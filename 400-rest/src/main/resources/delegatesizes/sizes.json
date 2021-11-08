@@ -3,6 +3,7 @@
     {
       "size" : "LAPTOP",
       "label" : "Laptop",
+      "taskLimit" : "50",
       "replicas" : "1",
       "ram" : "2048",
       "cpu" : "0.5"
@@ -10,6 +11,7 @@
     {
       "size" : "SMALL",
       "label" : "Small",
+      "taskLimit" : "100",
       "replicas" : "2",
       "ram" : "4096",
       "cpu" : "1"
@@ -17,6 +19,7 @@
     {
       "size" : "MEDIUM",
       "label" : "Medium",
+      "taskLimit" : "200",
       "replicas" : "4",
       "ram" : "8192",
       "cpu" : "2"
@@ -24,6 +27,7 @@
     {
       "size" : "LARGE",
       "label" : "Large",
+      "taskLimit" : "400",
       "replicas" : "8",
       "ram" : "16384",
       "cpu" : "4"

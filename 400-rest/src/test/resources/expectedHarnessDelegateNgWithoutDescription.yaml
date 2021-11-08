@@ -85,6 +85,8 @@ spec:
           value: "-Xms64M"
         - name: ACCOUNT_ID
           value: ACCOUNT_ID
+        - name: ACCOUNT_SECRET
+          value: ACCOUNT_KEY
         - name: MANAGER_HOST_AND_PORT
           value: https://localhost:9090
         - name: DEPLOY_MODE
@@ -93,44 +95,6 @@ spec:
           value: harness-delegate
         - name: DELEGATE_TYPE
           value: "KUBERNETES"
-        - name: DELEGATE_NAMESPACE
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.namespace
-        - name: INIT_SCRIPT
-          value: ""
-        - name: DELEGATE_DESCRIPTION
-          value: ""
-        - name: DELEGATE_TAGS
-          value: ""
-        - name: NEXT_GEN
-          value: "true"
-        - name: DELEGATE_TOKEN
-          value: ACCOUNT_KEY
-        - name: WATCHER_STORAGE_URL
-          value: http://localhost:8888
-        - name: WATCHER_CHECK_LOCATION
-          value: watcherci.txt
-        - name: DELEGATE_STORAGE_URL
-          value: http://localhost:8888
-        - name: DELEGATE_CHECK_LOCATION
-          value: delegateci.txt
-        - name: HELM_DESIRED_VERSION
-          value: ""
-        - name: JRE_VERSION
-          value: 11.0.14
-        - name: HELM3_PATH
-          value: ""
-        - name: HELM_PATH
-          value: ""
-        - name: KUSTOMIZE_PATH
-          value: ""
-        - name: KUBECTL_PATH
-          value: ""
-        - name: POLL_FOR_TASKS
-          value: "false"
-        - name: ENABLE_CE
-          value: "false"
         - name: PROXY_HOST
           value: ""
         - name: PROXY_PORT
@@ -151,9 +115,57 @@ spec:
             secretKeyRef:
               name: harness-delegate-proxy
               key: PROXY_PASSWORD
+        - name: POLL_FOR_TASKS
+          value: "false"
+        - name: ENABLE_CE
+          value: "false"
         - name: GRPC_SERVICE_ENABLED
           value: "false"
         - name: GRPC_SERVICE_CONNECTOR_PORT
           value: "0"
+        - name: VERSION_CHECK_DISABLED
+          value: "false"
+        - name: DELEGATE_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: DELEGATE_DESCRIPTION
+          value: ""
+        - name: DELEGATE_TAGS
+          value: ""
+        - name: DELEGATE_ORG_IDENTIFIER
+          value: ""
+        - name: DELEGATE_PROJECT_IDENTIFIER
+          value: ""
+        - name: INIT_SCRIPT
+          value: ""
+        - name: NEXT_GEN
+          value: "true"
+        - name: WATCHER_STORAGE_URL
+          value: http://localhost:8888
+        - name: WATCHER_CHECK_LOCATION
+          value: watcherci.txt
+        - name: REMOTE_WATCHER_URL_CDN
+          value: http://localhost:9500/builds
+        - name: DELEGATE_STORAGE_URL
+          value: http://localhost:8888
+        - name: DELEGATE_CHECK_LOCATION
+          value: delegateci.txt
+        - name: HELM_DESIRED_VERSION
+          value: ""
+        - name: USE_CDN
+          value: "false"
+        - name: CDN_URL
+          value: http://localhost:9500
+        - name: JRE_VERSION
+          value: 1.8.0_242
+        - name: HELM3_PATH
+          value: ""
+        - name: HELM_PATH
+          value: ""
+        - name: KUSTOMIZE_PATH
+          value: ""
+        - name: KUBECTL_PATH
+          value: ""
       restartPolicy: Always
 

@@ -1,67 +1,62 @@
-/*
- * Copyright 2022 Harness Inc. All rights reserved.
- * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
- * that can be found in the licenses directory at the root of this repository, also available at
- * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
- */
-
 package software.wings.service.delegate;
 
-import static io.harness.rule.OwnerRule.MARKO;
+import static io.harness.rule.OwnerRule.BOJAN;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.when;
+import static org.mockito.Matchers.anyString;
 
 import io.harness.category.element.UnitTests;
 import io.harness.configuration.DeployVariant;
 import io.harness.delegate.beans.DelegateSizeDetails;
 import io.harness.rule.Owner;
 
+import software.wings.WingsBaseTest;
 import software.wings.service.impl.DelegateServiceImpl;
 
+import com.google.inject.Inject;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
-@RunWith(MockitoJUnitRunner.class)
-public class DelegateSizeTest {
-  @Mock private DelegateServiceImpl underTest;
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({DeployVariant.class})
+@PowerMockIgnore({"javax.security.*", "javax.net.*", "javax.management.*", "javax.crypto.*"})
+public class DelegateSizeTest extends WingsBaseTest {
+  @Inject private DelegateServiceImpl delegateService;
 
   @Test
-  @Owner(developers = MARKO)
+  @Owner(developers = BOJAN)
   @Category(UnitTests.class)
   public void testFetchDefaultDelegateSize() {
-    try (MockedStatic<DeployVariant> deployVariant = Mockito.mockStatic(DeployVariant.class)) {
-      deployVariant.when(() -> DeployVariant.isCommunity(null)).thenReturn(false);
-      when(underTest.fetchDefaultDockerDelegateSize()).thenCallRealMethod();
-      DelegateSizeDetails delegateSizeDetails = underTest.fetchDefaultDockerDelegateSize();
+    PowerMockito.mockStatic(DeployVariant.class);
+    PowerMockito.when(DeployVariant.isCommunity(anyString())).thenReturn(false);
 
-      assertThat(delegateSizeDetails.getCpu()).isEqualTo(1);
-      assertThat(delegateSizeDetails.getLabel()).isEqualTo("Default");
-      assertThat(delegateSizeDetails.getRam()).isEqualTo(2048);
-      assertThat(delegateSizeDetails.getReplicas()).isEqualTo(0);
-      assertThat(delegateSizeDetails.getSize()).isNull();
-    }
+    DelegateSizeDetails delegateSizeDetails = delegateService.fetchDefaultDelegateSize();
+
+    assertThat(delegateSizeDetails.getCpu()).isEqualTo(0.5);
+    assertThat(delegateSizeDetails.getLabel()).isEqualTo("Default");
+    assertThat(delegateSizeDetails.getRam()).isEqualTo(2048);
+    assertThat(delegateSizeDetails.getReplicas()).isEqualTo(0);
+    assertThat(delegateSizeDetails.getSize()).isNull();
   }
 
   @Test
-  @Owner(developers = MARKO)
+  @Owner(developers = BOJAN)
   @Category(UnitTests.class)
   public void testFetchDefaultCommunityDelegateSize() {
-    try (MockedStatic<DeployVariant> deployVariant = Mockito.mockStatic(DeployVariant.class)) {
-      deployVariant.when(() -> DeployVariant.isCommunity(null)).thenReturn(true);
-      when(underTest.fetchDefaultDockerDelegateSize()).thenCallRealMethod();
-      DelegateSizeDetails delegateSizeDetails = underTest.fetchDefaultDockerDelegateSize();
+    PowerMockito.mockStatic(DeployVariant.class);
+    PowerMockito.when(DeployVariant.isCommunity(anyString())).thenReturn(true);
 
-      assertThat(delegateSizeDetails.getCpu()).isEqualTo(1);
-      assertThat(delegateSizeDetails.getLabel()).isEqualTo("Default Community Size");
-      assertThat(delegateSizeDetails.getRam()).isEqualTo(768);
-      assertThat(delegateSizeDetails.getReplicas()).isEqualTo(0);
-      assertThat(delegateSizeDetails.getSize()).isNull();
-    }
+    DelegateSizeDetails delegateSizeDetails = delegateService.fetchDefaultDelegateSize();
+
+    assertThat(delegateSizeDetails.getCpu()).isEqualTo(0.5);
+    assertThat(delegateSizeDetails.getLabel()).isEqualTo("Default Community Size");
+    assertThat(delegateSizeDetails.getRam()).isEqualTo(768);
+    assertThat(delegateSizeDetails.getReplicas()).isEqualTo(0);
+    assertThat(delegateSizeDetails.getSize()).isNull();
   }
 }

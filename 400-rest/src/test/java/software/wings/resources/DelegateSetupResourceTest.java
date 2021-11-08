@@ -254,8 +254,14 @@ public class DelegateSetupResourceTest extends CategoryTest {
   @Owner(developers = MARKO)
   @Category(UnitTests.class)
   public void shouldFetchDelegateSizes() {
-    List<DelegateSizeDetails> delegateSizes = Collections.singletonList(
-        DelegateSizeDetails.builder().size(DelegateSize.LAPTOP).label("Laptop").replicas(1).cpu(0.5).ram(2048).build());
+    List<DelegateSizeDetails> delegateSizes = Collections.singletonList(DelegateSizeDetails.builder()
+                                                                            .size(DelegateSize.LAPTOP)
+                                                                            .label("Laptop")
+                                                                            .replicas(1)
+                                                                            .taskLimit(50)
+                                                                            .cpu(0.5)
+                                                                            .ram(2048)
+                                                                            .build());
     when(delegateService.fetchAvailableSizes()).thenReturn(delegateSizes);
     RestResponse<List<DelegateSizeDetails>> restResponse =
         RESOURCES.client()
