@@ -44,6 +44,7 @@ import io.harness.perpetualtask.k8s.watch.K8sResourceStandardizer;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.collect.ImmutableMap;
+import io.kubernetes.client.openapi.apis.CoreV1Api;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.TemporalAmount;
@@ -89,9 +90,9 @@ public class K8sMetricCollector {
     this.lastMetricPublished = lastMetricPublished;
   }
 
-  public void collectAndPublishMetrics(final K8sMetricsClient k8sMetricsClient, Instant now) {
+  public void collectAndPublishMetrics(final K8sMetricsClient k8sMetricsClient, Instant now, CoreV1Api coreV1Api) {
     collectNodeMetrics(k8sMetricsClient);
-    collectPodMetricsAndContainerStates(k8sMetricsClient);
+    collectPodMetricsAndContainerStates(k8sMetricsClient, coreV1Api);
     collectPVMetrics(k8sMetricsClient);
     if (now.isAfter(this.lastMetricPublished.plus(AGGREGATION_WINDOW))) {
       publishPending(now);
@@ -147,7 +148,7 @@ public class K8sMetricCollector {
     }
   }
 
-  private void collectPodMetricsAndContainerStates(final K8sMetricsClient k8sMetricsClient) {
+  private void collectPodMetricsAndContainerStates(final K8sMetricsClient k8sMetricsClient, CoreV1Api coreV1Api) {
     List<PodMetrics> podMetricsList = k8sMetricsClient.podMetrics().list().getObject().getItems();
     for (PodMetrics podMetrics : podMetricsList) {
       if (!isEmpty(podMetrics.getContainers())) {

@@ -157,7 +157,7 @@ public class K8sMetricCollectorTest extends CategoryTest {
         .when(eventPublisher)
         .publishMessage(messageArgumentCaptor.capture(), any(Timestamp.class),
             eq(Collections.singletonMap(Constants.CLUSTER_ID_IDENTIFIER, CLUSTER_DETAILS.getClusterId())));
-    k8sMetricCollector.collectAndPublishMetrics(k8sMetricsClient, now);
+    k8sMetricCollector.collectAndPublishMetrics(k8sMetricsClient, now, k8sMetricsClient);
     verifyZeroInteractions(eventPublisher);
   }
 
@@ -277,8 +277,8 @@ public class K8sMetricCollectorTest extends CategoryTest {
         .when(eventPublisher)
         .publishMessage(messageArgumentCaptor.capture(), any(Timestamp.class),
             eq(Collections.singletonMap(Constants.CLUSTER_ID_IDENTIFIER, CLUSTER_DETAILS.getClusterId())));
-    k8sMetricCollector.collectAndPublishMetrics(k8sMetricsClient, now.plus(30, ChronoUnit.SECONDS));
-    k8sMetricCollector.collectAndPublishMetrics(k8sMetricsClient, now.plus(30, ChronoUnit.MINUTES));
+    k8sMetricCollector.collectAndPublishMetrics(k8sMetricsClient, now.plus(30, ChronoUnit.SECONDS), k8sMetricsClient);
+    k8sMetricCollector.collectAndPublishMetrics(k8sMetricsClient, now.plus(30, ChronoUnit.MINUTES), k8sMetricsClient);
 
     verify(2, getRequestedFor(urlMatching("^/api/v1/nodes/node[12]-name/proxy/stats/summary" + URL_REGEX_SUFFIX)));
 

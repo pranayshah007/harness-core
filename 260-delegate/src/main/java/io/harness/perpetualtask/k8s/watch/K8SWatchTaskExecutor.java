@@ -128,7 +128,7 @@ public class K8SWatchTaskExecutor implements PerpetualTaskExecutor {
                           .build();
                   return new K8sMetricCollector(eventPublisher, clusterDetails, heartbeatTime);
                 })
-            .collectAndPublishMetrics(k8sMetricsClient, now);
+            .collectAndPublishMetrics(k8sMetricsClient, now, k8sMetricsClient /* as CoreV1API */);
 
       } catch (JsonSyntaxException ex) {
         ApiExceptionLogger.logErrorIfNotSeenRecently(
