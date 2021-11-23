@@ -39,6 +39,7 @@ import io.harness.perpetualtask.k8s.metrics.client.model.node.NodeMetrics;
 import io.harness.perpetualtask.k8s.metrics.client.model.pod.PodMetrics;
 import io.harness.perpetualtask.k8s.metrics.recommender.ContainerState;
 import io.harness.perpetualtask.k8s.utils.ApiExceptionLogger;
+import io.harness.perpetualtask.k8s.watch.K8sControllerFetcher;
 import io.harness.perpetualtask.k8s.watch.K8sResourceStandardizer;
 
 import com.github.benmanes.caffeine.cache.Cache;
@@ -90,9 +91,10 @@ public class K8sMetricCollector {
     this.lastMetricPublished = lastMetricPublished;
   }
 
-  public void collectAndPublishMetrics(final K8sMetricsClient k8sMetricsClient, Instant now, CoreV1Api coreV1Api) {
+  public void collectAndPublishMetrics(
+      K8sMetricsClient k8sMetricsClient, Instant now, CoreV1Api coreV1Api, K8sControllerFetcher controllerFetcher) {
     collectNodeMetrics(k8sMetricsClient);
-    collectPodMetricsAndContainerStates(k8sMetricsClient, coreV1Api);
+    collectPodMetricsAndContainerStates(k8sMetricsClient, coreV1Api, controllerFetcher);
     collectPVMetrics(k8sMetricsClient);
     if (now.isAfter(this.lastMetricPublished.plus(AGGREGATION_WINDOW))) {
       publishPending(now);
@@ -148,7 +150,8 @@ public class K8sMetricCollector {
     }
   }
 
-  private void collectPodMetricsAndContainerStates(final K8sMetricsClient k8sMetricsClient, CoreV1Api coreV1Api) {
+  private void collectPodMetricsAndContainerStates(
+      final K8sMetricsClient k8sMetricsClient, CoreV1Api coreV1Api, K8sControllerFetcher controllerFetcher) {
     List<PodMetrics> podMetricsList = k8sMetricsClient.podMetrics().list().getObject().getItems();
     for (PodMetrics podMetrics : podMetricsList) {
       if (!isEmpty(podMetrics.getContainers())) {

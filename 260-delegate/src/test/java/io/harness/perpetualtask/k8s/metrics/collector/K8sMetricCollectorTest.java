@@ -42,6 +42,7 @@ import io.harness.perpetualtask.k8s.metrics.client.model.node.NodeMetrics;
 import io.harness.perpetualtask.k8s.metrics.client.model.node.NodeMetricsList;
 import io.harness.perpetualtask.k8s.metrics.client.model.pod.PodMetrics;
 import io.harness.perpetualtask.k8s.metrics.client.model.pod.PodMetricsList;
+import io.harness.perpetualtask.k8s.watch.K8sControllerFetcher;
 import io.harness.rule.Owner;
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
@@ -157,7 +158,7 @@ public class K8sMetricCollectorTest extends CategoryTest {
         .when(eventPublisher)
         .publishMessage(messageArgumentCaptor.capture(), any(Timestamp.class),
             eq(Collections.singletonMap(Constants.CLUSTER_ID_IDENTIFIER, CLUSTER_DETAILS.getClusterId())));
-    k8sMetricCollector.collectAndPublishMetrics(k8sMetricsClient, now, k8sMetricsClient);
+    k8sMetricCollector.collectAndPublishMetrics(k8sMetricsClient, now, k8sMetricsClient, null);
     verifyZeroInteractions(eventPublisher);
   }
 
@@ -277,8 +278,10 @@ public class K8sMetricCollectorTest extends CategoryTest {
         .when(eventPublisher)
         .publishMessage(messageArgumentCaptor.capture(), any(Timestamp.class),
             eq(Collections.singletonMap(Constants.CLUSTER_ID_IDENTIFIER, CLUSTER_DETAILS.getClusterId())));
-    k8sMetricCollector.collectAndPublishMetrics(k8sMetricsClient, now.plus(30, ChronoUnit.SECONDS), k8sMetricsClient);
-    k8sMetricCollector.collectAndPublishMetrics(k8sMetricsClient, now.plus(30, ChronoUnit.MINUTES), k8sMetricsClient);
+    k8sMetricCollector.collectAndPublishMetrics(
+        k8sMetricsClient, now.plus(30, ChronoUnit.SECONDS), k8sMetricsClient, null);
+    k8sMetricCollector.collectAndPublishMetrics(
+        k8sMetricsClient, now.plus(30, ChronoUnit.MINUTES), k8sMetricsClient, null);
 
     verify(2, getRequestedFor(urlMatching("^/api/v1/nodes/node[12]-name/proxy/stats/summary" + URL_REGEX_SUFFIX)));
 

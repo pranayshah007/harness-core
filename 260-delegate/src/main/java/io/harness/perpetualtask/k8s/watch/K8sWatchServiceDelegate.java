@@ -63,19 +63,14 @@ public class K8sWatchServiceDelegate {
   private final ApiClientFactory apiClientFactory;
 
   private final Map<String, WatcherGroup> watchMap; // <id, Watch>
-  private final KryoSerializer kryoSerializer; // <id, Watch>
-  private final ContainerDeploymentDelegateHelper containerDeploymentDelegateHelper;
 
   @Inject
   public K8sWatchServiceDelegate(WatcherFactory watcherFactory,
-      SharedInformerFactoryFactory sharedInformerFactoryFactory, ApiClientFactory apiClientFactory,
-      KryoSerializer kryoSerializer, ContainerDeploymentDelegateHelper containerDeploymentDelegateHelper) {
+      SharedInformerFactoryFactory sharedInformerFactoryFactory, ApiClientFactory apiClientFactory) {
     this.watcherFactory = watcherFactory;
     this.sharedInformerFactoryFactory = sharedInformerFactoryFactory;
     this.apiClientFactory = apiClientFactory;
     this.watchMap = new ConcurrentHashMap<>();
-    this.kryoSerializer = kryoSerializer;
-    this.containerDeploymentDelegateHelper = containerDeploymentDelegateHelper;
   }
 
   @Value
@@ -83,6 +78,7 @@ public class K8sWatchServiceDelegate {
   public static class WatcherGroup implements Closeable {
     String watchId;
     SharedInformerFactory sharedInformerFactory;
+    K8sControllerFetcher controllerFetcher;
 
     @Override
     public void close() {
@@ -93,6 +89,11 @@ public class K8sWatchServiceDelegate {
 
   Iterable<String> watchIds() {
     return watchMap.keySet();
+  }
+
+  public K8sControllerFetcher getK8sControllerFetcher(String clusterId) {
+    WatcherGroup watch = watchMap.get(clusterId);
+    return (watch != null) ? watch.controllerFetcher : null;
   }
 
   public String create(K8sWatchTaskParams params, KubernetesConfig kubernetesConfig) {
@@ -146,7 +147,11 @@ public class K8sWatchServiceDelegate {
 
       // cluster is seen/old now, any new onAdd event older than 2 hours will be ignored.
       // TODO(UTSAV): TEMP K8sClusterHelper.setAsSeen(params.getClusterId(), kubeSystemUid);
-      return WatcherGroup.builder().watchId(id).sharedInformerFactory(sharedInformerFactory).build();
+      return WatcherGroup.builder()
+          .watchId(id)
+          .sharedInformerFactory(sharedInformerFactory)
+          .controllerFetcher(controllerFetcher)
+          .build();
     });
 
     return watchId;
