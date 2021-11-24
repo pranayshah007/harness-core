@@ -31,7 +31,6 @@ import io.harness.perpetualtask.k8s.utils.K8sClusterHelper;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
 
-import software.wings.helpers.ext.container.ContainerDeploymentDelegateHelper;
 import software.wings.helpers.ext.k8s.request.K8sClusterConfig;
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule;

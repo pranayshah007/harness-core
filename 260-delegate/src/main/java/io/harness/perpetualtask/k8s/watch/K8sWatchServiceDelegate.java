@@ -14,9 +14,6 @@ import io.harness.k8s.model.KubernetesConfig;
 import io.harness.perpetualtask.k8s.informer.ClusterDetails;
 import io.harness.perpetualtask.k8s.informer.SharedInformerFactoryFactory;
 import io.harness.perpetualtask.k8s.metrics.client.impl.DefaultK8sMetricsClient;
-import io.harness.serializer.KryoSerializer;
-
-import software.wings.helpers.ext.container.ContainerDeploymentDelegateHelper;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;

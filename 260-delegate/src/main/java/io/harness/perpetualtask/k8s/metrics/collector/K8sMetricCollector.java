@@ -41,21 +41,27 @@ import io.harness.perpetualtask.k8s.metrics.recommender.ContainerState;
 import io.harness.perpetualtask.k8s.utils.ApiExceptionLogger;
 import io.harness.perpetualtask.k8s.watch.K8sControllerFetcher;
 import io.harness.perpetualtask.k8s.watch.K8sResourceStandardizer;
+import io.harness.perpetualtask.k8s.watch.Owner;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.collect.ImmutableMap;
+import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
+import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodList;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.TemporalAmount;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
 import lombok.Builder;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
 
 @Slf4j
 @TargetModule(HarnessModule._420_DELEGATE_AGENT)
@@ -82,6 +88,10 @@ public class K8sMetricCollector {
   private final Cache<CacheKey, Aggregates> pvMetricsCache = Caffeine.newBuilder().build();
 
   private final Cache<CacheKey, ContainerState> containerStatesCache = Caffeine.newBuilder().build();
+
+  // Cache from "namespace/podName" --> <workloadKind, workloadName>.
+  private Cache<String, Pair<String, String>> workloadInfoCache =
+      Caffeine.newBuilder().expireAfterAccess(3, TimeUnit.MINUTES).build();
 
   private Instant lastMetricPublished;
 
@@ -182,6 +192,42 @@ public class K8sMetricCollector {
             .update(podCpuNano, podMemoryBytes, podMetrics.getTimestamp());
       }
     }
+  }
+
+  private Pair<String, String> getWorkloadInfo(
+      String namespace, String podName, CoreV1Api coreV1Api, K8sControllerFetcher controllerFetcher) {
+    String key = namespace + "/" + podName;
+    return workloadInfoCache.get(key, k -> findWorkloadInfo(namespace, podName, coreV1Api, controllerFetcher));
+  }
+
+  private Pair<String, String> findWorkloadInfo(
+      String namespace, String podName, CoreV1Api coreV1Api, K8sControllerFetcher controllerFetcher) {
+    V1Pod pod = getPod(coreV1Api, namespace, podName);
+    if (pod == null) {
+      return null;
+    }
+    Owner owner = controllerFetcher.getTopLevelOwner(pod);
+    if (owner == null) {
+      log.warn("Failed to find top level controller for pod {}/{}", namespace, podName);
+      return null;
+    }
+    return Pair.of(owner.getKind(), owner.getName());
+  }
+
+  private V1Pod getPod(CoreV1Api coreV1Api, String namespace, String podName) {
+    V1PodList podList;
+    try {
+      podList = coreV1Api.listNamespacedPod(
+          namespace, null, false, null, "metadata.name=" + podName, null, 1, null, null, false);
+    } catch (ApiException e) {
+      log.warn("Failed to get pod {} in namespace {}: {}", podName, namespace, e);
+      return null;
+    }
+    if (podList.getItems().size() == 0) {
+      log.info("Pod not found: namespace={}, podName={}", namespace, podName);
+      return null;
+    }
+    return podList.getItems().get(0);
   }
 
   private void publishNodeMetrics() {
