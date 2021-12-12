@@ -6,6 +6,7 @@ import static io.harness.delegate.task.citasks.vm.helper.CIVMConstants.RUNNER_UR
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.ci.vm.runner.ExecuteStepResponse;
+import io.harness.delegate.beans.ci.vm.runner.PoolOwnerStepResponse;
 import io.harness.network.Http;
 
 import com.google.inject.Singleton;
@@ -55,6 +56,12 @@ public class HttpHelper {
     RetryPolicy<Object> retryPolicy = getRetryPolicyForDeletion(
         "[Retrying failed to cleanup stage; attempt: {}", "Failing to cleanup stage after retrying {} times");
     return Failsafe.with(retryPolicy).get(() -> getRunnerClient(600).destroy(params).execute());
+  }
+
+  public Response<PoolOwnerStepResponse> isPoolOwner(Map<String, String> params) {
+    RetryPolicy<Object> retryPolicy = getRetryPolicy("[Retrying failed to check for pool_owner; attempt: {}",
+        "Failing to check for pool_owner after retrying {} times");
+    return Failsafe.with(retryPolicy).get(() -> getRunnerClient(600).poolOwner(params).execute());
   }
 
   private RetryPolicy<Object> getRetryPolicy(String failedAttemptMessage, String failureMessage) {

@@ -28,6 +28,7 @@ message CapabilityParameters {
     PcfAutoScalarParameters pcf_auto_scalar_parameters = 14;
     PcfConnectivityParameters pcf_connectivity_parameters = 15;
     PcfInstallationParameters pcf_installation_parameters = 18;
+    CIVMParameters ci_vm_parameters = 19;
     ProcessExecutorParameters process_executor_parameters = 7;
     SftpCapabilityParameters sftp_capability_parameters = 3;
     SmbConnectionParameters smb_connection_parameters = 2;
@@ -161,4 +162,9 @@ message LiteEngineConnectionParameters {
   string ip = 1;
   int32 port = 2;
   bool is_local = 3;
+}
+
+// Testing whether a delegate can connect to a given VM (CI)
+message CIVMParameters {
+    string pool_id = 1;
 }

@@ -38,5 +38,6 @@ public enum CapabilityType {
   SELECTORS,
   GIT_CONNECTION_NG,
   GIT_INSTALLATION,
-  LITE_ENGINE;
+  LITE_ENGINE,
+  CI_VM;
 }
