@@ -44,9 +44,11 @@ public class CIVmConnectionCapabilityCheck implements CapabilityCheck, ProtoCapa
     if (parameters.getCapabilityCase() != CapabilityParameters.CapabilityCase.CI_VM_PARAMETERS) {
       return builder.permissionResult(CapabilitySubjectPermission.PermissionResult.DENIED).build();
     }
+    boolean isOwner = isPoolOwner(parameters.getCiVmParameters().getPoolId());
+    log.info(String.format("vm capability check performed, result is %s", isOwner));
 
     return builder
-        .permissionResult(isPoolOwner(parameters.getCiVmParameters().getPoolId())
+        .permissionResult(isOwner
                 ? CapabilitySubjectPermission.PermissionResult.ALLOWED
                 : CapabilitySubjectPermission.PermissionResult.DENIED)
         .build();

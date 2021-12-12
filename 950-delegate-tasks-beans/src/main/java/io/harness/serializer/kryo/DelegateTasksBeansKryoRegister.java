@@ -140,27 +140,7 @@ import io.harness.delegate.beans.connector.scm.ScmValidationParams;
 import io.harness.delegate.beans.connector.splunkconnector.SplunkConnectionTaskParams;
 import io.harness.delegate.beans.connector.splunkconnector.SplunkConnectionTaskResponse;
 import io.harness.delegate.beans.connector.vaultconnector.VaultValidationParams;
-import io.harness.delegate.beans.executioncapability.AlwaysFalseValidationCapability;
-import io.harness.delegate.beans.executioncapability.AwsRegionCapability;
-import io.harness.delegate.beans.executioncapability.CapabilityType;
-import io.harness.delegate.beans.executioncapability.ChartMuseumCapability;
-import io.harness.delegate.beans.executioncapability.ExecutionCapability;
-import io.harness.delegate.beans.executioncapability.GitConnectionNGCapability;
-import io.harness.delegate.beans.executioncapability.GitInstallationCapability;
-import io.harness.delegate.beans.executioncapability.HelmInstallationCapability;
-import io.harness.delegate.beans.executioncapability.HttpConnectionExecutionCapability;
-import io.harness.delegate.beans.executioncapability.KustomizeCapability;
-import io.harness.delegate.beans.executioncapability.LiteEngineConnectionCapability;
-import io.harness.delegate.beans.executioncapability.PcfAutoScalarCapability;
-import io.harness.delegate.beans.executioncapability.PcfConnectivityCapability;
-import io.harness.delegate.beans.executioncapability.PcfInstallationCapability;
-import io.harness.delegate.beans.executioncapability.ProcessExecutorCapability;
-import io.harness.delegate.beans.executioncapability.SelectorCapability;
-import io.harness.delegate.beans.executioncapability.SftpCapability;
-import io.harness.delegate.beans.executioncapability.SmbConnectionCapability;
-import io.harness.delegate.beans.executioncapability.SmtpCapability;
-import io.harness.delegate.beans.executioncapability.SocketConnectivityExecutionCapability;
-import io.harness.delegate.beans.executioncapability.SystemEnvCheckerCapability;
+import io.harness.delegate.beans.executioncapability.*;
 import io.harness.delegate.beans.git.GitCommandExecutionResponse;
 import io.harness.delegate.beans.git.GitCommandExecutionResponse.GitCommandStatus;
 import io.harness.delegate.beans.git.GitCommandParams;
@@ -991,5 +971,6 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(VmRunTestStep.class, 543451);
     kryo.register(VmJunitTestReport.class, 543452);
     kryo.register(VmUnitTestReport.class, 543453);
+    kryo.register(CIVmConnectionCapability.class, 543454);
   }
 }
