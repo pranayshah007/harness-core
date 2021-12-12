@@ -126,6 +126,7 @@ import io.harness.migrations.all.UpdateWorkflowExecutionDuration;
 import io.harness.migrations.all.WFEAddDeploymentMetaData;
 import io.harness.migrations.all.WorkflowExecutionAddCDPageCandidateMigration;
 import io.harness.migrations.apppermission.ManageApplicationTemplatePermissionMigration;
+import io.harness.migrations.apppermission.NullAppFilterPermissionMigration;
 
 import com.google.common.collect.ImmutableList;
 import java.util.List;
@@ -350,6 +351,7 @@ public class MigrationBackgroundList {
         .add(Pair.of(206, CDPaidLicenseToNGMigration.class))
         .add(Pair.of(207, DeleteDelegateAlertsExceptDelegateDown.class))
         .add(Pair.of(208, MigrationSMCredentialsFromLocalToGlobalKMS.class))
+        .add(Pair.of(209, NullAppFilterPermissionMigration.class))
         .build();
   }
 }

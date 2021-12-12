@@ -8,6 +8,9 @@ import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.TimeSeriesMetricType;
 import io.harness.cvng.core.beans.DatadogMetricHealthDefinition;
+import io.harness.cvng.core.utils.analysisinfo.DevelopmentVerificationTransformer;
+import io.harness.cvng.core.utils.analysisinfo.LiveMonitoringTransformer;
+import io.harness.cvng.core.utils.analysisinfo.SLIMetricTransformer;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.google.common.base.Preconditions;
@@ -52,18 +55,22 @@ public class DatadogMetricCVConfig extends MetricCVConfig {
 
     datadogMetricDefinitions.forEach(definition -> {
       TimeSeriesMetricType metricType = definition.getRiskProfile().getMetricType();
-      metricInfoList.add(MetricInfo.builder()
-                             .metricName(definition.getMetricName())
-                             .identifier(definition.getIdentifier())
-                             .metric(definition.getMetric())
-                             .query(definition.getQuery())
-                             .groupingQuery(definition.getGroupingQuery())
-                             .metricType(metricType)
-                             .aggregation(definition.getAggregation())
-                             .metricTags(definition.getMetricTags())
-                             .isManualQuery(definition.isManualQuery())
-                             .serviceInstanceIdentifierTag(definition.getServiceInstanceIdentifierTag())
-                             .build());
+      metricInfoList.add(
+          MetricInfo.builder()
+              .metricName(definition.getMetricName())
+              .identifier(definition.getIdentifier())
+              .metric(definition.getMetric())
+              .query(definition.getQuery())
+              .groupingQuery(definition.getGroupingQuery())
+              .metricType(metricType)
+              .aggregation(definition.getAggregation())
+              .metricTags(definition.getMetricTags())
+              .isManualQuery(definition.isManualQuery())
+              .serviceInstanceIdentifierTag(definition.getServiceInstanceIdentifierTag())
+              .sli(SLIMetricTransformer.transformDTOtoEntity(definition.getSli()))
+              .liveMonitoring(LiveMonitoringTransformer.transformDTOtoEntity(definition.getAnalysis()))
+              .deploymentVerification(DevelopmentVerificationTransformer.transformDTOtoEntity(definition.getAnalysis()))
+              .build());
 
       // add this metric to the pack and the corresponding thresholds
       Set<TimeSeriesThreshold> thresholds = getThresholdsToCreateOnSaveForCustomProviders(

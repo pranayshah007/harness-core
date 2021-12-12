@@ -5,7 +5,11 @@ import static io.harness.delegate.task.citasks.vm.helper.CIVMConstants.RUNNER_UR
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.beans.ci.vm.runner.DestroyVmRequest;
+import io.harness.delegate.beans.ci.vm.runner.ExecuteStepRequest;
 import io.harness.delegate.beans.ci.vm.runner.ExecuteStepResponse;
+import io.harness.delegate.beans.ci.vm.runner.SetupVmRequest;
+import io.harness.delegate.beans.ci.vm.runner.SetupVmResponse;
 import io.harness.delegate.beans.ci.vm.runner.PoolOwnerStepResponse;
 import io.harness.network.Http;
 
@@ -39,23 +43,23 @@ public class HttpHelper {
     return retrofit.create(RunnerRestClient.class);
   }
 
-  public Response<Void> setupStageWithRetries(Map<String, String> params) {
+  public Response<SetupVmResponse> setupStageWithRetries(SetupVmRequest setupVmRequest) {
     // TODO(shubham): Retry on stage setup can create 2 VMs.
     RetryPolicy<Object> retryPolicy = getRetryPolicy(
         "[Retrying failed to setup stage; attempt: {}", "Failing to setup stage after retrying {} times");
-    return Failsafe.with(retryPolicy).get(() -> getRunnerClient(600).setup(params).execute());
+    return Failsafe.with(retryPolicy).get(() -> getRunnerClient(600).setup(setupVmRequest).execute());
   }
 
-  public Response<ExecuteStepResponse> executeStepWithRetries(Map<String, String> params) {
+  public Response<ExecuteStepResponse> executeStepWithRetries(ExecuteStepRequest executeStepRequest) {
     RetryPolicy<Object> retryPolicy = getRetryPolicy(
         "[Retrying failed to execute step; attempt: {}", "Failing to execute step after retrying {} times");
-    return Failsafe.with(retryPolicy).get(() -> getRunnerClient(14400).step(params).execute());
+    return Failsafe.with(retryPolicy).get(() -> getRunnerClient(14400).step(executeStepRequest).execute());
   }
 
-  public Response<Void> cleanupStageWithRetries(Map<String, String> params) {
+  public Response<Void> cleanupStageWithRetries(DestroyVmRequest destroyVmRequest) {
     RetryPolicy<Object> retryPolicy = getRetryPolicyForDeletion(
         "[Retrying failed to cleanup stage; attempt: {}", "Failing to cleanup stage after retrying {} times");
-    return Failsafe.with(retryPolicy).get(() -> getRunnerClient(600).destroy(params).execute());
+    return Failsafe.with(retryPolicy).get(() -> getRunnerClient(600).destroy(destroyVmRequest).execute());
   }
 
   public Response<PoolOwnerStepResponse> isPoolOwner(Map<String, String> params) {

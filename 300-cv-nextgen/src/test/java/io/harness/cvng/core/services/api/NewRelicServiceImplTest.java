@@ -222,6 +222,23 @@ public class NewRelicServiceImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = PRAVEEN)
   @Category(UnitTests.class)
+  public void testParseSampleData_withArrays() throws Exception {
+    String responseObject = Resources.toString(
+        NewRelicServiceImplTest.class.getResource("/newrelic/newrelic-custom-response-witharray.json"), Charsets.UTF_8);
+    String metricValuesPath = "$.timeSeries.[*].results.[0].average";
+    String timestampPath = "$.timeSeries.[*].endTimeSeconds";
+    String timestampFormat = null;
+
+    List<TimeSeriesSampleDTO> sampleData = newRelicService.parseSampleData(
+        builderFactory.getProjectParams(), responseObject, "myNRTxn", metricValuesPath, timestampPath, timestampFormat);
+
+    assertThat(sampleData).isNotEmpty();
+    assertThat(sampleData.size()).isEqualTo(30);
+  }
+
+  @Test
+  @Owner(developers = PRAVEEN)
+  @Category(UnitTests.class)
   public void testParseSampleData_badPath() throws Exception {
     String responseObject = Resources.toString(
         NewRelicServiceImplTest.class.getResource("/newrelic/newrelic-custom-response.json"), Charsets.UTF_8);

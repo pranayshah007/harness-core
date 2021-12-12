@@ -8,7 +8,9 @@ import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.bigQuery.BigQueryService;
+import io.harness.ccm.budget.BudgetPeriod;
 import io.harness.ccm.commons.utils.BigQueryHelper;
+import io.harness.ccm.graphql.core.budget.BudgetCostService;
 import io.harness.ccm.utils.LogAccountIdentifier;
 import io.harness.ccm.views.entities.CEView;
 import io.harness.ccm.views.service.CEReportScheduleService;
@@ -68,15 +70,18 @@ public class PerspectiveResource {
   private final ViewCustomFieldService viewCustomFieldService;
   private final BigQueryService bigQueryService;
   private final BigQueryHelper bigQueryHelper;
+  private final BudgetCostService budgetCostService;
 
   @Inject
   public PerspectiveResource(CEViewService ceViewService, CEReportScheduleService ceReportScheduleService,
-      ViewCustomFieldService viewCustomFieldService, BigQueryService bigQueryService, BigQueryHelper bigQueryHelper) {
+      ViewCustomFieldService viewCustomFieldService, BigQueryService bigQueryService, BigQueryHelper bigQueryHelper,
+      BudgetCostService budgetCostService) {
     this.ceViewService = ceViewService;
     this.ceReportScheduleService = ceReportScheduleService;
     this.viewCustomFieldService = viewCustomFieldService;
     this.bigQueryService = bigQueryService;
     this.bigQueryHelper = bigQueryHelper;
+    this.budgetCostService = budgetCostService;
   }
 
   @GET
@@ -103,6 +108,33 @@ public class PerspectiveResource {
   }
 
   @GET
+  @Path("lastPeriodCost")
+  @Timed
+  @LogAccountIdentifier
+  @ExceptionMetered
+  @ApiOperation(value = "Get last period cost for perspective", nickname = "getLastPeriodCost")
+  @Operation(operationId = "getLastPeriodCost", description = "Get last period cost for a Perspective",
+      summary = "Get the last period cost for a Perspective",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(description = "Returns a number having the cost of last period",
+            content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
+      })
+  public ResponseDTO<Double>
+  getLastPeriodCost(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
+                        NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
+      @NotNull @Valid @QueryParam("perspectiveId") @Parameter(
+          required = true, description = "The Perspective identifier for which we want the cost") String perspectiveId,
+      @NotNull @Valid @QueryParam("startTime") @Parameter(
+          required = true, description = "The Start time (timestamp in millis) for the period") long startTime,
+      @NotNull @Valid @QueryParam("period") @Parameter(required = true,
+          description = "The period (DAILY, WEEKLY, MONTHLY, QUARTERLY, YEARLY) for which we want the cost")
+      BudgetPeriod period) {
+    return ResponseDTO.newResponse(budgetCostService.getLastPeriodCost(accountId, perspectiveId, startTime, period));
+  }
+
+  @GET
   @Path("forecastCost")
   @Timed
   @ExceptionMetered
@@ -122,6 +154,33 @@ public class PerspectiveResource {
       @Valid @NotNull @Parameter(required = true, description = "Unique identifier for the Perspective") @QueryParam(
           "perspectiveId") String perspectiveId) {
     return ResponseDTO.newResponse(ceViewService.getForecastCostForPerspective(accountId, perspectiveId));
+  }
+
+  @GET
+  @Path("forecastCostForPeriod")
+  @Timed
+  @ExceptionMetered
+  @ApiOperation(value = "Get forecast cost for perspective for given period", nickname = "getForecastCostForPeriod")
+  @Operation(operationId = "getForecastCostForPeriod",
+      description = "Get the forecasted cost of a Perspective for next period",
+      summary = "Get the forecasted cost of a Perspective for given period",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(description = "Returns a number having the forecast cost of a Perspective for next period",
+            content = { @Content(mediaType = MediaType.APPLICATION_JSON) })
+      })
+  public ResponseDTO<Double>
+  getForecastCostForPeriod(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
+                               NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
+      @NotNull @Valid @QueryParam("perspectiveId") @Parameter(required = true,
+          description = "The Perspective identifier for which we want the forecast cost") String perspectiveId,
+      @NotNull @Valid @QueryParam("startTime") @Parameter(
+          required = true, description = "The Start time (timestamp in millis) for the period") long startTime,
+      @NotNull @Valid @QueryParam("period") @Parameter(required = true,
+          description = "The period (DAILY, WEEKLY, MONTHLY, QUARTERLY, YEARLY) for which we want the forecast cost")
+      BudgetPeriod period) {
+    return ResponseDTO.newResponse(budgetCostService.getForecastCost(accountId, perspectiveId, startTime, period));
   }
 
   @POST

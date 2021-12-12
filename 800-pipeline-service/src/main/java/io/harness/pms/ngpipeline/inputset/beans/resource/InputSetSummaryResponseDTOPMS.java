@@ -14,6 +14,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.annotations.ApiModel;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Map;
+import java.util.Set;
 import lombok.Builder;
 import lombok.Value;
 
@@ -39,4 +40,5 @@ public class InputSetSummaryResponseDTOPMS {
   InputSetErrorWrapperDTOPMS inputSetErrorDetails;
   Map<String, String> overlaySetErrorDetails;
   EntityValidityDetails entityValidityDetails;
+  Set<String> modules;
 }

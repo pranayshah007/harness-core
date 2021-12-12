@@ -62,6 +62,7 @@ io.harness.beans.steps.stepinfo.UploadToArtifactoryStepInfo
 io.harness.plancreator.flowcontrol.FlowControlConfig
 io.harness.steps.approval.step.jira.beans.KeyValuesCriteriaSpec
 io.harness.beans.outcomes.LiteEnginePodDetailsOutcome
+io.harness.beans.outcomes.VmDetailsOutcome
 io.harness.ngpipeline.artifact.bean.ArtifactsOutcome
 io.harness.states.codebase.CodeBaseTaskStepParameters
 io.harness.steps.resourcerestraint.beans.HoldingScope

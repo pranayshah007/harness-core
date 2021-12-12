@@ -1,10 +1,9 @@
 // The number of approvals required to merge.
 let numApprovalsRequired = 1;
 
-if (review.pullRequest.title.startsWith('[CDP') ||
-    review.pullRequest.title.startsWith('[CVNG') ||
-    review.pullRequest.title.startsWith('[CV') ||
-    review.pullRequest.title.startsWith('[PIE')) {
+let re = /(feat|fix|techdebt).*(:).*(\[CDP|\[CV|\[PIE)/g;
+
+if (review.pullRequest.title.match(re)) {
   numApprovalsRequired = 2;
 }
 

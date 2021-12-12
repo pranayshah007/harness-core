@@ -70,6 +70,7 @@ public class CVNGBackgroundMigrationList {
         .add(Pair.of(25, DeleteSLISLOMigration.class))
         .add(Pair.of(26, AddDefaultFieldsToMonitoredService.class))
         .add(Pair.of(27, AppDCustomMetricForExistingProjects.class))
+        .add(Pair.of(28, DeleteSLISLOMigration.class))
         .build();
   }
 }

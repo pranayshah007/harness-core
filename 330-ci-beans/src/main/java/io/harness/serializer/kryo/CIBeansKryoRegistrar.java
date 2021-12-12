@@ -29,6 +29,7 @@ import io.harness.beans.executionargs.CIExecutionArgs;
 import io.harness.beans.inputset.WebhookTriggerExecutionInputSet;
 import io.harness.beans.outcomes.DependencyOutcome;
 import io.harness.beans.outcomes.LiteEnginePodDetailsOutcome;
+import io.harness.beans.outcomes.VmDetailsOutcome;
 import io.harness.beans.steps.outcome.CIStepOutcome;
 import io.harness.beans.steps.outcome.StepArtifacts;
 import io.harness.beans.steps.stepinfo.BuildEnvSetupStepInfo;
@@ -153,5 +154,7 @@ public class CIBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(VmStageInfraDetails.class, 100098);
     kryo.register(StageInfraDetails.class, 100099);
     kryo.register(K8StageInfraDetails.class, 100100);
+
+    kryo.register(VmDetailsOutcome.class, 110101); // quantum change in order because 100101 is already assigned.
   }
 }

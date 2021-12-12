@@ -5,8 +5,6 @@ import static io.harness.ccm.budget.AlertThresholdBase.FORECASTED_COST;
 import static io.harness.ccm.commons.constants.Constants.HARNESS_NAME;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
-import static software.wings.graphql.datafetcher.billing.CloudBillingHelper.unified;
-
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
@@ -19,8 +17,10 @@ import io.harness.batch.processing.mail.CEMailNotificationService;
 import io.harness.batch.processing.shard.AccountShardService;
 import io.harness.batch.processing.slackNotification.CESlackNotificationService;
 import io.harness.ccm.budget.AlertThreshold;
-import io.harness.ccm.budget.BudgetUtils;
+import io.harness.ccm.budget.BudgetPeriod;
+import io.harness.ccm.budget.dao.BudgetDao;
 import io.harness.ccm.budget.entities.BudgetAlertsData;
+import io.harness.ccm.budget.utils.BudgetUtils;
 import io.harness.ccm.commons.entities.billing.Budget;
 import io.harness.ccm.communication.CESlackWebhookService;
 import io.harness.ccm.communication.entities.CESlackWebhook;
@@ -61,7 +61,7 @@ public class BudgetAlertsServiceImpl {
   @Autowired private CEMailNotificationService emailNotificationService;
   @Autowired private CESlackNotificationService slackNotificationService;
   @Autowired private BudgetTimescaleQueryHelper budgetTimescaleQueryHelper;
-  @Autowired private BudgetUtils budgetUtils;
+  @Autowired private BudgetDao budgetDao;
   @Autowired private CESlackWebhookService ceSlackWebhookService;
   @Autowired private BatchMainConfig mainConfiguration;
   @Autowired private CloudToHarnessMappingService cloudToHarnessMappingService;
@@ -77,8 +77,9 @@ public class BudgetAlertsServiceImpl {
     List<Account> ceEnabledAccounts = accountShardService.getCeEnabledAccounts();
     List<String> accountIds = ceEnabledAccounts.stream().map(Account::getUuid).collect(Collectors.toList());
     accountIds.forEach(accountId -> {
-      List<Budget> budgets = budgetUtils.listBudgetsForAccount(accountId);
+      List<Budget> budgets = budgetDao.list(accountId);
       budgets.forEach(budget -> {
+        updateCGBudget(budget);
         try {
           checkAndSendAlerts(budget);
         } catch (Exception e) {
@@ -99,18 +100,16 @@ public class BudgetAlertsServiceImpl {
     emailAddresses.addAll(getEmailsForUserGroup(budget.getAccountId(), userGroupIds));
     CESlackWebhook slackWebhook = ceSlackWebhookService.getByAccountId(budget.getAccountId());
 
-    String cloudProviderTable = cloudBillingHelper.getCloudProviderTableName(
-        mainConfiguration.getBillingDataPipelineConfig().getGcpProjectId(), budget.getAccountId(), unified);
     // For sending alerts based on actual cost
     AlertThreshold[] alertsBasedOnActualCost =
-        budgetUtils.getSortedAlertThresholds(ACTUAL_COST, budget.getAlertThresholds());
-    double actualCost = budgetUtils.getActualCost(budget, cloudProviderTable);
+        BudgetUtils.getSortedAlertThresholds(ACTUAL_COST, budget.getAlertThresholds());
+    double actualCost = budget.getActualCost();
     checkAlertThresholdsAndSendAlerts(budget, alertsBasedOnActualCost, slackWebhook, emailAddresses, actualCost);
 
     // For sending alerts based on forecast cost
     AlertThreshold[] alertsBasedOnForecastCost =
-        budgetUtils.getSortedAlertThresholds(FORECASTED_COST, budget.getAlertThresholds());
-    double forecastCost = budgetUtils.getForecastCost(budget, cloudProviderTable);
+        BudgetUtils.getSortedAlertThresholds(FORECASTED_COST, budget.getAlertThresholds());
+    double forecastCost = budget.getForecastCost();
     checkAlertThresholdsAndSendAlerts(budget, alertsBasedOnForecastCost, slackWebhook, emailAddresses, forecastCost);
   }
 
@@ -139,8 +138,8 @@ public class BudgetAlertsServiceImpl {
                                   .time(System.currentTimeMillis())
                                   .build();
 
-      if (budgetUtils.isAlertSentInCurrentMonth(
-              budgetTimescaleQueryHelper.getLastAlertTimestamp(data, budget.getAccountId()))) {
+      if (BudgetUtils.isAlertSentInCurrentPeriod(
+              budgetTimescaleQueryHelper.getLastAlertTimestamp(data, budget.getAccountId()), budget.getStartTime())) {
         break;
       }
       String costType = ACTUAL_COST_BUDGET;
@@ -259,6 +258,20 @@ public class BudgetAlertsServiceImpl {
         return budget.getBudgetAmount() * alertThreshold.getPercentage() / 100;
       default:
         return 0;
+    }
+  }
+
+  private void updateCGBudget(Budget budget) {
+    try {
+      if (budget.getPeriod() == null) {
+        budget.setPeriod(BudgetPeriod.MONTHLY);
+        budget.setStartTime(BudgetUtils.getStartOfMonth(false));
+        budget.setEndTime(BudgetUtils.getEndTimeForBudget(budget.getStartTime(), budget.getPeriod()));
+        budget.setGrowthRate(0D);
+        budgetDao.update(budget.getUuid(), budget);
+      }
+    } catch (Exception e) {
+      log.error("Can't update CG budget : {}, Exception: ", budget.getUuid(), e);
     }
   }
 }

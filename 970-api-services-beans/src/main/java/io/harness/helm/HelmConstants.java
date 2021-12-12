@@ -30,6 +30,7 @@ public final class HelmConstants {
   public static final String WORKING_DIR_BASE = "./repository/helm-values/";
   public static final String VALUES_YAML = "values.yaml";
   public static final String CHARTS_YAML_KEY = "Chart.yaml";
+  public static final String CHART_VERSION = "${CHART_VERSION}";
 
   // Add more command types as needed
   enum CommandType { REPO_ADD, REPO_UPDATE }
@@ -111,6 +112,7 @@ public final class HelmConstants {
     public static final String HELM_REPO_FLAGS = " --repository-config ${HELM_CACHE_HOME}/repo-${REPO_NAME}.yaml";
     public static final String HELM_CACHE_HOME = "XDG_CACHE_HOME";
     public static final String HELM_CACHE_HOME_PATH = "${HELM_CACHE_HOME}/repo-${REPO_NAME}";
+    public static final String HELM_CHART_VERSION_FLAG = " --version ${CHART_VERSION}";
 
     private V3Commands() {
       throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");

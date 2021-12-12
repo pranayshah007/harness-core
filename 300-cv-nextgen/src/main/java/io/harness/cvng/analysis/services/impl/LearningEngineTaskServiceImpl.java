@@ -6,6 +6,7 @@ import static io.harness.cvng.analysis.CVAnalysisConstants.MARK_FAILURE_PATH;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
+import io.harness.cvng.analysis.beans.ExceptionInfo;
 import io.harness.cvng.analysis.entities.LearningEngineTask;
 import io.harness.cvng.analysis.entities.LearningEngineTask.ExecutionStatus;
 import io.harness.cvng.analysis.entities.LearningEngineTask.LearningEngineTaskKeys;
@@ -171,11 +172,17 @@ public class LearningEngineTaskServiceImpl implements LearningEngineTaskService 
   }
 
   @Override
-  public void markFailure(String taskId) {
+  public void markFailure(String taskId, ExceptionInfo exceptionInfo) {
     Preconditions.checkNotNull(taskId, "taskId can not be null.");
     UpdateOperations<LearningEngineTask> updateOperations =
         hPersistence.createUpdateOperations(LearningEngineTask.class);
     updateOperations.set(LearningEngineTaskKeys.taskStatus, ExecutionStatus.FAILED);
+    if (isNotEmpty(exceptionInfo.getException())) {
+      updateOperations.set(LearningEngineTaskKeys.exception, exceptionInfo.getException());
+    }
+    if (isNotEmpty(exceptionInfo.getStackTrace())) {
+      updateOperations.set(LearningEngineTaskKeys.stackTrace, exceptionInfo.getStackTrace());
+    }
     hPersistence.update(hPersistence.createQuery(LearningEngineTask.class).filter(LearningEngineTaskKeys.uuid, taskId),
         updateOperations);
     incTaskStatusMetric(get(taskId).getAccountId(), ExecutionStatus.FAILED);

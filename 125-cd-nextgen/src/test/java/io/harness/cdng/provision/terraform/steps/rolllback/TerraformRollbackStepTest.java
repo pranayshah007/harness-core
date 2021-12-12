@@ -14,6 +14,7 @@ import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
 
 import io.harness.CategoryTest;
+import io.harness.account.services.AccountService;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EnvironmentType;
@@ -31,6 +32,7 @@ import io.harness.delegate.task.terraform.TerraformTaskNGParameters;
 import io.harness.delegate.task.terraform.TerraformTaskNGResponse;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.UnitProgress;
+import io.harness.ng.core.dto.AccountDTO;
 import io.harness.persistence.HIterator;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -70,6 +72,7 @@ public class TerraformRollbackStepTest extends CategoryTest {
   @Mock private TerraformConfigHelper terraformConfigHelper;
   @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
   @Mock private StepHelper stepHelper;
+  @Mock private AccountService accountService;
   @Mock private TelemetryReporter telemetryReporter;
 
   @InjectMocks private TerraformRollbackStep terraformRollbackStep;
@@ -94,7 +97,7 @@ public class TerraformRollbackStepTest extends CategoryTest {
     assertThat(taskRequest.getSkipTaskRequest()).isNotNull();
     assertThat(taskRequest.getSkipTaskRequest().getMessage())
         .isEqualTo("No successful Provisioning found with provisionerIdentifier: [id]. Skipping rollback.");
-    verify(stepHelper, times(0)).sendRollbackTelemetryEvent(any(), any());
+    verify(stepHelper, times(0)).sendRollbackTelemetryEvent(any(), any(), any());
   }
 
   @Test
@@ -139,7 +142,7 @@ public class TerraformRollbackStepTest extends CategoryTest {
     TerraformTaskNGParameters taskParameters =
         (TerraformTaskNGParameters) taskDataArgumentCaptor.getValue().getParameters()[0];
     assertThat(taskParameters.getTaskType()).isEqualTo(TFTaskType.DESTROY);
-    verify(stepHelper, times(0)).sendRollbackTelemetryEvent(any(), any());
+    verify(stepHelper, times(0)).sendRollbackTelemetryEvent(any(), any(), any());
   }
 
   @Test
@@ -185,7 +188,7 @@ public class TerraformRollbackStepTest extends CategoryTest {
     TerraformTaskNGParameters taskParameters =
         (TerraformTaskNGParameters) taskDataArgumentCaptor.getValue().getParameters()[0];
     assertThat(taskParameters.getTaskType()).isEqualTo(TFTaskType.APPLY);
-    verify(stepHelper, times(0)).sendRollbackTelemetryEvent(any(), any());
+    verify(stepHelper, times(0)).sendRollbackTelemetryEvent(any(), any(), any());
   }
 
   @Test
@@ -211,6 +214,11 @@ public class TerraformRollbackStepTest extends CategoryTest {
     doReturn(optionalSweepingOutput).when(executionSweepingOutputService).resolveOptional(any(), any());
     doNothing().when(terraformStepHelper).saveTerraformConfig(terraformConfig, ambiance);
 
+    AccountDTO accountDTO = AccountDTO.builder().name("TestAccountName").build();
+    doReturn(accountDTO)
+            .when(accountService)
+            .getAccount(any());
+
     StepResponse stepResponse =
         terraformRollbackStep.handleTaskResult(ambiance, stepElementParameters, () -> terraformTaskNGResponse);
 
@@ -218,7 +226,7 @@ public class TerraformRollbackStepTest extends CategoryTest {
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
     assertThat(stepResponse.getUnitProgressList()).isEqualTo(unitProgresses);
     verify(terraformStepHelper, times(1)).saveTerraformConfig(terraformConfig, ambiance);
-    verify(stepHelper, times(1)).sendRollbackTelemetryEvent(any(), any());
+    verify(stepHelper, times(1)).sendRollbackTelemetryEvent(any(), any(), any());
   }
 
   @Test
@@ -244,6 +252,11 @@ public class TerraformRollbackStepTest extends CategoryTest {
     doReturn(optionalSweepingOutput).when(executionSweepingOutputService).resolveOptional(any(), any());
     doNothing().when(terraformConfigDAL).clearTerraformConfig(ambiance, "entityId");
 
+    AccountDTO accountDTO = AccountDTO.builder().name("TestAccountName").build();
+    doReturn(accountDTO)
+            .when(accountService)
+            .getAccount(any());
+
     StepResponse stepResponse =
         terraformRollbackStep.handleTaskResult(ambiance, stepElementParameters, () -> terraformTaskNGResponse);
 
@@ -251,7 +264,7 @@ public class TerraformRollbackStepTest extends CategoryTest {
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
     assertThat(stepResponse.getUnitProgressList()).isEqualTo(unitProgresses);
     verify(terraformConfigDAL, times(1)).clearTerraformConfig(ambiance, "entityId");
-    verify(stepHelper, times(1)).sendRollbackTelemetryEvent(any(), any());
+    verify(stepHelper, times(1)).sendRollbackTelemetryEvent(any(), any(), any());
   }
 
   @Test
@@ -275,13 +288,18 @@ public class TerraformRollbackStepTest extends CategoryTest {
         OptionalSweepingOutput.builder().output(terraformConfigSweepingOutput).build();
     doReturn(optionalSweepingOutput).when(executionSweepingOutputService).resolveOptional(any(), any());
 
+    AccountDTO accountDTO = AccountDTO.builder().name("TestAccountName").build();
+    doReturn(accountDTO)
+            .when(accountService)
+            .getAccount(any());
+
     StepResponse stepResponse =
         terraformRollbackStep.handleTaskResult(ambiance, stepElementParameters, () -> terraformTaskNGResponse);
 
     assertThat(stepResponse).isNotNull();
     assertThat(stepResponse.getStatus()).isEqualTo(Status.FAILED);
     assertThat(stepResponse.getUnitProgressList()).isNullOrEmpty();
-    verify(stepHelper, times(1)).sendRollbackTelemetryEvent(any(), any());
+    verify(stepHelper, times(1)).sendRollbackTelemetryEvent(any(), any(), any());
   }
 
   @Test

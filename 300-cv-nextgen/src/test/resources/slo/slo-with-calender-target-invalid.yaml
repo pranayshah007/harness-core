@@ -8,14 +8,13 @@ monitoredServiceRef: $monitoredServiceRef
 healthSourceRef: $healthSourceRef
 serviceLevelIndicators:
   - type: Availability
+    sliMissingDataType: Good
     spec:
       type: Threshold
       spec:
-        eventType: ''
-        metric1: ''
+        eventType: 'Good'
+        metric1: metric1
         metric2: metric2
-      objectiveValue: 1
-      comparator: greater
 target:
   sloTargetPercentage: 0
   type: Calender

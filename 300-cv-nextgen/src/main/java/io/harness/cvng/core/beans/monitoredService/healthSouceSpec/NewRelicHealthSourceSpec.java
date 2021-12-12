@@ -3,6 +3,7 @@ package io.harness.cvng.core.beans.monitoredService.healthSouceSpec;
 import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.core.beans.HealthSourceMetricDefinition;
+import io.harness.cvng.core.beans.HealthSourceQueryType;
 import io.harness.cvng.core.beans.monitoredService.HealthSource.CVConfigUpdateResult;
 import io.harness.cvng.core.beans.monitoredService.MetricPackDTO;
 import io.harness.cvng.core.entities.CVConfig;
@@ -132,6 +133,7 @@ public class NewRelicHealthSourceSpec extends HealthSourceSpec {
                                               .envIdentifier(environmentRef)
                                               .serviceIdentifier(serviceRef)
                                               .groupName(definitionList.get(0).getGroupName())
+                                              .queryType(definitionList.get(0).getQueryType())
                                               .category(definitionList.get(0).getRiskProfile().getCategory())
                                               .build();
       newRelicCVConfig.populateFromMetricDefinitions(
@@ -160,6 +162,7 @@ public class NewRelicHealthSourceSpec extends HealthSourceSpec {
     String groupName;
     String nrql;
     MetricResponseMapping responseMapping;
+    HealthSourceQueryType queryType;
   }
 
   @Value
@@ -187,10 +190,13 @@ public class NewRelicHealthSourceSpec extends HealthSourceSpec {
   private static class MetricDefinitionKey {
     String groupName;
     CVMonitoringCategory category;
+    HealthSourceQueryType queryType;
+
     public static MetricDefinitionKey fromMetricDefinition(NewRelicMetricDefinition metricDefinition) {
       return MetricDefinitionKey.builder()
           .category(metricDefinition.getRiskProfile().getCategory())
           .groupName(metricDefinition.getGroupName())
+          .queryType(metricDefinition.getQueryType())
           .build();
     }
   }

@@ -248,6 +248,19 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
   }
 
   @Override
+  public PipelineExecutionSummaryEntity getPipelineExecutionSummaryEntity(
+          String accountId, String orgId, String projectId, String planExecutionId) {
+    Optional<PipelineExecutionSummaryEntity> pipelineExecutionSummaryEntityOptional =
+            pmsExecutionSummaryRespository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndPlanExecutionId(
+                            accountId, orgId, projectId, planExecutionId);
+    if (pipelineExecutionSummaryEntityOptional.isPresent()) {
+      return pipelineExecutionSummaryEntityOptional.get();
+    }
+    throw new InvalidRequestException(
+            "Plan Execution Summary does not exist or has been deleted for given planExecutionId");
+  }
+
+  @Override
   public Page<PipelineExecutionSummaryEntity> getPipelineExecutionSummaryEntity(Criteria criteria, Pageable pageable) {
     return pmsExecutionSummaryRespository.findAll(criteria, pageable);
   }

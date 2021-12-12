@@ -2,6 +2,7 @@ package io.harness.cdng.provision.terraform.steps.rolllback;
 
 import static java.lang.String.format;
 
+import io.harness.account.services.AccountService;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.expressions.CDExpressionResolveFunctor;
@@ -68,6 +69,7 @@ public class TerraformRollbackStep extends TaskExecutableWithRollbackAndRbac<Ter
   @Inject private StepHelper stepHelper;
   @Inject private EngineExpressionService engineExpressionService;
   @Inject public TerraformConfigDAL terraformConfigDAL;
+  @Inject private AccountService accountService;
 
   @Override
   public TaskRequest obtainTaskAfterRbac(
@@ -178,7 +180,9 @@ public class TerraformRollbackStep extends TaskExecutableWithRollbackAndRbac<Ter
     try {
       stepResponse = generateStepResponse(ambiance, stepParameters, responseDataSupplier);
     } finally {
-      stepHelper.sendRollbackTelemetryEvent(ambiance, stepResponse == null ? Status.FAILED : stepResponse.getStatus());
+      String accountName = accountService.getAccount(AmbianceUtils.getAccountId(ambiance)).getName();
+      stepHelper.sendRollbackTelemetryEvent(
+          ambiance, stepResponse == null ? Status.FAILED : stepResponse.getStatus(), accountName);
     }
 
     return stepResponse;

@@ -30,6 +30,7 @@ import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.template.TemplateApplyRequestDTO;
 import io.harness.ng.core.template.TemplateListType;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
+import io.harness.ng.core.template.TemplateReferenceSummary;
 import io.harness.ng.core.template.TemplateSummaryResponseDTO;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.template.TemplateFilterPropertiesDTO;
@@ -60,6 +61,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
@@ -500,8 +503,19 @@ public class NGTemplateResource {
       @QueryParam(NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgId,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
       @NotNull TemplateApplyRequestDTO templateApplyRequestDTO) {
-    return ResponseDTO.newResponse(templateMergeHelper.mergeTemplateSpecToPipelineYaml(
-        accountId, orgId, projectId, templateApplyRequestDTO.getOriginalEntityYaml()));
+    TemplateMergeResponseDTO templateMergeResponseDTO = templateMergeHelper.mergeTemplateSpecToPipelineYaml(
+        accountId, orgId, projectId, templateApplyRequestDTO.getOriginalEntityYaml());
+    if (templateApplyRequestDTO.isCheckForAccess() && templateMergeResponseDTO != null
+        && EmptyPredicate.isNotEmpty(templateMergeResponseDTO.getTemplateReferenceSummaries())) {
+      Set<String> templateIdentifiers = templateMergeResponseDTO.getTemplateReferenceSummaries()
+                                            .stream()
+                                            .map(TemplateReferenceSummary::getTemplateIdentifier)
+                                            .collect(Collectors.toSet());
+      templateIdentifiers.forEach(templateIdentifier
+          -> accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgId, projectId),
+              Resource.of(TEMPLATE, templateIdentifier), PermissionTypes.TEMPLATE_ACCESS_PERMISSION));
+    }
+    return ResponseDTO.newResponse(templateMergeResponseDTO);
   }
 
   @GET

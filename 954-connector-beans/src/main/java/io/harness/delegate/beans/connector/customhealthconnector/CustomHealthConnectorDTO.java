@@ -44,7 +44,9 @@ public class CustomHealthConnectorDTO extends ConnectorConfigDTO implements Decr
   public List<DecryptableEntity> getDecryptableEntities() {
     List<CustomHealthKeyAndValue> headerList = headers != null ? headers : new LinkedList();
     List<CustomHealthKeyAndValue> paramList = params != null ? params : new LinkedList();
-    return Stream.concat(headerList.stream(), paramList.stream()).collect(Collectors.toList());
+    return Stream.concat(headerList.stream(), paramList.stream())
+        .filter(keyAndValue -> keyAndValue.isValueEncrypted())
+        .collect(Collectors.toList());
   }
 
   public List<CustomHealthKeyAndValue> getHeaders() {

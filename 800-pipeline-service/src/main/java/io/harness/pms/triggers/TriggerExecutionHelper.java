@@ -101,14 +101,14 @@ public class TriggerExecutionHelper {
     return createPlanExecution(triggerDetails, triggerPayload, payload, executionTagForGitEvent, triggerInfo);
   }
 
+  // Todo: Check if we can merge some logic with ExecutionHelper
   private PlanExecution createPlanExecution(TriggerDetails triggerDetails, TriggerPayload triggerPayload,
       String payload, String executionTagForGitEvent, ExecutionTriggerInfo triggerInfo) {
     try {
       NGTriggerEntity ngTriggerEntity = triggerDetails.getNgTriggerEntity();
       String targetIdentifier = ngTriggerEntity.getTargetIdentifier();
-      Optional<PipelineEntity> pipelineEntityToExecute =
-          pmsPipelineService.incrementRunSequence(ngTriggerEntity.getAccountId(), ngTriggerEntity.getOrgIdentifier(),
-              ngTriggerEntity.getProjectIdentifier(), targetIdentifier, false);
+      Optional<PipelineEntity> pipelineEntityToExecute = pmsPipelineService.get(ngTriggerEntity.getAccountId(),
+          ngTriggerEntity.getOrgIdentifier(), ngTriggerEntity.getProjectIdentifier(), targetIdentifier, false);
 
       if (!pipelineEntityToExecute.isPresent()) {
         throw new TriggerException("Unable to continue trigger execution. Pipeline with identifier: "
@@ -125,7 +125,8 @@ public class TriggerExecutionHelper {
           ExecutionMetadata.newBuilder()
               .setExecutionUuid(executionId)
               .setTriggerInfo(triggerInfo)
-              .setRunSequence(pipelineEntityToExecute.get().getRunSequence())
+              .setRunSequence(pmsPipelineService.incrementRunSequence(ngTriggerEntity.getAccountId(),
+                  ngTriggerEntity.getOrgIdentifier(), ngTriggerEntity.getProjectIdentifier(), targetIdentifier, false))
               .setPipelineIdentifier(pipelineEntityToExecute.get().getIdentifier());
 
       PlanExecutionMetadata.Builder planExecutionMetadataBuilder =
@@ -151,7 +152,7 @@ public class TriggerExecutionHelper {
         pipelineYaml = pipelineTemplateHelper
                            .resolveTemplateRefsInPipeline(pipelineEntityToExecute.get().getAccountId(),
                                pipelineEntityToExecute.get().getOrgIdentifier(),
-                               pipelineEntityToExecute.get().getProjectIdentifier(), pipelineYaml)
+                               pipelineEntityToExecute.get().getProjectIdentifier(), pipelineYaml, true)
                            .getMergedPipelineYaml();
       }
 

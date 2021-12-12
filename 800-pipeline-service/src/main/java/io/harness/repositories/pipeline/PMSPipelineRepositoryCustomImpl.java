@@ -66,6 +66,18 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
   }
 
   @Override
+  public PipelineEntity findFirstPipeline(Criteria criteria) {
+    Query query = new Query().addCriteria(criteria);
+    return mongoTemplate.findOne(query, PipelineEntity.class);
+  }
+
+  @Override
+  public Long countAllPipelines(Criteria criteria) {
+    Query query = new Query().addCriteria(criteria);
+    return mongoTemplate.count(query, PipelineEntity.class);
+  }
+
+  @Override
   public PipelineEntity save(PipelineEntity pipelineToSave, PipelineConfig yamlDTO) {
     Supplier<OutboxEvent> supplier = ()
         -> outboxService.save(new PipelineCreateEvent(pipelineToSave.getAccountIdentifier(),

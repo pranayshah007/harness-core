@@ -214,3 +214,4 @@ Brandon Groves brandon.groves@harness.io
 Michael D'Amour michael.damour@harness.io
 Hodaya Gamliel hodaya.gamliel@harness.io
 Amnon Danieli amnon.danieli@harness.io
+Gaurav Jain gaurav.jain@harness.io

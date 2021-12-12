@@ -1,5 +1,6 @@
 package io.harness.cdng.pipeline;
 
+import io.harness.advisers.rollback.OnFailRollbackParameters;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.helm.HelmDeployStepInfo;
@@ -13,11 +14,14 @@ import io.harness.cdng.k8s.K8sDeleteStepInfo;
 import io.harness.cdng.k8s.K8sRollingRollbackStepInfo;
 import io.harness.cdng.k8s.K8sRollingStepInfo;
 import io.harness.cdng.k8s.K8sScaleStepInfo;
+import io.harness.cdng.pipeline.steps.CdStepParametersUtils;
 import io.harness.cdng.provision.terraform.TerraformApplyStepInfo;
 import io.harness.cdng.provision.terraform.TerraformDestroyStepInfo;
 import io.harness.cdng.provision.terraform.TerraformPlanStepInfo;
 import io.harness.cdng.provision.terraform.steps.rolllback.TerraformRollbackStepInfo;
+import io.harness.plancreator.steps.common.StepElementParameters.StepElementParametersBuilder;
 import io.harness.plancreator.steps.common.WithStepElementParameters;
+import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.yaml.core.StepSpecType;
 
 import io.swagger.annotations.ApiModel;
@@ -29,4 +33,12 @@ import io.swagger.annotations.ApiModel;
               TerraformRollbackStepInfo.class, HelmDeployStepInfo.class, HelmRollbackStepInfo.class})
 
 @OwnedBy(HarnessTeam.CDC)
-public interface CDStepInfo extends StepSpecType, WithStepElementParameters {}
+public interface CDStepInfo extends StepSpecType, WithStepElementParameters {
+  default StepParameters getStepParameters(
+      CdAbstractStepNode stepElementConfig, OnFailRollbackParameters failRollbackParameters) {
+    StepElementParametersBuilder stepParametersBuilder =
+        CdStepParametersUtils.getStepParameters(stepElementConfig, failRollbackParameters);
+    stepParametersBuilder.spec(getSpecParameters());
+    return stepParametersBuilder.build();
+  }
+}

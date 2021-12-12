@@ -18,6 +18,10 @@ public interface PMSPipelineRepositoryCustom {
   Page<PipelineEntity> findAll(Criteria criteria, Pageable pageable, String accountIdentifier, String orgIdentifier,
       String projectIdentifier, boolean getDistinctFromBranches);
 
+  PipelineEntity findFirstPipeline(Criteria criteria);
+
+  Long countAllPipelines(Criteria criteria);
+
   PipelineEntity save(PipelineEntity pipelineToSave, PipelineConfig yamlDTO);
 
   Optional<PipelineEntity> findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndDeletedNot(

@@ -18,6 +18,7 @@ import io.harness.beans.FeatureName;
 import io.harness.beans.Scope;
 import io.harness.delegate.beans.git.YamlGitConfigDTO;
 import io.harness.ff.FeatureFlagService;
+import io.harness.git.model.ChangeType;
 import io.harness.gitsync.ChangeSet;
 import io.harness.gitsync.ChangeSets;
 import io.harness.gitsync.EntityInfo;
@@ -515,8 +516,8 @@ public class GitToHarnessProcessorServiceImpl implements GitToHarnessProcessorSe
         .status(GitSyncErrorStatus.ACTIVE)
         .completeFilePath(changeSet.getFilePath())
         .failureReason(errorMessage)
-        .changeType(io.harness.git.model.ChangeType.valueOf(changeSet.getChangeType().toString()))
-        .entityType(EntityType.fromString(changeSet.getEntityType().toString()))
+        .changeType(ChangeType.valueOf(changeSet.getChangeType().toString()))
+        .entityType(EventProtoToEntityHelper.getEntityTypeFromProto(changeSet.getEntityType()))
         .additionalErrorDetails(GitToHarnessErrorDetailsDTO.builder()
                                     .gitCommitId(gitToHarnessProcessingInfo.getCommitId())
                                     .yamlContent(changeSet.getYaml())

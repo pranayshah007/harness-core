@@ -143,6 +143,7 @@ public class AppDynamicsHealthSourceSpecTransformerTest extends CvNextGenTestBas
     assertThat(appDynamicsHealthSourceSpec.getMetricPacks().size()).isEqualTo(2);
     assertThat(appDynamicsHealthSourceSpec.getMetricDefinitions().size()).isEqualTo(1);
     assertThat(appDynamicsHealthSourceSpec.getMetricDefinitions().get(0).getMetricName()).isEqualTo("metric1");
+    assertThat(appDynamicsHealthSourceSpec.getMetricDefinitions().get(0).getIdentifier()).isEqualTo("identifier1");
     assertThat(appDynamicsHealthSourceSpec.getMetricDefinitions().get(0).getBaseFolder()).isEqualTo("baseFolder");
     assertThat(appDynamicsHealthSourceSpec.getMetricDefinitions().get(0).getGroupName()).isEqualTo("group");
     assertThat(appDynamicsHealthSourceSpec.getMetricDefinitions()
@@ -178,6 +179,7 @@ public class AppDynamicsHealthSourceSpecTransformerTest extends CvNextGenTestBas
             .metricInfos(Arrays.<MetricInfo>asList(
                 MetricInfo.builder()
                     .metricName("metric1")
+                    .identifier("identifier1")
                     .metricPath("path")
                     .metricType(TimeSeriesMetricType.INFRA)
                     .baseFolder("baseFolder")

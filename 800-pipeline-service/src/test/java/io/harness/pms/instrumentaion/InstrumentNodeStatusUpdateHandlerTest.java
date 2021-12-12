@@ -6,15 +6,18 @@ import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
+import io.harness.account.services.AccountService;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.observers.NodeUpdateInfo;
 import io.harness.execution.NodeExecution;
+import io.harness.ng.core.dto.AccountDTO;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureData;
@@ -44,6 +47,7 @@ import org.mockito.MockitoAnnotations;
 public class InstrumentNodeStatusUpdateHandlerTest extends CategoryTest {
   @Mock TelemetryReporter telemetryReporter;
   @InjectMocks InstrumentNodeStatusUpdateHandler instrumentNodeStatusUpdateHandler;
+  @Mock AccountService accountService;
 
   @Before
   public void setUp() {
@@ -77,11 +81,17 @@ public class InstrumentNodeStatusUpdateHandlerTest extends CategoryTest {
             .ambiance(ambiance)
             .startTs(1000L)
             .build();
+
+    AccountDTO accountDTO = AccountDTO.builder().name("TestAccountName").build();
+    doReturn(accountDTO)
+            .when(accountService)
+            .getAccount(any());
+
     NodeUpdateInfo nodeUpdateInfo = NodeUpdateInfo.builder().nodeExecution(nodeExecution).updatedTs(2000L).build();
     instrumentNodeStatusUpdateHandler.onNodeStatusUpdate(nodeUpdateInfo);
     ArgumentCaptor<HashMap> argumentCaptor = ArgumentCaptor.forClass(HashMap.class);
     verify(telemetryReporter, times(1))
-        .sendTrackEvent(any(), eq("admin"), eq("accountId"), argumentCaptor.capture(), any(), any());
+        .sendTrackEvent(any(), eq("admin"), eq("accountId"), argumentCaptor.capture(), any(), any(), any());
     HashMap<String, Object> propertiesMap = argumentCaptor.getValue();
     EnumSet<FailureType> returnedFailureTypes =
         (EnumSet<FailureType>) propertiesMap.get(PipelineInstrumentationConstants.FAILURE_TYPES);
@@ -128,7 +138,7 @@ public class InstrumentNodeStatusUpdateHandlerTest extends CategoryTest {
     instrumentNodeStatusUpdateHandler.onNodeStatusUpdate(nodeUpdateInfo);
     argumentCaptor = ArgumentCaptor.forClass(HashMap.class);
     verify(telemetryReporter, times(1))
-        .sendTrackEvent(any(), eq("admin@harness.io"), eq("accountId"), argumentCaptor.capture(), any(), any());
+        .sendTrackEvent(any(), eq("admin@harness.io"), eq("accountId"), argumentCaptor.capture(), any(), any(), any());
     propertiesMap = argumentCaptor.getValue();
 
     returnedFailureTypes = (EnumSet<FailureType>) propertiesMap.get(PipelineInstrumentationConstants.FAILURE_TYPES);

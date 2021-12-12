@@ -10,6 +10,7 @@ import io.harness.beans.sweepingoutputs.K8StageInfraDetails;
 import io.harness.beans.sweepingoutputs.PodCleanupDetails;
 import io.harness.beans.sweepingoutputs.StageDetails;
 import io.harness.beans.sweepingoutputs.StageInfraDetails;
+import io.harness.beans.sweepingoutputs.VmStageInfraDetails;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
 import io.harness.delegate.beans.ci.CICleanupTaskParams;
@@ -59,7 +60,8 @@ public class StageCleanupUtility {
       K8StageInfraDetails k8StageInfraDetails = (K8StageInfraDetails) stageInfraDetails;
       return buildK8CleanupParameters(k8StageInfraDetails, ambiance);
     } else if (stageInfraDetails.getType() == StageInfraDetails.Type.VM) {
-      return buildVmCleanupParameters(ambiance);
+      VmStageInfraDetails vmStageInfraDetails = (VmStageInfraDetails) stageInfraDetails;
+      return buildVmCleanupParameters(ambiance, vmStageInfraDetails);
     } else {
       throw new CIStageExecutionException("Unknown infra type");
     }
@@ -92,7 +94,7 @@ public class StageCleanupUtility {
         .build();
   }
 
-  public CIVmCleanupTaskParams buildVmCleanupParameters(Ambiance ambiance) {
+  public CIVmCleanupTaskParams buildVmCleanupParameters(Ambiance ambiance, VmStageInfraDetails vmStageInfraDetails) {
     OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputResolver.resolveOptional(
         ambiance, RefObjectUtils.getSweepingOutputRefObject(ContextElement.stageDetails));
     if (!optionalSweepingOutput.isFound()) {
@@ -100,6 +102,9 @@ public class StageCleanupUtility {
     }
 
     StageDetails stageDetails = (StageDetails) optionalSweepingOutput.getOutput();
-    return CIVmCleanupTaskParams.builder().stageRuntimeId(stageDetails.getStageRuntimeID()).build();
+    return CIVmCleanupTaskParams.builder()
+        .stageRuntimeId(stageDetails.getStageRuntimeID())
+        .poolId(vmStageInfraDetails.getPoolId())
+        .build();
   }
 }

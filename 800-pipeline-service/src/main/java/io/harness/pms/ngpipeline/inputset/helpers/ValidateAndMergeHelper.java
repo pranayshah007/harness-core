@@ -141,6 +141,7 @@ public class ValidateAndMergeHelper {
       return InputSetTemplateResponseDTOPMS.builder()
           .inputSetTemplateYaml(template)
           .replacedExpressions(replacedExpressions)
+          .modules(optionalPipelineEntity.get().getFilters().keySet())
           .build();
     } else {
       throw new InvalidRequestException("Could not find pipeline");

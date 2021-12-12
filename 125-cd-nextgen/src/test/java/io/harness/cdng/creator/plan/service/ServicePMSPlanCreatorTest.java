@@ -3,6 +3,8 @@ package io.harness.cdng.creator.plan.service;
 import static io.harness.rule.OwnerRule.GARVIT;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.verify;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -13,6 +15,7 @@ import io.harness.cdng.artifact.steps.ArtifactStep;
 import io.harness.cdng.artifact.steps.ArtifactStepParameters;
 import io.harness.cdng.creator.plan.infrastructure.InfrastructurePmsPlanCreator;
 import io.harness.cdng.infra.steps.EnvironmentStep;
+import io.harness.cdng.licenserestriction.EnforcementValidator;
 import io.harness.cdng.manifest.steps.ManifestStep;
 import io.harness.cdng.manifest.steps.ManifestStepParameters;
 import io.harness.cdng.manifest.yaml.GithubStore;
@@ -27,8 +30,11 @@ import io.harness.cdng.service.steps.ServiceDefinitionStepParameters;
 import io.harness.cdng.service.steps.ServiceSpecStep;
 import io.harness.cdng.service.steps.ServiceSpecStepParameters;
 import io.harness.cdng.service.steps.ServiceStep;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
+import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.plan.PlanNode;
+import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
@@ -44,12 +50,24 @@ import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.reflect.FieldUtils;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
 
 @OwnedBy(HarnessTeam.CDC)
 public class ServicePMSPlanCreatorTest extends CDNGTestBase {
+  @Mock private EnforcementValidator enforcementValidator;
   @Inject private KryoSerializer kryoSerializer;
+  @Inject @InjectMocks private ServicePMSPlanCreator servicePMSPlanCreator;
+
+  @Before
+  public void before() throws IllegalAccessException {
+    FieldUtils.writeField(servicePMSPlanCreator, "enforcementValidator", enforcementValidator, true);
+  }
 
   @Test
   @Owner(developers = GARVIT)
@@ -81,11 +99,10 @@ public class ServicePMSPlanCreatorTest extends CDNGTestBase {
 
     PipelineInfrastructure actualInfraConfig =
         InfrastructurePmsPlanCreator.getActualInfraConfig(infrastructure, infraField);
-
-    PlanCreationResponse response = ServicePMSPlanCreator.createPlanForServiceNode(field, serviceConfig, kryoSerializer,
-        InfrastructurePmsPlanCreator.getInfraSectionStepParams(actualInfraConfig, ""));
+    PlanCreationContext ctx = getPlanCreationContext();
+    PlanCreationResponse response = servicePMSPlanCreator.createPlanForServiceNode(field, serviceConfig, kryoSerializer,
+        InfrastructurePmsPlanCreator.getInfraSectionStepParams(actualInfraConfig, ""), ctx);
     assertThat(response).isNotNull();
-
     String startingNodeId = response.getStartingNodeId();
     assertThat(startingNodeId).isNotNull();
     assertThat(startingNodeId.length()).isGreaterThan(0);
@@ -203,6 +220,26 @@ public class ServicePMSPlanCreatorTest extends CDNGTestBase {
                    .getValue())
         .containsExactly("random4", "random3");
     assertThat(manifestStepParameters.getStageOverride()).isNull();
+    verify(enforcementValidator)
+        .validate("ACCOUNT_IDENTIFIER", "ORG_IDENTIFIER", "PROJECT_IDENTIFIER", "PIPELINE_IDENTIFIER", "YAML",
+            "EXECUTION_UUID");
+  }
+
+  private PlanCreationContext getPlanCreationContext() {
+    PlanCreationContext ctx = Mockito.mock(PlanCreationContext.class);
+    doReturn(PlanCreationContextValue.newBuilder()
+                 .setAccountIdentifier("ACCOUNT_IDENTIFIER")
+                 .setProjectIdentifier("PROJECT_IDENTIFIER")
+                 .setOrgIdentifier("ORG_IDENTIFIER")
+                 .setMetadata(ExecutionMetadata.newBuilder()
+                                  .setPipelineIdentifier("PIPELINE_IDENTIFIER")
+                                  .setExecutionUuid("EXECUTION_UUID")
+                                  .build())
+                 .build())
+        .when(ctx)
+        .getMetadata();
+    doReturn("YAML").when(ctx).getYaml();
+    return ctx;
   }
 
   private List<PlanNode> findNodes(List<PlanNode> nodes, StepType stepType) {

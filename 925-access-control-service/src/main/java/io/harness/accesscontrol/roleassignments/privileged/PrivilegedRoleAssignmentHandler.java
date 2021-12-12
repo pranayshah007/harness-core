@@ -1,6 +1,6 @@
 package io.harness.accesscontrol.roleassignments.privileged;
 
-import static io.harness.accesscontrol.roleassignments.privileged.AdminPrivilegedRoleAssignmentMapper.ALL_RESOURCES_RESOURCE_GROUP;
+import static io.harness.accesscontrol.roleassignments.privileged.AdminPrivilegedRoleAssignmentMapper.MANAGED_RESOURCE_GROUP_IDENTIFIERS;
 import static io.harness.accesscontrol.roleassignments.privileged.AdminPrivilegedRoleAssignmentMapper.roleToPrivilegedRole;
 
 import io.harness.accesscontrol.principals.PrincipalType;
@@ -83,7 +83,7 @@ public class PrivilegedRoleAssignmentHandler implements RoleAssignmentCRUDEventH
   public void handleUserGroupUpdate(UserGroupDBO userGroupDBO) {
     Criteria criteria = new Criteria();
     criteria.and(RoleAssignmentDBOKeys.scopeIdentifier).is(userGroupDBO.getScopeIdentifier());
-    criteria.and(RoleAssignmentDBOKeys.resourceGroupIdentifier).is(ALL_RESOURCES_RESOURCE_GROUP);
+    criteria.and(RoleAssignmentDBOKeys.resourceGroupIdentifier).in(MANAGED_RESOURCE_GROUP_IDENTIFIERS);
     criteria.and(RoleAssignmentDBOKeys.roleIdentifier).in(roleToPrivilegedRole.keySet());
     criteria.and(RoleAssignmentDBOKeys.principalIdentifier).is(userGroupDBO.getIdentifier());
     criteria.and(RoleAssignmentDBOKeys.principalType).is(PrincipalType.USER_GROUP);

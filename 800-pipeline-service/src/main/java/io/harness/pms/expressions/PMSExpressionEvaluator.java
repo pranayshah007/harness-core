@@ -27,7 +27,6 @@ import io.harness.project.remote.ProjectClient;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -56,21 +55,19 @@ public class PMSExpressionEvaluator extends AmbianceExpressionEvaluator {
     // Trigger functors
     addToContext(SetupAbstractionKeys.eventPayload, new EventPayloadFunctor(ambiance, planExecutionMetadataService));
     addToContext(SetupAbstractionKeys.trigger, new TriggerFunctor(ambiance, planExecutionMetadataService));
-    List<PmsSdkInstance> pmsSdkInstances = pmsSdkInstanceService.getActiveInstances();
-
-    pmsSdkInstances.forEach(e -> {
+    Map<String, PmsSdkInstance> cacheValueMap = pmsSdkInstanceService.getSdkInstanceCacheValue();
+    cacheValueMap.values().forEach(e -> {
       for (Map.Entry<String, String> entry : CollectionUtils.emptyIfNull(e.getStaticAliases()).entrySet()) {
         addStaticAlias(entry.getKey(), entry.getValue());
       }
     });
 
-    pmsSdkInstances.forEach(e -> {
-      for (String functorKey : CollectionUtils.emptyIfNull(e.getSdkFunctors())) {
+    cacheValueMap.forEach((key, value) -> {
+      for (String functorKey : CollectionUtils.emptyIfNull(value.getSdkFunctors())) {
         addToContext(functorKey,
             RemoteExpressionFunctor.builder()
                 .ambiance(ambiance)
-                .remoteFunctorServiceBlockingStub(
-                    remoteFunctorServiceBlockingStubMap.get(ModuleType.fromString(e.getName())))
+                .remoteFunctorServiceBlockingStub(remoteFunctorServiceBlockingStubMap.get(ModuleType.fromString(key)))
                 .functorKey(functorKey)
                 .build());
       }

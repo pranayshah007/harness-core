@@ -27,7 +27,6 @@ import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.Map;
 import java.util.TimeZone;
-
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -126,7 +125,8 @@ public class InstanceStatsEventListener implements MessageListener {
         try {
           Map<String, String> dataMap = dataPointArray[currElementIdx].getDataMap();
           log.info("Saving the instance data in the timescale db {}", dataMap);
-          statement.setTimestamp(1, new Timestamp(eventInfo.getTimestamp()), Calendar.getInstance(TimeZone.getTimeZone("UTC")));
+          statement.setTimestamp(
+              1, new Timestamp(eventInfo.getTimestamp()), Calendar.getInstance(TimeZone.getTimeZone("UTC")));
           statement.setString(2, eventInfo.getAccountId());
           statement.setString(3, dataMap.get(TimescaleConstants.ORG_ID.getKey()));
           statement.setString(4, dataMap.get(TimescaleConstants.PROJECT_ID.getKey()));

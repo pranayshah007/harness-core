@@ -5,8 +5,8 @@ import io.harness.annotations.dev.OwnedBy;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PipelineInstrumentationConstants {
-  public static String PIPELINE_EXECUTION = "pipeline_execution";
-  public static String PIPELINE_NOTIFICATION = "pipeline_notification";
+  public static String PIPELINE_EXECUTION = "cd_pipeline_execution";
+  public static String PIPELINE_NOTIFICATION = "cd_pipeline_notification";
   public static String EXECUTION_TIME = "execution_time";
   public static String LEVEL = "level";
   public static String STAGE_TYPES = "stage_types";
@@ -20,4 +20,5 @@ public class PipelineInstrumentationConstants {
   public static String EVENT_TYPES = "events_types";
   public static String FAILURE_TYPES = "failure_types";
   public static String ERROR_MESSAGES = "error_messages";
+  public static String ACCOUNT_NAME = "account_name";
 }

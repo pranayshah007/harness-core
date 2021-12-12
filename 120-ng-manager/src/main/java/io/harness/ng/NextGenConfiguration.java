@@ -99,6 +99,7 @@ public class NextGenConfiguration extends Configuration {
   public static final String INSTANCE_NG_PACKAGE = "io.harness.ng.instance";
   public static final String SMTP_NG_RESOURCE = "io.harness.ng.core.smtp.resources";
   public static final String SCIM_NG_RESOURCE = "io.harness.ng.scim.resource";
+  public static final String LICENSING_USAGE_PACKAGE = "io.harness.licensing.usage.resources";
   public static final Collection<Class<?>> HARNESS_RESOURCE_CLASSES = getResourceClasses();
 
   @JsonProperty("swagger") private SwaggerBundleConfiguration swaggerBundleConfiguration;
@@ -191,7 +192,8 @@ public class NextGenConfiguration extends Configuration {
                 SERVICE_PACKAGE, SERVICE_ACCOUNTS_PACKAGE, BUCKETS_PACKAGE, CLUSTER_GCP_PACKAGE, WEBHOOK_PACKAGE,
                 ENVIRONMENT_PACKAGE, USERPROFILE_PACKAGE, JIRA_PACKAGE, EXECUTION_PACKAGE, ENTITYSETUP_PACKAGE,
                 SCHEMA_PACKAGE, DELEGATE_PACKAGE, ACCESS_CONTROL_PACKAGE, FEEDBACK_PACKAGE, INSTANCE_SYNC_PACKAGE,
-                INVITE_PACKAGE, USER_PACKAGE, INSTANCE_NG_PACKAGE, SMTP_NG_RESOURCE, SCIM_NG_RESOURCE))
+                INVITE_PACKAGE, USER_PACKAGE, INSTANCE_NG_PACKAGE, LICENSING_USAGE_PACKAGE, SMTP_NG_RESOURCE,
+                SCIM_NG_RESOURCE))
         .collect(Collectors.toSet());
   }
 

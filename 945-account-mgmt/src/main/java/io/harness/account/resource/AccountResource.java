@@ -1,5 +1,6 @@
 package io.harness.account.resource;
 
+import static io.harness.NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE;
 import static io.harness.account.accesscontrol.AccountAccessControlPermissions.EDIT_ACCOUNT_PERMISSION;
 import static io.harness.account.accesscontrol.AccountAccessControlPermissions.VIEW_ACCOUNT_PERMISSION;
 
@@ -85,7 +86,7 @@ public class AccountResource {
       })
   @NGAccessControlCheck(resourceType = ResourceTypes.ACCOUNT, permission = VIEW_ACCOUNT_PERMISSION)
   public ResponseDTO<AccountDTO>
-  get(@Parameter(description = "Account id to get an account.") @PathParam(
+  get(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @PathParam(
       "accountIdentifier") @AccountIdentifier String accountIdentifier) {
     AccountDTO accountDTO = RestClientUtils.getResponse(accountClient.getAccountDTO(accountIdentifier));
 
@@ -101,12 +102,14 @@ public class AccountResource {
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(responseCode = "default", description = "Returns an account DTO")
+        ApiResponse(responseCode = "default", description = "Returns an account")
       })
   @NGAccessControlCheck(resourceType = ResourceTypes.ACCOUNT, permission = EDIT_ACCOUNT_PERMISSION)
   public ResponseDTO<AccountDTO>
-  updateAccountName(@Parameter(description = "Account id to update an account name.") @PathParam("accountIdentifier")
-                    @AccountIdentifier String accountIdentifier, AccountDTO dto) {
+  updateAccountName(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @PathParam(
+                        "accountIdentifier") @AccountIdentifier String accountIdentifier,
+      @io.swagger.v3.oas.annotations.parameters.RequestBody(
+          required = true, description = "This is details of the Account. Name is mandatory.") AccountDTO dto) {
     AccountDTO accountDTO = RestClientUtils.getResponse(accountClient.updateAccountName(accountIdentifier, dto));
 
     return ResponseDTO.newResponse(accountDTO);
@@ -119,12 +122,14 @@ public class AccountResource {
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(responseCode = "default", description = "Returns an account DTO")
+        ApiResponse(responseCode = "default", description = "Returns an account")
       })
   @NGAccessControlCheck(resourceType = ResourceTypes.ACCOUNT, permission = EDIT_ACCOUNT_PERMISSION)
   public ResponseDTO<AccountDTO>
-  updateDefaultExperience(@Parameter(description = "Account id to update the default experience.")
-                          @PathParam("accountIdentifier") @AccountIdentifier String accountIdentifier, AccountDTO dto) {
+  updateDefaultExperience(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @PathParam(
+                              "accountIdentifier") @AccountIdentifier String accountIdentifier,
+      @io.swagger.v3.oas.annotations.parameters.RequestBody(required = true,
+          description = "This is details of the Account. DefaultExperience is mandatory") AccountDTO dto) {
     AccountDTO accountDTO = RestClientUtils.getResponse(accountClient.updateDefaultExperience(accountIdentifier, dto));
 
     return ResponseDTO.newResponse(accountDTO);

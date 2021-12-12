@@ -52,19 +52,19 @@ features:
         restrictionType: AVAILABILITY
         enabled: true
       TEAM:
-        restrictionType: RATE_LIMIT
-        limit: 200
-        clientName: cimanager
+        restrictionType: LICENSE_RATE_LIMIT
+        fieldName: totalDevelopers
         timeUnit:
           unit: DAYS
           numberOfUnits: 30
+        clientName: cimanager
       ENTERPRISE:
-        restrictionType: RATE_LIMIT
-        limit: 200
-        clientName: cimanager
+        restrictionType: LICENSE_RATE_LIMIT
+        fieldName: totalDevelopers
         timeUnit:
           unit: DAYS
           numberOfUnits: 30
+        clientName: cimanager
   - name: BUILDS
     description: The restriction on number of builds
     restrictions:

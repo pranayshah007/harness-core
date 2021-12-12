@@ -34,6 +34,7 @@ public class YamlSchemaTransientHelper {
     {
       add(EntityType.HTTP_STEP);
       add(EntityType.SHELL_SCRIPT_STEP);
+      add(EntityType.K8S_CANARY_DEPLOY_STEP);
     }
   };
 
@@ -46,7 +47,9 @@ public class YamlSchemaTransientHelper {
   };
 
   // Add cd steps here that are moved to new schema.
-  public static final List<EntityType> cdStepV2EntityTypes = new ArrayList<>();
+  public static final List<EntityType> cdStepV2EntityTypes = new ArrayList<EntityType>() {
+    { add(EntityType.K8S_CANARY_DEPLOY_STEP); }
+  };
   // Add cv steps here that are moved to new schema.
   public static final List<EntityType> cvStepV2EntityTypes = new ArrayList<>();
   // Add ci steps here that are moved to new schema.

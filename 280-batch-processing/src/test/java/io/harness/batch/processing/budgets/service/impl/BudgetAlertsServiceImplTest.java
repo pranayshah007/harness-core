@@ -1,6 +1,5 @@
 package io.harness.batch.processing.budgets.service.impl;
 
-import static io.harness.ccm.budget.AlertThresholdBase.ACTUAL_COST;
 import static io.harness.ccm.budget.BudgetType.SPECIFIED_AMOUNT;
 import static io.harness.rule.OwnerRule.SHUBHANSHU;
 
@@ -20,8 +19,8 @@ import io.harness.category.element.UnitTests;
 import io.harness.ccm.budget.AlertThreshold;
 import io.harness.ccm.budget.AlertThresholdBase;
 import io.harness.ccm.budget.ApplicationBudgetScope;
-import io.harness.ccm.budget.BudgetUtils;
 import io.harness.ccm.budget.EnvironmentType;
+import io.harness.ccm.budget.dao.BudgetDao;
 import io.harness.ccm.commons.entities.billing.Budget;
 import io.harness.ccm.communication.CESlackWebhookService;
 import io.harness.ccm.communication.entities.CESlackWebhook;
@@ -56,12 +55,12 @@ public class BudgetAlertsServiceImplTest extends CategoryTest {
   @Mock private CEMailNotificationService emailNotificationService;
   @Mock private CESlackNotificationService slackNotificationService;
   @Mock private BudgetTimescaleQueryHelper budgetTimescaleQueryHelper;
-  @Mock private BudgetUtils budgetUtils;
   @Mock private CESlackWebhookService ceSlackWebhookService;
   @Mock private BatchMainConfig mainConfiguration;
   @Mock private CloudToHarnessMappingService cloudToHarnessMappingService;
   @Mock private AccountShardService accountShardService;
   @Mock private CloudBillingHelper cloudBillingHelper;
+  @Mock private BudgetDao budgetDao;
   @InjectMocks private BudgetAlertsServiceImpl budgetAlertsService;
 
   @Mock Statement statement;
@@ -93,7 +92,6 @@ public class BudgetAlertsServiceImplTest extends CategoryTest {
     when(accountShardService.getCeEnabledAccounts())
         .thenReturn(Arrays.asList(Account.Builder.anAccount().withUuid(ACCOUNT_ID).build()));
     alertThreshold = AlertThreshold.builder().percentage(0.5).basedOn(AlertThresholdBase.ACTUAL_COST).build();
-    AlertThreshold[] alertThresholds = new AlertThreshold[] {alertThreshold};
     budget = Budget.builder()
                  .uuid(BUDGET_ID)
                  .accountId(ACCOUNT_ID)
@@ -103,7 +101,9 @@ public class BudgetAlertsServiceImplTest extends CategoryTest {
                             .environmentType(EnvironmentType.ALL)
                             .build())
                  .type(SPECIFIED_AMOUNT)
-                 .budgetAmount(0.0)
+                 .budgetAmount(1000.0)
+                 .actualCost(600.0)
+                 .forecastCost(800.0)
                  .alertThresholds(new AlertThreshold[] {alertThreshold})
                  .userGroupIds(userGroupIds)
                  .build();
@@ -116,13 +116,12 @@ public class BudgetAlertsServiceImplTest extends CategoryTest {
     when(mainConfiguration.getBaseUrl()).thenReturn(BASE_URL);
     when(mainConfiguration.getBillingDataPipelineConfig())
         .thenReturn(BillingDataPipelineConfig.builder().gcpProjectId("projectId").build());
-    when(budgetUtils.listBudgetsForAccount(ACCOUNT_ID)).thenReturn(Collections.singletonList(budget));
+    when(budgetDao.list(ACCOUNT_ID)).thenReturn(Collections.singletonList(budget));
     when(cloudToHarnessMappingService.getUserGroup(ACCOUNT_ID, userGroupIds[0], true)).thenReturn(userGroup);
     when(cloudToHarnessMappingService.getUser(MEMBER_ID)).thenReturn(user);
     when(ceSlackWebhookService.getByAccountId(budget.getAccountId())).thenReturn(ceSlackWebhook);
     when(cloudBillingHelper.getCloudProviderTableName(anyString(), anyString(), anyString()))
         .thenReturn("cloudProviderTable");
-    when(budgetUtils.getSortedAlertThresholds(ACTUAL_COST, budget.getAlertThresholds())).thenReturn(alertThresholds);
   }
 
   @Test

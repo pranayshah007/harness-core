@@ -90,6 +90,12 @@ import io.harness.delegate.beans.ci.vm.CIVmCleanupTaskParams;
 import io.harness.delegate.beans.ci.vm.CIVmExecuteStepTaskParams;
 import io.harness.delegate.beans.ci.vm.CIVmInitializeTaskParams;
 import io.harness.delegate.beans.ci.vm.VmTaskExecutionResponse;
+import io.harness.delegate.beans.ci.vm.steps.VmJunitTestReport;
+import io.harness.delegate.beans.ci.vm.steps.VmPluginStep;
+import io.harness.delegate.beans.ci.vm.steps.VmRunStep;
+import io.harness.delegate.beans.ci.vm.steps.VmRunTestStep;
+import io.harness.delegate.beans.ci.vm.steps.VmStepInfo;
+import io.harness.delegate.beans.ci.vm.steps.VmUnitTestReport;
 import io.harness.delegate.beans.connector.ConnectorHeartbeatDelegateResponse;
 import io.harness.delegate.beans.connector.ConnectorValidationParameterResponse;
 import io.harness.delegate.beans.connector.ConnectorValidationParams;
@@ -979,5 +985,11 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(CIVmCleanupTaskParams.class, 543445);
     kryo.register(VmTaskExecutionResponse.class, 543446);
     kryo.register(JiraValidationParams.class, 543447);
+    kryo.register(VmStepInfo.class, 543448);
+    kryo.register(VmPluginStep.class, 543449);
+    kryo.register(VmRunStep.class, 543450);
+    kryo.register(VmRunTestStep.class, 543451);
+    kryo.register(VmJunitTestReport.class, 543452);
+    kryo.register(VmUnitTestReport.class, 543453);
   }
 }

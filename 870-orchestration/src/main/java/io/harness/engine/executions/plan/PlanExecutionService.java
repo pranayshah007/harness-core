@@ -37,4 +37,7 @@ public interface PlanExecutionService extends NodeStatusUpdateObserver {
   Status calculateStatusExcluding(String planExecutionId, String excludedNodeExecutionId);
 
   List<PlanExecution> findByStatusWithProjections(Set<Status> statuses, Set<String> fieldNames);
+
+  List<PlanExecution> findAllByAccountIdAndOrgIdAndProjectIdAndLastUpdatedAtInBetweenTimestamps(
+      String accountId, String orgId, String projectId, long startTS, long endTS);
 }

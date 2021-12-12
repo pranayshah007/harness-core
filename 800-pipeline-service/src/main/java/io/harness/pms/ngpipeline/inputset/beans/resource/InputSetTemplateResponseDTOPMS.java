@@ -9,6 +9,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.annotations.ApiModel;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
+import java.util.Set;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Value;
@@ -26,4 +27,5 @@ import lombok.experimental.FieldDefaults;
 public class InputSetTemplateResponseDTOPMS {
   String inputSetTemplateYaml;
   List<String> replacedExpressions;
+  Set<String> modules;
 }

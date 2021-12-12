@@ -10,6 +10,6 @@ import java.util.List;
 
 public interface CVNGDataCollectionDelegateService {
   @DelegateTaskType(TaskType.GET_DATA_COLLECTION_RESULT)
-  String getDataCollectionResult(
-      String accountId, DataCollectionRequest dataCollectionRequest, List<EncryptedDataDetail> encryptedDataDetails);
+  String getDataCollectionResult(String accountId, DataCollectionRequest dataCollectionRequest,
+      List<List<EncryptedDataDetail>> encryptedDataDetails);
 }

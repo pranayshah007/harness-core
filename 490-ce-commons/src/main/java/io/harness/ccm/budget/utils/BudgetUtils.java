@@ -17,6 +17,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Comparator;
 import java.util.List;
 import java.util.TimeZone;
 import lombok.extern.slf4j.Slf4j;
@@ -150,6 +151,10 @@ public class BudgetUtils {
     return getStartOfCurrentDay() - 30 * ONE_DAY_MILLIS;
   }
 
+  public static long getStartTimeForForecasting(long startOfPeriod) {
+    return startOfPeriod - 30 * ONE_DAY_MILLIS;
+  }
+
   public static long getStartTimeForCurrentBillingCycle() {
     Calendar c = Calendar.getInstance();
     c.set(Calendar.DAY_OF_MONTH, 1);
@@ -184,7 +189,7 @@ public class BudgetUtils {
   }
 
   public static int getTimeLeftForBudget(Budget budget) {
-    return Math.toIntExact((budget.getEndTime() - budget.getStartTime()) / ONE_DAY_MILLIS);
+    return Math.toIntExact((budget.getEndTime() - getStartOfCurrentDay()) / ONE_DAY_MILLIS);
   }
 
   public static List<Double> getAlertThresholdsForBudget(Budget budget, AlertThresholdBase basedOn) {
@@ -246,6 +251,29 @@ public class BudgetUtils {
     }
   }
 
+  public static long getStartTimeForCostGraph(long startOfCurrentPeriod, BudgetPeriod period) {
+    Calendar c = Calendar.getInstance();
+    c.setTimeZone(TimeZone.getTimeZone(DEFAULT_TIMEZONE));
+    c.setTimeInMillis(startOfCurrentPeriod);
+    switch (period) {
+      case DAILY:
+        return startOfCurrentPeriod - 10 * ONE_DAY_MILLIS;
+      case WEEKLY:
+        return startOfCurrentPeriod - 70 * ONE_DAY_MILLIS;
+      case MONTHLY:
+        c.add(Calendar.MONTH, -8);
+        return c.getTimeInMillis();
+      case QUARTERLY:
+        c.add(Calendar.MONTH, -9);
+        return c.getTimeInMillis();
+      case YEARLY:
+        c.add(Calendar.YEAR, -1);
+        return c.getTimeInMillis();
+      default:
+        return startOfCurrentPeriod;
+    }
+  }
+
   public static int getTimeOffsetInDays(Budget budget) {
     try {
       return (int) ((budget.getStartTime() - getStartOfPeriod(budget.getPeriod())) / ONE_DAY_MILLIS);
@@ -267,5 +295,42 @@ public class BudgetUtils {
           "Exception while calculating updated budget amount for budget : {}. Exception: {}", budget.getUuid(), e);
       return budget.getBudgetAmount();
     }
+  }
+
+  public static BudgetPeriod getBudgetPeriod(Budget budget) {
+    if (budget.getPeriod() != null) {
+      return budget.getPeriod();
+    }
+    return BudgetPeriod.MONTHLY;
+  }
+
+  public static Double getBudgetGrowthRate(Budget budget) {
+    if (budget.getGrowthRate() != null) {
+      return budget.getGrowthRate();
+    }
+    return 0D;
+  }
+
+  public static long getBudgetStartTime(Budget budget) {
+    if (budget.getStartTime() != 0) {
+      return budget.getStartTime();
+    }
+    return getStartOfMonth(false);
+  }
+
+  public static AlertThreshold[] getSortedAlertThresholds(
+      AlertThresholdBase costType, AlertThreshold[] alertThresholds) {
+    List<AlertThreshold> alerts = new ArrayList<>();
+    for (AlertThreshold alertThreshold : alertThresholds) {
+      if (alertThreshold.getBasedOn() == costType) {
+        alerts.add(alertThreshold);
+      }
+    }
+    alerts.sort(Comparator.comparing(AlertThreshold::getPercentage).reversed());
+    return alerts.toArray(new AlertThreshold[0]);
+  }
+
+  public static boolean isAlertSentInCurrentPeriod(long crossedAt, long startOfBudgetPeriod) {
+    return startOfBudgetPeriod <= crossedAt;
   }
 }

@@ -9,7 +9,6 @@ import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.servicelevelobjective.beans.SLIAnalyseRequest;
 import io.harness.cvng.servicelevelobjective.beans.SLIAnalyseResponse;
-import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.SLIMetricSpec;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState;
 import io.harness.cvng.servicelevelobjective.services.api.SLIDataProcessorService;
@@ -57,8 +56,8 @@ public class SLIDataProcessorServiceImplTest extends CvNextGenTestBase {
     Map<String, List<SLIAnalyseRequest>> sliAnalyseRequests = new HashMap<String, List<SLIAnalyseRequest>>() {
       { put(metricIdentifier, Arrays.asList(sliAnalyseRequest1, sliAnalyseRequest2)); }
     };
-    List<SLIAnalyseResponse> responses = sliDataProcessorService.process(
-        sliAnalyseRequests, sliMetricSpec, startTime, endTime, SLIMissingDataType.GOOD, 0L, 0L);
+    List<SLIAnalyseResponse> responses =
+        sliDataProcessorService.process(sliAnalyseRequests, sliMetricSpec, startTime, endTime);
 
     assertThat(responses).hasSize(4);
     assertThat(responses.get(0).getTimeStamp()).isEqualTo(startTime);
@@ -71,10 +70,10 @@ public class SLIDataProcessorServiceImplTest extends CvNextGenTestBase {
     assertThat(responses.get(2).getRunningBadCount()).isEqualTo(1);
     assertThat(responses.get(3).getRunningBadCount()).isEqualTo(1);
 
-    assertThat(responses.get(0).getRunningGoodCount()).isEqualTo(1);
-    assertThat(responses.get(1).getRunningGoodCount()).isEqualTo(1);
-    assertThat(responses.get(2).getRunningGoodCount()).isEqualTo(2);
-    assertThat(responses.get(3).getRunningGoodCount()).isEqualTo(3);
+    assertThat(responses.get(0).getRunningGoodCount()).isEqualTo(0);
+    assertThat(responses.get(1).getRunningGoodCount()).isEqualTo(0);
+    assertThat(responses.get(2).getRunningGoodCount()).isEqualTo(1);
+    assertThat(responses.get(3).getRunningGoodCount()).isEqualTo(1);
 
     assertThat(responses.get(0).getSliState()).isEqualTo(SLIState.NO_DATA);
     assertThat(responses.get(1).getSliState()).isEqualTo(SLIState.BAD);
@@ -85,71 +84,7 @@ public class SLIDataProcessorServiceImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = ABHIJITH)
   @Category(UnitTests.class)
-  public void testProcess_withMissingDataAsBad() {
-    Instant endTime = clock.instant();
-    Instant startTime = endTime.minus(Duration.ofMinutes(4));
-    String metricIdentifier = "metricIdenitifer";
-    SLIMetricSpec sliMetricSpec = builderFactory.getThresholdSLIMetricSpecBuilder().metric1(metricIdentifier).build();
-
-    SLIAnalyseRequest sliAnalyseRequest1 = SLIAnalyseRequest.builder().timeStamp(startTime).metricValue(50).build();
-    SLIAnalyseRequest sliAnalyseRequest2 =
-        SLIAnalyseRequest.builder().timeStamp(startTime.plus(Duration.ofMinutes(2))).metricValue(120).build();
-
-    Map<String, List<SLIAnalyseRequest>> sliAnalyseRequests = new HashMap<String, List<SLIAnalyseRequest>>() {
-      { put(metricIdentifier, Arrays.asList(sliAnalyseRequest1, sliAnalyseRequest2)); }
-    };
-    List<SLIAnalyseResponse> responses = sliDataProcessorService.process(
-        sliAnalyseRequests, sliMetricSpec, startTime, endTime, SLIMissingDataType.BAD, 0L, 0L);
-
-    assertThat(responses).hasSize(4);
-
-    assertThat(responses.get(0).getRunningBadCount()).isEqualTo(1);
-    assertThat(responses.get(1).getRunningBadCount()).isEqualTo(2);
-    assertThat(responses.get(2).getRunningBadCount()).isEqualTo(2);
-    assertThat(responses.get(3).getRunningBadCount()).isEqualTo(3);
-
-    assertThat(responses.get(0).getRunningGoodCount()).isEqualTo(0);
-    assertThat(responses.get(1).getRunningGoodCount()).isEqualTo(0);
-    assertThat(responses.get(2).getRunningGoodCount()).isEqualTo(1);
-    assertThat(responses.get(3).getRunningGoodCount()).isEqualTo(1);
-  }
-
-  @Test
-  @Owner(developers = ABHIJITH)
-  @Category(UnitTests.class)
-  public void testProcess_withMissingDataIgnore() {
-    Instant endTime = clock.instant();
-    Instant startTime = endTime.minus(Duration.ofMinutes(4));
-    String metricIdentifier = "metricIdenitifer";
-    SLIMetricSpec sliMetricSpec = builderFactory.getThresholdSLIMetricSpecBuilder().metric1(metricIdentifier).build();
-
-    SLIAnalyseRequest sliAnalyseRequest1 = SLIAnalyseRequest.builder().timeStamp(startTime).metricValue(50).build();
-    SLIAnalyseRequest sliAnalyseRequest2 =
-        SLIAnalyseRequest.builder().timeStamp(startTime.plus(Duration.ofMinutes(2))).metricValue(120).build();
-
-    Map<String, List<SLIAnalyseRequest>> sliAnalyseRequests = new HashMap<String, List<SLIAnalyseRequest>>() {
-      { put(metricIdentifier, Arrays.asList(sliAnalyseRequest1, sliAnalyseRequest2)); }
-    };
-    List<SLIAnalyseResponse> responses = sliDataProcessorService.process(
-        sliAnalyseRequests, sliMetricSpec, startTime, endTime, SLIMissingDataType.IGNORE, 0L, 0L);
-
-    assertThat(responses).hasSize(4);
-
-    assertThat(responses.get(0).getRunningBadCount()).isEqualTo(1);
-    assertThat(responses.get(1).getRunningBadCount()).isEqualTo(1);
-    assertThat(responses.get(2).getRunningBadCount()).isEqualTo(1);
-    assertThat(responses.get(3).getRunningBadCount()).isEqualTo(1);
-
-    assertThat(responses.get(0).getRunningGoodCount()).isEqualTo(0);
-    assertThat(responses.get(1).getRunningGoodCount()).isEqualTo(0);
-    assertThat(responses.get(2).getRunningGoodCount()).isEqualTo(1);
-    assertThat(responses.get(3).getRunningGoodCount()).isEqualTo(1);
-  }
-
-  @Test
-  @Owner(developers = ABHIJITH)
-  @Category(UnitTests.class)
-  public void testProcess_withRatoBasedSpec() {
+  public void testProcess_withRatioBasedSpec() {
     Instant endTime = clock.instant();
     Instant startTime = endTime.minus(Duration.ofMinutes(4));
     SLIMetricSpec sliMetricSpec = builderFactory.getRatioSLIMetricSpecBuilder().build();
@@ -168,8 +103,8 @@ public class SLIDataProcessorServiceImplTest extends CvNextGenTestBase {
       }
     };
 
-    List<SLIAnalyseResponse> responses = sliDataProcessorService.process(
-        sliAnalyseRequests, sliMetricSpec, startTime, endTime, SLIMissingDataType.IGNORE, 0L, 0L);
+    List<SLIAnalyseResponse> responses =
+        sliDataProcessorService.process(sliAnalyseRequests, sliMetricSpec, startTime, endTime);
 
     assertThat(responses).hasSize(4);
 

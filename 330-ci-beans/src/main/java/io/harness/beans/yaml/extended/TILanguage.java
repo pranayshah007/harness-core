@@ -9,7 +9,8 @@ import com.fasterxml.jackson.annotation.JsonValue;
 
 @OwnedBy(HarnessTeam.CI)
 public enum TILanguage {
-  @JsonProperty("Java") JAVA("Java");
+  @JsonProperty("Java") JAVA("Java"),
+  @JsonProperty("Csharp") CSHARP("Csharp");
 
   private final String yamlName;
 

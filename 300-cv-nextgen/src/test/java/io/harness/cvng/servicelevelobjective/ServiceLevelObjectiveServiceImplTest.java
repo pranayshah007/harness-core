@@ -11,8 +11,10 @@ import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
+import io.harness.cvng.servicelevelobjective.beans.DayOfWeek;
 import io.harness.cvng.servicelevelobjective.beans.SLIMetricType;
 import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
+import io.harness.cvng.servicelevelobjective.beans.SLOCalenderType;
 import io.harness.cvng.servicelevelobjective.beans.SLOTarget;
 import io.harness.cvng.servicelevelobjective.beans.SLOTargetType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
@@ -20,9 +22,11 @@ import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorSpec;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveResponse;
+import io.harness.cvng.servicelevelobjective.beans.slimetricspec.RatioSLIMetricEventType;
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.RatioSLIMetricSpec;
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.ThresholdType;
 import io.harness.cvng.servicelevelobjective.beans.slotargetspec.CalenderSLOTargetSpec;
+import io.harness.cvng.servicelevelobjective.beans.slotargetspec.CalenderSLOTargetSpec.WeeklyCalendarSpec;
 import io.harness.cvng.servicelevelobjective.beans.slotargetspec.RollingSLOTargetSpec;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveService;
 import io.harness.exception.InvalidRequestException;
@@ -82,7 +86,7 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
                                                            .spec(ServiceLevelIndicatorSpec.builder()
                                                                      .type(SLIMetricType.RATIO)
                                                                      .spec(RatioSLIMetricSpec.builder()
-                                                                               .eventType("eventName")
+                                                                               .eventType(RatioSLIMetricEventType.GOOD)
                                                                                .metric1("metric1")
                                                                                .metric2("metric2")
                                                                                .build())
@@ -92,7 +96,7 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
     sloTarget = SLOTarget.builder()
                     .type(SLOTargetType.ROLLING)
                     .sloTargetPercentage(80.0)
-                    .spec(RollingSLOTargetSpec.builder().periodLength("30D").build())
+                    .spec(RollingSLOTargetSpec.builder().periodLength("30d").build())
                     .build();
 
     SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
@@ -100,10 +104,8 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
                             .type(SLOTargetType.CALENDER)
                             .sloTargetPercentage(80.0)
                             .spec(CalenderSLOTargetSpec.builder()
-                                      .type(CalenderSLOTargetSpec.CalenderType.WEEKLY)
-                                      .spec(CalenderSLOTargetSpec.WeeklyCalendarSpec.builder()
-                                                .dayOfWeek(CalenderSLOTargetSpec.WeeklyCalendarSpec.DayOfWeek.MONDAY)
-                                                .build())
+                                      .type(SLOCalenderType.WEEKLY)
+                                      .spec(WeeklyCalendarSpec.builder().dayOfWeek(DayOfWeek.MONDAY).build())
 
                                       .build())
                             .build();
@@ -226,7 +228,7 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
                                           .spec(RatioSLIMetricSpec.builder()
                                                     .thresholdValue(20.0)
                                                     .thresholdType(ThresholdType.GREATER_THAN)
-                                                    .eventType("Bad")
+                                                    .eventType(RatioSLIMetricEventType.BAD)
                                                     .metric1("metric4")
                                                     .metric2("metric5")
                                                     .build())

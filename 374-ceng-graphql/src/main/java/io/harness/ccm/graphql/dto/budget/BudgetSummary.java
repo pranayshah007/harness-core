@@ -1,5 +1,9 @@
 package io.harness.ccm.graphql.dto.budget;
 
+import io.harness.ccm.budget.AlertThreshold;
+import io.harness.ccm.budget.BudgetPeriod;
+import io.harness.ccm.budget.BudgetType;
+
 import io.leangen.graphql.annotations.GraphQLNonNull;
 import java.util.List;
 import lombok.Builder;
@@ -19,4 +23,9 @@ public class BudgetSummary {
   @GraphQLNonNull String timeScope;
   @GraphQLNonNull List<Double> actualCostAlerts;
   @GraphQLNonNull List<Double> forecastCostAlerts;
+  @GraphQLNonNull AlertThreshold[] alertThresholds;
+  @GraphQLNonNull BudgetPeriod period;
+  @GraphQLNonNull BudgetType type;
+  @GraphQLNonNull Double growthRate;
+  @GraphQLNonNull long startTime;
 }

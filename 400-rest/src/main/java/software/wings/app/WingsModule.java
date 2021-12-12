@@ -193,7 +193,9 @@ import io.harness.service.EventHelper;
 import io.harness.service.EventService;
 import io.harness.service.EventServiceImpl;
 import io.harness.service.impl.DelegateTokenServiceImpl;
+import io.harness.service.impl.DelegateUpgraderServiceImpl;
 import io.harness.service.intfc.DelegateTokenService;
+import io.harness.service.intfc.DelegateUpgraderService;
 import io.harness.telemetry.AbstractTelemetryModule;
 import io.harness.telemetry.TelemetryConfiguration;
 import io.harness.templatizedsm.RuntimeCredentialsInjector;
@@ -981,6 +983,7 @@ public class WingsModule extends AbstractModule implements ServersModule {
     bind(EntityVersionService.class).to(EntityVersionServiceImpl.class);
     bind(PluginService.class).to(PluginServiceImpl.class);
     bind(CommandService.class).to(CommandServiceImpl.class);
+    bind(DelegateUpgraderService.class).to(DelegateUpgraderServiceImpl.class);
     bind(DelegateService.class).to(DelegateServiceImpl.class);
     bind(DelegateScopeService.class).to(DelegateScopeServiceImpl.class);
     bind(DelegateSelectionLogsService.class).to(DelegateSelectionLogsServiceImpl.class);

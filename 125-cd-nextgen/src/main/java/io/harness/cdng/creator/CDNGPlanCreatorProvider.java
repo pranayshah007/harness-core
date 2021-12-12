@@ -5,9 +5,11 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.creator.filters.DeploymentStageFilterJsonCreator;
 import io.harness.cdng.creator.plan.stage.DeploymentStagePMSPlanCreator;
 import io.harness.cdng.creator.plan.steps.CDPMSStepFilterJsonCreator;
+import io.harness.cdng.creator.plan.steps.CDPMSStepFilterJsonCreatorV2;
 import io.harness.cdng.creator.plan.steps.CDPMSStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.K8sBGSwapServicesPMSStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.K8sCanaryDeletePMSStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.K8sCanaryStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.K8sRollingDeployPMSStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.K8sRollingRollbackPMSStepPlanCreator;
 import io.harness.cdng.creator.variables.DeploymentStageVariableCreator;
@@ -44,6 +46,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     List<PartialPlanCreator<?>> planCreators = new LinkedList<>();
     planCreators.add(new DeploymentStagePMSPlanCreator());
     planCreators.add(new CDPMSStepPlanCreator());
+    planCreators.add(new K8sCanaryStepPlanCreator());
     planCreators.add(new K8sRollingRollbackPMSStepPlanCreator());
     planCreators.add(new K8sCanaryDeletePMSStepPlanCreator());
     planCreators.add(new K8sRollingDeployPMSStepPlanCreator());
@@ -58,6 +61,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     List<FilterJsonCreator> filterJsonCreators = new ArrayList<>();
     filterJsonCreators.add(new DeploymentStageFilterJsonCreator());
     filterJsonCreators.add(new CDPMSStepFilterJsonCreator());
+    filterJsonCreators.add(new CDPMSStepFilterJsonCreatorV2());
     injectorUtils.injectMembers(filterJsonCreators);
 
     return filterJsonCreators;

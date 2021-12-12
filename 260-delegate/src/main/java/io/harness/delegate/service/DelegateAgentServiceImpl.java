@@ -2267,16 +2267,16 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       try {
         response = HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofSeconds(30), () -> {
           Response<ResponseBody> resp = null;
-          int retries = 3;
-          while (retries-- > 0) {
+          int retries = 5;
+          for (int attempt = 0; attempt < retries; attempt++) {
             resp = delegateAgentManagerClient.sendTaskStatus(delegateId, taskId, accountId, taskResponse).execute();
             if (resp != null && resp.code() >= 200 && resp.code() <= 299) {
               log.info("Task {} response sent to manager", taskId);
               return resp;
             } else {
-              log.warn("Response received for sent task {}: {}. {}", taskId, resp == null ? "null" : resp.code(),
+              log.warn("Failed to send response for task {}: {}. {}", taskId, resp == null ? "null" : resp.code(),
                   retries > 0 ? "Retrying." : "Giving up.");
-              sleep(ofMillis(200));
+              sleep(ofSeconds(FibonacciBackOff.getFibonacciElement(attempt)));
             }
           }
           return resp;

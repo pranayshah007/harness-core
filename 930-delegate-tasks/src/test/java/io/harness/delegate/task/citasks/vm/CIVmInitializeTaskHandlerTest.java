@@ -3,7 +3,7 @@ package io.harness.delegate.task.citasks.vm;
 import static io.harness.rule.OwnerRule.SHUBHAM;
 
 import static junit.framework.TestCase.assertEquals;
-import static org.mockito.Matchers.anyMap;
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.ci.vm.CIVmInitializeTaskParams;
 import io.harness.delegate.beans.ci.vm.VmTaskExecutionResponse;
+import io.harness.delegate.beans.ci.vm.runner.SetupVmResponse;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.citasks.vm.helper.HttpHelper;
 import io.harness.logging.CommandExecutionStatus;
@@ -46,8 +47,9 @@ public class CIVmInitializeTaskHandlerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void executeTaskInternal() throws IOException {
     CIVmInitializeTaskParams params = CIVmInitializeTaskParams.builder().stageRuntimeId("stage").build();
-    Response<Void> setupResponse = Response.success(null);
-    when(httpHelper.setupStageWithRetries(anyMap())).thenReturn(setupResponse);
+    Response<SetupVmResponse> setupResponse =
+        Response.success(SetupVmResponse.builder().instanceID("test").ipAddress("1.1.1.1").build());
+    when(httpHelper.setupStageWithRetries(any())).thenReturn(setupResponse);
     VmTaskExecutionResponse response = ciVmInitializeTaskHandler.executeTaskInternal(params, logStreamingTaskClient);
     assertEquals(CommandExecutionStatus.SUCCESS, response.getCommandExecutionStatus());
   }
@@ -58,8 +60,8 @@ public class CIVmInitializeTaskHandlerTest extends CategoryTest {
   public void executeTaskInternalFailure() throws IOException {
     CIVmInitializeTaskParams params = CIVmInitializeTaskParams.builder().stageRuntimeId("stage").build();
     ResponseBody body = mock(ResponseBody.class);
-    Response<Void> setupResponse = Response.error(400, body);
-    when(httpHelper.setupStageWithRetries(anyMap())).thenReturn(setupResponse);
+    Response<SetupVmResponse> setupResponse = Response.error(400, body);
+    when(httpHelper.setupStageWithRetries(any())).thenReturn(setupResponse);
     VmTaskExecutionResponse response = ciVmInitializeTaskHandler.executeTaskInternal(params, logStreamingTaskClient);
     assertEquals(CommandExecutionStatus.FAILURE, response.getCommandExecutionStatus());
   }

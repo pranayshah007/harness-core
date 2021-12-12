@@ -559,13 +559,13 @@ public class TriggerServiceTest extends WingsBaseTest {
     assertThatThrownBy(() -> triggerService.save(scheduledConditionTrigger))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(
-            "Deployments can be triggered only at 5 minute intervals. Cron Expression should evaluate to time intervals of at least "
+            "Deployments must be triggered at intervals greater than or equal to 5 minutes. Cron Expression should evaluate to time intervals of at least "
             + 300 + " seconds.");
     scheduledConditionTrigger.setCondition(ScheduledTriggerCondition.builder().cronExpression("0/2 0 ? * * *").build());
     assertThatThrownBy(() -> triggerService.save(scheduledConditionTrigger))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(
-            "Deployments can be triggered only at 5 minute intervals. Cron Expression should evaluate to time intervals of at least "
+            "Deployments must be triggered at intervals greater than or equal to 5 minutes. Cron Expression should evaluate to time intervals of at least "
             + 300 + " seconds.");
     scheduledConditionTrigger.setCondition(ScheduledTriggerCondition.builder().cronExpression("0/5 0 ? * * *").build());
   }
@@ -608,13 +608,13 @@ public class TriggerServiceTest extends WingsBaseTest {
     assertThatThrownBy(() -> triggerService.update(scheduledConditionTrigger, false))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(
-            "Deployments can be triggered only at 5 minute intervals. Cron Expression should evaluate to time intervals of at least "
+            "Deployments must be triggered at intervals greater than or equal to 5 minutes. Cron Expression should evaluate to time intervals of at least "
             + 300 + " seconds.");
     scheduledConditionTrigger.setCondition(ScheduledTriggerCondition.builder().cronExpression("0/2 0 ? * * *").build());
     assertThatThrownBy(() -> triggerService.update(scheduledConditionTrigger, false))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage(
-            "Deployments can be triggered only at 5 minute intervals. Cron Expression should evaluate to time intervals of at least "
+            "Deployments must be triggered at intervals greater than or equal to 5 minutes. Cron Expression should evaluate to time intervals of at least "
             + 300 + " seconds.");
     scheduledConditionTrigger.setCondition(ScheduledTriggerCondition.builder().cronExpression("0/5 0 ? * * *").build());
   }

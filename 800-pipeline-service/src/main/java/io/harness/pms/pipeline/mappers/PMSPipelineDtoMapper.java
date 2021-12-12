@@ -31,6 +31,7 @@ public class PMSPipelineDtoMapper {
     return PMSPipelineResponseDTO.builder()
         .yamlPipeline(pipelineEntity.getYaml())
         .version(pipelineEntity.getVersion())
+        .modules(pipelineEntity.getFilters().keySet())
         .gitDetails(EntityGitDetailsMapper.mapEntityGitDetails(pipelineEntity))
         .entityValidityDetails(pipelineEntity.isEntityInvalid()
                 ? EntityValidityDetails.builder().valid(false).invalidYaml(pipelineEntity.getYaml()).build()

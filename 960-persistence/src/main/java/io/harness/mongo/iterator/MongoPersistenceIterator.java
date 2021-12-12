@@ -236,7 +236,7 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
 
         try (DelayLogContext ignore2 = new DelayLogContext(delay, OVERRIDE_ERROR)) {
           if (delay < acceptableNoAlertDelay.toMillis()) {
-            log.debug("Working on entity");
+            log.info("Working on entity");
           } else {
             log.error(
                 "Working on entity but the delay is more than the acceptable {}", acceptableNoAlertDelay.toMillis());
@@ -256,7 +256,7 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
         long processTime = currentTimeMillis() - startTime;
         try (ProcessTimeLogContext ignore2 = new ProcessTimeLogContext(processTime, OVERRIDE_ERROR)) {
           if (acceptableExecutionTime == null || processTime <= acceptableExecutionTime.toMillis()) {
-            log.debug("Done with entity");
+            log.info("Done with entity");
           } else {
             log.error("Done with entity but took too long acceptable {}", acceptableExecutionTime.toMillis());
           }

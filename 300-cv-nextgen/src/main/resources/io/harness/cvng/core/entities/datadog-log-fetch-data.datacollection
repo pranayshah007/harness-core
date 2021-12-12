@@ -2,10 +2,15 @@ Var logsSearchUrl = concat(Env:baseUrl, "v2/logs/events/search")
 
 Var body = {}
 Var filter = {}
+Var nullObject = null
+
 Var:filter.put("from", Env:startTimeMillis)
 Var:filter.put("to", Env:endTimeMillis)
 Var:filter.put("query", Env:query)
 Var:body.put("filter", Var:filter)
+if Env:indexes != Var:nullObject {
+   Var:filter.put("indexes", Env:indexes)
+}
 
 Var page = {}
 Var:page.put("limit", Env:limit)
@@ -14,26 +19,24 @@ Var:body.put("page", Var:page)
 Var logsResponse = sync-call(url=Var:logsSearchUrl, header=Env:commonHeaders, body=Var:body)
 Var logsData = extract(Var:logsResponse, $.data)
 
-Var nullObject = null
 Var responseList = []
 Var hostKey = "host"
 foreach logData in Var:logsData {
       Var message = extract(Var:logData, $.attributes.message)
       Var host = null
       Var tags = extract(Var:logData, $.attributes.tags)
+      Var timestamp = extract(Var:logData, $.attributes.timestamp)
+      Var timeStampVal = string-to-time(Var:timestamp)
       foreach tag in Var:tags {
-        Var tagKey = Var:tag.split(":")[0]
-        if Env:serviceInstanceIdentifier == Var:tagKey {
-           Var:host = Var:tagKey
+        Var tagSplitResult = Var:tag.split(":")
+        if Env:serviceInstanceIdentifier == Var:tagSplitResult[0] {
+           Var:host = Var:tagSplitResult[1]
         }
       }
 
       if Var:host == Var:nullObject {
            Var:host = extract(Var:logData, $.attributes.host)
       }
-
-      Var timestamp = extract(Var:logData, $.attributes.timestamp)
-      Var timeStampVal = string-to-time(Var:timestamp)
 
       Var logToReturn = new LogDataRecord(log=Var:message, timestamp=Var:timeStampVal, host=Var:host)
       Var:responseList.append(Var:logToReturn)

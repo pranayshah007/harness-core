@@ -1,6 +1,9 @@
 package software.wings.resources;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.eraro.ErrorCode.ENCRYPT_DECRYPT_ERROR;
+import static io.harness.exception.WingsException.USER;
+import static io.harness.expression.SecretString.SECRET_MASK;
 
 import static software.wings.beans.CGConstants.GLOBAL_APP_ID;
 import static software.wings.beans.CGConstants.GLOBAL_ENV_ID;
@@ -10,6 +13,7 @@ import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.beans.SecretText;
+import io.harness.exception.SecretManagementException;
 import io.harness.rest.RestResponse;
 import io.harness.secretmanagers.SecretManagerConfigService;
 import io.harness.security.annotations.InternalApi;
@@ -31,6 +35,7 @@ import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
+import java.lang.reflect.Field;
 import java.util.List;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -80,7 +85,7 @@ public class SettingResourceNg {
     settingAuthHandler.authorize(variable, appId);
     SettingAttribute savedSettingAttribute = settingsService.saveWithPruning(variable, appId, accountId);
     settingServiceHelper.updateSettingAttributeBeforeResponse(savedSettingAttribute, false);
-    secretManager.maskEncryptedFields((EncryptableSetting) savedSettingAttribute.getValue());
+    maskEncryptedFields((EncryptableSetting) savedSettingAttribute.getValue());
     return new RestResponse<>(savedSettingAttribute);
   }
 
@@ -130,7 +135,7 @@ public class SettingResourceNg {
     }
     if (existingConfigWithNgSmtpSettingsPrefix != null) {
       settingServiceHelper.updateSettingAttributeBeforeResponse(existingConfigWithNgSmtpSettingsPrefix, true);
-      secretManager.maskEncryptedFields((EncryptableSetting) existingConfigWithNgSmtpSettingsPrefix.getValue());
+      maskEncryptedFields((EncryptableSetting) existingConfigWithNgSmtpSettingsPrefix.getValue());
     }
     return new RestResponse<>(existingConfigWithNgSmtpSettingsPrefix);
   }
@@ -161,7 +166,7 @@ public class SettingResourceNg {
     settingAuthHandler.authorize(variable, appId);
     SettingAttribute updatedSettingAttribute = settingsService.updateWithSettingFields(variable, attrId, appId);
     settingServiceHelper.updateSettingAttributeBeforeResponse(updatedSettingAttribute, false);
-    secretManager.maskEncryptedFields((EncryptableSetting) updatedSettingAttribute.getValue());
+    maskEncryptedFields((EncryptableSetting) updatedSettingAttribute.getValue());
     return new RestResponse<>(updatedSettingAttribute);
   }
 
@@ -179,5 +184,17 @@ public class SettingResourceNg {
     settingsService.delete(appId, attrId);
     secretManager.deleteSecret(existingAttribute.getAccountId(), storedSecretId, null, true);
     return new RestResponse<>(true);
+  }
+
+  public void maskEncryptedFields(EncryptableSetting object) {
+    List<Field> encryptedFields = object.getEncryptedFields();
+    try {
+      for (Field f : encryptedFields) {
+        f.setAccessible(true);
+        f.set(object, SECRET_MASK.toCharArray());
+      }
+    } catch (IllegalAccessException e) {
+      throw new SecretManagementException(ENCRYPT_DECRYPT_ERROR, e, USER);
+    }
   }
 }

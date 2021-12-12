@@ -37,6 +37,7 @@ import java.util.Set;
 @OwnedBy(CDC)
 public class DeploymentStagePMSPlanCreator extends GenericStagePlanCreator {
   @Inject private KryoSerializer kryoSerializer;
+  @Inject private ServicePMSPlanCreator servicePMSPlanCreator;
 
   @Override
   public Set<String> getSupportedStageTypes() {
@@ -80,9 +81,9 @@ public class DeploymentStagePMSPlanCreator extends GenericStagePlanCreator {
     PipelineInfrastructure actualInfraConfig =
         InfrastructurePmsPlanCreator.getActualInfraConfig(pipelineInfrastructure, infraField);
 
-    PlanCreationResponse servicePlanCreationResponse = ServicePMSPlanCreator.createPlanForServiceNode(serviceField,
+    PlanCreationResponse servicePlanCreationResponse = servicePMSPlanCreator.createPlanForServiceNode(serviceField,
         ((DeploymentStageConfig) field.getStageType()).getServiceConfig(), kryoSerializer,
-        InfrastructurePmsPlanCreator.getInfraSectionStepParams(actualInfraConfig, ""));
+        InfrastructurePmsPlanCreator.getInfraSectionStepParams(actualInfraConfig, ""), ctx);
     planCreationResponseMap.put(servicePlanCreationResponse.getStartingNodeId(),
         PlanCreationResponse.builder().nodes(servicePlanCreationResponse.getNodes()).build());
 

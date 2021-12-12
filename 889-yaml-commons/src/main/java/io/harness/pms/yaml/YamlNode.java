@@ -4,6 +4,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.YamlException;
 import io.harness.walktree.beans.VisitableChildren;
 import io.harness.walktree.visitor.Visitable;
@@ -37,7 +38,7 @@ public class YamlNode implements Visitable {
   public static final String NAME_FIELD_NAME = "name";
   public static final String KEY_FIELD_NAME = "key";
 
-  private static final String PATH_SEP = "/";
+  public static final String PATH_SEP = "/";
 
   String fieldName;
   YamlNode parentNode;
@@ -82,6 +83,14 @@ public class YamlNode implements Visitable {
     }
     Collections.reverse(path);
     return String.join(PATH_SEP, path);
+  }
+
+  public static String getLastKeyInPath(String path) {
+    if (EmptyPredicate.isEmpty(path)) {
+      throw new InvalidRequestException("Path cannot be empty");
+    }
+    String[] keys = path.split(PATH_SEP);
+    return keys[keys.length - 1];
   }
 
   public YamlNode gotoPath(String path) {

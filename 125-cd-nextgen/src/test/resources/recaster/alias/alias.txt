@@ -165,6 +165,7 @@ io.harness.steps.approval.step.harness.HarnessApprovalSpecParameters
 io.harness.plancreator.steps.http.HttpStepInfo
 io.harness.plancreator.steps.http.HttpStepNode
 io.harness.steps.shellscript.ShellScriptStepNode
+io.harness.cdng.k8s.K8sCanaryStepNode
 io.harness.cdng.manifest.yaml.GcsStoreConfig
 io.harness.ngpipeline.artifact.bean.EcrArtifactOutcome
 io.harness.steps.jira.JiraIssueOutcome

@@ -56,6 +56,7 @@ public class DelegateAsyncServiceImpl implements DelegateAsyncService {
     if (enablePrimaryCheck && queueController != null) {
       consumeResponse = queueController.isPrimary();
     }
+    final Stopwatch globalStopwatch = Stopwatch.createStarted();
     long loopStartTime = 0;
     while (consumeResponse) {
       try {
@@ -78,9 +79,14 @@ public class DelegateAsyncServiceImpl implements DelegateAsyncService {
           break;
         }
 
+        long queryTime = queryEndTime - queryStartTime;
+        long loopProcessingTime =
+            Math.max((globalStopwatch.elapsed(TimeUnit.MILLISECONDS) - loopStartTime) - queryTime, 0l);
+
         log.info("Process won the async task response {}, mongo queryTime {}, loop processing time {} .",
-            lockedAsyncTaskResponse.getUuid(), queryEndTime - queryStartTime, queryEndTime - loopStartTime);
-        loopStartTime = queryEndTime;
+            lockedAsyncTaskResponse.getUuid(), queryTime, loopProcessingTime);
+
+        loopStartTime = globalStopwatch.elapsed(TimeUnit.MILLISECONDS);
         ResponseData responseData = disableDeserialization
             ? BinaryResponseData.builder().data(lockedAsyncTaskResponse.getResponseData()).build()
             : (DelegateResponseData) kryoSerializer.asInflatedObject(lockedAsyncTaskResponse.getResponseData());

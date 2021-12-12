@@ -22,6 +22,7 @@ import io.harness.callback.DelegateCallbackToken;
 import io.harness.cdng.orchestration.NgStepRegistrar;
 import io.harness.connector.services.ConnectorService;
 import io.harness.delegate.DelegateServiceGrpc;
+import io.harness.enforcement.client.services.EnforcementClientService;
 import io.harness.engine.expressions.AmbianceExpressionEvaluatorProvider;
 import io.harness.engine.pms.tasks.NgDelegate2TaskExecutor;
 import io.harness.entitysetupusageclient.remote.EntitySetupUsageClient;
@@ -218,6 +219,7 @@ public class CDNGTestRule implements InjectorRuleMixin, MethodRule, MongoRuleMix
         bind(UserClient.class).toInstance(mock(UserClient.class));
         bind(OpaServiceClient.class).toInstance(mock(OpaServiceClient.class));
         bind(EntitySetupUsageClient.class).toInstance(mock(EntitySetupUsageClient.class));
+        bind(EnforcementClientService.class).toInstance(mock(EnforcementClientService.class));
         bind(new TypeLiteral<Supplier<DelegateCallbackToken>>() {
         }).toInstance(Suppliers.ofInstance(DelegateCallbackToken.newBuilder().build()));
         bind(new TypeLiteral<DelegateServiceGrpc.DelegateServiceBlockingStub>() {

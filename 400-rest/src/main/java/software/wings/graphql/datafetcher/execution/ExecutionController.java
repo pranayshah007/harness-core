@@ -455,6 +455,10 @@ public class ExecutionController {
 
     HelmChart helmChart =
         helmChartService.getByChartVersion(service.getAppId(), service.getUuid(), appManifestName, versionNumber);
+    if (helmChart == null) {
+      helmChart = helmChartService.fetchByChartVersion(
+          service.getAccountId(), service.getAppId(), service.getUuid(), appManifestName, versionNumber);
+    }
     notNullCheck("Cannot find helm chart for specified version number: " + versionNumber, helmChart, USER);
     return helmChart;
   }

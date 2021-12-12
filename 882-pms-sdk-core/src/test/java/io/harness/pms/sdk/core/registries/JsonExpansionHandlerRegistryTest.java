@@ -8,6 +8,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.pms.contracts.governance.ExpansionRequestMetadata;
 import io.harness.pms.sdk.core.PmsSdkCoreTestBase;
 import io.harness.pms.sdk.core.governance.ExpansionResponse;
 import io.harness.pms.sdk.core.governance.JsonExpansionHandler;
@@ -62,7 +63,7 @@ public class JsonExpansionHandlerRegistryTest extends PmsSdkCoreTestBase {
     int something;
 
     @Override
-    public ExpansionResponse expand(JsonNode fieldValue) {
+    public ExpansionResponse expand(JsonNode fieldValue, ExpansionRequestMetadata metadata) {
       return null;
     }
   }

@@ -556,7 +556,7 @@ public class PipelineResource implements YamlSchemaResource {
   }
 
   @GET
-  @Path("/refreshFFCache")
+  @Path("/ffCache/refresh")
   @ApiOperation(value = "Refresh the feature flag cache", nickname = "refreshFFCache")
   @Operation(operationId = "refreshFFCache", summary = "Refresh the feature flag cache",
       responses =

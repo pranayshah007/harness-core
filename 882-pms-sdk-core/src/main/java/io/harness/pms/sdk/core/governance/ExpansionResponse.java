@@ -13,7 +13,7 @@ import lombok.Value;
 @Builder
 public class ExpansionResponse {
   String key;
-  String value;
+  ExpandedValue value;
   ExpansionPlacementStrategy placement;
   boolean success;
   String errorMessage;

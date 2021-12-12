@@ -7,6 +7,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.ng.accesscontrol.PlatformPermissions.VIEW_USER_PERMISSION;
 import static io.harness.ng.accesscontrol.PlatformResourceTypes.USER;
 import static io.harness.ng.core.invites.mapper.InviteMapper.writeDTO;
+import static io.harness.ng.core.invites.mapper.RoleBindingMapper.validateRoleBindings;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.stripToNull;
@@ -221,6 +222,7 @@ public class InviteResource {
           description = "Details of the Invite to create") @NotNull @Valid CreateInviteDTO createInviteDTO) {
     projectIdentifier = stripToNull(projectIdentifier);
     orgIdentifier = stripToNull(orgIdentifier);
+    validateRoleBindings(createInviteDTO.getRoleBindings(), orgIdentifier, projectIdentifier);
     List<InviteOperationResponse> inviteOperationResponses =
         inviteService.createInvitations(accountIdentifier, orgIdentifier, projectIdentifier, createInviteDTO);
     return ResponseDTO.newResponse(inviteOperationResponses);

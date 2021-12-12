@@ -15,9 +15,11 @@ import io.harness.pms.sdk.core.adviser.Adviser;
 import io.harness.pms.sdk.core.events.OrchestrationEventHandler;
 import io.harness.pms.sdk.core.execution.events.node.facilitate.Facilitator;
 import io.harness.pms.sdk.core.execution.expression.SdkFunctor;
+import io.harness.pms.sdk.core.governance.JsonExpansionHandler;
 import io.harness.pms.sdk.core.registries.AdviserRegistry;
 import io.harness.pms.sdk.core.registries.FacilitatorRegistry;
 import io.harness.pms.sdk.core.registries.FunctorRegistry;
+import io.harness.pms.sdk.core.registries.JsonExpansionHandlerRegistry;
 import io.harness.pms.sdk.core.registries.OrchestrationEventHandlerRegistry;
 import io.harness.pms.sdk.core.registries.StepRegistry;
 import io.harness.pms.sdk.core.steps.Step;
@@ -88,6 +90,17 @@ public class PmsSdkRegistryModule extends AbstractModule {
       sdkFunctors.forEach((functorKey, v) -> { functorRegistry.register(functorKey, injector.getInstance(v)); });
     }
     return functorRegistry;
+  }
+
+  @Provides
+  @Singleton
+  JsonExpansionHandlerRegistry providesJsonExpansionHandlerRegistry(Injector injector) {
+    JsonExpansionHandlerRegistry jsonExpansionHandlerRegistry = new JsonExpansionHandlerRegistry();
+    Map<String, Class<? extends JsonExpansionHandler>> expansionHandlers = config.getJsonExpansionHandlers();
+    if (EmptyPredicate.isNotEmpty(expansionHandlers)) {
+      expansionHandlers.forEach((k, v) -> jsonExpansionHandlerRegistry.register(k, injector.getInstance(v)));
+    }
+    return jsonExpansionHandlerRegistry;
   }
 
   @Provides

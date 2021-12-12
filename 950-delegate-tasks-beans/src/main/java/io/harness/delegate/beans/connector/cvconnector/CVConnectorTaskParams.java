@@ -16,7 +16,7 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 public class CVConnectorTaskParams extends ConnectorTaskParams implements TaskParameters, ExecutionCapabilityDemander {
   ConnectorConfigDTO connectorConfigDTO;
-  List<EncryptedDataDetail> encryptionDetails;
+  List<List<EncryptedDataDetail>> encryptionDetails;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

@@ -10,6 +10,7 @@ import io.harness.ModuleType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.governance.ExpansionRequestMetadata;
 import io.harness.pms.sdk.core.execution.expression.SdkFunctor;
 import io.harness.pms.sdk.core.governance.ExpansionResponse;
 import io.harness.pms.sdk.core.governance.JsonExpansionHandler;
@@ -73,7 +74,7 @@ public class PmsSdkInitHelperTest extends CategoryTest {
 
   private static class Dummy1 implements JsonExpansionHandler {
     @Override
-    public ExpansionResponse expand(JsonNode fieldValue) {
+    public ExpansionResponse expand(JsonNode fieldValue, ExpansionRequestMetadata metadata) {
       return null;
     }
   }

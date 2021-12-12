@@ -17,7 +17,8 @@ public enum ServiceDefinitionType {
       ServiceSpecType.KUBERNETES),
 
   @JsonProperty(ServiceSpecType.NATIVE_HELM)
-  NATIVE_HELM("NativeHelm", Lists.newArrayList(ExecutionStrategyType.BASIC), ServiceSpecType.NATIVE_HELM);
+  NATIVE_HELM("NativeHelm", Lists.newArrayList(ExecutionStrategyType.ROLLING, ExecutionStrategyType.DEFAULT),
+      ServiceSpecType.NATIVE_HELM);
 
   /*
   //Unsupported for now

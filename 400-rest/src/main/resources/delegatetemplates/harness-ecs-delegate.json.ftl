@@ -43,6 +43,10 @@
           "value": "${delegateProfile}"
         },
         {
+          "name": "INIT_SCRIPT",
+          "value": ""
+        },
+        {
           "name": "DEPLOY_MODE",
           "value": "${deployMode}"
         },

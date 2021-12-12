@@ -78,7 +78,8 @@ public abstract class LearningEngineTask
   private long analysisEndEpochMinute; // This is temporary. LE needs it for now.
   private ExecutionStatus taskStatus;
   public abstract LearningEngineTaskType getType();
-
+  private String exception;
+  private String stackTrace;
   @JsonIgnore
   @SchemaIgnore
   @FdTtlIndex

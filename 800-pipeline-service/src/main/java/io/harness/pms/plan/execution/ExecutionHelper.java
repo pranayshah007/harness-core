@@ -37,6 +37,7 @@ import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
 import io.harness.pms.pipeline.service.PMSYamlSchemaService;
+import io.harness.pms.pipeline.service.PipelineEnforcementService;
 import io.harness.pms.plan.creation.PlanCreatorMergeService;
 import io.harness.pms.plan.execution.beans.ExecArgs;
 import io.harness.pms.plan.execution.beans.StagesExecutionInfo;
@@ -61,6 +62,7 @@ import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(PIPELINE)
@@ -82,11 +84,12 @@ public class ExecutionHelper {
   PlanService planService;
   PlanExecutionMetadataService planExecutionMetadataService;
   PMSPipelineTemplateHelper pipelineTemplateHelper;
+  PipelineEnforcementService pipelineEnforcementService;
 
   public PipelineEntity fetchPipelineEntity(@NotNull String accountId, @NotNull String orgIdentifier,
       @NotNull String projectIdentifier, @NotNull String pipelineIdentifier) {
     Optional<PipelineEntity> pipelineEntityOptional =
-        pmsPipelineService.incrementRunSequence(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
+        pmsPipelineService.get(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, false);
     if (!pipelineEntityOptional.isPresent()) {
       throw new InvalidRequestException(
           String.format("Pipeline with the given ID: %s does not exist or has been deleted", pipelineIdentifier));
@@ -123,6 +126,7 @@ public class ExecutionHelper {
         .build();
   }
 
+  @SneakyThrows
   public ExecArgs buildExecutionArgs(PipelineEntity pipelineEntity, String moduleType, String mergedRuntimeInputYaml,
       List<String> stagesToRun, Map<String, String> expressionValues, ExecutionTriggerInfo triggerInfo,
       String originalExecutionId, RetryExecutionParameters retryExecutionParameters) {
@@ -131,8 +135,6 @@ public class ExecutionHelper {
     boolean isRetry = retryExecutionParameters.isRetry();
     // RetryExecutionInfo
     RetryExecutionInfo retryExecutionInfo = buildRetryInfo(isRetry, originalExecutionId);
-    ExecutionMetadata executionMetadata = buildExecutionMetadata(
-        pipelineEntity.getIdentifier(), moduleType, triggerInfo, pipelineEntity, executionId, retryExecutionInfo);
 
     String pipelineYaml = getPipelineYamlAndValidate(mergedRuntimeInputYaml, pipelineEntity);
     StagesExecutionInfo stagesExecutionInfo =
@@ -144,7 +146,10 @@ public class ExecutionHelper {
     }
     PlanExecutionMetadata planExecutionMetadata = obtainPlanExecutionMetadata(
         mergedRuntimeInputYaml, executionId, stagesExecutionInfo, originalExecutionId, retryExecutionParameters);
-
+    pipelineEnforcementService.validateExecutionEnforcementsBasedOnStage(
+        pipelineEntity.getAccountId(), YamlUtils.extractPipelineField(planExecutionMetadata.getProcessedYaml()));
+    ExecutionMetadata executionMetadata = buildExecutionMetadata(
+        pipelineEntity.getIdentifier(), moduleType, triggerInfo, pipelineEntity, executionId, retryExecutionInfo);
     return ExecArgs.builder().metadata(executionMetadata).planExecutionMetadata(planExecutionMetadata).build();
   }
 
@@ -156,7 +161,9 @@ public class ExecutionHelper {
             .setExecutionUuid(executionId)
             .setTriggerInfo(triggerInfo)
             .setModuleType(moduleType)
-            .setRunSequence(pipelineEntity.getRunSequence())
+            .setRunSequence(pmsPipelineService.incrementRunSequence(pipelineEntity.getAccountId(),
+                pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(),
+                pipelineEntity.getIdentifier(), false))
             .setPipelineIdentifier(pipelineIdentifier)
             .setRetryInfo(retryExecutionInfo)
             .setPrincipalInfo(principalInfoHelper.getPrincipalInfoFromSecurityContext());
@@ -188,10 +195,11 @@ public class ExecutionHelper {
     }
 
     if (pipelineEntity.getTemplateReference() != null && pipelineEntity.getTemplateReference()) {
-      pipelineYaml = pipelineTemplateHelper
-                         .resolveTemplateRefsInPipeline(pipelineEntity.getAccountId(),
-                             pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineYaml)
-                         .getMergedPipelineYaml();
+      pipelineYaml =
+          pipelineTemplateHelper
+              .resolveTemplateRefsInPipeline(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
+                  pipelineEntity.getProjectIdentifier(), pipelineYaml, true)
+              .getMergedPipelineYaml();
     }
     pipelineYaml = InputSetSanitizer.trimValues(pipelineYaml);
     pmsYamlSchemaService.validateYamlSchema(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),

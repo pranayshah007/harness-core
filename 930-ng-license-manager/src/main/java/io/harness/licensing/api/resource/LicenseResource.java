@@ -1,5 +1,6 @@
 package io.harness.licensing.api.resource;
 
+import static io.harness.NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE;
 import static io.harness.licensing.accesscontrol.LicenseAccessControlPermissions.VIEW_LICENSE_PERMISSION;
 
 import io.harness.ModuleType;
@@ -93,9 +94,9 @@ public class LicenseResource {
       })
   @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = VIEW_LICENSE_PERMISSION)
   public ResponseDTO<List<ModuleLicenseDTO>>
-  getModuleLicenses(@Parameter(description = "Account id to get a module license.") @NotNull @PathParam(
+  getModuleLicenses(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @PathParam(
                         NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
-      @Parameter(description = "A Harness Platform module.") @NotNull @QueryParam(
+      @Parameter(required = true, description = "A Harness Platform module.") @NotNull @QueryParam(
           MODULE_TYPE_KEY) ModuleType moduleType) {
     validateModuleType(moduleType);
     return ResponseDTO.newResponse(licenseService.getModuleLicenses(accountIdentifier, moduleType));
@@ -114,9 +115,9 @@ public class LicenseResource {
       })
   @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = VIEW_LICENSE_PERMISSION)
   public ResponseDTO<LicensesWithSummaryDTO>
-  getLicensesWithSummary(@Parameter(description = "Account id to get a module license with summary.") @NotNull
-                         @PathParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
-      @Parameter(description = "A Harness Platform module.") @NotNull @QueryParam(
+  getLicensesWithSummary(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @PathParam(
+                             NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @Parameter(required = true, description = "A Harness Platform module.") @NotNull @QueryParam(
           MODULE_TYPE_KEY) ModuleType moduleType) {
     validateModuleType(moduleType);
     return ResponseDTO.newResponse(licenseService.getLicenseSummary(accountIdentifier, moduleType));
@@ -133,7 +134,7 @@ public class LicenseResource {
       })
   @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = VIEW_LICENSE_PERMISSION)
   public ResponseDTO<AccountLicenseDTO>
-  getAccountLicensesDTO(@Parameter(description = "Accouunt id to get all module licenses.") @QueryParam(
+  getAccountLicensesDTO(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
       NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier) {
     AccountLicenseDTO accountLicenses = licenseService.getAccountLicense(accountIdentifier);
     return ResponseDTO.newResponse(accountLicenses);
@@ -150,10 +151,10 @@ public class LicenseResource {
       })
   @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = VIEW_LICENSE_PERMISSION)
   public ResponseDTO<ModuleLicenseDTO>
-  get(@Parameter(description = "The module license identifier") @PathParam("identifier") String identifier,
+  get(@Parameter(required = true, description = "The module license identifier") @PathParam(
+          "identifier") String identifier,
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @Parameter(
-          description = "Account id to get a module license from an account.")
-      @AccountIdentifier String accountIdentifier) {
+          required = true, description = ACCOUNT_PARAM_MESSAGE) @AccountIdentifier String accountIdentifier) {
     ModuleLicenseDTO moduleLicense = licenseService.getModuleLicenseById(identifier);
     return ResponseDTO.newResponse(moduleLicense);
   }
@@ -165,13 +166,13 @@ public class LicenseResource {
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(responseCode = "default", description = "Returns a free module license")
+        ApiResponse(responseCode = "default", description = "Returns the Free License of the specified Module.")
       })
   @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = VIEW_LICENSE_PERMISSION)
   public ResponseDTO<ModuleLicenseDTO>
-  startFreeLicense(@Parameter(description = "Account id to start a free license") @NotNull @QueryParam(
+  startFreeLicense(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
                        NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
-      @Parameter(description = "A Harness Platform module.") @NotNull @QueryParam(
+      @Parameter(required = true, description = "A Harness Platform module.") @NotNull @QueryParam(
           NGCommonEntityConstants.MODULE_TYPE) ModuleType moduleType) {
     return ResponseDTO.newResponse(licenseService.startFreeLicense(accountIdentifier, moduleType));
   }
@@ -179,6 +180,7 @@ public class LicenseResource {
   @POST
   @Path("community")
   @ApiOperation(value = "Starts Community License For A Module", nickname = "startCommunityLicense")
+  @Hidden
   @InternalApi
   public ResponseDTO<ModuleLicenseDTO> startCommunityLicense(
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
@@ -193,13 +195,15 @@ public class LicenseResource {
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(responseCode = "default", description = "Returns a trial module license")
+        ApiResponse(responseCode = "default", description = "Returns the Trial License of the specified Module.")
       })
   @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = VIEW_LICENSE_PERMISSION)
   public ResponseDTO<ModuleLicenseDTO>
-  startTrialLicense(@Parameter(description = "Account id to start a trial license") @NotNull @QueryParam(
+  startTrialLicense(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
                         NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
-      @NotNull @Valid @Body StartTrialDTO startTrialRequestDTO) {
+      @io.swagger.v3.oas.annotations.parameters.RequestBody(required = true,
+          description = "This is the details of the Trial License. ModuleType and edition are mandatory") @NotNull
+      @Valid @Body StartTrialDTO startTrialRequestDTO) {
     return ResponseDTO.newResponse(licenseService.startTrialLicense(accountIdentifier, startTrialRequestDTO));
   }
 
@@ -210,13 +214,15 @@ public class LicenseResource {
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(responseCode = "default", description = "Returns a trial module license")
+        ApiResponse(responseCode = "default", description = "Returns the Trial License of the specified Module.")
       })
   @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = VIEW_LICENSE_PERMISSION)
   public ResponseDTO<ModuleLicenseDTO>
-  extendTrialLicense(@Parameter(description = "Account id to extend a trial") @NotNull @QueryParam(
+  extendTrialLicense(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
                          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
-      @NotNull @Valid @Body StartTrialDTO startTrialRequestDTO) {
+      @io.swagger.v3.oas.annotations.parameters.RequestBody(required = true,
+          description = "This is the details of the Trial License. ModuleType and edition are mandatory") @NotNull
+      @Valid @Body StartTrialDTO startTrialRequestDTO) {
     return ResponseDTO.newResponse(licenseService.extendTrialLicense(accountIdentifier, startTrialRequestDTO));
   }
 
@@ -231,9 +237,9 @@ public class LicenseResource {
       })
   @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = VIEW_LICENSE_PERMISSION)
   public ResponseDTO<Map<Edition, Set<EditionActionDTO>>>
-  getEditionActions(@Parameter(description = "Account id to get the allowed actions.") @NotNull @QueryParam(
+  getEditionActions(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
                         NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
-      @Parameter(description = "A Harness Platform module.") @NotNull @QueryParam(
+      @Parameter(required = true, description = "A Harness Platform module.") @NotNull @QueryParam(
           NGCommonEntityConstants.MODULE_TYPE) ModuleType moduleType) {
     return ResponseDTO.newResponse(licenseService.getEditionActions(accountIdentifier, moduleType));
   }
@@ -251,7 +257,7 @@ public class LicenseResource {
       })
   @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = VIEW_LICENSE_PERMISSION)
   public ResponseDTO<Map<ModuleType, Long>>
-  getLastModifiedTimeForAllModuleTypes(@Parameter(description = "Account id to get the last modified map.") @NotNull
+  getLastModifiedTimeForAllModuleTypes(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull
       @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier) {
     return ResponseDTO.newResponse(licenseService.getLastUpdatedAtMap(accountIdentifier));
   }

@@ -16,6 +16,7 @@ import io.harness.steps.StepSpecTypeConstants;
 import com.google.inject.Inject;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
@@ -93,6 +94,13 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
   public void update(String planExecutionId, NodeExecution nodeExecution) {
     updatePipelineLevelInfo(planExecutionId, nodeExecution);
     updateStageLevelInfo(planExecutionId, nodeExecution);
+  }
+
+  @Override
+  public Optional<PipelineExecutionSummaryEntity> getPipelineExecutionSummary(
+      String accountId, String orgId, String projectId, String planExecutionId) {
+    return pmsExecutionSummaryRepository.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndPlanExecutionId(
+        accountId, orgId, projectId, planExecutionId);
   }
 
   private void updatePipelineLevelInfo(String planExecutionId, NodeExecution nodeExecution) {

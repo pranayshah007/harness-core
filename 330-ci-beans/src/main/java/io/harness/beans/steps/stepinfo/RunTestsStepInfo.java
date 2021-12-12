@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.steps.CIStepInfo;
 import io.harness.beans.steps.CIStepInfoType;
 import io.harness.beans.steps.TypeInfo;
+import io.harness.beans.yaml.extended.CIShellType;
 import io.harness.beans.yaml.extended.ImagePullPolicy;
 import io.harness.beans.yaml.extended.TIBuildTool;
 import io.harness.beans.yaml.extended.TILanguage;
@@ -88,11 +89,12 @@ public class RunTestsStepInfo implements CIStepInfo {
   @YamlSchemaTypes({string}) @ApiModelProperty(dataType = INTEGER_CLASSPATH) private ParameterField<Integer> runAsUser;
   @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.ImagePullPolicy")
   private ParameterField<ImagePullPolicy> imagePullPolicy;
+  @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.CIShellType") private ParameterField<CIShellType> shell;
 
   @Builder
   @ConstructorProperties({"identifier", "name", "retry", "args", "language", "buildTool", "image", "connectorRef",
       "resources", "reports", "testAnnotations", "packages", "runOnlySelectedTests", "preCommand", "postCommand",
-      "outputVariables", "envVariables", "privileged", "runAsUser", "imagePullPolicy"})
+      "outputVariables", "envVariables", "privileged", "runAsUser", "imagePullPolicy", "shell"})
   public RunTestsStepInfo(String identifier, String name, Integer retry, ParameterField<String> args,
       ParameterField<TILanguage> language, ParameterField<TIBuildTool> buildTool, ParameterField<String> image,
       ParameterField<String> connectorRef, ContainerResource resources, UnitTestReport reports,
@@ -100,7 +102,8 @@ public class RunTestsStepInfo implements CIStepInfo {
       ParameterField<Boolean> runOnlySelectedTests, ParameterField<String> preCommand,
       ParameterField<String> postCommand, List<OutputNGVariable> outputVariables,
       ParameterField<Map<String, String>> envVariables, ParameterField<Boolean> privileged,
-      ParameterField<Integer> runAsUser, ParameterField<ImagePullPolicy> imagePullPolicy) {
+      ParameterField<Integer> runAsUser, ParameterField<ImagePullPolicy> imagePullPolicy,
+      ParameterField<CIShellType> shell) {
     this.identifier = identifier;
     this.name = name;
     this.retry = Optional.ofNullable(retry).orElse(DEFAULT_RETRY);
@@ -121,6 +124,7 @@ public class RunTestsStepInfo implements CIStepInfo {
     this.privileged = privileged;
     this.runAsUser = runAsUser;
     this.imagePullPolicy = imagePullPolicy;
+    this.shell = shell;
   }
 
   @Override

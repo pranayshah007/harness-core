@@ -1,5 +1,9 @@
 package io.harness.ng.core.user.service.impl;
 
+import static io.harness.NGConstants.DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER;
+import static io.harness.NGConstants.DEFAULT_ORGANIZATION_LEVEL_RESOURCE_GROUP_IDENTIFIER;
+import static io.harness.NGConstants.DEFAULT_PROJECT_LEVEL_RESOURCE_GROUP_IDENTIFIER;
+import static io.harness.NGConstants.DEFAULT_RESOURCE_GROUP_IDENTIFIER;
 import static io.harness.accesscontrol.principals.PrincipalType.SERVICE_ACCOUNT;
 import static io.harness.accesscontrol.principals.PrincipalType.USER;
 import static io.harness.accesscontrol.principals.PrincipalType.USER_GROUP;
@@ -7,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ng.core.invites.mapper.RoleBindingMapper.createRoleAssignmentDTOs;
+import static io.harness.ng.core.invites.mapper.RoleBindingMapper.getDefaultResourceGroupIdentifier;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
 import static io.harness.remote.client.NGRestUtils.getResponse;
 import static io.harness.springdata.TransactionUtils.DEFAULT_TRANSACTION_RETRY_POLICY;
@@ -120,9 +125,10 @@ public class NgUserServiceImpl implements NgUserService {
   private static final String ORG_ADMIN = "_organization_admin";
   private static final String PROJECT_ADMIN = "_project_admin";
   private static final String PROJECT_VIEWER = "_project_viewer";
-  private static final String DEFAULT_RESOURCE_GROUP_NAME = "All Resources";
-  private static final String DEFAULT_RESOURCE_GROUP_IDENTIFIER = "_all_resources";
-  private final List<String> MANAGED_ROLE_IDENTIFIERS =
+  private static final List<String> MANAGED_RESOURCE_GROUP_IDENTIFIERS =
+      ImmutableList.of(DEFAULT_RESOURCE_GROUP_IDENTIFIER, DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER,
+          DEFAULT_ORGANIZATION_LEVEL_RESOURCE_GROUP_IDENTIFIER, DEFAULT_PROJECT_LEVEL_RESOURCE_GROUP_IDENTIFIER);
+  private static final List<String> MANAGED_ROLE_IDENTIFIERS =
       ImmutableList.of(ACCOUNT_VIEWER, ORGANIZATION_VIEWER, PROJECT_VIEWER);
   public static final int DEFAULT_PAGE_SIZE = 10000;
   private final UserClient userClient;
@@ -474,7 +480,7 @@ public class NgUserServiceImpl implements NgUserService {
               .roleIdentifier(roleIdentifier)
               .disabled(false)
               .principal(PrincipalDTO.builder().type(SERVICE_ACCOUNT).identifier(serviceAccountId).build())
-              .resourceGroupIdentifier(DEFAULT_RESOURCE_GROUP_IDENTIFIER)
+              .resourceGroupIdentifier(getDefaultResourceGroupIdentifier(scope))
               .build();
       roleAssignmentDTOs.add(roleAssignmentDTO);
     }
@@ -487,7 +493,7 @@ public class NgUserServiceImpl implements NgUserService {
     ensureUserMetadata(userId);
     addUserToScopeInternal(userId, source, scope, getDefaultRoleIdentifier(scope));
     addUserToParentScope(userId, scope, source);
-    createRoleAssignments(userId, scope, createRoleAssignmentDTOs(roleBindings, userId));
+    createRoleAssignments(userId, scope, createRoleAssignmentDTOs(roleBindings, userId, scope));
     userGroupService.addUserToUserGroups(scope, userId, getValidUserGroups(scope, userGroups));
   }
 
@@ -537,7 +543,8 @@ public class NgUserServiceImpl implements NgUserService {
   private boolean isRoleAssignmentManaged(RoleAssignmentDTO roleAssignmentDTO) {
     return MANAGED_ROLE_IDENTIFIERS.stream().anyMatch(
                roleIdentifier -> roleIdentifier.equals(roleAssignmentDTO.getRoleIdentifier()))
-        && DEFAULT_RESOURCE_GROUP_IDENTIFIER.equals(roleAssignmentDTO.getResourceGroupIdentifier());
+        && MANAGED_RESOURCE_GROUP_IDENTIFIERS.stream().anyMatch(
+            resourceGroupIdentifier -> resourceGroupIdentifier.equals(roleAssignmentDTO.getResourceGroupIdentifier()));
   }
 
   private String getDefaultRoleIdentifier(Scope scope) {
@@ -612,7 +619,7 @@ public class NgUserServiceImpl implements NgUserService {
     try {
       RoleAssignmentDTO roleAssignmentDTO = RoleAssignmentDTO.builder()
                                                 .principal(PrincipalDTO.builder().type(USER).identifier(userId).build())
-                                                .resourceGroupIdentifier(DEFAULT_RESOURCE_GROUP_IDENTIFIER)
+                                                .resourceGroupIdentifier(getDefaultResourceGroupIdentifier(scope))
                                                 .disabled(false)
                                                 .roleIdentifier(roleIdentifier)
                                                 .build();

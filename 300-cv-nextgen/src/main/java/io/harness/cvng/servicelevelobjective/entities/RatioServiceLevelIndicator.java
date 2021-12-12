@@ -1,6 +1,7 @@
 package io.harness.cvng.servicelevelobjective.entities;
 
 import io.harness.cvng.servicelevelobjective.beans.SLIMetricType;
+import io.harness.cvng.servicelevelobjective.beans.slimetricspec.RatioSLIMetricEventType;
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.ThresholdType;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -20,7 +21,7 @@ import org.mongodb.morphia.query.UpdateOperations;
 @FieldNameConstants(innerTypeName = "RatioServiceLevelIndicatorKeys")
 @EqualsAndHashCode(callSuper = true)
 public class RatioServiceLevelIndicator extends ServiceLevelIndicator {
-  String eventType;
+  RatioSLIMetricEventType eventType;
   String metric1;
   String metric2;
   Double thresholdValue;

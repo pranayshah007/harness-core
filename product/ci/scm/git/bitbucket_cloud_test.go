@@ -92,6 +92,33 @@ func TestGetLatestCommitBitbucketCloud(t *testing.T) {
 	assert.NotNil(t, got.Commit.Sha, "There is a commit id")
 }
 
+func TestGetLatestCommitBitbucketCloudBranchNameWithSlash(t *testing.T) {
+	if gitBitbucketCloudToken == "" {
+		t.Skip("Skipping, Acceptance test")
+	}
+	in := &pb.GetLatestCommitRequest{
+		Slug: "AutoUserOne/publicrepo",
+		Type: &pb.GetLatestCommitRequest_Branch{
+			Branch: "test/one",
+		},
+		Provider: &pb.Provider{
+			Hook: &pb.Provider_BitbucketCloud{
+				BitbucketCloud: &pb.BitbucketCloudProvider{
+					Username:    "tphoney",
+					AppPassword: gitBitbucketCloudToken,
+				},
+			},
+			Debug: true,
+		},
+	}
+
+	log, _ := logs.GetObservedLogger(zap.InfoLevel)
+	got, err := GetLatestCommit(context.Background(), in, log.Sugar())
+
+	assert.Nil(t, err, "no errors")
+	assert.NotNil(t, got.Commit.Sha, "There is a commit id")
+}
+
 func TestListCommitsBitbucketCloud(t *testing.T) {
 	if gitBitbucketCloudToken == "" {
 		t.Skip("Skipping, Acceptance test")

@@ -199,6 +199,16 @@ func GetLatestCommit(ctx context.Context, request *pb.GetLatestCommitRequest, lo
 		log.Errorw("GetLatestCommit failure, bad ref/branch", "provider", gitclient.GetProvider(*request.GetProvider()), "slug", request.GetSlug(), "ref", ref, "elapsed_time_ms", utils.TimeSince(start), zap.Error(err))
 		return nil, err
 	}
+	switch client.Driver {
+		case scm.DriverBitbucket,
+			scm.DriverStash:
+			ref = scm.TrimRef(ref)
+			branch, _, err := client.Git.FindBranch(ctx, request.GetSlug(), ref)
+			if err != nil {
+				return nil, err
+			}
+			ref = branch.Sha
+	}
 
 	refResponse, response, err := client.Git.FindCommit(ctx, request.GetSlug(), ref)
 	if err != nil {

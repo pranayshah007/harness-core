@@ -23,7 +23,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TimeZone;
-
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -142,8 +141,10 @@ public class InstanceEventAggregator {
 
     // Fetch all records for current hour window until eventTimestamp to calculate Median of the data
     try (PreparedStatement statement = dbConnection.prepareStatement(aggregator.getFetchChildDataPointsSQL())) {
-      statement.setTimestamp(1, new Timestamp(windowBeginTimestamp.getTime()), Calendar.getInstance(TimeZone.getTimeZone("UTC")));
-      statement.setTimestamp(2, new Timestamp(windowEndTimestamp.getTime()), Calendar.getInstance(TimeZone.getTimeZone("UTC")));
+      statement.setTimestamp(
+          1, new Timestamp(windowBeginTimestamp.getTime()), Calendar.getInstance(TimeZone.getTimeZone("UTC")));
+      statement.setTimestamp(
+          2, new Timestamp(windowEndTimestamp.getTime()), Calendar.getInstance(TimeZone.getTimeZone("UTC")));
       statement.setString(3, aggregator.getEventInfo().getAccountId());
       statement.setString(4, dataMap.get(TimescaleConstants.ORG_ID.getKey()));
       statement.setString(5, dataMap.get(TimescaleConstants.PROJECT_ID.getKey()));

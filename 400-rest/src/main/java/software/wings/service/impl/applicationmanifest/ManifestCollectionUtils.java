@@ -80,7 +80,45 @@ public class ManifestCollectionUtils {
         appId, helmChartConfig, service.getHelmVersion(), appManifest.getPerpetualTaskId(), appManifestId, accountId);
 
     boolean useRepoFlags = false;
-    if (featureFlagService.isEnabled(FeatureName.USE_HELM_REPO_FLAGS, accountId)) {
+    if (featureFlagService.isEnabled(FeatureName.USE_HELM_REPO_FLAGS, accountId)
+        && HelmVersion.V3.equals(service.getHelmVersion())) {
+      useRepoFlags = true;
+    }
+
+    return HelmChartCollectionParams.builder()
+        .accountId(accountId)
+        .appId(appId)
+        .appManifestId(appManifestId)
+        .serviceId(appManifest.getServiceId())
+        .publishedVersions(getPublishedVersionsForAppManifest(accountId, appManifestId))
+        .helmChartConfigParams(helmChartConfigParamsBuilder.build())
+        .useRepoFlags(useRepoFlags)
+        .build();
+  }
+
+  public ManifestCollectionParams prepareCollectTaskParamsWithChartVersion(
+      String appManifestId, String appId, String chartVersion) {
+    ApplicationManifest appManifest = applicationManifestService.getById(appId, appManifestId);
+    if (appManifest == null) {
+      throw new InvalidRequestException("Cannot find app manifest with id " + appManifestId);
+    }
+    String accountId =
+        appManifest.getAccountId() != null ? appManifest.getAccountId() : appService.getAccountIdByAppId(appId);
+
+    Service service = serviceResourceService.get(appId, appManifest.getServiceId());
+    if (service == null) {
+      throw new InvalidRequestException("Service not found for the application manifest with id " + appManifestId);
+    }
+    HelmChartConfig helmChartConfig = appManifest.getHelmChartConfig();
+
+    HelmChartConfigParamsBuilder helmChartConfigParamsBuilder = constructHelmChartConfigParamsBuilder(
+        appId, helmChartConfig, service.getHelmVersion(), appManifest.getPerpetualTaskId(), appManifestId, accountId);
+    // add version to config
+    helmChartConfigParamsBuilder.chartVersion(chartVersion);
+
+    boolean useRepoFlags = false;
+    if (featureFlagService.isEnabled(FeatureName.USE_HELM_REPO_FLAGS, accountId)
+        && HelmVersion.V3.equals(service.getHelmVersion())) {
       useRepoFlags = true;
     }
 

@@ -19,6 +19,7 @@ import io.leangen.graphql.annotations.GraphQLEnvironment;
 import io.leangen.graphql.annotations.GraphQLQuery;
 import io.leangen.graphql.execution.ResolutionEnvironment;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -74,6 +75,7 @@ public class BudgetsQuery {
     if (fetchOnlyPerspectiveBudgets) {
       budgets = budgets.stream().filter(BudgetUtils::isPerspectiveBudget).collect(Collectors.toList());
     }
+    budgets.sort(Comparator.comparing(Budget::getLastUpdatedAt).reversed());
     budgets.forEach(budget -> budgetSummaryList.add(buildBudgetSummary(budget)));
 
     return budgetSummaryList;
@@ -96,9 +98,14 @@ public class BudgetsQuery {
         .forecastCost(budget.getForecastCost())
         .timeLeft(BudgetUtils.getTimeLeftForBudget(budget))
         .timeUnit(BudgetUtils.DEFAULT_TIME_UNIT)
-        .timeScope(BudgetUtils.DEFAULT_TIME_SCOPE)
+        .timeScope(BudgetUtils.getBudgetPeriod(budget).toString().toLowerCase())
         .actualCostAlerts(BudgetUtils.getAlertThresholdsForBudget(budget, ACTUAL_COST))
         .forecastCostAlerts(BudgetUtils.getAlertThresholdsForBudget(budget, FORECASTED_COST))
+        .alertThresholds(budget.getAlertThresholds())
+        .growthRate(BudgetUtils.getBudgetGrowthRate(budget))
+        .period(BudgetUtils.getBudgetPeriod(budget))
+        .startTime(BudgetUtils.getBudgetStartTime(budget))
+        .type(budget.getType())
         .build();
   }
 }

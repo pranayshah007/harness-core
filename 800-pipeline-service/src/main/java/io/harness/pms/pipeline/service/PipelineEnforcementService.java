@@ -4,6 +4,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.yaml.YamlField;
 
 import java.util.Map;
 import java.util.Set;
@@ -23,4 +24,6 @@ public interface PipelineEnforcementService {
    * Also, validates the deployments and builds feature restriction check if stepType contains module specific stage
    */
   void validatePipelineExecutionRestriction(String accountId, Set<StepType> stepTypes);
+
+  void validateExecutionEnforcementsBasedOnStage(String accountId, YamlField pipelineField);
 }

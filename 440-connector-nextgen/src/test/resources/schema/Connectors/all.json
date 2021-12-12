@@ -1346,7 +1346,8 @@
             "Datadog",
             "SumoLogic",
             "PagerDuty",
-            "CustomHealth"
+            "CustomHealth",
+            "ServiceNow"
           ]
         }
       },
@@ -1820,6 +1821,22 @@
           "if": {
             "properties": {
               "type": {
+                "const":"ServiceNow"
+              }
+            }
+          },
+          "then":{
+            "properties":{
+              "spec":{
+                "$ref":"#/definitions/ServiceNowConnector"
+              }
+            }
+          }
+        },
+        {
+          "if":{
+            "properties":{
+              "type":{
                 "const": "Splunk"
               }
             }
@@ -3842,6 +3859,56 @@
           ]
         }
       },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ServiceNowConnector": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ConnectorConfigDTO"
+        },
+        {
+          "type": "object",
+          "required": [
+            "passwordRef",
+            "serviceNowUrl"
+          ],
+          "properties": {
+            "delegateSelectors": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string"
+              }
+            },
+            "passwordRef": {
+              "type": "string"
+            },
+            "serviceNowUrl": {
+              "type": "string"
+            },
+            "username": {
+              "type": "string"
+            },
+            "usernameRef": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "oneOf": [
+            {
+              "required": [
+                "usernameRef"
+              ]
+            },
+            {
+              "required": [
+                "username"
+              ]
+            }
+          ]
+        }
+      ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "SplunkConnectorDTO": {

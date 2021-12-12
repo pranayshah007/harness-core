@@ -262,11 +262,15 @@ public class CVDataCollectionTaskServiceImpl implements CVDataCollectionTaskServ
                                        .orgIdentifier(orgIdentifier)
                                        .projectIdentifier(projectIdentifier)
                                        .build();
-    List<EncryptedDataDetail> encryptedDataDetails = new ArrayList<>();
-    if (isNotEmpty(dataCollectionRequest.getConnectorConfigDTO().getDecryptableEntities())) {
-      encryptedDataDetails = getEncryptedDataDetails(
-          basicNGAccessObject, dataCollectionRequest.getConnectorConfigDTO().getDecryptableEntities().get(0));
+    List<List<EncryptedDataDetail>> encryptedDataDetails = new ArrayList<>();
+    List<DecryptableEntity> decryptableEntities =
+        dataCollectionRequest.getConnectorConfigDTO().getDecryptableEntities();
+
+    if (isNotEmpty(decryptableEntities)) {
+      decryptableEntities.forEach(decryptableEntity
+          -> encryptedDataDetails.add(getEncryptedDataDetails(basicNGAccessObject, decryptableEntity)));
     }
+
     SyncTaskContext taskContext = getSyncTaskContext(accountId, orgIdentifier, projectIdentifier);
     return delegateProxyFactory.get(CVNGDataCollectionDelegateService.class, taskContext)
         .getDataCollectionResult(accountId, dataCollectionRequest, encryptedDataDetails);

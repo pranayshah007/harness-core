@@ -1,5 +1,7 @@
 package io.harness.connector.validator;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+
 import static software.wings.beans.TaskType.CVNG_CONNECTOR_VALIDATE_TASK;
 
 import io.harness.beans.DecryptableEntity;
@@ -20,6 +22,7 @@ import io.harness.service.DelegateGrpcClientWrapper;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import lombok.AccessLevel;
@@ -49,12 +52,16 @@ public class CVConnectorValidator extends AbstractConnectorValidator {
   public <T extends ConnectorConfigDTO> TaskParameters getTaskParameters(
       T connectorConfig, String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     List<DecryptableEntity> decryptableEntities = connectorConfig.getDecryptableEntities();
-    final List<EncryptedDataDetail> encryptionDetail =
-        super.getEncryptionDetail(decryptableEntities.size() > 0 ? decryptableEntities.get(0) : null, accountIdentifier,
-            orgIdentifier, projectIdentifier);
+    List<List<EncryptedDataDetail>> encryptedDetails = new ArrayList<>();
+    if (!isEmpty(decryptableEntities)) {
+      decryptableEntities.forEach(decryptableEntity
+          -> encryptedDetails.add(
+              super.getEncryptionDetail(decryptableEntity, accountIdentifier, orgIdentifier, projectIdentifier)));
+    }
+
     return CVConnectorTaskParams.builder()
         .connectorConfigDTO(connectorConfig)
-        .encryptionDetails(encryptionDetail)
+        .encryptionDetails(encryptedDetails)
         .build();
   }
 

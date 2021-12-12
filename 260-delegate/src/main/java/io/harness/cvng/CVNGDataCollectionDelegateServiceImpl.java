@@ -42,13 +42,18 @@ public class CVNGDataCollectionDelegateServiceImpl implements CVNGDataCollection
   @Inject private NGErrorHelper ngErrorHelper;
 
   @Override
-  public String getDataCollectionResult(
-      String accountId, DataCollectionRequest dataCollectionRequest, List<EncryptedDataDetail> encryptedDataDetails) {
+  public String getDataCollectionResult(String accountId, DataCollectionRequest dataCollectionRequest,
+      List<List<EncryptedDataDetail>> encryptedDataDetails) {
     List<DecryptableEntity> decryptableEntities =
         dataCollectionRequest.getConnectorConfigDTO().getDecryptableEntities();
+
     if (isNotEmpty(decryptableEntities)) {
-      decryptableEntities.forEach(
-          decryptableEntity -> secretDecryptionService.decrypt(decryptableEntity, encryptedDataDetails));
+      for (int decryptableEntityIndex = 0; decryptableEntityIndex < decryptableEntities.size();
+           decryptableEntityIndex++) {
+        DecryptableEntity decryptableEntity = decryptableEntities.get(decryptableEntityIndex);
+        List<EncryptedDataDetail> encryptedDataDetail = encryptedDataDetails.get(decryptableEntityIndex);
+        secretDecryptionService.decrypt(decryptableEntity, encryptedDataDetail);
+      }
     }
 
     try {

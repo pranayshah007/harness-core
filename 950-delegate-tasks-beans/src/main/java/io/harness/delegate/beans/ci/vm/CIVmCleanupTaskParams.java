@@ -22,6 +22,8 @@ import java.util.List;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class CIVmCleanupTaskParams implements CICleanupTaskParams, ExecutionCapabilityDemander {
   @NotNull private String stageRuntimeId;
+  @NotNull private String poolId;
+
   @Builder.Default private static final CICleanupTaskParams.Type type = CICleanupTaskParams.Type.VM;
 
   @Override
@@ -31,6 +33,6 @@ public class CIVmCleanupTaskParams implements CICleanupTaskParams, ExecutionCapa
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
-    return Collections.singletonList(CIVmConnectionCapability.builder().poolId().build());
+    return Collections.singletonList(CIVmConnectionCapability.builder().poolId(poolId).build());
   }
 }

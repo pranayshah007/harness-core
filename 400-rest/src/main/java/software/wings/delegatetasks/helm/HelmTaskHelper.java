@@ -2,6 +2,7 @@ package software.wings.delegatetasks.helm;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.task.helm.CustomManifestFetchTaskHelper.unzipManifestFiles;
 import static io.harness.delegate.task.helm.HelmTaskHelperBase.RESOURCE_DIR_BASE;
 import static io.harness.delegate.task.helm.HelmTaskHelperBase.getChartDirectory;
@@ -9,10 +10,12 @@ import static io.harness.exception.WingsException.USER;
 import static io.harness.filesystem.FileIo.createDirectoryIfDoesNotExist;
 import static io.harness.filesystem.FileIo.waitForDirectoryToBeAccessibleOutOfProcess;
 import static io.harness.helm.HelmConstants.CHARTS_YAML_KEY;
+import static io.harness.helm.HelmConstants.CHART_VERSION;
 import static io.harness.helm.HelmConstants.HELM_CACHE_HOME_PLACEHOLDER;
 import static io.harness.helm.HelmConstants.REPO_NAME;
 import static io.harness.helm.HelmConstants.V3Commands.HELM_CACHE_HOME;
 import static io.harness.helm.HelmConstants.V3Commands.HELM_CACHE_HOME_PATH;
+import static io.harness.helm.HelmConstants.V3Commands.HELM_CHART_VERSION_FLAG;
 import static io.harness.helm.HelmConstants.VALUES_YAML;
 import static io.harness.helm.HelmConstants.WORKING_DIR_BASE;
 import static io.harness.state.StateConstants.DEFAULT_STEADY_STATE_TIMEOUT;
@@ -483,6 +486,10 @@ public class HelmTaskHelper {
       command = fetchHelmChartVersionsCommandWithRepoFlags(helmChartConfigParams.getHelmVersion(),
           helmChartConfigParams.getChartName(), helmChartConfigParams.getRepoName(), destinationDirectory, tempDir);
     }
+    if (isNotEmpty(helmChartConfigParams.getChartVersion())) {
+      command =
+          command + HELM_CHART_VERSION_FLAG.replace(CHART_VERSION, helmChartConfigParams.getChartVersion().trim());
+    }
     String commandOutput = executeCommandWithLogOutput(environment, command, workingDirectory,
         "Helm chart fetch versions command failed ", HelmCliCommandType.FETCH_ALL_VERSIONS);
     if (log.isDebugEnabled()) {
@@ -549,6 +556,12 @@ public class HelmTaskHelper {
 
       String command = fetchHelmChartVersionsCommand(helmChartConfigParams.getHelmVersion(),
           helmChartConfigParams.getChartName(), helmChartConfigParams.getRepoName(), chartDirectory);
+
+      // fetch specific version
+      if (isNotEmpty(helmChartConfigParams.getChartVersion())) {
+        command =
+            command + HELM_CHART_VERSION_FLAG.replace(CHART_VERSION, helmChartConfigParams.getChartVersion().trim());
+      }
       String commandOutput = executeCommandWithLogOutput(Collections.emptyMap(), command, chartDirectory,
           "Helm chart fetch versions command failed ", HelmCliCommandType.FETCH_ALL_VERSIONS);
       return parseHelmVersionFetchOutput(commandOutput, helmChartCollectionParams);

@@ -3,7 +3,6 @@ package io.harness.cvng.servicelevelobjective.services.impl;
 import io.harness.cvng.servicelevelobjective.beans.SLIAnalyseRequest;
 import io.harness.cvng.servicelevelobjective.beans.SLIAnalyseResponse;
 import io.harness.cvng.servicelevelobjective.beans.SLIMetricType;
-import io.harness.cvng.servicelevelobjective.beans.SLIMissingDataType;
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.SLIMetricSpec;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord.SLIState;
 import io.harness.cvng.servicelevelobjective.services.api.SLIAnalyserService;
@@ -18,14 +17,13 @@ import java.util.Map;
 import org.apache.commons.lang3.tuple.Pair;
 
 public class SLIDataProcessorServiceImpl implements SLIDataProcessorService {
-  @Inject Map<SLIMetricType, SLIAnalyserService> sliAnalyserServiceMapBinder;
+  @Inject private Map<SLIMetricType, SLIAnalyserService> sliAnalyserServiceMapBinder;
 
   @Override
   public List<SLIAnalyseResponse> process(Map<String, List<SLIAnalyseRequest>> sliAnalyseRequestMap,
-      SLIMetricSpec sliSpec, Instant startTime, Instant endTime, SLIMissingDataType sliMissingDataType,
-      Long runningGoodCount, Long runningBadCount) {
+      SLIMetricSpec sliSpec, Instant startTime, Instant endTime) {
     List<SLIAnalyseResponse> sliAnalyseResponseList = new ArrayList<>();
-    Pair<Long, Long> runningCount = Pair.of(runningGoodCount, runningBadCount);
+    Pair<Long, Long> runningCount = Pair.of(0L, 0L);
     Map<Instant, Map<String, Double>> sliProcessRequestMap = new HashMap<>();
     for (Map.Entry<String, List<SLIAnalyseRequest>> entry : sliAnalyseRequestMap.entrySet()) {
       for (SLIAnalyseRequest sliAnalyseRequest : entry.getValue()) {
@@ -43,7 +41,7 @@ public class SLIDataProcessorServiceImpl implements SLIDataProcessorService {
       } else {
         sliState = SLIState.NO_DATA;
       }
-      runningCount = getRunningCount(runningCount, sliState, sliMissingDataType);
+      runningCount = getRunningCount(runningCount, sliState);
       sliAnalyseResponseList.add(SLIAnalyseResponse.builder()
                                      .sliState(sliState)
                                      .timeStamp(i)
@@ -54,20 +52,13 @@ public class SLIDataProcessorServiceImpl implements SLIDataProcessorService {
     return sliAnalyseResponseList;
   }
 
-  Pair<Long, Long> getRunningCount(
-      Pair<Long, Long> runningCount, SLIState sliState, SLIMissingDataType sliMissingDataType) {
+  Pair<Long, Long> getRunningCount(Pair<Long, Long> runningCount, SLIState sliState) {
     long runningGoodCount = runningCount.getKey();
     long runningBadCount = runningCount.getValue();
     if (SLIState.GOOD.equals(sliState)) {
       runningGoodCount++;
     } else if (SLIState.BAD.equals(sliState)) {
       runningBadCount++;
-    } else {
-      if (SLIMissingDataType.GOOD.equals(sliMissingDataType)) {
-        runningGoodCount++;
-      } else if (SLIMissingDataType.BAD.equals(sliMissingDataType)) {
-        runningBadCount++;
-      }
     }
     return Pair.of(runningGoodCount, runningBadCount);
   }

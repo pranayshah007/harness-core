@@ -1,0 +1,122 @@
+pipeline:
+  name: opa-pipeline
+  identifier: opapipeline
+  projectIdentifier: Local_Dev
+  orgIdentifier: default
+  tags: {}
+  stages:
+    - stage:
+        name: first app
+        identifier: first_app
+        description: ""
+        type: Approval
+        spec:
+          execution:
+            steps:
+              - step:
+                  name: Approval
+                  identifier: approval
+                  type: HarnessApproval
+                  timeout: 1d
+                  spec:
+                    approvalMessage: |-
+                      Please review the following information
+                      and approve the pipeline progression
+                    includePipelineExecutionHistory: true
+                    approvers:
+                      minimumCount: 1
+                      disallowPipelineExecutor: false
+                      userGroups: <+input>
+                    approverInputs: []
+              - step:
+                  type: JiraApproval
+                  name: jira app
+                  identifier: jira_app
+                  spec:
+                    connectorRef: jira_basic
+                    issueKey: PIE-1772
+                    approvalCriteria:
+                      type: KeyValues
+                      spec:
+                        matchAnyCondition: true
+                        conditions:
+                          - key: Status
+                            operator: equals
+                            value: Done
+                    rejectionCriteria:
+                      type: KeyValues
+                      spec:
+                        matchAnyCondition: true
+                        conditions: []
+                  timeout: 1d
+        tags: {}
+    - stage:
+        name: nm
+        identifier: nm
+        description: ""
+        type: Deployment
+        spec:
+          serviceConfig:
+            serviceRef: goodUpserteh
+            serviceDefinition:
+              type: Kubernetes
+              spec:
+                variables: []
+                artifacts:
+                  primary:
+                    type: DockerRegistry
+                    spec:
+                      connectorRef: nvh_docker
+                      imagePath: <+input>
+                      tag: <+input>
+          infrastructure:
+            environmentRef: PR_ENV
+            infrastructureDefinition:
+              type: KubernetesDirect
+              spec:
+                connectorRef: temp
+                namespace: mmmm
+                releaseName: release-<+INFRA_KEY>
+            allowSimultaneousDeployments: false
+          execution:
+            steps:
+              - step:
+                  type: Http
+                  name: mm
+                  identifier: mm
+                  spec:
+                    url: <+input>
+                    method: GET
+                    headers: []
+                    outputVariables: []
+                  timeout: 10s
+              - step:
+                  type: JiraApproval
+                  name: j app
+                  identifier: j_app
+                  spec:
+                    connectorRef: <+input>
+                    issueKey: PIE-1122
+                    approvalCriteria:
+                      type: KeyValues
+                      spec:
+                        matchAnyCondition: true
+                        conditions:
+                          - key: Status
+                            operator: equals
+                            value: Done
+                    rejectionCriteria:
+                      type: KeyValues
+                      spec:
+                        matchAnyCondition: true
+                        conditions: []
+                  timeout: 1d
+            rollbackSteps: []
+          serviceDependencies: []
+        tags: {}
+        failureStrategies:
+          - onFailure:
+              errors:
+                - AllErrors
+              action:
+                type: StageRollback

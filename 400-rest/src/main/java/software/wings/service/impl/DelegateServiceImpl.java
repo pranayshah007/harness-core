@@ -3783,7 +3783,7 @@ public class DelegateServiceImpl implements DelegateService {
   @Override
   public void validateDockerSetupDetailsNg(
       String accountId, DelegateSetupDetails delegateSetupDetails, String delegateType) {
-    validateDockerSetupDetails(accountId, delegateSetupDetails, delegateType);
+    validateDelegateSetupDetails(accountId, delegateSetupDetails, delegateType);
     if (hasToken(delegateSetupDetails)) {
       validateDelegateToken(accountId, delegateSetupDetails);
     }
@@ -3793,8 +3793,7 @@ public class DelegateServiceImpl implements DelegateService {
     return delegateSetupDetails != null && isNotBlank(delegateSetupDetails.getTokenName());
   }
 
-  @Override
-  public void validateDockerSetupDetails(
+  public void validateDelegateSetupDetails(
       String accountId, DelegateSetupDetails delegateSetupDetails, String delegateType) {
     if (delegateSetupDetails == null) {
       throw new InvalidRequestException("Delegate Setup Details must be provided.");
@@ -3833,7 +3832,11 @@ public class DelegateServiceImpl implements DelegateService {
 
   @Override
   public String createDelegateGroup(String accountId, DelegateSetupDetails delegateSetupDetails) {
-    validateDockerSetupDetails(accountId, delegateSetupDetails, DOCKER);
+    if (delegateSetupDetails != null && delegateSetupDetails.getDelegateType().equals(DOCKER)) {
+      validateDelegateSetupDetails(accountId, delegateSetupDetails, DOCKER);
+    } else {
+      validateDelegateSetupDetails(accountId, delegateSetupDetails, KUBERNETES);
+    }
     DelegateGroup delegateGroup = upsertDelegateGroup(delegateSetupDetails.getName(), accountId, delegateSetupDetails);
     return delegateGroup.getUuid();
   }

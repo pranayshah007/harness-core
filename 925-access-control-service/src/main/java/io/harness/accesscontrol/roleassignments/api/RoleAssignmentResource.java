@@ -8,6 +8,9 @@ import static io.harness.accesscontrol.common.filter.ManagedFilter.NO_FILTER;
 import static io.harness.accesscontrol.principals.PrincipalType.SERVICE_ACCOUNT;
 import static io.harness.accesscontrol.principals.PrincipalType.USER;
 import static io.harness.accesscontrol.principals.PrincipalType.USER_GROUP;
+import static io.harness.accesscontrol.resources.resourcegroups.HarnessResourceGroupConstants.DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER;
+import static io.harness.accesscontrol.resources.resourcegroups.HarnessResourceGroupConstants.DEFAULT_ORGANIZATION_LEVEL_RESOURCE_GROUP_IDENTIFIER;
+import static io.harness.accesscontrol.resources.resourcegroups.HarnessResourceGroupConstants.DEFAULT_PROJECT_LEVEL_RESOURCE_GROUP_IDENTIFIER;
 import static io.harness.accesscontrol.roleassignments.api.RoleAssignmentDTO.MODEL_NAME;
 import static io.harness.accesscontrol.roleassignments.api.RoleAssignmentDTOMapper.fromDTO;
 import static io.harness.accesscontrol.roleassignments.api.RoleAssignmentDTOMapper.toDTO;
@@ -38,6 +41,7 @@ import io.harness.accesscontrol.principals.usergroups.UserGroupService;
 import io.harness.accesscontrol.principals.users.HarnessUserService;
 import io.harness.accesscontrol.principals.users.UserService;
 import io.harness.accesscontrol.resourcegroups.api.ResourceGroupDTO;
+import io.harness.accesscontrol.resources.resourcegroups.HarnessResourceGroupConstants;
 import io.harness.accesscontrol.resources.resourcegroups.HarnessResourceGroupService;
 import io.harness.accesscontrol.resources.resourcegroups.ResourceGroupService;
 import io.harness.accesscontrol.resources.resourcegroups.api.ResourceGroupDTOMapper;
@@ -310,6 +314,7 @@ public class RoleAssignmentResource {
   public ResponseDTO<RoleAssignmentResponseDTO>
   create(@BeanParam HarnessScopeParams harnessScopeParams, @Body RoleAssignmentDTO roleAssignmentDTO) {
     Scope scope = ScopeMapper.fromParams(harnessScopeParams);
+    validateDeprecatedResourceGroupNotUsed(roleAssignmentDTO.getResourceGroupIdentifier(), scope.getLevel().toString());
     RoleAssignment roleAssignment = fromDTO(scope, roleAssignmentDTO);
     syncDependencies(roleAssignment, scope);
     checkUpdatePermission(harnessScopeParams, roleAssignment);
@@ -320,6 +325,13 @@ public class RoleAssignmentResource {
           response.getScope().getAccountIdentifier(), response.getRoleAssignment(), response.getScope()));
       return ResponseDTO.newResponse(response);
     }));
+  }
+
+  private static void validateDeprecatedResourceGroupNotUsed(String resourceGroupIdentifier, String scopeLevel) {
+    if (HarnessResourceGroupConstants.DEFAULT_RESOURCE_GROUP_IDENTIFIER.equals(resourceGroupIdentifier)) {
+      throw new InvalidRequestException(
+          String.format("_all_resources is deprecated, please use _all_%s_level_resources.", scopeLevel));
+    }
   }
 
   @PUT
@@ -336,6 +348,7 @@ public class RoleAssignmentResource {
     if (!identifier.equals(roleAssignmentDTO.getIdentifier())) {
       throw new InvalidRequestException("Role Assignment identifier in the request body and the url do not match.");
     }
+    validateDeprecatedResourceGroupNotUsed(roleAssignmentDTO.getResourceGroupIdentifier(), scope.getLevel().toString());
     RoleAssignment roleAssignmentUpdate = fromDTO(scope, roleAssignmentDTO);
     checkUpdatePermission(harnessScopeParams, roleAssignmentUpdate);
     return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
@@ -362,6 +375,11 @@ public class RoleAssignmentResource {
   public ResponseDTO<List<RoleAssignmentResponseDTO>>
   create(@BeanParam HarnessScopeParams harnessScopeParams,
       @Body RoleAssignmentCreateRequestDTO roleAssignmentCreateRequestDTO) {
+    Scope scope = ScopeMapper.fromParams(harnessScopeParams);
+    roleAssignmentCreateRequestDTO.getRoleAssignments().forEach(roleAssignmentDTO -> {
+      validateDeprecatedResourceGroupNotUsed(
+          roleAssignmentDTO.getResourceGroupIdentifier(), scope.getLevel().toString());
+    });
     return ResponseDTO.newResponse(createRoleAssignments(harnessScopeParams, roleAssignmentCreateRequestDTO, false));
   }
 
@@ -379,7 +397,35 @@ public class RoleAssignmentResource {
   create(@BeanParam HarnessScopeParams harnessScopeParams,
       @Body RoleAssignmentCreateRequestDTO roleAssignmentCreateRequestDTO,
       @QueryParam("managed") @DefaultValue("false") Boolean managed) {
+    List<RoleAssignmentDTO> roleAssignmentDTOs = new ArrayList<>();
+    roleAssignmentCreateRequestDTO.getRoleAssignments().forEach(roleAssignmentDTO -> {
+      if (HarnessResourceGroupConstants.DEFAULT_RESOURCE_GROUP_IDENTIFIER.equals(
+              roleAssignmentDTO.getResourceGroupIdentifier())) {
+        roleAssignmentDTOs.add(RoleAssignmentDTO.builder()
+                                   .disabled(roleAssignmentDTO.isDisabled())
+                                   .identifier(roleAssignmentDTO.getIdentifier())
+                                   .managed(roleAssignmentDTO.isManaged())
+                                   .principal(roleAssignmentDTO.getPrincipal())
+                                   .roleIdentifier(roleAssignmentDTO.getRoleIdentifier())
+                                   .resourceGroupIdentifier(getDefaultResourceGroupIdentifier(harnessScopeParams))
+                                   .build());
+      } else {
+        roleAssignmentDTOs.add(roleAssignmentDTO);
+      }
+    });
+    roleAssignmentCreateRequestDTO =
+        RoleAssignmentCreateRequestDTO.builder().roleAssignments(roleAssignmentDTOs).build();
     return ResponseDTO.newResponse(createRoleAssignments(harnessScopeParams, roleAssignmentCreateRequestDTO, managed));
+  }
+
+  private String getDefaultResourceGroupIdentifier(HarnessScopeParams harnessScopeParams) {
+    if (isNotEmpty(harnessScopeParams.getProjectIdentifier())) {
+      return DEFAULT_PROJECT_LEVEL_RESOURCE_GROUP_IDENTIFIER;
+    } else if (isNotEmpty(harnessScopeParams.getOrgIdentifier())) {
+      return DEFAULT_ORGANIZATION_LEVEL_RESOURCE_GROUP_IDENTIFIER;
+    } else {
+      return DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER;
+    }
   }
 
   @POST

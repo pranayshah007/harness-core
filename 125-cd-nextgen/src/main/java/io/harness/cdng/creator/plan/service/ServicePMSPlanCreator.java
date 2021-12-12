@@ -1,6 +1,7 @@
 package io.harness.cdng.creator.plan.service;
 
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -11,6 +12,7 @@ import io.harness.cdng.creator.plan.manifest.ManifestsPlanCreator;
 import io.harness.cdng.creator.plan.stage.DeploymentStageConfig;
 import io.harness.cdng.infra.steps.EnvironmentStep;
 import io.harness.cdng.infra.steps.InfraSectionStepParameters;
+import io.harness.cdng.licenserestriction.EnforcementValidator;
 import io.harness.cdng.manifest.yaml.ManifestOverrideSets.ManifestOverrideSetsStepParametersWrapper;
 import io.harness.cdng.service.ServiceSpec;
 import io.harness.cdng.service.beans.ServiceConfig;
@@ -40,6 +42,7 @@ import io.harness.pms.plan.creation.PlanCreatorUtils;
 import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
 import io.harness.pms.sdk.core.adviser.success.OnSuccessAdviserParameters;
 import io.harness.pms.sdk.core.plan.PlanNode;
+import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlField;
@@ -47,6 +50,8 @@ import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.KryoSerializer;
 
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import com.google.protobuf.ByteString;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -54,13 +59,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import lombok.experimental.UtilityClass;
 
 @OwnedBy(HarnessTeam.CDC)
-@UtilityClass
+@Singleton
 public class ServicePMSPlanCreator {
+  @Inject EnforcementValidator enforcementValidator;
+
   public PlanCreationResponse createPlanForServiceNode(YamlField serviceField, ServiceConfig serviceConfig,
-      KryoSerializer kryoSerializer, InfraSectionStepParameters infraSectionStepParameters) {
+      KryoSerializer kryoSerializer, InfraSectionStepParameters infraSectionStepParameters, PlanCreationContext ctx) {
+    enforcementValidator.validate(ctx.getMetadata().getAccountIdentifier(), ctx.getMetadata().getOrgIdentifier(),
+        ctx.getMetadata().getProjectIdentifier(), ctx.getMetadata().getMetadata().getPipelineIdentifier(),
+        ctx.getYaml(), ctx.getMetadata().getMetadata().getExecutionUuid());
     YamlNode serviceNode = serviceField.getNode();
     ServiceConfig actualServiceConfig = getActualServiceConfig(serviceConfig, serviceField);
     actualServiceConfig = applyUseFromStageOverrides(actualServiceConfig);
@@ -68,17 +77,17 @@ public class ServicePMSPlanCreator {
     Map<String, PlanNode> planNodes = new HashMap<>();
     List<String> serviceSpecChildrenIds = new ArrayList<>();
     PlanCreationResponse response = ArtifactsPlanCreator.createPlanForArtifactsNode(actualServiceConfig);
-    if (response != null && EmptyPredicate.isNotEmpty(response.getNodes())) {
+    if (response != null && isNotEmpty(response.getNodes())) {
       planNodes.putAll(response.getNodes());
-      if (EmptyPredicate.isNotEmpty(response.getStartingNodeId())) {
+      if (isNotEmpty(response.getStartingNodeId())) {
         serviceSpecChildrenIds.add(response.getStartingNodeId());
       }
     }
 
     response = ManifestsPlanCreator.createPlanForManifestsNode(actualServiceConfig);
-    if (response != null && EmptyPredicate.isNotEmpty(response.getNodes())) {
+    if (response != null && isNotEmpty(response.getNodes())) {
       planNodes.putAll(response.getNodes());
-      if (EmptyPredicate.isNotEmpty(response.getStartingNodeId())) {
+      if (isNotEmpty(response.getStartingNodeId())) {
         serviceSpecChildrenIds.add(response.getStartingNodeId());
       }
     }

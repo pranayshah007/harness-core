@@ -26,6 +26,12 @@ server:
     appenders: []
   maxThreads: 1024
 
+pipelineExecutionPoolConfig:
+  corePoolSize: ${PIPELINE_EXECUTION_POOL_CORE_SIZE:-5}
+  maxPoolSize: ${PIPELINE_EXECUTION_POOL_MAX_SIZE:-10}
+  idleTime: ${PIPELINE_EXECUTION_POOL_IDLE_TIME:-10}
+  timeUnit: ${PIPELINE_EXECUTION_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
+
 commonPoolConfig:
   corePoolSize: ${COMMON_POOL_CORE_SIZE:-10}
   maxPoolSize: ${COMMON_POOL_MAX_SIZE:-100}
@@ -37,6 +43,12 @@ orchestrationVisualizationThreadPoolConfig:
   maxPoolSize: ${ORCHESTRATION_VISUALIZATION_POOL_MAX_SIZE:-20}
   idleTime: ${ORCHESTRATION_VISUALIZATION_POOL_IDLE_TIME:-10}
   timeUnit: ${ORCHESTRATION_VISUALIZATION_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
+
+orchestrationPoolConfig:
+  corePoolSize: ${ORCHESTRATION_POOL_CORE_SIZE:-20}
+  maxPoolSize: ${ORCHESTRATION_POOL_MAX_SIZE:-100}
+  idleTime: ${ORCHESTRATION_POOL_IDLE_TIME:-500}
+  timeUnit: ${ORCHESTRATION_POOL_IDLE_TIME_TIME_UNIT:-SECONDS}
 
 pmsSdkExecutionPoolConfig:
   corePoolSize: ${PMS_SDK_EXECUTION_POOL_CORE_SIZE:-20}
@@ -330,5 +342,7 @@ segmentConfiguration:
 
 enforcementClientConfiguration:
   enforcementCheckEnabled: false
+
+shouldUseInstanceCache: true
 
 

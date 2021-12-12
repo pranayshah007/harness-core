@@ -1,5 +1,8 @@
 package io.harness.enforcement.utils;
 
+import static io.harness.configuration.DeployVariant.DEPLOY_VERSION;
+
+import io.harness.configuration.DeployVariant;
 import io.harness.enforcement.beans.metadata.AvailabilityRestrictionMetadataDTO;
 import io.harness.enforcement.beans.metadata.RateLimitRestrictionMetadataDTO;
 import io.harness.enforcement.beans.metadata.RestrictionMetadataDTO;
@@ -17,8 +20,14 @@ public class SuggestionMessageUtils {
   private static final String SEMI_COLON = ";";
   private static final String UPGRADE_PLAN = ". Plan to upgrade: ";
 
+  private static String deployVersion = System.getenv().get(DEPLOY_VERSION);
+
   public String generateSuggestionMessage(String message, Edition edition,
       Map<Edition, RestrictionMetadataDTO> restrictionMetadataDTOMap, String enableDefinition) {
+    if (DeployVariant.isCommunity(deployVersion)) {
+      return message;
+    }
+
     StringBuilder suggestionMessage = new StringBuilder();
     suggestionMessage.append(message).append(UPGRADE_PLAN);
     List<Edition> superiorEditions = Edition.getSuperiorEdition(edition);

@@ -1,6 +1,7 @@
 package io.harness.ng.accesscontrol.migrations.services;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.ng.core.invites.mapper.RoleBindingMapper.getDefaultResourceGroupIdentifier;
 
 import static java.util.Collections.emptyList;
 
@@ -61,7 +62,6 @@ import org.springframework.data.mongodb.core.query.Criteria;
 @Slf4j
 public class AccessControlMigrationServiceImpl implements AccessControlMigrationService {
   public static final int BATCH_SIZE = 5;
-  public static final String ALL_RESOURCES = "_all_resources";
   private final AccessControlMigrationDAO accessControlMigrationDAO;
   private final ProjectService projectService;
   private final OrganizationService organizationService;
@@ -234,7 +234,9 @@ public class AccessControlMigrationServiceImpl implements AccessControlMigration
     }
 
     log.info("Created {} NON-MANAGED role assignments from UserMembership for scope: {}",
-        createRoleAssignments(scope, false, buildRoleAssignments(users, getManagedAdminRole(scope))), scope);
+        createRoleAssignments(scope, false,
+            buildRoleAssignments(users, getManagedAdminRole(scope), getDefaultResourceGroupIdentifier(scope))),
+        scope);
   }
 
   private void assignAdminAndViewerRoleToCGUsers(Scope scope) {
@@ -248,7 +250,10 @@ public class AccessControlMigrationServiceImpl implements AccessControlMigration
     currentGenUsers.forEach(userId -> upsertUserMembership(scope, userId));
 
     log.info("Created {} NON-MANAGED role assignments from CG Users for scope: {}",
-        createRoleAssignments(scope, false, buildRoleAssignments(currentGenUsers, getManagedAdminRole(scope))), scope);
+        createRoleAssignments(scope, false,
+            buildRoleAssignments(
+                currentGenUsers, getManagedAdminRole(scope), getDefaultResourceGroupIdentifier(scope))),
+        scope);
   }
 
   private void upsertUserMembership(Scope scope, String userId) {
@@ -275,14 +280,15 @@ public class AccessControlMigrationServiceImpl implements AccessControlMigration
     }
   }
 
-  private List<RoleAssignmentDTO> buildRoleAssignments(Collection<String> userIds, String roleIdentifier) {
+  private List<RoleAssignmentDTO> buildRoleAssignments(
+      Collection<String> userIds, String roleIdentifier, String resourceGroupIdentifier) {
     return userIds.stream()
         .map(userId
             -> RoleAssignmentDTO.builder()
                    .disabled(false)
                    .identifier("role_assignment_".concat(CryptoUtils.secureRandAlphaNumString(20)))
                    .roleIdentifier(roleIdentifier)
-                   .resourceGroupIdentifier(ALL_RESOURCES)
+                   .resourceGroupIdentifier(resourceGroupIdentifier)
                    .principal(PrincipalDTO.builder().identifier(userId).type(PrincipalType.USER).build())
                    .build())
         .collect(Collectors.toList());

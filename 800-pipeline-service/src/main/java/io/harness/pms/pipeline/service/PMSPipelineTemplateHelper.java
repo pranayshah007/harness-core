@@ -38,11 +38,16 @@ public class PMSPipelineTemplateHelper {
 
   public TemplateMergeResponseDTO resolveTemplateRefsInPipeline(
       String accountId, String orgId, String projectId, String yaml) {
+    return resolveTemplateRefsInPipeline(accountId, orgId, projectId, yaml, false);
+  }
+
+  public TemplateMergeResponseDTO resolveTemplateRefsInPipeline(
+      String accountId, String orgId, String projectId, String yaml, boolean checkForTemplateAccess) {
     if (pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.NG_TEMPLATES)) {
       String TEMPLATE_RESOLVE_EXCEPTION_MSG = "Exception in resolving template refs in given pipeline yaml.";
       try {
-        return NGRestUtils.getResponse(templateResourceClient.applyTemplatesOnGivenYaml(
-            accountId, orgId, projectId, TemplateApplyRequestDTO.builder().originalEntityYaml(yaml).build()));
+        return NGRestUtils.getResponse(templateResourceClient.applyTemplatesOnGivenYaml(accountId, orgId, projectId,
+            TemplateApplyRequestDTO.builder().originalEntityYaml(yaml).checkForAccess(checkForTemplateAccess).build()));
       } catch (InvalidRequestException e) {
         if (e.getMetadata() instanceof TemplateInputsErrorMetadataDTO) {
           throw new NGTemplateResolveException(

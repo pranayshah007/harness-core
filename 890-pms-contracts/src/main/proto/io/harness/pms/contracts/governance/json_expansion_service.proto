@@ -10,6 +10,7 @@ service JsonExpansionService {
 
 message ExpansionRequestBatch {
   repeated ExpansionRequestProto expansionRequestProto = 1;
+  ExpansionRequestMetadata requestMetadata = 2;
 }
 
 message ExpansionRequestProto {
@@ -34,4 +35,11 @@ enum ExpansionPlacementStrategy {
   REPLACE = 0;
   PARALLEL = 1;
   MOVE_UP = 2;
+}
+
+message ExpansionRequestMetadata {
+  string accountId = 1;
+  string projectId = 2;
+  string orgId = 3;
+  bytes gitSyncBranchContext = 4;
 }

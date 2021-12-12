@@ -26,6 +26,7 @@ import io.harness.pms.contracts.execution.events.OrchestrationEvent;
 import io.harness.pms.contracts.execution.events.OrchestrationEventType;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.execution.utils.StatusUtils;
+import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.repositories.PlanExecutionRepository;
 
 import com.google.inject.Inject;
@@ -33,6 +34,7 @@ import com.google.inject.Singleton;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -193,5 +195,22 @@ public class PlanExecutionServiceImpl implements PlanExecutionService {
       field = field.include(fieldName);
     }
     return mongoTemplate.find(query, PlanExecution.class);
+  }
+
+  @Override
+  public List<PlanExecution> findAllByAccountIdAndOrgIdAndProjectIdAndLastUpdatedAtInBetweenTimestamps(
+      String accountId, String orgId, String projectId, long fromTS, long toTS) {
+    Map<String, String> setupAbstractionSubFields = new HashMap<>();
+    setupAbstractionSubFields.put(SetupAbstractionKeys.accountId, accountId);
+    setupAbstractionSubFields.put(SetupAbstractionKeys.orgIdentifier, orgId);
+    setupAbstractionSubFields.put(SetupAbstractionKeys.projectIdentifier, projectId);
+    Criteria criteria = new Criteria()
+                            .and(PlanExecutionKeys.setupAbstractions)
+                            .is(setupAbstractionSubFields)
+                            .and(PlanExecutionKeys.lastUpdatedAt)
+                            .gte(fromTS)
+                            .lte(toTS);
+
+    return mongoTemplate.find(query(criteria), PlanExecution.class);
   }
 }

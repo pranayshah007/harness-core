@@ -68,10 +68,8 @@ public class StackdriverCVConfig extends MetricCVConfig {
   protected void validateParams() {
     checkNotNull(metricInfoList, generateErrorMessageFromParam(StackdriverCVConfigKeys.metricInfoList));
 
-    metricInfoList.forEach(metricInfo -> {
-      StackDriverMetricDefinition.extractFromJson(metricInfo.getJsonMetricDefinition());
-      checkNotNull(metricInfo.getMetricType(), generateErrorMessageFromParam("metricType"));
-    });
+    metricInfoList.forEach(
+        metricInfo -> { StackDriverMetricDefinition.extractFromJson(metricInfo.getJsonMetricDefinition()); });
   }
 
   public void fromStackdriverDefinitions(

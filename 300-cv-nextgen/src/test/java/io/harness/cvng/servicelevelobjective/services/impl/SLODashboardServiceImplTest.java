@@ -3,6 +3,7 @@ package io.harness.cvng.servicelevelobjective.services.impl;
 import static io.harness.rule.OwnerRule.KAMAL;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.offset;
 
 import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
@@ -18,13 +19,11 @@ import io.harness.cvng.servicelevelobjective.beans.ServiceLevelObjectiveDTO;
 import io.harness.cvng.servicelevelobjective.services.api.SLODashboardService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveService;
 import io.harness.ng.beans.PageResponse;
-import io.harness.ng.core.common.beans.NGTag;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
+import java.time.Instant;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -76,19 +75,22 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     assertThat(pageResponse.getTotalItems()).isEqualTo(1);
     List<SLODashboardWidget> sloDashboardWidgets = pageResponse.getContent();
     assertThat(sloDashboardWidgets).hasSize(1);
-    assertThat(sloDashboardWidgets.get(0).getHealthSourceIdentifier()).isEqualTo(healthSource.getIdentifier());
-    assertThat(sloDashboardWidgets.get(0).getHealthSourceName()).isEqualTo(healthSource.getName());
-    assertThat(sloDashboardWidgets.get(0).getMonitoredServiceIdentifier()).isEqualTo(monitoredServiceIdentifier);
-    assertThat(sloDashboardWidgets.get(0).getMonitoredServiceName()).isEqualTo(monitoredServiceDTO.getName());
-    assertThat(sloDashboardWidgets.get(0).getTags()).isEqualTo(getNGTags(serviceLevelObjective.getTags()));
-    assertThat(sloDashboardWidgets.get(0).getType())
+    SLODashboardWidget sloDashboardWidget = sloDashboardWidgets.get(0);
+    assertThat(sloDashboardWidget.getSloIdentifier()).isEqualTo(serviceLevelObjective.getIdentifier());
+    assertThat(sloDashboardWidget.getHealthSourceIdentifier()).isEqualTo(healthSource.getIdentifier());
+    assertThat(sloDashboardWidget.getHealthSourceName()).isEqualTo(healthSource.getName());
+    assertThat(sloDashboardWidget.getMonitoredServiceIdentifier()).isEqualTo(monitoredServiceIdentifier);
+    assertThat(sloDashboardWidget.getMonitoredServiceName()).isEqualTo(monitoredServiceDTO.getName());
+    assertThat(sloDashboardWidget.getTags()).isEqualTo(serviceLevelObjective.getTags());
+    assertThat(sloDashboardWidget.getType())
         .isEqualTo(serviceLevelObjective.getServiceLevelIndicators().get(0).getType());
-  }
-
-  private List<NGTag> getNGTags(Map<String, String> tags) {
-    return tags.entrySet()
-        .stream()
-        .map(entry -> NGTag.builder().key(entry.getKey()).value(entry.getValue()).build())
-        .collect(Collectors.toList());
+    assertThat(sloDashboardWidget.getSloTargetType()).isEqualTo(serviceLevelObjective.getTarget().getType());
+    assertThat(sloDashboardWidget.getCurrentPeriodLengthDays()).isEqualTo(30);
+    assertThat(sloDashboardWidget.getCurrentPeriodStartTime())
+        .isEqualTo(Instant.parse("2020-06-27T00:00:00Z").toEpochMilli());
+    assertThat(sloDashboardWidget.getCurrentPeriodEndTime())
+        .isEqualTo(Instant.parse("2020-07-28T00:00:00Z").toEpochMilli());
+    assertThat(sloDashboardWidget.getErrorBudgetRemaining()).isEqualTo(8640);
+    assertThat(sloDashboardWidget.getSloTargetPercentage()).isCloseTo(80, offset(.0001));
   }
 }

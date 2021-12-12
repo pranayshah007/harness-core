@@ -1,5 +1,6 @@
 package io.harness.cvng.servicelevelobjective.beans;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
@@ -11,7 +12,6 @@ public class ServiceLevelIndicatorDTO {
   String identifier;
   @NotNull ServiceLevelIndicatorType type;
   @NotNull ServiceLevelIndicatorSpec spec;
-  // TODO Not null constraint post UI changes
-  SLIMissingDataType sliMissingDataType;
-  String healthSourceIdentifier;
+  @NotNull SLIMissingDataType sliMissingDataType;
+  @JsonIgnore String healthSourceRef; // TODO: we need to move health source ref to this level.
 }

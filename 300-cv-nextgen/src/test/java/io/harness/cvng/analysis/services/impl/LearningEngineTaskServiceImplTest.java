@@ -6,6 +6,7 @@ import static io.harness.cvng.analysis.entities.LearningEngineTask.LearningEngin
 import static io.harness.cvng.beans.DataSourceType.APP_DYNAMICS;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.persistence.HQuery.excludeAuthority;
+import static io.harness.rule.OwnerRule.KANHAIYA;
 import static io.harness.rule.OwnerRule.PRAVEEN;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -15,6 +16,7 @@ import static org.mockito.Mockito.when;
 
 import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
+import io.harness.cvng.analysis.beans.ExceptionInfo;
 import io.harness.cvng.analysis.entities.LearningEngineTask;
 import io.harness.cvng.analysis.entities.LearningEngineTask.ExecutionStatus;
 import io.harness.cvng.analysis.entities.TimeSeriesLearningEngineTask;
@@ -204,10 +206,24 @@ public class LearningEngineTaskServiceImplTest extends CvNextGenTestBase {
     LearningEngineTask taskToSave = getTaskToSave(ExecutionStatus.RUNNING);
     hPersistence.save(taskToSave);
 
-    learningEngineTaskService.markFailure(taskToSave.getUuid());
+    learningEngineTaskService.markFailure(taskToSave.getUuid(), ExceptionInfo.builder().build());
     taskToSave = hPersistence.get(LearningEngineTask.class, taskToSave.getUuid());
 
     assertThat(taskToSave.getTaskStatus().name()).isEqualTo(ExecutionStatus.FAILED.name());
+  }
+
+  @Test
+  @Owner(developers = KANHAIYA)
+  @Category(UnitTests.class)
+  public void testMarkFailed_exceptionIsUpdated() {
+    LearningEngineTask taskToSave = getTaskToSave(ExecutionStatus.RUNNING);
+    hPersistence.save(taskToSave);
+
+    learningEngineTaskService.markFailure(taskToSave.getUuid(),
+        ExceptionInfo.builder().exception("some-exception").stackTrace("some-stacktrace").build());
+    taskToSave = hPersistence.get(LearningEngineTask.class, taskToSave.getUuid());
+    assertThat(taskToSave.getException()).isEqualTo("some-exception");
+    assertThat(taskToSave.getStackTrace()).isEqualTo("some-stacktrace");
   }
 
   @Test
@@ -216,7 +232,8 @@ public class LearningEngineTaskServiceImplTest extends CvNextGenTestBase {
   public void testMarkFailed_badTaskId() {
     LearningEngineTask taskToSave = getTaskToSave(ExecutionStatus.RUNNING);
     hPersistence.save(taskToSave);
-    assertThatThrownBy(() -> learningEngineTaskService.markFailure(null)).isInstanceOf(NullPointerException.class);
+    assertThatThrownBy(() -> learningEngineTaskService.markFailure(null, ExceptionInfo.builder().build()))
+        .isInstanceOf(NullPointerException.class);
   }
 
   private LearningEngineTask getTaskToSave(ExecutionStatus taskStatus) {

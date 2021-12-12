@@ -37,7 +37,13 @@ public class PipelineServiceGrpcModuleTest extends CategoryTest {
     PipelineServiceGrpcModule pipelineServiceGrpcModule = PipelineServiceGrpcModule.getInstance();
     Map<ModuleType, JsonExpansionServiceBlockingStub> jsonExpansionHandlerClients =
         pipelineServiceGrpcModule.getJsonExpansionHandlerClients(configuration);
-    assertThat(jsonExpansionHandlerClients).hasSize(2);
-    assertThat(jsonExpansionHandlerClients).containsOnlyKeys(ModuleType.CD, ModuleType.CI);
+    assertThat(jsonExpansionHandlerClients).hasSize(3);
+    assertThat(jsonExpansionHandlerClients).containsOnlyKeys(ModuleType.CD, ModuleType.CI, ModuleType.PMS);
+
+    grpcClientConfigMap.clear();
+    pipelineServiceGrpcModule = PipelineServiceGrpcModule.getInstance();
+    jsonExpansionHandlerClients = pipelineServiceGrpcModule.getJsonExpansionHandlerClients(configuration);
+    assertThat(jsonExpansionHandlerClients).hasSize(1);
+    assertThat(jsonExpansionHandlerClients).containsOnlyKeys(ModuleType.PMS);
   }
 }

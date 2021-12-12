@@ -3,7 +3,10 @@ package software.wings.service.impl.applicationmanifest;
 import static io.harness.beans.SearchFilter.Operator.CONTAINS;
 import static io.harness.beans.SearchFilter.Operator.EQ;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.delegate.beans.TaskData.DEFAULT_SYNC_CALL_TIMEOUT;
 import static io.harness.validation.Validator.notNullCheck;
+
+import static software.wings.beans.TaskType.HELM_COLLECT_CHART;
 
 import static java.util.regex.Pattern.compile;
 import static java.util.stream.Collectors.groupingBy;
@@ -14,31 +17,41 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.beans.DelegateTask;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.beans.SortOrder;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.delegate.beans.TaskData;
 
 import software.wings.beans.appmanifest.ApplicationManifest;
 import software.wings.beans.appmanifest.HelmChart;
 import software.wings.beans.appmanifest.HelmChart.HelmChartKeys;
 import software.wings.dl.WingsPersistence;
+import software.wings.helpers.ext.helm.response.HelmCollectChartResponse;
+import software.wings.service.impl.DelegateServiceImpl;
 import software.wings.service.intfc.ApplicationManifestService;
 import software.wings.service.intfc.applicationmanifest.HelmChartService;
 
 import com.google.inject.Inject;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.Sort;
 
+@Slf4j
 @OwnedBy(HarnessTeam.CDC)
 @TargetModule(HarnessModule._870_CG_ORCHESTRATION)
 public class HelmChartServiceImpl implements HelmChartService {
   @Inject private WingsPersistence wingsPersistence;
   @Inject private ApplicationManifestService applicationManifestService;
+  @Inject private ManifestCollectionUtils manifestCollectionUtils;
+  @Inject private DelegateServiceImpl delegateService;
+  @Inject private HelmChartService helmChartService;
 
   @Override
   public HelmChart create(HelmChart helmChart) {
@@ -177,5 +190,40 @@ public class HelmChartServiceImpl implements HelmChartService {
                                  .filter(HelmChartKeys.applicationManifestId, applicationManifest.getUuid())
                                  .filter(HelmChartKeys.version, chartVersion);
     return query.get();
+  }
+
+  @Override
+  public HelmChart fetchByChartVersion(
+      String accountId, String appId, String serviceId, String appManifestName, String chartVersion) {
+    ApplicationManifest applicationManifest =
+        applicationManifestService.getAppManifestByName(appId, null, serviceId, appManifestName);
+    notNullCheck("App manifest with name " + appManifestName + " doesn't belong to the given app and service",
+        applicationManifest);
+
+    DelegateTask delegateTask =
+        DelegateTask.builder()
+            .accountId(accountId)
+            .data(TaskData.builder()
+                      .async(false)
+                      .taskType(HELM_COLLECT_CHART.name())
+                      .timeout(DEFAULT_SYNC_CALL_TIMEOUT)
+                      .parameters(new Object[] {manifestCollectionUtils.prepareCollectTaskParamsWithChartVersion(
+                          applicationManifest.getUuid(), appId, chartVersion)})
+                      .build())
+            .build();
+
+    HelmCollectChartResponse helmCollectChartResponse = null;
+    try {
+      helmCollectChartResponse = delegateService.executeTask(delegateTask);
+    } catch (InterruptedException e) {
+      log.error("Delegate Service execute task : fetchChartVersion" + e);
+    }
+
+    HelmChart helmChart = helmCollectChartResponse == null ? null : helmCollectChartResponse.getHelmChart();
+
+    if (helmChart != null) {
+      addCollectedHelmCharts(accountId, applicationManifest.getUuid(), Collections.singletonList(helmChart));
+    }
+    return helmChart;
   }
 }

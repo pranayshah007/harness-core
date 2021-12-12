@@ -1,6 +1,10 @@
 package io.harness.delegate.task.citasks.vm.helper;
 
+import io.harness.delegate.beans.ci.vm.runner.DestroyVmRequest;
+import io.harness.delegate.beans.ci.vm.runner.ExecuteStepRequest;
 import io.harness.delegate.beans.ci.vm.runner.ExecuteStepResponse;
+import io.harness.delegate.beans.ci.vm.runner.SetupVmRequest;
+import io.harness.delegate.beans.ci.vm.runner.SetupVmResponse;
 import io.harness.delegate.beans.ci.vm.runner.PoolOwnerStepResponse;
 
 import java.util.Map;
@@ -14,11 +18,11 @@ public interface RunnerRestClient {
   @Headers("Accept: application/json")
   Call<PoolOwnerStepResponse> poolOwner(@Body Map<String, String> parameters);
 
-  @POST("setup") @Headers("Accept: application/json") Call<Void> setup(@Body Map<String, String> parameters);
+  @POST("setup") @Headers("Accept: application/json") Call<SetupVmResponse> setup(@Body SetupVmRequest setupVmRequest);
 
   @POST("step")
   @Headers("Accept: application/json")
-  Call<ExecuteStepResponse> step(@Body Map<String, String> parameters);
+  Call<ExecuteStepResponse> step(@Body ExecuteStepRequest executeStepRequest);
 
-  @POST("destroy") @Headers("Accept: application/json") Call<Void> destroy(@Body Map<String, String> parameters);
+  @POST("destroy") @Headers("Accept: application/json") Call<Void> destroy(@Body DestroyVmRequest destroyVmRequest);
 }

@@ -1,5 +1,6 @@
 package io.harness.cvng.analysis.services.api;
 
+import io.harness.cvng.analysis.beans.ExceptionInfo;
 import io.harness.cvng.analysis.entities.LearningEngineTask;
 import io.harness.cvng.analysis.entities.LearningEngineTask.ExecutionStatus;
 import io.harness.cvng.analysis.entities.LearningEngineTask.LearningEngineTaskType;
@@ -15,7 +16,7 @@ public interface LearningEngineTaskService {
   String createLearningEngineTask(LearningEngineTask learningEngineTask);
   Map<String, ExecutionStatus> getTaskStatus(Set<String> taskIds);
   void markCompleted(String taskId);
-  void markFailure(String taskId);
+  void markFailure(String taskId, ExceptionInfo exceptionInfo);
   String createFailureUrl(String taskId);
   LearningEngineTask get(String learningEngineTaskId);
 }

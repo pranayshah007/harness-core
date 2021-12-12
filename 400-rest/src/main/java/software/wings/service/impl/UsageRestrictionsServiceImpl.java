@@ -457,7 +457,7 @@ public class UsageRestrictionsServiceImpl implements UsageRestrictionsService {
         PermissionType permissionType = appPermission.getPermissionType();
 
         Set<Action> actions = appPermission.getActions();
-        if (!actions.contains(action)) {
+        if (!actions.contains(action) || appPermission.getAppFilter() == null) {
           return;
         }
 

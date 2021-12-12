@@ -9,7 +9,14 @@ import io.harness.execution.NodeExecution;
 import io.harness.interrupts.Interrupt;
 import io.harness.interrupts.Interrupt.State;
 import io.harness.interrupts.InterruptEffect;
+import io.harness.pms.contracts.plan.ConsumerConfig;
+import io.harness.pms.contracts.plan.SdkModuleInfo;
+import io.harness.pms.contracts.steps.SdkStep;
 import io.harness.pms.data.stepparameters.PmsStepParameters;
+import io.harness.pms.sdk.PmsSdkInstance;
+import io.harness.pms.serializer.kryo.serializers.ConsumerConfigKryoSerializer;
+import io.harness.pms.serializer.kryo.serializers.SdkModuleInfoKryoSerializer;
+import io.harness.pms.serializer.kryo.serializers.SdkStepKryoSerializer;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.timeout.trackers.active.ActiveTimeoutParameters;
 
@@ -40,5 +47,9 @@ public class OrchestrationBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(StepDetailInstance.class, 87603);
 
     kryo.register(PmsStepParameters.class, 88405);
+    kryo.register(PmsSdkInstance.class, 88408);
+    kryo.register(ConsumerConfig.class, ConsumerConfigKryoSerializer.getInstance(), 2627);
+    kryo.register(SdkModuleInfo.class, SdkModuleInfoKryoSerializer.getInstance(), 2628);
+    kryo.register(SdkStep.class, SdkStepKryoSerializer.getInstance(), 2629);
   }
 }

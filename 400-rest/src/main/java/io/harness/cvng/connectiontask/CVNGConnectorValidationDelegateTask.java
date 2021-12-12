@@ -1,6 +1,6 @@
 package io.harness.cvng.connectiontask;
 
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
@@ -18,15 +18,18 @@ import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.errorhandling.NGErrorHelper;
+import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
 
 import com.google.inject.Inject;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import lombok.extern.slf4j.Slf4j;
+
 @Slf4j
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 public class CVNGConnectorValidationDelegateTask extends AbstractDelegateRunnableTask {
@@ -56,8 +59,22 @@ public class CVNGConnectorValidationDelegateTask extends AbstractDelegateRunnabl
     CVConnectorTaskParams taskParameters = (CVConnectorTaskParams) parameters;
     if (taskParameters.getConnectorConfigDTO() instanceof DecryptableEntity) {
       List<DecryptableEntity> decryptableEntities = taskParameters.getConnectorConfigDTO().getDecryptableEntities();
-      secretDecryptionService.decrypt(
-          isNotEmpty(decryptableEntities) ? decryptableEntities.get(0) : null, taskParameters.getEncryptionDetails());
+      List<List<EncryptedDataDetail>> encryptionDetails = taskParameters.getEncryptionDetails();
+
+      if (isEmpty(decryptableEntities)) {
+        decryptableEntities = new ArrayList<>();
+      }
+
+      if (isEmpty(encryptionDetails)) {
+        encryptionDetails = new ArrayList<>();
+      }
+
+      for (int decryptableEntityIndex = 0; decryptableEntityIndex < decryptableEntities.size();
+           decryptableEntityIndex++) {
+        DecryptableEntity decryptableEntity = decryptableEntities.get(decryptableEntityIndex);
+        List<EncryptedDataDetail> encryptedDataDetail = encryptionDetails.get(decryptableEntityIndex);
+        secretDecryptionService.decrypt(decryptableEntity, encryptedDataDetail);
+      }
     }
     boolean validCredentials = false;
     try {

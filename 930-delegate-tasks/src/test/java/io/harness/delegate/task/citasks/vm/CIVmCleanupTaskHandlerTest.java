@@ -3,7 +3,7 @@ package io.harness.delegate.task.citasks.vm;
 import static io.harness.rule.OwnerRule.SHUBHAM;
 
 import static junit.framework.TestCase.assertEquals;
-import static org.mockito.Matchers.anyMap;
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -45,7 +45,7 @@ public class CIVmCleanupTaskHandlerTest extends CategoryTest {
   public void executeTaskInternal() throws IOException {
     CIVmCleanupTaskParams params = CIVmCleanupTaskParams.builder().stageRuntimeId("stage").build();
     Response<Void> cleanupResponse = Response.success(null);
-    when(httpHelper.cleanupStageWithRetries(anyMap())).thenReturn(cleanupResponse);
+    when(httpHelper.cleanupStageWithRetries(any())).thenReturn(cleanupResponse);
     VmTaskExecutionResponse response = ciVmCleanupTaskHandler.executeTaskInternal(params);
     assertEquals(CommandExecutionStatus.SUCCESS, response.getCommandExecutionStatus());
   }
@@ -57,7 +57,7 @@ public class CIVmCleanupTaskHandlerTest extends CategoryTest {
     CIVmCleanupTaskParams params = CIVmCleanupTaskParams.builder().stageRuntimeId("stage").build();
     ResponseBody body = mock(ResponseBody.class);
     Response<Void> cleanupResponse = Response.error(400, body);
-    when(httpHelper.cleanupStageWithRetries(anyMap())).thenReturn(cleanupResponse);
+    when(httpHelper.cleanupStageWithRetries(any())).thenReturn(cleanupResponse);
     VmTaskExecutionResponse response = ciVmCleanupTaskHandler.executeTaskInternal(params);
     assertEquals(CommandExecutionStatus.FAILURE, response.getCommandExecutionStatus());
   }

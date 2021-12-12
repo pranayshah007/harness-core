@@ -7,8 +7,10 @@ import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
 
 import java.util.List;
+import lombok.Data;
 
 @OwnedBy(PIPELINE)
+@Data
 public abstract class CdAbstractStepNode extends AbstractStepNode {
   List<FailureStrategyConfig> failureStrategies;
 }

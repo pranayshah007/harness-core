@@ -18,15 +18,20 @@ import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.refobjects.RefObject;
 import io.harness.pms.contracts.refobjects.RefType;
+import io.harness.pms.contracts.steps.StepCategory;
+import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.data.OrchestrationRefType;
+import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.rule.Owner;
 import io.harness.steps.OutputExpressionConstants;
 import io.harness.steps.StepHelper;
+import io.harness.steps.TelemetryRollbackConstants;
 import io.harness.steps.environment.EnvironmentOutcome;
 import io.harness.telemetry.TelemetryReporter;
 
@@ -179,21 +184,44 @@ public class StepHelperTest extends CategoryTest {
   }
 
   private void testSendRollbackTelemetryEvent(Status statusToSend, Status StatusToCheck) {
-    Level level = Level.newBuilder().setGroup(StepOutcomeGroup.STEP.name()).setIdentifier("TestRollbackStep").build();
-    Ambiance ambiance = Ambiance.newBuilder().setStartTs(DateTimeUtils.currentTimeMillis()).addLevels(level).build();
-    Map<String, Object> props = stepHelper.sendRollbackTelemetryEvent(ambiance, statusToSend);
+    Level stageLevel = Level.newBuilder()
+                           .setIdentifier("TestStageId")
+                           .setGroup(StepOutcomeGroup.STAGE.name())
+                           .setStepType(StepType.newBuilder().setStepCategory(StepCategory.STAGE).build())
+                           .build();
+
+    Level stepLevel =
+        Level.newBuilder().setGroup(StepOutcomeGroup.STEP.name()).setIdentifier("TestRollbackStep").build();
+
+    Ambiance ambiance = Ambiance.newBuilder()
+                            .setStartTs(DateTimeUtils.currentTimeMillis())
+                            .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "TestProjectId")
+                            .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, "TestOrgId")
+                            .putSetupAbstractions(SetupAbstractionKeys.accountId, "TestAccountId")
+                            .setPlanExecutionId("TestExecutionId")
+                            .setMetadata(ExecutionMetadata.newBuilder().setPipelineIdentifier("TestPipelineId").build())
+                            .addLevels(stageLevel)
+                            .addLevels(stepLevel)
+                            .build();
+    Map<String, Object> props = stepHelper.sendRollbackTelemetryEvent(ambiance, statusToSend, "TestAccountName");
 
     assertNotNull(props);
 
-    assertEquals(StepOutcomeGroup.STEP.name(), props.get(StepHelper.TELEMETRY_ROLLBACK_PROP_LEVEL));
-    assertEquals("TestRollbackStep", props.get(StepHelper.TELEMETRY_ROLLBACK_PROP_NAME));
-    assertEquals(String.valueOf(StatusToCheck), props.get(StepHelper.TELEMETRY_ROLLBACK_PROP_STATUS));
+    assertEquals("TestProjectId", props.get(TelemetryRollbackConstants.TELEMETRY_ROLLBACK_PROP_PROJECT_ID));
+    assertEquals("TestOrgId", props.get(TelemetryRollbackConstants.TELEMETRY_ROLLBACK_PROP_ORG_ID));
+    assertEquals("TestAccountId", props.get(TelemetryRollbackConstants.TELEMETRY_ROLLBACK_PROP_ACCOUNT_ID));
+    assertEquals("TestAccountName", props.get(TelemetryRollbackConstants.TELEMETRY_ROLLBACK_PROP_ACCOUNT_NAME));
+    assertEquals("TestExecutionId", props.get(TelemetryRollbackConstants.TELEMETRY_ROLLBACK_PROP_EXECUTION_ID));
+    assertEquals("TestPipelineId", props.get(TelemetryRollbackConstants.TELEMETRY_ROLLBACK_PROP_PIPELINE_ID));
+    assertEquals("TestStageId", props.get(TelemetryRollbackConstants.TELEMETRY_ROLLBACK_PROP_STAGE_ID));
+    assertEquals("TestRollbackStep", props.get(TelemetryRollbackConstants.TELEMETRY_ROLLBACK_PROP_STEP_ID));
+    assertEquals(String.valueOf(StatusToCheck), props.get(TelemetryRollbackConstants.TELEMETRY_ROLLBACK_PROP_STATUS));
 
-    assertThat(props).hasSize(3);
+    assertThat(props).hasSize(9);
   }
 
   private void testSendRollbackTelemetryEventWithInvalidParams(Ambiance ambiance, Status status) {
-    Map<String, Object> props = stepHelper.sendRollbackTelemetryEvent(ambiance, status);
+    Map<String, Object> props = stepHelper.sendRollbackTelemetryEvent(ambiance, status, null);
 
     assertNull(props);
   }

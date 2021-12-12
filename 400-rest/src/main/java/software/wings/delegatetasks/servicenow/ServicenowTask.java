@@ -118,6 +118,7 @@ public class ServicenowTask extends AbstractDelegateRunnableTask {
 
     Response<JsonNode> response = null;
     try {
+      log.info("Body of the request made to the ServiceNow server: {}", body);
       response = request.execute();
       log.info("Response received from serviceNow: {}", response);
       handleResponse(response, "Failed to create ServiceNow ticket");

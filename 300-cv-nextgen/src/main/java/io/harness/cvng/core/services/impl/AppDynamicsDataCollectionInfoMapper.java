@@ -3,10 +3,12 @@ package io.harness.cvng.core.services.impl;
 import io.harness.cvng.beans.AppDynamicsDataCollectionInfo;
 import io.harness.cvng.beans.AppDynamicsDataCollectionInfo.AppMetricInfoDTO;
 import io.harness.cvng.core.entities.AppDynamicsCVConfig;
+import io.harness.cvng.core.services.CVNextGenConstants;
 import io.harness.cvng.core.services.api.DataCollectionInfoMapper;
 import io.harness.cvng.core.services.api.DataCollectionSLIInfoMapper;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 
+import com.google.common.base.Preconditions;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.commons.collections4.CollectionUtils;
@@ -45,6 +47,13 @@ public class AppDynamicsDataCollectionInfoMapper
   public AppDynamicsDataCollectionInfo toDataCollectionInfo(
       List<AppDynamicsCVConfig> cvConfigs, ServiceLevelIndicator serviceLevelIndicator) {
     List<String> sliMetricIdentifiers = serviceLevelIndicator.getMetricNames();
+    cvConfigs =
+        CollectionUtils.emptyIfNull(cvConfigs)
+            .stream()
+            .filter(
+                cvConfig -> cvConfig.getMetricPack().getIdentifier().equals(CVNextGenConstants.CUSTOM_PACK_IDENTIFIER))
+            .collect(Collectors.toList());
+    Preconditions.checkArgument(!cvConfigs.isEmpty(), "Metrics not found in the health-source");
     AppDynamicsCVConfig baseCvConfig = cvConfigs.get(0);
 
     AppDynamicsDataCollectionInfo appDynamicsDataCollectionInfo =

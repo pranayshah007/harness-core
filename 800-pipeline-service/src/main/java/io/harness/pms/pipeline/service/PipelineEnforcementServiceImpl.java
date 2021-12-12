@@ -1,6 +1,7 @@
 package io.harness.pms.pipeline.service;
 
 import io.harness.ModuleType;
+import io.harness.PipelineUtils;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
@@ -12,7 +13,11 @@ import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepInfo;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.pipeline.CommonStepInfo;
+import io.harness.pms.plan.creation.PlanCreatorServiceInfo;
+import io.harness.pms.plan.creation.PlanCreatorUtils;
+import io.harness.pms.sdk.PmsSdkHelper;
 import io.harness.pms.sdk.PmsSdkInstanceService;
+import io.harness.pms.yaml.YamlField;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableSet;
@@ -24,6 +29,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -34,10 +40,12 @@ public class PipelineEnforcementServiceImpl implements PipelineEnforcementServic
 
   private static final String EXECUTION_ERROR = "Your current plan does not support the use of following steps: %s.";
   private static final String UPGRADE_YOUR_PLAN_ERROR_MESSAGE = "Please upgrade your plan.";
+  private static final Map<String, String> stageTypeToModule = new ConcurrentHashMap<>();
 
   @Inject PmsSdkInstanceService pmsSdkInstanceService;
   @Inject EnforcementClientService enforcementClientService;
   @Inject CommonStepInfo commonStepInfo;
+  @Inject PmsSdkHelper pmsSdkHelper;
 
   @Override
   public boolean isFeatureRestricted(String accountId, String featureRestrictionName) {
@@ -65,6 +73,59 @@ public class PipelineEnforcementServiceImpl implements PipelineEnforcementServic
       }
     }
     return disabledFeatures;
+  }
+
+  @Override
+  public void validateExecutionEnforcementsBasedOnStage(String accountId, YamlField pipelineField) {
+    Set<YamlField> stageFields = PipelineUtils.getStagesFieldFromPipeline(pipelineField);
+    Set<String> modules = new HashSet<>();
+    Set<YamlField> nonCachedStageYamlFields = new HashSet<>();
+    for (YamlField stageField : stageFields) {
+      if (stageTypeToModule.containsKey(stageField.getNode().getType())) {
+        modules.add(stageTypeToModule.get(stageField.getNode().getType()));
+      } else {
+        nonCachedStageYamlFields.add(stageField);
+      }
+    }
+
+    if (!nonCachedStageYamlFields.isEmpty()) {
+      Map<String, PlanCreatorServiceInfo> services = pmsSdkHelper.getServices();
+      for (Map.Entry<String, PlanCreatorServiceInfo> planCreatorServiceInfoEntry : services.entrySet()) {
+        Map<String, Set<String>> supportedTypes = planCreatorServiceInfoEntry.getValue().getSupportedTypes();
+        for (YamlField stageField : stageFields) {
+          if (stageTypeToModule.containsKey(stageField.getNode().getType())) {
+            modules.add(stageTypeToModule.get(stageField.getNode().getType()));
+          } else {
+            if (PlanCreatorUtils.supportsField(supportedTypes, stageField)) {
+              modules.add(planCreatorServiceInfoEntry.getKey());
+              stageTypeToModule.put(stageField.getNode().getType(), planCreatorServiceInfoEntry.getKey());
+            }
+          }
+        }
+      }
+    }
+    validateExecutionFeatureRestrictions(accountId, modules);
+  }
+
+  private void validateExecutionFeatureRestrictions(String accountId, Set<String> modules) {
+    Multimap<String, String> featureRestrictionToStepNameMap = HashMultimap.create();
+    // Add featureRestriction based on executions (Builds or deployments)
+    for (String module : modules) {
+      // Todo: Take via PmsSdkInstance
+      if (module.equalsIgnoreCase(ModuleType.CD.name())) {
+        featureRestrictionToStepNameMap.put(
+            FeatureRestrictionName.DEPLOYMENTS_PER_MONTH.name(), DEPLOYMENT_EXCEEDED_KEY);
+      } else if (module.equalsIgnoreCase(ModuleType.CI.name())) {
+        featureRestrictionToStepNameMap.put(FeatureRestrictionName.BUILDS.name(), BUILD_EXCEEDED_KEY);
+      }
+    }
+
+    Set<FeatureRestrictionName> disabledFeatures =
+        getDisabledFeatureRestrictionNames(accountId, featureRestrictionToStepNameMap.keySet());
+    if (disabledFeatures.isEmpty()) {
+      return;
+    }
+    throw new FeatureNotSupportedException(constructErrorMessage(featureRestrictionToStepNameMap, disabledFeatures));
   }
 
   /**
@@ -114,16 +175,6 @@ public class PipelineEnforcementServiceImpl implements PipelineEnforcementServic
       if (stepTypeString.contains(stepInfo.getType())
           && EmptyPredicate.isNotEmpty(stepInfo.getFeatureRestrictionName())) {
         featureRestrictionToStepNameMap.put(stepInfo.getFeatureRestrictionName(), stepInfo.getName());
-      }
-    }
-
-    // Add featureRestriction based on executions (Builds or deployments)
-    for (String module : modules) {
-      if (module.equalsIgnoreCase(ModuleType.CD.name())) {
-        featureRestrictionToStepNameMap.put(
-            FeatureRestrictionName.DEPLOYMENTS_PER_MONTH.name(), DEPLOYMENT_EXCEEDED_KEY);
-      } else if (module.equalsIgnoreCase(ModuleType.CI.name())) {
-        featureRestrictionToStepNameMap.put(FeatureRestrictionName.BUILDS.name(), BUILD_EXCEEDED_KEY);
       }
     }
     return featureRestrictionToStepNameMap;

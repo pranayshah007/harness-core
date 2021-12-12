@@ -1,5 +1,7 @@
 package io.harness.cvng.servicelevelobjective.beans.slotargetspec;
 
+import io.harness.cvng.servicelevelobjective.beans.DayOfWeek;
+import io.harness.cvng.servicelevelobjective.beans.SLOCalenderType;
 import io.harness.cvng.servicelevelobjective.beans.SLOTargetType;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -21,17 +23,13 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class CalenderSLOTargetSpec extends SLOTargetSpec {
-  @JsonProperty("type") CalenderType type;
+  @JsonProperty("type") SLOCalenderType type;
   @JsonTypeInfo(
       use = JsonTypeInfo.Id.NAME, property = "type", include = JsonTypeInfo.As.EXTERNAL_PROPERTY, visible = true)
   @Valid
   @NotNull
   CalenderSpec spec;
-  public enum CalenderType {
-    @JsonProperty("Weekly") WEEKLY,
-    @JsonProperty("Monthly") MONTHLY,
-    @JsonProperty("Quarterly") QUARTERLY
-  }
+
   @SuperBuilder
   @Data
   @NoArgsConstructor
@@ -42,26 +40,17 @@ public class CalenderSLOTargetSpec extends SLOTargetSpec {
         @JsonSubTypes.Type(value = QuarterlyCalenderSpec.class, name = "Quarterly"),
   })
   public abstract static class CalenderSpec {
-    @JsonIgnore public abstract CalenderType getType();
+    @JsonIgnore public abstract SLOCalenderType getType();
   }
   @SuperBuilder
   @Data
   @NoArgsConstructor
   @JsonIgnoreProperties(ignoreUnknown = true)
   public static class WeeklyCalendarSpec extends CalenderSpec {
-    public enum DayOfWeek {
-      @JsonProperty("Mon") MONDAY,
-      @JsonProperty("Tue") TUESDAY,
-      @JsonProperty("Wed") WEDNESDAY,
-      @JsonProperty("Thu") THURSDAY,
-      @JsonProperty("Fri") FRIDAY,
-      @JsonProperty("Sat") SATURDAY,
-      @JsonProperty("Sun") SUNDAY;
-    }
     @NotNull private DayOfWeek dayOfWeek;
     @Override
-    public CalenderType getType() {
-      return CalenderType.WEEKLY;
+    public SLOCalenderType getType() {
+      return SLOCalenderType.WEEKLY;
     }
   }
   @SuperBuilder
@@ -71,8 +60,8 @@ public class CalenderSLOTargetSpec extends SLOTargetSpec {
   public static class MonthlyCalenderSpec extends CalenderSpec {
     @NotNull private int dayOfMonth;
     @Override
-    public CalenderType getType() {
-      return CalenderType.MONTHLY;
+    public SLOCalenderType getType() {
+      return SLOCalenderType.MONTHLY;
     }
   }
   @SuperBuilder
@@ -81,8 +70,8 @@ public class CalenderSLOTargetSpec extends SLOTargetSpec {
   @JsonIgnoreProperties(ignoreUnknown = true)
   public static class QuarterlyCalenderSpec extends CalenderSpec {
     @Override
-    public CalenderType getType() {
-      return CalenderType.QUARTERLY;
+    public SLOCalenderType getType() {
+      return SLOCalenderType.QUARTERLY;
     }
   }
 

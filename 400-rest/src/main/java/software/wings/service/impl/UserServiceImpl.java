@@ -305,7 +305,7 @@ public class UserServiceImpl implements UserService {
    * The Executor service.
    */
   @Inject ExecutorService executorService;
-  @Inject private software.wings.service.impl.UserServiceLimitChecker userServiceLimitChecker;
+  @Inject private UserServiceLimitChecker userServiceLimitChecker;
   @Inject private WingsPersistence wingsPersistence;
   @Inject private EmailNotificationService emailNotificationService;
   @Inject private MainConfiguration configuration;

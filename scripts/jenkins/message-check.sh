@@ -2,25 +2,27 @@
 
 set +e
 
+COMMIT_CONTENT="\[feat]|\[fix]|\[techdebt]|feat|fix|techdebt"
 PROJECTS="BT|CCE|CCM|CDC|CDNG|CDP|CE|CI|CV|CVNG|DEL|DOC|DX|ER|OPS|PIE|PL|SEC|SWAT|GTM|FFM|ONP|LWG|ART|GIT"
 
 # Check commit message if there's a single commit
-if [ $(git rev-list --count $ghprbActualCommit ^origin/master)  -eq 1 ]; then
-    ghprbPullTitle=$(git log -1 --format="%s" $ghprbActualCommit)
-fi
+#if [ $(git rev-list --count $ghprbActualCommit ^origin/master)  -eq 1 ]; then
+#    ghprbPullTitle=$(git log -1 --format="%s" $ghprbActualCommit)
+#fi
 
-PR_MESSAGE=`echo "${ghprbPullTitle}" | grep -iE "\[(${PROJECTS})-[0-9]+]:"`
+ghprbPullTitle="$1"
+
+PR_MESSAGE=`echo "${ghprbPullTitle}" | grep -iE "^(${COMMIT_CONTENT}): \[(${PROJECTS})-[0-9]+]: "`
 
 if [ -z "$PR_MESSAGE" ]
 then
     echo The PR title \"${ghprbPullTitle}\"
     echo "does not match the expectations"
-    echo "Make sure that your message starts with [${PROJECTS}-<number>]: <description>"
+    echo "Make sure that your commit message is in format -> ${COMMIT_CONTENT}: [${PROJECTS}-<number>]: <description>"
     exit 1
 fi
 
 KEY=`echo "${ghprbPullTitle}" | grep -o -iqE "(${PROJECTS})-[0-9]+"`
-
 
 #TODO: enable priorities check
 

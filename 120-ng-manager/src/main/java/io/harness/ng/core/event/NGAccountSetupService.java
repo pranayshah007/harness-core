@@ -3,6 +3,7 @@ package io.harness.ng.core.event;
 import static io.harness.NGConstants.DEFAULT_ORG_IDENTIFIER;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.ng.core.invites.mapper.RoleBindingMapper.getDefaultResourceGroupIdentifier;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
@@ -152,17 +153,18 @@ public class NGAccountSetupService {
   }
 
   private void assignAdminRoleToUsers(Scope scope, Collection<String> users, String roleIdentifier) {
-    createRoleAssignments(scope, buildRoleAssignments(users, roleIdentifier));
+    createRoleAssignments(scope, buildRoleAssignments(users, roleIdentifier, getDefaultResourceGroupIdentifier(scope)));
   }
 
-  private List<RoleAssignmentDTO> buildRoleAssignments(Collection<String> userIds, String roleIdentifier) {
+  private List<RoleAssignmentDTO> buildRoleAssignments(
+      Collection<String> userIds, String roleIdentifier, String resourceGroupIdentifier) {
     return userIds.stream()
         .map(userId
             -> RoleAssignmentDTO.builder()
                    .disabled(false)
                    .identifier("role_assignment_".concat(CryptoUtils.secureRandAlphaNumString(20)))
                    .roleIdentifier(roleIdentifier)
-                   .resourceGroupIdentifier("_all_resources")
+                   .resourceGroupIdentifier(resourceGroupIdentifier)
                    .principal(PrincipalDTO.builder().identifier(userId).type(PrincipalType.USER).build())
                    .build())
         .collect(Collectors.toList());

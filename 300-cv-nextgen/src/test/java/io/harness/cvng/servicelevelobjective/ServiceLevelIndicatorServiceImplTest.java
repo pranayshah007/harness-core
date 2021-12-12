@@ -24,6 +24,7 @@ import io.harness.cvng.servicelevelobjective.beans.SLIMetricType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorSpec;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorType;
+import io.harness.cvng.servicelevelobjective.beans.slimetricspec.RatioSLIMetricEventType;
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.RatioSLIMetricSpec;
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.ThresholdSLIMetricSpec;
 import io.harness.cvng.servicelevelobjective.beans.slimetricspec.ThresholdType;
@@ -62,7 +63,7 @@ public class ServiceLevelIndicatorServiceImplTest extends CvNextGenTestBase {
     String monitoredServiceIdentifier = "monitoredServiceIdentifier";
     CVConfig cvConfig = builderFactory.appDynamicsCVConfigBuilder()
                             .identifier(HealthSourceService.getNameSpacedIdentifier(
-                                monitoredServiceIdentifier, serviceLevelIndicatorDTO.getHealthSourceIdentifier()))
+                                monitoredServiceIdentifier, serviceLevelIndicatorDTO.getHealthSourceRef()))
                             .build();
     hPersistence.save(cvConfig);
 
@@ -125,11 +126,14 @@ public class ServiceLevelIndicatorServiceImplTest extends CvNextGenTestBase {
         .identifier("sliIndicator")
         .name("sliName")
         .type(ServiceLevelIndicatorType.LATENCY)
-        .spec(
-            ServiceLevelIndicatorSpec.builder()
-                .type(SLIMetricType.RATIO)
-                .spec(RatioSLIMetricSpec.builder().eventType("eventName").metric1("metric1").metric2("metric2").build())
-                .build())
+        .spec(ServiceLevelIndicatorSpec.builder()
+                  .type(SLIMetricType.RATIO)
+                  .spec(RatioSLIMetricSpec.builder()
+                            .eventType(RatioSLIMetricEventType.GOOD)
+                            .metric1("metric1")
+                            .metric2("metric2")
+                            .build())
+                  .build())
         .build();
   }
 

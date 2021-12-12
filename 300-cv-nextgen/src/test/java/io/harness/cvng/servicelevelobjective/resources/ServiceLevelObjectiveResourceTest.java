@@ -59,6 +59,11 @@ public class ServiceLevelObjectiveResourceTest extends CvNextGenTestBase {
                             .request(MediaType.APPLICATION_JSON_TYPE)
                             .post(Entity.json(convertToJson(sloYaml)));
     assertThat(response.getStatus()).isEqualTo(200);
+    String jsonResponse = response.readEntity(String.class);
+    // TODO: we need to find a library to assert json responses in a better way.
+    assertThat(jsonResponse)
+        .contains(
+            "{\"type\":\"Threshold\",\"spec\":{\"metric1\":\"metric2\",\"thresholdValue\":4.0,\"thresholdType\":\"<\"}}");
   }
 
   @Test

@@ -42,4 +42,5 @@ public class EntityYamlRootNames {
   public static String FEATURE_FLAGS = "featureFlags";
   public static String HTTP = "Http";
   public static String SHELL_SCRIPT = "ShellScript";
+  public static String K8S_CANARY_DEPLOY = "K8sCanaryDeploy";
 }

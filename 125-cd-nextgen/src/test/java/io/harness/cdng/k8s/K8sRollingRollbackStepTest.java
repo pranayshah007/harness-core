@@ -14,6 +14,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
+import io.harness.account.services.AccountService;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.instance.info.InstanceInfoService;
@@ -27,6 +28,7 @@ import io.harness.delegate.task.k8s.K8sRollingDeployRollbackResponse;
 import io.harness.delegate.task.k8s.K8sRollingRollbackDeployRequest;
 import io.harness.k8s.model.K8sPod;
 import io.harness.logging.CommandExecutionStatus;
+import io.harness.ng.core.dto.AccountDTO;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
@@ -67,6 +69,7 @@ public class K8sRollingRollbackStepTest extends CategoryTest {
   @Mock private K8sStepHelper k8sStepHelper;
   @Mock private InstanceInfoService instanceInfoService;
   @InjectMocks private K8sRollingRollbackStep k8sRollingRollbackStep;
+  @Mock private AccountService accountService;
   @Mock private StepHelper stepHelper;
   @Mock private TelemetryReporter telemetryReporter;
 
@@ -94,7 +97,7 @@ public class K8sRollingRollbackStepTest extends CategoryTest {
     assertThat(taskRequest).isNotNull();
     assertThat(taskRequest.getSkipTaskRequest().getMessage())
         .isEqualTo("K8s Rollout Deploy step was not executed. Skipping rollback.");
-    verify(stepHelper, times(0)).sendRollbackTelemetryEvent(any(), any());
+    verify(stepHelper, times(0)).sendRollbackTelemetryEvent(any(), any(), any());
   }
 
   @Test
@@ -131,6 +134,11 @@ public class K8sRollingRollbackStepTest extends CategoryTest {
   @Owner(developers = ACHYUTH)
   @Category(UnitTests.class)
   public void testHandleTaskResultWithSecurityContext() throws Exception {
+    AccountDTO accountDTO = AccountDTO.builder().name("TestAccountName").build();
+    doReturn(accountDTO)
+            .when(accountService)
+            .getAccount(any());
+
     StepResponse stepResponse = k8sRollingRollbackStep.handleTaskResultWithSecurityContext(
         ambiance, StepElementParameters.builder().build(), () -> {
           return K8sDeployResponse.builder()
@@ -139,13 +147,14 @@ public class K8sRollingRollbackStepTest extends CategoryTest {
               .build();
         });
     assertThat(stepResponse.getStatus()).isEqualTo(Status.FAILED);
-    verify(stepHelper, times(1)).sendRollbackTelemetryEvent(any(), any());
+    verify(stepHelper, times(1)).sendRollbackTelemetryEvent(any(), any(), any());
 
     List<K8sPod> k8sPodList = new ArrayList<>();
     k8sPodList.add(K8sPod.builder().name("Pod").namespace("default").build());
 
     when(instanceInfoService.saveServerInstancesIntoSweepingOutput(any(), any()))
         .thenReturn(StepResponse.StepOutcome.builder().name("abc").build());
+
     stepResponse = k8sRollingRollbackStep.handleTaskResultWithSecurityContext(
         ambiance, StepElementParameters.builder().build(), () -> {
           return K8sDeployResponse.builder()
@@ -156,7 +165,7 @@ public class K8sRollingRollbackStepTest extends CategoryTest {
         });
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
     assertThat(stepResponse.getStepOutcomes().contains(StepResponse.StepOutcome.builder().name("abc").build()));
-    verify(stepHelper, times(2)).sendRollbackTelemetryEvent(any(), any());
+    verify(stepHelper, times(2)).sendRollbackTelemetryEvent(any(), any(), any());
   }
 
   private void testRollback(OptionalSweepingOutput releaseOutput, OptionalSweepingOutput deploymentOutput,
@@ -194,6 +203,6 @@ public class K8sRollingRollbackStepTest extends CategoryTest {
     K8sRollingRollbackDeployRequest request = (K8sRollingRollbackDeployRequest) requestArgumentCaptor.getValue();
     assertThat(request.getReleaseName()).isEqualTo(expectedReleaseName);
     assertThat(request.getReleaseNumber()).isEqualTo(expectedReleaseNumber);
-    verify(stepHelper, times(0)).sendRollbackTelemetryEvent(any(), any());
+    verify(stepHelper, times(0)).sendRollbackTelemetryEvent(any(), any(), any());
   }
 }

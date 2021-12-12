@@ -12,6 +12,7 @@ import lombok.Data;
 public class VmTaskExecutionResponse implements CITaskExecutionResponse {
   private DelegateMetaInfo delegateMetaInfo;
   private String errorMessage;
+  private String ipAddress;
   private CommandExecutionStatus commandExecutionStatus;
   @Builder.Default private static final CITaskExecutionResponse.Type type = Type.VM;
 

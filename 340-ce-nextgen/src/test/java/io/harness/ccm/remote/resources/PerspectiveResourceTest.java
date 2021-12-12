@@ -12,6 +12,7 @@ import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.ccm.bigQuery.BigQueryService;
 import io.harness.ccm.commons.utils.BigQueryHelper;
+import io.harness.ccm.graphql.core.budget.BudgetCostService;
 import io.harness.ccm.views.entities.CEView;
 import io.harness.ccm.views.entities.ViewState;
 import io.harness.ccm.views.entities.ViewType;
@@ -32,6 +33,7 @@ public class PerspectiveResourceTest extends CategoryTest {
   private CEReportScheduleService ceReportScheduleService = mock(CEReportScheduleService.class);
   private BigQueryService bigQueryService = mock(BigQueryService.class);
   private BigQueryHelper bigQueryHelper = mock(BigQueryHelper.class);
+  private BudgetCostService budgetCostService = mock(BudgetCostService.class);
   private PerspectiveResource perspectiveResource;
 
   private final String ACCOUNT_ID = "ACCOUNT_ID";
@@ -60,8 +62,8 @@ public class PerspectiveResourceTest extends CategoryTest {
     when(ceViewService.update(perspective)).thenReturn(perspective);
     when(bigQueryHelper.getCloudProviderTableName(ACCOUNT_ID, UNIFIED_TABLE)).thenReturn(UNIFIED_TABLE_NAME);
 
-    perspectiveResource = new PerspectiveResource(
-        ceViewService, ceReportScheduleService, viewCustomFieldService, bigQueryService, bigQueryHelper);
+    perspectiveResource = new PerspectiveResource(ceViewService, ceReportScheduleService, viewCustomFieldService,
+        bigQueryService, bigQueryHelper, budgetCostService);
   }
 
   @Test

@@ -9,7 +9,7 @@ else
 
     # regex to validate in commit msg
     commit_regex='^\[(BT|CCE|CCM|CDC|CDNG|CDP|CE|CI|CV|CVNG|DEL|DOC|DX|ER|FFM|ONP|OPS|PIE|PL|SEC|SWAT|GTM|LWG)-[0-9]+]: |Merge branch '
-    error_msg="Aborting commit. [`cat $1`] is missing a JIRA Issue"
+    error_msg="Aborting commit. [`cat $1`] is missing a JIRA Issue and Commit Content. Example Commit Message: \"[JIRAProject-123]: Message \""
 
     if [ ! -z "`cat $1`" ]
     then

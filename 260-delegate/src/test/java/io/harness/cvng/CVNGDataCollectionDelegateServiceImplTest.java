@@ -17,6 +17,7 @@ import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.splunkconnector.SplunkConnectorDTO;
 import io.harness.encryption.SecretRefData;
 import io.harness.rule.Owner;
+import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
 
 import software.wings.service.intfc.cvng.CVNGDataCollectionDelegateService;
@@ -26,6 +27,7 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -60,12 +62,17 @@ public class CVNGDataCollectionDelegateServiceImplTest extends CategoryTest {
             .username("harnessadmin")
             .passwordRef(SecretRefData.builder().decryptedValue("123".toCharArray()).build())
             .build();
+    List<EncryptedDataDetail> encryptedDataDetails = new ArrayList<>();
+    encryptedDataDetails.add(EncryptedDataDetail.builder().build());
+    List<List<EncryptedDataDetail>> details = new ArrayList<>();
+    details.add(encryptedDataDetails);
+
     when(dataCollectionDSLService.execute(any(), any(), any())).thenReturn(Collections.singletonMap("a", 1));
     String result = cvngDataCollectionDelegateService.getDataCollectionResult(accountId,
         SplunkSavedSearchRequest.builder()
             .connectorInfoDTO(ConnectorInfoDTO.builder().connectorConfig(connectorConfigDTO).build())
             .build(),
-        new ArrayList<>());
+        new ArrayList<>(details));
     assertThat(result).isEqualTo("{\"a\":1}");
   }
 }

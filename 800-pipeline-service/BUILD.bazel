@@ -37,6 +37,7 @@ java_binary(
         "//940-primary-version-manager:module",
         "//942-enforcement-sdk:module",
         "//945-ng-audit-client:module",
+        "//945-account-mgmt:module",
         "//948-access-control-sdk:module",
         "//950-ng-project-n-orgs:module",
         "//950-opa-client:module",

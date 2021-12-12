@@ -74,6 +74,7 @@ import io.harness.connector.entities.embedded.nexusconnector.NexusConnector;
 import io.harness.connector.entities.embedded.nexusconnector.NexusUserNamePasswordAuthentication;
 import io.harness.connector.entities.embedded.pagerduty.PagerDutyConnector;
 import io.harness.connector.entities.embedded.prometheusconnector.PrometheusConnector;
+import io.harness.connector.entities.embedded.servicenow.ServiceNowConnector;
 import io.harness.connector.entities.embedded.splunkconnector.SplunkConnector;
 import io.harness.connector.entities.embedded.sumologic.SumoLogicConnector;
 import io.harness.connector.entities.embedded.vaultconnector.VaultConnector;
@@ -119,6 +120,7 @@ public class ConnectorMorphiaClassesRegistrar implements MorphiaRegistrar {
     set.add(DynatraceConnector.class);
     set.add(PagerDutyConnector.class);
     set.add(CustomHealthConnector.class);
+    set.add(ServiceNowConnector.class);
   }
 
   @Override

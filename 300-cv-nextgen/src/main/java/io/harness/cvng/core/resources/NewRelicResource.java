@@ -114,7 +114,7 @@ public class NewRelicResource {
       @QueryParam("jsonResponse") @NotNull String jsonResponse, @QueryParam("groupName") @NotNull String groupName,
       @QueryParam("metricValueJsonPath") @NotNull String metricValueJsonPath,
       @QueryParam("timestampJsonPath") @NotNull String timestampJsonPath,
-      @QueryParam("timestampFormat") @NotNull String timestampFormat) {
+      @QueryParam("timestampFormat") String timestampFormat) {
     ProjectParams projectParams = ProjectParams.builder()
                                       .accountIdentifier(accountId)
                                       .orgIdentifier(orgIdentifier)

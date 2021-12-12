@@ -181,7 +181,7 @@ public interface DelegateService extends OwnedByAccount {
 
   DelegateSizeDetails fetchDefaultDelegateSize();
 
-  void validateDockerSetupDetails(String accountId, DelegateSetupDetails delegateSetupDetails, String delegateType);
+  void validateDelegateSetupDetails(String accountId, DelegateSetupDetails delegateSetupDetails, String delegateType);
 
   File downloadNgDocker(String managerHost, String verificationServiceUrl, String accountId,
       DelegateSetupDetails delegateSetupDetails) throws IOException;

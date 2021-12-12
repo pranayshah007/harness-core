@@ -19,5 +19,5 @@ import lombok.experimental.SuperBuilder;
 })
 public abstract class SLIMetricSpec {
   @JsonIgnore public abstract SLIMetricType getType();
-  public abstract String getMetricName();
+  @JsonIgnore public abstract String getMetricName();
 }

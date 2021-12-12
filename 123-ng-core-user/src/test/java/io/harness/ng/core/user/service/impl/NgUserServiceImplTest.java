@@ -352,7 +352,7 @@ public class NgUserServiceImplTest extends CategoryTest {
                    userId, UserMembershipUpdateSource.USER, parentScope, getDefaultRoleIdentifier(parentScope)));
     doNothing()
         .when(ngUserService)
-        .createRoleAssignments(userId, scope, createRoleAssignmentDTOs(roleBindings, userId));
+        .createRoleAssignments(userId, scope, createRoleAssignmentDTOs(roleBindings, userId, scope));
 
     UserGroupFilterDTO userGroupFilterDTO =
         UserGroupFilterDTO.builder()

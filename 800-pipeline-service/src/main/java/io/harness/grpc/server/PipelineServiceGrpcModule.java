@@ -110,7 +110,8 @@ public class PipelineServiceGrpcModule extends AbstractModule {
       map.put(ModuleType.fromString(entry.getKey()),
           JsonExpansionServiceGrpc.newBlockingStub(getChannel(entry.getValue())));
     }
-
+    map.put(ModuleType.PMS,
+        JsonExpansionServiceGrpc.newBlockingStub(InProcessChannelBuilder.forName("pmsSdkInternal").build()));
     return map;
   }
 

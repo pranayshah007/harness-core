@@ -1,16 +1,21 @@
 package io.harness.cdng.pipeline.executions;
 
 import static io.harness.executions.steps.StepSpecTypeConstants.K8S_ROLLING_ROLLBACK;
+import static io.harness.executions.steps.StepSpecTypeConstants.TERRAFORM_APPLY;
+import static io.harness.executions.steps.StepSpecTypeConstants.TERRAFORM_DESTROY;
+import static io.harness.executions.steps.StepSpecTypeConstants.TERRAFORM_PLAN;
 import static io.harness.executions.steps.StepSpecTypeConstants.TERRAFORM_ROLLBACK;
 import static io.harness.pms.contracts.execution.Status.ABORTED;
 import static io.harness.pms.contracts.execution.Status.EXPIRED;
 
+import io.harness.account.services.AccountService;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.logstreaming.ILogStreamingStepClient;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
+import io.harness.plancreator.beans.OrchestrationConstants;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
@@ -18,6 +23,7 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.sdk.core.events.OrchestrationEvent;
 import io.harness.pms.sdk.core.events.OrchestrationEventHandler;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
 
@@ -40,13 +46,14 @@ public class CdngPipelineExecutionUpdateEventHandler implements OrchestrationEve
 
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject private StepHelper stepHelper;
+  @Inject private AccountService accountService;
 
   @Override
   public void handleEvent(OrchestrationEvent event) {
     try {
-      if (isExpiredOrAborted(event.getStatus()) && isK8sOrTerraformRollback(event.getAmbiance())) {
-        log.info(String.format("Rollback %s", EXPIRED.equals(event.getStatus()) ? "has expired." : "was aborted"));
-        stepHelper.sendRollbackTelemetryEvent(event.getAmbiance(), event.getStatus());
+      if (isExpiredOrAborted(event.getStatus()) && (isK8sOrTerraformRollback(event.getAmbiance()))) {
+        String accountName = accountService.getAccount(AmbianceUtils.getAccountId(event.getAmbiance())).getName();
+        stepHelper.sendRollbackTelemetryEvent(event.getAmbiance(), event.getStatus(), accountName);
       }
 
       if (updateK8sLogStreams(event)) {
@@ -64,7 +71,58 @@ public class CdngPipelineExecutionUpdateEventHandler implements OrchestrationEve
   }
 
   private boolean isK8sOrTerraformRollback(Ambiance ambiance) {
-    return isStepType(ambiance, K8S_ROLLING_ROLLBACK) || isStepType(ambiance, TERRAFORM_ROLLBACK);
+    return isK8sRollingRollbackStep(ambiance) || isTerraformRollbackStep(ambiance);
+  }
+
+  private boolean isK8sRollingRollbackStep(Ambiance ambiance) {
+    return isStepType(ambiance, K8S_ROLLING_ROLLBACK);
+  }
+
+  private boolean isTerraformRollbackStep(Ambiance ambiance) {
+    return isStepType(ambiance, TERRAFORM_ROLLBACK);
+  }
+
+  //currently not used, but left here for future use.
+  private boolean isInfrastructureRollback(Ambiance ambiance) {
+    Level level = AmbianceUtils.obtainCurrentLevel(ambiance);
+    return level.getIdentifier().equals(OrchestrationConstants.INFRA_ROLLBACK_NODE_IDENTIFIER);
+  }
+
+  //currently not used, but left here for future use.
+  private boolean isDeploymentRollback(Ambiance ambiance) {
+    boolean hasInfraRollbackNodeStep = false;
+    boolean hasRollbackStepsStep = false;
+
+    for (Level level : ambiance.getLevelsList()) {
+      if (!hasRollbackStepsStep && level.getIdentifier().equals(YAMLFieldNameConstants.ROLLBACK_STEPS)) {
+        hasRollbackStepsStep = true;
+      }
+
+      // if we find the infra rollback node identifier then it must be an infrastructure rollback and not the deployment
+      // one
+      if (level.getIdentifier().equals(OrchestrationConstants.INFRA_ROLLBACK_NODE_IDENTIFIER)) {
+        hasInfraRollbackNodeStep = true;
+        break;
+      }
+    }
+
+    return hasRollbackStepsStep && !hasInfraRollbackNodeStep;
+  }
+
+  //currently not used, but left here for future use.
+  private boolean isTerraformInfrastructureRollback(Ambiance ambiance) {
+    boolean isTFStep = isStepType(ambiance, TERRAFORM_ROLLBACK) || isStepType(ambiance, TERRAFORM_DESTROY)
+        || isStepType(ambiance, TERRAFORM_PLAN) || isStepType(ambiance, TERRAFORM_APPLY);
+
+    if (isTFStep) {
+      for (Level level : ambiance.getLevelsList()) {
+        if (level.getIdentifier().equals(OrchestrationConstants.INFRA_ROLLBACK_NODE_IDENTIFIER)) {
+          return true;
+        }
+      }
+    }
+
+    return false;
   }
 
   private boolean isExpiredOrAborted(Status status) {

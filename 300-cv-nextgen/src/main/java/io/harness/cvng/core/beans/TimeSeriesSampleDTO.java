@@ -9,7 +9,7 @@ import org.jetbrains.annotations.NotNull;
 public class TimeSeriesSampleDTO implements Comparable<TimeSeriesSampleDTO> {
   private String txnName;
   private String metricName;
-  private double metricValue;
+  private Double metricValue;
   private Long timestamp;
 
   @Override

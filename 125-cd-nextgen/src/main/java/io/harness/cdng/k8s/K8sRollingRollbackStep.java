@@ -2,6 +2,7 @@ package io.harness.cdng.k8s;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.account.services.AccountService;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
@@ -54,6 +55,7 @@ public class K8sRollingRollbackStep extends TaskExecutableWithRollbackAndRbac<K8
   @Inject ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private InstanceInfoService instanceInfoService;
   @Inject private StepHelper stepHelper;
+  @Inject private AccountService accountService;
 
   @Override
   public Class<StepElementParameters> getStepParametersClass() {
@@ -132,7 +134,9 @@ public class K8sRollingRollbackStep extends TaskExecutableWithRollbackAndRbac<K8
 
       stepResponse = generateStepResponse(ambiance, executionResponse, stepResponseBuilder);
     } finally {
-      stepHelper.sendRollbackTelemetryEvent(ambiance, stepResponse == null ? Status.FAILED : stepResponse.getStatus());
+      String accountName = accountService.getAccount(AmbianceUtils.getAccountId(ambiance)).getName();
+      stepHelper.sendRollbackTelemetryEvent(
+          ambiance, stepResponse == null ? Status.FAILED : stepResponse.getStatus(), accountName);
     }
 
     return stepResponse;

@@ -169,7 +169,7 @@ public class PMSExpressionEvaluatorTest extends PipelineServiceTestBase {
     EngineExpressionEvaluator engineExpressionEvaluator = prepareEngineExpressionEvaluator(newAmbiance);
     PmsSdkInstance pmsSdkInstance =
         PmsSdkInstance.builder().staticAliases(new PipelineServiceApplication().getStaticAliases()).build();
-    doReturn(Collections.singletonList(pmsSdkInstance)).when(pmsSdkInstanceService).getActiveInstances();
+    doReturn(ImmutableMap.of("cd", pmsSdkInstance)).when(pmsSdkInstanceService).getSdkInstanceCacheValue();
     Object pipelineSuccess =
         engineExpressionEvaluator.evaluateExpression("<+" + OrchestrationConstants.PIPELINE_SUCCESS + ">");
     assertThat(pipelineSuccess).isInstanceOf(Boolean.class);
