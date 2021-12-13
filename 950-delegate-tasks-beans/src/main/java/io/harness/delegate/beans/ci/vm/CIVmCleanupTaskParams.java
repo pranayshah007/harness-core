@@ -4,7 +4,6 @@ import io.harness.delegate.beans.ci.CICleanupTaskParams;
 import io.harness.delegate.beans.executioncapability.CIVmConnectionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
-import io.harness.delegate.beans.executioncapability.LiteEngineConnectionCapability;
 import io.harness.expression.ExpressionEvaluator;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
