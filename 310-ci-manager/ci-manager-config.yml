@@ -108,7 +108,7 @@ ciExecutionServiceConfig:
   delegateServiceEndpointVariableValue: "delegate-service:8080"
   addonImage: harness/ci-addon:release-61
   liteEngineImage: harness/ci-lite-engine:release-30
-  isLocal: true
+  isLocal: false
   stepConfig:
     gitCloneConfig:
       image: harness/drone-git:v1.0.4
@@ -173,7 +173,7 @@ pmsGrpcClientConfig:
 
 apiUrl: https://localhost:8181/#/
 
-shouldConfigureWithPMS: true
+shouldConfigureWithPMS: false
 
 enableDashboardTimescale: false
 
