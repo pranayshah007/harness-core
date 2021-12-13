@@ -10,11 +10,8 @@ import io.harness.delegate.task.citasks.vm.helper.HttpHelper;
 
 import java.util.HashMap;
 import javax.inject.Inject;
-
-import lombok.extern.slf4j.Slf4j;
 import retrofit2.Response;
 
-@Slf4j
 public class CIVmConnectionCapabilityCheck implements CapabilityCheck, ProtoCapabilityCheck {
   @Inject HttpHelper httpHelper;
 
@@ -22,7 +19,6 @@ public class CIVmConnectionCapabilityCheck implements CapabilityCheck, ProtoCapa
   public CapabilityResponse performCapabilityCheck(ExecutionCapability delegateCapability) {
     CIVmConnectionCapability connectionCapabiilty = (CIVmConnectionCapability) delegateCapability;
     boolean isOwner = isPoolOwner(connectionCapabiilty.getPoolId());
-    log.info(String.format("vm capability check performed, result is %s", isOwner));
     return CapabilityResponse.builder().delegateCapability(delegateCapability).validated(isOwner).build();
   }
 
@@ -45,12 +41,10 @@ public class CIVmConnectionCapabilityCheck implements CapabilityCheck, ProtoCapa
       return builder.permissionResult(CapabilitySubjectPermission.PermissionResult.DENIED).build();
     }
     boolean isOwner = isPoolOwner(parameters.getCiVmParameters().getPoolId());
-    log.info(String.format("vm capability check performed, result is %s", isOwner));
 
     return builder
-        .permissionResult(isOwner
-                ? CapabilitySubjectPermission.PermissionResult.ALLOWED
-                : CapabilitySubjectPermission.PermissionResult.DENIED)
+        .permissionResult(isOwner ? CapabilitySubjectPermission.PermissionResult.ALLOWED
+                                  : CapabilitySubjectPermission.PermissionResult.DENIED)
         .build();
   }
 }
