@@ -215,9 +215,7 @@ public class TerraformRollbackStepTest extends CategoryTest {
     doNothing().when(terraformStepHelper).saveTerraformConfig(terraformConfig, ambiance);
 
     AccountDTO accountDTO = AccountDTO.builder().name("TestAccountName").build();
-    doReturn(accountDTO)
-            .when(accountService)
-            .getAccount(any());
+    doReturn(accountDTO).when(accountService).getAccount(any());
 
     StepResponse stepResponse =
         terraformRollbackStep.handleTaskResult(ambiance, stepElementParameters, () -> terraformTaskNGResponse);
@@ -253,9 +251,7 @@ public class TerraformRollbackStepTest extends CategoryTest {
     doNothing().when(terraformConfigDAL).clearTerraformConfig(ambiance, "entityId");
 
     AccountDTO accountDTO = AccountDTO.builder().name("TestAccountName").build();
-    doReturn(accountDTO)
-            .when(accountService)
-            .getAccount(any());
+    doReturn(accountDTO).when(accountService).getAccount(any());
 
     StepResponse stepResponse =
         terraformRollbackStep.handleTaskResult(ambiance, stepElementParameters, () -> terraformTaskNGResponse);
@@ -289,9 +285,7 @@ public class TerraformRollbackStepTest extends CategoryTest {
     doReturn(optionalSweepingOutput).when(executionSweepingOutputService).resolveOptional(any(), any());
 
     AccountDTO accountDTO = AccountDTO.builder().name("TestAccountName").build();
-    doReturn(accountDTO)
-            .when(accountService)
-            .getAccount(any());
+    doReturn(accountDTO).when(accountService).getAccount(any());
 
     StepResponse stepResponse =
         terraformRollbackStep.handleTaskResult(ambiance, stepElementParameters, () -> terraformTaskNGResponse);

@@ -541,8 +541,11 @@ public class PipelineServiceModule extends AbstractModule {
   @Singleton
   @Named("PipelineExecutorService")
   public ExecutorService pipelineExecutorService() {
-    return ThreadPool.create(
-        configuration.getPipelineExecutionPoolConfig().getCorePoolSize(), configuration.getPipelineExecutionPoolConfig().getMaxPoolSize(), configuration.getPipelineExecutionPoolConfig().getIdleTime(), configuration.getPipelineExecutionPoolConfig().getTimeUnit(), new ThreadFactoryBuilder().setNameFormat("PipelineExecutorService-%d").build());
+    return ThreadPool.create(configuration.getPipelineExecutionPoolConfig().getCorePoolSize(),
+        configuration.getPipelineExecutionPoolConfig().getMaxPoolSize(),
+        configuration.getPipelineExecutionPoolConfig().getIdleTime(),
+        configuration.getPipelineExecutionPoolConfig().getTimeUnit(),
+        new ThreadFactoryBuilder().setNameFormat("PipelineExecutorService-%d").build());
   }
 
   @Provides

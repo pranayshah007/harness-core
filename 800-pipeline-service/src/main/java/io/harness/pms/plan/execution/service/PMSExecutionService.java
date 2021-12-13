@@ -30,7 +30,7 @@ public interface PMSExecutionService {
       String accountId, String orgId, String projectId, String planExecutionId, boolean pipelineDeleted);
 
   PipelineExecutionSummaryEntity getPipelineExecutionSummaryEntity(
-        String accountId, String orgId, String projectId, String planExecutionId);
+      String accountId, String orgId, String projectId, String planExecutionId);
 
   OrchestrationGraphDTO getOrchestrationGraph(String stageNodeId, String planExecutionId);
 

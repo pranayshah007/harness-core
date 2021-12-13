@@ -83,9 +83,7 @@ public class InstrumentNodeStatusUpdateHandlerTest extends CategoryTest {
             .build();
 
     AccountDTO accountDTO = AccountDTO.builder().name("TestAccountName").build();
-    doReturn(accountDTO)
-            .when(accountService)
-            .getAccount(any());
+    doReturn(accountDTO).when(accountService).getAccount(any());
 
     NodeUpdateInfo nodeUpdateInfo = NodeUpdateInfo.builder().nodeExecution(nodeExecution).updatedTs(2000L).build();
     instrumentNodeStatusUpdateHandler.onNodeStatusUpdate(nodeUpdateInfo);

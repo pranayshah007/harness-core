@@ -1,6 +1,7 @@
 package io.harness.ci.plan.creator.step;
 
-import com.google.protobuf.ByteString;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.ROLLBACK_STEPS;
+
 import io.harness.advisers.nextstep.NextStepAdviserParameters;
 import io.harness.advisers.rollback.OnFailRollbackParameters;
 import io.harness.advisers.rollback.OnFailRollbackParameters.OnFailRollbackParametersBuilder;
@@ -37,14 +38,13 @@ import io.harness.utils.TimeoutUtils;
 import io.harness.when.utils.RunInfoUtils;
 import io.harness.yaml.core.timeout.Timeout;
 
+import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import static io.harness.pms.yaml.YAMLFieldNameConstants.ROLLBACK_STEPS;
 
 @OwnedBy(HarnessTeam.CI)
 public abstract class CIPMSStepPlanCreatorV2<T extends CIAbstractStepNode> extends AbstractStepPlanCreator<T> {
@@ -63,30 +63,30 @@ public abstract class CIPMSStepPlanCreatorV2<T extends CIAbstractStepNode> exten
 
     StepParameters stepParameters = getStepParameters(ctx, stepElement);
     PlanNode stepPlanNode =
-            PlanNode.builder()
-                    .uuid(ctx.getCurrentField().getNode().getUuid())
-                    .name(getName(stepElement))
-                    .identifier(stepElement.getIdentifier())
-                    .stepType(stepElement.getStepSpecType().getStepType())
-                    .group(StepOutcomeGroup.STEP.name())
-                    .stepParameters(stepParameters)
-                    .facilitatorObtainment(FacilitatorObtainment.newBuilder()
-                            .setType(FacilitatorType.newBuilder()
-                                    .setType(stepElement.getStepSpecType().getFacilitatorType())
-                                    .build())
-                            .build())
-                    .adviserObtainments(adviserObtainmentFromMetaData)
-                    .skipCondition(SkipInfoUtils.getSkipCondition(stepElement.getSkipCondition()))
-                    .whenCondition(isStepInsideRollback ? RunInfoUtils.getRunConditionForRollback(stepElement.getWhen())
-                            : RunInfoUtils.getRunCondition(stepElement.getWhen()))
-                    .timeoutObtainment(
-                            SdkTimeoutObtainment.builder()
-                                    .dimension(AbsoluteTimeoutTrackerFactory.DIMENSION)
-                                    .parameters(
-                                            AbsoluteSdkTimeoutTrackerParameters.builder().timeout(getTimeoutString(stepElement)).build())
-                                    .build())
-                    .skipUnresolvedExpressionsCheck(stepElement.getStepSpecType().skipUnresolvedExpressionsCheck())
-                    .build();
+        PlanNode.builder()
+            .uuid(ctx.getCurrentField().getNode().getUuid())
+            .name(getName(stepElement))
+            .identifier(stepElement.getIdentifier())
+            .stepType(stepElement.getStepSpecType().getStepType())
+            .group(StepOutcomeGroup.STEP.name())
+            .stepParameters(stepParameters)
+            .facilitatorObtainment(FacilitatorObtainment.newBuilder()
+                                       .setType(FacilitatorType.newBuilder()
+                                                    .setType(stepElement.getStepSpecType().getFacilitatorType())
+                                                    .build())
+                                       .build())
+            .adviserObtainments(adviserObtainmentFromMetaData)
+            .skipCondition(SkipInfoUtils.getSkipCondition(stepElement.getSkipCondition()))
+            .whenCondition(isStepInsideRollback ? RunInfoUtils.getRunConditionForRollback(stepElement.getWhen())
+                                                : RunInfoUtils.getRunCondition(stepElement.getWhen()))
+            .timeoutObtainment(
+                SdkTimeoutObtainment.builder()
+                    .dimension(AbsoluteTimeoutTrackerFactory.DIMENSION)
+                    .parameters(
+                        AbsoluteSdkTimeoutTrackerParameters.builder().timeout(getTimeoutString(stepElement)).build())
+                    .build())
+            .skipUnresolvedExpressionsCheck(stepElement.getStepSpecType().skipUnresolvedExpressionsCheck())
+            .build();
     return PlanCreationResponse.builder().node(stepPlanNode.getUuid(), stepPlanNode).build();
   }
 
@@ -125,10 +125,10 @@ public abstract class CIPMSStepPlanCreatorV2<T extends CIAbstractStepNode> exten
       YamlField siblingField = GenericPlanCreatorUtils.obtainNextSiblingField(currentField);
       if (siblingField != null && siblingField.getNode().getUuid() != null) {
         return AdviserObtainment.newBuilder()
-                .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.NEXT_STEP.name()).build())
-                .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
-                        NextStepAdviserParameters.builder().nextNodeId(siblingField.getNode().getUuid()).build())))
-                .build();
+            .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.NEXT_STEP.name()).build())
+            .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
+                NextStepAdviserParameters.builder().nextNodeId(siblingField.getNode().getUuid()).build())))
+            .build();
       }
     }
     return null;
@@ -142,10 +142,10 @@ public abstract class CIPMSStepPlanCreatorV2<T extends CIAbstractStepNode> exten
       YamlField siblingField = GenericPlanCreatorUtils.obtainNextSiblingField(currentField);
       if (siblingField != null && siblingField.getNode().getUuid() != null) {
         return AdviserObtainment.newBuilder()
-                .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.ON_SUCCESS.name()).build())
-                .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
-                        OnSuccessAdviserParameters.builder().nextNodeId(siblingField.getNode().getUuid()).build())))
-                .build();
+            .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.ON_SUCCESS.name()).build())
+            .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
+                OnSuccessAdviserParameters.builder().nextNodeId(siblingField.getNode().getUuid()).build())))
+            .build();
       }
     }
     return null;
@@ -155,8 +155,8 @@ public abstract class CIPMSStepPlanCreatorV2<T extends CIAbstractStepNode> exten
     if (stepElement.getStepSpecType() instanceof WithStepElementParameters) {
       stepElement.setTimeout(TimeoutUtils.getTimeout(stepElement.getTimeout()));
       return ((CIStepInfo) stepElement.getStepSpecType())
-              .getStepParameters(stepElement,
-                      getRollbackParameters(ctx.getCurrentField(), Collections.emptySet(), RollbackStrategy.UNKNOWN));
+          .getStepParameters(stepElement,
+              getRollbackParameters(ctx.getCurrentField(), Collections.emptySet(), RollbackStrategy.UNKNOWN));
     }
 
     return stepElement.getStepSpecType().getStepParameters();
@@ -176,14 +176,14 @@ public abstract class CIPMSStepPlanCreatorV2<T extends CIAbstractStepNode> exten
     ParameterField<Timeout> timeout = TimeoutUtils.getTimeout(stepElement.getTimeout());
     if (timeout.isExpression()) {
       return ParameterField.createExpressionField(
-              true, timeout.getExpressionValue(), timeout.getInputSetValidator(), true);
+          true, timeout.getExpressionValue(), timeout.getInputSetValidator(), true);
     } else {
       return ParameterField.createValueField(timeout.getValue().getTimeoutString());
     }
   }
 
   protected OnFailRollbackParameters getRollbackParameters(
-          YamlField currentField, Set<FailureType> failureTypes, RollbackStrategy rollbackStrategy) {
+      YamlField currentField, Set<FailureType> failureTypes, RollbackStrategy rollbackStrategy) {
     OnFailRollbackParametersBuilder rollbackParametersBuilder = OnFailRollbackParameters.builder();
     rollbackParametersBuilder.applicableFailureTypes(failureTypes);
     rollbackParametersBuilder.strategy(rollbackStrategy);
@@ -195,9 +195,9 @@ public abstract class CIPMSStepPlanCreatorV2<T extends CIAbstractStepNode> exten
     String stageNodeId = GenericPlanCreatorUtils.getStageNodeId(currentField);
     Map<RollbackStrategy, String> rollbackStrategyStringMap = new HashMap<>();
     rollbackStrategyStringMap.put(RollbackStrategy.STAGE_ROLLBACK,
-            stageNodeId + PipelineServiceUtilPlanCreationConstants.COMBINED_ROLLBACK_ID_SUFFIX);
+        stageNodeId + PipelineServiceUtilPlanCreationConstants.COMBINED_ROLLBACK_ID_SUFFIX);
     rollbackStrategyStringMap.put(
-            RollbackStrategy.STEP_GROUP_ROLLBACK, GenericPlanCreatorUtils.getStepGroupRollbackStepsNodeId(currentField));
+        RollbackStrategy.STEP_GROUP_ROLLBACK, GenericPlanCreatorUtils.getStepGroupRollbackStepsNodeId(currentField));
     return rollbackStrategyStringMap;
   }
 }

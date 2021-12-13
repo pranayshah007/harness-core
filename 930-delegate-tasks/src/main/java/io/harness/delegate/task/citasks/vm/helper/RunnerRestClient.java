@@ -3,11 +3,10 @@ package io.harness.delegate.task.citasks.vm.helper;
 import io.harness.delegate.beans.ci.vm.runner.DestroyVmRequest;
 import io.harness.delegate.beans.ci.vm.runner.ExecuteStepRequest;
 import io.harness.delegate.beans.ci.vm.runner.ExecuteStepResponse;
+import io.harness.delegate.beans.ci.vm.runner.PoolOwnerStepResponse;
 import io.harness.delegate.beans.ci.vm.runner.SetupVmRequest;
 import io.harness.delegate.beans.ci.vm.runner.SetupVmResponse;
-import io.harness.delegate.beans.ci.vm.runner.PoolOwnerStepResponse;
 
-import java.util.Map;
 import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.Headers;

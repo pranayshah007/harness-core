@@ -82,13 +82,13 @@ public class CdngPipelineExecutionUpdateEventHandler implements OrchestrationEve
     return isStepType(ambiance, TERRAFORM_ROLLBACK);
   }
 
-  //currently not used, but left here for future use.
+  // currently not used, but left here for future use.
   private boolean isInfrastructureRollback(Ambiance ambiance) {
     Level level = AmbianceUtils.obtainCurrentLevel(ambiance);
     return level.getIdentifier().equals(OrchestrationConstants.INFRA_ROLLBACK_NODE_IDENTIFIER);
   }
 
-  //currently not used, but left here for future use.
+  // currently not used, but left here for future use.
   private boolean isDeploymentRollback(Ambiance ambiance) {
     boolean hasInfraRollbackNodeStep = false;
     boolean hasRollbackStepsStep = false;
@@ -109,7 +109,7 @@ public class CdngPipelineExecutionUpdateEventHandler implements OrchestrationEve
     return hasRollbackStepsStep && !hasInfraRollbackNodeStep;
   }
 
-  //currently not used, but left here for future use.
+  // currently not used, but left here for future use.
   private boolean isTerraformInfrastructureRollback(Ambiance ambiance) {
     boolean isTFStep = isStepType(ambiance, TERRAFORM_ROLLBACK) || isStepType(ambiance, TERRAFORM_DESTROY)
         || isStepType(ambiance, TERRAFORM_PLAN) || isStepType(ambiance, TERRAFORM_APPLY);

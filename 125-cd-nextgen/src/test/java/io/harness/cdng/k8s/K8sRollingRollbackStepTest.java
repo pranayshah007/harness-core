@@ -135,9 +135,7 @@ public class K8sRollingRollbackStepTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testHandleTaskResultWithSecurityContext() throws Exception {
     AccountDTO accountDTO = AccountDTO.builder().name("TestAccountName").build();
-    doReturn(accountDTO)
-            .when(accountService)
-            .getAccount(any());
+    doReturn(accountDTO).when(accountService).getAccount(any());
 
     StepResponse stepResponse = k8sRollingRollbackStep.handleTaskResultWithSecurityContext(
         ambiance, StepElementParameters.builder().build(), () -> {

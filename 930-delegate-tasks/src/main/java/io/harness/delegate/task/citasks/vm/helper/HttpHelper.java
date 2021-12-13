@@ -8,9 +8,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.ci.vm.runner.DestroyVmRequest;
 import io.harness.delegate.beans.ci.vm.runner.ExecuteStepRequest;
 import io.harness.delegate.beans.ci.vm.runner.ExecuteStepResponse;
+import io.harness.delegate.beans.ci.vm.runner.PoolOwnerStepResponse;
 import io.harness.delegate.beans.ci.vm.runner.SetupVmRequest;
 import io.harness.delegate.beans.ci.vm.runner.SetupVmResponse;
-import io.harness.delegate.beans.ci.vm.runner.PoolOwnerStepResponse;
 import io.harness.network.Http;
 
 import com.google.inject.Singleton;

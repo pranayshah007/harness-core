@@ -48,7 +48,6 @@ public class InstrumentNodeStatusUpdateHandler implements AsyncInformObserver, N
     if ((nodeExecution.getNode().getStepType().getStepCategory() == StepCategory.STAGE
             || nodeExecution.getNode().getStepType().getStepCategory() == StepCategory.STEP)
         && StatusUtils.isFinalStatus(nodeExecution.getStatus())) {
-
       String accountId = AmbianceUtils.getAccountId(ambiance);
       AccountDTO accountDTO = accountService.getAccount(accountId);
       String accountName = accountDTO.getName();
@@ -64,7 +63,7 @@ public class InstrumentNodeStatusUpdateHandler implements AsyncInformObserver, N
 
       telemetryReporter.sendTrackEvent(PIPELINE_EXECUTION, email, accountId, propertiesMap,
           Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL,
-              TelemetryOption.builder().sendForCommunity(true).build());
+          TelemetryOption.builder().sendForCommunity(true).build());
     }
   }
 

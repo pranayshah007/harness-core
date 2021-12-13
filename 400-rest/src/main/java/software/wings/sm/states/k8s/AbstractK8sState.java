@@ -242,7 +242,8 @@ public abstract class AbstractK8sState extends State implements K8sStateExecutor
         K8sDelegateManifestConfig.builder()
             .manifestStoreTypes(appManifest.getStoreType())
             .helmCommandFlag(ApplicationManifestUtils.getHelmCommandFlags(appManifest.getHelmCommandFlag()))
-            .optimizedFilesFetch(featureFlagService.isEnabled(OPTIMIZED_GIT_FETCH_FILES, context.getAccountId())  && !applicationManifestUtils.isKustomizeSource(context) );
+            .optimizedFilesFetch(featureFlagService.isEnabled(OPTIMIZED_GIT_FETCH_FILES, context.getAccountId())
+                && !applicationManifestUtils.isKustomizeSource(context));
 
     boolean customManifestEnabled = featureFlagService.isEnabled(FeatureName.CUSTOM_MANIFEST, context.getAccountId());
     manifestConfigBuilder.customManifestEnabled(customManifestEnabled);
@@ -328,7 +329,8 @@ public abstract class AbstractK8sState extends State implements K8sStateExecutor
     GitFetchFilesTaskParams fetchFilesTaskParams =
         applicationManifestUtils.createGitFetchFilesTaskParams(context, app, appManifestMap);
     fetchFilesTaskParams.setOptimizedFilesFetch(
-        featureFlagService.isEnabled(OPTIMIZED_GIT_FETCH_FILES, context.getAccountId()) && !applicationManifestUtils.isKustomizeSource(context) );
+        featureFlagService.isEnabled(OPTIMIZED_GIT_FETCH_FILES, context.getAccountId())
+        && !applicationManifestUtils.isKustomizeSource(context));
     fetchFilesTaskParams.setActivityId(activityId);
     fetchFilesTaskParams.setAppManifestKind(AppManifestKind.VALUES);
     fetchFilesTaskParams.setDelegateSelectors(

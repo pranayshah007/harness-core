@@ -1,7 +1,10 @@
 package io.harness.cvng.cdng.services.impl;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.google.protobuf.ByteString;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.FAILURE_STRATEGIES;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.ROLLBACK_STEPS;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.STAGE;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP_GROUP;
+
 import io.harness.advisers.manualIntervention.ManualInterventionAdviserRollbackParameters;
 import io.harness.advisers.manualIntervention.ManualInterventionAdviserWithRollback;
 import io.harness.advisers.nextstep.NextStepAdviserParameters;
@@ -58,6 +61,8 @@ import io.harness.yaml.core.failurestrategy.manualintervention.ManualInterventio
 import io.harness.yaml.core.failurestrategy.retry.RetryFailureActionConfig;
 import io.harness.yaml.core.timeout.Timeout;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.google.protobuf.ByteString;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -68,11 +73,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import static io.harness.pms.yaml.YAMLFieldNameConstants.FAILURE_STRATEGIES;
-import static io.harness.pms.yaml.YAMLFieldNameConstants.ROLLBACK_STEPS;
-import static io.harness.pms.yaml.YAMLFieldNameConstants.STAGE;
-import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP_GROUP;
 
 @OwnedBy(HarnessTeam.CV)
 public abstract class CVNGPlanCreatorV2<T extends CVNGAbstractStepNode> extends AbstractStepPlanCreator<T> {
@@ -91,30 +91,30 @@ public abstract class CVNGPlanCreatorV2<T extends CVNGAbstractStepNode> extends 
 
     StepParameters stepParameters = getStepParameters(ctx, stepElement);
     PlanNode stepPlanNode =
-            PlanNode.builder()
-                    .uuid(ctx.getCurrentField().getNode().getUuid())
-                    .name(getName(stepElement))
-                    .identifier(stepElement.getIdentifier())
-                    .stepType(stepElement.getStepSpecType().getStepType())
-                    .group(StepOutcomeGroup.STEP.name())
-                    .stepParameters(stepParameters)
-                    .facilitatorObtainment(FacilitatorObtainment.newBuilder()
-                            .setType(FacilitatorType.newBuilder()
-                                    .setType(stepElement.getStepSpecType().getFacilitatorType())
-                                    .build())
-                            .build())
-                    .adviserObtainments(adviserObtainmentFromMetaData)
-                    .skipCondition(SkipInfoUtils.getSkipCondition(stepElement.getSkipCondition()))
-                    .whenCondition(isStepInsideRollback ? RunInfoUtils.getRunConditionForRollback(stepElement.getWhen())
-                            : RunInfoUtils.getRunCondition(stepElement.getWhen()))
-                    .timeoutObtainment(
-                            SdkTimeoutObtainment.builder()
-                                    .dimension(AbsoluteTimeoutTrackerFactory.DIMENSION)
-                                    .parameters(
-                                            AbsoluteSdkTimeoutTrackerParameters.builder().timeout(getTimeoutString(stepElement)).build())
-                                    .build())
-                    .skipUnresolvedExpressionsCheck(stepElement.getStepSpecType().skipUnresolvedExpressionsCheck())
-                    .build();
+        PlanNode.builder()
+            .uuid(ctx.getCurrentField().getNode().getUuid())
+            .name(getName(stepElement))
+            .identifier(stepElement.getIdentifier())
+            .stepType(stepElement.getStepSpecType().getStepType())
+            .group(StepOutcomeGroup.STEP.name())
+            .stepParameters(stepParameters)
+            .facilitatorObtainment(FacilitatorObtainment.newBuilder()
+                                       .setType(FacilitatorType.newBuilder()
+                                                    .setType(stepElement.getStepSpecType().getFacilitatorType())
+                                                    .build())
+                                       .build())
+            .adviserObtainments(adviserObtainmentFromMetaData)
+            .skipCondition(SkipInfoUtils.getSkipCondition(stepElement.getSkipCondition()))
+            .whenCondition(isStepInsideRollback ? RunInfoUtils.getRunConditionForRollback(stepElement.getWhen())
+                                                : RunInfoUtils.getRunCondition(stepElement.getWhen()))
+            .timeoutObtainment(
+                SdkTimeoutObtainment.builder()
+                    .dimension(AbsoluteTimeoutTrackerFactory.DIMENSION)
+                    .parameters(
+                        AbsoluteSdkTimeoutTrackerParameters.builder().timeout(getTimeoutString(stepElement)).build())
+                    .build())
+            .skipUnresolvedExpressionsCheck(stepElement.getStepSpecType().skipUnresolvedExpressionsCheck())
+            .build();
     return PlanCreationResponse.builder().node(stepPlanNode.getUuid(), stepPlanNode).build();
   }
 
@@ -126,7 +126,7 @@ public abstract class CVNGPlanCreatorV2<T extends CVNGAbstractStepNode> extends 
 
     // Adding adviser obtainment list from the failure strategy.
     List<AdviserObtainment> adviserObtainmentList =
-            new ArrayList<>(getAdviserObtainmentForFailureStrategy(currentField, isStepInsideRollback));
+        new ArrayList<>(getAdviserObtainmentForFailureStrategy(currentField, isStepInsideRollback));
 
     /*
      * Adding OnSuccess adviser if step is inside rollback section else adding NextStep adviser for when condition to
@@ -155,10 +155,10 @@ public abstract class CVNGPlanCreatorV2<T extends CVNGAbstractStepNode> extends 
       YamlField siblingField = GenericPlanCreatorUtils.obtainNextSiblingField(currentField);
       if (siblingField != null && siblingField.getNode().getUuid() != null) {
         return AdviserObtainment.newBuilder()
-                .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.NEXT_STEP.name()).build())
-                .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
-                        NextStepAdviserParameters.builder().nextNodeId(siblingField.getNode().getUuid()).build())))
-                .build();
+            .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.NEXT_STEP.name()).build())
+            .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
+                NextStepAdviserParameters.builder().nextNodeId(siblingField.getNode().getUuid()).build())))
+            .build();
       }
     }
     return null;
@@ -172,10 +172,10 @@ public abstract class CVNGPlanCreatorV2<T extends CVNGAbstractStepNode> extends 
       YamlField siblingField = GenericPlanCreatorUtils.obtainNextSiblingField(currentField);
       if (siblingField != null && siblingField.getNode().getUuid() != null) {
         return AdviserObtainment.newBuilder()
-                .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.ON_SUCCESS.name()).build())
-                .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
-                        OnSuccessAdviserParameters.builder().nextNodeId(siblingField.getNode().getUuid()).build())))
-                .build();
+            .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.ON_SUCCESS.name()).build())
+            .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
+                OnSuccessAdviserParameters.builder().nextNodeId(siblingField.getNode().getUuid()).build())))
+            .build();
       }
     }
     return null;
@@ -185,49 +185,49 @@ public abstract class CVNGPlanCreatorV2<T extends CVNGAbstractStepNode> extends 
     if (stepElement.getStepSpecType() instanceof WithStepElementParameters) {
       stepElement.setTimeout(TimeoutUtils.getTimeout(stepElement.getTimeout()));
       return ((CVStepInfoBase) stepElement.getStepSpecType())
-              .getStepParameters(stepElement,
-                      getRollbackParameters(ctx.getCurrentField(), Collections.emptySet(), RollbackStrategy.UNKNOWN));
+          .getStepParameters(stepElement,
+              getRollbackParameters(ctx.getCurrentField(), Collections.emptySet(), RollbackStrategy.UNKNOWN));
     }
 
     return stepElement.getStepSpecType().getStepParameters();
   }
 
   protected AdviserObtainment getRetryAdviserObtainment(Set<FailureType> failureTypes, String nextNodeUuid,
-                                                        AdviserObtainment.Builder adviserObtainmentBuilder, RetryFailureActionConfig retryAction,
-                                                        ParameterField<Integer> retryCount, FailureStrategyActionConfig actionUnderRetry, YamlField currentField) {
+      AdviserObtainment.Builder adviserObtainmentBuilder, RetryFailureActionConfig retryAction,
+      ParameterField<Integer> retryCount, FailureStrategyActionConfig actionUnderRetry, YamlField currentField) {
     return adviserObtainmentBuilder.setType(RetryAdviserWithRollback.ADVISER_TYPE)
-            .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
-                    RetryAdviserRollbackParameters.builder()
-                            .applicableFailureTypes(failureTypes)
-                            .nextNodeId(nextNodeUuid)
-                            .repairActionCodeAfterRetry(GenericPlanCreatorUtils.toRepairAction(actionUnderRetry))
-                            .retryCount(retryCount.getValue())
-                            .strategyToUuid(getRollbackStrategyMap(currentField))
-                            .waitIntervalList(retryAction.getSpecConfig()
-                                    .getRetryIntervals()
-                                    .getValue()
-                                    .stream()
-                                    .map(s -> (int) TimeoutUtils.getTimeoutInSeconds(s, 0))
-                                    .collect(Collectors.toList()))
-                            .build())))
-            .build();
+        .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
+            RetryAdviserRollbackParameters.builder()
+                .applicableFailureTypes(failureTypes)
+                .nextNodeId(nextNodeUuid)
+                .repairActionCodeAfterRetry(GenericPlanCreatorUtils.toRepairAction(actionUnderRetry))
+                .retryCount(retryCount.getValue())
+                .strategyToUuid(getRollbackStrategyMap(currentField))
+                .waitIntervalList(retryAction.getSpecConfig()
+                                      .getRetryIntervals()
+                                      .getValue()
+                                      .stream()
+                                      .map(s -> (int) TimeoutUtils.getTimeoutInSeconds(s, 0))
+                                      .collect(Collectors.toList()))
+                .build())))
+        .build();
   }
 
   protected AdviserObtainment getManualInterventionAdviserObtainment(Set<FailureType> failureTypes,
-                                                                     AdviserObtainment.Builder adviserObtainmentBuilder, ManualInterventionFailureActionConfig actionConfig,
-                                                                     FailureStrategyActionConfig actionUnderManualIntervention) {
+      AdviserObtainment.Builder adviserObtainmentBuilder, ManualInterventionFailureActionConfig actionConfig,
+      FailureStrategyActionConfig actionUnderManualIntervention) {
     return adviserObtainmentBuilder.setType(ManualInterventionAdviserWithRollback.ADVISER_TYPE)
-            .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
-                    ManualInterventionAdviserRollbackParameters.builder()
-                            .applicableFailureTypes(failureTypes)
-                            .timeoutAction(GenericPlanCreatorUtils.toRepairAction(actionUnderManualIntervention))
-                            .timeout((int) TimeoutUtils.getTimeoutInSeconds(actionConfig.getSpecConfig().getTimeout(), 0))
-                            .build())))
-            .build();
+        .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
+            ManualInterventionAdviserRollbackParameters.builder()
+                .applicableFailureTypes(failureTypes)
+                .timeoutAction(GenericPlanCreatorUtils.toRepairAction(actionUnderManualIntervention))
+                .timeout((int) TimeoutUtils.getTimeoutInSeconds(actionConfig.getSpecConfig().getTimeout(), 0))
+                .build())))
+        .build();
   }
 
   private List<FailureStrategyConfig> getFieldFailureStrategies(
-          YamlField currentField, String fieldName, boolean isStepInsideRollback) {
+      YamlField currentField, String fieldName, boolean isStepInsideRollback) {
     YamlNode fieldNode = YamlUtils.getGivenYamlNodeFromParentPath(currentField.getNode(), fieldName);
     if (isStepInsideRollback && fieldNode != null) {
       // Check if found fieldNode is within rollbackSteps section
@@ -249,7 +249,7 @@ public abstract class CVNGPlanCreatorV2<T extends CVNGAbstractStepNode> extends 
     try {
       if (failureStrategy != null) {
         failureStrategyConfigs =
-                YamlUtils.read(failureStrategy.getNode().toString(), new TypeReference<List<FailureStrategyConfig>>() {});
+            YamlUtils.read(failureStrategy.getNode().toString(), new TypeReference<List<FailureStrategyConfig>>() {});
       }
     } catch (IOException e) {
       throw new InvalidRequestException("Invalid yaml", e);
@@ -258,20 +258,20 @@ public abstract class CVNGPlanCreatorV2<T extends CVNGAbstractStepNode> extends 
   }
 
   protected List<AdviserObtainment> getAdviserObtainmentForFailureStrategy(
-          YamlField currentField, boolean isStepInsideRollback) {
+      YamlField currentField, boolean isStepInsideRollback) {
     List<AdviserObtainment> adviserObtainmentList = new ArrayList<>();
     List<FailureStrategyConfig> stageFailureStrategies =
-            getFieldFailureStrategies(currentField, STAGE, isStepInsideRollback);
+        getFieldFailureStrategies(currentField, STAGE, isStepInsideRollback);
     List<FailureStrategyConfig> stepGroupFailureStrategies =
-            getFieldFailureStrategies(currentField, STEP_GROUP, isStepInsideRollback);
+        getFieldFailureStrategies(currentField, STEP_GROUP, isStepInsideRollback);
     List<FailureStrategyConfig> stepFailureStrategies = getFailureStrategies(currentField.getNode());
 
     Map<FailureStrategyActionConfig, Collection<FailureType>> actionMap;
     FailureStrategiesUtils.priorityMergeFailureStrategies(
-            stepFailureStrategies, stepGroupFailureStrategies, stageFailureStrategies);
+        stepFailureStrategies, stepGroupFailureStrategies, stageFailureStrategies);
 
     actionMap = FailureStrategiesUtils.priorityMergeFailureStrategies(
-            stepFailureStrategies, stepGroupFailureStrategies, stageFailureStrategies);
+        stepFailureStrategies, stepGroupFailureStrategies, stageFailureStrategies);
 
     for (Map.Entry<FailureStrategyActionConfig, Collection<FailureType>> entry : actionMap.entrySet()) {
       FailureStrategyActionConfig action = entry.getKey();
@@ -295,12 +295,12 @@ public abstract class CVNGPlanCreatorV2<T extends CVNGAbstractStepNode> extends 
       switch (actionType) {
         case IGNORE:
           adviserObtainmentList.add(
-                  adviserObtainmentBuilder.setType(IgnoreAdviser.ADVISER_TYPE)
-                          .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(IgnoreAdviserParameters.builder()
-                                  .applicableFailureTypes(failureTypes)
-                                  .nextNodeId(nextNodeUuid)
-                                  .build())))
-                          .build());
+              adviserObtainmentBuilder.setType(IgnoreAdviser.ADVISER_TYPE)
+                  .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(IgnoreAdviserParameters.builder()
+                                                                                .applicableFailureTypes(failureTypes)
+                                                                                .nextNodeId(nextNodeUuid)
+                                                                                .build())))
+                  .build());
           break;
         case RETRY:
           RetryFailureActionConfig retryAction = (RetryFailureActionConfig) action;
@@ -308,39 +308,39 @@ public abstract class CVNGPlanCreatorV2<T extends CVNGAbstractStepNode> extends 
           ParameterField<Integer> retryCount = retryAction.getSpecConfig().getRetryCount();
           FailureStrategyActionConfig actionUnderRetry = retryAction.getSpecConfig().getOnRetryFailure().getAction();
           adviserObtainmentList.add(getRetryAdviserObtainment(failureTypes, nextNodeUuid, adviserObtainmentBuilder,
-                  retryAction, retryCount, actionUnderRetry, currentField));
+              retryAction, retryCount, actionUnderRetry, currentField));
           break;
         case MARK_AS_SUCCESS:
           adviserObtainmentList.add(
-                  adviserObtainmentBuilder.setType(OnMarkSuccessAdviser.ADVISER_TYPE)
-                          .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(OnMarkSuccessAdviserParameters.builder()
-                                  .applicableFailureTypes(failureTypes)
-                                  .nextNodeId(nextNodeUuid)
-                                  .build())))
-                          .build());
+              adviserObtainmentBuilder.setType(OnMarkSuccessAdviser.ADVISER_TYPE)
+                  .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(OnMarkSuccessAdviserParameters.builder()
+                                                                                .applicableFailureTypes(failureTypes)
+                                                                                .nextNodeId(nextNodeUuid)
+                                                                                .build())))
+                  .build());
 
           break;
         case ABORT:
           adviserObtainmentList.add(
-                  adviserObtainmentBuilder.setType(OnAbortAdviser.ADVISER_TYPE)
-                          .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
-                                  OnAbortAdviserParameters.builder().applicableFailureTypes(failureTypes).build())))
-                          .build());
+              adviserObtainmentBuilder.setType(OnAbortAdviser.ADVISER_TYPE)
+                  .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
+                      OnAbortAdviserParameters.builder().applicableFailureTypes(failureTypes).build())))
+                  .build());
           break;
         case STAGE_ROLLBACK:
           OnFailRollbackParameters rollbackParameters =
-                  getRollbackParameters(currentField, failureTypes, RollbackStrategy.STAGE_ROLLBACK);
+              getRollbackParameters(currentField, failureTypes, RollbackStrategy.STAGE_ROLLBACK);
           adviserObtainmentList.add(adviserObtainmentBuilder.setType(OnFailRollbackAdviser.ADVISER_TYPE)
-                  .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(rollbackParameters)))
-                  .build());
+                                        .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(rollbackParameters)))
+                                        .build());
           break;
         case MANUAL_INTERVENTION:
           ManualInterventionFailureActionConfig actionConfig = (ManualInterventionFailureActionConfig) action;
           FailureStrategiesUtils.validateManualInterventionFailureAction(actionConfig);
           FailureStrategyActionConfig actionUnderManualIntervention =
-                  actionConfig.getSpecConfig().getOnTimeout().getAction();
+              actionConfig.getSpecConfig().getOnTimeout().getAction();
           adviserObtainmentList.add(getManualInterventionAdviserObtainment(
-                  failureTypes, adviserObtainmentBuilder, actionConfig, actionUnderManualIntervention));
+              failureTypes, adviserObtainmentBuilder, actionConfig, actionUnderManualIntervention));
           break;
         default:
           Switch.unhandled(actionType);
@@ -363,14 +363,14 @@ public abstract class CVNGPlanCreatorV2<T extends CVNGAbstractStepNode> extends 
     ParameterField<Timeout> timeout = TimeoutUtils.getTimeout(stepElement.getTimeout());
     if (timeout.isExpression()) {
       return ParameterField.createExpressionField(
-              true, timeout.getExpressionValue(), timeout.getInputSetValidator(), true);
+          true, timeout.getExpressionValue(), timeout.getInputSetValidator(), true);
     } else {
       return ParameterField.createValueField(timeout.getValue().getTimeoutString());
     }
   }
 
   protected OnFailRollbackParameters getRollbackParameters(
-          YamlField currentField, Set<FailureType> failureTypes, RollbackStrategy rollbackStrategy) {
+      YamlField currentField, Set<FailureType> failureTypes, RollbackStrategy rollbackStrategy) {
     OnFailRollbackParametersBuilder rollbackParametersBuilder = OnFailRollbackParameters.builder();
     rollbackParametersBuilder.applicableFailureTypes(failureTypes);
     rollbackParametersBuilder.strategy(rollbackStrategy);
@@ -382,9 +382,9 @@ public abstract class CVNGPlanCreatorV2<T extends CVNGAbstractStepNode> extends 
     String stageNodeId = GenericPlanCreatorUtils.getStageNodeId(currentField);
     Map<RollbackStrategy, String> rollbackStrategyStringMap = new HashMap<>();
     rollbackStrategyStringMap.put(RollbackStrategy.STAGE_ROLLBACK,
-            stageNodeId + PipelineServiceUtilPlanCreationConstants.COMBINED_ROLLBACK_ID_SUFFIX);
+        stageNodeId + PipelineServiceUtilPlanCreationConstants.COMBINED_ROLLBACK_ID_SUFFIX);
     rollbackStrategyStringMap.put(
-            RollbackStrategy.STEP_GROUP_ROLLBACK, GenericPlanCreatorUtils.getStepGroupRollbackStepsNodeId(currentField));
+        RollbackStrategy.STEP_GROUP_ROLLBACK, GenericPlanCreatorUtils.getStepGroupRollbackStepsNodeId(currentField));
     return rollbackStrategyStringMap;
   }
 }

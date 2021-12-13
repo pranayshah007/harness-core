@@ -58,7 +58,6 @@ import io.harness.telemetry.TelemetryReporter;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -115,37 +114,23 @@ public class InstrumentationPipelineEndEventHandler implements OrchestrationEndO
     String identity = ambiance.getMetadata().getTriggerInfo().getTriggeredBy().getExtraInfoMap().get("email");
     telemetryReporter.sendTrackEvent(PIPELINE_EXECUTION, identity, accountId, propertiesMap,
         Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL,
-            TelemetryOption.builder().sendForCommunity(true).build());
+        TelemetryOption.builder().sendForCommunity(true).build());
 
     sendNotificationEvents(notificationRulesList, ambiance, accountId, accountName);
 
     Set<String> serviceNames = getServiceNamesForPipelineExecution(pipelineExecutionSummaryEntity);
 
     for (String serviceName : serviceNames) {
-      sendServiceUsedInPipelineExecutionEvent(
-              pipelineId,
-              identity,
-              accountId,
-              accountName,
-              orgId,
-              projectId,
-              planExecutionId,
-              serviceName,
-              pipelineExecutionSummaryEntity.getPipelineIdentifier());
+      sendServiceUsedInPipelineExecutionEvent(pipelineId, identity, accountId, accountName, orgId, projectId,
+          planExecutionId, serviceName, pipelineExecutionSummaryEntity.getPipelineIdentifier());
     }
 
-    sendCountOfDistinctActiveServicesEvent(
-            pipelineId,
-            identity,
-            accountId,
-            accountName,
-            orgId,
-            projectId);
+    sendCountOfDistinctActiveServicesEvent(pipelineId, identity, accountId, accountName, orgId, projectId);
   }
 
   @VisibleForTesting
   private void sendCountOfDistinctActiveServicesEvent(
-          String pipelineId, String identity, String accountId, String accountName, String orgId, String projectId) {
+      String pipelineId, String identity, String accountId, String accountName, String orgId, String projectId) {
     long currentTS = System.currentTimeMillis();
     long searchingPeriod = 30L * 24 * 60 * 60 * 1000; // 30 days
     List<PlanExecution> planExecutionList =
@@ -181,7 +166,9 @@ public class InstrumentationPipelineEndEventHandler implements OrchestrationEndO
     }
   }
 
-  private void sendServiceUsedInPipelineExecutionEvent(String eventPipelineId, String identity, String accountId, String accountName, String orgId, String projectId, String planExecutionId, String serviceName, String servicePipelineId) {
+  private void sendServiceUsedInPipelineExecutionEvent(String eventPipelineId, String identity, String accountId,
+      String accountName, String orgId, String projectId, String planExecutionId, String serviceName,
+      String servicePipelineId) {
     HashMap<String, Object> serviceUsedPropMap = new HashMap<>();
     serviceUsedPropMap.put(SERVICE_USED_EXECUTION_ID, planExecutionId);
     serviceUsedPropMap.put(SERVICE_USED_SERVICE_NAME, serviceName);
@@ -192,8 +179,8 @@ public class InstrumentationPipelineEndEventHandler implements OrchestrationEndO
     serviceUsedPropMap.put(SERVICE_USED_EVENT_PIPELINE_ID, eventPipelineId);
     serviceUsedPropMap.put(SERVICE_USED_SERVICE_PIPELINE_ID, servicePipelineId);
     telemetryReporter.sendTrackEvent(SERVICE_USED_EVENT, identity, accountId, serviceUsedPropMap,
-            Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL,
-            TelemetryOption.builder().sendForCommunity(true).build());
+        Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL,
+        TelemetryOption.builder().sendForCommunity(true).build());
   }
 
   private Set<String> getServiceNamesForPipelineExecution(PipelineExecutionSummaryEntity executionSummary) {
@@ -223,7 +210,7 @@ public class InstrumentationPipelineEndEventHandler implements OrchestrationEndO
       String email = PipelineInstrumentationUtils.getIdentityFromAmbiance(ambiance);
       telemetryReporter.sendTrackEvent(PIPELINE_NOTIFICATION, email, accountId, propertiesMap,
           Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL,
-              TelemetryOption.builder().sendForCommunity(true).build());
+          TelemetryOption.builder().sendForCommunity(true).build());
     }
   }
 

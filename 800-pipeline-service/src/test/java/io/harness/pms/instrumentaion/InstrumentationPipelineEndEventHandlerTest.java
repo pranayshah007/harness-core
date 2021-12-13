@@ -50,7 +50,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import org.bson.Document;
 import org.junit.Before;
 import org.junit.Test;
@@ -138,9 +137,7 @@ public class InstrumentationPipelineEndEventHandlerTest extends CategoryTest {
         .getNotificationMethodTypes(notificationRulesList);
 
     AccountDTO accountDTO = AccountDTO.builder().name("TestAccountName").build();
-    doReturn(accountDTO)
-            .when(accountService)
-            .getAccount(any());
+    doReturn(accountDTO).when(accountService).getAccount(any());
 
     List<PlanExecution> planExecutionList = new ArrayList<>();
     Map<String, String> planExecution1 = new HashMap<>();
@@ -153,18 +150,12 @@ public class InstrumentationPipelineEndEventHandlerTest extends CategoryTest {
     planExecution2.put(SetupAbstractionKeys.orgIdentifier, "TestOrganizationId");
     planExecution2.put(SetupAbstractionKeys.projectIdentifier, "TestProjectId");
 
-    planExecutionList.add(PlanExecution.builder()
-            .uuid("qwertyuiop11111")
-            .setupAbstractions(planExecution1)
-            .build());
-    planExecutionList.add(PlanExecution.builder()
-            .uuid("qwertyuiop22222")
-            .setupAbstractions(planExecution2)
-            .build());
+    planExecutionList.add(PlanExecution.builder().uuid("qwertyuiop11111").setupAbstractions(planExecution1).build());
+    planExecutionList.add(PlanExecution.builder().uuid("qwertyuiop22222").setupAbstractions(planExecution2).build());
     doReturn(planExecutionList)
-            .when(planExecutionService)
-            .findAllByAccountIdAndOrgIdAndProjectIdAndLastUpdatedAtInBetweenTimestamps(any(), any(), any(), anyLong(), anyLong());
-
+        .when(planExecutionService)
+        .findAllByAccountIdAndOrgIdAndProjectIdAndLastUpdatedAtInBetweenTimestamps(
+            any(), any(), any(), anyLong(), anyLong());
 
     List serviceIdentifiers1 = new ArrayList();
     serviceIdentifiers1.add("TestVirtualService1_instance1");
@@ -173,14 +164,13 @@ public class InstrumentationPipelineEndEventHandlerTest extends CategoryTest {
     document1.put("serviceIdentifiers", serviceIdentifiers1);
     Map<String, Document> moduleInfo1 = new HashMap<>();
     moduleInfo1.put("cd", document1);
-    PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity1 = PipelineExecutionSummaryEntity.builder()
-            .moduleInfo(moduleInfo1)
-            .pipelineIdentifier("TestPipelineA")
-            .build();
+    PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity1 =
+        PipelineExecutionSummaryEntity.builder().moduleInfo(moduleInfo1).pipelineIdentifier("TestPipelineA").build();
 
     doReturn(pipelineExecutionSummaryEntity1)
-            .when(pmsExecutionService)
-            .getPipelineExecutionSummaryEntity("TestPlanExecution1Id", "TestOrganizationId", "TestProjectId", "qwertyuiop11111");
+        .when(pmsExecutionService)
+        .getPipelineExecutionSummaryEntity(
+            "TestPlanExecution1Id", "TestOrganizationId", "TestProjectId", "qwertyuiop11111");
 
     List serviceIdentifiers2 = new ArrayList();
     serviceIdentifiers2.add("TestVirtualService2_instance1");
@@ -188,13 +178,12 @@ public class InstrumentationPipelineEndEventHandlerTest extends CategoryTest {
     document2.put("serviceIdentifiers", serviceIdentifiers2);
     Map<String, Document> moduleInfo2 = new HashMap<>();
     moduleInfo2.put("cd", document2);
-    PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity2 = PipelineExecutionSummaryEntity.builder()
-            .moduleInfo(moduleInfo2)
-            .pipelineIdentifier("TestPipelineB")
-            .build();
+    PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity2 =
+        PipelineExecutionSummaryEntity.builder().moduleInfo(moduleInfo2).pipelineIdentifier("TestPipelineB").build();
     doReturn(pipelineExecutionSummaryEntity2)
-            .when(pmsExecutionService)
-            .getPipelineExecutionSummaryEntity("TestPlanExecution2Id", "TestOrganizationId", "TestProjectId", "qwertyuiop22222");
+        .when(pmsExecutionService)
+        .getPipelineExecutionSummaryEntity(
+            "TestPlanExecution2Id", "TestOrganizationId", "TestProjectId", "qwertyuiop22222");
 
     instrumentationPipelineEndEventHandler.onEnd(ambiance);
 
@@ -229,12 +218,11 @@ public class InstrumentationPipelineEndEventHandlerTest extends CategoryTest {
     assertTrue(eventTypes.contains(PipelineEventType.PIPELINE_END));
 
     verify(telemetryReporter, times(3))
-            .sendTrackEvent(eq(SERVICE_USED_EVENT), any(),
-                    eq("accountId"), any(), any(), any(), any());
+        .sendTrackEvent(eq(SERVICE_USED_EVENT), any(), eq("accountId"), any(), any(), any(), any());
 
     verify(telemetryReporter, times(1))
-            .sendTrackEvent(eq(ACTIVE_SERVICES_COUNT_EVENT), any(),
-                    eq("accountId"), argumentCaptor.capture(), any(), any(), any());
+        .sendTrackEvent(
+            eq(ACTIVE_SERVICES_COUNT_EVENT), any(), eq("accountId"), argumentCaptor.capture(), any(), any(), any());
     propertiesMap = argumentCaptor.getValue();
     assertEquals(propertiesMap.get(ServiceInstrumentationConstants.ACTIVE_SERVICES_ACCOUNT_NAME), "TestAccountName");
     assertEquals(propertiesMap.get(ServiceInstrumentationConstants.ACTIVE_SERVICES_PIPELINE_ID), "pipelineTestId");

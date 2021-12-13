@@ -76,30 +76,31 @@ public class StepHelper {
           properties.put(TELEMETRY_ROLLBACK_PROP_ORG_ID, AmbianceUtils.getOrgIdentifier(ambiance));
           properties.put(TELEMETRY_ROLLBACK_PROP_ACCOUNT_ID, accountId);
           properties.put(TELEMETRY_ROLLBACK_PROP_ACCOUNT_NAME,
-                  accountName != null ? accountName : TELEMETRY_ROLLBACK_PROP_VAL_UNASSIGNED);
+              accountName != null ? accountName : TELEMETRY_ROLLBACK_PROP_VAL_UNASSIGNED);
           properties.put(TELEMETRY_ROLLBACK_PROP_EXECUTION_ID, ambiance.getPlanExecutionId());
           properties.put(TELEMETRY_ROLLBACK_PROP_PIPELINE_ID, ambiance.getMetadata().getPipelineIdentifier());
-          properties.put(
-                  TELEMETRY_ROLLBACK_PROP_STAGE_ID, AmbianceUtils.getStageLevelFromAmbiance(ambiance).get().getIdentifier());
+          properties.put(TELEMETRY_ROLLBACK_PROP_STAGE_ID,
+              AmbianceUtils.getStageLevelFromAmbiance(ambiance).get().getIdentifier());
           properties.put(TELEMETRY_ROLLBACK_PROP_STEP_ID, AmbianceUtils.obtainStepIdentifier(ambiance));
           properties.put(TELEMETRY_ROLLBACK_PROP_STATUS, String.valueOf(status));
 
           log.info(String.format(
-                  "Sending Rollback Telemetry event: [execution=%s] [pipeline=%s], [stage=%s], [step=%s], [status=%s]",
-                  properties.get(TELEMETRY_ROLLBACK_PROP_EXECUTION_ID), properties.get(TELEMETRY_ROLLBACK_PROP_PIPELINE_ID),
-                  properties.get(TELEMETRY_ROLLBACK_PROP_STAGE_ID), properties.get(TELEMETRY_ROLLBACK_PROP_STEP_ID),
-                  properties.get(TELEMETRY_ROLLBACK_PROP_STATUS)));
+              "Sending Rollback Telemetry event: [execution=%s] [pipeline=%s], [stage=%s], [step=%s], [status=%s]",
+              properties.get(TELEMETRY_ROLLBACK_PROP_EXECUTION_ID), properties.get(TELEMETRY_ROLLBACK_PROP_PIPELINE_ID),
+              properties.get(TELEMETRY_ROLLBACK_PROP_STAGE_ID), properties.get(TELEMETRY_ROLLBACK_PROP_STEP_ID),
+              properties.get(TELEMETRY_ROLLBACK_PROP_STATUS)));
 
-          telemetryReporter.sendTrackEvent(TELEMETRY_ROLLBACK_EXECUTION, identity, accountId, (HashMap<String, Object>) properties,
-                  Collections.singletonMap(AMPLITUDE, true), io.harness.telemetry.Category.GLOBAL,
-                  TelemetryOption.builder().sendForCommunity(true).build());
+          telemetryReporter.sendTrackEvent(TELEMETRY_ROLLBACK_EXECUTION, identity, accountId,
+              (HashMap<String, Object>) properties, Collections.singletonMap(AMPLITUDE, true),
+              io.harness.telemetry.Category.GLOBAL, TelemetryOption.builder().sendForCommunity(true).build());
 
           return properties;
         } else {
           log.error("TelemetryReporter was not injected.");
         }
       } else {
-        log.error("One or more arguments for method io.harness.steps.StepHelper.sendRollbackTelemetryEvent are invalid.");
+        log.error(
+            "One or more arguments for method io.harness.steps.StepHelper.sendRollbackTelemetryEvent are invalid.");
       }
     } catch (Exception e) {
       log.error("Problem with sending rollback telemetry event.", e);

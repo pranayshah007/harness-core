@@ -117,15 +117,14 @@ public class PlanExecutionServiceImplTest extends OrchestrationTestBase {
     setupAbstractions.put(SetupAbstractionKeys.projectIdentifier, projectId);
 
     PlanExecution savedExecution = planExecutionService.save(PlanExecution.builder()
-            .uuid(planExecutionId)
-            .setupAbstractions(setupAbstractions)
-            .lastUpdatedAt(System.currentTimeMillis())
-            .build());
+                                                                 .uuid(planExecutionId)
+                                                                 .setupAbstractions(setupAbstractions)
+                                                                 .lastUpdatedAt(System.currentTimeMillis())
+                                                                 .build());
     assertThat(savedExecution.getUuid()).isEqualTo(planExecutionId);
     assertThat(savedExecution.getSetupAbstractions().get(SetupAbstractionKeys.accountId)).isEqualTo(accountId);
     assertThat(savedExecution.getSetupAbstractions().get(SetupAbstractionKeys.orgIdentifier)).isEqualTo(orgId);
     assertThat(savedExecution.getSetupAbstractions().get(SetupAbstractionKeys.projectIdentifier)).isEqualTo(projectId);
-
 
     long endTS = System.currentTimeMillis() + 5 * 60 * 1000;
 
