@@ -819,6 +819,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
                TaskType.valueOf(delegateTask.getData().getTaskType()).getTaskGroup().name(), OVERRIDE_ERROR)) {
         BatchDelegateSelectionLog batch = delegateSelectionLogsService.createBatch(delegateTask);
         boolean canAssign = assignDelegateService.canAssign(batch, delegateId, delegateTask);
+        canAssign = true;
         delegateSelectionLogsService.save(batch);
 
         if (!canAssign) {

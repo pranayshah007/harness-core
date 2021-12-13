@@ -17,11 +17,6 @@ public class CIVmConnectionCapability implements ExecutionCapability {
   }
 
   @Override
-  public CapabilityType getCapabilityType() {
-    return null;
-  }
-
-  @Override
   public String fetchCapabilityBasis() {
     return String.format(poolId);
   }

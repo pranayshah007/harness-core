@@ -65,7 +65,7 @@ public class HttpHelper {
   public Response<PoolOwnerStepResponse> isPoolOwner(Map<String, String> params) {
     RetryPolicy<Object> retryPolicy = getRetryPolicy("[Retrying failed to check for pool_owner; attempt: {}",
         "Failing to check for pool_owner after retrying {} times");
-    return Failsafe.with(retryPolicy).get(() -> getRunnerClient(600).poolOwner(params).execute());
+    return Failsafe.with(retryPolicy).get(() -> getRunnerClient(600).poolOwner(params.get("pool_id")).execute());
   }
 
   private RetryPolicy<Object> getRetryPolicy(String failedAttemptMessage, String failureMessage) {

@@ -9,14 +9,12 @@ import io.harness.delegate.beans.ci.vm.runner.PoolOwnerStepResponse;
 
 import java.util.Map;
 import retrofit2.Call;
-import retrofit2.http.Body;
-import retrofit2.http.Headers;
-import retrofit2.http.POST;
+import retrofit2.http.*;
 
 public interface RunnerRestClient {
   @POST("pool_owner")
   @Headers("Accept: application/json")
-  Call<PoolOwnerStepResponse> poolOwner(@Body Map<String, String> parameters);
+  Call<PoolOwnerStepResponse> poolOwner(@Query("pool") String pool);
 
   @POST("setup") @Headers("Accept: application/json") Call<SetupVmResponse> setup(@Body SetupVmRequest setupVmRequest);
 
