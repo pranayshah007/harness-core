@@ -95,6 +95,8 @@ public class SubscriptionResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Returns product prices")
       })
+  // TODO define new resource type and permission for billing functions, define new role e.g. "Billing Admin" and have
+  // proper pemission assgined
   @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = VIEW_LICENSE_PERMISSION)
   public ResponseDTO<PriceCollectionDTO>
   retrieveProductPrices(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(

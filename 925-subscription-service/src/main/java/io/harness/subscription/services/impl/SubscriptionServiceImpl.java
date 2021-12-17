@@ -108,6 +108,8 @@ public class SubscriptionServiceImpl implements SubscriptionService {
   public SubscriptionDetailDTO createSubscription(String accountIdentifier, SubscriptionDTO subscriptionDTO) {
     isSelfServiceEnable(accountIdentifier);
 
+    // TODO: transaction control in case any race condition
+
     // verify customer exists
     StripeCustomer stripeCustomer = stripeCustomerRepository.findByAccountIdentifierAndCustomerId(
         accountIdentifier, subscriptionDTO.getCustomerId());
@@ -158,6 +160,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     if (checkSubscriptionInValid(subscriptionDetail, accountIdentifier)) {
       throw new InvalidRequestException("Invalid subscriptionId");
     }
+    // TODO: verify priceId is acceptable to update, could utilize local price cache
 
     SubscriptionParams param = SubscriptionParams.builder()
                                    .accountIdentifier(accountIdentifier)
@@ -232,6 +235,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     if (Strings.isNullOrEmpty(customerDTO.getCompanyName())) {
       throw new InvalidRequestException("Company name is invalid");
     }
+    // TODO: double check if accountIdnetifer already bind to one customer
 
     CustomerDetailDTO customerDetailDTO =
         stripeHelper.createCustomer(CustomerParams.builder()
@@ -288,6 +292,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
   public List<CustomerDetailDTO> listStripeCustomers(String accountIdentifier) {
     isSelfServiceEnable(accountIdentifier);
 
+    // TODO: Might not needed any more due to one customer to one account
     List<StripeCustomer> stripeCustomers = stripeCustomerRepository.findByAccountIdentifier(accountIdentifier);
     return stripeCustomers.stream().map(s -> toCustomerDetailDTO(s)).collect(Collectors.toList());
   }
@@ -296,6 +301,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
   public PaymentMethodCollectionDTO listPaymentMethods(String accountIdentifier, String customerId) {
     isSelfServiceEnable(accountIdentifier);
 
+    // TODO: Might not needed any more because we request every time user input a payment method
     StripeCustomer stripeCustomer =
         stripeCustomerRepository.findByAccountIdentifierAndCustomerId(accountIdentifier, customerId);
     if (stripeCustomer == null) {
