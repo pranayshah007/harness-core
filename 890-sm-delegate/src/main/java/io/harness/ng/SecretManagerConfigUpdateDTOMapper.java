@@ -9,6 +9,7 @@ package io.harness.ng;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.ng.AwsKmsConfigDTOMapper.getAwsKmsConfigUpdateDTO;
+import static io.harness.ng.AzureBlobConfigDTOMapper.getAzureBlobConfigUpdateDTO;
 import static io.harness.ng.AzureKeyVaultConfigDTOMapper.getAzureKeyVaultConfigUpdateDTO;
 import static io.harness.ng.GcpKmsConfigDTOMapper.getGcpKmsConfigUpdateDTO;
 import static io.harness.ng.GcpSecretManagerConfigDTOMapper.getGcpSecretManagerConfigUpdateDTO;
@@ -20,6 +21,7 @@ import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.awskmsconnector.AwsKmsConnectorDTO;
+import io.harness.delegate.beans.connector.azureblobconnector.AzureBlobConnectorDTO;
 import io.harness.delegate.beans.connector.azurekeyvaultconnector.AzureKeyVaultConnectorDTO;
 import io.harness.delegate.beans.connector.gcpkmsconnector.GcpKmsConnectorDTO;
 import io.harness.delegate.beans.connector.gcpsecretmanager.GcpSecretManagerConnectorDTO;
@@ -45,6 +47,8 @@ public class SecretManagerConfigUpdateDTOMapper {
       return getAzureKeyVaultConfigUpdateDTO(connectorRequestDTO, (AzureKeyVaultConnectorDTO) connectorConfigDTO);
     } else if (connector.getConnectorType() == ConnectorType.GCP_SECRET_MANAGER) {
       return getGcpSecretManagerConfigUpdateDTO(connectorRequestDTO, (GcpSecretManagerConnectorDTO) connectorConfigDTO);
+    } else if (connector.getConnectorType() == ConnectorType.AZURE_BLOB) {
+      return getAzureBlobConfigUpdateDTO(connectorRequestDTO, (AzureBlobConnectorDTO) connectorConfigDTO);
     } else if (connector.getConnectorType() == ConnectorType.LOCAL) {
       throw new InvalidRequestException("Update operation not supported for Local Secret Manager");
     }
