@@ -8,10 +8,8 @@
 package io.harness.connector.mappers.secretmanagermapper;
 
 import io.harness.connector.entities.embedded.azureblobconnector.AzureBlobConnector;
-import io.harness.connector.entities.embedded.azurekeyvaultconnector.AzureKeyVaultConnector;
 import io.harness.connector.mappers.ConnectorEntityToDTOMapper;
 import io.harness.delegate.beans.connector.azureblobconnector.AzureBlobConnectorDTO;
-import io.harness.delegate.beans.connector.azurekeyvaultconnector.AzureKeyVaultConnectorDTO;
 import io.harness.encryption.SecretRefHelper;
 
 public class AzureBlobEntityToDTO implements ConnectorEntityToDTOMapper<AzureBlobConnectorDTO, AzureBlobConnector> {
