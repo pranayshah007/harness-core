@@ -40,6 +40,8 @@ import io.harness.secretmanagerclient.dto.awssecretmanager.AwsSMIamRoleCredentia
 import io.harness.secretmanagerclient.dto.awssecretmanager.AwsSMManualCredentialConfig;
 import io.harness.secretmanagerclient.dto.awssecretmanager.AwsSMStsCredentialConfig;
 import io.harness.secretmanagerclient.dto.awssecretmanager.BaseAwsSMConfigDTO;
+import io.harness.secretmanagerclient.dto.azureblob.AzureBlobConfigDTO;
+import io.harness.secretmanagerclient.dto.azureblob.AzureBlobConfigUpdateDTO;
 import io.harness.secretmanagerclient.dto.azurekeyvault.AzureKeyVaultConfigDTO;
 import io.harness.secretmanagerclient.dto.azurekeyvault.AzureKeyVaultConfigUpdateDTO;
 import io.harness.serializer.KryoRegistrar;
@@ -89,5 +91,8 @@ public class SecretManagerClientKryoRegistrar implements KryoRegistrar {
     kryo.register(AwsSMManualCredentialConfig.class, 643305);
     kryo.register(AwsSMIamRoleCredentialConfig.class, 643306);
     kryo.register(AwsSMStsCredentialConfig.class, 643307);
+
+    kryo.register(AzureBlobConfigDTO.class, 643300);
+    kryo.register(AzureBlobConfigUpdateDTO.class, 743300);
   }
 }

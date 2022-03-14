@@ -335,6 +335,7 @@ import io.harness.encryptors.KmsEncryptor;
 import io.harness.encryptors.VaultEncryptor;
 import io.harness.encryptors.clients.AwsKmsEncryptor;
 import io.harness.encryptors.clients.AwsSecretsManagerEncryptor;
+import io.harness.encryptors.clients.AzureBlobEncryptor;
 import io.harness.encryptors.clients.AzureVaultEncryptor;
 import io.harness.encryptors.clients.CustomSecretsManagerEncryptor;
 import io.harness.encryptors.clients.GcpKmsEncryptor;
@@ -1844,6 +1845,11 @@ public class DelegateModule extends AbstractModule {
         .bind(VaultEncryptor.class)
         .annotatedWith(Names.named(Encryptors.AZURE_VAULT_ENCRYPTOR.getName()))
         .to(AzureVaultEncryptor.class);
+
+    binder()
+        .bind(VaultEncryptor.class)
+        .annotatedWith(Names.named(Encryptors.AZURE_BLOB_ENCRYPTOR.getName()))
+        .to(AzureBlobEncryptor.class);
 
     binder()
         .bind(VaultEncryptor.class)
