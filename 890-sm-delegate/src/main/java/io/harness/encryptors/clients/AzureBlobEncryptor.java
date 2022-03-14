@@ -31,7 +31,6 @@ import com.google.common.util.concurrent.TimeLimiter;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.microsoft.azure.keyvault.core.IKey;
-import com.microsoft.azure.keyvault.extensions.KeyVaultKeyResolver;
 import com.microsoft.azure.storage.StorageException;
 import com.microsoft.azure.storage.blob.BlobEncryptionPolicy;
 import com.microsoft.azure.storage.blob.BlobRequestOptions;

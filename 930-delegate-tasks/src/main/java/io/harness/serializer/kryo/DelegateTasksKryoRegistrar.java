@@ -81,6 +81,7 @@ import software.wings.api.terragrunt.TerragruntProvisionInheritPlanElement;
 import software.wings.beans.APMVerificationConfig;
 import software.wings.beans.AppDynamicsConfig;
 import software.wings.beans.AwsSecretsManagerConfig;
+import software.wings.beans.AzureBlobConfig;
 import software.wings.beans.AzureConfig;
 import software.wings.beans.AzureContainerRegistry;
 import software.wings.beans.AzureResourceGroup;
@@ -741,6 +742,7 @@ public class DelegateTasksKryoRegistrar implements KryoRegistrar {
     kryo.register(K8sTrafficSplitResponse.class, 7182);
     kryo.register(K8sApplyTaskParameters.class, 7186);
     kryo.register(K8sApplyResponse.class, 7187);
+    kryo.register(AzureBlobConfig.class, 7503);
     kryo.register(AzureVaultConfig.class, 7205);
     kryo.register(ServiceNowImportSetResponse.class, 7212);
     kryo.register(ServiceNowImportSetResult.class, 7213);

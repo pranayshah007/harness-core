@@ -56,7 +56,7 @@ public class AzureBlobConfigDTOMapper {
                                                 .azureEnvironmentType(azureBlobConnectorDTO.getAzureEnvironmentType())
                                                 .vaultName(azureBlobConnectorDTO.getVaultName())
                                                 .isDefault(false)
-                                                .encryptionType(EncryptionType.AZURE_VAULT)
+                                                .encryptionType(EncryptionType.AZURE_BLOB)
                                                 .delegateSelectors(azureBlobConnectorDTO.getDelegateSelectors())
 
                                                 .name(connector.getName())

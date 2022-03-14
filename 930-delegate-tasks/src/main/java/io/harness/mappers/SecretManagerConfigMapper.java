@@ -25,6 +25,7 @@ import io.harness.secretmanagerclient.dto.awskms.AwsKmsConfigDTO;
 import io.harness.secretmanagerclient.dto.awskms.AwsKmsConfigUpdateDTO;
 import io.harness.secretmanagerclient.dto.awssecretmanager.AwsSMConfigDTO;
 import io.harness.secretmanagerclient.dto.awssecretmanager.AwsSMConfigUpdateDTO;
+import io.harness.secretmanagerclient.dto.azureblob.AzureBlobConfigDTO;
 import io.harness.secretmanagerclient.dto.azurekeyvault.AzureKeyVaultConfigDTO;
 import io.harness.secretmanagerclient.dto.azurekeyvault.AzureKeyVaultConfigUpdateDTO;
 
@@ -48,6 +49,8 @@ public class SecretManagerConfigMapper {
         return VaultConfigMapper.fromDTO((VaultConfigDTO) dto);
       case AZURE_VAULT:
         return AzureKeyVaultConfigMapper.fromDTO((AzureKeyVaultConfigDTO) dto);
+      case AZURE_BLOB:
+        return AzureBlobConfigMapper.fromDTO((AzureBlobConfigDTO) dto);
       case GCP_KMS:
         return GcpKmsConfigMapper.fromDTO((GcpKmsConfigDTO) dto);
       case KMS:

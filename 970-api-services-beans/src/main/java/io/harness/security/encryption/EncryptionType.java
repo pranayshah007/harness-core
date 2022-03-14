@@ -13,6 +13,7 @@ public enum EncryptionType {
   GCP_KMS("gcpkms"),
   AWS_SECRETS_MANAGER("awssecretsmanager"),
   AZURE_VAULT("azurevault"),
+  AZURE_BLOB("azureblob"),
   CYBERARK("cyberark"),
   VAULT("hashicorpvault"),
   GCP_SECRETS_MANAGER("gcpsecretsmanager"),

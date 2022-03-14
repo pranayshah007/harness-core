@@ -10,11 +10,7 @@ package io.harness.encryptors;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.eraro.ErrorCode.SECRET_MANAGEMENT_ERROR;
 import static io.harness.exception.WingsException.USER;
-import static io.harness.security.encryption.EncryptionType.AWS_SECRETS_MANAGER;
-import static io.harness.security.encryption.EncryptionType.AZURE_VAULT;
-import static io.harness.security.encryption.EncryptionType.CYBERARK;
-import static io.harness.security.encryption.EncryptionType.GCP_SECRETS_MANAGER;
-import static io.harness.security.encryption.EncryptionType.VAULT;
+import static io.harness.security.encryption.EncryptionType.*;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.SecretManagementDelegateException;
@@ -42,6 +38,7 @@ public class VaultEncryptorsRegistry {
     registeredEncryptors.put(VAULT, Encryptors.HASHICORP_VAULT_ENCRYPTOR);
     registeredEncryptors.put(AWS_SECRETS_MANAGER, Encryptors.AWS_VAULT_ENCRYPTOR);
     registeredEncryptors.put(AZURE_VAULT, Encryptors.AZURE_VAULT_ENCRYPTOR);
+    registeredEncryptors.put(AZURE_BLOB, Encryptors.AZURE_BLOB_ENCRYPTOR);
     registeredEncryptors.put(GCP_SECRETS_MANAGER, Encryptors.GCP_VAULT_ENCRYPTOR);
     registeredEncryptors.put(CYBERARK, Encryptors.CYBERARK_VAULT_ENCRYPTOR);
   }
