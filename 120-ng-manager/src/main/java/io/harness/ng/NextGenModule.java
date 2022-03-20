@@ -803,6 +803,11 @@ public class NextGenModule extends AbstractModule {
         .to(NGManagerVaultEncryptor.class);
 
     binder()
+        .bind(VaultEncryptor.class)
+        .annotatedWith(Names.named(Encryptors.AZURE_BLOB_ENCRYPTOR.getName()))
+        .to(NGManagerVaultEncryptor.class);
+
+    binder()
         .bind(KmsEncryptor.class)
         .annotatedWith(Names.named(Encryptors.AWS_KMS_ENCRYPTOR.getName()))
         .to(NGManagerKmsEncryptor.class);

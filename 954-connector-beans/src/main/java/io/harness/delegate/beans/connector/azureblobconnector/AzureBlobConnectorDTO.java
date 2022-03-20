@@ -58,7 +58,7 @@ public class AzureBlobConnectorDTO extends ConnectorConfigDTO implements Delegat
   private String vaultName;
   @NotNull @Schema(description = "Azure Subscription ID.") private String subscription;
   @Schema(description = "Connection string for Azure storage.") @NotNull private String connectionString;
-  @Schema(description = "Continer name of the Azure Storge Conatiner where blob is to be stored.")
+  @Schema(description = "Container name of the Azure Storage Container where blob is to be stored.")
   @NotNull
   private String containerName;
   @Schema(description = "Key ID of the Azure Key Vault Key to be used for blob encryption")

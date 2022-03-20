@@ -102,7 +102,12 @@ public class AzureBlobEncryptor implements VaultEncryptor {
 
   @Override
   public boolean validateReference(String accountId, String path, EncryptionConfig encryptionConfig) {
-    return false;
+    return true;
+  }
+
+  @Override
+  public boolean validateSecretManagerConfiguration(String accountId, EncryptionConfig encryptionConfig) {
+    return true;
   }
 
   @Override

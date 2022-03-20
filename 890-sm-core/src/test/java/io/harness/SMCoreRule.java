@@ -17,6 +17,7 @@ import io.harness.encryptors.KmsEncryptor;
 import io.harness.encryptors.VaultEncryptor;
 import io.harness.encryptors.clients.AwsKmsEncryptor;
 import io.harness.encryptors.clients.AwsSecretsManagerEncryptor;
+import io.harness.encryptors.clients.AzureBlobEncryptor;
 import io.harness.encryptors.clients.AzureVaultEncryptor;
 import io.harness.encryptors.clients.GcpKmsEncryptor;
 import io.harness.encryptors.clients.GcpSecretsManagerEncryptor;
@@ -188,6 +189,11 @@ public class SMCoreRule implements MethodRule, InjectorRuleMixin, MongoRuleMixin
             .bind(VaultEncryptor.class)
             .annotatedWith(Names.named(Encryptors.AZURE_VAULT_ENCRYPTOR.getName()))
             .to(AzureVaultEncryptor.class);
+
+        binder()
+            .bind(VaultEncryptor.class)
+            .annotatedWith(Names.named(Encryptors.AZURE_BLOB_ENCRYPTOR.getName()))
+            .to(AzureBlobEncryptor.class);
 
         binder()
             .bind(VaultEncryptor.class)
