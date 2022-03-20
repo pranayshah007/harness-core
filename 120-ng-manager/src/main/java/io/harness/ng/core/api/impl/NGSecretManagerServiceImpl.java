@@ -13,6 +13,7 @@ import static io.harness.helpers.GlobalSecretManagerUtils.GLOBAL_ACCOUNT_ID;
 import static io.harness.remote.client.RestClientUtils.getResponse;
 import static io.harness.security.encryption.AccessType.APP_ROLE;
 import static io.harness.security.encryption.EncryptionType.AWS_SECRETS_MANAGER;
+import static io.harness.security.encryption.EncryptionType.AZURE_BLOB;
 import static io.harness.security.encryption.EncryptionType.AZURE_VAULT;
 import static io.harness.security.encryption.EncryptionType.CUSTOM_NG;
 import static io.harness.security.encryption.EncryptionType.VAULT;
@@ -108,7 +109,8 @@ public class NGSecretManagerServiceImpl implements NGSecretManagerService {
         switch (encryptionConfig.getType()) {
           case VAULT:
             if (AZURE_VAULT == encryptionConfig.getEncryptionType()
-                || AWS_SECRETS_MANAGER == encryptionConfig.getEncryptionType()) {
+                || AWS_SECRETS_MANAGER == encryptionConfig.getEncryptionType()
+                || AZURE_BLOB == encryptionConfig.getEncryptionType()) {
               validationResult = vaultEncryptorsRegistry.getVaultEncryptor(encryptionConfig.getEncryptionType())
                                      .validateSecretManagerConfiguration(accountIdentifier, encryptionConfig);
             } else {

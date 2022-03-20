@@ -119,7 +119,7 @@ public class AzureBlobConfig extends SecretManagerConfig {
 
   @Override
   public EncryptionType getEncryptionType() {
-    return EncryptionType.AZURE_VAULT;
+    return EncryptionType.AZURE_BLOB;
   }
 
   private String obtainEncryptionServiceUrl() {

@@ -26,11 +26,11 @@ import lombok.extern.slf4j.Slf4j;
 @UtilityClass
 @Slf4j
 public class AzureBlobADALAuthenticator {
-  public static CloudBlockBlob getBlobClient(String connectionString, String continerName, String blobName)
+  public static CloudBlockBlob getBlobClient(String connectionString, String containerName, String blobName)
       throws URISyntaxException, InvalidKeyException, StorageException {
     CloudStorageAccount storageAccount = CloudStorageAccount.parse(connectionString);
     CloudBlobClient blobClient = storageAccount.createCloudBlobClient();
-    CloudBlobContainer container = blobClient.getContainerReference(continerName);
+    CloudBlobContainer container = blobClient.getContainerReference(containerName);
     return container.getBlockBlobReference(blobName);
   }
 
