@@ -55,7 +55,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class AzureBlobConfig extends SecretManagerConfig {
   private static final String TASK_SELECTORS = "Task Selectors";
-  public static final String AZURE_VAULT_VALIDATION_URL = "harnessAzureVaultValidation";
+  public static final String AZURE_BLOB_VALIDATION_URL = "harnessAzureBlobValidation";
   @Attributes(title = "Name", required = true) private String name;
 
   @Attributes(title = "Azure Client Id", required = true) @NotEmpty private String clientId;
