@@ -8,6 +8,7 @@
 package io.harness.encryptors.clients;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.AZURE_BLOB_OPERATION_ERROR;
 import static io.harness.eraro.ErrorCode.AZURE_KEY_VAULT_OPERATION_ERROR;
 import static io.harness.exception.WingsException.USER;
@@ -26,6 +27,7 @@ import io.harness.security.encryption.EncryptedRecordData;
 import io.harness.security.encryption.EncryptionConfig;
 
 import software.wings.beans.AzureBlobConfig;
+import software.wings.beans.AzureVaultConfig;
 
 import com.google.common.util.concurrent.TimeLimiter;
 import com.google.inject.Inject;
@@ -101,11 +103,17 @@ public class AzureBlobEncryptor implements VaultEncryptor {
 
   @Override
   public boolean validateReference(String accountId, String path, EncryptionConfig encryptionConfig) {
-    return true;
+    return isNotEmpty(fetchSecretValue(accountId, EncryptedRecordData.builder().path(path).build(), encryptionConfig));
   }
 
   @Override
   public boolean validateSecretManagerConfiguration(String accountId, EncryptionConfig encryptionConfig) {
+    try {
+      createSecret(accountId, AzureBlobConfig.AZURE_BLOB_VALIDATION_URL, Boolean.TRUE.toString(), encryptionConfig);
+    } catch (Exception exception) {
+      log.error("Validation for Secret Manager/KMS failed: " + encryptionConfig.getName());
+      throw exception;
+    }
     return true;
   }
 
