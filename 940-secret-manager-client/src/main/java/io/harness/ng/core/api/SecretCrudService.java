@@ -17,7 +17,10 @@ import io.harness.ng.core.remote.SecretValidationMetaData;
 import io.harness.ng.core.remote.SecretValidationResultDTO;
 import io.harness.secretmanagerclient.SecretType;
 
+import com.microsoft.azure.storage.StorageException;
 import java.io.InputStream;
+import java.net.URISyntaxException;
+import java.security.InvalidKeyException;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;

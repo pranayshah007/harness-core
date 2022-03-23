@@ -310,9 +310,9 @@ outboxPollConfig:
   lockId: NextGenManager
 
 segmentConfiguration:
-  enabled: false
-  url: "segment_url_place_holder"
-  apiKey: "segment_api_key"
+  enabled: true
+  url: "https://api.segment.io/v1/"
+  apiKey: "CH5AK0sPUi3wHH3NoU1yWMI5ELN38Bhh"
   certValidationRequired: false
 
 subscriptionConfig:
