@@ -37,6 +37,7 @@ public class AzureBlobConfigMapper {
                                           .connectionString(azureBlobConfigDTO.getConnectionString())
                                           .containerName(azureBlobConfigDTO.getContainerName())
                                           .keyId(azureBlobConfigDTO.getKeyId())
+                                          .keyName(azureBlobConfigDTO.getKeyName())
                                           .azureEnvironmentType(azureBlobConfigDTO.getAzureEnvironmentType())
                                           .vaultName(azureBlobConfigDTO.getVaultName())
                                           .delegateSelectors(azureBlobConfigDTO.getDelegateSelectors())

@@ -29,6 +29,7 @@ public class AzureBlobDTOToEntity implements ConnectorDTOToEntityMapper<AzureBlo
         .connectionString(connectorDTO.getConnectionString())
         .containerName(connectorDTO.getContainerName())
         .keyId(connectorDTO.getKeyId())
+        .keyName(connectorDTO.getKeyName())
         .azureEnvironmentType(connectorDTO.getAzureEnvironmentType())
         .build();
   }

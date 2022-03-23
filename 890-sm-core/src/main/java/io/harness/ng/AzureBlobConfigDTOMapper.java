@@ -56,6 +56,7 @@ public class AzureBlobConfigDTOMapper {
                                                 .connectionString(azureBlobConnectorDTO.getConnectionString())
                                                 .containerName(azureBlobConnectorDTO.getContainerName())
                                                 .keyId(azureBlobConnectorDTO.getKeyId())
+                                                .keyName(azureBlobConnectorDTO.getKeyName())
                                                 .azureEnvironmentType(azureBlobConnectorDTO.getAzureEnvironmentType())
                                                 .vaultName(azureBlobConnectorDTO.getVaultName())
                                                 .isDefault(false)

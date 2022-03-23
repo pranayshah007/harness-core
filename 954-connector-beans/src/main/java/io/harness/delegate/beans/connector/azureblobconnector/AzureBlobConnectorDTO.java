@@ -64,6 +64,9 @@ public class AzureBlobConnectorDTO extends ConnectorConfigDTO implements Delegat
   @Schema(description = "Key ID of the Azure Key Vault Key to be used for blob encryption")
   @NotNull
   private String keyId;
+  @Schema(description = "Key Name of the Azure Key Vault Key to be used for blob encryption")
+  @NotNull
+  private String keyName;
   @Schema(description = SecretManagerDescriptionConstants.DEFAULT) private boolean isDefault;
 
   @Builder.Default
@@ -85,5 +88,6 @@ public class AzureBlobConnectorDTO extends ConnectorConfigDTO implements Delegat
     Preconditions.checkNotNull(this.connectionString, "connectionString cannot be empty");
     Preconditions.checkNotNull(this.containerName, "containerName cannot be empty");
     Preconditions.checkNotNull(this.keyId, "keyId cannot be empty");
+    Preconditions.checkNotNull(this.keyName, "keyName cannot be empty");
   }
 }
