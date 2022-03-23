@@ -26,12 +26,20 @@ import lombok.extern.slf4j.Slf4j;
 @UtilityClass
 @Slf4j
 public class AzureBlobADALAuthenticator {
-  public static CloudBlockBlob getBlobClient(String connectionString, String containerName, String blobName)
-      throws URISyntaxException, InvalidKeyException, StorageException {
-    CloudStorageAccount storageAccount = CloudStorageAccount.parse(connectionString);
-    CloudBlobClient blobClient = storageAccount.createCloudBlobClient();
-    CloudBlobContainer container = blobClient.getContainerReference(containerName);
-    return container.getBlockBlobReference(blobName);
+  public static CloudBlockBlob getBlobClient(String connectionString, String containerName, String blobName) {
+    try {
+      CloudStorageAccount storageAccount = CloudStorageAccount.parse(connectionString);
+      CloudBlobClient blobClient = storageAccount.createCloudBlobClient();
+      CloudBlobContainer container = blobClient.getContainerReference(containerName);
+      return container.getBlockBlobReference(blobName);
+    } catch (URISyntaxException e) {
+      e.printStackTrace();
+    } catch (InvalidKeyException e) {
+      e.printStackTrace();
+    } catch (StorageException e) {
+      e.printStackTrace();
+    }
+    return null;
   }
 
   public static KeyVaultKeyResolver getKeyResolverClient(String clientId, String clientKey) {

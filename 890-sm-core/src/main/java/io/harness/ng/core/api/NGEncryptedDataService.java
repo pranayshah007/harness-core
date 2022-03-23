@@ -16,7 +16,10 @@ import io.harness.ng.core.dto.secrets.SecretDTOV2;
 import io.harness.ng.core.entities.NGEncryptedData;
 import io.harness.security.encryption.EncryptedDataDetail;
 
+import com.microsoft.azure.storage.StorageException;
 import java.io.InputStream;
+import java.net.URISyntaxException;
+import java.security.InvalidKeyException;
 import java.util.List;
 
 @OwnedBy(PL)

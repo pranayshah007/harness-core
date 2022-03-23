@@ -14,6 +14,9 @@ import io.harness.beans.SecretText;
 import io.harness.security.encryption.EncryptedRecord;
 import io.harness.security.encryption.EncryptionConfig;
 
+import com.microsoft.azure.storage.StorageException;
+import java.net.URISyntaxException;
+import java.security.InvalidKeyException;
 import javax.validation.constraints.NotNull;
 import org.hibernate.validator.constraints.NotEmpty;
 

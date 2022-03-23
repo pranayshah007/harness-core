@@ -11,7 +11,10 @@ import io.harness.delegate.beans.DelegateFile;
 import io.harness.security.encryption.EncryptedRecord;
 import io.harness.security.encryption.EncryptionConfig;
 
+import com.microsoft.azure.storage.StorageException;
 import java.io.IOException;
+import java.net.URISyntaxException;
+import java.security.InvalidKeyException;
 
 public interface EncryptDecryptHelper {
   EncryptedRecord encryptContent(byte[] content, String name, EncryptionConfig config);
