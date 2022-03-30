@@ -35,6 +35,7 @@ public class AzureBlobConfigUpdateDTO extends SecretManagerConfigUpdateDTO {
   private String connectionString;
   private String containerName;
   private String keyId;
+  private String keyName;
   private boolean isDefault;
 
   @Builder.Default private AzureEnvironmentType azureEnvironmentType = AZURE;
