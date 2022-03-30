@@ -21,9 +21,6 @@ import io.harness.security.encryption.EncryptedRecord;
 import io.harness.security.encryption.EncryptionConfig;
 
 import com.google.inject.Inject;
-import com.microsoft.azure.storage.StorageException;
-import java.net.URISyntaxException;
-import java.security.InvalidKeyException;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import org.apache.commons.lang3.NotImplementedException;
