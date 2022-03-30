@@ -9,14 +9,10 @@ package io.harness.delegate.task;
 
 import io.harness.delegate.beans.DelegateResponseData;
 
-import com.microsoft.azure.storage.StorageException;
 import java.io.IOException;
-import java.net.URISyntaxException;
-import java.security.InvalidKeyException;
 import org.jose4j.lang.JoseException;
 
 public interface DelegateRunnableTask extends Runnable {
   @Deprecated DelegateResponseData run(Object[] parameters);
-  DelegateResponseData run(TaskParameters parameters)
-      throws IOException, JoseException, URISyntaxException, InvalidKeyException, StorageException;
+  DelegateResponseData run(TaskParameters parameters) throws IOException, JoseException;
 }
