@@ -43,6 +43,7 @@ public class AzureBlobConnector extends Connector {
   String connectionString;
   String containerName;
   String keyId;
+  String keyName;
   boolean isDefault;
 
   @Builder.Default AzureEnvironmentType azureEnvironmentType = AZURE;

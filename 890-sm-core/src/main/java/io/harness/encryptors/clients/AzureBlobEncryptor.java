@@ -199,7 +199,9 @@ public class AzureBlobEncryptor implements VaultEncryptor {
     try {
       KeyVaultKeyResolver keyResolver = AzureBlobADALAuthenticator.getKeyResolverClient(
           azureBlobConfig.getClientId(), azureBlobConfig.getSecretKey());
-      IKey key = keyResolver.resolveKeyAsync(azureBlobConfig.getKeyId()).get();
+      String keyIdentifier = azureBlobConfig.getEncryptionServiceUrl() + "/keys/" + azureBlobConfig.getKeyName() + "/"
+          + azureBlobConfig.getKeyId();
+      IKey key = keyResolver.resolveKeyAsync(keyIdentifier).get();
       BlobEncryptionPolicy policy = new BlobEncryptionPolicy(key, null);
       BlobRequestOptions options = new BlobRequestOptions();
       options.setEncryptionPolicy(policy);
@@ -237,7 +239,9 @@ public class AzureBlobEncryptor implements VaultEncryptor {
     try {
       KeyVaultKeyResolver keyResolver = AzureBlobADALAuthenticator.getKeyResolverClient(
           azureBlobConfig.getClientId(), azureBlobConfig.getSecretKey());
-      IKey key = keyResolver.resolveKeyAsync(azureBlobConfig.getKeyId()).get();
+      String keyId = azureBlobConfig.getEncryptionServiceUrl() + "/keys/" + azureBlobConfig.getKeyName() + "/"
+          + azureBlobConfig.getKeyId();
+      IKey key = keyResolver.resolveKeyAsync(keyId).get();
       BlobEncryptionPolicy policy = new BlobEncryptionPolicy(key, null);
       BlobRequestOptions options = new BlobRequestOptions();
       options.setEncryptionPolicy(policy);

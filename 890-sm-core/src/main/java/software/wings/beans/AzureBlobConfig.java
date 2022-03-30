@@ -77,6 +77,8 @@ public class AzureBlobConfig extends SecretManagerConfig {
 
   @Attributes(title = "Azure Key Vault Key ID", required = true) @NotEmpty private String keyId;
 
+  @Attributes(title = "Azure Key Vault Key Name", required = true) @NotEmpty private String keyName;
+
   @Attributes(title = "delegateSelectors") private Set<String> delegateSelectors;
 
   @Builder.Default private AzureEnvironmentType azureEnvironmentType = AZURE;
@@ -161,6 +163,7 @@ public class AzureBlobConfig extends SecretManagerConfig {
                                                   .connectionString(getConnectionString())
                                                   .containerName(getContainerName())
                                                   .keyId(getKeyId())
+                                                  .keyName(getKeyName())
                                                   .azureEnvironmentType(getAzureEnvironmentType())
                                                   .delegateSelectors(getDelegateSelectors())
                                                   .build();
