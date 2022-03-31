@@ -14,6 +14,7 @@ import io.harness.connector.heartbeat.ArtifactoryValidationParamsProvider;
 import io.harness.connector.heartbeat.AwsKmsConnectorValidationParamsProvider;
 import io.harness.connector.heartbeat.AwsSecretManagerValidationParamsProvider;
 import io.harness.connector.heartbeat.AwsValidationParamsProvider;
+import io.harness.connector.heartbeat.AzureBlobConnectorValidationParamsProvider;
 import io.harness.connector.heartbeat.AzureKeyVaultConnectorValidationParamsProvider;
 import io.harness.connector.heartbeat.AzureValidationParamsProvider;
 import io.harness.connector.heartbeat.CEK8sConnectorValidationParamsProvider;

@@ -808,7 +808,11 @@ public class SecretManagerImpl implements SecretManager, EncryptedSettingAttribu
                                                 .equal(null)
                                                 .asList();
     for (EncryptedData encryptedData : encryptedDataList) {
-      deleteSecret(accountId, encryptedData.getUuid(), new HashMap<>(), true);
+      try {
+        deleteSecret(accountId, encryptedData.getUuid(), new HashMap<>(), true);
+      } catch (SecretManagementException e) {
+        log.error("Could not delete secret due to the following error: {}", e.getMessage(), e);
+      }
     }
   }
 

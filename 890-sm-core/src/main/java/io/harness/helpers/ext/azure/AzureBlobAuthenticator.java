@@ -25,7 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(PL)
 @UtilityClass
 @Slf4j
-public class AzureBlobADALAuthenticator {
+public class AzureBlobAuthenticator {
   public static CloudBlockBlob getBlobClient(String connectionString, String containerName, String blobName) {
     try {
       CloudStorageAccount storageAccount = CloudStorageAccount.parse(connectionString);
