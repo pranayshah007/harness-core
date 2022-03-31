@@ -209,8 +209,6 @@ shared_dependencies = [
     "@maven//:com_microsoft_azure_azure_client_runtime",
     "@maven//:com_microsoft_azure_azure_keyvault",
     "@maven//:com_microsoft_azure_azure_keyvault_core",
-    "@maven//:com_microsoft_azure_azure_keyvault_cryptography",
-    "@maven//:com_microsoft_azure_azure_keyvault_extensions",
     "@maven//:com_microsoft_azure_azure_keyvault_webkey",
     "@maven//:com_microsoft_azure_azure_mgmt_appservice",
     "@maven//:com_microsoft_azure_azure_mgmt_batch",

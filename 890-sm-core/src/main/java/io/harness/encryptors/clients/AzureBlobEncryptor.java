@@ -24,7 +24,7 @@ import io.harness.concurrent.HTimeLimiter;
 import io.harness.encryptors.VaultEncryptor;
 import io.harness.exception.AzureKeyVaultOperationException;
 import io.harness.exception.SecretManagementDelegateException;
-import io.harness.helpers.ext.azure.AzureBlobADALAuthenticator;
+import io.harness.helpers.ext.azure.AzureBlobAuthenticator;
 import io.harness.helpers.ext.azure.AzureParsedSecretReference;
 import io.harness.security.encryption.EncryptedRecord;
 import io.harness.security.encryption.EncryptedRecordData;
@@ -64,51 +64,13 @@ public class AzureBlobEncryptor implements VaultEncryptor {
   @Override
   public EncryptedRecord createSecret(
       String accountId, String name, String plaintext, EncryptionConfig encryptionConfig) {
-    AzureBlobConfig azureConfig = (AzureBlobConfig) encryptionConfig;
-    int failedAttempts = 0;
-    while (true) {
-      try {
-        return HTimeLimiter.callInterruptible21(
-            timeLimiter, Duration.ofSeconds(15), () -> upsertInternal(accountId, name, plaintext, null, azureConfig));
-      } catch (Exception e) {
-        failedAttempts++;
-        log.warn("encryption failed. trial num: {}", failedAttempts, e);
-        if (failedAttempts == NUM_OF_RETRIES) {
-          String message = "After " + NUM_OF_RETRIES + " tries, encryption for secret " + name + " failed.";
-          if (e instanceof RestException) {
-            throw(RestException) e;
-          } else {
-            throw new SecretManagementDelegateException(AZURE_BLOB_OPERATION_ERROR, message, e, USER);
-          }
-        }
-        sleep(ofMillis(1000));
-      }
-    }
+    return upsertSecret(accountId, name, plaintext, null, encryptionConfig);
   }
 
   @Override
   public EncryptedRecord updateSecret(String accountId, String name, String plaintext, EncryptedRecord existingRecord,
       EncryptionConfig encryptionConfig) {
-    AzureBlobConfig azureConfig = (AzureBlobConfig) encryptionConfig;
-    int failedAttempts = 0;
-    while (true) {
-      try {
-        return HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofSeconds(15),
-            () -> upsertInternal(accountId, name, plaintext, existingRecord, azureConfig));
-      } catch (Exception e) {
-        failedAttempts++;
-        log.warn("encryption failed. trial num: {}", failedAttempts, e);
-        if (failedAttempts == NUM_OF_RETRIES) {
-          String message = "After " + NUM_OF_RETRIES + " tries, encryption for secret " + name + " failed.";
-          if (e instanceof RestException) {
-            throw(RestException) e;
-          } else {
-            throw new SecretManagementDelegateException(AZURE_BLOB_OPERATION_ERROR, message, e, USER);
-          }
-        }
-        sleep(ofMillis(1000));
-      }
-    }
+    return upsertSecret(accountId, name, plaintext, existingRecord, encryptionConfig);
   }
 
   @Override
@@ -118,7 +80,7 @@ public class AzureBlobEncryptor implements VaultEncryptor {
     int failedAttempts = 0;
     while (true) {
       try {
-        return HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofSeconds(15),
+        return HTimeLimiter.callInterruptible(timeLimiter, Duration.ofSeconds(15),
             () -> renameSecretInternal(accountId, name, existingRecord, azureConfig));
       } catch (Exception e) {
         failedAttempts++;
@@ -172,7 +134,7 @@ public class AzureBlobEncryptor implements VaultEncryptor {
     while (true) {
       try {
         log.info("Trying to decrypt record {} by {}", encryptedRecord.getEncryptionKey(), azureConfig.getVaultName());
-        return HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofSeconds(15),
+        return HTimeLimiter.callInterruptible(timeLimiter, Duration.ofSeconds(15),
             () -> fetchSecretValueInternal(encryptedRecord, azureConfig, encryptedRecord.getName()));
       } catch (Exception e) {
         failedAttempts++;
@@ -181,6 +143,30 @@ public class AzureBlobEncryptor implements VaultEncryptor {
           String message =
               "After " + NUM_OF_RETRIES + " tries, decryption for secret " + encryptedRecord.getName() + " failed.";
           throw new SecretManagementDelegateException(AZURE_KEY_VAULT_OPERATION_ERROR, message, e, USER);
+        }
+        sleep(ofMillis(1000));
+      }
+    }
+  }
+
+  private EncryptedRecord upsertSecret(String accountId, String name, String plaintext, EncryptedRecord existingRecord,
+      EncryptionConfig encryptionConfig) {
+    AzureBlobConfig azureConfig = (AzureBlobConfig) encryptionConfig;
+    int failedAttempts = 0;
+    while (true) {
+      try {
+        return HTimeLimiter.callInterruptible(timeLimiter, Duration.ofSeconds(15),
+            () -> upsertInternal(accountId, name, plaintext, existingRecord, azureConfig));
+      } catch (Exception e) {
+        failedAttempts++;
+        log.warn("encryption failed. trial num: {}", failedAttempts, e);
+        if (failedAttempts == NUM_OF_RETRIES) {
+          String message = "After " + NUM_OF_RETRIES + " tries, encryption for secret " + name + " failed.";
+          if (e instanceof RestException) {
+            throw(RestException) e;
+          } else {
+            throw new SecretManagementDelegateException(AZURE_BLOB_OPERATION_ERROR, message, e, USER);
+          }
         }
         sleep(ofMillis(1000));
       }
@@ -197,8 +183,8 @@ public class AzureBlobEncryptor implements VaultEncryptor {
 
     CloudBlockBlob azureBlob = getAzureBlob(azureBlobConfig, fullSecretName);
     try {
-      KeyVaultKeyResolver keyResolver = AzureBlobADALAuthenticator.getKeyResolverClient(
-          azureBlobConfig.getClientId(), azureBlobConfig.getSecretKey());
+      KeyVaultKeyResolver keyResolver =
+          AzureBlobAuthenticator.getKeyResolverClient(azureBlobConfig.getClientId(), azureBlobConfig.getSecretKey());
       String keyIdentifier = azureBlobConfig.getEncryptionServiceUrl() + "/keys/" + azureBlobConfig.getKeyName() + "/"
           + azureBlobConfig.getKeyId();
       IKey key = keyResolver.resolveKeyAsync(keyIdentifier).get();
@@ -237,8 +223,8 @@ public class AzureBlobEncryptor implements VaultEncryptor {
     long startTime = System.currentTimeMillis();
     CloudBlockBlob azureBlob = getAzureBlob(azureBlobConfig, fullSecretName);
     try {
-      KeyVaultKeyResolver keyResolver = AzureBlobADALAuthenticator.getKeyResolverClient(
-          azureBlobConfig.getClientId(), azureBlobConfig.getSecretKey());
+      KeyVaultKeyResolver keyResolver =
+          AzureBlobAuthenticator.getKeyResolverClient(azureBlobConfig.getClientId(), azureBlobConfig.getSecretKey());
       String keyId = azureBlobConfig.getEncryptionServiceUrl() + "/keys/" + azureBlobConfig.getKeyName() + "/"
           + azureBlobConfig.getKeyId();
       IKey key = keyResolver.resolveKeyAsync(keyId).get();
@@ -259,15 +245,14 @@ public class AzureBlobEncryptor implements VaultEncryptor {
     log.info("Done saving secret {} into Azure Blob Secrets Manager for {} in {} ms", fullSecretName,
         azureBlobConfig.getName(), System.currentTimeMillis() - startTime);
 
-    EncryptedRecordData newRecord = EncryptedRecordData.builder()
-                                        .encryptedValue(fullSecretName.toCharArray())
-                                        .encryptionKey(fullSecretName)
-                                        .build();
-    return newRecord;
+    return EncryptedRecordData.builder()
+        .encryptedValue(fullSecretName.toCharArray())
+        .encryptionKey(fullSecretName)
+        .build();
   }
 
   private CloudBlockBlob getAzureBlob(AzureBlobConfig azureBlobConfig, String blobName) {
-    return AzureBlobADALAuthenticator.getBlobClient(
+    return AzureBlobAuthenticator.getBlobClient(
         azureBlobConfig.getConnectionString(), azureBlobConfig.getContainerName(), blobName);
   }
 }
