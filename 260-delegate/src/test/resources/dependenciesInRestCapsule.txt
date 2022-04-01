@@ -184,7 +184,6 @@ com.microsoft.azure:azure-client-runtime:jar:1.7.0
 com.microsoft.azure:azure-keyvault-core:jar:1.2.4
 com.microsoft.azure:azure-keyvault-cryptography:jar:1.2.4
 com.microsoft.azure:azure-keyvault-webkey:jar:1.2.4
-com.microsoft.azure:azure-keyvault-extensions:jar:1.2.4
 com.microsoft.azure:azure-keyvault:jar:1.2.4
 com.microsoft.azure:azure-mgmt-appservice:jar:1.31.1
 com.microsoft.azure:azure-mgmt-batch:jar:1.31.1

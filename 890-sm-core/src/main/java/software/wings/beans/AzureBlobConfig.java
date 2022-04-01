@@ -56,7 +56,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 public class AzureBlobConfig extends SecretManagerConfig {
   private static final String TASK_SELECTORS = "Task Selectors";
   public static final String AZURE_BLOB_VALIDATION_URL = "harnessAzureBlobValidation";
-  @Attributes(title = "Name", required = true) private String name;
+  @Attributes(title = "Name", required = true) @NotEmpty private String name;
 
   @Attributes(title = "Azure Client Id", required = true) @NotEmpty private String clientId;
 
@@ -67,9 +67,9 @@ public class AzureBlobConfig extends SecretManagerConfig {
 
   @Attributes(title = "Azure Tenant Id", required = true) @NotEmpty private String tenantId;
 
-  @Attributes(title = "Azure Vault Name", required = true) private String vaultName;
+  @Attributes(title = "Azure Vault Name", required = true) @NotEmpty private String vaultName;
 
-  @Attributes(title = "Subscription") private String subscription;
+  @Attributes(title = "Subscription") @NotEmpty private String subscription;
 
   @Attributes(title = "Azure Storage Connection String", required = true) @NotEmpty private String connectionString;
 
