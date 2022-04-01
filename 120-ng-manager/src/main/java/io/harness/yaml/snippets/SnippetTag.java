@@ -32,6 +32,7 @@ public enum SnippetTag implements YamlSnippetTags {
   appdynamics,
   vault,
   azurekeyvault,
+  azureblob,
   local,
   gcpkms,
   gcp,
