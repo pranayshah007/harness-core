@@ -8,8 +8,8 @@
 package io.harness.delegate.beans.connector.azureblobconnector;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.delegate.beans.connector.azureblobconnector.AzureBlobConstants.AZURE_DEFAULT_ENCRYPTION_URL;
-import static io.harness.delegate.beans.connector.azureblobconnector.AzureBlobConstants.AZURE_US_GOVERNMENT_ENCRYPTION_URL;
+import static io.harness.delegate.beans.connector.azurekeyvaultconnector.AzureKeyVaultConstants.AZURE_DEFAULT_ENCRYPTION_URL;
+import static io.harness.delegate.beans.connector.azurekeyvaultconnector.AzureKeyVaultConstants.AZURE_US_GOVERNMENT_ENCRYPTION_URL;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.ConnectorCapabilityBaseHelper;

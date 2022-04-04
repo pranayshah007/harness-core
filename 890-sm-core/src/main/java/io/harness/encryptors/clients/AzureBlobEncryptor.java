@@ -32,6 +32,7 @@ import io.harness.security.encryption.EncryptionConfig;
 
 import software.wings.beans.AzureBlobConfig;
 
+import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.TimeLimiter;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -116,6 +117,7 @@ public class AzureBlobEncryptor implements VaultEncryptor {
   @Override
   public boolean validateSecretManagerConfiguration(String accountId, EncryptionConfig encryptionConfig) {
     try {
+      //      Sending a dummy text as the string "true" to store in the Azure Blob
       createSecret(accountId, AzureBlobConfig.AZURE_BLOB_VALIDATION_URL, Boolean.TRUE.toString(), encryptionConfig);
     } catch (Exception exception) {
       log.error("Validation for Secret Manager/KMS failed: " + encryptionConfig.getName());
@@ -177,17 +179,13 @@ public class AzureBlobEncryptor implements VaultEncryptor {
       EncryptedRecord data, AzureBlobConfig azureBlobConfig, String fullSecretName) {
     long startTime = System.currentTimeMillis();
 
-    AzureParsedSecretReference parsedSecretReference = isNotEmpty(data.getPath())
-        ? new AzureParsedSecretReference(data.getPath())
-        : new AzureParsedSecretReference(data.getEncryptionKey());
-
     CloudBlockBlob azureBlob = getAzureBlob(azureBlobConfig, fullSecretName);
     try {
       KeyVaultKeyResolver keyResolver =
           AzureBlobAuthenticator.getKeyResolverClient(azureBlobConfig.getClientId(), azureBlobConfig.getSecretKey());
-      String keyIdentifier = azureBlobConfig.getEncryptionServiceUrl() + "/keys/" + azureBlobConfig.getKeyName() + "/"
+      String keyURL = azureBlobConfig.getEncryptionServiceUrl() + "/keys/" + azureBlobConfig.getKeyName() + "/"
           + azureBlobConfig.getKeyId();
-      IKey key = keyResolver.resolveKeyAsync(keyIdentifier).get();
+      IKey key = keyResolver.resolveKeyAsync(keyURL).get();
       BlobEncryptionPolicy policy = new BlobEncryptionPolicy(key, null);
       BlobRequestOptions options = new BlobRequestOptions();
       options.setEncryptionPolicy(policy);
@@ -195,18 +193,16 @@ public class AzureBlobEncryptor implements VaultEncryptor {
       ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
       azureBlob.download(outputStream, null, options, null);
 
-      log.info("Done decrypting Azure Blob secret {} in {} ms", parsedSecretReference.getSecretName(),
-          System.currentTimeMillis() - startTime);
+      log.info("Done decrypting Azure Blob secret {} in {} ms", fullSecretName, System.currentTimeMillis() - startTime);
       if (outputStream == null) {
         throw new AzureKeyVaultOperationException(
-            "Received null value for " + parsedSecretReference.getSecretName(), AZURE_BLOB_OPERATION_ERROR, USER_SRE);
+            "Received null value for " + fullSecretName, AZURE_BLOB_OPERATION_ERROR, USER_SRE);
       }
       return outputStream.toString().toCharArray();
     } catch (Exception ex) {
-      log.error("Failed to decrypt secret in azure blob due to exception", ex);
+      log.error("Failed to decrypt secret in Azure Blob due to exception", ex);
       String message = format("Failed to decrypt secret %s in Azure Blob %s in account %s due to error %s",
-          parsedSecretReference.getSecretName(), azureBlobConfig.getName(), azureBlobConfig.getAccountId(),
-          ex.getMessage());
+          fullSecretName, azureBlobConfig.getName(), azureBlobConfig.getAccountId(), ex.getMessage());
       throw new SecretManagementDelegateException(AZURE_KEY_VAULT_OPERATION_ERROR, message, USER);
     }
   }
@@ -225,9 +221,9 @@ public class AzureBlobEncryptor implements VaultEncryptor {
     try {
       KeyVaultKeyResolver keyResolver =
           AzureBlobAuthenticator.getKeyResolverClient(azureBlobConfig.getClientId(), azureBlobConfig.getSecretKey());
-      String keyId = azureBlobConfig.getEncryptionServiceUrl() + "/keys/" + azureBlobConfig.getKeyName() + "/"
+      String keyURL = azureBlobConfig.getEncryptionServiceUrl() + "/keys/" + azureBlobConfig.getKeyName() + "/"
           + azureBlobConfig.getKeyId();
-      IKey key = keyResolver.resolveKeyAsync(keyId).get();
+      IKey key = keyResolver.resolveKeyAsync(keyURL).get();
       BlobEncryptionPolicy policy = new BlobEncryptionPolicy(key, null);
       BlobRequestOptions options = new BlobRequestOptions();
       options.setEncryptionPolicy(policy);
