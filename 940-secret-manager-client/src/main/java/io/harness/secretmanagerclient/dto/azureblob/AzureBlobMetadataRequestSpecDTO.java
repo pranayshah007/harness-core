@@ -27,14 +27,14 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@JsonTypeName("AZURE_VAULT")
+@JsonTypeName("AZURE_BLOB")
 public class AzureBlobMetadataRequestSpecDTO extends SecretManagerMetadataRequestSpecDTO {
   @NotNull private String clientId;
   @NotNull private String tenantId;
   @ApiModelProperty(dataType = "string") @NotNull private SecretRefData secretKey;
   @NotNull private String subscription;
-  @NotNull private String connectionString;
-  @NotNull private String containerName;
+//  @NotNull private String connectionString;
+//  @NotNull private String containerName;
   private AzureEnvironmentType azureEnvironmentType = AZURE;
   private Set<String> delegateSelectors;
 }
