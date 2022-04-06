@@ -21,7 +21,6 @@ import io.harness.encryption.SecretReference;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.google.common.base.Preconditions;
 import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Collections;
@@ -44,50 +43,38 @@ import lombok.ToString;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Schema(name = "AzureBlobConnector", description = "Returns configuration details for the Azure Blob Secret Manager.")
 public class AzureBlobConnectorDTO extends ConnectorConfigDTO implements DelegateSelectable {
-  @Schema(description = "Application ID of the Azure App.") @NotNull private String clientId;
+  @Schema(description = SecretManagerDescriptionConstants.AZURE_CLIENT_ID) @NotNull private String clientId;
   @SecretReference
   @ApiModelProperty(dataType = "string")
   @NotNull
-  @Schema(description = "This is the Harness text secret with the Azure authentication key as its value.")
+  @Schema(description = SecretManagerDescriptionConstants.AZURE_SECRET_KEY)
   private SecretRefData secretKey;
   @NotNull
-  @Schema(description = "The Azure Active Directory (AAD) directory ID where you created your application.")
+  @Schema(description = SecretManagerDescriptionConstants.AZURE_TENANT_ID)
   private String tenantId;
   @NotNull
-  @Schema(description = "The Azure Active Directory (AAD) directory ID where you created your application.")
+  @Schema(description = SecretManagerDescriptionConstants.AZURE_VAULT_NAME)
   private String vaultName;
-  @NotNull @Schema(description = "Azure Subscription ID.") private String subscription;
-  @Schema(description = "Connection string for Azure storage.") @NotNull private String connectionString;
-  @Schema(description = "Container name of the Azure Storage Container where blob is to be stored.")
+  @NotNull @Schema(description = SecretManagerDescriptionConstants.AZURE_SUBSCRIPTION_ID) private String subscription;
+  @Schema(description = SecretManagerDescriptionConstants.AZURE_STORAGAE_CONNECTION_STRING) @NotNull private String connectionString;
+  @Schema(description = SecretManagerDescriptionConstants.AZURE_STORAGE_CONTAINER_NAME)
   @NotNull
   private String containerName;
-  @Schema(description = "Key ID of the Azure Key Vault Key to be used for blob encryption")
+  @Schema(description = SecretManagerDescriptionConstants.AZURE_KEY_ID)
   @NotNull
   private String keyId;
-  @Schema(description = "Key Name of the Azure Key Vault Key to be used for blob encryption")
+  @Schema(description = SecretManagerDescriptionConstants.AZURE_KEY_NAME)
   @NotNull
   private String keyName;
   @Schema(description = SecretManagerDescriptionConstants.DEFAULT) private boolean isDefault;
 
   @Builder.Default
-  @Schema(description = "This specifies the Azure Environment type, which is AZURE by default.")
+  @Schema(description = SecretManagerDescriptionConstants.AZURE_ENV_TYPE)
   private AzureEnvironmentType azureEnvironmentType = AZURE;
   @Schema(description = SecretManagerDescriptionConstants.DELEGATE_SELECTORS) private Set<String> delegateSelectors;
 
   @Override
   public List<DecryptableEntity> getDecryptableEntities() {
     return Collections.singletonList(this);
-  }
-
-  @Override
-  public void validate() {
-    Preconditions.checkNotNull(this.clientId, "clientId cannot be empty");
-    Preconditions.checkNotNull(this.tenantId, "tenantId cannot be empty");
-    Preconditions.checkNotNull(this.vaultName, "vaultName cannot be empty");
-    Preconditions.checkNotNull(this.subscription, "subscription cannot be empty");
-    Preconditions.checkNotNull(this.connectionString, "connectionString cannot be empty");
-    Preconditions.checkNotNull(this.containerName, "containerName cannot be empty");
-    Preconditions.checkNotNull(this.keyId, "keyId cannot be empty");
-    Preconditions.checkNotNull(this.keyName, "keyName cannot be empty");
   }
 }

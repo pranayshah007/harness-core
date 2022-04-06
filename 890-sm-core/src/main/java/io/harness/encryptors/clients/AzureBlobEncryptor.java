@@ -25,14 +25,12 @@ import io.harness.encryptors.VaultEncryptor;
 import io.harness.exception.AzureKeyVaultOperationException;
 import io.harness.exception.SecretManagementDelegateException;
 import io.harness.helpers.ext.azure.AzureBlobAuthenticator;
-import io.harness.helpers.ext.azure.AzureParsedSecretReference;
 import io.harness.security.encryption.EncryptedRecord;
 import io.harness.security.encryption.EncryptedRecordData;
 import io.harness.security.encryption.EncryptionConfig;
 
 import software.wings.beans.AzureBlobConfig;
 
-import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.TimeLimiter;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -137,7 +135,7 @@ public class AzureBlobEncryptor implements VaultEncryptor {
       try {
         log.info("Trying to decrypt record {} by {}", encryptedRecord.getEncryptionKey(), azureConfig.getVaultName());
         return HTimeLimiter.callInterruptible(timeLimiter, Duration.ofSeconds(15),
-            () -> fetchSecretValueInternal(encryptedRecord, azureConfig, encryptedRecord.getName()));
+            () -> fetchSecretValueInternal(encryptedRecord, azureConfig));
       } catch (Exception e) {
         failedAttempts++;
         log.warn("decryption failed. trial num: {}", failedAttempts, e);
@@ -176,9 +174,9 @@ public class AzureBlobEncryptor implements VaultEncryptor {
   }
 
   private char[] fetchSecretValueInternal(
-      EncryptedRecord data, AzureBlobConfig azureBlobConfig, String fullSecretName) {
+      EncryptedRecord data, AzureBlobConfig azureBlobConfig) {
     long startTime = System.currentTimeMillis();
-
+    String fullSecretName = data.getName();
     CloudBlockBlob azureBlob = getAzureBlob(azureBlobConfig, fullSecretName);
     try {
       KeyVaultKeyResolver keyResolver =
@@ -209,7 +207,7 @@ public class AzureBlobEncryptor implements VaultEncryptor {
 
   private EncryptedRecord renameSecretInternal(
       String accountId, String name, EncryptedRecord existingRecord, AzureBlobConfig azureConfig) {
-    char[] value = fetchSecretValueInternal(existingRecord, azureConfig, name);
+    char[] value = fetchSecretValueInternal(existingRecord, azureConfig);
     return upsertInternal(accountId, name, new String(value), existingRecord, azureConfig);
   }
 

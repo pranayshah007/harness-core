@@ -34,7 +34,6 @@ import org.mockito.MockitoAnnotations;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PreflightCommonUtilsTest extends CategoryTest {
   Map<String, Object> fqnToObjectMapMergedYaml = new HashMap<>();
-
   @Before
   public void setup() throws IOException {
     MockitoAnnotations.initMocks(this);

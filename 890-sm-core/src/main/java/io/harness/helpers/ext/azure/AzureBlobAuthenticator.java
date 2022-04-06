@@ -19,6 +19,8 @@ import com.microsoft.azure.storage.blob.CloudBlobContainer;
 import com.microsoft.azure.storage.blob.CloudBlockBlob;
 import java.net.URISyntaxException;
 import java.security.InvalidKeyException;
+
+import io.harness.exception.UnexpectedException;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
@@ -32,14 +34,10 @@ public class AzureBlobAuthenticator {
       CloudBlobClient blobClient = storageAccount.createCloudBlobClient();
       CloudBlobContainer container = blobClient.getContainerReference(containerName);
       return container.getBlockBlobReference(blobName);
-    } catch (URISyntaxException e) {
-      e.printStackTrace();
-    } catch (InvalidKeyException e) {
-      e.printStackTrace();
-    } catch (StorageException e) {
-      e.printStackTrace();
+    } catch (URISyntaxException | InvalidKeyException | StorageException e) {
+      log.error("Exception while getting the blob client", e);
+      throw new UnexpectedException(e.getMessage());
     }
-    return null;
   }
 
   public static KeyVaultKeyResolver getKeyResolverClient(String clientId, String clientKey) {
