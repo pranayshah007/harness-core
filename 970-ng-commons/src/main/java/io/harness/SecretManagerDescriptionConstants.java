@@ -62,13 +62,11 @@ public class SecretManagerDescriptionConstants {
   public static final String CUSTOM_AUTH_TOKEN =
       "This is the authentication token used to connect underlying secret manager.";
   public static final String AZURE_CLIENT_ID = "Client/Application ID of the Azure App.";
-  public static final String AZURE_SECRET_KEY = "This is the Harness text secret with the Azure authentication key as its value.";
-  public static final String AZURE_TENANT_ID = "The Azure Active Directory (AAD) directory ID where you created your application.";
-  public static final String AZURE_SUBSCRIPTION_ID = "Azure Subscription ID.";
-  public static final String AZURE_VAULT_NAME = "Azure Key Vault Name where the Encryption Key is stored";
-  public static final String AZURE_STORAGAE_CONNECTION_STRING = "Connection string for Azure storage.";
-  public static final String AZURE_STORAGE_CONTAINER_NAME = "Container name of the Azure Storage Container where blob is to be stored.";
-  public static final String AZURE_KEY_ID = "Key ID of the Azure Key Vault Key to be used for blob encryption";
-  public static final String AZURE_KEY_NAME = "Key Name of the Azure Key Vault Key to be used for blob encryption";
+  public static final String AZURE_SECRET_KEY =
+      "This is the Harness text secret with the Azure authentication key as its value.";
+  public static final String AZURE_TENANT_ID =
+      "The Azure Active Directory (AAD) directory ID where you created your application.";
+  public static final String AZURE_STORAGE_CONTAINER_URL =
+      "Container URL of the Azure Storage Container where blob is to be stored.";
   public static final String AZURE_ENV_TYPE = "This specifies the Azure Environment type, which is AZURE by default.";
 }
