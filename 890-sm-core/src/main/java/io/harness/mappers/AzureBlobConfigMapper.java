@@ -32,14 +32,9 @@ public class AzureBlobConfigMapper {
                                           .name(azureBlobConfigDTO.getName())
                                           .clientId(azureBlobConfigDTO.getClientId())
                                           .secretKey(azureBlobConfigDTO.getSecretKey())
-                                          .subscription(azureBlobConfigDTO.getSubscription())
                                           .tenantId(azureBlobConfigDTO.getTenantId())
-                                          .connectionString(azureBlobConfigDTO.getConnectionString())
-                                          .containerName(azureBlobConfigDTO.getContainerName())
-                                          .keyId(azureBlobConfigDTO.getKeyId())
-                                          .keyName(azureBlobConfigDTO.getKeyName())
+                                          .containerURL(azureBlobConfigDTO.getContainerURL())
                                           .azureEnvironmentType(azureBlobConfigDTO.getAzureEnvironmentType())
-                                          .vaultName(azureBlobConfigDTO.getVaultName())
                                           .delegateSelectors(azureBlobConfigDTO.getDelegateSelectors())
                                           .build();
     azureBlobConfig.setNgMetadata(ngMetaDataFromDto(azureBlobConfigDTO));
@@ -61,14 +56,10 @@ public class AzureBlobConfigMapper {
 
   public static AzureBlobConfig applyUpdate(
       AzureBlobConfig blobConfig, AzureBlobConfigUpdateDTO updateDTO, boolean secretsPresentInBlob) {
-    if (secretsPresentInBlob) {
-      checkEqualValues(blobConfig.getVaultName(), updateDTO.getVaultName(), "vault name");
-    }
     blobConfig.setClientId(updateDTO.getClientId());
-    blobConfig.setSubscription(updateDTO.getSubscription());
     blobConfig.setAzureEnvironmentType(updateDTO.getAzureEnvironmentType());
     blobConfig.setTenantId(updateDTO.getTenantId());
-    blobConfig.setVaultName(updateDTO.getVaultName());
+    blobConfig.setContainerURL(updateDTO.getContainerURL());
     if (Optional.ofNullable(updateDTO.getSecretKey()).isPresent()) {
       blobConfig.setSecretKey(updateDTO.getSecretKey());
     }

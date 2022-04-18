@@ -49,23 +49,10 @@ public class AzureBlobConnectorDTO extends ConnectorConfigDTO implements Delegat
   @NotNull
   @Schema(description = SecretManagerDescriptionConstants.AZURE_SECRET_KEY)
   private SecretRefData secretKey;
+  @NotNull @Schema(description = SecretManagerDescriptionConstants.AZURE_TENANT_ID) private String tenantId;
+  @Schema(description = SecretManagerDescriptionConstants.AZURE_STORAGE_CONTAINER_URL)
   @NotNull
-  @Schema(description = SecretManagerDescriptionConstants.AZURE_TENANT_ID)
-  private String tenantId;
-  @NotNull
-  @Schema(description = SecretManagerDescriptionConstants.AZURE_VAULT_NAME)
-  private String vaultName;
-  @NotNull @Schema(description = SecretManagerDescriptionConstants.AZURE_SUBSCRIPTION_ID) private String subscription;
-  @Schema(description = SecretManagerDescriptionConstants.AZURE_STORAGAE_CONNECTION_STRING) @NotNull private String connectionString;
-  @Schema(description = SecretManagerDescriptionConstants.AZURE_STORAGE_CONTAINER_NAME)
-  @NotNull
-  private String containerName;
-  @Schema(description = SecretManagerDescriptionConstants.AZURE_KEY_ID)
-  @NotNull
-  private String keyId;
-  @Schema(description = SecretManagerDescriptionConstants.AZURE_KEY_NAME)
-  @NotNull
-  private String keyName;
+  private String containerURL;
   @Schema(description = SecretManagerDescriptionConstants.DEFAULT) private boolean isDefault;
 
   @Builder.Default

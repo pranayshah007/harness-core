@@ -50,6 +50,7 @@ import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsAuthenti
 import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsConnectorDTO;
 import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsCredentialsDTO;
 import io.harness.delegate.beans.connector.azureartifacts.AzureArtifactsTokenDTO;
+import io.harness.delegate.beans.connector.azureblobconnector.AzureBlobConnectorDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureAuthCredentialDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureAuthDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureClientKeyCertDTO;
@@ -427,5 +428,6 @@ public class ConnectorBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(AzureArtifactsAuthenticationType.class, 10000103);
     kryo.register(AzureArtifactsAuthenticationDTO.class, 10000109);
     kryo.register(AzureArtifactsTokenDTO.class, 10000111);
+    kryo.register(AzureBlobConnectorDTO.class, 19812);
   }
 }

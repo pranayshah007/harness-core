@@ -19,6 +19,8 @@ import io.harness.connector.ConnectorValidationResult;
 import io.harness.connector.task.ConnectorValidationHandler;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.ConnectorValidationParams;
+import io.harness.delegate.beans.connector.azureblobconnector.AzureBlobConnectorDTO;
+import io.harness.delegate.beans.connector.azureblobconnector.AzureBlobValidationParams;
 import io.harness.delegate.beans.connector.azurekeyvaultconnector.AzureKeyVaultConnectorDTO;
 import io.harness.delegate.beans.connector.azurekeyvaultconnector.AzureKeyVaultValidationParams;
 import io.harness.delegate.beans.connector.vaultconnector.VaultConnectorDTO;
@@ -31,6 +33,7 @@ import io.harness.ng.SecretManagerConfigDTOMapper;
 import io.harness.ng.core.dto.ErrorDetail;
 import io.harness.secretmanagerclient.dto.SecretManagerConfigDTO;
 
+import software.wings.beans.AzureBlobConfig;
 import software.wings.beans.AzureVaultConfig;
 import software.wings.beans.VaultConfig;
 
@@ -97,6 +100,22 @@ public class UpsertSecretTaskValidationHandler implements ConnectorValidationHan
           .encryptionConfig(SecretManagerConfigMapper.fromDTO(secretManagerConfigDTO))
           .taskType(UpsertSecretTaskType.CREATE)
           .name(AzureVaultConfig.AZURE_VAULT_VALIDATION_URL)
+          .plaintext(Boolean.TRUE.toString())
+          .existingRecord(null)
+          .build();
+    } else if (ConnectorType.AZURE_BLOB.equals(connectorValidationParams.getConnectorType())) {
+      AzureBlobConnectorDTO azureBlobConnectorDTO =
+          ((AzureBlobValidationParams) connectorValidationParams).getAzureBlobConnectorDTO();
+      ConnectorInfoDTO connectorInfoDTO = ConnectorInfoDTO.builder()
+                                              .connectorConfig(azureBlobConnectorDTO)
+                                              .connectorType(ConnectorType.AZURE_BLOB)
+                                              .build();
+      SecretManagerConfigDTO secretManagerConfigDTO = SecretManagerConfigDTOMapper.fromConnectorDTO(
+          accountIdentifier, ConnectorDTO.builder().connectorInfo(connectorInfoDTO).build(), azureBlobConnectorDTO);
+      return UpsertSecretTaskParameters.builder()
+          .encryptionConfig(SecretManagerConfigMapper.fromDTO(secretManagerConfigDTO))
+          .taskType(UpsertSecretTaskType.UPDATE)
+          .name(AzureBlobConfig.AZURE_BLOB_VALIDATION_URL)
           .plaintext(Boolean.TRUE.toString())
           .existingRecord(null)
           .build();

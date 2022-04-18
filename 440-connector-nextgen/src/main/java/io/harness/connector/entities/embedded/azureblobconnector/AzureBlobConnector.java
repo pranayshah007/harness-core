@@ -37,13 +37,8 @@ import org.springframework.data.annotation.TypeAlias;
 public class AzureBlobConnector extends Connector {
   String clientId;
   String tenantId;
-  String vaultName;
   String secretKeyRef;
-  String subscription;
-  String connectionString;
-  String containerName;
-  String keyId;
-  String keyName;
+  String containerURL;
   boolean isDefault;
 
   @Builder.Default AzureEnvironmentType azureEnvironmentType = AZURE;
