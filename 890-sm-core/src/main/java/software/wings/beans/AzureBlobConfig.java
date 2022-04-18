@@ -67,17 +67,7 @@ public class AzureBlobConfig extends SecretManagerConfig {
 
   @Attributes(title = "Azure Tenant Id", required = true) @NotEmpty private String tenantId;
 
-  @Attributes(title = "Azure Vault Name", required = true) @NotEmpty private String vaultName;
-
-  @Attributes(title = "Subscription") @NotEmpty private String subscription;
-
-  @Attributes(title = "Azure Storage Connection String", required = true) @NotEmpty private String connectionString;
-
-  @Attributes(title = "Azure Storage Container Name", required = true) @NotEmpty private String containerName;
-
-  @Attributes(title = "Azure Key Vault Key ID", required = true) @NotEmpty private String keyId;
-
-  @Attributes(title = "Azure Key Vault Key Name", required = true) @NotEmpty private String keyName;
+  @Attributes(title = "Azure Storage Container URL", required = true) @NotEmpty private String containerURL;
 
   @Attributes(title = "delegateSelectors") private Set<String> delegateSelectors;
 
@@ -88,23 +78,21 @@ public class AzureBlobConfig extends SecretManagerConfig {
     this.secretKey = SECRET_MASK;
   }
 
+  @Override
+  public String getEncryptionServiceUrl() {
+    return getContainerURL();
+  }
+
   @JsonIgnore
   @SchemaIgnore
   @Override
   public String getValidationCriteria() {
-    return obtainEncryptionServiceUrl();
+    return getContainerURL();
   }
 
   @Override
   public SecretManagerType getType() {
     return VAULT;
-  }
-
-  @JsonIgnore
-  @SchemaIgnore
-  @Override
-  public String getEncryptionServiceUrl() {
-    return obtainEncryptionServiceUrl();
   }
 
   @Override
@@ -117,26 +105,6 @@ public class AzureBlobConfig extends SecretManagerConfig {
           SelectorCapability.builder().selectors(getDelegateSelectors()).selectorOrigin(TASK_SELECTORS).build());
     }
     return executionCapabilities;
-  }
-
-  @Override
-  public EncryptionType getEncryptionType() {
-    return EncryptionType.AZURE_BLOB;
-  }
-
-  private String obtainEncryptionServiceUrl() {
-    if (this.azureEnvironmentType == null) {
-      return String.format("https://%s.vault.azure.net", getVaultName());
-    }
-
-    switch (this.azureEnvironmentType) {
-      case AZURE_US_GOVERNMENT:
-        return String.format("https://%s.vault.usgovcloudapi.net", getVaultName());
-
-      case AZURE:
-      default:
-        return String.format("https://%s.vault.azure.net", getVaultName());
-    }
   }
 
   @Override
@@ -158,12 +126,7 @@ public class AzureBlobConfig extends SecretManagerConfig {
                                                   .isDefault(isDefault())
                                                   .clientId(getClientId())
                                                   .tenantId(getTenantId())
-                                                  .vaultName(getVaultName())
-                                                  .subscription(getSubscription())
-                                                  .connectionString(getConnectionString())
-                                                  .containerName(getContainerName())
-                                                  .keyId(getKeyId())
-                                                  .keyName(getKeyName())
+                                                  .containerURL(getContainerURL())
                                                   .azureEnvironmentType(getAzureEnvironmentType())
                                                   .delegateSelectors(getDelegateSelectors())
                                                   .build();

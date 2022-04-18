@@ -31,12 +31,7 @@ public class AzureBlobConfigDTO extends SecretManagerConfigDTO {
   private String clientId;
   private String secretKey;
   private String tenantId;
-  private String vaultName;
-  private String subscription;
-  private String connectionString;
-  private String containerName;
-  private String keyId;
-  private String keyName;
+  private String containerURL;
   private Set<String> delegateSelectors;
 
   @Builder.Default AzureEnvironmentType azureEnvironmentType = AZURE;

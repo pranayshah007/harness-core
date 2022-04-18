@@ -22,7 +22,8 @@ import static io.harness.remote.client.RestClientUtils.getResponse;
 import static io.harness.security.encryption.AccessType.APP_ROLE;
 import static io.harness.security.encryption.AccessType.AWS_IAM;
 import static io.harness.security.encryption.AccessType.TOKEN;
-import static io.harness.security.encryption.EncryptionType.*;
+import static io.harness.security.encryption.EncryptionType.AZURE_VAULT;
+import static io.harness.security.encryption.EncryptionType.VAULT;
 import static io.harness.threading.Morpheus.sleep;
 
 import static software.wings.beans.TaskType.NG_AZURE_VAULT_FETCH_ENGINES;
@@ -91,7 +92,6 @@ import io.harness.secretmanagerclient.dto.VaultK8sCredentialDTO;
 import io.harness.secretmanagerclient.dto.VaultMetadataRequestSpecDTO;
 import io.harness.secretmanagerclient.dto.VaultMetadataSpecDTO;
 import io.harness.secretmanagerclient.dto.VaultSecretEngineDTO;
-import io.harness.secretmanagerclient.dto.azureblob.AzureBlobMetadataRequestSpecDTO;
 import io.harness.secretmanagerclient.dto.azurekeyvault.AzureKeyVaultMetadataRequestSpecDTO;
 import io.harness.secretmanagerclient.dto.azurekeyvault.AzureKeyVaultMetadataSpecDTO;
 import io.harness.security.encryption.AccessType;
@@ -99,7 +99,10 @@ import io.harness.security.encryption.EncryptedRecordData;
 import io.harness.security.encryption.EncryptionConfig;
 import io.harness.service.DelegateGrpcClientWrapper;
 
-import software.wings.beans.*;
+import software.wings.beans.AzureVaultConfig;
+import software.wings.beans.BaseVaultConfig;
+import software.wings.beans.TaskType;
+import software.wings.beans.VaultConfig;
 import software.wings.service.impl.security.NGEncryptorService;
 
 import com.google.inject.Inject;
@@ -297,10 +300,7 @@ public class NGVaultServiceImpl implements NGVaultService {
       return getHashicorpVaultMetadata(accountIdentifier, requestDTO, existingVaultEncryptionConfig);
     } else if (AZURE_VAULT == requestDTO.getEncryptionType()) {
       return getAzureKeyVaultMetadata(accountIdentifier, requestDTO, existingVaultEncryptionConfig);
-    } else if (AZURE_BLOB == requestDTO.getEncryptionType()) {
-      return getAzureBlobMetadata(accountIdentifier, requestDTO, existingVaultEncryptionConfig);
-    }
-    else {
+    } else {
       throw new UnsupportedOperationException(
           "This API is not supported for secret manager of type: " + requestDTO.getEncryptionType());
     }
@@ -571,58 +571,6 @@ public class NGVaultServiceImpl implements NGVaultService {
         .build();
   }
 
-  private SecretManagerMetadataDTO getAzureBlobMetadata(String accountIdentifier,
-                                                            SecretManagerMetadataRequestDTO requestDTO, EncryptionConfig existingBlobEncryptionConfig) {
-    AzureBlobMetadataRequestSpecDTO specDTO = (AzureBlobMetadataRequestSpecDTO) requestDTO.getSpec();
-    AzureBlobConfig azureBlobConfig;
-    if (null != existingBlobEncryptionConfig) {
-      azureBlobConfig = (AzureBlobConfig) existingBlobEncryptionConfig;
-    } else {
-      azureBlobConfig = AzureBlobConfig.builder().build();
-      azureBlobConfig.setAccountId(accountIdentifier);
-      azureBlobConfig.setNgMetadata(NGSecretManagerMetadata.builder()
-              .orgIdentifier(requestDTO.getOrgIdentifier())
-              .projectIdentifier(requestDTO.getProjectIdentifier())
-              .build());
-    }
-    Optional.ofNullable(specDTO.getClientId()).ifPresent(azureBlobConfig::setClientId);
-    Optional.ofNullable(specDTO.getTenantId()).ifPresent(azureBlobConfig::setTenantId);
-    Optional.ofNullable(specDTO.getSubscription()).ifPresent(azureBlobConfig::setSubscription);
-    Optional.ofNullable(specDTO.getSecretKey())
-            .ifPresent(secretKey -> azureBlobConfig.setSecretKey(String.valueOf(secretKey.getDecryptedValue())));
-    Optional.ofNullable(specDTO.getAzureEnvironmentType()).ifPresent(azureBlobConfig::setAzureEnvironmentType);
-    Optional.ofNullable(specDTO.getDelegateSelectors()).ifPresent(azureBlobConfig::setDelegateSelectors);
-    List<String> vaultNames;
-    try {
-      AzureVaultConfig config = AzureVaultConfig.builder()
-              .clientId(azureBlobConfig.getClientId())
-              .tenantId(azureBlobConfig.getTenantId())
-              .subscription(azureBlobConfig.getSubscription())
-              .azureEnvironmentType(azureBlobConfig.getAzureEnvironmentType())
-              .secretKey(azureBlobConfig.getSecretKey())
-              .delegateSelectors(azureBlobConfig.getDelegateSelectors())
-              .build();
-      vaultNames = listVaultsInternal(accountIdentifier, config);
-    } catch (WingsException wingsException) {
-      log.error("Listing vaults failed for account Id {}", accountIdentifier);
-      throw wingsException; // for error handling framework
-    } catch (DelegateServiceDriverException ex) {
-      if (ex.getCause() != null) {
-        throw new WingsException(ex.getCause().getMessage(), ex);
-      } else {
-        throw new WingsException(ex);
-      }
-    } catch (Exception e) {
-      log.error("Listing vaults failed for account Id {}", accountIdentifier, e);
-      throw new AzureServiceException("Failed to list vaults.", INVALID_AZURE_VAULT_CONFIGURATION, USER);
-    }
-
-    return SecretManagerMetadataDTO.builder()
-            .encryptionType(AZURE_BLOB)
-            .spec(AzureKeyVaultMetadataSpecDTO.builder().vaultNames(vaultNames).build())
-            .build();
-  }
-
   private List<String> listVaultsInternal(String accountId, AzureVaultConfig azureVaultConfig) throws IOException {
     AzureKeyVaultConnectorDTO azureKeyVaultConnectorDTO =
         AzureKeyVaultConnectorDTO.builder()
@@ -727,9 +675,6 @@ public class NGVaultServiceImpl implements NGVaultService {
         // n case of VAULT_AGENT we don't have any secretref
         return null;
       }
-    } else if(AZURE_BLOB == requestDTO.getEncryptionType()) {
-      secretRefData = ((AzureBlobMetadataRequestSpecDTO) requestDTO.getSpec()).getSecretKey();
-      secretRefDataList.add(secretRefData);
     } else { // Azure Key Vault
       secretRefData = ((AzureKeyVaultMetadataRequestSpecDTO) requestDTO.getSpec()).getSecretKey();
       secretRefDataList.add(secretRefData);
