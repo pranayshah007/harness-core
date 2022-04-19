@@ -45,6 +45,7 @@ import io.harness.delegate.beans.connector.awssecretmanager.AwsSecretManagerCred
 import io.harness.delegate.beans.connector.awssecretmanager.AwsSecretManagerCredentialSpecDTO;
 import io.harness.delegate.beans.connector.awssecretmanager.AwsSecretManagerCredentialType;
 import io.harness.delegate.beans.connector.awssecretmanager.AwsSecretManagerDTO;
+import io.harness.delegate.beans.connector.azureblobconnector.AzureBlobConnectorDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureAuthCredentialDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureAuthDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureClientKeyCertDTO;
@@ -414,5 +415,6 @@ public class ConnectorBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(TemplateLinkConfigForCustomSecretManager.class, 19877);
     kryo.register(ELKConnectorDTO.class, 10000001);
     kryo.register(ELKAuthType.class, 10000002);
+    kryo.register(AzureBlobConnectorDTO.class, 19812);
   }
 }
