@@ -21,6 +21,7 @@ import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.security.annotations.PublicApi;
+import io.harness.subscription.constant.Prices;
 import io.harness.subscription.dto.CustomerDTO;
 import io.harness.subscription.dto.CustomerDetailDTO;
 import io.harness.subscription.dto.InvoiceDetailDTO;
@@ -86,7 +87,7 @@ public class SubscriptionResource {
   private static final String CUSTOMER_ID = "customerId";
   @Inject private SubscriptionService subscriptionService;
 
-  @POST
+  @GET
   @Path("/prices")
   @ApiOperation(value = "Retrieves product prices", nickname = "retrieveProductPrices")
   @Operation(operationId = "retrieveProductPrices", summary = "Retrieves product prices",
@@ -101,9 +102,10 @@ public class SubscriptionResource {
   public ResponseDTO<PriceCollectionDTO>
   retrieveProductPrices(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
                             NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
-      @io.swagger.v3.oas.annotations.parameters.RequestBody(
-          required = true, description = "This is the list of the Prices.") @NotNull ListPricesDTO prices) {
-    return ResponseDTO.newResponse(subscriptionService.listPrices(accountIdentifier, prices));
+                        @Parameter(required = true, description = "Module Type") @NotNull @QueryParam(
+                                "moduleType") String moduleType) {
+
+    return ResponseDTO.newResponse(subscriptionService.listPrices(accountIdentifier, moduleType));
   }
 
   @POST

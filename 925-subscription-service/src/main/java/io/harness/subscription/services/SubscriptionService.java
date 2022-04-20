@@ -21,7 +21,7 @@ import io.harness.subscription.dto.SubscriptionDetailDTO;
 import java.util.List;
 
 public interface SubscriptionService {
-  PriceCollectionDTO listPrices(String accountIdentifier, ListPricesDTO lookupPrices);
+  PriceCollectionDTO listPrices(String accountIdentifier, String module);
   InvoiceDetailDTO previewInvoice(String accountIdentifier, SubscriptionDTO subscriptionDTO);
   SubscriptionDetailDTO createSubscription(String accountIdentifier, SubscriptionDTO subscriptionDTO);
   SubscriptionDetailDTO updateSubscription(

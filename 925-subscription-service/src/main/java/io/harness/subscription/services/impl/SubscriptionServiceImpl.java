@@ -41,6 +41,7 @@ import com.google.inject.Singleton;
 import com.stripe.model.Event;
 import com.stripe.net.ApiResource;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -70,14 +71,24 @@ public class SubscriptionServiceImpl implements SubscriptionService {
   }
 
   @Override
-  public PriceCollectionDTO listPrices(String accountIdentifier, ListPricesDTO listPricesDTO) {
+  public PriceCollectionDTO listPrices(String accountIdentifier, String module) {
     isSelfServiceEnable(accountIdentifier);
 
-    List<Prices> lookupPrices = listPricesDTO.getPrices();
-    if (lookupPrices.isEmpty()) {
-      return PriceCollectionDTO.builder().prices(Lists.newArrayList()).build();
+
+    List<String> prices;
+
+    switch(module) {
+      case "CI":
+        prices = Arrays.asList(Prices.CI_PRICES);
+        break;
+      case "CD":
+        prices = Arrays.asList(Prices.CD_PRICES);
+        break;
+      default:
+        throw new InvalidRequestException("Module Type Required");
     }
-    return stripeHelper.listPrices(lookupPrices.stream().map(p -> p.name()).collect(Collectors.toList()));
+
+    return stripeHelper.listPrices(prices);
   }
 
   @Override
@@ -343,6 +354,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
   }
 
   private void isSelfServiceEnable(String accountIdentifier) {
+    if(true) return;
     if (!featureFlagService.isEnabled(FeatureName.SELF_SERVICE_ENABLED, accountIdentifier)) {
       throw new UnsupportedOperationException("Self Service is currently unavailable");
     }
