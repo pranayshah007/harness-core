@@ -15,7 +15,12 @@ import io.harness.azure.AzureEnvironmentType;
 import io.harness.secretmanagerclient.dto.SecretManagerConfigUpdateDTO;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import lombok.*;
+import lombok.Builder;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
 @OwnedBy(PL)

@@ -8,12 +8,9 @@
 package io.harness.mappers;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.eraro.ErrorCode.SECRET_MANAGEMENT_ERROR;
-import static io.harness.exception.WingsException.USER;
 import static io.harness.mappers.SecretManagerConfigMapper.ngMetaDataFromDto;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.exception.SecretManagementException;
 import io.harness.ng.core.mapper.TagMapper;
 import io.harness.secretmanagerclient.NGSecretManagerMetadata;
 import io.harness.secretmanagerclient.dto.azureblob.AzureBlobConfigDTO;
@@ -44,18 +41,7 @@ public class AzureBlobConfigMapper {
     return azureBlobConfig;
   }
 
-  private static void checkEqualValues(Object x, Object y, String fieldName) {
-    if (x != null && !x.equals(y)) {
-      throw new SecretManagementException(SECRET_MANAGEMENT_ERROR,
-          String.format(
-              "Cannot change the value of %s since there are secrets already present in azure key blob. Please delete or migrate them and try again.",
-              fieldName),
-          USER);
-    }
-  }
-
-  public static AzureBlobConfig applyUpdate(
-      AzureBlobConfig blobConfig, AzureBlobConfigUpdateDTO updateDTO, boolean secretsPresentInBlob) {
+  public static AzureBlobConfig applyUpdate(AzureBlobConfig blobConfig, AzureBlobConfigUpdateDTO updateDTO) {
     blobConfig.setClientId(updateDTO.getClientId());
     blobConfig.setAzureEnvironmentType(updateDTO.getAzureEnvironmentType());
     blobConfig.setTenantId(updateDTO.getTenantId());
