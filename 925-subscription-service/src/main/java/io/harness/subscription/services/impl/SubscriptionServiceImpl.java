@@ -74,7 +74,6 @@ public class SubscriptionServiceImpl implements SubscriptionService {
   public PriceCollectionDTO listPrices(String accountIdentifier, String module) {
     isSelfServiceEnable(accountIdentifier);
 
-
     List<String> prices;
 
     switch(module) {
@@ -84,8 +83,11 @@ public class SubscriptionServiceImpl implements SubscriptionService {
       case "CD":
         prices = Arrays.asList(Prices.CD_PRICES);
         break;
+      case "CF":
+        prices = Arrays.asList(Prices.FF_PRICES);
+        break;
       default:
-        throw new InvalidRequestException("Module Type Required");
+        throw new InvalidRequestException("Valid Module Type Required");
     }
 
     return stripeHelper.listPrices(prices);

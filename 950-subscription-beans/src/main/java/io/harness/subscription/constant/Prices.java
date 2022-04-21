@@ -20,4 +20,14 @@ public class Prices {
           "CI_TEAM_DEVELOPERS_MONTHLY",
           "CI_TEAM_DEVELOPERS_YEARLY"
   };
+  public static final String[] FF_PRICES = new String[] {
+          "FF_ENTERPRISE_DEVELOPERS_MONTHLY",
+          "FF_ENTERPRISE_DEVELOPERS_YEARLY",
+          "FF_TEAM_DEVELOPERS_MONTHLY",
+          "FF_TEAM_DEVELOPERS_YEARLY",
+          "FF_ENTERPRISE_MAU_MONTHLY",
+          "FF_ENTERPRISE_MAU_YEARLY",
+          "FF_TEAM_MAU_MONTHLY",
+          "FF_TEAM_MAU_YEARLY"
+  };
 }
