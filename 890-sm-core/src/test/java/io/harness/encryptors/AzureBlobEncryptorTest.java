@@ -3,7 +3,11 @@ package io.harness.encryptors;
 import static io.harness.rule.OwnerRule.TEJAS;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
 
 import io.harness.CategoryTest;
@@ -20,7 +24,6 @@ import io.harness.security.encryption.EncryptionType;
 import software.wings.beans.AzureBlobConfig;
 
 import com.azure.storage.blob.BlobClient;
-import com.azure.storage.blob.BlobContainerClient;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
@@ -43,7 +46,6 @@ public class AzureBlobEncryptorTest extends CategoryTest {
   private AzureBlobEncryptor azureBlobEncryptor;
   private AzureBlobConfig azureBlobConfig;
   private BlobClient blobClient;
-  private BlobContainerClient blobContainerClient;
   private String blobName = "dummy";
 
   @Before
@@ -82,7 +84,7 @@ public class AzureBlobEncryptorTest extends CategoryTest {
     verify(blobClient, times(1))
         .upload(byteArrayInputStreamArgumentCaptor.capture(), longArgumentCaptor.capture(),
             booleanArgumentCaptor.capture());
-    int length = (int) plainText.length();
+    int length = plainText.length();
     byte[] textArray = new byte[length];
     byteArrayInputStreamArgumentCaptor.getValue().read(textArray, 0, length);
     assertThat(textArray).isEqualTo(plainText.getBytes(StandardCharsets.UTF_8));
@@ -119,7 +121,7 @@ public class AzureBlobEncryptorTest extends CategoryTest {
     verify(blobClient, times(1))
         .upload(byteArrayInputStreamArgumentCaptor.capture(), longArgumentCaptor.capture(),
             booleanArgumentCaptor.capture());
-    int length = (int) plainText.length();
+    int length = plainText.length();
     byte[] textArray = new byte[length];
     byteArrayInputStreamArgumentCaptor.getValue().read(textArray, 0, length);
     assertThat(textArray).isEqualTo(plainText.getBytes(StandardCharsets.UTF_8));
@@ -146,7 +148,7 @@ public class AzureBlobEncryptorTest extends CategoryTest {
     verify(blobClient, times(1))
         .upload(byteArrayInputStreamArgumentCaptor.capture(), longArgumentCaptor.capture(),
             booleanArgumentCaptor.capture());
-    int length = (int) plainText.length();
+    int length = plainText.length();
     byte[] textArray = new byte[length];
     byteArrayInputStreamArgumentCaptor.getValue().read(textArray, 0, length);
     assertThat(textArray).isEqualTo(plainText.getBytes(StandardCharsets.UTF_8));

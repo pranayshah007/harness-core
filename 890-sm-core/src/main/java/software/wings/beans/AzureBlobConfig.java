@@ -9,7 +9,11 @@ package software.wings.beans;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.azure.AzureEnvironmentType.AZURE;
-import static io.harness.beans.SecretManagerCapabilities.*;
+import static io.harness.beans.SecretManagerCapabilities.CAN_BE_DEFAULT_SM;
+import static io.harness.beans.SecretManagerCapabilities.CREATE_FILE_SECRET;
+import static io.harness.beans.SecretManagerCapabilities.CREATE_INLINE_SECRET;
+import static io.harness.beans.SecretManagerCapabilities.CREATE_REFERENCE_SECRET;
+import static io.harness.beans.SecretManagerCapabilities.TRANSITION_SECRET_FROM_SM;
 import static io.harness.beans.SecretManagerCapabilities.TRANSITION_SECRET_TO_SM;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.expression.SecretString.SECRET_MASK;
