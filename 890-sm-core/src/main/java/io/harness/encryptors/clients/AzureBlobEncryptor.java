@@ -24,6 +24,7 @@ import io.harness.concurrent.HTimeLimiter;
 import io.harness.encryptors.VaultEncryptor;
 import io.harness.exception.AzureKeyVaultOperationException;
 import io.harness.exception.SecretManagementDelegateException;
+import io.harness.helpers.ext.azure.BlobClientAuthenticator;
 import io.harness.security.encryption.EncryptedRecord;
 import io.harness.security.encryption.EncryptedRecordData;
 import io.harness.security.encryption.EncryptionConfig;
@@ -228,16 +229,7 @@ public class AzureBlobEncryptor implements VaultEncryptor {
         .build();
   }
 
-  private BlobClient getAzureBlob(AzureBlobConfig azureBlobConfig, String blobName) {
-    ClientSecretCredential credentials = new ClientSecretCredentialBuilder()
-                                             .clientId(azureBlobConfig.getClientId())
-                                             .tenantId(azureBlobConfig.getTenantId())
-                                             .clientSecret(azureBlobConfig.getSecretKey())
-                                             .build();
-    BlobContainerClient blobContainerClient = new BlobContainerClientBuilder()
-                                                  .endpoint(azureBlobConfig.getContainerURL())
-                                                  .credential(credentials)
-                                                  .buildClient();
-    return blobContainerClient.getBlobClient(blobName);
+  public BlobClient getAzureBlob(AzureBlobConfig azureBlobConfig, String blobName) {
+    return BlobClientAuthenticator.getClient(azureBlobConfig, blobName);
   }
 }
