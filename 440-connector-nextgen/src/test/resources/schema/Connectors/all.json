@@ -904,6 +904,54 @@
         }
       ]
     },
+    "AzureBlobConnectorDTO": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ConnectorConfigDTO"
+        },
+        {
+          "type": "object",
+          "required": [
+            "clientId",
+            "containerURL",
+            "secretKey",
+            "tenantId"
+          ],
+          "properties": {
+            "azureEnvironmentType": {
+              "type": "string",
+              "enum": [
+                "AZURE",
+                "AZURE_US_GOVERNMENT"
+              ]
+            },
+            "clientId": {
+              "type": "string"
+            },
+            "containerURL": {
+              "type": "string"
+            },
+            "default": {
+              "type": "boolean"
+            },
+            "delegateSelectors": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string"
+              }
+            },
+            "secretKey": {
+              "type": "string"
+            },
+            "tenantId": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "AzureClientKeyCertDTO": {
       "allOf": [
         {
@@ -1897,6 +1945,7 @@
             "Dynatrace",
             "Vault",
             "AzureKeyVault",
+            "AzureBlob",
             "DockerRegistry",
             "Local",
             "AwsKms",
@@ -2026,6 +2075,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/AzureConnector"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "AzureBlob"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AzureBlobConnectorDTO"
               }
             }
           }
