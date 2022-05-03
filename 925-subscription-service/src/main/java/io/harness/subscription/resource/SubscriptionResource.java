@@ -22,15 +22,7 @@ import io.harness.rest.RestResponse;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.security.annotations.PublicApi;
 import io.harness.subscription.constant.Prices;
-import io.harness.subscription.dto.CustomerDTO;
-import io.harness.subscription.dto.CustomerDetailDTO;
-import io.harness.subscription.dto.InvoiceDetailDTO;
-import io.harness.subscription.dto.ListPricesDTO;
-import io.harness.subscription.dto.PaymentMethodCollectionDTO;
-import io.harness.subscription.dto.PriceCollectionDTO;
-import io.harness.subscription.dto.StripeEventDTO;
-import io.harness.subscription.dto.SubscriptionDTO;
-import io.harness.subscription.dto.SubscriptionDetailDTO;
+import io.harness.subscription.dto.*;
 import io.harness.subscription.services.SubscriptionService;
 
 import com.google.inject.Inject;
@@ -109,22 +101,40 @@ public class SubscriptionResource {
   }
 
   @POST
-  @ApiOperation(value = "Creates a subscription", nickname = "createSubscription")
-  @Operation(operationId = "createSubscription", summary = "Creates a subscription",
-      responses =
-      {
-        @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(responseCode = "default", description = "Returns subscription details")
-      })
+  @ApiOperation(value = "Creates a feature flag subscription", nickname = "createFfSubscription")
+  @Operation(operationId = "createFfSubscription", summary = "Creates a feature flag subscription",
+          responses =
+                  {
+                          @io.swagger.v3.oas.annotations.responses.
+                                  ApiResponse(responseCode = "default", description = "Returns subscription details")
+                  })
   @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = VIEW_LICENSE_PERMISSION)
   public ResponseDTO<SubscriptionDetailDTO>
-  createSubscription(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
-                         NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
-      @io.swagger.v3.oas.annotations.parameters.RequestBody(
-          required = true, description = "This is the details of the Subscription Request.") @NotNull
-      @Valid SubscriptionDTO subscriptionDTO) {
-    return ResponseDTO.newResponse(subscriptionService.createSubscription(accountIdentifier, subscriptionDTO));
+  createFfSubscription(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+                     @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                             required = true, description = "This is the details of the Subscription Request.") @NotNull
+                     @Valid FfSubscriptionDTO subscriptionDTO) {
+    return ResponseDTO.newResponse(subscriptionService.createFfSubscription(accountIdentifier, subscriptionDTO));
   }
+
+//  @POST
+//  @ApiOperation(value = "Creates a subscription", nickname = "createSubscription")
+//  @Operation(operationId = "createSubscription", summary = "Creates a subscription",
+//      responses =
+//      {
+//        @io.swagger.v3.oas.annotations.responses.
+//        ApiResponse(responseCode = "default", description = "Returns subscription details")
+//      })
+//  @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = VIEW_LICENSE_PERMISSION)
+//  public ResponseDTO<SubscriptionDetailDTO>
+//  createSubscription(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+//                         NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+//      @io.swagger.v3.oas.annotations.parameters.RequestBody(
+//          required = true, description = "This is the details of the Subscription Request.") @NotNull
+//      @Valid SubscriptionDTO subscriptionDTO) {
+//    return ResponseDTO.newResponse(subscriptionService.createSubscription(accountIdentifier, subscriptionDTO));
+//  }
 
   @PUT
   @Path("/{subscriptionId}")
@@ -280,21 +290,21 @@ public class SubscriptionResource {
     return ResponseDTO.newResponse(subscriptionService.getStripeCustomer(accountIdentifier, customerId));
   }
 
-  @GET
-  @Path("/customers")
-  @ApiOperation(value = "Lists all customers", nickname = "listCustomers")
-  @Operation(operationId = "listCustomers", summary = "Lists all customers",
-      responses =
-      {
-        @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(responseCode = "default", description = "Returns customer details")
-      })
-  @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = VIEW_LICENSE_PERMISSION)
-  public ResponseDTO<List<CustomerDetailDTO>>
-  listCustomers(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
-      NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier) {
-    return ResponseDTO.newResponse(subscriptionService.listStripeCustomers(accountIdentifier));
-  }
+//  @GET
+//  @Path("/customers")
+//  @ApiOperation(value = "Lists all customers", nickname = "listCustomers")
+//  @Operation(operationId = "listCustomers", summary = "Lists all customers",
+//      responses =
+//      {
+//        @io.swagger.v3.oas.annotations.responses.
+//        ApiResponse(responseCode = "default", description = "Returns customer details")
+//      })
+//  @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = VIEW_LICENSE_PERMISSION)
+//  public ResponseDTO<List<CustomerDetailDTO>>
+//  listCustomers(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+//      NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier) {
+//    return ResponseDTO.newResponse(subscriptionService.listStripeCustomers(accountIdentifier));
+//  }
 
   @GET
   @Path("/payment_methods")

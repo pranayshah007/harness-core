@@ -19,5 +19,5 @@ import org.springframework.transaction.annotation.Transactional;
 public interface StripeCustomerRepository extends CrudRepository<StripeCustomer, String> {
   StripeCustomer findByAccountIdentifierAndCustomerId(String accountIdentifier, String customerId);
   StripeCustomer findByCustomerId(String customerId);
-  List<StripeCustomer> findByAccountIdentifier(String accountIdentifier);
+  StripeCustomer findByAccountIdentifier(String accountIdentifier);
 }

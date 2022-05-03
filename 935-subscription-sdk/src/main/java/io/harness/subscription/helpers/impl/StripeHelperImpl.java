@@ -109,6 +109,21 @@ public class StripeHelperImpl implements StripeHelper {
   }
 
   @Override
+  public Price getPrice(String lookupKey) {
+    List<String> lookupKeyList = new ArrayList<String>();
+    lookupKeyList.add(lookupKey);
+
+    PriceListParams params = PriceListParams.builder()
+          .setActive(true)
+          .addAllLookupKeys(lookupKeyList)
+          .addAllExpand(Lists.newArrayList("data.tiers"))
+          .build();
+
+    Price price = stripeHandler.listPrices(params).getData().get(0);
+    return price;
+  }
+
+  @Override
   public PriceCollectionDTO listPrices(List<String> lookupKeys) {
     PriceListParams params = PriceListParams.builder()
                                  .setActive(true)

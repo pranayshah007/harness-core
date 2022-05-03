@@ -16,4 +16,10 @@ public class ItemParams {
   private String priceId;
   private Long quantity;
   private String lookupKey;
+
+  public ItemParams(String priceId, Long quantity, String lookupKey) {
+    this.priceId = priceId;
+    this.quantity = quantity;
+    this.lookupKey = lookupKey;
+  }
 }

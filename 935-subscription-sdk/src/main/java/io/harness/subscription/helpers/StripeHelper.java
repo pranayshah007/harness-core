@@ -7,11 +7,8 @@
 
 package io.harness.subscription.helpers;
 
-import io.harness.subscription.dto.CustomerDetailDTO;
-import io.harness.subscription.dto.InvoiceDetailDTO;
-import io.harness.subscription.dto.PaymentMethodCollectionDTO;
-import io.harness.subscription.dto.PriceCollectionDTO;
-import io.harness.subscription.dto.SubscriptionDetailDTO;
+import com.stripe.model.Price;
+import io.harness.subscription.dto.*;
 import io.harness.subscription.params.CustomerParams;
 import io.harness.subscription.params.SubscriptionParams;
 
@@ -24,6 +21,7 @@ public interface StripeHelper {
 
   CustomerDetailDTO getCustomer(String customerId);
 
+  Price getPrice(String lookupKey);
   PriceCollectionDTO listPrices(List<String> lookupKeys);
   SubscriptionDetailDTO createSubscription(SubscriptionParams subscriptionParams);
   SubscriptionDetailDTO updateSubscription(SubscriptionParams subscriptionParams);

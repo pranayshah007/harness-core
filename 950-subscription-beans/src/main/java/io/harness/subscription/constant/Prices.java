@@ -30,4 +30,10 @@ public class Prices {
           "FF_TEAM_MAU_MONTHLY",
           "FF_TEAM_MAU_YEARLY"
   };
+  public static String getLookupKey(String module, String edition, String product, String paymentFrequency) {
+    return module.toUpperCase().trim()
+            + "_" + edition.toUpperCase().trim()
+            + "_" + product.toUpperCase().trim()
+            + "_" + paymentFrequency.toUpperCase().trim();
+  }
 }
