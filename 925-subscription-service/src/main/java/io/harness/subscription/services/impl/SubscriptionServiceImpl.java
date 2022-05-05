@@ -120,7 +120,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     // verify customer exists
     StripeCustomer stripeCustomer = stripeCustomerRepository.findByAccountIdentifier(accountIdentifier);
     if (stripeCustomer == null) {
-      createStripeCustomer(accountIdentifier, new CustomerDTO("",""));
+      createStripeCustomer(accountIdentifier, new CustomerDTO("admin@harness.io","Harness"));
       stripeCustomer = stripeCustomerRepository.findByAccountIdentifier(accountIdentifier);
     }
 
