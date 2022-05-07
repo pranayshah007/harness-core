@@ -1841,6 +1841,37 @@
             }
           },
           "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "execution",
+            "deploymentType",
+            "environmentGroup",
+            "service"
+          ],
+          "properties": {
+            "deploymentType": {
+              "type": "string",
+              "enum": [
+                "Kubernetes",
+                "NativeHelm",
+                "Ssh",
+                "WinRm",
+                "ServerlessAwsLambda"
+              ]
+            },
+            "environmentGroup": {
+              "$ref": "#/definitions/EnvironmentGroupYaml"
+            },
+            "execution": {
+              "$ref": "#/definitions/ExecutionElementConfig"
+            },
+            "service": {
+              "$ref": "#/definitions/ServiceYamlV2"
+            }
+          },
+          "additionalProperties": false
         }
       ]
     },
@@ -2070,6 +2101,27 @@
           ]
         }
       ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "EnvironmentGroupYaml": {
+      "type": "object",
+      "required": [
+        "envGroupRef"
+      ],
+      "properties": {
+        "envGroupConfig": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/EnvironmentYamlV2"
+          }
+        },
+        "envGroupRef": {
+          "type": "string"
+        },
+        "metadata": {
+          "type": "string"
+        }
+      },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "EnvironmentYaml": {
