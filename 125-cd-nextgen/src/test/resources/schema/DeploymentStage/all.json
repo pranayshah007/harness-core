@@ -1789,24 +1789,60 @@
       ]
     },
     "DeploymentStageConfig": {
-      "type": "object",
-      "required": [
-        "execution",
-        "infrastructure",
-        "serviceConfig"
-      ],
-      "properties": {
-        "execution": {
-          "$ref": "#/definitions/ExecutionElementConfig"
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "execution",
+            "serviceConfig",
+            "infrastructure"
+          ],
+          "properties": {
+            "execution": {
+              "$ref": "#/definitions/ExecutionElementConfig"
+            },
+            "infrastructure": {
+              "$ref": "#/definitions/PipelineInfrastructure"
+            },
+            "serviceConfig": {
+              "$ref": "#/definitions/ServiceConfig"
+            }
+          },
+          "additionalProperties": false
         },
-        "infrastructure": {
-          "$ref": "#/definitions/PipelineInfrastructure"
-        },
-        "serviceConfig": {
-          "$ref": "#/definitions/ServiceConfig"
+        {
+          "type": "object",
+          "required": [
+            "execution",
+            "deploymentType",
+            "environment",
+            "service"
+          ],
+          "properties": {
+            "deploymentType": {
+              "type": "string",
+              "enum": [
+                "Kubernetes",
+                "NativeHelm",
+                "Ssh",
+                "WinRm",
+                "ServerlessAwsLambda"
+              ]
+            },
+            "environment": {
+              "$ref": "#/definitions/EnvironmentYamlV2"
+            },
+            "execution": {
+              "$ref": "#/definitions/ExecutionElementConfig"
+            },
+            "service": {
+              "$ref": "#/definitions/ServiceYamlV2"
+            }
+          },
+          "additionalProperties": false
         }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#"
+      ]
     },
     "DeploymentStageNode": {
       "type": "object",
@@ -2065,6 +2101,27 @@
             "PreProduction",
             "Production"
           ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "EnvironmentYamlV2": {
+      "type": "object",
+      "required": [
+        "environmentRef"
+      ],
+      "properties": {
+        "environmentRef": {
+          "type": "string"
+        },
+        "infrastructureDefinitions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/InfraStructureDefinition"
+          }
+        },
+        "metadata": {
+          "type": "string"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -2861,6 +2918,21 @@
         },
         "infrastructureDefinition": {
           "$ref": "#/definitions/InfrastructureDef"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "InfraStructureDefinition": {
+      "type": "object",
+      "required": [
+        "ref"
+      ],
+      "properties": {
+        "metadata": {
+          "type": "string"
+        },
+        "ref": {
+          "type": "string"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -6361,6 +6433,21 @@
           "additionalProperties": {
             "type": "string"
           }
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ServiceYamlV2": {
+      "type": "object",
+      "required": [
+        "serviceConfigRef"
+      ],
+      "properties": {
+        "metadata": {
+          "type": "string"
+        },
+        "serviceConfigRef": {
+          "type": "string"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
