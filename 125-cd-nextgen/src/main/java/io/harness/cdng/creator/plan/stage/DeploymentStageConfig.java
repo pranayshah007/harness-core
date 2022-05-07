@@ -48,8 +48,10 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonTypeName("Deployment")
-@OneOfSet(fields = {"serviceConfig, infrastructure", "service, deploymentType, environment"},
-    requiredFieldNames = {"service", "serviceConfig", "deploymentType", "infrastructure", "environment"})
+@OneOfSet(fields = {"serviceConfig, infrastructure", "service, deploymentType, environment",
+              "service, deploymentType, environmentGroup"},
+    requiredFieldNames = {"service", "serviceConfig", "deploymentType", "infrastructure", "environment",
+        "environmentGroup"})
 @TypeAlias("deploymentStageConfig")
 @SimpleVisitorHelper(helperClass = DeploymentStageVisitorHelper.class)
 public class DeploymentStageConfig implements StageInfoConfig, Visitable {
@@ -75,7 +77,7 @@ public class DeploymentStageConfig implements StageInfoConfig, Visitable {
   // New Environment Yaml
   EnvironmentYamlV2 environment;
 
-  // New Environment Group Yaml
+  // Environment Group yaml
   EnvironmentGroupYaml environmentGroup;
 
   PipelineInfrastructure infrastructure;
