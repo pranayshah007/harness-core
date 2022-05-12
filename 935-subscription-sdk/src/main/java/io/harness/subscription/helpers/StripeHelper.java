@@ -28,6 +28,7 @@ public interface StripeHelper {
   SubscriptionDetailDTO updateSubscriptionDefaultPayment(SubscriptionParams subscriptionParams);
   void cancelSubscription(SubscriptionParams subscriptionParams);
   SubscriptionDetailDTO retrieveSubscription(SubscriptionParams subscriptionParams);
+  InvoiceDetailDTO getUpcomingInvoice(String invoiceParams);
   InvoiceDetailDTO previewInvoice(SubscriptionParams subscriptionParams);
 
   PaymentMethodCollectionDTO listPaymentMethods(String customerId);

@@ -30,6 +30,7 @@ import com.stripe.param.SubscriptionCreateParams;
 import com.stripe.param.SubscriptionRetrieveParams;
 import com.stripe.param.SubscriptionUpdateParams;
 import java.util.List;
+import java.util.Map;
 
 public class StripeHandlerImpl {
   StripeHandlerImpl() {}
@@ -115,6 +116,14 @@ public class StripeHandlerImpl {
       return Price.retrieve(priceId);
     } catch (StripeException e) {
       throw new InvalidRequestException("Unable to retrieve price", e);
+    }
+  }
+
+  Invoice retrieveUpcomingInvoice(Map<String, Object> params) {
+    try {
+      return Invoice.upcoming(params);
+    } catch (StripeException e) {
+      throw new InvalidRequestException("Unable to retrieve invoice", e);
     }
   }
 

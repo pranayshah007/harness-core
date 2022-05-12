@@ -227,6 +227,21 @@ public class StripeHelperImpl implements StripeHelper {
   }
 
   @Override
+  public InvoiceDetailDTO getUpcomingInvoice(String customerId) {
+    InvoiceUpcomingParams.Builder upcomingParamBuilder = InvoiceUpcomingParams.builder();
+
+    if(Strings.isNullOrEmpty(customerId)) {
+      throw new InvalidArgumentsException("Customer ID Required to retrieve an upcoming invoice.");
+    }
+
+    Map<String, Object> invoiceParams = new HashMap<>();
+    invoiceParams.put("customer", customerId);
+
+    Invoice invoice = stripeHandler.retrieveUpcomingInvoice(invoiceParams);
+
+    return toInvoiceDetailDTO(invoice);
+  }
+  @Override
   public InvoiceDetailDTO previewInvoice(SubscriptionParams subscriptionParams) {
     InvoiceUpcomingParams.Builder upcomingParamBuilder = InvoiceUpcomingParams.builder();
 

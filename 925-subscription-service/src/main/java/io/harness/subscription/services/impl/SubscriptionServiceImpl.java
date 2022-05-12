@@ -112,7 +112,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
   }
 
   @Override
-  public SubscriptionDetailDTO createFfSubscription(String accountIdentifier, FfSubscriptionDTO subscriptionDTO) {
+  public InvoiceDetailDTO createFfSubscription(String accountIdentifier, FfSubscriptionDTO subscriptionDTO) {
     isSelfServiceEnable(accountIdentifier);
 
     // TODO: transaction control in case any race condition
@@ -168,7 +168,10 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     //            .latestInvoice(subscription.getLatestInvoice())
     //            .moduleType(subscriptionDTO.getModuleType())
     //            .build());
-    return subscription;
+
+    val invoice = stripeHelper.getUpcomingInvoice(stripeCustomer.getCustomerId());
+
+    return invoice;
   }
 
   @Override
