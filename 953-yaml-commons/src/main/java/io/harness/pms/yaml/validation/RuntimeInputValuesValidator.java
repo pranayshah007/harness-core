@@ -15,6 +15,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.common.NGExpressionUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
+import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlUtils;
 
@@ -103,6 +104,72 @@ public class RuntimeInputValuesValidator {
       }
     }
     return error;
+  }
+
+  public boolean validateInputValues(Object sourceObject, Object objectToValidate) {
+    /*
+      This if block is to validate static values inside an array of primitive values.
+      For example, the pipeline can have something like `a: <+input>.regex(a.*a)`, and the input set provides
+      the following value `a: [austria, australia, india]`. This block checks each element in the list against the
+      regex provided in the pipeline yaml.
+     */
+    if (objectToValidate instanceof ArrayNode) {
+      ArrayNode objectToValidateValueArray = (ArrayNode) objectToValidate;
+      for (JsonNode element : objectToValidateValueArray) {
+        if (!validateInputValues(sourceObject, element)) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    String sourceValue = ((JsonNode) sourceObject).asText();
+    String objectToValidateValue = ((JsonNode) objectToValidate).asText();
+    ParameterField<String> inputSetField;
+    inputSetField = getInputSetParameterField(objectToValidateValue);
+    String objectToValidateFieldValue;
+    if (inputSetField == null || inputSetField.getValue() == null) {
+      objectToValidateFieldValue = objectToValidateValue;
+    } else {
+      objectToValidateFieldValue = inputSetField.getValue().toString();
+    }
+
+    if (NGExpressionUtils.matchesInputSetPattern(sourceValue)) {
+      try {
+        ParameterField<?> sourceField = YamlUtils.read(sourceValue, ParameterField.class);
+        if (NGExpressionUtils.matchesInputSetPattern(objectToValidateFieldValue)) {
+          // if both are runtime inputs, they should match exactly else return false
+          return sourceValue.equals(objectToValidateValue);
+        } else if (EngineExpressionEvaluator.hasExpressions(objectToValidateFieldValue)) {
+          // if linked input is expression, return true.
+          return true;
+        } else {
+          if (sourceField.getInputSetValidator() == null) {
+            return true;
+          }
+
+          InputSetValidator inputSetValidator = sourceField.getInputSetValidator();
+          if (inputSetValidator.getValidatorType() == REGEX) {
+            return NGExpressionUtils.matchesPattern(
+                Pattern.compile(inputSetValidator.getParameters()), objectToValidateFieldValue);
+          } else if (inputSetValidator.getValidatorType() == ALLOWED_VALUES) {
+            String[] allowedValues = inputSetValidator.getParameters().split(", *");
+            for (String allowedValue : allowedValues) {
+              if (NGExpressionUtils.isRuntimeOrExpressionField(allowedValue)
+                  || allowedValue.equals(objectToValidateFieldValue)) {
+                return true;
+              }
+            }
+            return false;
+          }
+        }
+      } catch (IOException e) {
+        throw new InvalidRequestException(
+            "Input set expression " + sourceValue + " or " + objectToValidateFieldValue + " is not valid");
+      }
+    }
+
+    return true;
   }
 
   private static ParameterField<String> getInputSetParameterField(String inputSetValue) {

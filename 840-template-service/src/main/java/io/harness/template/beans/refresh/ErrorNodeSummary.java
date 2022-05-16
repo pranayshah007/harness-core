@@ -10,11 +10,23 @@ package io.harness.template.beans.refresh;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
+import java.util.ArrayList;
 import java.util.List;
+import lombok.Builder;
+import lombok.Data;
 
 @OwnedBy(HarnessTeam.CDC)
+@Data
+@Builder
 public class ErrorNodeSummary {
   NodeInfo nodeInfo;
   TemplateInfo templateInfo;
   List<ErrorNodeSummary> childrenErrorNodes;
+
+  public void addChildrenErrorNode(ErrorNodeSummary errorNodeSummary) {
+    if (childrenErrorNodes == null) {
+      childrenErrorNodes = new ArrayList<>();
+    }
+    childrenErrorNodes.add(errorNodeSummary);
+  }
 }

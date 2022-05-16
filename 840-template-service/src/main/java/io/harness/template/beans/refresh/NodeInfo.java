@@ -10,7 +10,12 @@ package io.harness.template.beans.refresh;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
+import lombok.Builder;
+import lombok.Getter;
+
 @OwnedBy(HarnessTeam.CDC)
+@Getter
+@Builder
 public class NodeInfo {
   String identifier;
   String name;

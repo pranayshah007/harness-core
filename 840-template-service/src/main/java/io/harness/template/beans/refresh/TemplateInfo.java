@@ -11,9 +11,14 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.template.TemplateEntityType;
 
+import lombok.Builder;
+import lombok.Getter;
+
 @OwnedBy(HarnessTeam.CDC)
+@Getter
+@Builder
 public class TemplateInfo {
-  String templateIdentifier;
-  String versionLabel;
-  TemplateEntityType templateEntityType;
+  private String templateIdentifier;
+  private String versionLabel;
+  private TemplateEntityType templateEntityType;
 }

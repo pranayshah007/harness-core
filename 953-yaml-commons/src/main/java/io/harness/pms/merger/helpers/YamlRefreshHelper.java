@@ -64,7 +64,7 @@ public class YamlRefreshHelper {
 
     // add dummy node to nodeToRefresh and convert to yaml.
     ObjectNode dummyNodeToRefreshNode = mapper.createObjectNode();
-    dummyNodeToRefreshNode.set(DUMMY_NODE, sourceNode);
+    dummyNodeToRefreshNode.set(DUMMY_NODE, nodeToRefresh);
     String dummyNodeToRefreshYaml = convertToYaml(dummyNodeToRefreshNode);
 
     JsonNode refreshedJsonNode = refreshYamlFromSourceYaml(dummyNodeToRefreshYaml, sourceNodeInputSetFormatYaml);
@@ -88,6 +88,7 @@ public class YamlRefreshHelper {
 
     // Iterating all the Runtime Inputs in the sourceNodeFqnToValueMap and replacing the updated values of the runtime
     // inputs with those in the nodeToRefreshFqnToValueMap.
+    // TODO: This is incorrect. This doesn't cover the case when the replaced value is an object.
     sourceNodeFqnToValueMap.keySet().forEach(key -> {
       if (nodeToRefreshFqnToValueMap.containsKey(key)) {
         Object value = nodeToRefreshFqnToValueMap.get(key);

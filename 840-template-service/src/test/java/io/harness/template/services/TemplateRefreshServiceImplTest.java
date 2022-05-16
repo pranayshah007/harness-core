@@ -25,6 +25,7 @@ import io.harness.git.model.ChangeType;
 import io.harness.rule.Owner;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.helpers.TemplateInputsRefreshHelper;
+import io.harness.template.helpers.TemplateInputsValidator;
 
 import com.google.common.io.Resources;
 import java.io.IOException;
@@ -46,6 +47,7 @@ public class TemplateRefreshServiceImplTest extends TemplateServiceTestBase {
   @InjectMocks TemplateRefreshServiceImpl templateRefreshService;
   @Mock NGTemplateService templateService;
   @Mock TemplateInputsRefreshHelper templateInputsRefreshHelper;
+  @Mock TemplateInputsValidator templateInputsValidator;
 
   private String readFile(String filename) {
     ClassLoader classLoader = getClass().getClassLoader();

@@ -10,7 +10,12 @@ package io.harness.template.beans.refresh;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
+import lombok.Builder;
+import lombok.Data;
+
 @OwnedBy(HarnessTeam.CDC)
+@Data
+@Builder
 public class ValidateTemplateInputsResponseDTO {
   boolean validYaml;
   ErrorNodeSummary errorNodeSummary;

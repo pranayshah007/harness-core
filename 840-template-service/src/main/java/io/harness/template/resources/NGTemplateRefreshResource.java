@@ -128,6 +128,11 @@ public class NGTemplateRefreshResource {
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo, @NotNull RefreshRequestDTO refreshRequestDTO) {
+    if (RefreshRequestType.TEMPLATE.equals(refreshRequestDTO.getType())) {
+      TemplateRefreshRequestDTO templateRefreshRequestDTO = (TemplateRefreshRequestDTO) refreshRequestDTO;
+      ResponseDTO.newResponse(templateRefreshService.validateTemplateInputsInTemplate(accountId, orgId, projectId,
+          templateRefreshRequestDTO.getTemplateIdentifier(), templateRefreshRequestDTO.getVersionLabel()));
+    }
     return null;
   }
 
