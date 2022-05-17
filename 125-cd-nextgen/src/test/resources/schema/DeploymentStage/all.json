@@ -1232,6 +1232,21 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "ClusterYaml": {
+      "type": "object",
+      "required": [
+        "ref"
+      ],
+      "properties": {
+        "metadata": {
+          "type": "string"
+        },
+        "ref": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "CommandStepInfo": {
       "allOf": [
         {
@@ -2163,13 +2178,26 @@
         "environmentRef"
       ],
       "properties": {
+        "environmentInputs": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object"
+          }
+        },
         "environmentRef": {
-          "type": "string"
+          "type": "string",
+          "pattern": "\\<\\+input\\>|^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$"
+        },
+        "gitopsClusters": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ClusterYaml"
+          }
         },
         "infrastructureDefinitions": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/InfraStructureDefinition"
+            "$ref": "#/definitions/InfraStructureDefinitionYaml"
           }
         },
         "metadata": {
@@ -2974,17 +3002,24 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
-    "InfraStructureDefinition": {
+    "InfraStructureDefinitionYaml": {
       "type": "object",
       "required": [
         "ref"
       ],
       "properties": {
+        "inputs": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object"
+          }
+        },
         "metadata": {
           "type": "string"
         },
         "ref": {
-          "type": "string"
+          "type": "string",
+          "pattern": "\\<\\+input\\>|^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -4139,7 +4174,11 @@
         },
         {
           "type": "object",
-          "properties": { }
+          "properties": {
+            "gitOpsEnabled": {
+              "type": "boolean"
+            }
+          }
         }
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -6499,7 +6538,8 @@
           "type": "string"
         },
         "serviceConfigRef": {
-          "type": "string"
+          "type": "string",
+          "pattern": "\\<\\+input\\>|^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
