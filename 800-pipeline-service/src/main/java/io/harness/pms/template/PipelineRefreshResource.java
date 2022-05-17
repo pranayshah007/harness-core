@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.template.resources;
+package io.harness.pms.template;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
@@ -13,19 +13,15 @@ import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.OrgIdentifier;
 import io.harness.accesscontrol.ProjectIdentifier;
-import io.harness.accesscontrol.acl.api.Resource;
-import io.harness.accesscontrol.acl.api.ResourceScope;
-import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.pms.template.service.PipelineRefreshService;
 import io.harness.security.annotations.NextGenManagerAuth;
-import io.harness.template.beans.PermissionTypes;
 import io.harness.template.beans.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.template.beans.refresh.YamlDiffResponseDTO;
-import io.harness.template.services.TemplateRefreshService;
 
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
@@ -36,7 +32,6 @@ import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
@@ -60,7 +55,6 @@ import lombok.extern.slf4j.Slf4j;
       @ApiResponse(code = 400, response = FailureDTO.class, message = "Bad Request")
       , @ApiResponse(code = 500, response = ErrorDTO.class, message = "Internal server error")
     })
-@Tag(name = "Templates", description = "This contains a list of APIs specific to the Templates Validations and Refresh")
 @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = NGCommonEntityConstants.BAD_REQUEST_CODE,
     description = NGCommonEntityConstants.BAD_REQUEST_PARAM_MESSAGE,
     content =
@@ -83,15 +77,12 @@ import lombok.extern.slf4j.Slf4j;
     })
 @NextGenManagerAuth
 @Slf4j
-public class NGTemplateRefreshResource {
-  private static final String TEMPLATE_PARAM_MESSAGE = "Template Identifier for the entity";
-  private static final String TEMPLATE = "TEMPLATE";
-  private final TemplateRefreshService templateRefreshService;
-  private final AccessControlClient accessControlClient;
+public class PipelineRefreshResource {
+  private final PipelineRefreshService pipelineRefreshService;
 
   @POST
   @ApiOperation(
-      value = "This refreshes and update template inputs in template", nickname = "refreshAndUpdateTemplateInputs")
+      value = "This refreshes and update template inputs in pipeline", nickname = "refreshAndUpdateTemplateInputs")
   @Hidden
   public ResponseDTO<Boolean>
   refreshAndUpdateTemplate(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
@@ -100,19 +91,15 @@ public class NGTemplateRefreshResource {
           NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgId,
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
-      @Parameter(description = TEMPLATE_PARAM_MESSAGE) @QueryParam(
-          "templateIdentifier") @NotNull String templateIdentifier,
-      @Parameter(description = "Template version") @NotNull @QueryParam(NGCommonEntityConstants.VERSION_LABEL_KEY)
-      String versionLabel, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
-    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgId, projectId),
-        Resource.of(TEMPLATE, templateIdentifier), PermissionTypes.TEMPLATE_EDIT_PERMISSION);
+      @QueryParam(NGCommonEntityConstants.IDENTIFIER_KEY) String pipelineIdentifier,
+      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
     return ResponseDTO.newResponse(
-        templateRefreshService.refreshAndUpdateTemplate(accountId, orgId, projectId, templateIdentifier, versionLabel));
+        pipelineRefreshService.refreshTemplateInputsInPipeline(accountId, orgId, projectId, pipelineIdentifier));
   }
 
   @GET
   @Path("validate-template-inputs")
-  @ApiOperation(value = "This validates whether yaml of template is valid or not", nickname = "validateTemplateInputs")
+  @ApiOperation(value = "This validates whether yaml of pipeline is valid or not", nickname = "validateTemplateInputs")
   @Hidden
   public ResponseDTO<ValidateTemplateInputsResponseDTO> validateTemplateInputs(
       @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
@@ -121,17 +108,15 @@ public class NGTemplateRefreshResource {
           NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgId,
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
-      @Parameter(description = TEMPLATE_PARAM_MESSAGE) @QueryParam(
-          "templateIdentifier") @NotNull String templateIdentifier,
-      @Parameter(description = "Template version") @NotNull @QueryParam(NGCommonEntityConstants.VERSION_LABEL_KEY)
-      String versionLabel, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
-    return ResponseDTO.newResponse(templateRefreshService.validateTemplateInputsInTemplate(
-        accountId, orgId, projectId, templateIdentifier, versionLabel));
+      @QueryParam(NGCommonEntityConstants.IDENTIFIER_KEY) String pipelineIdentifier,
+      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
+    return ResponseDTO.newResponse(
+        pipelineRefreshService.validateTemplateInputsInPipeline(accountId, orgId, projectId, pipelineIdentifier));
   }
 
   @GET
   @Path("show-diff")
-  @ApiOperation(value = "This returns original yaml and refresh yaml of template", nickname = "getYamlDiff")
+  @ApiOperation(value = "This returns original yaml and refresh yaml of pipeline", nickname = "getYamlDiff")
   @Hidden
   public ResponseDTO<YamlDiffResponseDTO> getYamlDiff(
       @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
@@ -140,16 +125,14 @@ public class NGTemplateRefreshResource {
           NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgId,
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
-      @Parameter(description = TEMPLATE_PARAM_MESSAGE) @QueryParam(
-          "templateIdentifier") @NotNull String templateIdentifier,
-      @Parameter(description = "Template version") @NotNull @QueryParam(NGCommonEntityConstants.VERSION_LABEL_KEY)
-      String versionLabel, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
-    return null;
+      @QueryParam(NGCommonEntityConstants.IDENTIFIER_KEY) String pipelineIdentifier,
+      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
+    return ResponseDTO.newResponse(pipelineRefreshService.getYamlDiff(accountId, orgId, projectId, pipelineIdentifier));
   }
 
   @POST
   @Path("refresh-all")
-  @ApiOperation(value = "This does recursive refresh and update template inputs in template", nickname = "refreshAll")
+  @ApiOperation(value = "This recursively refresh and update template inputs in pipeline", nickname = "refreshAll")
   @Hidden
   public ResponseDTO<Boolean> refreshAll(
       @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
@@ -158,10 +141,9 @@ public class NGTemplateRefreshResource {
           NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgId,
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
-      @Parameter(description = TEMPLATE_PARAM_MESSAGE) @QueryParam(
-          "templateIdentifier") @NotNull String templateIdentifier,
-      @Parameter(description = "Template version") @NotNull @QueryParam(NGCommonEntityConstants.VERSION_LABEL_KEY)
-      String versionLabel, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
-    return null;
+      @QueryParam(NGCommonEntityConstants.IDENTIFIER_KEY) String pipelineIdentifier,
+      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
+    return ResponseDTO.newResponse(pipelineRefreshService.recursivelyRefreshAllTemplateInputsInPipeline(
+        accountId, orgId, projectId, pipelineIdentifier));
   }
 }

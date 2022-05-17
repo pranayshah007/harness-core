@@ -115,6 +115,8 @@ import io.harness.pms.resourceconstraints.service.PMSResourceConstraintService;
 import io.harness.pms.resourceconstraints.service.PMSResourceConstraintServiceImpl;
 import io.harness.pms.sdk.PmsSdkInstance;
 import io.harness.pms.servicenow.ServiceNowStepHelperServiceImpl;
+import io.harness.pms.template.service.PipelineRefreshService;
+import io.harness.pms.template.service.PipelineRefreshServiceImpl;
 import io.harness.pms.triggers.webhook.service.TriggerWebhookExecutionService;
 import io.harness.pms.triggers.webhook.service.TriggerWebhookExecutionServiceV2;
 import io.harness.pms.triggers.webhook.service.impl.TriggerWebhookExecutionServiceImpl;
@@ -331,6 +333,7 @@ public class PipelineServiceModule extends AbstractModule {
     bind(FeatureFlagYamlService.class).to(FeatureFlagYamlServiceImpl.class).in(Singleton.class);
     bind(PipelineEnforcementService.class).to(PipelineEnforcementServiceImpl.class).in(Singleton.class);
 
+    bind(PipelineRefreshService.class).to(PipelineRefreshServiceImpl.class);
     bind(NodeTypeLookupService.class).to(NodeTypeLookupServiceImpl.class);
 
     bind(ScheduledExecutorService.class)
