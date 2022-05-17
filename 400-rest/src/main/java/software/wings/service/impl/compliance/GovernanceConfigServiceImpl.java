@@ -562,7 +562,7 @@ public class GovernanceConfigServiceImpl implements GovernanceConfigService {
     if (timeRange.getTo() - timeRange.getFrom() > MAX_FREEZE_WINDOW_TIME) {
       throw new InvalidRequestException("Freeze window time should be less than 365 days");
     }
-    if (timeRange.getTo() <System.currentTimeMillis()) {
+    if (timeRange.getTo() < System.currentTimeMillis()) {
       throw new InvalidRequestException("Freeze window expired");
     }
   }
