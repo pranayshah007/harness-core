@@ -61,7 +61,7 @@ public class TemplateInputsValidator {
     return validateTemplateInputsResponse;
   }
 
-  public ValidateTemplateInputsResponseDTO validateNestedTemplateInputsForPipeline(
+  public ValidateTemplateInputsResponseDTO validateNestedTemplateInputsForGivenYaml(
       String accountId, String orgId, String projectId, String yaml) {
     ErrorNodeSummary errorNodeSummary = ErrorNodeSummary.builder().childrenErrorNodes(new ArrayList<>()).build();
 

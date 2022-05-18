@@ -15,11 +15,14 @@ import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.gitsync.sdk.GitSyncApiConstants;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ng.core.template.RefreshRequestDTO;
+import io.harness.ng.core.template.RefreshResponseDTO;
 import io.harness.ng.core.template.TemplateApplyRequestDTO;
 import io.harness.ng.core.template.TemplateListType;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.ng.core.template.TemplateSummaryResponseDTO;
 import io.harness.template.TemplateFilterPropertiesDTO;
+import io.harness.template.beans.refresh.ValidateTemplateInputsResponseDTO;
 
 import java.util.List;
 import org.hibernate.validator.constraints.NotEmpty;
@@ -31,6 +34,8 @@ import retrofit2.http.Query;
 @OwnedBy(HarnessTeam.CDC)
 public interface TemplateResourceClient {
   String TEMPLATE_ENDPOINT = "templates/";
+  String TEMPLATE_REFRESH_ENDPOINT = "refresh-template/";
+
   // list templates
   @POST(TEMPLATE_ENDPOINT + "list")
   Call<ResponseDTO<PageResponse<TemplateSummaryResponseDTO>>> listTemplates(
@@ -59,4 +64,25 @@ public interface TemplateResourceClient {
       @Query(value = GitSyncApiConstants.BRANCH_KEY) String branch,
       @Query(value = GitSyncApiConstants.REPO_IDENTIFIER_KEY) String repoIdentifier,
       @Query(value = GitSyncApiConstants.DEFAULT_FROM_OTHER_REPO) Boolean defaultFromOtherRepo, @Body String yaml);
+
+  // Refresh Template APIs
+  @POST(TEMPLATE_REFRESH_ENDPOINT + "internal")
+  Call<ResponseDTO<RefreshResponseDTO>> getRefreshedYaml(
+      @Query(value = NGCommonEntityConstants.ACCOUNT_KEY) @NotEmpty String accountIdentifier,
+      @Query(value = NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Query(value = NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @Query(value = GitSyncApiConstants.BRANCH_KEY) String branch,
+      @Query(value = GitSyncApiConstants.REPO_IDENTIFIER_KEY) String repoIdentifier,
+      @Query(value = GitSyncApiConstants.DEFAULT_FROM_OTHER_REPO) Boolean defaultFromOtherRepo,
+      @Body RefreshRequestDTO refreshRequest);
+
+  @POST(TEMPLATE_REFRESH_ENDPOINT + "validate-template-inputs/internal")
+  Call<ResponseDTO<ValidateTemplateInputsResponseDTO>> validateTemplateInputsForGivenYaml(
+      @Query(value = NGCommonEntityConstants.ACCOUNT_KEY) @NotEmpty String accountIdentifier,
+      @Query(value = NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Query(value = NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @Query(value = GitSyncApiConstants.BRANCH_KEY) String branch,
+      @Query(value = GitSyncApiConstants.REPO_IDENTIFIER_KEY) String repoIdentifier,
+      @Query(value = GitSyncApiConstants.DEFAULT_FROM_OTHER_REPO) Boolean defaultFromOtherRepo,
+      @Body RefreshRequestDTO refreshRequest);
 }

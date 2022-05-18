@@ -21,6 +21,8 @@ import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.ng.core.template.RefreshRequestDTO;
+import io.harness.ng.core.template.RefreshResponseDTO;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.template.beans.PermissionTypes;
 import io.harness.template.beans.refresh.ValidateTemplateInputsResponseDTO;
@@ -48,6 +50,7 @@ import javax.ws.rs.QueryParam;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import retrofit2.http.Body;
 
 @OwnedBy(CDC)
 @Api("refresh-template")
@@ -110,11 +113,31 @@ public class NGTemplateRefreshResource {
         templateRefreshService.refreshAndUpdateTemplate(accountId, orgId, projectId, templateIdentifier, versionLabel));
   }
 
+  @POST
+  @Path("/internal")
+  @ApiOperation(
+      value = "This refreshes and update template inputs in given yaml", nickname = "getRefreshedYaml", hidden = true)
+  @Hidden
+  public ResponseDTO<RefreshResponseDTO>
+  getRefreshedYaml(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+                       NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgId,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
+      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
+      @Parameter(description = "Template YAML") @NotNull @Body RefreshRequestDTO refreshRequestDTO) {
+    return ResponseDTO.newResponse(RefreshResponseDTO.builder()
+                                       .refreshedYaml(templateRefreshService.refreshLinkedTemplateInputs(
+                                           accountId, orgId, projectId, refreshRequestDTO.getYaml()))
+                                       .build());
+  }
+
   @GET
   @Path("validate-template-inputs")
   @ApiOperation(value = "This validates whether yaml of template is valid or not", nickname = "validateTemplateInputs")
   @Hidden
-  public ResponseDTO<ValidateTemplateInputsResponseDTO> validateTemplateInputs(
+  public ResponseDTO<ValidateTemplateInputsResponseDTO> validateTemplateInputsForTemplate(
       @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
       @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
@@ -127,6 +150,24 @@ public class NGTemplateRefreshResource {
       String versionLabel, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
     return ResponseDTO.newResponse(templateRefreshService.validateTemplateInputsInTemplate(
         accountId, orgId, projectId, templateIdentifier, versionLabel));
+  }
+
+  @POST
+  @Path("validate-template-inputs/internal")
+  @ApiOperation(value = "This validates whether yaml provided is valid or not. This is to be used for pipeline service",
+      nickname = "validateTemplateInputs", hidden = true)
+  @Hidden
+  public ResponseDTO<ValidateTemplateInputsResponseDTO>
+  validateTemplateInputsForYaml(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull
+                                @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgId,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
+      @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo,
+      @Parameter(description = "Template YAML") @NotNull @Body RefreshRequestDTO refreshRequestDTO) {
+    return ResponseDTO.newResponse(
+        templateRefreshService.validateTemplateInputsForYaml(accountId, orgId, projectId, refreshRequestDTO.getYaml()));
   }
 
   @GET
@@ -144,7 +185,8 @@ public class NGTemplateRefreshResource {
           "templateIdentifier") @NotNull String templateIdentifier,
       @Parameter(description = "Template version") @NotNull @QueryParam(NGCommonEntityConstants.VERSION_LABEL_KEY)
       String versionLabel, @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
-    return null;
+    return ResponseDTO.newResponse(templateRefreshService.getYamlDiffOnRefreshingTemplate(
+        accountId, orgId, projectId, templateIdentifier, versionLabel));
   }
 
   @POST

@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.template.beans.refresh.ValidateTemplateInputsResponseDTO;
+import io.harness.template.beans.refresh.YamlDiffResponseDTO;
 
 @OwnedBy(CDC)
 public interface TemplateRefreshService {
@@ -20,5 +21,11 @@ public interface TemplateRefreshService {
   String refreshLinkedTemplateInputs(String accountId, String orgId, String projectId, String yaml);
 
   ValidateTemplateInputsResponseDTO validateTemplateInputsInTemplate(
+      String accountId, String orgId, String projectId, String templateIdentifier, String versionLabel);
+
+  ValidateTemplateInputsResponseDTO validateTemplateInputsForYaml(
+      String accountId, String orgId, String projectId, String yaml);
+
+  YamlDiffResponseDTO getYamlDiffOnRefreshingTemplate(
       String accountId, String orgId, String projectId, String templateIdentifier, String versionLabel);
 }

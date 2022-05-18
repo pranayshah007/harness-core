@@ -66,7 +66,7 @@ public class TemplateInputsRefreshHelper {
         getRefreshedTemplateInputsMap(accountId, orgId, projectId, yamlNode, templateCacheMap);
 
     // Returning the Refreshed YAML corresponding to the ResMap
-    return YamlUtils.write(refreshedTemplateInputsMap).replace("---\n", "");
+    return YamlPipelineUtils.writeYamlString(refreshedTemplateInputsMap);
   }
 
   // Gets the Updated ResMap -> Key,Value pairs of the YAML with Refreshed Template Inputs

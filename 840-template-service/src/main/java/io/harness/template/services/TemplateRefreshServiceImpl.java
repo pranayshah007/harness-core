@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
 import io.harness.git.model.ChangeType;
 import io.harness.template.beans.refresh.ValidateTemplateInputsResponseDTO;
+import io.harness.template.beans.refresh.YamlDiffResponseDTO;
 import io.harness.template.entity.TemplateEntity;
 import io.harness.template.helpers.TemplateInputsRefreshHelper;
 import io.harness.template.helpers.TemplateInputsValidator;
@@ -76,5 +77,22 @@ public class TemplateRefreshServiceImpl implements TemplateRefreshService {
       return validateTemplateInputsResponse;
     }
     return ValidateTemplateInputsResponseDTO.builder().validYaml(true).build();
+  }
+
+  @Override
+  public ValidateTemplateInputsResponseDTO validateTemplateInputsForYaml(
+      String accountId, String orgId, String projectId, String yaml) {
+    return templateInputsValidator.validateNestedTemplateInputsForGivenYaml(accountId, orgId, projectId, yaml);
+  }
+
+  @Override
+  public YamlDiffResponseDTO getYamlDiffOnRefreshingTemplate(
+      String accountId, String orgId, String projectId, String templateIdentifier, String versionLabel) {
+    TemplateEntity template = getTemplate(accountId, orgId, projectId, templateIdentifier, versionLabel);
+
+    String templateYaml = template.getYaml();
+    String refreshedYaml = refreshLinkedTemplateInputs(accountId, orgId, projectId, templateYaml);
+
+    return YamlDiffResponseDTO.builder().originalYaml(templateYaml).refreshedYaml(refreshedYaml).build();
   }
 }
