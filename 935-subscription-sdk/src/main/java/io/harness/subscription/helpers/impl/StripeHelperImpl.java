@@ -49,12 +49,13 @@ import com.stripe.param.InvoiceUpcomingParams;
 import com.stripe.param.PriceListParams;
 import com.stripe.param.SubscriptionCreateParams;
 import com.stripe.param.SubscriptionUpdateParams;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+
+import java.util.*;
 import java.util.stream.Collectors;
+import java.util.Calendar;
+
+import static java.util.Calendar.*;
+import static java.util.Calendar.DAY_OF_MONTH;
 
 @Singleton
 public class StripeHelperImpl implements StripeHelper {
@@ -136,10 +137,19 @@ public class StripeHelperImpl implements StripeHelper {
 
   @Override
   public SubscriptionDetailDTO createSubscription(SubscriptionParams subscriptionParams) {
+
+    Calendar next = getInstance();
+    next.set(YEAR, next.get(YEAR));
+    next.set(DAY_OF_MONTH, 1);
+    next.set(MONTH, next.get(MONTH) + 1);
+
     SubscriptionCreateParams.Builder creationParamsBuilder = SubscriptionCreateParams.builder();
     creationParamsBuilder.setCustomer(subscriptionParams.getCustomerId())
         .setPaymentBehavior(SubscriptionCreateParams.PaymentBehavior.DEFAULT_INCOMPLETE)
-        .addAllExpand(subscriptionExpandList);
+        .addAllExpand(subscriptionExpandList)
+        .setProrationBehavior(SubscriptionCreateParams.ProrationBehavior.ALWAYS_INVOICE)
+        .setBillingCycleAnchor(next.getTimeInMillis() / 1000L);
+
 
     // Register subscription items
     subscriptionParams.getItems().forEach(item
@@ -159,8 +169,15 @@ public class StripeHelperImpl implements StripeHelper {
       creationParamsBuilder.setDefaultPaymentMethod(subscriptionParams.getPaymentMethodId());
     }
 
-    Subscription subscription = stripeHandler.createSubscription(creationParamsBuilder.build());
-    return toSubscriptionDetailDTO(subscription);
+    try {
+      Subscription subscription = stripeHandler.createSubscription(creationParamsBuilder.build());
+      return toSubscriptionDetailDTO(subscription);
+    }
+    catch(Exception ex)
+    {
+      System.out.println(ex.getMessage());
+    }
+    return null;
   }
 
   @Override
