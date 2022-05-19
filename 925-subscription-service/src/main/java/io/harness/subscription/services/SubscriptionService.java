@@ -32,5 +32,5 @@ public interface SubscriptionService {
 
   PaymentMethodCollectionDTO listPaymentMethods(String accountIdentifier, String customerId);
 
-  void syncStripeEvent(StripeEventDTO stripeEventDTO);
+  void syncStripeEvent(String event);
 }

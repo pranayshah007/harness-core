@@ -334,8 +334,8 @@ public class SubscriptionResource {
   @POST
   @Path("/sync_event")
   @PublicApi
-  public RestResponse<Void> syncStripeEvent(@NotNull StripeEventDTO stripeEventDTO) {
-    subscriptionService.syncStripeEvent(stripeEventDTO);
+  public RestResponse<Void> syncStripeEvent(@NotNull String stripeEvent) {
+    subscriptionService.syncStripeEvent(stripeEvent);
     return new RestResponse();
   }
 }

@@ -39,7 +39,7 @@ public class SubscriptionModule extends AbstractModule {
 
     MapBinder<String, StripeEventHandler> eventHandlerMapBinder =
         MapBinder.newMapBinder(binder(), String.class, StripeEventHandler.class);
-    eventHandlerMapBinder.addBinding("invoice.payment_succeeded").to(InvoicePaymentSucceedHandler.class);
+    eventHandlerMapBinder.addBinding("invoice.paid").to(InvoicePaymentSucceedHandler.class);
     eventHandlerMapBinder.addBinding("customer.subscription.updated").to(SubscriptionUpdateHandler.class);
     eventHandlerMapBinder.addBinding("customer.subscription.deleted").to(SubscriptionDeleteHandler.class);
   }
