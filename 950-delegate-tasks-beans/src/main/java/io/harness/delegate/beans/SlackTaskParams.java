@@ -11,6 +11,7 @@ import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
 import io.harness.delegate.beans.executioncapability.HttpConnectionExecutionCapability;
 import io.harness.delegate.task.TaskParameters;
+import io.harness.expression.Expression;
 import io.harness.expression.ExpressionEvaluator;
 
 import java.net.URI;
@@ -21,11 +22,13 @@ import lombok.Builder;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 
+import static io.harness.expression.Expression.ALLOW_SECRETS;
+
 @Value
 @Builder
 @Slf4j
 public class SlackTaskParams implements TaskParameters, ExecutionCapabilityDemander {
-  List<String> slackWebhookUrls;
+  @Expression(ALLOW_SECRETS) List<String> slackWebhookUrls;
   String message;
   String notificationId;
 

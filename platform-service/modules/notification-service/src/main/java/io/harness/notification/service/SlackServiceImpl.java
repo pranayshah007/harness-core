@@ -39,6 +39,7 @@ import com.google.inject.Inject;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -126,6 +127,8 @@ public class SlackServiceImpl implements ChannelService {
                                                                         .message(message)
                                                                         .slackWebhookUrls(slackWebhookUrls)
                                                                         .build())
+              .taskSetupAbstractions(new HashMap<>()) // put acountid, org id , projectid, ng=true
+              .expressionFunctorToken(-1) // notifcationRequest.channel.expressionfunctor token
                                                     .executionTimeout(Duration.ofMinutes(1L))
                                                     .build();
       NotificationTaskResponse notificationTaskResponse =
