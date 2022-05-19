@@ -26,5 +26,6 @@ public class InvoiceDetailDTO {
   private Long periodEnd;
   private Long nextPaymentAttempt;
   private Long amountDue;
+  private String clientSecret;
   private PaymentIntentDetailDTO paymentIntent;
 }

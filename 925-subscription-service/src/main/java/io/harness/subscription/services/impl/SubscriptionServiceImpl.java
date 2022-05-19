@@ -160,16 +160,17 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     SubscriptionDetailDTO subscription = stripeHelper.createSubscription(param);
 
     // Save locally with basic information after succeed
-    //    subscriptionDetailRepository.save(SubscriptionDetail.builder()
-    //            .accountIdentifier(accountIdentifier)
-    //            .customerId(stripeCustomer.getCustomerId())
-    //            .subscriptionId(subscription.getSubscriptionId())
-    //            .status(subscription.getStatus())
-    //            .latestInvoice(subscription.getLatestInvoice())
-    //            .moduleType(subscriptionDTO.getModuleType())
-    //            .build());
+        subscriptionDetailRepository.save(SubscriptionDetail.builder()
+                .accountIdentifier(accountIdentifier)
+                .customerId(stripeCustomer.getCustomerId())
+                .subscriptionId(subscription.getSubscriptionId())
+                .status(subscription.getStatus())
+                .latestInvoice(subscription.getLatestInvoice())
+                .moduleType(ModuleType.CF)
+                .build());
 
     val invoice = stripeHelper.getUpcomingInvoice(stripeCustomer.getCustomerId());
+    invoice.setClientSecret(subscription.getClientSecret());
 
     return invoice;
   }
@@ -390,8 +391,8 @@ public class SubscriptionServiceImpl implements SubscriptionService {
   }
 
   @Override
-  public void syncStripeEvent(StripeEventDTO stripeEventDTO) {
-    Event event = ApiResource.GSON.fromJson(stripeEventDTO.getPayloadData(), Event.class);
+  public void syncStripeEvent(String eventString) {
+    Event event = ApiResource.GSON.fromJson(eventString, Event.class);
     StripeEventHandler stripeEventHandler = eventHandlers.get(event.getType());
     if (stripeEventHandler == null) {
       throw new InvalidRequestException("Event type is not supported");
