@@ -218,6 +218,8 @@ public class FileStoreServiceImpl implements FileStoreService {
   @Override
   public FolderNodeDTO listFolderNodes(@NotNull String accountIdentifier, String orgIdentifier,
       String projectIdentifier, @NotNull FolderNodeDTO folderNodeDTO) {
+    fetchFileOrThrow(accountIdentifier, orgIdentifier, projectIdentifier, folderNodeDTO.getIdentifier());
+
     return populateFolderNode(folderNodeDTO, accountIdentifier, orgIdentifier, projectIdentifier);
   }
 

@@ -182,4 +182,16 @@ public class EntitySetupUsageQueryFilterHelper {
     populateGitCriteriaForReferredEntity(criteria);
     return criteria;
   }
+
+  public Criteria createCriteriaToCheckWhetherListOfFQNsIsReferred(
+      String accountIdentifier, List<String> folderChildrenFQNs, EntityType referredEntityType) {
+    Criteria criteria = new Criteria();
+    criteria.and(EntitySetupUsageKeys.accountIdentifier).is(accountIdentifier);
+    criteria.and(EntitySetupUsageKeys.referredEntityFQN).in(folderChildrenFQNs);
+    if (referredEntityType != null) {
+      criteria.and(EntitySetupUsageKeys.referredEntityType).is(referredEntityType.getYamlName());
+    }
+    populateGitCriteriaForReferredEntity(criteria);
+    return criteria;
+  }
 }

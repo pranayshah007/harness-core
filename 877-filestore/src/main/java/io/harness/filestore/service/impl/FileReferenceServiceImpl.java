@@ -8,7 +8,7 @@
 package io.harness.filestore.service.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.filestore.entities.NGFile.NGFiles;
 import static io.harness.ng.core.EntityDetail.EntityDetailKeys;
 import static io.harness.ng.core.Resource.ResourceKeys;
 import static io.harness.ng.core.entitysetupusage.entity.EntitySetupUsage.EntitySetupUsageKeys;
@@ -27,18 +27,26 @@ import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.ng.core.entitysetupusage.service.EntitySetupUsageService;
 import io.harness.ng.core.filestore.NGFileType;
 import io.harness.repositories.spring.FileStoreRepository;
+import io.harness.utils.FullyQualifiedIdentifierHelper;
 import io.harness.utils.IdentifierRefHelper;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.bson.Document;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.AggregationResults;
+import org.springframework.data.mongodb.core.aggregation.GraphLookupOperation;
+import org.springframework.data.mongodb.core.aggregation.MatchOperation;
+import org.springframework.data.mongodb.core.aggregation.TypedAggregation;
+import org.springframework.data.mongodb.core.query.Criteria;
 
 @OwnedBy(CDP)
 @Singleton
@@ -47,6 +55,7 @@ import org.springframework.data.domain.Sort;
 public class FileReferenceServiceImpl implements FileReferenceService {
   public static final String REFERRED_BY_IDENTIFIER_KEY =
       EntitySetupUsageKeys.referredByEntity + "." + EntityDetailKeys.entityRef + "." + ResourceKeys.identifier;
+  private static final long NUMBER_OF_RECURSIONS = 5L;
 
   private final EntitySetupUsageService entitySetupUsageService;
   private final FileStoreRepository fileStoreRepository;
@@ -82,15 +91,18 @@ public class FileReferenceServiceImpl implements FileReferenceService {
 
   @Override
   public void validateReferenceByAndThrow(NGFile fileOrFolder) {
-    Long count = countEntitiesReferencingFile(fileOrFolder);
     if (NGFileType.FOLDER.equals(fileOrFolder.getType())) {
-      count += countEntitiesReferencingFolder(fileOrFolder);
+      List<String> folderChildrenFQNs = getFolderChildrenFQNs(fileOrFolder);
+
+      Long count = entitySetupUsageService.countReferredByEntitiesByFQNsIn(
+          fileOrFolder.getAccountIdentifier(), folderChildrenFQNs);
       if (count > 0L) {
         throw new ReferencedEntityException(format(
             "Folder [%s], or its subfolders, contain file(s) referenced by %s other entities and can not be deleted.",
             fileOrFolder.getIdentifier(), count));
       }
     } else {
+      Long count = countEntitiesReferencingFile(fileOrFolder);
       if (count > 0L) {
         throw new ReferencedEntityException(
             format("File [%s] is referenced by %s other entities and can not be deleted.", fileOrFolder.getIdentifier(),
@@ -99,22 +111,45 @@ public class FileReferenceServiceImpl implements FileReferenceService {
     }
   }
 
-  private long countEntitiesReferencingFolder(NGFile folder) {
-    List<NGFile> childrenFiles = listFilesByParent(folder);
-    if (isEmpty(childrenFiles)) {
-      return 0L;
+  private List<String> getFolderChildrenFQNs(NGFile fileOrFolder) {
+    GraphLookupOperation graphLookupOperation = Aggregation.graphLookup("ngFiles")
+                                                    .startWith("$identifier")
+                                                    .connectFrom(NGFiles.identifier)
+                                                    .connectTo(NGFiles.parentIdentifier)
+                                                    .depthField("level")
+                                                    .maxDepth(NUMBER_OF_RECURSIONS)
+                                                    .as(NGFiles.children);
+
+    MatchOperation matchOperation = Aggregation.match(Criteria.where(NGFiles.identifier)
+                                                          .is(fileOrFolder.getIdentifier())
+                                                          .and(NGFiles.accountIdentifier)
+                                                          .is(fileOrFolder.getAccountIdentifier())
+                                                          .and(NGFiles.orgIdentifier)
+                                                          .is(fileOrFolder.getOrgIdentifier())
+                                                          .and(NGFiles.projectIdentifier)
+                                                          .is(fileOrFolder.getProjectIdentifier()));
+
+    TypedAggregation<NGFile> aggregation =
+        Aggregation.newAggregation(NGFile.class, matchOperation, graphLookupOperation);
+
+    AggregationResults<Document> result = fileStoreRepository.aggregate(aggregation, Document.class);
+    Document mappedResult = result.getUniqueMappedResult();
+
+    if (mappedResult == null) {
+      return Collections.emptyList();
     }
-    return childrenFiles.stream()
-        .filter(Objects::nonNull)
-        .map(this::countEntitiesReferencingFile)
-        .reduce(Long::sum)
-        .orElse(0L);
+
+    return mappedResult.getList(NGFiles.children, Document.class)
+        .stream()
+        .map(mapNgFileToFQN())
+        .collect(Collectors.toList());
   }
 
-  private List<NGFile> listFilesByParent(NGFile parent) {
-    return fileStoreRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndParentIdentifier(
-        parent.getAccountIdentifier(), parent.getOrgIdentifier(), parent.getProjectIdentifier(),
-        parent.getIdentifier());
+  private Function<Document, String> mapNgFileToFQN() {
+    return file
+        -> FullyQualifiedIdentifierHelper.getFullyQualifiedIdentifier(file.getString(NGFiles.accountIdentifier),
+            file.getString(NGFiles.orgIdentifier), file.getString(NGFiles.projectIdentifier),
+            file.getString(NGFiles.identifier));
   }
 
   public Page<EntitySetupUsageDTO> getAllReferencedByInScope(String accountIdentifier, String orgIdentifier,

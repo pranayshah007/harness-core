@@ -99,12 +99,14 @@ import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.mongodb.core.query.Criteria;
 
 @OwnedBy(HarnessTeam.CDP)
 @RunWith(MockitoJUnitRunner.class)
 public class FileStoreServiceImplTest extends CategoryTest {
+  private static final String FILE_UUID1 = "fileUUID";
   @Mock private FileStoreRepository fileStoreRepository;
   @Mock private FileService fileService;
   @Mock private FileStoreConfiguration configuration;
@@ -532,8 +534,7 @@ public class FileStoreServiceImplTest extends CategoryTest {
   @Owner(developers = VLAD)
   @Category(UnitTests.class)
   public void shouldDeleteFolderWithScopePrefix() {
-    String fileUuid = "fileUUID";
-    NGFile file = builder().name(IDENTIFIER).identifier(IDENTIFIER).fileUuid(fileUuid).build();
+    NGFile file = builder().name(IDENTIFIER).identifier(IDENTIFIER).fileUuid(FILE_UUID1).build();
     String folder1 = "folder1";
     NGFile parentFolder = builder()
                               .name(folder1)
@@ -572,6 +573,10 @@ public class FileStoreServiceImplTest extends CategoryTest {
   @Owner(developers = IVAN)
   @Category(UnitTests.class)
   public void testListFolderNodes() {
+    NGFile file = builder().name(IDENTIFIER).identifier(FILE_IDENTIFIER).fileUuid(FILE_UUID1).build();
+    when(fileStoreRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(
+             ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, FILE_IDENTIFIER))
+        .thenReturn(Optional.of(file));
     FolderNodeDTO folderNodeDTO = FolderNodeDTO.builder().identifier(FILE_IDENTIFIER).name(FILE_NAME).build();
     when(fileStoreRepository.findAllAndSort(
              createCriteriaByScopeAndParentIdentifier(
@@ -667,7 +672,7 @@ public class FileStoreServiceImplTest extends CategoryTest {
   @Owner(developers = BOJAN)
   @Category(UnitTests.class)
   public void testListCreatedByShouldReturnAll() {
-    when(fileStoreRepository.aggregate(any(), any()))
+    when(fileStoreRepository.aggregate(any(Aggregation.class), any()))
         .thenReturn(new AggregationResults<>(
             Lists.newArrayList(EmbeddedUser.builder().name("testuser1").email("testuser1@test.com").build(),
                 EmbeddedUser.builder().name("testuser2").email("testuser2@test.com").build()),

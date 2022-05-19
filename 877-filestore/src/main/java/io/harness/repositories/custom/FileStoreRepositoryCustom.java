@@ -18,6 +18,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
+import org.springframework.data.mongodb.core.aggregation.TypedAggregation;
 import org.springframework.data.mongodb.core.query.Criteria;
 
 @OwnedBy(CDP)
@@ -31,6 +32,16 @@ public interface FileStoreRepositoryCustom {
    * @return the aggregation results
    */
   <T> AggregationResults<T> aggregate(Aggregation aggregation, Class<T> classToFillResultIn);
+
+  /**
+   * Execute aggregation query.
+   *
+   * @param aggregation aggregation query
+   * @param classToFillResultIn cast result in class
+   * @param <T> type
+   * @return the aggregation results
+   */
+  <T> AggregationResults<T> aggregate(TypedAggregation<T> aggregation, Class<T> classToFillResultIn);
 
   /**
    * List all NG files sorted by sort criteria

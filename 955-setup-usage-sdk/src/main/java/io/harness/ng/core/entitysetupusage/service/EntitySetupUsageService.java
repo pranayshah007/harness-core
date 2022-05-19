@@ -56,4 +56,6 @@ public interface EntitySetupUsageService {
 
   Page<EntitySetupUsageDTO> listAllEntityUsagePerEntityScope(int page, int size, String accountIdentifier,
       String referredEntityFQScope, EntityType referredEntityType, EntityType referredByEntityType, Sort sort);
+
+  Long countReferredByEntitiesByFQNsIn(String accountIdentifier, List<String> folderChildrenIdentifiers);
 }

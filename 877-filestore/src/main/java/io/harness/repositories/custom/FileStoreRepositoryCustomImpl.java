@@ -22,6 +22,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
+import org.springframework.data.mongodb.core.aggregation.TypedAggregation;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.repository.support.PageableExecutionUtils;
@@ -34,6 +35,11 @@ public class FileStoreRepositoryCustomImpl implements FileStoreRepositoryCustom 
   @Override
   public <T> AggregationResults<T> aggregate(Aggregation aggregation, Class<T> classToFillResultIn) {
     return mongoTemplate.aggregate(aggregation, NGFile.class, classToFillResultIn);
+  }
+
+  @Override
+  public <T> AggregationResults<T> aggregate(TypedAggregation<T> aggregation, Class<T> classToFillResultIn) {
+    return mongoTemplate.aggregate(aggregation, classToFillResultIn);
   }
 
   @Override

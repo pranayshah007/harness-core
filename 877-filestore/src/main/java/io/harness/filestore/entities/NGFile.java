@@ -109,6 +109,11 @@ public class NGFile implements PersistentEntity, UuidAware, NGAccountAccess, NGO
                 .field(NGFiles.projectIdentifier)
                 .field(NGFiles.identifier)
                 .unique(true)
+                .build(),
+            CompoundMongoIndex.builder()
+                .name("parent_identifier_idx")
+                .field(NGFiles.parentIdentifier)
+                .unique(false)
                 .build())
         .build();
   }
@@ -132,5 +137,6 @@ public class NGFile implements PersistentEntity, UuidAware, NGAccountAccess, NGO
   public static final class NGFiles {
     public static final String CREATED_BY_NAME = NGFiles.createdBy + "." + EmbeddedUserKeys.name;
     public static final String CREATED_BY_EMAIL = NGFiles.createdBy + "." + EmbeddedUserKeys.email;
+    public static final String children = "children";
   }
 }
