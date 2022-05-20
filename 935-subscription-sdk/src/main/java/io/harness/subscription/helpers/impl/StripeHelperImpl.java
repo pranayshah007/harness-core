@@ -141,7 +141,11 @@ public class StripeHelperImpl implements StripeHelper {
     Calendar next = getInstance();
     next.set(YEAR, next.get(YEAR));
     next.set(DAY_OF_MONTH, 1);
-    next.set(MONTH, next.get(MONTH) + 1);
+    if (subscriptionParams.getPaymentFrequency().toUpperCase() == "MONTHLY") {
+      next.set(MONTH, next.get(MONTH) + 1);
+    } else {
+      next.set(MONTH, 0);
+    }
 
     SubscriptionCreateParams.Builder creationParamsBuilder = SubscriptionCreateParams.builder();
     creationParamsBuilder.setCustomer(subscriptionParams.getCustomerId())

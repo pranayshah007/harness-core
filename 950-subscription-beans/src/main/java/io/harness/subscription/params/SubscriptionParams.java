@@ -19,5 +19,6 @@ public class SubscriptionParams {
   private String customerId;
   private String paymentMethodId;
   private String moduleType;
+  private String paymentFrequency;
   private List<ItemParams> items;
 }
