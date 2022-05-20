@@ -44,12 +44,7 @@ import com.google.inject.Inject;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -68,6 +63,9 @@ public class PagerDutyServiceImpl implements ChannelService {
   private final YamlUtils yamlUtils;
   private final PagerDutySenderImpl pagerDutySender;
   private final DelegateGrpcClientWrapper delegateGrpcClientWrapper;
+  private static final String ACCOUNT_IDENTIFIER = "accountIdentifier";
+  private static final String ORG_IDENTIFIER = "orgIdentifier";
+  private static final String PROJECT_IDENTIFIER = "projectIdentifier";
 
   @Override
   public NotificationProcessingResponse send(NotificationRequest notificationRequest) {
@@ -91,8 +89,15 @@ public class PagerDutyServiceImpl implements ChannelService {
       return NotificationProcessingResponse.trivialResponseWithNoRetries;
     }
 
+    int expressionFunctorToken = Math.toIntExact(pagerDutyDetails.getExpressionFunctorToken());
+
+    Map<String, String> abstractionMap = new HashMap<>();
+    abstractionMap.put(ACCOUNT_IDENTIFIER, notificationRequest.getAccountId());
+    abstractionMap.put(ORG_IDENTIFIER, pagerDutyDetails.getOrgIdentifier());
+    abstractionMap.put(PROJECT_IDENTIFIER, pagerDutyDetails.getProjectIdentifier());
+
     return send(pagerDutyKeys, templateId, templateData, notificationRequest.getId(), notificationRequest.getTeam(),
-        notificationRequest.getAccountId());
+        notificationRequest.getAccountId(), expressionFunctorToken, abstractionMap);
   }
 
   @Override
@@ -105,7 +110,8 @@ public class PagerDutyServiceImpl implements ChannelService {
           DEFAULT_ERROR_CODE, USER);
     }
     NotificationProcessingResponse processingResponse = send(Collections.singletonList(pagerdutyKey), TEST_PD_TEMPLATE,
-        Collections.emptyMap(), pagerDutySettingDTO.getNotificationId(), null, notificationSettingDTO.getAccountId());
+        Collections.emptyMap(), pagerDutySettingDTO.getNotificationId(), null, notificationSettingDTO.getAccountId(), 0,
+        Collections.emptyMap());
     if (NotificationProcessingResponse.isNotificationRequestFailed(processingResponse)) {
       throw new NotificationException("Invalid pagerduty key encountered while processing Test Connection request "
               + notificationSettingDTO.getNotificationId(),
@@ -115,7 +121,8 @@ public class PagerDutyServiceImpl implements ChannelService {
   }
 
   private NotificationProcessingResponse send(List<String> pagerDutyKeys, String templateId,
-      Map<String, String> templateData, String notificationId, Team team, String accountId) {
+      Map<String, String> templateData, String notificationId, Team team, String accountId, int expressionFunctorToken,
+      Map<String, String> abstractionMap) {
     Optional<PagerDutyTemplate> templateOpt = getTemplate(templateId, team);
     if (!templateOpt.isPresent()) {
       log.info("Can't find template with templateId {} for notification request {}", templateId, notificationId);
@@ -162,6 +169,8 @@ public class PagerDutyServiceImpl implements ChannelService {
                                                                         .payload(payload)
                                                                         .links(links)
                                                                         .build())
+                                                    .taskSetupAbstractions(abstractionMap)
+                                                    .expressionFunctorToken(expressionFunctorToken)
                                                     .executionTimeout(Duration.ofMinutes(1L))
                                                     .build();
       NotificationTaskResponse notificationTaskResponse =

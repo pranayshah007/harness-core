@@ -8,8 +8,7 @@
 package io.harness.notification.service;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.rule.OwnerRule.ANKUSH;
-import static io.harness.rule.OwnerRule.VUK;
+import static io.harness.rule.OwnerRule.*;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
@@ -21,6 +20,7 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.data.algorithm.HashGenerator;
 import io.harness.delegate.beans.NotificationProcessingResponse;
 import io.harness.delegate.beans.NotificationTaskResponse;
 import io.harness.notification.NotificationRequest;
@@ -155,6 +155,58 @@ public class SlackServiceImplTest extends CategoryTest {
                                                               .setProjectIdentifier("projectIdentifier")
                                                               .setOrgIdentifier("orgIdentifier")
                                                               .build())
+                                            .build())
+                              .build();
+    notificationExpectedResponse =
+        NotificationProcessingResponse.builder().result(Arrays.asList(true, false)).shouldRetry(false).build();
+    when(notificationTemplateService.getTemplateAsString(eq(slackTemplateName), any()))
+        .thenReturn(Optional.of("this is test notification"));
+    when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(true);
+    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+        .thenReturn(NotificationTaskResponse.builder().processingResponse(notificationExpectedResponse).build());
+    notificationProcessingResponse = slackService.send(notificationRequest);
+    assertEquals(notificationExpectedResponse, notificationProcessingResponse);
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void sendNotification_WhenSecretIsPassedForWebhookURl() {
+    NotificationRequest notificationRequest =
+        NotificationRequest.newBuilder()
+            .setId(id)
+            .setAccountId(accountId)
+            .setSlack(NotificationRequest.Slack.newBuilder()
+                          .addAllSlackWebHookUrls(Collections.singletonList(slackWebhookurl))
+                          .setTemplateId(slackTemplateName)
+                          .setExpressionFunctorToken(HashGenerator.generateIntegerHash())
+                          .setOrgIdentifier("orgIdentifier")
+                          .setProjectIdentifier("projectIdentifier")
+                          .build())
+            .build();
+
+    NotificationProcessingResponse notificationExpectedResponse =
+        NotificationProcessingResponse.builder().result(Arrays.asList(true, false)).shouldRetry(false).build();
+    when(notificationTemplateService.getTemplateAsString(eq(slackTemplateName), any()))
+        .thenReturn(Optional.empty(), Optional.of("This is a test notification"));
+    when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(false);
+    when(slackSender.send(any(), any(), any())).thenReturn(notificationExpectedResponse);
+
+    NotificationProcessingResponse notificationProcessingResponse = slackService.send(notificationRequest);
+    assertEquals(notificationProcessingResponse, NotificationProcessingResponse.trivialResponseWithNoRetries);
+
+    notificationProcessingResponse = slackService.send(notificationRequest);
+    assertEquals(notificationExpectedResponse, notificationProcessingResponse);
+
+    notificationRequest = NotificationRequest.newBuilder()
+                              .setId(id)
+                              .setAccountId(accountId)
+                              .setSlack(NotificationRequest.Slack.newBuilder()
+                                            .setTemplateId(slackTemplateName)
+                                            .addAllSlackWebHookUrls(Collections.singletonList(slackWebhookurl))
+                                            .setExpressionFunctorToken(HashGenerator.generateIntegerHash())
+                                            .setOrgIdentifier("orgIdentifier")
+                                            .setProjectIdentifier("projectIdentifier")
                                             .build())
                               .build();
     notificationExpectedResponse =

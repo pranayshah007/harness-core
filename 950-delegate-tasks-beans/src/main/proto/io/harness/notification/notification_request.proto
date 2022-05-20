@@ -37,7 +37,7 @@ message NotificationRequest {
     map<string, string> templateData = 4;
     string orgIdentifier = 10;
     string projectIdentifier = 11;
-    string expressionFunctorToken = 12;
+    int64 expressionFunctorToken = 12;
     string templateId = 3;
   }
 
@@ -56,7 +56,7 @@ message NotificationRequest {
     map<string, string> templateData = 4;
     string orgIdentifier = 10;
     string projectIdentifier = 11;
-    string expressionFunctorToken = 12;
+    int64 expressionFunctorToken = 12;
     string templateId = 3;
   }
 
@@ -67,7 +67,7 @@ message NotificationRequest {
     map<string, string> templateData = 4;
     string orgIdentifier = 10;
     string projectIdentifier = 11;
-    string expressionFunctorToken = 12;
+    int64 expressionFunctorToken = 12;
     string templateId = 3;
   }
 
