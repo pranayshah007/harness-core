@@ -148,6 +148,13 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     subscriptionItems.add(new ItemParams(mauPriceId.getId(), (long) subscriptionDTO.getNumberOfDevelopers(),
         Prices.getLookupKey("FF", subscriptionDTO.getEdition(), "MAU", subscriptionDTO.getPaymentFreq())));
 
+    if(subscriptionDTO.isPremiumSupport()) {
+      val supportPriceId = stripeHelper.getPrice(Prices.PREMIUM_SUPPORT);
+      subscriptionItems.add(new ItemParams(supportPriceId.getId(),
+              1L,
+              Prices.PREMIUM_SUPPORT));
+    }
+
     // subscriptionItems.add(new ItemParams(priceId));
 
     // create Subscription
