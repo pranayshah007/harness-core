@@ -21,6 +21,7 @@ import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
 import io.harness.template.beans.refresh.NodeInfo;
 import io.harness.template.beans.refresh.ValidateTemplateInputsResponseDTO;
 import io.harness.template.beans.refresh.YamlDiffResponseDTO;
+import io.harness.template.beans.refresh.YamlFullRefreshResponseDTO;
 
 import com.google.inject.Inject;
 import java.util.List;
@@ -40,21 +41,25 @@ public class PipelineRefreshServiceImpl implements PipelineRefreshService {
     if (Boolean.TRUE.equals(pipelineEntity.getTemplateReference())) {
       RefreshResponseDTO refreshResponseDTO =
           pmsPipelineTemplateHelper.getRefreshedYaml(accountId, orgId, projectId, pipelineEntity.getYaml());
-      pipelineEntity.withYaml(refreshResponseDTO.getRefreshedYaml());
-      GovernanceMetadata governanceMetadata =
-          pipelineServiceHelper.validatePipelineYamlAndSetTemplateRefIfAny(pipelineEntity, true);
-      if (governanceMetadata.getDeny()) {
-        List<String> denyingPolicySetIds = governanceMetadata.getDetailsList()
-                                               .stream()
-                                               .filter(PolicySetMetadata::getDeny)
-                                               .map(PolicySetMetadata::getIdentifier)
-                                               .collect(Collectors.toList());
-        throw new InvalidRequestException(
-            "Pipeline does not follow the Policies in these Policy Sets: " + denyingPolicySetIds.toString());
-      }
-      pmsPipelineService.updatePipelineYaml(pipelineEntity, ChangeType.MODIFY);
+      updatePipelineWithYaml(pipelineEntity, refreshResponseDTO.getRefreshedYaml());
     }
     return true;
+  }
+
+  private void updatePipelineWithYaml(PipelineEntity pipelineEntity, String refreshedYaml) {
+    PipelineEntity updatedPipelineEntity = pipelineEntity.withYaml(refreshedYaml);
+    GovernanceMetadata governanceMetadata =
+        pipelineServiceHelper.validatePipelineYamlAndSetTemplateRefIfAny(updatedPipelineEntity, true);
+    if (governanceMetadata.getDeny()) {
+      List<String> denyingPolicySetIds = governanceMetadata.getDetailsList()
+                                             .stream()
+                                             .filter(PolicySetMetadata::getDeny)
+                                             .map(PolicySetMetadata::getIdentifier)
+                                             .collect(Collectors.toList());
+      throw new InvalidRequestException(
+          "Pipeline does not follow the Policies in these Policy Sets: " + denyingPolicySetIds.toString());
+    }
+    pmsPipelineService.updatePipelineYaml(updatedPipelineEntity, ChangeType.MODIFY);
   }
 
   @Override
@@ -105,6 +110,15 @@ public class PipelineRefreshServiceImpl implements PipelineRefreshService {
   @Override
   public boolean recursivelyRefreshAllTemplateInputsInPipeline(
       String accountId, String orgId, String projectId, String pipelineIdentifier) {
-    return false;
+    PipelineEntity pipelineEntity = getPipelineEntity(accountId, orgId, projectId, pipelineIdentifier);
+
+    if (Boolean.TRUE.equals(pipelineEntity.getTemplateReference())) {
+      YamlFullRefreshResponseDTO refreshResponse =
+          pmsPipelineTemplateHelper.refreshAllTemplatesForYaml(accountId, orgId, projectId, pipelineEntity.getYaml());
+      if (refreshResponse.isShouldRefreshYaml()) {
+        updatePipelineWithYaml(pipelineEntity, refreshResponse.getRefreshedYaml());
+      }
+    }
+    return true;
   }
 }

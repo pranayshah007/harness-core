@@ -29,6 +29,7 @@ import io.harness.pms.helpers.PmsFeatureFlagHelper;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.template.beans.refresh.ValidateTemplateInputsResponseDTO;
+import io.harness.template.beans.refresh.YamlFullRefreshResponseDTO;
 import io.harness.template.remote.TemplateResourceClient;
 
 import com.google.inject.Inject;
@@ -140,6 +141,20 @@ public class PMSPipelineTemplateHelper {
     }
 
     return NGRestUtils.getResponse(templateResourceClient.validateTemplateInputsForGivenYaml(
+        accountId, orgId, projectId, null, null, null, refreshRequest));
+  }
+
+  public YamlFullRefreshResponseDTO refreshAllTemplatesForYaml(
+      String accountId, String orgId, String projectId, String yaml) {
+    GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
+    RefreshRequestDTO refreshRequest = RefreshRequestDTO.builder().yaml(yaml).build();
+    if (gitEntityInfo != null) {
+      return NGRestUtils.getResponse(templateResourceClient.refreshAllTemplatesForYaml(accountId, orgId, projectId,
+          gitEntityInfo.isNewBranch() ? gitEntityInfo.getBaseBranch() : gitEntityInfo.getBranch(),
+          gitEntityInfo.getYamlGitConfigId(), true, refreshRequest));
+    }
+
+    return NGRestUtils.getResponse(templateResourceClient.refreshAllTemplatesForYaml(
         accountId, orgId, projectId, null, null, null, refreshRequest));
   }
 }

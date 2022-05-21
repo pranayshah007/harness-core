@@ -9,18 +9,14 @@ package io.harness.template.beans.refresh;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.ng.core.template.TemplateEntityType;
 
 import lombok.Builder;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
+import lombok.Value;
 
 @OwnedBy(HarnessTeam.CDC)
-@Getter
+@Value
 @Builder
-@EqualsAndHashCode
-public class TemplateInfo {
-  private String templateIdentifier;
-  private String versionLabel;
-  private TemplateEntityType templateEntityType;
+public class YamlFullRefreshResponseDTO {
+  boolean shouldRefreshYaml; // Tells whether yaml provided needs to be refreshed or not.
+  String refreshedYaml; // if shouldRefreshYaml == true, returns the yaml to be refreshed.
 }

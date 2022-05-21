@@ -23,6 +23,7 @@ import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.ng.core.template.TemplateSummaryResponseDTO;
 import io.harness.template.TemplateFilterPropertiesDTO;
 import io.harness.template.beans.refresh.ValidateTemplateInputsResponseDTO;
+import io.harness.template.beans.refresh.YamlFullRefreshResponseDTO;
 
 import java.util.List;
 import org.hibernate.validator.constraints.NotEmpty;
@@ -78,6 +79,16 @@ public interface TemplateResourceClient {
 
   @POST(TEMPLATE_REFRESH_ENDPOINT + "validate-template-inputs/internal")
   Call<ResponseDTO<ValidateTemplateInputsResponseDTO>> validateTemplateInputsForGivenYaml(
+      @Query(value = NGCommonEntityConstants.ACCOUNT_KEY) @NotEmpty String accountIdentifier,
+      @Query(value = NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Query(value = NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @Query(value = GitSyncApiConstants.BRANCH_KEY) String branch,
+      @Query(value = GitSyncApiConstants.REPO_IDENTIFIER_KEY) String repoIdentifier,
+      @Query(value = GitSyncApiConstants.DEFAULT_FROM_OTHER_REPO) Boolean defaultFromOtherRepo,
+      @Body RefreshRequestDTO refreshRequest);
+
+  @POST(TEMPLATE_REFRESH_ENDPOINT + "refresh-all/internal")
+  Call<ResponseDTO<YamlFullRefreshResponseDTO>> refreshAllTemplatesForYaml(
       @Query(value = NGCommonEntityConstants.ACCOUNT_KEY) @NotEmpty String accountIdentifier,
       @Query(value = NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Query(value = NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
