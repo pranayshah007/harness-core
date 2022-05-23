@@ -26,6 +26,7 @@ import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
 import io.harness.eventsframework.schemas.entity.IdentifierRefProtoDTO;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.ng.core.template.TemplateEntityType;
+import io.harness.ng.core.template.TemplateReferenceRequestDTO;
 import io.harness.pms.contracts.service.EntityReferenceRequest;
 import io.harness.pms.contracts.service.EntityReferenceResponse;
 import io.harness.pms.contracts.service.EntityReferenceServiceGrpc.EntityReferenceServiceBlockingStub;
@@ -101,9 +102,9 @@ public class TemplateReferenceHelper {
         entityReferenceServiceBlockingStub.getReferences(entityReferenceRequestBuilder.build());
     List<EntityDetailProtoDTO> referredEntities =
         correctFQNsOfReferredEntities(response.getReferredEntitiesList(), templateEntity.getTemplateEntityType());
-    List<EntityDetailProtoDTO> referredEntitiesInLinkedTemplates =
-        getNestedTemplateReferences(templateEntity.getAccountId(), templateEntity.getOrgIdentifier(),
-            templateEntity.getProjectIdentifier(), pmsUnderstandableYaml, true);
+    List<EntityDetailProtoDTO> referredEntitiesInLinkedTemplates = getNestedTemplateReferences(
+        templateEntity.getAccountId(), templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier(),
+        TemplateReferenceRequestDTO.builder().yaml(pmsUnderstandableYaml).build(), true);
     referredEntities.addAll(referredEntitiesInLinkedTemplates);
     templateSetupUsageHelper.publishSetupUsageEvent(templateEntity, referredEntities);
   }
@@ -142,15 +143,15 @@ public class TemplateReferenceHelper {
    * @param accountId
    * @param orgId
    * @param projectId
-   * @param yaml yaml for which we want to get references.
+   * @param templateReferenceRequestDTO contains yaml for which we want to get references.
    * @param shouldModifyFqn We don't want to modify FQN in case we are getting references for pipeline. For pipeline
    *     this will be false and true for templates.
    * @return
    */
-  public List<EntityDetailProtoDTO> getNestedTemplateReferences(
-      String accountId, String orgId, String projectId, String yaml, boolean shouldModifyFqn) {
+  public List<EntityDetailProtoDTO> getNestedTemplateReferences(String accountId, String orgId, String projectId,
+      TemplateReferenceRequestDTO templateReferenceRequestDTO, boolean shouldModifyFqn) {
     List<EntityDetailProtoDTO> referredEntities = new ArrayList<>();
-    YamlConfig yamlConfig = new YamlConfig(yaml);
+    YamlConfig yamlConfig = new YamlConfig(templateReferenceRequestDTO.getYaml());
     Map<FQN, Object> fqnToValueMap = yamlConfig.getFqnToValueMap();
     Set<FQN> fqnSet = new LinkedHashSet<>(yamlConfig.getFqnToValueMap().keySet());
     Map<String, Object> fqnStringToValueMap = new HashMap<>();
