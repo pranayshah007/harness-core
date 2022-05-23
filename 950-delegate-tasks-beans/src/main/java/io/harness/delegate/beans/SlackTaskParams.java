@@ -7,6 +7,8 @@
 
 package io.harness.delegate.beans;
 
+import static io.harness.expression.Expression.ALLOW_SECRETS;
+
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
 import io.harness.delegate.beans.executioncapability.HttpConnectionExecutionCapability;
@@ -21,8 +23,6 @@ import java.util.List;
 import lombok.Builder;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
-
-import static io.harness.expression.Expression.ALLOW_SECRETS;
 
 @Value
 @Builder
