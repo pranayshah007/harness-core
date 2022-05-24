@@ -33,12 +33,12 @@ public class PagerDutyChannel extends NotificationChannel {
   List<String> integrationKeys;
   String orgIdentifier;
   String projectIdentifier;
-  int expressionFunctorToken;
+  long expressionFunctorToken;
 
   @Builder
   public PagerDutyChannel(String accountId, List<NotificationRequest.UserGroup> userGroups, String templateId,
       Map<String, String> templateData, Team team, List<String> integrationKeys, String orgIdentifier,
-      String projectIdentifier, int expressionFunctorToken) {
+      String projectIdentifier, long expressionFunctorToken) {
     super(accountId, userGroups, templateId, templateData, team);
     this.integrationKeys = integrationKeys;
     this.orgIdentifier = orgIdentifier;

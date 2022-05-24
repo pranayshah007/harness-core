@@ -33,12 +33,12 @@ public class SlackChannel extends NotificationChannel {
   List<String> webhookUrls;
   String orgIdentifier;
   String projectIdentifier;
-  int expressionFunctorToken;
+  long expressionFunctorToken;
 
   @Builder
   public SlackChannel(String accountId, List<NotificationRequest.UserGroup> userGroups, String templateId,
       Map<String, String> templateData, Team team, List<String> webhookUrls, String orgIdentifier,
-      String projectIdentifier, int expressionFunctorToken) {
+      String projectIdentifier, long expressionFunctorToken) {
     super(accountId, userGroups, templateId, templateData, team);
     this.webhookUrls = webhookUrls;
     this.orgIdentifier = orgIdentifier;

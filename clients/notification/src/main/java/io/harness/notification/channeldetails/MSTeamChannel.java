@@ -33,12 +33,12 @@ public class MSTeamChannel extends NotificationChannel {
   List<String> msTeamKeys;
   String orgIdentifier;
   String projectIdentifier;
-  int expressionFunctorToken;
+  long expressionFunctorToken;
 
   @Builder
   public MSTeamChannel(String accountId, List<NotificationRequest.UserGroup> userGroups, String templateId,
       Map<String, String> templateData, Team team, List<String> msTeamKeys, String orgIdentifier,
-      String projectIdentifier, int expressionFunctorToken) {
+      String projectIdentifier, long expressionFunctorToken) {
     super(accountId, userGroups, templateId, templateData, team);
     this.msTeamKeys = msTeamKeys;
     this.orgIdentifier = orgIdentifier;
