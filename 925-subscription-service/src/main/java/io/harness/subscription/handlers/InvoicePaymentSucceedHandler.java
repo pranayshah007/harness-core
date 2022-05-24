@@ -147,7 +147,22 @@ public class InvoicePaymentSucceedHandler implements StripeEventHandler {
   }
 
   private void syncCFLicense(CFModuleLicense cfModuleLicense, List<InvoiceLineItem> items) {
-    // TODO implement CF license sync
+    items.forEach(item -> {
+      if (isPaymentConsequence(item)) {
+        if (isItem("DEVELOPERS", item)) {
+          cfModuleLicense.setNumberOfUsers(
+                   item.getQuantity().intValue());
+        }
+        if (isItem("MAUS", item)) {
+          cfModuleLicense.setNumberOfClientMAUs(
+                  item.getQuantity().longValue());
+          setLicenseProperty(item, cfModuleLicense);
+        }
+        if (isItem("SUPPORT", item)) {
+          setSupport(item, cfModuleLicense);
+        }
+      }
+    });
   }
 
   private void syncCILicense(CIModuleLicense ciModuleLicense, List<InvoiceLineItem> items) {
