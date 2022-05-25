@@ -95,7 +95,7 @@ notificationServiceConfig:
     host: host_placeholder
     port: 465
     fromAddress: noreply@harness.io
-    useSSL: true
+    useSSL:  ${SMTP_USE_SSL:-true}
     username: smtp_username_placeholder
     password: "smtp_password_placeholder"
 
