@@ -87,6 +87,7 @@ import io.harness.exception.exceptionmanager.exceptionhandler.ExceptionHandler;
 import io.harness.file.NGFileServiceModule;
 import io.harness.filter.FilterType;
 import io.harness.filter.mapper.FilterPropertiesMapper;
+import io.harness.gitops.GitopsResourceClientModule;
 import io.harness.gitsync.GitSyncConfigClientModule;
 import io.harness.gitsync.GitSyncModule;
 import io.harness.gitsync.common.events.FullSyncMessageListener;
@@ -257,8 +258,6 @@ import io.harness.timescaledb.metrics.HExecuteListener;
 import io.harness.token.TokenClientModule;
 import io.harness.tracing.AbstractPersistenceTracerModule;
 import io.harness.user.UserClientModule;
-import io.harness.utils.featureflaghelper.FeatureFlagHelperService;
-import io.harness.utils.featureflaghelper.NGFeatureFlagHelperServiceImpl;
 import io.harness.version.VersionModule;
 import io.harness.yaml.YamlSdkModule;
 import io.harness.yaml.core.StepSpecType;
@@ -617,6 +616,7 @@ public class NextGenModule extends AbstractModule {
         appConfig.getResourceGroupClientConfig().getSecret(), NG_MANAGER.getServiceId()));
     install(new NGFileServiceModule(appConfig.getFileServiceConfiguration().getFileStorageMode(),
         appConfig.getFileServiceConfiguration().getClusterName()));
+    install(new GitopsResourceClientModule(appConfig.getGitopsResourceClientConfig(), NG_MANAGER.getServiceId()));
     if (TRUE.equals(appConfig.getAccessControlAdminClientConfiguration().getMockAccessControlService())) {
       AccessControlAdminClientConfiguration accessControlAdminClientConfiguration =
           AccessControlAdminClientConfiguration.builder()
@@ -705,7 +705,6 @@ public class NextGenModule extends AbstractModule {
 
     registerEventsFrameworkMessageListeners();
     registerEncryptors();
-    bind(FeatureFlagHelperService.class).to(NGFeatureFlagHelperServiceImpl.class);
 
     bind(VariableService.class).to(VariableServiceImpl.class);
     bindExceptionHandlers();

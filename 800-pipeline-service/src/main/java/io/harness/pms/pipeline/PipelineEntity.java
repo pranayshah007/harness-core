@@ -15,8 +15,8 @@ import io.harness.annotations.ChangeDataCapture;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.validator.EntityName;
 import io.harness.data.validator.Trimmed;
+import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.persistance.GitSyncableEntity;
-import io.harness.gitsync.v2.StoreType;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
@@ -27,6 +27,7 @@ import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UpdatedAtAware;
 import io.harness.persistence.UuidAware;
+import io.harness.persistence.gitaware.GitAware;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.github.reinert.jjschema.SchemaIgnore;
@@ -68,7 +69,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @ChangeDataCapture(table = "tags_info", dataStore = "pms-harness", fields = {}, handler = "TagsInfoCD")
 @ChangeDataCapture(table = "pipelines", dataStore = "ng-harness", fields = {}, handler = "Pipelines")
 public class PipelineEntity
-    implements GitSyncableEntity, PersistentEntity, AccountAccess, UuidAware, CreatedAtAware, UpdatedAtAware {
+    implements GitAware, GitSyncableEntity, PersistentEntity, AccountAccess, UuidAware, CreatedAtAware, UpdatedAtAware {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
@@ -98,10 +99,10 @@ public class PipelineEntity
   @Trimmed @NotEmpty String projectIdentifier;
   @NotEmpty String identifier;
 
-  @Wither @NotEmpty String yaml;
+  @Wither @NotEmpty @NonFinal @Setter String yaml;
 
   @Setter @NonFinal @SchemaIgnore @FdIndex @CreatedDate long createdAt;
-  @Setter @NonFinal @SchemaIgnore @NotNull @LastModifiedDate long lastUpdatedAt;
+  @Wither @Setter @NonFinal @SchemaIgnore @NotNull @LastModifiedDate long lastUpdatedAt;
   @Wither @Default Boolean deleted = Boolean.FALSE;
 
   @Wither @EntityName String name;
@@ -110,7 +111,7 @@ public class PipelineEntity
 
   @Wither @Version Long version;
 
-  @Default Map<String, org.bson.Document> filters = new HashMap<>();
+  @Wither @Default Map<String, org.bson.Document> filters = new HashMap<>();
   // Todo: Move this to pipelineMetadata
   ExecutionSummaryInfo executionSummaryInfo;
   int runSequence;
@@ -127,18 +128,22 @@ public class PipelineEntity
   @Setter @NonFinal Boolean isFromDefaultBranch;
   @Setter @NonFinal String branch;
   @Setter @NonFinal String yamlGitConfigRef;
-  @Setter @NonFinal String filePath;
+  @Wither @Setter @NonFinal String filePath; // -> also used in git simplification
   @Setter @NonFinal String rootFolder;
   @Getter(AccessLevel.NONE) @Wither @NonFinal Boolean isEntityInvalid;
 
   // git experience parameters after simplification
-  StoreType storeType;
-  String repo;
-  String path;
-  String connectorRef;
+  @Wither @Setter @NonFinal StoreType storeType;
+  @Wither @Setter @NonFinal String repo;
+  @Wither @Setter @NonFinal String connectorRef;
 
   public String getData() {
     return yaml;
+  }
+
+  @Override
+  public void setData(String data) {
+    yaml = data;
   }
 
   @Override
@@ -159,9 +164,5 @@ public class PipelineEntity
   @Override
   public String getInvalidYamlString() {
     return yaml;
-  }
-
-  public boolean shouldAllowStageExecutions() {
-    return allowStageExecutions != null && allowStageExecutions;
   }
 }

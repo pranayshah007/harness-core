@@ -97,7 +97,6 @@ public class CVNGStepVariableCreatorTest extends CvNextGenTestBase {
                                               .collect(Collectors.toList());
     assertThat(fqnExtraPropertiesList)
         .containsOnly("pipeline.stages.QA_deployment.spec.execution.steps.canaryDepoyment.steps.Verify.type",
-            "pipeline.stages.QA_deployment.spec.execution.steps.canaryDepoyment.steps.Verify.monitoredService",
             "pipeline.stages.QA_deployment.spec.execution.steps.canaryDepoyment.steps.Verify.identifier",
             "pipeline.stages.QA_deployment.spec.execution.steps.canaryDepoyment.steps.Verify.when",
             "pipeline.stages.QA_deployment.spec.execution.steps.canaryDepoyment.steps.Verify.startTs",

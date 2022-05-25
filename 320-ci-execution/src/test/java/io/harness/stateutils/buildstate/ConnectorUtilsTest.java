@@ -329,6 +329,7 @@ public class ConnectorUtilsTest extends CIExecutionTestBase {
   @Test
   @Owner(developers = HARSH)
   @Category(UnitTests.class)
+  @Ignore("skipping this test")
   public void shouldAddDelegateSelector() throws IOException {
     Call<ResponseDTO<Optional<ConnectorDTO>>> getConnectorResourceCall = mock(Call.class);
     ResponseDTO<Optional<ConnectorDTO>> responseDTO = ResponseDTO.newResponse(Optional.of(k8sConnectorFromDelegate));

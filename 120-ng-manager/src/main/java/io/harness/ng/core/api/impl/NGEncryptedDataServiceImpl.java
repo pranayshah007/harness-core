@@ -21,12 +21,16 @@ import static io.harness.secretmanagerclient.SecretType.SecretFile;
 import static io.harness.secretmanagerclient.SecretType.SecretText;
 import static io.harness.secretmanagerclient.ValueType.Inline;
 import static io.harness.secretmanagerclient.ValueType.Reference;
+import static io.harness.secrets.SecretPermissions.SECRET_ACCESS_PERMISSION;
+import static io.harness.secrets.SecretPermissions.SECRET_RESOURCE_TYPE;
 import static io.harness.security.SimpleEncryption.CHARSET;
 import static io.harness.security.encryption.EncryptionType.GCP_KMS;
 import static io.harness.security.encryption.EncryptionType.LOCAL;
 import static io.harness.security.encryption.SecretManagerType.KMS;
 import static io.harness.security.encryption.SecretManagerType.VAULT;
 
+import io.harness.accesscontrol.acl.api.Resource;
+import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
 import io.harness.beans.SecretManagerConfig;
@@ -40,9 +44,11 @@ import io.harness.exception.SecretManagementException;
 import io.harness.mappers.SecretManagerConfigMapper;
 import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.api.NGEncryptedDataService;
+import io.harness.ng.core.api.SecretCrudService;
 import io.harness.ng.core.dao.NGEncryptedDataDao;
 import io.harness.ng.core.dto.secrets.SecretDTOV2;
 import io.harness.ng.core.dto.secrets.SecretFileSpecDTO;
+import io.harness.ng.core.dto.secrets.SecretResponseWrapper;
 import io.harness.ng.core.dto.secrets.SecretTextSpecDTO;
 import io.harness.ng.core.entities.NGEncryptedData;
 import io.harness.ng.core.entities.NGEncryptedData.NGEncryptedDataBuilder;
@@ -88,17 +94,22 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
   private static final String READ_ONLY_SECRET_MANAGER_ERROR =
       "Cannot create an Inline secret in read only secret manager";
   private final NGEncryptedDataDao encryptedDataDao;
+  private final SecretCrudService ngSecretService;
   private final KmsEncryptorsRegistry kmsEncryptorsRegistry;
   private final VaultEncryptorsRegistry vaultEncryptorsRegistry;
   private final SecretsFileService secretsFileService;
   private final GlobalEncryptDecryptClient globalEncryptDecryptClient;
   private final NGConnectorSecretManagerService ngConnectorSecretManagerService;
+  private final SecretPermissionValidator secretPermissionValidator;
 
   @Inject
   public NGEncryptedDataServiceImpl(NGEncryptedDataDao encryptedDataDao, KmsEncryptorsRegistry kmsEncryptorsRegistry,
       VaultEncryptorsRegistry vaultEncryptorsRegistry, SecretsFileService secretsFileService,
       SecretManagerClient secretManagerClient, GlobalEncryptDecryptClient globalEncryptDecryptClient,
-      NGConnectorSecretManagerService ngConnectorSecretManagerService) {
+      NGConnectorSecretManagerService ngConnectorSecretManagerService, SecretCrudService ngSecretService,
+      SecretPermissionValidator secretPermissionValidator) {
+    this.ngSecretService = ngSecretService;
+    this.secretPermissionValidator = secretPermissionValidator;
     this.encryptedDataDao = encryptedDataDao;
     this.kmsEncryptorsRegistry = kmsEncryptorsRegistry;
     this.vaultEncryptorsRegistry = vaultEncryptorsRegistry;
@@ -449,6 +460,32 @@ public class NGEncryptedDataServiceImpl implements NGEncryptedDataService {
     }
     List<EncryptedDataDetail> encryptedDataDetails = new ArrayList<>();
     List<Field> encryptedFields = object.getSecretReferenceFields();
+
+    // check if the secrets are accessible
+    for (Field field : encryptedFields) {
+      try {
+        field.setAccessible(true);
+        SecretRefData secretRefData = (SecretRefData) field.get(object);
+        if (!Optional.ofNullable(secretRefData).isPresent() || secretRefData.isNull()) {
+          continue;
+        }
+        Scope secretScope = secretRefData.getScope();
+        SecretResponseWrapper secret =
+            ngSecretService
+                .get(ngAccess.getAccountIdentifier(), getOrgIdentifier(ngAccess.getOrgIdentifier(), secretScope),
+                    getProjectIdentifier(ngAccess.getProjectIdentifier(), secretScope), secretRefData.getIdentifier())
+                .orElse(null);
+        secretPermissionValidator.checkForAccessOrThrow(
+            ResourceScope.of(ngAccess.getAccountIdentifier(),
+                getOrgIdentifier(ngAccess.getOrgIdentifier(), secretScope),
+                getProjectIdentifier(ngAccess.getProjectIdentifier(), secretScope)),
+            Resource.of(SECRET_RESOURCE_TYPE, secretRefData.getIdentifier()), SECRET_ACCESS_PERMISSION,
+            secret != null ? secret.getSecret().getOwner() : null);
+
+      } catch (IllegalAccessException illegalAccessException) {
+        log.error("Error while checking access permission for secret: {}", field, illegalAccessException);
+      }
+    }
 
     // iterate over all the fields with @SecretReference annotation
     for (Field field : encryptedFields) {

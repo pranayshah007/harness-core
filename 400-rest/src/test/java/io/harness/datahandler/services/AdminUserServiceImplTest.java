@@ -74,11 +74,11 @@ public class AdminUserServiceImplTest extends CategoryTest {
     String accountId = randomAlphabetic(10);
     String userId = randomAlphabetic(11);
     when(userService.getUserByEmail(userId)).thenReturn(null);
-    when(userService.getUserByUserId(userId))
+    when(userService.getUserByUserId(userId, accountId))
         .thenReturn(User.Builder.anUser().uuid(userId).email(randomAlphabetic(12)).build());
     assertTrue(adminUserService.assignAdminRoleToUserInNG(accountId, userId));
     verify(userService, times(1)).getUserByEmail(any());
-    verify(userService, times(1)).getUserByUserId(any());
+    verify(userService, times(1)).getUserByUserId(any(), any());
     verify(ngInviteClient, times(1)).addUsers(any(), any(), any(), any());
   }
 }

@@ -27,6 +27,8 @@ import io.harness.pms.sdk.core.plan.creation.creators.ChildrenPlanCreator;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.serializer.KryoSerializer;
+import io.harness.steps.matrix.StrategyConstants;
+import io.harness.steps.matrix.StrategyMetadata;
 
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
@@ -84,5 +86,29 @@ public abstract class AbstractStagePlanCreator<T extends AbstractStageNode> exte
       }
     }
     return adviserObtainments;
+  }
+
+  /**
+   * Adds a strategy node as a dependency of the stage if present.
+   * Please note that strategy uses uuid of the stage node because the stage is using the uuid of strategy field as we
+   * want to wrap stage around strategy.
+   * @param ctx
+   * @param field
+   * @param dependenciesNodeMap
+   * @param metadataMap
+   */
+  protected void addStrategyFieldDependencyIfPresent(PlanCreationContext ctx, AbstractStageNode field,
+      Map<String, YamlField> dependenciesNodeMap, Map<String, ByteString> metadataMap) {
+    YamlField strategyField = ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.STRATEGY);
+    if (strategyField != null) {
+      dependenciesNodeMap.put(field.getUuid(), strategyField);
+      // This is mandatory because it is the parent's responsibility to pass the nodeId and the childNodeId to the
+      // strategy node
+      metadataMap.put(StrategyConstants.STRATEGY_METADATA + strategyField.getNode().getUuid(),
+          ByteString.copyFrom(kryoSerializer.asDeflatedBytes(StrategyMetadata.builder()
+                                                                 .strategyNodeId(field.getUuid())
+                                                                 .childNodeId(strategyField.getNode().getUuid())
+                                                                 .build())));
+    }
   }
 }

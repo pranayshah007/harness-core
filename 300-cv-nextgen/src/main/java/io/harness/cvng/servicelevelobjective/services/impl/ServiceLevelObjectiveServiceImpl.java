@@ -434,6 +434,12 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
   public PageResponse<NotificationRuleResponse> getNotificationRules(
       ProjectParams projectParams, String sloIdentifier, PageParams pageParams) {
     ServiceLevelObjective serviceLevelObjective = getEntity(projectParams, sloIdentifier);
+    if (serviceLevelObjective == null) {
+      throw new InvalidRequestException(String.format(
+          "SLO  with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s  is not present",
+          sloIdentifier, projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
+          projectParams.getProjectIdentifier()));
+    }
     List<NotificationRuleRef> notificationRuleRefList = serviceLevelObjective.getNotificationRuleRefs();
     List<NotificationRuleResponse> notificationRuleResponseList =
         notificationRuleService.getNotificationRuleResponse(projectParams, notificationRuleRefList);

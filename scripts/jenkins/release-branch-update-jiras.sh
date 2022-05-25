@@ -70,7 +70,6 @@ else
    echo "Unknown purpose ${PURPOSE}"
    exit 1
 fi
-
 for KEY in ${KEYS}
 do
     echo $KEY
@@ -81,3 +80,40 @@ do
        https://harness.atlassian.net/rest/api/2/issue/${KEY} \
        --user $JIRA_USERNAME:$JIRA_PASSWORD
 done
+# Note - $EXECUTE_NEW_VERSION_CODE should be added to the appropriate ci Jobs for this to work
+# Also, once this is rolled out for good, then this code needs to be integrated into the loop above instead
+# of having two loops over the same jira cases.
+
+if [ "${EXECUTE_NEW_VERSION_CODE}" == "true" ]; then
+  # Set the next version number - this will be something like 1.23.5-704219
+  # Note - $VERSION and $NEW_TAG are set in release-branch.sh
+  if [ "${NEW_TAG}" != "" ]; then
+    NEXT_VERSION=$NEW_TAG-$VERSION
+  else
+    echo "NEW_TAG not set - just using build number"
+    NEXT_VERSION=$VERSION
+  fi
+  if [ "${NEXT_VERSION}" == "" ]; then
+    echo "VERSION was also empty - aborting setting fix versions"
+    exit 0
+  fi
+  echo "Setting Fix Version to $NEXT_VERSION on issues in this release"
+  for KEY in ${KEYS}
+  do
+    echo "$KEY"
+    response=$(curl -q -X PUT https://harness.atlassian.net/rest/api/2/issue/${KEY} --write-out '%{http_code}' --user ${JIRA_USERNAME}:${JIRA_PASSWORD} -H "Content-Type: application/json" -d '{
+      "update": {
+        "fixVersions": [
+          {"add":
+            {"name": "'"$NEXT_VERSION"'" }
+          }
+        ]
+      }
+    }')
+    if [[ "$response" -eq 204 ]] ; then
+      echo "$KEY fixVersion set to $NEXT_VERSION"
+    elif [[ "$response" -eq 400 ]] ; then
+      echo "Could not set fixVersion on $KEY - field hidden for the issue type"
+    fi
+  done
+fi

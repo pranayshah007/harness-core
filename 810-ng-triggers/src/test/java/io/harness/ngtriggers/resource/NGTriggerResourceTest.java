@@ -46,7 +46,6 @@ import io.harness.utils.YamlPipelineUtils;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -164,8 +163,6 @@ public class NGTriggerResourceTest extends CategoryTest {
                                  .targetIdentifier(PIPELINE_IDENTIFIER)
                                  .identifier(IDENTIFIER)
                                  .name(NAME)
-                                 .pipelineBranchName("pipelineBranchName")
-                                 .inputSetRefs(Arrays.asList("Inputset1", "Inputset2"))
                                  .targetType(TargetType.PIPELINE)
                                  .type(NGTriggerType.WEBHOOK)
                                  .metadata(ngTriggerMetadata)

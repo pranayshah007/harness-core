@@ -32,6 +32,8 @@ public class PlanCreatorConstants {
   public final String MANIFEST_NODE_NAME = "Manifest";
   public final String INFRA_NODE_NAME = "Infrastructure";
   public final String SPEC_IDENTIFIER = "spec";
+  public final String CONFIG_FILES_NODE_NAME = "ConfigFiles";
+  public final String CONFIG_FILE_NODE_NAME = "ConfigFile";
 
   // DependencyMetadata constants
   public final String PRIMARY_STEP_PARAMETERS = "primaryStepParameters";
@@ -39,4 +41,5 @@ public class PlanCreatorConstants {
   public final String IDENTIFIER = "identifier";
   public final String SIDECAR_STEP_PARAMETERS = "sideCarsStepParameters";
   public final String MANIFEST_STEP_PARAMETER = "manifestStepParameters";
+  public final String CONFIG_FILE_STEP_PARAMETER = "configFileStepParameters";
 }

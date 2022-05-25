@@ -13,7 +13,6 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.cdng.beans.CVNGStepInfo;
-import io.harness.cvng.cdng.beans.MonitoredServiceNode;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.yaml.core.StepSpecType;
 
@@ -37,8 +36,6 @@ public class CVVerifyStepNode extends AbstractStepNode {
   @JsonProperty("spec")
   @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
   CVNGStepInfo verifyStepInfo;
-
-  MonitoredServiceNode monitoredService;
 
   @Override
   public String getType() {

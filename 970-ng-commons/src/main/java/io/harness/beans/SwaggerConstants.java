@@ -17,6 +17,6 @@ public interface SwaggerConstants {
   String INTEGER_CLASSPATH = "java.lang.Integer";
   String DOUBLE_CLASSPATH = "java.lang.Double";
   String BOOLEAN_CLASSPATH = "java.lang.Boolean";
-  String STRING_LIST_CLASSPATH = "List[java.lang.String]";
+  String STRING_LIST_CLASSPATH = "[Ljava.lang.String;";
   String STRING_MAP_CLASSPATH = "Map[String,String]";
 }

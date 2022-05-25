@@ -23,7 +23,6 @@ import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
-import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
@@ -33,6 +32,7 @@ import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
@@ -85,11 +85,8 @@ public class EnvironmentPlanCreatorV2Test extends CDNGTestBase {
                                   .dependency(Dependency.newBuilder().putAllMetadata(metadataDependency).build())
                                   .build();
 
-    PlanCreationResponse planForField =
-        environmentPlanCreator.createPlanForField(ctx, EnvironmentPlanCreatorConfig.builder().build());
-    assertThat(planForField).isNotNull();
-    assertThat(planForField.getPlanNode()).isNotNull();
-    PlanNode planNode = planForField.getPlanNode();
+    PlanNode planNode = environmentPlanCreator.createPlanForParentNode(
+        ctx, EnvironmentPlanCreatorConfig.builder().build(), Collections.emptyList());
     assertThat(planNode.getStepType()).isEqualTo(EnvironmentStepV2.STEP_TYPE);
     assertThat(planNode.getName()).isEqualTo(PlanCreatorConstants.ENVIRONMENT_NODE_NAME);
     assertThat(planNode.getIdentifier()).isEqualTo(YamlTypes.ENVIRONMENT_YAML);

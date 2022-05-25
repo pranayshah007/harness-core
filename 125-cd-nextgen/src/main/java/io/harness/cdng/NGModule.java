@@ -32,6 +32,7 @@ import io.harness.cdng.buckets.resources.service.GcsResourceServiceImpl;
 import io.harness.cdng.envGroup.mappers.EnvironmentGroupFilterPropertiesMapper;
 import io.harness.cdng.envGroup.services.EnvironmentGroupService;
 import io.harness.cdng.envGroup.services.EnvironmentGroupServiceImpl;
+import io.harness.cdng.environment.EnvironmentFilterPropertiesMapper;
 import io.harness.cdng.gitops.ClusterServiceImpl;
 import io.harness.cdng.gitops.service.ClusterService;
 import io.harness.cdng.instance.info.InstanceInfoService;
@@ -113,5 +114,6 @@ public class NGModule extends AbstractModule {
         MapBinder.newMapBinder(binder(), String.class, FilterPropertiesMapper.class);
     filterPropertiesMapper.addBinding(FilterType.ENVIRONMENTGROUP.toString())
         .to(EnvironmentGroupFilterPropertiesMapper.class);
+    filterPropertiesMapper.addBinding(FilterType.ENVIRONMENT.toString()).to(EnvironmentFilterPropertiesMapper.class);
   }
 }

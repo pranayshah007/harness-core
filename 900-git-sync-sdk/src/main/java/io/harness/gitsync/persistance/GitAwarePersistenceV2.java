@@ -9,7 +9,7 @@ package io.harness.gitsync.persistance;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.gitsync.v2.GitAware;
+import io.harness.persistence.gitaware.GitAware;
 
 import java.util.Optional;
 import org.springframework.data.mongodb.core.query.Criteria;

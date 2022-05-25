@@ -350,7 +350,7 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
                                                .build();
     doReturn(true)
         .when(k8sCanaryBaseHandler)
-        .prepareForCanary(canaryHandlerConfig, delegateTaskParams, true, logCallback, true);
+        .prepareForCanary(canaryHandlerConfig, delegateTaskParams, true, logCallback, true, false);
     doReturn(1).when(k8sCanaryBaseHandler).getCurrentInstances(canaryHandlerConfig, delegateTaskParams, logCallback);
 
     k8sCanaryRequestHandler.prepareForCanary(deployRequest, delegateTaskParams, logCallback);
@@ -375,7 +375,7 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
     verify(k8sTaskHelperBase, times(1)).getTargetInstancesForCanary(70, currentInstances, logCallback);
     verify(k8sCanaryBaseHandler, times(1)).updateTargetInstances(k8sCanaryHandlerConfig, 3, logCallback);
     verify(k8sCanaryBaseHandler, times(1))
-        .prepareForCanary(k8sCanaryHandlerConfig, delegateTaskParams, false, logCallback, true);
+        .prepareForCanary(k8sCanaryHandlerConfig, delegateTaskParams, false, logCallback, true, false);
   }
 
   @Test

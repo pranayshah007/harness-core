@@ -14,6 +14,7 @@ import static javax.ws.rs.Priorities.HEADER_DECORATOR;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.context.GlobalContext;
+import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.sdk.GitSyncApiConstants;
 import io.harness.manage.GlobalContextManager;
 
@@ -61,7 +62,11 @@ public class GitSyncThreadDecorator implements ContainerRequestFilter, Container
         getRequestParamFromContext(GitSyncApiConstants.RESOLVED_CONFLICT_COMMIT_ID, pathParameters, queryParameters);
     final String connectorRef =
         getRequestParamFromContext(GitSyncApiConstants.CONNECTOR_REF, pathParameters, queryParameters);
+    final String storeType =
+        getRequestParamFromContext(GitSyncApiConstants.STORE_TYPE, pathParameters, queryParameters);
     final String repoName = getRequestParamFromContext(GitSyncApiConstants.REPO_NAME, pathParameters, queryParameters);
+    final String lastCommitId =
+        getRequestParamFromContext(GitSyncApiConstants.LAST_COMMIT_ID, pathParameters, queryParameters);
     final GitEntityInfo branchInfo = GitEntityInfo.builder()
                                          .branch(branchName)
                                          .filePath(filePath)
@@ -74,7 +79,9 @@ public class GitSyncThreadDecorator implements ContainerRequestFilter, Container
                                          .baseBranch(baseBranch)
                                          .resolvedConflictCommitId(resolvedConflictCommitId)
                                          .connectorRef(connectorRef)
+                                         .storeType(StoreType.getFromStringOrNull(storeType))
                                          .repoName(repoName)
+                                         .lastCommitId(lastCommitId)
                                          .build();
     if (!GlobalContextManager.isAvailable()) {
       GlobalContextManager.set(new GlobalContext());

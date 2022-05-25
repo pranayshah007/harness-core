@@ -1,0 +1,128 @@
+pipeline:
+  name: plan creator
+  identifier: plan_creator
+  projectIdentifier: LocalDev
+  orgIdentifier: default
+  tags: {}
+  stages:
+    - stage:
+        name: a1-1
+        identifier: a11
+        description: ""
+        strategy:
+          matrix:
+            a: [ 1,2,3 ]
+            exclude:
+              - a: 1
+        type: Approval
+        spec:
+          execution:
+            steps:
+              - stepGroup:
+                  name: searching
+                  identifier: searching
+                  steps:
+                    - step:
+                        type: Http
+                        name: google
+                        identifier: google
+                        spec:
+                          url: https://www.google.com
+                          method: GET
+                          headers: []
+                          outputVariables: []
+                        timeout: 1m
+                    - step:
+                        type: Http
+                        name: bing
+                        identifier: bing
+                        spec:
+                          url: https://www.bing.com
+                          method: GET
+                          headers: []
+                          outputVariables: []
+                        timeout: 10s
+              - parallel:
+                  - step:
+                      type: Http
+                      name: google again
+                      identifier: google_again
+                      spec:
+                        url: https://www.google.com
+                        method: GET
+                        headers: []
+                        outputVariables: []
+                      timeout: 10s
+                  - step:
+                      type: Http
+                      name: bing in parallel
+                      identifier: bing_in_parallel
+                      spec:
+                        url: https://www.bing.com
+                        method: GET
+                        headers: []
+                        outputVariables: []
+                      timeout: 10s
+          serviceDependencies: []
+        tags: {}
+    - parallel:
+        - stage:
+            name: d1
+            identifier: d1
+            description: ""
+            type: Deployment
+            spec:
+              serviceConfig:
+                serviceDefinition:
+                  type: Kubernetes
+                  spec:
+                    manifests:
+                      - manifest:
+                          identifier: m1
+                          type: K8sManifest
+                          spec:
+                            store:
+                              type: Github
+                              spec:
+                                connectorRef: repo_in_payload
+                                gitFetchType: Branch
+                                paths:
+                                  - dds
+                                branch: master
+                            skipResourceVersioning: false
+                    variables: []
+                serviceRef: s1help
+              infrastructure:
+                environmentRef: ee
+                infrastructureDefinition:
+                  type: KubernetesDirect
+                  spec:
+                    connectorRef: account.temp
+                    namespace: ssss
+                    releaseName: release-<+INFRA_KEY>
+                allowSimultaneousDeployments: false
+              execution:
+                steps:
+                  - step:
+                      type: ShellScript
+                      name: echo1
+                      identifier: echo1
+                      spec:
+                        shell: Bash
+                        onDelegate: true
+                        source:
+                          type: Inline
+                          spec:
+                            script: echo done
+                        environmentVariables: []
+                        outputVariables: []
+                        executionTarget: {}
+                      timeout: 10m
+                rollbackSteps: []
+            tags: {}
+            failureStrategies:
+              - onFailure:
+                  errors:
+                    - AllErrors
+                  action:
+                    type: StageRollback

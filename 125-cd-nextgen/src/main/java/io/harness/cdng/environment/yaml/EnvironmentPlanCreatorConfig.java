@@ -63,4 +63,5 @@ public class EnvironmentPlanCreatorConfig implements Visitable {
 
   // linked Infra Info
   List<InfrastructurePlanCreatorConfig> infrastructureDefinitions;
+  List<String> clusterRefs;
 }

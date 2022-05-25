@@ -471,3 +471,6 @@ replace_key_value secretsConfiguration.secretResolutionEnabled "$RESOLVE_SECRETS
 
 replace_key_value opaServerConfig.baseUrl "$OPA_SERVER_BASEURL"
 replace_key_value opaServerConfig.secret "$OPA_SERVER_SECRET"
+
+replace_key_value gitopsResourceClientConfig.config.baseUrl "$GITOPS_SERVICE_CLIENT_BASEURL"
+replace_key_value gitopsResourceClientConfig.secret "$GITOPS_SERVICE_SECRET"

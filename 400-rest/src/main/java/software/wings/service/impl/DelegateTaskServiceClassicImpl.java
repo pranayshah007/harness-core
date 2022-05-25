@@ -1271,9 +1271,11 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     final List<DelegateTask> delegateTasks = persistence.createQuery(DelegateTask.class)
                                                  .filter(DelegateTaskKeys.accountId, accountId)
                                                  .filter(DelegateTaskKeys.delegateId, delegateId)
-                                                 .field(DelegateTaskKeys.status)
-                                                 .in(runningStatuses())
+                                                 .filter(DelegateTaskKeys.status, STARTED)
                                                  .asList();
+    if (isEmpty(delegateTasks)) {
+      return;
+    }
     log.info("Marking delegate tasks {} failed since delegate went down before completion.",
         delegateTasks.stream().map(DelegateTask::getUuid).collect(Collectors.toList()));
     final String errorMessage = "Delegate disconnected while executing the task";

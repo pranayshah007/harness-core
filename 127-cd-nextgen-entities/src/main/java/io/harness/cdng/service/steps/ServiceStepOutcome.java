@@ -36,6 +36,8 @@ public class ServiceStepOutcome implements Outcome, ExecutionSweepingOutput {
   String type;
   Map<String, String> tags;
 
+  // TODO(archit): add gitOpsEnabled for expression to work
+
   public String getServiceDefinitionType() {
     return type;
   }
@@ -53,6 +55,17 @@ public class ServiceStepOutcome implements Outcome, ExecutionSweepingOutput {
         .tags(serviceEntity.getTags() == null
                 ? Collections.emptyMap()
                 : serviceEntity.getTags().stream().collect(Collectors.toMap(NGTag::getKey, NGTag::getValue)))
+        .build();
+  }
+
+  public static ServiceStepOutcome fromServiceStepV2(
+      String identifier, String name, String type, String description, Map<String, String> tags) {
+    return ServiceStepOutcome.builder()
+        .identifier(identifier)
+        .name(name)
+        .description(description)
+        .tags(tags)
+        .type(type)
         .build();
   }
 }

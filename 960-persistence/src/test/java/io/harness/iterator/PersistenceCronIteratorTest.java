@@ -134,6 +134,7 @@ public class PersistenceCronIteratorTest extends PersistenceTestBase {
     PersistenceIterator<TestCronIterableEntity> iterator =
         MongoPersistenceIterator.<TestCronIterableEntity, MorphiaFilterExpander<TestCronIterableEntity>>builder()
             .mode(LOOP)
+            .iteratorName(this.getClass().getName())
             .clazz(TestCronIterableEntity.class)
             .fieldName(CronIterableEntityKeys.nextIterations)
             .targetInterval(ofSeconds(10))

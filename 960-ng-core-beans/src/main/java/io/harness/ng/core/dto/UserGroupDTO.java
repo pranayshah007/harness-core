@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
 
+import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.NGEntityName;
@@ -34,25 +35,30 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(NON_NULL)
-@Schema(name = "UserGroup", description = "This is the view of the UserGroup entity defined in Harness")
+@Schema(name = "UserGroup", description = "User Group details defined in Harness.")
 public class UserGroupDTO {
-  String accountIdentifier;
-  @EntityIdentifier(allowBlank = true) String orgIdentifier;
-  @EntityIdentifier(allowBlank = true) String projectIdentifier;
-  @NotNull @EntityIdentifier String identifier;
+  @Schema(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) String accountIdentifier;
+  @Schema(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE)
+  @EntityIdentifier(allowBlank = true)
+  String orgIdentifier;
+  @Schema(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE)
+  @EntityIdentifier(allowBlank = true)
+  String projectIdentifier;
+  @Schema(description = "Identifier of the UserGroup.") @NotNull @EntityIdentifier String identifier;
 
-  @NotNull @NGEntityName String name;
-  List<String> users;
-  List<NotificationSettingConfigDTO> notificationConfigs;
+  @Schema(description = "Name of the UserGroup.") @NotNull @NGEntityName String name;
+  @Schema(description = "List of users in the UserGroup.") List<String> users;
+  @Schema(description = "List of notification settings.") List<NotificationSettingConfigDTO> notificationConfigs;
 
-  private boolean isSsoLinked;
-  private String linkedSsoId;
-  private String linkedSsoDisplayName;
-  private String ssoGroupId;
-  private String ssoGroupName;
+  @Schema(description = "Specifies whether or not the userGroup is linked via SSO or not.") private boolean isSsoLinked;
+  @Schema(description = "Identifier of the linked SSO.") private String linkedSsoId;
+  @Schema(description = "Name of the linked SSO.") private String linkedSsoDisplayName;
+  @Schema(description = "Identifier of the userGroup in SSO.") private String ssoGroupId;
+  @Schema(description = "Name of the SSO userGroup.") private String ssoGroupName;
 
+  @Schema(description = "Specifies whether or not the userGroup is externally managed.")
   private boolean externallyManaged;
 
-  @Size(max = 1024) String description;
-  @Size(max = 128) Map<String, String> tags;
+  @Schema(description = NGCommonEntityConstants.DESCRIPTION) @Size(max = 1024) String description;
+  @Schema(description = NGCommonEntityConstants.TAGS) @Size(max = 128) Map<String, String> tags;
 }

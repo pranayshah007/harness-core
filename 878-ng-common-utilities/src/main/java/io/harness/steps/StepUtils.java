@@ -105,10 +105,12 @@ public class StepUtils {
       childStatuses.add(executionStatus);
       nodeExecutionId = responseNotifyData.getNodeUuid();
       if (StatusUtils.brokeStatuses().contains(executionStatus)) {
-        failureInfoBuilder.addAllFailureData(responseNotifyData.getFailureInfo().getFailureDataList());
-        failureInfoBuilder.addAllFailureTypes(responseNotifyData.getFailureInfo().getFailureTypesList());
-        failureInfoBuilder.setErrorMessage(responseNotifyData.getFailureInfo().getErrorMessage());
-        hasFailureInfo = true;
+        if (responseNotifyData.getFailureInfo() != null) {
+          failureInfoBuilder.addAllFailureData(responseNotifyData.getFailureInfo().getFailureDataList());
+          failureInfoBuilder.addAllFailureTypes(responseNotifyData.getFailureInfo().getFailureTypesList());
+          failureInfoBuilder.setErrorMessage(responseNotifyData.getFailureInfo().getErrorMessage());
+          hasFailureInfo = true;
+        }
       }
     }
     if (hasFailureInfo) {

@@ -12,6 +12,7 @@ import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.ACHYUTH;
 import static io.harness.rule.OwnerRule.FILIP;
+import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.SAHIL;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
 
@@ -31,6 +32,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.cdng.common.beans.SetupAbstractionKeys;
 import io.harness.cdng.environment.yaml.EnvironmentYaml;
 import io.harness.cdng.infra.beans.InfraMapping;
+import io.harness.cdng.infra.beans.K8sAzureInfraMapping;
 import io.harness.cdng.infra.beans.K8sDirectInfraMapping;
 import io.harness.cdng.infra.beans.K8sGcpInfraMapping;
 import io.harness.cdng.infra.beans.PdcInfraMapping;
@@ -38,6 +40,7 @@ import io.harness.cdng.infra.beans.SshWinRmAzureInfraMapping;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure.K8SDirectInfrastructureBuilder;
+import io.harness.cdng.infra.yaml.K8sAzureInfrastructure;
 import io.harness.cdng.infra.yaml.K8sGcpInfrastructure;
 import io.harness.cdng.infra.yaml.PdcInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAzureInfrastructure;
@@ -516,6 +519,36 @@ public class InfrastructureStepTest extends CategoryTest {
                 K8sGcpInfrastructure.builder().connectorRef(ParameterField.createValueField("account.gcp-sa")).build(),
                 Ambiance.newBuilder().putSetupAbstractions(SetupAbstractionKeys.accountId, ACCOUNT_ID).build()))
         .doesNotThrowAnyException();
+  }
+
+  @Test
+  @Owner(developers = MLUKIC)
+  @Category(UnitTests.class)
+  public void testCreateK8sAzureInfraMapping() {
+    String namespace = "namespace";
+    String connector = "connector";
+    String subscriptionId = "subscriptionId";
+    String resourceGroup = "resourceGroup";
+    String cluster = "cluster";
+
+    Infrastructure infrastructureSpec = K8sAzureInfrastructure.builder()
+                                            .connectorRef(ParameterField.createValueField(connector))
+                                            .namespace(ParameterField.createValueField(namespace))
+                                            .subscriptionId(ParameterField.createValueField(subscriptionId))
+                                            .resourceGroup(ParameterField.createValueField(resourceGroup))
+                                            .cluster(ParameterField.createValueField(cluster))
+                                            .build();
+
+    InfraMapping expectedInfraMapping = K8sAzureInfraMapping.builder()
+                                            .azureConnector(connector)
+                                            .namespace(namespace)
+                                            .subscription(subscriptionId)
+                                            .resourceGroup(resourceGroup)
+                                            .cluster(cluster)
+                                            .build();
+
+    InfraMapping infraMapping = infrastructureStep.createInfraMappingObject(infrastructureSpec);
+    assertThat(infraMapping).isEqualTo(expectedInfraMapping);
   }
 
   private void assertConnectorValidationMessage(Infrastructure infrastructure, String message) {

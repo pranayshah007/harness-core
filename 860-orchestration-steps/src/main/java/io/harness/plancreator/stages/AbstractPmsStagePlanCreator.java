@@ -66,8 +66,15 @@ public abstract class AbstractPmsStagePlanCreator<T extends PmsAbstractStageNode
     YamlField specField =
         Preconditions.checkNotNull(ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.SPEC));
     stageParameters.specConfig(getSpecParameters(specField.getNode().getUuid(), ctx, stageNode));
+    YamlField strategyField = ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.STRATEGY);
+    // Since strategy is a child of stage but in execution we want to wrap stage around strategy,
+    // we are swapping the uuid of stage and strategy node.
+    String planNodeId = stageNode.getUuid();
+    if (strategyField != null) {
+      planNodeId = strategyField.getNode().getUuid();
+    }
     return PlanNode.builder()
-        .uuid(stageNode.getUuid())
+        .uuid(planNodeId)
         .name(stageNode.getName())
         .identifier(stageNode.getIdentifier())
         .group(StepOutcomeGroup.STAGE.name())

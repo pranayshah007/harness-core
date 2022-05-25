@@ -31,6 +31,6 @@ public class ConfiguredMonitoredServiceSpec extends MonitoredServiceSpec {
 
   @Override
   public String getType() {
-    return MonitoredServiceType.CONFIGURED.name();
+    return MonitoredServiceSpecType.CONFIGURED.name();
   }
 }

@@ -289,29 +289,29 @@ public class PlanExecutionSummaryCdServiceAndInfraChangeDataHandler implements C
               DBObject artifacts = (DBObject) serviceInfoObject.get("artifacts");
               // Add artifacts here
               String tag = "";
+              String imagePath = "";
               if (artifacts.get("primary") != null) {
                 DBObject primary = (DBObject) artifacts.get("primary");
                 if (primary.get("tag") != null || primary.get("version") != null) {
                   tag = primary.get("tag") == null ? primary.get("version").toString() : primary.get("tag").toString();
                 }
-                if (columnValueMapping.containsKey("tag")) {
-                  columnValueMapping.get("tag").add(tag);
-                } else {
-                  List<String> tagList = new ArrayList<>();
-                  tagList.add(tag);
-                  columnValueMapping.put("tag", tagList);
-                }
-                String imagePath = "";
                 if (primary.get("imagePath") != null) {
                   imagePath = primary.get("imagePath").toString();
                 }
-                if (columnValueMapping.containsKey("artifact_image")) {
-                  columnValueMapping.get("artifact_image").add(imagePath);
-                } else {
-                  List<String> tagList = new ArrayList<>();
-                  tagList.add(imagePath);
-                  columnValueMapping.put("artifact_image", tagList);
-                }
+              }
+              if (columnValueMapping.containsKey("tag")) {
+                columnValueMapping.get("tag").add(tag);
+              } else {
+                List<String> tagList = new ArrayList<>();
+                tagList.add(tag);
+                columnValueMapping.put("tag", tagList);
+              }
+              if (columnValueMapping.containsKey("artifact_image")) {
+                columnValueMapping.get("artifact_image").add(imagePath);
+              } else {
+                List<String> tagList = new ArrayList<>();
+                tagList.add(imagePath);
+                columnValueMapping.put("artifact_image", tagList);
               }
             }
           }

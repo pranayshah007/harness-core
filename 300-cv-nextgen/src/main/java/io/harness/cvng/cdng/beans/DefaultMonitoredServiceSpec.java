@@ -25,6 +25,6 @@ import lombok.experimental.SuperBuilder;
 public class DefaultMonitoredServiceSpec extends MonitoredServiceSpec {
   @Override
   public String getType() {
-    return MonitoredServiceType.DEFAULT.name();
+    return MonitoredServiceSpecType.DEFAULT.name();
   }
 }

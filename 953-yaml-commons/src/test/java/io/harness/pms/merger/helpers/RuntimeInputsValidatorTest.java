@@ -79,6 +79,12 @@ public class RuntimeInputsValidatorTest extends CategoryTest {
     assertThat(areInputsValidAgainstSourceNode(convertYamlToJsonNode("field: yes.allowedValues(yes, no)"),
                    convertYamlToJsonNode("field: <+input>.allowedValues(yes, no)")))
         .isTrue();
+    assertThat(areInputsValidAgainstSourceNode(convertYamlToJsonNode("field: <+input>.allowedValues(yes, no)"),
+                   convertYamlToJsonNode("field: <+input>")))
+        .isTrue();
+    assertThat(areInputsValidAgainstSourceNode(
+                   convertYamlToJsonNode("field: <+input>.regex(a.*)"), convertYamlToJsonNode("field: <+input>")))
+        .isTrue();
 
     // all false scenarios
     assertThat(areInputsValidAgainstSourceNode(null, convertYamlToJsonNode("field: <+input>"))).isFalse();

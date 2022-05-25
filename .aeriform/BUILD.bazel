@@ -320,6 +320,8 @@ aeriform("//clients/access-control/sdk:module")
 
 aeriform("//clients/access-control/sdk:tests")
 
+aeriform("//948-cv-nextgen-beans:module")
+
 aeriform("//950-command-library-common:module")
 
 aeriform("//950-delegate-tasks-beans:module")

@@ -15,5 +15,6 @@ public enum StepOutcomeGroup {
   EXECUTION,
   STAGES,
   PIPELINE,
-  STEP_GROUP;
+  STEP_GROUP,
+  STRATEGY;
 }

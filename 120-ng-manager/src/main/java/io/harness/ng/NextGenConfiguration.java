@@ -24,6 +24,7 @@ import io.harness.enforcement.client.EnforcementClientConfiguration;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.ff.FeatureFlagConfig;
 import io.harness.file.FileServiceConfiguration;
+import io.harness.gitops.GitopsResourceClientConfig;
 import io.harness.gitsync.GitSdkConfiguration;
 import io.harness.grpc.client.GrpcClientConfig;
 import io.harness.grpc.server.GrpcServerConfig;
@@ -208,6 +209,7 @@ public class NextGenConfiguration extends Configuration {
   @JsonProperty("secretsConfiguration") private SecretsConfiguration secretsConfiguration;
   @JsonProperty("pmsPlanCreatorServicePoolConfig") private ThreadPoolConfig pmsPlanCreatorServicePoolConfig;
   @JsonProperty("ffServerClientConfig") ServiceHttpClientConfig ffServerClientConfig;
+  @ConfigSecret @JsonProperty("gitopsResourceClientConfig") GitopsResourceClientConfig gitopsResourceClientConfig;
 
   // [secondary-db]: Uncomment this and the corresponding config in yaml file if you want to connect to another database
   //  @JsonProperty("secondary-mongo") MongoConfig secondaryMongoConfig;

@@ -31,7 +31,6 @@ import software.wings.service.InstanceSyncConstants;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.protobuf.ByteString;
-import io.jsonwebtoken.lang.Collections;
 import java.time.Instant;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -88,7 +87,9 @@ public class PcfInstanceSyncDelegateExecutor implements PerpetualTaskExecutor {
                                      .build();
         cfCommandExecutionResponse.setPcfCommandResponse(cfInstanceSyncResponse);
       } else {
-        int instanceSize = Collections.size(cfInstanceSyncResponse.getInstanceIndices());
+        int instanceSize = cfInstanceSyncResponse.getInstanceIndices() == null
+            ? 0
+            : cfInstanceSyncResponse.getInstanceIndices().size();
         log.info("Found {} number of instances pcf deployment", instanceSize);
       }
       execute(delegateAgentManagerClient.publishInstanceSyncResult(

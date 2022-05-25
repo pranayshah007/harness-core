@@ -453,7 +453,7 @@ func parseCrudResponse(ctx context.Context, client *scm.Client, body io.Reader, 
 			return "", ""
 		}
 		return out.Commit.Sha, out.Content.Sha
-	case *pb.Provider_BitbucketCloud:
+	case *pb.Provider_BitbucketCloud, *pb.Provider_BitbucketServer:
 		// Bitbucket doesn't work on blobId concept for a file, thus it will  always be empty
 		// We try to find out the latest commit on the file, which is most-likely the commit done by SCM itself
 		// It works on best-effort basis

@@ -18,13 +18,6 @@ java_library(
         "//970-grpc:module",
         "//980-commons:module",
         "//999-annotations:module",
-        "@maven//:com_google_code_findbugs_annotations",
-        "@maven//:com_google_guava_guava",
-        "@maven//:com_google_inject_guice",
-        "@maven//:com_google_protobuf_protobuf_java",
-        "@maven//:io_grpc_grpc_api",
-        "@maven//:io_grpc_grpc_stub",
-        "@maven//:org_slf4j_slf4j_api",
     ],
 )
 

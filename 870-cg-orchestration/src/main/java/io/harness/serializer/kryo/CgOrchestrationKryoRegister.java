@@ -16,7 +16,6 @@ import io.harness.beans.RepairActionCode;
 import io.harness.beans.ShellScriptProvisionOutputVariables;
 import io.harness.serializer.KryoRegistrar;
 
-import software.wings.api.ecs.EcsBGSetupData;
 import software.wings.sm.BarrierStatusData;
 
 import com.esotericsoftware.kryo.Kryo;
@@ -33,8 +32,5 @@ public class CgOrchestrationKryoRegister implements KryoRegistrar {
     kryo.register(ShellScriptProvisionOutputVariables.class, 40021);
 
     kryo.register(BarrierStatusData.class, 7277);
-
-    // Put promoted classes here and do not change the id
-    kryo.register(EcsBGSetupData.class, 5611);
   }
 }

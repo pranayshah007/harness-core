@@ -106,7 +106,7 @@ public abstract class VerificationJob
   private String activitySourceIdentifier;
   private VerificationJobType type;
   @NotNull private String accountId;
-  @NotNull private String monitoredServiceIdentifier;
+  private String monitoredServiceIdentifier;
   @NotNull private RuntimeParameter serviceIdentifier;
   @NotNull private RuntimeParameter envIdentifier;
   @Deprecated private List<DataSourceType> dataSources;
@@ -115,6 +115,8 @@ public abstract class VerificationJob
 
   private RuntimeParameter duration;
   private boolean isDefaultJob;
+
+  // TODO: Add CVConfig map
 
   public abstract VerificationJobType getType();
   public abstract VerificationJobDTO getVerificationJobDTO();

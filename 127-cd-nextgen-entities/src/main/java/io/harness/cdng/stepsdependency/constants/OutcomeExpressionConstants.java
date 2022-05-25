@@ -35,4 +35,5 @@ public class OutcomeExpressionConstants {
   public final String SERVERLESS_AWS_LAMBDA_ROLLBACK_DATA_OUTCOME = "serverlessAwsLambdaRollbackDataOutcome";
   public final String SERVERLESS_GIT_FETCH_OUTCOME = "serverlessGitFetchOutcome";
   public final String SERVERLESS_AWS_LAMBDA_ROLLBACK_OUTCOME = "serverlessAwsLambdaRollbackOutcome";
+  public final String CONFIG_FILES = "configFiles";
 }

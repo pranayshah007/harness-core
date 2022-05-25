@@ -236,7 +236,8 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
   }
 
   @SneakyThrows
-  private MonitoredServiceDTO getExpandedMonitoredServiceFromYaml(ProjectParams projectParams, String yaml) {
+  @Override
+  public MonitoredServiceDTO getExpandedMonitoredServiceFromYaml(ProjectParams projectParams, String yaml) {
     String templateResolvedYaml = templateFacade.resolveYaml(projectParams, yaml);
     MonitoredServiceYamlExpressionEvaluator yamlExpressionEvaluator =
         new MonitoredServiceYamlExpressionEvaluator(templateResolvedYaml);
@@ -1481,6 +1482,12 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
         getMonitoredService(MonitoredServiceParams.builderWithProjectParams(projectParams)
                                 .monitoredServiceIdentifier(monitoredServiceIdentifier)
                                 .build());
+    if (monitoredService == null) {
+      throw new InvalidRequestException(String.format(
+          "Monitored Service  with identifier %s, accountId %s, orgIdentifier %s and projectIdentifier %s  is not present",
+          monitoredServiceIdentifier, projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
+          projectParams.getProjectIdentifier()));
+    }
     List<NotificationRuleRef> notificationRuleRefList = monitoredService.getNotificationRuleRefs();
     List<NotificationRuleResponse> notificationRuleResponseList =
         notificationRuleService.getNotificationRuleResponse(projectParams, notificationRuleRefList);

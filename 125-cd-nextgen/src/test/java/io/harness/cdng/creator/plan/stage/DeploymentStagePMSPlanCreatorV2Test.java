@@ -15,6 +15,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGTestBase;
+import io.harness.cdng.creator.plan.environment.EnvironmentPlanCreatorHelper;
 import io.harness.cdng.environment.yaml.EnvironmentPlanCreatorConfig;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
@@ -76,7 +77,7 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
         getYamlFromPath("cdng/plan/environment/environmentPlanCreatorConfigWithInfra.yml");
     EnvironmentPlanCreatorConfig environmentPlanCreatorConfig =
         YamlUtils.read(envPlanCreatorConfigYaml, EnvironmentPlanCreatorConfig.class);
-    YamlField updatedEnvironmentYamlField = deploymentStagePMSPlanCreator.fetchEnvironmentPlanCreatorConfigYaml(
+    YamlField updatedEnvironmentYamlField = EnvironmentPlanCreatorHelper.fetchEnvironmentPlanCreatorConfigYaml(
         environmentPlanCreatorConfig, environmentYamlV2);
     assertThat(updatedEnvironmentYamlField).isNotNull();
     assertThat(updatedEnvironmentYamlField.getNode().getFieldName()).isEqualTo(YamlTypes.ENVIRONMENT_YAML);
@@ -103,7 +104,7 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
         YamlUtils.read(envPlanCreatorConfigYaml, EnvironmentPlanCreatorConfig.class);
     LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap = new LinkedHashMap<>();
     deploymentStagePMSPlanCreator.addEnvironmentV2Dependency(
-        planCreationResponseMap, environmentPlanCreatorConfig, environmentYamlV2);
+        planCreationResponseMap, environmentPlanCreatorConfig, environmentYamlV2, false);
     assertThat(planCreationResponseMap.size()).isEqualTo(1);
     String key = planCreationResponseMap.keySet().iterator().next();
     assertThat(planCreationResponseMap.get(key).getYamlUpdates().getFqnToYamlCount()).isEqualTo(1);

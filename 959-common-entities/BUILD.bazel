@@ -11,11 +11,6 @@ java_library(
         "//960-persistence:module",
         "//980-commons:module",
         "//999-annotations:module",
-        "@maven//:com_esotericsoftware_kryo",
-        "@maven//:com_google_code_findbugs_annotations",
-        "@maven//:com_google_guava_guava",
-        "@maven//:org_hibernate_hibernate_validator",
-        "@maven//:org_mongodb_morphia_morphia",
     ],
 )
 

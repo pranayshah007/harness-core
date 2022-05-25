@@ -28,6 +28,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.CreatedByType;
 import io.harness.beans.ExecutionInterruptType;
+import io.harness.beans.FeatureName;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.beans.SearchFilter.Operator;
@@ -54,6 +55,8 @@ import software.wings.beans.StateExecutionElement;
 import software.wings.beans.StateExecutionInterrupt;
 import software.wings.beans.WorkflowExecution;
 import software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
+import software.wings.beans.approval.ApproveAndRejectPreviousDeploymentsBody;
+import software.wings.beans.approval.PreviousApprovalDetails;
 import software.wings.beans.artifact.Artifact;
 import software.wings.beans.baseline.WorkflowExecutionBaseline;
 import software.wings.beans.concurrency.ConcurrentExecutionResponse;
@@ -438,6 +441,14 @@ public class ExecutionResource {
           approvalStateExecutionData.getApprovalStateType() + " Approval Type not supported", USER);
     }
 
+    String accountId = appService.getAccountIdByAppId(appId);
+
+    if (approvalStateExecutionData.isAutoRejectPreviousDeployments()
+        && approvalDetails.getAction() == ApprovalDetails.Action.APPROVE
+        && featureFlagService.isEnabled(FeatureName.AUTO_REJECT_PREVIOUS_APPROVALS, accountId)) {
+      workflowExecutionService.rejectPreviousDeployments(appId, workflowExecutionId, approvalDetails);
+    }
+
     if (isEmpty(approvalStateExecutionData.getUserGroups())) {
       deploymentAuthHandler.authorize(appId, workflowExecutionId);
     }
@@ -731,5 +742,31 @@ public class ExecutionResource {
       throw new InvalidRequestException("workflowExecutionId is required", USER);
     }
     return new RestResponse<>(workflowExecutionService.getWorkflowExecutionInfo(workflowExecutionId));
+  }
+
+  @GET
+  @Path("{workflowExecutionId}/previousApprovalDetails")
+  @Timed
+  @ExceptionMetered
+  @AuthRule(permissionType = DEPLOYMENT, action = EXECUTE_PIPELINE, skipAuth = true)
+  public RestResponse<PreviousApprovalDetails> getPreviousApprovalDetails(@QueryParam("appId") String appId,
+      @PathParam("workflowExecutionId") String workflowExecutionId, @QueryParam("pipelineId") String workflowId,
+      @QueryParam("approvalId") String approvalId) {
+    return new RestResponse<>(
+        workflowExecutionService.getPreviousApprovalDetails(appId, workflowExecutionId, workflowId, approvalId));
+  }
+
+  @POST
+  @Path("{workflowExecutionId}/approveAndRejectPreviousDeployments")
+  @Timed
+  @ExceptionMetered
+  @AuthRule(permissionType = DEPLOYMENT, action = EXECUTE_PIPELINE, skipAuth = true)
+  public RestResponse<Boolean> approveAndRejectPreviousDeployments(@QueryParam("accountId") String accountId,
+      @QueryParam("appId") String appId, @QueryParam("stateExecutionId") String stateExecutionId,
+      @PathParam("workflowExecutionId") String workflowExecutionId,
+      ApproveAndRejectPreviousDeploymentsBody approveAndRejectPreviousDeploymentsBody) {
+    return new RestResponse<>(workflowExecutionService.approveAndRejectPreviousExecutions(accountId, appId,
+        workflowExecutionId, stateExecutionId, approveAndRejectPreviousDeploymentsBody.getApprovalDetails(),
+        approveAndRejectPreviousDeploymentsBody.getPreviousApprovalDetails()));
   }
 }

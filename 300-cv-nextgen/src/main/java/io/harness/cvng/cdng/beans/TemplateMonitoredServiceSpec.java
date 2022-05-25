@@ -35,6 +35,6 @@ public class TemplateMonitoredServiceSpec extends MonitoredServiceSpec {
 
   @Override
   public String getType() {
-    return MonitoredServiceType.TEMPLATE.name();
+    return MonitoredServiceSpecType.TEMPLATE.name();
   }
 }

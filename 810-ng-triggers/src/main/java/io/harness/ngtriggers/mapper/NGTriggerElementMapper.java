@@ -246,13 +246,7 @@ public class NGTriggerElementMapper {
                                                .metadata(toMetadata(config.getSource()))
                                                .enabled(config.getEnabled())
                                                .tags(TagMapper.convertToList(config.getTags()));
-    if (isNotEmpty(config.getPipelineBranchName())) {
-      entityBuilder.pipelineBranchName(config.getPipelineBranchName());
-    }
 
-    if (isNotEmpty(config.getInputSetRefs())) {
-      entityBuilder.inputSetRefs(config.getInputSetRefs());
-    }
     if (config.getSource().getType() == NGTriggerType.SCHEDULED) {
       entityBuilder.nextIterations(new ArrayList<>());
     }

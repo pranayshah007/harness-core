@@ -287,11 +287,63 @@ public class EnvironmentResourceV2 {
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(responseCode = "default", description = "Returns the list of Environments for a Project")
+        ApiResponse(description = "Returns the list of Environments for a Project")
       })
   public ResponseDTO<PageResponse<EnvironmentResponse>>
   listEnvironment(@Parameter(description = NGCommonEntityConstants.PAGE_PARAM_MESSAGE) @QueryParam(
                       NGCommonEntityConstants.PAGE) @DefaultValue("0") int page,
+      @Parameter(description = NGCommonEntityConstants.SIZE_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.SIZE) @DefaultValue("100") int size,
+      @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ResourceIdentifier String projectIdentifier,
+      @Parameter(description = "The word to be searched and included in the list response") @QueryParam(
+          NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm,
+      @Parameter(description = "List of EnvironmentIds") @QueryParam("envIdentifiers") List<String> envIdentifiers,
+      @Parameter(
+          description =
+              "Specifies sorting criteria of the list. Like sorting based on the last updated entity, alphabetical sorting in an ascending or descending order")
+      @QueryParam("sort") List<String> sort) {
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
+        Resource.of(ENVIRONMENT, null), ENVIRONMENT_VIEW_PERMISSION, "Unauthorized to list environments");
+    Criteria criteria = EnvironmentFilterHelper.createCriteriaForGetList(
+        accountId, orgIdentifier, projectIdentifier, false, searchTerm);
+    Pageable pageRequest;
+
+    if (isNotEmpty(envIdentifiers)) {
+      criteria.and(EnvironmentKeys.identifier).in(envIdentifiers);
+    }
+    if (isEmpty(sort)) {
+      pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, EnvironmentKeys.createdAt));
+    } else {
+      pageRequest = PageUtils.getPageRequest(page, size, sort);
+    }
+    Page<Environment> environmentEntities = environmentService.list(criteria, pageRequest);
+    environmentEntities.forEach(environment -> {
+      if (EmptyPredicate.isEmpty(environment.getYaml())) {
+        NGEnvironmentConfig ngEnvironmentConfig = EnvironmentMapper.toNGEnvironmentConfig(environment);
+        environment.setYaml(EnvironmentMapper.toYaml(ngEnvironmentConfig));
+      }
+    });
+    return ResponseDTO.newResponse(getNGPageResponse(environmentEntities.map(EnvironmentMapper::toResponseWrapper)));
+  }
+
+  @POST
+  @Path("/listV2")
+  @ApiOperation(value = "Gets environment list", nickname = "getEnvironmentListV2")
+  @Operation(operationId = "getEnvironmentList", summary = "Gets Environment list for a project with filters",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(description = "Returns the list of Environments for a Project")
+      },
+      hidden = true)
+  public ResponseDTO<PageResponse<EnvironmentResponse>>
+  listEnvironmentsV2(@Parameter(description = NGCommonEntityConstants.PAGE_PARAM_MESSAGE) @QueryParam(
+                         NGCommonEntityConstants.PAGE) @DefaultValue("0") int page,
       @Parameter(description = NGCommonEntityConstants.SIZE_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.SIZE) @DefaultValue("100") int size,
       @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(

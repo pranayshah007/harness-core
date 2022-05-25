@@ -35,6 +35,7 @@ public class NotificationRegistrars {
           .addAll(SMCoreRegistrars.kryoRegistrars)
           .addAll(io.harness.serializer.ApiServiceBeansRegistrars.kryoRegistrars)
           .addAll(AccessControlClientRegistrars.kryoRegistrars)
+          .addAll(CvNextGenBeansRegistrars.kryoRegistrars)
           .add(NGCoreKryoRegistrar.class)
           .add(DelegateTasksKryoRegistrar.class)
           .add(DelegateServiceBeansKryoRegistrar.class)

@@ -437,7 +437,7 @@ public class UserGroupResource {
     return ResponseDTO.newResponse(Long.toString(userGroup.getVersion()), toDTO(userGroup));
   }
 
-  public static void validateScopes(
+  private static void validateScopes(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, UserGroupDTO userGroupDTO) {
     verifyValuesNotChanged(Lists.newArrayList(Pair.of(accountIdentifier, userGroupDTO.getAccountIdentifier()),
                                Pair.of(orgIdentifier, userGroupDTO.getOrgIdentifier()),

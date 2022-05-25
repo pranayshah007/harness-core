@@ -194,8 +194,6 @@ public class TriggerExecutionHelperTest extends CategoryTest {
                                                  .targetIdentifier("PIPELINE_IDENTIFIER")
                                                  .identifier("IDENTIFIER")
                                                  .name("NAME")
-                                                 .pipelineBranchName("pipelineBranchName")
-                                                 .inputSetRefs(Arrays.asList("Inputset1", "Inputset2"))
                                                  .targetType(TargetType.PIPELINE)
                                                  .type(NGTriggerType.WEBHOOK)
                                                  .version(0L)

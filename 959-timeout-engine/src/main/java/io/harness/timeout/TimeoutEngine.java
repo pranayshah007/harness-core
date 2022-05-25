@@ -127,6 +127,7 @@ public class TimeoutEngine implements Handler<TimeoutInstance> {
     iterator = persistenceIteratorFactory.createIterator(TimeoutEngine.class,
         MongoPersistenceIterator.<TimeoutInstance, SpringFilterExpander>builder()
             .mode(LOOP)
+            .iteratorName("TimeoutEngine")
             .clazz(TimeoutInstance.class)
             .fieldName(TimeoutInstanceKeys.nextIteration)
             .targetInterval(ofSeconds(iteratorConfig.getTargetIntervalInSeconds()))

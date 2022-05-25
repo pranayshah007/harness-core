@@ -180,6 +180,7 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
 
   private void createAndQueueHealthVerification(VerificationJobInstance verificationJobInstance) {
     // We dont do any data collection for health verification. So just queue the analysis.
+    // TODO: Get cvConfigs from verificationJob rather than DB
     List<CVConfig> cvConfigs = getCVConfigsForVerificationJob(verificationJobInstance.getResolvedJob());
     cvConfigs.forEach(cvConfig -> {
       String verificationTaskId = verificationTaskService.createDeploymentVerificationTask(cvConfig.getAccountId(),
@@ -242,6 +243,7 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
   public void createDataCollectionTasks(VerificationJobInstance verificationJobInstance) {
     VerificationJob verificationJob = verificationJobInstance.getResolvedJob();
     Preconditions.checkNotNull(verificationJob);
+    // TODO: Get cvConfigs from verificationJob rather than DB
     List<CVConfig> cvConfigs = getCVConfigsForVerificationJob(verificationJob);
     Preconditions.checkState(isNotEmpty(cvConfigs), "No config is matching the criteria");
     createDataCollectionTasks(verificationJobInstance, verificationJob, cvConfigs);
@@ -317,6 +319,7 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
     verificationJobInstances.forEach(verificationJobInstance -> {
       VerificationJob verificationJob = verificationJobInstance.getResolvedJob();
       Preconditions.checkNotNull(verificationJob);
+      // TODO: Get cvConfigs from verificationJob rather than DB
       List<CVConfig> cvConfigs = getCVConfigsForVerificationJob(verificationJob);
       Preconditions.checkState(isNotEmpty(cvConfigs), "No config is matching the criteria");
       cvConfigs.forEach(cvConfig -> {

@@ -1022,8 +1022,8 @@ go_repository(
 go_repository(
     name = "com_github_drone_go_scm",
     importpath = "github.com/drone/go-scm",
-    sum = "h1:FfAszrJKLZoiU3gA6L8+6ZTw3wNV1avQ7NU4nIqkYKU=",
-    version = "v1.22.0",
+    sum = "h1:lWDPRkl+4Ot2u+SSAfZxv0Et/+H80IkpOK4Hqd2hJzA=",
+    version = "v1.23.0",
 )
 
 go_repository(
@@ -4657,7 +4657,7 @@ plain_artifacts = [
     "io.grpc:grpc-services:1.33.1",
     "io.grpc:grpc-stub:1.33.1",
     "io.gsonfire:gson-fire:1.8.3",
-    "io.harness.cv:data-collection-dsl:0.34-RELEASE",
+    "io.harness.cv:data-collection-dsl:0.35-RELEASE",
     "io.harness:ff-java-server-sdk:1.1.5",
     "io.jsonwebtoken:jjwt:0.9.1",
     "io.kubernetes:client-java-api:11.0.2",
@@ -5028,7 +5028,7 @@ amazon_artifacts = [
     maven.artifact(
         group = "com.amazonaws",
         artifact = x,
-        version = "1.12.47",
+        version = "1.12.220",
         exclusions = [
             "commons-logging:commons-logging",
         ],

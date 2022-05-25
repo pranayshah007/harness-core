@@ -2197,6 +2197,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
                 .enabled(true)
                 .build()));
     monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    createHeatMaps(monitoredServiceDTO);
     MonitoredService monitoredService = getMonitoredService(monitoredServiceDTO.getIdentifier());
 
     clock = Clock.fixed(clock.instant().plus(1, ChronoUnit.HOURS), ZoneOffset.UTC);
@@ -2217,7 +2218,6 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     NotificationRuleResponse notificationRuleResponse =
         notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
 
-    Instant endTime = roundDownTo5MinBoundary(clock.instant());
     MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTOWithCustomDependencies(
         "service_1_local", environmentParams.getServiceIdentifier(), Sets.newHashSet());
     monitoredServiceDTO.setNotificationRuleRefs(
@@ -2234,6 +2234,32 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     assertThat(
         ((MonitoredServiceServiceImpl) monitoredServiceService).shouldSendNotification(monitoredService, condition))
         .isTrue();
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testShouldSendNotification_withHealthScoreCondition_withNoData() {
+    NotificationRuleDTO notificationRuleDTO =
+        builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.MONITORED_SERVICE).build();
+    NotificationRuleResponse notificationRuleResponse =
+        notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+
+    MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTOWithCustomDependencies(
+        "service_1_local", environmentParams.getServiceIdentifier(), Sets.newHashSet());
+    monitoredServiceDTO.setNotificationRuleRefs(
+        Arrays.asList(NotificationRuleRefDTO.builder()
+                          .notificationRuleRef(notificationRuleResponse.getNotificationRule().getIdentifier())
+                          .enabled(true)
+                          .build()));
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    MonitoredService monitoredService = getMonitoredService(monitoredServiceDTO.getIdentifier());
+
+    MonitoredServiceHealthScoreCondition condition =
+        MonitoredServiceHealthScoreCondition.builder().threshold(20.0).period(600000).build();
+    assertThat(
+        ((MonitoredServiceServiceImpl) monitoredServiceService).shouldSendNotification(monitoredService, condition))
+        .isFalse();
   }
 
   @Test

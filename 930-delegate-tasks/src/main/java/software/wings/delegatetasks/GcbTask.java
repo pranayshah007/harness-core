@@ -53,7 +53,6 @@ import software.wings.sm.states.gcbconfigs.GcbRemoteBuildSpec;
 import software.wings.sm.states.gcbconfigs.GcbTriggerBuildSpec;
 
 import com.google.inject.Inject;
-import com.hazelcast.core.RuntimeInterruptedException;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -137,7 +136,7 @@ public class GcbTask extends AbstractDelegateRunnableTask {
             build.getStatus().getCommandExecutionStatus(), params.getAppId(), gcbOutput);
       } while (build.isWorking());
       return gcbDelegateResponseOf(params, build);
-    } catch (RuntimeInterruptedException | InterruptedRuntimeException e) {
+    } catch (InterruptedRuntimeException e) {
       log.error("GCB_TASK - GCB poll task failed due to: ", e);
       return GcbDelegateResponse.interruptedGcbTask(params);
     }

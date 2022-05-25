@@ -17,7 +17,10 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class DelegateTaskRegistrars {
   public final ImmutableSet<Class<? extends KryoRegistrar>> kryoRegistrars =
-      ImmutableSet.<Class<? extends KryoRegistrar>>builder().add(DelegateTasksKryoRegistrar.class).build();
+      ImmutableSet.<Class<? extends KryoRegistrar>>builder()
+          .add(DelegateTasksKryoRegistrar.class)
+          .addAll(CvNextGenBeansRegistrars.kryoRegistrars)
+          .build();
 
   public static final ImmutableSet<Class<? extends MorphiaRegistrar>> morphiaRegistrars =
       ImmutableSet.<Class<? extends MorphiaRegistrar>>builder().add(DelegateTasksMorphiaRegistrar.class).build();

@@ -28,6 +28,7 @@ import static io.harness.beans.ExecutionStatus.SUCCESS;
 import static io.harness.beans.ExecutionStatus.WAITING;
 import static io.harness.beans.ExecutionStatus.activeStatuses;
 import static io.harness.beans.ExecutionStatus.isActiveStatus;
+import static io.harness.beans.FeatureName.AUTO_REJECT_PREVIOUS_APPROVALS;
 import static io.harness.beans.FeatureName.DISABLE_ARTIFACT_COLLECTION;
 import static io.harness.beans.FeatureName.HELM_CHART_AS_ARTIFACT;
 import static io.harness.beans.FeatureName.NEW_DEPLOYMENT_FREEZE;
@@ -72,6 +73,7 @@ import static software.wings.beans.deployment.DeploymentMetadata.Include.ARTIFAC
 import static software.wings.beans.deployment.DeploymentMetadata.Include.DEPLOYMENT_TYPE;
 import static software.wings.beans.deployment.DeploymentMetadata.Include.ENVIRONMENT;
 import static software.wings.service.impl.ApplicationManifestServiceImpl.CHART_NAME;
+import static software.wings.service.impl.pipeline.PipelineServiceHelper.generatePipelineExecutionUrl;
 import static software.wings.sm.InstanceStatusSummary.InstanceStatusSummaryBuilder.anInstanceStatusSummary;
 import static software.wings.sm.StateType.APPROVAL;
 import static software.wings.sm.StateType.APPROVAL_RESUME;
@@ -244,6 +246,8 @@ import software.wings.beans.alert.AlertType;
 import software.wings.beans.alert.DeploymentRateApproachingLimitAlert;
 import software.wings.beans.alert.UsageLimitExceededAlert;
 import software.wings.beans.appmanifest.HelmChart;
+import software.wings.beans.approval.ApprovalInfo;
+import software.wings.beans.approval.PreviousApprovalDetails;
 import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.ArtifactInput;
 import software.wings.beans.artifact.ArtifactStream;
@@ -263,6 +267,7 @@ import software.wings.beans.trigger.TriggerConditionType;
 import software.wings.dl.WingsPersistence;
 import software.wings.exception.InvalidBaselineConfigurationException;
 import software.wings.helpers.ext.jenkins.BuildDetails;
+import software.wings.helpers.ext.url.SubdomainUrlHelper;
 import software.wings.infra.AwsAmiInfrastructure;
 import software.wings.infra.InfrastructureDefinition;
 import software.wings.security.ExecutableElementsFilter;
@@ -384,6 +389,7 @@ import java.util.concurrent.Future;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.validation.executable.ValidateOnExecution;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -437,7 +443,9 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
   @Inject private ArtifactStreamServiceBindingService artifactStreamServiceBindingService;
   @Inject private FeatureFlagService featureFlagService;
   @Inject private WorkflowExecutionServiceHelper workflowExecutionServiceHelper;
-  @Inject private MultiArtifactWorkflowExecutionServiceHelper multiArtifactWorkflowExecutionServiceHelper;
+  @Inject
+  private software.wings.service.impl
+      .MultiArtifactWorkflowExecutionServiceHelper multiArtifactWorkflowExecutionServiceHelper;
   @Inject private ArtifactStreamService artifactStreamService;
   @Inject private ArtifactCollectionUtils artifactCollectionUtils;
   @Inject private GovernanceConfigService governanceConfigService;
@@ -458,6 +466,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
   @Inject private ApplicationManifestService applicationManifestService;
   @Inject private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
   @Inject private Injector injector;
+  @Inject private SubdomainUrlHelper subdomainUrlHelper;
 
   @Inject @RateLimitCheck private PreDeploymentChecker deployLimitChecker;
   @Inject @ServiceInstanceUsage private PreDeploymentChecker siUsageChecker;
@@ -2972,8 +2981,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     PreDeploymentChecker deploymentFreezeChecker = new DeploymentFreezeChecker(governanceConfigService,
         new DeploymentCtx(appId,
             featureFlagService.isEnabled(NEW_DEPLOYMENT_FREEZE, accountId)
-                ? software.wings.service.impl.pipeline.PipelineServiceHelper.getEnvironmentIdsForParallelIndex(
-                    pipeline, parallelIndexToResume)
+                ? PipelineServiceHelper.getEnvironmentIdsForParallelIndex(pipeline, parallelIndexToResume)
                 : pipeline.getEnvIds(),
             getPipelineServiceIds(pipeline)),
         environmentService, featureFlagService);
@@ -3773,6 +3781,15 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
         wingsPersistence.createQuery(StateExecutionInstance.class).filter("_id", stateExecutionInstance.getUuid()), ops,
         HPersistence.returnNewOptions);
 
+    UpdateOperations<WorkflowExecution> executionUpdates =
+        wingsPersistence.createUpdateOperations(WorkflowExecution.class);
+    executionUpdates.set(WorkflowExecutionKeys.envIds, pipelineExecution.getEnvIds());
+    executionUpdates.set(WorkflowExecutionKeys.serviceIds, pipelineExecution.getServiceIds());
+    executionUpdates.set(WorkflowExecutionKeys.infraDefinitionIds, pipelineExecution.getInfraDefinitionIds());
+    wingsPersistence.findAndModify(
+        wingsPersistence.createQuery(WorkflowExecution.class).filter("_id", pipelineExecutionId), executionUpdates,
+        HPersistence.returnNewOptions);
+
     // Replace with WF variables and not pipeline Vars.
     ResponseData responseData = new ContinuePipelineResponseData(wfVariables, null);
     waitNotifyEngine.doneWith(
@@ -3988,7 +4005,73 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     List<Artifact> existingArtifacts = pipelineExecution.getArtifacts();
     List<Artifact> newArtifacts = executionArgs.getArtifacts();
     validateArtifactOverrides(existingArtifacts, newArtifacts);
+
+    updateServiceInfraEnvInPipelineExecution(pipelineExecution, wfVariables, workflowVariables, envIdInStage);
     return wfVariables;
+  }
+
+  private void updateServiceInfraEnvInPipelineExecution(WorkflowExecution pipelineExecution,
+      Map<String, String> wfVariables, List<Variable> workflowVariables, String envIdInStage) {
+    if (pipelineExecution.getEnvIds() == null) {
+      List<String> envIds = new ArrayList<>();
+      envIds.add(envIdInStage);
+      pipelineExecution.setEnvIds(envIds);
+    } else {
+      if (!pipelineExecution.getEnvIds().contains(envIdInStage)) {
+        pipelineExecution.getEnvIds().add(envIdInStage);
+      }
+    }
+
+    updateServiceIdInExecution(pipelineExecution, wfVariables, workflowVariables);
+
+    updateInfraIdInExecution(pipelineExecution, wfVariables, workflowVariables);
+  }
+
+  private void updateInfraIdInExecution(
+      WorkflowExecution pipelineExecution, Map<String, String> wfVariables, List<Variable> workflowVariables) {
+    List<String> infraVariableNames =
+        workflowVariables.stream()
+            .filter(v -> EntityType.INFRASTRUCTURE_DEFINITION.equals(v.obtainEntityType()))
+            .map(Variable::getName)
+            .collect(toList());
+
+    List<String> infraIdsFromRuntime = infraVariableNames.stream().map(wfVariables::get).collect(toList());
+    List<String> infraIdsSeparated =
+        infraIdsFromRuntime.stream().flatMap(infraId -> Stream.of(infraId.split(","))).collect(toList());
+
+    if (isNotEmpty(infraIdsSeparated)) {
+      if (pipelineExecution.getInfraDefinitionIds() == null) {
+        pipelineExecution.setInfraDefinitionIds(infraIdsSeparated);
+      } else {
+        infraIdsSeparated.forEach(infraId -> {
+          if (!pipelineExecution.getInfraDefinitionIds().contains(infraId)) {
+            pipelineExecution.getInfraDefinitionIds().add(infraId);
+          }
+        });
+      }
+    }
+  }
+
+  private void updateServiceIdInExecution(
+      WorkflowExecution pipelineExecution, Map<String, String> wfVariables, List<Variable> workflowVariables) {
+    List<String> serviceVariableNames = workflowVariables.stream()
+                                            .filter(v -> EntityType.SERVICE.equals(v.obtainEntityType()))
+                                            .map(Variable::getName)
+                                            .collect(toList());
+
+    List<String> serviceIdsFromRuntime = serviceVariableNames.stream().map(wfVariables::get).collect(toList());
+
+    if (isNotEmpty(serviceIdsFromRuntime)) {
+      if (pipelineExecution.getServiceIds() == null) {
+        pipelineExecution.setServiceIds(serviceIdsFromRuntime);
+      } else {
+        serviceIdsFromRuntime.forEach(serviceId -> {
+          if (!pipelineExecution.getServiceIds().contains(serviceId)) {
+            pipelineExecution.getServiceIds().add(serviceId);
+          }
+        });
+      }
+    }
   }
 
   private void validateArtifactOverrides(List<Artifact> existingArtifacts, List<Artifact> newArtifacts) {
@@ -6158,6 +6241,172 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
   }
 
   @Override
+  public PreviousApprovalDetails getPreviousApprovalDetails(
+      String appId, String workflowExecutionId, String workflowId, String approvalId) {
+    WorkflowExecution currentExecution = fetchWorkflowExecution(appId, workflowExecutionId,
+        WorkflowExecutionKeys.createdAt, WorkflowExecutionKeys.pipelineExecution, WorkflowExecutionKeys.serviceIds,
+        WorkflowExecutionKeys.infraDefinitionIds, WorkflowExecutionKeys.workflowType, WorkflowExecutionKeys.appId);
+
+    List<WorkflowExecution> pausedExecutions = wingsPersistence.createQuery(WorkflowExecution.class)
+                                                   .filter(WorkflowExecutionKeys.appId, appId)
+                                                   .filter(WorkflowExecutionKeys.workflowId, workflowId)
+                                                   .field(WorkflowExecutionKeys.status)
+                                                   .in(asList(PAUSED, RUNNING))
+                                                   .field(WorkflowExecutionKeys.createdAt)
+                                                   .lessThan(currentExecution.getCreatedAt())
+                                                   .order(Sort.descending(WorkflowExecutionKeys.createdAt))
+                                                   .asList();
+
+    List<String> serviceIds = currentExecution.getServiceIds();
+    List<String> infraIds = currentExecution.getInfraDefinitionIds();
+
+    if (currentExecution.getWorkflowType() == ORCHESTRATION) {
+      List<String> approvalIds = getPreviousApprovalIdsWithSameServicesAndInfraForWorkflow(
+          currentExecution, pausedExecutions, serviceIds, infraIds);
+      return PreviousApprovalDetails.builder()
+          .previousApprovals(approvalIds.stream().map(ApprovalInfo::new).collect(toList()))
+          .size(approvalIds.size())
+          .build();
+    }
+
+    PipelineStageExecution requiredStage =
+        currentExecution.getPipelineExecution()
+            .getPipelineStageExecutions()
+            .stream()
+            .filter(pse -> {
+              if (pse.getStateType().equals(APPROVAL.name())) {
+                ApprovalStateExecutionData stateExecutionData =
+                    (ApprovalStateExecutionData) pse.getStateExecutionData();
+                return PAUSED.equals(pse.getStatus())
+                    && StringUtils.equals(stateExecutionData.getApprovalId(), approvalId);
+              }
+              return false;
+            })
+            .findFirst()
+            .orElse(null);
+
+    if (requiredStage != null) {
+      String pipelineStageElementId = requiredStage.getPipelineStageElementId();
+      List<String> approvalIds = getPreviousApprovalIdsWithSameServicesAndInfra(
+          pausedExecutions, pipelineStageElementId, serviceIds, infraIds);
+      return PreviousApprovalDetails.builder()
+          .previousApprovals(approvalIds.stream().map(ApprovalInfo::new).collect(toList()))
+          .size(approvalIds.size())
+          .build();
+    }
+    return PreviousApprovalDetails.builder().previousApprovals(Collections.emptyList()).size(0).build();
+  }
+
+  private List<String> getPreviousApprovalIdsWithSameServicesAndInfraForWorkflow(WorkflowExecution currentExecution,
+      List<WorkflowExecution> pausedExecutions, List<String> serviceIds, List<String> infraIds) {
+    List<WorkflowExecution> executionsWithSameServiceAndInfra =
+        pausedExecutions.stream()
+            .filter(e
+                -> CollectionUtils.isEqualCollection(e.getServiceIds(), serviceIds)
+                    && CollectionUtils.isEqualCollection(e.getInfraDefinitionIds(), infraIds))
+            .collect(toList());
+    List<String> approvalIds = new ArrayList<>();
+    executionsWithSameServiceAndInfra.forEach(execution -> {
+      List<ApprovalStateExecutionData> approvalDataForWorkflow =
+          fetchApprovalStateExecutionsDataFromWorkflowExecution(currentExecution.getAppId(), execution.getUuid());
+      if (approvalDataForWorkflow != null) {
+        approvalIds.addAll(
+            approvalDataForWorkflow.stream().map(ApprovalStateExecutionData::getApprovalId).collect(toList()));
+      }
+    });
+    return approvalIds;
+  }
+
+  @Override
+  public Boolean approveAndRejectPreviousExecutions(String accountId, String appId, String workflowExecutionId,
+      String stateExecutionId, ApprovalDetails approvalDetails, PreviousApprovalDetails previousApprovalDetails) {
+    ApprovalStateExecutionData stateExecutionData = fetchApprovalStateExecutionDataFromWorkflowExecution(
+        appId, workflowExecutionId, stateExecutionId, approvalDetails);
+    boolean success = approveOrRejectExecution(appId, stateExecutionData.getUserGroups(), approvalDetails);
+    List<String> previousApprovalIds = new ArrayList<>();
+    if (previousApprovalDetails.getPreviousApprovals() != null) {
+      previousApprovalIds =
+          previousApprovalDetails.getPreviousApprovals().stream().map(ApprovalInfo::getApprovalId).collect(toList());
+    }
+    if (featureFlagService.isEnabled(AUTO_REJECT_PREVIOUS_APPROVALS, accountId)) {
+      rejectPreviousDeployments(accountId, appId, workflowExecutionId, approvalDetails, previousApprovalIds);
+    }
+    return success;
+  }
+
+  private void rejectPreviousDeployments(String accountId, String appId, String workflowExecutionId,
+      ApprovalDetails approvalDetails, List<String> previousApprovalIds) {
+    String baseUrl = subdomainUrlHelper.getPortalBaseUrl(accountId);
+    String executionUrl = "";
+    if (baseUrl != null) {
+      executionUrl = generatePipelineExecutionUrl(accountId, appId, workflowExecutionId, baseUrl);
+    }
+    if (isNotEmpty(previousApprovalIds)) {
+      for (String approvalId : previousApprovalIds) {
+        ApprovalDetails rejectionDetails = new ApprovalDetails();
+        rejectionDetails.setApprovalId(approvalId);
+        rejectionDetails.setComments(isEmpty(approvalDetails.getComments())
+                ? "Pipeline rejected when the following execution was approved: " + executionUrl
+                : approvalDetails.getComments());
+        rejectionDetails.setAction(REJECT);
+        approveOrRejectExecution(appId, rejectionDetails);
+      }
+    }
+  }
+
+  @Override
+  public void rejectPreviousDeployments(String appId, String workflowExecutionId, ApprovalDetails approvalDetails) {
+    WorkflowExecution execution = fetchWorkflowExecution(
+        appId, workflowExecutionId, WorkflowExecutionKeys.workflowId, WorkflowExecutionKeys.accountId);
+    PreviousApprovalDetails previousApprovalDetails = getPreviousApprovalDetails(
+        appId, workflowExecutionId, execution.getWorkflowId(), approvalDetails.getApprovalId());
+    List<String> previousApprovalIds = new ArrayList<>();
+    if (previousApprovalDetails.getPreviousApprovals() != null) {
+      previousApprovalIds =
+          previousApprovalDetails.getPreviousApprovals().stream().map(ApprovalInfo::getApprovalId).collect(toList());
+    }
+    rejectPreviousDeployments(
+        execution.getAccountId(), appId, workflowExecutionId, approvalDetails, previousApprovalIds);
+  }
+
+  private List<String> getPreviousApprovalIdsWithSameServicesAndInfra(List<WorkflowExecution> pausedExecutions,
+      String pipelineStageElementId, List<String> serviceIds, List<String> infraIds) {
+    List<WorkflowExecution> executionsWithSameServiceAndInfra =
+        pausedExecutions.stream()
+            .filter(e
+                -> CollectionUtils.isEqualCollection(e.getServiceIds(), serviceIds)
+                    && CollectionUtils.isEqualCollection(e.getInfraDefinitionIds(), infraIds))
+            .collect(toList());
+
+    List<String> approvalIds = new ArrayList<>();
+    executionsWithSameServiceAndInfra.forEach(execution -> {
+      Optional<PipelineStageExecution> pausedStage =
+          execution.getPipelineExecution()
+              .getPipelineStageExecutions()
+              .stream()
+              .filter(pse
+                  -> PAUSED.equals(pse.getStatus()) && pipelineStageElementId.equals(pse.getPipelineStageElementId()))
+              .findFirst();
+
+      if (pausedStage.isPresent()) {
+        if (pausedStage.get().getStateType().equals(APPROVAL.name())) {
+          ApprovalStateExecutionData stateExecutionData =
+              (ApprovalStateExecutionData) pausedStage.get().getStateExecutionData();
+          approvalIds.add(stateExecutionData.getApprovalId());
+        } else {
+          String workflowExecutionId = pausedStage.get().getWorkflowExecutions().get(0).getUuid();
+          List<ApprovalStateExecutionData> approvalDataForWorkflow =
+              fetchApprovalStateExecutionsDataFromWorkflowExecution(execution.getAppId(), workflowExecutionId);
+          if (approvalDataForWorkflow != null) {
+            approvalIds.addAll(
+                approvalDataForWorkflow.stream().map(ApprovalStateExecutionData::getApprovalId).collect(toList()));
+          }
+        }
+      }
+    });
+    return approvalIds;
+  }
+
   public WorkflowExecution getLastSuccessfulWorkflowExecution(
       String accountId, String appId, String workflowId, String envId, String serviceId, String infraMappingId) {
     return wingsPersistence.createQuery(WorkflowExecution.class)

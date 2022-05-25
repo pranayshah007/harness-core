@@ -13,6 +13,8 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static software.wings.sm.StateType.ENV_LOOP_STATE;
 import static software.wings.sm.StateType.ENV_STATE;
 
+import static java.lang.String.format;
+
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
@@ -29,12 +31,14 @@ import software.wings.beans.Workflow;
 import software.wings.expression.ManagerExpressionEvaluator;
 import software.wings.sm.states.EnvState.EnvStateKeys;
 
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.http.client.utils.URIBuilder;
 
 @OwnedBy(CDC)
 @Slf4j
@@ -83,6 +87,9 @@ public class PipelineServiceHelper {
   }
 
   public static void updatePipelineWithLoopedState(Pipeline pipeline) {
+    if (pipeline.getInfraDefinitionIds() == null) {
+      pipeline.setInfraDefinitionIds(new ArrayList<>());
+    }
     for (PipelineStage pipelineStage : pipeline.getPipelineStages()) {
       if (pipelineStage.isLooped()) {
         PipelineStageElement pse = pipelineStage.getPipelineStageElements().get(0);
@@ -114,6 +121,7 @@ public class PipelineServiceHelper {
           pse.setType(ENV_LOOP_STATE.getType());
           pse.getProperties().put("loopedValues", loopedValues);
           pse.getProperties().put("loopedVarName", varLooped);
+          pipeline.getInfraDefinitionIds().addAll(loopedValues);
         }
       }
     }
@@ -160,5 +168,26 @@ public class PipelineServiceHelper {
                                       .map(Variable::getValue)
                                       .orElse("");
     return workflowVariables.get(workflowVariableName);
+  }
+
+  public static String generatePipelineExecutionUrl(
+      String accountId, String appId, String pipelineExecutionId, String baseUrl) {
+    return buildAbsoluteUrl(format("/account/%s/app/%s/pipeline-execution/%s/workflow-execution/undefined/details",
+                                accountId, appId, pipelineExecutionId),
+        baseUrl);
+  }
+
+  public static String buildAbsoluteUrl(String fragment, String baseUrl) {
+    if (!baseUrl.endsWith("/")) {
+      baseUrl += "/";
+    }
+    try {
+      URIBuilder uriBuilder = new URIBuilder(baseUrl);
+      uriBuilder.setFragment(fragment);
+      return uriBuilder.toString();
+    } catch (URISyntaxException e) {
+      log.error("Bad URI syntax", e);
+      return baseUrl;
+    }
   }
 }

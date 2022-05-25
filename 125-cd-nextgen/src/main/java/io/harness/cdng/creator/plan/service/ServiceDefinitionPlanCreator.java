@@ -10,6 +10,7 @@ package io.harness.cdng.creator.plan.service;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
+import io.harness.cdng.configfile.ConfigFileWrapper;
 import io.harness.cdng.creator.plan.PlanCreatorConstants;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.cdng.service.ServiceSpec;
@@ -19,6 +20,7 @@ import io.harness.cdng.service.steps.ServiceDefinitionStepParameters;
 import io.harness.cdng.service.steps.ServiceSpecStep;
 import io.harness.cdng.service.steps.ServiceSpecStepParameters;
 import io.harness.cdng.utilities.ArtifactsUtility;
+import io.harness.cdng.utilities.ConfigFileUtility;
 import io.harness.cdng.utilities.ManifestsUtility;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.EmptyPredicate;
@@ -87,6 +89,12 @@ public class ServiceDefinitionPlanCreator extends ChildrenPlanCreator<YamlField>
         String manifestPlanNodeId =
             addDependenciesForManifests(serviceConfigNode, planCreationResponseMap, serviceConfig);
         serviceSpecChildrenIds.add(manifestPlanNodeId);
+      }
+
+      if (shouldCreatePlanNodeForConfigFiles(serviceConfig)) {
+        String configFilesPlanNodeId =
+            addDependenciesForConfigFiles(serviceConfigNode, planCreationResponseMap, serviceConfig);
+        serviceSpecChildrenIds.add(configFilesPlanNodeId);
       }
 
       // Add serviceSpec node
@@ -201,6 +209,31 @@ public class ServiceDefinitionPlanCreator extends ChildrenPlanCreator<YamlField>
     return manifestsPlanNodeId;
   }
 
+  public String addDependenciesForConfigFiles(YamlNode serviceConfigNode,
+      LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, ServiceConfig serviceConfig) {
+    YamlUpdates.Builder yamlUpdates = YamlUpdates.newBuilder();
+    boolean isUseFromStage = serviceConfig.getUseFromStage() != null;
+    YamlField configFilesYamlField =
+        ConfigFileUtility.fetchConfigFilesYamlFieldAndSetYamlUpdates(serviceConfigNode, isUseFromStage, yamlUpdates);
+    String configFilesPlanNodeId = "configFiles-" + UUIDGenerator.generateUuid();
+
+    Map<String, ByteString> metadataDependency = prepareMetadata(configFilesPlanNodeId, serviceConfig);
+
+    Map<String, YamlField> dependenciesMap = new HashMap<>();
+    dependenciesMap.put(configFilesPlanNodeId, configFilesYamlField);
+    PlanCreationResponseBuilder configFilesPlanCreationResponse = PlanCreationResponse.builder().dependencies(
+        DependenciesUtils.toDependenciesProto(dependenciesMap)
+            .toBuilder()
+            .putDependencyMetadata(
+                configFilesPlanNodeId, Dependency.newBuilder().putAllMetadata(metadataDependency).build())
+            .build());
+    if (yamlUpdates.getFqnToYamlCount() > 0) {
+      configFilesPlanCreationResponse.yamlUpdates(yamlUpdates.build());
+    }
+    planCreationResponseMap.put(configFilesPlanNodeId, configFilesPlanCreationResponse.build());
+    return configFilesPlanNodeId;
+  }
+
   public boolean validateCreatePlanNodeForArtifacts(ServiceConfig actualServiceConfig) {
     ArtifactListConfig artifactListConfig = actualServiceConfig.getServiceDefinition().getServiceSpec().getArtifacts();
 
@@ -231,6 +264,18 @@ public class ServiceDefinitionPlanCreator extends ChildrenPlanCreator<YamlField>
     return actualServiceConfig.getStageOverrides() != null
         && actualServiceConfig.getStageOverrides().getManifests() != null
         && EmptyPredicate.isNotEmpty(actualServiceConfig.getStageOverrides().getManifests());
+  }
+
+  public boolean shouldCreatePlanNodeForConfigFiles(ServiceConfig actualServiceConfig) {
+    List<ConfigFileWrapper> configFiles = actualServiceConfig.getServiceDefinition().getServiceSpec().getConfigFiles();
+
+    if (EmptyPredicate.isNotEmpty(configFiles)) {
+      return true;
+    }
+
+    return actualServiceConfig.getStageOverrides() != null
+        && actualServiceConfig.getStageOverrides().getConfigFiles() != null
+        && EmptyPredicate.isNotEmpty(actualServiceConfig.getStageOverrides().getConfigFiles());
   }
 
   public Map<String, ByteString> prepareMetadata(String planNodeId, ServiceConfig actualServiceConfig) {

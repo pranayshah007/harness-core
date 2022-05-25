@@ -24,8 +24,10 @@ import io.harness.serializer.KryoRegistrar;
 import software.wings.api.CloudProviderType;
 import software.wings.api.ExecutionDataValue;
 import software.wings.api.ServiceElement;
+import software.wings.api.ecs.EcsBGSetupData;
 import software.wings.beans.AmiDeploymentType;
 import software.wings.beans.AppContainer;
+import software.wings.beans.ApprovalDetails;
 import software.wings.beans.ArtifactStreamMetadata;
 import software.wings.beans.ArtifactVariable;
 import software.wings.beans.AwsInstanceFilter;
@@ -116,6 +118,7 @@ public class CgOrchestrationBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(PipelineSummary.class, 5142);
     kryo.register(StateTypeScope.class, 5144);
     kryo.register(StepExecutionSummary.class, 5145);
+    kryo.register(EcsBGSetupData.class, 5611);
     kryo.register(WebhookSource.class, 8551);
     kryo.register(ApiCallLogDTO.class, 9048);
     kryo.register(ApiCallLogDTOField.class, 9049);
@@ -138,5 +141,6 @@ public class CgOrchestrationBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(HelmChart.class, 71106);
     kryo.register(Artifact.ContentStatus.class, 7193);
     kryo.register(Artifact.Status.class, 7194);
+    kryo.register(ApprovalDetails.Action.class, 7461);
   }
 }

@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.advisers.RollbackCustomStepParameters;
 import io.harness.cdng.artifact.bean.artifactsource.DockerArtifactSource;
 import io.harness.cdng.artifact.steps.ArtifactStepParameters;
+import io.harness.cdng.configfile.steps.ConfigFileStepParameters;
 import io.harness.cdng.environment.yaml.EnvironmentYaml;
 import io.harness.cdng.helm.HelmDeployStepInfo;
 import io.harness.cdng.helm.HelmDeployStepParams;
@@ -155,5 +156,6 @@ public class NGKryoRegistrar implements KryoRegistrar {
     kryo.register(ServerlessGitFetchOutcome.class, 12582);
     kryo.register(ServerlessAwsLambdaRollbackDataOutcome.class, 12583);
     kryo.register(CloudformationRollbackStepInfo.class, 12584);
+    kryo.register(ConfigFileStepParameters.class, 12585);
   }
 }

@@ -7,8 +7,6 @@
 
 package software.wings.app;
 
-import io.harness.maintenance.HazelcastListener;
-import io.harness.maintenance.MaintenanceController;
 import io.harness.state.inspection.StateInspectionService;
 import io.harness.state.inspection.StateInspectionServiceImpl;
 
@@ -27,9 +25,6 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class ObserversHelper {
   public static void registerSharedObservers(Injector injector) {
-    final MaintenanceController maintenanceController = injector.getInstance(MaintenanceController.class);
-    maintenanceController.register(new HazelcastListener());
-
     SettingsServiceImpl settingsService = (SettingsServiceImpl) injector.getInstance(Key.get(SettingsService.class));
     StateInspectionServiceImpl stateInspectionService =
         (StateInspectionServiceImpl) injector.getInstance(Key.get(StateInspectionService.class));

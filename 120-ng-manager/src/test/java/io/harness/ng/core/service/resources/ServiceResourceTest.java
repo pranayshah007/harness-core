@@ -69,6 +69,9 @@ public class ServiceResourceTest extends CategoryTest {
                             .projectIdentifier("PROJECT_ID")
                             .name("Service")
                             .tags(singletonMap("k1", "v1"))
+                            .yaml("service:\n  name: \"Service\"\n  identifier: \"IDENTIFIER\"\n  "
+                                + "orgIdentifier: \"ORG_ID\"\n  projectIdentifier: \"PROJECT_ID\"\n  tags:\n    "
+                                + "k1: \"v1\"\n")
                             .build();
 
     serviceResponseDTO = ServiceResponseDTO.builder()

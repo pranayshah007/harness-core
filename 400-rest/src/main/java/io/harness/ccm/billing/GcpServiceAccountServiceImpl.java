@@ -8,9 +8,8 @@
 package io.harness.ccm.billing;
 
 import static io.harness.annotations.dev.HarnessTeam.CE;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
-import static com.hazelcast.internal.util.Preconditions.checkFalse;
 import static java.lang.String.format;
 import static java.util.Collections.singletonList;
 
@@ -34,6 +33,7 @@ import com.google.api.services.iam.v1.model.SetIamPolicyRequest;
 import com.google.auth.Credentials;
 import com.google.auth.oauth2.ImpersonatedCredentials;
 import com.google.auth.oauth2.ServiceAccountCredentials;
+import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.File;
@@ -133,7 +133,7 @@ public class GcpServiceAccountServiceImpl implements GcpServiceAccountService {
   // read the credential path from env variables
   public static ServiceAccountCredentials getCredentials(String googleCredentialPathSystemEnv) {
     String googleCredentialsPath = System.getenv(googleCredentialPathSystemEnv);
-    checkFalse(isEmpty(googleCredentialsPath), "Missing environment variable for GCP credentials.");
+    Preconditions.checkState(isNotEmpty(googleCredentialsPath), "Missing environment variable for GCP credentials.");
     File credentialsFile = new File(googleCredentialsPath);
     ServiceAccountCredentials credentials = null;
     try (FileInputStream serviceAccountStream = new FileInputStream(credentialsFile)) {
