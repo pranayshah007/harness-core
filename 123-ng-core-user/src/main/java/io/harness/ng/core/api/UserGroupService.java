@@ -52,7 +52,7 @@ public interface UserGroupService {
   Page<UserGroup> list(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String searchTerm, Pageable pageable);
 
-  List<UserGroup> list(Criteria criteria);
+  List<UserGroup> list(Criteria criteria, Integer skip, Integer limit);
 
   List<UserGroup> list(UserGroupFilterDTO userGroupFilterDTO);
 

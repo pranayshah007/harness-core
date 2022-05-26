@@ -105,12 +105,13 @@ public class NGScimGroupServiceImpl implements ScimGroupService {
 
     if (StringUtils.isNotEmpty(searchQuery)) {
       userGroupList = userGroupService.list(
-          Criteria.where(UserGroupKeys.accountIdentifier).is(accountId).and(UserGroupKeys.name).is(searchQuery));
+          Criteria.where(UserGroupKeys.accountIdentifier).is(accountId).and(UserGroupKeys.name).is(searchQuery),
+          startIndex, count);
     } else {
       return scimGroupList;
     }
     if (isNotEmpty(userGroupList)) {
-      for (UserGroup userGroup : userGroupList.subList(startIndex, startIndex + count)) {
+      for (UserGroup userGroup : userGroupList) {
         scimGroupList.add(buildGroupResponse(userGroup));
       }
     }
@@ -154,7 +155,8 @@ public class NGScimGroupServiceImpl implements ScimGroupService {
                                                                       .and(UserGroupKeys.accountIdentifier)
                                                                       .is(accountId)
                                                                       .and(UserGroupKeys.externallyManaged)
-                                                                      .is(true));
+                                                                      .is(true),
+        null, null);
     if (!isNotEmpty(existingUserGroupList)) {
       return Response.status(Response.Status.NOT_FOUND).build();
     }
@@ -177,7 +179,8 @@ public class NGScimGroupServiceImpl implements ScimGroupService {
                                                               .and(UserGroupKeys.accountIdentifier)
                                                               .is(accountId)
                                                               .and(UserGroupKeys.externallyManaged)
-                                                              .is(true));
+                                                              .is(true),
+        null, null);
     if (!isNotEmpty(userGroupList)) {
       throw new UnauthorizedException(EXC_MSG_GROUP_DOESNT_EXIST, GROUP);
     }
@@ -229,7 +232,8 @@ public class NGScimGroupServiceImpl implements ScimGroupService {
                                                                       .and(UserGroupKeys.accountIdentifier)
                                                                       .is(accountId)
                                                                       .and(UserGroupKeys.externallyManaged)
-                                                                      .is(true));
+                                                                      .is(true),
+        null, null);
 
     if (!isNotEmpty(existingUserGroupList)) {
       return Response.status(Response.Status.NOT_FOUND).build();
@@ -341,7 +345,8 @@ public class NGScimGroupServiceImpl implements ScimGroupService {
   @Override
   public ScimGroup getGroup(String groupId, String accountId) {
     List<UserGroup> userGroupList = userGroupService.list(
-        Criteria.where(UserGroupKeys.identifier).is(groupId).and(UserGroupKeys.accountIdentifier).is(accountId));
+        Criteria.where(UserGroupKeys.identifier).is(groupId).and(UserGroupKeys.accountIdentifier).is(accountId), null,
+        null);
     if (!isNotEmpty(userGroupList)) {
       throw new UnauthorizedException(EXC_MSG_GROUP_DOESNT_EXIST, GROUP);
     }

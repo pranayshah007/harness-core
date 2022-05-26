@@ -76,7 +76,7 @@ public class NGSamlUserGroupSyncTest extends AuthenticationSettingTestBase {
 
     List<UserGroup> userGroupList = new ArrayList<>();
 
-    when(userGroupService.list(any(Criteria.class))).thenReturn(userGroupList);
+    when(userGroupService.list(any(Criteria.class), any(), any())).thenReturn(userGroupList);
     ngSamlUserGroupSync.removeUsersFromScopesPostSync(userId);
     verify(ngUserService, atLeast(1)).removeUserWithCriteria(anyString(), any(), any());
   }
@@ -89,7 +89,7 @@ public class NGSamlUserGroupSyncTest extends AuthenticationSettingTestBase {
 
     List<UserGroup> userGroupList = new ArrayList<>();
 
-    when(userGroupService.list(any(Criteria.class))).thenReturn(userGroupList);
+    when(userGroupService.list(any(Criteria.class), any(), any())).thenReturn(userGroupList);
     ngSamlUserGroupSync.removeUsersFromScopesPostSync(userId);
     verify(ngUserService, times(3)).removeUserWithCriteria(anyString(), any(), any());
   }
@@ -113,7 +113,7 @@ public class NGSamlUserGroupSyncTest extends AuthenticationSettingTestBase {
     List<UserGroup> userGroupList = new ArrayList<>();
     userGroupList.add(userGroup);
 
-    when(userGroupService.list(any(Criteria.class))).thenReturn(userGroupList);
+    when(userGroupService.list(any(Criteria.class), any(), any())).thenReturn(userGroupList);
     ngSamlUserGroupSync.removeUsersFromScopesPostSync(userId);
     verify(ngUserService, times(0)).removeUserWithCriteria(anyString(), any(), any());
   }
