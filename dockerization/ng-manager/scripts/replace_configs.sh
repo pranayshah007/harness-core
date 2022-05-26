@@ -469,6 +469,7 @@ replace_key_value enforcementClientConfiguration.enforcementCheckEnabled "$ENFOR
 replace_key_value secretsConfiguration.gcpSecretManagerProject "$GCP_SECRET_MANAGER_PROJECT"
 replace_key_value secretsConfiguration.secretResolutionEnabled "$RESOLVE_SECRETS"
 
+replace_key_value subscriptionConfig.stripeApiKey "$STRIPE_API_KEY"
 replace_key_value opaServerConfig.baseUrl "$OPA_SERVER_BASEURL"
 replace_key_value opaServerConfig.secret "$OPA_SERVER_SECRET"
 
