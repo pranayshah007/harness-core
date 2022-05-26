@@ -16,7 +16,7 @@ import lombok.Data;
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class SubscriptionDetail {
-  private String subscriptionId;
-  private String clientSecret;
+public class CustomerDTO {
+  private String billingEmail;
+  private String companyName;
 }

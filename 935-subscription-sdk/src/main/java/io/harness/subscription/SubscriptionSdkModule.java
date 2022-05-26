@@ -7,18 +7,21 @@
 
 package io.harness.subscription;
 
+import io.harness.subscription.helpers.StripeHelper;
+import io.harness.subscription.helpers.impl.StripeHelperImpl;
+
 import com.google.inject.AbstractModule;
 import com.stripe.Stripe;
 
-public class SubscriptionModule extends AbstractModule {
-  private static SubscriptionModule instance;
+public class SubscriptionSdkModule extends AbstractModule {
+  private static SubscriptionSdkModule instance;
   private static SubscriptionConfig subscriptionConfig;
 
-  private SubscriptionModule() {}
+  private SubscriptionSdkModule() {}
 
-  public static SubscriptionModule getInstance(SubscriptionConfig config) {
+  public static SubscriptionSdkModule getInstance(SubscriptionConfig config) {
     if (instance == null) {
-      instance = new SubscriptionModule();
+      instance = new SubscriptionSdkModule();
       subscriptionConfig = config;
 
       Stripe.apiKey = subscriptionConfig.getStripeApiKey();
@@ -30,5 +33,7 @@ public class SubscriptionModule extends AbstractModule {
   }
 
   @Override
-  protected void configure() {}
+  protected void configure() {
+    bind(StripeHelper.class).to(StripeHelperImpl.class);
+  }
 }

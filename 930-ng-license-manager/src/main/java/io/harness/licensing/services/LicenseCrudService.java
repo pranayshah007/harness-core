@@ -10,6 +10,7 @@ package io.harness.licensing.services;
 import io.harness.ModuleType;
 import io.harness.licensing.beans.modules.AccountLicenseDTO;
 import io.harness.licensing.beans.modules.ModuleLicenseDTO;
+import io.harness.licensing.entities.modules.ModuleLicense;
 
 import java.util.List;
 
@@ -22,4 +23,8 @@ public interface LicenseCrudService {
   ModuleLicenseDTO createModuleLicense(ModuleLicenseDTO moduleLicense);
   ModuleLicenseDTO updateModuleLicense(ModuleLicenseDTO moduleLicense);
   void deleteModuleLicense(String id);
+
+  ModuleLicense getCurrentLicense(String accountId, ModuleType moduleType);
+  ModuleLicense createModuleLicense(ModuleLicense moduleLicense);
+  ModuleLicense updateModuleLicense(ModuleLicense moduleLicense);
 }

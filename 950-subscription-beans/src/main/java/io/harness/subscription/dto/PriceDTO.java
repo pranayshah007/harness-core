@@ -10,6 +10,7 @@ package io.harness.subscription.dto;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import java.util.List;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 
@@ -24,4 +25,7 @@ public class PriceDTO {
   private List<TiersDTO> tiersDTO;
   private TierMode tierMode;
   private Long unitAmount;
+  private String lookupKey;
+  private String productId;
+  private Map<String, String> metaData;
 }

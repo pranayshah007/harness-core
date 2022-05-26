@@ -40,6 +40,7 @@ directories:
   920-delegate-agent-beans
   920-delegate-service-beans
   920-ng-signup
+  925-subscription-service
   930-delegate-tasks
   930-ng-core-clients
   930-ng-license-manager

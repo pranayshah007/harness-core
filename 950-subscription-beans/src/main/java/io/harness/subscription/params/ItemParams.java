@@ -15,4 +15,5 @@ import lombok.Data;
 public class ItemParams {
   private String priceId;
   private Long quantity;
+  private String lookupKey;
 }

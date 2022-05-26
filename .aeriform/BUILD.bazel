@@ -274,6 +274,8 @@ aeriform("//925-enforcement-service:module")
 
 aeriform("//925-enforcement-service:tests")
 
+aeriform("//925-subscription-service:module")
+
 aeriform("//930-delegate-tasks:module")
 
 aeriform("//930-delegate-tasks:tests")
