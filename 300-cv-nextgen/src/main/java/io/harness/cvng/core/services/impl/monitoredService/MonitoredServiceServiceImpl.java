@@ -1517,6 +1517,22 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
                     .collect(Collectors.toList())));
   }
 
+  @Override
+  public int countUniqueEnabledServices(String accountId) {
+    List<MonitoredService> enabledMonitoredServices = hPersistence.createQuery(MonitoredService.class)
+                                                          .filter(MonitoredServiceKeys.accountId, accountId)
+                                                          .filter(MonitoredServiceKeys.enabled, true)
+                                                          .asList();
+    Set<String> uniqueEnabledServiceSet = new HashSet<>();
+
+    for (MonitoredService monitoredService : enabledMonitoredServices) {
+      if (!uniqueEnabledServiceSet.contains(monitoredService.getServiceIdentifier())) {
+        uniqueEnabledServiceSet.add(monitoredService.getServiceIdentifier());
+      }
+    }
+    return uniqueEnabledServiceSet.size();
+  }
+
   private List<MonitoredService> get(ProjectParams projectParams, Filter filter) {
     List<MonitoredService> monitoredServiceList =
         hPersistence.createQuery(MonitoredService.class)
