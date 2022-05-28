@@ -121,6 +121,8 @@ import io.harness.sanitizer.HtmlInputSanitizer;
 import io.harness.security.dto.UserPrincipal;
 import io.harness.serializer.KryoSerializer;
 import io.harness.signup.dto.SignupInviteDTO;
+import io.harness.telemetry.Destination;
+import io.harness.telemetry.TelemetryReporter;
 import io.harness.usermembership.remote.UserMembershipClient;
 import io.harness.version.VersionInfoManager;
 
@@ -254,6 +256,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -308,6 +313,7 @@ public class UserServiceImpl implements UserService {
   private static final String SYSTEM = "system";
   private static final String SETUP_ACCOUNT_FROM_MARKETPLACE = "Account Setup from Marketplace";
   private static final String NG_AUTH_UI_PATH_PREFIX = "auth/";
+  private static final String USER_INVITE = "user_invite";
 
   /**
    * The Executor service.
@@ -350,6 +356,7 @@ public class UserServiceImpl implements UserService {
   @Inject private SegmentHelper segmentHelper;
   @Inject private FeatureFlagService featureFlagService;
   @Inject @Named("PRIVILEGED") private UserMembershipClient userMembershipClient;
+  @Inject private TelemetryReporter telemetryReporter;
 
   private Cache<String, User> getUserCache() {
     if (configurationController.isPrimary()) {
@@ -985,10 +992,14 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
-  public User getUserByUserId(String userId) {
+  public User getUserByUserId(String accountId, String userId) {
     User user = null;
-    if (isNotEmpty(userId)) {
-      user = wingsPersistence.createQuery(User.class).filter(UserKeys.externalUserId, userId).get();
+    if (isNotEmpty(userId) && isNotEmpty(accountId)) {
+      user = wingsPersistence.createQuery(User.class)
+                 .filter(UserKeys.externalUserId, userId)
+                 .field(UserKeys.accounts)
+                 .hasThisOne(accountId)
+                 .get();
       loadSupportAccounts(user);
       if (user != null && isEmpty(user.getAccounts())) {
         user.setAccounts(newArrayList());
@@ -1323,7 +1334,7 @@ public class UserServiceImpl implements UserService {
 
     User user = getUserByEmail(userInvite.getEmail());
     if (user == null) {
-      user = getUserByUserId(userInvite.getExternalUserId());
+      user = getUserByUserId(account.getUuid(), userInvite.getExternalUserId());
     }
 
     boolean createNewUser = user == null;
@@ -1757,9 +1768,49 @@ public class UserServiceImpl implements UserService {
     eventPublishHelper.publishUserRegistrationCompletionEvent(userInvite.getAccountId(), existingUser);
     auditServiceHelper.reportForAuditingUsingAccountId(
         userInvite.getAccountId(), null, userInvite, Type.ACCEPTED_INVITE);
+    sendInviteAcceptTelemetryEvents(existingUser, userInvite.getAccountId(), account.getAccountName());
     log.info(
         "Auditing accepted invite for userInvite={} in account={}", userInvite.getName(), userInvite.getAccountName());
     return ACCOUNT_INVITE_ACCEPTED;
+  }
+
+  private void sendInviteAcceptTelemetryEvents(User user, String accountId, String accountName) {
+    String userEmail = user.getEmail();
+
+    HashMap<String, Object> properties = new HashMap<>();
+    properties.put("email", userEmail);
+    properties.put("name", user.getName());
+    properties.put("id", user.getUuid());
+    properties.put("startTime", String.valueOf(Instant.now().toEpochMilli()));
+    properties.put("accountId", accountId);
+    properties.put("accountName", accountName);
+    properties.put("source", USER_INVITE);
+
+    // identify event to register new user
+    telemetryReporter.sendIdentifyEvent(
+        userEmail, properties, ImmutableMap.<Destination, Boolean>builder().put(Destination.MARKETO, true).build());
+
+    HashMap<String, Object> groupProperties = new HashMap<>();
+    groupProperties.put("group_id", accountId);
+    groupProperties.put("group_type", "Account");
+    groupProperties.put("group_name", accountName);
+
+    // group event to register new signed-up user with new account
+    telemetryReporter.sendGroupEvent(accountId, userEmail, groupProperties,
+        ImmutableMap.<Destination, Boolean>builder().put(Destination.MARKETO, true).build());
+
+    // flush all events so that event queue is empty
+    telemetryReporter.flush();
+
+    properties.put("platform", "CG");
+    // Wait 20 seconds, to ensure identify is sent before track
+    ScheduledExecutorService tempExecutor = Executors.newSingleThreadScheduledExecutor();
+    tempExecutor.schedule(
+        ()
+            -> telemetryReporter.sendTrackEvent("Invite Accepted", userEmail, accountId, properties,
+                ImmutableMap.<Destination, Boolean>builder().put(Destination.MARKETO, true).build(), null),
+        20, TimeUnit.SECONDS);
+    log.info("User Invite telemetry sent");
   }
 
   @Override

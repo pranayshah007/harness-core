@@ -38,8 +38,10 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.FileData;
 import io.harness.chartmuseum.ChartMuseumServer;
+import io.harness.chartmuseum.ChartmuseumClient;
 import io.harness.delegate.beans.DelegateFileManagerBase;
 import io.harness.delegate.beans.FileBucket;
+import io.harness.delegate.chartmuseum.CgChartmuseumClientFactory;
 import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.delegate.task.helm.HelmCommandFlag;
 import io.harness.delegate.task.helm.HelmTaskHelperBase;
@@ -47,20 +49,19 @@ import io.harness.exception.HelmClientException;
 import io.harness.exception.HelmClientRuntimeException;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.helm.HelmCliCommandType;
 import io.harness.k8s.model.HelmVersion;
 
 import software.wings.annotation.EncryptableSetting;
 import software.wings.beans.appmanifest.HelmChart;
 import software.wings.beans.command.ExecutionLogCallback;
-import software.wings.beans.container.HelmChartSpecificationDTO;
+import software.wings.beans.dto.HelmChartSpecification;
 import software.wings.beans.settings.helm.AmazonS3HelmRepoConfig;
 import software.wings.beans.settings.helm.GCSHelmRepoConfig;
 import software.wings.beans.settings.helm.HelmRepoConfig;
 import software.wings.beans.settings.helm.HttpHelmRepoConfig;
 import software.wings.beans.settings.helm.OciHelmRepoConfig;
-import software.wings.delegatetasks.ExceptionMessageSanitizer;
-import software.wings.helpers.ext.chartmuseum.ChartMuseumClient;
 import software.wings.helpers.ext.helm.request.HelmChartCollectionParams;
 import software.wings.helpers.ext.helm.request.HelmChartConfigParams;
 import software.wings.helpers.ext.helm.request.HelmCommandRequest;
@@ -114,7 +115,7 @@ public class HelmTaskHelper {
   public static final String REGISTRY_URL_PREFIX = "oci://%s";
 
   @Inject private EncryptionService encryptionService;
-  @Inject private ChartMuseumClient chartMuseumClient;
+  @Inject private CgChartmuseumClientFactory cgChartmuseumClientFactory;
   @Inject private HelmTaskHelperBase helmTaskHelperBase;
   @Inject private DelegateFileManagerBase delegateFileManagerBase;
 
@@ -180,7 +181,7 @@ public class HelmTaskHelper {
     fetchChartFiles(helmChartConfigParams, workingDirectory, timeoutInMillis, helmCommandFlag);
   }
 
-  public void downloadChartFiles(HelmChartSpecificationDTO helmChartSpecification, String destinationDirectory,
+  public void downloadChartFiles(HelmChartSpecification helmChartSpecification, String destinationDirectory,
       HelmCommandRequest helmCommandRequest, long timeoutInMillis, HelmCommandFlag helmCommandFlag) throws Exception {
     String workingDirectory = createDirectory(Paths.get(destinationDirectory).toString());
     HelmChartConfigParams helmChartConfigParams =
@@ -280,6 +281,7 @@ public class HelmTaskHelper {
   private void fetchChartUsingChartMuseumServer(HelmChartConfigParams helmChartConfigParams,
       SettingValue connectorConfig, String chartDirectory, long timeoutInMillis, HelmCommandFlag helmCommandFlag)
       throws Exception {
+    ChartmuseumClient chartmuseumClient = null;
     ChartMuseumServer chartMuseumServer = null;
     String resourceDirectory = null;
     boolean useRepoFlags = false;
@@ -294,9 +296,10 @@ public class HelmTaskHelper {
 
     try {
       resourceDirectory = createNewDirectoryAtPath(RESOURCE_DIR_BASE);
-      chartMuseumServer = chartMuseumClient.startChartMuseumServer(helmChartConfigParams.getHelmRepoConfig(),
+      chartmuseumClient = cgChartmuseumClientFactory.createClient(helmChartConfigParams.getHelmRepoConfig(),
           connectorConfig, resourceDirectory, helmChartConfigParams.getBasePath(),
           helmChartConfigParams.isUseLatestChartMuseumVersion());
+      chartMuseumServer = chartmuseumClient.start();
 
       helmTaskHelperBase.addChartMuseumRepo(modifiedRepoName, helmChartConfigParams.getRepoDisplayName(),
           chartMuseumServer.getPort(), chartDirectory, helmChartConfigParams.getHelmVersion(), timeoutInMillis,
@@ -305,8 +308,8 @@ public class HelmTaskHelper {
           helmChartConfigParams.getChartName(), helmChartConfigParams.getChartVersion(), chartDirectory,
           helmChartConfigParams.getHelmVersion(), helmCommandFlag, timeoutInMillis, false, cacheDir);
     } finally {
-      if (chartMuseumServer != null) {
-        chartMuseumClient.stopChartMuseumServer(chartMuseumServer.getStartedProcess());
+      if (chartmuseumClient != null && chartMuseumServer != null) {
+        chartmuseumClient.stop(chartMuseumServer);
       }
       removeRepo(modifiedRepoName, chartDirectory, helmChartConfigParams.getHelmVersion(), timeoutInMillis,
           useRepoFlags, EMPTY);
@@ -488,17 +491,19 @@ public class HelmTaskHelper {
       String repoDisplayName, String workingDirectory, String basePath, HelmVersion helmVersion,
       boolean useLatestChartMuseumVersion) throws Exception {
     ChartMuseumServer chartMuseumServer = null;
+    ChartmuseumClient chartmuseumClient = null;
     String resourceDirectory = null;
     try {
       resourceDirectory = createNewDirectoryAtPath(RESOURCE_DIR_BASE);
-      chartMuseumServer = chartMuseumClient.startChartMuseumServer(
+      chartmuseumClient = cgChartmuseumClientFactory.createClient(
           helmRepoConfig, connectorConfig, resourceDirectory, basePath, useLatestChartMuseumVersion);
+      chartMuseumServer = chartmuseumClient.start();
 
       helmTaskHelperBase.addChartMuseumRepo(repoName, repoDisplayName, chartMuseumServer.getPort(), workingDirectory,
           helmVersion, DEFAULT_TIMEOUT_IN_MILLIS, "");
     } finally {
-      if (chartMuseumServer != null) {
-        chartMuseumClient.stopChartMuseumServer(chartMuseumServer.getStartedProcess());
+      if (chartmuseumClient != null && chartMuseumServer != null) {
+        chartmuseumClient.stop(chartMuseumServer);
       }
       cleanup(resourceDirectory);
     }
@@ -685,9 +690,10 @@ public class HelmTaskHelper {
     HelmChartConfigParams helmChartConfigParams = helmChartCollectionParams.getHelmChartConfigParams();
     String resourceDirectory = createNewDirectoryAtPath(RESOURCE_DIR_BASE);
 
-    ChartMuseumServer chartMuseumServer = chartMuseumClient.startChartMuseumServer(
+    ChartmuseumClient chartmuseumClient = cgChartmuseumClientFactory.createClient(
         helmChartConfigParams.getHelmRepoConfig(), helmChartConfigParams.getConnectorConfig(), resourceDirectory,
         helmChartConfigParams.getBasePath(), helmChartConfigParams.isUseLatestChartMuseumVersion());
+    ChartMuseumServer chartMuseumServer = chartmuseumClient.start();
 
     try {
       helmTaskHelperBase.addChartMuseumRepo(helmChartConfigParams.getRepoName(),
@@ -706,7 +712,7 @@ public class HelmTaskHelper {
           "Helm chart fetch versions command failed ", HelmCliCommandType.FETCH_ALL_VERSIONS);
       return parseHelmVersionFetchOutput(commandOutput, helmChartCollectionParams);
     } finally {
-      chartMuseumClient.stopChartMuseumServer(chartMuseumServer.getStartedProcess());
+      chartmuseumClient.stop(chartMuseumServer);
     }
   }
 

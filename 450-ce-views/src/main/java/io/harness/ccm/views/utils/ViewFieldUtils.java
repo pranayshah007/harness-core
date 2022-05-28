@@ -113,6 +113,7 @@ public class ViewFieldUtils {
   public static List<QLCEViewField> getCommonFields() {
     return ImmutableList.of(QLCEViewField.builder().fieldId(REGION_FIELD_ID).fieldName("Region").build(),
         QLCEViewField.builder().fieldId("product").fieldName("Product").build(),
+        QLCEViewField.builder().fieldId("cloudProvider").fieldName("Cloud Provider").build(),
         QLCEViewField.builder().fieldId("label").fieldName("Label").build(),
         QLCEViewField.builder().fieldId("none").fieldName(NONE_FIELD).build());
   }

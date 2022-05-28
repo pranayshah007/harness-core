@@ -366,6 +366,7 @@ public class CloudformationRollbackStepTest extends CategoryTest {
         () -> { throw new TaskNGDataException(UnitProgressData.builder().build(), null); });
 
     verify(cloudformationStepHelper, times(1)).getFailureResponse(any(), any());
+    verify(cloudformationConfigDAL, times(0)).clearStoredCloudformationConfig(any(), any());
     assertThat(result).isEqualTo(stepResponse);
   }
 
@@ -381,6 +382,7 @@ public class CloudformationRollbackStepTest extends CategoryTest {
         () -> CloudformationTaskNGResponse.builder().unitProgressData(UnitProgressData.builder().build()).build());
 
     verify(cloudformationStepHelper, times(1)).getFailureResponse(any(), any());
+    verify(cloudformationConfigDAL, times(0)).clearStoredCloudformationConfig(any(), any());
     assertThat(result).isEqualTo(stepResponse);
   }
 
@@ -396,11 +398,20 @@ public class CloudformationRollbackStepTest extends CategoryTest {
             .unitProgressData(UnitProgressData.builder().build())
             .build();
 
-    StepResponse result = cloudformationRollbackStep.handleTaskResultWithSecurityContext(
-        getAmbiance(), StepElementParameters.builder().build(), () -> cloudformationTaskNGResponse);
+    CloudformationRollbackStepParameters cloudformationRollbackStepParameters =
+        CloudformationRollbackStepParameters.infoBuilder()
+            .configuration(CloudformationRollbackStepConfiguration.builder()
+                               .provisionerIdentifier(ParameterField.createValueField(PROVISIONER_IDENTIFIER))
+                               .build())
+            .build();
+
+    StepResponse result = cloudformationRollbackStep.handleTaskResultWithSecurityContext(getAmbiance(),
+        StepElementParameters.builder().spec(cloudformationRollbackStepParameters).build(),
+        () -> cloudformationTaskNGResponse);
 
     assertThat(result.getStatus()).isEqualTo(Status.SUCCEEDED);
     assertThat(result.getStepOutcomes()).isNotNull();
+    verify(cloudformationConfigDAL, times(1)).clearStoredCloudformationConfig(any(), any());
   }
 
   private Ambiance getAmbiance() {

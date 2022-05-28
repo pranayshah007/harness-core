@@ -76,14 +76,6 @@ if [[ "" != "$NG_MANAGER_URL" ]]; then
   yq write -i $CONFIG_FILE nextGen.ngManagerUrl "$NG_MANAGER_URL"
 fi
 
-if [[ "" != "$NOTIFICATION_BASE_URL" ]]; then
-  yq write -i $CONFIG_FILE notificationClient.httpClient.baseUrl "$NOTIFICATION_BASE_URL"
-fi
-
-if [[ "" != "$NOTIFICATION_MONGO_URI" ]]; then
-  yq write -i $CONFIG_FILE notificationClient.messageBroker.uri "${NOTIFICATION_MONGO_URI//\\&/&}"
-fi
-
 if [[ "" != "$PORTAL_URL" ]]; then
   yq write -i $CONFIG_FILE portalUrl "$PORTAL_URL"
 fi
@@ -166,8 +158,15 @@ replace_key_value cfClientConfig.connectionTimeout "$CF_CLIENT_CONNECTION_TIMEOU
 replace_key_value cfClientConfig.readTimeout "$CF_CLIENT_READ_TIMEOUT"
 replace_key_value featureFlagConfig.featureFlagSystem "$FEATURE_FLAG_SYSTEM"
 replace_key_value featureFlagConfig.syncFeaturesToCF "$SYNC_FEATURES_TO_CF"
-replace_key_value notificationClient.secrets.notificationClientSecret "$PLATFORM_SERVICE_SECRET"
+
+replace_key_value notificationClient.httpClient.baseUrl "$NOTIFICATION_BASE_URL"
+replace_key_value notificationClient.messageBroker.uri "${NOTIFICATION_MONGO_URI//\\&/&}"
+replace_key_value notificationClient.secrets.notificationClientSecret "$NOTIFICATION_CLIENT_SECRET"
+replace_key_value shouldConfigureWithNotification "$SHOULD_CONFIGURE_WITH_NOTIFICATION"
 
 replace_key_value accessControlClientConfig.enableAccessControl "$ACCESS_CONTROL_ENABLED"
 replace_key_value accessControlClientConfig.accessControlServiceConfig.baseUrl "$ACCESS_CONTROL_BASE_URL"
 replace_key_value accessControlClientConfig.accessControlServiceSecret "$ACCESS_CONTROL_SECRET"
+
+replace_key_value templateServiceClientConfig.baseUrl "$TEMPLATE_SERVICE_ENDPOINT"
+replace_key_value templateServiceSecret "$TEMPLATE_SERVICE_SECRET"

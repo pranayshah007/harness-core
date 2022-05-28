@@ -95,6 +95,7 @@ public class TerraformProvisionParameters implements TaskParameters, ActivityAcc
   private final TfVarSource tfVarSource;
 
   private final boolean useTfClient; // FF: USE_TF_CLIENT
+  private final boolean useActivityIdBasedTfBaseDir;
   /**
    * Boolean to indicate if we should skip updating terraform state using refresh command before applying an approved
    * terraform plan

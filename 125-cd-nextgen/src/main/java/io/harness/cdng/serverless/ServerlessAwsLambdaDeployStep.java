@@ -154,6 +154,7 @@ public class ServerlessAwsLambdaDeployStep
     log.info("Finalizing execution with passThroughData: " + passThroughData.getClass().getName());
     ServerlessExecutionPassThroughData serverlessExecutionPassThroughData =
         (ServerlessExecutionPassThroughData) passThroughData;
+    InfrastructureOutcome infrastructureOutcome = serverlessExecutionPassThroughData.getInfrastructure();
     ServerlessDeployResponse serverlessDeployResponse;
     ServerlessAwsLambdaRollbackDataOutcomeBuilder serverlessRollbackDataOutcomeBuilder =
         ServerlessAwsLambdaRollbackDataOutcome.builder();
@@ -183,8 +184,8 @@ public class ServerlessAwsLambdaDeployStep
       return ServerlessStepCommonHelper.getFailureResponseBuilder(serverlessDeployResponse, stepResponseBuilder)
           .build();
     }
-    List<ServerInstanceInfo> functionInstanceInfos =
-        serverlessStepCommonHelper.getFunctionInstanceInfo(serverlessDeployResponse, serverlessAwsLambdaStepHelper);
+    List<ServerInstanceInfo> functionInstanceInfos = serverlessStepCommonHelper.getFunctionInstanceInfo(
+        serverlessDeployResponse, serverlessAwsLambdaStepHelper, infrastructureOutcome.getInfrastructureKey());
     StepResponse.StepOutcome stepOutcome =
         instanceInfoService.saveServerInstancesIntoSweepingOutput(ambiance, functionInstanceInfos);
 

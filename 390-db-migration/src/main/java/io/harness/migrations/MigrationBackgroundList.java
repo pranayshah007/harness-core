@@ -48,6 +48,7 @@ import io.harness.migrations.all.AddAnalysisStatusMigration;
 import io.harness.migrations.all.AddAppManifestName;
 import io.harness.migrations.all.AddArtifactIdentityMigration;
 import io.harness.migrations.all.AddCeFullTrialLicenseToCurrentAccounts;
+import io.harness.migrations.all.AddClusterNameInGcpTypeInstanceMigration;
 import io.harness.migrations.all.AddEnableIteratorsToGovernanceConfig;
 import io.harness.migrations.all.AddHarnessOwnedToResourceConstraint;
 import io.harness.migrations.all.AddInfraMappingNameToInstanceData;
@@ -379,8 +380,10 @@ public class MigrationBackgroundList {
         .add(Pair.of(218, AlertCheckJobPollIntervalMigration.class))
         .add(Pair.of(219, BaseMigration.class))
         .add(Pair.of(220, AddNotificationGroupReferenceToUserGroups.class))
-        .add(Pair.of(221, UpdateCorruptedInstanceStatsMigration.class))
+        .add(Pair.of(221, BaseMigration.class))
         .add(Pair.of(222, UpdateNameInAwsInfrastructureMappingMigration.class))
+        .add(Pair.of(223, AddClusterNameInGcpTypeInstanceMigration.class))
+        .add(Pair.of(224, UpdateCorruptedInstanceStatsMigration.class))
         .build();
   }
 }

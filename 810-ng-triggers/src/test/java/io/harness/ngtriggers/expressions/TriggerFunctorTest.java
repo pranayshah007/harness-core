@@ -99,7 +99,7 @@ public class TriggerFunctorTest extends CategoryTest {
     SampleEvaluator expressionEvaluator = new SampleEvaluator(
         new TriggerFunctor(Ambiance.newBuilder().setMetadata(ExecutionMetadata.newBuilder()).build(), metadataService));
 
-    assertThat(expressionEvaluator.renderExpression("<+trigger.branch>")).isEqualTo("target");
+    assertThat(expressionEvaluator.renderExpression("<+trigger.branch>")).isEqualTo("source");
     assertThat(expressionEvaluator.renderExpression("<+trigger.sourceBranch>")).isEqualTo("source");
     assertThat(expressionEvaluator.renderExpression("<+trigger.targetBranch>")).isEqualTo("target");
     assertThat(expressionEvaluator.renderExpression("<+trigger.event>")).isEqualTo("PR");

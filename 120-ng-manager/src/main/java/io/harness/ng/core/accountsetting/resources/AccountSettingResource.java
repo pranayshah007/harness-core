@@ -8,6 +8,8 @@
 package io.harness.ng.core.accountsetting.resources;
 
 import static io.harness.NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE;
+import static io.harness.NGCommonEntityConstants.ORG_PARAM_MESSAGE;
+import static io.harness.NGCommonEntityConstants.PROJECT_PARAM_MESSAGE;
 import static io.harness.NGCommonEntityConstants.TYPE_KEY;
 import static io.harness.account.accesscontrol.AccountAccessControlPermissions.EDIT_ACCOUNT_PERMISSION;
 
@@ -80,11 +82,18 @@ public class AccountSettingResource {
 
   @GET
   @ApiOperation(value = "Gets account setting", nickname = "getAccountSetting")
-  public ResponseDTO<AccountSettingResponseDTO> get(
-      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
-      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
-      @NotNull @QueryParam(TYPE_KEY) AccountSettingType type) {
+  @Operation(operationId = "getAccountSetting", summary = "Get the AccountSetting by accountIdentifier",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "default", description = "Returns the AccountSetting with the requested accountIdentifier")
+      })
+  public ResponseDTO<AccountSettingResponseDTO>
+  get(@Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotNull @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.PROJECT_KEY)
+      String projectIdentifier, @NotNull @QueryParam(TYPE_KEY) AccountSettingType type) {
     return ResponseDTO.newResponse(
         accountSettingService.get(accountIdentifier, orgIdentifier, projectIdentifier, type));
   }
@@ -92,11 +101,18 @@ public class AccountSettingResource {
   @GET
   @Path("/list")
   @ApiOperation(value = "List account setting", nickname = "listAccountSetting")
-  public ResponseDTO<List<AccountSettingsDTO>> list(
-      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
-      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
-      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
-      @QueryParam(TYPE_KEY) AccountSettingType type) {
+  @Operation(operationId = "listAccountSetting", summary = "Get the AccountSetting by accountIdentifier",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
+            description = "Returns the list of AccountSettings with requested accountIdentifier")
+      })
+  public ResponseDTO<List<AccountSettingsDTO>>
+  list(@Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotNull @QueryParam(
+           NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.PROJECT_KEY)
+      String projectIdentifier, @QueryParam(TYPE_KEY) AccountSettingType type) {
     return ResponseDTO.newResponse(
         accountSettingService.list(accountIdentifier, orgIdentifier, projectIdentifier, type));
   }

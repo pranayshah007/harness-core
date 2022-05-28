@@ -21,11 +21,8 @@ import static io.harness.NGCommonEntityConstants.SIZE_PARAM_MESSAGE;
 import static io.harness.annotations.dev.HarnessTeam.DX;
 
 import io.harness.NGCommonEntityConstants;
-import io.harness.ScopeIdentifiers;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.gitsync.GitPRCreateRequest;
-import io.harness.gitsync.GetFileRequest;
-import io.harness.gitsync.GetFileResponse;
 import io.harness.gitsync.common.YamlConstants;
 import io.harness.gitsync.common.dtos.CreatePRDTO;
 import io.harness.gitsync.common.dtos.GitBranchesResponseDTO;
@@ -229,43 +226,6 @@ public class ScmFacilitatorResource {
         -> scmClientFacilitatorService.createPullRequest(gitCreatePRRequest),
         gitCreatePRRequest.getProjectIdentifier(), gitCreatePRRequest.getOrgIdentifier(),
         gitCreatePRRequest.getAccountIdentifier()));
-  }
-
-  // API just for testing purpose, not exposed to customer
-  // TODO should be removed after testing @Mohit
-  @GET
-  @Path("get-file")
-  @ApiOperation(value = "get file", nickname = "getFile")
-  @Hidden
-  @Operation(operationId = "getFile", summary = "get file",
-      responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Successfully created a PR") },
-      hidden = true)
-  public ResponseDTO<GetFileResponse>
-  getFile(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @NotBlank @NotNull @QueryParam(
-              NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
-      @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(
-          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
-      @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(
-          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
-      @Parameter(description = "Repo Name") @QueryParam("RepoName") @NotBlank @NotNull String repoName,
-      @Parameter(description = GitSyncApiConstants.BRANCH_PARAM_MESSAGE) @QueryParam(
-          YamlConstants.BRANCH) String branch,
-      @Parameter(description = "File Path") @QueryParam(YamlConstants.FILE_PATH) @NotBlank @NotNull String filePath,
-      @Parameter(description = "Commit Id") @QueryParam(YamlConstants.COMMIT_ID) String commitId,
-      @Parameter(description = "Connector Ref") @QueryParam("ConnectorRef") String connectorRef) {
-    return ResponseDTO.newResponse(
-        harnessToGitHelperService.getFile(GetFileRequest.newBuilder()
-                                              .setScopeIdentifiers(ScopeIdentifiers.newBuilder()
-                                                                       .setAccountIdentifier(accountIdentifier)
-                                                                       .setOrgIdentifier(orgIdentifier)
-                                                                       .setProjectIdentifier(projectIdentifier)
-                                                                       .build())
-                                              .setRepoName(repoName)
-                                              .setBranchName(branch)
-                                              .setFilePath(filePath)
-                                              .setCommitId(commitId)
-                                              .setConnectorRef(connectorRef)
-                                              .build()));
   }
 
   @GET

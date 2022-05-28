@@ -151,13 +151,13 @@ public class CloudFormationCreateStackState extends CloudFormationState {
   }
 
   @Override
-  protected List<String> commandUnits() {
-    List<String> commandUnints = new ArrayList<>();
-    if (useParametersFile) {
-      commandUnints.add(FETCH_FILES_COMMAND_UNIT);
+  protected List<String> commandUnits(CloudFormationInfrastructureProvisioner provisioner) {
+    List<String> commandUnits = new ArrayList<>();
+    if (provisioner != null && (provisioner.provisionByGit() || useParametersFile)) {
+      commandUnits.add(FETCH_FILES_COMMAND_UNIT);
     }
-    commandUnints.add(mainCommandUnit());
-    return commandUnints;
+    commandUnits.add(mainCommandUnit());
+    return commandUnits;
   }
 
   @Override

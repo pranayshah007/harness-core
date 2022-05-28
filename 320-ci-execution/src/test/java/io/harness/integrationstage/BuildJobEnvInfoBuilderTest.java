@@ -105,7 +105,7 @@ public class BuildJobEnvInfoBuilderTest extends CIExecutionTestBase {
     BuildJobEnvInfo actual = buildJobEnvInfoBuilder.getCIBuildJobEnvInfo(stageElementConfig,
         VmInfraYaml.builder()
             .spec(VmPoolYaml.builder()
-                      .spec(VmPoolYamlSpec.builder().os(ParameterField.createValueField(OSType.Osx)).build())
+                      .spec(VmPoolYamlSpec.builder().os(ParameterField.createValueField(OSType.MacOS)).build())
                       .build())
             .build(),
         null, new ArrayList<>(), ambiance);

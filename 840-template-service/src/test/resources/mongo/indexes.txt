@@ -3,6 +3,9 @@
 !!!custom_delegateSyncTaskResponses {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
 !!!custom_delegateTaskProgressResponses {"name": "processAfter_1", "background": true} {"processAfter": 1}
 !!!custom_delegateTaskProgressResponses {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
+appContainers {"name": "appId_1", "background": true} {"appId": 1}
+appContainers {"name": "createdAt_1", "background": true} {"createdAt": 1}
+appContainers {"name": "unique_yaml", "unique": true} {"accountId": 1, "name": 1}
 artifacts {"name": "accountId_1", "background": true} {"accountId": 1}
 artifacts {"name": "accountId_artifactStreamId_createdAt", "background": true} {"accountId": 1, "artifactStreamId": 1, "createdAt": -1}
 artifacts {"name": "appId_1", "background": true} {"appId": 1}
@@ -84,6 +87,11 @@ helmCharts {"name": "account_appManifestId", "background": true} {"accountId": 1
 helmCharts {"name": "appId_appManifestId", "background": true} {"appId": 1, "applicationManifestId": 1}
 helmCharts {"name": "appId_serviceId", "background": true} {"appId": 1, "serviceId": 1}
 helmCharts {"name": "applicationManifestId_1", "background": true} {"applicationManifestId": 1}
+hosts {"name": "appId_1", "background": true} {"appId": 1}
+hosts {"name": "app_inframappingid", "background": true} {"appId": 1, "infraMappingId": 1}
+hosts {"name": "createdAt_1", "background": true} {"createdAt": 1}
+hosts {"name": "hostName_1", "background": true} {"hostName": 1}
+hosts {"name": "serviceTemplateId_1", "background": true} {"serviceTemplateId": 1}
 kmsTransitionEvent2 {"name": "earliestGet_1", "background": true, "expireAfterSeconds": 86400} {"earliestGet": 1}
 kmsTransitionEvent2 {"name": "next4", "background": true} {"topic": 1, "earliestGet": 1}
 migratedEntityMapping {"name": "accountId_1", "background": true} {"accountId": 1}

@@ -92,4 +92,5 @@ public interface EntityTypeConstants {
   String SERVERLESS_AWS_LAMBDA_DEPLOY = "ServerlessAwsLambdaDeploy";
   String SERVERLESS_AWS_LAMBDA_ROLLBACK = "ServerlessAwsLambdaRollback";
   String CLOUDFORMATION_ROLLBACK_STACK_STEP = "RollbackStack";
+  String INFRASTRUCTURE = "Infrastructure";
 }

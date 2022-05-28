@@ -99,4 +99,20 @@ public class GitEnabledHelperTest extends CategoryTest {
     assertThat(gitEnabledDTO)
         .isEqualTo(GitEnabledDTO.builder().isGitSyncEnabled(true).connectivityMode(ConnectivityMode.DELEGATE).build());
   }
+
+  @Test
+  @Owner(developers = ABHINAV)
+  @Category(UnitTests.class)
+  public void testGitEnabledForGitSimplificationUseCase() throws IOException {
+    GitSyncSettingsDTO gitSyncSettingsDTO = GitSyncSettingsDTO.builder().isGitSimplificationEnabled(true).build();
+    doReturn(Optional.of(gitSyncSettingsDTO)).when(gitSyncSettingsService).get(anyString(), anyString(), anyString());
+    doReturn(false).when(yamlGitConfigService).isGitSyncEnabled(anyString(), anyString(), anyString());
+    GitEnabledDTO gitEnabledDTO = gitEnabledHelper.getGitEnabledDTO("proj", "org", "acc");
+    assertThat(gitEnabledDTO).isEqualTo(GitEnabledDTO.builder().isGitSimplificationEnabled(true).build());
+
+    gitSyncSettingsDTO.setGitSimplificationEnabled(false);
+    doReturn(Optional.of(gitSyncSettingsDTO)).when(gitSyncSettingsService).get(anyString(), anyString(), anyString());
+    gitEnabledDTO = gitEnabledHelper.getGitEnabledDTO("proj", "org", "acc");
+    assertThat(gitEnabledDTO).isEqualTo(GitEnabledDTO.builder().isGitSimplificationEnabled(false).build());
+  }
 }

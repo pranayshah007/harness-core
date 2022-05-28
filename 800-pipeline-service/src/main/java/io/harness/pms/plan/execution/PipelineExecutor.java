@@ -24,6 +24,7 @@ import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
 import io.harness.pms.instrumentaion.PipelineTelemetryHelper;
 import io.harness.pms.ngpipeline.inputset.helpers.ValidateAndMergeHelper;
 import io.harness.pms.pipeline.PipelineEntity;
+import io.harness.pms.pipeline.mappers.PMSPipelineDtoMapper;
 import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
 import io.harness.pms.plan.execution.beans.ExecArgs;
 import io.harness.pms.plan.execution.beans.dto.RunStageRequestDTO;
@@ -125,7 +126,7 @@ public class PipelineExecutor {
     }
     return PlanExecutionResponseDto.builder()
         .planExecution(planExecution)
-        .gitDetails(EntityGitDetailsMapper.mapEntityGitDetails(pipelineEntity))
+        .gitDetails(PMSPipelineDtoMapper.getEntityGitDetails(pipelineEntity))
         .build();
   }
 

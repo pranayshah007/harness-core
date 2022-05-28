@@ -31,4 +31,8 @@ public class EnvironmentOutcome implements Outcome, ExecutionSweepingOutput {
   String description;
   EnvironmentType type;
   Map<String, String> tags;
+
+  // EnvironmentOutcomeV2
+  String environmentRef;
+  Map<String, Object> variables;
 }

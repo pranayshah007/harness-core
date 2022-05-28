@@ -16,15 +16,22 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.beans.Environment.EnvironmentKeys;
+import io.harness.ng.core.environment.beans.EnvironmentFilterPropertiesDTO;
+import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
 import io.harness.rule.Owner;
+import io.harness.rule.OwnerRule;
 
 import java.beans.PropertyDescriptor;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.regex.Pattern;
 import org.bson.Document;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -34,6 +41,11 @@ import org.springframework.data.mongodb.core.query.Update;
 
 @OwnedBy(HarnessTeam.CDC)
 public class EnvironmentFilterHelperTest extends CategoryTest {
+  String accountIdentifier = "accountIdentifier";
+  String orgIdentifier = "orgIdentifier";
+  String projectIdentifier = "projectIdentifier";
+  EnvironmentType environmentType = EnvironmentType.PreProduction;
+
   @Test
   @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
@@ -89,5 +101,75 @@ public class EnvironmentFilterHelperTest extends CategoryTest {
         assertThat(stringSet.contains(propertyDescriptor.getName())).isFalse();
       }
     }
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.HINGER)
+  @Category(UnitTests.class)
+  public void testListWithNamesFilter() {
+    EnvironmentFilterPropertiesDTO environmentFilterPropertiesDTO =
+        EnvironmentFilterPropertiesDTO.builder().environmentNames(Arrays.asList("qa", "dev")).build();
+    Criteria criteria = EnvironmentFilterHelper.createCriteriaForGetList(
+        accountIdentifier, orgIdentifier, projectIdentifier, false, null, null, environmentFilterPropertiesDTO);
+    Document criteriaObj = criteria.getCriteriaObject();
+    assertThat(criteriaObj.get(EnvironmentKeys.accountId)).isEqualTo(accountIdentifier);
+    assertThat(criteriaObj.get(EnvironmentKeys.projectIdentifier)).isEqualTo(projectIdentifier);
+    assertThat(criteriaObj.get(EnvironmentKeys.orgIdentifier)).isEqualTo(orgIdentifier);
+    Object p =
+        ((Document) ((List<?>) ((Document) ((List<?>) criteriaObj.get("$and")).get(0)).get("$or")).get(0)).get("name");
+    assertThat(((Pattern) p).pattern()).isEqualTo("qa");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.HINGER)
+  @Category(UnitTests.class)
+  public void testListWithEnvTypeFilter() {
+    EnvironmentFilterPropertiesDTO environmentFilterPropertiesDTO =
+        EnvironmentFilterPropertiesDTO.builder().environmentTypes(Collections.singletonList(environmentType)).build();
+    Criteria criteria = EnvironmentFilterHelper.createCriteriaForGetList(
+        accountIdentifier, orgIdentifier, projectIdentifier, false, null, null, environmentFilterPropertiesDTO);
+    Document criteriaObj = criteria.getCriteriaObject();
+    assertThat(criteriaObj.get(EnvironmentKeys.accountId)).isEqualTo(accountIdentifier);
+    assertThat(criteriaObj.get(EnvironmentKeys.projectIdentifier)).isEqualTo(projectIdentifier);
+    assertThat(criteriaObj.get(EnvironmentKeys.orgIdentifier)).isEqualTo(orgIdentifier);
+    Object p = ((List<?>) ((Document) criteriaObj.get("type")).get("$in")).get(0);
+    assertThat((EnvironmentType) p).isEqualTo(EnvironmentType.PreProduction);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.HINGER)
+  @Category(UnitTests.class)
+  public void testListWithDescriptionFilter() {
+    EnvironmentFilterPropertiesDTO environmentFilterPropertiesDTO =
+        EnvironmentFilterPropertiesDTO.builder().description("deploying to production").build();
+    Criteria criteria = EnvironmentFilterHelper.createCriteriaForGetList(
+        accountIdentifier, orgIdentifier, projectIdentifier, false, null, null, environmentFilterPropertiesDTO);
+    Document criteriaObj = criteria.getCriteriaObject();
+    assertThat(criteriaObj.get(EnvironmentKeys.accountId)).isEqualTo(accountIdentifier);
+    assertThat(criteriaObj.get(EnvironmentKeys.projectIdentifier)).isEqualTo(projectIdentifier);
+    assertThat(criteriaObj.get(EnvironmentKeys.orgIdentifier)).isEqualTo(orgIdentifier);
+    Object p = ((Document) ((List<?>) criteriaObj.get("$and")).get(0)).get("description");
+    // pattern
+    assertThat(((Pattern) p).pattern()).isEqualTo("deploying|to|production");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.HINGER)
+  @Category(UnitTests.class)
+  public void testListWithSearchTermFilter() {
+    EnvironmentFilterPropertiesDTO environmentFilterPropertiesDTO = EnvironmentFilterPropertiesDTO.builder().build();
+    Criteria criteria = EnvironmentFilterHelper.createCriteriaForGetList(
+        accountIdentifier, orgIdentifier, projectIdentifier, false, "gcp", null, environmentFilterPropertiesDTO);
+    Document criteriaObj = criteria.getCriteriaObject();
+    assertThat(criteriaObj.get(EnvironmentKeys.accountId)).isEqualTo(accountIdentifier);
+    assertThat(criteriaObj.get(EnvironmentKeys.projectIdentifier)).isEqualTo(projectIdentifier);
+    assertThat(criteriaObj.get(EnvironmentKeys.orgIdentifier)).isEqualTo(orgIdentifier);
+    List<?> p = (List<?>) ((Document) ((List<?>) criteriaObj.get("$and")).get(0)).get("$or");
+    assertThat(p.size()).isEqualTo(4); // name, description, identifier, tags criteria
+
+    assertThat(((Pattern) ((Document) p.get(0)).get("name")).pattern()).isEqualTo("gcp");
+    assertThat(((Pattern) ((Document) p.get(1)).get("identifier")).pattern()).isEqualTo("gcp");
+    assertThat(((Pattern) ((Document) p.get(2)).get("description")).pattern()).isEqualTo("gcp");
+    assertThat(((NGTag) ((Document) p.get(3)).get("tags")).getKey()).isEqualTo("gcp");
   }
 }

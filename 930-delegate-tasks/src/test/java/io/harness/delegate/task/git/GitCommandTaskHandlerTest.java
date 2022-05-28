@@ -8,8 +8,11 @@
 package io.harness.delegate.task.git;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.delegate.beans.connector.scm.GitAuthType.HTTP;
+import static io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoApiAccessType.TOKEN;
 import static io.harness.rule.OwnerRule.ABHINAV2;
 import static io.harness.rule.OwnerRule.DEV_MITTAL;
+import static io.harness.rule.OwnerRule.MANKRIT;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -34,6 +37,13 @@ import io.harness.connector.service.scm.ScmDelegateClient;
 import io.harness.connector.task.git.GitCommandTaskHandler;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoApiAccessDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoAuthenticationDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoHttpAuthenticationType;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoHttpCredentialsDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoTokenSpecDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoUsernameTokenDTO;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessType;
@@ -45,7 +55,9 @@ import io.harness.delegate.beans.connector.scm.gitlab.GitlabTokenSpecDTO;
 import io.harness.delegate.beans.git.GitCommandExecutionResponse;
 import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
+import io.harness.encryption.SecretRefHelper;
 import io.harness.errorhandling.NGErrorHelper;
+import io.harness.exception.ExplanationException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.exception.exceptionmanager.ExceptionManager;
@@ -170,6 +182,52 @@ public class GitCommandTaskHandlerTest extends CategoryTest {
     assertThatThrownBy(
         () -> gitCommandTaskHandler.handleValidateTask(gitConfig, connector, ACCOUNT_IDENTIFIER, sshSessionConfig))
         .isInstanceOf(SCMRuntimeException.class);
+  }
+
+  @Test
+  @Owner(developers = MANKRIT)
+  @Category(UnitTests.class)
+  public void testAzureRepoApiCredentialsWhenException() {
+    final String url = "url";
+    final String tokenRef = "tokenRef";
+    final String username = "username";
+    final String validationProject = "validationProject";
+    final String validationRepo = "validationRepo";
+    final String invalid = "XYZ";
+    final AzureRepoAuthenticationDTO azureRepoAuthenticationDTO =
+        AzureRepoAuthenticationDTO.builder()
+            .authType(HTTP)
+            .credentials(AzureRepoHttpCredentialsDTO.builder()
+                             .type(AzureRepoHttpAuthenticationType.USERNAME_AND_TOKEN)
+                             .httpCredentialsSpec(AzureRepoUsernameTokenDTO.builder()
+                                                      .username(username)
+                                                      .tokenRef(SecretRefHelper.createSecretRef(tokenRef))
+                                                      .build())
+                             .build())
+            .build();
+
+    final AzureRepoApiAccessDTO azureRepoApiAccessDTO =
+        AzureRepoApiAccessDTO.builder()
+            .type(TOKEN)
+            .spec(AzureRepoTokenSpecDTO.builder().tokenRef(SecretRefHelper.createSecretRef(invalid)).build())
+            .build();
+
+    final AzureRepoConnectorDTO azureRepoConnectorDTO = AzureRepoConnectorDTO.builder()
+                                                            .connectionType(GitConnectionType.ACCOUNT)
+                                                            .url(url)
+                                                            .validationProject(validationProject)
+                                                            .validationRepo(validationRepo)
+                                                            .authentication(azureRepoAuthenticationDTO)
+                                                            .apiAccess(azureRepoApiAccessDTO)
+                                                            .build();
+    GitConfigDTO gitConfig = GitConfigDTO.builder().build();
+    ScmConnector connector = azureRepoConnectorDTO;
+    GetUserReposResponse userReposResponse = GetUserReposResponse.newBuilder().setStatus(203).build();
+    doReturn(userReposResponse).when(scmDelegateClient).processScmRequest(any());
+    assertThatThrownBy(
+        () -> gitCommandTaskHandler.handleValidateTask(gitConfig, connector, ACCOUNT_IDENTIFIER, sshSessionConfig))
+        .isInstanceOf(ExplanationException.class)
+        .hasMessage("Invalid API Access Token");
   }
 
   @Test

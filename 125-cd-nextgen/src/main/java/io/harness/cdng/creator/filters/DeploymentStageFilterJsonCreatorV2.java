@@ -17,15 +17,18 @@ import io.harness.cdng.creator.plan.stage.DeploymentStageConfig;
 import io.harness.cdng.creator.plan.stage.DeploymentStageNode;
 import io.harness.cdng.envgroup.yaml.EnvironmentGroupYaml;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
-import io.harness.cdng.infra.yaml.InfraStructureDefinition;
+import io.harness.cdng.infra.yaml.InfraStructureDefinitionYaml;
 import io.harness.cdng.pipeline.PipelineInfrastructure;
 import io.harness.cdng.service.beans.ServiceConfig;
 import io.harness.cdng.service.beans.ServiceDefinition;
+import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.service.beans.ServiceYaml;
 import io.harness.cdng.service.beans.ServiceYamlV2;
 import io.harness.filters.GenericStageFilterJsonCreatorV2;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.services.EnvironmentService;
+import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
+import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.mappers.NGServiceEntityMapper;
 import io.harness.ng.core.service.services.ServiceEntityService;
@@ -52,8 +55,9 @@ import javax.validation.constraints.NotNull;
 
 @OwnedBy(HarnessTeam.CDC)
 public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCreatorV2<DeploymentStageNode> {
-  @Inject ServiceEntityService serviceEntityService;
-  @Inject EnvironmentService environmentService;
+  @Inject private ServiceEntityService serviceEntityService;
+  @Inject private EnvironmentService environmentService;
+  @Inject private InfrastructureEntityService infraService;
 
   @Override
   public Set<String> getSupportedStageTypes() {
@@ -82,7 +86,8 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
     if (deploymentStageConfig.getServiceConfig() != null) {
       addFiltersFromServiceConfig(filterCreationContext, filterBuilder, deploymentStageConfig.getServiceConfig());
     } else if (deploymentStageConfig.getService() != null) {
-      addFiltersFromServiceV2(filterCreationContext, filterBuilder, deploymentStageConfig.getService());
+      addFiltersFromServiceV2(filterCreationContext, filterBuilder, deploymentStageConfig.getService(),
+          deploymentStageConfig.getDeploymentType());
     } else {
       throw new InvalidYamlRuntimeException(
           format("serviceConfig or Service should be present in stage [%s]. Please add it and try again",
@@ -122,14 +127,20 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
         final Environment entity = environmentEntityOptional.get();
         filterBuilder.environmentName(entity.getName());
 
-        List<InfraStructureDefinition> infraList = env.getInfrastructureDefinitions();
+        List<InfraStructureDefinitionYaml> infraList = env.getInfrastructureDefinitions();
         if (isNotEmpty(infraList)) {
           if (infraList.size() > 1) {
             throw new InvalidYamlRuntimeException(format(
                 "multiple infra deployments are not supported yet in stage [%s]. Please select 1 infrastructure and try again",
                 YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
           }
-          // Todo: Add InfraType filter
+          Optional<InfrastructureEntity> infrastructureEntity =
+              infraService.get(filterCreationContext.getSetupMetadata().getAccountId(),
+                  filterCreationContext.getSetupMetadata().getOrgId(),
+                  filterCreationContext.getSetupMetadata().getProjectId(), entity.getIdentifier(),
+                  infraList.get(0).getRef().getValue());
+          infrastructureEntity.ifPresent(
+              ie -> filterBuilder.infrastructureType(infrastructureEntity.get().getType().getDisplayName()));
         }
       }
     }
@@ -145,9 +156,9 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
     }
   }
 
-  private void addFiltersFromServiceV2(
-      FilterCreationContext filterCreationContext, CdFilterBuilder filterBuilder, ServiceYamlV2 service) {
-    final ParameterField<String> serviceEntityRef = service.getServiceConfigRef();
+  private void addFiltersFromServiceV2(FilterCreationContext filterCreationContext, CdFilterBuilder filterBuilder,
+      ServiceYamlV2 service, ServiceDefinitionType deploymentType) {
+    final ParameterField<String> serviceEntityRef = service.getServiceRef();
     if (serviceEntityRef == null || serviceEntityRef.fetchFinalValue() == null) {
       throw new InvalidYamlRuntimeException(format(
           "serviceConfigRef should be present in stage [%s] when referring to a service entity. Please add it and try again",
@@ -159,9 +170,17 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
           filterCreationContext.getSetupMetadata().getAccountId(), filterCreationContext.getSetupMetadata().getOrgId(),
           filterCreationContext.getSetupMetadata().getProjectId(), serviceEntityRef.getValue(), false);
       serviceEntityOptional.ifPresent(se -> {
-        NGServiceV2InfoConfig cfg = NGServiceEntityMapper.toNGServiceConfig(se).getNgServiceV2InfoConfig();
-        filterBuilder.serviceName(cfg.getName());
-        filterBuilder.deploymentType(cfg.getServiceDefinition().getType().getYamlName());
+        NGServiceV2InfoConfig config = NGServiceEntityMapper.toNGServiceConfig(se).getNgServiceV2InfoConfig();
+        filterBuilder.serviceName(se.getName());
+        if (config.getServiceDefinition() == null) {
+          throw new InvalidYamlRuntimeException(
+              format("ServiceDefinition should be present in service [%s]. Please add it and try again", se.getName()));
+        }
+        if (config.getServiceDefinition().getType() != deploymentType) {
+          throw new InvalidYamlRuntimeException(format(
+              "deploymentType should be the same as in service [%s]. Please correct it and try again", se.getName()));
+        }
+        filterBuilder.deploymentType(config.getServiceDefinition().getType().getYamlName());
       });
     }
   }
@@ -232,19 +251,21 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
   protected Map<String, YamlField> getDependencies(YamlField stageField) {
     // Add dependency for rollback steps
     Map<String, YamlField> dependencies = new HashMap<>(super.getDependencies(stageField));
-    YamlField provisionerField = stageField.getNode()
-                                     .getField(YAMLFieldNameConstants.SPEC)
-                                     .getNode()
-                                     .getField(YAMLFieldNameConstants.PIPELINE_INFRASTRUCTURE)
-                                     .getNode()
-                                     .getField("infrastructureDefinition")
-                                     .getNode()
-                                     .getField(YAMLFieldNameConstants.PROVISIONER);
+    YamlField pipelineInfraField = stageField.getNode()
+                                       .getField(YAMLFieldNameConstants.SPEC)
+                                       .getNode()
+                                       .getField(YAMLFieldNameConstants.PIPELINE_INFRASTRUCTURE);
+    if (pipelineInfraField != null) {
+      YamlField provisionerField = pipelineInfraField.getNode()
+                                       .getField("infrastructureDefinition")
+                                       .getNode()
+                                       .getField(YAMLFieldNameConstants.PROVISIONER);
 
-    if (provisionerField != null) {
-      YamlField stepsField = provisionerField.getNode().getField("steps");
-      if (stepsField != null && stepsField.getNode().asArray().size() != 0) {
-        addRollbackDependencies(dependencies, stepsField);
+      if (provisionerField != null) {
+        YamlField stepsField = provisionerField.getNode().getField("steps");
+        if (stepsField != null && stepsField.getNode().asArray().size() != 0) {
+          addRollbackDependencies(dependencies, stepsField);
+        }
       }
     }
     YamlField executionField =

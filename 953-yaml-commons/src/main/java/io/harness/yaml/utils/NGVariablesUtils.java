@@ -16,6 +16,7 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.yaml.core.properties.CIProperties;
 import io.harness.yaml.core.properties.NGProperties;
+import io.harness.yaml.core.variables.NGServiceOverrides;
 import io.harness.yaml.core.variables.NGVariable;
 import io.harness.yaml.core.variables.SecretNGVariable;
 
@@ -85,6 +86,17 @@ public class NGVariablesUtils {
           mapOfVariables.put(variable.getName(), value);
         }
       }
+    }
+    return mapOfVariables;
+  }
+
+  public Map<String, Object> getMapOfServiceVariables(List<NGServiceOverrides> serviceOverrides) {
+    Map<String, Object> mapOfVariables = new HashMap<>();
+    if (EmptyPredicate.isEmpty(serviceOverrides)) {
+      return mapOfVariables;
+    }
+    for (NGServiceOverrides variable : serviceOverrides) {
+      mapOfVariables.put(variable.getServiceRef(), getMapOfVariables(variable.getVariables()));
     }
     return mapOfVariables;
   }

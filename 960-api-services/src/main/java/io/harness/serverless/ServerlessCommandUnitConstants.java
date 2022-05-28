@@ -11,7 +11,7 @@ public enum ServerlessCommandUnitConstants {
   fetchFiles {
     @Override
     public String toString() {
-      return "Fetch Files";
+      return "Fetch Serverless Manifest";
     }
   },
   init {
@@ -30,6 +30,36 @@ public enum ServerlessCommandUnitConstants {
     @Override
     public String toString() {
       return "Rollback";
+    }
+  },
+  setupDirectory {
+    @Override
+    public String toString() {
+      return "Setup Serverless Directory";
+    }
+  },
+  artifact {
+    @Override
+    public String toString() {
+      return "Download Artifact";
+    }
+  },
+  configureCred {
+    @Override
+    public String toString() {
+      return "Configure Credentials";
+    }
+  },
+  plugin {
+    @Override
+    public String toString() {
+      return "Install Serverless Plugins";
+    }
+  },
+  rollbackData {
+    @Override
+    public String toString() {
+      return "Prepare Rollback Data";
     }
   }
 }

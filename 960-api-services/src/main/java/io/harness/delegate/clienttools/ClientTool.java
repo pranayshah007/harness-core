@@ -22,44 +22,43 @@ public enum ClientTool {
   //  These are only placeholders for now.
   //  CF("cf", "", "./client-tools/helm/", "./cf --version", "", ImmutableList.copyOf(CfVersion.values()),
   //  CfVersion.V7),
-  HELM("helm", "public/shared/tools/helm/release/%s/bin/%s/amd64/helm", "./client-tools/helm/", "./helm version -c",
+  HELM("helm", "public/shared/tools/helm/release/%s/bin/%s/amd64/helm", "./client-tools/helm/", "version -c",
       "storage/harness-download/harness-helm/release/%s/bin/%s/amd64/helm", ImmutableList.copyOf(HelmVersion.values()),
       HelmVersion.V3_8),
   KUBECTL("kubectl", "public/shared/tools/kubectl/release/%s/bin/%s/amd64/kubectl", "./client-tools/kubectl/",
-      "./kubectl version --short --client",
-      "storage/harness-download/kubernetes-release/release/%s/bin/%s/amd64/kubectl",
+      "version --short --client", "storage/harness-download/kubernetes-release/release/%s/bin/%s/amd64/kubectl",
       ImmutableList.copyOf(KubectlVersion.values()), KubectlVersion.V1_19),
   KUSTOMIZE("kustomize", "public/shared/tools/kustomize/release/%s/bin/%s/amd64/kustomize", "./client-tools/kustomize/",
-      "./kustomize version --short", "storage/harness-download/harness-kustomize/release/%s/bin/%s/amd64/kustomize",
+      "version --short", "storage/harness-download/harness-kustomize/release/%s/bin/%s/amd64/kustomize",
       ImmutableList.copyOf(KustomizeVersion.values()), KustomizeVersion.V4),
-  OC("oc", "public/shared/tools/oc/release/%s/bin/%s/amd64/oc", "./client-tools/oc/", "./oc version --client",
+  OC("oc", "public/shared/tools/oc/release/%s/bin/%s/amd64/oc", "./client-tools/oc/", "version --client",
       "storage/harness-download/harness-oc/release/%s/bin/%s/amd64/oc", ImmutableList.copyOf(OcVersion.values()),
       OcVersion.V4_2),
-  SCM("scm", "public/shared/tools/scm/release/%s/bin/%s/amd64/scm", "./client-tools/scm/", "./scm --version",
+  SCM("scm", "public/shared/tools/scm/release/%s/bin/%s/amd64/scm", "./client-tools/scm/", "--version",
       "storage/harness-download/harness-scm/release/%s/bin/%s/amd64/scm", ImmutableList.copyOf(ScmVersion.values()),
       ScmVersion.DEFAULT),
   TERRAFORM_CONFIG_INSPECT("terraform-config-inspect",
       "public/shared/tools/terraform-config-inspect/%s/%s/amd64/terraform-config-inspect",
-      "./client-tools/tf-config-inspect", "./terraform-config-inspect",
+      "./client-tools/tf-config-inspect", "",
       "storage/harness-download/harness-terraform-config-inspect/%s/%s/amd64/terraform-config-inspect",
       ImmutableList.copyOf(TerraformConfigInspectVersion.values()), TerraformConfigInspectVersion.V1_1),
   GO_TEMPLATE("go-template", "public/shared/tools/go-template/release/%s/bin/%s/amd64/go-template",
-      "./client-tools/go-template/", "./go-template -v",
+      "./client-tools/go-template/", "-v",
       "storage/harness-download/snapshot-go-template/release/%s/bin/%s/amd64/go-template",
       ImmutableList.copyOf(GoTemplateVersion.values()), GoTemplateVersion.V0_4),
   HARNESS_PYWINRM("harness-pywinrm", "public/shared/tools/harness-pywinrm/release/%s/bin/%s/amd64/harness-pywinrm",
-      "./client-tools/harness-pywinrm/", "./harness-pywinrm -v",
+      "./client-tools/harness-pywinrm/", "-v",
       "storage/harness-download/snapshot-harness-pywinrm/release/%s/bin/%s/amd64/harness-pywinrm",
       ImmutableList.copyOf(HarnessPywinrmVersion.values()), HarnessPywinrmVersion.V0_4),
   CHARTMUSEUM("chartmuseum", "public/shared/tools/chartmuseum/release/%s/bin/%s/amd64/chartmuseum",
-      "./client-tools/chartmuseum/", "./chartmuseum -v",
+      "./client-tools/chartmuseum/", "-v",
       "storage/harness-download/harness-chartmuseum/release/%s/bin/%s/amd64/chartmuseum",
       ImmutableList.copyOf(ChartmuseumVersion.values()), ChartmuseumVersion.V0_12);
 
   @ToString.Include private final String binaryName;
   private final String cdnPath;
   private final String baseDir;
-  private final String validateCommand;
+  private final String validateCommandArgs;
   private final String onPremPath;
   private final List<ClientToolVersion> versions;
   private final ClientToolVersion latestVersion;

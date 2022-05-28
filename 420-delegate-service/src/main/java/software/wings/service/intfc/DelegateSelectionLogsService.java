@@ -27,7 +27,7 @@ public interface DelegateSelectionLogsService {
 
   void logNoEligibleDelegatesToExecuteTask(DelegateTask delegateTask);
 
-  void logEligibleDelegatesToExecuteTask(Set<String> delegateIds, DelegateTask delegateTask);
+  void logEligibleDelegatesToExecuteTask(Set<String> delegateIds, DelegateTask delegateTask, boolean preAssigned);
 
   void logNonSelectedDelegates(DelegateTask delegateTask, Map<String, List<String>> nonAssignableDelegates);
 

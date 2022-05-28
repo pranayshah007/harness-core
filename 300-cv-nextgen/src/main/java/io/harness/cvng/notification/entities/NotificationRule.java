@@ -13,10 +13,17 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.core.services.api.UpdatableEntity;
 import io.harness.cvng.notification.beans.NotificationRuleType;
-import io.harness.cvng.notification.channelDetails.CVNGNotificationChannel;
+import io.harness.cvng.notification.channelDetails.CVNGNotificationChannelType;
+import io.harness.cvng.notification.channelDetails.CVNGNotificationChannelUtils;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
+import io.harness.notification.Team;
+import io.harness.notification.channeldetails.EmailChannel;
+import io.harness.notification.channeldetails.MSTeamChannel;
+import io.harness.notification.channeldetails.NotificationChannel;
+import io.harness.notification.channeldetails.PagerDutyChannel;
+import io.harness.notification.channeldetails.SlackChannel;
 import io.harness.persistence.AccountAccess;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
@@ -24,7 +31,10 @@ import io.harness.persistence.UpdatedAtAware;
 import io.harness.persistence.UuidAware;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -76,6 +86,110 @@ public abstract class NotificationRule
 
   NotificationRuleType type;
   CVNGNotificationChannel notificationMethod;
+
+  @Data
+  @SuperBuilder
+  public abstract static class CVNGNotificationChannel {
+    public abstract CVNGNotificationChannelType getType();
+    public abstract NotificationChannel toNotificationChannel(String accountId, String orgIdentifier,
+        String projectIdentifier, String templateId, Map<String, String> templateData);
+  }
+
+  @Data
+  @SuperBuilder
+  public static class CVNGEmailChannel extends CVNGNotificationChannel {
+    public final CVNGNotificationChannelType type = CVNGNotificationChannelType.EMAIL;
+    List<String> userGroups;
+    List<String> recipients;
+
+    @Override
+    public NotificationChannel toNotificationChannel(String accountId, String orgIdentifier, String projectIdentifier,
+        String templateId, Map<String, String> templateData) {
+      return EmailChannel.builder()
+          .accountId(accountId)
+          .recipients(recipients)
+          .userGroups(
+              userGroups.stream()
+                  .map(e -> CVNGNotificationChannelUtils.getUserGroups(e, accountId, orgIdentifier, projectIdentifier))
+                  .collect(Collectors.toList()))
+          .team(Team.CV)
+          .templateData(templateData)
+          .templateId(templateId)
+          .build();
+    }
+  }
+
+  @Data
+  @SuperBuilder
+  public static class CVNGSlackChannel extends CVNGNotificationChannel {
+    public final CVNGNotificationChannelType type = CVNGNotificationChannelType.SLACK;
+    List<String> userGroups;
+    String webhookUrl;
+
+    @Override
+    public NotificationChannel toNotificationChannel(String accountId, String orgIdentifier, String projectIdentifier,
+        String templateId, Map<String, String> templateData) {
+      return SlackChannel.builder()
+          .accountId(accountId)
+          .team(Team.CV)
+          .templateData(templateData)
+          .templateId(templateId)
+          .userGroups(
+              userGroups.stream()
+                  .map(e -> CVNGNotificationChannelUtils.getUserGroups(e, accountId, orgIdentifier, projectIdentifier))
+                  .collect(Collectors.toList()))
+          .webhookUrls(Lists.newArrayList(webhookUrl))
+          .build();
+    }
+  }
+
+  @Data
+  @SuperBuilder
+  public static class CVNGPagerDutyChannel extends CVNGNotificationChannel {
+    public final CVNGNotificationChannelType type = CVNGNotificationChannelType.PAGERDUTY;
+    List<String> userGroups;
+    String integrationKey;
+
+    @Override
+    public NotificationChannel toNotificationChannel(String accountId, String orgIdentifier, String projectIdentifier,
+        String templateId, Map<String, String> templateData) {
+      return PagerDutyChannel.builder()
+          .accountId(accountId)
+          .userGroups(
+              userGroups.stream()
+                  .map(e -> CVNGNotificationChannelUtils.getUserGroups(e, accountId, orgIdentifier, projectIdentifier))
+                  .collect(Collectors.toList()))
+          .team(Team.CV)
+          .templateId(templateId)
+          .integrationKeys(Lists.newArrayList(integrationKey))
+          .templateData(templateData)
+          .build();
+    }
+  }
+
+  @Data
+  @SuperBuilder
+  public static class CVNGMSTeamsChannel extends CVNGNotificationChannel {
+    public final CVNGNotificationChannelType type = CVNGNotificationChannelType.MSTEAMS;
+    List<String> msTeamKeys;
+    List<String> userGroups;
+
+    @Override
+    public NotificationChannel toNotificationChannel(String accountId, String orgIdentifier, String projectIdentifier,
+        String templateId, Map<String, String> templateData) {
+      return MSTeamChannel.builder()
+          .msTeamKeys(msTeamKeys)
+          .accountId(accountId)
+          .team(Team.CV)
+          .templateData(templateData)
+          .templateId(templateId)
+          .userGroups(
+              userGroups.stream()
+                  .map(e -> CVNGNotificationChannelUtils.getUserGroups(e, accountId, orgIdentifier, projectIdentifier))
+                  .collect(Collectors.toList()))
+          .build();
+    }
+  }
 
   public abstract static class NotificationRuleUpdatableEntity<T extends NotificationRule, D extends NotificationRule>
       implements UpdatableEntity<T, D> {

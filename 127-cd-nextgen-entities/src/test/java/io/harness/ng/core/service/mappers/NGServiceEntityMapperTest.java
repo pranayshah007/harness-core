@@ -42,8 +42,6 @@ public class NGServiceEntityMapperTest {
     final NGServiceV2InfoConfig ngServiceV2InfoConfig = ngServiceConfig.getNgServiceV2InfoConfig();
     assertThat(ngServiceV2InfoConfig.getName()).isEqualTo("se");
     assertThat(ngServiceV2InfoConfig.getIdentifier()).isEqualTo("serviceId");
-    assertThat(ngServiceV2InfoConfig.getOrgIdentifier()).isEqualTo("orgId");
-    assertThat(ngServiceV2InfoConfig.getProjectIdentifier()).isEqualTo("projectId");
     assertThat(ngServiceV2InfoConfig.getDescription()).isEqualTo("sample service");
     assertThat(ngServiceV2InfoConfig.getTags().get("k1")).isEqualTo("v1");
   }
@@ -85,8 +83,6 @@ public class NGServiceEntityMapperTest {
     final NGServiceV2InfoConfig ngServiceV2InfoConfig = ngServiceConfig.getNgServiceV2InfoConfig();
     assertThat(ngServiceV2InfoConfig.getName()).isEqualTo("se");
     assertThat(ngServiceV2InfoConfig.getIdentifier()).isEqualTo("serviceId");
-    assertThat(ngServiceV2InfoConfig.getOrgIdentifier()).isEqualTo("orgId");
-    assertThat(ngServiceV2InfoConfig.getProjectIdentifier()).isEqualTo("projectId");
     assertThat(ngServiceV2InfoConfig.getDescription()).isEqualTo("sample service");
     assertThat(ngServiceV2InfoConfig.getTags().get("k1")).isEqualTo("v1");
     assertThat(ngServiceV2InfoConfig.getServiceDefinition().getType()).isEqualTo(ServiceDefinitionType.KUBERNETES);

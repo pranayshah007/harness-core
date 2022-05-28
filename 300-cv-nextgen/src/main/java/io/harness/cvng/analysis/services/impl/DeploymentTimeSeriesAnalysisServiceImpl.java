@@ -205,9 +205,12 @@ public class DeploymentTimeSeriesAnalysisServiceImpl implements DeploymentTimeSe
     List<DeploymentTimeSeriesAnalysis> latestDeploymentTimeSeriesAnalysis =
         getLatestDeploymentTimeSeriesAnalysis(accountId, verificationJobInstanceId, deploymentTimeSeriesAnalysisFilter);
     for (DeploymentTimeSeriesAnalysis timeSeriesAnalysis : latestDeploymentTimeSeriesAnalysis) {
-      timeSeriesAnalysis.getTransactionMetricSummaries().forEach(transactionMetricHostData
-          -> transactionMetricHostData.getHostData().forEach(
-              hostData -> nodeNameSet.add(hostData.getHostName().get())));
+      timeSeriesAnalysis.getTransactionMetricSummaries().forEach(
+          transactionMetricHostData -> transactionMetricHostData.getHostData().forEach(hostData -> {
+            if (hostData.getHostName().isPresent()) {
+              nodeNameSet.add(hostData.getHostName().get());
+            }
+          }));
     }
 
     return new HashSet<>(nodeNameSet);

@@ -39,6 +39,7 @@ import io.harness.exception.WingsException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.logging.CommandExecutionStatus;
+import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.plancreator.steps.common.rollback.TaskExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -62,8 +63,10 @@ import software.wings.beans.TaskType;
 import com.amazonaws.services.cloudformation.model.StackStatus;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -111,6 +114,11 @@ public class CloudformationRollbackStep extends TaskExecutableWithRollbackAndRba
           cloudformationTaskNGResponse.getUnitProgressData().getUnitProgresses(),
           cloudformationTaskNGResponse.getErrorMessage());
     }
+
+    String provisionerId = getParameterFieldValue(((CloudformationRollbackStepParameters) stepParameters.getSpec())
+                                                      .getConfiguration()
+                                                      .getProvisionerIdentifier());
+    cloudformationConfigDAL.clearStoredCloudformationConfig(ambiance, provisionerId);
 
     StepResponseBuilder stepResponseBuilder =
         StepResponse.builder()
@@ -179,7 +187,9 @@ public class CloudformationRollbackStep extends TaskExecutableWithRollbackAndRba
     return StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
         Collections.singletonList(cloudformationTaskNGParameters.getCfCommandUnit().name()),
         TaskType.CLOUDFORMATION_TASK_NG.getDisplayName(),
-        StepUtils.getTaskSelectors(stepParameters.getDelegateSelectors()), stepHelper.getEnvironmentType(ambiance));
+        TaskSelectorYaml.toTaskSelector(
+            ((CloudformationRollbackStepParameters) stepParameters.getSpec()).getDelegateSelectors()),
+        stepHelper.getEnvironmentType(ambiance));
   }
 
   @Override
@@ -194,13 +204,22 @@ public class CloudformationRollbackStep extends TaskExecutableWithRollbackAndRba
         (AwsConnectorDTO) cloudformationStepHelper.getConnectorDTO(cloudformationConfig.getConnectorRef(), ambiance)
             .getConnectorConfig();
     Map<String, String> parameters = new HashMap<>();
-    cloudformationConfig.getParametersFiles().forEach(
-        (s, strings)
-            -> strings.forEach(fileContent
-                -> parameters.putAll(cloudformationStepHelper.getParametersFromJson(ambiance, fileContent))));
+    if (cloudformationConfig.getParametersFiles() != null) {
+      cloudformationConfig.getParametersFiles().forEach(
+          (s, strings)
+              -> strings.forEach(fileContent
+                  -> parameters.putAll(cloudformationStepHelper.getParametersFromJson(ambiance, fileContent))));
+    }
 
     if (cloudformationConfig.getParameterOverrides() != null) {
       parameters.putAll(cloudformationConfig.getParameterOverrides());
+    }
+    List<StackStatus> statusesToMarkAsSuccess = new ArrayList<>();
+    if (cloudformationConfig.getStackStatusesToMarkAsSuccess() != null) {
+      statusesToMarkAsSuccess = cloudformationConfig.getStackStatusesToMarkAsSuccess()
+                                    .stream()
+                                    .map(StackStatus::fromValue)
+                                    .collect(Collectors.toList());
     }
 
     CloudformationTaskNGParameters cloudformationTaskNGParameters =
@@ -218,10 +237,7 @@ public class CloudformationRollbackStep extends TaskExecutableWithRollbackAndRba
             .parameters(parameters)
             .capabilities(cloudformationConfig.getCapabilities())
             .tags(cloudformationConfig.getTags())
-            .stackStatusesToMarkAsSuccess(cloudformationConfig.getStackStatusesToMarkAsSuccess()
-                                              .stream()
-                                              .map(StackStatus::fromValue)
-                                              .collect(Collectors.toList()))
+            .stackStatusesToMarkAsSuccess(statusesToMarkAsSuccess)
             .timeoutInMs(StepUtils.getTimeoutMillis(stepParameters.getTimeout(), DEFAULT_TIMEOUT))
             .build();
     ExpressionEvaluatorUtils.updateExpressions(

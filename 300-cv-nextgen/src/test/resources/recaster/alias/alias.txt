@@ -85,3 +85,8 @@ io.harness.plancreator.stages.StageElementWrapperConfig
 io.harness.plancreator.execution.StepsExecutionConfig
 io.harness.yaml.core.parallelStepElementConfig
 io.harness.steps.customstage.CustomStageNode
+io.harness.plancreator.strategy.AxisConfig
+io.harness.plancreator.strategy.ExcludeConfig
+io.harness.plancreator.strategy.MatrixConfig
+io.harness.plancreator.strategy.StrategyConfig
+io.harness.plancreator.strategy.HarnessForConfig

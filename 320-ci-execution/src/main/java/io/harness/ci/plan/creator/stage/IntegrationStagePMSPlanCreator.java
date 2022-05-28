@@ -120,7 +120,7 @@ public class IntegrationStagePMSPlanCreator extends GenericStagePlanCreator {
 
   @Override
   public Set<String> getSupportedStageTypes() {
-    return ImmutableSet.of(StepSpecTypeConstants.CI_STAGE, StepSpecTypeConstants.SECURITY_STAGE);
+    return ImmutableSet.of(StepSpecTypeConstants.CI_STAGE);
   }
 
   @Override

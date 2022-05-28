@@ -250,8 +250,6 @@ public class AppDynamicsHealthSourceSpecTest extends CvNextGenTestBase {
     assertThat(cvConfig.getApplicationName()).isEqualTo(applicationName);
     assertThat(cvConfig.getTierName()).isEqualTo(tierName);
     assertThat(cvConfig.getConnectorIdentifier()).isEqualTo(connectorIdentifier);
-    assertThat(cvConfig.getEnvIdentifier()).isEqualTo(envIdentifier);
-    assertThat(cvConfig.getServiceIdentifier()).isEqualTo(serviceIdentifier);
     assertThat(cvConfig.getIdentifier()).isEqualTo(identifier);
     assertThat(cvConfig.getProductName()).isEqualTo(feature);
     assertThat(cvConfig.getMonitoringSourceName()).isEqualTo(name);

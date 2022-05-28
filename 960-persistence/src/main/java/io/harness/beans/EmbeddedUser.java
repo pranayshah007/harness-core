@@ -14,10 +14,12 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.experimental.FieldNameConstants;
 import org.springframework.data.annotation.TypeAlias;
 
 @Data
 @Builder
+@FieldNameConstants(innerTypeName = "EmbeddedUserKeys")
 @NoArgsConstructor
 @AllArgsConstructor
 @TypeAlias("embeddedUser")

@@ -32,8 +32,12 @@ import org.hibernate.validator.constraints.NotEmpty;
 @OwnedBy(PL)
 @Schema(name = "CreateInvite", description = "This is the view of the CreateInvite entity defined in Harness")
 public class CreateInviteDTO {
-  @ApiModelProperty(required = true) @NotEmpty @Size(max = 100) List<String> users;
-  List<RoleBinding> roleBindings;
-  @ApiModelProperty(required = true) InviteType inviteType;
-  List<String> userGroups;
+  @Schema(description = "List of users to be invited.")
+  @ApiModelProperty(required = true)
+  @NotEmpty
+  @Size(max = 100)
+  List<String> users;
+  @Schema(description = "Role bindings to be associated with the invited users.") List<RoleBinding> roleBindings;
+  @Schema(description = "Specifies the invite type.") @ApiModelProperty(required = true) InviteType inviteType;
+  @Schema(description = "List of the user Groups in the invite.") List<String> userGroups;
 }

@@ -101,6 +101,7 @@ public class ServerlessEntityHelper {
             .serverlessInfraType(AWS_INFRA)
             .region(serverlessAwsLambdaInfrastructureOutcome.getRegion())
             .stage(serverlessAwsLambdaInfrastructureOutcome.getStage())
+            .infraStructureKey(serverlessAwsLambdaInfrastructureOutcome.getInfrastructureKey())
             .build();
       default:
         throw new UnsupportedOperationException(

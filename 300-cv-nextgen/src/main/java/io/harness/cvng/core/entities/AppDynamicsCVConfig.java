@@ -25,6 +25,7 @@ import io.harness.cvng.core.utils.analysisinfo.SLIMetricTransformer;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -100,6 +101,9 @@ public class AppDynamicsCVConfig extends MetricCVConfig<MetricInfo> {
   @Override
   public List<MetricInfo> getMetricInfos() {
     populateCompleteMetricPaths();
+    if (metricInfos == null) {
+      return Collections.emptyList();
+    }
     return metricInfos;
   }
 

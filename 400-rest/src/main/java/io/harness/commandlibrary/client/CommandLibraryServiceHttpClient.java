@@ -7,7 +7,7 @@
 
 package io.harness.commandlibrary.client;
 
-import io.harness.commandlibrary.api.dto.CommandDTO;
+import io.harness.commandlibrary.api.dto.CommandEntityDTO;
 import io.harness.rest.RestResponse;
 
 import software.wings.api.commandlibrary.EnrichedCommandVersionDTO;
@@ -34,7 +34,7 @@ public interface CommandLibraryServiceHttpClient {
       @Path("commandStoreName") String commandStoreName, @QueryMap Map<String, Object> pageRequestParams);
 
   @GET("command-stores/{commandStoreName}/commands/{commandName}")
-  Call<RestResponse<CommandDTO>> getCommandDetails(@Path("commandStoreName") String commandStoreName,
+  Call<RestResponse<CommandEntityDTO>> getCommandDetails(@Path("commandStoreName") String commandStoreName,
       @Path("commandName") String commandName, @QueryMap Map<String, Object> pageRequestParams);
 
   @GET("command-stores/{commandStoreName}/commands/{commandName}/versions/{version}")

@@ -120,7 +120,7 @@ public class PrometheusState extends AbstractMetricAnalysisState {
             .metricEndpoints(metricEndpoints)
             .accountId(accountId)
             .strategy(getComparisonStrategy())
-            .dataCollectionTotalTime(Integer.parseInt(getTimeDuration()))
+            .dataCollectionTotalTime(Integer.parseInt(getTimeDuration(context)))
             .initialDelaySeconds(getDelaySeconds(initialAnalysisDelay))
             .validateCert(accountService.isCertValidationRequired(accountId))
             .build();
@@ -136,7 +136,7 @@ public class PrometheusState extends AbstractMetricAnalysisState {
                       .async(true)
                       .taskType(TaskType.APM_METRIC_DATA_COLLECTION_TASK.name())
                       .parameters(new Object[] {dataCollectionInfo})
-                      .timeout(TimeUnit.MINUTES.toMillis(Integer.parseInt(getTimeDuration()) + 5))
+                      .timeout(TimeUnit.MINUTES.toMillis(Integer.parseInt(getTimeDuration(context)) + 5))
                       .build())
             .setupAbstraction(Cd1SetupFields.ENV_ID_FIELD, envId)
             .setupAbstraction(Cd1SetupFields.INFRASTRUCTURE_MAPPING_ID_FIELD, infrastructureMappingId)
@@ -148,7 +148,7 @@ public class PrometheusState extends AbstractMetricAnalysisState {
             .executionData(executionData)
             .dataCollectionStartTime(dataCollectionStartTimeStamp)
             .dataCollectionEndTime(
-                dataCollectionStartTimeStamp + TimeUnit.MINUTES.toMillis(Integer.parseInt(getTimeDuration())))
+                dataCollectionStartTimeStamp + TimeUnit.MINUTES.toMillis(Integer.parseInt(getTimeDuration(context))))
             .build(),
         waitId);
     return delegateService.queueTask(delegateTask);

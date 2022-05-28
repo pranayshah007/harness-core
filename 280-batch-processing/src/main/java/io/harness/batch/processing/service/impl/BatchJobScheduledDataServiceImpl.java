@@ -43,6 +43,9 @@ public class BatchJobScheduledDataServiceImpl implements BatchJobScheduledDataSe
   public Instant fetchLastBatchJobScheduledTime(String accountId, BatchJobType batchJobType) {
     Instant instant = fetchLastDependentBatchJobScheduledTime(accountId, batchJobType);
     if (null == instant) {
+      if (batchJobType.equals(BatchJobType.DELEGATE_HEALTH_CHECK)) {
+        return Instant.now().minus(1, ChronoUnit.HOURS).truncatedTo(ChronoUnit.HOURS);
+      }
       if (ImmutableSet.of(BatchJobBucket.OUT_OF_CLUSTER, BatchJobBucket.OUT_OF_CLUSTER_ECS)
               .contains(batchJobType.getBatchJobBucket())) {
         Instant connectorCreationTime =
@@ -59,6 +62,11 @@ public class BatchJobScheduledDataServiceImpl implements BatchJobScheduledDataSe
       } else {
         instant = lastReceivedPublishedMessageDao.getFirstEventReceivedTime(accountId);
       }
+    }
+
+    if (null != instant && batchJobType == BatchJobType.DELEGATE_HEALTH_CHECK) {
+      Instant startInstant = Instant.now().minus(1, ChronoUnit.HOURS).truncatedTo(ChronoUnit.HOURS);
+      instant = startInstant.isAfter(instant) ? startInstant : instant;
     }
 
     if (null != instant && batchJobType == BatchJobType.INSTANCE_BILLING_HOURLY_AGGREGATION) {

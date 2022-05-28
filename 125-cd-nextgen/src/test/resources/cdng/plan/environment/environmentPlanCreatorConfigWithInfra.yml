@@ -1,0 +1,33 @@
+environmentRef: envId
+name: envId
+identifier: envId
+description: ""
+orgIdentifier: my_org
+projectIdentifier: my_proj
+variables:
+  - name: var1
+    type: String
+    value: value2
+serviceOverrides:
+  - serviceRef: s1
+    variables:
+      - name: var1
+        type: String
+        value: value1
+infrastructureDefinitions:
+  - ref: id1
+    infrastructureDefinition:
+      identifier: id1
+      type: KubernetesDirect
+      spec:
+        connectorRef: org.KubernetesConnectorForAutomationTest
+        namespace: cdp-k8s-qa-sanity
+        releaseName: releasename-681406
+  - ref: id2
+    infrastructureDefinition:
+      identifier: id2
+      type: KubernetesDirect
+      spec:
+        connectorRef: org.KubernetesConnectorForAutomationTest
+        namespace: cdp-k8s-qa-sanity
+        releaseName: releasename-681406

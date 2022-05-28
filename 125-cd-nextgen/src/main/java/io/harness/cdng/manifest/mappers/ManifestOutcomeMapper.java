@@ -88,6 +88,7 @@ public class ManifestOutcomeMapper {
     return K8sManifestOutcome.builder()
         .identifier(k8sManifest.getIdentifier())
         .store(k8sManifest.getStoreConfig())
+        .valuesPaths(k8sManifest.getValuesPaths())
         .skipResourceVersioning(k8sManifest.getSkipResourceVersioning())
         .build();
   }
@@ -110,6 +111,7 @@ public class ManifestOutcomeMapper {
         .chartName(helmChartManifest.getChartName())
         .chartVersion(helmChartManifest.getChartVersion())
         .helmVersion(helmChartManifest.getHelmVersion())
+        .valuesPaths(helmChartManifest.getValuesPaths())
         .skipResourceVersioning(helmChartManifest.getSkipResourceVersioning())
         .commandFlags(helmChartManifest.getCommandFlags())
         .build();
@@ -122,6 +124,7 @@ public class ManifestOutcomeMapper {
         .store(kustomizeManifest.getStoreConfig())
         .skipResourceVersioning(kustomizeManifest.getSkipResourceVersioning())
         .pluginPath(kustomizeManifest.getPluginPath())
+        .patchesPaths(kustomizeManifest.getPatchesPaths())
         .build();
   }
 
@@ -141,6 +144,7 @@ public class ManifestOutcomeMapper {
         .identifier(openshiftManifest.getIdentifier())
         .store(openshiftManifest.getStoreConfig())
         .skipResourceVersioning(openshiftManifest.getSkipResourceVersioning())
+        .paramsPaths(openshiftManifest.getParamsPaths())
         .build();
   }
 

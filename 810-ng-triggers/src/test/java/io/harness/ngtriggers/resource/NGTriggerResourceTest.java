@@ -8,6 +8,7 @@
 package io.harness.ngtriggers.resource;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.rule.OwnerRule.HARSH;
 import static io.harness.rule.OwnerRule.MATT;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.ROHITKARELIA;
@@ -38,6 +39,7 @@ import io.harness.ngtriggers.beans.target.TargetType;
 import io.harness.ngtriggers.mapper.NGTriggerElementMapper;
 import io.harness.ngtriggers.mapper.TriggerFilterHelper;
 import io.harness.ngtriggers.service.NGTriggerService;
+import io.harness.pms.inputset.MergeInputSetResponseDTOPMS;
 import io.harness.rule.Owner;
 import io.harness.utils.YamlPipelineUtils;
 
@@ -74,11 +76,15 @@ public class NGTriggerResourceTest extends CategoryTest {
   private final String ORG_IDENTIFIER = "orgId";
   private final String PROJ_IDENTIFIER = "projId";
   private String ngTriggerYaml;
+  private String ngTriggerYamlWithGitSync;
 
   private NGTriggerDetailsResponseDTO ngTriggerDetailsResponseDTO;
   private NGTriggerResponseDTO ngTriggerResponseDTO;
+  private NGTriggerResponseDTO ngTriggerResponseDTOGitSync;
   private NGTriggerEntity ngTriggerEntity;
+  private NGTriggerEntity ngTriggerEntityGitSync;
   private NGTriggerConfigV2 ngTriggerConfig;
+  private MergeInputSetResponseDTOPMS mergeInputSetResponseDTOPMS;
 
   @Before
   public void setUp() throws IOException {
@@ -86,8 +92,11 @@ public class NGTriggerResourceTest extends CategoryTest {
 
     ClassLoader classLoader = getClass().getClassLoader();
     String filename = "ng-trigger-github-pr-v2.yaml";
+    String filenameGitSync = "ng-trigger-github-pr-gitsync.yaml";
     ngTriggerYaml =
         Resources.toString(Objects.requireNonNull(classLoader.getResource(filename)), StandardCharsets.UTF_8);
+    ngTriggerYamlWithGitSync =
+        Resources.toString(Objects.requireNonNull(classLoader.getResource(filenameGitSync)), StandardCharsets.UTF_8);
 
     ngTriggerConfig = YamlPipelineUtils.read(ngTriggerYaml, NGTriggerConfigV2.class);
     WebhookTriggerConfigV2 webhookTriggerConfig = (WebhookTriggerConfigV2) ngTriggerConfig.getSource().getSpec();
@@ -105,6 +114,18 @@ public class NGTriggerResourceTest extends CategoryTest {
                                .type(NGTriggerType.WEBHOOK)
                                .version(0L)
                                .build();
+
+    ngTriggerResponseDTOGitSync = NGTriggerResponseDTO.builder()
+                                      .accountIdentifier(ACCOUNT_ID)
+                                      .orgIdentifier(ORG_IDENTIFIER)
+                                      .projectIdentifier(PROJ_IDENTIFIER)
+                                      .targetIdentifier(PIPELINE_IDENTIFIER)
+                                      .identifier(IDENTIFIER)
+                                      .name(NAME)
+                                      .yaml(ngTriggerYamlWithGitSync)
+                                      .type(NGTriggerType.WEBHOOK)
+                                      .version(0L)
+                                      .build();
 
     ngTriggerDetailsResponseDTO =
         NGTriggerDetailsResponseDTO.builder()
@@ -135,6 +156,22 @@ public class NGTriggerResourceTest extends CategoryTest {
                           .yaml(ngTriggerYaml)
                           .version(0L)
                           .build();
+    ngTriggerEntityGitSync = NGTriggerEntity.builder()
+                                 .accountId(ACCOUNT_ID)
+                                 .orgIdentifier(ORG_IDENTIFIER)
+                                 .projectIdentifier(PROJ_IDENTIFIER)
+                                 .targetIdentifier(PIPELINE_IDENTIFIER)
+                                 .identifier(IDENTIFIER)
+                                 .name(NAME)
+                                 .targetType(TargetType.PIPELINE)
+                                 .type(NGTriggerType.WEBHOOK)
+                                 .metadata(ngTriggerMetadata)
+                                 .yaml(ngTriggerYamlWithGitSync)
+                                 .version(0L)
+                                 .build();
+
+    mergeInputSetResponseDTOPMS =
+        MergeInputSetResponseDTOPMS.builder().isErrorResponse(false).pipelineYaml("pipelineYaml").build();
   }
 
   @Test
@@ -150,9 +187,27 @@ public class NGTriggerResourceTest extends CategoryTest {
     when(ngTriggerElementMapper.toResponseDTO(ngTriggerEntity)).thenReturn(ngTriggerResponseDTO);
 
     NGTriggerResponseDTO responseDTO =
-        ngTriggerResource.create(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, ngTriggerYaml)
+        ngTriggerResource.create(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, ngTriggerYaml, true)
             .getData();
     assertThat(responseDTO).isEqualTo(ngTriggerResponseDTO);
+  }
+
+  @Test
+  @Owner(developers = HARSH)
+  @Category(UnitTests.class)
+  public void testCreateWithGitSync() throws Exception {
+    doReturn(ngTriggerEntityGitSync).when(ngTriggerService).create(any());
+    when(ngTriggerElementMapper.toResponseDTO(ngTriggerEntity)).thenReturn(ngTriggerResponseDTOGitSync);
+    TriggerDetails triggerDetails = TriggerDetails.builder().ngTriggerEntity(ngTriggerEntity).build();
+    doReturn(triggerDetails)
+        .when(ngTriggerElementMapper)
+        .toTriggerDetails(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, ngTriggerYaml);
+    when(ngTriggerElementMapper.toResponseDTO(ngTriggerEntityGitSync)).thenReturn(ngTriggerResponseDTOGitSync);
+
+    NGTriggerResponseDTO responseDTO =
+        ngTriggerResource.create(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, ngTriggerYaml, false)
+            .getData();
+    assertThat(responseDTO).isEqualTo(ngTriggerResponseDTOGitSync);
   }
 
   @Test
@@ -189,12 +244,40 @@ public class NGTriggerResourceTest extends CategoryTest {
             ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER, ngTriggerYaml);
     when(ngTriggerElementMapper.toResponseDTO(ngTriggerEntity)).thenReturn(ngTriggerResponseDTO);
 
-    NGTriggerResponseDTO responseDTO =
-        ngTriggerResource
-            .update("0", ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER, ngTriggerYaml)
-            .getData();
+    NGTriggerResponseDTO responseDTO = ngTriggerResource
+                                           .update("0", ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+                                               PIPELINE_IDENTIFIER, IDENTIFIER, ngTriggerYaml, true)
+                                           .getData();
 
     assertThat(responseDTO).isEqualTo(ngTriggerResponseDTO);
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testUpdateWithGitSync() throws Exception {
+    doReturn(ngTriggerEntityGitSync).when(ngTriggerService).update(any());
+    doReturn(Optional.of(ngTriggerEntityGitSync))
+        .when(ngTriggerService)
+        .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER, false);
+    TriggerDetails triggerDetails = TriggerDetails.builder().ngTriggerEntity(ngTriggerEntityGitSync).build();
+    doReturn(triggerDetails)
+        .when(ngTriggerElementMapper)
+        .toTriggerDetails(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, ngTriggerYaml);
+    doReturn(triggerDetails)
+        .when(ngTriggerElementMapper)
+        .mergeTriggerEntity(triggerDetails.getNgTriggerEntity(), ngTriggerYamlWithGitSync);
+    doReturn(triggerDetails)
+        .when(ngTriggerService)
+        .fetchTriggerEntity(
+            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, IDENTIFIER, ngTriggerYamlWithGitSync);
+    when(ngTriggerElementMapper.toResponseDTO(ngTriggerEntityGitSync)).thenReturn(ngTriggerResponseDTOGitSync);
+    NGTriggerResponseDTO responseDTO = ngTriggerResource
+                                           .update("0", ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+                                               PIPELINE_IDENTIFIER, IDENTIFIER, ngTriggerYamlWithGitSync, false)
+                                           .getData();
+
+    assertThat(responseDTO).isEqualTo(ngTriggerResponseDTOGitSync);
   }
 
   @Test

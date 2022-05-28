@@ -32,6 +32,7 @@ import io.harness.delegate.task.serverless.request.ServerlessDeployRequest;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.runtime.serverless.ServerlessAwsLambdaRuntimeException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.filesystem.FileIo;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
@@ -49,7 +50,6 @@ import io.harness.serverless.model.ServerlessDelegateTaskParams;
 
 import software.wings.beans.LogColor;
 import software.wings.beans.LogWeight;
-import software.wings.delegatetasks.ExceptionMessageSanitizer;
 import software.wings.service.intfc.aws.delegate.AwsCFHelperServiceDelegate;
 
 import com.google.common.collect.Iterables;
@@ -269,7 +269,7 @@ public class ServerlessAwsCommandTaskHelper {
       }
       if (functionPropertyMap.containsKey(AWS_LAMBDA_FUNCTION_TIMEOUT_PROPERTY_KEY)) {
         serverlessAwsLambdaFunctionBuilder.timeout(
-            functionPropertyMap.get(AWS_LAMBDA_FUNCTION_TIMEOUT_PROPERTY_KEY).toString());
+            Integer.parseInt(functionPropertyMap.get(AWS_LAMBDA_FUNCTION_TIMEOUT_PROPERTY_KEY).toString()));
       }
       serverlessAwsLambdaFunctions.add(serverlessAwsLambdaFunctionBuilder.build());
     }

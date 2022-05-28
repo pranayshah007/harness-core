@@ -9,8 +9,8 @@ package io.harness.notification.notificationclient;
 
 import static io.harness.remote.client.NGRestUtils.getResponse;
 
-import io.harness.NotificationRequest;
-import io.harness.Team;
+import io.harness.notification.NotificationRequest;
+import io.harness.notification.Team;
 import io.harness.notification.channeldetails.NotificationChannel;
 import io.harness.notification.messageclient.MessageClient;
 import io.harness.notification.remote.NotificationHTTPClient;

@@ -40,4 +40,10 @@ public interface InfrastructureEntityService {
 
   InfrastructureEntity find(@NotEmpty String accountIdentifier, @NotEmpty String orgIdentifier,
       @NotEmpty String projectIdentifier, @NotEmpty String envIdentifier, @NotEmpty String infraIdentifier);
+
+  List<InfrastructureEntity> getAllInfrastructureFromIdentifierList(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String value, List<String> infraIdentifier);
+
+  List<InfrastructureEntity> getAllInfrastructureFromEnvIdentifier(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String envIdentifier);
 }

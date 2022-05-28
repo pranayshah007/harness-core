@@ -17,6 +17,7 @@ import io.harness.utils.RequestField;
 import software.wings.security.PermissionAttribute;
 import software.wings.security.annotations.Scope;
 
+import java.util.List;
 import lombok.Builder;
 import lombok.Value;
 import lombok.experimental.FieldNameConstants;
@@ -37,4 +38,5 @@ public class QLWinRMCredentialUpdate {
   RequestField<Boolean> skipCertCheck;
   RequestField<Integer> port;
   RequestField<QLUsageScope> usageScope;
+  RequestField<List<QLWinRmCommandParameter>> parameters;
 }

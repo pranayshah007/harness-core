@@ -351,10 +351,10 @@ public class WorkflowExecutionServiceImplTest extends WingsBaseTest {
   @Owner(developers = SRINIVAS)
   @Category(UnitTests.class)
   public void shouldTriggerComplexWorkflow() throws InterruptedException {
-    Host host1 = wingsPersistence.saveAndGet(
-        Host.class, aHost().withAppId(app.getUuid()).withEnvId(env.getUuid()).withHostName("host1").build());
-    Host host2 = wingsPersistence.saveAndGet(
-        Host.class, aHost().withAppId(app.getUuid()).withEnvId(env.getUuid()).withHostName("host2").build());
+    Host host1 = aHost().withAppId(app.getUuid()).withEnvId(env.getUuid()).withHostName("host1").build();
+    wingsPersistence.save(host1);
+    Host host2 = aHost().withAppId(app.getUuid()).withEnvId(env.getUuid()).withHostName("host2").build();
+    wingsPersistence.save(host2);
 
     Service service1 = addService("svc1");
     Service service2 = addService("svc2");
@@ -524,8 +524,8 @@ public class WorkflowExecutionServiceImplTest extends WingsBaseTest {
   }
 
   private Pipeline constructPipeline(Service service) {
-    Host host = wingsPersistence.saveAndGet(
-        Host.class, aHost().withAppId(app.getUuid()).withEnvId(env.getUuid()).withHostName("host").build());
+    Host host = aHost().withAppId(app.getUuid()).withEnvId(env.getUuid()).withHostName("host").build();
+    wingsPersistence.save(host);
 
     ServiceTemplate serviceTemplate = getServiceTemplate(service);
 
@@ -1229,10 +1229,10 @@ public class WorkflowExecutionServiceImplTest extends WingsBaseTest {
   @Category(UnitTests.class)
   @Ignore("TODO: please provide clear motivation why this test is ignored")
   public void shouldWaitOnError() throws InterruptedException {
-    Host applicationHost1 = wingsPersistence.saveAndGet(
-        Host.class, aHost().withAppId(app.getAppId()).withEnvId(env.getUuid()).withHostName("host1").build());
-    Host applicationHost2 = wingsPersistence.saveAndGet(
-        Host.class, aHost().withAppId(app.getAppId()).withEnvId(env.getUuid()).withHostName("host2").build());
+    Host applicationHost1 = aHost().withAppId(app.getAppId()).withEnvId(env.getUuid()).withHostName("host1").build();
+    wingsPersistence.save(applicationHost1);
+    Host applicationHost2 = aHost().withAppId(app.getAppId()).withEnvId(env.getUuid()).withHostName("host2").build();
+    wingsPersistence.save(applicationHost2);
 
     Service service = addService("svc1");
     ServiceTemplate serviceTemplate = getServiceTemplate(service);
@@ -1421,8 +1421,8 @@ public class WorkflowExecutionServiceImplTest extends WingsBaseTest {
   @Category(UnitTests.class)
   @Ignore("TODO: please provide clear motivation why this test is ignored")
   public void shouldRetryOnError() throws InterruptedException {
-    Host host1 = wingsPersistence.saveAndGet(
-        Host.class, aHost().withAppId(app.getUuid()).withEnvId(env.getUuid()).withHostName("host1").build());
+    Host host1 = aHost().withAppId(app.getUuid()).withEnvId(env.getUuid()).withHostName("host1").build();
+    wingsPersistence.save(host1);
 
     Service service = addService("svc1");
     ServiceTemplate serviceTemplate = getServiceTemplate(service);

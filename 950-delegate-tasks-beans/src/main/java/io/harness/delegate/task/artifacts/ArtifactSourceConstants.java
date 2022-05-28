@@ -16,4 +16,5 @@ public interface ArtifactSourceConstants {
   String ACR_NAME = "Acr";
   String CUSTOM_ARTIFACT_NAME = "CustomArtifact";
   String ARTIFACTORY_GENERIC_REGISTRY_NAME = "ArtifactoryGenericRegistry";
+  String JENKINS_NAME = "Jenkins";
 }

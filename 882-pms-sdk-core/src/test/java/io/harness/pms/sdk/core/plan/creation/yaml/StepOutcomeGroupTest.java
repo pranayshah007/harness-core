@@ -23,6 +23,6 @@ public class StepOutcomeGroupTest extends CategoryTest {
   @Owner(developers = SAHIL)
   @Category(UnitTests.class)
   public void testEnum() {
-    assertThat(StepOutcomeGroup.values().length).isEqualTo(7);
+    assertThat(StepOutcomeGroup.values().length).isEqualTo(8);
   }
 }

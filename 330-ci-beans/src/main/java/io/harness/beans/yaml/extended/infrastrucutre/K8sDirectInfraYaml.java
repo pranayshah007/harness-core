@@ -91,5 +91,6 @@ public class K8sDirectInfraYaml implements Infrastructure {
     @YamlSchemaTypes({runtime})
     @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.infrastrucutre.OSType")
     private ParameterField<OSType> os;
+    @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> harnessImageConnectorRef;
   }
 }

@@ -150,5 +150,8 @@ print_err "$?" "Pushing build.properties to develop branch failed"
 echo "STEP4: INFO: Update jira issues"
 git fetch origin refs/heads/master; git checkout master && git branch
 check_branch_name "master"
+if [[ "$EXECUTE_NEW_VERSION_CODE" == "true" ]]; then
+  scripts/jenkins/release-branch-create-versions.sh
+fi
 scripts/jenkins/release-branch-update-jiras.sh
 scripts/jenkins/release-branch-update-jira_status.sh

@@ -1,0 +1,23 @@
+pipeline:
+  name: pipeline
+  identifier: pipeline
+  stages:
+    - stage:
+        name: dev
+        identifier: dev
+        type: Deployment
+        spec:
+          serviceConfig:
+            serviceDefinition:
+              type: Kubernetes
+              spec:
+                artifacts:
+                  primary:
+                    type: ArtifactoryRegistry
+                    spec:
+                      connectorRef: conn1
+                      tag: <+input>
+                      artifactPath: path1
+                      repository: automation-repo-do-not-delete1
+                      repositoryUrl: url1
+                      repositoryFormat: docker

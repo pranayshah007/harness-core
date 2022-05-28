@@ -51,7 +51,7 @@ public class InstallUtilsTest {
 
   private static final String DEFAULT_KUSTOMIZE_3_PATH = PWD + "/client-tools/kustomize/v3.5.4/kustomize";
   private static final String DEFAULT_KUSTOMIZE_4_PATH = PWD + "/client-tools/kustomize/v4.0.0/kustomize";
-  private static final String DEFAULT_SCM_PATH = PWD + "/client-tools/scm/9ac991d2/scm";
+  private static final String DEFAULT_SCM_PATH = PWD + "/client-tools/scm/0487ccaf/scm";
   private static final String DEFAULT_OC_PATH = PWD + "/client-tools/oc/v4.2.16/oc";
   private static final String DEFAULT_TFCONFIG_INSPECT_1_0_PATH =
       PWD + "/client-tools/tf-config-inspect/v1.0/terraform-config-inspect";
@@ -102,6 +102,41 @@ public class InstallUtilsTest {
     assertThat(getPath(HELM, HelmVersion.V3)).isEqualTo(helm3Path);
     assertThat(getLatestVersionPath(KUSTOMIZE)).isEqualTo(kustomizePath);
     assertThat(getPath(KUSTOMIZE, KustomizeVersion.V3)).isEqualTo(kustomizePath);
+  }
+
+  @Test
+  @Owner(developers = MARKO)
+  @Category(FunctionalTests.class)
+  public void whenCustomBinaryNameThenTheyAreUsed() {
+    final String helm3Path = "/usr/local/bin/helm3";
+    final String helmPath = "/usr/local/bin/helm2";
+    final DelegateConfiguration customConfig = DelegateConfiguration.builder()
+                                                   .managerUrl("localhost")
+                                                   .clientToolsDownloadDisabled(true)
+                                                   .helm3Path(helm3Path)
+                                                   .helmPath(helmPath)
+                                                   .build();
+
+    setupClientTools(customConfig);
+
+    assertThat(getPath(HELM, HelmVersion.V2)).isEqualTo(helmPath);
+    assertThat(getPath(HELM, HelmVersion.V3)).isEqualTo(helm3Path);
+  }
+
+  @Test
+  @Owner(developers = MARKO)
+  @Category(FunctionalTests.class)
+  public void whenNoAbsoluthPathThenTheyAreUsed() {
+    final String kubectl = "kubectl";
+    final DelegateConfiguration customConfig = DelegateConfiguration.builder()
+                                                   .managerUrl("localhost")
+                                                   .clientToolsDownloadDisabled(true)
+                                                   .kubectlPath(kubectl)
+                                                   .build();
+
+    setupClientTools(customConfig);
+
+    assertThat(getPath(KUBECTL, KubectlVersion.V1_13)).isEqualTo(PWD + "/kubectl");
   }
 
   @Test

@@ -7,9 +7,9 @@
 
 package io.harness.notification.service.api;
 
-import io.harness.NotificationRequest;
-import io.harness.Team;
 import io.harness.ng.beans.PageRequest;
+import io.harness.notification.NotificationRequest;
+import io.harness.notification.Team;
 import io.harness.notification.entities.Notification;
 
 import java.util.Optional;

@@ -7,7 +7,7 @@
 
 package io.harness.notification.notificationclient;
 
-import io.harness.Team;
+import io.harness.notification.Team;
 import io.harness.notification.channeldetails.NotificationChannel;
 import io.harness.notification.remote.dto.NotificationSettingDTO;
 import io.harness.notification.remote.dto.TemplateDTO;

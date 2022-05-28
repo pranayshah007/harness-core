@@ -27,7 +27,6 @@ import software.wings.delegatetasks.buildsource.BuildSourceExecutionResponse;
 import software.wings.delegatetasks.buildsource.BuildSourceParameters;
 import software.wings.delegatetasks.buildsource.BuildSourceResponse;
 import software.wings.helpers.ext.jenkins.BuildDetails;
-import software.wings.service.impl.artifact.ArtifactCollectionUtils;
 import software.wings.utils.DelegateArtifactCollectionUtils;
 
 import com.github.benmanes.caffeine.cache.Cache;
@@ -233,7 +232,8 @@ public class ArtifactPerpetualTaskExecutor implements PerpetualTaskExecutor {
       String artifactStreamId, BuildSourceParameters buildSourceParameters) {
     Function<BuildDetails, String> buildDetailsKeyFn = DelegateArtifactCollectionUtils.getBuildDetailsKeyFn(
         buildSourceParameters.getArtifactStreamType(), buildSourceParameters.getArtifactStreamAttributes());
-    boolean enableCleanup = ArtifactCollectionUtils.supportsCleanup(buildSourceParameters.getArtifactStreamType());
+    boolean enableCleanup =
+        DelegateArtifactCollectionUtils.supportsCleanup(buildSourceParameters.getArtifactStreamType());
     return cache.get(artifactStreamId,
         id
         -> new ArtifactsPublishedCache(

@@ -117,6 +117,8 @@ public interface AccountService {
 
   DelegateConfiguration getDelegateConfiguration(String accountId);
 
+  List<String> getWatcherVersion(String accountId);
+
   String getAccountPrimaryDelegateVersion(String accountId);
 
   List<Account> listAllAccounts();

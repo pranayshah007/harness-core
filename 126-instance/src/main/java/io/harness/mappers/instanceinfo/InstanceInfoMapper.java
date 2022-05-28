@@ -13,10 +13,12 @@ import io.harness.dtos.instanceinfo.InstanceInfoDTO;
 import io.harness.dtos.instanceinfo.K8sInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.NativeHelmInstanceInfoDTO;
 import io.harness.dtos.instanceinfo.ReferenceInstanceInfoDTO;
+import io.harness.dtos.instanceinfo.ServerlessAwsLambdaInstanceInfoDTO;
 import io.harness.entities.instanceinfo.InstanceInfo;
 import io.harness.entities.instanceinfo.K8sInstanceInfo;
 import io.harness.entities.instanceinfo.NativeHelmInstanceInfo;
 import io.harness.entities.instanceinfo.ReferenceInstanceInfo;
+import io.harness.entities.instanceinfo.ServerlessAwsLambdaInstanceInfo;
 import io.harness.exception.InvalidRequestException;
 
 import lombok.experimental.UtilityClass;
@@ -31,6 +33,8 @@ public class InstanceInfoMapper {
       return K8sInstanceInfoMapper.toDTO((K8sInstanceInfo) instanceInfo);
     } else if (instanceInfo instanceof NativeHelmInstanceInfo) {
       return NativeHelmInstanceInfoMapper.toDTO((NativeHelmInstanceInfo) instanceInfo);
+    } else if (instanceInfo instanceof ServerlessAwsLambdaInstanceInfo) {
+      return ServerlessAwsLambdaInstanceInfoMapper.toDTO((ServerlessAwsLambdaInstanceInfo) instanceInfo);
     }
     throw new InvalidRequestException("No InstanceInfoMapper toDTO found for instanceInfo : {}" + instanceInfo);
   }
@@ -42,6 +46,8 @@ public class InstanceInfoMapper {
       return K8sInstanceInfoMapper.toEntity((K8sInstanceInfoDTO) instanceInfoDTO);
     } else if (instanceInfoDTO instanceof NativeHelmInstanceInfoDTO) {
       return NativeHelmInstanceInfoMapper.toEntity((NativeHelmInstanceInfoDTO) instanceInfoDTO);
+    } else if (instanceInfoDTO instanceof ServerlessAwsLambdaInstanceInfoDTO) {
+      return ServerlessAwsLambdaInstanceInfoMapper.toEntity((ServerlessAwsLambdaInstanceInfoDTO) instanceInfoDTO);
     }
     throw new InvalidRequestException(
         "No InstanceInfoMapper toEntity found for instanceInfoDTO : {}" + instanceInfoDTO);

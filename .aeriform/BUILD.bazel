@@ -84,13 +84,17 @@ aeriform("//310-ci-manager:module")
 
 aeriform("//310-ci-manager:tests")
 
+aeriform("//315-sto-manager:module")
+
+aeriform("//315-sto-manager:tests")
+
 aeriform("//320-ci-execution:module")
 
 aeriform("//320-ci-execution:tests")
 
-aeriform("//323-sto-execution:module")
+aeriform("//323-sto-utilities:module")
 
-aeriform("//323-sto-execution:tests")
+aeriform("//323-sto-utilities:tests")
 
 aeriform("//325-sto-beans:module")
 
@@ -319,6 +323,8 @@ aeriform("//clients/access-control/admin-client:module")
 aeriform("//clients/access-control/sdk:module")
 
 aeriform("//clients/access-control/sdk:tests")
+
+aeriform("//948-cv-nextgen-beans:module")
 
 aeriform("//950-command-library-common:module")
 

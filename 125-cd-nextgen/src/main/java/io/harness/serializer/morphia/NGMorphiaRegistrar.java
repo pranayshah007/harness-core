@@ -20,6 +20,7 @@ import io.harness.cdng.infra.beans.K8sDirectInfraMapping;
 import io.harness.cdng.infra.beans.K8sGcpInfraMapping;
 import io.harness.cdng.infra.beans.PdcInfraMapping;
 import io.harness.cdng.infra.beans.ServerlessAwsLambdaInfraMapping;
+import io.harness.cdng.infra.beans.SshWinRmAzureInfraMapping;
 import io.harness.cdng.infra.steps.InfraStepParameters;
 import io.harness.cdng.pipeline.executions.CDAccountExecutionMetadata;
 import io.harness.cdng.provision.cloudformation.beans.CloudformationConfig;
@@ -40,6 +41,7 @@ public class NGMorphiaRegistrar implements MorphiaRegistrar {
     set.add(K8sGcpInfraMapping.class);
     set.add(K8sAzureInfraMapping.class);
     set.add(PdcInfraMapping.class);
+    set.add(SshWinRmAzureInfraMapping.class);
     set.add(DockerArtifactSource.class);
     set.add(ArtifactSource.class);
     set.add(TerraformConfig.class);

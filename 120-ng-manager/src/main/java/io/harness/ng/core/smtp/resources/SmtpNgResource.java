@@ -91,8 +91,8 @@ public class SmtpNgResource {
   @ExceptionMetered
   public ResponseDTO<NgSmtpDTO>
   save(@Valid @NotNull NgSmtpDTO variable,
-      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier)
-      throws IOException {
+      @Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotNull @AccountIdentifier @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier) throws IOException {
     variable.setAccountId(accountIdentifier);
     NgSmtpDTO response = smtpNgService.saveSmtpSettings(variable);
     return ResponseDTO.newResponse(response);
@@ -129,8 +129,8 @@ public class SmtpNgResource {
   @ExceptionMetered
   public ResponseDTO<NgSmtpDTO>
   update(@Valid @NotNull NgSmtpDTO variable,
-      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier)
-      throws IOException {
+      @Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotNull @AccountIdentifier @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier) throws IOException {
     variable.setAccountId(accountIdentifier);
     NgSmtpDTO response = smtpNgService.updateSmtpSettings(variable);
     return ResponseDTO.newResponse(response);
@@ -172,8 +172,8 @@ public class SmtpNgResource {
   @ExceptionMetered
   public ResponseDTO<Boolean>
   delete(@Parameter(description = "Config identifier") @PathParam("identifier") String identifier,
-      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier)
-      throws IOException {
+      @Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotNull @AccountIdentifier @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier) throws IOException {
     Boolean response = smtpNgService.deleteSmtpSettings(identifier);
     return ResponseDTO.newResponse(response);
   }

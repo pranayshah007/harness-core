@@ -21,7 +21,9 @@ import io.harness.persistence.HPersistence;
 import com.google.inject.Inject;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.Sort;
@@ -71,6 +73,21 @@ public class LastReceivedPublishedMessageDao {
         .field(LastReceivedPublishedMessageKeys.identifier)
         .equal(identifier)
         .get();
+  }
+
+  public Map<String, Long> getLastReceivedTimeForClusters(String accountId, List<String> identifiers) {
+    Map<String, Long> lastReceivedTimeMap = new HashMap<>();
+    for (LastReceivedPublishedMessage message : hPersistence.createQuery(LastReceivedPublishedMessage.class)
+                                                    .field(LastReceivedPublishedMessageKeys.accountId)
+                                                    .equal(accountId)
+                                                    .field(LastReceivedPublishedMessageKeys.identifier)
+                                                    .in(identifiers)
+                                                    .project(LastReceivedPublishedMessageKeys.identifier, true)
+                                                    .project(LastReceivedPublishedMessageKeys.lastReceivedAt, true)
+                                                    .fetch()) {
+      lastReceivedTimeMap.put(message.getIdentifier(), message.getLastReceivedAt());
+    }
+    return lastReceivedTimeMap;
   }
 
   public LastReceivedPublishedMessage get(String accountId) {

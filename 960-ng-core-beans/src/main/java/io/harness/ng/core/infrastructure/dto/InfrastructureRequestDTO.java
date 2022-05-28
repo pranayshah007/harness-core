@@ -34,7 +34,7 @@ public class InfrastructureRequestDTO {
   @EntityIdentifier @Schema(description = "identifier of the infrastructure") String identifier;
   @Schema(description = "organisation identifier of the infrastructure") String orgIdentifier;
   @Schema(description = "project identifier of the infrastructure") String projectIdentifier;
-  @Schema(description = "environment identifier of the infrastructure") String envIdentifier;
+  @Schema(description = "environment reference of the infrastructure") String environmentRef;
 
   @EntityName @Schema(description = "name of the infrastructure") String name;
   @Schema(description = "description of the infrastructure") String description;

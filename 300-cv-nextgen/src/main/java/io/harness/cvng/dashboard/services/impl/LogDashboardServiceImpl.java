@@ -218,8 +218,11 @@ public class LogDashboardServiceImpl implements LogDashboardService {
     List<LiveMonitoringLogAnalysisRadarChartClusterDTO> sortedList =
         liveMonitoringLogAnalysisRadarChartClusterDTOS.stream()
             .filter(cluster -> tags.contains(LogAnalysisResult.RadarChartTagToLogAnalysisTag(cluster.getClusterType())))
-            .sorted(Comparator.comparing(LiveMonitoringLogAnalysisRadarChartClusterDTO::getClusterId))
+            .sorted(Comparator.comparing(LiveMonitoringLogAnalysisRadarChartClusterDTO::getClusterType)
+                        .thenComparing(LiveMonitoringLogAnalysisRadarChartClusterDTO::getClusterId))
             .collect(Collectors.toList());
+
+    Collections.reverse(sortedList);
 
     if (monitoredServiceLogAnalysisFilter.hasClusterIdFilter()) {
       sortedList = sortedList.stream()
@@ -262,7 +265,7 @@ public class LogDashboardServiceImpl implements LogDashboardService {
   }
 
   private double getRandomRadiusInExpectedRange(RadarChartTag tag, Random random) {
-    if (tag.equals(LogAnalysisTag.KNOWN) || tag.equals(LogAnalysisTag.UNEXPECTED)) {
+    if (tag.equals(RadarChartTag.KNOWN_EVENT) || tag.equals(RadarChartTag.UNEXPECTED_FREQUENCY)) {
       return random.nextDouble() + 1;
     } else {
       return random.nextDouble() + 2;
@@ -409,7 +412,12 @@ public class LogDashboardServiceImpl implements LogDashboardService {
                                   .clusterType(analyzedRadarChartLogDataDTO.getClusterType())
                                   .build()));
     List<AnalyzedRadarChartLogDataDTO> sortedAnalyzedRadarChartLogDataDTOS =
-        sortedList.stream().sorted(Comparator.comparing(x -> x.getClusterId())).collect(Collectors.toList());
+        sortedList.stream()
+            .sorted(Comparator.comparing(AnalyzedRadarChartLogDataDTO::getClusterType)
+                        .thenComparing(AnalyzedRadarChartLogDataDTO::getClusterId))
+            .collect(Collectors.toList());
+
+    Collections.reverse(sortedAnalyzedRadarChartLogDataDTOS);
 
     if (monitoredServiceLogAnalysisFilter.hasClusterIdFilter()) {
       sortedAnalyzedRadarChartLogDataDTOS = sortedAnalyzedRadarChartLogDataDTOS.stream()
@@ -431,6 +439,7 @@ public class LogDashboardServiceImpl implements LogDashboardService {
 
     sortedAnalyzedRadarChartLogDataDTOS =
         filterDataByAngle(sortedAnalyzedRadarChartLogDataDTOS, monitoredServiceLogAnalysisFilter);
+
     PageResponse<AnalyzedRadarChartLogDataDTO> analyzedRadarChartLogDataDTOs =
         PageUtils.offsetAndLimit(sortedAnalyzedRadarChartLogDataDTOS, page, size);
 

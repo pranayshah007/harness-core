@@ -855,4 +855,36 @@ public class CloudFormationCreateStackStateTest extends WingsBaseTest {
         (CloudFormationCreateStackRequest) delegateTask.getData().getParameters()[0];
     assertThat(request.isDeploy()).isTrue();
   }
+
+  @Test
+  @Owner(developers = NAVNEET)
+  @Category(UnitTests.class)
+  public void verifyCommandUnitsForGitFileFetch() {
+    CloudFormationInfrastructureProvisioner provisionerGit =
+        CloudFormationInfrastructureProvisioner.builder().sourceType(GIT.name()).build();
+    List<String> commandsGit = state.commandUnits(provisionerGit);
+
+    assertThat(commandsGit.size()).isEqualTo(2);
+    assertThat(commandsGit).contains("Fetch Files");
+
+    CloudFormationInfrastructureProvisioner provisionerInline =
+        CloudFormationInfrastructureProvisioner.builder().sourceType(TEMPLATE_BODY.name()).build();
+    List<String> commandsInline = state.commandUnits(provisionerInline);
+
+    assertThat(commandsInline.size()).isEqualTo(1);
+    assertThat(commandsInline).doesNotContain("Fetch Files");
+
+    CloudFormationInfrastructureProvisioner provisionerS3 =
+        CloudFormationInfrastructureProvisioner.builder().sourceType(TEMPLATE_URL.name()).build();
+    List<String> commandsS3 = state.commandUnits(provisionerS3);
+
+    assertThat(commandsS3.size()).isEqualTo(1);
+    assertThat(commandsS3).doesNotContain("Fetch Files");
+
+    state.setUseParametersFile(true);
+    List<String> commandsS3withParams = state.commandUnits(provisionerS3);
+
+    assertThat(commandsS3withParams.size()).isEqualTo(2);
+    assertThat(commandsS3withParams).contains("Fetch Files");
+  }
 }

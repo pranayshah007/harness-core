@@ -7,17 +7,17 @@
 
 package io.harness.notification.utils;
 
-import static io.harness.NotificationRequest.newBuilder;
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.notification.NotificationRequest.newBuilder;
 import static io.harness.notification.NotificationServiceConstants.TEST_MAIL_TEMPLATE;
 import static io.harness.notification.NotificationServiceConstants.TEST_MSTEAMS_TEMPLATE;
 import static io.harness.notification.NotificationServiceConstants.TEST_PD_TEMPLATE;
 import static io.harness.notification.NotificationServiceConstants.TEST_SLACK_TEMPLATE;
 
-import io.harness.NotificationRequest;
-import io.harness.NotificationRequest.ChannelCase;
-import io.harness.Team;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.notification.NotificationRequest;
+import io.harness.notification.NotificationRequest.ChannelCase;
+import io.harness.notification.Team;
 import io.harness.notification.entities.Notification;
 import io.harness.notification.entities.SlackChannel;
 

@@ -89,6 +89,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.ArtifactMetadata;
 import io.harness.beans.EmbeddedUser;
 import io.harness.beans.ExecutionStatus;
+import io.harness.beans.FeatureName;
 import io.harness.beans.PageResponse;
 import io.harness.beans.SweepingOutputInstance;
 import io.harness.beans.WorkflowType;
@@ -97,6 +98,7 @@ import io.harness.context.ContextElementType;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
 import io.harness.tasks.ResponseData;
@@ -234,6 +236,7 @@ public class ApprovalStateTest extends WingsBaseTest {
   @Mock private TemplateExpressionProcessor templateExpressionProcessor;
   @Mock private ServiceResourceService serviceResourceService;
   @Mock private ActivityService activityService;
+  @Mock private FeatureFlagService featureFlagService;
   @InjectMocks private ApprovalState approvalState = new ApprovalState("ApprovalState");
 
   @Inject KryoSerializer kryoSerializer;
@@ -2197,6 +2200,7 @@ public class ApprovalStateTest extends WingsBaseTest {
     approvalState.setUserGroupAsExpression(true);
     approvalState.setUserGroupExpression(expression);
 
+    when(featureFlagService.isNotEnabled(eq(FeatureName.USER_GROUP_AS_EXPRESSION), anyString())).thenReturn(false);
     when(context.renderExpression(expression)).thenReturn("group1, group2");
     when(context.getAccountId()).thenReturn(ACCOUNT_ID);
     when(userGroupService.get(ACCOUNT_ID, "group1")).thenReturn(UserGroup.builder().uuid("A1").build());
@@ -2211,6 +2215,8 @@ public class ApprovalStateTest extends WingsBaseTest {
   @Owner(developers = FERNANDOD)
   @Category(UnitTests.class)
   public void shouldThrowInvalidRequestWhenUserGroupExpressionNull() {
+    when(featureFlagService.isNotEnabled(eq(FeatureName.USER_GROUP_AS_EXPRESSION), any())).thenReturn(false);
+
     assertThatThrownBy(() -> {
       approvalState.setUserGroupExpression(null);
       approvalState.resolveUserGroupFromExpression(context);
@@ -2224,6 +2230,8 @@ public class ApprovalStateTest extends WingsBaseTest {
   @Owner(developers = FERNANDOD)
   @Category(UnitTests.class)
   public void shouldThrowInvalidRequestWhenUserGroupExpressionEmpty() {
+    when(featureFlagService.isNotEnabled(eq(FeatureName.USER_GROUP_AS_EXPRESSION), any())).thenReturn(false);
+
     assertThatThrownBy(() -> {
       approvalState.setUserGroupExpression("");
       approvalState.resolveUserGroupFromExpression(context);
@@ -2237,6 +2245,8 @@ public class ApprovalStateTest extends WingsBaseTest {
   @Owner(developers = FERNANDOD)
   @Category(UnitTests.class)
   public void shouldThrowInvalidRequestWhenRenderedExpressionEmpty() {
+    when(featureFlagService.isNotEnabled(eq(FeatureName.USER_GROUP_AS_EXPRESSION), any())).thenReturn(false);
+
     String expression = "${userGroupExpression}";
     approvalState.setUserGroupAsExpression(true);
     approvalState.setUserGroupExpression(expression);

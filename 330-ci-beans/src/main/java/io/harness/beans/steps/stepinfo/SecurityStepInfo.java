@@ -20,6 +20,7 @@ import io.harness.beans.plugin.compatible.PluginCompatibleStep;
 import io.harness.beans.steps.CIStepInfoType;
 import io.harness.beans.steps.TypeInfo;
 import io.harness.beans.yaml.extended.ImagePullPolicy;
+import io.harness.data.structure.CollectionUtils;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.filters.WithConnectorRef;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -40,10 +41,13 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.databind.JsonNode;
 import io.swagger.annotations.ApiModelProperty;
 import java.beans.ConstructorProperties;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
@@ -100,6 +104,15 @@ public class SecurityStepInfo implements PluginCompatibleStep, WithConnectorRef 
   @ApiModelProperty(dataType = "io.harness.beans.yaml.extended.ImagePullPolicy")
   private ParameterField<ImagePullPolicy> imagePullPolicy;
 
+  @VariableExpression(skipVariableExpression = true) private static List<OutputNGVariable> defaultOutputVariables;
+
+  static {
+    defaultOutputVariables = Arrays.asList(OutputNGVariable.builder().name("JOB_ID").build(),
+        OutputNGVariable.builder().name("JOB_STATUS").build(), OutputNGVariable.builder().name("CRITICAL").build(),
+        OutputNGVariable.builder().name("HIGH").build(), OutputNGVariable.builder().name("MEDIUM").build(),
+        OutputNGVariable.builder().name("LOW").build(), OutputNGVariable.builder().name("TOTAL").build());
+  }
+
   @Builder
   @ConstructorProperties({"identifier", "name", "retry", "settings", "connectorRef", "resources", "outputVariables",
       "runAsUser", "privileged", "imagePullPolicy"})
@@ -133,6 +146,16 @@ public class SecurityStepInfo implements PluginCompatibleStep, WithConnectorRef 
   @Override
   public String getFacilitatorType() {
     return OrchestrationFacilitatorType.ASYNC;
+  }
+
+  public ParameterField<List<OutputNGVariable>> getOutputVariables() {
+    return ParameterField.createValueField(
+        Stream
+            .concat(defaultOutputVariables.stream(),
+                (CollectionUtils.emptyIfNull((List<OutputNGVariable>) outputVariables.fetchFinalValue())).stream())
+            .collect(Collectors.toSet())
+            .stream()
+            .collect(Collectors.toList()));
   }
 
   @Override

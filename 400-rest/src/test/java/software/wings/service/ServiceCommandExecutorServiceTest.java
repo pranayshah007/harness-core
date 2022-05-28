@@ -15,7 +15,6 @@ import static io.harness.shell.AccessType.USER_PASSWORD;
 import static software.wings.beans.HostConnectionAttributes.Builder.aHostConnectionAttributes;
 import static software.wings.beans.SSHExecutionCredential.Builder.aSSHExecutionCredential;
 import static software.wings.beans.SettingAttribute.Builder.aSettingAttribute;
-import static software.wings.beans.command.Command.Builder.aCommand;
 import static software.wings.beans.command.ExecCommandUnit.Builder.anExecCommandUnit;
 import static software.wings.beans.infrastructure.Host.Builder.aHost;
 import static software.wings.utils.WingsTestConstants.ACTIVITY_ID;
@@ -44,8 +43,8 @@ import software.wings.beans.ExecutionCredential;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.WinRmConnectionAttributes;
 import software.wings.beans.command.AbstractCommandUnit;
-import software.wings.beans.command.Command;
 import software.wings.beans.command.CommandExecutionContext;
+import software.wings.beans.dto.Command;
 import software.wings.beans.infrastructure.Host;
 import software.wings.service.impl.ServiceCommandExecutorServiceImpl;
 import software.wings.service.impl.SshCommandUnitExecutorServiceImpl;
@@ -55,6 +54,8 @@ import software.wings.service.intfc.security.EncryptionService;
 import software.wings.service.intfc.security.SSHVaultService;
 import software.wings.utils.WingsTestConstants;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
@@ -81,7 +82,8 @@ public class ServiceCommandExecutorServiceTest extends WingsBaseTest {
       aHost().withAppId(APP_ID).withHostName(HOST_NAME).withHostConnAttr(hostConnAttrPwd.getUuid()).build();
   private AbstractCommandUnit commandUnit =
       anExecCommandUnit().withName(COMMAND_UNIT_NAME).withCommandString("rm -f $HOME/jetty").build();
-  private Command command = aCommand().withName(COMMAND_NAME).addCommandUnits(commandUnit).build();
+  private Command command =
+      Command.builder().name(COMMAND_NAME).commandUnits(new ArrayList<>(Arrays.asList(commandUnit))).build();
 
   @Before
   public void setup() {
@@ -130,7 +132,8 @@ public class ServiceCommandExecutorServiceTest extends WingsBaseTest {
                                           .deploymentType(DeploymentType.SSH.name())
                                           .executeOnDelegate(true)
                                           .build();
-    Command nestedCommand = aCommand().withName("NESTED_CMD").addCommandUnits(command).build();
+    Command nestedCommand =
+        Command.builder().name("NESTED_CMD").commandUnits(new ArrayList<>(Arrays.asList(command))).build();
     when(commandUnitExecutorServiceMap.get(DeploymentType.SSH.name())).thenReturn(sshCommandUnitExecutorService);
     when(sshCommandUnitExecutorService.execute(any(AbstractCommandUnit.class), eq(context))).thenReturn(SUCCESS);
     CommandExecutionStatus commandExecutionStatus = cmdExecutorService.execute(nestedCommand, context);
@@ -157,7 +160,8 @@ public class ServiceCommandExecutorServiceTest extends WingsBaseTest {
                                           .executeOnDelegate(true)
                                           .inlineSshCommand(true)
                                           .build();
-    Command nestedCommand = aCommand().withName("NESTED_CMD").addCommandUnits(command).build();
+    Command nestedCommand =
+        Command.builder().name("NESTED_CMD").commandUnits(new ArrayList<>(Arrays.asList(command))).build();
     when(commandUnitExecutorServiceMap.get(DeploymentType.SSH.name())).thenReturn(sshCommandUnitExecutorService);
     when(sshCommandUnitExecutorService.execute(any(AbstractCommandUnit.class), eq(context))).thenReturn(SUCCESS);
     CommandExecutionStatus commandExecutionStatus = cmdExecutorService.execute(nestedCommand, context);
@@ -184,7 +188,8 @@ public class ServiceCommandExecutorServiceTest extends WingsBaseTest {
                                           .executeOnDelegate(true)
                                           .inlineSshCommand(true)
                                           .build();
-    Command nestedCommand = aCommand().withName("NESTED_CMD").addCommandUnits(command).build();
+    Command nestedCommand =
+        Command.builder().name("NESTED_CMD").commandUnits(new ArrayList<>(Arrays.asList(command))).build();
     when(commandUnitExecutorServiceMap.get(DeploymentType.WINRM.name())).thenReturn(sshCommandUnitExecutorService);
     when(sshCommandUnitExecutorService.execute(any(AbstractCommandUnit.class), eq(context))).thenReturn(SUCCESS);
     CommandExecutionStatus commandExecutionStatus = cmdExecutorService.execute(nestedCommand, context);
@@ -211,7 +216,8 @@ public class ServiceCommandExecutorServiceTest extends WingsBaseTest {
                                           .executeOnDelegate(true)
                                           .inlineSshCommand(true)
                                           .build();
-    Command nestedCommand = aCommand().withName("NESTED_CMD").addCommandUnits(command).build();
+    Command nestedCommand =
+        Command.builder().name("NESTED_CMD").commandUnits(new ArrayList<>(Arrays.asList(command))).build();
     when(commandUnitExecutorServiceMap.get(DeploymentType.ECS.name())).thenReturn(sshCommandUnitExecutorService);
     when(sshCommandUnitExecutorService.execute(any(AbstractCommandUnit.class), eq(context))).thenReturn(SUCCESS);
     CommandExecutionStatus commandExecutionStatus = cmdExecutorService.execute(nestedCommand, context);
@@ -239,7 +245,8 @@ public class ServiceCommandExecutorServiceTest extends WingsBaseTest {
                                           .cloudProviderSetting(new SettingAttribute())
                                           .hostConnectionAttributes(new SettingAttribute())
                                           .build();
-    Command nestedCommand = aCommand().withName("NESTED_CMD").addCommandUnits(command).build();
+    Command nestedCommand =
+        Command.builder().name("NESTED_CMD").commandUnits(new ArrayList<>(Arrays.asList(command))).build();
     when(commandUnitExecutorServiceMap.get(DeploymentType.ECS.name())).thenReturn(sshCommandUnitExecutorService);
     when(sshCommandUnitExecutorService.execute(any(AbstractCommandUnit.class), eq(context))).thenReturn(SUCCESS);
 

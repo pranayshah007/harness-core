@@ -8,6 +8,7 @@
 package software.wings.sm.states.provision;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.beans.FeatureName.ACTIVITY_ID_BASED_TF_BASE_DIR;
 import static io.harness.beans.FeatureName.TERRAFORM_AWS_CP_AUTHENTICATION;
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.BOJANA;
@@ -239,6 +240,8 @@ public class TerraformRollbackStateTest extends WingsBaseTest {
     settingAttribute.setUuid("UUID");
     settingAttribute.setValue(new AwsConfig());
     doReturn(true).when(featureFlagService).isEnabled(eq(TERRAFORM_AWS_CP_AUTHENTICATION), any());
+    doReturn(true).when(featureFlagService).isEnabled(eq(ACTIVITY_ID_BASED_TF_BASE_DIR), any());
+
     doReturn(settingAttribute).when(settingsService).get(any());
     doReturn(encryptionDetails).when(secretManager).getEncryptionDetails(any(), any(), any());
     ExecutionResponse executionResponse = terraformRollbackState.executeInternal(executionContext, ACTIVITY_ID);
@@ -253,6 +256,8 @@ public class TerraformRollbackStateTest extends WingsBaseTest {
     assertThat(parameters.getAwsConfig()).isEqualTo(settingAttribute.getValue());
     assertThat(parameters.getAwsRoleArn()).isEqualTo("arn");
     assertThat(parameters.getAwsRegion()).isEqualTo("region");
+
+    assertThat(parameters.isUseActivityIdBasedTfBaseDir()).isTrue();
   }
 
   private void setUp(String sourceRepoBranch, boolean setVarsAndBackendConfigs, String workflowExecutionId) {

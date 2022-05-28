@@ -202,24 +202,26 @@ public class ArtifactResponseToOutcomeMapper {
   private ArtifactoryGenericArtifactOutcome getArtifactoryGenericArtifactOutcome(
       ArtifactoryRegistryArtifactConfig artifactConfig,
       ArtifactoryGenericArtifactDelegateResponse artifactDelegateResponse, boolean useDelegateResponse) {
+    String artifactPath = useDelegateResponse ? ParameterField.isBlank(artifactConfig.getArtifactPathFilter())
+            ? Paths.get(artifactConfig.getArtifactDirectory().getValue(), artifactDelegateResponse.getArtifactPath())
+                  .toString()
+            : artifactDelegateResponse.getArtifactPath()
+                                              : (ParameterField.isNull(artifactConfig.getArtifactPath()) ? null
+                                                      : ParameterField.isBlank(artifactConfig.getArtifactPathFilter())
+                                                      ? Paths
+                                                            .get(artifactConfig.getArtifactDirectory().getValue(),
+                                                                artifactConfig.getArtifactPath().getValue())
+                                                            .toString()
+                                                      : artifactConfig.getArtifactPath().getValue());
+
     return ArtifactoryGenericArtifactOutcome.builder()
         .repositoryName(artifactConfig.getRepository().getValue())
         .connectorRef(artifactConfig.getConnectorRef().getValue())
         .artifactDirectory(artifactConfig.getArtifactDirectory().getValue())
         .repositoryFormat(artifactConfig.getRepositoryFormat().getValue())
-        .artifactPath(useDelegateResponse ? ParameterField.isBlank(artifactConfig.getArtifactPathFilter())
-                    ? Paths
-                          .get(artifactConfig.getArtifactDirectory().getValue(),
-                              artifactDelegateResponse.getArtifactPath())
-                          .toString()
-                    : artifactDelegateResponse.getArtifactPath()
-                                          : (ParameterField.isNull(artifactConfig.getArtifactPath()) ? null
-                                                  : ParameterField.isBlank(artifactConfig.getArtifactPathFilter())
-                                                  ? Paths
-                                                        .get(artifactConfig.getArtifactDirectory().getValue(),
-                                                            artifactConfig.getArtifactPath().getValue())
-                                                        .toString()
-                                                  : artifactConfig.getArtifactPath().getValue()))
+        .artifactPath(artifactPath)
+        // As tag is common field in all artifact outcomes, this need to be populated
+        .tag(artifactPath)
         .artifactPathFilter(ParameterField.isNull(artifactConfig.getArtifactPathFilter())
                 ? null
                 : artifactConfig.getArtifactPathFilter().getValue())

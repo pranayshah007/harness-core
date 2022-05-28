@@ -15,7 +15,9 @@ import io.harness.accesscontrol.principals.PrincipalType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.service.beans.ServiceConfig;
+import io.harness.cdng.service.beans.ServiceDefinition;
 import io.harness.cdng.service.steps.ServiceStepParameters;
+import io.harness.cdng.service.steps.ServiceStepParametersV2;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
@@ -26,6 +28,7 @@ import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.plan.ExecutionPrincipalInfo;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.rbac.NGResourceType;
 import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.rbac.PrincipalTypeProtoToPrincipalTypeMapper;
 import io.harness.pms.tags.TagUtils;
@@ -63,6 +66,30 @@ public class ServiceStepUtils {
           ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier), Resource.of("SERVICE", null),
           CDNGRbacPermissions.SERVICE_CREATE_PERMISSION, "Validation for Service Step failed");
     }
+  }
+
+  public void validateResourcesV2(EntityReferenceExtractorUtils entityReferenceExtractorUtils,
+      PipelineRbacHelper pipelineRbacHelper, AccessControlClient accessControlClient, Ambiance ambiance,
+      ServiceStepParametersV2 stepParameters) {
+    String accountIdentifier = AmbianceUtils.getAccountId(ambiance);
+    String orgIdentifier = AmbianceUtils.getOrgIdentifier(ambiance);
+    String projectIdentifier = AmbianceUtils.getProjectIdentifier(ambiance);
+    ExecutionPrincipalInfo executionPrincipalInfo = ambiance.getMetadata().getPrincipalInfo();
+    String principal = executionPrincipalInfo.getPrincipal();
+    if (EmptyPredicate.isEmpty(principal)) {
+      return;
+    }
+
+    PrincipalType principalType = PrincipalTypeProtoToPrincipalTypeMapper.convertToAccessControlPrincipalType(
+        executionPrincipalInfo.getPrincipalType());
+    ServiceDefinition serviceDefinition = stepParameters.getServiceDefinition().getValue();
+    Set<EntityDetailProtoDTO> entityDetails =
+        entityReferenceExtractorUtils.extractReferredEntities(ambiance, serviceDefinition);
+    pipelineRbacHelper.checkRuntimePermissions(ambiance, entityDetails);
+    accessControlClient.checkForAccessOrThrow(Principal.of(principalType, principal),
+        ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+        Resource.of(NGResourceType.SERVICE, stepParameters.getIdentifier()),
+        CDNGRbacPermissions.SERVICE_RUNTIME_PERMISSION, "Validation for Service Step failed");
   }
 
   // NOTE: Returned service entity shouldn't contain a version. Multiple stages running in parallel might see

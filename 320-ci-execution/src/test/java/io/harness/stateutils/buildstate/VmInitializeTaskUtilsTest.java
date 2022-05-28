@@ -72,10 +72,12 @@ public class VmInitializeTaskUtilsTest extends CIExecutionTestBase {
   @Category(UnitTests.class)
   public void getInitializeTaskParamsWithName() {
     String poolName = "test";
-    VmPoolYaml vmPoolYaml =
-        VmPoolYaml.builder()
-            .spec(VmPoolYamlSpec.builder().poolName(ParameterField.createValueField(poolName)).build())
-            .build();
+    VmPoolYaml vmPoolYaml = VmPoolYaml.builder()
+                                .spec(VmPoolYamlSpec.builder()
+                                          .harnessImageConnectorRef(ParameterField.<String>builder().build())
+                                          .poolName(ParameterField.createValueField(poolName))
+                                          .build())
+                                .build();
 
     String stageRuntimeId = "test";
     InitializeStepInfo initializeStepInfo = InitializeStepInfo.builder()
@@ -115,10 +117,13 @@ public class VmInitializeTaskUtilsTest extends CIExecutionTestBase {
   @Category(UnitTests.class)
   public void getInitializeTaskParamsWithId() {
     String poolId = "test";
-    VmPoolYaml vmPoolYaml =
-        VmPoolYaml.builder()
-            .spec(VmPoolYamlSpec.builder().identifier(poolId).poolName(ParameterField.createValueField(null)).build())
-            .build();
+    VmPoolYaml vmPoolYaml = VmPoolYaml.builder()
+                                .spec(VmPoolYamlSpec.builder()
+                                          .identifier(poolId)
+                                          .harnessImageConnectorRef(ParameterField.<String>builder().build())
+                                          .poolName(ParameterField.createValueField(null))
+                                          .build())
+                                .build();
 
     String stageRuntimeId = "test";
     InitializeStepInfo initializeStepInfo = InitializeStepInfo.builder()

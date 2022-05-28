@@ -87,6 +87,7 @@ import software.wings.beans.artifact.ArtifactStreamType;
 import software.wings.beans.command.CleanupPowerShellCommandUnit;
 import software.wings.beans.command.CleanupSshCommandUnit;
 import software.wings.beans.command.Command;
+import software.wings.beans.command.CommandMapper;
 import software.wings.beans.command.CommandUnit;
 import software.wings.beans.command.CommandUnitType;
 import software.wings.beans.command.ExecCommandUnit;
@@ -573,11 +574,11 @@ public class CommandState extends State {
 
       CommandParameters commandParameters = commandParametersBuilder.activityId(activityId)
                                                 .deploymentType(deploymentType.name())
-                                                .command(command)
+                                                .command(CommandMapper.toCommandDTO(command))
                                                 .build();
 
-      delegateTaskId = queueDelegateTask(activityId, envId, infrastructureMappingId, accountId, commandParameters,
-          context, expressionFunctorToken, command);
+      delegateTaskId = queueDelegateTask(
+          activityId, envId, infrastructureMappingId, accountId, commandParameters, context, expressionFunctorToken);
       log.info("DelegateTaskId [{}] sent for activityId [{}]", delegateTaskId, activityId);
 
     } catch (WingsException ex) {
@@ -707,7 +708,7 @@ public class CommandState extends State {
   }
 
   private String queueDelegateTask(String activityId, String envId, String infrastructureMappingId, String accountId,
-      CommandParameters commandParameters, ExecutionContext context, int expressionFunctorToken, Command command) {
+      CommandParameters commandParameters, ExecutionContext context, int expressionFunctorToken) {
     String appId = context.getAppId();
     InfrastructureMapping infrastructureMapping = infrastructureMappingService.get(appId, infrastructureMappingId);
     String serviceId = infrastructureMapping == null ? null : infrastructureMapping.getServiceId();

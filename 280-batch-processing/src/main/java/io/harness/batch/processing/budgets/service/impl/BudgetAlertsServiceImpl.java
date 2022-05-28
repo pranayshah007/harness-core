@@ -33,7 +33,6 @@ import io.harness.ccm.communication.CESlackWebhookService;
 import io.harness.ccm.communication.entities.CESlackWebhook;
 import io.harness.timescaledb.TimeScaleDBService;
 
-import software.wings.beans.Account;
 import software.wings.beans.User;
 import software.wings.beans.notification.SlackNotificationConfiguration;
 import software.wings.beans.notification.SlackNotificationSetting;
@@ -83,8 +82,7 @@ public class BudgetAlertsServiceImpl {
   private static final String FORECASTED_COST_BUDGET = "forecasted cost";
 
   public void sendBudgetAlerts() {
-    List<Account> ceEnabledAccounts = accountShardService.getCeEnabledAccounts();
-    List<String> accountIds = ceEnabledAccounts.stream().map(Account::getUuid).collect(Collectors.toList());
+    List<String> accountIds = accountShardService.getCeEnabledAccountIds();
     accountIds.forEach(accountId -> {
       List<Budget> budgets = budgetDao.list(accountId);
       budgets.forEach(budget -> {

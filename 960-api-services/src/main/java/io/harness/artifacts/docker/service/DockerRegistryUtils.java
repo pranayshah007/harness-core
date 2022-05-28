@@ -11,6 +11,8 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.artifacts.docker.service.DockerRegistryServiceImpl.isSuccessful;
 import static io.harness.exception.WingsException.USER;
 
+import static java.lang.String.format;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifacts.docker.DockerRegistryRestClient;
 import io.harness.artifacts.docker.beans.DockerImageManifestResponse;
@@ -21,6 +23,7 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidArtifactServerException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.WingsException;
+import io.harness.k8s.model.ImageDetails;
 
 import com.google.inject.Singleton;
 import java.io.IOException;
@@ -43,6 +46,13 @@ import retrofit2.Response;
 @Slf4j
 public class DockerRegistryUtils {
   protected static final String GITHUB_CONTAINER_REGISTRY = "ghcr.io";
+  private static final String DOCKER_REGISTRY_CREDENTIAL_TEMPLATE =
+      "{\"%s\":{\"username\":\"%s\",\"password\":\"%s\"}}";
+
+  public static String getDockerRegistryCredentials(ImageDetails imageDetails) {
+    return format(DOCKER_REGISTRY_CREDENTIAL_TEMPLATE, imageDetails.getRegistryUrl(), imageDetails.getUsername(),
+        imageDetails.getPassword().replaceAll("\"", "\\\\\""));
+  }
 
   public ArtifactMetaInfo getArtifactMetaInfo(DockerInternalConfig dockerConfig,
       DockerRegistryRestClient registryRestClient, Function<Headers, String> getTokenFn, String authHeader,

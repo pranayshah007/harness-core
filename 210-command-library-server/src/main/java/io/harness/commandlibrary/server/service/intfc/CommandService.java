@@ -9,7 +9,7 @@ package io.harness.commandlibrary.server.service.intfc;
 
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
-import io.harness.commandlibrary.api.dto.CommandDTO;
+import io.harness.commandlibrary.api.dto.CommandEntityDTO;
 import io.harness.commandlibrary.server.beans.CommandManifest;
 
 import software.wings.beans.commandlibrary.CommandEntity;
@@ -17,7 +17,7 @@ import software.wings.beans.commandlibrary.CommandEntity;
 import java.util.Optional;
 
 public interface CommandService {
-  Optional<CommandDTO> getCommandDetails(String commandStoreName, String commandName);
+  Optional<CommandEntityDTO> getCommandDetails(String commandStoreName, String commandName);
 
   Optional<CommandEntity> getCommandEntity(String commandStoreName, String commandName);
 

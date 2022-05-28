@@ -22,9 +22,8 @@ import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.serverless.ServerlessCommandTaskHandler;
 import io.harness.delegate.task.serverless.request.ServerlessCommandRequest;
 import io.harness.delegate.task.serverless.response.ServerlessCommandResponse;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.serverless.model.ServerlessDelegateTaskParams;
-
-import software.wings.delegatetasks.ExceptionMessageSanitizer;
 
 import com.google.inject.Inject;
 import java.nio.file.Paths;

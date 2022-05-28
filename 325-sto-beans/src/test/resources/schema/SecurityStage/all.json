@@ -1625,22 +1625,6 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
-    "HoldingScope": {
-      "type": "object",
-      "required": [
-        "nodeSetupId",
-        "scope"
-      ],
-      "properties": {
-        "nodeSetupId": {
-          "type": "string"
-        },
-        "scope": {
-          "type": "string"
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
     "HostPathVolume": {
       "allOf": [
         {
@@ -2262,6 +2246,9 @@
             }
           ]
         },
+        "harnessImageConnectorRef": {
+          "type": "string"
+        },
         "initTimeout": {
           "type": "string"
         },
@@ -2302,7 +2289,7 @@
               "type": "string",
               "enum": [
                 "Linux",
-                "Osx",
+                "MacOS",
                 "Windows"
               ]
             },
@@ -3490,7 +3477,13 @@
               ]
             },
             "holdingScope": {
-              "$ref": "#/definitions/HoldingScope"
+              "type": "string",
+              "enum": [
+                "PLAN",
+                "PIPELINE",
+                "STAGE",
+                "STEP_GROUP"
+              ]
             },
             "name": {
               "type": "string"
@@ -3858,6 +3851,22 @@
             "args": {
               "type": "string"
             },
+            "buildEnvironment": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "Core",
+                    "Framework"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "minLength": 1
+                }
+              ]
+            },
             "buildTool": {
               "oneOf": [
                 {
@@ -3890,6 +3899,22 @@
                 },
                 {
                   "type": "string"
+                }
+              ]
+            },
+            "frameworkVersion": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "5.0",
+                    "6.0"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "minLength": 1
                 }
               ]
             },
@@ -3928,6 +3953,9 @@
                   "minLength": 1
                 }
               ]
+            },
+            "namespaces": {
+              "type": "string"
             },
             "outputVariables": {
               "oneOf": [
@@ -6148,6 +6176,9 @@
     "VmPoolYamlSpec": {
       "type": "object",
       "properties": {
+        "harnessImageConnectorRef": {
+          "type": "string"
+        },
         "identifier": {
           "type": "string"
         },
@@ -6157,7 +6188,7 @@
               "type": "string",
               "enum": [
                 "Linux",
-                "Osx",
+                "MacOS",
                 "Windows"
               ]
             },

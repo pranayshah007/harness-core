@@ -26,8 +26,7 @@ public class ClusterEntityMapper {
         .accountId(accountId)
         .orgIdentifier(request.getOrgIdentifier())
         .projectIdentifier(request.getProjectIdentifier())
-        .identifier(request.getIdentifier())
-        .name(request.getName())
+        .clusterRef(request.getIdentifier())
         .envRef(request.getEnvRef())
         .build();
   }
@@ -41,8 +40,7 @@ public class ClusterEntityMapper {
                    .orgIdentifier(request.getOrgIdentifier())
                    .projectIdentifier(request.getProjectIdentifier())
                    .envRef(request.getEnvRef())
-                   .identifier(r.getIdentifier())
-                   .name(r.getName())
+                   .clusterRef(r.getIdentifier())
                    .build())
         .collect(Collectors.toList());
   }
@@ -51,8 +49,7 @@ public class ClusterEntityMapper {
     return ClusterResponse.builder()
         .orgIdentifier(cluster.getOrgIdentifier())
         .projectIdentifier(cluster.getProjectIdentifier())
-        .identifier(cluster.getIdentifier())
-        .name(cluster.getName())
+        .clusterRef(cluster.getClusterRef())
         .envRef(cluster.getEnvRef())
         .build();
   }

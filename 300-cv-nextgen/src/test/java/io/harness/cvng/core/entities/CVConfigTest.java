@@ -63,23 +63,12 @@ public class CVConfigTest extends CategoryTest {
   @Test
   @Owner(developers = NEMANJA)
   @Category(UnitTests.class)
-  public void testValidate_whenServiceIdentifierIsUndefined() {
+  public void testValidate_whenMonitoredServiceIdentifierIsUndefined() {
     CVConfig cvConfig = createCVConfig();
-    cvConfig.setServiceIdentifier(null);
+    cvConfig.setMonitoredServiceIdentifier(null);
     assertThatThrownBy(() -> cvConfig.validate())
         .isInstanceOf(NullPointerException.class)
-        .hasMessage("serviceIdentifier should not be null");
-  }
-
-  @Test
-  @Owner(developers = NEMANJA)
-  @Category(UnitTests.class)
-  public void testValidate_whenEnvironmentIdentifierIsUndefined() {
-    CVConfig cvConfig = createCVConfig();
-    cvConfig.setEnvIdentifier(null);
-    assertThatThrownBy(() -> cvConfig.validate())
-        .isInstanceOf(NullPointerException.class)
-        .hasMessage("envIdentifier should not be null");
+        .hasMessage("monitoredServiceIdentifier should not be null");
   }
 
   @Test
@@ -116,10 +105,9 @@ public class CVConfigTest extends CategoryTest {
     cvConfig.setVerificationType(VerificationType.LOG);
     cvConfig.setAccountId(accountId);
     cvConfig.setConnectorIdentifier(connectorIdentifier);
-    cvConfig.setServiceIdentifier(generateUuid());
-    cvConfig.setEnvIdentifier(generateUuid());
     cvConfig.setProjectIdentifier(generateUuid());
     cvConfig.setIdentifier(groupId);
+    cvConfig.setMonitoredServiceIdentifier(generateUuid());
     cvConfig.setMonitoringSourceName(generateUuid());
     cvConfig.setCategory(CVMonitoringCategory.PERFORMANCE);
     cvConfig.setProductName(productName);

@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.ANSHUL;
+import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.YOGESH;
 
 import static java.util.Arrays.asList;
@@ -33,6 +34,7 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.container.ContainerInfo;
+import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorCredentialDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpCredentialType;
@@ -54,6 +56,8 @@ import io.harness.logging.LogLevel;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
+
+import software.wings.delegatetasks.azure.AzureAsyncTaskHelper;
 
 import com.google.common.collect.ImmutableMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -81,6 +85,7 @@ public class ContainerDeploymentDelegateBaseHelperTest extends CategoryTest {
   @Mock private GkeClusterHelper gkeClusterHelper;
   @Mock private K8sYamlToDelegateDTOMapper k8sYamlToDelegateDTOMapper;
   @Mock private SecretDecryptionService secretDecryptionService;
+  @Mock private AzureAsyncTaskHelper azureAsyncTaskHelper;
   @Mock LogCallback logCallback;
 
   @Spy @InjectMocks ContainerDeploymentDelegateBaseHelper containerDeploymentDelegateBaseHelper;
@@ -344,5 +349,27 @@ public class ContainerDeploymentDelegateBaseHelperTest extends CategoryTest {
     containerDeploymentDelegateBaseHelper.getKubeconfigFileContent(gcpK8sInfraDelegateConfig);
     verify(gkeClusterHelper).getCluster(serviceAccountKeyFileContent, false, "cluster", "default");
     verify(secretDecryptionService).decrypt(credentials, encryptionDataDetails);
+  }
+
+  @Test
+  @Owner(developers = MLUKIC)
+  @Category(UnitTests.class)
+  public void testGetKubeconfigFileContentAzureK8sInfraDelegateConfig() {
+    final List<EncryptedDataDetail> encryptionDataDetails = emptyList();
+    final AzureConnectorDTO azureConnectorDTO = AzureConnectorDTO.builder().build();
+    final AzureK8sInfraDelegateConfig azureK8sInfraDelegateConfig = AzureK8sInfraDelegateConfig.builder()
+                                                                        .azureConnectorDTO(azureConnectorDTO)
+                                                                        .subscription("sub")
+                                                                        .resourceGroup("rg")
+                                                                        .cluster("aks")
+                                                                        .namespace("default")
+                                                                        .encryptionDataDetails(encryptionDataDetails)
+                                                                        .build();
+    final KubernetesConfig kubernetesConfig = KubernetesConfig.builder().build();
+
+    doReturn(kubernetesConfig).when(azureAsyncTaskHelper).getClusterConfig(any(), any(), any(), any(), any(), any());
+
+    containerDeploymentDelegateBaseHelper.getKubeconfigFileContent(azureK8sInfraDelegateConfig);
+    verify(kubernetesContainerService).getConfigFileContent(kubernetesConfig);
   }
 }

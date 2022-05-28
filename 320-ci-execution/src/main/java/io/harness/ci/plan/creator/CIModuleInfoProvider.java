@@ -102,55 +102,58 @@ public class CIModuleInfoProvider implements ExecutionSummaryModuleInfoProvider 
     BaseNGAccess baseNGAccess = retrieveBaseNGAccess(ambiance);
     try {
       StepElementParameters stepElementParameters = (StepElementParameters) event.getResolvedStepParameters();
-      InitializeStepInfo initializeStepInfo = (InitializeStepInfo) stepElementParameters.getSpec();
+      if (stepElementParameters != null) {
+        InitializeStepInfo initializeStepInfo = (InitializeStepInfo) stepElementParameters.getSpec();
 
-      if (initializeStepInfo == null) {
-        return null;
-      }
-
-      ParameterField<Build> buildParameterField = null;
-      if (initializeStepInfo.getCiCodebase() != null) {
-        buildParameterField = initializeStepInfo.getCiCodebase().getBuild();
-
-        if (isNotEmpty(initializeStepInfo.getCiCodebase().getRepoName().getValue())) {
-          repoName = initializeStepInfo.getCiCodebase().getRepoName().getValue();
+        if (initializeStepInfo == null) {
+          return null;
         }
-        if (initializeStepInfo.getCiCodebase().getConnectorRef().getValue() != null) {
-          try {
-            ConnectorDetails connectorDetails = connectorUtils.getConnectorDetails(
-                baseNGAccess, initializeStepInfo.getCiCodebase().getConnectorRef().getValue());
-            if (executionTriggerInfo.getTriggerType() == TriggerType.WEBHOOK) {
-              url = IntegrationStageUtils.getGitURLFromConnector(connectorDetails, initializeStepInfo.getCiCodebase());
-            }
-            if (url == null) {
-              url = connectorUtils.retrieveURL(connectorDetails);
-            }
-            if (isEmpty(repoName) || repoName.equals(NULL_STR)) {
-              repoName = getGitRepo(url);
-            }
 
-          } catch (Exception exception) {
-            log.warn("Failed to retrieve repo");
+        ParameterField<Build> buildParameterField = null;
+        if (initializeStepInfo.getCiCodebase() != null) {
+          buildParameterField = initializeStepInfo.getCiCodebase().getBuild();
+
+          if (isNotEmpty(initializeStepInfo.getCiCodebase().getRepoName().getValue())) {
+            repoName = initializeStepInfo.getCiCodebase().getRepoName().getValue();
+          }
+          if (initializeStepInfo.getCiCodebase().getConnectorRef().getValue() != null) {
+            try {
+              ConnectorDetails connectorDetails = connectorUtils.getConnectorDetails(
+                  baseNGAccess, initializeStepInfo.getCiCodebase().getConnectorRef().getValue());
+              if (executionTriggerInfo.getTriggerType() == TriggerType.WEBHOOK) {
+                url =
+                    IntegrationStageUtils.getGitURLFromConnector(connectorDetails, initializeStepInfo.getCiCodebase());
+              }
+              if (url == null) {
+                url = connectorUtils.retrieveURL(connectorDetails);
+              }
+              if (isEmpty(repoName) || repoName.equals(NULL_STR)) {
+                repoName = getGitRepo(url);
+              }
+
+            } catch (Exception exception) {
+              log.warn("Failed to retrieve repo");
+            }
           }
         }
-      }
-      isPrivateRepo = isPrivateRepo(url);
-      Build build = RunTimeInputHandler.resolveBuild(buildParameterField);
-      if (build != null) {
-        buildType = build.getType().toString();
-      }
-      if (build != null && build.getType().equals(BuildType.BRANCH)) {
-        branch = (String) ((BranchBuildSpec) build.getSpec()).getBranch().fetchFinalValue();
-      }
-
-      if (build != null && build.getType().equals(BuildType.PR)) {
-        if (((PRBuildSpec) build.getSpec()).getNumber().isExpression() == false) {
-          prNumber = (String) ((PRBuildSpec) build.getSpec()).getNumber().fetchFinalValue();
+        isPrivateRepo = isPrivateRepo(url);
+        Build build = RunTimeInputHandler.resolveBuild(buildParameterField);
+        if (build != null) {
+          buildType = build.getType().toString();
         }
-      }
+        if (build != null && build.getType().equals(BuildType.BRANCH)) {
+          branch = (String) ((BranchBuildSpec) build.getSpec()).getBranch().fetchFinalValue();
+        }
 
-      if (build != null && build.getType().equals(BuildType.TAG)) {
-        tag = (String) ((TagBuildSpec) build.getSpec()).getTag().fetchFinalValue();
+        if (build != null && build.getType().equals(BuildType.PR)) {
+          if (((PRBuildSpec) build.getSpec()).getNumber().isExpression() == false) {
+            prNumber = (String) ((PRBuildSpec) build.getSpec()).getNumber().fetchFinalValue();
+          }
+        }
+
+        if (build != null && build.getType().equals(BuildType.TAG)) {
+          tag = (String) ((TagBuildSpec) build.getSpec()).getTag().fetchFinalValue();
+        }
       }
     } catch (Exception ex) {
       log.error("Failed to retrieve branch and tag for filtering", ex);
@@ -206,8 +209,20 @@ public class CIModuleInfoProvider implements ExecutionSummaryModuleInfoProvider 
     if (codebaseSweepingOutput != null) {
       log.info("Codebase sweeping output {}", codebaseSweepingOutput);
 
-      if (isEmpty(branch) && codebaseSweepingOutput != null) {
+      if (isEmpty(branch)) {
         branch = codebaseSweepingOutput.getBranch();
+      }
+
+      if (isEmpty(prNumber)) {
+        prNumber = codebaseSweepingOutput.getPrNumber();
+      }
+
+      if (isEmpty(tag)) {
+        tag = codebaseSweepingOutput.getTag();
+      }
+
+      if (isEmpty(repoName) && isNotEmpty(codebaseSweepingOutput.getRepoUrl())) {
+        repoName = getGitRepo(codebaseSweepingOutput.getRepoUrl());
       }
     }
 

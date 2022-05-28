@@ -10,13 +10,10 @@ package io.harness.chartmuseum;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.chartmuseum.ChartMuseumConstants.ADDRESS_BIND_CODE;
 import static io.harness.chartmuseum.ChartMuseumConstants.ADDRESS_BIND_ERROR;
-import static io.harness.chartmuseum.ChartMuseumConstants.AMAZON_S3_COMMAND_TEMPLATE;
 import static io.harness.chartmuseum.ChartMuseumConstants.AWS_ACCESS_KEY_ID;
 import static io.harness.chartmuseum.ChartMuseumConstants.AWS_SECRET_ACCESS_KEY;
 import static io.harness.chartmuseum.ChartMuseumConstants.BUCKET_REGION_ERROR_CODE;
 import static io.harness.chartmuseum.ChartMuseumConstants.CHART_MUSEUM_SERVER_START_RETRIES;
-import static io.harness.chartmuseum.ChartMuseumConstants.GCS_COMMAND_TEMPLATE;
-import static io.harness.chartmuseum.ChartMuseumConstants.GOOGLE_APPLICATION_CREDENTIALS;
 import static io.harness.chartmuseum.ChartMuseumConstants.HEALTH_CHECK_TIME_GAP_SECONDS;
 import static io.harness.chartmuseum.ChartMuseumConstants.INVALID_ACCESS_KEY_ID_ERROR;
 import static io.harness.chartmuseum.ChartMuseumConstants.INVALID_ACCESS_KEY_ID_ERROR_CODE;
@@ -27,85 +24,50 @@ import static io.harness.chartmuseum.ChartMuseumConstants.PORTS_START_POINT;
 import static io.harness.chartmuseum.ChartMuseumConstants.SERVER_HEALTH_CHECK_RETRIES;
 import static io.harness.chartmuseum.ChartMuseumConstants.SIGNATURE_DOES_NOT_MATCH_ERROR;
 import static io.harness.chartmuseum.ChartMuseumConstants.SIGNATURE_DOES_NOT_MATCH_ERROR_CODE;
+import static io.harness.chartmuseum.ChartMuseumConstants.VERSION;
+import static io.harness.chartmuseum.ChartMuseumConstants.VERSION_PATTERN;
 import static io.harness.exception.ExceptionUtils.getMessage;
-import static io.harness.k8s.kubectl.Utils.encloseWithQuotesIfNeeded;
 import static io.harness.threading.Morpheus.sleep;
 
 import static java.lang.String.format;
 import static java.time.Duration.ofSeconds;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.version.Version;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
-import io.harness.filesystem.FileIo;
-import io.harness.k8s.K8sGlobalConfigService;
 import io.harness.shell.ScriptProcessExecutor;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketException;
-import java.nio.file.Paths;
 import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import org.zeroturnaround.exec.ProcessExecutor;
+import org.zeroturnaround.exec.ProcessResult;
 import org.zeroturnaround.exec.StartedProcess;
 
 @OwnedBy(CDP)
 @Slf4j
 @Singleton
 public class ChartMuseumClientHelper {
+  // Minimal Chartmuseum version to fallback to
+  private static final Version CHARTMUSEUM_DEFAULT_VERSION = Version.parse("0.0.1");
   private static final SecureRandom random = new SecureRandom();
   private static final String CHARTMUSEUM_SERVER_STARTUP_FAILURE_MESSAGE =
       "Could not start chart museum server. Failed after %s retries %n";
   private static final String ADDRESS_ALREADY_IN_USE_REGEX = "tcp :(\\d+): bind: address already in use";
   private static final Pattern ADDRESS_ALREADY_IN_USE_PATTERN =
       Pattern.compile(ADDRESS_ALREADY_IN_USE_REGEX, Pattern.MULTILINE);
-
-  @Inject private K8sGlobalConfigService k8sGlobalConfigService;
-
-  public ChartMuseumServer startS3ChartMuseumServer(String bucket, String basePath, String region,
-      boolean useEc2IamCredentials, char[] accessKey, char[] secretKey, boolean useIRSA,
-      boolean useLatestChartMuseumVersion) throws Exception {
-    Map<String, String> environment = getEnvForAwsConfig(accessKey, secretKey, useEc2IamCredentials, useIRSA);
-    String evaluatedTemplate = AMAZON_S3_COMMAND_TEMPLATE.replace("${BUCKET_NAME}", bucket)
-                                   .replace("${FOLDER_PATH}", basePath == null ? "" : basePath)
-                                   .replace("${REGION}", region);
-
-    StringBuilder builder = new StringBuilder(128);
-    builder.append(encloseWithQuotesIfNeeded(k8sGlobalConfigService.getChartMuseumPath(useLatestChartMuseumVersion)))
-        .append(' ')
-        .append(evaluatedTemplate);
-
-    return startServer(builder.toString(), environment);
-  }
-
-  public ChartMuseumServer startGCSChartMuseumServer(String bucket, String basePath, char[] serviceAccountKey,
-      String resourceDirectory, boolean useLatestChartMuseumVersion) throws Exception {
-    Map<String, String> environment = new HashMap<>();
-    if (serviceAccountKey != null) {
-      String credentialFilePath = writeGCSCredentialsFile(resourceDirectory, serviceAccountKey);
-      environment.put(GOOGLE_APPLICATION_CREDENTIALS, credentialFilePath);
-    }
-
-    String evaluatedTemplate = GCS_COMMAND_TEMPLATE.replace("${BUCKET_NAME}", bucket)
-                                   .replace("${FOLDER_PATH}", basePath == null ? "" : basePath);
-
-    StringBuilder builder = new StringBuilder(128);
-    builder.append(encloseWithQuotesIfNeeded(k8sGlobalConfigService.getChartMuseumPath(useLatestChartMuseumVersion)))
-        .append(' ')
-        .append(evaluatedTemplate);
-
-    return startServer(builder.toString(), environment);
-  }
 
   public void stopChartMuseumServer(StartedProcess process) {
     try {
@@ -121,7 +83,7 @@ public class ChartMuseumClientHelper {
     }
   }
 
-  public ChartMuseumServer startServer(String command, Map<String, String> environment) throws Exception {
+  public ChartMuseumServer startServer(String command, Map<String, String> environment) throws IOException {
     int port = 0;
     StartedProcess process = null;
     int retries = 0;
@@ -163,9 +125,37 @@ public class ChartMuseumClientHelper {
     return ChartMuseumServer.builder().startedProcess(process).port(port).build();
   }
 
+  public Version getVersion(String cliPath) {
+    try {
+      ProcessResult versionResult = executeCommand(cliPath + ' ' + VERSION);
+
+      if (versionResult.getExitValue() != 0) {
+        log.warn("Failed to get chartmuseum version. Exit code: {}, output: {}", versionResult.getExitValue(),
+            versionResult.hasOutput() ? versionResult.outputUTF8() : "no output");
+        return CHARTMUSEUM_DEFAULT_VERSION;
+      }
+
+      if (versionResult.hasOutput()) {
+        String versionOutput = versionResult.outputUTF8();
+        Matcher versionMatcher = VERSION_PATTERN.matcher(versionOutput);
+        if (!versionMatcher.find()) {
+          log.warn("No valid chartmuseum version present in output: {}", versionOutput);
+          return CHARTMUSEUM_DEFAULT_VERSION;
+        }
+
+        return Version.parse(versionMatcher.group(1));
+      }
+
+    } catch (IOException | InterruptedException | TimeoutException e) {
+      log.error("Failed to get chartmuseum version", e);
+    }
+
+    return CHARTMUSEUM_DEFAULT_VERSION;
+  }
+
   @VisibleForTesting
   StartedProcess startProcess(String command, Map<String, String> environment, StringBuffer stringBuffer)
-      throws Exception {
+      throws IOException {
     try (ScriptProcessExecutor.StringBufferOutputStream stringBufferOutputStream =
              new ScriptProcessExecutor.StringBufferOutputStream(stringBuffer)) {
       return new ProcessExecutor()
@@ -180,14 +170,11 @@ public class ChartMuseumClientHelper {
   }
 
   @VisibleForTesting
-  String writeGCSCredentialsFile(String resourceDirectory, char[] serviceAccountKey) throws IOException {
-    String credentialFilePath = Paths.get(resourceDirectory, "credentials.json").toString();
-    FileIo.writeUtf8StringToFile(credentialFilePath, String.valueOf(serviceAccountKey));
-    return credentialFilePath;
+  ProcessResult executeCommand(String command) throws IOException, InterruptedException, TimeoutException {
+    return new ProcessExecutor().commandSplit(command).readOutput(true).execute();
   }
 
-  @VisibleForTesting
-  static Map<String, String> getEnvForAwsConfig(
+  public Map<String, String> getEnvForAwsConfig(
       char[] accessKey, char[] secretKey, boolean useIamCredentials, boolean useIrsa) {
     Map<String, String> environment = new HashMap<>();
     if (useIrsa) {

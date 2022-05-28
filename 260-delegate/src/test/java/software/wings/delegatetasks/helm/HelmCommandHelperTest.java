@@ -22,7 +22,7 @@ import io.harness.exception.WingsException;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
-import software.wings.beans.container.HelmChartSpecificationDTO;
+import software.wings.beans.dto.HelmChartSpecification;
 import software.wings.helpers.ext.helm.request.HelmInstallCommandRequest;
 import software.wings.helpers.ext.helm.request.HelmReleaseHistoryCommandRequest;
 import software.wings.helpers.ext.helm.request.HelmRollbackCommandRequest;
@@ -120,15 +120,14 @@ public class HelmCommandHelperTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testIsValidChartSpecification() {
     assertThat(helmCommandHelper.isValidChartSpecification(null)).isFalse();
-    assertThat(helmCommandHelper.isValidChartSpecification(HelmChartSpecificationDTO.builder().build())).isFalse();
+    assertThat(helmCommandHelper.isValidChartSpecification(HelmChartSpecification.builder().build())).isFalse();
     String DUMMY = "DUMMY";
-    assertThat(
-        helmCommandHelper.isValidChartSpecification(HelmChartSpecificationDTO.builder().chartName(DUMMY).build()))
+    assertThat(helmCommandHelper.isValidChartSpecification(HelmChartSpecification.builder().chartName(DUMMY).build()))
         .isTrue();
-    assertThat(helmCommandHelper.isValidChartSpecification(HelmChartSpecificationDTO.builder().chartUrl(DUMMY).build()))
+    assertThat(helmCommandHelper.isValidChartSpecification(HelmChartSpecification.builder().chartUrl(DUMMY).build()))
         .isTrue();
     assertThat(helmCommandHelper.isValidChartSpecification(
-                   HelmChartSpecificationDTO.builder().chartUrl(DUMMY).chartName(DUMMY).build()))
+                   HelmChartSpecification.builder().chartUrl(DUMMY).chartName(DUMMY).build()))
         .isTrue();
   }
 

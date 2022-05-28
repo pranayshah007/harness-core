@@ -7,8 +7,8 @@
 
 package io.harness.notification.entities;
 
-import static io.harness.NotificationRequest.Slack;
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.notification.NotificationRequest.Slack;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.notification.NotificationChannelType;

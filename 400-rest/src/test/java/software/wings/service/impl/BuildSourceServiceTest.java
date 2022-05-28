@@ -66,7 +66,7 @@ import software.wings.beans.artifact.AmazonS3ArtifactStream;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.beans.artifact.ArtifactStreamType;
-import software.wings.beans.artifact.AzureArtifactsArtifactStream.ProtocolType;
+import software.wings.beans.artifact.AzureArtifactsArtifactStreamProtocolType;
 import software.wings.beans.artifact.BambooArtifactStream;
 import software.wings.beans.artifact.CustomArtifactStream;
 import software.wings.beans.artifact.JenkinsArtifactStream;
@@ -1051,7 +1051,7 @@ public class BuildSourceServiceTest extends WingsBaseTest {
     when(azureArtifactsBuildService.getPackages(any(), any(), any(), any(), any()))
         .thenReturn(Collections.singletonList(aPackage));
     List<AzureArtifactsPackage> packages =
-        buildSourceService.getPackages(SETTING_ID, null, "FEED", ProtocolType.maven.name());
+        buildSourceService.getPackages(SETTING_ID, null, "FEED", AzureArtifactsArtifactStreamProtocolType.maven.name());
     assertThat(packages).isNotEmpty();
     assertThat(packages).hasSize(1).extracting(AzureArtifactsPackage::getId).containsExactly("id1");
   }
@@ -1069,7 +1069,7 @@ public class BuildSourceServiceTest extends WingsBaseTest {
     when(delegateProxyFactory.get(any(), any(SyncTaskContext.class))).thenReturn(bambooBuildService);
 
     List<AzureArtifactsPackage> packages =
-        buildSourceService.getPackages(SETTING_ID, null, "FEED", ProtocolType.maven.name());
+        buildSourceService.getPackages(SETTING_ID, null, "FEED", AzureArtifactsArtifactStreamProtocolType.maven.name());
     assertThat(packages).isEmpty();
   }
 

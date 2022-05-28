@@ -27,6 +27,8 @@ public interface ServerlessSpecParameters extends SpecParameters {
   @JsonIgnore
   default List<String> getCommandUnits() {
     return Arrays.asList(ServerlessCommandUnitConstants.fetchFiles.toString(),
-        ServerlessCommandUnitConstants.init.toString(), ServerlessCommandUnitConstants.deploy.toString());
+        ServerlessCommandUnitConstants.setupDirectory.toString(), ServerlessCommandUnitConstants.artifact.toString(),
+        ServerlessCommandUnitConstants.configureCred.toString(), ServerlessCommandUnitConstants.plugin.toString(),
+        ServerlessCommandUnitConstants.rollbackData.toString(), ServerlessCommandUnitConstants.deploy.toString());
   }
 }

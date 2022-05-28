@@ -32,7 +32,9 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.when;
 
+import io.harness.artifacts.jenkins.service.JenkinsRegistryUtils;
 import io.harness.category.element.UnitTests;
+import io.harness.delegate.task.artifacts.mappers.JenkinsRequestResponseMapper;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.WingsException;
 import io.harness.rule.Owner;
@@ -81,6 +83,8 @@ public class JenkinsBuildServiceTest extends WingsBaseTest {
   @Mock private JenkinsFactory jenkinsFactory;
 
   @Mock private Jenkins jenkins;
+
+  @Mock private JenkinsRegistryUtils jenkinsRegistryUtils;
 
   @Inject @InjectMocks JenkinsUtils jenkinsUtil;
 
@@ -204,7 +208,9 @@ public class JenkinsBuildServiceTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldTestGetJobParameters() {
     JobWithExtendedDetails jobWithDetails = Mockito.mock(JobWithExtendedDetails.class, RETURNS_DEEP_STUBS);
-    when(jenkins.getJobWithDetails(BUILD_JOB_NAME)).thenReturn(jobWithDetails);
+    when(jenkinsRegistryUtils.getJobWithDetails(
+             JenkinsRequestResponseMapper.toJenkinsInternalConfig(jenkinsConfig), BUILD_JOB_NAME))
+        .thenReturn(jobWithDetails);
     JobProperty jobProperty =
         JobProperty.builder()
             .parameterDefinitions(asList(

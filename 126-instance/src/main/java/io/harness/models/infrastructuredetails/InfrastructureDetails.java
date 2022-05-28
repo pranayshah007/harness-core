@@ -15,5 +15,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 @OwnedBy(HarnessTeam.DX)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type", include = JsonTypeInfo.As.EXISTING_PROPERTY)
-@JsonSubTypes({ @JsonSubTypes.Type(value = K8sInfrastructureDetails.class, name = "K8S") })
+@JsonSubTypes({
+  @JsonSubTypes.Type(value = K8sInfrastructureDetails.class, name = "K8S")
+  , @JsonSubTypes.Type(value = ServerlessAwsLambdaInfrastructureDetails.class, name = "ServerlessAwsLambda")
+})
 public abstract class InfrastructureDetails {}

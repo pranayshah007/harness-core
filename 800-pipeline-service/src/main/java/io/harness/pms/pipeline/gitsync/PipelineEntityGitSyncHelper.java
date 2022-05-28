@@ -15,6 +15,7 @@ import io.harness.common.EntityReference;
 import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.IdentifierRefProtoDTO;
+import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
@@ -189,10 +190,14 @@ public class PipelineEntityGitSyncHelper extends AbstractGitSdkEntityHandler<Pip
   public Optional<EntityGitDetails> getEntityDetailsIfExists(String accountIdentifier, String yaml) {
     final PipelineConfig pipelineConfig = getYamlDTO(yaml);
     final PipelineInfoConfig pipelineInfoConfig = pipelineConfig.getPipelineInfoConfig();
-    final Optional<PipelineEntity> pipelineEntity =
-        pmsPipelineService.get(accountIdentifier, pipelineInfoConfig.getOrgIdentifier(),
-            pipelineInfoConfig.getProjectIdentifier(), pipelineInfoConfig.getIdentifier(), false);
-    return pipelineEntity.map(EntityGitDetailsMapper::mapEntityGitDetails);
+    try {
+      final Optional<PipelineEntity> pipelineEntity =
+          pmsPipelineService.get(accountIdentifier, pipelineInfoConfig.getOrgIdentifier(),
+              pipelineInfoConfig.getProjectIdentifier(), pipelineInfoConfig.getIdentifier(), false);
+      return pipelineEntity.map(EntityGitDetailsMapper::mapEntityGitDetails);
+    } catch (EntityNotFoundException e) {
+      return Optional.empty();
+    }
   }
 
   @Override

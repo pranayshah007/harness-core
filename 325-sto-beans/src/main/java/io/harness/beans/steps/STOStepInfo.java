@@ -7,7 +7,7 @@
 
 package io.harness.beans.steps;
 
-import static io.harness.annotations.dev.HarnessTeam.CI;
+import static io.harness.annotations.dev.HarnessTeam.STO;
 
 import io.harness.advisers.rollback.OnFailRollbackParameters;
 import io.harness.annotations.dev.OwnedBy;
@@ -24,7 +24,7 @@ import java.time.Duration;
 import java.util.List;
 
 @ApiModel(subTypes = {SecurityStepInfo.class})
-@OwnedBy(CI)
+@OwnedBy(STO)
 public interface STOStepInfo extends StepSpecType, WithStepElementParameters, SpecParameters {
   int MIN_RETRY = 0;
   int MAX_RETRY = 5;

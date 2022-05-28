@@ -17,7 +17,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.gitaware.helper.GitAwareContextHelper;
+import io.harness.gitsync.beans.StoreType;
+import io.harness.gitsync.scm.beans.ScmGitMetaData;
+import io.harness.gitsync.sdk.EntityGitDetails;
+import io.harness.gitsync.sdk.EntityValidityDetails;
 import io.harness.pms.pipeline.ExecutionSummaryInfo;
+import io.harness.pms.pipeline.PMSPipelineResponseDTO;
 import io.harness.pms.pipeline.PMSPipelineSummaryResponseDTO;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.mappers.PMSPipelineDtoMapper;
@@ -26,6 +32,7 @@ import io.harness.rule.Owner;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +41,8 @@ import org.junit.experimental.categories.Category;
 
 @OwnedBy(PIPELINE)
 public class PMSPipelineDtoMapperTest extends CategoryTest {
+  String yaml = "yaml";
+
   @Test
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
@@ -109,5 +118,352 @@ public class PMSPipelineDtoMapperTest extends CategoryTest {
 
     assertThat(deploymentList).isEqualTo(pmsPipelineSummaryResponseDTO.getExecutionSummaryInfo().getDeployments());
     assertThat(numberOfErrorsList).isEqualTo(pmsPipelineSummaryResponseDTO.getExecutionSummaryInfo().getNumOfErrors());
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testGetEntityGitDetails() {
+    PipelineEntity oldNonGitSync = PipelineEntity.builder().build();
+    EntityGitDetails entityGitDetails0 = PMSPipelineDtoMapper.getEntityGitDetails(oldNonGitSync);
+    assertThat(entityGitDetails0).isEqualTo(EntityGitDetails.builder().build());
+
+    PipelineEntity oldGitSync = PipelineEntity.builder().yamlGitConfigRef("repo").branch("branch1").build();
+    EntityGitDetails entityGitDetails1 = PMSPipelineDtoMapper.getEntityGitDetails(oldGitSync);
+    assertThat(entityGitDetails1).isNotNull();
+    assertThat(entityGitDetails1.getRepoIdentifier()).isEqualTo("repo");
+    assertThat(entityGitDetails1.getBranch()).isEqualTo("branch1");
+
+    PipelineEntity inline = PipelineEntity.builder().storeType(StoreType.INLINE).build();
+    EntityGitDetails entityGitDetails2 = PMSPipelineDtoMapper.getEntityGitDetails(inline);
+    assertThat(entityGitDetails2).isNull();
+
+    GitAwareContextHelper.updateScmGitMetaData(
+        ScmGitMetaData.builder().branchName("brName").repoName("repoName").build());
+
+    PipelineEntity remote = PipelineEntity.builder().storeType(StoreType.REMOTE).build();
+    EntityGitDetails entityGitDetails3 = PMSPipelineDtoMapper.getEntityGitDetails(remote);
+    assertThat(entityGitDetails3).isNotNull();
+    assertThat(entityGitDetails3.getBranch()).isEqualTo("brName");
+    assertThat(entityGitDetails3.getRepoName()).isEqualTo("repoName");
+    assertThat(entityGitDetails3.getRepoIdentifier()).isNull();
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testGetEntityValidityDetails() {
+    PipelineEntity oldNonGitSync = PipelineEntity.builder().yaml(yaml).build();
+    EntityValidityDetails entityValidityDetails = PMSPipelineDtoMapper.getEntityValidityDetails(oldNonGitSync);
+    assertThat(entityValidityDetails.isValid()).isTrue();
+    assertThat(entityValidityDetails.getInvalidYaml()).isNull();
+
+    PipelineEntity oldGitSyncValid = PipelineEntity.builder().yaml(yaml).build();
+    entityValidityDetails = PMSPipelineDtoMapper.getEntityValidityDetails(oldGitSyncValid);
+    assertThat(entityValidityDetails.isValid()).isTrue();
+    assertThat(entityValidityDetails.getInvalidYaml()).isNull();
+
+    PipelineEntity oldGitSyncInvalid =
+        PipelineEntity.builder().yaml(yaml).yamlGitConfigRef("repo").isEntityInvalid(true).build();
+    entityValidityDetails = PMSPipelineDtoMapper.getEntityValidityDetails(oldGitSyncInvalid);
+    assertThat(entityValidityDetails.isValid()).isFalse();
+    assertThat(entityValidityDetails.getInvalidYaml()).isEqualTo(yaml);
+
+    PipelineEntity inline = PipelineEntity.builder().yaml(yaml).storeType(StoreType.INLINE).build();
+    entityValidityDetails = PMSPipelineDtoMapper.getEntityValidityDetails(inline);
+    assertThat(entityValidityDetails.isValid()).isTrue();
+    assertThat(entityValidityDetails.getInvalidYaml()).isNull();
+
+    PipelineEntity remote = PipelineEntity.builder().yaml(yaml).storeType(StoreType.REMOTE).build();
+    entityValidityDetails = PMSPipelineDtoMapper.getEntityValidityDetails(remote);
+    assertThat(entityValidityDetails.isValid()).isTrue();
+    assertThat(entityValidityDetails.getInvalidYaml()).isNull();
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testWritePipelineDto() {
+    PipelineEntity oldNonGitSync =
+        PipelineEntity.builder().yaml(yaml).filters(Collections.singletonMap("cd", null)).build();
+    PMSPipelineResponseDTO pipelineResponseDTO = PMSPipelineDtoMapper.writePipelineDto(oldNonGitSync);
+    assertThat(pipelineResponseDTO.getYamlPipeline()).isEqualTo(yaml);
+    assertThat(pipelineResponseDTO.getModules()).containsExactly("cd");
+    assertThat(pipelineResponseDTO.getGitDetails()).isEqualTo(EntityGitDetails.builder().build());
+    assertThat(pipelineResponseDTO.getEntityValidityDetails())
+        .isEqualTo(EntityValidityDetails.builder().valid(true).build());
+
+    PipelineEntity oldGitSyncValid = PipelineEntity.builder()
+                                         .yaml(yaml)
+                                         .filters(Collections.singletonMap("cd", null))
+                                         .yamlGitConfigRef("repo")
+                                         .branch("br1")
+                                         .build();
+    pipelineResponseDTO = PMSPipelineDtoMapper.writePipelineDto(oldGitSyncValid);
+    assertThat(pipelineResponseDTO.getYamlPipeline()).isEqualTo(yaml);
+    assertThat(pipelineResponseDTO.getModules()).containsExactly("cd");
+    assertThat(pipelineResponseDTO.getGitDetails())
+        .isEqualTo(EntityGitDetails.builder().repoIdentifier("repo").branch("br1").build());
+    assertThat(pipelineResponseDTO.getEntityValidityDetails())
+        .isEqualTo(EntityValidityDetails.builder().valid(true).build());
+
+    PipelineEntity oldGitSyncInvalid = PipelineEntity.builder()
+                                           .yaml(yaml)
+                                           .filters(Collections.singletonMap("cd", null))
+                                           .isEntityInvalid(true)
+                                           .yamlGitConfigRef("repo")
+                                           .branch("br1")
+                                           .build();
+    pipelineResponseDTO = PMSPipelineDtoMapper.writePipelineDto(oldGitSyncInvalid);
+    assertThat(pipelineResponseDTO.getYamlPipeline()).isEqualTo(yaml);
+    assertThat(pipelineResponseDTO.getModules()).containsExactly("cd");
+    assertThat(pipelineResponseDTO.getGitDetails())
+        .isEqualTo(EntityGitDetails.builder().repoIdentifier("repo").branch("br1").build());
+    assertThat(pipelineResponseDTO.getEntityValidityDetails())
+        .isEqualTo(EntityValidityDetails.builder().valid(false).invalidYaml(yaml).build());
+
+    PipelineEntity inline = PipelineEntity.builder()
+                                .yaml(yaml)
+                                .filters(Collections.singletonMap("cd", null))
+                                .storeType(StoreType.INLINE)
+                                .build();
+    pipelineResponseDTO = PMSPipelineDtoMapper.writePipelineDto(inline);
+    assertThat(pipelineResponseDTO.getYamlPipeline()).isEqualTo(yaml);
+    assertThat(pipelineResponseDTO.getModules()).containsExactly("cd");
+    assertThat(pipelineResponseDTO.getGitDetails()).isNull();
+    assertThat(pipelineResponseDTO.getEntityValidityDetails())
+        .isEqualTo(EntityValidityDetails.builder().valid(true).build());
+
+    GitAwareContextHelper.updateScmGitMetaData(
+        ScmGitMetaData.builder().branchName("brName").repoName("repoName").build());
+    PipelineEntity remote = PipelineEntity.builder()
+                                .yaml(yaml)
+                                .filters(Collections.singletonMap("cd", null))
+                                .storeType(StoreType.REMOTE)
+                                .build();
+    pipelineResponseDTO = PMSPipelineDtoMapper.writePipelineDto(remote);
+    assertThat(pipelineResponseDTO.getYamlPipeline()).isEqualTo(yaml);
+    assertThat(pipelineResponseDTO.getModules()).containsExactly("cd");
+    assertThat(pipelineResponseDTO.getGitDetails())
+        .isEqualTo(EntityGitDetails.builder().repoName("repoName").branch("brName").build());
+    assertThat(pipelineResponseDTO.getEntityValidityDetails())
+        .isEqualTo(EntityValidityDetails.builder().valid(true).build());
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testPreparePipelineSummary() {
+    PipelineEntity oldNonGitSync = PipelineEntity.builder()
+                                       .name("name")
+                                       .identifier("identifier")
+                                       .description("desc")
+                                       .stageCount(23)
+                                       .filters(Collections.singletonMap("cd", null))
+                                       .build();
+    PMSPipelineSummaryResponseDTO pipelineSummaryResponse = PMSPipelineDtoMapper.preparePipelineSummary(oldNonGitSync);
+    assertThat(pipelineSummaryResponse.getGitDetails()).isEqualTo(EntityGitDetails.builder().build());
+    assertThat(pipelineSummaryResponse.getEntityValidityDetails())
+        .isEqualTo(EntityValidityDetails.builder().valid(true).build());
+    assertThat(pipelineSummaryResponse.getName()).isEqualTo("name");
+    assertThat(pipelineSummaryResponse.getIdentifier()).isEqualTo("identifier");
+    assertThat(pipelineSummaryResponse.getDescription()).isEqualTo("desc");
+    assertThat(pipelineSummaryResponse.getNumOfStages()).isEqualTo(23);
+    assertThat(pipelineSummaryResponse.getStoreType()).isNull();
+    assertThat(pipelineSummaryResponse.getConnectorRef()).isNull();
+
+    PipelineEntity oldGitSyncValid = PipelineEntity.builder()
+                                         .name("name")
+                                         .identifier("identifier")
+                                         .description("desc")
+                                         .stageCount(23)
+                                         .filters(Collections.singletonMap("cd", null))
+                                         .yamlGitConfigRef("repo")
+                                         .branch("br1")
+                                         .build();
+    pipelineSummaryResponse = PMSPipelineDtoMapper.preparePipelineSummary(oldGitSyncValid);
+    assertThat(pipelineSummaryResponse.getGitDetails())
+        .isEqualTo(EntityGitDetails.builder().repoIdentifier("repo").branch("br1").build());
+    assertThat(pipelineSummaryResponse.getEntityValidityDetails())
+        .isEqualTo(EntityValidityDetails.builder().valid(true).build());
+    assertThat(pipelineSummaryResponse.getName()).isEqualTo("name");
+    assertThat(pipelineSummaryResponse.getIdentifier()).isEqualTo("identifier");
+    assertThat(pipelineSummaryResponse.getDescription()).isEqualTo("desc");
+    assertThat(pipelineSummaryResponse.getNumOfStages()).isEqualTo(23);
+    assertThat(pipelineSummaryResponse.getStoreType()).isNull();
+    assertThat(pipelineSummaryResponse.getConnectorRef()).isNull();
+
+    PipelineEntity oldGitSyncInvalid = PipelineEntity.builder()
+                                           .name("name")
+                                           .identifier("identifier")
+                                           .description("desc")
+                                           .yaml(yaml)
+                                           .stageCount(23)
+                                           .filters(Collections.singletonMap("cd", null))
+                                           .yamlGitConfigRef("repo")
+                                           .branch("br1")
+                                           .isEntityInvalid(true)
+                                           .build();
+    pipelineSummaryResponse = PMSPipelineDtoMapper.preparePipelineSummary(oldGitSyncInvalid);
+    assertThat(pipelineSummaryResponse.getGitDetails())
+        .isEqualTo(EntityGitDetails.builder().repoIdentifier("repo").branch("br1").build());
+    assertThat(pipelineSummaryResponse.getEntityValidityDetails())
+        .isEqualTo(EntityValidityDetails.builder().valid(false).invalidYaml(yaml).build());
+    assertThat(pipelineSummaryResponse.getName()).isEqualTo("name");
+    assertThat(pipelineSummaryResponse.getIdentifier()).isEqualTo("identifier");
+    assertThat(pipelineSummaryResponse.getDescription()).isEqualTo("desc");
+    assertThat(pipelineSummaryResponse.getNumOfStages()).isEqualTo(23);
+    assertThat(pipelineSummaryResponse.getStoreType()).isNull();
+    assertThat(pipelineSummaryResponse.getConnectorRef()).isNull();
+
+    PipelineEntity inline = PipelineEntity.builder()
+                                .name("name")
+                                .identifier("identifier")
+                                .description("desc")
+                                .stageCount(23)
+                                .filters(Collections.singletonMap("cd", null))
+                                .storeType(StoreType.INLINE)
+                                .build();
+    pipelineSummaryResponse = PMSPipelineDtoMapper.preparePipelineSummary(inline);
+    assertThat(pipelineSummaryResponse.getGitDetails()).isNull();
+    assertThat(pipelineSummaryResponse.getEntityValidityDetails())
+        .isEqualTo(EntityValidityDetails.builder().valid(true).build());
+    assertThat(pipelineSummaryResponse.getName()).isEqualTo("name");
+    assertThat(pipelineSummaryResponse.getIdentifier()).isEqualTo("identifier");
+    assertThat(pipelineSummaryResponse.getDescription()).isEqualTo("desc");
+    assertThat(pipelineSummaryResponse.getNumOfStages()).isEqualTo(23);
+    assertThat(pipelineSummaryResponse.getStoreType()).isEqualTo(StoreType.INLINE);
+
+    GitAwareContextHelper.updateScmGitMetaData(
+        ScmGitMetaData.builder().branchName("brName").repoName("repoName").build());
+    PipelineEntity remote = PipelineEntity.builder()
+                                .name("name")
+                                .identifier("identifier")
+                                .description("desc")
+                                .stageCount(23)
+                                .filters(Collections.singletonMap("cd", null))
+                                .storeType(StoreType.REMOTE)
+                                .repo("repoName")
+                                .connectorRef("conn")
+                                .build();
+    pipelineSummaryResponse = PMSPipelineDtoMapper.preparePipelineSummary(remote);
+    assertThat(pipelineSummaryResponse.getGitDetails())
+        .isEqualTo(EntityGitDetails.builder().repoName("repoName").branch("brName").build());
+    assertThat(pipelineSummaryResponse.getEntityValidityDetails())
+        .isEqualTo(EntityValidityDetails.builder().valid(true).build());
+    assertThat(pipelineSummaryResponse.getName()).isEqualTo("name");
+    assertThat(pipelineSummaryResponse.getIdentifier()).isEqualTo("identifier");
+    assertThat(pipelineSummaryResponse.getDescription()).isEqualTo("desc");
+    assertThat(pipelineSummaryResponse.getNumOfStages()).isEqualTo(23);
+    assertThat(pipelineSummaryResponse.getStoreType()).isEqualTo(StoreType.REMOTE);
+    assertThat(pipelineSummaryResponse.getConnectorRef()).isEqualTo("conn");
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testPreparePipelineSummaryForListView() {
+    PipelineEntity oldNonGitSync = PipelineEntity.builder()
+                                       .name("name")
+                                       .identifier("identifier")
+                                       .description("desc")
+                                       .stageCount(23)
+                                       .filters(Collections.singletonMap("cd", null))
+                                       .build();
+    PMSPipelineSummaryResponseDTO pipelineSummaryResponse =
+        PMSPipelineDtoMapper.preparePipelineSummaryForListView(oldNonGitSync);
+    assertThat(pipelineSummaryResponse.getGitDetails()).isEqualTo(EntityGitDetails.builder().build());
+    assertThat(pipelineSummaryResponse.getEntityValidityDetails())
+        .isEqualTo(EntityValidityDetails.builder().valid(true).build());
+    assertThat(pipelineSummaryResponse.getName()).isEqualTo("name");
+    assertThat(pipelineSummaryResponse.getIdentifier()).isEqualTo("identifier");
+    assertThat(pipelineSummaryResponse.getDescription()).isEqualTo("desc");
+    assertThat(pipelineSummaryResponse.getNumOfStages()).isEqualTo(23);
+    assertThat(pipelineSummaryResponse.getStoreType()).isNull();
+    assertThat(pipelineSummaryResponse.getConnectorRef()).isNull();
+
+    PipelineEntity oldGitSyncValid = PipelineEntity.builder()
+                                         .name("name")
+                                         .identifier("identifier")
+                                         .description("desc")
+                                         .stageCount(23)
+                                         .filters(Collections.singletonMap("cd", null))
+                                         .yamlGitConfigRef("repo")
+                                         .branch("br1")
+                                         .build();
+    pipelineSummaryResponse = PMSPipelineDtoMapper.preparePipelineSummaryForListView(oldGitSyncValid);
+    assertThat(pipelineSummaryResponse.getGitDetails())
+        .isEqualTo(EntityGitDetails.builder().repoIdentifier("repo").branch("br1").build());
+    assertThat(pipelineSummaryResponse.getEntityValidityDetails())
+        .isEqualTo(EntityValidityDetails.builder().valid(true).build());
+    assertThat(pipelineSummaryResponse.getName()).isEqualTo("name");
+    assertThat(pipelineSummaryResponse.getIdentifier()).isEqualTo("identifier");
+    assertThat(pipelineSummaryResponse.getDescription()).isEqualTo("desc");
+    assertThat(pipelineSummaryResponse.getNumOfStages()).isEqualTo(23);
+    assertThat(pipelineSummaryResponse.getStoreType()).isNull();
+    assertThat(pipelineSummaryResponse.getConnectorRef()).isNull();
+
+    PipelineEntity oldGitSyncInvalid = PipelineEntity.builder()
+                                           .name("name")
+                                           .identifier("identifier")
+                                           .description("desc")
+                                           .yaml(yaml)
+                                           .stageCount(23)
+                                           .filters(Collections.singletonMap("cd", null))
+                                           .yamlGitConfigRef("repo")
+                                           .branch("br1")
+                                           .isEntityInvalid(true)
+                                           .build();
+    pipelineSummaryResponse = PMSPipelineDtoMapper.preparePipelineSummaryForListView(oldGitSyncInvalid);
+    assertThat(pipelineSummaryResponse.getGitDetails())
+        .isEqualTo(EntityGitDetails.builder().repoIdentifier("repo").branch("br1").build());
+    assertThat(pipelineSummaryResponse.getEntityValidityDetails())
+        .isEqualTo(EntityValidityDetails.builder().valid(false).invalidYaml(yaml).build());
+    assertThat(pipelineSummaryResponse.getName()).isEqualTo("name");
+    assertThat(pipelineSummaryResponse.getIdentifier()).isEqualTo("identifier");
+    assertThat(pipelineSummaryResponse.getDescription()).isEqualTo("desc");
+    assertThat(pipelineSummaryResponse.getNumOfStages()).isEqualTo(23);
+    assertThat(pipelineSummaryResponse.getStoreType()).isNull();
+    assertThat(pipelineSummaryResponse.getConnectorRef()).isNull();
+
+    PipelineEntity inline = PipelineEntity.builder()
+                                .name("name")
+                                .identifier("identifier")
+                                .description("desc")
+                                .stageCount(23)
+                                .filters(Collections.singletonMap("cd", null))
+                                .storeType(StoreType.INLINE)
+                                .build();
+    pipelineSummaryResponse = PMSPipelineDtoMapper.preparePipelineSummaryForListView(inline);
+    assertThat(pipelineSummaryResponse.getGitDetails()).isNull();
+    assertThat(pipelineSummaryResponse.getEntityValidityDetails())
+        .isEqualTo(EntityValidityDetails.builder().valid(true).build());
+    assertThat(pipelineSummaryResponse.getName()).isEqualTo("name");
+    assertThat(pipelineSummaryResponse.getIdentifier()).isEqualTo("identifier");
+    assertThat(pipelineSummaryResponse.getDescription()).isEqualTo("desc");
+    assertThat(pipelineSummaryResponse.getNumOfStages()).isEqualTo(23);
+    assertThat(pipelineSummaryResponse.getStoreType()).isEqualTo(StoreType.INLINE);
+
+    PipelineEntity remote = PipelineEntity.builder()
+                                .name("name")
+                                .identifier("identifier")
+                                .description("desc")
+                                .stageCount(23)
+                                .filters(Collections.singletonMap("cd", null))
+                                .storeType(StoreType.REMOTE)
+                                .repo("repoName")
+                                .connectorRef("conn")
+                                .build();
+    pipelineSummaryResponse = PMSPipelineDtoMapper.preparePipelineSummaryForListView(remote);
+    assertThat(pipelineSummaryResponse.getGitDetails())
+        .isEqualTo(EntityGitDetails.builder().repoName("repoName").build());
+    assertThat(pipelineSummaryResponse.getEntityValidityDetails())
+        .isEqualTo(EntityValidityDetails.builder().valid(true).build());
+    assertThat(pipelineSummaryResponse.getName()).isEqualTo("name");
+    assertThat(pipelineSummaryResponse.getIdentifier()).isEqualTo("identifier");
+    assertThat(pipelineSummaryResponse.getDescription()).isEqualTo("desc");
+    assertThat(pipelineSummaryResponse.getNumOfStages()).isEqualTo(23);
+    assertThat(pipelineSummaryResponse.getStoreType()).isEqualTo(StoreType.REMOTE);
+    assertThat(pipelineSummaryResponse.getConnectorRef()).isEqualTo("conn");
   }
 }

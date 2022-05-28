@@ -577,8 +577,6 @@ public class TimeSeriesRecordServiceImplTest extends CvNextGenTestBase {
   public void testGetTimeSeriesMetricDefinitions_projectLevelThresholdsNotncluded() {
     metricPackService.getMetricPacks(accountId, orgIdentifier, projectIdentifier, APP_DYNAMICS);
     AppDynamicsCVConfig appDynamicsCVConfig = builderFactory.appDynamicsCVConfigBuilder().build();
-    appDynamicsCVConfig.setServiceIdentifier("serviceIdentifier");
-    appDynamicsCVConfig.setEnvIdentifier("environmentIdentifier");
     appDynamicsCVConfig.setMonitoringSourceName(generateUuid());
     appDynamicsCVConfig.setTierName("docker-tier");
     appDynamicsCVConfig.setApplicationName("cv-app");
@@ -624,8 +622,6 @@ public class TimeSeriesRecordServiceImplTest extends CvNextGenTestBase {
     metricPackService.getMetricPacks(accountId, orgIdentifier, projectIdentifier, APP_DYNAMICS);
     AppDynamicsCVConfig appDynamicsCVConfig = builderFactory.appDynamicsCVConfigBuilder().build();
     appDynamicsCVConfig.setConnectorIdentifier(connectorIdentifier);
-    appDynamicsCVConfig.setServiceIdentifier("serviceIdentifier");
-    appDynamicsCVConfig.setEnvIdentifier("environmentIdentifier");
     appDynamicsCVConfig.setMonitoringSourceName(generateUuid());
     appDynamicsCVConfig.setTierName("docker-tier");
     appDynamicsCVConfig.setApplicationName("cv-app");

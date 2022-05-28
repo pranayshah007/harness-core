@@ -14,6 +14,7 @@ import io.harness.annotation.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.validator.EntityName;
 import io.harness.data.validator.Trimmed;
+import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.persistance.GitSyncableEntity;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
@@ -26,6 +27,7 @@ import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UpdatedAtAware;
 import io.harness.persistence.UuidAware;
+import io.harness.persistence.gitaware.GitAware;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.github.reinert.jjschema.SchemaIgnore;
@@ -63,7 +65,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @HarnessEntity(exportable = true)
 @StoreIn(DbAliases.PMS)
 public class InputSetEntity
-    implements GitSyncableEntity, PersistentEntity, AccountAccess, UuidAware, CreatedAtAware, UpdatedAtAware {
+    implements GitAware, GitSyncableEntity, PersistentEntity, AccountAccess, UuidAware, CreatedAtAware, UpdatedAtAware {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
@@ -91,7 +93,7 @@ public class InputSetEntity
   }
   @Setter @NonFinal @Id @org.mongodb.morphia.annotations.Id String uuid;
 
-  @Wither @NotEmpty String yaml;
+  @Wither @NotEmpty @NonFinal @Setter String yaml;
 
   @NotEmpty String accountId;
   @NotEmpty String orgIdentifier;
@@ -107,7 +109,7 @@ public class InputSetEntity
   @Wither List<String> inputSetReferences;
 
   @Setter @NonFinal @SchemaIgnore @FdIndex @CreatedDate long createdAt;
-  @Setter @NonFinal @SchemaIgnore @NotNull @LastModifiedDate long lastUpdatedAt;
+  @Wither @Setter @NonFinal @SchemaIgnore @NotNull @LastModifiedDate long lastUpdatedAt;
   @Wither @Builder.Default Boolean deleted = Boolean.FALSE;
   @Wither @Version Long version;
 
@@ -119,7 +121,21 @@ public class InputSetEntity
   @Setter @NonFinal String rootFolder;
   @Getter(AccessLevel.NONE) @Wither @NonFinal Boolean isEntityInvalid;
 
+  // git experience parameters after simplification
+  @Wither @Setter @NonFinal StoreType storeType;
+  @Setter @NonFinal String repo;
+  @Setter @NonFinal String connectorRef;
+
   @Wither @Builder.Default Boolean isInvalid = Boolean.FALSE;
+
+  public String getData() {
+    return yaml;
+  }
+
+  @Override
+  public void setData(String data) {
+    yaml = data;
+  }
 
   @Override
   public String getAccountIdentifier() {

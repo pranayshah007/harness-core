@@ -90,6 +90,7 @@ public class InternalContainerParamsProvider {
         .containerType(CIContainerType.ADD_ON)
         .imageDetailsWithConnector(ImageDetailsWithConnector.builder()
                                        .imageDetails(IntegrationStageUtils.getImageInfo(fullyQualifiedImage))
+                                       .imageConnectorDetails(harnessInternalImageConnector)
                                        .build())
         .containerSecrets(ContainerSecrets.builder().build())
         .volumeToMountPath(volumeToMountPath)

@@ -23,7 +23,7 @@ import io.harness.logging.LogLevel;
 import io.harness.logging.NoopExecutionCallback;
 import io.harness.rule.Owner;
 
-import software.wings.beans.container.HelmChartSpecificationDTO;
+import software.wings.beans.dto.HelmChartSpecification;
 import software.wings.helpers.ext.helm.request.HelmCommandRequest;
 import software.wings.helpers.ext.helm.request.HelmInstallCommandRequest;
 import software.wings.helpers.ext.helm.request.HelmRollbackCommandRequest;
@@ -58,7 +58,7 @@ public class HelmCommandDataMapperTest extends CategoryTest {
                                                 .workingDir("working-dir")
                                                 .commandFlags("--debug")
                                                 .repoName("my-repo")
-                                                .chartSpecification(HelmChartSpecificationDTO.builder()
+                                                .chartSpecification(HelmChartSpecification.builder()
                                                                         .chartName("coolest-chart")
                                                                         .chartUrl("harness.io")
                                                                         .chartVersion("0.1.0")
@@ -101,7 +101,7 @@ public class HelmCommandDataMapperTest extends CategoryTest {
                                                 .workingDir("working-dir")
                                                 .commandFlags("--fetch")
                                                 .repoName("my-repo")
-                                                .chartSpecification(HelmChartSpecificationDTO.builder()
+                                                .chartSpecification(HelmChartSpecification.builder()
                                                                         .chartName("coolest-chart")
                                                                         .chartUrl("harness.io")
                                                                         .chartVersion("0.1.0")

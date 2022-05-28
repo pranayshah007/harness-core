@@ -854,7 +854,7 @@ public class DeploymentTimeSeriesAnalysisServiceImplTest extends CvNextGenTestBa
   @Test
   @Owner(developers = KAPIL)
   @Category(UnitTests.class)
-  public void testNodeNames() {
+  public void testGetNodeNames() {
     verificationJobService.create(accountId, createCanaryVerificationJobDTO());
     VerificationJobInstance verificationJobInstance = createVerificationJobInstance();
     CVConfig cvConfig = verificationJobInstance.getCvConfigMap().values().iterator().next();
@@ -866,6 +866,22 @@ public class DeploymentTimeSeriesAnalysisServiceImplTest extends CvNextGenTestBa
 
     assertThat(nodeNameSet.size()).isEqualTo(3);
     assertThat(nodeNameSet).isEqualTo(Sets.newHashSet("node1", "node2", "node3"));
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testGetNodeNames_withoutHostNames() {
+    verificationJobService.create(accountId, createCanaryVerificationJobDTO());
+    VerificationJobInstance verificationJobInstance = createVerificationJobInstance();
+    CVConfig cvConfig = verificationJobInstance.getCvConfigMap().values().iterator().next();
+    String verificationJobInstanceId = verificationJobInstanceService.create(verificationJobInstance);
+    String verificationTaskId = verificationTaskService.createDeploymentVerificationTask(
+        accountId, cvConfig.getUuid(), verificationJobInstanceId, cvConfig.getType());
+    deploymentTimeSeriesAnalysisService.save(createDeploymentTimeSeriesAnalysisWithoutHostNames(verificationTaskId));
+    Set<String> nodeNameSet = deploymentTimeSeriesAnalysisService.getNodeNames(accountId, verificationJobInstanceId);
+
+    assertThat(nodeNameSet.size()).isEqualTo(0);
   }
 
   @Test
@@ -1041,6 +1057,26 @@ public class DeploymentTimeSeriesAnalysisServiceImplTest extends CvNextGenTestBa
         .verificationTaskId(verificationTaskId)
         .transactionMetricSummaries(Arrays.asList(transactionMetricHostData1, transactionMetricHostData2))
         .hostSummaries(Arrays.asList(hostInfo1, hostInfo2, hostInfo3))
+        .startTime(Instant.now())
+        .endTime(Instant.now().plus(1, ChronoUnit.MINUTES))
+        .build();
+  }
+
+  private DeploymentTimeSeriesAnalysis createDeploymentTimeSeriesAnalysisWithoutHostNames(String verificationTaskId) {
+    DeploymentTimeSeriesAnalysisDTO.HostData hostData1 =
+        createHostData(null, 0, 0.0, Arrays.asList(1D), Arrays.asList(1D));
+    DeploymentTimeSeriesAnalysisDTO.TransactionMetricHostData transactionMetricHostData1 =
+        createTransactionMetricHostData("/todolist/inside", "Errors per Minute", 0, 0.5, Arrays.asList(hostData1));
+    DeploymentTimeSeriesAnalysisDTO.HostData hostData3 =
+        createHostData(null, 0, 0.0, Arrays.asList(1D), Arrays.asList(1D));
+    DeploymentTimeSeriesAnalysisDTO.TransactionMetricHostData transactionMetricHostData2 =
+        createTransactionMetricHostData("/todolist/exception", "Calls per Minute", 2, 2.5, Arrays.asList(hostData3));
+    return DeploymentTimeSeriesAnalysis.builder()
+        .accountId(accountId)
+        .score(.7)
+        .risk(Risk.OBSERVE)
+        .verificationTaskId(verificationTaskId)
+        .transactionMetricSummaries(Arrays.asList(transactionMetricHostData1, transactionMetricHostData2))
         .startTime(Instant.now())
         .endTime(Instant.now().plus(1, ChronoUnit.MINUTES))
         .build();

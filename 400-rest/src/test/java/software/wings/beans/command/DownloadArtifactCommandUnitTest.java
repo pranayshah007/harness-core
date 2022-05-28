@@ -63,7 +63,7 @@ import software.wings.beans.SettingAttribute;
 import software.wings.beans.artifact.ArtifactMetadataKeys;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.beans.artifact.ArtifactStreamType;
-import software.wings.beans.artifact.AzureArtifactsArtifactStream.ProtocolType;
+import software.wings.beans.artifact.AzureArtifactsArtifactStreamProtocolType;
 import software.wings.beans.config.ArtifactoryConfig;
 import software.wings.beans.config.NexusConfig;
 import software.wings.beans.infrastructure.Host;
@@ -182,7 +182,7 @@ public class DownloadArtifactCommandUnitTest extends WingsBaseTest {
           .metadata(mockMetadata(ArtifactStreamType.AZURE_ARTIFACTS))
           .serverSetting(azureArtifactsConfig)
           .artifactServerEncryptedDataDetails(Collections.emptyList())
-          .protocolType(ProtocolType.maven.name())
+          .protocolType(AzureArtifactsArtifactStreamProtocolType.maven.name())
           .project("PROJECT")
           .feed("FEED")
           .packageId("PACKAGE_ID")

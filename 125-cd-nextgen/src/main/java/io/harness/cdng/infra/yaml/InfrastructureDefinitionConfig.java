@@ -16,6 +16,7 @@ import io.harness.beans.SwaggerConstants;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.EntityName;
 import io.harness.ng.core.infrastructure.InfrastructureType;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.validator.NGRegexValidatorConstants;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -57,7 +58,7 @@ public class InfrastructureDefinitionConfig {
 
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) String description;
   Map<String, String> tags;
-
+  private ParameterField<Boolean> allowSimultaneousDeployments;
   @NotNull @JsonProperty("type") InfrastructureType type;
 
   @JsonProperty("spec")

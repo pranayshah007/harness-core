@@ -122,8 +122,8 @@ public final class LogAnalysisResult implements PersistentEntity, UuidAware, Cre
 
   public enum RadarChartTag {
     KNOWN_EVENT(0, "Known"),
-    UNEXPECTED_FREQUENCY(1, "Unknown"),
-    UNKNOWN_EVENT(2, "Unexpected Frequency");
+    UNEXPECTED_FREQUENCY(1, "Unexpected Frequency"),
+    UNKNOWN_EVENT(2, "Unknown");
 
     private Integer severity;
     private String displayName;

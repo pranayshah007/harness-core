@@ -44,19 +44,18 @@ public class ManifestsUtility {
   }
 
   public YamlField fetchManifestsYamlFieldAndSetYamlUpdates(
-      YamlField serviceField, Boolean isUseFromStage, YamlUpdates.Builder yamlUpdates) {
+      YamlNode serviceConfigNode, Boolean isUseFromStage, YamlUpdates.Builder yamlUpdates) {
     if (isUseFromStage == false) {
-      return serviceField.getNode()
-          .getField(YamlTypes.SERVICE_DEFINITION)
+      return serviceConfigNode.getField(YamlTypes.SERVICE_DEFINITION)
           .getNode()
           .getField(YamlTypes.SPEC)
           .getNode()
           .getField(YamlTypes.MANIFEST_LIST_CONFIG);
     }
-    YamlField stageOverrideField = serviceField.getNode().getField(YamlTypes.STAGE_OVERRIDES_CONFIG);
+    YamlField stageOverrideField = serviceConfigNode.getField(YamlTypes.STAGE_OVERRIDES_CONFIG);
 
     if (stageOverrideField == null) {
-      YamlField stageOverridesYamlField = fetchOverridesYamlField(serviceField);
+      YamlField stageOverridesYamlField = fetchOverridesYamlField(serviceConfigNode);
       PlanCreatorUtils.setYamlUpdate(stageOverridesYamlField, yamlUpdates);
       return stageOverridesYamlField.getNode().getField(YamlTypes.MANIFEST_LIST_CONFIG);
     }
@@ -74,10 +73,10 @@ public class ManifestsUtility {
         new YamlNode(YamlTypes.MANIFEST_LIST_CONFIG, ManifestsUtility.getManifestsJsonNode(), stageOverride.getNode()));
   }
 
-  private YamlField fetchOverridesYamlField(YamlField serviceField) {
+  private YamlField fetchOverridesYamlField(YamlNode serviceConfigNode) {
     return new YamlField(YamlTypes.STAGE_OVERRIDES_CONFIG,
-        new YamlNode(YamlTypes.STAGE_OVERRIDES_CONFIG, StageOverridesUtility.getStageOverridesJsonNode(),
-            serviceField.getNode()));
+        new YamlNode(
+            YamlTypes.STAGE_OVERRIDES_CONFIG, StageOverridesUtility.getStageOverridesJsonNode(), serviceConfigNode));
   }
 
   public YamlField fetchIndividualManifestYamlField(YamlField manifestListYamlField,

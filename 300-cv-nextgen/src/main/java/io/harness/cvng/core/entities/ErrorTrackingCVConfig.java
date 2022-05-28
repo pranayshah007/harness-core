@@ -14,6 +14,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import javax.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -29,7 +30,8 @@ import org.mongodb.morphia.query.UpdateOperations;
 @EqualsAndHashCode(callSuper = true)
 public class ErrorTrackingCVConfig extends LogCVConfig {
   @VisibleForTesting static final String DSL = readDSL("overops.datacollection");
-
+  @NotNull private String serviceIdentifier;
+  @NotNull private String envIdentifier;
   @Override
   protected void validateParams() {
     // No parameters to be validated

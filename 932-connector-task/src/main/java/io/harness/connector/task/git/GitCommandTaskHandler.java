@@ -31,6 +31,7 @@ import io.harness.connector.service.scm.ScmDelegateClient;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubAppSpecDTO;
@@ -38,6 +39,7 @@ import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.git.GitCommandExecutionResponse;
 import io.harness.eraro.ErrorCode;
 import io.harness.errorhandling.NGErrorHelper;
+import io.harness.exception.ExplanationException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.exceptionmanager.ExceptionManager;
 import io.harness.exception.runtime.SCMRuntimeException;
@@ -140,6 +142,13 @@ public class GitCommandTaskHandler {
     if (reposResponse != null && reposResponse.getStatus() > 300) {
       ErrorCode errorCode = convertScmStatusCodeToErrorCode(reposResponse.getStatus());
       throw SCMRuntimeException.builder().errorCode(errorCode).message(reposResponse.getError()).build();
+    }
+
+    // AzureRepo returns an error with code 203
+    if (reposResponse != null && scmConnector instanceof AzureRepoConnectorDTO && reposResponse.getStatus() == 203) {
+      ErrorCode errorCode = convertScmStatusCodeToErrorCode(reposResponse.getStatus());
+      throw new ExplanationException("Invalid API Access Token",
+          SCMRuntimeException.builder().errorCode(errorCode).message(reposResponse.getError()).build());
     }
   }
 

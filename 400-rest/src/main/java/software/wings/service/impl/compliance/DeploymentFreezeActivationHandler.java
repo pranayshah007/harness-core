@@ -63,6 +63,7 @@ public class DeploymentFreezeActivationHandler implements Handler<GovernanceConf
     iterator = persistenceIteratorFactory.createIterator(DeploymentFreezeActivationHandler.class,
         MongoPersistenceIterator.<GovernanceConfig, MorphiaFilterExpander<GovernanceConfig>>builder()
             .mode(PersistenceIterator.ProcessMode.LOOP)
+            .iteratorName("DeploymentFreezeActivities")
             .clazz(GovernanceConfig.class)
             .fieldName(GovernanceConfigKeys.nextIterations)
             .acceptableNoAlertDelay(ofSeconds(60))

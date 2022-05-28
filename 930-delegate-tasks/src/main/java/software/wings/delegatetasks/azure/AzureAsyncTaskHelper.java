@@ -7,6 +7,8 @@
 
 package software.wings.delegatetasks.azure;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -295,7 +297,10 @@ public class AzureAsyncTaskHelper {
     try {
       AzureKubeConfig azureKubeConfig =
           new ObjectMapper(new YAMLFactory())
-              .readValue(new String(k8sCluster.userKubeConfigContent()), AzureKubeConfig.class);
+              .readValue(new String(k8sCluster.adminKubeConfigContent()), AzureKubeConfig.class);
+
+      verifyAzureKubeConfig(azureKubeConfig);
+
       return KubernetesConfig.builder()
           .namespace(namespace)
           .masterUrl(azureKubeConfig.getClusters().get(0).getCluster().getServer())
@@ -308,6 +313,28 @@ public class AzureAsyncTaskHelper {
       throw NestedExceptionUtils.hintWithExplanationException(
           format("Kube Config could not be read from cluster %s ", k8sCluster.name()),
           "Please check your Azure permissions", new AzureAKSException(e.getMessage(), WingsException.USER, e));
+    }
+  }
+
+  private void verifyAzureKubeConfig(AzureKubeConfig azureKubeConfig) {
+    if (isEmpty(azureKubeConfig.getClusters().get(0).getCluster().getServer())) {
+      throw new AzureAKSException("Server url was not found in the kube config content!!!");
+    }
+
+    if (isEmpty(azureKubeConfig.getClusters().get(0).getCluster().getCertificateAuthorityData())) {
+      throw new AzureAKSException("CertificateAuthorityData was not found in the kube config content!!!");
+    }
+
+    if (isEmpty(azureKubeConfig.getUsers().get(0).getUser().getClientCertificateData())) {
+      throw new AzureAKSException("ClientCertificateData was not found in the kube config content!!!");
+    }
+
+    if (isEmpty(azureKubeConfig.getUsers().get(0).getName())) {
+      throw new AzureAKSException("Cluster user name was not found in the kube config content!!!");
+    }
+
+    if (isEmpty(azureKubeConfig.getUsers().get(0).getUser().getClientKeyData())) {
+      throw new AzureAKSException("ClientKeyData was not found in the kube config content!!!");
     }
   }
 

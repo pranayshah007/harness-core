@@ -90,9 +90,7 @@ public class ArtifactStreamAttributesMapper extends ArtifactConnectorMapper {
   }
 
   private String getArtifactoryArtifactPath() {
-    String artifactUrl = getArtifactUrlFromStreamMetadata();
-    String jobName = artifactStreamAttributes.getJobName();
-    return "." + artifactUrl.substring(artifactUrl.lastIndexOf(jobName) + jobName.length());
+    return artifactStreamAttributes.getMetadata().get("artifactPath");
   }
 
   public String getArtifactPath() {

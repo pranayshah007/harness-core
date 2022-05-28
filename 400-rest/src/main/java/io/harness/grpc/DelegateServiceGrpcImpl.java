@@ -71,6 +71,7 @@ import com.google.protobuf.util.Durations;
 import com.google.protobuf.util.Timestamps;
 import io.grpc.stub.StreamObserver;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -134,6 +135,7 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
               .executionCapabilities(capabilities)
               .tags(taskSelectors)
               .selectionLogsTrackingEnabled(request.getSelectionTrackingLogEnabled())
+              .eligibleToExecuteDelegateIds(new LinkedList<>(request.getEligibleToExecuteDelegateIdsList()))
               .forceExecute(request.getForceExecute())
               .data(TaskData.builder()
                         .parked(taskDetails.getParked())

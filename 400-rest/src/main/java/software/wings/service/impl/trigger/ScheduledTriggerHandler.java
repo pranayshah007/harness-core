@@ -63,6 +63,7 @@ public class ScheduledTriggerHandler implements Handler<Trigger> {
     iterator = persistenceIteratorFactory.createIterator(ScheduledTriggerHandler.class,
         MongoPersistenceIterator.<Trigger, MorphiaFilterExpander<Trigger>>builder()
             .mode(PersistenceIterator.ProcessMode.LOOP)
+            .iteratorName("ScheduledTrigger")
             .clazz(Trigger.class)
             .fieldName(TriggerKeys.nextIterations)
             .acceptableNoAlertDelay(ofSeconds(60))

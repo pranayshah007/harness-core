@@ -213,7 +213,7 @@ public class LdapGroupSyncJobHelperTest extends CategoryTest {
     addedGroupMembers.put(ldapUserResponse, userGroupSet);
 
     when(featureFlagService.isEnabled(any(), any())).thenReturn(true);
-    when(userService.getUserByUserId(any())).thenReturn(null);
+    when(userService.getUserByUserId(any(), any())).thenReturn(null);
 
     try {
       ldapGroupSyncJobHelper.syncUserGroupMembers(account.getUuid(), null, addedGroupMembers);
@@ -252,7 +252,7 @@ public class LdapGroupSyncJobHelperTest extends CategoryTest {
     user.setUuid("user_uuid");
 
     when(featureFlagService.isEnabled(any(), any())).thenReturn(true);
-    when(userService.getUserByUserId(any())).thenReturn(user);
+    when(userService.getUserByUserId(any(), any())).thenReturn(user);
     when(userService.isUserAssignedToAccount(any(), any())).thenReturn(false);
 
     try {
@@ -292,7 +292,7 @@ public class LdapGroupSyncJobHelperTest extends CategoryTest {
     user.setUuid("user_uuid");
 
     when(featureFlagService.isEnabled(any(), any())).thenReturn(true);
-    when(userService.getUserByUserId(any())).thenReturn(user);
+    when(userService.getUserByUserId(any(), any())).thenReturn(user);
     when(userService.isUserAssignedToAccount(any(), any())).thenReturn(true);
 
     try {
@@ -336,7 +336,7 @@ public class LdapGroupSyncJobHelperTest extends CategoryTest {
     user.setUuid("user_uuid");
 
     when(featureFlagService.isEnabled(any(), any())).thenReturn(true);
-    when(userService.getUserByUserId(any())).thenReturn(user);
+    when(userService.getUserByUserId(any(), any())).thenReturn(user);
     when(userService.isUserAssignedToAccount(any(), any())).thenReturn(true);
 
     try {
@@ -380,7 +380,7 @@ public class LdapGroupSyncJobHelperTest extends CategoryTest {
     user.setUuid("user_uuid");
 
     when(featureFlagService.isEnabled(any(), any())).thenReturn(true);
-    when(userService.getUserByUserId(any())).thenReturn(null);
+    when(userService.getUserByUserId(any(), any())).thenReturn(null);
     when(userService.isUserAssignedToAccount(any(), any())).thenReturn(true);
 
     try {

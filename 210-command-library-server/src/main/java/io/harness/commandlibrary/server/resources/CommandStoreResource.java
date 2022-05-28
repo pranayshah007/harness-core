@@ -24,7 +24,7 @@ import static org.apache.commons.collections4.SetUtils.emptyIfNull;
 
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
-import io.harness.commandlibrary.api.dto.CommandDTO;
+import io.harness.commandlibrary.api.dto.CommandEntityDTO;
 import io.harness.commandlibrary.api.dto.CommandStoreDTO;
 import io.harness.commandlibrary.api.dto.CommandVersionDTO;
 import io.harness.commandlibrary.server.app.CommandLibraryServerConfig;
@@ -119,7 +119,7 @@ public class CommandStoreResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = LOGGED_IN)
-  public RestResponse<PageResponse<CommandDTO>> listCommands(@QueryParam("accountId") String accountId,
+  public RestResponse<PageResponse<CommandEntityDTO>> listCommands(@QueryParam("accountId") String accountId,
       @PathParam("commandStoreName") String commandStoreName, @BeanParam PageRequest<CommandEntity> pageRequest,
       @QueryParam("cl_implementation_version") Integer clImplementationVersion, @QueryParam("tag") String tag) {
     return new RestResponse<>(commandStoreService.listCommandsForStore(commandStoreName, pageRequest, tag));
@@ -130,7 +130,7 @@ public class CommandStoreResource {
   @Timed
   @ExceptionMetered
   @AuthRule(permissionType = LOGGED_IN)
-  public RestResponse<CommandDTO> getCommandDetails(@QueryParam("accountId") String accountId,
+  public RestResponse<CommandEntityDTO> getCommandDetails(@QueryParam("accountId") String accountId,
       @PathParam("commandStoreName") String commandStoreName, @PathParam("commandName") String commandName) {
     return new RestResponse<>(
         commandService.getCommandDetails(commandStoreName, commandName)

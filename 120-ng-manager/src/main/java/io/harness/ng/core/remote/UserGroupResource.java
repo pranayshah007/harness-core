@@ -32,6 +32,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.beans.SortOrder;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ng.accesscontrol.scopes.ScopeNameDTO;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.api.UserGroupService;
@@ -43,6 +44,7 @@ import io.harness.ng.core.dto.UserGroupFilterDTO;
 import io.harness.ng.core.user.entities.UserGroup;
 import io.harness.ng.core.user.remote.dto.UserFilter;
 import io.harness.ng.core.user.remote.dto.UserMetadataDTO;
+import io.harness.ng.core.usergroups.filter.UserGroupFilterType;
 import io.harness.ng.core.utils.UserGroupMapper;
 import io.harness.rest.RestResponse;
 import io.harness.security.annotations.NextGenManagerAuth;
@@ -71,6 +73,7 @@ import javax.validation.constraints.NotNull;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -254,19 +257,45 @@ public class UserGroupResource {
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
-      @Parameter(description = "Search filter which matches by user group name/identifier")
-      @QueryParam(NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm, @BeanParam PageRequest pageRequest) {
+      @Parameter(description = "Search filter which matches by user group name/identifier") @QueryParam(
+          NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm,
+      @QueryParam("filterType") @DefaultValue("EXCLUDE_INHERITED_GROUPS") UserGroupFilterType filterType,
+      @BeanParam PageRequest pageRequest) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
         Resource.of(USERGROUP, null), VIEW_USERGROUP_PERMISSION);
     if (isEmpty(pageRequest.getSortOrders())) {
       SortOrder order = SortOrder.Builder.aSortOrder().withField("lastModifiedAt", SortOrder.OrderType.DESC).build();
       pageRequest.setSortOrders(ImmutableList.of(order));
     }
-    Page<UserGroupDTO> page =
-        userGroupService
-            .list(accountIdentifier, orgIdentifier, projectIdentifier, searchTerm, getPageRequest(pageRequest))
-            .map(UserGroupMapper::toDTO);
+    Page<UserGroupDTO> page = userGroupService
+                                  .list(accountIdentifier, orgIdentifier, projectIdentifier, searchTerm, filterType,
+                                      getPageRequest(pageRequest))
+                                  .map(UserGroupMapper::toDTO);
     return ResponseDTO.newResponse(getNGPageResponse(page));
+  }
+
+  @GET
+  @Path("{identifier}/scopes")
+  @ApiOperation(value = "Get Inheriting Child Scope List", nickname = "getInheritingChildScopeList")
+  @Operation(operationId = "getInheritingChildScopeList", summary = "List the Child Scopes inheriting this User Group",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(description = "Returns the list of the child scopes inheriting this User Group.")
+      })
+  public ResponseDTO<List<ScopeNameDTO>>
+  getInheritingChildScopeList(@Parameter(description = "Identifier of the user group",
+                                  required = true) @NotNull @PathParam("identifier") String userGroupIdentifier,
+      @Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotNull @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+        Resource.of(USERGROUP, null), VIEW_USERGROUP_PERMISSION);
+    List<ScopeNameDTO> inheritingScopeNames = userGroupService.getInheritingChildScopeList(
+        accountIdentifier, orgIdentifier, projectIdentifier, userGroupIdentifier);
+    return ResponseDTO.newResponse(inheritingScopeNames);
   }
 
   @POST
@@ -408,7 +437,7 @@ public class UserGroupResource {
     return ResponseDTO.newResponse(Long.toString(userGroup.getVersion()), toDTO(userGroup));
   }
 
-  public static void validateScopes(
+  private static void validateScopes(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, UserGroupDTO userGroupDTO) {
     verifyValuesNotChanged(Lists.newArrayList(Pair.of(accountIdentifier, userGroupDTO.getAccountIdentifier()),
                                Pair.of(orgIdentifier, userGroupDTO.getOrgIdentifier()),

@@ -26,9 +26,9 @@ import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
+import software.wings.beans.dto.LdapSettings;
 import software.wings.beans.sso.LdapConnectionSettings;
 import software.wings.beans.sso.LdapGroupSettings;
-import software.wings.beans.sso.LdapSettingsDTO;
 import software.wings.beans.sso.LdapUserSettings;
 import software.wings.helpers.ext.ldap.LdapResponse;
 import software.wings.helpers.ext.ldap.LdapResponse.Status;
@@ -67,7 +67,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 @PowerMockIgnore({"javax.security.*", "javax.net.*"})
 @OwnedBy(HarnessTeam.PL)
 public class LdapHelperTest extends WingsBaseTest {
-  private LdapSettingsDTO ldapSettings;
+  private LdapSettings ldapSettings;
   private LdapHelper helper;
   private SearchResult searchResult;
   private LdapSearch.Builder searchBuilder;
@@ -98,7 +98,7 @@ public class LdapHelperTest extends WingsBaseTest {
     userSettingsList.add(userSettings);
     LdapGroupSettings groupSettings = new LdapGroupSettings();
     groupSettings.setBaseDN("testBaseDN");
-    ldapSettings = LdapSettingsDTO.builder()
+    ldapSettings = LdapSettings.builder()
                        .accountId("testSettings")
                        .connectionSettings(connectionSettings)
                        .userSettingsList(userSettingsList)

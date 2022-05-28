@@ -79,11 +79,11 @@ public class K8sAzureInfrastructure implements Infrastructure, Visitable, WithCo
   @Override
   public InfraMapping getInfraMapping() {
     return K8sAzureInfraMapping.builder()
-        .gcpConnector(connectorRef.getValue())
+        .azureConnector(connectorRef.getValue())
         .namespace(namespace.getValue())
         .cluster(cluster.getValue())
-        .subscription(cluster.getValue())
-        .resourceGroup(cluster.getValue())
+        .subscription(subscriptionId.getValue())
+        .resourceGroup(resourceGroup.getValue())
         .build();
   }
 

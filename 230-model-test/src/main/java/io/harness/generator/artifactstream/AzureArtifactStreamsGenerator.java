@@ -22,6 +22,7 @@ import software.wings.beans.Service;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.AzureArtifactsArtifactStream;
+import software.wings.beans.artifact.AzureArtifactsArtifactStreamProtocolType;
 
 import com.google.inject.Inject;
 
@@ -58,7 +59,7 @@ public class AzureArtifactStreamsGenerator implements ArtifactStreamsGenerator {
                                         .packageId(PACKAGE_ID_MAVEN)
                                         .name("azure-hello-world")
                                         .packageName(PACKAGE_NAME_MAVEN)
-                                        .protocolType(AzureArtifactsArtifactStream.ProtocolType.maven.name())
+                                        .protocolType(AzureArtifactsArtifactStreamProtocolType.maven.name())
                                         .autoPopulate(true)
                                         .settingId(settingAttribute.getUuid())
                                         .build();

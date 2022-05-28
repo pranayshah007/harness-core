@@ -53,6 +53,7 @@ public class ServiceFilterHelper {
     update.setOnInsert(ServiceEntityKeys.createdAt, System.currentTimeMillis());
     update.set(ServiceEntityKeys.lastModifiedAt, System.currentTimeMillis());
     update.set(ServiceEntityKeys.yaml, serviceEntity.getYaml());
+    update.set(ServiceEntityKeys.gitOpsEnabled, serviceEntity.getGitOpsEnabled());
     return update;
   }
 

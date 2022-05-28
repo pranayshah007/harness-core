@@ -18,6 +18,7 @@ public class DelegateRegisterResponse {
   String migrateUrl;
   String sequenceNum;
   String delegateRandomToken;
+  String delegateTokenName;
 
   public enum Action { SELF_DESTRUCT, MIGRATE }
 }

@@ -13,8 +13,8 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.security.encryption.EncryptedDataDetail;
 
+import software.wings.beans.dto.LdapSettings;
 import software.wings.beans.sso.LdapGroupResponse;
-import software.wings.beans.sso.LdapSettingsDTO;
 import software.wings.beans.sso.LdapTestResponse;
 import software.wings.beans.sso.LdapTestResponse.Status;
 import software.wings.beans.sso.LdapUserResponse;
@@ -56,7 +56,7 @@ public class LdapDelegateServiceImpl implements LdapDelegateService {
 
   @Override
   public LdapTestResponse validateLdapConnectionSettings(
-      LdapSettingsDTO settings, EncryptedDataDetail encryptedDataDetail) {
+      LdapSettings settings, EncryptedDataDetail encryptedDataDetail) {
     log.info("Initiating validateLdapConnectionSettings with ldap settings : {}", settings);
     settings.decryptFields(encryptedDataDetail, encryptionService);
     LdapHelper helper = new LdapHelper(settings.getConnectionSettings());
@@ -68,7 +68,7 @@ public class LdapDelegateServiceImpl implements LdapDelegateService {
   }
 
   @Override
-  public LdapTestResponse validateLdapUserSettings(LdapSettingsDTO settings, EncryptedDataDetail encryptedDataDetail) {
+  public LdapTestResponse validateLdapUserSettings(LdapSettings settings, EncryptedDataDetail encryptedDataDetail) {
     log.info("Initiating validateLdapUserSettings with ldap settings : {}", settings);
     settings.decryptFields(encryptedDataDetail, encryptionService);
     LdapHelper helper = new LdapHelper(settings.getConnectionSettings());
@@ -80,7 +80,7 @@ public class LdapDelegateServiceImpl implements LdapDelegateService {
   }
 
   @Override
-  public LdapTestResponse validateLdapGroupSettings(LdapSettingsDTO settings, EncryptedDataDetail encryptedDataDetail) {
+  public LdapTestResponse validateLdapGroupSettings(LdapSettings settings, EncryptedDataDetail encryptedDataDetail) {
     log.info("Initiating validateLdapGroupSettings with ldap settings : {}", settings);
     settings.decryptFields(encryptedDataDetail, encryptionService);
     LdapHelper helper = new LdapHelper(settings.getConnectionSettings());
@@ -92,7 +92,7 @@ public class LdapDelegateServiceImpl implements LdapDelegateService {
   }
 
   @Override
-  public LdapResponse authenticate(LdapSettingsDTO settings, EncryptedDataDetail settingsEncryptedDataDetail,
+  public LdapResponse authenticate(LdapSettings settings, EncryptedDataDetail settingsEncryptedDataDetail,
       String username, EncryptedDataDetail passwordEncryptedDataDetail) {
     settings.decryptFields(settingsEncryptedDataDetail, encryptionService);
     String password = new String(encryptionService.getDecryptedValue(passwordEncryptedDataDetail, false));
@@ -175,7 +175,7 @@ public class LdapDelegateServiceImpl implements LdapDelegateService {
 
   @Override
   public Collection<LdapGroupResponse> searchGroupsByName(
-      LdapSettingsDTO settings, EncryptedDataDetail encryptedDataDetail, String nameQuery) {
+      LdapSettings settings, EncryptedDataDetail encryptedDataDetail, String nameQuery) {
     settings.decryptFields(encryptedDataDetail, encryptionService);
     LdapHelper helper = new LdapHelper(settings.getConnectionSettings());
     try {
@@ -187,7 +187,7 @@ public class LdapDelegateServiceImpl implements LdapDelegateService {
   }
 
   private Collection<LdapGroupResponse> createLdapGroupResponse(LdapHelper helper,
-      List<LdapListGroupsResponse> ldapListGroupsResponses, LdapSettingsDTO ldapSettings) throws LdapException {
+      List<LdapListGroupsResponse> ldapListGroupsResponses, LdapSettings ldapSettings) throws LdapException {
     Collection<LdapGroupResponse> ldapGroupResponse = new ArrayList<>();
     for (LdapListGroupsResponse ldapListGroupsResponse : ldapListGroupsResponses) {
       if (LdapResponse.Status.SUCCESS == ldapListGroupsResponse.getLdapResponse().getStatus()) {
@@ -202,8 +202,7 @@ public class LdapDelegateServiceImpl implements LdapDelegateService {
   }
 
   @Override
-  public LdapGroupResponse fetchGroupByDn(
-      LdapSettingsDTO settings, EncryptedDataDetail encryptedDataDetail, String dn) {
+  public LdapGroupResponse fetchGroupByDn(LdapSettings settings, EncryptedDataDetail encryptedDataDetail, String dn) {
     settings.decryptFields(encryptedDataDetail, encryptionService);
     LdapHelper helper = new LdapHelper(settings.getConnectionSettings());
     LdapGroupResponse groupResponse;

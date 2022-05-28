@@ -17,6 +17,7 @@ import io.harness.pms.execution.utils.StatusUtils;
 import io.harness.pms.pipeline.ExecutionSummaryInfo;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
+import io.harness.pms.security.PmsSecurityContextEventGuard;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -39,28 +40,34 @@ public class ExecutionInfoUpdateEventHandler implements PlanStatusUpdateObserver
 
   @Override
   public void onPlanStatusUpdate(Ambiance ambiance) {
-    String accountId = AmbianceUtils.getAccountId(ambiance);
-    String projectId = AmbianceUtils.getProjectIdentifier(ambiance);
-    String orgId = AmbianceUtils.getOrgIdentifier(ambiance);
-    String pipelineId = ambiance.getMetadata().getPipelineIdentifier();
-    Optional<PipelineEntity> pipelineEntity = pmsPipelineService.get(accountId, orgId, projectId, pipelineId, false);
-    if (!pipelineEntity.isPresent()) {
-      return;
-    }
-    Status status = planExecutionService.get(ambiance.getPlanExecutionId()).getStatus();
-    ExecutionSummaryInfo executionSummaryInfo = pipelineEntity.get().getExecutionSummaryInfo();
-    executionSummaryInfo.setLastExecutionStatus(ExecutionStatus.getExecutionStatus(status));
-    if (StatusUtils.brokeStatuses().contains(status)) {
-      Map<String, Integer> errors = executionSummaryInfo.getNumOfErrors();
-      Date date = new Date();
-      SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy");
-      String strDate = formatter.format(date);
-      if (errors.containsKey(strDate)) {
-        errors.put(strDate, errors.get(strDate) + 1);
-      } else {
-        errors.put(strDate, 1);
+    // this security context guard is needed because now pipeline get requires proper permissions to be set in the case
+    // when the Pipeline is REMOTE
+    try (PmsSecurityContextEventGuard ignore = new PmsSecurityContextEventGuard(ambiance)) {
+      String accountId = AmbianceUtils.getAccountId(ambiance);
+      String projectId = AmbianceUtils.getProjectIdentifier(ambiance);
+      String orgId = AmbianceUtils.getOrgIdentifier(ambiance);
+      String pipelineId = ambiance.getMetadata().getPipelineIdentifier();
+      Optional<PipelineEntity> pipelineEntity = pmsPipelineService.get(accountId, orgId, projectId, pipelineId, false);
+      if (!pipelineEntity.isPresent()) {
+        return;
       }
+      Status status = planExecutionService.get(ambiance.getPlanExecutionId()).getStatus();
+      ExecutionSummaryInfo executionSummaryInfo = pipelineEntity.get().getExecutionSummaryInfo();
+      executionSummaryInfo.setLastExecutionStatus(ExecutionStatus.getExecutionStatus(status));
+      if (StatusUtils.brokeStatuses().contains(status)) {
+        Map<String, Integer> errors = executionSummaryInfo.getNumOfErrors();
+        Date date = new Date();
+        SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy");
+        String strDate = formatter.format(date);
+        if (errors.containsKey(strDate)) {
+          errors.put(strDate, errors.get(strDate) + 1);
+        } else {
+          errors.put(strDate, 1);
+        }
+      }
+      pmsPipelineService.saveExecutionInfo(accountId, orgId, projectId, pipelineId, executionSummaryInfo);
+    } catch (Exception e) {
+      // ignore
     }
-    pmsPipelineService.saveExecutionInfo(accountId, orgId, projectId, pipelineId, executionSummaryInfo);
   }
 }

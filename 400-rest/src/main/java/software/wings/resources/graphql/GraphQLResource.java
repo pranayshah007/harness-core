@@ -92,6 +92,7 @@ public class GraphQLResource {
   private interface Constants {
     String QUERY = "query";
     String EMPTY_BRACKET = "{";
+    String MUTATION = "mutation";
   }
 
   @Inject
@@ -199,6 +200,9 @@ public class GraphQLResource {
         String queryInLowerCase = query.trim().toLowerCase();
         if (!(queryInLowerCase.startsWith(Constants.QUERY) || queryInLowerCase.startsWith(Constants.EMPTY_BRACKET))) {
           throw graphQLUtils.getUnauthorizedException();
+        }
+        if (queryInLowerCase.contains(Constants.MUTATION)) {
+          throw graphQLUtils.getUnauthorizedExceptionForSupportUserWithMutation();
         }
       }
       hasUserContext = true;

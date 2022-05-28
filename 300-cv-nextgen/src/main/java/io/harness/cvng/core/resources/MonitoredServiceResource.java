@@ -42,6 +42,7 @@ import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
 import io.harness.cvng.core.beans.params.TimeRangeParams;
 import io.harness.cvng.core.beans.params.logsFilterParams.LiveMonitoringLogsFilter;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
+import io.harness.cvng.notification.beans.NotificationRuleResponse;
 import io.harness.cvng.utils.NGAccessControlClientCheck;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -469,5 +470,20 @@ public class MonitoredServiceResource {
       @QueryParam("startTime") Long startTime, @QueryParam("endTime") Long endTime) {
     return new RestResponse<>(monitoredServiceService.getMonitoredServiceChangeDetails(
         projectParams, monitoredServiceIdentifier, startTime, endTime));
+  }
+
+  @GET
+  @Timed
+  @ExceptionMetered
+  @Path("{identifier}/notification-rules")
+  @ApiOperation(
+      value = "get notification rules for MonitoredService", nickname = "getNotificationRulesForMonitoredService")
+  @NGAccessControlCheck(resourceType = MONITORED_SERVICE, permission = VIEW_PERMISSION)
+  public ResponseDTO<PageResponse<NotificationRuleResponse>>
+  getNotificationRulesForMonitoredService(@NotNull @BeanParam ProjectParams projectParams,
+      @ApiParam(required = true) @NotNull @PathParam("identifier")
+      @ResourceIdentifier String monitoredServiceIdentifier, @BeanParam PageParams pageParams) {
+    return ResponseDTO.newResponse(
+        monitoredServiceService.getNotificationRules(projectParams, monitoredServiceIdentifier, pageParams));
   }
 }

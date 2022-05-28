@@ -107,8 +107,6 @@ public class StackdriverMetricHealthSourceSpecTest {
     assertThat(cvConfigUpdateResult.getAdded().size()).isEqualTo(1);
     List<StackdriverCVConfig> cvConfigList = (List<StackdriverCVConfig>) (List<?>) cvConfigUpdateResult.getAdded();
     StackdriverCVConfig cvConfig = cvConfigList.get(0);
-    assertThat(cvConfig.getServiceIdentifier()).isEqualTo(serviceIdentifier);
-    assertThat(cvConfig.getEnvIdentifier()).isEqualTo(envIdentifier);
     assertThat(cvConfig.getMetricInfoList().size()).isEqualTo(1);
     StackdriverCVConfig.MetricInfo metricInfo = cvConfig.getMetricInfoList().get(0);
     assertThat(metricInfo.getMetricName()).isEqualTo(metricName);
@@ -163,8 +161,6 @@ public class StackdriverMetricHealthSourceSpecTest {
     assertThat(cvConfigUpdateResult.getAdded().size()).isEqualTo(1);
     List<StackdriverCVConfig> cvConfigList = (List<StackdriverCVConfig>) (List<?>) cvConfigUpdateResult.getAdded();
     StackdriverCVConfig cvConfig = cvConfigList.get(0);
-    assertThat(cvConfig.getServiceIdentifier()).isEqualTo(serviceIdentifier);
-    assertThat(cvConfig.getEnvIdentifier()).isEqualTo(envIdentifier);
     assertThat(cvConfig.getMetricInfoList().size()).isEqualTo(1);
     StackdriverCVConfig.MetricInfo metricInfo = cvConfig.getMetricInfoList().get(0);
     assertThat(metricInfo.getMetricName()).isEqualTo(metricName);

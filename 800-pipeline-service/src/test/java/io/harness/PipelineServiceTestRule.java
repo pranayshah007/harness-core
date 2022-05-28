@@ -23,6 +23,7 @@ import io.harness.callback.DelegateCallbackToken;
 import io.harness.delegate.DelegateServiceGrpc;
 import io.harness.engine.expressions.AmbianceExpressionEvaluatorProvider;
 import io.harness.factory.ClosingFactory;
+import io.harness.gitsync.HarnessToGitPushInfoServiceGrpc;
 import io.harness.gitsync.persistance.GitAwarePersistence;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.persistance.NoOpGitSyncSdkServiceImpl;
@@ -183,6 +184,9 @@ public class PipelineServiceTestRule implements InjectorRuleMixin, MethodRule, M
         bind(GitAwarePersistence.class).to(NoOpGitAwarePersistenceImpl.class);
         bind(GitSyncSdkService.class).to(NoOpGitSyncSdkServiceImpl.class);
         bind(PersistentLocker.class).toInstance(mock(PersistentLocker.class));
+        bind(HarnessToGitPushInfoServiceGrpc.HarnessToGitPushInfoServiceBlockingStub.class)
+            .toInstance(HarnessToGitPushInfoServiceGrpc.newBlockingStub(
+                InProcessChannelBuilder.forName(generateUuid()).build()));
       }
     });
 

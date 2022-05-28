@@ -12,7 +12,7 @@ import static io.harness.commandlibrary.server.utils.CommandVersionUtils.populat
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.collections4.ListUtils.emptyIfNull;
 
-import io.harness.commandlibrary.api.dto.CommandDTO.CommandDTOBuilder;
+import io.harness.commandlibrary.api.dto.CommandEntityDTO.CommandEntityDTOBuilder;
 
 import software.wings.api.commandlibrary.EnrichedCommandVersionDTO;
 import software.wings.beans.commandlibrary.CommandEntity;
@@ -23,10 +23,11 @@ import lombok.experimental.UtilityClass;
 
 @UtilityClass
 public class CommandUtils {
-  public static CommandDTOBuilder populateCommandDTO(CommandDTOBuilder commandDTOBuilder, CommandEntity commandEntity,
-      CommandVersionEntity latestCommandVersionEntity, List<CommandVersionEntity> allVersionList) {
+  public static CommandEntityDTOBuilder populateCommandEntityDTO(CommandEntityDTOBuilder commandEntityDTOBuilder,
+      CommandEntity commandEntity, CommandVersionEntity latestCommandVersionEntity,
+      List<CommandVersionEntity> allVersionList) {
     if (commandEntity != null) {
-      commandDTOBuilder.name(commandEntity.getName())
+      commandEntityDTOBuilder.name(commandEntity.getName())
           .commandStoreName(commandEntity.getCommandStoreName())
           .type(commandEntity.getType())
           .name(commandEntity.getName())
@@ -43,6 +44,6 @@ public class CommandUtils {
                                -> populateCommandVersionDTO(EnrichedCommandVersionDTO.builder(), versionEntity).build())
                            .collect(toList()));
     }
-    return commandDTOBuilder;
+    return commandEntityDTOBuilder;
   }
 }

@@ -17,6 +17,7 @@ import io.harness.engine.observers.beans.OrchestrationStartInfo;
 import io.harness.execution.PlanExecution;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.execution.StagesExecutionMetadata;
+import io.harness.notification.PipelineEventType;
 import io.harness.plan.Plan;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
@@ -26,6 +27,7 @@ import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.pms.merger.helpers.InputSetTemplateHelper;
+import io.harness.pms.notification.NotificationHelper;
 import io.harness.pms.pipeline.ExecutionSummaryInfo;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.mappers.GraphLayoutDtoMapper;
@@ -60,17 +62,20 @@ public class ExecutionSummaryCreateEventHandler implements OrchestrationStartObs
   private final NodeTypeLookupService nodeTypeLookupService;
   private final PmsExecutionSummaryRespository pmsExecutionSummaryRespository;
   private final PmsGitSyncHelper pmsGitSyncHelper;
+  private final NotificationHelper notificationHelper;
 
   @Inject
   public ExecutionSummaryCreateEventHandler(PMSPipelineService pmsPipelineService, PlanService planService,
       PlanExecutionService planExecutionService, NodeTypeLookupService nodeTypeLookupService,
-      PmsExecutionSummaryRespository pmsExecutionSummaryRespository, PmsGitSyncHelper pmsGitSyncHelper) {
+      PmsExecutionSummaryRespository pmsExecutionSummaryRespository, PmsGitSyncHelper pmsGitSyncHelper,
+      NotificationHelper notificationHelper) {
     this.pmsPipelineService = pmsPipelineService;
     this.planService = planService;
     this.planExecutionService = planExecutionService;
     this.nodeTypeLookupService = nodeTypeLookupService;
     this.pmsExecutionSummaryRespository = pmsExecutionSummaryRespository;
     this.pmsGitSyncHelper = pmsGitSyncHelper;
+    this.notificationHelper = notificationHelper;
   }
 
   @Override
@@ -157,6 +162,8 @@ public class ExecutionSummaryCreateEventHandler implements OrchestrationStartObs
             .stagesExecutionMetadata(planExecutionMetadata.getStagesExecutionMetadata())
             .build();
     pmsExecutionSummaryRespository.save(pipelineExecutionSummaryEntity);
+    notificationHelper.sendNotification(
+        orchestrationStartInfo.getAmbiance(), PipelineEventType.PIPELINE_START, null, null);
   }
 
   private String getPipelineTemplate(PipelineEntity pipelineEntity, PlanExecutionMetadata planExecutionMetadata) {

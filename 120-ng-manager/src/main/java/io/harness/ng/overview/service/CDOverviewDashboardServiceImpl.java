@@ -20,6 +20,7 @@ import static io.harness.ng.core.activityhistory.dto.TimeGroupType.HOUR;
 import io.harness.NGDateUtils;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cd.CDDashboardServiceHelper;
 import io.harness.cd.NGPipelineSummaryCDConstants;
 import io.harness.cd.NGServiceConstants;
 import io.harness.event.timeseries.processor.utils.DateUtils;
@@ -424,18 +425,18 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     long production = Collections.frequency(envType, EnvironmentType.Production.name());
     long nonProduction = Collections.frequency(envType, EnvironmentType.PreProduction.name());
 
-    List<io.harness.ng.overview.dto.DeploymentDateAndCount> totalDateAndCount = new ArrayList<>();
-    List<io.harness.ng.overview.dto.DeploymentDateAndCount> successDateAndCount = new ArrayList<>();
-    List<io.harness.ng.overview.dto.DeploymentDateAndCount> failedDateAndCount = new ArrayList<>();
+    List<DeploymentDateAndCount> totalDateAndCount = new ArrayList<>();
+    List<DeploymentDateAndCount> successDateAndCount = new ArrayList<>();
+    List<DeploymentDateAndCount> failedDateAndCount = new ArrayList<>();
     startDateCopy = startInterval;
     endDateCopy = endInterval;
 
     while (startDateCopy < endDateCopy) {
-      totalDateAndCount.add(io.harness.ng.overview.dto.DeploymentDateAndCount.builder()
+      totalDateAndCount.add(DeploymentDateAndCount.builder()
                                 .time(startDateCopy)
                                 .deployments(Deployment.builder().count(totalCountMap.get(startDateCopy)).build())
                                 .build());
-      successDateAndCount.add(io.harness.ng.overview.dto.DeploymentDateAndCount.builder()
+      successDateAndCount.add(DeploymentDateAndCount.builder()
                                   .time(startDateCopy)
                                   .deployments(Deployment.builder().count(successCountMap.get(startDateCopy)).build())
                                   .build());

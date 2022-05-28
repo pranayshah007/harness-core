@@ -315,6 +315,11 @@ public class ViewsQueryHelper {
         groupBy -> groupBy.getEntityGroupBy() != null && groupBy.getEntityGroupBy().getFieldName().equals(fieldName));
   }
 
+  public Boolean isGroupByFieldIdPresent(List<QLCEViewGroupBy> groupByList, String fieldId) {
+    return groupByList.stream().anyMatch(
+        groupBy -> groupBy.getEntityGroupBy() != null && groupBy.getEntityGroupBy().getFieldId().equals(fieldId));
+  }
+
   public List<QLCEViewGroupBy> removeGroupByNone(List<QLCEViewGroupBy> groupByList) {
     return groupByList.stream()
         .filter(groupBy

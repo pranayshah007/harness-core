@@ -31,6 +31,7 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
 import io.harness.exception.TriggerException;
+import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.network.SafeHttpCall;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
@@ -67,6 +68,10 @@ import io.harness.ngtriggers.utils.PollingSubscriptionHelper;
 import io.harness.ngtriggers.validations.TriggerValidationHandler;
 import io.harness.ngtriggers.validations.ValidationResult;
 import io.harness.outbox.api.OutboxService;
+import io.harness.pipeline.remote.PipelineServiceClient;
+import io.harness.pms.inputset.InputSetErrorWrapperDTOPMS;
+import io.harness.pms.inputset.MergeInputSetRequestDTOPMS;
+import io.harness.pms.inputset.MergeInputSetResponseDTOPMS;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.merger.helpers.YamlSubMapExtractor;
@@ -74,6 +79,7 @@ import io.harness.pms.yaml.YamlUtils;
 import io.harness.polling.client.PollingResourceClient;
 import io.harness.polling.contracts.PollingItem;
 import io.harness.polling.contracts.service.PollingDocument;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.spring.NGTriggerRepository;
 import io.harness.repositories.spring.TriggerEventHistoryRepository;
 import io.harness.repositories.spring.TriggerWebhookEventRepository;
@@ -86,6 +92,7 @@ import com.cronutils.model.time.ExecutionTime;
 import com.cronutils.parser.CronParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.mongodb.client.result.UpdateResult;
@@ -126,6 +133,8 @@ public class NGTriggerServiceImpl implements NGTriggerService {
   private final PollingSubscriptionHelper pollingSubscriptionHelper;
   private final ExecutorService executorService;
   private final KryoSerializer kryoSerializer;
+  private final PipelineServiceClient pipelineServiceClient;
+  private final BuildTriggerHelper buildTriggerHelper;
   private final PollingResourceClient pollingResourceClient;
   private final NGTriggerElementMapper ngTriggerElementMapper;
   private final OutboxService outboxService;
@@ -556,7 +565,9 @@ public class NGTriggerServiceImpl implements NGTriggerService {
       throw new InvalidArgumentsException("Name can not be empty");
     }
 
-    validatePipelineRef(triggerDetails);
+    if (isNotEmpty(triggerDetails.getNgTriggerConfigV2().getInputYaml())) {
+      validatePipelineRef(triggerDetails);
+    }
 
     NGTriggerSourceV2 triggerSource = triggerDetails.getNgTriggerConfigV2().getSource();
     NGTriggerSpecV2 spec = triggerSource.getSpec();
@@ -582,6 +593,42 @@ public class NGTriggerServiceImpl implements NGTriggerService {
         return;
       default:
         return; // not implemented
+    }
+  }
+
+  @Override
+  public void validateInputSets(TriggerDetails triggerDetails) {
+    MergeInputSetResponseDTOPMS mergeInputSetResponseDTOPMS = validateInputSetsInternal(triggerDetails);
+    if (mergeInputSetResponseDTOPMS != null
+        && (mergeInputSetResponseDTOPMS.isErrorResponse()
+            || mergeInputSetResponseDTOPMS.getInputSetErrorWrapper() != null)) {
+      InputSetErrorWrapperDTOPMS inputSetErrorWrapperDTOPMS = mergeInputSetResponseDTOPMS.getInputSetErrorWrapper();
+
+      Map<String, Map<String, String>> errorMap = generateErrorMap(inputSetErrorWrapperDTOPMS);
+      throw new InvalidTriggerYamlException("Invalid Yaml", errorMap, triggerDetails, null);
+    }
+  }
+
+  public MergeInputSetResponseDTOPMS validateInputSetsInternal(TriggerDetails triggerDetails) {
+    if (isEmpty(triggerDetails.getNgTriggerConfigV2().getPipelineBranchName())) {
+      validatePipelineRef(triggerDetails);
+      return null;
+    } else {
+      NGTriggerEntity ngTriggerEntity = triggerDetails.getNgTriggerEntity();
+      if (isEmpty(triggerDetails.getNgTriggerConfigV2().getInputSetRefs())) {
+        return null;
+      }
+      NGTriggerConfigV2 triggerConfigV2 = ngTriggerElementMapper.toTriggerConfigV2(ngTriggerEntity);
+      String pipelineBranch = triggerConfigV2.getPipelineBranchName();
+      String branch = null;
+      if (isNotEmpty(pipelineBranch) && !isBranchExpr(pipelineBranch)) {
+        branch = pipelineBranch;
+      }
+      List<String> inputSetRefs = triggerConfigV2.getInputSetRefs();
+      return NGRestUtils.getResponse(pipelineServiceClient.getMergeInputSetFromPipelineTemplate(
+          ngTriggerEntity.getAccountId(), ngTriggerEntity.getOrgIdentifier(), ngTriggerEntity.getProjectIdentifier(),
+          ngTriggerEntity.getTargetIdentifier(), branch,
+          MergeInputSetRequestDTOPMS.builder().inputSetReferences(inputSetRefs).build()));
     }
   }
 
@@ -775,6 +822,7 @@ public class NGTriggerServiceImpl implements NGTriggerService {
    */
   public NGTriggerEntity updateTriggerWithValidationStatus(
       NGTriggerEntity ngTriggerEntity, ValidationResult validationResult) {
+    String identifier = ngTriggerEntity.getIdentifier();
     Criteria criteria = getTriggerEqualityCriteria(ngTriggerEntity, false);
     boolean needsUpdate = false;
 
@@ -809,11 +857,16 @@ public class NGTriggerServiceImpl implements NGTriggerService {
       ngTriggerEntity = ngTriggerRepository.updateValidationStatus(criteria, ngTriggerEntity);
       if (ngTriggerEntity == null) {
         throw new InvalidRequestException(
-            String.format("NGTrigger [%s] couldn't be updated or doesn't exist", ngTriggerEntity.getIdentifier()));
+            String.format("NGTrigger [%s] couldn't be updated or doesn't exist", identifier));
       }
     }
 
     return ngTriggerEntity;
+  }
+
+  @Override
+  public Map<String, Map<String, String>> generateErrorMap(InputSetErrorWrapperDTOPMS inputSetErrorWrapperDTOPMS) {
+    return buildTriggerHelper.generateErrorMap(inputSetErrorWrapperDTOPMS);
   }
 
   @Override
@@ -827,5 +880,11 @@ public class NGTriggerServiceImpl implements NGTriggerService {
     }
 
     return TriggerDetails.builder().ngTriggerConfigV2(config).ngTriggerEntity(entity).build();
+  }
+
+  @VisibleForTesting
+  public boolean isBranchExpr(String pipelineBranch) {
+    return pipelineBranch.startsWith(EngineExpressionEvaluator.EXPR_START)
+        && pipelineBranch.endsWith(EngineExpressionEvaluator.EXPR_END);
   }
 }

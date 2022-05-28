@@ -7,8 +7,8 @@
 
 package io.harness.notification.repositories;
 
-import io.harness.Team;
 import io.harness.annotation.HarnessRepo;
+import io.harness.notification.Team;
 import io.harness.notification.entities.NotificationTemplate;
 
 import java.util.List;

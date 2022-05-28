@@ -344,8 +344,9 @@ public class ServerlessStepCommonHelperTest extends CategoryTest {
         Arrays.asList(ServerlessAwsLambdaServerInstanceInfo.builder().build());
     doReturn(serverInstanceInfoList)
         .when(serverlessStepHelper)
-        .getServerlessDeployFunctionInstanceInfo(serverlessDeployResult);
-    assertThat(serverlessStepCommonHelper.getFunctionInstanceInfo(serverlessCommandResponse, serverlessStepHelper))
+        .getServerlessDeployFunctionInstanceInfo(serverlessDeployResult, "infraStructureKey");
+    assertThat(serverlessStepCommonHelper.getFunctionInstanceInfo(
+                   serverlessCommandResponse, serverlessStepHelper, "infraStructureKey"))
         .isEqualTo(serverInstanceInfoList);
   }
 

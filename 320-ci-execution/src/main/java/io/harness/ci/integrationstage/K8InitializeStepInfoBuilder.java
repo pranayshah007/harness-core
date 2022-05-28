@@ -339,6 +339,8 @@ public class K8InitializeStepInfoBuilder implements InitializeStepInfoBuilder {
     }
 
     CIStepInfo ciStepInfo = (CIStepInfo) stepElement.getStepSpecType();
+    validateStepType(ciStepInfo.getNonYamlInfo().getStepInfoType(), os);
+
     long timeout = TimeoutUtils.getTimeoutInSeconds(stepElement.getTimeout(), ciStepInfo.getDefaultTimeout());
     switch (ciStepInfo.getNonYamlInfo().getStepInfoType()) {
       case RUN:
@@ -366,6 +368,21 @@ public class K8InitializeStepInfoBuilder implements InitializeStepInfoBuilder {
             portFinder, stepIndex, stepElement.getIdentifier(), accountId, os);
       default:
         return null;
+    }
+  }
+
+  private void validateStepType(CIStepInfoType stepType, OSType os) {
+    if (os != OSType.Windows) {
+      return;
+    }
+
+    switch (stepType) {
+      case DOCKER:
+      case ECR:
+      case GCR:
+        throw new CIStageExecutionException(format("%s step not allowed in windows kubernetes builds", stepType));
+      default:
+        return;
     }
   }
 

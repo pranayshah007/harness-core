@@ -10,8 +10,8 @@ package software.wings.service.intfc.ldap;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.beans.TaskType;
+import software.wings.beans.dto.LdapSettings;
 import software.wings.beans.sso.LdapGroupResponse;
-import software.wings.beans.sso.LdapSettingsDTO;
 import software.wings.beans.sso.LdapTestResponse;
 import software.wings.delegatetasks.DelegateTaskType;
 import software.wings.helpers.ext.ldap.LdapResponse;
@@ -24,31 +24,31 @@ import java.util.Collection;
  */
 public interface LdapDelegateService {
   /**
-   * API to test LDAP connection settings for given {@link software.wings.beans.sso.LdapSettingsDTO}
+   * API to test LDAP connection settings for given {@link LdapSettings}
    * @param settings
    * @param encryptedDataDetail
    * @return
    */
   @DelegateTaskType(TaskType.LDAP_TEST_CONN_SETTINGS)
-  LdapTestResponse validateLdapConnectionSettings(LdapSettingsDTO settings, EncryptedDataDetail encryptedDataDetail);
+  LdapTestResponse validateLdapConnectionSettings(LdapSettings settings, EncryptedDataDetail encryptedDataDetail);
 
   /**
-   * API to test LDAP User settings for given {@link LdapSettingsDTO}
+   * API to test LDAP User settings for given {@link LdapSettings}
    * @param settings
    * @param encryptedDataDetail
    * @return
    */
   @DelegateTaskType(TaskType.LDAP_TEST_USER_SETTINGS)
-  LdapTestResponse validateLdapUserSettings(LdapSettingsDTO settings, EncryptedDataDetail encryptedDataDetail);
+  LdapTestResponse validateLdapUserSettings(LdapSettings settings, EncryptedDataDetail encryptedDataDetail);
 
   /**
-   * API to test LDAP Group settings for given {@link LdapSettingsDTO}
+   * API to test LDAP Group settings for given {@link LdapSettings}
    * @param settings
    * @param encryptedDataDetail
    * @return
    */
   @DelegateTaskType(TaskType.LDAP_TEST_GROUP_SETTINGS)
-  LdapTestResponse validateLdapGroupSettings(LdapSettingsDTO settings, EncryptedDataDetail encryptedDataDetail);
+  LdapTestResponse validateLdapGroupSettings(LdapSettings settings, EncryptedDataDetail encryptedDataDetail);
 
   /**
    * API to authenticate username and password using ldap settings
@@ -59,7 +59,7 @@ public interface LdapDelegateService {
    * @return
    */
   @DelegateTaskType(TaskType.LDAP_AUTHENTICATION)
-  LdapResponse authenticate(LdapSettingsDTO settings, EncryptedDataDetail settingsEncryptedDataDetail, String username,
+  LdapResponse authenticate(LdapSettings settings, EncryptedDataDetail settingsEncryptedDataDetail, String username,
       EncryptedDataDetail passwordEncryptedDataDetail);
 
   /**
@@ -70,7 +70,7 @@ public interface LdapDelegateService {
    */
   @DelegateTaskType(TaskType.LDAP_SEARCH_GROUPS)
   Collection<LdapGroupResponse> searchGroupsByName(
-      LdapSettingsDTO settings, EncryptedDataDetail encryptedDataDetail, String name);
+      LdapSettings settings, EncryptedDataDetail encryptedDataDetail, String name);
 
   /**
    * API to fetch one ldap group by dn populated with users
@@ -81,5 +81,5 @@ public interface LdapDelegateService {
    * @return
    */
   @DelegateTaskType(TaskType.LDAP_FETCH_GROUP)
-  LdapGroupResponse fetchGroupByDn(LdapSettingsDTO settings, EncryptedDataDetail encryptedDataDetail, String dn);
+  LdapGroupResponse fetchGroupByDn(LdapSettings settings, EncryptedDataDetail encryptedDataDetail, String dn);
 }

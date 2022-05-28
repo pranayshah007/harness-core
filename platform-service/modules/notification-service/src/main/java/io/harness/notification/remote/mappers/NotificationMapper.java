@@ -7,7 +7,7 @@
 
 package io.harness.notification.remote.mappers;
 
-import io.harness.NotificationRequest;
+import io.harness.notification.NotificationRequest;
 import io.harness.notification.entities.Channel;
 import io.harness.notification.entities.EmailChannel;
 import io.harness.notification.entities.MicrosoftTeamsChannel;

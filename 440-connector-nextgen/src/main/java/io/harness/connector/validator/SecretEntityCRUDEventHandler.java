@@ -16,6 +16,9 @@ import io.harness.common.EntityReference;
 import io.harness.connector.services.ConnectorService;
 import io.harness.eventsframework.entity_crud.EntityChangeDTO;
 import io.harness.ng.core.EntityDetail;
+import io.harness.ng.core.api.SecretCrudService;
+import io.harness.ng.core.dto.secrets.SecretDTOV2;
+import io.harness.ng.core.dto.secrets.SecretResponseWrapper;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.ng.core.entitysetupusage.service.EntitySetupUsageService;
 import io.harness.utils.FullyQualifiedIdentifierHelper;
@@ -37,12 +40,14 @@ import org.springframework.data.domain.Page;
 public class SecretEntityCRUDEventHandler {
   EntitySetupUsageService entitySetupUsageService;
   ConnectorService connectorService;
+  private final SecretCrudService secretCrudService;
 
   @Inject
   public SecretEntityCRUDEventHandler(@Named(CONNECTOR_DECORATOR_SERVICE) ConnectorService connectorService,
-      EntitySetupUsageService entitySetupUsageService) {
+      EntitySetupUsageService entitySetupUsageService, SecretCrudService secretCrudService) {
     this.entitySetupUsageService = entitySetupUsageService;
     this.connectorService = connectorService;
+    this.secretCrudService = secretCrudService;
   }
 
   public boolean handleUpdate(@NotNull EntityChangeDTO entityChangeDTO) {
@@ -87,5 +92,30 @@ public class SecretEntityCRUDEventHandler {
           return Pair.of(accountIdentifier, heartBeatPerpetualTaskId);
         })
         .collect(Collectors.toList());
+  }
+
+  public boolean deleteAssociatedSecrets(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    List<SecretResponseWrapper> secretResponseWrappers =
+        fetchAllSecretsInGivenScope(accountIdentifier, orgIdentifier, projectIdentifier);
+    List<String> secretIdentifiers = secretResponseWrappers.stream()
+                                         .map(SecretResponseWrapper::getSecret)
+                                         .map(SecretDTOV2::getIdentifier)
+                                         .collect(Collectors.toList());
+    if (!secretIdentifiers.isEmpty()) {
+      secretCrudService.deleteBatch(accountIdentifier, orgIdentifier, projectIdentifier, secretIdentifiers);
+    }
+    return true;
+  }
+
+  private List<SecretResponseWrapper> fetchAllSecretsInGivenScope(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    Page<SecretResponseWrapper> pagedSecretList = null;
+    List<SecretResponseWrapper> secretList = new ArrayList<>();
+    do {
+      pagedSecretList = secretCrudService.list(accountIdentifier, orgIdentifier, projectIdentifier, null, null, false,
+          null, pagedSecretList == null ? 0 : pagedSecretList.getNumber() + 1, 10, null);
+      secretList.addAll(pagedSecretList.stream().collect(Collectors.toList()));
+    } while (pagedSecretList.hasNext());
+    return secretList;
   }
 }

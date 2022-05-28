@@ -110,16 +110,19 @@ ciExecutionServiceConfig:
   defaultInternalImageConnector: ''
   pvcDefaultStorageSize: 25600
   delegateServiceEndpointVariableValue: "delegate-service:8080"
-  addonImage: harness/ci-addon:1.14.0
-  liteEngineImage: harness/ci-lite-engine:1.14.0
+  addonImage: harness/ci-addon:1.14.2
+  liteEngineImage: harness/ci-lite-engine:1.14.2
   isLocal: false
   stepConfig:
     # The below config is for K8 steps
     gitCloneConfig:
       # Use rootless image only for K8 git clone
-      image: harness/drone-git:1.0.6-rootless-linux-amd64
+      image: harness/drone-git:1.1.0-rootless
       entrypoint:
         - /usr/local/bin/clone
+      windowsEntrypoint:
+        - "pwsh"
+        - "C:\\bin\\clone.ps1"
     buildAndPushDockerRegistryConfig:
       image: plugins/kaniko:1.3.1
       entrypoint:
@@ -133,13 +136,17 @@ ciExecutionServiceConfig:
       entrypoint:
         - /kaniko/kaniko-gcr
     gcsUploadConfig:
-      image: plugins/gcs:1.2.4
+      image: plugins/gcs:1.2.6
       entrypoint:
         - /bin/drone-gcs
+      windowsEntrypoint:
+        - "C:\\drone-gcs.exe"
     s3UploadConfig:
-      image: plugins/s3:1.0.4
+      image: plugins/s3:1.0.5
       entrypoint:
         - /bin/drone-s3
+      windowsEntrypoint:
+        - "C:\\drone-s3.exe"
     securityConfig:
       image: zeronorth/sto_plugin:dev
       entrypoint:
@@ -150,27 +157,32 @@ ciExecutionServiceConfig:
       image: plugins/artifactory:1.0.6
       entrypoint:
         - /bin/plugin
+      windowsEntrypoint:
+        - "C:\\bin\\drone-artifactory.exe"
     cacheGCSConfig:
-      image: plugins/cache:1.3.7
+      image: plugins/cache:1.3.8
       entrypoint:
         - /bin/drone-cache
+      windowsEntrypoint:
+        - "C:\\drone-cache.exe"
     cacheS3Config:
-      image: plugins/cache:1.3.7
+      image: plugins/cache:1.3.8
       entrypoint:
         - /bin/drone-cache
-
+      windowsEntrypoint:
+        - "C:\\drone-cache.exe"
     vmImageConfig:
       # Use root image for VM git clone
-      gitClone: harness/drone-git:1.0.6
+      gitClone: harness/drone-git:1.1.0
       buildAndPushDockerRegistry: plugins/docker:latest
       buildAndPushECR: plugins/ecr:latest
       buildAndPushGCR: plugins/gcr:latest
-      gcsUpload: plugins/gcs:1.2.4
-      s3Upload: plugins/s3:1.0.4
+      gcsUpload: plugins/gcs:1.2.6
+      s3Upload: plugins/s3:1.0.5
       security: plugin/sto_plugin:dev
       artifactoryUpload: plugins/artifactory:1.0.6
-      cacheGCS: plugins/cache:1.3.7
-      cacheS3: plugins/cache:1.3.7
+      cacheGCS: plugins/cache:1.3.8
+      cacheS3: plugins/cache:1.3.8
 
 pmsSdkExecutionPoolConfig:
   corePoolSize: ${PMS_SDK_EXECUTION_POOL_CORE_SIZE:-50}

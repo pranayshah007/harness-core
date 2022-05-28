@@ -144,7 +144,7 @@ public class AzureAuthorizationClientImpl extends AzureClient implements AzureAu
         response =
             azureAuthorizationRestClient
                 .servicePrincipalAccessToken(azureConfig.getTenantId(), AzureConstants.CLIENT_CREDENTIALS_GRANT_TYPE,
-                    azureConfig.getClientId(), AzureUtils.AUTH_SCOPE, azureConfig.getKey().toString())
+                    azureConfig.getClientId(), AzureUtils.AUTH_SCOPE, String.valueOf(azureConfig.getKey()))
                 .execute();
       }
 

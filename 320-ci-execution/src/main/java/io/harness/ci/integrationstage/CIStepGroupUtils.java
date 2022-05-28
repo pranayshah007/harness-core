@@ -32,6 +32,7 @@ import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.steps.stepinfo.PluginStepInfo;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
+import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.CIStageExecutionException;
@@ -85,7 +86,8 @@ public class CIStepGroupUtils {
     boolean gitClone = RunTimeInputHandler.resolveGitClone(integrationStageConfig.getCloneCodebase());
 
     if (gitClone) {
-      initializeExecutionSections.add(getGitCloneStep(ciExecutionArgs, ciCodebase, accountId));
+      initializeExecutionSections.add(
+          getGitCloneStep(ciExecutionArgs, ciCodebase, accountId, IntegrationStageUtils.getK8OS(infrastructure)));
     }
     for (ExecutionWrapperConfig executionWrapper : executionSections) {
       initializeExecutionSections.add(executionWrapper);
@@ -153,10 +155,6 @@ public class CIStepGroupUtils {
     }
   }
 
-  private boolean containsManagerStep(List<ExecutionWrapperConfig> executionSections) {
-    return executionSections.stream().anyMatch(this::isCIManagerStep);
-  }
-
   private boolean isCIManagerStep(ExecutionWrapperConfig executionWrapperConfig) {
     if (executionWrapperConfig != null) {
       if (executionWrapperConfig.getStep() != null && !executionWrapperConfig.getStep().isNull()) {
@@ -207,7 +205,7 @@ public class CIStepGroupUtils {
   }
 
   private ExecutionWrapperConfig getGitCloneStep(
-      CIExecutionArgs ciExecutionArgs, CodeBase ciCodebase, String accountId) {
+      CIExecutionArgs ciExecutionArgs, CodeBase ciCodebase, String accountId, OSType os) {
     Map<String, JsonNode> settings = new HashMap<>();
     if (ciCodebase == null) {
       throw new CIStageExecutionException("Codebase is mandatory with enabled cloneCodebase flag");
@@ -237,6 +235,11 @@ public class CIStepGroupUtils {
       envVariables.put(GIT_SSL_NO_VERIFY, "true");
     }
 
+    List<String> entrypoint = ciExecutionServiceConfig.getStepConfig().getGitCloneConfig().getEntrypoint();
+    if (os == OSType.Windows) {
+      entrypoint = ciExecutionServiceConfig.getStepConfig().getGitCloneConfig().getWindowsEntrypoint();
+    }
+
     String gitCloneImage = ciExecutionConfigService.getPluginVersion(CIStepInfoType.GIT_CLONE, accountId).getImage();
     PluginStepInfo step = PluginStepInfo.builder()
                               .identifier(GIT_CLONE_STEP_ID)
@@ -244,7 +247,7 @@ public class CIStepGroupUtils {
                               .name(GIT_CLONE_STEP_NAME)
                               .settings(ParameterField.createValueField(settings))
                               .envVariables(envVariables)
-                              .entrypoint(ciExecutionServiceConfig.getStepConfig().getGitCloneConfig().getEntrypoint())
+                              .entrypoint(entrypoint)
                               .harnessManagedImage(true)
                               .resources(ciCodebase.getResources())
                               .build();

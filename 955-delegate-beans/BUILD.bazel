@@ -13,9 +13,6 @@ java_library(
         "//:lombok",
         "//970-api-services-beans:module",
         "//980-commons:module",
-        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
-        "@maven//:com_google_code_findbugs_annotations",
-        "@maven//:javax_validation_validation_api",
     ],
 )
 

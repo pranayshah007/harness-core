@@ -10,6 +10,7 @@ package software.wings.service.impl;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.rule.OwnerRule.ABHINAV;
 import static io.harness.rule.OwnerRule.DHRUV;
+import static io.harness.rule.OwnerRule.FERNANDOD;
 import static io.harness.rule.OwnerRule.POOJA;
 import static io.harness.rule.OwnerRule.PRABU;
 import static io.harness.rule.OwnerRule.SRINIVAS;
@@ -998,6 +999,21 @@ public class PipelineServiceImplTest extends WingsBaseTest {
     assertThat(pipeline.isValid()).isFalse();
     assertThat(pipelineStage.isValid()).isFalse();
     assertThat(pipeline.getValidationMessage()).isEqualTo("Some steps [TEST_STEP] are found to be invalid/incomplete.");
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldDetectClassCastWhenSetPipelineVariablesApprovalState() {
+    HashMap<String, Object> properties = new HashMap<>();
+    properties.put("templateExpressions", "");
+    PipelineStageElement pse = PipelineStageElement.builder().type("APPROVAL").properties(properties).build();
+    PipelineStage pipelineStage = PipelineStage.builder().name("Approval").build();
+    List<Variable> pipelineVariables = new ArrayList<>();
+
+    pipelineServiceImpl.setPipelineVariablesApproval(pse, pipelineVariables, pipelineStage.getName());
+
+    assertThat(pipelineVariables).isEmpty();
   }
 
   @Test

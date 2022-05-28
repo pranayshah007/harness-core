@@ -67,20 +67,12 @@ public abstract class CVConfig
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
-                 .name("env_service_category_index")
+                 .name("insert_index")
                  .field(CVConfigKeys.accountId)
                  .field(CVConfigKeys.orgIdentifier)
                  .field(CVConfigKeys.projectIdentifier)
-                 .field(CVConfigKeys.envIdentifier)
-                 .field(CVConfigKeys.serviceIdentifier)
+                 .field(CVConfigKeys.identifier)
                  .build(),
-            CompoundMongoIndex.builder()
-                .name("insert_index")
-                .field(CVConfigKeys.accountId)
-                .field(CVConfigKeys.orgIdentifier)
-                .field(CVConfigKeys.projectIdentifier)
-                .field(CVConfigKeys.identifier)
-                .build(),
             CompoundMongoIndex.builder()
                 .name("monitoredservice_category_index")
                 .field(CVConfigKeys.accountId)
@@ -98,9 +90,6 @@ public abstract class CVConfig
 
   @NotNull private String accountId;
   @NotNull @FdIndex private String connectorIdentifier;
-
-  @NotNull @Deprecated private String serviceIdentifier;
-  @NotNull @Deprecated private String envIdentifier;
 
   private String monitoredServiceIdentifier;
 
@@ -147,9 +136,8 @@ public abstract class CVConfig
     checkNotNull(getVerificationType(), generateErrorMessageFromParam(CVConfigKeys.verificationType));
     checkNotNull(accountId, generateErrorMessageFromParam(CVConfigKeys.accountId));
     checkNotNull(connectorIdentifier, generateErrorMessageFromParam(CVConfigKeys.connectorIdentifier));
-    checkNotNull(serviceIdentifier, generateErrorMessageFromParam(CVConfigKeys.serviceIdentifier));
-    checkNotNull(envIdentifier, generateErrorMessageFromParam(CVConfigKeys.envIdentifier));
     checkNotNull(projectIdentifier, generateErrorMessageFromParam(CVConfigKeys.projectIdentifier));
+    checkNotNull(monitoredServiceIdentifier, generateErrorMessageFromParam(CVConfigKeys.monitoredServiceIdentifier));
     checkNotNull(identifier, generateErrorMessageFromParam(CVConfigKeys.identifier));
     checkNotNull(monitoringSourceName, generateErrorMessageFromParam(CVConfigKeys.monitoringSourceName));
     checkNotNull(category, generateErrorMessageFromParam(CVConfigKeys.category));
@@ -187,8 +175,6 @@ public abstract class CVConfig
       implements UpdatableEntity<T, D> {
     protected void setCommonOperations(UpdateOperations<T> updateOperations, D cvConfig) {
       updateOperations.set(CVConfigKeys.verificationType, cvConfig.getVerificationType())
-          .set(CVConfigKeys.serviceIdentifier, cvConfig.getServiceIdentifier())
-          .set(CVConfigKeys.envIdentifier, cvConfig.getEnvIdentifier())
           .set(CVConfigKeys.monitoringSourceName, cvConfig.getMonitoringSourceName())
           .set(CVConfigKeys.category, cvConfig.getCategory())
           .set(CVConfigKeys.enabled, cvConfig.isEnabled());

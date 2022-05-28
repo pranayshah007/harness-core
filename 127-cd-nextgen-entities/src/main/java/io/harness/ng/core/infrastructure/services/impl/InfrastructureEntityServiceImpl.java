@@ -224,6 +224,20 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
         accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier, infraIdentifier);
   }
 
+  @Override
+  public List<InfrastructureEntity> getAllInfrastructureFromIdentifierList(String accountIdentifier,
+      String orgIdentifier, String projectIdentifier, String envIdentifier, List<String> infraIdentifierList) {
+    return infrastructureRepository.findAllFromInfraIdentifierList(
+        accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier, infraIdentifierList);
+  }
+
+  @Override
+  public List<InfrastructureEntity> getAllInfrastructureFromEnvIdentifier(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String envIdentifier) {
+    return infrastructureRepository.findAllFromEnvIdentifier(
+        accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier);
+  }
+
   String getDuplicateInfrastructureExistsErrorMessage(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String envIdentifier, String infraIdentifier) {
     if (EmptyPredicate.isEmpty(orgIdentifier)) {

@@ -11,8 +11,8 @@ import lombok.experimental.UtilityClass;
 
 @UtilityClass
 public class LdapSettingsMapper {
-  public LdapSettingsDTO ldapSettingsDTO(LdapSettings ldapSettings) {
-    return LdapSettingsDTO.builder()
+  public software.wings.beans.dto.LdapSettings ldapSettingsDTO(LdapSettings ldapSettings) {
+    return software.wings.beans.dto.LdapSettings.builder()
         .accountId(ldapSettings.getAccountId())
         .connectionSettings(ldapSettings.getConnectionSettings())
         .userSettingsList(ldapSettings.getUserSettingsList())

@@ -161,6 +161,13 @@ ffServerClientConfig:
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
 
+gitopsResourceClientConfig:
+  config:
+    baseUrl: http://localhost:7908/api/v1/
+    connectTimeOutSeconds: 15
+    readTimeOutSeconds: 15
+  secret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
+
 enableAuth: true
 
 grpcClient:
@@ -401,7 +408,8 @@ scopeAccessCheckEnabled: true
 
 hostname: ${HOSTNAME:-localhost}
 
-signupTargetEnv: "CI Target"
+signupTargetEnv: "CI PR Target"
+delegateStatusEndpoint: "34.123.209.41"
 
 basePathPrefix: ${BASE_PATH_PREFIX:-""}
 

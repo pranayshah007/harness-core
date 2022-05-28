@@ -42,6 +42,9 @@ public class ServiceElementMapperTest extends CategoryTest {
                             .projectIdentifier("PROJECT_ID")
                             .name("Service")
                             .tags(ImmutableMap.of("k1", "v1", "k2", "v2"))
+                            .yaml("service:\n  name: \"Service\"\n  identifier: \"IDENTIFIER\"\n  "
+                                + "orgIdentifier: \"ORG_ID\"\n  projectIdentifier: \"PROJECT_ID\"\n  tags:\n    "
+                                + "k1: \"v1\"\n    k2: \"v2\"\n")
                             .build();
 
     serviceResponseDTO = ServiceResponseDTO.builder()

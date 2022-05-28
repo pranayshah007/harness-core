@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 
 import com.mongodb.client.result.DeleteResult;
+import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -24,4 +25,10 @@ public interface InfrastructureRepositoryCustom {
   DeleteResult delete(Criteria criteria);
   InfrastructureEntity find(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String envIdentifier, String infraIdentifier);
+
+  List<InfrastructureEntity> findAllFromInfraIdentifierList(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String envIdentifier, List<String> infraIdentifierList);
+
+  List<InfrastructureEntity> findAllFromEnvIdentifier(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String envIdentifier);
 }

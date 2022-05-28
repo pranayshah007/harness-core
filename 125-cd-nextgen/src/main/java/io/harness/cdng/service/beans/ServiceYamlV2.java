@@ -15,12 +15,15 @@ import io.harness.beans.SwaggerConstants;
 import io.harness.cdng.visitor.helpers.serviceconfig.ServiceEntityVisitorHelperV2;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
+import io.harness.validator.NGRegexValidatorConstants;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModelProperty;
+import java.util.Map;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
 import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
@@ -39,5 +42,7 @@ public class ServiceYamlV2 implements Visitable {
   // For New Service Yaml
   @NotNull
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
-  private ParameterField<String> serviceConfigRef;
+  @Pattern(regexp = NGRegexValidatorConstants.RUNTIME_OR_FIXED_IDENTIFIER_PATTERN)
+  private ParameterField<String> serviceRef;
+  Map<String, Object> serviceInputs;
 }

@@ -43,7 +43,7 @@ import software.wings.beans.JenkinsConfig;
 import software.wings.beans.artifact.ArtifactMetadataKeys;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.beans.artifact.ArtifactStreamType;
-import software.wings.beans.artifact.AzureArtifactsArtifactStream.ProtocolType;
+import software.wings.beans.artifact.AzureArtifactsArtifactStreamProtocolType;
 import software.wings.beans.config.NexusConfig;
 import software.wings.beans.settings.azureartifacts.AzureArtifactsConfig;
 import software.wings.beans.settings.azureartifacts.AzureArtifactsPATConfig;
@@ -76,7 +76,7 @@ import org.mockito.Mock;
 
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 public class ArtifactCollectionTaskHelperTest extends WingsBaseTest {
-  private static final String MAVEN = ProtocolType.maven.name();
+  private static final String MAVEN = AzureArtifactsArtifactStreamProtocolType.maven.name();
   private static final String FEED = "FEED";
   private static final String PACKAGE_ID = "PACKAGE_ID";
   private static final String PACKAGE_NAME_MAVEN = "GROUP_ID:ARTIFACT_ID";

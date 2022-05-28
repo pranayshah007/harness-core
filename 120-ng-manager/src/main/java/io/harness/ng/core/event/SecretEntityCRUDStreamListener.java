@@ -8,8 +8,14 @@
 package io.harness.ng.core.event;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
+import static io.harness.beans.FeatureName.HARD_DELETE_SECRETS;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ACTION;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CREATE_ACTION;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.DELETE_ACTION;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ENTITY_TYPE;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ORGANIZATION_ENTITY;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.PROJECT_ENTITY;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.RESTORE_ACTION;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.SECRET_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.UPDATE_ACTION;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
@@ -19,9 +25,12 @@ import io.harness.connector.validator.SecretEntityCRUDEventHandler;
 import io.harness.eventsframework.NgEventLogContext;
 import io.harness.eventsframework.consumer.Message;
 import io.harness.eventsframework.entity_crud.EntityChangeDTO;
+import io.harness.eventsframework.entity_crud.organization.OrganizationEntityChangeDTO;
+import io.harness.eventsframework.entity_crud.project.ProjectEntityChangeDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.AutoLogContext;
 import io.harness.ng.core.api.SecretCrudService;
+import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -36,12 +45,15 @@ import org.jetbrains.annotations.NotNull;
 public class SecretEntityCRUDStreamListener implements MessageListener {
   private final SecretCrudService secretCrudService;
   private final SecretEntityCRUDEventHandler secretEntityCRUDEventHandler;
+  private final NGFeatureFlagHelperService ngFeatureFlagHelperService;
 
   @Inject
-  public SecretEntityCRUDStreamListener(
-      SecretCrudService secretCrudService, SecretEntityCRUDEventHandler secretEntityCRUDEventHandler) {
+  public SecretEntityCRUDStreamListener(SecretCrudService secretCrudService,
+      SecretEntityCRUDEventHandler secretEntityCRUDEventHandler,
+      NGFeatureFlagHelperService ngFeatureFlagHelperService) {
     this.secretCrudService = secretCrudService;
     this.secretEntityCRUDEventHandler = secretEntityCRUDEventHandler;
+    this.ngFeatureFlagHelperService = ngFeatureFlagHelperService;
   }
 
   @Override
@@ -71,6 +83,10 @@ public class SecretEntityCRUDStreamListener implements MessageListener {
                   "Unable to complete processing the secrets crud event with the id {} because ACTION for the event was null",
                   messageId);
             }
+          } else if (PROJECT_ENTITY.equals(entityType)) {
+            return processProjectChangeEvent(message);
+          } else if (ORGANIZATION_ENTITY.equals(entityType)) {
+            return processOrganizationChangeEvent(message);
           }
         }
       }
@@ -84,6 +100,85 @@ public class SecretEntityCRUDStreamListener implements MessageListener {
         return secretEntityCRUDEventHandler.handleUpdate(entityChangeDTO);
       default:
     }
+    return true;
+  }
+
+  private boolean processOrganizationChangeEvent(Message message) {
+    OrganizationEntityChangeDTO organizationEntityChangeDTO;
+    try {
+      organizationEntityChangeDTO = OrganizationEntityChangeDTO.parseFrom(message.getMessage().getData());
+    } catch (InvalidProtocolBufferException e) {
+      throw new InvalidRequestException(
+          String.format("Exception in unpacking EntityChangeDTO for key %s", message.getId()), e);
+    }
+    String action = message.getMessage().getMetadataMap().get(ACTION);
+    if (action != null) {
+      switch (action) {
+        case CREATE_ACTION:
+          return processOrganizationCreateEvent(organizationEntityChangeDTO);
+        case DELETE_ACTION:
+          return processOrganizationDeleteEvent(organizationEntityChangeDTO);
+        case RESTORE_ACTION:
+          return processOrganizationRestoreEvent(organizationEntityChangeDTO);
+        default:
+      }
+    }
+    return true;
+  }
+
+  private boolean processOrganizationCreateEvent(OrganizationEntityChangeDTO organizationEntityChangeDTO) {
+    return true;
+  }
+
+  private boolean processOrganizationDeleteEvent(OrganizationEntityChangeDTO organizationEntityChangeDTO) {
+    if (!ngFeatureFlagHelperService.isEnabled(
+            organizationEntityChangeDTO.getAccountIdentifier(), HARD_DELETE_SECRETS)) {
+      return true;
+    }
+    return secretEntityCRUDEventHandler.deleteAssociatedSecrets(
+        organizationEntityChangeDTO.getAccountIdentifier(), organizationEntityChangeDTO.getIdentifier(), null);
+  }
+
+  private boolean processOrganizationRestoreEvent(OrganizationEntityChangeDTO organizationEntityChangeDTO) {
+    return true;
+  }
+
+  private boolean processProjectChangeEvent(Message message) {
+    ProjectEntityChangeDTO projectEntityChangeDTO;
+    try {
+      projectEntityChangeDTO = ProjectEntityChangeDTO.parseFrom(message.getMessage().getData());
+    } catch (InvalidProtocolBufferException e) {
+      throw new InvalidRequestException(
+          String.format("Exception in unpacking ProjectEntityChangeDTO for key %s", message.getId()), e);
+    }
+    String action = message.getMessage().getMetadataMap().get(ACTION);
+    if (action != null) {
+      switch (action) {
+        case CREATE_ACTION:
+          return processProjectCreateEvent(projectEntityChangeDTO);
+        case DELETE_ACTION:
+          return processProjectDeleteEvent(projectEntityChangeDTO);
+        case RESTORE_ACTION:
+          return processProjectRestoreEvent(projectEntityChangeDTO);
+        default:
+      }
+    }
+    return true;
+  }
+
+  private boolean processProjectCreateEvent(ProjectEntityChangeDTO projectEntityChangeDTO) {
+    return true;
+  }
+
+  private boolean processProjectDeleteEvent(ProjectEntityChangeDTO projectEntityChangeDTO) {
+    if (!ngFeatureFlagHelperService.isEnabled(projectEntityChangeDTO.getAccountIdentifier(), HARD_DELETE_SECRETS)) {
+      return true;
+    }
+    return secretEntityCRUDEventHandler.deleteAssociatedSecrets(projectEntityChangeDTO.getAccountIdentifier(),
+        projectEntityChangeDTO.getOrgIdentifier(), projectEntityChangeDTO.getIdentifier());
+  }
+
+  private boolean processProjectRestoreEvent(ProjectEntityChangeDTO projectEntityChangeDTO) {
     return true;
   }
 }

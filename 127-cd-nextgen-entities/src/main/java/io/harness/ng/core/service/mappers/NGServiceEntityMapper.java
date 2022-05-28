@@ -7,7 +7,7 @@
 
 package io.harness.ng.core.service.mappers;
 
-import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ng.core.mapper.TagMapper.convertToMap;
 
@@ -22,7 +22,7 @@ import io.harness.utils.YamlPipelineUtils;
 import java.io.IOException;
 import lombok.experimental.UtilityClass;
 
-@OwnedBy(PIPELINE)
+@OwnedBy(CDC)
 @UtilityClass
 public class NGServiceEntityMapper {
   public String toYaml(NGServiceConfig ngServiceConfig) {
@@ -47,11 +47,10 @@ public class NGServiceEntityMapper {
         .ngServiceV2InfoConfig(NGServiceV2InfoConfig.builder()
                                    .name(serviceEntity.getName())
                                    .identifier(serviceEntity.getIdentifier())
-                                   .orgIdentifier(serviceEntity.getOrgIdentifier())
-                                   .projectIdentifier(serviceEntity.getProjectIdentifier())
                                    .description(serviceEntity.getDescription())
                                    .tags(convertToMap(serviceEntity.getTags()))
                                    .serviceDefinition(sDef)
+                                   .gitOpsEnabled(serviceEntity.getGitOpsEnabled())
                                    .build())
         .build();
   }

@@ -20,6 +20,7 @@ public class EnumCodeSchemaHandler {
   public List<ValidationMessage> handle(List<ValidationMessage> validationMessages) {
     Map<String, List<ValidationMessage>> pathMap = SchemaValidationUtils.getValidationPathMap(validationMessages);
     List<ValidationMessage> processedValidationMsg = new ArrayList<>();
+    // Iterating over all FQN's and processing error messages for each FQN.
     for (List<ValidationMessage> validationMessageList : pathMap.values()) {
       List<String> arguments = new ArrayList<>();
       for (ValidationMessage validationMessage : validationMessageList) {

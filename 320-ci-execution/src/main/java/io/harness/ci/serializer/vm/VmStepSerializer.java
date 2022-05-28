@@ -12,6 +12,7 @@ import io.harness.beans.steps.CIStepInfo;
 import io.harness.beans.steps.stepinfo.PluginStepInfo;
 import io.harness.beans.steps.stepinfo.RunStepInfo;
 import io.harness.beans.steps.stepinfo.RunTestsStepInfo;
+import io.harness.beans.sweepingoutputs.VmStageInfraDetails;
 import io.harness.delegate.beans.ci.vm.steps.VmStepInfo;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
@@ -36,8 +37,8 @@ public class VmStepSerializer {
         vmStepInfo, AmbianceUtils.getNgAccess(ambiance), ambiance.getExpressionFunctorToken());
   }
 
-  public VmStepInfo serialize(
-      Ambiance ambiance, CIStepInfo stepInfo, String identifier, ParameterField<Timeout> parameterFieldTimeout) {
+  public VmStepInfo serialize(Ambiance ambiance, CIStepInfo stepInfo, VmStageInfraDetails vmStageInfraDetails,
+      String identifier, ParameterField<Timeout> parameterFieldTimeout) {
     String stepName = stepInfo.getNonYamlInfo().getStepInfoType().getDisplayName();
     switch (stepInfo.getNonYamlInfo().getStepInfoType()) {
       case RUN:
@@ -48,7 +49,7 @@ public class VmStepSerializer {
             (RunTestsStepInfo) stepInfo, identifier, parameterFieldTimeout, stepName, ambiance);
       case PLUGIN:
         return vmPluginStepSerializer.serialize(
-            (PluginStepInfo) stepInfo, identifier, parameterFieldTimeout, stepName, ambiance);
+            (PluginStepInfo) stepInfo, vmStageInfraDetails, identifier, parameterFieldTimeout, stepName, ambiance);
       case GCR:
       case DOCKER:
       case ECR:
@@ -60,8 +61,8 @@ public class VmStepSerializer {
       case SAVE_CACHE_S3:
       case SECURITY:
       case RESTORE_CACHE_S3:
-        return vmPluginCompatibleStepSerializer.serialize(
-            ambiance, (PluginCompatibleStep) stepInfo, identifier, parameterFieldTimeout, stepName);
+        return vmPluginCompatibleStepSerializer.serialize(ambiance, (PluginCompatibleStep) stepInfo,
+            vmStageInfraDetails, identifier, parameterFieldTimeout, stepName);
       case CLEANUP:
       case TEST:
       case BUILD:

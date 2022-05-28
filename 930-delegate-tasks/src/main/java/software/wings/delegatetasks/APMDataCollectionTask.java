@@ -47,7 +47,6 @@ import software.wings.service.impl.apm.APMMetricInfo;
 import software.wings.service.impl.apm.APMResponseParser;
 import software.wings.service.impl.newrelic.NewRelicMetricDataRecord;
 import software.wings.service.intfc.analysis.ClusterLevel;
-import software.wings.service.intfc.newrelic.NewRelicDelegateService;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.BiMap;
@@ -96,8 +95,6 @@ public class APMDataCollectionTask extends AbstractDelegateDataCollectionTask {
   private static final int FIVE_MINS_IN_SECONDS = 5 * 60;
   private static final int TWO_MINS_IN_SECONDS = 2 * 60;
 
-  @Inject private NewRelicDelegateService newRelicDelegateService;
-  @Inject private DelegateLogService delegateLogService;
   @Inject private RequestExecutor requestExecutor;
 
   private int collectionWindow = 1;

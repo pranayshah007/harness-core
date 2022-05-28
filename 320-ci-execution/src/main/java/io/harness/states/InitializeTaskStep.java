@@ -30,6 +30,7 @@ import io.harness.beans.executionargs.CIExecutionArgs;
 import io.harness.beans.outcomes.DependencyOutcome;
 import io.harness.beans.outcomes.LiteEnginePodDetailsOutcome;
 import io.harness.beans.outcomes.VmDetailsOutcome;
+import io.harness.beans.outcomes.VmDetailsOutcome.VmDetailsOutcomeBuilder;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.sweepingoutputs.StepLogKeyDetails;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
@@ -267,12 +268,11 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
       return StepResponse.builder()
           .status(Status.SUCCEEDED)
           .stepOutcome(stepOutcome)
-          .stepOutcome(
-              StepResponse.StepOutcome.builder()
-                  .name(VM_DETAILS_OUTCOME)
-                  .group(StepOutcomeGroup.STAGE.name())
-                  .outcome(VmDetailsOutcome.builder().ipAddress(vmTaskExecutionResponse.getIpAddress()).build())
-                  .build())
+          .stepOutcome(StepResponse.StepOutcome.builder()
+                           .name(VM_DETAILS_OUTCOME)
+                           .group(StepOutcomeGroup.STAGE.name())
+                           .outcome(getVmDetailsOutcome(vmTaskExecutionResponse))
+                           .build())
           .build();
     } else {
       log.error("VM initialize step execution finished with status [{}] and response [{}]",
@@ -284,6 +284,16 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
       }
       return stepResponseBuilder.build();
     }
+  }
+
+  private VmDetailsOutcome getVmDetailsOutcome(VmTaskExecutionResponse vmTaskExecutionResponse) {
+    VmDetailsOutcomeBuilder builder = VmDetailsOutcome.builder().ipAddress(vmTaskExecutionResponse.getIpAddress());
+    if (vmTaskExecutionResponse.getDelegateMetaInfo() == null
+        || isEmpty(vmTaskExecutionResponse.getDelegateMetaInfo().getId())) {
+      return builder.build();
+    }
+
+    return builder.delegateId(vmTaskExecutionResponse.getDelegateMetaInfo().getId()).build();
   }
 
   private LiteEnginePodDetailsOutcome getPodDetailsOutcome(CiK8sTaskResponse ciK8sTaskResponse) {

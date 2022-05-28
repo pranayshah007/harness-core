@@ -9,9 +9,9 @@ package io.harness.notification.service.api;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
-import io.harness.NotificationRequest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.notification.NotificationChannelType;
+import io.harness.notification.NotificationRequest;
 import io.harness.notification.SmtpConfig;
 import io.harness.notification.entities.NotificationSetting;
 import io.harness.notification.remote.SmtpConfigResponse;

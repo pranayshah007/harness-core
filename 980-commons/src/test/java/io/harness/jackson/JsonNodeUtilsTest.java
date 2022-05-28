@@ -9,6 +9,7 @@ package io.harness.jackson;
 
 import static io.harness.rule.OwnerRule.ABHINAV;
 import static io.harness.rule.OwnerRule.ALEXEI;
+import static io.harness.rule.OwnerRule.SOUMYAJIT;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -104,5 +105,22 @@ public class JsonNodeUtilsTest extends CategoryTest {
 
     assertThat(list.stream().map(JsonNode::intValue).collect(Collectors.toList()))
         .containsExactlyInAnyOrder(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+  }
+
+  @Test
+  @Owner(developers = SOUMYAJIT)
+  @Category(UnitTests.class)
+  public void testUpdatePropertyInObjectNode() {
+    JsonNodeUtils.updatePropertyInObjectNode(jsonNode, "required", "latest", "latest1");
+    JsonNodeUtils.updatePropertyInObjectNode(jsonNode, "orgIdentifier", "newOrg");
+    JsonNodeUtils.updatePropertyInObjectNode(jsonNode, "newNode", "newNodeVal");
+    JsonNodeUtils.updatePropertyInObjectNode(jsonNode, "newNode1", "newNodeVal1", "newNodeVal2");
+    assertThat(jsonNode.get("orgIdentifier").textValue()).isEqualTo("newOrg");
+    assertThat(jsonNode.get("required")).isInstanceOf(ArrayNode.class);
+    ((ArrayNode) jsonNode.get("required")).iterator().forEachRemaining(node -> {
+      assertThat(node.textValue()).isIn("identifier", "name", "spec", "type", "latest", "latest1");
+    });
+    assertThat(jsonNode.get("newNode")).isInstanceOf(TextNode.class);
+    assertThat(jsonNode.get("newNode1")).isInstanceOf(ArrayNode.class);
   }
 }

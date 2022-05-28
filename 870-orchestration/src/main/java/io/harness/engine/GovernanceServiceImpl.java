@@ -87,8 +87,7 @@ public class GovernanceServiceImpl implements GovernanceService {
             pipelineField.getNode().getField(YAMLFieldNameConstants.PIPELINE).getNode().getIdentifier();
         String pipelineName = pipelineField.getNode().getField(YAMLFieldNameConstants.PIPELINE).getNode().getName();
         String entityString = getEntityString(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
-        String entityMetadata = getEntityMetadataString(
-            accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, pipelineName, planExecutionId);
+        String entityMetadata = getEntityMetadataString(pipelineIdentifier, pipelineName, planExecutionId);
         String userIdentifier = getUserIdentifier();
 
         response = SafeHttpCall.executeWithExceptions(
@@ -114,14 +113,11 @@ public class GovernanceServiceImpl implements GovernanceService {
     return URLEncoder.encode(entityStringRaw, StandardCharsets.UTF_8.toString());
   }
 
-  private String getEntityMetadataString(String accountId, String orgIdentifier, String projectIdentifier,
-      String pipelineIdentifier, String pipelineName, String planExecutionId) throws UnsupportedEncodingException {
+  private String getEntityMetadataString(String pipelineIdentifier, String pipelineName, String planExecutionId)
+      throws UnsupportedEncodingException {
     Map<String, String> metadataMap = ImmutableMap.<String, String>builder()
-                                          .put("accountIdentifier", accountId)
-                                          .put("orgIdentifier", orgIdentifier)
-                                          .put("projectIdentifier", projectIdentifier)
                                           .put("pipelineIdentifier", pipelineIdentifier)
-                                          .put("pipelineName", pipelineName)
+                                          .put("entityName", pipelineName)
                                           .put("executionIdentifier", planExecutionId)
                                           .build();
     return URLEncoder.encode(JsonUtils.asJson(metadataMap), StandardCharsets.UTF_8.toString());

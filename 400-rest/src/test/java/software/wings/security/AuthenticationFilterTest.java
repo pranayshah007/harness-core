@@ -135,6 +135,7 @@ public class AuthenticationFilterTest extends CategoryTest {
       doReturn(false).when(authenticationFilter).authenticationExemptedRequests(any(ContainerRequestContext.class));
       doReturn(false).when(authenticationFilter).externalFacingAPI();
       doReturn(false).when(authenticationFilter).delegateAPI();
+      doReturn(false).when(authenticationFilter).delegateAuth2API();
       doReturn(false).when(authenticationFilter).learningEngineServiceAPI();
       doReturn(false).when(authenticationFilter).isAdminPortalRequest();
 
@@ -174,6 +175,7 @@ public class AuthenticationFilterTest extends CategoryTest {
     doReturn(false).when(authenticationFilter).externalFacingAPI();
     doReturn(true).when(authenticationFilter).learningEngineServiceAPI();
     doReturn(false).when(authenticationFilter).delegateAPI();
+    doReturn(false).when(authenticationFilter).delegateAuth2API();
     doReturn(false).when(authenticationFilter).identityServiceAPI();
     doReturn(false).when(authenticationFilter).isAdminPortalRequest();
     authenticationFilter.filter(context);
@@ -189,6 +191,7 @@ public class AuthenticationFilterTest extends CategoryTest {
     doReturn(false).when(authenticationFilter).externalFacingAPI();
     doReturn(false).when(authenticationFilter).learningEngineServiceAPI();
     doReturn(false).when(authenticationFilter).delegateAPI();
+    doReturn(false).when(authenticationFilter).delegateAuth2API();
     doReturn(false).when(authenticationFilter).isAdminPortalRequest();
     doReturn(false).when(authenticationFilter).isNextGenManagerRequest(any(ResourceInfo.class));
     doReturn(true).when(authenticationFilter).identityServiceAPI();
@@ -203,6 +206,7 @@ public class AuthenticationFilterTest extends CategoryTest {
     when(context.getHeaderString(HttpHeaders.AUTHORIZATION)).thenReturn("AdminPortal token");
     doReturn(false).when(authenticationFilter).authenticationExemptedRequests(any(ContainerRequestContext.class));
     doReturn(false).when(authenticationFilter).delegateAPI();
+    doReturn(false).when(authenticationFilter).delegateAuth2API();
     doReturn(false).when(authenticationFilter).learningEngineServiceAPI();
     doReturn(false).when(authenticationFilter).isScimAPI();
     doReturn(false).when(authenticationFilter).externalFacingAPI();
@@ -221,6 +225,7 @@ public class AuthenticationFilterTest extends CategoryTest {
     doReturn(false).when(authenticationFilter).externalFacingAPI();
     doReturn(false).when(authenticationFilter).learningEngineServiceAPI();
     doReturn(false).when(authenticationFilter).delegateAPI();
+    doReturn(false).when(authenticationFilter).delegateAuth2API();
     doReturn(false).when(authenticationFilter).identityServiceAPI();
     doReturn(false).when(authenticationFilter).isAdminPortalRequest();
     doReturn(false).when(authenticationFilter).isNextGenManagerRequest(any(ResourceInfo.class));
@@ -240,6 +245,7 @@ public class AuthenticationFilterTest extends CategoryTest {
     when(context.getHeaderString(API_KEY_HEADER)).thenReturn(apiKey);
     doReturn(false).when(authenticationFilter).authenticationExemptedRequests(any(ContainerRequestContext.class));
     doReturn(false).when(authenticationFilter).delegateAPI();
+    doReturn(false).when(authenticationFilter).delegateAuth2API();
     doReturn(false).when(authenticationFilter).learningEngineServiceAPI();
     doReturn(false).when(authenticationFilter).isAdminPortalRequest();
     doReturn(true).when(authenticationFilter).externalFacingAPI();
@@ -265,6 +271,7 @@ public class AuthenticationFilterTest extends CategoryTest {
     doReturn(false).when(authenticationFilter).authenticationExemptedRequests(any(ContainerRequestContext.class));
     doReturn(false).when(authenticationFilter).identityServiceAPI();
     doReturn(false).when(authenticationFilter).delegateAPI();
+    doReturn(false).when(authenticationFilter).delegateAuth2API();
     doReturn(false).when(authenticationFilter).learningEngineServiceAPI();
     doReturn(false).when(authenticationFilter).isAdminPortalRequest();
     doReturn(true).when(authenticationFilter).externalFacingAPI();
@@ -287,6 +294,7 @@ public class AuthenticationFilterTest extends CategoryTest {
     when(context.getHeaderString(API_KEY_HEADER)).thenReturn(apiKey);
     doReturn(false).when(authenticationFilter).authenticationExemptedRequests(any(ContainerRequestContext.class));
     doReturn(false).when(authenticationFilter).delegateAPI();
+    doReturn(false).when(authenticationFilter).delegateAuth2API();
     doReturn(false).when(authenticationFilter).learningEngineServiceAPI();
     doReturn(false).when(authenticationFilter).isAdminPortalRequest();
     doReturn(false).when(authenticationFilter).externalFacingAPI();
@@ -352,6 +360,7 @@ public class AuthenticationFilterTest extends CategoryTest {
       when(context.getHeaderString(HttpHeaders.AUTHORIZATION)).thenReturn("Bearer bearerToken");
       doReturn(false).when(authenticationFilter).authenticationExemptedRequests(any(ContainerRequestContext.class));
       doReturn(false).when(authenticationFilter).delegateAPI();
+      doReturn(false).when(authenticationFilter).delegateAuth2API();
       doReturn(false).when(authenticationFilter).externalFacingAPI();
       doReturn(false).when(authenticationFilter).learningEngineServiceAPI();
       doReturn(false).when(authenticationFilter).identityServiceAPI();
@@ -374,6 +383,7 @@ public class AuthenticationFilterTest extends CategoryTest {
       when(context.getHeaderString(HttpHeaders.AUTHORIZATION)).thenReturn("Bearer bearerToken");
       doReturn(false).when(authenticationFilter).authenticationExemptedRequests(any(ContainerRequestContext.class));
       doReturn(false).when(authenticationFilter).delegateAPI();
+      doReturn(false).when(authenticationFilter).delegateAuth2API();
       doReturn(false).when(authenticationFilter).learningEngineServiceAPI();
       doReturn(false).when(authenticationFilter).externalFacingAPI();
       doReturn(false).when(authenticationFilter).identityServiceAPI();
@@ -397,6 +407,7 @@ public class AuthenticationFilterTest extends CategoryTest {
       when(context.getHeaderString(HttpHeaders.AUTHORIZATION)).thenReturn("fakeToken");
       doReturn(false).when(authenticationFilter).authenticationExemptedRequests(any(ContainerRequestContext.class));
       doReturn(false).when(authenticationFilter).delegateAPI();
+      doReturn(false).when(authenticationFilter).delegateAuth2API();
       doReturn(false).when(authenticationFilter).learningEngineServiceAPI();
       doReturn(false).when(authenticationFilter).externalFacingAPI();
       doReturn(false).when(authenticationFilter).isAdminPortalRequest();

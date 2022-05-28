@@ -17,6 +17,7 @@ import io.harness.advisers.rollback.RollbackStrategy;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.steps.environment.EnvironmentOutcome;
 import io.harness.steps.fork.ForkStepParameters;
+import io.harness.steps.matrix.StrategyMetadata;
 import io.harness.steps.section.chain.SectionChainPassThroughData;
 import io.harness.steps.section.chain.SectionChainStepParameters;
 
@@ -39,5 +40,6 @@ public class NGCommonUtilKryoRegistrar implements KryoRegistrar {
     kryo.register(ForkStepParameters.class, 3211);
     kryo.register(SectionChainStepParameters.class, 3214);
     kryo.register(SectionChainPassThroughData.class, 3217);
+    kryo.register(StrategyMetadata.class, 878001);
   }
 }

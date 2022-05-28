@@ -87,6 +87,8 @@ public interface SettingsService extends OwnedByAccount, OwnedBySettingAttribute
 
   SettingAttribute getSettingAttributeByName(String accountId, String settingAttributeName);
 
+  void checkRbacOnSettingAttribute(String appId, SettingAttribute settingAttribute);
+
   @ValidationGroups(Update.class) SettingAttribute update(@Valid SettingAttribute settingAttribute);
 
   @ValidationGroups(Update.class)

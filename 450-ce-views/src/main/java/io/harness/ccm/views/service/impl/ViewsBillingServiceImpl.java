@@ -11,6 +11,11 @@ import static io.harness.annotations.dev.HarnessTeam.CE;
 import static io.harness.beans.FeatureName.CE_BILLING_DATA_PRE_AGGREGATION;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.AWS_ACCOUNT_FIELD;
 import static io.harness.ccm.commons.constants.ViewFieldConstants.AWS_ACCOUNT_FIELD_ID;
+import static io.harness.ccm.commons.constants.ViewFieldConstants.CLOUD_SERVICE_NAME_FIELD_ID;
+import static io.harness.ccm.commons.constants.ViewFieldConstants.LAUNCH_TYPE_FIELD_ID;
+import static io.harness.ccm.commons.constants.ViewFieldConstants.NAMESPACE_FIELD_ID;
+import static io.harness.ccm.commons.constants.ViewFieldConstants.TASK_FIELD_ID;
+import static io.harness.ccm.commons.constants.ViewFieldConstants.WORKLOAD_NAME_FIELD_ID;
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.CLUSTER;
 import static io.harness.ccm.views.entities.ViewFieldIdentifier.LABEL;
 import static io.harness.ccm.views.graphql.QLCEViewAggregateOperation.MAX;
@@ -152,6 +157,7 @@ import com.google.cloud.bigquery.QueryJobConfiguration;
 import com.google.cloud.bigquery.Schema;
 import com.google.cloud.bigquery.StandardSQLTypeName;
 import com.google.cloud.bigquery.TableResult;
+import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.healthmarketscience.sqlbuilder.SelectQuery;
@@ -209,6 +215,8 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
   private static final String STANDARD_TIME_ZONE = "GMT";
   private static final long ONE_DAY_MILLIS = 86400000L;
   private static final long OBSERVATION_PERIOD = 29 * ONE_DAY_MILLIS;
+  private static final List<String> UNALLOCATED_COST_CLUSTER_FIELDS = ImmutableList.of(
+      NAMESPACE_FIELD_ID, WORKLOAD_NAME_FIELD_ID, CLOUD_SERVICE_NAME_FIELD_ID, TASK_FIELD_ID, LAUNCH_TYPE_FIELD_ID);
 
   @Override
   public List<String> getFilterValueStats(BigQuery bigQuery, List<QLCEViewFilterWrapper> filters,
@@ -377,6 +385,29 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
   }
 
   @Override
+  public Map<Long, Double> getUnallocatedCostDataNg(final BigQuery bigQuery, final List<QLCEViewFilterWrapper> filters,
+      final List<QLCEViewGroupBy> groupBy, final List<QLCEViewSortCriteria> sort, final String cloudProviderTableName,
+      final ViewQueryParams queryParams) {
+    if (shouldShowUnallocatedCost(groupBy) && isClusterTableQuery(filters, queryParams)) {
+      final List<QLCEViewAggregation> aggregateFunction =
+          Collections.singletonList(QLCEViewAggregation.builder()
+                                        .operationType(QLCEViewAggregateOperation.SUM)
+                                        .columnName(entityConstantUnallocatedCost)
+                                        .build());
+      final SelectQuery query = getQuery(filters, modifyGroupByForUnallocatedCostData(groupBy), aggregateFunction, sort,
+          cloudProviderTableName, queryParams);
+      final QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(query.toString()).build();
+      try {
+        return convertToUnallocatedCostData(bigQuery.query(queryConfig));
+      } catch (final InterruptedException e) {
+        log.error("Failed to getUnallocatedCostDataNg.", e);
+        Thread.currentThread().interrupt();
+      }
+    }
+    return null;
+  }
+
+  @Override
   public QLCEViewTrendInfo getTrendStatsData(BigQuery bigQuery, List<QLCEViewFilterWrapper> filters,
       List<QLCEViewAggregation> aggregateFunction, String cloudProviderTableName) {
     return getTrendStatsDataNg(
@@ -534,7 +565,7 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
   }
 
   private boolean isClusterTableQuery(List<QLCEViewFilterWrapper> filters, ViewQueryParams queryParams) {
-    return (isClusterPerspective(filters) || queryParams.isClusterQuery()) && queryParams.getAccountId() != null;
+    return (queryParams.isClusterQuery() || isClusterPerspective(filters)) && queryParams.getAccountId() != null;
   }
 
   private List<String> getColumnsData(BigQuery bigQuery, SelectQuery query) {
@@ -616,6 +647,43 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
       viewCostDataBuilder.utilizedCost(viewsQueryHelper.getRoundedDoubleValue(utilizedCost));
     }
     return viewCostDataBuilder.build();
+  }
+
+  private boolean shouldShowUnallocatedCost(final List<QLCEViewGroupBy> groupByList) {
+    boolean shouldShowUnallocatedCost = false;
+    for (final String unallocatedCostClusterField : UNALLOCATED_COST_CLUSTER_FIELDS) {
+      shouldShowUnallocatedCost = viewsQueryHelper.isGroupByFieldIdPresent(groupByList, unallocatedCostClusterField);
+      if (shouldShowUnallocatedCost) {
+        break;
+      }
+    }
+    return shouldShowUnallocatedCost;
+  }
+
+  private Map<Long, Double> convertToUnallocatedCostData(final TableResult result) {
+    Map<Long, Double> unallocatedCostMapping = new HashMap<>();
+    final Schema schema = result.getSchema();
+    final FieldList fields = schema.getFields();
+    for (final FieldValueList row : result.iterateAll()) {
+      long timestamp = 0L;
+      double unallocatedCost = 0.0D;
+      for (final Field field : fields) {
+        switch (field.getType().getStandardType()) {
+          case TIMESTAMP:
+            timestamp = row.get(field.getName()).getTimestampValue() / 1000;
+            break;
+          case FLOAT64:
+            unallocatedCost = getNumericValue(row, field, true);
+            break;
+          default:
+            break;
+        }
+      }
+      if (unallocatedCost != 0L) {
+        unallocatedCostMapping.put(timestamp, unallocatedCostMapping.getOrDefault(timestamp, 0.0D) + unallocatedCost);
+      }
+    }
+    return unallocatedCostMapping;
   }
 
   protected QLCEViewTrendInfo getCostBillingStats(ViewCostData costData, ViewCostData prevCostData,
@@ -717,6 +785,12 @@ public class ViewsBillingServiceImpl implements ViewsBillingService {
         .statsValue(forecastCostValue)
         .value(forecastCost)
         .build();
+  }
+
+  private static List<QLCEViewGroupBy> modifyGroupByForUnallocatedCostData(final List<QLCEViewGroupBy> groupByList) {
+    return groupByList.stream()
+        .filter(groupBy -> Objects.nonNull(groupBy.getTimeTruncGroupBy()))
+        .collect(Collectors.toList());
   }
 
   protected List<QLCEViewTimeFilter> getTrendFilters(List<QLCEViewTimeFilter> timeFilters) {

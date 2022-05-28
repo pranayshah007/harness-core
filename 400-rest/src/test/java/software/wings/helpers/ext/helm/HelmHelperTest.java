@@ -33,9 +33,9 @@ import io.harness.rule.Owner;
 import software.wings.WingsBaseTest;
 import software.wings.beans.GitConfig;
 import software.wings.beans.HelmExecutionSummary;
-import software.wings.beans.appmanifest.ManifestFileDTO;
 import software.wings.beans.appmanifest.StoreType;
-import software.wings.beans.container.HelmChartSpecificationDTO;
+import software.wings.beans.dto.HelmChartSpecification;
+import software.wings.beans.dto.ManifestFile;
 import software.wings.beans.settings.helm.AmazonS3HelmRepoConfig;
 import software.wings.beans.settings.helm.GCSHelmRepoConfig;
 import software.wings.beans.settings.helm.HelmRepoConfig;
@@ -168,8 +168,8 @@ public class HelmHelperTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testPrepareHelmExecutionSummary() {
     final String releaseName = "release-name";
-    HelmChartSpecificationDTO chartSpecification =
-        HelmChartSpecificationDTO.builder().chartUrl("abc.com").chartName("sql").chartVersion("1.1.42").build();
+    HelmChartSpecification chartSpecification =
+        HelmChartSpecification.builder().chartUrl("abc.com").chartName("sql").chartVersion("1.1.42").build();
     HelmExecutionSummary helmExecutionSummary =
         helmHelper.prepareHelmExecutionSummary(releaseName, chartSpecification, null);
     assertThat(helmExecutionSummary.getReleaseName()).isEqualTo(releaseName);
@@ -237,7 +237,7 @@ public class HelmHelperTest extends WingsBaseTest {
   public void testReplaceManifestPlaceholdersWithLocalConfig() {
     String manifestContent = "testKey nonSecretValue";
     String manifestMaskSecret = "testValue nonSecretValue";
-    ManifestFileDTO manifestFile = ManifestFileDTO.builder().fileContent(manifestContent).build();
+    ManifestFile manifestFile = ManifestFile.builder().fileContent(manifestContent).build();
     when(delegateLocalConfigService.replacePlaceholdersWithLocalConfig(manifestContent)).thenReturn(manifestMaskSecret);
 
     helmHelper.replaceManifestPlaceholdersWithLocalConfig(manifestFile);

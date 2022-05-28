@@ -9,13 +9,13 @@ package io.harness.notification.remote.resources;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
-import io.harness.Team;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.notification.Team;
 import io.harness.notification.remote.dto.NotificationDTO;
 
 import io.swagger.annotations.Api;

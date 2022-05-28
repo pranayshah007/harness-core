@@ -223,7 +223,7 @@ public class DynatraceStateTest extends APMStateVerificationTestBase {
             .workflowExecutionId(workflowExecutionId)
             .serviceId(serviceId)
             .startTime(0)
-            .collectionTime(Integer.parseInt(dynatraceState.getTimeDuration()))
+            .collectionTime(Integer.parseInt(dynatraceState.getTimeDuration(executionContext)))
             .dynatraceServiceIds(new HashSet<>())
             .timeSeriesDefinitions(Lists.newArrayList(DynaTraceTimeSeries.values()))
             .dataCollectionMinute(0)

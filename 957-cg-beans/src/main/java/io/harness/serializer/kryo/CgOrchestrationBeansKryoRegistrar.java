@@ -22,10 +22,12 @@ import io.harness.cvng.beans.cvnglog.ApiCallLogDTO.ApiCallLogDTOField;
 import io.harness.serializer.KryoRegistrar;
 
 import software.wings.api.CloudProviderType;
-import software.wings.api.ContainerServiceData;
 import software.wings.api.ExecutionDataValue;
 import software.wings.api.ServiceElement;
+import software.wings.api.ecs.EcsBGSetupData;
 import software.wings.beans.AmiDeploymentType;
+import software.wings.beans.AppContainer;
+import software.wings.beans.ApprovalDetails;
 import software.wings.beans.ArtifactStreamMetadata;
 import software.wings.beans.ArtifactVariable;
 import software.wings.beans.AwsInstanceFilter;
@@ -49,6 +51,13 @@ import software.wings.beans.artifact.ArtifactFile;
 import software.wings.beans.artifact.ArtifactInput;
 import software.wings.beans.artifact.ArtifactStreamSummary;
 import software.wings.beans.artifact.ArtifactSummary;
+import software.wings.beans.container.IstioConfig;
+import software.wings.beans.container.KubernetesBlueGreenConfig;
+import software.wings.beans.container.KubernetesPortProtocol;
+import software.wings.beans.container.KubernetesServiceSpecification;
+import software.wings.beans.container.KubernetesServiceType;
+import software.wings.beans.container.Label;
+import software.wings.beans.infrastructure.Host;
 import software.wings.beans.trigger.WebhookSource;
 import software.wings.helpers.ext.gcb.models.BuildStep;
 import software.wings.helpers.ext.gcb.models.GcbBuildDetails;
@@ -59,6 +68,8 @@ import software.wings.sm.ExecutionInterruptEffect;
 import software.wings.sm.PipelineSummary;
 import software.wings.sm.StateTypeScope;
 import software.wings.sm.StepExecutionSummary;
+import software.wings.utils.ContainerFamily;
+import software.wings.utils.FileType;
 
 import com.esotericsoftware.kryo.Kryo;
 
@@ -70,6 +81,7 @@ public class CgOrchestrationBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(WorkflowType.class, 5025);
     kryo.register(ServiceElement.class, 5083);
     kryo.register(ExecutionStatus.class, 5136);
+    kryo.register(KubernetesBlueGreenConfig.class, 5364);
     kryo.register(Variable.class, 5378);
     kryo.register(GitFileConfig.class, 5472);
     kryo.register(LicenseInfo.class, 5511);
@@ -85,11 +97,19 @@ public class CgOrchestrationBeansKryoRegistrar implements KryoRegistrar {
     // Put promoted classes here and do not change the id
     kryo.register(SweepingOutput.class, 3101);
     kryo.register(ExecutionInterruptType.class, 4000);
-    kryo.register(ContainerServiceData.class, 5157);
     kryo.register(ExecutionDataValue.class, 5368);
     kryo.register(CountsByStatuses.class, 4008);
+    kryo.register(AppContainer.class, 5064);
+    kryo.register(Host.class, 5067);
+    kryo.register(ContainerFamily.class, 5118);
+    kryo.register(FileType.class, 5119);
+    kryo.register(KubernetesPortProtocol.class, 5152);
+    kryo.register(KubernetesServiceType.class, 5153);
     kryo.register(MetricType.class, 5313);
+    kryo.register(Label.class, 5345);
     kryo.register(EntityType.class, 5360);
+    kryo.register(KubernetesServiceSpecification.class, 5363);
+    kryo.register(IstioConfig.class, 5466);
     kryo.register(ErrorStrategy.class, 4005);
     kryo.register(ExecutionStrategy.class, 4002);
     kryo.register(PhaseStepType.class, 5026);
@@ -98,6 +118,7 @@ public class CgOrchestrationBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(PipelineSummary.class, 5142);
     kryo.register(StateTypeScope.class, 5144);
     kryo.register(StepExecutionSummary.class, 5145);
+    kryo.register(EcsBGSetupData.class, 5611);
     kryo.register(WebhookSource.class, 8551);
     kryo.register(ApiCallLogDTO.class, 9048);
     kryo.register(ApiCallLogDTOField.class, 9049);
@@ -120,5 +141,6 @@ public class CgOrchestrationBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(HelmChart.class, 71106);
     kryo.register(Artifact.ContentStatus.class, 7193);
     kryo.register(Artifact.Status.class, 7194);
+    kryo.register(ApprovalDetails.Action.class, 7461);
   }
 }

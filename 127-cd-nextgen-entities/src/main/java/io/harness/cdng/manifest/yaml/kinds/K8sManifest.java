@@ -10,10 +10,12 @@ package io.harness.cdng.manifest.yaml.kinds;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper.StoreConfigWrapperParameters;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.bool;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.SwaggerConstants;
 import io.harness.cdng.manifest.ManifestType;
 import io.harness.cdng.manifest.yaml.ManifestAttributes;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
@@ -32,6 +34,7 @@ import io.harness.yaml.YamlSchemaTypes;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
+import java.util.List;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
@@ -66,6 +69,12 @@ public class K8sManifest implements ManifestAttributes, Visitable {
   @SkipAutoEvaluation
   ParameterField<StoreConfigWrapper> store;
 
+  @Wither
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
+  @YamlSchemaTypes({runtime})
+  @SkipAutoEvaluation
+  ParameterField<List<String>> valuesPaths;
+
   @Wither @YamlSchemaTypes({string, bool}) @SkipAutoEvaluation ParameterField<Boolean> skipResourceVersioning;
   // For Visitor Framework Impl
   String metadata;
@@ -77,6 +86,9 @@ public class K8sManifest implements ManifestAttributes, Visitable {
     if (k8sManifest.getStore() != null && k8sManifest.getStore().getValue() != null) {
       resultantManifest = resultantManifest.withStore(
           ParameterField.createValueField(store.getValue().applyOverrides(k8sManifest.getStore().getValue())));
+    }
+    if (!ParameterField.isNull(k8sManifest.getValuesPaths())) {
+      resultantManifest = resultantManifest.withValuesPaths(k8sManifest.getValuesPaths());
     }
     if (k8sManifest.getSkipResourceVersioning() != null) {
       resultantManifest = resultantManifest.withSkipResourceVersioning(k8sManifest.getSkipResourceVersioning());
@@ -104,14 +116,15 @@ public class K8sManifest implements ManifestAttributes, Visitable {
 
   @Override
   public ManifestAttributeStepParameters getManifestAttributeStepParameters() {
-    return new K8sManifestStepParameters(
-        identifier, StoreConfigWrapperParameters.fromStoreConfigWrapper(store.getValue()), skipResourceVersioning);
+    return new K8sManifestStepParameters(identifier,
+        StoreConfigWrapperParameters.fromStoreConfigWrapper(store.getValue()), valuesPaths, skipResourceVersioning);
   }
 
   @Value
   public static class K8sManifestStepParameters implements ManifestAttributeStepParameters {
     String identifier;
     StoreConfigWrapperParameters store;
+    ParameterField<List<String>> valuesPaths;
     ParameterField<Boolean> skipResourceVersioning;
   }
 }

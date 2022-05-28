@@ -12,6 +12,7 @@ import static io.harness.eraro.Status.CONFLICT;
 import static io.harness.eraro.Status.EXPECTATION_FAILED;
 import static io.harness.eraro.Status.FORBIDDEN;
 import static io.harness.eraro.Status.GATEWAY_TIMEOUT;
+import static io.harness.eraro.Status.INTERNAL_SERVER_ERROR;
 import static io.harness.eraro.Status.MOVED_PERMANENTLY;
 import static io.harness.eraro.Status.NOT_FOUND;
 import static io.harness.eraro.Status.SERVICE_UNAVAILABLE;
@@ -571,9 +572,11 @@ public enum ErrorCode {
   HTTP_RESPONSE_EXCEPTION,
   SCM_NOT_FOUND_ERROR,
   SCM_CONFLICT_ERROR,
+  SCM_CONFLICT_ERROR_V2(CONFLICT),
   SCM_UNPROCESSABLE_ENTITY,
   PROCESS_EXECUTION_EXCEPTION,
   SCM_UNAUTHORIZED,
+  SCM_BAD_REQUEST,
   SCM_INTERNAL_SERVER_ERROR,
   DATA,
   CONTEXT,
@@ -604,7 +607,9 @@ public enum ErrorCode {
   DATA_PROCESSING_ERROR,
   INVALID_AZURE_AKS_REQUEST,
   AWS_IAM_ERROR,
-  AWS_CF_ERROR;
+  AWS_CF_ERROR,
+  SCM_INTERNAL_SERVER_ERROR_V2(INTERNAL_SERVER_ERROR),
+  SCM_UNAUTHORIZED_ERROR_V2(UNAUTHORIZED);
 
   private Status status = BAD_REQUEST;
   private String description;

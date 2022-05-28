@@ -10,6 +10,8 @@ package io.harness.gitsync.sdk;
 import static io.harness.annotations.dev.HarnessTeam.DX;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
+import io.harness.gitsync.interceptor.GitSyncConstants;
 import io.harness.gitsync.persistance.GitSyncableEntity;
 
 import lombok.experimental.UtilityClass;
@@ -36,5 +38,12 @@ public class EntityGitDetailsMapper {
     toGitSyncableEntity.setYamlGitConfigRef(fromGitSyncableEntity.getYamlGitConfigRef());
     toGitSyncableEntity.setFilePath(fromGitSyncableEntity.getFilePath());
     toGitSyncableEntity.setObjectIdOfYaml(fromGitSyncableEntity.getObjectIdOfYaml());
+  }
+
+  public String nullIfDefault(String val) {
+    if (EmptyPredicate.isEmpty(val) || val.equals(GitSyncConstants.DEFAULT)) {
+      return null;
+    }
+    return val;
   }
 }

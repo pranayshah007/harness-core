@@ -27,7 +27,6 @@ public class ClusterEntityMapperTest extends CategoryTest {
   public void testToEntity() {
     ClusterRequest request = ClusterRequest.builder()
                                  .identifier("id")
-                                 .name("name")
                                  .envRef("env")
                                  .orgIdentifier("orgId")
                                  .projectIdentifier("orgId")
@@ -38,8 +37,7 @@ public class ClusterEntityMapperTest extends CategoryTest {
     assertThat(entity.getAccountId()).isEqualTo("accountId");
     assertThat(entity.getOrgIdentifier()).isEqualTo("orgId");
     assertThat(entity.getProjectIdentifier()).isEqualTo("orgId");
-    assertThat(entity.getIdentifier()).isEqualTo("id");
-    assertThat(entity.getName()).isEqualTo("name");
+    assertThat(entity.getClusterRef()).isEqualTo("id");
   }
 
   @Test
@@ -48,8 +46,7 @@ public class ClusterEntityMapperTest extends CategoryTest {
   public void testWriteDTO() {
     Cluster request = Cluster.builder()
                           .accountId("accountId")
-                          .identifier("id")
-                          .name("name")
+                          .clusterRef("id")
                           .envRef("env")
                           .orgIdentifier("orgId")
                           .projectIdentifier("orgId")
@@ -59,7 +56,6 @@ public class ClusterEntityMapperTest extends CategoryTest {
 
     assertThat(entity.getOrgIdentifier()).isEqualTo("orgId");
     assertThat(entity.getProjectIdentifier()).isEqualTo("orgId");
-    assertThat(entity.getIdentifier()).isEqualTo("id");
-    assertThat(entity.getName()).isEqualTo("name");
+    assertThat(entity.getClusterRef()).isEqualTo("id");
   }
 }

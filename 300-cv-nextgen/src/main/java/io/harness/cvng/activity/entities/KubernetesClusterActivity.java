@@ -16,7 +16,9 @@ import io.harness.cvng.beans.change.KubernetesChangeEventMetadata.KubernetesReso
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance.VerificationJobInstanceBuilder;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -122,6 +124,15 @@ public class KubernetesClusterActivity extends Activity {
         updateOperations.set(key, value);
       }
     }
+  }
+
+  public List<String> getRealatedAppMonitoredServiceIdentifiers() {
+    if (relatedAppServices == null) {
+      return Collections.emptyList();
+    }
+    return relatedAppServices.stream()
+        .map(RelatedAppMonitoredService::getMonitoredServiceIdentifier)
+        .collect(Collectors.toList());
   }
 
   @FieldNameConstants(innerTypeName = "ServiceEnvironmentKeys")

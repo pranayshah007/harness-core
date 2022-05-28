@@ -90,6 +90,27 @@ public class AnomalyQueryBuilder {
   }
 
   @NotNull
+  public Condition applyAllFilters(@NotNull CCMFilter filter, @NotNull List<CCMFilter> ruleFilters) {
+    Condition condition = DSL.noCondition();
+    condition = applyPerspectiveRuleFilters(ruleFilters);
+
+    if (filter.getNumericFilters() != null) {
+      condition = applyNumericFilters(filter.getNumericFilters(), condition);
+    }
+
+    if (filter.getStringFilters() != null) {
+      // Todo: Remove perspectiveId filter if present
+      condition = applyStringFilters(filter.getStringFilters(), condition);
+    }
+
+    if (filter.getTimeFilters() != null) {
+      condition = applyTimeFilters(filter.getTimeFilters(), condition);
+    }
+
+    return condition;
+  }
+
+  @NotNull
   private Condition applyTimeFilters(@NotNull List<CCMTimeFilter> filters, Condition condition) {
     for (CCMTimeFilter filter : filters) {
       condition = condition.and(constructCondition(ANOMALIES.ANOMALYTIME, filter.getTimestamp(), filter.getOperator()));
@@ -127,6 +148,19 @@ public class AnomalyQueryBuilder {
       }
     }
     return condition;
+  }
+
+  @NotNull
+  private Condition applyPerspectiveRuleFilters(@NotNull List<CCMFilter> filters) {
+    Condition overallCondition = DSL.noCondition();
+    for (CCMFilter filter : filters) {
+      Condition ruleCondition = DSL.noCondition();
+      if (filter.getStringFilters() != null) {
+        ruleCondition = applyStringFilters(filter.getStringFilters(), ruleCondition);
+      }
+      overallCondition = overallCondition.or(ruleCondition);
+    }
+    return overallCondition;
   }
 
   @NotNull

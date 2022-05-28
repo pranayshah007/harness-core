@@ -594,7 +594,7 @@ public class UserResource {
     return ResponseDTO.newResponse(ngUserService.getUserMetadata(userId).orElse(null));
   }
 
-  public Optional<String> getUserIdentifierFromSecurityContext() {
+  Optional<String> getUserIdentifierFromSecurityContext() {
     Optional<String> userId = Optional.empty();
     if (SourcePrincipalContextBuilder.getSourcePrincipal() != null
         && SourcePrincipalContextBuilder.getSourcePrincipal().getType() == PrincipalType.USER) {

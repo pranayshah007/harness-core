@@ -148,6 +148,6 @@ public class K8sRollingRequestHandlerTest extends CategoryTest {
     verify(kubernetesContainerService, times(1))
         .saveReleaseHistory(any(KubernetesConfig.class), anyString(), anyString(), anyBoolean());
     verify(baseHandler, times(1))
-        .addLabelsInDeploymentSelectorForCanary(anyBoolean(), anyBoolean(), anyList(), any(KubernetesConfig.class));
+        .addLabelsInDeploymentSelectorForCanary(anyBoolean(), anyBoolean(), anyList(), anyList());
   }
 }

@@ -395,12 +395,12 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
     return serverlessStepHelper.getServerlessManifestConfig(serverlessManifestOutcome, ambiance, manifestParams);
   }
 
-  public List<ServerInstanceInfo> getFunctionInstanceInfo(
-      ServerlessCommandResponse serverlessCommandResponse, ServerlessStepHelper serverlessStepHelper) {
+  public List<ServerInstanceInfo> getFunctionInstanceInfo(ServerlessCommandResponse serverlessCommandResponse,
+      ServerlessStepHelper serverlessStepHelper, String infraStructureKey) {
     if (serverlessCommandResponse instanceof ServerlessDeployResponse) {
       ServerlessDeployResponse serverlessDeployResponse = (ServerlessDeployResponse) serverlessCommandResponse;
       return serverlessStepHelper.getServerlessDeployFunctionInstanceInfo(
-          serverlessDeployResponse.getServerlessDeployResult());
+          serverlessDeployResponse.getServerlessDeployResult(), infraStructureKey);
     }
     throw new GeneralException("Invalid serverless command response instance");
   }

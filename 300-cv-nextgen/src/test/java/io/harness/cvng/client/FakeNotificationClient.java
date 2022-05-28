@@ -7,7 +7,7 @@
 
 package io.harness.cvng.client;
 
-import io.harness.Team;
+import io.harness.notification.Team;
 import io.harness.notification.channeldetails.NotificationChannel;
 import io.harness.notification.notificationclient.NotificationClient;
 import io.harness.notification.notificationclient.NotificationResult;

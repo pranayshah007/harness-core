@@ -35,6 +35,7 @@ import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.cdng.provision.cloudformation.beans.CloudFormationCreateStackPassThroughData;
 import io.harness.cdng.provision.cloudformation.beans.CloudformationConfig;
 import io.harness.connector.ConnectorInfoDTO;
+import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialDTO;
@@ -50,6 +51,7 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.UnitProgress;
 import io.harness.logging.UnitStatus;
 import io.harness.ng.core.EntityDetail;
+import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
@@ -68,6 +70,7 @@ import software.wings.beans.TaskType;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -111,6 +114,9 @@ public class CloudformationCreateStackStepTest extends CategoryTest {
     InlineCloudformationTemplateFileSpec templateFileSpec = new InlineCloudformationTemplateFileSpec();
     CloudformationParametersFileSpec parametersFileSpec = new CloudformationParametersFileSpec();
     CloudformationParametersFileSpec parametersFileSpec2 = new CloudformationParametersFileSpec();
+    LinkedHashMap<String, CloudformationParametersFileSpec> parametersFileSpecs = new LinkedHashMap<>();
+    parametersFileSpecs.put("var1", parametersFileSpec);
+    parametersFileSpecs.put("var2", parametersFileSpec2);
     doReturn(true).when(cdFeatureFlagHelper).isEnabled(anyString(), any());
 
     StoreConfigWrapper storeConfigWrapper =
@@ -120,9 +126,9 @@ public class CloudformationCreateStackStepTest extends CategoryTest {
     parametersFileSpec.setStore(storeConfigWrapper);
     parametersFileSpec2.setStore(storeConfigWrapper);
     templateFileSpec.setTemplateBody(ParameterField.createValueField("data"));
-    parameters.setConfiguration(CloudformationCreateStackStepConfiguration.builder()
+    parameters.setConfiguration(CloudformationCreateStackStepConfigurationParameters.builder()
                                     .connectorRef(ParameterField.createValueField(CONNECTOR_REF))
-                                    .parametersFilesSpecs(Arrays.asList(parametersFileSpec, parametersFileSpec2))
+                                    .parameters(parametersFileSpecs)
                                     .templateFile(CloudformationTemplateFile.builder()
                                                       .spec(templateFileSpec)
                                                       .type(CloudformationTemplateFileTypes.Inline)
@@ -151,6 +157,9 @@ public class CloudformationCreateStackStepTest extends CategoryTest {
     RemoteCloudformationTemplateFileSpec templateFileSpec = new RemoteCloudformationTemplateFileSpec();
     CloudformationParametersFileSpec parametersFileSpec = new CloudformationParametersFileSpec();
     CloudformationParametersFileSpec parametersFileSpec2 = new CloudformationParametersFileSpec();
+    LinkedHashMap<String, CloudformationParametersFileSpec> parametersFileSpecs = new LinkedHashMap<>();
+    parametersFileSpecs.put("var1", parametersFileSpec);
+    parametersFileSpecs.put("var2", parametersFileSpec2);
     doReturn(true).when(cdFeatureFlagHelper).isEnabled(anyString(), any());
 
     StoreConfigWrapper storeConfigWrapper =
@@ -160,9 +169,9 @@ public class CloudformationCreateStackStepTest extends CategoryTest {
     parametersFileSpec.setStore(storeConfigWrapper);
     parametersFileSpec2.setStore(storeConfigWrapper);
     templateFileSpec.setStore(storeConfigWrapper);
-    parameters.setConfiguration(CloudformationCreateStackStepConfiguration.builder()
+    parameters.setConfiguration(CloudformationCreateStackStepConfigurationParameters.builder()
                                     .connectorRef(ParameterField.createValueField("test" + CONNECTOR_REF))
-                                    .parametersFilesSpecs(Arrays.asList(parametersFileSpec, parametersFileSpec2))
+                                    .parameters(parametersFileSpecs)
                                     .templateFile(CloudformationTemplateFile.builder()
                                                       .spec(templateFileSpec)
                                                       .type(CloudformationTemplateFileTypes.Remote)
@@ -203,7 +212,9 @@ public class CloudformationCreateStackStepTest extends CategoryTest {
     RemoteCloudformationTemplateFileSpec templateFileSpec = new RemoteCloudformationTemplateFileSpec();
     CloudformationParametersFileSpec parametersFileSpec = new CloudformationParametersFileSpec();
     CloudformationParametersFileSpec parametersFileSpec2 = new CloudformationParametersFileSpec();
-
+    LinkedHashMap<String, CloudformationParametersFileSpec> parametersFileSpecs = new LinkedHashMap<>();
+    parametersFileSpecs.put("var1", parametersFileSpec);
+    parametersFileSpecs.put("var2", parametersFileSpec2);
     StoreConfigWrapper storeConfigWrapper =
         StoreConfigWrapper.builder()
             .spec(GithubStore.builder().connectorRef(ParameterField.createValueField(CONNECTOR_REF)).build())
@@ -211,18 +222,25 @@ public class CloudformationCreateStackStepTest extends CategoryTest {
     parametersFileSpec.setStore(storeConfigWrapper);
     parametersFileSpec2.setStore(storeConfigWrapper);
     templateFileSpec.setStore(storeConfigWrapper);
-    parameters.setConfiguration(CloudformationCreateStackStepConfiguration.builder()
-                                    .parametersFilesSpecs(Arrays.asList(parametersFileSpec, parametersFileSpec2))
+    parameters.setConfiguration(CloudformationCreateStackStepConfigurationParameters.builder()
+                                    .parameters(parametersFileSpecs)
                                     .templateFile(CloudformationTemplateFile.builder()
                                                       .spec(templateFileSpec)
                                                       .type(CloudformationTemplateFileTypes.Remote)
                                                       .build())
                                     .build());
+    TaskSelectorYaml taskSelectorYaml = new TaskSelectorYaml("create-d-selector-1");
+    parameters.setDelegateSelectors(ParameterField.createValueField(Arrays.asList(taskSelectorYaml)));
+
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(parameters).build();
     mockStatic(StepUtils.class);
     PowerMockito.when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
     ArgumentCaptor<TaskData> taskDataArgumentCaptor = ArgumentCaptor.forClass(TaskData.class);
+
+    Class<ArrayList<TaskSelector>> delegateSelectors = (Class<ArrayList<TaskSelector>>) (Class) ArrayList.class;
+    ArgumentCaptor<ArrayList<TaskSelector>> taskSelectorsArgumentCaptor = ArgumentCaptor.forClass(delegateSelectors);
+
     List<EncryptedDataDetail> encryptedDataDetails = new ArrayList<>();
     CloudformationTaskNGParameters cloudformationTaskNGParameters = CloudformationTaskNGParameters.builder()
                                                                         .accountId("test-account")
@@ -237,13 +255,15 @@ public class CloudformationCreateStackStepTest extends CategoryTest {
             cloudformationTaskNGParameters, CloudFormationCreateStackPassThroughData.builder().build());
     assertThat(taskChainResponse).isNotNull();
     PowerMockito.verifyStatic(StepUtils.class, times(1));
-    StepUtils.prepareCDTaskRequest(any(), taskDataArgumentCaptor.capture(), any(), any(), any(), any(), any());
+    StepUtils.prepareCDTaskRequest(
+        any(), taskDataArgumentCaptor.capture(), any(), any(), any(), taskSelectorsArgumentCaptor.capture(), any());
     assertThat(taskDataArgumentCaptor.getValue()).isNotNull();
     assertThat(taskDataArgumentCaptor.getValue().getParameters()).isNotNull();
     CloudformationTaskNGParameters taskParameters =
         (CloudformationTaskNGParameters) taskDataArgumentCaptor.getValue().getParameters()[0];
     assertThat(taskParameters.getTaskType()).isEqualTo(CloudformationTaskType.CREATE_STACK);
     assertThat(taskDataArgumentCaptor.getValue().getTaskType()).isEqualTo(TaskType.CLOUDFORMATION_TASK_NG.name());
+    assertThat(taskSelectorsArgumentCaptor.getValue().get(0).getSelector()).isEqualTo("create-d-selector-1");
   }
 
   @Test
@@ -263,6 +283,9 @@ public class CloudformationCreateStackStepTest extends CategoryTest {
     RemoteCloudformationTemplateFileSpec templateFileSpec = new RemoteCloudformationTemplateFileSpec();
     CloudformationParametersFileSpec parametersFileSpec = new CloudformationParametersFileSpec();
     CloudformationParametersFileSpec parametersFileSpec2 = new CloudformationParametersFileSpec();
+    LinkedHashMap<String, CloudformationParametersFileSpec> parametersFileSpecs = new LinkedHashMap<>();
+    parametersFileSpecs.put("var1", parametersFileSpec);
+    parametersFileSpecs.put("var2", parametersFileSpec2);
     CloudformationConfig cloudformationConfig = CloudformationConfig.builder().build();
 
     StoreConfigWrapper storeConfigWrapper = StoreConfigWrapper.builder()
@@ -275,10 +298,10 @@ public class CloudformationCreateStackStepTest extends CategoryTest {
     parametersFileSpec.setStore(storeConfigWrapper);
     parametersFileSpec2.setStore(storeConfigWrapper);
     templateFileSpec.setStore(storeConfigWrapper);
-    parameters.setConfiguration(CloudformationCreateStackStepConfiguration.builder()
+    parameters.setConfiguration(CloudformationCreateStackStepConfigurationParameters.builder()
                                     .region(ParameterField.createValueField("region"))
                                     .stackName(ParameterField.createValueField("stack-name"))
-                                    .parametersFilesSpecs(Arrays.asList(parametersFileSpec, parametersFileSpec2))
+                                    .parameters(parametersFileSpecs)
                                     .templateFile(CloudformationTemplateFile.builder()
                                                       .spec(templateFileSpec)
                                                       .type(CloudformationTemplateFileTypes.Remote)

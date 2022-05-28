@@ -40,6 +40,7 @@ import io.harness.delegate.task.k8s.K8sTaskHelperBase;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.filesystem.FileIo;
 import io.harness.git.model.GitFile;
 import io.harness.git.model.GitRepositoryType;
@@ -63,14 +64,13 @@ import io.harness.logging.LogLevel;
 
 import software.wings.beans.GitConfig;
 import software.wings.beans.GitFileConfig;
-import software.wings.beans.appmanifest.ManifestFileDTO;
 import software.wings.beans.appmanifest.StoreType;
 import software.wings.beans.command.ExecutionLogCallback;
 import software.wings.beans.command.HelmDummyCommandUnitConstants;
-import software.wings.beans.container.HelmChartSpecificationDTO;
+import software.wings.beans.dto.HelmChartSpecification;
+import software.wings.beans.dto.ManifestFile;
 import software.wings.beans.yaml.GitFetchFilesResult;
 import software.wings.delegatetasks.DelegateLogService;
-import software.wings.delegatetasks.ExceptionMessageSanitizer;
 import software.wings.delegatetasks.ScmFetchFilesHelper;
 import software.wings.delegatetasks.helm.HarnessHelmDeployConfig;
 import software.wings.delegatetasks.helm.HelmCommandHelper;
@@ -383,7 +383,7 @@ public class HelmDeployServiceImpl implements HelmDeployService {
 
   @VisibleForTesting
   void fetchInlineChartUrl(HelmCommandRequest commandRequest, long timeoutInMillis) throws Exception {
-    HelmChartSpecificationDTO helmChartSpecification = commandRequest.getChartSpecification();
+    HelmChartSpecification helmChartSpecification = commandRequest.getChartSpecification();
     String workingDirectory = Paths.get(getWorkingDirectory(commandRequest)).toString();
 
     helmTaskHelper.downloadChartFiles(
@@ -493,8 +493,8 @@ public class HelmDeployServiceImpl implements HelmDeployService {
 
     HelmCommandResponse commandResponse = renderHelmChart(commandRequest, namespace, chartLocation, valueOverrides);
 
-    ManifestFileDTO manifestFile =
-        ManifestFileDTO.builder().fileName(MANIFEST_FILE_NAME).fileContent(commandResponse.getOutput()).build();
+    ManifestFile manifestFile =
+        ManifestFile.builder().fileName(MANIFEST_FILE_NAME).fileContent(commandResponse.getOutput()).build();
     helmHelper.replaceManifestPlaceholdersWithLocalConfig(manifestFile);
 
     List<KubernetesResource> resources = ManifestHelper.processYaml(manifestFile.getFileContent());
@@ -929,9 +929,9 @@ public class HelmDeployServiceImpl implements HelmDeployService {
             if (optionalHarnessHelmDeployConfig.isPresent()) {
               HelmDeployChartSpec helmDeployChartSpec = optionalHarnessHelmDeployConfig.get().getHelmDeployChartSpec();
 
-              HelmChartSpecificationDTO helmChartSpecification;
+              HelmChartSpecification helmChartSpecification;
               if (commandRequest.getChartSpecification() == null) {
-                helmChartSpecification = HelmChartSpecificationDTO.builder().build();
+                helmChartSpecification = HelmChartSpecification.builder().build();
               } else {
                 helmChartSpecification = commandRequest.getChartSpecification();
               }
@@ -1102,7 +1102,7 @@ public class HelmDeployServiceImpl implements HelmDeployService {
   }
 
   private String getChartVersion(HelmInstallCommandRequest request, String chartInfo) throws Exception {
-    HelmChartSpecificationDTO chartSpecification = request.getChartSpecification();
+    HelmChartSpecification chartSpecification = request.getChartSpecification();
 
     if (isNotBlank(chartSpecification.getChartVersion())) {
       return chartSpecification.getChartVersion();
@@ -1143,7 +1143,7 @@ public class HelmDeployServiceImpl implements HelmDeployService {
 
   private HelmChartInfo getHelmChartInfoFromChartSpec(HelmInstallCommandRequest request) throws Exception {
     String chartInfo;
-    HelmChartSpecificationDTO chartSpecification = request.getChartSpecification();
+    HelmChartSpecification chartSpecification = request.getChartSpecification();
 
     if (isBlank(chartSpecification.getChartUrl())) {
       chartInfo = chartSpecification.getChartName();

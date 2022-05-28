@@ -9,12 +9,12 @@ package io.harness.notification.entities;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
-import io.harness.Team;
 import io.harness.annotation.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
+import io.harness.notification.Team;
 
 import com.google.common.collect.ImmutableList;
 import java.util.List;

@@ -12,12 +12,12 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.notification.remote.mappers.NotificationMapper.toDTO;
 import static io.harness.utils.PageUtils.getNGPageResponse;
 
-import io.harness.Team;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SortOrder;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.notification.Team;
 import io.harness.notification.entities.Notification;
 import io.harness.notification.remote.dto.NotificationDTO;
 import io.harness.notification.service.api.NotificationService;

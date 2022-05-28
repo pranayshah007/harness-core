@@ -33,6 +33,7 @@ import io.harness.common.EntityReference;
 import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.IdentifierRefProtoDTO;
+import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.UnexpectedException;
 import io.harness.git.model.ChangeType;
 import io.harness.gitsync.sdk.EntityGitDetails;
@@ -232,5 +233,16 @@ public class PipelineEntityGitSyncHelperTest extends CategoryTest {
     boolean marked = pipelineEntityGitSyncHelper.markEntityInvalid(accountId, entityReference, erroneousYaml);
     assertThat(marked).isTrue();
     verify(pipelineService, times(1)).markEntityInvalid(accountId, orgId, projectId, pipelineId, erroneousYaml);
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testGetEntityDetailsIfExistsWithEntityNotFoundException() {
+    when(pipelineService.get(accountId, orgId, projectId, pipelineId, false))
+        .thenThrow(new EntityNotFoundException("message"));
+    Optional<EntityGitDetails> entityDetailsIfExists =
+        pipelineEntityGitSyncHelper.getEntityDetailsIfExists(accountId, pipelineYaml);
+    assertThat(entityDetailsIfExists.isPresent()).isFalse();
   }
 }

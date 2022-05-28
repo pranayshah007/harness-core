@@ -15,11 +15,14 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.InfrastructureConfig;
 import io.harness.cdng.infra.yaml.InfrastructureDefinitionConfig;
+import io.harness.cdng.infra.yaml.InfrastructurePlanCreatorConfig;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.utils.YamlPipelineUtils;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 
 @OwnedBy(PIPELINE)
@@ -57,5 +60,16 @@ public class InfrastructureEntityConfigMapper {
                                             .spec(infrastructure)
                                             .build())
         .build();
+  }
+
+  public List<InfrastructurePlanCreatorConfig> toInfrastructurePlanCreatorConfig(
+      List<InfrastructureEntity> infrastructureEntity) {
+    return infrastructureEntity.stream()
+        .map(entity
+            -> InfrastructurePlanCreatorConfig.builder()
+                   .ref(entity.getIdentifier())
+                   .infrastructureDefinitionConfig(toInfrastructureConfig(entity).getInfrastructureDefinitionConfig())
+                   .build())
+        .collect(Collectors.toList());
   }
 }

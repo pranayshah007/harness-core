@@ -106,11 +106,12 @@ public class TerraformPlanTaskHandlerTest extends CategoryTest {
     FileUtils.touch(planFile);
     when(terraformBaseHelper.getPlanName(TerraformCommand.APPLY)).thenReturn("tfplan");
     when(terraformBaseHelper.executeTerraformPlanStep(any()))
-        .thenReturn(CliResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build());
+        .thenReturn(CliResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).exitCode(2).build());
     TerraformTaskNGResponse response =
         terraformPlanTaskHandler.executeTaskInternal(getTerraformTaskParameters(), "delegateId", "taskId", logCallback);
     assertThat(response).isNotNull();
     assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+    assertThat(response.getDetailedExitCode()).isEqualTo(2);
     Files.deleteIfExists(Paths.get(outputFile.getPath()));
     Files.deleteIfExists(Paths.get(planFile.getPath()));
     Files.deleteIfExists(Paths.get("sourceDir"));
@@ -132,11 +133,12 @@ public class TerraformPlanTaskHandlerTest extends CategoryTest {
     FileUtils.touch(planFile);
     when(terraformBaseHelper.getPlanName(TerraformCommand.APPLY)).thenReturn("tfplan");
     when(terraformBaseHelper.executeTerraformPlanStep(any()))
-        .thenReturn(CliResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build());
+        .thenReturn(CliResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).exitCode(0).build());
     TerraformTaskNGResponse response = terraformPlanTaskHandler.executeTaskInternal(
         getTerraformTaskParametersWithArtifactoryConfig(), "delegateId", "taskId", logCallback);
     assertThat(response).isNotNull();
     assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+    assertThat(response.getDetailedExitCode()).isEqualTo(0);
     Files.deleteIfExists(Paths.get(outputFile.getPath()));
     Files.deleteIfExists(Paths.get(planFile.getPath()));
     Files.deleteIfExists(Paths.get("sourceDir"));

@@ -35,6 +35,7 @@ import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -43,6 +44,7 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.chartmuseum.ChartMuseumServer;
+import io.harness.chartmuseum.ChartmuseumClient;
 import io.harness.delegate.beans.connector.helm.HttpHelmAuthType;
 import io.harness.delegate.beans.connector.helm.HttpHelmAuthenticationDTO;
 import io.harness.delegate.beans.connector.helm.HttpHelmConnectorDTO;
@@ -52,7 +54,7 @@ import io.harness.delegate.beans.storeconfig.HttpHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.S3HelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfigType;
-import io.harness.delegate.chartmuseum.NGChartMuseumService;
+import io.harness.delegate.chartmuseum.NgChartmuseumClientFactory;
 import io.harness.delegate.task.k8s.HelmChartManifestDelegateConfig;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.HelmClientException;
@@ -84,6 +86,7 @@ import org.mockito.stubbing.Answer;
 import org.zeroturnaround.exec.ProcessExecutor;
 import org.zeroturnaround.exec.ProcessOutput;
 import org.zeroturnaround.exec.ProcessResult;
+import org.zeroturnaround.exec.StartedProcess;
 
 @OwnedBy(CDP)
 @FieldDefaults(level = AccessLevel.PRIVATE)
@@ -92,19 +95,23 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
   private static final String CHART_VERSION = "1.0.0";
   private static final String REPO_NAME = "helm_charts";
   private static final String REPO_DISPLAY_NAME = "Helm Charts";
+  private static final int CHARTMUSEUM_SERVER_PORT = 33344;
 
   @Mock K8sGlobalConfigService k8sGlobalConfigService;
-  @Mock NGChartMuseumService ngChartMuseumService;
+  @Mock NgChartmuseumClientFactory ngChartmuseumClientFactory;
+  @Mock ChartmuseumClient chartmuseumClient;
 
   @InjectMocks @Spy HelmTaskHelperBase helmTaskHelperBase;
 
   @Mock ProcessExecutor processExecutor;
   @Mock LogCallback logCallback;
+  @Mock StartedProcess chartmuseumStartedProcess;
 
+  ChartMuseumServer chartMuseumServer;
   final HelmCommandFlag emptyHelmCommandFlag = HelmCommandFlag.builder().build();
 
   @Before
-  public void setup() {
+  public void setup() throws IOException {
     MockitoAnnotations.initMocks(this);
 
     doReturn("v2/helm").when(k8sGlobalConfigService).getHelmPath(HelmVersion.V2);
@@ -116,6 +123,10 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
     doReturn(processExecutor)
         .when(helmTaskHelperBase)
         .createProcessExecutor(anyString(), anyString(), anyLong(), anyMap());
+
+    chartMuseumServer =
+        ChartMuseumServer.builder().port(CHARTMUSEUM_SERVER_PORT).startedProcess(chartmuseumStartedProcess).build();
+    doReturn(chartMuseumServer).when(chartmuseumClient).start();
   }
 
   @Test
@@ -487,8 +498,6 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
     final String destinationDirectory = "destinationDirectory";
     final String resourceDirectory = "resourceDirectory";
     final long timeoutInMillis = 90000L;
-    final int port = 33344;
-    final ChartMuseumServer chartMuseumServer = ChartMuseumServer.builder().port(port).build();
     final HelmChartManifestDelegateConfig manifest = HelmChartManifestDelegateConfig.builder()
                                                          .chartName(CHART_NAME)
                                                          .chartVersion(CHART_VERSION)
@@ -497,12 +506,11 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
                                                          .build();
 
     doReturn(resourceDirectory).when(helmTaskHelperBase).createNewDirectoryAtPath(RESOURCE_DIR_BASE);
-    doReturn(chartMuseumServer)
-        .when(ngChartMuseumService)
-        .startChartMuseumServer(storeDelegateConfig, resourceDirectory);
+    doReturn(chartmuseumClient).when(ngChartmuseumClientFactory).createClient(storeDelegateConfig, resourceDirectory);
     doNothing()
         .when(helmTaskHelperBase)
-        .addChartMuseumRepo(REPO_NAME, REPO_DISPLAY_NAME, port, destinationDirectory, V3, timeoutInMillis, "");
+        .addChartMuseumRepo(
+            REPO_NAME, REPO_DISPLAY_NAME, CHARTMUSEUM_SERVER_PORT, destinationDirectory, V3, timeoutInMillis, "");
     doNothing()
         .when(helmTaskHelperBase)
         .fetchChartFromRepo(REPO_NAME, REPO_DISPLAY_NAME, CHART_NAME, CHART_VERSION, destinationDirectory, V3, null,
@@ -513,11 +521,12 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
 
     helmTaskHelperBase.downloadChartFilesUsingChartMuseum(manifest, destinationDirectory, timeoutInMillis);
 
-    verify(ngChartMuseumService, times(1)).startChartMuseumServer(storeDelegateConfig, resourceDirectory);
-    verify(ngChartMuseumService, times(1)).stopChartMuseumServer(chartMuseumServer);
+    verify(ngChartmuseumClientFactory, times(1)).createClient(storeDelegateConfig, resourceDirectory);
+    verify(chartmuseumClient, times(1)).start();
+    verify(chartmuseumClient, times(1)).stop(chartMuseumServer);
     verify(helmTaskHelperBase, times(1))
-        .addChartMuseumRepo(
-            REPO_NAME + "-some-bucket", REPO_DISPLAY_NAME, port, destinationDirectory, V3, timeoutInMillis, "");
+        .addChartMuseumRepo(REPO_NAME + "-some-bucket", REPO_DISPLAY_NAME, CHARTMUSEUM_SERVER_PORT,
+            destinationDirectory, V3, timeoutInMillis, "");
     verify(helmTaskHelperBase, times(1))
         .fetchChartFromRepo(REPO_NAME + "-some-bucket", REPO_DISPLAY_NAME, CHART_NAME, CHART_VERSION,
             destinationDirectory, V3, null, timeoutInMillis, false, "");
@@ -840,13 +849,12 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
     String repoUrl = "https://localhost:9999/";
     String directory = "dir";
     long timeout = 90000L;
-    final ChartMuseumServer chartMuseumServer = ChartMuseumServer.builder().port(9999).build();
 
     HelmChartManifestDelegateConfig helmChartManifestDelegateConfig =
         getHelmChartManifestDelegateConfig(repoUrl, null, null, V3, GCS_HELM);
-    doReturn(chartMuseumServer)
-        .when(ngChartMuseumService)
-        .startChartMuseumServer(helmChartManifestDelegateConfig.getStoreDelegateConfig(), RESOURCE_DIR_BASE);
+    doReturn(chartmuseumClient)
+        .when(ngChartmuseumClientFactory)
+        .createClient(helmChartManifestDelegateConfig.getStoreDelegateConfig(), RESOURCE_DIR_BASE);
     doReturn(new ProcessResult(0, null)).when(processExecutor).execute();
     doAnswer(invocationOnMock -> invocationOnMock.getArgumentAt(0, String.class))
         .when(helmTaskHelperBase)
@@ -865,8 +873,10 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
     assertThat(chartVersions.get(0)).isEqualTo("1.0.2");
     assertThat(chartVersions.get(1)).isEqualTo("1.0.1");
     verify(processExecutor, times(1)).execute();
-    verify(ngChartMuseumService)
-        .startChartMuseumServer(helmChartManifestDelegateConfig.getStoreDelegateConfig(), RESOURCE_DIR_BASE);
+    verify(ngChartmuseumClientFactory)
+        .createClient(helmChartManifestDelegateConfig.getStoreDelegateConfig(), RESOURCE_DIR_BASE);
+    verify(chartmuseumClient).start();
+    verify(chartmuseumClient).stop(chartMuseumServer);
   }
 
   @Test
@@ -916,13 +926,12 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
     String repoUrl = "https://localhost:9999/";
     String directory = "dir";
     long timeout = 90000L;
-    final ChartMuseumServer chartMuseumServer = ChartMuseumServer.builder().port(9999).build();
 
     HelmChartManifestDelegateConfig helmChartManifestDelegateConfig =
         getHelmChartManifestDelegateConfig(repoUrl, null, null, V3, GCS_HELM);
-    doReturn(chartMuseumServer)
-        .when(ngChartMuseumService)
-        .startChartMuseumServer(helmChartManifestDelegateConfig.getStoreDelegateConfig(), RESOURCE_DIR_BASE);
+    doReturn(chartmuseumClient)
+        .when(ngChartmuseumClientFactory)
+        .createClient(helmChartManifestDelegateConfig.getStoreDelegateConfig(), RESOURCE_DIR_BASE);
     doAnswer(new Answer() {
       private int count = 0;
       public Object answer(InvocationOnMock invocation) throws TimeoutException {
@@ -944,9 +953,10 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
     assertThatThrownBy(() -> helmTaskHelperBase.fetchChartVersions(helmChartManifestDelegateConfig, timeout, directory))
         .isInstanceOf(HelmClientException.class)
         .hasMessageContaining("[Timed out] Helm chart fetch versions command failed ");
-    verify(ngChartMuseumService)
-        .startChartMuseumServer(helmChartManifestDelegateConfig.getStoreDelegateConfig(), RESOURCE_DIR_BASE);
-    verify(ngChartMuseumService).stopChartMuseumServer(chartMuseumServer);
+    verify(ngChartmuseumClientFactory)
+        .createClient(helmChartManifestDelegateConfig.getStoreDelegateConfig(), RESOURCE_DIR_BASE);
+    verify(chartmuseumClient).start();
+    verify(chartmuseumClient).stop(chartMuseumServer);
   }
 
   @Test
@@ -960,13 +970,13 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
 
     HelmChartManifestDelegateConfig helmChartManifestDelegateConfig =
         getHelmChartManifestDelegateConfig(repoUrl, null, null, V3, GCS_HELM);
-    doNothing().when(ngChartMuseumService).stopChartMuseumServer(chartMuseumServer);
     doReturn(new ProcessResult(0, null)).when(processExecutor).execute();
     doNothing().when(helmTaskHelperBase).cleanup(directory);
 
     helmTaskHelperBase.cleanupAfterCollection(helmChartManifestDelegateConfig, directory, timeout);
     verify(helmTaskHelperBase).cleanup(directory);
     verify(processExecutor).execute();
+    verify(ngChartmuseumClientFactory, never()).createClient(any(StoreDelegateConfig.class), anyString());
   }
 
   @Test

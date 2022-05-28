@@ -1,5 +1,6 @@
-name: dev
-identifier: dev
+environmentRef: envId
+name: envId
+identifier: envId
 tags: []
 description: ""
 orgIdentifier: my_org
@@ -15,19 +16,20 @@ serviceOverrides:
         type: String
         value: value1
 infrastructureDefinitions:
-  - identifier: id1
-    type: KubernetesDirect
-    spec:
-      connectorRef: org.KubernetesConnectorForAutomationTest
-      namespace: cdp-k8s-qa-sanity
-      releaseName: releasename-681406
-  - identifier: id2
-    type: NativeHelm
-    spec:
-      connectorRef: org.KubernetesConnectorForAutomationTest
-      namespace: cdp-k8s-dev-sanity
-GitopsClusters:
-  - identifier: id1
-    name: c1 # do we need name also ?
-  - identifier: id2
-    name: c2
+  - ref: id1
+    infrastructureDefinition:
+      identifier: id1
+      type: KubernetesDirect
+      spec:
+        connectorRef: org.KubernetesConnectorForAutomationTest
+        namespace: cdp-k8s-qa-sanity
+        releaseName: releasename-681406
+  - ref: id2
+    infrastructureDefinition:
+      identifier: id2
+      type: KubernetesDirect
+      spec:
+        connectorRef: org.KubernetesConnectorForAutomationTest
+        namespace: cdp-k8s-qa-sanity
+        releaseName: releasename-681406
+

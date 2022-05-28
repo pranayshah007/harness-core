@@ -16,11 +16,13 @@ import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.manifest.ManifestType;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.manifest.yaml.ValuesManifestOutcome;
+import io.harness.delegate.task.helm.HelmFetchFileResult;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Value;
 import org.springframework.data.annotation.TypeAlias;
@@ -34,6 +36,7 @@ public class K8sStepPassThroughData implements PassThroughData {
   ManifestOutcome k8sManifestOutcome;
   List<ManifestOutcome> manifestOutcomeList;
   InfrastructureOutcome infrastructure;
+  Map<String, HelmFetchFileResult> helmValuesFileMapContents;
   String helmValuesFileContent;
 
   public List<ValuesManifestOutcome> getValuesManifestOutcomes() {

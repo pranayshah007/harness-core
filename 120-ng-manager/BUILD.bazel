@@ -111,7 +111,6 @@ shared_dependencies = [
     "@maven//:com_fasterxml_jackson_module_jackson_module_parameter_names",
     "@maven//:com_fasterxml_uuid_java_uuid_generator",
     "@maven//:com_fasterxml_woodstox_woodstox_core",
-    "@maven//:com_github_allbegray_slack_api",
     "@maven//:com_github_ben_manes_caffeine_caffeine",
     "@maven//:com_github_ben_manes_caffeine_jcache",
     "@maven//:com_github_dikhan_pagerduty_client",

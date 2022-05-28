@@ -25,6 +25,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
 import io.harness.execution.PlanExecution;
 import io.harness.execution.PlanExecutionMetadata;
+import io.harness.gitsync.beans.StoreType;
 import io.harness.logging.AutoLogContext;
 import io.harness.notification.bean.NotificationRules;
 import io.harness.plan.Plan;
@@ -155,13 +156,13 @@ public class ExecutionHelper {
       RetryExecutionInfo retryExecutionInfo = buildRetryInfo(isRetry, originalExecutionId);
 
       String pipelineYaml = getPipelineYamlAndValidate(mergedRuntimeInputYaml, pipelineEntity);
+      BasicPipeline basicPipeline = YamlUtils.read(pipelineYaml, BasicPipeline.class);
       StagesExecutionInfo stagesExecutionInfo = StagesExecutionInfo.builder()
                                                     .isStagesExecution(false)
                                                     .pipelineYamlToRun(pipelineYaml)
-                                                    .allowStagesExecution(pipelineEntity.shouldAllowStageExecutions())
+                                                    .allowStagesExecution(basicPipeline.isAllowStageExecutions())
                                                     .build();
       if (EmptyPredicate.isNotEmpty(stagesToRun)) {
-        BasicPipeline basicPipeline = YamlUtils.read(pipelineYaml, BasicPipeline.class);
         if (!basicPipeline.isAllowStageExecutions()) {
           throw new InvalidRequestException(
               String.format("Stage executions are not allowed for pipeline [%s]", basicPipeline.getIdentifier()));
@@ -185,7 +186,7 @@ public class ExecutionHelper {
           stagesExecutionInfo.getPipelineYamlToRun());
       planExecutionMetadataBuilder.expandedPipelineJson(expandedJson);
       PlanExecutionMetadata planExecutionMetadata = planExecutionMetadataBuilder.build();
-      BasicPipeline basicPipeline = YamlUtils.read(planExecutionMetadata.getYaml(), BasicPipeline.class);
+      basicPipeline = YamlUtils.read(planExecutionMetadata.getYaml(), BasicPipeline.class);
       ExecutionMetadata executionMetadata = buildExecutionMetadata(pipelineEntity.getIdentifier(), moduleType,
           triggerInfo, pipelineEntity, executionId, retryExecutionInfo, basicPipeline.getNotificationRules());
       return ExecArgs.builder().metadata(executionMetadata).planExecutionMetadata(planExecutionMetadata).build();
@@ -207,7 +208,8 @@ public class ExecutionHelper {
             .setRetryInfo(retryExecutionInfo)
             .setPrincipalInfo(principalInfoHelper.getPrincipalInfoFromSecurityContext())
             .setIsNotificationConfigured(EmptyPredicate.isNotEmpty(notificationRules));
-    ByteString gitSyncBranchContext = pmsGitSyncHelper.getGitSyncBranchContextBytesThreadLocal(pipelineEntity);
+    ByteString gitSyncBranchContext = pmsGitSyncHelper.getGitSyncBranchContextBytesThreadLocal(
+        pipelineEntity, pipelineEntity.getStoreType(), pipelineEntity.getRepo());
     if (gitSyncBranchContext != null) {
       builder.setGitSyncBranchContext(gitSyncBranchContext);
     }
@@ -246,9 +248,14 @@ public class ExecutionHelper {
     pipelineYaml = InputSetSanitizer.trimValues(pipelineYaml);
     pmsYamlSchemaService.validateYamlSchema(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
         pipelineEntity.getProjectIdentifier(), pipelineYaml);
-    pipelineRbacServiceImpl.extractAndValidateStaticallyReferredEntities(pipelineEntity.getAccountId(),
-        pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineEntity.getIdentifier(),
-        pipelineYaml);
+    if (pipelineEntity.getStoreType() == null || pipelineEntity.getStoreType() == StoreType.INLINE) {
+      // For REMOTE Pipelines, entity setup usage framework cannot be relied upon. That is because the setup usages can
+      // be outdated wrt the YAML we find on Git during execution. This means the fail fast approach that we have for
+      // RBAC checks can't be provided for remote pipelines
+      pipelineRbacServiceImpl.extractAndValidateStaticallyReferredEntities(pipelineEntity.getAccountId(),
+          pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineEntity.getIdentifier(),
+          pipelineYaml);
+    }
     return pipelineYaml;
   }
 

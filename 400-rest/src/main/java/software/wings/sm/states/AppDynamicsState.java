@@ -340,7 +340,7 @@ public class AppDynamicsState extends AbstractMetricAnalysisState {
             .stateExecutionId(context.getStateExecutionInstanceId())
             .dataCollectionStartTime(dataCollectionStartTimeStamp)
             .dataCollectionEndTime(
-                dataCollectionStartTimeStamp + TimeUnit.MINUTES.toMillis(Integer.parseInt(getTimeDuration())))
+                dataCollectionStartTimeStamp + TimeUnit.MINUTES.toMillis(Integer.parseInt(getTimeDuration(context))))
             .executionData(executionData)
             .build(),
         waitIds);
@@ -397,7 +397,7 @@ public class AppDynamicsState extends AbstractMetricAnalysisState {
             .workflowExecutionId(context.getWorkflowExecutionId())
             .serviceId(getPhaseServiceId(context))
             .startTime(dataCollectionStartTimeStamp)
-            .collectionTime(Integer.parseInt(getTimeDuration()))
+            .collectionTime(Integer.parseInt(getTimeDuration(context)))
             .appId(Long.parseLong(finalApplicationId))
             .tierId(finalTierId)
             .dataCollectionMinute(0)
@@ -408,18 +408,19 @@ public class AppDynamicsState extends AbstractMetricAnalysisState {
             .build();
 
     String waitId = generateUuid();
-    delegateTasks.add(DelegateTask.builder()
-                          .accountId(appService.get(context.getAppId()).getAccountId())
-                          .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, context.getAppId())
-                          .waitId(waitId)
-                          .data(TaskData.builder()
-                                    .async(true)
-                                    .taskType(TaskType.APPDYNAMICS_COLLECT_METRIC_DATA.name())
-                                    .parameters(new Object[] {dataCollectionInfo})
-                                    .timeout(TimeUnit.MINUTES.toMillis(Integer.parseInt(getTimeDuration()) + 120))
-                                    .build())
-                          .setupAbstraction(Cd1SetupFields.ENV_ID_FIELD, envId)
-                          .build());
+    delegateTasks.add(
+        DelegateTask.builder()
+            .accountId(appService.get(context.getAppId()).getAccountId())
+            .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, context.getAppId())
+            .waitId(waitId)
+            .data(TaskData.builder()
+                      .async(true)
+                      .taskType(TaskType.APPDYNAMICS_COLLECT_METRIC_DATA.name())
+                      .parameters(new Object[] {dataCollectionInfo})
+                      .timeout(TimeUnit.MINUTES.toMillis(Integer.parseInt(getTimeDuration(context)) + 120))
+                      .build())
+            .setupAbstraction(Cd1SetupFields.ENV_ID_FIELD, envId)
+            .build());
     return waitId;
   }
 

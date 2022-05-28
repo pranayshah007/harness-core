@@ -43,4 +43,6 @@ public class EnvironmentGroupYaml implements Visitable {
   @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) private ParameterField<String> envGroupRef;
 
   List<EnvironmentYamlV2> envGroupConfig;
+
+  boolean deployToAll;
 }

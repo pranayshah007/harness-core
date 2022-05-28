@@ -103,7 +103,6 @@ import software.wings.beans.GitConfig;
 import software.wings.beans.GitConfig.ProviderType;
 import software.wings.beans.GitFileConfig;
 import software.wings.beans.appmanifest.ManifestFile;
-import software.wings.beans.appmanifest.ManifestFileDTO;
 import software.wings.beans.appmanifest.StoreType;
 import software.wings.beans.command.ExecutionLogCallback;
 import software.wings.beans.yaml.GitFetchFilesResult;
@@ -405,8 +404,10 @@ public class K8sTaskHelperTest extends CategoryTest {
 
     // only values.yaml
     FileData fileData = prepareValuesYamlFile();
-    ManifestFileDTO values =
-        ManifestFileDTO.builder().fileName(fileData.getFileName()).fileContent(fileData.getFileContent()).build();
+    software.wings.beans.dto.ManifestFile values = software.wings.beans.dto.ManifestFile.builder()
+                                                       .fileName(fileData.getFileName())
+                                                       .fileContent(fileData.getFileContent())
+                                                       .build();
     assertThat(helper.fetchManifestFilesAndWriteToDirectory(
                    K8sDelegateManifestConfig.builder().manifestFiles(asList(values)).manifestStoreTypes(Local).build(),
                    manifestFileDirectory, logCallback, LONG_TIMEOUT_INTERVAL))
@@ -511,9 +512,13 @@ public class K8sTaskHelperTest extends CategoryTest {
     assertThat(file.list()).contains("test.yaml");
   }
 
-  private List<ManifestFileDTO> convertFileDataToManifestFiles(List<FileData> fileDataList) {
+  private List<software.wings.beans.dto.ManifestFile> convertFileDataToManifestFiles(List<FileData> fileDataList) {
     return fileDataList.stream()
-        .map(p -> ManifestFileDTO.builder().fileName(p.getFileName()).fileContent(p.getFileContent()).build())
+        .map(p
+            -> software.wings.beans.dto.ManifestFile.builder()
+                   .fileName(p.getFileName())
+                   .fileContent(p.getFileContent())
+                   .build())
         .collect(Collectors.toList());
   }
 
@@ -1022,7 +1027,7 @@ public class K8sTaskHelperTest extends CategoryTest {
     K8sDelegateManifestConfig config =
         K8sDelegateManifestConfig.builder()
             .manifestStoreTypes(Remote)
-            .manifestFiles(singletonList(ManifestFileDTO.builder().accountId("1234").build()))
+            .manifestFiles(singletonList(software.wings.beans.dto.ManifestFile.builder().accountId("1234").build()))
             .build();
 
     FileData fileData = FileData.builder().fileName("test").build();
@@ -1053,7 +1058,7 @@ public class K8sTaskHelperTest extends CategoryTest {
     K8sDelegateManifestConfig config =
         K8sDelegateManifestConfig.builder()
             .manifestStoreTypes(Remote)
-            .manifestFiles(singletonList(ManifestFileDTO.builder().accountId("1234").build()))
+            .manifestFiles(singletonList(software.wings.beans.dto.ManifestFile.builder().accountId("1234").build()))
             .build();
     KubernetesResource resource = KubernetesResource.builder().spec("spec").build();
 

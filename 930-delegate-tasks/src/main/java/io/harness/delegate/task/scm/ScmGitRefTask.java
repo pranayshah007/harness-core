@@ -139,7 +139,7 @@ public class ScmGitRefTask extends AbstractDelegateRunnableTask {
             .findCommitResponse(commitResponse.toByteArray())
             .build();
       }
-      case CREATE_NEW_BRANCH: {
+      case CREATE_BRANCH: {
         final CreateBranchResponse createBranchResponse = scmDelegateClient.processScmRequest(c
             -> scmServiceClient.createNewBranch(scmGitRefTaskParams.getScmConnector(), scmGitRefTaskParams.getBranch(),
                 scmGitRefTaskParams.getBaseBranch(), SCMGrpc.newBlockingStub(c)));
@@ -172,6 +172,15 @@ public class ScmGitRefTask extends AbstractDelegateRunnableTask {
         return ScmGitRefTaskResponseData.builder()
             .gitRefType(scmGitRefTaskParams.getGitRefType())
             .getUserRepoResponse(getUserRepoResponse.toByteArray())
+            .build();
+      }
+      case CREATE_BRANCH_V2: {
+        final CreateBranchResponse createBranchResponse = scmDelegateClient.processScmRequest(c
+            -> scmServiceClient.createNewBranchV2(scmGitRefTaskParams.getScmConnector(),
+                scmGitRefTaskParams.getBranch(), scmGitRefTaskParams.getBaseBranch(), SCMGrpc.newBlockingStub(c)));
+        return ScmGitRefTaskResponseData.builder()
+            .gitRefType(scmGitRefTaskParams.getGitRefType())
+            .createBranchResponse(createBranchResponse.toByteArray())
             .build();
       }
       default:

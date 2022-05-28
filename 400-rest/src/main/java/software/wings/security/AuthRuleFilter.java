@@ -699,7 +699,9 @@ public class AuthRuleFilter implements ContainerRequestFilter {
     Method resourceMethod = resourceInfo.getResourceMethod();
 
     return resourceMethod.getAnnotation(DelegateAuth.class) != null
-        || resourceClass.getAnnotation(DelegateAuth.class) != null;
+        || resourceClass.getAnnotation(DelegateAuth.class) != null
+        || resourceMethod.getAnnotation(io.harness.security.annotations.DelegateAuth2.class) != null
+        || resourceClass.getAnnotation(io.harness.security.annotations.DelegateAuth2.class) != null;
   }
 
   private boolean learningEngineServiceAPI() {

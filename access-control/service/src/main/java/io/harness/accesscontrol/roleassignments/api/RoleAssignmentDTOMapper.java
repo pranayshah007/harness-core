@@ -129,6 +129,36 @@ public class RoleAssignmentDTOMapper {
         .build();
   }
 
+  public static RoleAssignmentFilter fromDTOIncludingChildScopes(
+      String scopeIdentifier, RoleAssignmentFilterDTO object) {
+    return RoleAssignmentFilter.builder()
+        .scopeFilter(scopeIdentifier)
+        .includeChildScopes(true)
+        .roleFilter(object.getRoleFilter() == null ? new HashSet<>() : object.getRoleFilter())
+        .resourceGroupFilter(
+            object.getResourceGroupFilter() == null ? new HashSet<>() : object.getResourceGroupFilter())
+        .principalFilter(object.getPrincipalFilter() == null
+                ? new HashSet<>()
+                : object.getPrincipalFilter()
+                      .stream()
+                      .map(principalDTO
+                          -> Principal.builder()
+                                 .principalScopeLevel(principalDTO.getScopeLevel())
+                                 .principalType(principalDTO.getType())
+                                 .principalIdentifier(principalDTO.getIdentifier())
+                                 .build())
+                      .collect(Collectors.toSet()))
+        .principalTypeFilter(
+            object.getPrincipalTypeFilter() == null ? new HashSet<>() : object.getPrincipalTypeFilter())
+        .principalScopeLevelFilter(
+            object.getPrincipalScopeLevelFilter() == null ? new HashSet<>() : object.getPrincipalScopeLevelFilter())
+        .managedFilter(Objects.isNull(object.getHarnessManagedFilter())
+                ? ManagedFilter.NO_FILTER
+                : buildFromSet(object.getHarnessManagedFilter()))
+        .disabledFilter(object.getDisabledFilter() == null ? new HashSet<>() : object.getDisabledFilter())
+        .build();
+  }
+
   public static RoleAssignmentValidationRequest fromDTO(Scope scope, RoleAssignmentValidationRequestDTO object) {
     return RoleAssignmentValidationRequest.builder()
         .roleAssignment(fromDTO(scope, object.getRoleAssignment()))

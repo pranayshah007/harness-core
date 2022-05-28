@@ -75,7 +75,7 @@ public class TriggerHelper {
     switch (parsedPayload.getPayloadCase()) {
       case PR:
         PullRequest pullRequest = parsedPayload.getPr().getPr();
-        jsonObject.put(BRANCH, pullRequest.getTarget());
+        jsonObject.put(BRANCH, pullRequest.getSource());
         jsonObject.put(TARGET_BRANCH, pullRequest.getTarget());
         jsonObject.put(SOURCE_BRANCH, pullRequest.getSource());
         jsonObject.put(EVENT, PR);

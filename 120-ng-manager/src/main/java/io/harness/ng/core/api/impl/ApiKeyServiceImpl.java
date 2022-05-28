@@ -280,7 +280,7 @@ public class ApiKeyServiceImpl implements ApiKeyService {
   public long deleteAllByParentIdentifier(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       ApiKeyType apiKeyType, String parentIdentifier) {
     return apiKeyRepository
-        .deleteAllByAccountIdentifierAndOrgIdentifierAndParentIdentifierAndApiKeyTypeAndParentIdentifier(
+        .deleteAllByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndApiKeyTypeAndParentIdentifier(
             accountIdentifier, orgIdentifier, projectIdentifier, apiKeyType, parentIdentifier);
   }
 

@@ -131,7 +131,6 @@ public class FullSyncAccumulatorServiceImplTest extends GitSyncTestBase {
     fullSyncAccumulatorService.triggerFullSync(fullSyncEventRequest, messageId);
     verify(fullSyncJobService, times(1)).save(any());
   }
-
   @Test
   @Owner(developers = DEEPAK)
   @Category(UnitTests.class)

@@ -23,6 +23,7 @@ import static io.harness.delegate.message.ManagerMessageConstants.USE_STORAGE_PR
 import static io.harness.delegate.message.MessageConstants.DELEGATE_DASH;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_GO_AHEAD;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_HEARTBEAT;
+import static io.harness.delegate.message.MessageConstants.DELEGATE_ID;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_IS_NEW;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_JRE_VERSION;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_MIGRATE;
@@ -36,11 +37,13 @@ import static io.harness.delegate.message.MessageConstants.DELEGATE_START_GRPC;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_STOP_ACQUIRING;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_STOP_GRPC;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_SWITCH_STORAGE;
+import static io.harness.delegate.message.MessageConstants.DELEGATE_TOKEN_NAME;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_UPGRADE_NEEDED;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_UPGRADE_PENDING;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_UPGRADE_STARTED;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_VERSION;
 import static io.harness.delegate.message.MessageConstants.MIGRATE_TO_JRE_VERSION;
+import static io.harness.delegate.message.MessageConstants.UNREGISTERED;
 import static io.harness.delegate.message.MessageConstants.UPGRADING_DELEGATE;
 import static io.harness.delegate.message.MessageConstants.WATCHER_DATA;
 import static io.harness.delegate.message.MessageConstants.WATCHER_HEARTBEAT;
@@ -71,7 +74,6 @@ import static io.harness.utils.MemoryPerformanceUtils.memoryUsage;
 
 import static java.lang.Boolean.TRUE;
 import static java.lang.String.format;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.time.Duration.ofMinutes;
 import static java.time.Duration.ofSeconds;
 import static java.util.Arrays.asList;
@@ -160,10 +162,10 @@ import io.harness.version.VersionInfoManager;
 
 import software.wings.beans.DelegateTaskFactory;
 import software.wings.beans.TaskType;
-import software.wings.beans.command.Command;
 import software.wings.beans.command.CommandExecutionContext;
 import software.wings.beans.delegation.CommandParameters;
 import software.wings.beans.delegation.ShellScriptParameters;
+import software.wings.beans.dto.Command;
 import software.wings.beans.shellscript.provisioner.ShellScriptProvisionParameters;
 import software.wings.delegatetasks.ActivityBasedLogSanitizer;
 import software.wings.delegatetasks.DelegateLogService;
@@ -368,6 +370,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   private final AtomicInteger maxValidatingTasksCount = new AtomicInteger();
   private final AtomicInteger maxExecutingTasksCount = new AtomicInteger();
   private final AtomicInteger maxExecutingFuturesCount = new AtomicInteger();
+  private final AtomicInteger heartbeatSuccessCalls = new AtomicInteger();
 
   private final AtomicLong lastHeartbeatSentAt = new AtomicLong(System.currentTimeMillis());
   private final AtomicLong frozenAt = new AtomicLong(-1);
@@ -408,7 +411,8 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       || TRUE.toString().equals(System.getenv().get("MULTI_VERSION"));
   private boolean isImmutableDelegate;
 
-  private double maxRSSThresholdMB;
+  private double maxProcessRSSThresholdMB;
+  private double maxPodRSSThresholdMB;
   private final AtomicBoolean rejectRequest = new AtomicBoolean(false);
 
   public static Optional<String> getDelegateId() {
@@ -435,6 +439,32 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   @SuppressWarnings("unchecked")
   public void run(final boolean watched, final boolean isImmutableDelegate) {
     this.isImmutableDelegate = isImmutableDelegate;
+
+    try {
+      // Initialize delegate process in background.
+      backgroundExecutor.submit(() -> { initDelegateProcess(watched); });
+
+      if (!this.isImmutableDelegate) {
+        // Wait till we receive notify event.
+        log.info("Waiting indefinitely for stop event");
+        synchronized (waiter) {
+          while (waiter.get()) {
+            waiter.wait();
+          }
+        }
+        log.info("Got stop message from watcher, shutting down now");
+        clearData();
+      }
+
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      log.error("Exception while starting/running delegate", e);
+    } catch (Exception e) {
+      log.error("Exception while starting/running delegate", e);
+    }
+  }
+
+  private void initDelegateProcess(final boolean watched) {
     try {
       accountId = delegateConfiguration.getAccountId();
       if (perpetualTaskWorker != null) {
@@ -541,7 +571,9 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       DelegateAgentCommonVariables.setDelegateId(delegateId);
       log.info("[New] Delegate registered in {} ms", clock.millis() - start);
       DelegateStackdriverLogAppender.setDelegateId(delegateId);
-      if (delegateConfiguration.isDynamicHandlingOfRequestEnabled()) {
+      if (delegateConfiguration.isDynamicHandlingOfRequestEnabled()
+          && DeployMode.KUBERNETES.name().equals(System.getenv().get(DeployMode.DEPLOY_MODE))) {
+        // Enable dynamic throttling of requests only for kubernetes pod(s)
         startDynamicHandlingOfTasks();
       }
 
@@ -639,20 +671,6 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
           delegateLogService.registerLogSanitizer(new GenericLogSanitizer(new HashSet<>(localSecrets.values())));
         }
       }
-
-      if (!this.isImmutableDelegate) {
-        synchronized (waiter) {
-          while (waiter.get()) {
-            waiter.wait();
-          }
-        }
-
-        clearData();
-      }
-
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-      log.error("Exception while starting/running delegate", e);
     } catch (RuntimeException | IOException e) {
       log.error("Exception while starting/running delegate", e);
     }
@@ -666,15 +684,29 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
 
   private void maybeUpdateTaskRejectionStatus() {
     final long currentRSSMB = MemoryHelper.getProcessMemoryMB();
-    if (currentRSSMB >= maxRSSThresholdMB) {
-      log.warn("Reached resource threshold, temporarily reject incoming task request. CurrentRSSMB {} ThresholdMB {}",
-          currentRSSMB, maxRSSThresholdMB);
+    if (currentRSSMB >= maxProcessRSSThresholdMB) {
+      log.warn(
+          "Reached resource threshold, temporarily reject incoming task request. CurrentProcessRSSMB {} ThresholdMB {}",
+          currentRSSMB, maxProcessRSSThresholdMB);
       rejectRequest.compareAndSet(false, true);
       return;
     }
 
+    final long currentPodRSSMB = MemoryHelper.getPodRSSFromCgroupMB();
+    if (currentPodRSSMB >= maxPodRSSThresholdMB) {
+      log.warn(
+          "Reached resource threshold, temporarily reject incoming task request. CurrentPodRSSMB {} ThresholdMB {}",
+          currentPodRSSMB, maxPodRSSThresholdMB);
+      rejectRequest.compareAndSet(false, true);
+      return;
+    }
+    log.debug("Process info CurrentProcessRSSMB {} ThresholdProcessMB {} currentPodRSSMB {} ThresholdPodMemoryMB {}",
+        currentRSSMB, maxProcessRSSThresholdMB, currentPodRSSMB, maxPodRSSThresholdMB);
+
     if (rejectRequest.compareAndSet(true, false)) {
-      log.info("Accepting incoming task request. CurrentRSSMB {} ThresholdMB {}", currentRSSMB, maxRSSThresholdMB);
+      log.info(
+          "Accepting incoming task request. CurrentProcessRSSMB {} ThresholdProcessMB {} currentPodRSSMB {} ThresholdPodMemoryMB {}",
+          currentRSSMB, maxProcessRSSThresholdMB, currentPodRSSMB, maxPodRSSThresholdMB);
     }
   }
 
@@ -698,6 +730,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       URIBuilder uriBuilder =
           new URIBuilder(delegateConfiguration.getManagerUrl().replace("/api/", "/stream/") + "delegate/" + accountId)
               .addParameter("delegateId", delegateId)
+              .addParameter("delegateTokenName", DelegateAgentCommonVariables.getDelegateTokenName())
               .addParameter("delegateConnectionId", delegateConnectionId)
               .addParameter("token", tokenGenerator.getToken("https", "localhost", 9090, HOST_NAME))
               .addParameter("sequenceNum", getSequenceNumForEcsDelegate())
@@ -1036,7 +1069,9 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         continue;
       }
       builder.delegateId(responseDelegateId);
-      log.info("Delegate registered with id {}", responseDelegateId);
+      DelegateAgentCommonVariables.setDelegateTokenName(delegateResponse.getDelegateTokenName());
+      log.info("Delegate registered with id {} and delegate token name {}", responseDelegateId,
+          delegateResponse.getDelegateTokenName());
       return responseDelegateId;
     }
 
@@ -1093,7 +1128,8 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     File profile = new File("profile");
     if (profile.exists()) {
       try {
-        return JsonUtils.asObject(FileUtils.readFileToString(profile, UTF_8), DelegateProfileParams.class);
+        return JsonUtils.asObject(
+            FileUtils.readFileToString(profile, java.nio.charset.StandardCharsets.UTF_8), DelegateProfileParams.class);
       } catch (Exception e) {
         log.error("Error reading profile", e);
       }
@@ -1174,7 +1210,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         FileUtils.forceDelete(profileFile);
       }
       FileUtils.touch(profileFile);
-      FileUtils.write(profileFile, JsonUtils.asPrettyJson(profile), UTF_8);
+      FileUtils.write(profileFile, JsonUtils.asPrettyJson(profile), java.nio.charset.StandardCharsets.UTF_8);
 
       File resultFile = new File("profile.result");
       if (resultFile.exists()) {
@@ -1387,16 +1423,23 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   private void startDynamicHandlingOfTasks() {
     log.info("Starting dynamic handling of tasks tp {} ms", 1000);
     try {
-      maxRSSThresholdMB = MemoryHelper.getProcessMaxMemoryMB() * RESOURCE_USAGE_THRESHOLD;
+      maxProcessRSSThresholdMB = MemoryHelper.getProcessMaxMemoryMB() * RESOURCE_USAGE_THRESHOLD;
+      maxPodRSSThresholdMB = MemoryHelper.getPodMaxMemoryMB() * RESOURCE_USAGE_THRESHOLD;
+
+      if (maxPodRSSThresholdMB < 1 || maxProcessRSSThresholdMB < 1) {
+        log.error("Error while fetching memory information, will not enable dynamic handling of tasks");
+        return;
+      }
+
       healthMonitorExecutor.scheduleAtFixedRate(() -> {
         try {
           maybeUpdateTaskRejectionStatus();
         } catch (Exception ex) {
           log.error("Exception while determining delegate behaviour", ex);
         }
-      }, 0, 1, TimeUnit.SECONDS);
+      }, 0, 5, TimeUnit.SECONDS);
     } catch (Exception ex) {
-      log.error("Error while fetching maxRSS, will not enable dynamic handling of tasks");
+      log.error("Error while fetching memory information, will not enable dynamic handling of tasks");
     }
   }
 
@@ -1427,9 +1470,14 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     healthMonitorExecutor.scheduleAtFixedRate(() -> {
       try {
         sendHeartbeat(builder);
+        if (heartbeatSuccessCalls.incrementAndGet() > 100) {
+          log.info("Sent {} calls to manager", heartbeatSuccessCalls.getAndSet(0));
+        }
       } catch (Exception ex) {
         log.error("Exception while sending heartbeat", ex);
       }
+      // Log delegate performance after every 60 sec i.e. heartbeat interval.
+      logCurrentTasks();
     }, 0, delegateConfiguration.getHeartbeatIntervalMs(), TimeUnit.MILLISECONDS);
   }
 
@@ -1445,19 +1493,19 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   }
 
   private void startLocalHeartbeat() {
+    log.debug("Starting local heartbeat");
     healthMonitorExecutor.scheduleAtFixedRate(() -> {
       try {
-        log.debug("Starting local heartbeat.");
+        log.debug("Sending local heartbeat");
         sendLocalHeartBeat();
       } catch (Exception e) {
         log.error("Exception while scheduling local heartbeat and filling status data", e);
       }
-      logCurrentTasks();
     }, 0, LOCAL_HEARTBEAT_INTERVAL, TimeUnit.SECONDS);
   }
 
   private void sendLocalHeartBeat() {
-    log.debug("Filling status data.");
+    log.debug("Filling status data");
     Map<String, Object> statusData = new HashMap<>();
     if (selfDestruct.get()) {
       statusData.put(DELEGATE_SELF_DESTRUCT, true);
@@ -1469,6 +1517,9 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       statusData.put(DELEGATE_UPGRADE_NEEDED, upgradeNeeded.get());
       statusData.put(DELEGATE_UPGRADE_PENDING, upgradePending.get());
       statusData.put(DELEGATE_SHUTDOWN_PENDING, !acquireTasks.get());
+      // dont pass null delegateId, instead pass "Unregistered" as delegateId
+      statusData.put(DELEGATE_ID, getDelegateId().orElse(UNREGISTERED));
+      statusData.put(DELEGATE_TOKEN_NAME, DelegateAgentCommonVariables.getDelegateTokenName());
       if (switchStorage.get() && !switchStorageMsgSent) {
         statusData.put(DELEGATE_SWITCH_STORAGE, TRUE);
         log.info("Switch storage message sent");
@@ -1677,7 +1728,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       return;
     }
 
-    log.info("Sending heartbeat...");
+    log.debug("Sending heartbeat...");
     try {
       updateBuilderIfEcsDelegate(builder);
       DelegateParams delegateParams =

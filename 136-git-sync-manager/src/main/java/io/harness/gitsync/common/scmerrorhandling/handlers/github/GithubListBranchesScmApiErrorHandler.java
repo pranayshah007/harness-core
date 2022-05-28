@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.NestedExceptionUtils;
-import io.harness.exception.ScmResourceNotFoundException;
+import io.harness.exception.ScmBadRequestException;
 import io.harness.exception.ScmUnauthorizedException;
 import io.harness.exception.ScmUnexpectedException;
 import io.harness.exception.WingsException;
@@ -34,8 +34,7 @@ public class GithubListBranchesScmApiErrorHandler implements ScmApiErrorHandler 
             new ScmUnauthorizedException(errorMessage));
       case 404:
         throw NestedExceptionUtils.hintWithExplanationException(ScmErrorHints.REPO_NOT_FOUND,
-            LIST_BRANCH_FAILED_MESSAGE + ScmErrorExplanations.REPO_NOT_FOUND,
-            new ScmResourceNotFoundException(errorMessage));
+            LIST_BRANCH_FAILED_MESSAGE + ScmErrorExplanations.REPO_NOT_FOUND, new ScmBadRequestException(errorMessage));
       default:
         log.error(String.format("Error while listing github branches: [%s: %s]", statusCode, errorMessage));
         throw new ScmUnexpectedException(errorMessage);

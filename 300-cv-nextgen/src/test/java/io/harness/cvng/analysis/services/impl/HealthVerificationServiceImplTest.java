@@ -227,10 +227,8 @@ public class HealthVerificationServiceImplTest extends CvNextGenTestBase {
   }
 
   private CVConfig getAppDCVConfig() {
-    AppDynamicsCVConfig cvConfig = new AppDynamicsCVConfig();
+    AppDynamicsCVConfig cvConfig = builderFactory.appDynamicsCVConfigBuilder().build();
     cvConfig.setProjectIdentifier(projectIdentifier);
-    cvConfig.setEnvIdentifier(envIdentifier);
-    cvConfig.setServiceIdentifier(serviceIdentifier);
     cvConfig.setAccountId(accountId);
     cvConfig.setUuid(cvConfigId);
     cvConfig.setCategory(CVMonitoringCategory.PERFORMANCE);
@@ -238,10 +236,8 @@ public class HealthVerificationServiceImplTest extends CvNextGenTestBase {
   }
 
   private CVConfig getSplunkConfig() {
-    SplunkCVConfig cvConfig = new SplunkCVConfig();
+    SplunkCVConfig cvConfig = builderFactory.splunkCVConfigBuilder().build();
     cvConfig.setProjectIdentifier(projectIdentifier);
-    cvConfig.setEnvIdentifier(envIdentifier);
-    cvConfig.setServiceIdentifier(serviceIdentifier);
     cvConfig.setAccountId(accountId);
     cvConfig.setUuid(cvConfigId + "-2");
     cvConfig.setCategory(CVMonitoringCategory.PERFORMANCE);

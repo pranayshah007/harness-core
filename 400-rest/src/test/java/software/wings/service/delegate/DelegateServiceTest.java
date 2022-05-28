@@ -3166,10 +3166,11 @@ public class DelegateServiceTest extends WingsBaseTest {
             .build(),
         ConnectionMode.POLLING);
 
+    final String version = versionInfoManager.getVersionInfo().getVersion();
+    when(accountService.getAccountPrimaryDelegateVersion(ACCOUNT_ID)).thenReturn(version);
     assertThat(delegateService.checkDelegateConnected(ACCOUNT_ID, DELEGATE_ID)).isTrue();
 
     delegateConnectionDao.delegateDisconnected(ACCOUNT_ID, delegateConnectionId);
-
     assertThat(delegateService.checkDelegateConnected(ACCOUNT_ID, DELEGATE_ID)).isFalse();
   }
 

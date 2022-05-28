@@ -31,4 +31,5 @@ public class DelegateTaskRequest {
   LinkedHashMap<String, String> logStreamingAbstractions;
   boolean forceExecute;
   int expressionFunctorToken;
+  List<String> eligibleToExecuteDelegateIds;
 }

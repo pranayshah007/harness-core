@@ -8,6 +8,7 @@
 package io.harness.batch.processing.config;
 
 import static io.harness.AuthorizationServiceHeader.BATCH_PROCESSING;
+import static io.harness.AuthorizationServiceHeader.MANAGER;
 
 import io.harness.annotations.retry.MethodExecutionHelper;
 import io.harness.annotations.retry.RetryOnException;
@@ -57,6 +58,7 @@ import io.harness.ff.FeatureFlagService;
 import io.harness.ff.FeatureFlagServiceImpl;
 import io.harness.govern.ProviderMethodInterceptor;
 import io.harness.instanceng.InstanceNGResourceClientModule;
+import io.harness.licensing.remote.NgLicenseHttpClientModule;
 import io.harness.lock.PersistentLocker;
 import io.harness.lock.noop.PersistentNoopLocker;
 import io.harness.metrics.modules.MetricsModule;
@@ -135,6 +137,8 @@ public class BatchProcessingModule extends AbstractModule {
         batchMainConfig.getNgManagerServiceSecret(), BATCH_PROCESSING.getServiceId(), ClientMode.PRIVILEGED));
     install(new InstanceNGResourceClientModule(batchMainConfig.getNgManagerServiceHttpClientConfig(),
         batchMainConfig.getNgManagerServiceSecret(), BATCH_PROCESSING.getServiceId(), ClientMode.PRIVILEGED));
+    install(NgLicenseHttpClientModule.getInstance(batchMainConfig.getNgManagerServiceHttpClientConfig(),
+        batchMainConfig.getNgManagerServiceSecret(), MANAGER.getServiceId()));
     install(new AbstractTelemetryModule() {
       @Override
       public TelemetryConfiguration telemetryConfiguration() {

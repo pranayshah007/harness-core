@@ -43,11 +43,12 @@ public class CloudformationConfig implements PersistentEntity, CreatedAtAware {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(SortCompoundMongoIndex.builder()
-                 .name("accountId_orgId_projectId_provisionerIdentifier_createdAt")
+                 .name("accountId_orgId_projectId_provisionerIdentifier_stageExecutionId_createdAt")
                  .field(CloudformationConfigKeys.accountId)
                  .field(CloudformationConfigKeys.orgId)
                  .field(CloudformationConfigKeys.projectId)
                  .field(CloudformationConfigKeys.provisionerIdentifier)
+                 .field(CloudformationConfigKeys.stageExecutionId)
                  .descSortField(CloudformationConfigKeys.createdAt)
                  .build())
         .build();
@@ -56,7 +57,7 @@ public class CloudformationConfig implements PersistentEntity, CreatedAtAware {
   @NotNull String accountId;
   @NotNull String orgId;
   @NotNull String projectId;
-  @NotNull String pipelineExecutionId;
+  @NotNull String stageExecutionId;
   @NotNull String provisionerIdentifier;
   @NotNull long createdAt;
 

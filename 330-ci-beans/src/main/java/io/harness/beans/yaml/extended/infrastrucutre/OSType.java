@@ -13,7 +13,7 @@ import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum OSType {
   @JsonProperty("Linux") Linux("Linux"),
-  @JsonProperty("Osx") Osx("Osx"),
+  @JsonProperty("MacOS") MacOS("MacOS"),
   @JsonProperty("Windows") Windows("Windows");
   private final String yamlName;
 

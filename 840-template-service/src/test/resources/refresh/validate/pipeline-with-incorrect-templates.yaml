@@ -1,0 +1,80 @@
+pipeline:
+  name: Test Pipline
+  identifier: pipelineTest
+  projectIdentifier: projectId
+  orgIdentifier: orgId
+  stages:
+      - stage:
+          name: Stage 1
+          identifier: Stage_1
+          template:
+            templateRef: stageTemplate
+            versionLabel: 1
+            templateInputs:
+              type: Approval
+              spec:
+                execution:
+                  steps:
+                    - step:
+                        identifier: approval
+                        type: HarnessApproval
+                        spec:
+                          approvers:
+                            userGroups: <+input>
+                    - step:
+                        identifier: http
+                        template:
+                          templateInputs:
+                            type: Http
+                            spec:
+                              url: <+input>
+                              requestBody: <+input>
+      - stage:
+          name: Stage 2
+          identifier: Stage_2
+          template:
+            templateRef: stageTemplate
+            versionLabel: 2
+            templateInputs:
+              type: Approval
+              spec:
+                execution:
+                  steps:
+                    - step:
+                        identifier: approval
+                        type: HarnessApproval
+                        spec:
+                          approvers:
+                            userGroups: <+input>
+                    - step:
+                        identifier: http
+                        template:
+                          templateInputs:
+                            type: Http
+                            spec:
+                              url: <+input>
+                              requestBody: <+input>
+      - stage:
+          name: Stage 3
+          identifier: Stage_3
+          template:
+            templateRef: stageTemplate
+            versionLabel: 1
+            templateInputs:
+              type: Approval
+              spec:
+                execution:
+                  steps:
+                    - step:
+                        identifier: approval
+                        type: HarnessApproval
+                        spec:
+                          approvers:
+                            userGroups: <+input>
+                    - step:
+                        identifier: http
+                        template:
+                          templateInputs:
+                            type: Http
+                            spec:
+                              requestBody: <+input>

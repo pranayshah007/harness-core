@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
 
+import java.util.regex.Pattern;
 import lombok.experimental.UtilityClass;
 
 @OwnedBy(CDP)
@@ -19,8 +20,9 @@ public class ChartMuseumConstants {
   public final int CHART_MUSEUM_SERVER_START_RETRIES = 5;
   public final int PORTS_START_POINT = 35000;
   public final int PORTS_BOUND = 5000;
-  public final int SERVER_HEALTH_CHECK_RETRIES = 12;
-  public final int HEALTH_CHECK_TIME_GAP_SECONDS = 5; // 12*5 = 60 seconds is the timeout for health check
+  public final int SERVER_HEALTH_CHECK_RETRIES = 24;
+  public final int HEALTH_CHECK_TIME_GAP_SECONDS = 5; // 24*5 = 120 seconds is the timeout for health check
+  public final Pattern VERSION_PATTERN = Pattern.compile("v?(\\d+\\.\\d+\\.\\d+)");
 
   public final String CHART_MUSEUM_SERVER_URL = "http://127.0.0.1:${PORT}";
 
@@ -47,6 +49,10 @@ public class ChartMuseumConstants {
 
   public final String GCS_COMMAND_TEMPLATE =
       " --port=${PORT} --storage=google --storage-google-bucket=${BUCKET_NAME} --storage-google-prefix=${FOLDER_PATH}";
+
+  public final String DISABLE_STATEFILES = "--disable-statefiles --index-limit 100";
+
+  public final String VERSION = "--version";
 
   public final String ADDRESS_BIND_ERROR = "Reason: Chartmuseum tried to start on port [%s] which is already in use.";
   public final String ADDRESS_BIND_CODE = "bind: address already in use";

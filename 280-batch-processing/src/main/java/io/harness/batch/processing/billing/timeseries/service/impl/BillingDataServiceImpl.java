@@ -91,6 +91,8 @@ public class BillingDataServiceImpl {
   public static final String DAILY_BILLING_DATA_TABLE = "BILLING_DATA";
   public static final String HOURLY_BILLING_DATA_TABLE = "BILLING_DATA_HOURLY";
 
+  private static final String BILLING_DATA_PURGE_QUERY = "SELECT drop_chunks('billing_data', interval '60 days')";
+
   private static final List<InstanceType> PREAGG_INSTANCES =
       ImmutableList.of(InstanceType.K8S_POD, InstanceType.ECS_CONTAINER_INSTANCE, InstanceType.ECS_TASK_EC2,
           InstanceType.ECS_TASK_FARGATE, InstanceType.K8S_POD_FARGATE);
@@ -544,6 +546,11 @@ public class BillingDataServiceImpl {
         BillingDataTableNameProvider.replaceTableName("SELECT drop_chunks('%s', interval '14 days')", batchJobType);
     log.info("Purging old {} data !!", batchJobType.name());
     return executeQuery(PURGE_DATA_QUERY);
+  }
+
+  public boolean purgeOldBillingData() {
+    log.info("Purging old {} data !!", BILLING_DATA_PURGE_QUERY);
+    return executeQuery(BILLING_DATA_PURGE_QUERY);
   }
 
   private boolean executeQuery(String query) {

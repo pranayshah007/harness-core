@@ -796,6 +796,10 @@ public class UserGroupServiceImpl implements UserGroupService {
   public boolean delete(String accountId, String userGroupId, boolean forceDelete) {
     UserGroup userGroup = get(accountId, userGroupId, false);
     notNullCheck("userGroup", userGroup);
+    if (!(userGroup.getParents().isEmpty())) {
+      throw new InvalidRequestException(
+          "This userGroup is being referenced in either approval step/stage or notification strategy. Please make sure to remove the references to delete this userGroup.");
+    }
     if (!forceDelete && UserGroupUtils.isAdminUserGroup(userGroup)) {
       return false;
     }

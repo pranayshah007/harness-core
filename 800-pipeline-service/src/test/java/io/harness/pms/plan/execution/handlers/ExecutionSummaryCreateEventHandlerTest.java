@@ -14,6 +14,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.PipelineServiceTestBase;
@@ -26,6 +28,7 @@ import io.harness.engine.observers.beans.OrchestrationStartInfo;
 import io.harness.execution.PlanExecution;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.execution.StagesExecutionMetadata;
+import io.harness.notification.PipelineEventType;
 import io.harness.plan.Plan;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
@@ -34,6 +37,7 @@ import io.harness.pms.contracts.plan.GraphLayoutInfo;
 import io.harness.pms.contracts.plan.GraphLayoutNode;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
+import io.harness.pms.notification.NotificationHelper;
 import io.harness.pms.pipeline.ExecutionSummaryInfo;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
@@ -60,13 +64,15 @@ public class ExecutionSummaryCreateEventHandlerTest extends PipelineServiceTestB
   @Mock private NodeTypeLookupService nodeTypeLookupService;
   @Mock private PmsExecutionSummaryRespository pmsExecutionSummaryRespository;
   @Mock private PmsGitSyncHelper pmsGitSyncHelper;
+  @Mock private NotificationHelper notificationHelper;
 
   private ExecutionSummaryCreateEventHandler executionSummaryCreateEventHandler;
 
   @Before
   public void setUp() throws Exception {
-    executionSummaryCreateEventHandler = new ExecutionSummaryCreateEventHandler(pmsPipelineService, planService,
-        planExecutionService, nodeTypeLookupService, pmsExecutionSummaryRespository, pmsGitSyncHelper);
+    executionSummaryCreateEventHandler =
+        new ExecutionSummaryCreateEventHandler(pmsPipelineService, planService, planExecutionService,
+            nodeTypeLookupService, pmsExecutionSummaryRespository, pmsGitSyncHelper, notificationHelper);
   }
 
   @Test
@@ -151,6 +157,8 @@ public class ExecutionSummaryCreateEventHandlerTest extends PipelineServiceTestB
     assertThat(capturedEntity.getLayoutNodeMap()).containsKeys("startId");
     assertThat(capturedEntity.getStagesExecutionMetadata().isStagesExecution()).isTrue();
     assertThat(capturedEntity.isStagesExecutionAllowed()).isTrue();
+
+    verify(notificationHelper, times(1)).sendNotification(ambiance, PipelineEventType.PIPELINE_START, null, null);
   }
 
   private String getFormattedDate() {

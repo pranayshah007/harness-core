@@ -32,7 +32,7 @@ public abstract class AbstractBigQueryChangeDataHandler implements ChangeHandler
   @Override
   public boolean handleChange(ChangeEvent<?> changeEvent, String tableName, String[] fields) {
     tableName = String.format(fullyQualifiedTableNameTemplate, config.getGcpProjectId(), tableName);
-    log.info("In TimeScale Change Handler: {}, {}, {}", changeEvent, tableName, fields);
+    log.trace("In TimeScale Change Handler: {}, {}, {}", changeEvent, tableName, fields);
     switch (changeEvent.getChangeType()) {
       case INSERT:
         dbOperation(insertSQL(tableName, getColumnValueMapping(changeEvent, fields)));
@@ -52,7 +52,7 @@ public abstract class AbstractBigQueryChangeDataHandler implements ChangeHandler
 
   public boolean dbOperation(String query) {
     boolean successfulOperation = false;
-    log.info("In dbOperation, Query: {}", query);
+    log.trace("In dbOperation, Query: {}", query);
     int retryCount = 0;
 
     while (!successfulOperation && retryCount < MAX_RETRY_COUNT) {

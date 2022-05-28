@@ -66,8 +66,8 @@ import software.wings.beans.command.ContainerSetupCommandUnitExecutionData.Conta
 import software.wings.beans.command.EcsSetupParams;
 import software.wings.beans.command.ExecutionLogCallback;
 import software.wings.beans.container.AwsAutoScalarConfig;
-import software.wings.beans.container.EcsContainerTask;
-import software.wings.beans.container.EcsServiceSpecification;
+import software.wings.beans.dto.EcsContainerTask;
+import software.wings.beans.dto.EcsServiceSpecification;
 import software.wings.cloudprovider.aws.AwsClusterService;
 import software.wings.cloudprovider.aws.EcsContainerService;
 import software.wings.service.impl.AwsHelperService;
@@ -715,8 +715,7 @@ public class EcsSetupCommandTaskHelperTest extends WingsBaseTest {
   @Owner(developers = GEORGE)
   @Category(UnitTests.class)
   public void testCreateTaskDefinition_ECS() throws Exception {
-    EcsContainerTask ecsContainerTask = new EcsContainerTask();
-    ecsContainerTask.setAdvancedConfig(taskDefJson);
+    EcsContainerTask ecsContainerTask = EcsContainerTask.builder().advancedConfig(taskDefJson).build();
 
     doReturn(new TaskDefinition()).when(awsClusterService).createTask(anyString(), any(), anyList(), any());
 
@@ -767,8 +766,8 @@ public class EcsSetupCommandTaskHelperTest extends WingsBaseTest {
   @Owner(developers = SAINATH)
   @Category(UnitTests.class)
   public void testCreateTaskDefinitionParseAsRegisterTaskDefinitionRequest_ECS() {
-    EcsContainerTask ecsContainerTask = new EcsContainerTask();
-    ecsContainerTask.setAdvancedConfig(registerTaskDefinitionRequestJson);
+    EcsContainerTask ecsContainerTask =
+        EcsContainerTask.builder().advancedConfig(registerTaskDefinitionRequestJson).build();
 
     doReturn(new TaskDefinition()).when(awsClusterService).createTask(anyString(), any(), anyList(), any());
 
@@ -826,8 +825,7 @@ public class EcsSetupCommandTaskHelperTest extends WingsBaseTest {
   @Owner(developers = ADWAIT)
   @Category(UnitTests.class)
   public void testCreateTaskDefinition_Fargate() throws Exception {
-    EcsContainerTask ecsContainerTask = new EcsContainerTask();
-    ecsContainerTask.setAdvancedConfig(fargateConfigYaml);
+    EcsContainerTask ecsContainerTask = EcsContainerTask.builder().advancedConfig(fargateConfigYaml).build();
 
     EcsSetupParams setupParams = getEcsSetupParams();
     setupParams.setVpcId(VPC_ID);
@@ -869,8 +867,8 @@ public class EcsSetupCommandTaskHelperTest extends WingsBaseTest {
   @Owner(developers = SAINATH)
   @Category(UnitTests.class)
   public void testCreateTaskDefinitionParseAsRegisterTaskDefinitionRequest_Fargate() {
-    EcsContainerTask ecsContainerTask = new EcsContainerTask();
-    ecsContainerTask.setAdvancedConfig(fargateRegisterTaskDefinitionRequestJson);
+    EcsContainerTask ecsContainerTask =
+        EcsContainerTask.builder().advancedConfig(fargateRegisterTaskDefinitionRequestJson).build();
 
     EcsSetupParams setupParams = getEcsSetupParams();
     setupParams.setVpcId(VPC_ID);
@@ -1522,7 +1520,7 @@ public class EcsSetupCommandTaskHelperTest extends WingsBaseTest {
 
     EcsSetupParams ecsSetupParams = anEcsSetupParams()
                                         .withImageDetails(imageDetails)
-                                        .withContainerTask(new EcsContainerTask())
+                                        .withContainerTask(EcsContainerTask.builder().build())
                                         .withEcsRegisterTaskDefinitionTagsEnabled(true)
                                         .build();
     ecsSetupCommandTaskHelper.createTaskDefinition(null, null, null, null, new ExecutionLogCallback(), ecsSetupParams);

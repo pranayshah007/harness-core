@@ -19,19 +19,20 @@ import java.util.List;
 
 public enum ServiceDefinitionType {
   @JsonProperty(ServiceSpecType.KUBERNETES)
-  KUBERNETES("Kubernetes",
+  KUBERNETES(ServiceSpecType.KUBERNETES,
       Lists.newArrayList(ExecutionStrategyType.ROLLING, ExecutionStrategyType.BLUE_GREEN, ExecutionStrategyType.CANARY,
           ExecutionStrategyType.DEFAULT),
       ServiceSpecType.KUBERNETES),
 
   @JsonProperty(ServiceSpecType.NATIVE_HELM)
-  NATIVE_HELM("NativeHelm", Lists.newArrayList(ExecutionStrategyType.ROLLING, ExecutionStrategyType.DEFAULT),
-      ServiceSpecType.NATIVE_HELM),
+  NATIVE_HELM(ServiceSpecType.NATIVE_HELM,
+      Lists.newArrayList(ExecutionStrategyType.ROLLING, ExecutionStrategyType.DEFAULT), ServiceSpecType.NATIVE_HELM),
 
-  @JsonProperty(ServiceSpecType.SSH) SSH("Ssh", Lists.newArrayList(ExecutionStrategyType.DEFAULT), ServiceSpecType.SSH),
+  @JsonProperty(ServiceSpecType.SSH)
+  SSH(ServiceSpecType.SSH, Lists.newArrayList(ExecutionStrategyType.DEFAULT), ServiceSpecType.SSH),
 
   @JsonProperty(ServiceSpecType.WINRM)
-  WINRM("WinRm", Lists.newArrayList(ExecutionStrategyType.DEFAULT), ServiceSpecType.WINRM),
+  WINRM(ServiceSpecType.WINRM, Lists.newArrayList(ExecutionStrategyType.DEFAULT), ServiceSpecType.WINRM),
 
   @JsonProperty(ServiceSpecType.SERVERLESS_AWS_LAMBDA)
   SERVERLESS_AWS_LAMBDA("Serverless Aws Lambda",

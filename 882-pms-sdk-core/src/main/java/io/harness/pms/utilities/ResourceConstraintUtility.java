@@ -37,8 +37,7 @@ public class ResourceConstraintUtility {
         + "  resourceUnit: \"" + resourceUnit + "\"\n"
         + "  acquireMode: \"ENSURE\"\n"
         + "  permits: 1\n"
-        + "  holdingScope:\n"
-        + "    scope: \"" + PmsConstants.RELEASE_ENTITY_TYPE_PLAN + "\"\n";
+        + "  holdingScope: PIPELINE";
     YamlField resourceConstraintYamlField;
     try {
       String yamlFieldWithUuid = YamlUtils.injectUuid(yamlField);

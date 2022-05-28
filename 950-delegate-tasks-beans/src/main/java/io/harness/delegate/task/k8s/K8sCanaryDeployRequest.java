@@ -43,4 +43,5 @@ public class K8sCanaryDeployRequest implements K8sDeployRequest {
   CommandUnitsProgress commandUnitsProgress;
   boolean useLatestKustomizeVersion;
   boolean useNewKubectlVersion;
+  boolean cleanUpIncompleteCanaryDeployRelease;
 }

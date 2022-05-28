@@ -106,7 +106,7 @@ pub fn modules() -> HashMap<String, JavaModule> {
         "https/harness.jfrog.io/artifactory/portal-maven",
         "io/harness",
         "ff-java-server-sdk",
-        "1.0.5.1",
+        "1.1.5",
         Some("CE".to_string()),
     );
 

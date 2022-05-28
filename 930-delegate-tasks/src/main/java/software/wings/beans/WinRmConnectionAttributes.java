@@ -60,6 +60,7 @@ public class WinRmConnectionAttributes extends SettingValue implements Encryptab
   @SchemaIgnore @NotEmpty private String accountId;
 
   @JsonView(JsonViews.Internal.class) @SchemaIgnore private String encryptedPassword;
+  @Attributes private List<WinRmCommandParameter> parameters;
 
   // Always called inside other ExecutionCapabilityDemander Check ShellScriptParameters and
   // ConnectivityValidationDelegateRequest
@@ -75,7 +76,7 @@ public class WinRmConnectionAttributes extends SettingValue implements Encryptab
 
   public WinRmConnectionAttributes(AuthenticationScheme authenticationScheme, String domain, String username,
       char[] password, boolean useSSL, int port, boolean skipCertChecks, boolean useKeyTab, String keyTabFilePath,
-      boolean useNoProfile, String accountId, String encryptedPassword) {
+      boolean useNoProfile, String accountId, String encryptedPassword, List<WinRmCommandParameter> parameters) {
     super(SettingVariableTypes.WINRM_CONNECTION_ATTRIBUTES.name());
     this.authenticationScheme = authenticationScheme;
     this.domain = domain;
@@ -89,6 +90,7 @@ public class WinRmConnectionAttributes extends SettingValue implements Encryptab
     this.useKeyTab = useKeyTab;
     this.keyTabFilePath = keyTabFilePath;
     this.useNoProfile = useNoProfile;
+    this.parameters = parameters;
   }
 
   @Override
@@ -107,11 +109,12 @@ public class WinRmConnectionAttributes extends SettingValue implements Encryptab
     private boolean useSSL;
     private int port;
     private boolean skipCertChecks;
+    private List<WinRmCommandParameter> parameters;
 
     @lombok.Builder
     public Yaml(String type, String harnessApiVersion, AuthenticationScheme authenticationScheme, String domain,
         String userName, String password, boolean useSSL, int port, boolean skipCertChecks,
-        UsageRestrictions.Yaml usageRestrictions) {
+        UsageRestrictions.Yaml usageRestrictions, List<WinRmCommandParameter> parameters) {
       super(type, harnessApiVersion, usageRestrictions);
       this.authenticationScheme = authenticationScheme;
       this.domain = domain;
@@ -120,6 +123,7 @@ public class WinRmConnectionAttributes extends SettingValue implements Encryptab
       this.useSSL = useSSL;
       this.port = port;
       this.skipCertChecks = skipCertChecks;
+      this.parameters = parameters;
     }
   }
 }

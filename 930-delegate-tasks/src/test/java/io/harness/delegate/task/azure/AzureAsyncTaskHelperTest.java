@@ -10,6 +10,7 @@ package io.harness.delegate.task.azure;
 import static io.harness.rule.OwnerRule.BUHA;
 import static io.harness.rule.OwnerRule.MLUKIC;
 
+import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
@@ -35,6 +36,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectivityStatus;
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.delegate.beans.azure.response.AzureAcrTokenTaskResponse;
 import io.harness.delegate.beans.azure.response.AzureClustersResponse;
 import io.harness.delegate.beans.azure.response.AzureRegistriesResponse;
 import io.harness.delegate.beans.azure.response.AzureRepositoriesResponse;
@@ -67,6 +69,7 @@ import io.harness.rule.Owner;
 import io.harness.security.encryption.SecretDecryptionService;
 
 import software.wings.delegatetasks.azure.AzureAsyncTaskHelper;
+import software.wings.helpers.ext.azure.AzureIdentityAccessTokenResponse;
 
 import com.google.common.io.Resources;
 import com.microsoft.azure.management.containerregistry.Registry;
@@ -79,6 +82,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import org.assertj.core.util.Lists;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -96,11 +100,19 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
   @Mock private AzureComputeClient azureComputeClient;
   @Mock private AzureContainerRegistryClient azureContainerRegistryClient;
   @Mock private AzureKubernetesClient azureKubernetesClient;
-  String clientId = "clientId";
-  String tenantId = "tenantId";
-  String secretIdentifier = "secretKey";
-  String pass = "pass";
-  String error = "Failed to do something";
+  private static String CLIENT_ID = "clientId";
+  private static String BAD_CLIENT_ID = "badclientId";
+  private static String TENANT_ID = "tenantId";
+  private static String SECRET_KEY = "secretKey";
+  private static String PASS = "pass";
+  private static String ERROR = "Failed to do something";
+  private static String SUBSCRIPTION_ID = "123456-6543-3456-654321";
+  private static String SUBSCRIPTION_NAME = "TEST-SUBSCRIPTION";
+  private static String RESOURCE_GROUP = "test-rg";
+  private static String CLUSTER = "aks-test-cluster";
+  private static String REPOSITORY = "test/appimage";
+  private static String REGISTRY = "testreg";
+  private static String REGISTRY_URL = format("%s.azurecr.io", REGISTRY.toLowerCase());
 
   @Before
   public void setUp() throws Exception {
@@ -108,35 +120,19 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
   }
 
   @Test
-  @Owner(developers = BUHA)
+  @Owner(developers = {BUHA, MLUKIC})
   @Category(UnitTests.class)
   public void testValidateSuccessConnectionWithSecretKey() {
-    AzureConnectorDTO azureConnectorDTO = getAzureConnectorDTOWithSecretType(AzureSecretType.SECRET_KEY);
-    AzureConfig azureConfig = getAzureConfigSecret();
-
-    doReturn(true).when(azureAuthorizationClient).validateAzureConnection(azureConfig);
-
-    ConnectorValidationResult result = azureAsyncTaskHelper.getConnectorValidationResult(null, azureConnectorDTO);
-
-    assertThat(result.getStatus()).isEqualTo(ConnectivityStatus.SUCCESS);
-    verify(secretDecryptionService).decrypt(any(), any());
-    verify(azureAuthorizationClient).validateAzureConnection(azureConfig);
+    testValidateSuccessConnectionWithServicePrincipal(
+        getAzureConnectorDTOWithSecretType(AzureSecretType.SECRET_KEY), getAzureConfigSecret());
   }
 
   @Test
-  @Owner(developers = BUHA)
+  @Owner(developers = {BUHA, MLUKIC})
   @Category(UnitTests.class)
   public void testValidateSuccessConnectionWithCert() {
-    AzureConnectorDTO azureConnectorDTO = getAzureConnectorDTOWithSecretType(AzureSecretType.KEY_CERT);
-    AzureConfig azureConfig = getAzureConfigCert();
-
-    doReturn(true).when(azureAuthorizationClient).validateAzureConnection(azureConfig);
-
-    ConnectorValidationResult result = azureAsyncTaskHelper.getConnectorValidationResult(null, azureConnectorDTO);
-
-    assertThat(result.getStatus()).isEqualTo(ConnectivityStatus.SUCCESS);
-    verify(secretDecryptionService).decrypt(any(), any());
-    verify(azureAuthorizationClient).validateAzureConnection(azureConfig);
+    testValidateSuccessConnectionWithServicePrincipal(
+        getAzureConnectorDTOWithSecretType(AzureSecretType.KEY_CERT), getAzureConfigCert());
   }
 
   @Test
@@ -162,20 +158,454 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
     verify(azureAuthorizationClient).validateAzureConnection(azureConfig);
   }
 
+  @Test
+  @Owner(developers = MLUKIC)
+  @Category(UnitTests.class)
+  public void testGetConnectorValidationResultWithInheritFromDelegateUserAssignedMSIConnection() {
+    testValidateSuccessConnectionWithManagedIdentity(getAzureConfigUserAssignedMSI(), CLIENT_ID);
+  }
+
+  @Test
+  @Owner(developers = MLUKIC)
+  @Category(UnitTests.class)
+  public void testGetConnectorValidationResultWithInheritFromDelegateSystemAssignedMSIConnection() {
+    testValidateSuccessConnectionWithManagedIdentity(getAzureConfigSystemAssignedMSI(), null);
+  }
+
+  @Test
+  @Owner(developers = MLUKIC)
+  @Category(UnitTests.class)
+  public void testGetConnectorValidationResultWithInheritFromDelegateUserAssignedMSIConnectionFailure() {
+    testValidateSuccessConnectionWithManagedIdentityFailure(
+        getAzureConfigUserAssignedMSI(BAD_CLIENT_ID), BAD_CLIENT_ID);
+  }
+
+  @Test
+  @Owner(developers = MLUKIC)
+  @Category(UnitTests.class)
+  public void testGetConnectorValidationResultWithInheritFromDelegateSystemAssignedMSIConnectionFailure() {
+    testValidateSuccessConnectionWithManagedIdentityFailure(getAzureConfigSystemAssignedMSI(), null);
+  }
+
+  @Test
+  @Owner(developers = {BUHA, MLUKIC})
+  @Category(UnitTests.class)
+  public void testGetSubscriptionUsingServicePrincipalWithSecret() {
+    testGetSubscriptions(getAzureConnectorDTOWithSecretType(AzureSecretType.SECRET_KEY), getAzureConfigSecret());
+  }
+
+  @Test
+  @Owner(developers = MLUKIC)
+  @Category(UnitTests.class)
+  public void testGetSubscriptionUsingServicePrincipalWithCertificate() {
+    testGetSubscriptions(getAzureConnectorDTOWithSecretType(AzureSecretType.KEY_CERT), getAzureConfigCert());
+  }
+
+  @Test
+  @Owner(developers = {BUHA, MLUKIC})
+  @Category(UnitTests.class)
+  public void testGetSubscriptionsWithUserAssignedManagedIdentity() {
+    testGetSubscriptions(getAzureConnectorDTOWithMSI(CLIENT_ID), getAzureConfigUserAssignedMSI());
+  }
+
+  @Test
+  @Owner(developers = MLUKIC)
+  @Category(UnitTests.class)
+  public void testGetSubscriptionsWithSystemAssignedManagedIdentity() {
+    testGetSubscriptions(getAzureConnectorDTOWithMSI(null), getAzureConfigSystemAssignedMSI());
+  }
+
+  @Test(expected = RuntimeException.class)
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void testGetSubscriptionsThrowException() {
+    AzureConnectorDTO azureConnectorDTO = getAzureConnectorDTOWithSecretType(AzureSecretType.SECRET_KEY);
+
+    doThrow(new RuntimeException(ERROR)).when(azureComputeClient).listSubscriptions(any());
+    when(ngErrorHelper.getErrorSummary(ERROR)).thenReturn(ERROR);
+
+    AzureSubscriptionsResponse azureSubscriptionsResponse =
+        azureAsyncTaskHelper.listSubscriptions(null, azureConnectorDTO);
+
+    assertThat(azureSubscriptionsResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.FAILURE);
+    assertThat(azureSubscriptionsResponse.getSubscriptions()).isNull();
+    assertThat(azureSubscriptionsResponse.getErrorSummary()).isEqualTo(ERROR);
+  }
+
+  @Test
+  @Owner(developers = {BUHA, MLUKIC})
+  @Category(UnitTests.class)
+  public void testListResourceGroupUsingServicePrincipalWithSecret() {
+    testListResourceGroups(getAzureConnectorDTOWithSecretType(AzureSecretType.SECRET_KEY), getAzureConfigSecret());
+  }
+
+  @Test
+  @Owner(developers = MLUKIC)
+  @Category(UnitTests.class)
+  public void testListResourceGroupUsingServicePrincipalWithCertificate() {
+    testListResourceGroups(getAzureConnectorDTOWithSecretType(AzureSecretType.KEY_CERT), getAzureConfigCert());
+  }
+
+  @Test
+  @Owner(developers = MLUKIC)
+  @Category(UnitTests.class)
+  public void testListResourceGroupUsingUserAssignedManagedIdentity() {
+    testListResourceGroups(getAzureConnectorDTOWithMSI(CLIENT_ID), getAzureConfigUserAssignedMSI());
+  }
+
+  @Test
+  @Owner(developers = MLUKIC)
+  @Category(UnitTests.class)
+  public void testListResourceGroupUsingSystemAssignedManagedIdentity() {
+    testListResourceGroups(getAzureConnectorDTOWithMSI(null), getAzureConfigSystemAssignedMSI());
+  }
+
+  @Test
+  @Owner(developers = {BUHA, MLUKIC})
+  @Category(UnitTests.class)
+  public void testListClustersUsingServicePrincipalWithSecret() {
+    testListClusters(getAzureConnectorDTOWithSecretType(AzureSecretType.SECRET_KEY), getAzureConfigSecret());
+  }
+
+  @Test
+  @Owner(developers = MLUKIC)
+  @Category(UnitTests.class)
+  public void testListClustersUsingServicePrincipalWithCertificate() {
+    testListClusters(getAzureConnectorDTOWithSecretType(AzureSecretType.KEY_CERT), getAzureConfigCert());
+  }
+
+  @Test
+  @Owner(developers = MLUKIC)
+  @Category(UnitTests.class)
+  public void testListClustersUsingUserAssignedManagedIdentity() {
+    testListClusters(getAzureConnectorDTOWithMSI(CLIENT_ID), getAzureConfigUserAssignedMSI());
+  }
+
+  @Test
+  @Owner(developers = MLUKIC)
+  @Category(UnitTests.class)
+  public void testListClustersUsingSystemAssignedManagedIdentity() {
+    testListClusters(getAzureConnectorDTOWithMSI(null), getAzureConfigSystemAssignedMSI());
+  }
+
+  @Test
+  @Owner(developers = {BUHA, MLUKIC})
+  @Category(UnitTests.class)
+  public void testListRegistriesUsingServicePrincipalWithSecret() {
+    testListRegistries(getAzureConnectorDTOWithSecretType(AzureSecretType.SECRET_KEY), getAzureConfigSecret());
+  }
+
+  @Test
+  @Owner(developers = MLUKIC)
+  @Category(UnitTests.class)
+  public void testListRegistriesUsingServicePrincipalWithCertificate() {
+    testListRegistries(getAzureConnectorDTOWithSecretType(AzureSecretType.KEY_CERT), getAzureConfigCert());
+  }
+
+  @Test
+  @Owner(developers = MLUKIC)
+  @Category(UnitTests.class)
+  public void testListRegistriesUsingUserAssignedManagedIdentity() {
+    testListRegistries(getAzureConnectorDTOWithMSI(CLIENT_ID), getAzureConfigUserAssignedMSI());
+  }
+
+  @Test
+  @Owner(developers = MLUKIC)
+  @Category(UnitTests.class)
+  public void testListRegistriesUsingSystemAssignedManagedIdentity() {
+    testListRegistries(getAzureConnectorDTOWithMSI(null), getAzureConfigSystemAssignedMSI());
+  }
+
+  @Test
+  @Owner(developers = {BUHA, MLUKIC})
+  @Category(UnitTests.class)
+  public void testListRepositoriesUsingServicePrincipalWithSecret() {
+    testListRepositories(getAzureConnectorDTOWithSecretType(AzureSecretType.SECRET_KEY), getAzureConfigSecret());
+  }
+
+  @Test
+  @Owner(developers = MLUKIC)
+  @Category(UnitTests.class)
+  public void testListRepositoriesUsingServicePrincipalWithCertificate() {
+    testListRepositories(getAzureConnectorDTOWithSecretType(AzureSecretType.KEY_CERT), getAzureConfigCert());
+  }
+
+  @Test
+  @Owner(developers = MLUKIC)
+  @Category(UnitTests.class)
+  public void testListRepositoriesUsingUserAssignedManagedIdentity() {
+    testListRepositories(getAzureConnectorDTOWithMSI(CLIENT_ID), getAzureConfigUserAssignedMSI());
+  }
+
+  @Test
+  @Owner(developers = MLUKIC)
+  @Category(UnitTests.class)
+  public void testListRepositoriesUsingSystemAssignedManagedIdentity() {
+    testListRepositories(getAzureConnectorDTOWithMSI(null), getAzureConfigSystemAssignedMSI());
+  }
+
+  @Test
+  @Owner(developers = {BUHA, MLUKIC})
+  @Category(UnitTests.class)
+  public void testClusterConfigUsingServicePrincipalWithSecret() {
+    testClusterConfig(getAzureConnectorDTOWithSecretType(AzureSecretType.SECRET_KEY), getAzureConfigSecret());
+  }
+
+  @Test
+  @Owner(developers = MLUKIC)
+  @Category(UnitTests.class)
+  public void testClusterConfigUsingServicePrincipalWithCertificate() {
+    testClusterConfig(getAzureConnectorDTOWithSecretType(AzureSecretType.KEY_CERT), getAzureConfigCert());
+  }
+
+  @Test
+  @Owner(developers = MLUKIC)
+  @Category(UnitTests.class)
+  public void testClusterConfigUsingUserAssignedManagedIdentity() {
+    testClusterConfig(getAzureConnectorDTOWithMSI(CLIENT_ID), getAzureConfigUserAssignedMSI());
+  }
+
+  @Test
+  @Owner(developers = MLUKIC)
+  @Category(UnitTests.class)
+  public void testClusterConfigUsingSystemAssignedManagedIdentity() {
+    testClusterConfig(getAzureConnectorDTOWithMSI(null), getAzureConfigSystemAssignedMSI());
+  }
+
+  @Test
+  @Owner(developers = {BUHA, MLUKIC})
+  @Category(UnitTests.class)
+  public void testGetImageTagsUsingServicePrincipalWithSecret() {
+    testGetImageTags(getAzureConfigSecret());
+  }
+
+  @Test
+  @Owner(developers = MLUKIC)
+  @Category(UnitTests.class)
+  public void testGetImageTagsUsingServicePrincipalWithCertificate() {
+    testGetImageTags(getAzureConfigCert());
+  }
+
+  @Test
+  @Owner(developers = MLUKIC)
+  @Category(UnitTests.class)
+  public void testGetImageTagsUsingUserAssignedManagedIdentity() {
+    testGetImageTags(getAzureConfigUserAssignedMSI());
+  }
+
+  @Test
+  @Owner(developers = MLUKIC)
+  @Category(UnitTests.class)
+  public void testGetImageTagsUsingSystemAssignedManagedIdentity() {
+    testGetImageTags(getAzureConfigSystemAssignedMSI());
+  }
+
+  @Test
+  @Owner(developers = MLUKIC)
+  @Category(UnitTests.class)
+  public void testGetServicePrincipalCertificateAcrLoginToken() {
+    String azureAccessToken = "AzureAccessJWTToken";
+    String acrRefreshToken = "ACRRefreshJWTToken";
+
+    AzureIdentityAccessTokenResponse azureIdentityAccessTokenResponse = new AzureIdentityAccessTokenResponse();
+    azureIdentityAccessTokenResponse.setAccessToken(azureAccessToken);
+
+    when(azureAuthorizationClient.getUserAccessToken(any())).thenReturn(azureIdentityAccessTokenResponse);
+    when(azureContainerRegistryClient.getAcrRefreshToken(REGISTRY, azureIdentityAccessTokenResponse.getAccessToken()))
+        .thenReturn(acrRefreshToken);
+
+    AzureAcrTokenTaskResponse azureAcrTokenTaskResponse =
+        azureAsyncTaskHelper.getServicePrincipalCertificateAcrLoginToken(
+            REGISTRY, Lists.emptyList(), getAzureConnectorDTOWithSecretType(AzureSecretType.KEY_CERT));
+
+    assertThat(azureAcrTokenTaskResponse).isNotNull();
+    assertThat(azureAcrTokenTaskResponse.getToken()).isNotNull();
+    assertThat(azureAcrTokenTaskResponse.getToken()).isEqualTo(acrRefreshToken);
+  }
+
+  private void testValidateSuccessConnectionWithServicePrincipal(
+      AzureConnectorDTO azureConnectorDTO, AzureConfig azureConfig) {
+    doReturn(true).when(azureAuthorizationClient).validateAzureConnection(azureConfig);
+
+    ConnectorValidationResult result = azureAsyncTaskHelper.getConnectorValidationResult(null, azureConnectorDTO);
+
+    assertThat(result.getStatus()).isEqualTo(ConnectivityStatus.SUCCESS);
+    verify(secretDecryptionService).decrypt(any(), any());
+    verify(azureAuthorizationClient).validateAzureConnection(azureConfig);
+  }
+
+  private void testValidateSuccessConnectionWithManagedIdentity(AzureConfig azureConfig, String clientId) {
+    AzureConnectorDTO azureConnectorDTO = getAzureConnectorDTOWithMSI(clientId);
+
+    doReturn(true).when(azureAuthorizationClient).validateAzureConnection(any());
+
+    ConnectorValidationResult result = azureAsyncTaskHelper.getConnectorValidationResult(null, azureConnectorDTO);
+
+    assertThat(result.getStatus()).isEqualTo(ConnectivityStatus.SUCCESS);
+
+    verify(azureAuthorizationClient).validateAzureConnection(azureConfig);
+  }
+
+  private void testValidateSuccessConnectionWithManagedIdentityFailure(AzureConfig azureConfig, String clientId) {
+    AzureConnectorDTO azureConnectorDTO = getAzureConnectorDTOWithMSI(clientId);
+    doThrow(NestedExceptionUtils.hintWithExplanationException("Failed to validate connection for Azure connector.",
+                "Please check your Azure connector configuration.",
+                new AzureAuthenticationException("Failed to connect to Azure cluster.")))
+        .when(azureAuthorizationClient)
+        .validateAzureConnection(azureConfig);
+
+    assertThatThrownBy(() -> azureAsyncTaskHelper.getConnectorValidationResult(null, azureConnectorDTO))
+        .isInstanceOf(HintException.class)
+        .getCause()
+        .isInstanceOf(ExplanationException.class)
+        .getCause()
+        .isInstanceOf(AzureAuthenticationException.class);
+
+    verify(azureAuthorizationClient).validateAzureConnection(azureConfig);
+  }
+
+  private void testGetSubscriptions(AzureConnectorDTO azureConnectorDTO, AzureConfig azureConfig) {
+    Subscription subscription = mock(Subscription.class);
+    when(azureComputeClient.listSubscriptions(any())).thenReturn(Collections.singletonList(subscription));
+    when(subscription.subscriptionId()).thenReturn(SUBSCRIPTION_ID);
+    when(subscription.displayName()).thenReturn(SUBSCRIPTION_NAME);
+
+    AzureSubscriptionsResponse azureSubscriptionsResponse =
+        azureAsyncTaskHelper.listSubscriptions(null, azureConnectorDTO);
+
+    verify(azureComputeClient).listSubscriptions(azureConfig);
+    assertThat(azureSubscriptionsResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+    assertThat(azureSubscriptionsResponse.getSubscriptions().isEmpty()).isFalse();
+    assertThat(azureSubscriptionsResponse.getSubscriptions().get(SUBSCRIPTION_ID)).isEqualTo(SUBSCRIPTION_NAME);
+  }
+
+  private void testListResourceGroups(AzureConnectorDTO azureConnectorDTO, AzureConfig azureConfig) {
+    when(azureComputeClient.listResourceGroupsNamesBySubscriptionId(any(), any()))
+        .thenReturn(Collections.singletonList("resource-group"));
+
+    AzureResourceGroupsResponse resourceGroups =
+        azureAsyncTaskHelper.listResourceGroups(null, azureConnectorDTO, "subscriptionId");
+
+    verify(azureComputeClient).listResourceGroupsNamesBySubscriptionId(azureConfig, "subscriptionId");
+    assertThat(resourceGroups.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+    assertThat(resourceGroups.getResourceGroups().isEmpty()).isFalse();
+    assertThat(resourceGroups.getResourceGroups().get(0)).isEqualTo("resource-group");
+  }
+
+  private void testListClusters(AzureConnectorDTO azureConnectorDTO, AzureConfig azureConfig) {
+    KubernetesCluster cluster = mock(KubernetesCluster.class);
+
+    when(azureKubernetesClient.listKubernetesClusters(any(), any())).thenReturn(Collections.singletonList(cluster));
+    when(cluster.name()).thenReturn(CLUSTER);
+    when(cluster.resourceGroupName()).thenReturn(RESOURCE_GROUP);
+
+    AzureClustersResponse clustersResponse =
+        azureAsyncTaskHelper.listClusters(null, azureConnectorDTO, SUBSCRIPTION_ID, RESOURCE_GROUP);
+
+    verify(azureKubernetesClient).listKubernetesClusters(azureConfig, SUBSCRIPTION_ID);
+    assertThat(clustersResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+    assertThat(clustersResponse.getClusters().isEmpty()).isFalse();
+    assertThat(clustersResponse.getClusters().get(0)).isEqualTo(CLUSTER);
+  }
+
+  private void testListRegistries(AzureConnectorDTO azureConnectorDTO, AzureConfig azureConfig) {
+    Registry registry = mock(Registry.class);
+
+    when(azureContainerRegistryClient.listContainerRegistries(any(), any()))
+        .thenReturn(Collections.singletonList(registry));
+    when(registry.name()).thenReturn("registry");
+
+    AzureRegistriesResponse registriesResponse =
+        azureAsyncTaskHelper.listContainerRegistries(null, azureConnectorDTO, "subscriptionId");
+
+    verify(azureContainerRegistryClient).listContainerRegistries(azureConfig, "subscriptionId");
+    assertThat(registriesResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+    assertThat(registriesResponse.getContainerRegistries().isEmpty()).isFalse();
+    assertThat(registriesResponse.getContainerRegistries().get(0)).isEqualTo("registry");
+  }
+
+  private void testListRepositories(AzureConnectorDTO azureConnectorDTO, AzureConfig azureConfig) {
+    Registry registry = mock(Registry.class);
+
+    when(azureContainerRegistryClient.findFirstContainerRegistryByNameOnSubscription(any(), any(), any()))
+        .thenReturn(Optional.of(registry));
+    when(azureContainerRegistryClient.listRepositories(any(), any(), any()))
+        .thenReturn(Collections.singletonList("repository"));
+    when(registry.name()).thenReturn("registry");
+    when(registry.loginServerUrl()).thenReturn("registry.azurecr.io");
+
+    AzureRepositoriesResponse azureRepositoriesResponse =
+        azureAsyncTaskHelper.listRepositories(null, azureConnectorDTO, "subscriptionId", "registry");
+
+    verify(azureContainerRegistryClient)
+        .findFirstContainerRegistryByNameOnSubscription(azureConfig, "subscriptionId", "registry");
+    verify(azureContainerRegistryClient).listRepositories(azureConfig, "subscriptionId", "registry.azurecr.io");
+    assertThat(azureRepositoriesResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+    assertThat(azureRepositoriesResponse.getRepositories().isEmpty()).isFalse();
+    assertThat(azureRepositoriesResponse.getRepositories().get(0)).isEqualTo("repository");
+  }
+
+  private void testClusterConfig(AzureConnectorDTO azureConnectorDTO, AzureConfig azureConfig) {
+    KubernetesCluster cluster = mock(KubernetesCluster.class);
+
+    when(azureKubernetesClient.listKubernetesClusters(any(), any())).thenReturn(Collections.singletonList(cluster));
+    when(cluster.name()).thenReturn(CLUSTER);
+    when(cluster.resourceGroupName()).thenReturn(RESOURCE_GROUP);
+    when(cluster.adminKubeConfigContent())
+        .thenReturn(readResourceFileContent("azure/kubeConfigContent.yaml").getBytes());
+
+    KubernetesConfig clusterConfig = azureAsyncTaskHelper.getClusterConfig(
+        azureConnectorDTO, SUBSCRIPTION_ID, RESOURCE_GROUP, CLUSTER, "default", null);
+
+    verify(azureKubernetesClient).listKubernetesClusters(azureConfig, SUBSCRIPTION_ID);
+    assertThat(clusterConfig.getMasterUrl()).isEqualTo("https://dummy.hcp.eastus.azmk8s.io:443");
+    assertThat(clusterConfig.getNamespace()).isEqualTo("default");
+    assertThat(clusterConfig.getCaCert()).isEqualTo("dummycertificateauthoritydata".toCharArray());
+    assertThat(clusterConfig.getUsername()).isEqualTo("clusterAdmin_cdp-test-rg_cdp-test-aks".toCharArray());
+    assertThat(clusterConfig.getClientCert()).isEqualTo("dummycertificatedata".toCharArray());
+    assertThat(clusterConfig.getClientKey()).isEqualTo("dummyclientkeydata".toCharArray());
+  }
+
+  private void testGetImageTags(AzureConfig azureConfig) {
+    Registry registry = mock(Registry.class);
+    List<String> acrResponse = Arrays.asList("v1", "v2", "v3");
+
+    when(azureContainerRegistryClient.findFirstContainerRegistryByNameOnSubscription(any(), any(), any()))
+        .thenReturn(Optional.of(registry));
+    when(azureContainerRegistryClient.listRepositoryTags(any(), any(), any())).thenReturn(acrResponse);
+    when(registry.name()).thenReturn(REGISTRY);
+    when(registry.loginServerUrl()).thenReturn(REGISTRY_URL);
+
+    List<BuildDetailsInternal> builds =
+        azureAsyncTaskHelper.getImageTags(azureConfig, SUBSCRIPTION_ID, REGISTRY, REPOSITORY);
+
+    verify(azureContainerRegistryClient)
+        .findFirstContainerRegistryByNameOnSubscription(azureConfig, SUBSCRIPTION_ID, REGISTRY);
+    verify(azureContainerRegistryClient).listRepositoryTags(azureConfig, REGISTRY_URL, REPOSITORY);
+    assertThat(builds).isNotEmpty();
+    builds.forEach(build -> {
+      assertThat(build.getBuildUrl().startsWith(format("%s/%s:%s", REGISTRY_URL, REPOSITORY, "v"))).isTrue();
+      assertThat(acrResponse.contains(build.getNumber())).isTrue();
+      assertThat(build.getMetadata()
+                     .get(ArtifactMetadataKeys.IMAGE)
+                     .startsWith(format("%s/%s:%s", REGISTRY_URL, REPOSITORY, "v")))
+          .isTrue();
+      assertThat(build.getMetadata().get(ArtifactMetadataKeys.TAG).startsWith("v")).isTrue();
+      assertThat(build.getMetadata().get(ArtifactMetadataKeys.REGISTRY_HOSTNAME)).isEqualTo(REGISTRY_URL);
+    });
+  }
+
   private AzureConnectorDTO getAzureConnectorDTOWithSecretType(AzureSecretType type) {
-    SecretRefData secretRef = SecretRefData.builder()
-                                  .identifier(secretIdentifier)
-                                  .scope(Scope.ACCOUNT)
-                                  .decryptedValue(pass.toCharArray())
-                                  .build();
+    SecretRefData secretRef =
+        SecretRefData.builder().identifier(SECRET_KEY).scope(Scope.ACCOUNT).decryptedValue(PASS.toCharArray()).build();
     return AzureConnectorDTO.builder()
         .azureEnvironmentType(AzureEnvironmentType.AZURE)
         .credential(
             AzureCredentialDTO.builder()
                 .azureCredentialType(AzureCredentialType.MANUAL_CREDENTIALS)
                 .config(AzureManualDetailsDTO.builder()
-                            .clientId(clientId)
-                            .tenantId(tenantId)
+                            .clientId(CLIENT_ID)
+                            .tenantId(TENANT_ID)
                             .authDTO(AzureAuthDTO.builder()
                                          .azureSecretType(type)
                                          .credentials(type == AzureSecretType.KEY_CERT
@@ -214,328 +644,45 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
         .build();
   }
 
-  @Test
-  @Owner(developers = MLUKIC)
-  @Category(UnitTests.class)
-  public void testGetConnectorValidationResultWithInheritFromDelegateUserAssignedMSIConnection() {
-    AzureConfig azureNGConfig = AzureConfig.builder()
-                                    .azureEnvironmentType(AzureEnvironmentType.AZURE)
-                                    .clientId("testClientId")
-                                    .azureAuthenticationType(AzureAuthenticationType.MANAGED_IDENTITY_USER_ASSIGNED)
-                                    .build();
-
-    AzureConnectorDTO azureConnectorDTO = getAzureConnectorDTOWithMSI("testClientId");
-
-    doReturn(true).when(azureAuthorizationClient).validateAzureConnection(any());
-
-    ConnectorValidationResult result = azureAsyncTaskHelper.getConnectorValidationResult(null, azureConnectorDTO);
-
-    assertThat(result.getStatus()).isEqualTo(ConnectivityStatus.SUCCESS);
-
-    verify(azureAuthorizationClient).validateAzureConnection(azureNGConfig);
-  }
-
-  @Test
-  @Owner(developers = MLUKIC)
-  @Category(UnitTests.class)
-  public void testGetConnectorValidationResultWithInheritFromDelegateSystemAssignedMSIConnection() {
-    AzureConfig azureNGConfig = AzureConfig.builder()
-                                    .azureEnvironmentType(AzureEnvironmentType.AZURE)
-                                    .azureAuthenticationType(AzureAuthenticationType.MANAGED_IDENTITY_SYSTEM_ASSIGNED)
-                                    .build();
-
-    AzureConnectorDTO azureConnectorDTO = getAzureConnectorDTOWithMSI(null);
-
-    doReturn(true).when(azureAuthorizationClient).validateAzureConnection(any());
-
-    ConnectorValidationResult result = azureAsyncTaskHelper.getConnectorValidationResult(null, azureConnectorDTO);
-
-    assertThat(result.getStatus()).isEqualTo(ConnectivityStatus.SUCCESS);
-
-    verify(azureAuthorizationClient).validateAzureConnection(azureNGConfig);
-  }
-
-  @Test
-  @Owner(developers = MLUKIC)
-  @Category(UnitTests.class)
-  public void testGetConnectorValidationResultWithInheritFromDelegateUserAssignedMSIConnectionFailure() {
-    AzureConfig azureConfig = AzureConfig.builder()
-                                  .azureEnvironmentType(AzureEnvironmentType.AZURE)
-                                  .clientId("badTestClientId")
-                                  .azureAuthenticationType(AzureAuthenticationType.MANAGED_IDENTITY_USER_ASSIGNED)
-                                  .build();
-
-    AzureConnectorDTO azureConnectorDTO = getAzureConnectorDTOWithMSI("badTestClientId");
-
-    doThrow(NestedExceptionUtils.hintWithExplanationException("Failed to validate connection for Azure connector.",
-                "Please check your Azure connector configuration.",
-                new AzureAuthenticationException("Failed to connect to Azure cluster.")))
-        .when(azureAuthorizationClient)
-        .validateAzureConnection(azureConfig);
-
-    assertThatThrownBy(() -> azureAsyncTaskHelper.getConnectorValidationResult(null, azureConnectorDTO))
-        .isInstanceOf(HintException.class)
-        .getCause()
-        .isInstanceOf(ExplanationException.class)
-        .getCause()
-        .isInstanceOf(AzureAuthenticationException.class);
-  }
-
-  @Test
-  @Owner(developers = MLUKIC)
-  @Category(UnitTests.class)
-  public void testGetConnectorValidationResultWithInheritFromDelegateSystemAssignedMSIConnectionFailure() {
-    AzureConfig azureConfig = AzureConfig.builder()
-                                  .azureEnvironmentType(AzureEnvironmentType.AZURE)
-                                  .azureAuthenticationType(AzureAuthenticationType.MANAGED_IDENTITY_SYSTEM_ASSIGNED)
-                                  .build();
-    AzureConnectorDTO azureConnectorDTO = getAzureConnectorDTOWithMSI(null);
-    doThrow(NestedExceptionUtils.hintWithExplanationException("Failed to validate connection for Azure connector.",
-                "Please check your Azure connector configuration.",
-                new AzureAuthenticationException("Failed to connect to Azure cluster.")))
-        .when(azureAuthorizationClient)
-        .validateAzureConnection(azureConfig);
-
-    assertThatThrownBy(() -> azureAsyncTaskHelper.getConnectorValidationResult(null, azureConnectorDTO))
-        .isInstanceOf(HintException.class)
-        .getCause()
-        .isInstanceOf(ExplanationException.class)
-        .getCause()
-        .isInstanceOf(AzureAuthenticationException.class);
-  }
-
-  @Test
-  @Owner(developers = BUHA)
-  @Category(UnitTests.class)
-  public void testGetSubscriptionWithServicePrincipal() {
-    AzureConnectorDTO azureConnectorDTO = getAzureConnectorDTOWithSecretType(AzureSecretType.SECRET_KEY);
-    AzureConfig azureConfig = getAzureConfigSecret();
-
-    Subscription subscription = mock(Subscription.class);
-    when(azureComputeClient.listSubscriptions(any())).thenReturn(Collections.singletonList(subscription));
-    when(subscription.subscriptionId()).thenReturn("subscriptionId");
-    when(subscription.displayName()).thenReturn("subscriptionName");
-
-    AzureSubscriptionsResponse azureSubscriptionsResponse =
-        azureAsyncTaskHelper.listSubscriptions(null, azureConnectorDTO);
-
-    verify(azureComputeClient).listSubscriptions(azureConfig);
-    assertThat(azureSubscriptionsResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
-    assertThat(azureSubscriptionsResponse.getSubscriptions().isEmpty()).isFalse();
-    assertThat(azureSubscriptionsResponse.getSubscriptions().get("subscriptionId")).isEqualTo("subscriptionName");
-  }
-
-  @Test
-  @Owner(developers = BUHA)
-  @Category(UnitTests.class)
-  public void testGetSubscriptionsWithManagedIdentity() {
-    AzureConnectorDTO azureConnectorDTO = getAzureConnectorDTOWithMSI(clientId);
-    AzureConfig azureConfig = AzureConfig.builder()
-                                  .clientId(clientId)
-                                  .azureAuthenticationType(AzureAuthenticationType.MANAGED_IDENTITY_USER_ASSIGNED)
-                                  .azureEnvironmentType(AzureEnvironmentType.AZURE)
-                                  .build();
-
-    Subscription subscription = mock(Subscription.class);
-    when(azureComputeClient.listSubscriptions(any())).thenReturn(Collections.singletonList(subscription));
-    when(subscription.subscriptionId()).thenReturn("subscriptionId");
-    when(subscription.displayName()).thenReturn("subscriptionName");
-
-    AzureSubscriptionsResponse azureSubscriptionsResponse =
-        azureAsyncTaskHelper.listSubscriptions(null, azureConnectorDTO);
-
-    verify(azureComputeClient).listSubscriptions(azureConfig);
-    assertThat(azureSubscriptionsResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
-    assertThat(azureSubscriptionsResponse.getSubscriptions().isEmpty()).isFalse();
-    assertThat(azureSubscriptionsResponse.getSubscriptions().get("subscriptionId")).isEqualTo("subscriptionName");
-  }
-
-  @Test(expected = RuntimeException.class)
-  @Owner(developers = BUHA)
-  @Category(UnitTests.class)
-  public void testGetSubscriptionsThrowException() {
-    AzureConnectorDTO azureConnectorDTO = getAzureConnectorDTOWithSecretType(AzureSecretType.SECRET_KEY);
-
-    doThrow(new RuntimeException(error)).when(azureComputeClient).listSubscriptions(any());
-    when(ngErrorHelper.getErrorSummary(error)).thenReturn(error);
-
-    AzureSubscriptionsResponse azureSubscriptionsResponse =
-        azureAsyncTaskHelper.listSubscriptions(null, azureConnectorDTO);
-
-    assertThat(azureSubscriptionsResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.FAILURE);
-    assertThat(azureSubscriptionsResponse.getSubscriptions()).isNull();
-    assertThat(azureSubscriptionsResponse.getErrorSummary()).isEqualTo(error);
-  }
-
-  @Test
-  @Owner(developers = BUHA)
-  @Category(UnitTests.class)
-  public void testListResourceGroupWithServicePrincipal() {
-    AzureConnectorDTO azureConnectorDTO = getAzureConnectorDTOWithSecretType(AzureSecretType.SECRET_KEY);
-    AzureConfig azureConfig = getAzureConfigSecret();
-
-    when(azureComputeClient.listResourceGroupsNamesBySubscriptionId(any(), any()))
-        .thenReturn(Collections.singletonList("resource-group"));
-
-    AzureResourceGroupsResponse resourceGroups =
-        azureAsyncTaskHelper.listResourceGroups(null, azureConnectorDTO, "subscriptionId");
-
-    verify(azureComputeClient).listResourceGroupsNamesBySubscriptionId(azureConfig, "subscriptionId");
-    assertThat(resourceGroups.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
-    assertThat(resourceGroups.getResourceGroups().isEmpty()).isFalse();
-    assertThat(resourceGroups.getResourceGroups().get(0)).isEqualTo("resource-group");
-  }
-
-  @Test
-  @Owner(developers = BUHA)
-  @Category(UnitTests.class)
-  public void testListClusters() {
-    AzureConnectorDTO azureConnectorDTO = getAzureConnectorDTOWithSecretType(AzureSecretType.SECRET_KEY);
-    AzureConfig azureConfig = getAzureConfigSecret();
-
-    KubernetesCluster cluster = mock(KubernetesCluster.class);
-
-    when(azureKubernetesClient.listKubernetesClusters(any(), any())).thenReturn(Collections.singletonList(cluster));
-    when(cluster.name()).thenReturn("cluster");
-    when(cluster.resourceGroupName()).thenReturn("resource-group");
-
-    AzureClustersResponse clustersResponse =
-        azureAsyncTaskHelper.listClusters(null, azureConnectorDTO, "subscriptionId", "resource-group");
-
-    verify(azureKubernetesClient).listKubernetesClusters(azureConfig, "subscriptionId");
-    assertThat(clustersResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
-    assertThat(clustersResponse.getClusters().isEmpty()).isFalse();
-    assertThat(clustersResponse.getClusters().get(0)).isEqualTo("cluster");
-  }
-
-  @Test
-  @Owner(developers = BUHA)
-  @Category(UnitTests.class)
-  public void testListRegistries() {
-    AzureConnectorDTO azureConnectorDTO = getAzureConnectorDTOWithSecretType(AzureSecretType.SECRET_KEY);
-    AzureConfig azureConfig = getAzureConfigSecret();
-
-    Registry registry = mock(Registry.class);
-
-    when(azureContainerRegistryClient.listContainerRegistries(any(), any()))
-        .thenReturn(Collections.singletonList(registry));
-    when(registry.name()).thenReturn("registry");
-
-    AzureRegistriesResponse registriesResponse =
-        azureAsyncTaskHelper.listContainerRegistries(null, azureConnectorDTO, "subscriptionId");
-
-    verify(azureContainerRegistryClient).listContainerRegistries(azureConfig, "subscriptionId");
-    assertThat(registriesResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
-    assertThat(registriesResponse.getContainerRegistries().isEmpty()).isFalse();
-    assertThat(registriesResponse.getContainerRegistries().get(0)).isEqualTo("registry");
-  }
-
-  @Test
-  @Owner(developers = BUHA)
-  @Category(UnitTests.class)
-  public void testListRepositories() {
-    AzureConnectorDTO azureConnectorDTO = getAzureConnectorDTOWithSecretType(AzureSecretType.SECRET_KEY);
-    AzureConfig azureConfig = getAzureConfigSecret();
-
-    Registry registry = mock(Registry.class);
-
-    when(azureContainerRegistryClient.findFirstContainerRegistryByNameOnSubscription(any(), any(), any()))
-        .thenReturn(Optional.of(registry));
-    when(azureContainerRegistryClient.listRepositories(any(), any(), any()))
-        .thenReturn(Collections.singletonList("repository"));
-    when(registry.name()).thenReturn("registry");
-    when(registry.loginServerUrl()).thenReturn("registry.azurecr.io");
-
-    AzureRepositoriesResponse azureRepositoriesResponse =
-        azureAsyncTaskHelper.listRepositories(null, azureConnectorDTO, "subscriptionId", "registry");
-
-    verify(azureContainerRegistryClient)
-        .findFirstContainerRegistryByNameOnSubscription(azureConfig, "subscriptionId", "registry");
-    verify(azureContainerRegistryClient).listRepositories(azureConfig, "subscriptionId", "registry.azurecr.io");
-    assertThat(azureRepositoriesResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
-    assertThat(azureRepositoriesResponse.getRepositories().isEmpty()).isFalse();
-    assertThat(azureRepositoriesResponse.getRepositories().get(0)).isEqualTo("repository");
-  }
-
-  @Test
-  @Owner(developers = BUHA)
-  @Category(UnitTests.class)
-  public void testClusterConfig() {
-    AzureConnectorDTO azureConnectorDTO = getAzureConnectorDTOWithSecretType(AzureSecretType.SECRET_KEY);
-    AzureConfig azureConfig = getAzureConfigSecret();
-
-    KubernetesCluster cluster = mock(KubernetesCluster.class);
-
-    when(azureKubernetesClient.listKubernetesClusters(any(), any())).thenReturn(Collections.singletonList(cluster));
-    when(cluster.name()).thenReturn("cluster");
-    when(cluster.resourceGroupName()).thenReturn("resource-group");
-    when(cluster.userKubeConfigContent())
-        .thenReturn(readResourceFileContent("azure/kubeConfigContent.yaml").getBytes());
-
-    KubernetesConfig clusterConfig = azureAsyncTaskHelper.getClusterConfig(
-        azureConnectorDTO, "subscriptionId", "resource-group", "cluster", "default", null);
-
-    verify(azureKubernetesClient).listKubernetesClusters(azureConfig, "subscriptionId");
-    assertThat(clusterConfig.getMasterUrl()).isEqualTo("https://dummy.hcp.eastus.azmk8s.io:443");
-    assertThat(clusterConfig.getNamespace()).isEqualTo("default");
-    assertThat(clusterConfig.getCaCert()).isEqualTo("dummycertificateauthoritydata".toCharArray());
-    assertThat(clusterConfig.getUsername()).isEqualTo("clusterAdmin_cdp-test-rg_cdp-test-aks".toCharArray());
-    assertThat(clusterConfig.getClientCert()).isEqualTo("dummycertificatedata".toCharArray());
-    assertThat(clusterConfig.getClientKey()).isEqualTo("dummyclientkeydata".toCharArray());
-  }
-
-  @Test
-  @Owner(developers = BUHA)
-  @Category(UnitTests.class)
-  public void testGetBuilds() {
-    AzureConfig azureConfig = getAzureConfigSecret();
-
-    Registry registry = mock(Registry.class);
-    List<String> acrResponse = Arrays.asList("v1", "v2", "v3");
-
-    when(azureContainerRegistryClient.findFirstContainerRegistryByNameOnSubscription(any(), any(), any()))
-        .thenReturn(Optional.of(registry));
-    when(azureContainerRegistryClient.listRepositoryTags(any(), any(), any())).thenReturn(acrResponse);
-    when(registry.name()).thenReturn("registry");
-    when(registry.loginServerUrl()).thenReturn("registry.azurecr.io");
-
-    List<BuildDetailsInternal> builds =
-        azureAsyncTaskHelper.getImageTags(azureConfig, "subscriptionId", "registry", "repository");
-
-    verify(azureContainerRegistryClient)
-        .findFirstContainerRegistryByNameOnSubscription(azureConfig, "subscriptionId", "registry");
-    verify(azureContainerRegistryClient).listRepositoryTags(azureConfig, "registry.azurecr.io", "repository");
-    assertThat(builds).isNotEmpty();
-    builds.forEach(build -> {
-      assertThat(build.getBuildUrl().startsWith("registry.azurecr.io/repository:v")).isTrue();
-      assertThat(acrResponse.contains(build.getNumber())).isTrue();
-      assertThat(build.getMetadata().get(ArtifactMetadataKeys.IMAGE).startsWith("registry.azurecr.io/repository:v"))
-          .isTrue();
-      assertThat(build.getMetadata().get(ArtifactMetadataKeys.TAG).startsWith("v")).isTrue();
-      assertThat(build.getMetadata().get(ArtifactMetadataKeys.REGISTRY_HOSTNAME)).isEqualTo("registry.azurecr.io");
-    });
-  }
-
   private AzureConfig getAzureConfigSecret() {
     return AzureConfig.builder()
-        .clientId(clientId)
-        .tenantId(tenantId)
-        .key(pass.toCharArray())
+        .clientId(CLIENT_ID)
+        .tenantId(TENANT_ID)
+        .key(PASS.toCharArray())
         .azureEnvironmentType(AzureEnvironmentType.AZURE)
         .build();
   }
 
   private AzureConfig getAzureConfigCert() {
     return AzureConfig.builder()
-        .clientId(clientId)
-        .tenantId(tenantId)
-        .cert(pass.getBytes())
+        .clientId(CLIENT_ID)
+        .tenantId(TENANT_ID)
+        .cert(PASS.getBytes())
         .azureEnvironmentType(AzureEnvironmentType.AZURE)
         .azureAuthenticationType(AzureAuthenticationType.SERVICE_PRINCIPAL_CERT)
         .build();
   }
 
-  public static String readResourceFileContent(String resourceFilePath) {
+  private AzureConfig getAzureConfigUserAssignedMSI() {
+    return getAzureConfigUserAssignedMSI(CLIENT_ID);
+  }
+
+  private AzureConfig getAzureConfigUserAssignedMSI(String clientId) {
+    return AzureConfig.builder()
+        .clientId(clientId)
+        .azureAuthenticationType(AzureAuthenticationType.MANAGED_IDENTITY_USER_ASSIGNED)
+        .azureEnvironmentType(AzureEnvironmentType.AZURE)
+        .build();
+  }
+
+  private AzureConfig getAzureConfigSystemAssignedMSI() {
+    return AzureConfig.builder()
+        .azureAuthenticationType(AzureAuthenticationType.MANAGED_IDENTITY_SYSTEM_ASSIGNED)
+        .azureEnvironmentType(AzureEnvironmentType.AZURE)
+        .build();
+  }
+
+  private String readResourceFileContent(String resourceFilePath) {
     ClassLoader classLoader = AzureAsyncTaskHelperTest.class.getClassLoader();
     try {
       return Resources.toString(

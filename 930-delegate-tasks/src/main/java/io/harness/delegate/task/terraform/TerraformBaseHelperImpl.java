@@ -23,6 +23,7 @@ import static io.harness.filesystem.FileIo.deleteDirectoryAndItsContentIfExists;
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
 import static io.harness.logging.LogLevel.WARN;
+import static io.harness.provision.TerraformConstants.ACTIVITY_ID_BASED_TF_BASE_DIR;
 import static io.harness.provision.TerraformConstants.TERRAFORM_APPLY_PLAN_FILE_VAR_NAME;
 import static io.harness.provision.TerraformConstants.TERRAFORM_DESTROY_PLAN_FILE_OUTPUT_NAME;
 import static io.harness.provision.TerraformConstants.TERRAFORM_DESTROY_PLAN_FILE_VAR_NAME;
@@ -436,8 +437,15 @@ public class TerraformBaseHelperImpl implements TerraformBaseHelper {
   }
 
   @NonNull
-  public String resolveBaseDir(String accountId, String provisionerId) {
-    return TF_BASE_DIR.replace("${ACCOUNT_ID}", accountId).replace("${ENTITY_ID}", provisionerId);
+  public String resolveBaseDir(String accountId, String entityId) {
+    return TF_BASE_DIR.replace("${ACCOUNT_ID}", accountId).replace("${ENTITY_ID}", entityId);
+  }
+
+  @Override
+  public String activityIdBasedBaseDir(String accountId, String entityId, String activityId) {
+    return ACTIVITY_ID_BASED_TF_BASE_DIR.replace("${ACCOUNT_ID}", accountId)
+        .replace("${ENTITY_ID}", entityId)
+        .replace("${ACTIVITY_ID}", activityId);
   }
 
   public String resolveScriptDirectory(String workingDir, String scriptPath) {

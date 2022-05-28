@@ -17,8 +17,8 @@ import java.util.Optional;
 /**
  * Created by peeyushaggarwal on 6/28/16.
  */
-public class OverridingCommandUnitDescriptor implements OverridingStencil<CommandUnit>, CommandUnitDescriptor {
-  private CommandUnitDescriptor commandUnitDescriptor;
+public class OverridingCommandUnitDescriptor implements OverridingStencil<CommandUnit>, CommandUnitStencil {
+  private CommandUnitStencil commandUnitDescriptor;
   private Optional<String> overridingName = Optional.empty();
   private Optional<JsonNode> overridingJsonSchema = Optional.empty();
 
@@ -27,7 +27,7 @@ public class OverridingCommandUnitDescriptor implements OverridingStencil<Comman
    *
    * @param commandUnitDescriptor the command unit descriptor
    */
-  public OverridingCommandUnitDescriptor(CommandUnitDescriptor commandUnitDescriptor) {
+  public OverridingCommandUnitDescriptor(CommandUnitStencil commandUnitDescriptor) {
     this.commandUnitDescriptor = commandUnitDescriptor;
   }
 

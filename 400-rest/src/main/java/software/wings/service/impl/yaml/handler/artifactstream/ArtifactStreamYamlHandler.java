@@ -55,6 +55,7 @@ public abstract class ArtifactStreamYamlHandler<Y extends Yaml, B extends Artifa
   protected String getSettingId(String accountId, String appId, String settingName) {
     SettingAttribute settingAttribute = settingsService.getByName(accountId, appId, settingName);
     notNullCheck("Invalid SettingAttribute:" + settingName, settingAttribute, USER);
+    settingsService.checkRbacOnSettingAttribute(appId, settingAttribute);
     return settingAttribute.getUuid();
   }
 

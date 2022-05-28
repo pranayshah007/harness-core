@@ -44,6 +44,7 @@ import io.harness.delegate.task.k8s.K8sTaskHelperBase;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.filesystem.FileIo;
 import io.harness.k8s.kubectl.Kubectl;
 import io.harness.k8s.manifest.ManifestHelper;
@@ -57,11 +58,10 @@ import io.harness.manifest.CustomManifestSource;
 
 import software.wings.beans.GitConfig;
 import software.wings.beans.GitFileConfig;
-import software.wings.beans.appmanifest.ManifestFileDTO;
 import software.wings.beans.appmanifest.StoreType;
 import software.wings.beans.command.ExecutionLogCallback;
+import software.wings.beans.dto.ManifestFile;
 import software.wings.delegatetasks.DelegateLogService;
-import software.wings.delegatetasks.ExceptionMessageSanitizer;
 import software.wings.delegatetasks.ScmFetchFilesHelper;
 import software.wings.delegatetasks.helm.HelmTaskHelper;
 import software.wings.exception.ShellScriptException;
@@ -122,12 +122,12 @@ public class K8sTaskHelper {
   }
 
   private boolean writeManifestFilesToDirectory(
-      List<ManifestFileDTO> manifestFiles, String manifestFilesDirectory, ExecutionLogCallback executionLogCallback) {
+      List<ManifestFile> manifestFiles, String manifestFilesDirectory, ExecutionLogCallback executionLogCallback) {
     String directoryPath = Paths.get(manifestFilesDirectory).toString();
 
     try {
       for (int i = 0; i < manifestFiles.size(); i++) {
-        ManifestFileDTO manifestFile = manifestFiles.get(i);
+        ManifestFile manifestFile = manifestFiles.get(i);
         if (StringUtils.equals(values_filename, manifestFile.getFileName())) {
           continue;
         }

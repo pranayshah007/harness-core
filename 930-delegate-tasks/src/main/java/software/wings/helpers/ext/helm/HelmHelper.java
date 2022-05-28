@@ -32,9 +32,9 @@ import io.harness.k8s.manifest.ManifestHelper;
 import io.harness.k8s.model.KubernetesResource;
 
 import software.wings.beans.HelmExecutionSummary;
-import software.wings.beans.appmanifest.ManifestFileDTO;
 import software.wings.beans.appmanifest.StoreType;
-import software.wings.beans.container.HelmChartSpecificationDTO;
+import software.wings.beans.dto.HelmChartSpecification;
+import software.wings.beans.dto.ManifestFile;
 import software.wings.beans.settings.helm.AmazonS3HelmRepoConfig;
 import software.wings.beans.settings.helm.GCSHelmRepoConfig;
 import software.wings.beans.settings.helm.HelmRepoConfig;
@@ -121,7 +121,7 @@ public class HelmHelper {
   }
 
   public HelmExecutionSummary prepareHelmExecutionSummary(
-      String releaseName, HelmChartSpecificationDTO helmChartSpec, K8sDelegateManifestConfig delegateManifestConfig) {
+      String releaseName, HelmChartSpecification helmChartSpec, K8sDelegateManifestConfig delegateManifestConfig) {
     HelmChartInfo helmChartInfo = HelmChartInfo.builder().build();
 
     if (helmChartSpec != null) {
@@ -202,7 +202,7 @@ public class HelmHelper {
     }
   }
 
-  public void replaceManifestPlaceholdersWithLocalConfig(ManifestFileDTO manifestFile) {
+  public void replaceManifestPlaceholdersWithLocalConfig(ManifestFile manifestFile) {
     manifestFile.setFileContent(
         delegateLocalConfigService.replacePlaceholdersWithLocalConfig(manifestFile.getFileContent()));
   }

@@ -71,12 +71,12 @@ import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.Service;
 import software.wings.beans.SettingAttribute.SettingCategory;
 import software.wings.beans.User;
-import software.wings.beans.Workflow;
 import software.wings.beans.WorkflowExecution;
 import software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
 import software.wings.beans.appmanifest.HelmChart;
 import software.wings.beans.appmanifest.ManifestSummary;
 import software.wings.beans.artifact.Artifact;
+import software.wings.beans.execution.WorkflowExecutionInfo;
 import software.wings.beans.infrastructure.instance.Instance;
 import software.wings.beans.infrastructure.instance.SyncStatus;
 import software.wings.beans.instance.dashboard.ArtifactSummary;
@@ -897,11 +897,11 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
         .sort(descending("count"))
         .aggregate(AggregationInfo.class)
         .forEachRemaining(instanceInfoList::add);
-    return constructCurrentActiveInstances(instanceInfoList, appId, accountId);
+    return constructCurrentActiveInstances(instanceInfoList, appId, accountId, serviceId);
   }
 
   private List<CurrentActiveInstances> constructCurrentActiveInstances(
-      List<AggregationInfo> aggregationInfoList, String appId, String accountId) {
+      List<AggregationInfo> aggregationInfoList, String appId, String accountId, String serviceId) {
     List<CurrentActiveInstances> currentActiveInstancesList = Lists.newArrayList();
     for (AggregationInfo aggregationInfo : aggregationInfoList) {
       long count = aggregationInfo.getCount();
@@ -931,17 +931,21 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
                               .build();
       }
 
-      long deployedAt = aggregationInfo.getArtifactInfo().getDeployedAt();
-
       String lastWorkflowExecutionId = aggregationInfo.getArtifactInfo().getLastWorkflowExecutionId();
-      // To fetch last execution
-      final WorkflowExecution lastWE = wingsPersistence.createQuery(WorkflowExecution.class)
-                                           .filter(WorkflowExecutionKeys.uuid, lastWorkflowExecutionId)
-                                           .get();
+      WorkflowExecutionInfo workflowExecutionInfo =
+          workflowExecutionService.getWorkflowExecutionInfo(appId, lastWorkflowExecutionId);
+
+      // To fetch last successful execution
+      WorkflowExecution lastSuccessfulWE = workflowExecutionService.getLastSuccessfulWorkflowExecution(accountId, appId,
+          workflowExecutionInfo.getWorkflowId(), envInfo.getId(), serviceId, infraMappingInfo.getId());
 
       CurrentActiveInstances currentActiveInstances;
-      if (lastWE == null) {
-        log.info("Last workflow execution is null, Execution Id {}", lastWorkflowExecutionId);
+      if (lastSuccessfulWE == null) {
+        log.info("Last successful workflow execution is null. "
+                + "WFExecutionId {}, AccountId {}, AppId {}, WorkflowId {}, EnvId {}, ServiceId {}, InfraId {}",
+            lastWorkflowExecutionId, accountId, appId, workflowExecutionInfo.getWorkflowId(), envInfo.getId(),
+            serviceId, infraMappingInfo.getId());
+        long deployedAt = aggregationInfo.getArtifactInfo().getDeployedAt();
         currentActiveInstances = CurrentActiveInstances.builder()
                                      .artifact(artifactSummary)
                                      .manifest(manifestSummary)
@@ -953,35 +957,27 @@ public class DashboardStatisticsServiceImpl implements DashboardStatisticsServic
                                      .onDemandRollbackAvailable(false)
                                      .build();
       } else {
-        Workflow workflow = workflowService.readWorkflowWithoutOrchestration(appId, lastWE.getWorkflowId());
-        String workflowName;
-        if (workflow != null) {
-          workflowName = workflow.getName();
-        } else {
-          // if workflow is deleted setting workflowExecution name so UI does not break.
-          workflowName = lastWE.getName();
-        }
-        boolean rollbackAvailable = workflowExecutionService.getOnDemandRollbackAvailable(appId, lastWE);
-        EntitySummary workflowExecutionSummary =
-            getEntitySummary(workflowName, lastWE.getUuid(), EntityType.WORKFLOW_EXECUTION.name());
+        boolean rollbackAvailable = workflowExecutionService.getOnDemandRollbackAvailable(appId, lastSuccessfulWE);
+        EntitySummary workflowExecutionSummary = getEntitySummary(
+            lastSuccessfulWE.getName(), lastSuccessfulWE.getUuid(), EntityType.WORKFLOW_EXECUTION.name());
 
-        PipelineSummary pipelineSummary = lastWE.getPipelineSummary();
+        PipelineSummary pipelineSummary = lastSuccessfulWE.getPipelineSummary();
         // This is just precautionary this should never happen hence logging this
-        if (lastWE.isOnDemandRollback() && pipelineSummary != null) {
-          log.error("Pipeline Summary non null for rollback execution : {}", lastWE.getUuid());
+        if (lastSuccessfulWE.isOnDemandRollback() && pipelineSummary != null) {
+          log.error("Pipeline Summary non null for rollback execution : {}", lastSuccessfulWE.getUuid());
           pipelineSummary = null;
         }
         EntitySummary pipelineEntitySummary = null;
         if (pipelineSummary != null) {
           pipelineEntitySummary = getEntitySummary(
-              pipelineSummary.getPipelineName(), lastWE.getPipelineExecutionId(), EntityType.PIPELINE.name());
+              pipelineSummary.getPipelineName(), lastSuccessfulWE.getPipelineExecutionId(), EntityType.PIPELINE.name());
         }
 
         currentActiveInstances = CurrentActiveInstances.builder()
                                      .artifact(artifactSummary)
                                      .manifest(manifestSummary)
-                                     .lastWorkflowExecutionDate(new Date(lastWE.getStartTs()))
-                                     .deployedAt(new Date(deployedAt))
+                                     .lastWorkflowExecutionDate(new Date(lastSuccessfulWE.getStartTs()))
+                                     .deployedAt(new Date(lastSuccessfulWE.getStartTs()))
                                      .environment(environmentSummary)
                                      .instanceCount(count)
                                      .serviceInfra(serviceInfraSummary)

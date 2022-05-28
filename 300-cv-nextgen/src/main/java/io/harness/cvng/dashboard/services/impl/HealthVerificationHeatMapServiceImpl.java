@@ -105,33 +105,6 @@ public class HealthVerificationHeatMapServiceImpl implements HealthVerificationH
   }
 
   @Override
-  public Set<CategoryRisk> getAggregatedRisk(String activityId, HealthVerificationPeriod healthVerificationPeriod) {
-    Preconditions.checkNotNull(activityId, "activityId is null when trying to get aggregated risk");
-    Map<CVMonitoringCategory, Double> scoreMap = new HashMap<>();
-    Set<CategoryRisk> categoryRisks = new HashSet<>();
-    List<HealthVerificationHeatMap> heatMaps =
-        hPersistence.createQuery(HealthVerificationHeatMap.class, excludeAuthority)
-            .filter(HealthVerificationHeatMapKeys.activityId, activityId)
-            .filter(HealthVerificationHeatMapKeys.healthVerificationPeriod, healthVerificationPeriod)
-            .filter(HealthVerificationHeatMapKeys.aggregationLevel, AggregationLevel.ACTIVITY)
-            .asList();
-    heatMaps.forEach(heatMap -> {
-      Double risk = heatMap.getRiskScore() * 100;
-      categoryRisks.add(
-          CategoryRisk.builder().category(heatMap.getCategory()).risk(Double.valueOf(risk.intValue())).build());
-      scoreMap.put(heatMap.getCategory(), heatMap.getRiskScore());
-    });
-
-    Arrays.asList(CVMonitoringCategory.values()).forEach(category -> {
-      if (!scoreMap.containsKey(category)) {
-        categoryRisks.add(CategoryRisk.builder().category(category).risk(-1.0).build());
-      }
-    });
-
-    return categoryRisks;
-  }
-
-  @Override
   public Set<CategoryRisk> getVerificationJobInstanceAggregatedRisk(
       String accountId, String verificationJobInstanceId, HealthVerificationPeriod healthVerificationPeriod) {
     Preconditions.checkNotNull(
@@ -215,8 +188,6 @@ public class HealthVerificationHeatMapServiceImpl implements HealthVerificationH
             .setOnInsert(HealthVerificationHeatMapKeys.aggregationId, aggregationId)
             .setOnInsert(HealthVerificationHeatMapKeys.category, cvConfig.getCategory())
             .setOnInsert(HealthVerificationHeatMapKeys.projectIdentifier, cvConfig.getProjectIdentifier())
-            .setOnInsert(HealthVerificationHeatMapKeys.serviceIdentifier, cvConfig.getServiceIdentifier())
-            .setOnInsert(HealthVerificationHeatMapKeys.envIdentifier, cvConfig.getEnvIdentifier())
             .setOnInsert(HealthVerificationHeatMapKeys.accountId, cvConfig.getAccountId())
             .setOnInsert(HealthVerificationHeatMapKeys.healthVerificationPeriod, healthVerificationPeriod)
             .setOnInsert(HealthVerificationHeatMapKeys.activityId, activity.getUuid())

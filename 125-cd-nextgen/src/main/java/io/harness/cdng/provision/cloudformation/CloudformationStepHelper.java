@@ -90,7 +90,6 @@ import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.validator.NGRegexValidatorConstants;
-import io.harness.yaml.utils.NGVariablesUtils;
 
 import software.wings.beans.TaskType;
 import software.wings.sm.states.provision.S3UriParser;
@@ -142,7 +141,7 @@ public class CloudformationStepHelper {
       StepElementParameters stepElementParameters) {
     CloudformationCreateStackStepParameters cloudformationCreateStackStepParameters =
         (CloudformationCreateStackStepParameters) stepElementParameters.getSpec();
-    CloudformationCreateStackStepConfiguration stepConfiguration =
+    CloudformationCreateStackStepConfigurationParameters stepConfiguration =
         cloudformationCreateStackStepParameters.getConfiguration();
     CloudformationTemplateFileSpec cloudformationTemplateFileSpec = stepConfiguration.getTemplateFile().getSpec();
 
@@ -206,7 +205,7 @@ public class CloudformationStepHelper {
       ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
     CloudformationCreateStackStepParameters cloudformationCreateStackStepParameters =
         (CloudformationCreateStackStepParameters) stepElementParameters.getSpec();
-    CloudformationCreateStackStepConfiguration stepConfiguration =
+    CloudformationCreateStackStepConfigurationParameters stepConfiguration =
         cloudformationCreateStackStepParameters.getConfiguration();
     CloudFormationCreateStackPassThroughData cloudFormationCreateStackPassThroughData =
         (CloudFormationCreateStackPassThroughData) passThroughData;
@@ -260,7 +259,7 @@ public class CloudformationStepHelper {
         .build();
   }
 
-  public void saveCloudFormationInheritOutput(CloudformationCreateStackStepConfiguration configuration,
+  public void saveCloudFormationInheritOutput(CloudformationCreateStackStepConfigurationParameters configuration,
       String provisionerIdentifier, Ambiance ambiance, boolean stackExisted) {
     CloudFormationInheritOutput cloudFormationInheritOutput =
         CloudFormationInheritOutput.builder()
@@ -292,7 +291,7 @@ public class CloudformationStepHelper {
       CloudFormationCreateStackPassThroughData passThroughData) {
     CloudformationCreateStackStepParameters cloudformationCreateStackStepParameters =
         (CloudformationCreateStackStepParameters) stepParameters.getSpec();
-    CloudformationCreateStackStepConfiguration stepConfiguration =
+    CloudformationCreateStackStepConfigurationParameters stepConfiguration =
         cloudformationCreateStackStepParameters.getConfiguration();
 
     return CloudformationConfig.builder()
@@ -301,7 +300,7 @@ public class CloudformationStepHelper {
         .projectId(AmbianceUtils.getProjectIdentifier(ambiance))
         .provisionerIdentifier(
             getParameterFieldValue(cloudformationCreateStackStepParameters.getProvisionerIdentifier()))
-        .pipelineExecutionId(ambiance.getPlanExecutionId())
+        .stageExecutionId(ambiance.getStageExecutionId())
         .connectorRef(getParameterFieldValue(stepConfiguration.getConnectorRef()))
         .region(getParameterFieldValue(stepConfiguration.getRegion()))
         .templateUrl(passThroughData.getTemplateUrl())
@@ -318,12 +317,13 @@ public class CloudformationStepHelper {
   }
 
   private List<AwsS3FetchFileDelegateConfig> getAwsS3FetchFileDelegateConfigs(
-      Ambiance ambiance, CloudformationCreateStackStepConfiguration stepConfiguration) {
+      Ambiance ambiance, CloudformationCreateStackStepConfigurationParameters stepConfiguration) {
     List<AwsS3FetchFileDelegateConfig> awsS3FetchFileDelegateConfigs = new ArrayList<>();
     List<AwsS3FetchFileDelegateConfig> parametersS3FetchFileDelegateConfigs;
-    if (isNotEmpty(stepConfiguration.getParametersFilesSpecs())) {
+    if (isNotEmpty(stepConfiguration.getParameters())) {
       parametersS3FetchFileDelegateConfigs =
-          stepConfiguration.getParametersFilesSpecs()
+          stepConfiguration.getParameters()
+              .values()
               .stream()
               .filter(cloudformationParametersFileSpec
                   -> cloudformationParametersFileSpec.getStore().getSpec().getKind().equals(ManifestStoreType.S3URL))
@@ -371,7 +371,7 @@ public class CloudformationStepHelper {
   }
 
   private CloudFormationCreateStackPassThroughData getCloudFormationCreateStackPassThroughData(
-      CloudformationCreateStackStepConfiguration stepConfiguration) {
+      CloudformationCreateStackStepConfigurationParameters stepConfiguration) {
     boolean hasS3Files = hasS3StoredParameters(stepConfiguration) || areTagsStoredOnS3(stepConfiguration);
     boolean hasGitFiles = hasGitStoredParameters(stepConfiguration) || areTagsStoredOnGit(stepConfiguration)
         || isTemplateStoredOnGit(stepConfiguration.getTemplateFile().getSpec());
@@ -379,26 +379,27 @@ public class CloudformationStepHelper {
     CloudFormationCreateStackPassThroughData passThroughData =
         CloudFormationCreateStackPassThroughData.builder().hasGitFiles(hasGitFiles).hasS3Files(hasS3Files).build();
 
-    if (isNotEmpty(stepConfiguration.getParametersFilesSpecs())) {
-      stepConfiguration.getParametersFilesSpecs().forEach(cloudformationParametersFileSpec -> {
+    if (isNotEmpty(stepConfiguration.getParameters())) {
+      stepConfiguration.getParameters().values().forEach(cloudformationParametersFileSpec -> {
         String specKind = cloudformationParametersFileSpec.getStore().getSpec().getKind();
         if (ManifestStoreType.isInGitSubset(specKind) || specKind.equals(ManifestStoreType.S3URL)) {
-          passThroughData.getParametersFilesContent().put(cloudformationParametersFileSpec.getIdentifier(), null);
+          passThroughData.getParametersFilesContent().put(
+              cloudformationParametersFileSpec.getIdentifier(), new ArrayList<>());
         }
       });
     }
     return passThroughData;
   }
 
-  private boolean hasS3StoredParameters(CloudformationCreateStackStepConfiguration stepConfiguration) {
-    return stepConfiguration.getParametersFilesSpecs() != null
-        && stepConfiguration.getParametersFilesSpecs().stream().anyMatch(cloudformationParametersFileSpec
+  private boolean hasS3StoredParameters(CloudformationCreateStackStepConfigurationParameters stepConfiguration) {
+    return stepConfiguration.getParameters() != null
+        && stepConfiguration.getParameters().values().stream().anyMatch(cloudformationParametersFileSpec
             -> cloudformationParametersFileSpec.getStore().getSpec().getKind().equals(ManifestStoreType.S3URL));
   }
 
-  private boolean hasGitStoredParameters(CloudformationCreateStackStepConfiguration stepConfiguration) {
-    return stepConfiguration.getParametersFilesSpecs() != null
-        && stepConfiguration.getParametersFilesSpecs().stream().anyMatch(cloudformationParametersFileSpec
+  private boolean hasGitStoredParameters(CloudformationCreateStackStepConfigurationParameters stepConfiguration) {
+    return stepConfiguration.getParameters() != null
+        && stepConfiguration.getParameters().values().stream().anyMatch(cloudformationParametersFileSpec
             -> ManifestStoreType.isInGitSubset(cloudformationParametersFileSpec.getStore().getSpec().getKind()));
   }
 
@@ -423,9 +424,10 @@ public class CloudformationStepHelper {
 
   @NotNull
   private List<GitFetchFilesConfig> getParametersGitFetchFileConfigs(
-      Ambiance ambiance, CloudformationCreateStackStepConfiguration stepConfiguration) {
-    if (isNotEmpty(stepConfiguration.getParametersFilesSpecs())) {
-      return stepConfiguration.getParametersFilesSpecs()
+      Ambiance ambiance, CloudformationCreateStackStepConfigurationParameters stepConfiguration) {
+    if (isNotEmpty(stepConfiguration.getParameters())) {
+      return stepConfiguration.getParameters()
+          .values()
           .stream()
           .filter(cloudformationParametersFileSpec
               -> ManifestStoreType.isInGitSubset(cloudformationParametersFileSpec.getStore().getSpec().getKind()))
@@ -447,7 +449,7 @@ public class CloudformationStepHelper {
       String templateBody, String templateUrl, String tags) {
     CloudformationCreateStackStepParameters cloudformationCreateStackStepParameters =
         (CloudformationCreateStackStepParameters) stepElementParameters.getSpec();
-    CloudformationCreateStackStepConfiguration stepConfiguration =
+    CloudformationCreateStackStepConfigurationParameters stepConfiguration =
         cloudformationCreateStackStepParameters.getConfiguration();
     List<StackStatus> stackStatuses = new ArrayList<>();
     if (isNotEmpty(getParameterFieldValue(stepConfiguration.getSkipOnStackStatuses()))) {
@@ -481,7 +483,7 @@ public class CloudformationStepHelper {
 
   private TaskChainResponse handleAwsS3FetchFileResponse(CloudformationStepExecutor cloudformationStepExecutor,
       Ambiance ambiance, StepElementParameters stepElementParameters,
-      CloudformationCreateStackStepConfiguration stepConfiguration,
+      CloudformationCreateStackStepConfigurationParameters stepConfiguration,
       CloudFormationCreateStackPassThroughData cloudFormationCreateStackPassThroughData,
       AwsS3FetchFilesResponse responseData) {
     Set<String> identifiers = cloudFormationCreateStackPassThroughData.getParametersFilesContent().keySet();
@@ -530,7 +532,7 @@ public class CloudformationStepHelper {
 
   private TaskChainResponse handleGitFetchResponse(CloudformationStepExecutor cloudformationStepExecutor,
       Ambiance ambiance, StepElementParameters stepElementParameters,
-      CloudformationCreateStackStepConfiguration stepConfiguration,
+      CloudformationCreateStackStepConfigurationParameters stepConfiguration,
       CloudFormationCreateStackPassThroughData cloudFormationCreateStackPassThroughData,
       GitFetchResponse responseData) {
     Map<String, FetchFilesResult> filesFromMultipleRepo = responseData.getFilesFromMultipleRepo();
@@ -603,7 +605,7 @@ public class CloudformationStepHelper {
 
   @NotNull
   private Map<String, String> getParameters(Ambiance ambiance,
-      CloudformationCreateStackStepConfiguration stepConfiguration,
+      CloudformationCreateStackStepConfigurationParameters stepConfiguration,
       CloudFormationCreateStackPassThroughData cloudFormationCreateStackPassThroughData) {
     Map<String, String> parameters = new HashMap<>();
     cloudFormationCreateStackPassThroughData.getParametersFilesContent().forEach(
@@ -619,11 +621,14 @@ public class CloudformationStepHelper {
         .getConnectorConfig();
   }
 
-  private Map<String, String> getInlineParameters(CloudformationCreateStackStepConfiguration stepConfiguration) {
-    Map<String, Object> parameters = NGVariablesUtils.getMapOfVariables(stepConfiguration.getParameterOverrides(), 0L);
+  private Map<String, String> getInlineParameters(
+      CloudformationCreateStackStepConfigurationParameters stepConfiguration) {
+    Map<String, Object> parameters = stepConfiguration.getParameterOverrides();
     Map<String, String> inlineParameters = new HashMap<>();
-    parameters.keySet().forEach(
-        key -> inlineParameters.put(key, ((ParameterField<?>) parameters.get(key)).getValue().toString()));
+    if (isNotEmpty(parameters)) {
+      parameters.keySet().forEach(
+          key -> inlineParameters.put(key, ((ParameterField<?>) parameters.get(key)).getValue().toString()));
+    }
     return inlineParameters;
   }
 
@@ -737,14 +742,14 @@ public class CloudformationStepHelper {
             ((RemoteCloudformationTemplateFileSpec) cloudformationTemplateFileSpec).getStore().getSpec().getKind());
   }
 
-  private boolean areTagsStoredOnGit(CloudformationCreateStackStepConfiguration stepConfiguration) {
+  private boolean areTagsStoredOnGit(CloudformationCreateStackStepConfigurationParameters stepConfiguration) {
     return stepConfiguration.getTags() != null
         && stepConfiguration.getTags().getType().equals(CloudformationTagsFileTypes.Remote)
         && ManifestStoreType.isInGitSubset(
             ((RemoteCloudformationTagsFileSpec) stepConfiguration.getTags().getSpec()).getStore().getSpec().getKind());
   }
 
-  private boolean areTagsStoredOnS3(CloudformationCreateStackStepConfiguration stepConfiguration) {
+  private boolean areTagsStoredOnS3(CloudformationCreateStackStepConfigurationParameters stepConfiguration) {
     return stepConfiguration.getTags() != null
         && stepConfiguration.getTags().getType().equals(CloudformationTagsFileTypes.Remote)
         && ((RemoteCloudformationTagsFileSpec) stepConfiguration.getTags().getSpec())

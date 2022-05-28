@@ -478,7 +478,7 @@ public class ShellScriptStateTest extends WingsBaseTest {
 
     doReturn("TASKID").when(delegateService).queueTask(any());
     WinRmConnectionAttributes winRmConnectionAttributes = new WinRmConnectionAttributes(
-        null, "", "TestUser", new char[10], true, 80, true, false, null, true, ACCOUNT_ID, "");
+        null, "", "TestUser", new char[10], true, 80, true, false, null, true, ACCOUNT_ID, "", null);
 
     when(settingsService.get(any()))
         .thenReturn(SettingAttribute.Builder.aSettingAttribute()
@@ -527,7 +527,7 @@ public class ShellScriptStateTest extends WingsBaseTest {
 
     doReturn("TASKID").when(delegateService).queueTask(any());
     WinRmConnectionAttributes winRmConnectionAttributes = new WinRmConnectionAttributes(
-        null, "", "TestUser", new char[10], true, 80, true, false, null, true, ACCOUNT_ID, "");
+        null, "", "TestUser", new char[10], true, 80, true, false, null, true, ACCOUNT_ID, "", null);
     when(templateExpressionProcessor.resolveSettingAttribute(any(), any()))
         .thenReturn(SettingAttribute.Builder.aSettingAttribute()
                         .withName("SETTING")
@@ -579,7 +579,7 @@ public class ShellScriptStateTest extends WingsBaseTest {
 
     doReturn("TASKID").when(delegateService).queueTask(any());
     WinRmConnectionAttributes winRmConnectionAttributes = new WinRmConnectionAttributes(
-        null, "", "TestUser", new char[10], true, 80, true, false, null, true, ACCOUNT_ID, "");
+        null, "", "TestUser", new char[10], true, 80, true, false, null, true, ACCOUNT_ID, "", null);
     when(templateExpressionProcessor.resolveSettingAttribute(any(), any()))
         .thenReturn(SettingAttribute.Builder.aSettingAttribute()
                         .withName("SETTING")

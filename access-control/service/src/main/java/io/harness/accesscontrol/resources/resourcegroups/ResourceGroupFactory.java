@@ -19,10 +19,12 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.resourcegroup.beans.ScopeFilterType;
 import io.harness.resourcegroup.v2.model.ResourceFilter;
+import io.harness.resourcegroup.v2.model.ResourceSelector;
 import io.harness.resourcegroup.v2.model.ScopeSelector;
 import io.harness.resourcegroup.v2.remote.dto.ResourceGroupDTO;
 import io.harness.resourcegroup.v2.remote.dto.ResourceGroupResponse;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -68,6 +70,42 @@ public class ResourceGroupFactory {
     return buildResourceGroup(resourceGroupResponse, scope == null ? null : scope.toString());
   }
 
+  public boolean addProjectResource(ScopeSelector scopeSelector) {
+    if (ScopeFilterType.INCLUDING_CHILD_SCOPES.equals(scopeSelector.getFilter())) {
+      return true;
+    } else if (ScopeFilterType.EXCLUDING_CHILD_SCOPES.equals(scopeSelector.getFilter())
+        && scopeSelector.getProjectIdentifier() != null) {
+      return true;
+    }
+    return false;
+  }
+
+  public boolean addOrgResource(ScopeSelector scopeSelector) {
+    if (scopeSelector.getProjectIdentifier() == null) {
+      if (ScopeFilterType.INCLUDING_CHILD_SCOPES.equals(scopeSelector.getFilter())) {
+        return true;
+      } else if (ScopeFilterType.EXCLUDING_CHILD_SCOPES.equals(scopeSelector.getFilter())
+          && scopeSelector.getOrgIdentifier() != null) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  public Set<String> getResourceSelector(ResourceSelector resourceSelector) {
+    if (isEmpty(resourceSelector.getIdentifiers())) {
+      return Collections.singleton(PATH_DELIMITER.concat(resourceSelector.getResourceType())
+                                       .concat(PATH_DELIMITER)
+                                       .concat(ResourceGroup.ALL_RESOURCES_IDENTIFIER));
+    } else {
+      return resourceSelector.getIdentifiers()
+          .stream()
+          .map(identifier
+              -> PATH_DELIMITER.concat(resourceSelector.getResourceType()).concat(PATH_DELIMITER).concat(identifier))
+          .collect(Collectors.toSet());
+    }
+  }
+
   public Set<String> buildResourceSelector(ResourceGroupDTO resourceGroupDTO) {
     Set<String> resourceSelectors = new HashSet<>();
     Set<String> scopeSelectors = new HashSet<>();
@@ -92,22 +130,31 @@ public class ResourceGroupFactory {
                                 .concat(PATH_DELIMITER)
                                 .concat(ResourceGroup.ALL_RESOURCES_IDENTIFIER));
     } else {
-      resourceFilter.getResources().forEach(resourceSelector -> {
-        if (isEmpty(resourceSelector.getIdentifiers())) {
-          resourceSelectors.add(PATH_DELIMITER.concat(resourceSelector.getResourceType())
-                                    .concat(PATH_DELIMITER)
-                                    .concat(ResourceGroup.ALL_RESOURCES_IDENTIFIER));
-        } else {
-          resourceSelectors.addAll(resourceSelector.getIdentifiers()
-                                       .stream()
-                                       .map(identifier
-                                           -> PATH_DELIMITER.concat(resourceSelector.getResourceType())
-                                                  .concat(PATH_DELIMITER)
-                                                  .concat(identifier))
-                                       .collect(Collectors.toSet()));
-        }
-      });
+      List<ResourceSelector> resources = resourceFilter.getResources();
+      resources.forEach(resourceSelector -> { resourceSelectors.addAll(getResourceSelector(resourceSelector)); });
     }
+
+    includedScopes.stream().filter(Objects::nonNull).forEach(scopeSelector -> {
+      Scope scope = getScope(scopeSelector);
+      Set<String> modifiedResourceSelectors = new HashSet<>(resourceSelectors);
+
+      StringBuilder selector = new StringBuilder(scope == null ? "" : scope.toString().concat(SCOPE_DELIMITER));
+      if (ScopeFilterType.INCLUDING_CHILD_SCOPES.equals(scopeSelector.getFilter())) {
+        selector.append(PATH_DELIMITER).append(ResourceGroup.INCLUDE_CHILD_SCOPES_IDENTIFIER);
+      }
+      if (Boolean.FALSE.equals(resourceFilter.isIncludeAllResources())) {
+        if (addOrgResource(scopeSelector)) {
+          modifiedResourceSelectors.addAll(
+              getResourceSelector(ResourceSelector.builder().resourceType("ORGANIZATION").build()));
+        }
+        if (addProjectResource(scopeSelector)) {
+          modifiedResourceSelectors.addAll(
+              getResourceSelector(ResourceSelector.builder().resourceType("PROJECT").build()));
+        }
+      }
+      modifiedResourceSelectors.forEach(
+          resourceSelector -> { selectors.add(selector.toString().concat(resourceSelector)); });
+    });
 
     scopeSelectors.forEach(scopeSelector -> {
       resourceSelectors.forEach(resourceSelector -> { selectors.add(scopeSelector.concat(resourceSelector)); });

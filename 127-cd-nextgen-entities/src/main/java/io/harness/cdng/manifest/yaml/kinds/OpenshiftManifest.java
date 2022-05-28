@@ -10,10 +10,12 @@ package io.harness.cdng.manifest.yaml.kinds;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper.StoreConfigWrapperParameters;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.bool;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.SwaggerConstants;
 import io.harness.cdng.manifest.ManifestType;
 import io.harness.cdng.manifest.yaml.ManifestAttributes;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
@@ -30,6 +32,7 @@ import io.harness.yaml.YamlSchemaTypes;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
+import java.util.List;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
@@ -64,6 +67,12 @@ public class OpenshiftManifest implements ManifestAttributes, Visitable {
   @SkipAutoEvaluation
   ParameterField<StoreConfigWrapper> store;
 
+  @Wither
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
+  @YamlSchemaTypes({runtime})
+  @SkipAutoEvaluation
+  ParameterField<List<String>> paramsPaths;
+
   @Wither @YamlSchemaTypes({string, bool}) @SkipAutoEvaluation ParameterField<Boolean> skipResourceVersioning;
 
   @Override
@@ -85,6 +94,9 @@ public class OpenshiftManifest implements ManifestAttributes, Visitable {
       resultantManifest = resultantManifest.withStore(
           ParameterField.createValueField(store.getValue().applyOverrides(storeConfigOverride)));
     }
+    if (!ParameterField.isNull(openshiftManifest.getParamsPaths())) {
+      resultantManifest = resultantManifest.withParamsPaths(openshiftManifest.getParamsPaths());
+    }
     if (openshiftManifest.getSkipResourceVersioning() != null) {
       resultantManifest = resultantManifest.withSkipResourceVersioning(openshiftManifest.getSkipResourceVersioning());
     }
@@ -94,14 +106,15 @@ public class OpenshiftManifest implements ManifestAttributes, Visitable {
 
   @Override
   public ManifestAttributeStepParameters getManifestAttributeStepParameters() {
-    return new OpenshiftManifestStepParameters(
-        identifier, StoreConfigWrapperParameters.fromStoreConfigWrapper(store.getValue()), skipResourceVersioning);
+    return new OpenshiftManifestStepParameters(identifier,
+        StoreConfigWrapperParameters.fromStoreConfigWrapper(store.getValue()), paramsPaths, skipResourceVersioning);
   }
 
   @Value
   public static class OpenshiftManifestStepParameters implements ManifestAttributeStepParameters {
     String identifier;
     StoreConfigWrapperParameters store;
+    ParameterField<List<String>> paramsPaths;
     ParameterField<Boolean> skipResourceVersioning;
   }
 }

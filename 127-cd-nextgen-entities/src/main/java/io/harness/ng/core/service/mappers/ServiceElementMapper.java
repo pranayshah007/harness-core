@@ -41,6 +41,7 @@ public class ServiceElementMapper {
     if (isEmpty(serviceEntity.getYaml())) {
       serviceEntity.setYaml(NGServiceEntityMapper.toYaml(ngServiceConfig));
     }
+    serviceEntity.setGitOpsEnabled(ngServiceConfig.getNgServiceV2InfoConfig().getGitOpsEnabled());
     return serviceEntity;
   }
 

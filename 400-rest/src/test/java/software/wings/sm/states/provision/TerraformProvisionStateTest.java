@@ -241,6 +241,8 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
         .when(secretManagerConfigService)
         .getDefaultSecretManager(any());
     doNothing().when(stateExecutionService).appendDelegateTaskDetails(anyString(), any());
+    doReturn(true).when(featureFlagService).isEnabled(eq(FeatureName.ACTIVITY_ID_BASED_TF_BASE_DIR), anyString());
+    doReturn(WORKFLOW_EXECUTION_ID).when(executionContext).getWorkflowExecutionId();
   }
 
   @Test
@@ -375,6 +377,7 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
     assertThat(parameters.isSkipRefreshBeforeApplyingPlan()).isTrue();
     assertParametersVariables(parameters);
     assertParametersBackendConfigs(parameters);
+    assertThat(parameters.isUseActivityIdBasedTfBaseDir()).isTrue();
   }
 
   @Test
@@ -615,7 +618,6 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
     doReturn("fileId").when(fileService).getLatestFileId(anyString(), eq(FileBucket.TERRAFORM_STATE));
     doReturn(ACCOUNT_ID).when(executionContext).getAccountId();
     doReturn(gitConfig).when(gitUtilsManager).getGitConfig(anyString());
-    when(executionContext.getWorkflowExecutionId()).thenReturn(WORKFLOW_EXECUTION_ID);
     when(executionContext.prepareSweepingOutputInquiryBuilder()).thenReturn(SweepingOutputInquiry.builder());
     List<EncryptedDataDetail> encryptedDataDetails = new ArrayList<>();
     when(secretManager.getEncryptionDetails(gitConfig, GLOBAL_APP_ID, WORKFLOW_EXECUTION_ID))
@@ -650,6 +652,7 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
     TerraformProvisionParameters parameters =
         (TerraformProvisionParameters) delegateTaskCaptor.getValue().getData().getParameters()[0];
     assertThat(parameters.getEncryptedTfPlan()).isNotNull();
+    assertThat(parameters.isUseActivityIdBasedTfBaseDir()).isTrue();
   }
 
   @Test
@@ -691,7 +694,6 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
         .thenReturn("fileId");
     doReturn(ACCOUNT_ID).when(executionContext).getAccountId();
     doReturn(gitConfig).when(gitUtilsManager).getGitConfig(anyString());
-    when(executionContext.getWorkflowExecutionId()).thenReturn(WORKFLOW_EXECUTION_ID);
     when(executionContext.prepareSweepingOutputInquiryBuilder()).thenReturn(SweepingOutputInquiry.builder());
     List<EncryptedDataDetail> encryptedDataDetails = new ArrayList<>();
     when(secretManager.getEncryptionDetails(gitConfig, GLOBAL_APP_ID, WORKFLOW_EXECUTION_ID))
@@ -807,7 +809,6 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
             .encryptedTfPlan(EncryptedRecordData.builder().build())
             .tfPlanJson("{}")
             .build());
-    doReturn("workflowExecutionId").when(executionContext).getWorkflowExecutionId();
     state.setProvisionerId(PROVISIONER_ID);
     doReturn(SweepingOutputInquiry.builder()).when(executionContext).prepareSweepingOutputInquiryBuilder();
     doReturn(TerraformInfrastructureProvisioner.builder().build())
@@ -938,6 +939,7 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
     assertThat(parameters.getAwsConfig()).isEqualTo(settingAttribute.getValue());
     assertThat(parameters.getAwsRoleArn()).isEqualTo("arn");
     assertThat(parameters.getAwsRegion()).isEqualTo("region");
+    assertThat(parameters.isUseActivityIdBasedTfBaseDir()).isTrue();
   }
 
   @Test
@@ -1042,7 +1044,6 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
     doReturn("fileId").when(fileService).getLatestFileId(anyString(), eq(FileBucket.TERRAFORM_STATE));
     doReturn(ACCOUNT_ID).when(executionContext).getAccountId();
     doReturn(gitConfig).when(gitUtilsManager).getGitConfig(anyString());
-    when(executionContext.getWorkflowExecutionId()).thenReturn(WORKFLOW_EXECUTION_ID);
     when(executionContext.prepareSweepingOutputInquiryBuilder()).thenReturn(SweepingOutputInquiry.builder());
     List<EncryptedDataDetail> encryptedDataDetails = new ArrayList<>();
     when(secretManager.getEncryptionDetails(gitConfig, GLOBAL_APP_ID, WORKFLOW_EXECUTION_ID))
@@ -1380,7 +1381,6 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
 
     standardParams.setCurrentUser(EmbeddedUser.builder().name(USER_NAME).email(USER_EMAIL).build());
     doReturn(WorkflowType.ORCHESTRATION).when(executionContext).getWorkflowType();
-    doReturn(WORKFLOW_EXECUTION_ID).when(executionContext).getWorkflowExecutionId();
     doReturn(WORKFLOW_NAME).when(executionContext).getWorkflowExecutionName();
     ArgumentCaptor<Activity> activityCaptor = ArgumentCaptor.forClass(Activity.class);
 
@@ -1763,7 +1763,6 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
     doReturn(provisioner).when(infrastructureProvisionerService).get(APP_ID, PROVISIONER_ID);
     doReturn(ACCOUNT_ID).when(executionContext).getAccountId();
     doReturn(gitConfig).when(gitUtilsManager).getGitConfig(anyString());
-    when(executionContext.getWorkflowExecutionId()).thenReturn(WORKFLOW_EXECUTION_ID);
 
     state.setRunPlanOnly(true);
     ExecutionResponse executionResponse = state.execute(executionContext);
@@ -2055,6 +2054,9 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
         .when(executionContext)
         .prepareSweepingOutputBuilder(any(SweepingOutputInstance.Scope.class));
     doReturn(true).when(featureFlagService).isEnabled(eq(FeatureName.OPTIMIZED_TF_PLAN), anyString());
+    doReturn(false)
+        .when(featureFlagService)
+        .isEnabled(eq(FeatureName.SAVE_TERRAFORM_APPLY_SWEEPING_OUTPUT_TO_WORKFLOW), anyString());
 
     if (replaceExistingInstance) {
       doReturn(SweepingOutputInstance.builder()
@@ -2079,5 +2081,11 @@ public class TerraformProvisionStateTest extends WingsBaseTest {
     TerraformPlanParam savedPlanParam = (TerraformPlanParam) savedInstance.getValue();
     assertThat(savedPlanParam.getTfplan()).isNull();
     assertThat(savedPlanParam.getTfPlanJsonFileId()).isEqualTo("fileId");
+
+    doReturn(true)
+        .when(featureFlagService)
+        .isEnabled(eq(FeatureName.SAVE_TERRAFORM_APPLY_SWEEPING_OUTPUT_TO_WORKFLOW), anyString());
+    state.handleAsyncResponse(executionContext, response);
+    verify(executionContext, times(1)).prepareSweepingOutputBuilder(eq(Scope.WORKFLOW));
   }
 }

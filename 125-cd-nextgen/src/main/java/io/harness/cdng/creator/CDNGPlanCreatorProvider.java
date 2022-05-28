@@ -16,11 +16,14 @@ import io.harness.cdng.creator.plan.artifact.ArtifactsPlanCreator;
 import io.harness.cdng.creator.plan.artifact.PrimaryArtifactPlanCreator;
 import io.harness.cdng.creator.plan.artifact.SideCarArtifactPlanCreator;
 import io.harness.cdng.creator.plan.artifact.SideCarListPlanCreator;
-import io.harness.cdng.creator.plan.environment.EnvironmentPlanCreator;
+import io.harness.cdng.creator.plan.configfile.ConfigFilesPlanCreator;
+import io.harness.cdng.creator.plan.configfile.IndividualConfigFilePlanCreator;
+import io.harness.cdng.creator.plan.environment.EnvironmentPlanCreatorV2;
 import io.harness.cdng.creator.plan.execution.CDExecutionPMSPlanCreator;
 import io.harness.cdng.creator.plan.manifest.IndividualManifestPlanCreator;
 import io.harness.cdng.creator.plan.manifest.ManifestsPlanCreator;
 import io.harness.cdng.creator.plan.rollback.ExecutionStepsRollbackPMSPlanCreator;
+import io.harness.cdng.creator.plan.service.ServiceDefinitionPlanCreator;
 import io.harness.cdng.creator.plan.service.ServicePlanCreator;
 import io.harness.cdng.creator.plan.stage.DeploymentStagePMSPlanCreatorV2;
 import io.harness.cdng.creator.plan.steps.CDPMSStepFilterJsonCreator;
@@ -70,6 +73,7 @@ import io.harness.cdng.provision.terraform.variablecreator.TerraformRollbackStep
 import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.executions.steps.StepSpecTypeConstants;
 import io.harness.plancreator.stages.parallel.ParallelPlanCreator;
+import io.harness.plancreator.steps.SpecNodePlanCreator;
 import io.harness.plancreator.steps.StepGroupPMSPlanCreator;
 import io.harness.pms.contracts.steps.StepInfo;
 import io.harness.pms.contracts.steps.StepMetaData;
@@ -94,7 +98,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
   private static final List<String> CLOUDFORMATION_CATEGORY =
       Arrays.asList("Kubernetes", "Provisioner", "Cloudformation");
   private static final String CLOUDFORMATION_STEP_METADATA = "Cloudformation";
-  private static final List<String> TERRAFORM_CATEGORY = Arrays.asList("Kubernetes", "Provisioner");
+  private static final List<String> TERRAFORM_CATEGORY = Arrays.asList("Kubernetes", "Provisioner", "Helm");
 
   @Inject InjectorUtils injectorUtils;
   @Override
@@ -121,7 +125,8 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new CDExecutionPMSPlanCreator());
     planCreators.add(new ExecutionStepsRollbackPMSPlanCreator());
     planCreators.add(new ServicePlanCreator());
-    planCreators.add(new EnvironmentPlanCreator());
+    planCreators.add(new ServiceDefinitionPlanCreator());
+    planCreators.add(new EnvironmentPlanCreatorV2());
     planCreators.add(new ArtifactsPlanCreator());
     planCreators.add(new PrimaryArtifactPlanCreator());
     planCreators.add(new SideCarListPlanCreator());
@@ -136,6 +141,9 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new CloudformationCreateStackStepPlanCreator());
     planCreators.add(new CloudformationDeleteStackStepPlanCreator());
     planCreators.add(new CloudformationRollbackStackStepPlanCreator());
+    planCreators.add(new IndividualConfigFilePlanCreator());
+    planCreators.add(new ConfigFilesPlanCreator());
+    planCreators.add(new SpecNodePlanCreator());
     injectorUtils.injectMembers(planCreators);
     return planCreators;
   }
@@ -337,6 +345,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
                                                     .addAllCategory(CLOUDFORMATION_CATEGORY)
                                                     .addFolderPaths(CLOUDFORMATION_STEP_METADATA)
                                                     .build())
+                               .setFeatureFlag(FeatureName.CLOUDFORMATION_NG.name())
                                .build();
 
     StepInfo deleteStack = StepInfo.newBuilder()
@@ -347,6 +356,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
                                                     .addAllCategory(CLOUDFORMATION_CATEGORY)
                                                     .addFolderPaths(CLOUDFORMATION_STEP_METADATA)
                                                     .build())
+                               .setFeatureFlag(FeatureName.CLOUDFORMATION_NG.name())
                                .build();
 
     StepInfo rollbackStack = StepInfo.newBuilder()
@@ -357,6 +367,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
                                                       .addAllCategory(CLOUDFORMATION_CATEGORY)
                                                       .addFolderPaths(CLOUDFORMATION_STEP_METADATA)
                                                       .build())
+                                 .setFeatureFlag(FeatureName.CLOUDFORMATION_NG.name())
                                  .build();
 
     List<StepInfo> stepInfos = new ArrayList<>();

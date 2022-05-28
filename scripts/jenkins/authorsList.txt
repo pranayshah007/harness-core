@@ -172,6 +172,7 @@ Shalini Agrawal shalini.agarwal@harness.io
 Shashank Singh shashank.singh@harness.io
 Shaswat Deep shaswat.deep@harness.io
 Shivakumar Ningappa shivakumar.ningappa@harness.io
+Shreyas Singh shreyas.singh@harness.io
 Shubham Agrawal shubham.agrawal@harness.io
 Shubhanshu Verma shubhanshu.verma@harness.io
 Sowmya K sowmya.k@harness.io
@@ -271,3 +272,9 @@ Miloš Vasić milos.vasic@harness.io
 James Cox james.cox@harness.io
 Soumyajit Das soumyajit.das@harness.io
 smjt-h soumyajit.das@harness.io
+Avinash Madhwani avinash.m@harness.io
+Raj Das rajbabu.das@harness.io
+Vansh Bhatia vansh.bhatia@harness.io
+Saranya Jena saranya.jena@harness.io
+Amit Kumar Das amit.das@harness.io
+Sarthak Jain sarthak.jain@harness.io

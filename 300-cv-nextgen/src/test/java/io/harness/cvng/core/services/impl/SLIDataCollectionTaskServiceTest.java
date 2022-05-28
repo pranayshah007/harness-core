@@ -36,7 +36,6 @@ import io.harness.cvng.core.entities.PrometheusCVConfig;
 import io.harness.cvng.core.entities.SLIDataCollectionTask;
 import io.harness.cvng.core.services.api.CVConfigService;
 import io.harness.cvng.core.services.api.DataCollectionSLIInfoMapper;
-import io.harness.cvng.core.services.api.DataCollectionTaskManagementService;
 import io.harness.cvng.core.services.api.DataCollectionTaskService;
 import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.services.api.MonitoringSourcePerpetualTaskService;
@@ -75,7 +74,6 @@ public class SLIDataCollectionTaskServiceTest extends CvNextGenTestBase {
   @Inject private VerificationJobInstanceService verificationJobInstanceService;
   @Inject private MonitoringSourcePerpetualTaskService monitoringSourcePerpetualTaskService;
   @Inject private Map<DataSourceType, DataCollectionSLIInfoMapper> dataSourceTypeDataCollectionInfoMapperMap;
-  private String cvConfigId;
   private String accountId;
   private String orgIdentifier;
   private String projectIdentifier;
@@ -83,9 +81,6 @@ public class SLIDataCollectionTaskServiceTest extends CvNextGenTestBase {
   private String dataCollectionWorkerId;
   private String verificationTaskId;
   private CVConfig cvConfig;
-  @Inject
-  private Map<DataCollectionTask.Type, DataCollectionTaskManagementService>
-      dataCollectionTaskManagementServiceMapBinder;
   @Inject private PrometheusDataCollectionInfoMapper prometheusDataCollectionSLIInfoMapper;
   @Inject private SLIDataCollectionTaskServiceImpl sliDataCollectionTaskService;
   BuilderFactory builderFactory = BuilderFactory.getDefault();
@@ -101,7 +96,6 @@ public class SLIDataCollectionTaskServiceTest extends CvNextGenTestBase {
     projectIdentifier = builderFactory.getContext().getProjectIdentifier();
     metricPackService.createDefaultMetricPackAndThresholds(accountId, orgIdentifier, projectIdentifier);
     cvConfig = cvConfigService.save(createCVConfig());
-    cvConfigId = cvConfig.getUuid();
     serviceLevelIndicator = createSLI();
     verificationTaskId = verificationTaskService.getSLIVerificationTaskId(accountId, serviceLevelIndicator.getUuid());
     dataCollectionTaskService = spy(dataCollectionTaskService);
@@ -232,7 +226,7 @@ public class SLIDataCollectionTaskServiceTest extends CvNextGenTestBase {
   }
 
   private CVConfig createCVConfig() {
-    PrometheusCVConfig cvConfig = new PrometheusCVConfig();
+    PrometheusCVConfig cvConfig = builderFactory.prometheusCVConfigBuilder().build();
     String identifier = HealthSourceService.getNameSpacedIdentifier(
         builderFactory.getContext().getServiceIdentifier() + "_" + builderFactory.getContext().getEnvIdentifier(),
         "healthSourceIdentifier");
@@ -240,8 +234,6 @@ public class SLIDataCollectionTaskServiceTest extends CvNextGenTestBase {
     cvConfig.setAccountId(accountId);
     cvConfig.setEnabled(true);
     cvConfig.setConnectorIdentifier(generateUuid());
-    cvConfig.setServiceIdentifier(generateUuid());
-    cvConfig.setEnvIdentifier(generateUuid());
     cvConfig.setProjectIdentifier(projectIdentifier);
     cvConfig.setOrgIdentifier(orgIdentifier);
     cvConfig.setIdentifier(identifier);

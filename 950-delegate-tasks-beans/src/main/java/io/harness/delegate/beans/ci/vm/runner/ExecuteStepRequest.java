@@ -102,7 +102,10 @@ public class ExecuteStepRequest {
     @JsonProperty("build_tool") String buildTool;
     @JsonProperty("language") String language;
     @JsonProperty("packages") String packages;
+    @JsonProperty("namespaces") String namespaces;
     @JsonProperty("run_only_selected_tests") boolean runOnlySelectedTests;
     @JsonProperty("test_annotations") String testAnnotations;
+    @JsonProperty("build_environment") String buildEnvironment;
+    @JsonProperty("framework_version") String frameworkVersion;
   }
 }

@@ -55,6 +55,7 @@ import software.wings.beans.TaskType;
 import software.wings.beans.artifact.Artifact;
 import software.wings.beans.command.Command;
 import software.wings.beans.command.CommandExecutionContext;
+import software.wings.beans.command.CommandMapper;
 import software.wings.beans.command.ContainerSetupCommandUnitExecutionData;
 import software.wings.beans.command.ContainerSetupParams;
 import software.wings.beans.command.EcsSetupParams;
@@ -252,7 +253,7 @@ public abstract class ContainerServiceSetup extends State {
               .data(TaskData.builder()
                         .async(true)
                         .taskType(TaskType.COMMAND.name())
-                        .parameters(new Object[] {command, commandExecutionContext})
+                        .parameters(new Object[] {CommandMapper.toCommandDTO(command), commandExecutionContext})
                         .timeout(TimeUnit.HOURS.toMillis(1))
                         .build())
               .setupAbstraction(Cd1SetupFields.ENV_ID_FIELD, env.getUuid())

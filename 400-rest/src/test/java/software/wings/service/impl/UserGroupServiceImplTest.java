@@ -1453,6 +1453,31 @@ public class UserGroupServiceImplTest extends WingsBaseTest {
     assertThat(updatedUserGroup.getParents().size()).isEqualTo(0);
   }
 
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void test_deleteUserGroupWithExistingReference() {
+    UserGroup userGroup =
+        builder().accountId(accountId).uuid("userGroupId").description(description).name(userGroupName).build();
+
+    persistence.save(userGroup);
+    UserGroupEntityReference reference = UserGroupEntityReference.builder()
+                                             .id("pipelineId")
+                                             .accountId(accountId)
+                                             .appId("appId")
+                                             .entityType("PIPELINE")
+                                             .build();
+
+    userGroupService.addParentsReference("userGroupId", accountId, "appId", "pipelineId", EntityType.PIPELINE.name());
+    try {
+      userGroupService.delete(accountId, "userGroupId", false);
+    } catch (InvalidRequestException ex) {
+      assertThat(ex.getMessage())
+          .isEqualTo(
+              "This userGroup is being referenced in either approval step/stage or notification strategy. Please make sure to remove the references to delete this userGroup.");
+    }
+  }
+
   @Test()
   @Owner(developers = NAMANG)
   @Category(UnitTests.class)

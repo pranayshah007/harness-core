@@ -160,10 +160,10 @@ public class InstanceServiceImpl implements InstanceService {
   }
 
   @Override
-  public List<InstanceDTO> getActiveInstancesByInfrastructureMappingId(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, String infrastructureMappingId, long timestampInMs) {
+  public List<InstanceDTO> getActiveInstancesByInfrastructureMappingId(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String infrastructureMappingId) {
     return InstanceMapper.toDTO(instanceRepository.getActiveInstancesByInfrastructureMappingId(
-        accountIdentifier, orgIdentifier, projectIdentifier, infrastructureMappingId, timestampInMs));
+        accountIdentifier, orgIdentifier, projectIdentifier, infrastructureMappingId));
   }
 
   @Override

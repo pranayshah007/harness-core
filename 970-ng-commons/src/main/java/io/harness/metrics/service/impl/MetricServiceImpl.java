@@ -23,7 +23,7 @@ import io.harness.serializer.YamlUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
-import groovy.lang.Singleton;
+import com.google.inject.Singleton;
 import io.opencensus.common.Duration;
 import io.opencensus.common.Scope;
 import io.opencensus.exporter.stats.prometheus.PrometheusStatsCollector;
@@ -99,7 +99,8 @@ public class MetricServiceImpl implements MetricService {
   }
 
   private boolean isPrometheusConnectorEnabled() {
-    return isNotEmpty(System.getenv(ENABLE_PROMETHEUS_COLLECTOR));
+    return isNotEmpty(System.getenv(ENABLE_PROMETHEUS_COLLECTOR))
+        && Boolean.parseBoolean(System.getenv(ENABLE_PROMETHEUS_COLLECTOR));
   }
 
   private boolean isMetricPublicationEnabled() {

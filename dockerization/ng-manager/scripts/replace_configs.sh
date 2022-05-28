@@ -336,6 +336,14 @@ if [[ "" != "$LOCK_CONFIG_REDIS_URL" ]]; then
   yq write -i $REDISSON_CACHE_FILE singleServerConfig.address "$LOCK_CONFIG_REDIS_URL"
 fi
 
+if [[ "" != "$DELEGATE_STATUS_ENDPOINT" ]]; then
+  yq write -i $DELEGATE_STATUS_ENDPOINT delegateStatusEndpoint "$DELEGATE_STATUS_ENDPOINT"
+fi
+
+if [[ "" != "$SIGNUP_TARGET_ENV" ]]; then
+  yq write -i $SIGNUP_TARGET_ENV signupTargetEnv "$SIGNUP_TARGET_ENV"
+fi
+
 if [[ "$LOCK_CONFIG_USE_SENTINEL" == "true" ]]; then
   yq delete -i $REDISSON_CACHE_FILE singleServerConfig
 fi
@@ -463,3 +471,6 @@ replace_key_value secretsConfiguration.secretResolutionEnabled "$RESOLVE_SECRETS
 
 replace_key_value opaServerConfig.baseUrl "$OPA_SERVER_BASEURL"
 replace_key_value opaServerConfig.secret "$OPA_SERVER_SECRET"
+
+replace_key_value gitopsResourceClientConfig.config.baseUrl "$GITOPS_SERVICE_CLIENT_BASEURL"
+replace_key_value gitopsResourceClientConfig.secret "$GITOPS_SERVICE_SECRET"

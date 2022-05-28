@@ -402,6 +402,11 @@ public class AuthServiceImpl implements AuthService {
   }
 
   @Override
+  public void validateDelegateToken(String accountId, String tokenString) {
+    delegateTokenAuthenticator.validateDelegateAuth2Token(accountId, tokenString);
+  }
+
+  @Override
   public void validateExternalServiceToken(String accountId, String externalServiceToken) {
     String jwtExternalServiceSecret = configuration.getPortal().getJwtExternalServiceSecret();
     if (isBlank(jwtExternalServiceSecret)) {

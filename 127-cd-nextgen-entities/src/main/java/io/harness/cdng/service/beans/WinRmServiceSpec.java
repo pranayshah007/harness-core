@@ -12,6 +12,8 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactOverrideSetWrapper;
+import io.harness.cdng.configfile.ConfigFileOverrideSetWrapper;
+import io.harness.cdng.configfile.ConfigFileWrapper;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.cdng.manifest.yaml.ManifestOverrideSetWrapper;
 import io.harness.cdng.service.ServiceSpec;
@@ -19,12 +21,14 @@ import io.harness.cdng.variables.beans.NGVariableOverrideSetWrapper;
 import io.harness.cdng.visitor.helpers.serviceconfig.WinRmServiceSpecVisitorHelper;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.ng.core.k8s.ServiceSpecType;
+import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.beans.VisitableChildren;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
 import io.harness.yaml.core.VariableExpression;
 import io.harness.yaml.core.variables.NGVariable;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
@@ -41,13 +45,20 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.cdng.service.beans.WinRmServiceSpec")
 @OwnedBy(HarnessTeam.CDP)
 public class WinRmServiceSpec implements ServiceSpec, Visitable {
+  @JsonProperty(YamlNode.UUID_FIELD_NAME)
+  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
+  @ApiModelProperty(hidden = true)
+  String uuid;
+
   List<NGVariable> variables;
   ArtifactListConfig artifacts;
   List<ManifestConfigWrapper> manifests;
+  List<ConfigFileWrapper> configFiles;
 
   @VariableExpression(skipVariableExpression = true) List<NGVariableOverrideSetWrapper> variableOverrideSets;
   @VariableExpression(skipVariableExpression = true) List<ArtifactOverrideSetWrapper> artifactOverrideSets;
   @VariableExpression(skipVariableExpression = true) List<ManifestOverrideSetWrapper> manifestOverrideSets;
+  @VariableExpression(skipVariableExpression = true) List<ConfigFileOverrideSetWrapper> configFileOverrideSets;
 
   // For Visitor Framework Impl
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
@@ -68,6 +79,11 @@ public class WinRmServiceSpec implements ServiceSpec, Visitable {
     if (EmptyPredicate.isNotEmpty(artifactOverrideSets)) {
       artifactOverrideSets.forEach(artifactOverrideSet -> children.add("artifactOverrideSets", artifactOverrideSet));
     }
+
+    if (EmptyPredicate.isNotEmpty(configFiles)) {
+      configFiles.forEach(configFile -> children.add("configFiles", configFile));
+    }
+
     return children;
   }
 }

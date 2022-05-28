@@ -9,13 +9,21 @@ package software.wings.utils;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
+import static software.wings.beans.artifact.ArtifactStreamType.ACR;
 import static software.wings.beans.artifact.ArtifactStreamType.AMAZON_S3;
 import static software.wings.beans.artifact.ArtifactStreamType.AMI;
 import static software.wings.beans.artifact.ArtifactStreamType.ARTIFACTORY;
+import static software.wings.beans.artifact.ArtifactStreamType.AZURE_MACHINE_IMAGE;
+import static software.wings.beans.artifact.ArtifactStreamType.CUSTOM;
+import static software.wings.beans.artifact.ArtifactStreamType.DOCKER;
+import static software.wings.beans.artifact.ArtifactStreamType.ECR;
+import static software.wings.beans.artifact.ArtifactStreamType.GCR;
+import static software.wings.beans.artifact.ArtifactStreamType.NEXUS;
 
 import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.helpers.ext.jenkins.BuildDetails;
 
+import com.google.common.collect.Lists;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -23,6 +31,11 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class DelegateArtifactCollectionUtils {
+  public static final List<String> SUPPORTED_ARTIFACT_CLEANUP_LIST =
+      Lists.newArrayList(DOCKER, AMI, ARTIFACTORY, GCR, ECR, ACR, NEXUS, AZURE_MACHINE_IMAGE, CUSTOM)
+          .stream()
+          .map(Enum::name)
+          .collect(Collectors.toList());
   /**
    * getNewBuildDetails returns new BuildDetails after removing Artifact already present in DB.
    *
@@ -88,5 +101,9 @@ public class DelegateArtifactCollectionUtils {
           || !artifactStreamAttributes.getRepositoryType().equals(RepositoryType.docker.name());
     }
     return false;
+  }
+
+  public static boolean supportsCleanup(String artifactStreamType) {
+    return SUPPORTED_ARTIFACT_CLEANUP_LIST.stream().anyMatch(x -> x.equals(artifactStreamType));
   }
 }

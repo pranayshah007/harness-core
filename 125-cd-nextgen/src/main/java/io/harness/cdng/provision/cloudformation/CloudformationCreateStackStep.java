@@ -34,6 +34,7 @@ import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.k8s.K8sCommandUnitConstants;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.ng.core.EntityDetail;
+import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.plancreator.steps.common.rollback.TaskChainExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -108,8 +109,8 @@ public class CloudformationCreateStackStep
     }
 
     // Parameters file connectors
-    if (isNotEmpty(cloudformationCreateStackStepParameters.getConfiguration().getParametersFilesSpecs())) {
-      cloudformationCreateStackStepParameters.getConfiguration().getParametersFilesSpecs().forEach(
+    if (isNotEmpty(cloudformationCreateStackStepParameters.getConfiguration().getParameters())) {
+      cloudformationCreateStackStepParameters.getConfiguration().getParameters().values().forEach(
           cloudformationParametersFileSpec -> {
             String connectorRef =
                 getParameterFieldValue(cloudformationParametersFileSpec.getStore().getSpec().getConnectorReference());
@@ -144,7 +145,7 @@ public class CloudformationCreateStackStep
       PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
     CloudformationCreateStackStepParameters cloudformationCreateStackStepParameters =
         (CloudformationCreateStackStepParameters) stepParameters.getSpec();
-    CloudformationCreateStackStepConfiguration stepConfiguration =
+    CloudformationCreateStackStepConfigurationParameters stepConfiguration =
         cloudformationCreateStackStepParameters.getConfiguration();
     if (passThroughData instanceof StepExceptionPassThroughData) {
       StepExceptionPassThroughData stepExceptionPassThroughData = (StepExceptionPassThroughData) passThroughData;
@@ -172,9 +173,11 @@ public class CloudformationCreateStackStep
     cloudformationStepHelper.saveCloudFormationInheritOutput(stepConfiguration,
         getParameterFieldValue(cloudformationCreateStackStepParameters.getProvisionerIdentifier()), ambiance,
         cloudFormationCreateStackNGResponse.isExistentStack());
-    CloudformationConfig cloudformationConfig = cloudformationStepHelper.getCloudformationConfig(
-        ambiance, stepParameters, (CloudFormationCreateStackPassThroughData) passThroughData);
-    cloudformationConfigDAL.saveCloudformationConfig(cloudformationConfig);
+    if (!cloudformationTaskNGResponse.isUpdatedNotPerformed()) {
+      CloudformationConfig cloudformationConfig = cloudformationStepHelper.getCloudformationConfig(
+          ambiance, stepParameters, (CloudFormationCreateStackPassThroughData) passThroughData);
+      cloudformationConfigDAL.saveCloudformationConfig(cloudformationConfig);
+    }
     return StepResponse.builder()
         .unitProgressList(cloudformationTaskNGResponse.getUnitProgressData().getUnitProgresses())
         .stepOutcome(StepResponse.StepOutcome.builder()
@@ -212,7 +215,10 @@ public class CloudformationCreateStackStep
     final TaskRequest taskRequest = StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
         Arrays.asList(K8sCommandUnitConstants.FetchFiles, CloudformationCommandUnit.CreateStack.name()),
         TaskType.CLOUDFORMATION_TASK_NG.getDisplayName(),
-        StepUtils.getTaskSelectors(stepParameters.getDelegateSelectors()), stepHelper.getEnvironmentType(ambiance));
+        TaskSelectorYaml.toTaskSelector(
+            ((CloudformationCreateStackStepParameters) stepParameters.getSpec()).getDelegateSelectors()),
+        stepHelper.getEnvironmentType(ambiance));
+
     return TaskChainResponse.builder().taskRequest(taskRequest).passThroughData(passThroughData).chainEnd(true).build();
   }
 }

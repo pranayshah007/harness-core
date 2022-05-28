@@ -172,7 +172,7 @@ public class AwsResourceServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void getCFStates() {
     Set<String> states = service.getCFStates();
-    assertThat(states).size().isEqualTo(22);
+    assertThat(states).size().isEqualTo(23);
   }
 
   @Test()
