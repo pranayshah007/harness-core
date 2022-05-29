@@ -52,7 +52,6 @@ public class KubernetesServiceSpec implements ServiceSpec, Visitable {
 
   // For Visitor Framework Impl
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
-  boolean gitOpsEnabled;
 
   @Override
   public String getType() {
