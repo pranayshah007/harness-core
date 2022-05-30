@@ -41,6 +41,7 @@ import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.entitydetail.EntityDetailProtoToRestMapper;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.ng.core.template.TemplateEntityType;
+import io.harness.ng.core.template.TemplateReferenceRequestDTO;
 import io.harness.pms.contracts.service.EntityReferenceServiceGrpc;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.preflight.PreFlightCheckMetadata;
@@ -167,8 +168,8 @@ public class TemplateReferenceHelperTest extends TemplateServiceTestBase {
              anyString(), anyString(), anyString(), anyString(), anyString()))
         .thenReturn(Collections.EMPTY_LIST);
 
-    List<EntityDetailProtoDTO> templateReferences =
-        templateReferenceHelper.getNestedTemplateReferences(ACCOUNT_ID, ORG_ID, PROJECT_ID, yaml, true);
+    List<EntityDetailProtoDTO> templateReferences = templateReferenceHelper.getNestedTemplateReferences(
+        ACCOUNT_ID, ORG_ID, PROJECT_ID, TemplateReferenceRequestDTO.builder().yaml(yaml).build(), true);
     assertThat(templateReferences).isNotNull().hasSize(2);
     Map<String, String> metadata1 = new HashMap<>();
     Map<String, String> metadata2 = new HashMap<>();
@@ -274,8 +275,8 @@ public class TemplateReferenceHelperTest extends TemplateServiceTestBase {
     when(templateSetupUsageHelper.getReferencesOfTemplate("accountId", "orgId", "projectId", "approvalTemplate", "1"))
         .thenReturn(Collections.emptyList());
 
-    List<EntityDetailProtoDTO> referredEntities =
-        templateReferenceHelper.getNestedTemplateReferences(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, false);
+    List<EntityDetailProtoDTO> referredEntities = templateReferenceHelper.getNestedTemplateReferences(
+        ACCOUNT_ID, ORG_ID, PROJECT_ID, TemplateReferenceRequestDTO.builder().yaml(pipelineYaml).build(), false);
 
     assertThat(referredEntities).isNotNull().hasSize(3);
     Map<String, String> metadata1 = new HashMap<>();
@@ -301,8 +302,9 @@ public class TemplateReferenceHelperTest extends TemplateServiceTestBase {
     String filename = "pipeline-with-references.yaml";
     String pipelineYaml = readFile(filename);
 
-    assertThatThrownBy(
-        () -> templateReferenceHelper.getNestedTemplateReferences(ACCOUNT_ID, ORG_ID, null, pipelineYaml, false))
+    assertThatThrownBy(()
+                           -> templateReferenceHelper.getNestedTemplateReferences(ACCOUNT_ID, ORG_ID, null,
+                               TemplateReferenceRequestDTO.builder().yaml(pipelineYaml).build(), false))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("ProjectIdentifier cannot be empty for PROJECT scope");
   }
