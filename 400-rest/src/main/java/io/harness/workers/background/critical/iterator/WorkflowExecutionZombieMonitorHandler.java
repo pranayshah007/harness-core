@@ -17,10 +17,12 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.ExecutionInterruptType;
 import io.harness.beans.ExecutionStatus;
+import io.harness.beans.FeatureName;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.beans.SortOrder;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.iterator.PersistenceIterator.ProcessMode;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.iterator.PersistenceIteratorFactory.PumpExecutorOptions;
@@ -62,9 +64,9 @@ public class WorkflowExecutionZombieMonitorHandler implements Handler<WorkflowEx
 
   @Inject private PersistenceIteratorFactory persistenceIteratorFactory;
   @Inject private MorphiaPersistenceProvider<WorkflowExecution> persistenceProvider;
-  @Inject private WingsPersistence wingsPersistence;
   @Inject private WorkflowExecutionService workflowExecutionService;
   @Inject private StateExecutionService stateExecutionService;
+  @Inject private FeatureFlagService featureFlagService;
 
   public void registerIterators(int threadPoolSize) {
     log.info("Register {} using thread pool size of {}", PUMP_EXEC_NAME, threadPoolSize);
@@ -103,6 +105,10 @@ public class WorkflowExecutionZombieMonitorHandler implements Handler<WorkflowEx
 
   @Override
   public void handle(WorkflowExecution wfExecution) {
+    if (featureFlagService.isNotEnabled(FeatureName.WORKFLOW_EXECUTION_ZOMBIE_MONITOR, wfExecution.getAccountId())) {
+      return;
+    }
+
     log.info("Evaluating if workflow execution {} is a zombie execution [workflowId={}]", wfExecution.getUuid(),
         wfExecution.getWorkflowId());
 

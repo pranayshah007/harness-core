@@ -14,6 +14,7 @@ import static software.wings.sm.StateExecutionInstance.Builder.aStateExecutionIn
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -22,16 +23,16 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.ExecutionInterruptType;
+import io.harness.beans.FeatureName;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.beans.SearchFilter;
 import io.harness.beans.SortOrder;
 import io.harness.category.element.UnitTests;
-import io.harness.mongo.iterator.provider.MorphiaPersistenceProvider;
+import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
 
 import software.wings.beans.WorkflowExecution;
-import software.wings.dl.WingsPersistence;
 import software.wings.service.intfc.StateExecutionService;
 import software.wings.service.intfc.WorkflowExecutionService;
 import software.wings.sm.ExecutionInterrupt;
@@ -44,6 +45,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -61,10 +63,24 @@ public class WorkflowExecutionZombieMonitorHandlerTest {
 
   @InjectMocks private WorkflowExecutionZombieMonitorHandler monitorHandler;
 
-  @Mock private MorphiaPersistenceProvider<WorkflowExecution> persistenceProvider;
-  @Mock private WingsPersistence wingsPersistence;
   @Mock private WorkflowExecutionService workflowExecutionService;
   @Mock private StateExecutionService stateExecutionService;
+  @Mock private FeatureFlagService featureFlagService;
+
+  @Before
+  public void setup() {
+    when(featureFlagService.isNotEnabled(eq(FeatureName.WORKFLOW_EXECUTION_ZOMBIE_MONITOR), any())).thenReturn(false);
+  }
+
+  @Test
+  public void shouldIgnoreExecutionWhenFeatureFlagDisable() {
+    when(featureFlagService.isNotEnabled(eq(FeatureName.WORKFLOW_EXECUTION_ZOMBIE_MONITOR), any())).thenReturn(true);
+
+    monitorHandler.handle(createValidWorkflowExecution());
+
+    verify(stateExecutionService, never()).list(any());
+    verify(workflowExecutionService, never()).triggerExecutionInterrupt(any());
+  }
 
   @Test
   @Category(UnitTests.class)
@@ -78,7 +94,7 @@ public class WorkflowExecutionZombieMonitorHandlerTest {
   @Category(UnitTests.class)
   @Owner(developers = FERNANDOD)
   public void shouldHandleWorkflowExecutionWhenNotFoundStateExecutionInstances() {
-    WorkflowExecution wfExecution = WorkflowExecution.builder().workflowId(WORKFLOW_ID).uuid(EXECUTION_UUID).build();
+    WorkflowExecution wfExecution = createValidWorkflowExecution();
 
     ArgumentCaptor<PageRequest> arg = ArgumentCaptor.forClass(PageRequest.class);
     when(stateExecutionService.list(arg.capture())).thenReturn(new PageResponse<>());
@@ -93,7 +109,7 @@ public class WorkflowExecutionZombieMonitorHandlerTest {
   @Category(UnitTests.class)
   @Owner(developers = FERNANDOD)
   public void shouldHandleWorkflowExecutionWhenNotNotZombieState() {
-    WorkflowExecution wfExecution = WorkflowExecution.builder().workflowId(WORKFLOW_ID).uuid(EXECUTION_UUID).build();
+    WorkflowExecution wfExecution = createValidWorkflowExecution();
     StateExecutionInstance seInstance = aStateExecutionInstance().stateType(StateType.SHELL_SCRIPT.name()).build();
 
     ArgumentCaptor<PageRequest> arg = ArgumentCaptor.forClass(PageRequest.class);
@@ -111,7 +127,7 @@ public class WorkflowExecutionZombieMonitorHandlerTest {
   @Category(UnitTests.class)
   @Owner(developers = FERNANDOD)
   public void shouldHandleWorkflowExecutionAndTriggerInterruptWhenZombieState() {
-    WorkflowExecution wfExecution = WorkflowExecution.builder().workflowId(WORKFLOW_ID).uuid(EXECUTION_UUID).build();
+    WorkflowExecution wfExecution = createValidWorkflowExecution();
     StateExecutionInstance seInstance = aStateExecutionInstance()
                                             .appId("APP_ID")
                                             .executionUuid(EXECUTION_UUID)
@@ -151,6 +167,10 @@ public class WorkflowExecutionZombieMonitorHandlerTest {
     types.forEach(item -> {
       assertThat(monitorHandler.isZombieState(aStateExecutionInstance().stateType(item.name()).build())).isFalse();
     });
+  }
+
+  private WorkflowExecution createValidWorkflowExecution() {
+    return WorkflowExecution.builder().workflowId(WORKFLOW_ID).uuid(EXECUTION_UUID).build();
   }
 
   private void assertPageRequest(PageRequest req, WorkflowExecution wfExecution) {
