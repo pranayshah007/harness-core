@@ -513,7 +513,7 @@ public class ProjectServiceImpl implements ProjectService {
       return criteria;
     }
 
-    if (projectFilterDTO.getOrgIdentifiers() != null) {
+    if (projectFilterDTO.getOrgIdentifiers() != null && !projectFilterDTO.getOrgIdentifiers().isEmpty()) {
       criteria.and(ProjectKeys.orgIdentifier).in(projectFilterDTO.getOrgIdentifiers());
     }
 
