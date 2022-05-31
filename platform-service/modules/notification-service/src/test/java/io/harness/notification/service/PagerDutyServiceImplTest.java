@@ -59,6 +59,7 @@ public class PagerDutyServiceImplTest extends CategoryTest {
   private String accountId = "accountId";
   private String pdTemplateName = "pd_test";
   private String pdKey = "pd-key";
+  private String pdKey2 = "pd-key2";
   private String id = "id";
   private PagerDutyTemplate pdTemplate = new PagerDutyTemplate();
 
@@ -158,7 +159,7 @@ public class PagerDutyServiceImplTest extends CategoryTest {
                                                 .build())
                               .build();
     notificationExpectedResponse =
-        NotificationProcessingResponse.builder().result(Arrays.asList(true, false)).shouldRetry(false).build();
+        NotificationProcessingResponse.builder().result(Arrays.asList(true)).shouldRetry(false).build();
     when(notificationTemplateService.getTemplateAsString(eq(pdTemplateName), any()))
         .thenReturn(Optional.of("this is test notification"));
     when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(true);
@@ -204,14 +205,14 @@ public class PagerDutyServiceImplTest extends CategoryTest {
                               .setAccountId(accountId)
                               .setPagerDuty(NotificationRequest.PagerDuty.newBuilder()
                                                 .setTemplateId(pdTemplateName)
-                                                .addAllPagerDutyIntegrationKeys(Collections.singletonList(pdKey))
+                                                .addAllPagerDutyIntegrationKeys(Arrays.asList(pdKey, pdKey2))
                                                 .setExpressionFunctorToken(HashGenerator.generateIntegerHash())
                                                 .setOrgIdentifier("orgIdentifier")
                                                 .setProjectIdentifier("projectIdentifier")
                                                 .build())
                               .build();
     notificationExpectedResponse =
-        NotificationProcessingResponse.builder().result(Arrays.asList(true, false)).shouldRetry(false).build();
+        NotificationProcessingResponse.builder().result(Arrays.asList(true, true)).shouldRetry(false).build();
     when(notificationTemplateService.getTemplateAsString(eq(pdTemplateName), any()))
         .thenReturn(Optional.of("this is test notification"));
     when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(true);
@@ -268,7 +269,7 @@ public class PagerDutyServiceImplTest extends CategoryTest {
                                                 .build())
                               .build();
     notificationExpectedResponse =
-        NotificationProcessingResponse.builder().result(Arrays.asList(true, false)).shouldRetry(false).build();
+        NotificationProcessingResponse.builder().result(Arrays.asList(true)).shouldRetry(false).build();
     when(notificationTemplateService.getTemplateAsString(eq(pdTemplateName), any()))
         .thenReturn(Optional.of("this is test notification"));
     when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(true);

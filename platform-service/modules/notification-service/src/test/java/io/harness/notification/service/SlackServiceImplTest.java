@@ -55,6 +55,7 @@ public class SlackServiceImplTest extends CategoryTest {
   private String accountId = "accountId";
   private String slackTemplateName = "slack_test";
   private String slackWebhookurl = "slack-webhookurl";
+  private String slackWebhookurl2 = "slack-webhookurl2";
   private String id = "id";
 
   @Before
@@ -160,7 +161,7 @@ public class SlackServiceImplTest extends CategoryTest {
                                             .build())
                               .build();
     notificationExpectedResponse =
-        NotificationProcessingResponse.builder().result(Arrays.asList(true, false)).shouldRetry(false).build();
+        NotificationProcessingResponse.builder().result(Arrays.asList(true)).shouldRetry(false).build();
     when(notificationTemplateService.getTemplateAsString(eq(slackTemplateName), any()))
         .thenReturn(Optional.of("this is test notification"));
     when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(true);
@@ -205,14 +206,14 @@ public class SlackServiceImplTest extends CategoryTest {
                               .setAccountId(accountId)
                               .setSlack(NotificationRequest.Slack.newBuilder()
                                             .setTemplateId(slackTemplateName)
-                                            .addAllSlackWebHookUrls(Collections.singletonList(slackWebhookurl))
+                                            .addAllSlackWebHookUrls(Arrays.asList(slackWebhookurl, slackWebhookurl2))
                                             .setExpressionFunctorToken(HashGenerator.generateIntegerHash())
                                             .setOrgIdentifier("orgIdentifier")
                                             .setProjectIdentifier("projectIdentifier")
                                             .build())
                               .build();
     notificationExpectedResponse =
-        NotificationProcessingResponse.builder().result(Arrays.asList(true, false)).shouldRetry(false).build();
+        NotificationProcessingResponse.builder().result(Arrays.asList(true, true)).shouldRetry(false).build();
     when(notificationTemplateService.getTemplateAsString(eq(slackTemplateName), any()))
         .thenReturn(Optional.of("this is test notification"));
     when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(true);
@@ -258,7 +259,7 @@ public class SlackServiceImplTest extends CategoryTest {
                                             .build())
                               .build();
     notificationExpectedResponse =
-        NotificationProcessingResponse.builder().result(Arrays.asList(true, false)).shouldRetry(false).build();
+        NotificationProcessingResponse.builder().result(Arrays.asList(true)).shouldRetry(false).build();
     when(notificationTemplateService.getTemplateAsString(eq(slackTemplateName), any()))
         .thenReturn(Optional.of("this is test notification"));
     when(notificationSettingsService.getSendNotificationViaDelegate(eq(accountId))).thenReturn(true);
