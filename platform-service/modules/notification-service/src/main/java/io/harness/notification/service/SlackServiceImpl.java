@@ -21,7 +21,6 @@ import static org.apache.commons.lang3.StringUtils.trimToNull;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.delegate.beans.NotificationProcessingResponse;
-import io.harness.delegate.beans.NotificationTaskResponse;
 import io.harness.delegate.beans.SlackTaskParams;
 import io.harness.notification.NotificationChannelType;
 import io.harness.notification.NotificationRequest;
