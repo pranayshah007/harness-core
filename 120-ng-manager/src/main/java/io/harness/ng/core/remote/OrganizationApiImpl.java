@@ -76,10 +76,7 @@ public class OrganizationApiImpl implements OrganizationsApi {
 
     Page<OrganizationResponse> organizationResponsePage = orgPage.map(OrganizationApiMapper::getOrganizationResponse);
 
-    List<OrganizationResponse> organizationResponses = new ArrayList<>();
-    organizationResponses.addAll(organizationResponsePage.getContent());
-
-    return organizationResponses;
+    return new ArrayList<>(organizationResponsePage.getContent());
   }
 
   @NGAccessControlCheck(resourceType = ORGANIZATION, permission = EDIT_ORGANIZATION_PERMISSION)
