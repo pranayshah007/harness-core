@@ -91,6 +91,8 @@ public class ServicePlanCreatorV2 extends ChildrenPlanCreator<NGServiceV2InfoCon
             .serviceRef(ParameterField.createValueField(config.getIdentifier()))
             .build();
 
+    String infraSectionNodeUUid = "";
+
     // Creating service section node
     return PlanNode.builder()
         .uuid(serviceUuid)
@@ -106,7 +108,7 @@ public class ServicePlanCreatorV2 extends ChildrenPlanCreator<NGServiceV2InfoCon
             AdviserObtainment.newBuilder()
                 .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.ON_SUCCESS.name()).build())
                 .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
-                    OnSuccessAdviserParameters.builder().nextNodeId(serviceActualStepUUid).build())))
+                    OnSuccessAdviserParameters.builder().nextNodeId(infraSectionNodeUUid).build())))
                 .build())
         .build();
   }

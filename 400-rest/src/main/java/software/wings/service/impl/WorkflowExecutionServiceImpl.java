@@ -28,8 +28,8 @@ import static io.harness.beans.ExecutionStatus.SUCCESS;
 import static io.harness.beans.ExecutionStatus.WAITING;
 import static io.harness.beans.ExecutionStatus.activeStatuses;
 import static io.harness.beans.ExecutionStatus.isActiveStatus;
+import static io.harness.beans.FeatureName.ARTIFACT_COLLECTION_CONFIGURABLE;
 import static io.harness.beans.FeatureName.AUTO_REJECT_PREVIOUS_APPROVALS;
-import static io.harness.beans.FeatureName.DISABLE_ARTIFACT_COLLECTION;
 import static io.harness.beans.FeatureName.HELM_CHART_AS_ARTIFACT;
 import static io.harness.beans.FeatureName.NEW_DEPLOYMENT_FREEZE;
 import static io.harness.beans.FeatureName.PIPELINE_PER_ENV_DEPLOYMENT_PERMISSION;
@@ -1816,7 +1816,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
   }
 
   private boolean containArtifactInputs(ExecutionArgs executionArgs, String accountId) {
-    return featureFlagService.isEnabled(DISABLE_ARTIFACT_COLLECTION, accountId)
+    return featureFlagService.isEnabled(ARTIFACT_COLLECTION_CONFIGURABLE, accountId)
         && executionArgs.getArtifactVariables() != null
         && executionArgs.getArtifactVariables().stream().anyMatch(
             artifactVariable -> artifactVariable.getArtifactInput() != null);

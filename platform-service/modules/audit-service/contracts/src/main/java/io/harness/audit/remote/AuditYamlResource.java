@@ -7,6 +7,7 @@
 
 package io.harness.audit.remote;
 
+import static io.harness.NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.NGCommonEntityConstants;
@@ -20,6 +21,8 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -40,6 +43,14 @@ import javax.ws.rs.QueryParam;
 public interface AuditYamlResource {
   @GET
   @ApiOperation(value = "Get Yaml Diff for an audit", nickname = "getYamlDiff")
-  ResponseDTO<YamlDiffRecordDTO> get(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+  @Operation(operationId = "getYamlDiff", summary = "Gets the YamlDiff of the Audit.",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns the old Yaml and new Yaml.")
+      })
+  ResponseDTO<YamlDiffRecordDTO>
+  get(@Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotNull @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @NotNull @QueryParam("auditId") String auditId);
 }

@@ -13,6 +13,7 @@ import io.harness.annotation.HarnessEntity;
 import io.harness.annotation.StoreIn;
 import io.harness.annotations.ChangeDataCapture;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.validator.EntityName;
 import io.harness.data.validator.Trimmed;
 import io.harness.gitsync.beans.StoreType;
@@ -28,6 +29,7 @@ import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UpdatedAtAware;
 import io.harness.persistence.UuidAware;
 import io.harness.persistence.gitaware.GitAware;
+import io.harness.template.yaml.TemplateRefHelper;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.github.reinert.jjschema.SchemaIgnore;
@@ -121,8 +123,6 @@ public class PipelineEntity
 
   @Wither Boolean allowStageExecutions;
 
-  @Wither @Setter @NonFinal @Default Boolean templateReference = false;
-
   // git experience parameters before simplification
   @Wither @Setter @NonFinal String objectIdOfYaml;
   @Setter @NonFinal Boolean isFromDefaultBranch;
@@ -164,5 +164,12 @@ public class PipelineEntity
   @Override
   public String getInvalidYamlString() {
     return yaml;
+  }
+
+  public Boolean getTemplateReference() {
+    if (EmptyPredicate.isEmpty(getData())) {
+      return false;
+    }
+    return TemplateRefHelper.hasTemplateRef(getData());
   }
 }

@@ -42,23 +42,23 @@ public class RollbackUtility {
   public void publishRollbackInformation(Ambiance ambiance, Map<String, ResponseData> responseDataMap,
       ExecutionSweepingOutputService executionSweepingOutputService) {
     SectionStepSweepingOutputBuilder builder = SectionStepSweepingOutput.builder();
-    List<String> failedNodeIds = new ArrayList<>();
+    List<String> failedExecutionIds = new ArrayList<>();
     for (ResponseData responseData : responseDataMap.values()) {
       StepResponseNotifyData responseNotifyData = (StepResponseNotifyData) responseData;
       Status executionStatus = responseNotifyData.getStatus();
       if (StatusUtils.brokeStatuses().contains(executionStatus)) {
-        failedNodeIds.add(responseNotifyData.getNodeUuid());
+        failedExecutionIds.add(responseNotifyData.getNodeExecutionId());
       }
     }
     List<OptionalSweepingOutput> onFailRollbackOptionalOutput =
-        executionSweepingOutputService.listOutputsWithGivenNameAndSetupIds(
-            ambiance, FAILED_CHILDREN_OUTPUT, failedNodeIds);
-    if (onFailRollbackOptionalOutput.isEmpty() && !failedNodeIds.isEmpty()) {
-      builder.failedNodeIds(failedNodeIds);
+        executionSweepingOutputService.listOutputsWithGivenNameAndRuntimeIds(
+            ambiance, FAILED_CHILDREN_OUTPUT, failedExecutionIds);
+    if (onFailRollbackOptionalOutput.isEmpty() && !failedExecutionIds.isEmpty()) {
+      builder.failedNodeIds(failedExecutionIds);
     } else {
       for (int i = 0; i < onFailRollbackOptionalOutput.size(); i++) {
         OptionalSweepingOutput optionalSweepingOutput = onFailRollbackOptionalOutput.get(i);
-        String nodeUuid = failedNodeIds.get(i);
+        String nodeUuid = failedExecutionIds.get(i);
         if (optionalSweepingOutput.isFound()) {
           SectionStepSweepingOutput sectionStepSweepingOutput =
               (SectionStepSweepingOutput) optionalSweepingOutput.getOutput();

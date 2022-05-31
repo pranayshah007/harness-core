@@ -10,6 +10,10 @@ package io.harness.cdng.infra.steps;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 
+import static software.wings.beans.LogColor.Green;
+import static software.wings.beans.LogColor.Yellow;
+import static software.wings.beans.LogHelper.color;
+
 import static java.lang.String.format;
 
 import io.harness.accesscontrol.clients.AccessControlClient;
@@ -30,6 +34,7 @@ import io.harness.cdng.infra.yaml.SshWinRmAzureInfrastructure;
 import io.harness.cdng.k8s.K8sStepHelper;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.connector.ConnectorConnectivityDetails;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
@@ -49,7 +54,6 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogLevel;
 import io.harness.logging.UnitProgress;
 import io.harness.logging.UnitStatus;
-import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.environment.services.EnvironmentService;
@@ -72,6 +76,7 @@ import io.harness.pms.sdk.core.steps.io.StepResponse.StepOutcome;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.EntityReferenceExtractorUtils;
 import io.harness.steps.OutputExpressionConstants;
+import io.harness.steps.StepUtils;
 import io.harness.steps.environment.EnvironmentOutcome;
 import io.harness.steps.executable.SyncExecutableWithRbac;
 import io.harness.steps.shellscript.K8sInfraDelegateConfigOutput;
@@ -82,6 +87,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -91,10 +97,9 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
                                                .setType(ExecutionNodeType.INFRASTRUCTURE.getName())
                                                .setStepCategory(StepCategory.STEP)
                                                .build();
-  private static String INFRASTRUCTURE_COMMAND_UNIT = "Execute";
 
   @Inject private EnvironmentService environmentService;
-  @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
+  @Inject private InfrastructureStepHelper infrastructureStepHelper;
   @Inject private SimpleVisitorFactory simpleVisitorFactory;
   @Inject @Named("PRIVILEGED") private AccessControlClient accessControlClient;
   @Inject private EntityReferenceExtractorUtils entityReferenceExtractorUtils;
@@ -117,12 +122,15 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
   public StepResponse executeSyncAfterRbac(Ambiance ambiance, Infrastructure infrastructure,
       StepInputPackage inputPackage, PassThroughData passThroughData) {
     long startTime = System.currentTimeMillis();
-    NGLogCallback ngManagerLogCallback =
-        new NGLogCallback(logStreamingStepClientFactory, ambiance, INFRASTRUCTURE_COMMAND_UNIT, true);
-    ngManagerLogCallback.saveExecutionLog("Starting Infrastructure logs");
+
+    NGLogCallback logCallback = infrastructureStepHelper.getInfrastructureLogCallback(ambiance, true);
+    saveExecutionLog(logCallback, "Starting infrastructure step...");
 
     validateConnector(infrastructure, ambiance);
-    validateInfrastructure(infrastructure);
+
+    saveExecutionLog(logCallback, "Fetching environment information...");
+
+    validateInfrastructure(infrastructure, ambiance);
     EnvironmentOutcome environmentOutcome = (EnvironmentOutcome) executionSweepingOutputService.resolve(
         ambiance, RefObjectUtils.getSweepingOutputRefObject(OutputExpressionConstants.ENVIRONMENT));
     ServiceStepOutcome serviceOutcome = (ServiceStepOutcome) outcomeService.resolve(
@@ -130,9 +138,31 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
     InfrastructureOutcome infrastructureOutcome =
         InfrastructureMapper.toOutcome(infrastructure, environmentOutcome, serviceOutcome);
 
+    if (environmentOutcome != null) {
+      if (EmptyPredicate.isNotEmpty(environmentOutcome.getName())) {
+        saveExecutionLog(logCallback, color(format("Environment Name: %s", environmentOutcome.getName()), Yellow));
+      }
+
+      if (environmentOutcome.getType() != null && EmptyPredicate.isNotEmpty(environmentOutcome.getType().name())) {
+        saveExecutionLog(
+            logCallback, color(format("Environment Type: %s", environmentOutcome.getType().name()), Yellow));
+      }
+    }
+
+    if (infrastructureOutcome != null && EmptyPredicate.isNotEmpty(infrastructureOutcome.getKind())) {
+      saveExecutionLog(
+          logCallback, color(format("Infrastructure Definition Type: %s", infrastructureOutcome.getKind()), Yellow));
+    }
+
+    saveExecutionLog(logCallback, color("Environment information fetched", Green));
+
     publishInfraDelegateConfigOutput(infrastructureOutcome, ambiance);
-    ngManagerLogCallback.saveExecutionLog(
-        "Infrastructure Step completed", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+
+    if (logCallback != null) {
+      logCallback.saveExecutionLog(
+          color("Completed infrastructure step", Green), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+    }
+
     return StepResponse.builder()
         .status(Status.SUCCEEDED)
         .stepOutcome(StepOutcome.builder()
@@ -141,7 +171,7 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
                          .group(OutcomeExpressionConstants.INFRASTRUCTURE_GROUP)
                          .build())
         .unitProgressList(Collections.singletonList(UnitProgress.newBuilder()
-                                                        .setUnitName(INFRASTRUCTURE_COMMAND_UNIT)
+                                                        .setUnitName("Execute")
                                                         .setStatus(UnitStatus.SUCCESS)
                                                         .setStartTime(startTime)
                                                         .setEndTime(System.currentTimeMillis())
@@ -164,6 +194,8 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
 
   @VisibleForTesting
   void validateConnector(Infrastructure infrastructure, Ambiance ambiance) {
+    NGLogCallback logCallback = infrastructureStepHelper.getInfrastructureLogCallback(ambiance);
+
     if (infrastructure == null) {
       return;
     }
@@ -201,13 +233,18 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
 
     if (InfrastructureKind.SSH_WINRM_AZURE.equals(infrastructure.getKind())
         && !(connectorInfo.getConnectorConfig() instanceof AzureConnectorDTO)) {
-      throw new InvalidRequestException(String.format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
+      throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
           connectorInfo.getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
           ConnectorType.AZURE.name()));
     }
+
+    saveExecutionLog(logCallback, color("Connector validated", Green));
   }
 
   private ConnectorInfoDTO validateAndGetConnector(ParameterField<String> connectorRef, Ambiance ambiance) {
+    NGLogCallback logCallback = infrastructureStepHelper.getInfrastructureLogCallback(ambiance);
+    saveExecutionLog(logCallback, "Fetching and validating connector...");
+
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
     if (ParameterField.isNull(connectorRef)) {
       throw new InvalidRequestException("Connector ref field not present in infrastructure");
@@ -218,16 +255,43 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
     Optional<ConnectorResponseDTO> connectorDTO =
         connectorService.get(connectorIdentifierRef.getAccountIdentifier(), connectorIdentifierRef.getOrgIdentifier(),
             connectorIdentifierRef.getProjectIdentifier(), connectorIdentifierRef.getIdentifier());
+    ConnectorInfoDTO connectorInfoDTO;
     if (!connectorDTO.isPresent()) {
       throw new InvalidRequestException(format("Connector not found for identifier : [%s]", connectorRefValue));
+    } else {
+      saveExecutionLog(logCallback, color("Connector fetched", Green));
+
+      connectorInfoDTO = connectorDTO.get().getConnector();
+      if (connectorInfoDTO != null) {
+        if (EmptyPredicate.isNotEmpty(connectorInfoDTO.getName())) {
+          saveExecutionLog(logCallback, color(format("Connector Name: %s", connectorInfoDTO.getName()), Yellow));
+        }
+
+        if (connectorInfoDTO.getConnectorType() != null
+            && EmptyPredicate.isNotEmpty(connectorInfoDTO.getConnectorType().name())) {
+          saveExecutionLog(
+              logCallback, color(format("Connector Type: %s", connectorInfoDTO.getConnectorType().name()), Yellow));
+        }
+      }
+
+      ConnectorConnectivityDetails connectorConnectivityDetails = connectorDTO.get().getStatus();
+      if (connectorConnectivityDetails != null && connectorConnectivityDetails.getStatus() != null
+          && EmptyPredicate.isNotEmpty(connectorConnectivityDetails.getStatus().name())) {
+        saveExecutionLog(logCallback,
+            color(format("Connector Status: %s", connectorConnectivityDetails.getStatus().name()), Yellow));
+      }
     }
     ConnectorUtils.checkForConnectorValidityOrThrow(connectorDTO.get());
 
-    return connectorDTO.get().getConnector();
+    return connectorInfoDTO;
   }
 
   @VisibleForTesting
-  void validateInfrastructure(Infrastructure infrastructure) {
+  void validateInfrastructure(Infrastructure infrastructure, Ambiance ambiance) {
+    String k8sNamespaceLogLine = "Kubernetes Namespace: %s";
+
+    NGLogCallback logCallback = infrastructureStepHelper.getInfrastructureLogCallback(ambiance);
+
     if (infrastructure == null) {
       throw new InvalidRequestException("Infrastructure definition can't be null or empty");
     }
@@ -235,12 +299,24 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
       case InfrastructureKind.KUBERNETES_DIRECT:
         K8SDirectInfrastructure k8SDirectInfrastructure = (K8SDirectInfrastructure) infrastructure;
         validateExpression(k8SDirectInfrastructure.getConnectorRef(), k8SDirectInfrastructure.getNamespace());
+
+        if (k8SDirectInfrastructure.getNamespace() != null
+            && EmptyPredicate.isNotEmpty(k8SDirectInfrastructure.getNamespace().getValue())) {
+          saveExecutionLog(logCallback,
+              color(format(k8sNamespaceLogLine, k8SDirectInfrastructure.getNamespace().getValue()), Yellow));
+        }
         break;
 
       case InfrastructureKind.KUBERNETES_GCP:
         K8sGcpInfrastructure k8sGcpInfrastructure = (K8sGcpInfrastructure) infrastructure;
         validateExpression(k8sGcpInfrastructure.getConnectorRef(), k8sGcpInfrastructure.getNamespace(),
             k8sGcpInfrastructure.getCluster());
+
+        if (k8sGcpInfrastructure.getNamespace() != null
+            && EmptyPredicate.isNotEmpty(k8sGcpInfrastructure.getNamespace().getValue())) {
+          saveExecutionLog(
+              logCallback, color(format(k8sNamespaceLogLine, k8sGcpInfrastructure.getNamespace().getValue()), Yellow));
+        }
         break;
       case InfrastructureKind.SERVERLESS_AWS_LAMBDA:
         ServerlessAwsLambdaInfrastructure serverlessAwsLambdaInfrastructure =
@@ -254,6 +330,12 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
         validateExpression(k8sAzureInfrastructure.getConnectorRef(), k8sAzureInfrastructure.getNamespace(),
             k8sAzureInfrastructure.getCluster(), k8sAzureInfrastructure.getSubscriptionId(),
             k8sAzureInfrastructure.getResourceGroup());
+
+        if (k8sAzureInfrastructure.getNamespace() != null
+            && EmptyPredicate.isNotEmpty(k8sAzureInfrastructure.getNamespace().getValue())) {
+          saveExecutionLog(logCallback,
+              color(format(k8sNamespaceLogLine, k8sAzureInfrastructure.getNamespace().getValue()), Yellow));
+        }
         break;
 
       case InfrastructureKind.SSH_WINRM_AZURE:
@@ -303,5 +385,16 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
     Set<EntityDetailProtoDTO> entityDetails =
         entityReferenceExtractorUtils.extractReferredEntities(ambiance, infrastructure);
     pipelineRbacHelper.checkRuntimePermissions(ambiance, entityDetails);
+  }
+
+  private void saveExecutionLog(NGLogCallback logCallback, String line) {
+    if (logCallback != null) {
+      logCallback.saveExecutionLog(line);
+    }
+  }
+
+  @Override
+  public List<String> getLogKeys(Ambiance ambiance) {
+    return StepUtils.generateLogKeys(ambiance, null);
   }
 }

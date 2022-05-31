@@ -28,12 +28,15 @@ import lombok.NoArgsConstructor;
 @OwnedBy(HarnessTeam.CDP)
 @RecasterAlias("io.harness.cdng.provision.terraform.TerraformPlanStepParameters")
 public class TerraformPlanStepParameters extends TerraformPlanBaseStepInfo implements SpecParameters {
+  String stepFqn;
   TerraformPlanExecutionDataParameters configuration;
 
   @Builder(builderMethodName = "infoBuilder")
   public TerraformPlanStepParameters(ParameterField<String> provisionerIdentifier,
-      ParameterField<List<TaskSelectorYaml>> delegateSelectors, TerraformPlanExecutionDataParameters configuration) {
+      ParameterField<List<TaskSelectorYaml>> delegateSelectors, String stepFqn,
+      TerraformPlanExecutionDataParameters configuration) {
     super(provisionerIdentifier, delegateSelectors);
+    this.stepFqn = stepFqn;
     this.configuration = configuration;
   }
 }

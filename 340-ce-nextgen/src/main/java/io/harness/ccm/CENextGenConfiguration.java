@@ -22,6 +22,7 @@ import io.harness.ff.FeatureFlagConfig;
 import io.harness.grpc.client.GrpcClientConfig;
 import io.harness.mongo.MongoConfig;
 import io.harness.remote.CEAzureSetupConfig;
+import io.harness.remote.CEGcpSetupConfig;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.secret.ConfigSecret;
 import io.harness.secret.SecretsConfiguration;
@@ -96,6 +97,7 @@ public class CENextGenConfiguration extends Configuration {
 
   @JsonProperty(value = "gcpConfig") private GcpConfig gcpConfig;
   @JsonProperty(value = "ceAzureSetupConfig") @ConfigSecret private CEAzureSetupConfig ceAzureSetupConfig;
+  @JsonProperty(value = "ceGcpSetupConfig") @ConfigSecret private CEGcpSetupConfig ceGcpSetupConfig;
   @JsonProperty(value = "awsConfig") @ConfigSecret private AwsConfig awsConfig;
 
   @JsonProperty(value = "hostname") private String hostname = "localhost";

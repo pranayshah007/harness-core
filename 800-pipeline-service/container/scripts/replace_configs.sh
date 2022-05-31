@@ -189,6 +189,14 @@ if [[ "" != "$CI_MANAGER_AUTHORITY" ]]; then
   yq write -i $CONFIG_FILE grpcClientConfigs.ci.authority $CI_MANAGER_AUTHORITY
 fi
 
+if [[ "" != "$STO_MANAGER_TARGET" ]]; then
+  yq write -i $CONFIG_FILE grpcClientConfigs.sto.target $STO_MANAGER_TARGET
+fi
+
+if [[ "" != "$STO_MANAGER_AUTHORITY" ]]; then
+  yq write -i $CONFIG_FILE grpcClientConfigs.sto.authority $STO_MANAGER_AUTHORITY
+fi
+
 if [[ "" != "$NG_MANAGER_GITSYNC_TARGET" ]]; then
   yq write -i $CONFIG_FILE gitSdkConfiguration.gitManagerGrpcClientConfig.target $NG_MANAGER_GITSYNC_TARGET
 fi

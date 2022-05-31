@@ -10,11 +10,14 @@ package io.harness.pms.plan.creation;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.NAMAN;
 
+import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
+import io.harness.pms.PmsFeatureFlagService;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.contracts.triggers.ParsedPayload;
@@ -29,6 +32,7 @@ import org.junit.experimental.categories.Category;
 
 @OwnedBy(PIPELINE)
 public class PlanCreatorMergeServiceTest extends CategoryTest {
+  PmsFeatureFlagService pmsFeatureFlagService = new NoOpPmsFeatureFlagService();
   @Test
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
@@ -42,14 +46,15 @@ public class PlanCreatorMergeServiceTest extends CategoryTest {
                                               .setModuleType("cd")
                                               .setPipelineIdentifier("pipelineId")
                                               .build();
-    PlanCreatorMergeService planCreatorMergeService =
-        new PlanCreatorMergeService(null, null, null, null, Executors.newSingleThreadExecutor(), 20);
+    PlanCreatorMergeService planCreatorMergeService = new PlanCreatorMergeService(
+        null, null, null, null, Executors.newSingleThreadExecutor(), 20, pmsFeatureFlagService);
     Map<String, PlanCreationContextValue> initialPlanCreationContext =
         planCreatorMergeService.createInitialPlanCreationContext(accountId, orgId, projId, executionMetadata, null);
     assertThat(initialPlanCreationContext).hasSize(1);
     assertThat(initialPlanCreationContext.containsKey("metadata")).isTrue();
     PlanCreationContextValue planCreationContextValue = initialPlanCreationContext.get("metadata");
     assertThat(planCreationContextValue.getAccountIdentifier()).isEqualTo(accountId);
+    assertTrue(planCreationContextValue.getIsExecutionInputEnabled());
     assertThat(planCreationContextValue.getOrgIdentifier()).isEqualTo(orgId);
     assertThat(planCreationContextValue.getProjectIdentifier()).isEqualTo(projId);
     assertThat(planCreationContextValue.getMetadata()).isEqualTo(executionMetadata);
@@ -69,5 +74,16 @@ public class PlanCreatorMergeServiceTest extends CategoryTest {
     assertThat(planCreationContextValue.getProjectIdentifier()).isEqualTo(projId);
     assertThat(planCreationContextValue.getMetadata()).isEqualTo(executionMetadata);
     assertThat(planCreationContextValue.getTriggerPayload()).isEqualTo(triggerPayload);
+  }
+  private class NoOpPmsFeatureFlagService implements PmsFeatureFlagService {
+    @Override
+    public boolean isEnabled(String accountId, FeatureName featureName) {
+      return true;
+    }
+
+    @Override
+    public boolean isEnabled(String accountId, String featureName) {
+      return false;
+    }
   }
 }

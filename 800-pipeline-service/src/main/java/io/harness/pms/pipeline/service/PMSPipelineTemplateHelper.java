@@ -55,12 +55,19 @@ public class PMSPipelineTemplateHelper {
   }
 
   public TemplateMergeResponseDTO resolveTemplateRefsInPipeline(
-      String accountId, String orgId, String projectId, String yaml) {
-    return resolveTemplateRefsInPipeline(accountId, orgId, projectId, yaml, false);
+      PipelineEntity pipelineEntity, boolean getMergedTemplateWithTemplateReferences) {
+    return resolveTemplateRefsInPipeline(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
+        pipelineEntity.getProjectIdentifier(), pipelineEntity.getYaml(), false,
+        getMergedTemplateWithTemplateReferences);
   }
 
   public TemplateMergeResponseDTO resolveTemplateRefsInPipeline(
-      String accountId, String orgId, String projectId, String yaml, boolean checkForTemplateAccess) {
+      String accountId, String orgId, String projectId, String yaml) {
+    return resolveTemplateRefsInPipeline(accountId, orgId, projectId, yaml, false, false);
+  }
+
+  public TemplateMergeResponseDTO resolveTemplateRefsInPipeline(String accountId, String orgId, String projectId,
+      String yaml, boolean checkForTemplateAccess, boolean getMergedTemplateWithTemplateReferences) {
     if (pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.NG_TEMPLATES)
         && pipelineEnforcementService.isFeatureRestricted(accountId, FeatureRestrictionName.TEMPLATE_SERVICE.name())) {
       String TEMPLATE_RESOLVE_EXCEPTION_MSG = "Exception in resolving template refs in given pipeline yaml.";
@@ -73,11 +80,16 @@ public class PMSPipelineTemplateHelper {
               TemplateApplyRequestDTO.builder()
                   .originalEntityYaml(yaml)
                   .checkForAccess(checkForTemplateAccess)
+                  .getMergedYamlWithTemplateField(getMergedTemplateWithTemplateReferences)
                   .build()));
         }
-        return NGRestUtils.getResponse(templateResourceClient.applyTemplatesOnGivenYaml(accountId, orgId, projectId,
-            null, null, null,
-            TemplateApplyRequestDTO.builder().originalEntityYaml(yaml).checkForAccess(checkForTemplateAccess).build()));
+        return NGRestUtils.getResponse(
+            templateResourceClient.applyTemplatesOnGivenYaml(accountId, orgId, projectId, null, null, null,
+                TemplateApplyRequestDTO.builder()
+                    .originalEntityYaml(yaml)
+                    .checkForAccess(checkForTemplateAccess)
+                    .getMergedYamlWithTemplateField(getMergedTemplateWithTemplateReferences)
+                    .build()));
       } catch (InvalidRequestException e) {
         if (e.getMetadata() instanceof TemplateInputsErrorMetadataDTO) {
           throw new NGTemplateResolveException(

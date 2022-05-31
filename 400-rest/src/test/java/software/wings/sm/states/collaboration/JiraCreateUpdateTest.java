@@ -9,6 +9,7 @@ package software.wings.sm.states.collaboration;
 
 import static io.harness.beans.ExecutionStatus.FAILED;
 import static io.harness.rule.OwnerRule.AGORODETKI;
+import static io.harness.rule.OwnerRule.LUCAS_SALES;
 import static io.harness.rule.OwnerRule.POOJA;
 import static io.harness.rule.OwnerRule.PRABU;
 
@@ -32,11 +33,13 @@ import static org.mockito.Mockito.when;
 
 import io.harness.beans.DelegateTask;
 import io.harness.beans.ExecutionStatus;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.DelegateTaskDetails;
 import io.harness.exception.GeneralException;
 import io.harness.exception.HarnessJiraException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.jira.JiraAction;
 import io.harness.jira.JiraCreateMetaResponse;
 import io.harness.jira.JiraCustomFieldValue;
@@ -81,6 +84,8 @@ import org.mockito.Mock;
 public class JiraCreateUpdateTest extends WingsBaseTest {
   private static final String MULTI = "multi";
   private static final String ISSUE_TYPE = "Issue Type";
+
+  private static final String ISSUE_ID = "IssueId";
   private static final String CUSTOMFIELD_OPTION = "customfield_option";
   private static final String CUSTOMFIELD_OPTION_2 = "customfield_option_2";
   private static final String CUSTOMFIELD_OPTION_3 = "customfield_option_3";
@@ -104,6 +109,7 @@ public class JiraCreateUpdateTest extends WingsBaseTest {
   @Mock private DelegateService delegateService;
   @Mock private SecretManager secretManager;
   @Mock private StateExecutionService stateExecutionService;
+  @Mock private FeatureFlagService featureFlagService;
   @InjectMocks JiraCreateUpdate jiraCreateUpdateState = new JiraCreateUpdate("Jira");
   private static JiraCreateMetaResponse createMetaResponse;
   private static JSONArray projects;
@@ -668,6 +674,7 @@ public class JiraCreateUpdateTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldQueueDelegateTaskAndReturnExecutionResponse() {
     setUpMocksForEntireExecutionFlow();
+    when(featureFlagService.isEnabled(eq(FeatureName.ALLOW_USER_TYPE_FIELDS_JIRA), anyString())).thenReturn(false);
     ExecutionResponse expectedExecutionResponse =
         ExecutionResponse.builder()
             .async(true)
@@ -684,6 +691,62 @@ public class JiraCreateUpdateTest extends WingsBaseTest {
     assertThat(delegateTaskArgumentCaptor.getValue().isSelectionLogsTrackingEnabled()).isTrue();
     verify(stateExecutionService).appendDelegateTaskDetails(eq(null), any(DelegateTaskDetails.class));
     assertThat(executionResponse).isEqualTo(expectedExecutionResponse);
+  }
+
+  @Test
+  @Owner(developers = LUCAS_SALES)
+  @Category(UnitTests.class)
+  public void shouldQueueJiraUpdateTaskWithNGClient() {
+    setUpMocksForEntireExecutionFlow();
+    when(featureFlagService.isEnabled(eq(FeatureName.ALLOW_USER_TYPE_FIELDS_JIRA), anyString())).thenReturn(true);
+    when(context.renderExpression(jiraCreateUpdateState.getIssueId())).thenReturn(ISSUE_ID);
+    jiraCreateUpdateState.setJiraAction(JiraAction.UPDATE_TICKET);
+    jiraCreateUpdateState.setIssueType(ISSUE_TYPE);
+    ExecutionResponse expectedExecutionResponse =
+        ExecutionResponse.builder()
+            .async(true)
+            .correlationIds(Collections.singletonList(ACTIVITY_ID))
+            .delegateTaskId(UUID)
+            .stateExecutionData(JiraExecutionData.builder().activityId(ACTIVITY_ID).build())
+            .build();
+    ExecutionResponse executionResponse = jiraCreateUpdateState.execute(context);
+    ArgumentCaptor<DelegateTask> delegateTaskArgumentCaptor = ArgumentCaptor.forClass(DelegateTask.class);
+    verify(delegateService).queueTask(delegateTaskArgumentCaptor.capture());
+    assertThat(delegateTaskArgumentCaptor.getValue())
+        .isNotNull()
+        .hasFieldOrPropertyWithValue("data.taskType", JIRA.name());
+    assertThat(delegateTaskArgumentCaptor.getValue().isSelectionLogsTrackingEnabled()).isTrue();
+    verify(stateExecutionService).appendDelegateTaskDetails(eq(null), any(DelegateTaskDetails.class));
+    assertThat(executionResponse).isEqualTo(expectedExecutionResponse);
+    assertThat(jiraCreateUpdateState.getJiraAction() == JiraAction.UPDATE_TICKET_NG);
+  }
+
+  @Test
+  @Owner(developers = LUCAS_SALES)
+  @Category(UnitTests.class)
+  public void shouldQueueJiraCreateTaskWithNGClient() {
+    setUpMocksForEntireExecutionFlow();
+    when(featureFlagService.isEnabled(eq(FeatureName.ALLOW_USER_TYPE_FIELDS_JIRA), anyString())).thenReturn(true);
+    when(context.renderExpression(jiraCreateUpdateState.getIssueId())).thenReturn(ISSUE_ID);
+    jiraCreateUpdateState.setJiraAction(JiraAction.CREATE_TICKET);
+    jiraCreateUpdateState.setIssueType(ISSUE_TYPE);
+    ExecutionResponse expectedExecutionResponse =
+        ExecutionResponse.builder()
+            .async(true)
+            .correlationIds(Collections.singletonList(ACTIVITY_ID))
+            .delegateTaskId(UUID)
+            .stateExecutionData(JiraExecutionData.builder().activityId(ACTIVITY_ID).build())
+            .build();
+    ExecutionResponse executionResponse = jiraCreateUpdateState.execute(context);
+    ArgumentCaptor<DelegateTask> delegateTaskArgumentCaptor = ArgumentCaptor.forClass(DelegateTask.class);
+    verify(delegateService).queueTask(delegateTaskArgumentCaptor.capture());
+    assertThat(delegateTaskArgumentCaptor.getValue())
+        .isNotNull()
+        .hasFieldOrPropertyWithValue("data.taskType", JIRA.name());
+    assertThat(delegateTaskArgumentCaptor.getValue().isSelectionLogsTrackingEnabled()).isTrue();
+    verify(stateExecutionService).appendDelegateTaskDetails(eq(null), any(DelegateTaskDetails.class));
+    assertThat(executionResponse).isEqualTo(expectedExecutionResponse);
+    assertThat(jiraCreateUpdateState.getJiraAction() == JiraAction.CREATE_TICKET_NG);
   }
 
   @Test
@@ -706,6 +769,7 @@ public class JiraCreateUpdateTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldFailExecutionWhenIssueIdIsNotRendered() {
     setUpMocksForEntireExecutionFlow();
+    when(featureFlagService.isEnabled(eq(FeatureName.ALLOW_USER_TYPE_FIELDS_JIRA), anyString())).thenReturn(false);
     jiraCreateUpdateState.setJiraAction(JiraAction.UPDATE_TICKET);
     jiraCreateUpdateState.setIssueId(StringUtils.EMPTY);
     when(context.renderExpression(StringUtils.EMPTY)).thenReturn(StringUtils.EMPTY);

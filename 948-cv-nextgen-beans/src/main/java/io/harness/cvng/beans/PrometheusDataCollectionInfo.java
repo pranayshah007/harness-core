@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.Builder;
+import lombok.Builder.Default;
 import lombok.Data;
 
 @Data
@@ -23,6 +24,7 @@ import lombok.Data;
 public class PrometheusDataCollectionInfo extends TimeSeriesDataCollectionInfo<PrometheusConnectorDTO> {
   private String groupName;
   private List<MetricCollectionInfo> metricCollectionInfoList;
+  @Default private Integer maximumHostSizeAllowed = 100;
 
   public List<MetricCollectionInfo> getMetricCollectionInfoList() {
     if (metricCollectionInfoList == null) {
@@ -64,6 +66,7 @@ public class PrometheusDataCollectionInfo extends TimeSeriesDataCollectionInfo<P
     collectionEnvs.put("serviceInstanceFieldList", serviceInstanceFieldList);
     collectionEnvs.put("groupName", groupName);
     collectionEnvs.put("collectHostData", Boolean.toString(this.isCollectHostData()));
+    collectionEnvs.put("maximumHostSizeAllowed", maximumHostSizeAllowed);
 
     return collectionEnvs;
   }

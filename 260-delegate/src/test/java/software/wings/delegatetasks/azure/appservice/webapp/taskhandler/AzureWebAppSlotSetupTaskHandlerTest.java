@@ -33,9 +33,11 @@ import io.harness.delegate.task.azure.AzureTaskResponse;
 import io.harness.delegate.task.azure.appservice.AzureAppServicePreDeploymentData;
 import io.harness.delegate.task.azure.appservice.AzureAppServiceTaskParameters;
 import io.harness.delegate.task.azure.appservice.AzureAppServiceTaskResponse;
+import io.harness.delegate.task.azure.appservice.deployment.AzureAppServiceDeploymentService;
 import io.harness.delegate.task.azure.appservice.webapp.request.AzureWebAppSlotSetupParameters;
 import io.harness.delegate.task.azure.appservice.webapp.response.AzureAppDeploymentData;
 import io.harness.delegate.task.azure.appservice.webapp.response.AzureWebAppSlotSetupResponse;
+import io.harness.delegate.task.azure.common.AzureAppServiceService;
 import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
 import io.harness.logging.CommandExecutionStatus;
@@ -44,9 +46,7 @@ import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
-import software.wings.delegatetasks.azure.appservice.deployment.AzureAppServiceDeploymentService;
 import software.wings.delegatetasks.azure.common.ArtifactDownloaderServiceLogWrapper;
-import software.wings.delegatetasks.azure.common.AzureAppServiceService;
 import software.wings.delegatetasks.azure.common.AzureContainerRegistryService;
 
 import com.microsoft.azure.management.containerregistry.AccessKeyType;

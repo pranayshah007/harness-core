@@ -38,7 +38,6 @@ public class MatrixConfig {
 
   @ApiModelProperty(hidden = true) @Builder.Default Map<String, AxisConfig> axes = new LinkedHashMap<>();
   List<ExcludeConfig> exclude;
-  long batchSize;
 
   @JsonAnySetter
   void setAxis(String key, Object value) {

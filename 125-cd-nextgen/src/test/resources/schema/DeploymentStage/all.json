@@ -2412,22 +2412,6 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
-    "HoldingScope": {
-      "type": "object",
-      "required": [
-        "nodeSetupId",
-        "scope"
-      ],
-      "properties": {
-        "nodeSetupId": {
-          "type": "string"
-        },
-        "scope": {
-          "type": "string"
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
     "HttpHeaderConfig": {
       "type": "object",
       "properties": {
@@ -4893,7 +4877,8 @@
             "Nexus3Registry",
             "ArtifactoryRegistry",
             "CustomArtifact",
-            "Acr"
+            "Acr",
+            "Jenkins"
           ]
         }
       },
@@ -5191,7 +5176,13 @@
               ]
             },
             "holdingScope": {
-              "$ref": "#/definitions/HoldingScope"
+              "type": "string",
+              "enum": [
+                "PLAN",
+                "PIPELINE",
+                "STAGE",
+                "STEP_GROUP"
+              ]
             },
             "name": {
               "type": "string"
@@ -6272,7 +6263,8 @@
             "Nexus3Registry",
             "ArtifactoryRegistry",
             "CustomArtifact",
-            "Acr"
+            "Acr",
+            "Jenkins"
           ]
         }
       },
@@ -7709,6 +7701,16 @@
               }
             ]
           }
+        },
+        "exportTerraformPlanJson": {
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string"
+            }
+          ]
         },
         "secretManagerRef": {
           "type": "string"

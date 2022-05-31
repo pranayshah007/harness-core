@@ -9,6 +9,8 @@ package io.harness.cvng.notification.beans;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.List;
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -23,7 +25,7 @@ import lombok.experimental.SuperBuilder;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ChangeImpactConditionSpec extends NotificationRuleConditionSpec {
   @NonNull List<MonitoredServiceChangeEventType> changeEventTypes;
-  @NonNull Double threshold;
+  @NonNull @Min(0) @Max(100) Double threshold;
   @NonNull String period;
 
   @Override

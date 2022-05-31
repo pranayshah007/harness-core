@@ -10,7 +10,7 @@ package software.wings.sm.states;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.ExecutionStatus.FAILED;
 import static io.harness.beans.ExecutionStatus.SUCCESS;
-import static io.harness.beans.FeatureName.DISABLE_ARTIFACT_COLLECTION;
+import static io.harness.beans.FeatureName.ARTIFACT_COLLECTION_CONFIGURABLE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
@@ -280,7 +280,7 @@ public class ArtifactCollectionState extends State {
   }
 
   private boolean shouldCollectArtifact(ExecutionContext context) {
-    return featureFlagService.isEnabled(DISABLE_ARTIFACT_COLLECTION, context.getAccountId());
+    return featureFlagService.isEnabled(ARTIFACT_COLLECTION_CONFIGURABLE, context.getAccountId());
   }
 
   private ExecutionResponse collectArtifact(ExecutionContext context, ArtifactStream artifactStream) {

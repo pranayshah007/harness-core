@@ -9,23 +9,24 @@ package io.harness.steps.resourcerestraint.utils;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.pms.utils.PmsConstants;
-import io.harness.steps.resourcerestraint.ResourceRestraintSpecParameters;
-import io.harness.steps.resourcerestraint.service.ResourceRestraintInstanceService;
+import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.steps.resourcerestraint.beans.HoldingScope;
 
 import lombok.experimental.UtilityClass;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 @UtilityClass
 public class ResourceRestraintUtils {
-  public String getReleaseEntityId(ResourceRestraintSpecParameters specParameters, String planExecutionId) {
-    String releaseEntityId;
-    if (PmsConstants.RELEASE_ENTITY_TYPE_PLAN.equals(specParameters.getHoldingScope().getScope())) {
-      releaseEntityId = ResourceRestraintInstanceService.getReleaseEntityId(planExecutionId);
-    } else {
-      releaseEntityId = ResourceRestraintInstanceService.getReleaseEntityId(
-          planExecutionId, specParameters.getHoldingScope().getNodeSetupId());
+  public String getReleaseEntityId(Ambiance ambiance, HoldingScope scope) {
+    switch (scope) {
+      case PLAN:
+      case PIPELINE:
+        return ambiance.getPlanExecutionId();
+      case STAGE:
+        return AmbianceUtils.getStageRuntimeIdAmbiance(ambiance);
+      default:
+        throw new IllegalStateException(String.format("HoldingScope [%s] is not supported", scope));
     }
-    return releaseEntityId;
   }
 }

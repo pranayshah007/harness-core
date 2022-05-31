@@ -30,7 +30,7 @@ import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.SCMExceptionHints;
 import io.harness.exception.ScmException;
-import io.harness.exception.ScmInternalServerErrorV2Exception;
+import io.harness.exception.ScmInternalServerErrorException;
 import io.harness.exception.WingsException;
 import io.harness.exception.ngexception.beans.ScmErrorMetadataDTO;
 import io.harness.git.model.ChangeType;
@@ -276,7 +276,7 @@ public class SCMGitSyncHelperTest extends GitSdkTestBase {
 
     assertThatThrownBy(
         () -> scmGitSyncHelper.getFileByBranch(getDefaultScope(), repo, branch, filePath, connectorRef, contextMap))
-        .isInstanceOf(ScmInternalServerErrorV2Exception.class)
+        .isInstanceOf(ScmInternalServerErrorException.class)
         .hasMessage(error);
   }
 
@@ -310,7 +310,7 @@ public class SCMGitSyncHelperTest extends GitSdkTestBase {
         .thenReturn(createFileResponse);
 
     assertThatThrownBy(() -> scmGitSyncHelper.createFile(getDefaultScope(), createFileRequestDefault(), contextMap))
-        .isInstanceOf(ScmInternalServerErrorV2Exception.class)
+        .isInstanceOf(ScmInternalServerErrorException.class)
         .hasMessage(error);
   }
 
@@ -344,7 +344,7 @@ public class SCMGitSyncHelperTest extends GitSdkTestBase {
         .thenReturn(updateFileResponse);
 
     assertThatThrownBy(() -> scmGitSyncHelper.updateFile(getDefaultScope(), updateFileGitRequestDefault(), contextMap))
-        .isInstanceOf(ScmInternalServerErrorV2Exception.class)
+        .isInstanceOf(ScmInternalServerErrorException.class)
         .hasMessage(error);
   }
 
@@ -376,7 +376,7 @@ public class SCMGitSyncHelperTest extends GitSdkTestBase {
     assertThatThrownBy(()
                            -> scmGitSyncHelper.createPullRequest(
                                getDefaultScope(), repo, connectorRef, sourceBranch, targetBranch, title, contextMap))
-        .isInstanceOf(ScmInternalServerErrorV2Exception.class)
+        .isInstanceOf(ScmInternalServerErrorException.class)
         .hasMessage(error);
   }
 

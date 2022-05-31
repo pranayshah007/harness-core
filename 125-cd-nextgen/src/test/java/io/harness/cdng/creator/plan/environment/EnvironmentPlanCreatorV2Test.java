@@ -79,7 +79,8 @@ public class EnvironmentPlanCreatorV2Test extends CDNGTestBase {
     YamlField environmentYaml = YamlUtils.readTree(yaml);
 
     HashMap<String, ByteString> metadataDependency = new HashMap<>();
-    metadataDependency.put(YamlTypes.SERVICE_SPEC, ByteString.copyFrom(kryoSerializer.asDeflatedBytes("service_spec")));
+    metadataDependency.put(YamlTypes.NEXT_UUID, ByteString.copyFrom(kryoSerializer.asDeflatedBytes("service_spec")));
+    metadataDependency.put(YamlTypes.UUID, ByteString.copyFrom(kryoSerializer.asDeflatedBytes("uuid")));
     PlanCreationContext ctx = PlanCreationContext.builder()
                                   .currentField(environmentYaml)
                                   .dependency(Dependency.newBuilder().putAllMetadata(metadataDependency).build())

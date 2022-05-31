@@ -32,6 +32,7 @@ import io.harness.persistence.UuidAware;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -109,7 +110,8 @@ public abstract class NotificationRule
           .accountId(accountId)
           .recipients(recipients)
           .userGroups(
-              userGroups.stream()
+              getUserGroupList(userGroups)
+                  .stream()
                   .map(e -> CVNGNotificationChannelUtils.getUserGroups(e, accountId, orgIdentifier, projectIdentifier))
                   .collect(Collectors.toList()))
           .team(Team.CV)
@@ -135,7 +137,8 @@ public abstract class NotificationRule
           .templateData(templateData)
           .templateId(templateId)
           .userGroups(
-              userGroups.stream()
+              getUserGroupList(userGroups)
+                  .stream()
                   .map(e -> CVNGNotificationChannelUtils.getUserGroups(e, accountId, orgIdentifier, projectIdentifier))
                   .collect(Collectors.toList()))
           .webhookUrls(Lists.newArrayList(webhookUrl))
@@ -156,7 +159,8 @@ public abstract class NotificationRule
       return PagerDutyChannel.builder()
           .accountId(accountId)
           .userGroups(
-              userGroups.stream()
+              getUserGroupList(userGroups)
+                  .stream()
                   .map(e -> CVNGNotificationChannelUtils.getUserGroups(e, accountId, orgIdentifier, projectIdentifier))
                   .collect(Collectors.toList()))
           .team(Team.CV)
@@ -184,7 +188,8 @@ public abstract class NotificationRule
           .templateData(templateData)
           .templateId(templateId)
           .userGroups(
-              userGroups.stream()
+              getUserGroupList(userGroups)
+                  .stream()
                   .map(e -> CVNGNotificationChannelUtils.getUserGroups(e, accountId, orgIdentifier, projectIdentifier))
                   .collect(Collectors.toList()))
           .build();
@@ -200,5 +205,12 @@ public abstract class NotificationRule
           .set(NotificationRuleKeys.notificationMethod, notificationRule.getNotificationMethod())
           .inc(NotificationRuleKeys.version);
     }
+  }
+
+  public static List<String> getUserGroupList(List<String> userGroups) {
+    if (userGroups == null) {
+      return Collections.emptyList();
+    }
+    return userGroups;
   }
 }

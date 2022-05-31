@@ -21,7 +21,8 @@ import io.harness.exception.HintException;
 import io.harness.exception.WingsException;
 import io.harness.gitsync.common.beans.ScmApis;
 import io.harness.gitsync.common.scmerrorhandling.handlers.ScmApiErrorHandler;
-import io.harness.gitsync.common.scmerrorhandling.handlers.bitbucket.BitbucketListRepoScmApiErrorHandler;
+import io.harness.gitsync.common.scmerrorhandling.handlers.bitbucketcloud.BitbucketListRepoScmApiErrorHandler;
+import io.harness.gitsync.common.scmerrorhandling.handlers.bitbucketserver.BitbucketServerListRepoScmApiErrorHandler;
 import io.harness.gitsync.common.scmerrorhandling.handlers.github.GithubListRepoScmApiErrorHandler;
 import io.harness.rule.Owner;
 
@@ -41,12 +42,16 @@ public class ScmApiErrorHandlingHelperTest extends CategoryTest {
   @Owner(developers = BHAVYA)
   @Category(UnitTests.class)
   public void testGetScmApiErrorHandler() {
-    ScmApiErrorHandler scmApiErrorHandler =
-        ScmApiErrorHandlingHelper.getScmAPIErrorHandler(ScmApis.LIST_REPOSITORIES, ConnectorType.BITBUCKET);
+    ScmApiErrorHandler scmApiErrorHandler = ScmApiErrorHandlingHelper.getScmAPIErrorHandler(
+        ScmApis.LIST_REPOSITORIES, ConnectorType.BITBUCKET, "https://bitbucket.org/");
     assertThat(scmApiErrorHandler.getClass()).isEqualTo(BitbucketListRepoScmApiErrorHandler.class);
 
-    scmApiErrorHandler =
-        ScmApiErrorHandlingHelper.getScmAPIErrorHandler(ScmApis.LIST_REPOSITORIES, ConnectorType.GITHUB);
+    scmApiErrorHandler = ScmApiErrorHandlingHelper.getScmAPIErrorHandler(
+        ScmApis.LIST_REPOSITORIES, ConnectorType.BITBUCKET, "https://dev.harness.bitbucket.com/");
+    assertThat(scmApiErrorHandler.getClass()).isEqualTo(BitbucketServerListRepoScmApiErrorHandler.class);
+
+    scmApiErrorHandler = ScmApiErrorHandlingHelper.getScmAPIErrorHandler(
+        ScmApis.LIST_REPOSITORIES, ConnectorType.GITHUB, "https://github.com/");
     assertThat(scmApiErrorHandler.getClass()).isEqualTo(GithubListRepoScmApiErrorHandler.class);
   }
 
@@ -55,8 +60,8 @@ public class ScmApiErrorHandlingHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testProcessAndThrowErrorForListRepo() throws WingsException {
     assertThatThrownBy(()
-                           -> ScmApiErrorHandlingHelper.processAndThrowError(
-                               ScmApis.LIST_REPOSITORIES, ConnectorType.BITBUCKET, 403, "Not Authorised"))
+                           -> ScmApiErrorHandlingHelper.processAndThrowError(ScmApis.LIST_REPOSITORIES,
+                               ConnectorType.BITBUCKET, "https://bitbucket.com/", 403, "Not Authorised"))
         .isInstanceOf(HintException.class);
   }
 
@@ -65,8 +70,8 @@ public class ScmApiErrorHandlingHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testProcessAndThrowErrorForListBranches() throws WingsException {
     assertThatThrownBy(()
-                           -> ScmApiErrorHandlingHelper.processAndThrowError(
-                               ScmApis.LIST_BRANCHES, ConnectorType.GITHUB, 404, "Repo Not Found"))
+                           -> ScmApiErrorHandlingHelper.processAndThrowError(ScmApis.LIST_BRANCHES,
+                               ConnectorType.GITHUB, "https://github.com/", 404, "Repo Not Found"))
         .isInstanceOf(HintException.class);
   }
 }

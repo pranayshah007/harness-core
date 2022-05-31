@@ -14,11 +14,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.ScmBadRequestException;
-import io.harness.exception.ScmResourceNotFoundException;
 import io.harness.exception.ScmUnauthorizedException;
 import io.harness.exception.ScmUnexpectedException;
 import io.harness.exception.WingsException;
 import io.harness.gitsync.GitSyncTestBase;
+import io.harness.gitsync.common.scmerrorhandling.handlers.bitbucketcloud.BitbucketCreateBranchScmApiErrorHandler;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
@@ -70,7 +70,7 @@ public class BitbucketCreateBranchScmApiErrorHandlerTest extends GitSyncTestBase
     try {
       bitbucketCreateBranchScmApiErrorHandler.handleError(404, errorMessage);
     } catch (Exception ex) {
-      WingsException exception = ExceptionUtils.cause(ScmResourceNotFoundException.class, ex);
+      WingsException exception = ExceptionUtils.cause(ScmBadRequestException.class, ex);
       assertThat(exception).isNotNull();
       assertThat(exception.getMessage()).isEqualTo(errorMessage);
     }

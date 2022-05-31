@@ -11,6 +11,7 @@ import static io.harness.pms.yaml.YAMLFieldNameConstants.EXECUTION;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.FAILURE_STRATEGIES;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.PARALLEL;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.ROLLBACK_STEPS;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.SPEC;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STAGE;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEPS;
@@ -29,6 +30,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.pipeline.CDStepInfo;
 import io.harness.cdng.pipeline.CdAbstractStepNode;
+import io.harness.cdng.pipeline.PipelineInfrastructure.PipelineInfrastructureKeys;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.govern.Switch;
@@ -59,6 +61,7 @@ import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.timeout.AbsoluteSdkTimeoutTrackerParameters;
 import io.harness.pms.timeout.SdkTimeoutObtainment;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
@@ -82,7 +85,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 @OwnedBy(HarnessTeam.CDC)
@@ -415,6 +420,32 @@ public abstract class CDPMSStepPlanCreatorV2<T extends CdAbstractStepNode> exten
     return stepFqn;
   }
 
+  protected List<YamlNode> findStepsBeforeCurrentStep(YamlField currentStep, Predicate<YamlNode> filter) {
+    YamlNode stages = YamlUtils.findParentNode(currentStep.getNode(), YAMLFieldNameConstants.STAGES);
+    YamlNode currentStage = YamlUtils.findParentNode(currentStep.getNode(), STAGE);
+    if (stages == null || currentStage == null) {
+      return Collections.emptyList();
+    }
+
+    List<YamlNode> steps = new ArrayList<>();
+    String currentStageIdentifier = currentStage.getIdentifier();
+    for (YamlNode stageNode : stages.asArray()) {
+      YamlNode stage = stageNode.getField(STAGE).getNode();
+      if (stage == null) {
+        continue;
+      }
+
+      steps.addAll(findExecutionStepsFromStage(stage, filter));
+      steps.addAll(findProvisionerStepsFromStage(stage, filter));
+
+      if (currentStageIdentifier.equals(stage.getIdentifier())) {
+        break;
+      }
+    }
+
+    return steps;
+  }
+
   private String getStepFqnFromStepGroup(YamlNode stepGroup, String stepNodeType) {
     String stepFqn = null;
     List<YamlNode> stepsInsideStepGroup = stepGroup.getField(STEPS).getNode().asArray();
@@ -471,6 +502,81 @@ public abstract class CDPMSStepPlanCreatorV2<T extends CdAbstractStepNode> exten
       return stepsNode.getField(PARALLEL).getNode();
     } catch (Exception ex) {
       return null;
+    }
+  }
+
+  private List<YamlNode> findExecutionStepsFromStage(YamlNode stageNode, Predicate<YamlNode> filter) {
+    Optional<YamlField> stepsField = Optional.ofNullable(stageNode.getField(SPEC))
+                                         .map(specField -> specField.getNode().getField(EXECUTION))
+                                         .map(executionField -> executionField.getNode().getField(STEPS));
+
+    return stepsField.map(yamlField -> findStepNodesFromStepsField(yamlField, filter)).orElse(Collections.emptyList());
+  }
+
+  private List<YamlNode> findProvisionerStepsFromStage(YamlNode stageNode, Predicate<YamlNode> filter) {
+    Optional<YamlField> stepsField =
+        Optional.ofNullable(stageNode.getField(SPEC))
+            .map(specField -> specField.getNode().getField(YAMLFieldNameConstants.PIPELINE_INFRASTRUCTURE))
+            .map(YamlField::getNode)
+            .flatMap(infraNode -> {
+              if (infraNode.getField(PipelineInfrastructureKeys.useFromStage) != null) {
+                return Optional.empty();
+              }
+
+              return Optional.ofNullable(infraNode.getField(PipelineInfrastructureKeys.infrastructureDefinition));
+            })
+            .map(infraDefField -> infraDefField.getNode().getField(YAMLFieldNameConstants.PROVISIONER))
+            .map(provisionerField -> provisionerField.getNode().getField(STEPS));
+
+    return stepsField.map(yamlField -> findStepNodesFromStepsField(yamlField, filter)).orElse(Collections.emptyList());
+  }
+
+  private List<YamlNode> findStepNodesFromStepsField(YamlField stepsField, Predicate<YamlNode> filter) {
+    List<YamlNode> steps = new ArrayList<>();
+    for (YamlNode stepNode : stepsField.getNode().asArray()) {
+      YamlNode stepGroupNode = getStepGroup(stepNode);
+      if (stepGroupNode != null) {
+        addStepsFromStepGroup(stepGroupNode, filter, steps);
+      } else {
+        addStepsFromParallelOrInlineStepNode(stepNode, filter, steps);
+      }
+    }
+
+    return steps;
+  }
+
+  private void addStepsFromStepGroup(YamlNode stepGroupNode, Predicate<YamlNode> filter, List<YamlNode> result) {
+    YamlField groupStepsField = stepGroupNode.getField(STEPS);
+    if (groupStepsField == null) {
+      return;
+    }
+
+    for (YamlNode stepNode : groupStepsField.getNode().asArray()) {
+      addStepsFromParallelOrInlineStepNode(stepNode, filter, result);
+    }
+  }
+
+  private void addStepsFromParallelOrInlineStepNode(
+      YamlNode stepNode, Predicate<YamlNode> filter, List<YamlNode> result) {
+    YamlNode parallelStepNode = getParallelStep(stepNode);
+    if (parallelStepNode != null) {
+      for (YamlNode stepInParallelNode : parallelStepNode.asArray()) {
+        addStepsFromStepNode(stepInParallelNode, filter, result);
+      }
+      return;
+    }
+
+    addStepsFromStepNode(stepNode, filter, result);
+  }
+
+  private void addStepsFromStepNode(YamlNode stepNode, Predicate<YamlNode> filter, List<YamlNode> result) {
+    YamlField stepNodeField = stepNode.getField(STEP);
+    if (stepNodeField == null) {
+      return;
+    }
+
+    if (filter.test(stepNodeField.getNode())) {
+      result.add(stepNodeField.getNode());
     }
   }
 }

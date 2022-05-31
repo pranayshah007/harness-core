@@ -30,20 +30,29 @@ public interface PMSInputSetRepositoryCustom {
   Page<InputSetEntity> findAll(
       Criteria criteria, Pageable pageable, String accountIdentifier, String orgIdentifier, String projectIdentifier);
 
-  InputSetEntity save(InputSetEntity entityToSave, InputSetYamlDTO yamlDTO);
+  InputSetEntity saveForOldGitSync(InputSetEntity entityToSave, InputSetYamlDTO yamlDTO);
 
-  Optional<InputSetEntity>
-  findByAccountIdAndOrgIdentifierAndProjectIdentifierAndPipelineIdentifierAndIdentifierAndDeletedNot(String accountId,
-      String orgIdentifier, String projectIdentifier, String pipelineIdentifier, String identifier, boolean notDeleted);
+  InputSetEntity save(InputSetEntity entityToSave);
 
-  InputSetEntity update(InputSetEntity entityToUpdate, InputSetYamlDTO yamlDTO, ChangeType changeType);
+  Optional<InputSetEntity> findForOldGitSync(String accountId, String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, String identifier, boolean notDeleted);
+
+  Optional<InputSetEntity> find(String accountId, String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, String identifier, boolean notDeleted, boolean getMetadataOnly);
+
+  InputSetEntity updateForOldGitSync(InputSetEntity entityToUpdate, InputSetYamlDTO yamlDTO, ChangeType changeType);
+
+  InputSetEntity update(InputSetEntity entityToUpdate);
 
   InputSetEntity update(Criteria criteria, Update update);
 
   InputSetEntity update(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, Criteria criteria, Update update);
 
-  InputSetEntity delete(InputSetEntity entityToDelete, InputSetYamlDTO yamlDTO);
+  InputSetEntity deleteForOldGitSync(InputSetEntity entityToDelete, InputSetYamlDTO yamlDTO);
+
+  InputSetEntity delete(
+      String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier, String identifier);
 
   UpdateResult deleteAllInputSetsWhenPipelineDeleted(Query query, Update update);
 

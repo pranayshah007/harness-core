@@ -70,6 +70,7 @@ public class CliHelper {
         .commandExecutionStatus(status)
         .output(processResult.outputUTF8())
         .error(errorLogs.toString().trim())
+        .exitCode(processResult.getExitValue())
         .build();
   }
 }

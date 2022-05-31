@@ -146,9 +146,11 @@ public class TemplateMergeHelper {
    * @param orgId - organisationId of pipeline
    * @param projectId - projectId of pipeline
    * @param yaml - yaml
+   * @param getMergedYamlWithTemplateField - Returns merged Yaml with templates Fields as well OPA policies If set
    * @return final yaml with all template occurrences replaced with actual template information.
    */
-  public TemplateMergeResponseDTO applyTemplatesToYaml(String accountId, String orgId, String projectId, String yaml) {
+  public TemplateMergeResponseDTO applyTemplatesToYaml(
+      String accountId, String orgId, String projectId, String yaml, boolean getMergedYamlWithTemplateField) {
     if (isEmpty(yaml)) {
       throw new NGTemplateException("Yaml to applyTemplates cannot be empty.");
     }
@@ -166,12 +168,24 @@ public class TemplateMergeHelper {
     if (errorResponse != null) {
       throw new NGTemplateResolveException("Exception in resolving template refs in given yaml.", USER, errorResponse);
     }
-    Map<String, Object> resMap = mergeTemplateInputsInObject(accountId, orgId, projectId, yamlNode, templateCacheMap);
+    Map<String, Object> resMap;
+    MergeTemplateInputsInObject mergeTemplateInputsInObject = null;
+    if (!getMergedYamlWithTemplateField) {
+      resMap = mergeTemplateInputsInObject(accountId, orgId, projectId, yamlNode, templateCacheMap);
+    } else {
+      mergeTemplateInputsInObject =
+          mergeTemplateInputsInObjectAlongWithOpaPolicy(accountId, orgId, projectId, yamlNode, templateCacheMap);
+      resMap = mergeTemplateInputsInObject.getResMap();
+    }
+
     List<TemplateReferenceSummary> templateReferenceSummaries =
         getTemplateReferenceSummaries(accountId, orgId, projectId, yaml);
     return TemplateMergeResponseDTO.builder()
         .mergedPipelineYaml(convertToYaml(resMap))
         .templateReferenceSummaries(templateReferenceSummaries)
+        .mergedPipelineYamlWithTemplateRef(mergeTemplateInputsInObject == null
+                ? ""
+                : convertToYaml(mergeTemplateInputsInObject.getResMapWithOpaResponse()))
         .build();
   }
 
@@ -276,6 +290,75 @@ public class TemplateMergeHelper {
       }
     }
     return arrayList;
+  }
+
+  /**
+   * This method Provides all the information from mergeTemplateInputsInObject method along with template references.
+   */
+  private MergeTemplateInputsInObject mergeTemplateInputsInObjectAlongWithOpaPolicy(String accountId, String orgId,
+      String projectId, YamlNode yamlNode, Map<String, TemplateEntity> templateCacheMap) {
+    Map<String, Object> resMap = new LinkedHashMap<>();
+    Map<String, Object> resMapWithTemplateRef = new LinkedHashMap<>();
+    for (YamlField childYamlField : yamlNode.fields()) {
+      String fieldName = childYamlField.getName();
+      JsonNode value = childYamlField.getNode().getCurrJsonNode();
+      boolean isTemplatePresent = templateMergeServiceHelper.isTemplatePresent(fieldName, value);
+      if (isTemplatePresent) {
+        Map<String, Object> result = JsonUtils.jsonNodeToMap(value);
+        resMapWithTemplateRef.put(fieldName, result);
+        value = replaceTemplateOccurrenceWithTemplateSpecYaml(accountId, orgId, projectId, value, templateCacheMap);
+      }
+      if (value.isValueNode() || YamlUtils.checkIfNodeIsArrayWithPrimitiveTypes(value)) {
+        resMap.put(fieldName, value);
+        resMapWithTemplateRef.put(fieldName, value);
+      } else if (value.isArray()) {
+        ArrayListForMergedTemplateRef arrayLists = mergeTemplateInputsInArrayWithOpaPolicy(
+            accountId, orgId, projectId, childYamlField.getNode(), templateCacheMap);
+        resMap.put(fieldName, arrayLists.getArrayList());
+        resMapWithTemplateRef.put(fieldName, arrayLists.getArrayListWithTemplateRef());
+      } else {
+        // If it was template key in yaml, we have replace it with the fields in template.spec in template yaml.
+        // Hence, we directly put all the keys returned in map, after iterating over them.
+        if (isTemplatePresent) {
+          MergeTemplateInputsInObject temp = mergeTemplateInputsInObjectAlongWithOpaPolicy(accountId, orgId, projectId,
+              new YamlNode(fieldName, value, childYamlField.getNode().getParentNode()), templateCacheMap);
+          resMap.putAll(temp.getResMap());
+          resMapWithTemplateRef.putAll(temp.getResMapWithOpaResponse());
+        } else {
+          MergeTemplateInputsInObject temp = mergeTemplateInputsInObjectAlongWithOpaPolicy(
+              accountId, orgId, projectId, childYamlField.getNode(), templateCacheMap);
+          resMap.put(fieldName, temp.getResMap());
+          resMapWithTemplateRef.put(fieldName, temp.getResMapWithOpaResponse());
+        }
+      }
+    }
+    return MergeTemplateInputsInObject.builder().resMap(resMap).resMapWithOpaResponse(resMapWithTemplateRef).build();
+  }
+
+  private ArrayListForMergedTemplateRef mergeTemplateInputsInArrayWithOpaPolicy(String accountId, String orgId,
+      String projectId, YamlNode yamlNode, Map<String, TemplateEntity> templateCacheMap) {
+    List<Object> arrayList = new ArrayList<>();
+    List<Object> arrayListWithTemplateRef = new ArrayList<>();
+    for (YamlNode arrayElement : yamlNode.asArray()) {
+      if (yamlNode.getCurrJsonNode().isValueNode()) {
+        arrayList.add(arrayElement);
+        arrayListWithTemplateRef.add(arrayElement);
+      } else if (arrayElement.isArray()) {
+        ArrayListForMergedTemplateRef arrayListForMergedTemplateRef =
+            mergeTemplateInputsInArrayWithOpaPolicy(accountId, orgId, projectId, yamlNode, templateCacheMap);
+        arrayList.add(arrayListForMergedTemplateRef.getArrayList());
+        arrayListWithTemplateRef.add(arrayListForMergedTemplateRef.getArrayListWithTemplateRef());
+      } else {
+        MergeTemplateInputsInObject temp =
+            mergeTemplateInputsInObjectAlongWithOpaPolicy(accountId, orgId, projectId, arrayElement, templateCacheMap);
+        arrayList.add(temp.getResMap());
+        arrayListWithTemplateRef.add(temp.getResMapWithOpaResponse());
+      }
+    }
+    return ArrayListForMergedTemplateRef.builder()
+        .arrayList(arrayList)
+        .arrayListWithTemplateRef(arrayListWithTemplateRef)
+        .build();
   }
 
   /**

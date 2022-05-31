@@ -18,6 +18,7 @@ import io.harness.data.validator.Trimmed;
 import io.harness.dto.FailureInfoDTO;
 import io.harness.engine.executions.retry.RetryExecutionMetadata;
 import io.harness.execution.StagesExecutionMetadata;
+import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
@@ -122,6 +123,10 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
   GovernanceMetadata governanceMetadata;
   StagesExecutionMetadata stagesExecutionMetadata;
   Boolean allowStagesExecution;
+
+  // git simplification params
+  StoreType storeType;
+  String connectorRef;
 
   Long startTs;
   Long endTs;

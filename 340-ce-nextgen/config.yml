@@ -129,11 +129,15 @@ featureFlagConfig:
 gcpConfig:
   gcpProjectId: gcpProjectIdPlaceHolder
   gcpAwsConnectorCrudPubSubTopic: "ce-aws-connector-crud"
+  gcpGcpConnectorCrudPubSubTopic: "ce-gcp-connector-crud"
 
 ceAzureSetupConfig:
   azureAppClientId: azureAppClientIdPlaceholder
   azureAppClientSecret: azureAppClientSecretplaceholder
   enableFileCheckAtSource: false
+
+ceGcpSetupConfig:
+  enableServiceAccountPermissionsCheck: false
 
 awsConfig:
   accessKey: accessKey_placeholder

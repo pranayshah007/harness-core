@@ -146,7 +146,7 @@ import io.harness.steps.barriers.event.BarrierDropper;
 import io.harness.steps.barriers.event.BarrierPositionHelperEventHandler;
 import io.harness.steps.barriers.service.BarrierServiceImpl;
 import io.harness.steps.resourcerestraint.ResourceRestraintInitializer;
-import io.harness.steps.resourcerestraint.ResourceRestraintOrchestrationEndObserver;
+import io.harness.steps.resourcerestraint.ResourceRestraintObserver;
 import io.harness.steps.resourcerestraint.service.ResourceRestraintPersistenceMonitor;
 import io.harness.telemetry.TelemetryReporter;
 import io.harness.telemetry.filter.APIAuthTelemetryFilter;
@@ -427,6 +427,8 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
     nodeExecutionService.getStepStatusUpdateSubject().register(injector.getInstance(Key.get(BarrierDropper.class)));
     nodeExecutionService.getStepStatusUpdateSubject().register(
         injector.getInstance(Key.get(NodeExecutionStatusUpdateEventHandler.class)));
+    nodeExecutionService.getStepStatusUpdateSubject().register(
+        injector.getInstance(Key.get(ResourceRestraintObserver.class)));
 
     nodeExecutionService.getStepStatusUpdateSubject().register(
         injector.getInstance(Key.get(TimeoutInstanceRemover.class)));
@@ -483,7 +485,7 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
     planExecutionStrategy.getOrchestrationEndSubject().register(
         injector.getInstance(Key.get(PipelineStatusUpdateEventHandler.class)));
     planExecutionStrategy.getOrchestrationEndSubject().register(
-        injector.getInstance(Key.get(ResourceRestraintOrchestrationEndObserver.class)));
+        injector.getInstance(Key.get(ResourceRestraintObserver.class)));
 
     HMongoTemplate mongoTemplate = (HMongoTemplate) injector.getInstance(MongoTemplate.class);
     mongoTemplate.getTracerSubject().register(injector.getInstance(MongoRedisTracer.class));

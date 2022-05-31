@@ -21,6 +21,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.beans.DecryptableEntity;
+import io.harness.beans.FeatureName;
 import io.harness.beans.sweepingoutputs.K8StageInfraDetails;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml.K8sDirectInfraYamlSpec;
@@ -38,6 +39,7 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.executionplan.CIExecutionPlanTestHelper;
 import io.harness.executionplan.CIExecutionTestBase;
+import io.harness.ff.CIFeatureFlagService;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -71,7 +73,7 @@ import retrofit2.Response;
 
 public class ConnectorUtilsTest extends CIExecutionTestBase {
   @Inject CIExecutionPlanTestHelper ciExecutionPlanTestHelper;
-
+  @Mock CIFeatureFlagService featureFlagService;
   @Mock private ConnectorResourceClient connectorResourceClient;
   @Mock private SecretManagerClientService secretManagerClientService;
   @InjectMocks ConnectorUtils connectorUtils;
@@ -329,13 +331,14 @@ public class ConnectorUtilsTest extends CIExecutionTestBase {
   @Test
   @Owner(developers = HARSH)
   @Category(UnitTests.class)
-  @Ignore("skipping this test")
   public void shouldAddDelegateSelector() throws IOException {
     Call<ResponseDTO<Optional<ConnectorDTO>>> getConnectorResourceCall = mock(Call.class);
     ResponseDTO<Optional<ConnectorDTO>> responseDTO = ResponseDTO.newResponse(Optional.of(k8sConnectorFromDelegate));
+    when(featureFlagService.isEnabled(FeatureName.DISABLE_CI_STAGE_DEL_SELECTOR, "accountId")).thenReturn(false);
+
     when(getConnectorResourceCall.execute()).thenReturn(Response.success(responseDTO));
     when(connectorResourceClient.get(any(), any(), any(), any())).thenReturn(getConnectorResourceCall);
-
+    when(featureFlagService.isEnabled(FeatureName.DISABLE_CI_STAGE_DEL_SELECTOR, "accountId")).thenReturn(false);
     when(executionSweepingOutputResolver.resolveOptional(
              ambiance, RefObjectUtils.getSweepingOutputRefObject(STAGE_INFRA_DETAILS)))
         .thenReturn(OptionalSweepingOutput.builder()

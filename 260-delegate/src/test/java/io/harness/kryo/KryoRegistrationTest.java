@@ -16,18 +16,18 @@ import static org.assertj.core.api.Assertions.fail;
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
+import io.harness.serializer.ClassResolver;
 import io.harness.serializer.DelegateRegistrars;
+import io.harness.serializer.HKryo;
 import io.harness.serializer.KryoRegistrar;
 
-import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.Registration;
-import com.esotericsoftware.kryo.util.DefaultClassResolver;
 import com.esotericsoftware.kryo.util.IntMap;
 import com.esotericsoftware.kryo.util.ObjectMap;
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -35,6 +35,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.junit.Test;
@@ -42,14 +43,33 @@ import org.junit.experimental.categories.Category;
 
 public class KryoRegistrationTest extends CategoryTest {
   private static final String KRYO_REGISTRATION_FILE = "kryo-registrations.txt";
+
   /**
-   * Data types that are excluded from failing the test in case the same type is registered with the same id in two
-   * different registrars. This is required as Kryo automatically registers these types for every registrar.
+   * HKryo and Kryo register a number of classes by default,
+   * ignore those registrations in our duplicate checks in case of matching id.
    */
-  private static final HashSet<String> EXACT_DUPLICATE_EXCLUSIONS =
-      new HashSet<>(Arrays.asList("int", "java.lang.Integer", "float", "java.lang.Float", "boolean",
-          "java.lang.Boolean", "byte", "java.lang.Byte", "char", "java.lang.Character", "short", "java.lang.Short",
-          "long", "java.lang.Long", "double", "java.lang.Double", "void", "java.lang.Void", "java.lang.String"));
+  private static final Set<String> EXACT_DUPLICATE_EXCLUSIONS;
+  static {
+    HashSet<String> exclusions = new HashSet<>();
+
+    // Add Kryo exclusions
+    exclusions.addAll(Arrays.asList("int", "java.lang.Integer", "float", "java.lang.Float", "boolean",
+        "java.lang.Boolean", "byte", "java.lang.Byte", "char", "java.lang.Character", "short", "java.lang.Short",
+        "long", "java.lang.Long", "double", "java.lang.Double", "void", "java.lang.Void", "java.lang.String"));
+
+    // Add HKryo exclusions
+    ClassResolver resolver = new ClassResolver();
+    HKryo _ = new HKryo(resolver);
+    exclusions.addAll(resolver.getClassRegistrations()
+                          .values()
+                          .toArray()
+                          .stream()
+                          .map(reg -> reg.getType().getCanonicalName())
+                          .collect(Collectors.toList()));
+
+    // make set unmodifiable
+    EXACT_DUPLICATE_EXCLUSIONS = Collections.unmodifiableSet(exclusions);
+  }
 
   private static void log(String message) {
     System.out.println(message);
@@ -67,19 +87,19 @@ public class KryoRegistrationTest extends CategoryTest {
       throws InstantiationException, IllegalAccessException, NoSuchFieldException {
     Map<Class, ImmutablePair<String, Integer>> processedRegistrations = new HashMap<>();
     for (Class<? extends KryoRegistrar> registrarClass : getAllKryoRegistrars()) {
-      log(String.format("checking registrar '%s'.", registrarClass.getName()));
+      log(String.format("checking registrar '%s'.", registrarClass.getCanonicalName()));
 
-      Kryo kryo = new Kryo();
+      ClassResolver resolver = new ClassResolver();
+      HKryo kryo = new HKryo(resolver);
       registrarClass.newInstance().register(kryo);
-      ObjectMap<Class, Registration> registrations = extractClassRegistrationsFromKryo(kryo);
 
-      for (ObjectMap.Entry<Class, Registration> registration : registrations.entries()) {
+      for (ObjectMap.Entry<Class, Registration> registration : resolver.getClassRegistrations().entries()) {
         if (processedRegistrations.containsKey(registration.key)) {
           ImmutablePair<String, Integer> processedRegistration = processedRegistrations.get(registration.key);
 
           // ignore exact duplicates if they are explicitly excluded (no need to register, already registered)
           if (registration.value.getId() == processedRegistration.right
-              && EXACT_DUPLICATE_EXCLUSIONS.contains(registration.key.getName())) {
+              && EXACT_DUPLICATE_EXCLUSIONS.contains(registration.key.getCanonicalName())) {
             continue;
           }
 
@@ -88,13 +108,13 @@ public class KryoRegistrationTest extends CategoryTest {
                   + "   %d:%s\n"
                   + ">%s\n"
                   + "   %d:%s",
-              registration.key.getName(), registrarClass.getSimpleName(), registration.value.getId(),
-              registration.key.getName(), processedRegistration.left, processedRegistration.right,
-              registration.key.getName()));
+              registration.key.getCanonicalName(), registrarClass.getCanonicalName(), registration.value.getId(),
+              registration.key.getCanonicalName(), processedRegistration.left, processedRegistration.right,
+              registration.key.getCanonicalName()));
         }
 
         processedRegistrations.put(
-            registration.key, new ImmutablePair<>(registrarClass.getSimpleName(), registration.value.getId()));
+            registration.key, new ImmutablePair<>(registrarClass.getCanonicalName(), registration.value.getId()));
       }
     }
   }
@@ -111,19 +131,20 @@ public class KryoRegistrationTest extends CategoryTest {
       throws InstantiationException, IllegalAccessException, NoSuchFieldException {
     IntMap<ImmutablePair<String, String>> processedRegistrations = new IntMap<>();
     for (Class<? extends KryoRegistrar> registrarClass : getAllKryoRegistrars()) {
-      log(String.format("checking registrar '%s'.", registrarClass.getName()));
+      log(String.format("checking registrar '%s'.", registrarClass.getCanonicalName()));
 
-      Kryo kryo = new Kryo();
+      ClassResolver resolver = new ClassResolver();
+      HKryo kryo = new HKryo(resolver);
       registrarClass.newInstance().register(kryo);
-      IntMap<Registration> registrations = extractIdRegistrationsFromKryo(kryo);
+      IntMap<Registration> registrations = resolver.getRegistrations();
 
       for (IntMap.Entry<Registration> registration : registrations.entries()) {
         if (processedRegistrations.containsKey(registration.key)) {
           ImmutablePair<String, String> processedRegistration = processedRegistrations.get(registration.key);
 
           // ignore exact duplicates if they are explicitly excluded (no need to register, already registered)
-          if (registration.value.getType().getName() == processedRegistration.right
-              && EXACT_DUPLICATE_EXCLUSIONS.contains(registration.value.getType().getName())) {
+          if (registration.value.getType().getCanonicalName().equals(processedRegistration.right)
+              && EXACT_DUPLICATE_EXCLUSIONS.contains(registration.value.getType().getCanonicalName())) {
             continue;
           }
 
@@ -132,13 +153,13 @@ public class KryoRegistrationTest extends CategoryTest {
                   + "   %d:%s\n"
                   + ">%s\n"
                   + "   %d:%s",
-              registration.key, registrarClass.getSimpleName(), registration.key,
-              registration.value.getType().getName(), processedRegistration.left, registration.key,
+              registration.key, registrarClass.getCanonicalName(), registration.key,
+              registration.value.getType().getCanonicalName(), processedRegistration.left, registration.key,
               processedRegistration.right));
         }
 
         processedRegistrations.put(registration.key,
-            new ImmutablePair<>(registrarClass.getSimpleName(), registration.value.getType().getName()));
+            new ImmutablePair<>(registrarClass.getCanonicalName(), registration.value.getType().getCanonicalName()));
       }
     }
   }
@@ -184,7 +205,8 @@ public class KryoRegistrationTest extends CategoryTest {
 
   private static SortedMap<Integer, String> getAllClassesRegisteredWithKryo()
       throws InstantiationException, IllegalAccessException, NoSuchFieldException {
-    Kryo kryo = new Kryo();
+    ClassResolver resolver = new ClassResolver();
+    HKryo kryo = new HKryo(resolver);
     SortedMap<Integer, String> registeredClasses = new TreeMap<>();
 
     log("Load all registrar classes.");
@@ -196,34 +218,16 @@ public class KryoRegistrationTest extends CategoryTest {
     }
 
     log("Extract all registered classes from kryo.");
-    IntMap<Registration> idToRegistration = extractIdRegistrationsFromKryo(kryo);
+    IntMap<Registration> idToRegistration = resolver.getRegistrations();
 
     IntMap.Keys registeredKyroIds = idToRegistration.keys();
     while (registeredKyroIds.hasNext) {
       int registrationId = registeredKyroIds.next();
       Registration registration = kryo.getRegistration(registrationId);
-      registeredClasses.put(registration.getId(), registration.getType().getName());
+      registeredClasses.put(registration.getId(), registration.getType().getCanonicalName());
     }
 
     return registeredClasses;
-  }
-
-  private static IntMap<Registration> extractIdRegistrationsFromKryo(Kryo kryo)
-      throws NoSuchFieldException, IllegalAccessException {
-    // We need to access a private field from the kryo resolver in order to get all registrations.
-    DefaultClassResolver classResolver = (DefaultClassResolver) kryo.getClassResolver();
-    Field idToRegistrationField = classResolver.getClass().getDeclaredField("idToRegistration");
-    idToRegistrationField.setAccessible(true);
-    return (IntMap<Registration>) idToRegistrationField.get(classResolver);
-  }
-
-  private static ObjectMap<Class, Registration> extractClassRegistrationsFromKryo(Kryo kryo)
-      throws NoSuchFieldException, IllegalAccessException {
-    // We need to access a private field from the kryo resolver in order to get all registrations.
-    DefaultClassResolver classResolver = (DefaultClassResolver) kryo.getClassResolver();
-    Field classToRegistrationField = classResolver.getClass().getDeclaredField("classToRegistration");
-    classToRegistrationField.setAccessible(true);
-    return (ObjectMap<Class, Registration>) classToRegistrationField.get(classResolver);
   }
 
   private static Set<Class<? extends KryoRegistrar>> getAllKryoRegistrars() {

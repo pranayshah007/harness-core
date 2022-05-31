@@ -14,6 +14,7 @@ import static io.harness.ng.core.variable.VariableValueType.REGEX;
 import static io.harness.rule.OwnerRule.MEENAKSHI;
 import static io.harness.rule.OwnerRule.NISHANT;
 import static io.harness.rule.OwnerRule.TEJAS;
+import static io.harness.rule.OwnerRule.VIKAS_M;
 import static io.harness.utils.PageTestUtils.getPage;
 
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
@@ -508,5 +509,26 @@ public class VariableServiceImplTest extends CategoryTest {
         .thenReturn(Optional.empty());
     exceptionRule.expect(NotFoundException.class);
     variableService.delete(accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+  }
+
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void testDeleteBatch() {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String projectIdentifier = randomAlphabetic(10);
+    List<String> variableIdentifiers = new ArrayList<>();
+    for (int i = 0; i < 5; i++) {
+      variableIdentifiers.add(randomAlphabetic(10));
+    }
+    String identifier = randomAlphabetic(5);
+    String value = randomAlphabetic(7);
+    Variable variable = getVariable(accountIdentifier, orgIdentifier, projectIdentifier, identifier, value);
+    when(variableRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(
+             anyString(), anyString(), anyString(), anyString()))
+        .thenReturn(Optional.of(variable));
+    variableService.deleteBatch(accountIdentifier, orgIdentifier, projectIdentifier, variableIdentifiers);
+    verify(variableRepository, times(5)).delete(variable);
   }
 }

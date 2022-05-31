@@ -16,6 +16,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.HintException;
 import io.harness.gitsync.GitSyncTestBase;
+import io.harness.gitsync.common.scmerrorhandling.handlers.bitbucketcloud.BitbucketListBranchesScmApiErrorHandler;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;

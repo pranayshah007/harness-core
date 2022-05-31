@@ -64,7 +64,7 @@ public class CloudformationDeleteStackTaskHandlerTest extends CategoryTest {
   @Test
   @Owner(developers = NGONZALEZ)
   @Category(UnitTests.class)
-  public void testHandleHappyPath() throws IOException, TimeoutException, InterruptedException {
+  public void testHandleHappyPath() throws Exception {
     CloudformationTaskNGParameters parameters = getCloudformationTaskNGParameters();
     doReturn(AwsInternalConfig.builder().build())
         .when(cloudformationBaseHelper)
@@ -72,8 +72,7 @@ public class CloudformationDeleteStackTaskHandlerTest extends CategoryTest {
     Optional<Stack> stack =
         Optional.of(new Stack().withStackName("stackName").withRoleARN("roleARN").withStackId("id"));
     doReturn(stack).when(handler).getIfStackExists(any(), any(), any());
-    CloudformationTaskNGResponse response =
-        handler.executeTaskInternal(parameters, "delegate_id", "task_id", logCallback);
+    CloudformationTaskNGResponse response = handler.executeTask(parameters, "delegate_id", "task_id", logCallback);
     assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
     verify(handler, times(1)).getIfStackExists(any(), any(), any());
     verify(cloudformationBaseHelper, times(1)).getAwsInternalConfig(any(), any(), any());
@@ -98,15 +97,14 @@ public class CloudformationDeleteStackTaskHandlerTest extends CategoryTest {
   @Test
   @Owner(developers = NGONZALEZ)
   @Category(UnitTests.class)
-  public void testHandleStackDoesntExists() throws IOException, TimeoutException, InterruptedException {
+  public void testHandleStackDoesntExists() throws Exception {
     CloudformationTaskNGParameters parameters = getCloudformationTaskNGParameters();
     doReturn(AwsInternalConfig.builder().build())
         .when(cloudformationBaseHelper)
         .getAwsInternalConfig(any(), any(), any());
     Optional<Stack> stack = Optional.empty();
     doReturn(stack).when(handler).getIfStackExists(any(), any(), any());
-    CloudformationTaskNGResponse response =
-        handler.executeTaskInternal(parameters, "delegate_id", "task_id", logCallback);
+    CloudformationTaskNGResponse response = handler.executeTask(parameters, "delegate_id", "task_id", logCallback);
     assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
     verify(handler, times(1)).getIfStackExists(any(), any(), any());
     verify(cloudformationBaseHelper, times(1)).getAwsInternalConfig(any(), any(), any());
@@ -117,7 +115,7 @@ public class CloudformationDeleteStackTaskHandlerTest extends CategoryTest {
   @Test
   @Owner(developers = NGONZALEZ)
   @Category(UnitTests.class)
-  public void testHandleDeleteStackTimeout() throws IOException, TimeoutException, InterruptedException {
+  public void testHandleDeleteStackTimeout() throws Exception {
     CloudformationTaskNGParameters parameters = getCloudformationTaskNGParameters();
     doReturn(AwsInternalConfig.builder().build())
         .when(cloudformationBaseHelper)
@@ -126,8 +124,7 @@ public class CloudformationDeleteStackTaskHandlerTest extends CategoryTest {
         Optional.of(new Stack().withStackName("stackName").withRoleARN("roleARN").withStackId("id"));
     doReturn(stack).when(handler).getIfStackExists(any(), any(), any());
     doThrow(TimeoutException.class).when(cloudformationBaseHelper).deleteStack(any(), any(), any(), any(), anyInt());
-    CloudformationTaskNGResponse response =
-        handler.executeTaskInternal(parameters, "delegate_id", "task_id", logCallback);
+    CloudformationTaskNGResponse response = handler.executeTask(parameters, "delegate_id", "task_id", logCallback);
     assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.FAILURE);
     verify(handler, times(1)).getIfStackExists(any(), any(), any());
     verify(cloudformationBaseHelper, times(1)).getAwsInternalConfig(any(), any(), any());
@@ -138,7 +135,7 @@ public class CloudformationDeleteStackTaskHandlerTest extends CategoryTest {
   @Test
   @Owner(developers = NGONZALEZ)
   @Category(UnitTests.class)
-  public void testHandleWaitDeleteStackTimeout() throws IOException, TimeoutException, InterruptedException {
+  public void testHandleWaitDeleteStackTimeout() throws Exception {
     CloudformationTaskNGParameters parameters = getCloudformationTaskNGParameters();
     doReturn(AwsInternalConfig.builder().build())
         .when(cloudformationBaseHelper)
@@ -149,8 +146,7 @@ public class CloudformationDeleteStackTaskHandlerTest extends CategoryTest {
     doThrow(TimeoutException.class)
         .when(cloudformationBaseHelper)
         .waitForStackToBeDeleted(any(), any(), any(), any(), anyLong());
-    CloudformationTaskNGResponse response =
-        handler.executeTaskInternal(parameters, "delegate_id", "task_id", logCallback);
+    CloudformationTaskNGResponse response = handler.executeTask(parameters, "delegate_id", "task_id", logCallback);
     assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.FAILURE);
     verify(handler, times(1)).getIfStackExists(any(), any(), any());
     verify(cloudformationBaseHelper, times(1)).getAwsInternalConfig(any(), any(), any());

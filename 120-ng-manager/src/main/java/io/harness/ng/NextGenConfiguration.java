@@ -129,7 +129,7 @@ public class NextGenConfiguration extends Configuration {
   public static final String AZURE_RESOURCES_PACKAGE = "io.harness.ng.core.resources.azure";
   public static final String NG_TRIAL_SIGNUP_PACKAGE = "io.harness.ng.trialsignup";
   public static final String AWS_PACKAGE = "io.harness.ng.core.aws.resources";
-  public static final String FILE_STORE_RESOURCE_PACKAGE = "io.harness.ng.core.filestore.remote";
+  public static final String FILE_STORE_RESOURCE_PACKAGE = "io.harness.filestore.resource";
   public static final String GITOPS_RESOURCE_PACKAGE = "io.harness.ng.gitops.resource";
   public static final String INFRA_RESOURCE_PACKAGE = "io.harness.ng.core.infrastructure.resource";
   public static final Collection<Class<?>> HARNESS_RESOURCE_CLASSES = getResourceClasses();
