@@ -139,7 +139,7 @@ public class K8sDeleteTest extends CategoryTest {
     k8sDelete.setResources("${workflow.variables.resources}");
     k8sDelete.setFilePaths(null);
     k8sDelete.setDeleteNamespacesForRelease(true);
-
+    k8sDelete.setStateTimeoutInMinutes(15);
     k8sDelete.execute(context);
 
     ArgumentCaptor<List> listArgumentCaptor = ArgumentCaptor.forClass(List.class);
@@ -162,7 +162,7 @@ public class K8sDeleteTest extends CategoryTest {
                     .commandName(K8S_DELETE_COMMAND_NAME)
                     .k8sTaskType(DELETE)
                     .deleteNamespacesForRelease(true)
-                    .timeoutIntervalInMin(10)
+                    .timeoutIntervalInMin(15)
                     .useNewKubectlVersion(false)
                     .build()),
             anyMap());
@@ -179,7 +179,7 @@ public class K8sDeleteTest extends CategoryTest {
     k8sDelete.setResources("${workflow.variables.resources}");
     k8sDelete.setFilePaths(null);
     k8sDelete.setDeleteNamespacesForRelease(false);
-
+    k8sDelete.setStateTimeoutInMinutes(5);
     k8sDelete.execute(context);
 
     ArgumentCaptor<List> listArgumentCaptor = ArgumentCaptor.forClass(List.class);
@@ -202,7 +202,7 @@ public class K8sDeleteTest extends CategoryTest {
                     .commandName(K8S_DELETE_COMMAND_NAME)
                     .k8sTaskType(DELETE)
                     .deleteNamespacesForRelease(false)
-                    .timeoutIntervalInMin(10)
+                    .timeoutIntervalInMin(5)
                     .useNewKubectlVersion(false)
                     .build()),
             anyMap());

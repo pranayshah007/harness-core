@@ -157,6 +157,8 @@ public class ExecutionSummaryCreateEventHandlerTest extends PipelineServiceTestB
     assertThat(capturedEntity.getLayoutNodeMap()).containsKeys("startId");
     assertThat(capturedEntity.getStagesExecutionMetadata().isStagesExecution()).isTrue();
     assertThat(capturedEntity.isStagesExecutionAllowed()).isTrue();
+    assertThat(capturedEntity.getStoreType()).isNull();
+    assertThat(capturedEntity.getConnectorRef()).isNull();
 
     verify(notificationHelper, times(1)).sendNotification(ambiance, PipelineEventType.PIPELINE_START, null, null);
   }

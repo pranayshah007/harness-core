@@ -53,6 +53,8 @@ import io.harness.steps.approval.step.servicenow.ServiceNowApprovalStepPlanCreat
 import io.harness.steps.approval.step.servicenow.ServiceNowApprovalStepVariableCreator;
 import io.harness.steps.cf.FlagConfigurationStep;
 import io.harness.steps.customstage.CustomStageFilterCreator;
+import io.harness.steps.customstage.CustomStagePlanCreator;
+import io.harness.steps.customstage.CustomStageVariableCreator;
 import io.harness.steps.jira.JiraStepVariableCreator;
 import io.harness.steps.jira.JiraUpdateStepVariableCreator;
 import io.harness.steps.jira.create.JiraCreateStepPlanCreator;
@@ -103,6 +105,7 @@ public class PipelineServiceInternalInfoProvider implements PipelineServiceInfoP
     planCreators.add(new ServiceNowCreateStepPlanCreator());
     planCreators.add(new ServiceNowUpdateStepPlanCreator());
     planCreators.add(new StrategyConfigPlanCreator());
+    planCreators.add(new CustomStagePlanCreator());
     injectorUtils.injectMembers(planCreators);
     return planCreators;
   }
@@ -140,6 +143,7 @@ public class PipelineServiceInternalInfoProvider implements PipelineServiceInfoP
     variableCreators.add(new JiraApprovalStepVariableCreator());
     variableCreators.add(new ServiceNowCreateStepVariableCreator());
     variableCreators.add(new ServiceNowUpdateStepVariableCreator());
+    variableCreators.add(new CustomStageVariableCreator());
     injectorUtils.injectMembers(variableCreators);
     return variableCreators;
   }

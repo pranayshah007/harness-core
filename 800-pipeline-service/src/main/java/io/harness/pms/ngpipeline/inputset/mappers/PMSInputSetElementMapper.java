@@ -13,6 +13,10 @@ import static io.harness.pms.merger.helpers.InputSetYamlHelper.getPipelineCompon
 import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.InputSetReference;
+import io.harness.data.structure.EmptyPredicate;
+import io.harness.gitaware.helper.GitAwareContextHelper;
+import io.harness.gitsync.beans.StoreType;
+import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.gitsync.sdk.EntityGitDetailsMapper;
 import io.harness.gitsync.sdk.EntityValidityDetails;
 import io.harness.ng.core.EntityDetail;
@@ -77,21 +81,10 @@ public class PMSInputSetElementMapper {
         .build();
   }
 
-  public InputSetResponseDTOPMS toInputSetResponseDTOPMS(String accountId, String orgIdentifier,
-      String projectIdentifier, String pipelineIdentifier, String yaml, InputSetErrorWrapperDTOPMS errorWrapperDTO) {
-    return InputSetResponseDTOPMS.builder()
-        .accountId(accountId)
-        .orgIdentifier(orgIdentifier)
-        .projectIdentifier(projectIdentifier)
-        .pipelineIdentifier(pipelineIdentifier)
-        .identifier(InputSetYamlHelper.getStringField(yaml, "identifier", "inputSet"))
-        .inputSetYaml(yaml)
-        .name(InputSetYamlHelper.getStringField(yaml, "name", "inputSet"))
-        .description(InputSetYamlHelper.getStringField(yaml, "description", "inputSet"))
-        .tags(InputSetYamlHelper.getTags(yaml, "inputSet"))
-        .isErrorResponse(true)
-        .inputSetErrorWrapper(errorWrapperDTO)
-        .build();
+  public EntityGitDetails getEntityGitDetails(InputSetEntity entity) {
+    return entity.getStoreType() == null            ? EntityGitDetailsMapper.mapEntityGitDetails(entity)
+        : entity.getStoreType() == StoreType.REMOTE ? GitAwareContextHelper.getEntityGitDetailsFromScmGitMetadata()
+                                                    : null;
   }
 
   public InputSetResponseDTOPMS toInputSetResponseDTOPMS(InputSetEntity entity) {
@@ -106,11 +99,36 @@ public class PMSInputSetElementMapper {
         .description(entity.getDescription())
         .tags(TagMapper.convertToMap(entity.getTags()))
         .version(entity.getVersion())
-        .gitDetails(EntityGitDetailsMapper.mapEntityGitDetails(entity))
+        .gitDetails(getEntityGitDetails(entity))
         .isOutdated(entity.getIsInvalid())
         .entityValidityDetails(entity.isEntityInvalid()
                 ? EntityValidityDetails.builder().valid(false).invalidYaml(entity.getYaml()).build()
                 : EntityValidityDetails.builder().valid(true).build())
+        .storeType(entity.getStoreType())
+        .connectorRef(entity.getConnectorRef())
+        .build();
+  }
+
+  public InputSetResponseDTOPMS toInputSetResponseDTOPMSWithErrors(
+      InputSetEntity entity, InputSetErrorWrapperDTOPMS errorWrapperDTO) {
+    return InputSetResponseDTOPMS.builder()
+        .accountId(entity.getAccountId())
+        .orgIdentifier(entity.getOrgIdentifier())
+        .projectIdentifier(entity.getProjectIdentifier())
+        .pipelineIdentifier(entity.getPipelineIdentifier())
+        .identifier(entity.getIdentifier())
+        .inputSetYaml(entity.getYaml())
+        .name(entity.getName())
+        .description(entity.getDescription())
+        .tags(TagMapper.convertToMap(entity.getTags()))
+        .version(entity.getVersion())
+        .gitDetails(getEntityGitDetails(entity))
+        .isOutdated(entity.getIsInvalid())
+        .entityValidityDetails(EntityValidityDetails.builder().valid(false).invalidYaml(entity.getYaml()).build())
+        .inputSetErrorWrapper(errorWrapperDTO)
+        .isErrorResponse(true)
+        .storeType(entity.getStoreType())
+        .connectorRef(entity.getConnectorRef())
         .build();
   }
 
@@ -134,16 +152,25 @@ public class PMSInputSetElementMapper {
         .version(entity.getVersion())
         .isErrorResponse(isError)
         .invalidInputSetReferences(invalidReferences)
-        .gitDetails(EntityGitDetailsMapper.mapEntityGitDetails(entity))
+        .gitDetails(getEntityGitDetails(entity))
         .isOutdated(entity.getIsInvalid())
-        .entityValidityDetails(entity.isEntityInvalid()
+        .entityValidityDetails(entity.isEntityInvalid() || EmptyPredicate.isNotEmpty(invalidReferences)
                 ? EntityValidityDetails.builder().valid(false).invalidYaml(entity.getYaml()).build()
                 : EntityValidityDetails.builder().valid(true).build())
+        .storeType(entity.getStoreType())
+        .connectorRef(entity.getConnectorRef())
         .build();
   }
 
   public InputSetSummaryResponseDTOPMS toInputSetSummaryResponseDTOPMS(InputSetEntity entity,
       InputSetErrorWrapperDTOPMS inputSetErrorDetails, Map<String, String> overlaySetErrorDetails) {
+    // For List View, getEntityGitDetails(...) method cant be used because for REMOTE input sets. That is because
+    // GitAwareContextHelper.getEntityGitDetailsFromScmGitMetadata() cannot be used, because there won't be any
+    // SCM Context set in the List call.
+    EntityGitDetails entityGitDetails = entity.getStoreType() == null
+        ? EntityGitDetailsMapper.mapEntityGitDetails(entity)
+        : entity.getStoreType() == StoreType.REMOTE ? GitAwareContextHelper.getEntityGitDetails(entity)
+                                                    : null;
     return InputSetSummaryResponseDTOPMS.builder()
         .identifier(entity.getIdentifier())
         .name(entity.getName())
@@ -152,7 +179,7 @@ public class PMSInputSetElementMapper {
         .inputSetType(entity.getInputSetEntityType())
         .tags(TagMapper.convertToMap(entity.getTags()))
         .version(entity.getVersion())
-        .gitDetails(EntityGitDetailsMapper.mapEntityGitDetails(entity))
+        .gitDetails(entityGitDetails)
         .createdAt(entity.getCreatedAt())
         .lastUpdatedAt(entity.getLastUpdatedAt())
         .isOutdated(entity.getIsInvalid())
@@ -161,6 +188,8 @@ public class PMSInputSetElementMapper {
         .entityValidityDetails(entity.isEntityInvalid()
                 ? EntityValidityDetails.builder().valid(false).invalidYaml(entity.getYaml()).build()
                 : EntityValidityDetails.builder().valid(true).build())
+        .storeType(entity.getStoreType())
+        .connectorRef(entity.getConnectorRef())
         .build();
   }
 

@@ -12,8 +12,10 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.creator.plan.PlanCreatorConstants;
 import io.harness.cdng.creator.plan.environment.steps.EnvironmentStepV2;
 import io.harness.cdng.creator.plan.gitops.ClusterPlanCreatorUtils;
+import io.harness.cdng.creator.plan.infrastructure.InfrastructurePmsPlanCreator;
 import io.harness.cdng.environment.steps.EnvironmentStepParameters;
 import io.harness.cdng.environment.yaml.EnvironmentPlanCreatorConfig;
+import io.harness.cdng.infra.yaml.InfrastructureDefinitionConfig;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
@@ -28,6 +30,7 @@ import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.creators.ChildrenPlanCreator;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
+import io.harness.pms.yaml.YamlField;
 import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
@@ -62,7 +65,37 @@ public class EnvironmentPlanCreatorV2 extends ChildrenPlanCreator<EnvironmentPla
 
     boolean gitOpsEnabled = (boolean) kryoSerializer.asInflatedObject(
         ctx.getDependency().getMetadataMap().get(YAMLFieldNameConstants.GITOPS_ENABLED).toByteArray());
-    if (gitOpsEnabled) {
+
+    if (!gitOpsEnabled) {
+      // if gitOpsEnabled is false, add dependency for infrastructure
+      InfrastructureDefinitionConfig infrastructureDefinitionConfig =
+          config.getInfrastructureDefinitions().get(0).getInfrastructureDefinitionConfig();
+      YamlField infraField = ctx.getCurrentField().getNode().getField(YamlTypes.INFRASTRUCTURE_DEFS);
+
+      YamlField infraDefinitionField = ctx.getCurrentField()
+                                           .getNode()
+                                           .getField(YamlTypes.INFRASTRUCTURE_DEFS)
+                                           .getNode()
+                                           .asArray()
+                                           .get(0)
+                                           .getField(YamlTypes.INFRASTRUCTURE_DEF);
+
+      PlanNode infraSpecNode =
+          InfrastructurePmsPlanCreator.getInfraStepPlanNode(infrastructureDefinitionConfig.getSpec());
+      planCreationResponseMap.put(
+          infraSpecNode.getUuid(), PlanCreationResponse.builder().node(infraSpecNode.getUuid(), infraSpecNode).build());
+      String infraSectionNodeChildId = infraSpecNode.getUuid();
+
+      PlanNode infraDefPlanNode =
+          InfrastructurePmsPlanCreator.getInfraDefPlanNode(infraDefinitionField, infraSectionNodeChildId);
+      planCreationResponseMap.put(infraDefPlanNode.getUuid(),
+          PlanCreationResponse.builder().node(infraDefPlanNode.getUuid(), infraDefPlanNode).build());
+
+      String infraSectionUuid = (String) kryoSerializer.asInflatedObject(
+          ctx.getDependency().getMetadataMap().get(YamlTypes.INFRA_SECTION_UUID).toByteArray());
+      planCreationResponseMap.putAll(InfrastructurePmsPlanCreator.createPlanForInfraSectionV2(infraField.getNode(),
+          infraDefPlanNode.getUuid(), infrastructureDefinitionConfig, kryoSerializer, infraSectionUuid));
+    } else {
       PlanNode gitopsNode = ClusterPlanCreatorUtils.getGitopsClustersStepPlanNode(config);
       planCreationResponseMap.put(gitopsNode.getUuid(), PlanCreationResponse.builder().planNode(gitopsNode).build());
     }
@@ -79,13 +112,16 @@ public class EnvironmentPlanCreatorV2 extends ChildrenPlanCreator<EnvironmentPla
         EnvironmentMapper.toEnvironmentStepParameters(environmentPlanCreatorConfig);
 
     String serviceSpecNodeUuid = (String) kryoSerializer.asInflatedObject(
-        ctx.getDependency().getMetadataMap().get(YamlTypes.SERVICE_SPEC).toByteArray());
+        ctx.getDependency().getMetadataMap().get(YamlTypes.NEXT_UUID).toByteArray());
+
+    String uuid = (String) kryoSerializer.asInflatedObject(
+        ctx.getDependency().getMetadataMap().get(YamlTypes.UUID).toByteArray());
 
     ByteString advisorParameters = ByteString.copyFrom(
         kryoSerializer.asBytes(OnSuccessAdviserParameters.builder().nextNodeId(serviceSpecNodeUuid).build()));
 
     return PlanNode.builder()
-        .uuid(ctx.getCurrentField().getNode().getUuid())
+        .uuid(uuid)
         .stepType(EnvironmentStepV2.STEP_TYPE)
         .name(PlanCreatorConstants.ENVIRONMENT_NODE_NAME)
         .identifier(YamlTypes.ENVIRONMENT_YAML)

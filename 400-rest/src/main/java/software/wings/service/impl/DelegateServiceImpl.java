@@ -566,7 +566,7 @@ public class DelegateServiceImpl implements DelegateService {
       DelegateGroup delegateGroup = fetchFromCache
           ? delegateCache.getDelegateGroup(delegate.getAccountId(), delegate.getDelegateGroupId())
           : delegateSetupService.getDelegateGroup(delegate.getAccountId(), delegate.getDelegateGroupId());
-      if (delegateGroup.getTags() != null) {
+      if (delegateGroup != null && delegateGroup.getTags() != null) {
         selectors.addAll(delegateGroup.getTags());
       }
     }
@@ -2642,7 +2642,6 @@ public class DelegateServiceImpl implements DelegateService {
         .delegateId(delegate.getUuid())
         .sequenceNum(delegate.getSequenceNum())
         .delegateRandomToken(delegate.getDelegateRandomToken())
-        .delegateTokenName(delegate.getDelegateTokenName())
         .build();
   }
 

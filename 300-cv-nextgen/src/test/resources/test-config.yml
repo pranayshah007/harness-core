@@ -130,3 +130,10 @@ accessControlClientConfig:
     baseUrl: "http://localhost:9006/api/"
     readTimeOutSeconds: 15
     connectTimeOutSeconds: 15
+
+auditClientConfig:
+  baseUrl: http://localhost:9005/api/
+  connectTimeOutSeconds: 15
+  readTimeOutSeconds: 15
+
+enableAudit: false

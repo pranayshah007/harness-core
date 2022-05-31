@@ -3097,6 +3097,16 @@
             ]
           }
         },
+        "exportTerraformPlanJson": {
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
         "secretManagerRef": {
           "type": "string"
         },

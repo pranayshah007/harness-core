@@ -1671,6 +1671,9 @@ public class WorkflowServiceImpl implements WorkflowService {
         propertiesMap.put("workspace",
             isTerraformInheritState(step) ? provisionerIdWorkspaceMap.get(step.getProperties().get("provisionerId"))
                                           : step.getProperties().get("workspace"));
+        if (step.getProperties().get("templateExpressions") != null) {
+          propertiesMap.put("templateExpressions", step.getProperties().get("templateExpressions"));
+        }
         rollbackProvisionerNodes.add(GraphNode.builder()
                                          .type(stateType.name())
                                          .rollback(true)
@@ -2606,7 +2609,8 @@ public class WorkflowServiceImpl implements WorkflowService {
         deploymentMetadataBuilder.artifactVariables(artifactVariables);
         updateArtifactVariables(appId, workflow, artifactVariables, withDefaultArtifact, workflowExecution);
         resolveArtifactStreamMetadata(appId, artifactVariables, workflowExecution);
-        if (featureFlagService.isEnabled(FeatureName.DISABLE_ARTIFACT_COLLECTION, accountId) && withDefaultArtifact) {
+        if (featureFlagService.isEnabled(FeatureName.ARTIFACT_COLLECTION_CONFIGURABLE, accountId)
+            && withDefaultArtifact) {
           addArtifactInputToArtifactVariables(artifactVariables, workflowExecution);
         }
       }

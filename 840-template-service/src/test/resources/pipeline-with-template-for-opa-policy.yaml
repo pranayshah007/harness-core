@@ -1,0 +1,9 @@
+pipeline:
+  name: opa ex
+  identifier: opa_ex
+  template:
+    templateRef: PipelineTemplevel1
+    versionLabel: 1
+  tags: {}
+  projectIdentifier: projId
+  orgIdentifier: orgId

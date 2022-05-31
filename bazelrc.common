@@ -12,8 +12,8 @@ build:macos --host_javabase=@openjdk8u242_macos_archive//:runtime
 
 build --host_java_toolchain=@bazel_tools//tools/jdk:toolchain_vanilla
 build --java_toolchain=@bazel_tools//tools/jdk:toolchain_vanilla
-# build --host_java_toolchain=@bazel_tools//tools/jdk:toolchain_hostjdk8
-# build --java_toolchain=@bazel_tools//tools/jdk:toolchain_hostjdk8
+#build --host_java_toolchain=@bazel_tools//tools/jdk:toolchain_hostjdk8
+#build --java_toolchain=@bazel_tools//tools/jdk:toolchain_hostjdk8
 
 build --action_env=HARNESS_GENERATION_PASSPHRASE
 

@@ -12,6 +12,8 @@ import static io.harness.OrchestrationEventsFrameworkConstants.INITIATE_NODE_EVE
 import io.harness.eventsframework.api.Producer;
 import io.harness.eventsframework.producer.Message;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.execution.StrategyMetadata;
+import io.harness.pms.contracts.execution.events.InitiateMode;
 import io.harness.pms.contracts.execution.events.InitiateNodeEvent;
 import io.harness.pms.execution.utils.AmbianceUtils;
 
@@ -35,6 +37,24 @@ public class InitiateNodeHelper {
                                                      .build();
     InitiateNodeEvent event =
         InitiateNodeEvent.newBuilder().setAmbiance(ambiance).setNodeId(nodeId).setRuntimeId(runtimeId).build();
+    return producer.send(Message.newBuilder().putAllMetadata(eventMetadata).setData(event.toByteString()).build());
+  }
+
+  public String publishEvent(
+      Ambiance ambiance, String nodeId, String runtimeId, StrategyMetadata strategyMetadata, boolean shouldRun) {
+    ImmutableMap<String, String> eventMetadata = ImmutableMap.<String, String>builder()
+                                                     .put("eventType", "TRIGGER_NODE")
+                                                     .put("newNodeId", nodeId)
+                                                     .put("newRuntimeId", runtimeId)
+                                                     .putAll(AmbianceUtils.logContextMap(ambiance))
+                                                     .build();
+    InitiateNodeEvent event = InitiateNodeEvent.newBuilder()
+                                  .setAmbiance(ambiance)
+                                  .setNodeId(nodeId)
+                                  .setRuntimeId(runtimeId)
+                                  .setStrategyMetadata(strategyMetadata)
+                                  .setInitiateMode(InitiateMode.CREATE_AND_START)
+                                  .build();
     return producer.send(Message.newBuilder().putAllMetadata(eventMetadata).setData(event.toByteString()).build());
   }
 }

@@ -14,7 +14,9 @@ import io.harness.annotations.dev.OwnedBy;
 @OwnedBy(CDC)
 public enum JiraAction {
   CREATE_TICKET("Create Ticket"),
+  CREATE_TICKET_NG("Create Ticket NG"),
   UPDATE_TICKET("Update Ticket"),
+  UPDATE_TICKET_NG("Update Ticket NG"),
   AUTH("Auth"),
 
   GET_PROJECTS("Get Projects"),
@@ -24,7 +26,9 @@ public enum JiraAction {
 
   FETCH_ISSUE("Fetch Issue"),
   FETCH_ISSUE_DATA("Fetch Issue Details"),
-  CHECK_APPROVAL("Check Jira Approval");
+  CHECK_APPROVAL("Check Jira Approval"),
+
+  SEARCH_USER("Search User");
 
   private final String displayName;
 

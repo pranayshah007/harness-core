@@ -9,6 +9,7 @@ package io.harness.pms.plan.execution.handlers;
 
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.observers.PlanStatusUpdateObserver;
+import io.harness.exception.ExceptionUtils;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.execution.ExecutionStatus;
@@ -25,8 +26,10 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Map;
 import java.util.Optional;
+import lombok.extern.slf4j.Slf4j;
 
 @Singleton
+@Slf4j
 public class ExecutionInfoUpdateEventHandler implements PlanStatusUpdateObserver {
   private final PMSPipelineService pmsPipelineService;
   private final PlanExecutionService planExecutionService;
@@ -53,21 +56,27 @@ public class ExecutionInfoUpdateEventHandler implements PlanStatusUpdateObserver
       }
       Status status = planExecutionService.get(ambiance.getPlanExecutionId()).getStatus();
       ExecutionSummaryInfo executionSummaryInfo = pipelineEntity.get().getExecutionSummaryInfo();
-      executionSummaryInfo.setLastExecutionStatus(ExecutionStatus.getExecutionStatus(status));
-      if (StatusUtils.brokeStatuses().contains(status)) {
-        Map<String, Integer> errors = executionSummaryInfo.getNumOfErrors();
-        Date date = new Date();
-        SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy");
-        String strDate = formatter.format(date);
-        if (errors.containsKey(strDate)) {
-          errors.put(strDate, errors.get(strDate) + 1);
-        } else {
-          errors.put(strDate, 1);
+      if (executionSummaryInfo != null) {
+        executionSummaryInfo.setLastExecutionStatus(ExecutionStatus.getExecutionStatus(status));
+        if (StatusUtils.brokeStatuses().contains(status)) {
+          Map<String, Integer> errors = executionSummaryInfo.getNumOfErrors();
+          Date date = new Date();
+          SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy");
+          String strDate = formatter.format(date);
+          if (errors.containsKey(strDate)) {
+            errors.put(strDate, errors.get(strDate) + 1);
+          } else {
+            errors.put(strDate, 1);
+          }
         }
+        pmsPipelineService.saveExecutionInfo(accountId, orgId, projectId, pipelineId, executionSummaryInfo);
+      } else {
+        log.error("ExecutionSummaryInfo is null for executionId - " + ambiance.getPlanExecutionId());
       }
-      pmsPipelineService.saveExecutionInfo(accountId, orgId, projectId, pipelineId, executionSummaryInfo);
     } catch (Exception e) {
-      // ignore
+      log.error("Error while updating Plan Status for execution with ID " + ambiance.getPlanExecutionId() + ": "
+              + ExceptionUtils.getMessage(e),
+          e);
     }
   }
 }

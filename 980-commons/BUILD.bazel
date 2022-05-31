@@ -6,7 +6,6 @@ java_library(
     name = "module",
     srcs = glob(["src/main/java/**/*.java"]),
     resource_jars = [
-        "//990-commons-test:abstract-module",
         "//980-commons/src/main/proto:980_commons_java_proto",
     ],
     resources = [

@@ -17,7 +17,7 @@ public interface ExecutionLogger {
     this.log(LogLevel.INFO, message);
   }
   default void error(String message, String... messages) {
-    this.log(LogLevel.INFO, message);
+    this.log(LogLevel.ERROR, message, messages);
   }
 
   void log(LogLevel logLevel, String message, String... messages);

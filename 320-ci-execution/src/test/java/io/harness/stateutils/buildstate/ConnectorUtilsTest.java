@@ -334,6 +334,8 @@ public class ConnectorUtilsTest extends CIExecutionTestBase {
   public void shouldAddDelegateSelector() throws IOException {
     Call<ResponseDTO<Optional<ConnectorDTO>>> getConnectorResourceCall = mock(Call.class);
     ResponseDTO<Optional<ConnectorDTO>> responseDTO = ResponseDTO.newResponse(Optional.of(k8sConnectorFromDelegate));
+    when(featureFlagService.isEnabled(FeatureName.DISABLE_CI_STAGE_DEL_SELECTOR, "accountId")).thenReturn(false);
+
     when(getConnectorResourceCall.execute()).thenReturn(Response.success(responseDTO));
     when(connectorResourceClient.get(any(), any(), any(), any())).thenReturn(getConnectorResourceCall);
     when(featureFlagService.isEnabled(FeatureName.DISABLE_CI_STAGE_DEL_SELECTOR, "accountId")).thenReturn(false);

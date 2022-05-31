@@ -14,6 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.CollectionUtils;
 import io.harness.engine.executions.plan.PlanExecutionMetadataService;
 import io.harness.engine.expressions.AmbianceExpressionEvaluator;
+import io.harness.engine.expressions.functors.MatrixFunctor;
 import io.harness.engine.expressions.functors.NodeExecutionEntityType;
 import io.harness.expression.VariableResolverTracker;
 import io.harness.ngtriggers.expressions.functors.EventPayloadFunctor;
@@ -65,6 +66,8 @@ public class PMSExpressionEvaluator extends AmbianceExpressionEvaluator {
     addToContext("project", new ProjectFunctor(projectClient, ambiance));
 
     addToContext("pipeline", new PipelineExecutionFunctor(pmsExecutionService, pipelineExpressionHelper, ambiance));
+
+    addToContext("matrix", new MatrixFunctor(ambiance));
 
     // Trigger functors
     addToContext(SetupAbstractionKeys.eventPayload, new EventPayloadFunctor(ambiance, planExecutionMetadataService));

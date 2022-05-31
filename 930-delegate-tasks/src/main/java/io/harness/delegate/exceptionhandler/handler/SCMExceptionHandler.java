@@ -38,6 +38,12 @@ public class SCMExceptionHandler implements ExceptionHandler {
       return NestedExceptionUtils.hintWithExplanationException(HintException.HINT_SCM_INVALID_REQUEST,
           ExplanationException.EXPLANATION_SCM_INVALID_REQUEST,
           new InvalidRequestException("SCM service running with delegate has error", USER));
+    } else if (errorCode == ErrorCode.GIT_CONNECTION_ERROR) {
+      return NestedExceptionUtils.hintWithExplanationException(HintException.HINT_INVALID_GIT_REPO,
+          ExplanationException.INVALID_GIT_REPO, new InvalidRequestException(exception.getMessage(), USER));
+    } else if (errorCode == ErrorCode.CONNECTION_TIMEOUT) {
+      return NestedExceptionUtils.hintWithExplanationException(HintException.HINT_GIT_CONNECTIVITY,
+          ExplanationException.GIT_TIME_OUT, new InvalidRequestException(exception.getMessage(), USER));
     }
     return new InvalidRequestException(exception.getMessage(), USER);
   }

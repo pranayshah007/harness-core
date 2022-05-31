@@ -12,7 +12,9 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.gitsync.common.beans.BranchSyncStatus.UNSYNCED;
 import static io.harness.gitsync.common.scmerrorhandling.ScmErrorCodeToHttpStatusCodeMapping.HTTP_200;
 
+import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.common.EntityReference;
 import io.harness.connector.ConnectorResponseDTO;
@@ -83,6 +85,7 @@ import io.harness.ng.core.entitydetail.EntityDetailProtoToRestMapper;
 import io.harness.product.ci.scm.proto.CreateFileResponse;
 import io.harness.product.ci.scm.proto.DeleteFileResponse;
 import io.harness.product.ci.scm.proto.UpdateFileResponse;
+import io.harness.remote.client.RestClientUtils;
 import io.harness.security.Principal;
 import io.harness.security.dto.UserPrincipal;
 import io.harness.tasks.DecryptGitApiAccessHelper;
@@ -120,6 +123,7 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
   private final FullSyncJobService fullSyncJobService;
   private final ScmFacilitatorService scmFacilitatorService;
   private final GitSyncSettingsService gitSyncSettingsService;
+  private final AccountClient accountClient;
 
   @Inject
   public HarnessToGitHelperServiceImpl(@Named("connectorDecoratorService") ConnectorService connectorService,
@@ -129,7 +133,8 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
       ScmOrchestratorService scmOrchestratorService, GitBranchSyncService gitBranchSyncService,
       GitCommitService gitCommitService, UserProfileHelper userProfileHelper, GitSyncErrorService gitSyncErrorService,
       GitSyncConnectorHelper gitSyncConnectorHelper, FullSyncJobService fullSyncJobService,
-      ScmFacilitatorService scmFacilitatorService, GitSyncSettingsService gitSyncSettingsService) {
+      ScmFacilitatorService scmFacilitatorService, GitSyncSettingsService gitSyncSettingsService,
+      AccountClient accountClient) {
     this.connectorService = connectorService;
     this.decryptScmApiAccess = decryptScmApiAccess;
     this.gitEntityService = gitEntityService;
@@ -147,6 +152,7 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
     this.fullSyncJobService = fullSyncJobService;
     this.scmFacilitatorService = scmFacilitatorService;
     this.gitSyncSettingsService = gitSyncSettingsService;
+    this.accountClient = accountClient;
   }
 
   private Optional<ConnectorResponseDTO> getConnector(
@@ -251,8 +257,20 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
 
   @Override
   public Boolean isGitSimplificationEnabled(EntityScopeInfo entityScopeInfo) {
-    return gitSyncSettingsService.getGitSimplificationStatus(entityScopeInfo.getAccountId(),
-        entityScopeInfo.getOrgId().getValue(), entityScopeInfo.getProjectId().getValue());
+    try {
+      if (isEnabled(entityScopeInfo.getAccountId(), FeatureName.NG_GIT_EXPERIENCE)) {
+        return true;
+      }
+      return gitSyncSettingsService.getGitSimplificationStatus(entityScopeInfo.getAccountId(),
+          entityScopeInfo.getOrgId().getValue(), entityScopeInfo.getProjectId().getValue());
+    } catch (Exception ex) {
+      log.error(
+          String.format(
+              "Exception while checking git Simplification status for accountId: %s , orgId: %s , projectId: %s "),
+          entityScopeInfo.getAccountId(), entityScopeInfo.getOrgId().getValue(),
+          entityScopeInfo.getProjectId().getValue(), ex);
+      return false;
+    }
   }
 
   private void createGitBranch(
@@ -570,9 +588,13 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
 
   private ErrorDetails prepareDefaultErrorDetails(WingsException ex) {
     return ErrorDetails.newBuilder()
-        .setErrorMessage(ExceptionUtils.getMessage(ex))
+        .setErrorMessage(ScmExceptionUtils.getMessage(ex))
         .setExplanationMessage(ScmExceptionUtils.getExplanationMessage(ex))
         .setHintMessage(ScmExceptionUtils.getHintMessage(ex))
         .build();
+  }
+
+  private boolean isEnabled(String accountId, FeatureName featureName) {
+    return RestClientUtils.getResponse(accountClient.isFeatureFlagEnabled(featureName.name(), accountId));
   }
 }

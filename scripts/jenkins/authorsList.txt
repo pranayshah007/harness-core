@@ -208,6 +208,7 @@ Vikas Naiyar vikas.naiyar@harness.io
 Vikas Singh vikas.singh@harness.io
 VikasMaddukuriHarness vikas.maddukuri@harness.io
 Vistaar Juneja vistaar.juneja@harness.io
+Vivek Veman vivek.karnati@harness.io
 Vladimir Peric vladimir.peric@harness.io
 Vojin Djukic vojin.djukic@harness.io
 Vuk Skobalj vuk.harness@harness.io
@@ -278,3 +279,4 @@ Vansh Bhatia vansh.bhatia@harness.io
 Saranya Jena saranya.jena@harness.io
 Amit Kumar Das amit.das@harness.io
 Sarthak Jain sarthak.jain@harness.io
+Abhishek Abhishek abhishek.abhishek@harness.io

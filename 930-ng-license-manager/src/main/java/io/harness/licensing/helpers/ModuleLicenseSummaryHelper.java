@@ -13,12 +13,14 @@ import io.harness.licensing.beans.modules.CEModuleLicenseDTO;
 import io.harness.licensing.beans.modules.CFModuleLicenseDTO;
 import io.harness.licensing.beans.modules.CIModuleLicenseDTO;
 import io.harness.licensing.beans.modules.ModuleLicenseDTO;
+import io.harness.licensing.beans.modules.STOModuleLicenseDTO;
 import io.harness.licensing.beans.summary.CDLicenseSummaryDTO;
 import io.harness.licensing.beans.summary.CELicenseSummaryDTO;
 import io.harness.licensing.beans.summary.CFLicenseSummaryDTO;
 import io.harness.licensing.beans.summary.CILicenseSummaryDTO;
 import io.harness.licensing.beans.summary.CVLicenseSummaryDTO;
 import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
+import io.harness.licensing.beans.summary.STOLicenseSummaryDTO;
 import io.harness.licensing.utils.ModuleLicenseUtils;
 
 import com.google.inject.Singleton;
@@ -99,6 +101,19 @@ public class ModuleLicenseSummaryHelper {
             if (temp.getSpendLimit() != null) {
               ceLicenseSummaryDTO.setTotalSpendLimit(
                   ModuleLicenseUtils.computeAdd(ceLicenseSummaryDTO.getTotalSpendLimit(), temp.getSpendLimit()));
+            }
+          }
+        };
+        break;
+      case STO:
+        licensesWithSummaryDTO = STOLicenseSummaryDTO.builder().build();
+        summaryHandler = (moduleLicenseDTO, summaryDTO, current) -> {
+          STOModuleLicenseDTO temp = (STOModuleLicenseDTO) moduleLicenseDTO;
+          STOLicenseSummaryDTO stoLicenseSummaryDTO = (STOLicenseSummaryDTO) summaryDTO;
+          if (current < temp.getExpiryTime()) {
+            if (temp.getNumberOfDevelopers() != null) {
+              stoLicenseSummaryDTO.setTotalDevelopers(ModuleLicenseUtils.computeAdd(
+                  stoLicenseSummaryDTO.getTotalDevelopers(), temp.getNumberOfDevelopers()));
             }
           }
         };

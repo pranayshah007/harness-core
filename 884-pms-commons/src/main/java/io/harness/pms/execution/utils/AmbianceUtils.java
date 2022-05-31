@@ -183,6 +183,14 @@ public class AmbianceUtils {
     return stageLevel;
   }
 
+  public String getStageRuntimeIdAmbiance(Ambiance ambiance) {
+    Optional<Level> stageLevel = getStageLevelFromAmbiance(ambiance);
+    if (stageLevel.isPresent()) {
+      return stageLevel.get().getRuntimeId();
+    }
+    throw new InvalidRequestException("Stage not present");
+  }
+
   public static boolean isRetry(Ambiance ambiance) {
     Level level = Objects.requireNonNull(obtainCurrentLevel(ambiance));
     return level.getRetryIndex() != 0;

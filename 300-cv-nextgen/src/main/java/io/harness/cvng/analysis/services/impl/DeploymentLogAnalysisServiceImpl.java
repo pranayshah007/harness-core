@@ -356,6 +356,7 @@ public class DeploymentLogAnalysisServiceImpl implements DeploymentLogAnalysisSe
         .flatMap(deploymentLogAnalysis
             -> deploymentLogAnalysis.getHostSummaries()
                    .stream()
+                   .filter(hostSummary -> hostSummary.getHost() != null)
                    .map(DeploymentLogAnalysisDTO.HostSummary::getHost)
                    .filter(host -> !DataSourceType.ERROR_TRACKING.getDisplayName().equals(host)))
         .collect(Collectors.toSet());

@@ -19,6 +19,7 @@ import io.harness.ng.core.environment.mappers.EnvironmentMapper;
 import io.harness.ng.core.environment.yaml.NGEnvironmentInfoConfig;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.yaml.core.variables.NGServiceOverrides;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,7 +30,7 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(CDC)
 public class EnvironmentPlanCreatorConfigMapper {
   public static EnvironmentPlanCreatorConfig toEnvironmentPlanCreatorConfig(
-      Environment environment, List<InfrastructureEntity> infrastructureEntity) {
+      Environment environment, List<InfrastructureEntity> infrastructureEntity, NGServiceOverrides serviceOverride) {
     NGEnvironmentInfoConfig ngEnvironmentInfoConfig =
         EnvironmentMapper.toNGEnvironmentConfig(environment).getNgEnvironmentInfoConfig();
     return EnvironmentPlanCreatorConfig.builder()
@@ -42,14 +43,14 @@ public class EnvironmentPlanCreatorConfigMapper {
         .tags(ngEnvironmentInfoConfig.getTags())
         .type(ngEnvironmentInfoConfig.getType())
         .variables(ngEnvironmentInfoConfig.getVariables())
-        .serviceOverrides(ngEnvironmentInfoConfig.getServiceOverrides())
+        .serviceOverrides(serviceOverride)
         .infrastructureDefinitions(
             InfrastructureEntityConfigMapper.toInfrastructurePlanCreatorConfig(infrastructureEntity))
         .build();
   }
 
   public EnvironmentPlanCreatorConfig toEnvPlanCreatorConfigWithGitops(
-      Environment envEntity, EnvironmentYamlV2 envYaml) {
+      Environment envEntity, EnvironmentYamlV2 envYaml, NGServiceOverrides serviceOverride) {
     NGEnvironmentInfoConfig ngEnvironmentInfoConfig =
         EnvironmentMapper.toNGEnvironmentConfig(envEntity).getNgEnvironmentInfoConfig();
     return EnvironmentPlanCreatorConfig.builder()
@@ -62,7 +63,7 @@ public class EnvironmentPlanCreatorConfigMapper {
         .tags(ngEnvironmentInfoConfig.getTags())
         .type(ngEnvironmentInfoConfig.getType())
         .variables(ngEnvironmentInfoConfig.getVariables())
-        .serviceOverrides(ngEnvironmentInfoConfig.getServiceOverrides())
+        .serviceOverrides(serviceOverride)
         .gitOpsClusterRefs(getClusterRefs(envYaml))
         .deployToAll(envYaml.getDeployToAll() != null && envYaml.getDeployToAll())
         .build();

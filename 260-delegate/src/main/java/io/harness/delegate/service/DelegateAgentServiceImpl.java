@@ -1069,9 +1069,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         continue;
       }
       builder.delegateId(responseDelegateId);
-      DelegateAgentCommonVariables.setDelegateTokenName(delegateResponse.getDelegateTokenName());
-      log.info("Delegate registered with id {} and delegate token name {}", responseDelegateId,
-          delegateResponse.getDelegateTokenName());
+      log.info("Delegate registered with id {}", responseDelegateId);
       return responseDelegateId;
     }
 

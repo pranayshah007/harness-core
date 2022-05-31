@@ -73,6 +73,7 @@ import io.harness.cvng.core.utils.template.TemplateFacade;
 import io.harness.cvng.dashboard.services.api.HeatMapService;
 import io.harness.cvng.dashboard.services.api.LogDashboardService;
 import io.harness.cvng.dashboard.services.api.TimeSeriesDashboardService;
+import io.harness.cvng.events.MonitoredServiceCreateEvent;
 import io.harness.cvng.notification.beans.NotificationRuleRef;
 import io.harness.cvng.notification.beans.NotificationRuleRefDTO;
 import io.harness.cvng.notification.beans.NotificationRuleResponse;
@@ -97,6 +98,7 @@ import io.harness.ng.core.environment.dto.EnvironmentResponse;
 import io.harness.ng.core.mapper.TagMapper;
 import io.harness.notification.notificationclient.NotificationClient;
 import io.harness.notification.notificationclient.NotificationResult;
+import io.harness.outbox.api.OutboxService;
 import io.harness.persistence.HPersistence;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.utils.PageUtils;
@@ -176,6 +178,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
   @Inject private ServiceLevelObjectiveService serviceLevelObjectiveService;
   @Inject private NotificationClient notificationClient;
   @Inject private ActivityService activityService;
+  @Inject private OutboxService outboxService;
 
   private static final String templateIdentifierName = "monitoredServiceName";
 
@@ -216,6 +219,13 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
           monitoredServiceDTO.getSources().getChangeSources());
     }
     saveMonitoredServiceEntity(environmentParams, monitoredServiceDTO);
+    outboxService.save(MonitoredServiceCreateEvent.builder()
+                           .accountIdentifier(accountId)
+                           .monitoredServiceDTO(monitoredServiceDTO)
+                           .monitoredServiceIdentifier(monitoredServiceDTO.getIdentifier())
+                           .orgIdentifier(monitoredServiceDTO.getOrgIdentifier())
+                           .projectIdentifier(monitoredServiceDTO.getProjectIdentifier())
+                           .build());
     log.info(
         "Saved monitored service with identifier {} for account {}", monitoredServiceDTO.getIdentifier(), accountId);
     setupUsageEventService.sendCreateEventsForMonitoredService(environmentParams, monitoredServiceDTO);
@@ -1466,7 +1476,10 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
               notificationClient.sendNotificationAsync(notificationChannel.toNotificationChannel(
                   monitoredService.getAccountId(), monitoredService.getOrgIdentifier(),
                   monitoredService.getProjectIdentifier(), templateId, templateData));
-          log.info("Notification with Notification ID {} sent", notificationResult.getNotificationId());
+          log.info(
+              "Notification with Notification ID {}, Notification Rule {}, Condition {} for Monitored Service {} sent",
+              notificationResult.getNotificationId(), notificationRule.getName(), condition.getType().getDisplayName(),
+              monitoredService.getName());
           notificationRuleRefsWithChange.add(notificationRule.getIdentifier());
         }
       }

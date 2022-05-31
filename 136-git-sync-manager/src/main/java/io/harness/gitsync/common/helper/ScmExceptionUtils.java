@@ -7,24 +7,30 @@
 
 package io.harness.gitsync.common.helper;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.exception.WingsException.ReportTarget.REST_API;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eraro.ErrorCode;
+import io.harness.eraro.ResponseMessage;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.ScmException;
 import io.harness.exception.WingsException;
+import io.harness.logging.ExceptionLogger;
 
+import java.util.List;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
 @OwnedBy(HarnessTeam.PL)
 public class ScmExceptionUtils {
-  public ScmException getScmException(WingsException ex) {
+  public ScmException getScmException(Throwable ex) {
     while (ex != null) {
       if (ex instanceof ScmException) {
         return (ScmException) ex;
       }
-      ex = (WingsException) ex.getCause();
+      ex = ex.getCause();
     }
     return null;
   }
@@ -45,5 +51,13 @@ public class ScmExceptionUtils {
     } else {
       return explanationException.getMessage();
     }
+  }
+
+  public static String getMessage(WingsException ex) {
+    List<ResponseMessage> responseMessageList = ExceptionLogger.getResponseMessageList(ex, REST_API);
+    if (isNotEmpty(responseMessageList)) {
+      return responseMessageList.get(responseMessageList.size() - 1).getMessage();
+    }
+    return "Unexpected error occurred while performing scm operation.";
   }
 }

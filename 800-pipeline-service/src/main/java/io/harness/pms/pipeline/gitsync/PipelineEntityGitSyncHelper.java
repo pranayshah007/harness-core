@@ -10,11 +10,11 @@ package io.harness.pms.pipeline.gitsync;
 import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.common.EntityReference;
 import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.IdentifierRefProtoDTO;
+import io.harness.exception.EntityNotFoundException;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
@@ -31,7 +31,6 @@ import io.harness.manage.GlobalContextManager;
 import io.harness.ng.core.EntityDetail;
 import io.harness.plancreator.pipeline.PipelineConfig;
 import io.harness.plancreator.pipeline.PipelineInfoConfig;
-import io.harness.pms.PmsFeatureFlagService;
 import io.harness.pms.contracts.governance.GovernanceMetadata;
 import io.harness.pms.contracts.governance.PolicySetMetadata;
 import io.harness.pms.pipeline.PipelineEntity;
@@ -59,16 +58,13 @@ public class PipelineEntityGitSyncHelper extends AbstractGitSdkEntityHandler<Pip
   private final PMSPipelineService pmsPipelineService;
   private final PMSPipelineServiceHelper pipelineServiceHelper;
   private final PipelineFullGitSyncHandler pipelineFullGitSyncHandler;
-  private final PmsFeatureFlagService pmsFeatureFlagService;
 
   @Inject
   public PipelineEntityGitSyncHelper(PMSPipelineService pmsPipelineService,
-      PMSPipelineServiceHelper pipelineServiceHelper, PipelineFullGitSyncHandler pipelineFullGitSyncHandler,
-      PmsFeatureFlagService pmsFeatureFlagService) {
+      PMSPipelineServiceHelper pipelineServiceHelper, PipelineFullGitSyncHandler pipelineFullGitSyncHandler) {
     this.pmsPipelineService = pmsPipelineService;
     this.pipelineServiceHelper = pipelineServiceHelper;
     this.pipelineFullGitSyncHandler = pipelineFullGitSyncHandler;
-    this.pmsFeatureFlagService = pmsFeatureFlagService;
   }
 
   @Override
@@ -94,7 +90,7 @@ public class PipelineEntityGitSyncHelper extends AbstractGitSdkEntityHandler<Pip
   @Override
   public PipelineConfig save(String accountIdentifier, String yaml) {
     PipelineEntity entity = PMSPipelineDtoMapper.toPipelineEntity(accountIdentifier, yaml);
-    validate(accountIdentifier, entity);
+    validate(entity);
     PipelineEntity pipelineEntity = pmsPipelineService.create(entity);
     return PipelineYamlDtoMapper.toDto(pipelineEntity);
   }
@@ -102,16 +98,13 @@ public class PipelineEntityGitSyncHelper extends AbstractGitSdkEntityHandler<Pip
   @Override
   public PipelineConfig update(String accountIdentifier, String yaml, ChangeType changeType) {
     PipelineEntity entity = PMSPipelineDtoMapper.toPipelineEntity(accountIdentifier, yaml);
-    validate(accountIdentifier, entity);
+    validate(entity);
     PipelineEntity pipelineEntity = pmsPipelineService.updatePipelineYaml(entity, changeType);
     return PipelineYamlDtoMapper.toDto(pipelineEntity);
   }
 
-  private void validate(String accountIdentifier, PipelineEntity entity) {
-    boolean isGovernanceEnabled =
-        pmsFeatureFlagService.isEnabled(accountIdentifier, FeatureName.OPA_PIPELINE_GOVERNANCE);
-    GovernanceMetadata governanceMetadata =
-        pipelineServiceHelper.validatePipelineYamlAndSetTemplateRefIfAny(entity, isGovernanceEnabled);
+  private void validate(PipelineEntity entity) {
+    GovernanceMetadata governanceMetadata = pipelineServiceHelper.validatePipelineYaml(entity);
     if (governanceMetadata.getDeny()) {
       List<String> denyingPolicySetIds = governanceMetadata.getDetailsList()
                                              .stream()
@@ -172,7 +165,7 @@ public class PipelineEntityGitSyncHelper extends AbstractGitSdkEntityHandler<Pip
   @Override
   protected PipelineConfig updateEntityFilePath(String accountIdentifier, String yaml, String newFilePath) {
     PipelineEntity entity = PMSPipelineDtoMapper.toPipelineEntity(accountIdentifier, yaml);
-    validate(accountIdentifier, entity);
+    validate(entity);
     PipelineEntity pipelineEntity = pmsPipelineService.updateGitFilePath(entity, newFilePath);
     return PipelineYamlDtoMapper.toDto(pipelineEntity);
   }
@@ -189,10 +182,14 @@ public class PipelineEntityGitSyncHelper extends AbstractGitSdkEntityHandler<Pip
   public Optional<EntityGitDetails> getEntityDetailsIfExists(String accountIdentifier, String yaml) {
     final PipelineConfig pipelineConfig = getYamlDTO(yaml);
     final PipelineInfoConfig pipelineInfoConfig = pipelineConfig.getPipelineInfoConfig();
-    final Optional<PipelineEntity> pipelineEntity =
-        pmsPipelineService.get(accountIdentifier, pipelineInfoConfig.getOrgIdentifier(),
-            pipelineInfoConfig.getProjectIdentifier(), pipelineInfoConfig.getIdentifier(), false);
-    return pipelineEntity.map(EntityGitDetailsMapper::mapEntityGitDetails);
+    try {
+      final Optional<PipelineEntity> pipelineEntity =
+          pmsPipelineService.get(accountIdentifier, pipelineInfoConfig.getOrgIdentifier(),
+              pipelineInfoConfig.getProjectIdentifier(), pipelineInfoConfig.getIdentifier(), false);
+      return pipelineEntity.map(EntityGitDetailsMapper::mapEntityGitDetails);
+    } catch (EntityNotFoundException e) {
+      return Optional.empty();
+    }
   }
 
   @Override

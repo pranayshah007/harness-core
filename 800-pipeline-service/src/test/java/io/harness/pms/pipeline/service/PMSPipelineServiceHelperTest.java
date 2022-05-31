@@ -41,6 +41,7 @@ import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
 import io.harness.pms.pipeline.PipelineFilterPropertiesDto;
 import io.harness.rule.Owner;
 import io.harness.telemetry.TelemetryReporter;
+import io.harness.yaml.validator.InvalidYamlException;
 
 import com.google.protobuf.ByteString;
 import java.io.IOException;
@@ -249,5 +250,16 @@ public class PMSPipelineServiceHelperTest extends CategoryTest {
         .isEqualTo(true);
     assertThat(form.getCriteriaObject().containsKey("status")).isEqualTo(false);
     assertThat(form.getCriteriaObject().get("deleted")).isEqualTo(false);
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testBuildInvalidYamlException() {
+    String error = "this error message";
+    String yaml = "yaml";
+    InvalidYamlException invalidYamlException = PMSPipelineServiceHelper.buildInvalidYamlException(error, yaml);
+    assertThat(invalidYamlException.getYaml()).isEqualTo(yaml);
+    assertThatThrownBy(() -> { throw invalidYamlException; }).hasMessage(error);
   }
 }

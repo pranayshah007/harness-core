@@ -59,7 +59,7 @@ public class ServicePlanCreatorHelperTest extends CategoryTest {
                                        .infrastructure(PipelineInfrastructure.builder().build())
                                        .build())
             .build(),
-        kryoSerializer1);
+        "environmentUuid", "infraSectionUuid", kryoSerializer1);
     assertThat(dependencies).isNotEqualTo(null);
     assertThat(dependencies.getDependenciesMap().containsKey(serviceNodeId)).isEqualTo(true);
     assertThat(dependencies.getDependencyMetadataMap()

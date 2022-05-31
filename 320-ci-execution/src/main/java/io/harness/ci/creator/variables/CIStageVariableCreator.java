@@ -20,6 +20,7 @@ import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.steps.StepSpecTypeConstants;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -91,7 +92,8 @@ public class CIStageVariableCreator extends AbstractStageVariableCreator<Integra
 
   @Override
   public Map<String, Set<String>> getSupportedTypes() {
-    return Collections.singletonMap(YAMLFieldNameConstants.STAGE, Collections.singleton("CI"));
+    return Collections.singletonMap(
+        YAMLFieldNameConstants.STAGE, Collections.singleton(StepSpecTypeConstants.CI_STAGE));
   }
 
   @Override

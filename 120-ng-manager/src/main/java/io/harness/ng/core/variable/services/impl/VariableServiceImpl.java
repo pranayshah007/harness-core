@@ -7,6 +7,7 @@
 
 package io.harness.ng.core.variable.services.impl;
 
+import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER_SRE;
@@ -18,6 +19,7 @@ import static io.harness.utils.PageUtils.getPageRequest;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.NGResourceFilterConstants;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SortOrder;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
@@ -48,14 +50,18 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.ws.rs.NotFoundException;
+import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.transaction.support.TransactionTemplate;
 
+@OwnedBy(PL)
+@Slf4j
 public class VariableServiceImpl implements VariableService {
   private final VariableRepository variableRepository;
   private final VariableMapper variableMapper;
@@ -63,6 +69,7 @@ public class VariableServiceImpl implements VariableService {
   private final OutboxService outboxService;
   private final ProjectService projectService;
   private final OrganizationService organizationService;
+  @Inject private MongoTemplate mongoTemplate;
 
   @Inject
   public VariableServiceImpl(VariableRepository variableRepository, VariableMapper variableMapper,
@@ -207,6 +214,20 @@ public class VariableServiceImpl implements VariableService {
               orgIdentifier, projectIdentifier));
     }
     return false;
+  }
+
+  @Override
+  public void deleteBatch(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, List<String> variableIdentifiersList) {
+    for (String variableIdentifier : variableIdentifiersList) {
+      try {
+        delete(accountIdentifier, orgIdentifier, projectIdentifier, variableIdentifier);
+      } catch (NotFoundException ex) {
+        log.error(String.format(
+            "Unable to delete Variable. No Variable found with orgIdentifier- [%s], projectIdentifier- [%s] and variableIdentifier- [%s]",
+            orgIdentifier, projectIdentifier, variableIdentifier));
+      }
+    }
   }
 
   private Criteria getCriteriaForVariableExpressions(

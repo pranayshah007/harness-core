@@ -25,6 +25,7 @@ public interface YamlTypes {
   String GITOPS_CLUSTERS = "gitopsClusters";
   String ENVIRONMENT_REF = "environmentRef";
   String INFRASTRUCTURE_DEF = "infrastructureDefinition";
+  String INFRASTRUCTURE_DEFS = "infrastructureDefinitions";
   String INFRASTRUCTURE_STEP_PARAMETERS = "infrastructureStepParameters";
   String ENVIRONMENT_NODE_ID = "environmentNodeId";
 
@@ -90,4 +91,9 @@ public interface YamlTypes {
 
   String SUBSCRIPTION = "subscription";
   String RESOURCE_GROUP = "resourceGroup";
+
+  // METADATA for Service and Environment Plan Creator
+  String SERVICE_SPEC_UUID = "service_spec_uuid";
+  String INFRA_SECTION_UUID = "infra_section_uuid";
+  String NEXT_UUID = "nextUuid";
 }

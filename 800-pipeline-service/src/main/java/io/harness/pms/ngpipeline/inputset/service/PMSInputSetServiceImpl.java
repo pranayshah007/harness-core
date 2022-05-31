@@ -16,11 +16,15 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.InputSetReferenceProtoDTO;
 import io.harness.exception.DuplicateFieldException;
+import io.harness.exception.ExplanationException;
+import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.ScmException;
 import io.harness.git.model.ChangeType;
 import io.harness.gitsync.common.utils.GitEntityFilePath;
 import io.harness.gitsync.common.utils.GitSyncFilePathUtils;
 import io.harness.gitsync.helpers.GitContextHelper;
+import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.scm.EntityObjectIdUtils;
 import io.harness.grpc.utils.StringValueUtils;
 import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
@@ -47,6 +51,7 @@ import org.springframework.data.mongodb.core.query.Update;
 @OwnedBy(PIPELINE)
 public class PMSInputSetServiceImpl implements PMSInputSetService {
   @Inject private PMSInputSetRepository inputSetRepository;
+  @Inject private GitSyncSdkService gitSyncSdkService;
 
   private static final String DUP_KEY_EXP_FORMAT_STRING =
       "Input set [%s] under Project[%s], Organization [%s] for Pipeline [%s] already exists";
@@ -54,12 +59,20 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
   @Override
   public InputSetEntity create(InputSetEntity inputSetEntity) {
     try {
-      return inputSetRepository.save(inputSetEntity, InputSetYamlDTOMapper.toDTO(inputSetEntity));
+      if (gitSyncSdkService.isGitSyncEnabled(inputSetEntity.getAccountIdentifier(), inputSetEntity.getOrgIdentifier(),
+              inputSetEntity.getProjectIdentifier())) {
+        return inputSetRepository.saveForOldGitSync(inputSetEntity, InputSetYamlDTOMapper.toDTO(inputSetEntity));
+      } else {
+        return inputSetRepository.save(inputSetEntity);
+      }
     } catch (DuplicateKeyException ex) {
       throw new DuplicateFieldException(
           format(DUP_KEY_EXP_FORMAT_STRING, inputSetEntity.getIdentifier(), inputSetEntity.getProjectIdentifier(),
               inputSetEntity.getOrgIdentifier(), inputSetEntity.getPipelineIdentifier()),
           USER_SRE, ex);
+    } catch (ExplanationException | HintException | ScmException e) {
+      log.error("Error while creating Input Set " + inputSetEntity.getIdentifier(), e);
+      throw e;
     } catch (Exception e) {
       log.error(String.format("Error while saving input set [%s]", inputSetEntity.getIdentifier()), e);
       throw new InvalidRequestException(
@@ -70,21 +83,38 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
   @Override
   public Optional<InputSetEntity> get(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, String identifier, boolean deleted) {
+    Optional<InputSetEntity> optionalInputSetEntity;
     try {
-      return inputSetRepository
-          .findByAccountIdAndOrgIdentifierAndProjectIdentifierAndPipelineIdentifierAndIdentifierAndDeletedNot(
-              accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, identifier, !deleted);
+      if (gitSyncSdkService.isGitSyncEnabled(accountId, orgIdentifier, projectIdentifier)) {
+        optionalInputSetEntity = inputSetRepository.findForOldGitSync(
+            accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, identifier, !deleted);
+      } else {
+        optionalInputSetEntity = inputSetRepository.find(
+            accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, identifier, !deleted, false);
+      }
+    } catch (ExplanationException | HintException | ScmException e) {
+      log.error(String.format("Error while retrieving pipeline [%s]", identifier), e);
+      throw e;
     } catch (Exception e) {
       log.error(String.format("Error while retrieving input set [%s]", identifier), e);
       throw new InvalidRequestException(
           String.format("Error while retrieving input set [%s]: %s", identifier, e.getMessage()));
     }
+    return optionalInputSetEntity;
   }
 
   @Override
   public InputSetEntity update(InputSetEntity inputSetEntity, ChangeType changeType) {
+    if (gitSyncSdkService.isGitSyncEnabled(inputSetEntity.getAccountIdentifier(), inputSetEntity.getOrgIdentifier(),
+            inputSetEntity.getProjectIdentifier())) {
+      return updateForOldGitSync(inputSetEntity, changeType);
+    }
+    return makeInputSetUpdateCall(inputSetEntity, changeType, false);
+  }
+
+  private InputSetEntity updateForOldGitSync(InputSetEntity inputSetEntity, ChangeType changeType) {
     if (GitContextHelper.getGitEntityInfo() != null && GitContextHelper.getGitEntityInfo().isNewBranch()) {
-      return makeInputSetUpdateCall(inputSetEntity, changeType);
+      return makeInputSetUpdateCall(inputSetEntity, changeType, true);
     }
     Optional<InputSetEntity> optionalOriginalEntity =
         get(inputSetEntity.getAccountId(), inputSetEntity.getOrgIdentifier(), inputSetEntity.getProjectIdentifier(),
@@ -111,7 +141,7 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
                                         .withIsInvalid(false)
                                         .withIsEntityInvalid(false);
 
-    return makeInputSetUpdateCall(entityToUpdate, changeType);
+    return makeInputSetUpdateCall(entityToUpdate, changeType, true);
   }
 
   @Override
@@ -131,7 +161,7 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
           format("Input Set [%s], for pipeline [%s], under Project[%s], Organization [%s] doesn't exist.", inputSetId,
               pipelineId, projectId, orgId));
     }
-    return makeInputSetUpdateCall(optionalInputSetEntity.get(), ChangeType.ADD);
+    return makeInputSetUpdateCall(optionalInputSetEntity.get().withStoreType(null), ChangeType.ADD, true);
   }
 
   @Override
@@ -174,14 +204,18 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
     InputSetEntity updatedInputSet = existingInputSet.withYaml(invalidYaml)
                                          .withObjectIdOfYaml(EntityObjectIdUtils.getObjectIdOfYaml(invalidYaml))
                                          .withIsEntityInvalid(true);
-    makeInputSetUpdateCall(updatedInputSet, ChangeType.NONE);
+    makeInputSetUpdateCall(updatedInputSet, ChangeType.NONE, true);
     return true;
   }
 
-  private InputSetEntity makeInputSetUpdateCall(InputSetEntity entity, ChangeType changeType) {
+  private InputSetEntity makeInputSetUpdateCall(InputSetEntity entity, ChangeType changeType, boolean isOldFlow) {
     try {
-      InputSetEntity updatedEntity = inputSetRepository.update(entity, InputSetYamlDTOMapper.toDTO(entity), changeType);
-
+      InputSetEntity updatedEntity;
+      if (isOldFlow) {
+        updatedEntity = inputSetRepository.updateForOldGitSync(entity, InputSetYamlDTOMapper.toDTO(entity), changeType);
+      } else {
+        updatedEntity = inputSetRepository.update(entity);
+      }
       if (updatedEntity == null) {
         throw new InvalidRequestException(
             format("Input Set [%s], for pipeline [%s], under Project[%s], Organization [%s] could not be updated.",
@@ -189,6 +223,9 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
                 entity.getOrgIdentifier()));
       }
       return updatedEntity;
+    } catch (ExplanationException | HintException | ScmException e) {
+      log.error("Error while updating Input Set " + entity.getIdentifier(), e);
+      throw e;
     } catch (Exception e) {
       log.error(String.format("Error while updating input set [%s]", entity.getIdentifier()), e);
       throw new InvalidRequestException(
@@ -199,6 +236,22 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
   @Override
   public boolean delete(String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier,
       String identifier, Long version) {
+    if (gitSyncSdkService.isGitSyncEnabled(accountId, orgIdentifier, projectIdentifier)) {
+      return deleteForOldGitSync(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, identifier, version);
+    }
+    InputSetEntity deletedEntity =
+        inputSetRepository.delete(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, identifier);
+    if (deletedEntity.getDeleted()) {
+      return true;
+    } else {
+      throw new InvalidRequestException(
+          format("InputSet [%s] for Pipeline [%s] under Project[%s], Organization [%s] could not be deleted.",
+              identifier, pipelineIdentifier, projectIdentifier, orgIdentifier));
+    }
+  }
+
+  private boolean deleteForOldGitSync(String accountId, String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, String identifier, Long version) {
     Optional<InputSetEntity> optionalOriginalEntity =
         get(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, identifier, false);
     if (!optionalOriginalEntity.isPresent()) {
@@ -215,7 +268,7 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
     InputSetEntity entityWithDelete = existingEntity.withDeleted(true);
     try {
       InputSetEntity deletedEntity =
-          inputSetRepository.delete(entityWithDelete, InputSetYamlDTOMapper.toDTO(entityWithDelete));
+          inputSetRepository.deleteForOldGitSync(entityWithDelete, InputSetYamlDTOMapper.toDTO(entityWithDelete));
 
       if (deletedEntity.getDeleted()) {
         return true;

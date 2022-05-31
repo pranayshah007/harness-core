@@ -20,6 +20,7 @@ java_library(
         "//950-log-client:module",
         "//959-debezium-beans:module",
         "//955-delegate-beans:module",
+        "//959-common-entities:module",
         "//960-persistence:module",
         "//970-grpc:module",
         "//970-ng-commons:module",

@@ -16,6 +16,7 @@ import static io.harness.pms.contracts.execution.Status.ERRORED;
 import static io.harness.pms.contracts.execution.Status.EXPIRED;
 import static io.harness.pms.contracts.execution.Status.FAILED;
 import static io.harness.pms.contracts.execution.Status.IGNORE_FAILED;
+import static io.harness.pms.contracts.execution.Status.INPUT_WAITING;
 import static io.harness.pms.contracts.execution.Status.INTERVENTION_WAITING;
 import static io.harness.pms.contracts.execution.Status.PAUSED;
 import static io.harness.pms.contracts.execution.Status.PAUSING;
@@ -129,7 +130,7 @@ public class StatusUtils {
     switch (status) {
       case RUNNING:
         return EnumSet.of(QUEUED, ASYNC_WAITING, APPROVAL_WAITING, RESOURCE_WAITING, TASK_WAITING, TIMED_WAITING,
-            INTERVENTION_WAITING, PAUSED, PAUSING, APPROVAL_REJECTED);
+            INTERVENTION_WAITING, PAUSED, PAUSING, APPROVAL_REJECTED, INPUT_WAITING);
       case INTERVENTION_WAITING:
         return BROKE_STATUSES;
       case TIMED_WAITING:
@@ -140,6 +141,8 @@ public class StatusUtils {
       case PAUSING:
       case SKIPPED:
         return EnumSet.of(QUEUED, RUNNING);
+      case INPUT_WAITING:
+        return EnumSet.of(QUEUED);
       case PAUSED:
         return EnumSet.of(QUEUED, RUNNING, PAUSING);
       case DISCONTINUING:

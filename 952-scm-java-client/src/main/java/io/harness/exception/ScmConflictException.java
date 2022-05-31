@@ -13,7 +13,10 @@ import io.harness.eraro.ErrorCode;
 
 @OwnedBy(HarnessTeam.PL)
 public class ScmConflictException extends ScmException {
+  private static final String MESSAGE_ARG = "message";
+
   public ScmConflictException(String errorMessage) {
-    super(errorMessage, ErrorCode.SCM_CONFLICT_ERROR);
+    super(errorMessage, ErrorCode.SCM_CONFLICT_ERROR_V2);
+    super.param(MESSAGE_ARG, errorMessage);
   }
 }
