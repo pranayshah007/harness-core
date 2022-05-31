@@ -104,7 +104,7 @@ public interface OrganizationsApi {
 
       @Parameter(description = "This would be used to filter resources having attributes matching with search term.")
       String searchTerm,
-      @QueryParam("page") @DefaultValue("1")
+      @QueryParam("page") @DefaultValue("0")
 
       @Parameter(
           description =
