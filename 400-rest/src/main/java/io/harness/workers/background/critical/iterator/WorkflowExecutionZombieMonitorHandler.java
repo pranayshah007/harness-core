@@ -8,6 +8,8 @@
 package io.harness.workers.background.critical.iterator;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
+import static io.harness.beans.SearchFilter.Operator.EQ;
 import static io.harness.mongo.iterator.MongoPersistenceIterator.SchedulingType.REGULAR;
 
 import io.harness.annotations.dev.HarnessModule;
@@ -15,12 +17,13 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.ExecutionInterruptType;
 import io.harness.beans.ExecutionStatus;
-import io.harness.data.structure.CollectionUtils;
+import io.harness.beans.PageRequest;
+import io.harness.beans.PageResponse;
+import io.harness.beans.SortOrder;
 import io.harness.exception.InvalidRequestException;
 import io.harness.iterator.PersistenceIterator.ProcessMode;
 import io.harness.iterator.PersistenceIteratorFactory;
 import io.harness.iterator.PersistenceIteratorFactory.PumpExecutorOptions;
-import io.harness.mongo.EntityProcessController;
 import io.harness.mongo.iterator.MongoPersistenceIterator;
 import io.harness.mongo.iterator.MongoPersistenceIterator.Handler;
 import io.harness.mongo.iterator.filter.MorphiaFilterExpander;
@@ -29,6 +32,7 @@ import io.harness.mongo.iterator.provider.MorphiaPersistenceProvider;
 import software.wings.beans.WorkflowExecution;
 import software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
 import software.wings.dl.WingsPersistence;
+import software.wings.service.intfc.StateExecutionService;
 import software.wings.service.intfc.WorkflowExecutionService;
 import software.wings.sm.ExecutionInterrupt;
 import software.wings.sm.StateExecutionInstance;
@@ -50,8 +54,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(CDC)
 @TargetModule(HarnessModule._870_CG_ORCHESTRATION)
-public class WorkflowExecutionZombieMonitorHandler
-    implements Handler<WorkflowExecution>, EntityProcessController<WorkflowExecution> {
+public class WorkflowExecutionZombieMonitorHandler implements Handler<WorkflowExecution> {
   private static final String PUMP_EXEC_NAME = "WorkflowExecutionZombieMonitor";
   private static final long MAX_RUNNING_MINUTES = 10;
   private static final Set<String> ZOMBIE_STATE_TYPES = Sets.newHashSet(StateType.REPEAT.name(), StateType.FORK.name(),
@@ -61,6 +64,7 @@ public class WorkflowExecutionZombieMonitorHandler
   @Inject private MorphiaPersistenceProvider<WorkflowExecution> persistenceProvider;
   @Inject private WingsPersistence wingsPersistence;
   @Inject private WorkflowExecutionService workflowExecutionService;
+  @Inject private StateExecutionService stateExecutionService;
 
   public void registerIterators(int threadPoolSize) {
     log.info("Register {} using thread pool size of {}", PUMP_EXEC_NAME, threadPoolSize);
@@ -76,12 +80,15 @@ public class WorkflowExecutionZombieMonitorHandler
             .mode(ProcessMode.PUMP)
             .clazz(WorkflowExecution.class)
             .fieldName(WorkflowExecutionKeys.nextZombieIteration)
-            .filterExpander(q -> q.field(WorkflowExecutionKeys.status).in(ExecutionStatus.activeStatuses()))
+            .filterExpander(q
+                -> q.field(WorkflowExecutionKeys.status)
+                       .in(ExecutionStatus.activeStatuses())
+                       .field(WorkflowExecutionKeys.createdAt)
+                       .lessThanOrEq(minutesAgo()))
             .targetInterval(Duration.ofMinutes(5))
             .acceptableNoAlertDelay(Duration.ofMinutes(1))
             .schedulingType(REGULAR)
             .persistenceProvider(persistenceProvider)
-            .entityProcessController(this)
             .handler(this));
   }
 
@@ -89,9 +96,9 @@ public class WorkflowExecutionZombieMonitorHandler
    * The workflow execution should be running and created at least {@code #MAX_RUNNING_MINUTES} ago, then is valid to be
    * evaluated for zombie conditions.
    */
-  @Override
-  public boolean shouldProcessEntity(WorkflowExecution entity) {
-    return entity.getCreatedAt() <= (System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(MAX_RUNNING_MINUTES));
+  @VisibleForTesting
+  long minutesAgo() {
+    return System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(MAX_RUNNING_MINUTES);
   }
 
   @Override
@@ -99,14 +106,15 @@ public class WorkflowExecutionZombieMonitorHandler
     log.info("Evaluating if workflow execution {} is a zombie execution [workflowId={}]", wfExecution.getUuid(),
         wfExecution.getWorkflowId());
 
-    List<StateExecutionInstance> stateExecutionInstances =
-        wingsPersistence.createQuery(StateExecutionInstance.class)
-            .filter(StateExecutionInstanceKeys.workflowId, wfExecution.getWorkflowId())
-            .filter(StateExecutionInstanceKeys.executionUuid, wfExecution.getUuid())
-            .asList();
-
-    stateExecutionInstances = CollectionUtils.emptyIfNull(stateExecutionInstances);
-    sort(stateExecutionInstances);
+    // SORT STATE EXECUTION INSTANCES BASED ON createdAt FIELD IN ASCENDING ORDER. WE NEED THE MOST
+    // RECENTLY EXECUTION INSTANCE TO EVALUATE IF IT'S A ZOMBIE EXECUTION.
+    PageRequest<StateExecutionInstance> pageRequest =
+        aPageRequest()
+            .addFilter(StateExecutionInstanceKeys.workflowId, EQ, wfExecution.getWorkflowId())
+            .addFilter(StateExecutionInstanceKeys.executionUuid, EQ, wfExecution.getUuid())
+            .addOrder(StateExecutionInstanceKeys.createdAt, SortOrder.OrderType.ASC)
+            .build();
+    PageResponse<StateExecutionInstance> stateExecutionInstances = stateExecutionService.list(pageRequest);
 
     // WHEN THE LAST ELEMENT IS OF A ZOMBIE STATE TYPE WE MUST ABORT THE EXECUTION
     Optional<StateExecutionInstance> opt = getLastElement(stateExecutionInstances);
@@ -130,15 +138,6 @@ public class WorkflowExecutionZombieMonitorHandler
         }
       }
     });
-  }
-
-  /**
-   * Sort state execution instances based on createAt field in ascending order. We need the most
-   * recently execution instance to evaluate if it's a zombie execution.
-   */
-  @VisibleForTesting
-  void sort(List<StateExecutionInstance> stateExecutionInstances) {
-    stateExecutionInstances.sort((o1, o2) -> Long.compare(o1.getCreatedAt(), o2.getCreatedAt()));
   }
 
   private Optional<StateExecutionInstance> getLastElement(List<StateExecutionInstance> elements) {

@@ -14,7 +14,6 @@ import static software.wings.sm.StateExecutionInstance.Builder.aStateExecutionIn
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -23,18 +22,22 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.ExecutionInterruptType;
+import io.harness.beans.PageRequest;
+import io.harness.beans.PageResponse;
+import io.harness.beans.SearchFilter;
+import io.harness.beans.SortOrder;
 import io.harness.category.element.UnitTests;
 import io.harness.mongo.iterator.provider.MorphiaPersistenceProvider;
 import io.harness.rule.Owner;
 
 import software.wings.beans.WorkflowExecution;
 import software.wings.dl.WingsPersistence;
+import software.wings.service.intfc.StateExecutionService;
 import software.wings.service.intfc.WorkflowExecutionService;
 import software.wings.sm.ExecutionInterrupt;
 import software.wings.sm.StateExecutionInstance;
 import software.wings.sm.StateType;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -48,7 +51,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
-import org.mongodb.morphia.query.Query;
 
 @RunWith(MockitoJUnitRunner.class)
 @OwnedBy(CDC)
@@ -62,22 +64,14 @@ public class WorkflowExecutionZombieMonitorHandlerTest {
   @Mock private MorphiaPersistenceProvider<WorkflowExecution> persistenceProvider;
   @Mock private WingsPersistence wingsPersistence;
   @Mock private WorkflowExecutionService workflowExecutionService;
+  @Mock private StateExecutionService stateExecutionService;
 
   @Test
   @Category(UnitTests.class)
   @Owner(developers = FERNANDOD)
-  public void shouldNotProcessEntityWhenCreatedNotIsMoreThanMaxMinutes() {
-    WorkflowExecution entity = WorkflowExecution.builder().createdAt(System.currentTimeMillis()).build();
-    assertThat(monitorHandler.shouldProcessEntity(entity)).isFalse();
-  }
-
-  @Test
-  @Category(UnitTests.class)
-  @Owner(developers = FERNANDOD)
-  public void shouldProcessEntityWhenCreatedMoreThanMaxMinutes() {
-    WorkflowExecution entity =
-        WorkflowExecution.builder().createdAt(System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(10)).build();
-    assertThat(monitorHandler.shouldProcessEntity(entity)).isTrue();
+  public void shouldVerifyMinutesAgo() {
+    assertThat(monitorHandler.minutesAgo()).isLessThan(System.currentTimeMillis());
+    assertThat(monitorHandler.minutesAgo()).isGreaterThan(System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(20));
   }
 
   @Test
@@ -86,14 +80,13 @@ public class WorkflowExecutionZombieMonitorHandlerTest {
   public void shouldHandleWorkflowExecutionWhenNotFoundStateExecutionInstances() {
     WorkflowExecution wfExecution = WorkflowExecution.builder().workflowId(WORKFLOW_ID).uuid(EXECUTION_UUID).build();
 
-    Query<StateExecutionInstance> query = mock(Query.class);
-    when(wingsPersistence.createQuery(StateExecutionInstance.class)).thenReturn(query);
-    when(query.filter(any(), any())).thenReturn(query);
-    when(query.asList()).thenReturn(Collections.emptyList());
+    ArgumentCaptor<PageRequest> arg = ArgumentCaptor.forClass(PageRequest.class);
+    when(stateExecutionService.list(arg.capture())).thenReturn(new PageResponse<>());
 
     monitorHandler.handle(wfExecution);
 
     verify(workflowExecutionService, never()).triggerExecutionInterrupt(any());
+    assertPageRequest(arg.getValue(), wfExecution);
   }
 
   @Test
@@ -103,14 +96,15 @@ public class WorkflowExecutionZombieMonitorHandlerTest {
     WorkflowExecution wfExecution = WorkflowExecution.builder().workflowId(WORKFLOW_ID).uuid(EXECUTION_UUID).build();
     StateExecutionInstance seInstance = aStateExecutionInstance().stateType(StateType.SHELL_SCRIPT.name()).build();
 
-    Query<StateExecutionInstance> query = mock(Query.class);
-    when(wingsPersistence.createQuery(StateExecutionInstance.class)).thenReturn(query);
-    when(query.filter(any(), any())).thenReturn(query);
-    when(query.asList()).thenReturn(Collections.singletonList(seInstance));
+    ArgumentCaptor<PageRequest> arg = ArgumentCaptor.forClass(PageRequest.class);
+    PageResponse<StateExecutionInstance> response = new PageResponse<>();
+    response.setResponse(Collections.singletonList(seInstance));
+    when(stateExecutionService.list(arg.capture())).thenReturn(response);
 
     monitorHandler.handle(wfExecution);
 
     verify(workflowExecutionService, never()).triggerExecutionInterrupt(any());
+    assertPageRequest(arg.getValue(), wfExecution);
   }
 
   @Test
@@ -124,15 +118,16 @@ public class WorkflowExecutionZombieMonitorHandlerTest {
                                             .stateType(StateType.PHASE.name())
                                             .build();
 
-    Query<StateExecutionInstance> query = mock(Query.class);
-    when(wingsPersistence.createQuery(StateExecutionInstance.class)).thenReturn(query);
-    when(query.filter(any(), any())).thenReturn(query);
-    when(query.asList()).thenReturn(Collections.singletonList(seInstance));
+    ArgumentCaptor<PageRequest> arg = ArgumentCaptor.forClass(PageRequest.class);
+    PageResponse<StateExecutionInstance> response = new PageResponse<>();
+    response.setResponse(Collections.singletonList(seInstance));
+    when(stateExecutionService.list(arg.capture())).thenReturn(response);
 
     monitorHandler.handle(wfExecution);
 
     ArgumentCaptor<ExecutionInterrupt> captor = ArgumentCaptor.forClass(ExecutionInterrupt.class);
     verify(workflowExecutionService).triggerExecutionInterrupt(captor.capture());
+    assertPageRequest(arg.getValue(), wfExecution);
 
     ExecutionInterrupt value = captor.getValue();
     assertThat(value.getAppId()).isEqualTo("APP_ID");
@@ -158,21 +153,21 @@ public class WorkflowExecutionZombieMonitorHandlerTest {
     });
   }
 
-  @Test
-  @Category(UnitTests.class)
-  @Owner(developers = FERNANDOD)
-  public void shouldSortStateExecutionInstances() {
-    List<StateExecutionInstance> instances = new ArrayList<>();
-    instances.add(aStateExecutionInstance().createdAt(4).build());
-    instances.add(aStateExecutionInstance().createdAt(2).build());
-    instances.add(aStateExecutionInstance().createdAt(1).build());
-    instances.add(aStateExecutionInstance().createdAt(3).build());
+  private void assertPageRequest(PageRequest req, WorkflowExecution wfExecution) {
+    List<SortOrder> orders = req.getOrders();
+    assertThat(orders.size()).isEqualTo(1);
+    assertThat(orders.get(0).getFieldName()).isEqualTo("createdAt");
+    assertThat(orders.get(0).getOrderType()).isEqualTo(SortOrder.OrderType.ASC);
 
-    monitorHandler.sort(instances);
-
-    int value = 1;
-    for (StateExecutionInstance item : instances) {
-      assertThat(item.getCreatedAt()).isEqualTo(value++);
-    }
+    List<SearchFilter> filters = req.getFilters();
+    assertThat(filters.size()).isEqualTo(2);
+    //
+    assertThat(filters.get(0).getFieldName()).isEqualTo("workflowId");
+    assertThat(filters.get(0).getOp()).isEqualTo(SearchFilter.Operator.EQ);
+    assertThat(filters.get(0).getFieldValues()[0]).isEqualTo(wfExecution.getWorkflowId());
+    //
+    assertThat(filters.get(1).getFieldName()).isEqualTo("executionUuid");
+    assertThat(filters.get(1).getOp()).isEqualTo(SearchFilter.Operator.EQ);
+    assertThat(filters.get(1).getFieldValues()[0]).isEqualTo(wfExecution.getUuid());
   }
 }
