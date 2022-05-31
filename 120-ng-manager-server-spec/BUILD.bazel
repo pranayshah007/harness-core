@@ -1,0 +1,20 @@
+load("//:tools/bazel/harness.bzl", "java_library")
+load("//:tools/bazel/macros.bzl", "run_analysis")
+
+HarnessTeam = "PL"
+
+java_library(
+    name = "module",
+    srcs = glob(["src/main/**/*.java"]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//999-annotations:module",
+        "@maven//:javax_ws_rs_javax_ws_rs_api",
+        "@maven//:io_swagger_core_v3_swagger_annotations",
+        "@maven//:io_swagger_swagger_annotations",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:javax_validation_validation_api",
+    ],
+)
+
+run_analysis()
