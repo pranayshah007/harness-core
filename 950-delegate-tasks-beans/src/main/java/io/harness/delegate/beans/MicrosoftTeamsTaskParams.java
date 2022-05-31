@@ -42,7 +42,7 @@ public class MicrosoftTeamsTaskParams implements TaskParameters, ExecutionCapabi
                               .port(uri.getPort())
                               .build());
       } catch (URISyntaxException e) {
-        log.error("Can't parse webhookurl as URI {}", notificationId, e);
+        log.error("Can't parse webhookurl as URI {}", notificationId);
       }
     }
     return compatibility;
