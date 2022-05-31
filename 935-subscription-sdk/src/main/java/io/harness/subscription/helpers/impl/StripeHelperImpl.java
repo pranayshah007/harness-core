@@ -139,11 +139,17 @@ public class StripeHelperImpl implements StripeHelper {
   public SubscriptionDetailDTO createSubscription(SubscriptionParams subscriptionParams) {
 
     Calendar next = getInstance();
-    next.set(YEAR, next.get(YEAR));
+
     next.set(DAY_OF_MONTH, 1);
-    if (subscriptionParams.getPaymentFrequency().toUpperCase() == "MONTHLY") {
-      next.set(MONTH, next.get(MONTH) + 1);
+    if (subscriptionParams.getPaymentFrequency().toUpperCase().equals("MONTHLY")) {
+      next.set(YEAR, next.get(YEAR));
+      if(next.get(MONTH) == 11) {
+        next.set(YEAR, next.get(YEAR) + 1);
+        next.set(MONTH, 0);
+      }
+      else next.set(MONTH, next.get(MONTH) + 1);
     } else {
+      next.set(YEAR, next.get(YEAR) + 1);
       next.set(MONTH, 0);
     }
 
