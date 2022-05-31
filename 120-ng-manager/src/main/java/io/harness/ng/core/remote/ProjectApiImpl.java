@@ -79,10 +79,7 @@ public class ProjectApiImpl implements ProjectsApi {
 
     Page<ProjectResponse> projectResponsePage = projectPages.map(ProjectApiMapper::getProjectResponse);
 
-    List<ProjectResponse> projectResponses = new ArrayList<>();
-    projectResponses.addAll(projectResponsePage.getContent());
-
-    return projectResponses;
+    return new ArrayList<>(projectResponsePage.getContent());
   }
 
   @NGAccessControlCheck(resourceType = PROJECT, permission = EDIT_PROJECT_PERMISSION)
