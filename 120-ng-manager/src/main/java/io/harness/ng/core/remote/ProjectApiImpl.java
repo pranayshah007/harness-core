@@ -7,13 +7,22 @@
 
 package io.harness.ng.core.remote;
 
+import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.ng.accesscontrol.PlatformPermissions.CREATE_PROJECT_PERMISSION;
+import static io.harness.ng.accesscontrol.PlatformPermissions.DELETE_PROJECT_PERMISSION;
+import static io.harness.ng.accesscontrol.PlatformPermissions.EDIT_PROJECT_PERMISSION;
+import static io.harness.ng.accesscontrol.PlatformPermissions.VIEW_PROJECT_PERMISSION;
+import static io.harness.ng.accesscontrol.PlatformResourceTypes.PROJECT;
 import static io.harness.ng.core.remote.ProjectApiMapper.getPageRequest;
 import static io.harness.ng.core.remote.ProjectApiMapper.getProjectDto;
 import static io.harness.ng.core.remote.ProjectApiMapper.getProjectResponse;
 
+import io.harness.accesscontrol.NGAccessControlCheck;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.dto.ProjectFilterDTO;
 import io.harness.ng.core.entities.Project;
 import io.harness.ng.core.services.ProjectService;
+import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.spec.server.ng.ProjectsApi;
 import io.harness.spec.server.ng.model.CreateProjectRequest;
 import io.harness.spec.server.ng.model.ProjectResponse;
@@ -29,16 +38,20 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 
+@OwnedBy(PL)
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
+@NextGenManagerAuth
 public class ProjectApiImpl implements ProjectsApi {
   private final ProjectService projectService;
 
+  @NGAccessControlCheck(resourceType = PROJECT, permission = CREATE_PROJECT_PERMISSION)
   @Override
   public ProjectResponse createProject(String account, String org, CreateProjectRequest project) {
     Project createdProject = projectService.create(account, org, getProjectDto(org, project));
     return getProjectResponse(createdProject);
   }
 
+  @NGAccessControlCheck(resourceType = PROJECT, permission = VIEW_PROJECT_PERMISSION)
   @Override
   public ProjectResponse getProject(String id, String account, String org) {
     Optional<Project> projectOptional = projectService.get(account, org, id);
@@ -49,6 +62,7 @@ public class ProjectApiImpl implements ProjectsApi {
     return getProjectResponse(projectOptional.get());
   }
 
+  @NGAccessControlCheck(resourceType = PROJECT, permission = VIEW_PROJECT_PERMISSION)
   @Override
   public List<ProjectResponse> getProjects(String account, List org, List project, Boolean hasModule, String moduleType,
       String searchTerm, Integer page, Integer limit) {
@@ -71,6 +85,7 @@ public class ProjectApiImpl implements ProjectsApi {
     return projectResponses;
   }
 
+  @NGAccessControlCheck(resourceType = PROJECT, permission = EDIT_PROJECT_PERMISSION)
   @Override
   public ProjectResponse updateProject(
       String account, String org, String id, UpdateProjectRequest updateProjectRequest) {
@@ -78,6 +93,7 @@ public class ProjectApiImpl implements ProjectsApi {
     return getProjectResponse(updatedProject);
   }
 
+  @NGAccessControlCheck(resourceType = PROJECT, permission = DELETE_PROJECT_PERMISSION)
   @Override
   public ProjectResponse deleteProject(String id, String account, String org) {
     Optional<Project> projectOptional = projectService.get(account, org, id);
