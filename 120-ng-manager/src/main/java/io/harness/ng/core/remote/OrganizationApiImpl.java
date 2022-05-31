@@ -9,14 +9,21 @@ package io.harness.ng.core.remote;
 
 import static io.harness.NGConstants.DEFAULT_ORG_IDENTIFIER;
 import static io.harness.exception.WingsException.USER;
+import static io.harness.ng.accesscontrol.PlatformPermissions.CREATE_ORGANIZATION_PERMISSION;
+import static io.harness.ng.accesscontrol.PlatformPermissions.DELETE_ORGANIZATION_PERMISSION;
+import static io.harness.ng.accesscontrol.PlatformPermissions.EDIT_ORGANIZATION_PERMISSION;
+import static io.harness.ng.accesscontrol.PlatformPermissions.VIEW_ORGANIZATION_PERMISSION;
+import static io.harness.ng.accesscontrol.PlatformResourceTypes.ORGANIZATION;
 import static io.harness.ng.core.remote.OrganizationApiMapper.getOrganizationDto;
 import static io.harness.ng.core.remote.OrganizationApiMapper.getOrganizationResponse;
 import static io.harness.ng.core.remote.OrganizationApiMapper.getPageRequest;
 
+import io.harness.accesscontrol.NGAccessControlCheck;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.OrganizationFilterDTO;
 import io.harness.ng.core.entities.Organization;
 import io.harness.ng.core.services.OrganizationService;
+import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.spec.server.ng.OrganizationsApi;
 import io.harness.spec.server.ng.model.CreateOrganizationRequest;
 import io.harness.spec.server.ng.model.OrganizationResponse;
@@ -32,9 +39,11 @@ import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Page;
 
 @AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__({ @Inject }))
+@NextGenManagerAuth
 public class OrganizationApiImpl implements OrganizationsApi {
   private final OrganizationService organizationService;
 
+  @NGAccessControlCheck(resourceType = ORGANIZATION, permission = CREATE_ORGANIZATION_PERMISSION)
   @Override
   public OrganizationResponse createOrganization(String account, CreateOrganizationRequest request) {
     if (DEFAULT_ORG_IDENTIFIER.equals(request.getSlug())) {
@@ -45,6 +54,7 @@ public class OrganizationApiImpl implements OrganizationsApi {
     return getOrganizationResponse(createdOrganization);
   }
 
+  @NGAccessControlCheck(resourceType = ORGANIZATION, permission = VIEW_ORGANIZATION_PERMISSION)
   @Override
   public OrganizationResponse getOrganization(String id, String account) {
     Optional<Organization> organizationOptional = organizationService.get(account, id);
@@ -54,6 +64,7 @@ public class OrganizationApiImpl implements OrganizationsApi {
     return getOrganizationResponse(organizationOptional.get());
   }
 
+  @NGAccessControlCheck(resourceType = ORGANIZATION, permission = VIEW_ORGANIZATION_PERMISSION)
   @Override
   public List<OrganizationResponse> getOrganizations(
       String account, List org, String searchTerm, Integer page, Integer limit) {
@@ -71,6 +82,7 @@ public class OrganizationApiImpl implements OrganizationsApi {
     return organizationResponses;
   }
 
+  @NGAccessControlCheck(resourceType = ORGANIZATION, permission = EDIT_ORGANIZATION_PERMISSION)
   @Override
   public OrganizationResponse updateOrganization(String account, String id, UpdateOrganizationRequest request) {
     Organization updatedOrganization =
@@ -78,6 +90,7 @@ public class OrganizationApiImpl implements OrganizationsApi {
     return getOrganizationResponse(updatedOrganization);
   }
 
+  @NGAccessControlCheck(resourceType = ORGANIZATION, permission = DELETE_ORGANIZATION_PERMISSION)
   @Override
   public OrganizationResponse deleteOrganization(String id, String account) {
     if (DEFAULT_ORG_IDENTIFIER.equals(id)) {
