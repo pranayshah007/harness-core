@@ -83,7 +83,7 @@ public class CEViewFolderDao {
     CEViewFolder ceViewFolder =
         CEViewFolder.builder()
             .accountId(accountId)
-            .name((viewType.equals(ViewType.DEFAULT)) ? "Default Folder" : "Out of the box Folder")
+            .name((viewType.equals(ViewType.DEFAULT)) ? "Default" : "Out of the box")
             .pinned(true)
             .viewType(viewType)
             .description((viewType.equals(ViewType.DEFAULT))

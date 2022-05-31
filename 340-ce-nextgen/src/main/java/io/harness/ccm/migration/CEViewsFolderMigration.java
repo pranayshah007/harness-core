@@ -36,6 +36,12 @@ public class CEViewsFolderMigration implements NGMigration {
     try {
       log.info("Starting migration of all CCM Perspectives");
 
+      // Delete all perspectives of type DEFAULT_AZURE
+      Query<CEView> deleteQuery = hPersistence.createQuery(CEView.class)
+          .field(CEViewKeys.viewType)
+          .equal("DEFAULT_AZURE");
+      hPersistence.delete(deleteQuery);
+
       List<String> accountIds = hPersistence.createQuery(CEView.class).getCollection().distinct("accountId");
       for (String accountId : accountIds) {
         if (StringUtils.isEmpty(accountId)) {
@@ -52,7 +58,7 @@ public class CEViewsFolderMigration implements NGMigration {
                                   .field(CEViewKeys.accountId)
                                   .equal(accountId)
                                   .field(CEViewKeys.viewType)
-                                  .equal(ViewType.CUSTOMER);
+                                  .notEqual(ViewType.DEFAULT);
         UpdateOperations<CEView> updateOperations =
             hPersistence.createUpdateOperations(CEView.class).set(CEViewKeys.folderId, defaultFolderId);
         hPersistence.update(query, updateOperations);
@@ -68,7 +74,7 @@ public class CEViewsFolderMigration implements NGMigration {
                     .field(CEViewKeys.accountId)
                     .equal(accountId)
                     .field(CEViewKeys.viewType)
-                    .in(ImmutableList.of(ViewType.DEFAULT, ViewType.DEFAULT_AZURE, ViewType.SAMPLE));
+                    .equal(ViewType.DEFAULT);
         updateOperations = hPersistence.createUpdateOperations(CEView.class).set(CEViewKeys.folderId, sampleFolderId);
         hPersistence.update(query, updateOperations);
       }
