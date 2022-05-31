@@ -73,6 +73,8 @@ public class WorkflowExecutionZombieMonitorHandlerTest {
   }
 
   @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
   public void shouldIgnoreExecutionWhenFeatureFlagDisable() {
     when(featureFlagService.isNotEnabled(eq(FeatureName.WORKFLOW_EXECUTION_ZOMBIE_MONITOR), any())).thenReturn(true);
 
@@ -83,16 +85,16 @@ public class WorkflowExecutionZombieMonitorHandlerTest {
   }
 
   @Test
-  @Category(UnitTests.class)
   @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
   public void shouldVerifyMinutesAgo() {
     assertThat(monitorHandler.minutesAgo()).isLessThan(System.currentTimeMillis());
     assertThat(monitorHandler.minutesAgo()).isGreaterThan(System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(20));
   }
 
   @Test
-  @Category(UnitTests.class)
   @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
   public void shouldHandleWorkflowExecutionWhenNotFoundStateExecutionInstances() {
     WorkflowExecution wfExecution = createValidWorkflowExecution();
 
@@ -106,8 +108,8 @@ public class WorkflowExecutionZombieMonitorHandlerTest {
   }
 
   @Test
-  @Category(UnitTests.class)
   @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
   public void shouldHandleWorkflowExecutionWhenNotNotZombieState() {
     WorkflowExecution wfExecution = createValidWorkflowExecution();
     StateExecutionInstance seInstance = aStateExecutionInstance().stateType(StateType.SHELL_SCRIPT.name()).build();
@@ -124,8 +126,8 @@ public class WorkflowExecutionZombieMonitorHandlerTest {
   }
 
   @Test
-  @Category(UnitTests.class)
   @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
   public void shouldHandleWorkflowExecutionAndTriggerInterruptWhenZombieState() {
     WorkflowExecution wfExecution = createValidWorkflowExecution();
     StateExecutionInstance seInstance = aStateExecutionInstance()
@@ -152,8 +154,8 @@ public class WorkflowExecutionZombieMonitorHandlerTest {
   }
 
   @Test
-  @Category(UnitTests.class)
   @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
   public void shouldVerifyNotZombieStateType() {
     Set<StateType> types = new HashSet(Arrays.asList(StateType.values()));
 

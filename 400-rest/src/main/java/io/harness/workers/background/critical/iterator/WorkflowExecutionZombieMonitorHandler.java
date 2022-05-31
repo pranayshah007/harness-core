@@ -33,7 +33,6 @@ import io.harness.mongo.iterator.provider.MorphiaPersistenceProvider;
 
 import software.wings.beans.WorkflowExecution;
 import software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
-import software.wings.dl.WingsPersistence;
 import software.wings.service.intfc.StateExecutionService;
 import software.wings.service.intfc.WorkflowExecutionService;
 import software.wings.sm.ExecutionInterrupt;
