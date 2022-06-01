@@ -439,7 +439,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
     registerWaitEnginePublishers(injector);
     registerPmsSdkEvents(injector);
     registerDemoGenerationIterator(injector);
-    registerNotificationTemplates(configuration, injector);
+    registerNotificationTemplates(injector);
     registerSLONotificationIterator(injector);
     registerMonitoredServiceNotificationIterator(injector);
     scheduleSidekickProcessing(injector);
@@ -900,21 +900,18 @@ public class VerificationApplication extends Application<VerificationConfigurati
     migrationExecutor.scheduleWithFixedDelay(() -> dataCollectionIterator.process(), 0, 15, TimeUnit.MINUTES);
   }
 
-  private void registerNotificationTemplates(VerificationConfiguration configuration, Injector injector) {
+  private void registerNotificationTemplates(Injector injector) {
     NotificationClient notificationClient = injector.getInstance(NotificationClient.class);
     List<PredefinedTemplate> templates = new ArrayList<>(Arrays.asList(PredefinedTemplate.CVNG_SLO_SLACK,
         PredefinedTemplate.CVNG_SLO_EMAIL, PredefinedTemplate.CVNG_SLO_PAGERDUTY, PredefinedTemplate.CVNG_SLO_MSTEAMS,
         PredefinedTemplate.CVNG_MONITOREDSERVICE_SLACK, PredefinedTemplate.CVNG_MONITOREDSERVICE_EMAIL,
         PredefinedTemplate.CVNG_MONITOREDSERVICE_PAGERDUTY, PredefinedTemplate.CVNG_MONITOREDSERVICE_MSTEAMS));
-    if (configuration.getShouldConfigureWithNotification()) {
-      for (PredefinedTemplate template : templates) {
-        try {
-          log.info("Registering {} with NotificationService", template);
-          notificationClient.saveNotificationTemplate(Team.CV, template, true);
-        } catch (UnexpectedException ex) {
-          log.error(
-              "Unable to save {} to NotificationService - skipping register notification templates.", template, ex);
-        }
+    for (PredefinedTemplate template : templates) {
+      try {
+        log.info("Registering {} with NotificationService", template);
+        notificationClient.saveNotificationTemplate(Team.CV, template, true);
+      } catch (UnexpectedException ex) {
+        log.error("Unable to save {} to NotificationService - skipping register notification templates.", template, ex);
       }
     }
   }
@@ -956,8 +953,8 @@ public class VerificationApplication extends Application<VerificationConfigurati
             .iteratorName("MonitoredServiceNotificationIterator")
             .clazz(MonitoredService.class)
             .fieldName(MonitoredServiceKeys.nextNotificationIteration)
-            .targetInterval(ofMinutes(5))
-            .acceptableNoAlertDelay(ofMinutes(2))
+            .targetInterval(ofMinutes(10))
+            .acceptableNoAlertDelay(ofMinutes(5))
             .executorService(notificationExecutor)
             .semaphore(new Semaphore(5))
             .handler(notificationHandler)
@@ -967,7 +964,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
             .redistribute(true)
             .build();
     injector.injectMembers(dataCollectionIterator);
-    notificationExecutor.scheduleWithFixedDelay(() -> dataCollectionIterator.process(), 0, 2, TimeUnit.MINUTES);
+    notificationExecutor.scheduleWithFixedDelay(() -> dataCollectionIterator.process(), 0, 5, TimeUnit.MINUTES);
   }
 
   private void initializeServiceSecretKeys() {

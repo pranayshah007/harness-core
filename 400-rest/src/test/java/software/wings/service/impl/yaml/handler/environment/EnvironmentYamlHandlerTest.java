@@ -318,10 +318,9 @@ public class EnvironmentYamlHandlerTest extends YamlHandlerTestBase {
     ServiceTemplate serviceTemplate_1 = aServiceTemplate().withServiceId(SERVICE_ID).withEnvId(ENV_ID).build();
     environment.setServiceTemplates(Arrays.asList(serviceTemplate_1));
 
-    when(yamlHelper.extractEncryptedRecordId(eq(existing_1_override.getValue()), anyString()))
+    when(yamlHelper.extractEncryptedRecordId(eq(existing_1_override.getValue()), any()))
         .thenReturn(expected_value_for_encrypted_var);
-    when(mockServiceVariableService.getServiceVariablesByTemplate(
-             anyString(), anyString(), any(ServiceTemplate.class), any()))
+    when(mockServiceVariableService.getServiceVariablesByTemplate(any(), any(), any(ServiceTemplate.class), any()))
         .thenReturn(Arrays.asList(existing_1, existing_2));
     when(yamlHelper.getEnvironment(APP_ID, validYamlFilePath)).thenReturn(environment);
     when(serviceResourceService.getServiceByName(APP_ID, existing_1_override.getServiceName()))
@@ -337,7 +336,7 @@ public class EnvironmentYamlHandlerTest extends YamlHandlerTestBase {
     yaml.setVariableOverrides(Arrays.asList(existing_1_override));
     ChangeContext<Yaml> changeContext = getChangeContext(yaml);
     yamlHandler.upsertFromYaml(changeContext, null);
-    verify(mockServiceVariableService, times(1)).delete(anyString(), anyString(), eq(true));
+    verify(mockServiceVariableService, times(1)).delete(anyString(), any(), eq(true));
     verify(mockServiceVariableService, times(1)).update(captor.capture(), eq(true));
     String encrypted_serviceVariableValue = String.valueOf(captor.getValue().getValue());
     assertThat(encrypted_serviceVariableValue).isEqualTo(expected_value_for_encrypted_var);

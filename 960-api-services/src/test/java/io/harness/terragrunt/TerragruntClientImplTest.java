@@ -12,7 +12,7 @@ import static io.harness.rule.OwnerRule.TATHAGAT;
 
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyMap;
 import static org.mockito.Matchers.anyString;
@@ -74,8 +74,8 @@ public class TerragruntClientImplTest extends CategoryTest {
     MockitoAnnotations.initMocks(this);
     doReturn(CliResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build())
         .when(terragruntClient)
-        .executeShellCommand(
-            anyString(), anyString(), anyLong(), anyMap(), any(LogOutputStream.class), any(LogOutputStream.class));
+        .executeShellCommand(anyString(), anyString(), anyLong(), anyMap(), nullable(LogOutputStream.class),
+            nullable(LogOutputStream.class));
   }
 
   @Test
@@ -294,8 +294,8 @@ public class TerragruntClientImplTest extends CategoryTest {
 
   private String getTerraguntCommandPassedToExecutor() throws Exception {
     verify(terragruntClient, Mockito.atLeastOnce())
-        .executeShellCommand(stringCaptor.capture(), anyString(), anyLong(), anyMap(), any(LogOutputStream.class),
-            any(LogOutputStream.class));
+        .executeShellCommand(stringCaptor.capture(), anyString(), anyLong(), anyMap(), nullable(LogOutputStream.class),
+            nullable(LogOutputStream.class));
 
     return stringCaptor.getValue();
   }

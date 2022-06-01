@@ -11,9 +11,9 @@ import static io.harness.rule.OwnerRule.ARPITJ;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.doThrow;
 
 import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
@@ -96,7 +96,7 @@ public class SideKickServiceImplTest extends CvNextGenTestBase {
   public void test_ProcessNextStepFailure() {
     RetryChangeSourceHandleDeleteSideKickData sideKickData = createRetryChangeSourceHandleDeleteSideKick();
     sideKickService.schedule(sideKickData, Instant.now());
-    doThrow(SocketTimeoutException.class)
+    doAnswer(invocationOnMock -> { throw new SocketTimeoutException(); })
         .when(retryChangeSourceHandleDeleteSideKickExecutor)
         .execute(any(RetryChangeSourceHandleDeleteSideKickData.class));
 
@@ -117,7 +117,7 @@ public class SideKickServiceImplTest extends CvNextGenTestBase {
   public void test_ProcessNextFailure() {
     RetryChangeSourceHandleDeleteSideKickData sideKickData = createRetryChangeSourceHandleDeleteSideKick();
     sideKickService.schedule(sideKickData, Instant.now());
-    doThrow(SocketTimeoutException.class)
+    doAnswer(invocationOnMock -> { throw new SocketTimeoutException(); })
         .when(retryChangeSourceHandleDeleteSideKickExecutor)
         .execute(any(RetryChangeSourceHandleDeleteSideKickData.class));
 

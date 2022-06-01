@@ -76,7 +76,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import javax.activity.InvalidActivityException;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
 import org.junit.Test;
@@ -85,6 +84,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
+import org.omg.CORBA.INVALID_ACTIVITY;
 
 @Slf4j
 public class YamlServiceImplTest extends WingsBaseTest {
@@ -253,7 +253,7 @@ public class YamlServiceImplTest extends WingsBaseTest {
   @Test
   @Owner(developers = VARDAN_BANSAL)
   @Category(UnitTests.class)
-  public void shouldPerformYAMLOperationWithAuditsLogged() throws InvalidActivityException, FileNotFoundException {
+  public void shouldPerformYAMLOperationWithAuditsLogged() throws INVALID_ACTIVITY, FileNotFoundException {
     final AuditHeader auditHeader = AuditHeader.Builder.anAuditHeader().build();
     final String auditId = "AUDIT_ID";
     final String testAccountId = "TEST_ACCOUNT_ID";

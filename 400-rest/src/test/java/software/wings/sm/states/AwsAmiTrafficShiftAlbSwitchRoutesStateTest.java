@@ -31,9 +31,9 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
@@ -115,7 +115,7 @@ public class AwsAmiTrafficShiftAlbSwitchRoutesStateTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testSwitchRouteExecuteSetupElementFailure() {
     ExecutionContextImpl mockContext = initializeMockSetup(switchRoutesState, false, false);
-    doThrow(new NullPointerException())
+    doAnswer(invocation -> { throw new NullPointerException(); })
         .when(awsAmiServiceHelper)
         .getSetupElementFromSweepingOutput(mockContext, AMI_ALB_SETUP_SWEEPING_OUTPUT_NAME);
     ExecutionResponse response = switchRoutesState.execute(mockContext);
@@ -236,7 +236,7 @@ public class AwsAmiTrafficShiftAlbSwitchRoutesStateTest extends WingsBaseTest {
         .when(spotinstStateHelper)
         .createActivity(eq(mockContext), eq(null), anyString(), anyString(), any(), any());
     if (!isSuccess) {
-      doThrow(Exception.class).when(delegateService).queueTask(any());
+      doAnswer(invocation -> { throw new Exception(); }).when(delegateService).queueTask(any());
     }
     return mockContext;
   }

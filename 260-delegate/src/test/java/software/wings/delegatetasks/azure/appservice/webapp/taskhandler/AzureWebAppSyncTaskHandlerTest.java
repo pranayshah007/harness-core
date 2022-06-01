@@ -13,8 +13,8 @@ import static io.harness.rule.OwnerRule.ANIL;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 
 import io.harness.CategoryTest;
@@ -151,7 +151,7 @@ public class AzureWebAppSyncTaskHandlerTest extends CategoryTest {
                                                           .build();
     ArtifactStreamAttributes artifactStreamAttributes = buildArtifactStreamAttributes(true);
 
-    doThrow(Exception.class).when(azureWebClient).listWebAppsByResourceGroupName(any());
+    doAnswer(invocationOnMock -> { throw new Exception(); }).when(azureWebClient).listWebAppsByResourceGroupName(any());
     listWebAppNamesTaskHandler.executeTask(
         parameters, getAzureConfig(), mockLogStreamingTaskClient, artifactStreamAttributes);
   }

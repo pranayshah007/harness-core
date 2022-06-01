@@ -530,6 +530,8 @@ public class AnalysisStateMachineServiceImplTest extends CvNextGenTestBase {
     stateMachineService.retryStateMachineAfterFailure(stateMachine);
 
     AnalysisStateMachine savedStateMachine = hPersistence.createQuery(AnalysisStateMachine.class).get();
+    stateMachine.setAnalysisStartTime(stateMachine.getAnalysisStartTime().truncatedTo(ChronoUnit.MILLIS));
+    stateMachine.setAnalysisEndTime(stateMachine.getAnalysisEndTime().truncatedTo(ChronoUnit.MILLIS));
     assertThat(savedStateMachine).isEqualTo(stateMachine);
   }
 

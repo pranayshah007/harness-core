@@ -3,9 +3,6 @@
     <blaze-settings handler-id="BlazeJavaRunConfigurationHandlerProvider" kind="java_binary"
                     debug_port="6009" blaze-command="run" >
         <blaze-target>//160-stress-tester:module</blaze-target>
-        <blaze-user-flag>
-            --jvmopt="-Xbootclasspath/p:${HOME}/.m2/repository/org/mortbay/jetty/alpn/alpn-boot/8.1.13.v20181017/alpn-boot-8.1.13.v20181017.jar"
-        </blaze-user-flag>
         <blaze-user-exe-flag>server $PROJECT_DIR$/../160-stress-tester/config.yml</blaze-user-exe-flag>
     </blaze-settings>
     <method v="2">

@@ -18,6 +18,7 @@ import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
@@ -30,7 +31,6 @@ import io.kubernetes.client.openapi.ApiCallback;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.Pair;
-import io.kubernetes.client.openapi.apis.VersionApi;
 import java.lang.reflect.Type;
 import java.util.function.Supplier;
 import okhttp3.Call;
@@ -67,9 +67,11 @@ public class KubernetesApiCallTest extends CategoryTest {
   public void testK8sApiCallWithGenericError() throws ApiException {
     doReturn(request).when(call).request();
     doThrow(ApiException.class).when(apiClient).execute(any(Call.class), any(Type.class));
+    KubernetesApiCall.ApiCallSupplier apiCallSupplier = mock(KubernetesApiCall.ApiCallSupplier.class);
+    doReturn(call).when(apiCallSupplier).get();
 
     Supplier<Void> versionApiCall = () -> {
-      KubernetesApiCall.call(apiClient, () -> new VersionApi(apiClient).getCodeCall(null));
+      KubernetesApiCall.call(apiClient, apiCallSupplier);
       return null;
     };
     assertThatThrownBy(versionApiCall::get).isInstanceOf(ExplanationException.class);
@@ -81,9 +83,11 @@ public class KubernetesApiCallTest extends CategoryTest {
   public void testK8sApiCallWithConnectionFailure() throws ApiException {
     doReturn(requestWithUrl).when(call).request();
     doThrow(new ApiException(0, EXCEPTION_MESSAGE)).when(apiClient).execute(any(Call.class), any(Type.class));
+    KubernetesApiCall.ApiCallSupplier apiCallSupplier = mock(KubernetesApiCall.ApiCallSupplier.class);
+    doReturn(call).when(apiCallSupplier).get();
 
     Supplier<Void> versionApiCall = () -> {
-      KubernetesApiCall.call(apiClient, () -> new VersionApi(apiClient).getCodeCall(null));
+      KubernetesApiCall.call(apiClient, apiCallSupplier);
       return null;
     };
 
@@ -104,9 +108,11 @@ public class KubernetesApiCallTest extends CategoryTest {
     doThrow(new ApiException(RESPONSE_CODE, EXCEPTION_MESSAGE))
         .when(apiClient)
         .execute(any(Call.class), any(Type.class));
+    KubernetesApiCall.ApiCallSupplier apiCallSupplier = mock(KubernetesApiCall.ApiCallSupplier.class);
+    doReturn(call).when(apiCallSupplier).get();
 
     Supplier<Void> versionApiCall = () -> {
-      KubernetesApiCall.call(apiClient, () -> new VersionApi(apiClient).getCodeCall(null));
+      KubernetesApiCall.call(apiClient, apiCallSupplier);
       return null;
     };
 

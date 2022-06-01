@@ -7,6 +7,7 @@
 
 package io.harness.cvng.analysis.services.impl;
 
+import static io.harness.cvng.CVNGTestConstants.TIME_FOR_TESTS;
 import static io.harness.cvng.analysis.CVAnalysisConstants.TIMESERIES_SERVICE_GUARD_DATA_LENGTH;
 import static io.harness.cvng.analysis.CVAnalysisConstants.TIMESERIES_SERVICE_GUARD_WINDOW_SIZE;
 import static io.harness.cvng.beans.DataSourceType.APP_DYNAMICS;
@@ -144,8 +145,8 @@ public class TimeSeriesAnalysisServiceImplTest extends CvNextGenTestBase {
   public void testScheduleServiceGuardAnalysis() {
     AnalysisInput input = AnalysisInput.builder()
                               .verificationTaskId(verificationTaskId)
-                              .startTime(Instant.now().minus(10, ChronoUnit.MINUTES))
-                              .endTime(Instant.now())
+                              .startTime(TIME_FOR_TESTS.minus(10, ChronoUnit.MINUTES))
+                              .endTime(TIME_FOR_TESTS)
                               .build();
     List<String> taskIds = timeSeriesAnalysisService.scheduleServiceGuardAnalysis(input);
 
