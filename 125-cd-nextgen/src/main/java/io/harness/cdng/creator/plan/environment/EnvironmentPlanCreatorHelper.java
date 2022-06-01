@@ -103,18 +103,20 @@ public class EnvironmentPlanCreatorHelper {
               projectIdentifier, orgIdentifier, accountIdentifier));
     }
 
-    String envYaml = mergeEnvironmentInputs(environment.get().getYaml(), environmentV2.getEnvironmentInputs());
-    // setting merged yaml in entity
-    environment.get().setYaml(envYaml);
+    String mergedEnvYaml = environment.get().getYaml();
+
+    if (isNotEmpty(environmentV2.getEnvironmentInputs())) {
+      mergedEnvYaml = mergeEnvironmentInputs(environment.get().getYaml(), environmentV2.getEnvironmentInputs());
+    }
 
     if (!gitOpsEnabled) {
       List<InfrastructureEntity> infrastructureEntityList = getInfraStructureEntityList(
           accountIdentifier, orgIdentifier, projectIdentifier, environmentV2, infrastructure);
       return EnvironmentPlanCreatorConfigMapper.toEnvironmentPlanCreatorConfig(
-          environment.get(), infrastructureEntityList, serviceOverride);
+          mergedEnvYaml, infrastructureEntityList, serviceOverride);
     } else {
       return EnvironmentPlanCreatorConfigMapper.toEnvPlanCreatorConfigWithGitops(
-          environment.get(), environmentV2, serviceOverride);
+          mergedEnvYaml, environmentV2, serviceOverride);
     }
   }
 

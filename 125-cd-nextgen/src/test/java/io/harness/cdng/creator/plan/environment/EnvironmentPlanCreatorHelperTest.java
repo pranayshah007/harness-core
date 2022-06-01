@@ -42,7 +42,8 @@ public class EnvironmentPlanCreatorHelperTest extends CDNGTestBase {
   @Owner(developers = PRASHANTSHARMA)
   @Category(UnitTests.class)
   public void testMergeEnvironmentInputs() throws IOException {
-    String originalYamlWithRunTimeInputs = createYamlFromPath("cdng/plan/environment/runtimeInputEnvironment.yml");
+    String originalYamlWithRunTimeInputs =
+        createYamlFromPath("cdng/plan/environment/originalEnvironmentWithRuntimeValue.yml");
     String inputValueYaml = createYamlFromPath("cdng/plan/environment/runtimeInputValueEnvironment.yml");
 
     Map<String, Object> read = YamlPipelineUtils.read(inputValueYaml, Map.class);
