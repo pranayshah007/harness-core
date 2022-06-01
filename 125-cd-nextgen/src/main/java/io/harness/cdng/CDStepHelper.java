@@ -572,7 +572,7 @@ public class CDStepHelper {
     }
 
     if (ManifestStoreType.OCI.equals(storeConfig.getKind())) {
-      OciStoreConfig ociStoreConfig = (OciStoreConfig) storeConfig;
+      OciHelmChartConfig ociStoreConfig = (OciHelmChartConfig) storeConfig;
       ConnectorInfoDTO helmConnectorDTO =
           getConnector(getParameterFieldValue(ociStoreConfig.getConnectorReference()), ambiance);
       validateManifest(storeConfig.getKind(), helmConnectorDTO, validationErrorMessage);
