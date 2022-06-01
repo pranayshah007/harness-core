@@ -8,10 +8,12 @@
 package io.harness.delegate.task.azure;
 
 import static io.harness.rule.OwnerRule.MLUKIC;
+import static io.harness.rule.OwnerRule.VLICA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doReturn;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -25,11 +27,14 @@ import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.azure.response.AzureAcrTokenTaskResponse;
 import io.harness.delegate.beans.azure.response.AzureClustersResponse;
+import io.harness.delegate.beans.azure.response.AzureDeploymentSlotResponse;
+import io.harness.delegate.beans.azure.response.AzureDeploymentSlotsResponse;
 import io.harness.delegate.beans.azure.response.AzureRegistriesResponse;
 import io.harness.delegate.beans.azure.response.AzureRepositoriesResponse;
 import io.harness.delegate.beans.azure.response.AzureResourceGroupsResponse;
 import io.harness.delegate.beans.azure.response.AzureSubscriptionsResponse;
 import io.harness.delegate.beans.azure.response.AzureValidateTaskResponse;
+import io.harness.delegate.beans.azure.response.AzureWebAppNamesResponse;
 import io.harness.delegate.beans.connector.azureconnector.AzureAdditionalParams;
 import io.harness.delegate.beans.connector.azureconnector.AzureAuthDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureClientSecretKeyDTO;
@@ -53,6 +58,8 @@ import software.wings.delegatetasks.azure.AzureAsyncTaskHelper;
 import software.wings.delegatetasks.azure.AzureTask;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -70,6 +77,8 @@ public class AzureTaskTest {
   private static final String tenantId = "t-e-n-a-n-t-I-d";
   private static final String secretKey = "s-e-c-r-e-t-k-e-y";
   private static final String subscriptionId = "123456-654321-987654-345678";
+  private static final String resourceGroup = "test-resource-group-name";
+  private static final String webAppName = "test-web-app-name";
 
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
@@ -139,6 +148,80 @@ public class AzureTaskTest {
 
     AzureSubscriptionsResponse response = (AzureSubscriptionsResponse) delegateResponseData;
     assertThat(response).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testListWebAppNamesTaskType() {
+    Map<AzureAdditionalParams, String> additionalParamsStringMap = new HashMap<>();
+    additionalParamsStringMap.put(AzureAdditionalParams.SUBSCRIPTION_ID, subscriptionId);
+    additionalParamsStringMap.put(AzureAdditionalParams.RESOURCE_GROUP, resourceGroup);
+
+    TaskParameters taskParameters = getAzureTaskParams(AzureTaskType.LIST_WEBAPP_NAMES, additionalParamsStringMap);
+    AzureWebAppNamesResponse result =
+        AzureWebAppNamesResponse.builder().webAppNames(Arrays.asList("appName-1", "appName-2")).build();
+
+    doReturn(result).when(azureAsyncTaskHelper).listWebAppNames(any(), any(), anyString(), anyString());
+
+    DelegateResponseData delegateResponseData = task.run(taskParameters);
+    assertThat(delegateResponseData).isInstanceOf(AzureWebAppNamesResponse.class);
+    AzureWebAppNamesResponse response = (AzureWebAppNamesResponse) delegateResponseData;
+    assertThat(response).isNotNull();
+    assertThat(response.getWebAppNames().size()).isEqualTo(2);
+    assertThat(response.getWebAppNames().get(0)).isEqualTo("appName-1");
+    assertThat(response.getWebAppNames().get(1)).isEqualTo("appName-2");
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testSuccessfulListWebAppDeploymentSlotsTaskType() {
+    Map<AzureAdditionalParams, String> additionalParamsStringMap = new HashMap<>();
+    additionalParamsStringMap.put(AzureAdditionalParams.SUBSCRIPTION_ID, subscriptionId);
+    additionalParamsStringMap.put(AzureAdditionalParams.RESOURCE_GROUP, resourceGroup);
+    additionalParamsStringMap.put(AzureAdditionalParams.WEB_APP_NAME, webAppName);
+
+    TaskParameters taskParameters = getAzureTaskParams(AzureTaskType.LIST_DEPLOYMENT_SLOTS, additionalParamsStringMap);
+
+    AzureDeploymentSlotsResponse result =
+        AzureDeploymentSlotsResponse.builder()
+            .deploymentSlots(Collections.singletonList(
+                AzureDeploymentSlotResponse.builder().name("depSlotName-1").type("depSlotType-1").build()))
+            .build();
+
+    doReturn(result)
+        .when(azureAsyncTaskHelper)
+        .listDeploymentSlots(any(), any(), anyString(), anyString(), anyString());
+
+    DelegateResponseData delegateResponseData = task.run(taskParameters);
+
+    assertThat(delegateResponseData).isInstanceOf(AzureDeploymentSlotsResponse.class);
+
+    AzureDeploymentSlotsResponse response = (AzureDeploymentSlotsResponse) delegateResponseData;
+    assertThat(response).isNotNull();
+    assertThat(response.getDeploymentSlots().size()).isEqualTo(1);
+    assertThat(response.getDeploymentSlots().get(0).getName()).isEqualTo("depSlotName-1");
+    assertThat(response.getDeploymentSlots().get(0).getType()).isEqualTo("depSlotType-1");
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testFailedListWebAppDeploymentSlotsTaskType() {
+    Map<AzureAdditionalParams, String> additionalParamsStringMap = new HashMap<>();
+    additionalParamsStringMap.put(AzureAdditionalParams.SUBSCRIPTION_ID, subscriptionId);
+    additionalParamsStringMap.put(AzureAdditionalParams.RESOURCE_GROUP, resourceGroup);
+
+    TaskParameters taskParameters = getAzureTaskParams(AzureTaskType.LIST_DEPLOYMENT_SLOTS, additionalParamsStringMap);
+
+    assertThatThrownBy(() -> task.run(taskParameters))
+        .isInstanceOf(HintException.class)
+        .getCause()
+        .isInstanceOf(ExplanationException.class)
+        .getCause()
+        .isInstanceOf(AzureConfigException.class)
+        .hasMessage("Web App name not provided");
   }
 
   @Test

@@ -161,8 +161,7 @@ public class PMSPipelineServiceHelper {
   }
 
   public void validatePipelineFromRemote(PipelineEntity pipelineEntity) {
-    GovernanceMetadata governanceMetadata = validatePipelineYamlAndSetTemplateRefIfAny(pipelineEntity,
-        pmsFeatureFlagService.isEnabled(pipelineEntity.getAccountId(), FeatureName.OPA_PIPELINE_GOVERNANCE));
+    GovernanceMetadata governanceMetadata = validatePipelineYaml(pipelineEntity);
     if (governanceMetadata.getDeny()) {
       List<String> denyingPolicySetIds = governanceMetadata.getDetailsList()
                                              .stream()
@@ -175,9 +174,13 @@ public class PMSPipelineServiceHelper {
     }
   }
 
-  // todo: change method name
-  public GovernanceMetadata validatePipelineYamlAndSetTemplateRefIfAny(
-      PipelineEntity pipelineEntity, boolean checkAgainstOPAPolicies) {
+  public GovernanceMetadata validatePipelineYaml(PipelineEntity pipelineEntity) {
+    boolean governanceEnabled =
+        pmsFeatureFlagService.isEnabled(pipelineEntity.getAccountId(), FeatureName.OPA_PIPELINE_GOVERNANCE);
+    return validatePipelineYaml(pipelineEntity, governanceEnabled);
+  }
+
+  public GovernanceMetadata validatePipelineYaml(PipelineEntity pipelineEntity, boolean checkAgainstOPAPolicies) {
     try {
       GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
       if (gitEntityInfo != null && gitEntityInfo.isNewBranch()) {

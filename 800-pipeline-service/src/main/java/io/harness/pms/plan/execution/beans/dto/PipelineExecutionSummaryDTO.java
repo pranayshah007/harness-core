@@ -10,6 +10,7 @@ package io.harness.pms.plan.execution.beans.dto;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.dto.FailureInfoDTO;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.ng.core.common.beans.NGTag;
@@ -48,8 +49,9 @@ public class PipelineExecutionSummaryDTO {
   List<NGTag> tags;
 
   ExecutionTriggerInfo executionTriggerInfo;
-  ExecutionErrorInfo executionErrorInfo;
+  @Deprecated ExecutionErrorInfo executionErrorInfo;
   GovernanceMetadata governanceMetadata;
+  FailureInfoDTO failureInfo;
 
   Map<String, LinkedHashMap<String, Object>> moduleInfo;
   Map<String, GraphLayoutNodeDTO> layoutNodeMap;

@@ -93,8 +93,8 @@ public class PipelineCloneHelper {
     }
     if (clonePipelineDTO.getDestinationConfig().getTags() != null) {
       Map<String, String> tags = clonePipelineDTO.getDestinationConfig().getTags();
-
-      JsonNodeUtils.upsertPropertiesInJsonNode((ObjectNode) jsonNode.get("pipeline").get("tags"), tags);
+      ObjectMapper jsonMapper = new ObjectMapper();
+      ((ObjectNode) jsonNode.get("pipeline")).set("tags", jsonMapper.convertValue(tags, JsonNode.class));
     }
     if (destPipelineName != null) {
       JsonNodeUtils.updatePropertyInObjectNode(jsonNode.get("pipeline"), "name", destPipelineName);
