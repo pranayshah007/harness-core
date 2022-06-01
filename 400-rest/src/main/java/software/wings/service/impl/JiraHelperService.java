@@ -23,14 +23,17 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.Cd1SetupFields;
 import io.harness.beans.DelegateTask;
 import io.harness.beans.ExecutionStatus;
+import io.harness.beans.FeatureName;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.RemoteMethodReturnValueData;
 import io.harness.delegate.beans.TaskData;
 import io.harness.exception.HarnessJiraException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.jira.JiraAction;
 import io.harness.jira.JiraCreateMetaResponse;
+import io.harness.jira.JiraUserData;
 import io.harness.waiter.WaitNotifyEngine;
 
 import software.wings.api.ApprovalStateExecutionData;
@@ -49,6 +52,7 @@ import software.wings.service.intfc.security.SecretManager;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import net.sf.json.JSONArray;
 import org.mongodb.morphia.annotations.Transient;
@@ -70,6 +74,7 @@ public class JiraHelperService {
   @Inject WaitNotifyEngine waitNotifyEngine;
   @Inject private MainConfiguration mainConfiguration;
   @Inject StateExecutionService stateExecutionService;
+  @Inject private FeatureFlagService featureFlagService;
 
   private static final String JIRA_APPROVAL_API_PATH = "api/ticketing/jira-approval/";
   public static final String APP_ID_KEY = "app_id";
@@ -284,6 +289,25 @@ public class JiraHelperService {
       throw new HarnessJiraException("Failed to fetch Issue Metadata", WingsException.USER);
     }
     return jiraExecutionData.getCreateMetadata();
+  }
+
+  public List<JiraUserData> searchUser(
+      String connectorId, String accountId, String appId, long timeoutMillis, String userQuery, String offset) {
+    if (featureFlagService.isEnabled(FeatureName.ALLOW_USER_TYPE_FIELDS_JIRA, accountId)) {
+      JiraTaskParameters jiraTaskParameters = JiraTaskParameters.builder()
+                                                  .accountId(accountId)
+                                                  .userQuery(userQuery)
+                                                  .userQueryOffset(offset)
+                                                  .jiraAction(JiraAction.SEARCH_USER)
+                                                  .build();
+
+      JiraExecutionData jiraExecutionData = runTask(accountId, appId, connectorId, jiraTaskParameters, timeoutMillis);
+      if (jiraExecutionData.getExecutionStatus() != ExecutionStatus.SUCCESS) {
+        throw new HarnessJiraException("Failed to fetch user list", WingsException.USER);
+      }
+      return jiraExecutionData.getUserSearchList();
+    }
+    throw new HarnessJiraException("Search User not available for this account", USER);
   }
 
   public JiraExecutionData getApprovalStatus(String connectorId, String accountId, String appId, String issueId,

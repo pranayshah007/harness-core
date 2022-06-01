@@ -13,6 +13,7 @@ import static org.apache.cxf.ws.addressing.ContextUtils.generateUUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import io.harness.SystemWrapper;
 import io.harness.beans.ExecutionStatus;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.core.services.api.VerificationServiceSecretManager;
@@ -33,16 +34,8 @@ import java.util.concurrent.TimeUnit;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({System.class, VerificationServiceImpl.class})
-@PowerMockIgnore({"javax.security.*", "javax.net.*", "javax.crypto.*"})
 public class LearningEngineAnalysisServiceImplTest extends WingsBaseTest {
   @Inject private VerificationServiceSecretManager verificationServiceSecretManager;
   @Inject private VerificationService learningEngineService;
@@ -54,7 +47,6 @@ public class LearningEngineAnalysisServiceImplTest extends WingsBaseTest {
   public void setup() {
     MockitoAnnotations.initMocks(this);
     cvConfigId = generateUUID();
-    PowerMockito.mockStatic(System.class);
   }
 
   @Test
@@ -127,7 +119,7 @@ public class LearningEngineAnalysisServiceImplTest extends WingsBaseTest {
   @Owner(developers = SOWMYA)
   @Category(UnitTests.class)
   public void testCheckIfAnalysisHasData_Log_NoData() {
-    long minute = TimeUnit.MILLISECONDS.toMinutes(System.currentTimeMillis());
+    long minute = TimeUnit.MILLISECONDS.toMinutes(SystemWrapper.currentTimeMillis());
     boolean hasData = learningEngineService.checkIfAnalysisHasData(cvConfigId, MLAnalysisType.LOG_ML, minute);
     assertThat(hasData).isFalse();
   }
@@ -136,7 +128,7 @@ public class LearningEngineAnalysisServiceImplTest extends WingsBaseTest {
   @Owner(developers = SOWMYA)
   @Category(UnitTests.class)
   public void testCheckIfAnalysisHasData_Log_WithDataOutsideWindow() {
-    long minute = TimeUnit.MILLISECONDS.toMinutes(System.currentTimeMillis());
+    long minute = TimeUnit.MILLISECONDS.toMinutes(SystemWrapper.currentTimeMillis());
     LogDataRecord logDataRecord = LogDataRecord.builder().cvConfigId(cvConfigId).timeStamp(minute - 20).build();
     persistence.save(logDataRecord);
     boolean hasData = learningEngineService.checkIfAnalysisHasData(cvConfigId, MLAnalysisType.LOG_ML, minute);
@@ -147,7 +139,7 @@ public class LearningEngineAnalysisServiceImplTest extends WingsBaseTest {
   @Owner(developers = SOWMYA)
   @Category(UnitTests.class)
   public void testCheckIfAnalysisHasData_Log_WithOtherConfigId() {
-    long minute = TimeUnit.MILLISECONDS.toMinutes(System.currentTimeMillis());
+    long minute = TimeUnit.MILLISECONDS.toMinutes(SystemWrapper.currentTimeMillis());
     LogDataRecord logDataRecord = LogDataRecord.builder().cvConfigId("config2").timeStamp(minute - 10).build();
     persistence.save(logDataRecord);
     boolean hasData = learningEngineService.checkIfAnalysisHasData(cvConfigId, MLAnalysisType.LOG_ML, minute);
@@ -158,7 +150,7 @@ public class LearningEngineAnalysisServiceImplTest extends WingsBaseTest {
   @Owner(developers = SOWMYA)
   @Category(UnitTests.class)
   public void testCheckIfAnalysisHasData_Log_WithHearBeatRecord() {
-    long minute = TimeUnit.MILLISECONDS.toMinutes(System.currentTimeMillis());
+    long minute = TimeUnit.MILLISECONDS.toMinutes(SystemWrapper.currentTimeMillis());
     LogDataRecord logDataRecord =
         LogDataRecord.builder().cvConfigId(cvConfigId).clusterLevel(ClusterLevel.H0).timeStamp(minute - 10).build();
     persistence.save(logDataRecord);
@@ -170,7 +162,7 @@ public class LearningEngineAnalysisServiceImplTest extends WingsBaseTest {
   @Owner(developers = SOWMYA)
   @Category(UnitTests.class)
   public void testCheckIfAnalysisHasData_Log_WithData() {
-    long minute = TimeUnit.MILLISECONDS.toMinutes(System.currentTimeMillis());
+    long minute = TimeUnit.MILLISECONDS.toMinutes(SystemWrapper.currentTimeMillis());
     LogDataRecord logDataRecord =
         LogDataRecord.builder().cvConfigId(cvConfigId).clusterLevel(ClusterLevel.L2).timeStamp(minute - 10).build();
     persistence.save(logDataRecord);
@@ -182,7 +174,7 @@ public class LearningEngineAnalysisServiceImplTest extends WingsBaseTest {
   @Owner(developers = SOWMYA)
   @Category(UnitTests.class)
   public void testCheckIfAnalysisHasData_LogCluster_WithData() {
-    long minute = TimeUnit.MILLISECONDS.toMinutes(System.currentTimeMillis());
+    long minute = TimeUnit.MILLISECONDS.toMinutes(SystemWrapper.currentTimeMillis());
     LogDataRecord logDataRecord =
         LogDataRecord.builder().cvConfigId(cvConfigId).clusterLevel(ClusterLevel.L1).timeStamp(minute - 10).build();
     persistence.save(logDataRecord);
@@ -194,7 +186,7 @@ public class LearningEngineAnalysisServiceImplTest extends WingsBaseTest {
   @Owner(developers = SOWMYA)
   @Category(UnitTests.class)
   public void testCheckIfAnalysisHasData_Metric_NoData() {
-    long minute = TimeUnit.MILLISECONDS.toMinutes(System.currentTimeMillis());
+    long minute = TimeUnit.MILLISECONDS.toMinutes(SystemWrapper.currentTimeMillis());
     boolean hasData = learningEngineService.checkIfAnalysisHasData(cvConfigId, MLAnalysisType.TIME_SERIES, minute);
     assertThat(hasData).isFalse();
   }
@@ -203,7 +195,7 @@ public class LearningEngineAnalysisServiceImplTest extends WingsBaseTest {
   @Owner(developers = SOWMYA)
   @Category(UnitTests.class)
   public void testCheckIfAnalysisHasData_Metric_WithDataOutsideWindow() {
-    long minute = TimeUnit.MILLISECONDS.toMinutes(System.currentTimeMillis());
+    long minute = TimeUnit.MILLISECONDS.toMinutes(SystemWrapper.currentTimeMillis());
     TimeSeriesDataRecord record = TimeSeriesDataRecord.builder().cvConfigId(cvConfigId).timeStamp(minute - 20).build();
     persistence.save(record);
     boolean hasData = learningEngineService.checkIfAnalysisHasData(cvConfigId, MLAnalysisType.TIME_SERIES, minute);
@@ -214,7 +206,7 @@ public class LearningEngineAnalysisServiceImplTest extends WingsBaseTest {
   @Owner(developers = SOWMYA)
   @Category(UnitTests.class)
   public void testCheckIfAnalysisHasData_Metric_WithOtherConfigId() {
-    long minute = TimeUnit.MILLISECONDS.toMinutes(System.currentTimeMillis());
+    long minute = TimeUnit.MILLISECONDS.toMinutes(SystemWrapper.currentTimeMillis());
     TimeSeriesDataRecord record = TimeSeriesDataRecord.builder().cvConfigId("config2").timeStamp(minute - 10).build();
     persistence.save(record);
     boolean hasData = learningEngineService.checkIfAnalysisHasData(cvConfigId, MLAnalysisType.TIME_SERIES, minute);
@@ -225,7 +217,7 @@ public class LearningEngineAnalysisServiceImplTest extends WingsBaseTest {
   @Owner(developers = SOWMYA)
   @Category(UnitTests.class)
   public void testCheckIfAnalysisHasData_Metric_WithHearBeatRecord() {
-    long minute = TimeUnit.MILLISECONDS.toMinutes(System.currentTimeMillis());
+    long minute = TimeUnit.MILLISECONDS.toMinutes(SystemWrapper.currentTimeMillis());
     TimeSeriesDataRecord record =
         TimeSeriesDataRecord.builder().cvConfigId(cvConfigId).level(ClusterLevel.H0).timeStamp(minute - 10).build();
     persistence.save(record);
@@ -237,7 +229,7 @@ public class LearningEngineAnalysisServiceImplTest extends WingsBaseTest {
   @Owner(developers = SOWMYA)
   @Category(UnitTests.class)
   public void testCheckIfAnalysisHasData_Metric_WithData() {
-    long minute = TimeUnit.MILLISECONDS.toMinutes(System.currentTimeMillis());
+    long minute = TimeUnit.MILLISECONDS.toMinutes(SystemWrapper.currentTimeMillis());
     TimeSeriesDataRecord record = TimeSeriesDataRecord.builder().cvConfigId(cvConfigId).timeStamp(minute - 10).build();
     persistence.save(record);
     boolean hasData = learningEngineService.checkIfAnalysisHasData(cvConfigId, MLAnalysisType.TIME_SERIES, minute);
@@ -248,7 +240,7 @@ public class LearningEngineAnalysisServiceImplTest extends WingsBaseTest {
   @Owner(developers = SOWMYA)
   @Category(UnitTests.class)
   public void testCheckIfAnalysisHasData_Feedback() {
-    long minute = TimeUnit.MILLISECONDS.toMinutes(System.currentTimeMillis());
+    long minute = TimeUnit.MILLISECONDS.toMinutes(SystemWrapper.currentTimeMillis());
     assertThatThrownBy(
         () -> learningEngineService.checkIfAnalysisHasData(cvConfigId, MLAnalysisType.FEEDBACK_ANALYSIS, minute))
         .isInstanceOf(InvalidArgumentsException.class);

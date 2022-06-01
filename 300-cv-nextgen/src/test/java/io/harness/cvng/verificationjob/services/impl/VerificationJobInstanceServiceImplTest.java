@@ -16,6 +16,7 @@ import static io.harness.cvng.core.services.CVNextGenConstants.DATA_COLLECTION_D
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.persistence.HQuery.excludeAuthority;
 import static io.harness.rule.OwnerRule.ABHIJITH;
+import static io.harness.rule.OwnerRule.DHRUVX;
 import static io.harness.rule.OwnerRule.KAMAL;
 import static io.harness.rule.OwnerRule.KANHAIYA;
 import static io.harness.rule.OwnerRule.PRAVEEN;
@@ -857,6 +858,62 @@ public class VerificationJobInstanceServiceImplTest extends CvNextGenTestBase {
         verificationJobInstanceAnalysisService.getLatestRiskScore(accountId, verificationJobInstanceIds.get(0));
     assertThat(riskScore).isPresent();
     assertThat(riskScore.get()).isEqualTo(Risk.UNHEALTHY);
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testGetCVConfigsForVerificationJob_monitoredServiceReferenceIsAbsent() {
+    VerificationJob job = builderFactory.canaryVerificationJobBuilder()
+                              .accountId(accountId)
+                              .identifier(verificationJobIdentifier)
+                              .monitoredServiceIdentifier(null)
+                              .cvConfigs(null)
+                              .build();
+    List<CVConfig> cvConfigsBeforeSaving = verificationJobInstanceService.getCVConfigsForVerificationJob(job);
+    assertThat(cvConfigsBeforeSaving).isNull();
+    job.setCvConfigs(Collections.singletonList(cvConfig));
+    List<CVConfig> cvConfigsAfterSaving = verificationJobInstanceService.getCVConfigsForVerificationJob(job);
+    assertThat(cvConfigsAfterSaving.size()).isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testGetCVConfigsForVerificationJob_verificationJobContainsCvConfigs() {
+    CVConfig cvConfig = newCVConfig();
+    VerificationJob job = builderFactory.canaryVerificationJobBuilder()
+                              .accountId(accountId)
+                              .identifier(verificationJobIdentifier)
+                              .cvConfigs(Collections.singletonList(cvConfig))
+                              .monitoredServiceIdentifier(null)
+                              .build();
+    List<CVConfig> cvConfigsBeforeSaving = verificationJobInstanceService.getCVConfigsForVerificationJob(job);
+    assertThat(cvConfigsBeforeSaving.size()).isEqualTo(1);
+    job.setMonitoredServiceIdentifier(cvConfig.getMonitoredServiceIdentifier());
+    List<CVConfig> cvConfigsAfterSaving = verificationJobInstanceService.getCVConfigsForVerificationJob(job);
+    assertThat(cvConfigsAfterSaving.size()).isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testGetCVConfigsForVerificationJob_monitoredServiceReferenceIsPresentAndCvConfigIsAbsent() {
+    VerificationJob job = builderFactory.canaryVerificationJobBuilder()
+                              .accountId(accountId)
+                              .identifier(verificationJobIdentifier)
+                              .allMonitoringSourcesEnabled(true)
+                              .build();
+    CVConfig cvConfig = newCVConfig();
+    cvConfig.setAccountId(job.getAccountId());
+    cvConfig.setOrgIdentifier(job.getOrgIdentifier());
+    cvConfig.setProjectIdentifier(job.getProjectIdentifier());
+    cvConfig.setMonitoredServiceIdentifier(job.getMonitoredServiceIdentifier());
+    List<CVConfig> cvConfigsBeforeSaving = verificationJobInstanceService.getCVConfigsForVerificationJob(job);
+    assertThat(cvConfigsBeforeSaving.size()).isEqualTo(0);
+    cvConfigService.save(cvConfig);
+    List<CVConfig> cvConfigsAfterSaving = verificationJobInstanceService.getCVConfigsForVerificationJob(job);
+    assertThat(cvConfigsAfterSaving.size()).isEqualTo(1);
   }
 
   private VerificationJobDTO newCanaryVerificationJobDTO() {

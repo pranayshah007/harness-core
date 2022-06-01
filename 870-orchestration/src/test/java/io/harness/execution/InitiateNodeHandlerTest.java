@@ -9,14 +9,20 @@ package io.harness.execution;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.PRASHANT;
+import static io.harness.rule.OwnerRule.SAHIL;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import io.harness.OrchestrationTestBase;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.OrchestrationEngine;
+import io.harness.pms.PmsFeatureFlagService;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.events.InitiateNodeEvent;
 import io.harness.rule.Owner;
@@ -31,6 +37,7 @@ import org.mockito.Mock;
 
 public class InitiateNodeHandlerTest extends OrchestrationTestBase {
   @Mock OrchestrationEngine engine;
+  @Mock PmsFeatureFlagService pmsFeatureFlagService;
   @Inject @InjectMocks private InitiateNodeHandler initiateNodeHandler;
 
   @Test
@@ -90,6 +97,7 @@ public class InitiateNodeHandlerTest extends OrchestrationTestBase {
   @Owner(developers = PRASHANT)
   @Category(UnitTests.class)
   public void handleEventWithContext() {
+    when(pmsFeatureFlagService.isEnabled(anyString(), anyString())).thenReturn(false);
     Ambiance ambiance = Ambiance.newBuilder().setPlanExecutionId(generateUuid()).build();
     InitiateNodeEvent event = InitiateNodeEvent.newBuilder()
                                   .setAmbiance(ambiance)
@@ -98,5 +106,21 @@ public class InitiateNodeHandlerTest extends OrchestrationTestBase {
                                   .build();
     initiateNodeHandler.handleEventWithContext(event);
     verify(engine).initiateNode(eq(ambiance), eq(event.getNodeId()), eq(event.getRuntimeId()), eq(null));
+  }
+
+  @Test
+  @Owner(developers = SAHIL)
+  @Category(UnitTests.class)
+  public void handleEventWithContextWithMatrixFeatureEnabled() {
+    when(pmsFeatureFlagService.isEnabled(anyString(), any(FeatureName.class))).thenReturn(true);
+    Ambiance ambiance = Ambiance.newBuilder().setPlanExecutionId(generateUuid()).build();
+    InitiateNodeEvent event = InitiateNodeEvent.newBuilder()
+                                  .setAmbiance(ambiance)
+                                  .setNodeId(generateUuid())
+                                  .setRuntimeId(generateUuid())
+                                  .build();
+    initiateNodeHandler.handleEventWithContext(event);
+    verify(engine).initiateNode(
+        eq(ambiance), eq(event.getNodeId()), eq(event.getRuntimeId()), eq(null), any(), eq(true));
   }
 }

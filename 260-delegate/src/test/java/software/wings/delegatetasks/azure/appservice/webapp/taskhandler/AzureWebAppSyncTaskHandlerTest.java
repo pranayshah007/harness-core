@@ -13,8 +13,8 @@ import static io.harness.rule.OwnerRule.ANIL;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 
 import io.harness.CategoryTest;
@@ -25,6 +25,7 @@ import io.harness.azure.model.AzureConfig;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.azure.appservice.AzureAppServiceTaskParameters.AzureAppServiceType;
+import io.harness.delegate.task.azure.appservice.deployment.AzureAppServiceDeploymentService;
 import io.harness.delegate.task.azure.appservice.webapp.request.AzureWebAppListWebAppDeploymentSlotsParameters;
 import io.harness.delegate.task.azure.appservice.webapp.request.AzureWebAppListWebAppInstancesParameters;
 import io.harness.delegate.task.azure.appservice.webapp.request.AzureWebAppListWebAppNamesParameters;
@@ -33,12 +34,11 @@ import io.harness.delegate.task.azure.appservice.webapp.response.AzureWebAppList
 import io.harness.delegate.task.azure.appservice.webapp.response.AzureWebAppListWebAppInstancesResponse;
 import io.harness.delegate.task.azure.appservice.webapp.response.AzureWebAppListWebAppNamesResponse;
 import io.harness.delegate.task.azure.appservice.webapp.response.DeploymentSlotData;
+import io.harness.delegate.task.azure.common.AzureAppServiceService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.rule.Owner;
 
 import software.wings.beans.artifact.ArtifactStreamAttributes;
-import software.wings.delegatetasks.azure.appservice.deployment.AzureAppServiceDeploymentService;
-import software.wings.delegatetasks.azure.common.AzureAppServiceService;
 
 import com.microsoft.azure.management.appservice.DeploymentSlot;
 import com.microsoft.azure.management.appservice.WebApp;
@@ -151,7 +151,7 @@ public class AzureWebAppSyncTaskHandlerTest extends CategoryTest {
                                                           .build();
     ArtifactStreamAttributes artifactStreamAttributes = buildArtifactStreamAttributes(true);
 
-    doThrow(Exception.class).when(azureWebClient).listWebAppsByResourceGroupName(any());
+    doAnswer(invocationOnMock -> { throw new Exception(); }).when(azureWebClient).listWebAppsByResourceGroupName(any());
     listWebAppNamesTaskHandler.executeTask(
         parameters, getAzureConfig(), mockLogStreamingTaskClient, artifactStreamAttributes);
   }

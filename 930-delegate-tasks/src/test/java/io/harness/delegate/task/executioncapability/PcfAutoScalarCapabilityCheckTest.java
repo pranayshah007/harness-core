@@ -32,7 +32,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.powermock.api.mockito.PowerMockito;
+import org.mockito.Mockito;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
@@ -49,7 +49,7 @@ public class PcfAutoScalarCapabilityCheckTest extends CategoryTest {
   @Owner(developers = PRASHANT)
   @Category(UnitTests.class)
   public void shouldPerformCapabilityCheck() throws PivotalClientApiException {
-    PowerMockito.mockStatic(PcfUtils.class);
+    Mockito.mockStatic(PcfUtils.class);
     when(PcfUtils.checkIfAppAutoscalarInstalled(anyString(), any())).thenReturn(true);
     when(cfCliDelegateResolver.getAvailableCfCliPathOnDelegate(any())).thenReturn(Optional.of("cf-cli-path"));
     CapabilityResponse capabilityResponse =

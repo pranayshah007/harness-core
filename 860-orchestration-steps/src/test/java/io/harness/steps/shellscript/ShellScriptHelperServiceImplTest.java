@@ -57,9 +57,10 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
-import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
@@ -214,8 +215,8 @@ public class ShellScriptHelperServiceImplTest extends CategoryTest {
                                                    .build();
     ShellScriptTaskParametersNGBuilder taskParamsBuilder = ShellScriptTaskParametersNG.builder();
 
-    PowerMockito.mockStatic(NGRestUtils.class);
-    when(NGRestUtils.getResponse(any(), any())).thenReturn(null);
+    MockedStatic<NGRestUtils> aStatic = Mockito.mockStatic(NGRestUtils.class);
+    aStatic.when(() -> NGRestUtils.getResponse(any(), any())).thenReturn(null);
     assertThatThrownBy(()
                            -> shellScriptHelperServiceImpl.prepareTaskParametersForExecutionTarget(
                                ambiance, stepParameters, taskParamsBuilder))

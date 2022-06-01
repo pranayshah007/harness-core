@@ -14,7 +14,7 @@ import static io.harness.beans.ExecutionStatus.PREPARING;
 import static io.harness.beans.ExecutionStatus.RUNNING;
 import static io.harness.beans.ExecutionStatus.SUCCESS;
 import static io.harness.beans.ExecutionStatus.WAITING;
-import static io.harness.beans.FeatureName.DISABLE_ARTIFACT_COLLECTION;
+import static io.harness.beans.FeatureName.ARTIFACT_COLLECTION_CONFIGURABLE;
 import static io.harness.beans.FeatureName.WEBHOOK_TRIGGER_AUTHORIZATION;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.beans.SearchFilter.Operator.EQ;
@@ -2589,7 +2589,7 @@ public class WorkflowExecutionServiceImplTest extends WingsBaseTest {
                                                   .name("testNexus")
                                                   .build();
     when(artifactStreamService.get(ARTIFACT_STREAM_ID)).thenReturn(nexusArtifactStream);
-    when(buildSourceService.getBuild(anyString(), anyString(), anyString(), any()))
+    when(buildSourceService.getBuild(any(), any(), any(), any()))
         .thenReturn(BuildDetails.Builder.aBuildDetails().withNumber("1.0").build());
     Map<String, String> map = new HashMap<>();
     map.put("buildNo", "1.0");
@@ -2715,7 +2715,7 @@ public class WorkflowExecutionServiceImplTest extends WingsBaseTest {
                                                   .name("testNexus")
                                                   .build();
     when(artifactStreamService.get(ARTIFACT_STREAM_ID)).thenReturn(nexusArtifactStream);
-    when(buildSourceService.getBuild(anyString(), anyString(), anyString(), any()))
+    when(buildSourceService.getBuild(any(), any(), any(), any()))
         .thenReturn(BuildDetails.Builder.aBuildDetails().withNumber("1.0").build());
     Map<String, String> map = new HashMap<>();
     map.put("buildNo", "1.0");
@@ -3151,7 +3151,7 @@ public class WorkflowExecutionServiceImplTest extends WingsBaseTest {
                                                   .name("testNexus")
                                                   .build();
     when(artifactStreamService.get(ARTIFACT_STREAM_ID)).thenReturn(nexusArtifactStream);
-    when(buildSourceService.getBuild(anyString(), anyString(), anyString(), any()))
+    when(buildSourceService.getBuild(any(), any(), any(), any()))
         .thenReturn(BuildDetails.Builder.aBuildDetails().withNumber("1.0").build());
     Map<String, String> map = new HashMap<>();
     map.put("buildNo", "1.0");
@@ -3280,7 +3280,7 @@ public class WorkflowExecutionServiceImplTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldTriggerWorkflowWithArtifactInputsAndDisableArtifactCollectionFFOn() throws InterruptedException {
     String appId = app.getUuid();
-    when(featureFlagService.isEnabled(eq(DISABLE_ARTIFACT_COLLECTION), anyString())).thenReturn(true);
+    when(featureFlagService.isEnabled(eq(ARTIFACT_COLLECTION_CONFIGURABLE), anyString())).thenReturn(true);
 
     SettingAttribute computeProvider =
         aSettingAttribute().withAppId(app.getUuid()).withValue(aPhysicalDataCenterConfig().build()).build();

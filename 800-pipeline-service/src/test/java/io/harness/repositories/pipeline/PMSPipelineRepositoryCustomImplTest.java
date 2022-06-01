@@ -252,16 +252,6 @@ public class PMSPipelineRepositoryCustomImplTest extends CategoryTest {
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testUpdateInlinePipeline() {
-    PipelineEntity oldPipelineInDB = PipelineEntity.builder()
-                                         .accountId(accountIdentifier)
-                                         .orgIdentifier(orgIdentifier)
-                                         .projectIdentifier(projectIdentifier)
-                                         .identifier(pipelineId)
-                                         .name("old name")
-                                         .description("old desc")
-                                         .yaml(pipelineYaml)
-                                         .storeType(StoreType.INLINE)
-                                         .build();
     String newYaml = "pipeline: new yaml";
     PipelineEntity pipelineToUpdate = PipelineEntity.builder()
                                           .accountId(accountIdentifier)
@@ -273,30 +263,29 @@ public class PMSPipelineRepositoryCustomImplTest extends CategoryTest {
                                           .yaml(newYaml)
                                           .storeType(StoreType.INLINE)
                                           .build();
-    doReturn(oldPipelineInDB).when(mongoTemplate).findAndModify(any(), any(), any(), any(Class.class));
+    PipelineEntity pipelineEntity = PipelineEntity.builder()
+                                        .accountId(accountIdentifier)
+                                        .orgIdentifier(orgIdentifier)
+                                        .projectIdentifier(projectIdentifier)
+                                        .identifier(pipelineId)
+                                        .name("new name")
+                                        .description("new desc")
+                                        .yaml(newYaml)
+                                        .storeType(StoreType.INLINE)
+                                        .version(1L)
+                                        .build();
+    doReturn(pipelineEntity).when(transactionHelper).performTransaction(any());
     PipelineEntity updatedEntity = pipelineRepository.updatePipelineYaml(pipelineToUpdate);
     assertThat(updatedEntity.getYaml()).isEqualTo(newYaml);
     assertThat(updatedEntity.getName()).isEqualTo("new name");
     assertThat(updatedEntity.getDescription()).isEqualTo("new desc");
-    verify(mongoTemplate, times(1)).findAndModify(any(), any(), any(), any(Class.class));
     verify(gitAwareEntityHelper, times(0)).updateEntityOnGit(any(), any(), any());
-    verify(outboxService, times(1)).save(any());
   }
 
   @Test
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testUpdateRemotePipeline() {
-    PipelineEntity oldPipelineInDB = PipelineEntity.builder()
-                                         .accountId(accountIdentifier)
-                                         .orgIdentifier(orgIdentifier)
-                                         .projectIdentifier(projectIdentifier)
-                                         .identifier(pipelineId)
-                                         .name("old name")
-                                         .description("old desc")
-                                         .yaml(pipelineYaml)
-                                         .storeType(StoreType.REMOTE)
-                                         .build();
     String newYaml = "pipeline: new yaml";
     PipelineEntity pipelineToUpdate = PipelineEntity.builder()
                                           .accountId(accountIdentifier)
@@ -308,13 +297,58 @@ public class PMSPipelineRepositoryCustomImplTest extends CategoryTest {
                                           .yaml(newYaml)
                                           .storeType(StoreType.REMOTE)
                                           .build();
-    doReturn(oldPipelineInDB).when(mongoTemplate).findAndModify(any(), any(), any(), any(Class.class));
+    PipelineEntity pipelineEntity = PipelineEntity.builder()
+                                        .accountId(accountIdentifier)
+                                        .orgIdentifier(orgIdentifier)
+                                        .projectIdentifier(projectIdentifier)
+                                        .identifier(pipelineId)
+                                        .name("new name")
+                                        .description("new desc")
+                                        .yaml(newYaml)
+                                        .storeType(StoreType.REMOTE)
+                                        .version(1L)
+                                        .build();
+    doReturn(pipelineEntity).when(transactionHelper).performTransaction(any());
     PipelineEntity updatedEntity = pipelineRepository.updatePipelineYaml(pipelineToUpdate);
     assertThat(updatedEntity.getYaml()).isEqualTo(newYaml);
     assertThat(updatedEntity.getName()).isEqualTo("new name");
     assertThat(updatedEntity.getDescription()).isEqualTo("new desc");
-    verify(mongoTemplate, times(1)).findAndModify(any(), any(), any(), any(Class.class));
     verify(gitAwareEntityHelper, times(1)).updateEntityOnGit(any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testUpdatePipelineEntityInDB() {
+    Query query = new Query();
+    Update update = new Update();
+    String newYaml = "pipeline: new yaml";
+    PipelineEntity pipelineToUpdate = PipelineEntity.builder()
+                                          .accountId(accountIdentifier)
+                                          .orgIdentifier(orgIdentifier)
+                                          .projectIdentifier(projectIdentifier)
+                                          .identifier(pipelineId)
+                                          .name("new name")
+                                          .description("new desc")
+                                          .yaml(newYaml)
+                                          .storeType(StoreType.REMOTE)
+                                          .build();
+    PipelineEntity oldEntityFromDB = PipelineEntity.builder()
+                                         .accountId(accountIdentifier)
+                                         .orgIdentifier(orgIdentifier)
+                                         .projectIdentifier(projectIdentifier)
+                                         .identifier(pipelineId)
+                                         .name("name")
+                                         .description("desc")
+                                         .yaml(newYaml)
+                                         .storeType(StoreType.REMOTE)
+                                         .createdAt(0L)
+                                         .build();
+    doReturn(oldEntityFromDB).when(mongoTemplate).findAndModify(any(), any(), any(), any(Class.class));
+    PipelineEntity pipelineEntity = pipelineRepository.updatePipelineEntityInDB(query, update, pipelineToUpdate, 1L);
+    assertThat(pipelineEntity.getCreatedAt()).isEqualTo(0L);
+    assertThat(pipelineEntity.getLastUpdatedAt()).isEqualTo(1L);
+    assertThat(pipelineEntity.getYaml()).isEqualTo(newYaml);
     verify(outboxService, times(1)).save(any());
   }
 

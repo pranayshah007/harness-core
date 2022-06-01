@@ -378,7 +378,8 @@ public class AWSCloudformationClientImpl implements AWSCloudformationClient {
     return END_STATUS_LIST.contains(describeChangeSet.getStatus());
   }
 
-  private CreateChangeSetResult createChangeSet(
+  @VisibleForTesting
+  CreateChangeSetResult createChangeSet(
       String region, CreateChangeSetRequest createChangeSetRequest, AwsInternalConfig awsConfig) {
     try (CloseableAmazonWebServiceClient<AmazonCloudFormationClient> closeableAmazonCloudFormationClient =
              new CloseableAmazonWebServiceClient(getAmazonCloudFormationClient(Regions.fromName(region), awsConfig))) {
@@ -395,7 +396,8 @@ public class AWSCloudformationClientImpl implements AWSCloudformationClient {
     return null;
   }
 
-  private DescribeChangeSetResult describeChangeSet(
+  @VisibleForTesting
+  DescribeChangeSetResult describeChangeSet(
       String region, DescribeChangeSetRequest describeChangeSetRequest, AwsInternalConfig awsConfig) {
     try (CloseableAmazonWebServiceClient<AmazonCloudFormationClient> closeableAmazonCloudFormationClient =
              new CloseableAmazonWebServiceClient(getAmazonCloudFormationClient(Regions.fromName(region), awsConfig))) {
@@ -412,7 +414,8 @@ public class AWSCloudformationClientImpl implements AWSCloudformationClient {
     return null;
   }
 
-  private ExecuteChangeSetResult executeChangeSet(
+  @VisibleForTesting
+  ExecuteChangeSetResult executeChangeSet(
       String region, ExecuteChangeSetRequest executeChangeSetRequest, AwsInternalConfig awsConfig) {
     try (CloseableAmazonWebServiceClient<AmazonCloudFormationClient> closeableAmazonCloudFormationClient =
              new CloseableAmazonWebServiceClient(getAmazonCloudFormationClient(Regions.fromName(region), awsConfig))) {
@@ -429,7 +432,8 @@ public class AWSCloudformationClientImpl implements AWSCloudformationClient {
     return null;
   }
 
-  private DeleteChangeSetResult deleteChangeSet(
+  @VisibleForTesting
+  DeleteChangeSetResult deleteChangeSet(
       String region, DeleteChangeSetRequest deleteChangeSetRequest, AwsInternalConfig awsConfig) {
     try (CloseableAmazonWebServiceClient<AmazonCloudFormationClient> closeableAmazonCloudFormationClient =
              new CloseableAmazonWebServiceClient(getAmazonCloudFormationClient(Regions.fromName(region), awsConfig))) {

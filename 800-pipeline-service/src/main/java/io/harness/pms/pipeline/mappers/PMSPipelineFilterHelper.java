@@ -12,6 +12,7 @@ import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
 
 import lombok.experimental.UtilityClass;
+import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Update;
 
 @UtilityClass
@@ -41,7 +42,8 @@ public class PMSPipelineFilterHelper {
         .withFilters(fieldsToUpdate.getFilters())
         .withStageCount(fieldsToUpdate.getStageCount())
         .withStageNames(fieldsToUpdate.getStageNames())
-        .withAllowStageExecutions(fieldsToUpdate.getAllowStageExecutions());
+        .withAllowStageExecutions(fieldsToUpdate.getAllowStageExecutions())
+        .withVersion(entityFromDB.getVersion() == null ? 1 : entityFromDB.getVersion() + 1);
   }
 
   public Update getUpdateOperationsForOnboardingToInline() {
@@ -54,5 +56,19 @@ public class PMSPipelineFilterHelper {
     Update update = new Update();
     update.set(PipelineEntityKeys.deleted, true);
     return update;
+  }
+
+  public Criteria getCriteriaForFind(
+      String accountId, String orgIdentifier, String projectIdentifier, String identifier, boolean notDeleted) {
+    return Criteria.where(PipelineEntityKeys.deleted)
+        .is(!notDeleted)
+        .and(PipelineEntityKeys.identifier)
+        .is(identifier)
+        .and(PipelineEntityKeys.projectIdentifier)
+        .is(projectIdentifier)
+        .and(PipelineEntityKeys.orgIdentifier)
+        .is(orgIdentifier)
+        .and(PipelineEntityKeys.accountId)
+        .is(accountId);
   }
 }

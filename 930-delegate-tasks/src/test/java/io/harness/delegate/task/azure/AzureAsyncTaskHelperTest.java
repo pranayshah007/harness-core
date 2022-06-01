@@ -9,6 +9,7 @@ package io.harness.delegate.task.azure;
 
 import static io.harness.rule.OwnerRule.BUHA;
 import static io.harness.rule.OwnerRule.MLUKIC;
+import static io.harness.rule.OwnerRule.VLICA;
 
 import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -38,10 +39,12 @@ import io.harness.connector.ConnectorValidationResult;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.azure.response.AzureAcrTokenTaskResponse;
 import io.harness.delegate.beans.azure.response.AzureClustersResponse;
+import io.harness.delegate.beans.azure.response.AzureDeploymentSlotsResponse;
 import io.harness.delegate.beans.azure.response.AzureRegistriesResponse;
 import io.harness.delegate.beans.azure.response.AzureRepositoriesResponse;
 import io.harness.delegate.beans.azure.response.AzureResourceGroupsResponse;
 import io.harness.delegate.beans.azure.response.AzureSubscriptionsResponse;
+import io.harness.delegate.beans.azure.response.AzureWebAppNamesResponse;
 import io.harness.delegate.beans.connector.azureconnector.AzureAuthDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureClientKeyCertDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureClientSecretKeyDTO;
@@ -72,6 +75,7 @@ import software.wings.delegatetasks.azure.AzureAsyncTaskHelper;
 import software.wings.helpers.ext.azure.AzureIdentityAccessTokenResponse;
 
 import com.google.common.io.Resources;
+import com.microsoft.azure.management.appservice.DeploymentSlot;
 import com.microsoft.azure.management.containerregistry.Registry;
 import com.microsoft.azure.management.containerservice.KubernetesCluster;
 import com.microsoft.azure.management.resources.Subscription;
@@ -258,6 +262,63 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testListResourceGroupUsingSystemAssignedManagedIdentity() {
     testListResourceGroups(getAzureConnectorDTOWithMSI(null), getAzureConfigSystemAssignedMSI());
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testListWebAppNamesUsingServicePrincipalWithSecret() {
+    testListWebAppNames(getAzureConnectorDTOWithSecretType(AzureSecretType.SECRET_KEY), getAzureConfigSecret());
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testListWebAppNamesUsingServicePrincipalWithCertificate() {
+    testListWebAppNames(getAzureConnectorDTOWithSecretType(AzureSecretType.KEY_CERT), getAzureConfigCert());
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testListWebAppNamesUsingUserAssignedManagedIdentity() {
+    testListWebAppNames(getAzureConnectorDTOWithMSI(CLIENT_ID), getAzureConfigUserAssignedMSI());
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testListWebAppNamesUsingSystemAssignedManagedIdentity() {
+    testListWebAppNames(getAzureConnectorDTOWithMSI(null), getAzureConfigSystemAssignedMSI());
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testListWebAppDeploymentSlotsUsingServicePrincipalWithSecret() {
+    testListWebAppDeploymentSlots(
+        getAzureConnectorDTOWithSecretType(AzureSecretType.SECRET_KEY), getAzureConfigSecret());
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testListWebAppDeploymentSlotsUsingServicePrincipalWithCertificate() {
+    testListWebAppDeploymentSlots(getAzureConnectorDTOWithSecretType(AzureSecretType.KEY_CERT), getAzureConfigCert());
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testListWebAppDeploymentSlotsUsingUserAssignedManagedIdentity() {
+    testListWebAppDeploymentSlots(getAzureConnectorDTOWithMSI(CLIENT_ID), getAzureConfigUserAssignedMSI());
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testListWebAppDeploymentSlotsUsingSystemAssignedManagedIdentity() {
+    testListWebAppDeploymentSlots(getAzureConnectorDTOWithMSI(null), getAzureConfigSystemAssignedMSI());
   }
 
   @Test
@@ -490,6 +551,42 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
     assertThat(resourceGroups.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
     assertThat(resourceGroups.getResourceGroups().isEmpty()).isFalse();
     assertThat(resourceGroups.getResourceGroups().get(0)).isEqualTo("resource-group");
+  }
+
+  private void testListWebAppNames(AzureConnectorDTO azureConnectorDTO, AzureConfig azureConfig) {
+    when(azureComputeClient.listWebAppNamesBySubscriptionIdAndResourceGroup(any(), any(), any()))
+        .thenReturn(Arrays.asList("test-web-app-1", "test-web-app-2"));
+
+    AzureWebAppNamesResponse resourceGroups =
+        azureAsyncTaskHelper.listWebAppNames(null, azureConnectorDTO, "subscriptionId", "resourceGroup");
+
+    verify(azureComputeClient)
+        .listWebAppNamesBySubscriptionIdAndResourceGroup(azureConfig, "subscriptionId", "resourceGroup");
+    assertThat(resourceGroups.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+    assertThat(resourceGroups.getWebAppNames().size()).isEqualTo(2);
+
+    assertThat(resourceGroups.getWebAppNames().get(0)).isEqualTo("test-web-app-1");
+    assertThat(resourceGroups.getWebAppNames().get(1)).isEqualTo("test-web-app-2");
+  }
+
+  private void testListWebAppDeploymentSlots(AzureConnectorDTO azureConnectorDTO, AzureConfig azureConfig) {
+    DeploymentSlot deploymentSlot = mock(DeploymentSlot.class);
+
+    when(azureComputeClient.listWebAppDeploymentSlots(any(), any(), any(), any()))
+        .thenReturn(Arrays.asList(deploymentSlot));
+
+    when(deploymentSlot.name()).thenReturn("test-qa-name");
+
+    AzureDeploymentSlotsResponse deploymentSlotsResponse = azureAsyncTaskHelper.listDeploymentSlots(
+        null, azureConnectorDTO, "subscriptionId", "resourceGroup", "webAppName");
+
+    verify(azureComputeClient).listWebAppDeploymentSlots(azureConfig, "subscriptionId", "resourceGroup", "webAppName");
+    assertThat(deploymentSlotsResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+    assertThat(deploymentSlotsResponse.getDeploymentSlots().isEmpty()).isFalse();
+    assertThat(deploymentSlotsResponse.getDeploymentSlots().get(0).getName()).isEqualTo("webAppName-test-qa-name");
+    assertThat(deploymentSlotsResponse.getDeploymentSlots().get(0).getType()).isEqualTo("non-production");
+    assertThat(deploymentSlotsResponse.getDeploymentSlots().get(1).getName()).isEqualTo("webAppName");
+    assertThat(deploymentSlotsResponse.getDeploymentSlots().get(1).getType()).isEqualTo("production");
   }
 
   private void testListClusters(AzureConnectorDTO azureConnectorDTO, AzureConfig azureConfig) {

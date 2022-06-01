@@ -10,20 +10,28 @@ package io.harness.cvng.notification.beans;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public enum NotificationRuleConditionType {
-  @JsonProperty("ErrorBudgetRemainingPercentage") ERROR_BUDGET_REMAINING_PERCENTAGE(NotificationRuleType.SLO),
-  @JsonProperty("ErrorBudgetRemainingMinutes") ERROR_BUDGET_REMAINING_MINUTES(NotificationRuleType.SLO),
-  @JsonProperty("ErrorBudgetBurnRate") ERROR_BUDGET_BURN_RATE(NotificationRuleType.SLO),
-  @JsonProperty("ChangeImpact") CHANGE_IMPACT(NotificationRuleType.MONITORED_SERVICE),
-  @JsonProperty("HealthScore") HEALTH_SCORE(NotificationRuleType.MONITORED_SERVICE),
-  @JsonProperty("ChangeObserved") CHANGE_OBSERVED(NotificationRuleType.MONITORED_SERVICE);
+  @JsonProperty("ErrorBudgetRemainingPercentage")
+  ERROR_BUDGET_REMAINING_PERCENTAGE(NotificationRuleType.SLO, "ErrorBudgetRemainingPercentage"),
+  @JsonProperty("ErrorBudgetRemainingMinutes")
+  ERROR_BUDGET_REMAINING_MINUTES(NotificationRuleType.SLO, "ErrorBudgetRemainingMinutes"),
+  @JsonProperty("ErrorBudgetBurnRate") ERROR_BUDGET_BURN_RATE(NotificationRuleType.SLO, "ErrorBudgetBurnRate"),
+  @JsonProperty("ChangeImpact") CHANGE_IMPACT(NotificationRuleType.MONITORED_SERVICE, "ChangeImpact"),
+  @JsonProperty("HealthScore") HEALTH_SCORE(NotificationRuleType.MONITORED_SERVICE, "HealthScore"),
+  @JsonProperty("ChangeObserved") CHANGE_OBSERVED(NotificationRuleType.MONITORED_SERVICE, "ChangeObserved");
 
   private final NotificationRuleType notificationRuleType;
+  private final String displayName;
 
-  NotificationRuleConditionType(NotificationRuleType notificationRuleType) {
+  NotificationRuleConditionType(NotificationRuleType notificationRuleType, String displayName) {
     this.notificationRuleType = notificationRuleType;
+    this.displayName = displayName;
   }
 
   public NotificationRuleType getNotificationRuleType() {
     return this.notificationRuleType;
+  }
+
+  public String getDisplayName() {
+    return this.displayName;
   }
 }

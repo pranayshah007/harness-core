@@ -34,7 +34,6 @@ import io.harness.cdng.k8s.beans.K8sExecutionPassThroughData;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.task.k8s.K8sCanaryDeleteRequest;
-import io.harness.delegate.task.k8s.K8sDeleteRequest;
 import io.harness.delegate.task.k8s.K8sDeployResponse;
 import io.harness.delegate.task.k8s.K8sTaskType;
 import io.harness.plancreator.steps.common.StepElementParameters;
@@ -89,7 +88,7 @@ public class K8sCanaryDeleteStepTest extends CategoryTest {
   public void setUp() {
     MockitoAnnotations.initMocks(this);
 
-    doReturn(infrastructureOutcome).when(k8sStepHelper).getInfrastructureOutcome(any(Ambiance.class));
+    doReturn(infrastructureOutcome).when(k8sStepHelper).getInfrastructureOutcome(any());
     doReturn(releaseName).when(k8sStepHelper).getReleaseName(ambiance, infrastructureOutcome);
     doReturn(releaseName).when(k8sStepHelper).getReleaseName(rollback, infrastructureOutcome);
     doReturn(OptionalSweepingOutput.builder().found(false).build())
@@ -142,8 +141,7 @@ public class K8sCanaryDeleteStepTest extends CategoryTest {
 
     doReturn(response)
         .when(k8sStepHelper)
-        .queueK8sTask(
-            eq(stepElementParameters), any(K8sDeleteRequest.class), eq(ambiance), eq(expectedPassThroughData));
+        .queueK8sTask(eq(stepElementParameters), any(), eq(ambiance), eq(expectedPassThroughData));
     doReturn(OptionalSweepingOutput.builder().found(true).output(k8sCanaryOutcome).build())
         .when(executionSweepingOutputService)
         .resolveOptional(ambiance,
@@ -327,8 +325,7 @@ public class K8sCanaryDeleteStepTest extends CategoryTest {
 
     doReturn(response)
         .when(k8sStepHelper)
-        .queueK8sTask(
-            eq(stepElementParameters), any(K8sDeleteRequest.class), eq(rollback), eq(expectedPassThroughData));
+        .queueK8sTask(eq(stepElementParameters), any(), eq(rollback), eq(expectedPassThroughData));
 
     doReturn(OptionalSweepingOutput.builder().found(true).output(K8sCanaryExecutionOutput.builder().build()).build())
         .when(executionSweepingOutputService)

@@ -13,7 +13,6 @@ import static io.harness.rule.OwnerRule.TMACARI;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
@@ -43,7 +42,6 @@ import io.harness.delegate.task.terraform.TerraformTaskNGResponse;
 import io.harness.encryption.SecretRefData;
 import io.harness.filesystem.FileIo;
 import io.harness.git.GitClientHelper;
-import io.harness.git.model.GitBaseRequest;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
@@ -92,11 +90,9 @@ public class TerraformDestroyTaskHandlerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testDestroy() throws IOException, TimeoutException, InterruptedException {
     when(secretDecryptionService.decrypt(any(), any())).thenReturn(null);
-    when(terraformBaseHelper.getGitBaseRequestForConfigFile(
-             anyString(), any(GitStoreDelegateConfig.class), any(GitConfigDTO.class)))
-        .thenReturn(any(GitBaseRequest.class));
+    when(terraformBaseHelper.getGitBaseRequestForConfigFile(any(), any(), any())).thenReturn(any());
     when(terraformBaseHelper.fetchConfigFileAndPrepareScriptDir(
-             any(), anyString(), anyString(), anyString(), any(), logCallback, anyString(), anyString()))
+             any(), any(), any(), any(), any(), logCallback, any(), any()))
         .thenReturn("sourceDir");
     doNothing().when(terraformBaseHelper).downloadTfStateFile(null, "accountId", null, "scriptDir");
     when(gitClientHelper.getRepoDirectory(any())).thenReturn("sourceDir");
@@ -117,8 +113,7 @@ public class TerraformDestroyTaskHandlerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testApplyWithArtifactoryConfigAndVarFiles() throws IOException, TimeoutException, InterruptedException {
     when(secretDecryptionService.decrypt(any(), any())).thenReturn(null);
-    when(terraformBaseHelper.fetchConfigFileAndPrepareScriptDir(
-             any(), anyString(), anyString(), anyString(), eq(logCallback), anyString()))
+    when(terraformBaseHelper.fetchConfigFileAndPrepareScriptDir(any(), any(), any(), any(), eq(logCallback), any()))
         .thenReturn("sourceDir");
     doNothing().when(terraformBaseHelper).downloadTfStateFile(null, "accountId", null, "scriptDir");
     FileIo.createDirectoryIfDoesNotExist("sourceDir");

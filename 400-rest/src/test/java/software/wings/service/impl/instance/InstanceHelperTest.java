@@ -245,7 +245,7 @@ public class InstanceHelperTest extends WingsBaseTest {
     workflowStandardParams.setAppId(APP_ID);
     workflowStandardParams.setArtifactIds(asList(ARTIFACT_ID_1, ARTIFACT_ID_2));
     when(artifactService.get(anyString())).thenAnswer(invocation -> {
-      if (invocation.getArgumentAt(0, String.class).equals(ARTIFACT_ID_1)) {
+      if (invocation.getArgument(0, String.class).equals(ARTIFACT_ID_1)) {
         return Artifact.Builder.anArtifact()
             .withUuid(ARTIFACT_ID_1)
             .withDisplayName("artifact1")
@@ -1015,14 +1015,14 @@ public class InstanceHelperTest extends WingsBaseTest {
                  .withInfraMappingType(InfrastructureMappingType.PHYSICAL_DATA_CENTER_SSH.name())
                  .build())
         .when(infraMappingService)
-        .get(anyString(), anyString());
+        .get(any(), any());
     final AtomicInteger count = new AtomicInteger(0);
     doAnswer((Answer<Void>) invocationOnMock -> {
       count.incrementAndGet();
       return null;
     })
         .when(instanceService)
-        .updateSyncSuccess(anyString(), anyString(), anyString(), anyString(), anyString(), anyLong());
+        .updateSyncSuccess(any(), any(), any(), any(), any(), anyLong());
     instanceHelper.manualSync(APP_ID, INFRA_MAP_ID);
     assertThat(count.get()).isEqualTo(1);
   }
@@ -1079,14 +1079,14 @@ public class InstanceHelperTest extends WingsBaseTest {
                  .withInfraMappingType(InfrastructureMappingType.PHYSICAL_DATA_CENTER_SSH.name())
                  .build())
         .when(infraMappingService)
-        .get(anyString(), anyString());
+        .get(any(), any());
     final AtomicInteger count = new AtomicInteger(0);
     doAnswer((Answer<Void>) invocationOnMock -> {
       count.incrementAndGet();
       return null;
     })
         .when(instanceService)
-        .handleSyncFailure(anyString(), anyString(), anyString(), anyString(), anyString(), anyLong(), anyString());
+        .handleSyncFailure(any(), any(), any(), any(), any(), anyLong(), any());
     instanceHelper.manualSync(APP_ID, INFRA_MAP_ID);
     assertThat(count.get()).isEqualTo(1);
   }
@@ -1214,7 +1214,7 @@ public class InstanceHelperTest extends WingsBaseTest {
 
     PcfConfig pcfConfig = mock(PcfConfig.class);
     SettingAttribute settingAttribute = mock(SettingAttribute.class);
-    when(settingsService.get(anyString())).thenReturn(settingAttribute);
+    when(settingsService.get(any())).thenReturn(settingAttribute);
     when(settingAttribute.getValue()).thenReturn(pcfConfig);
 
     instanceHelper.processInstanceSyncResponseFromPerpetualTask(

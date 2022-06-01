@@ -8,6 +8,7 @@
 package io.harness.cvng.notification.beans;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import javax.validation.constraints.Min;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -21,7 +22,7 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ErrorBudgetRemainingPercentageConditionSpec extends NotificationRuleConditionSpec {
-  @NonNull Double threshold;
+  @NonNull @Min(0) Double threshold;
 
   @Override
   public NotificationRuleConditionType getType() {

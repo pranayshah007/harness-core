@@ -18,6 +18,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.executions.retry.RetryExecutionMetadata;
 import io.harness.execution.StagesExecutionMetadata;
+import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
@@ -73,6 +74,8 @@ public class PipelineExecutionSummaryDtoMapperTest extends PipelineServiceTestBa
     assertThat(executionSummaryDTO.getGitDetails().getObjectId()).isEqualTo(objectId);
     assertThat(executionSummaryDTO.getGitDetails().getFilePath()).isNull();
     assertThat(executionSummaryDTO.getGitDetails().getRootFolder()).isNull();
+    assertThat(executionSummaryDTO.getStoreType()).isNull();
+    assertThat(executionSummaryDTO.getConnectorRef()).isNull();
 
     entityGitDetails = EntityGitDetails.builder()
                            .branch(branch)
@@ -89,6 +92,8 @@ public class PipelineExecutionSummaryDtoMapperTest extends PipelineServiceTestBa
     assertThat(executionSummaryDTO.getGitDetails().getObjectId()).isEqualTo(objectId);
     assertThat(executionSummaryDTO.getGitDetails().getFilePath()).isNull();
     assertThat(executionSummaryDTO.getGitDetails().getRootFolder()).isNull();
+    assertThat(executionSummaryDTO.getStoreType()).isNull();
+    assertThat(executionSummaryDTO.getConnectorRef()).isNull();
 
     entityGitDetails = EntityGitDetails.builder()
                            .branch(branch)
@@ -105,6 +110,47 @@ public class PipelineExecutionSummaryDtoMapperTest extends PipelineServiceTestBa
     assertThat(executionSummaryDTO.getGitDetails().getObjectId()).isEqualTo(objectId);
     assertThat(executionSummaryDTO.getGitDetails().getFilePath()).isEqualTo(file);
     assertThat(executionSummaryDTO.getGitDetails().getRootFolder()).isEqualTo(rootFolder);
+    assertThat(executionSummaryDTO.getStoreType()).isNull();
+    assertThat(executionSummaryDTO.getConnectorRef()).isNull();
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testToDtoForInlinePipeline() {
+    PipelineExecutionSummaryEntity executionSummaryEntity = PipelineExecutionSummaryEntity.builder()
+                                                                .accountId(accountId)
+                                                                .orgIdentifier(orgId)
+                                                                .projectIdentifier(projId)
+                                                                .pipelineIdentifier(pipelineId)
+                                                                .runSequence(1)
+                                                                .planExecutionId(planId)
+                                                                .storeType(StoreType.INLINE)
+                                                                .build();
+    PipelineExecutionSummaryDTO executionSummaryDTO =
+        PipelineExecutionSummaryDtoMapper.toDto(executionSummaryEntity, null);
+    assertThat(executionSummaryDTO.getStoreType()).isEqualTo(StoreType.INLINE);
+    assertThat(executionSummaryDTO.getConnectorRef()).isNull();
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testToDtoForRemotePipeline() {
+    PipelineExecutionSummaryEntity executionSummaryEntity = PipelineExecutionSummaryEntity.builder()
+                                                                .accountId(accountId)
+                                                                .orgIdentifier(orgId)
+                                                                .projectIdentifier(projId)
+                                                                .pipelineIdentifier(pipelineId)
+                                                                .runSequence(1)
+                                                                .planExecutionId(planId)
+                                                                .storeType(StoreType.REMOTE)
+                                                                .connectorRef("conn")
+                                                                .build();
+    PipelineExecutionSummaryDTO executionSummaryDTO =
+        PipelineExecutionSummaryDtoMapper.toDto(executionSummaryEntity, null);
+    assertThat(executionSummaryDTO.getStoreType()).isEqualTo(StoreType.REMOTE);
+    assertThat(executionSummaryDTO.getConnectorRef()).isEqualTo("conn");
   }
 
   @Test
@@ -124,6 +170,8 @@ public class PipelineExecutionSummaryDtoMapperTest extends PipelineServiceTestBa
     assertThat(executionSummaryDTO.isStagesExecution()).isFalse();
     assertThat(executionSummaryDTO.getStagesExecuted()).isNull();
     assertThat(executionSummaryDTO.isAllowStageExecutions()).isFalse();
+    assertThat(executionSummaryDTO.getStoreType()).isNull();
+    assertThat(executionSummaryDTO.getConnectorRef()).isNull();
 
     PipelineExecutionSummaryEntity executionSummaryEntityWithStages =
         PipelineExecutionSummaryEntity.builder()
@@ -148,6 +196,8 @@ public class PipelineExecutionSummaryDtoMapperTest extends PipelineServiceTestBa
     assertThat(executionSummaryDTOWithStages.getStagesExecutedNames()).hasSize(1);
     assertThat(executionSummaryDTOWithStages.getStagesExecutedNames().get("s1")).isEqualTo("s one");
     assertThat(executionSummaryDTOWithStages.isAllowStageExecutions()).isTrue();
+    assertThat(executionSummaryDTO.getStoreType()).isNull();
+    assertThat(executionSummaryDTO.getConnectorRef()).isNull();
   }
 
   private String getPipelineYaml() {

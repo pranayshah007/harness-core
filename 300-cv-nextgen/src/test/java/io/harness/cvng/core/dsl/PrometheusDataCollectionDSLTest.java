@@ -9,9 +9,11 @@ package io.harness.cvng.core.dsl;
 
 import static io.harness.CvNextGenTestBase.getResourceFilePath;
 import static io.harness.CvNextGenTestBase.getSourceResourceFile;
+import static io.harness.rule.OwnerRule.ABHIJITH;
 import static io.harness.rule.OwnerRule.KAMAL;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
@@ -50,6 +52,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.apache.commons.io.FileUtils;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -117,6 +120,59 @@ public class PrometheusDataCollectionDSLTest extends HoverflyCVNextGenTestBase {
     assertThat(Sets.newHashSet(timeSeriesRecords))
         .isEqualTo(new Gson().fromJson(
             readJson("expected-prometheus-dsl-output.json"), new TypeToken<Set<TimeSeriesRecord>>() {}.getType()));
+  }
+
+  @Test
+  @Owner(developers = ABHIJITH)
+  @Category(UnitTests.class)
+  @Ignore("Ignore till delegate is deployed with new Data collection Info and DSL Changes")
+  public void testExecute_prometheusDSLWithTooLargeHostData() throws IOException {
+    DataCollectionDSLService dataCollectionDSLService = new DataCollectionServiceImpl();
+    dataCollectionDSLService.registerDatacollectionExecutorService(executorService);
+    String code = readDSL("metric-collection.datacollection");
+    Instant instant = Instant.parse("2022-05-27T10:21:00.000Z");
+    List<MetricPack> metricPacks = metricPackService.getMetricPacks(builderFactory.getContext().getAccountId(),
+        builderFactory.getContext().getOrgIdentifier(), builderFactory.getContext().getProjectIdentifier(),
+        DataSourceType.APP_DYNAMICS);
+
+    PrometheusCVConfig prometheusCVConfig =
+        builderFactory.prometheusCVConfigBuilder()
+            .metricInfoList(Collections.singletonList(PrometheusCVConfig.MetricInfo.builder()
+                                                          .query("avg(\n"
+                                                              + "\tgauge_servo_response_mvc_createpayment\t{\n"
+                                                              + "\n"
+                                                              + "\t\tjob=\"payment-service-nikpapag\"\n"
+                                                              + "\n"
+                                                              + "})")
+                                                          .metricType(TimeSeriesMetricType.RESP_TIME)
+                                                          .identifier("createpayment")
+                                                          .metricName("createpayment")
+                                                          .serviceInstanceFieldName("pod")
+                                                          .isManualQuery(true)
+                                                          .build()))
+            .build();
+    prometheusCVConfig.setMetricPack(metricPacks.get(0));
+    PrometheusDataCollectionInfo prometheusDataCollectionInfo =
+        dataCollectionInfoMapper.toDataCollectionInfo(prometheusCVConfig, TaskType.DEPLOYMENT);
+    prometheusDataCollectionInfo.setCollectHostData(true);
+    prometheusDataCollectionInfo.setMaximumHostSizeAllowed(1);
+
+    Map<String, Object> params = prometheusDataCollectionInfo.getDslEnvVariables(
+        PrometheusConnectorDTO.builder().url("http://35.214.81.102:9090/").build());
+
+    Map<String, String> headers = new HashMap<>();
+    RuntimeParameters runtimeParameters = RuntimeParameters.builder()
+                                              .startTime(instant.minus(Duration.ofMinutes(5)))
+                                              .endTime(instant)
+                                              .commonHeaders(headers)
+                                              .otherEnvVariables(params)
+                                              .baseUrl("http://35.214.81.102:9090/")
+                                              .build();
+    assertThatThrownBy(()
+                           -> dataCollectionDSLService.execute(
+                               code, runtimeParameters, callDetails -> { System.out.println(callDetails); }))
+        .hasMessage(
+            "Host list returned from Prometheus is of size 2, which is greater than allowed 1, please check the query");
   }
 
   private String readDSL(String name) throws IOException {

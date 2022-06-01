@@ -99,7 +99,7 @@ public class PipelineStageExecutionMetadataTest extends CategoryTest {
                    PipelineStageExecution.builder().build(), null, false))
         .isNull();
 
-    Instant now = Instant.now();
+    Instant now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
     Instant minuteAgo = now.minus(1, ChronoUnit.MINUTES);
     PipelineStageExecutionMetadata pipelineStageExecutionMetadata =
         PipelineStageExecutionMetadata.fromPipelineStageExecution(

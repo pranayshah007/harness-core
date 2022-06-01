@@ -8,6 +8,7 @@
 package software.wings.sm.states;
 
 import static org.mockito.AdditionalAnswers.returnsFirstArg;
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.anyString;
@@ -198,7 +199,7 @@ public class APMStateVerificationTestBase extends WingsBaseTest {
 
   protected void setupCvActivityLogService(AbstractAnalysisState state) throws IllegalAccessException {
     FieldUtils.writeField(state, "cvActivityLogService", cvActivityLogService, true);
-    PowerMockito.when(cvActivityLogService.getLoggerByStateExecutionId(anyString(), anyString()))
+    PowerMockito.when(cvActivityLogService.getLoggerByStateExecutionId(any(), any()))
         .thenReturn(mock(CVActivityLogger.class));
   }
 }

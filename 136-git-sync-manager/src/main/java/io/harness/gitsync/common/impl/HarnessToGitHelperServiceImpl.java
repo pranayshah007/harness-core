@@ -258,7 +258,7 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
   @Override
   public Boolean isGitSimplificationEnabled(EntityScopeInfo entityScopeInfo) {
     try {
-      if (isEnabled(entityScopeInfo.getAccountId(), FeatureName.GIT_SIMPLIFICATION)) {
+      if (isEnabled(entityScopeInfo.getAccountId(), FeatureName.NG_GIT_EXPERIENCE)) {
         return true;
       }
       return gitSyncSettingsService.getGitSimplificationStatus(entityScopeInfo.getAccountId(),

@@ -14,6 +14,7 @@ import io.harness.accesscontrol.OrgIdentifier;
 import io.harness.accesscontrol.ProjectIdentifier;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.engine.execution.ExecutionInputService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.ExecutionInputInstance;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
@@ -88,7 +89,7 @@ public class ExecutionInputResource {
   @Inject private final PMSExecutionService pmsExecutionService;
   @Inject private final PMSPipelineService pmsPipelineService;
   @Inject private final VariableCreatorMergeService variableCreatorMergeService;
-
+  @Inject private final ExecutionInputService executionInputService;
   @GET
   @Path("/{nodeExecutionId}")
   @ApiOperation(
@@ -111,12 +112,13 @@ public class ExecutionInputResource {
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) @Parameter(
           description = PipelineResourceConstants.PROJECT_PARAM_MESSAGE) @ProjectIdentifier String projectIdentifier,
       @NotNull @PathParam("nodeExecutionId") @Parameter(
-          description = PlanExecutionResourceConstants.NODE_EXECUTION_ID_PARAM_MESSAGE)
-      @ProjectIdentifier String nodeExecutionId) {
-    ExecutionInputInstance executionInputInstance = ExecutionInputInstance.builder().build();
+          description = PlanExecutionResourceConstants.NODE_EXECUTION_ID_PARAM_MESSAGE) String nodeExecutionId) {
+    ExecutionInputInstance executionInputInstance = executionInputService.getExecutionInputInstance(nodeExecutionId);
+    // TODO(BRIJESH): Write mapper to convert entity to DTO.
     return ResponseDTO.newResponse(ExecutionInputDTO.builder()
-                                       .nodeExecutionId(nodeExecutionId)
+                                       .inputInstanceId(executionInputInstance.getInputInstanceId())
                                        .inputTemplate(executionInputInstance.getTemplate())
+                                       .nodeExecutionId(executionInputInstance.getNodeExecutionId())
                                        .build());
   }
 
@@ -142,10 +144,10 @@ public class ExecutionInputResource {
       @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) @Parameter(
           description = PipelineResourceConstants.PROJECT_PARAM_MESSAGE) @ProjectIdentifier String projectIdentifier,
       @NotNull @PathParam("nodeExecutionId") @Parameter(
-          description = PlanExecutionResourceConstants.NODE_EXECUTION_ID_PARAM_MESSAGE)
-      @ProjectIdentifier String nodeExecutionId,
+          description = PlanExecutionResourceConstants.NODE_EXECUTION_ID_PARAM_MESSAGE) String nodeExecutionId,
       @RequestBody(required = true,
           description = "Execution Input for the provided nodeExecutionId") @NotNull String executionInputYaml) {
+    executionInputService.continueExecution(nodeExecutionId);
     return ResponseDTO.newResponse(ExecutionInputStatusDTO.builder()
                                        .nodeExecutionId(nodeExecutionId)
                                        .status(ExecutionInputStatus.Success)

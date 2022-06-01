@@ -128,7 +128,7 @@ public class EventPublisherServerImpl extends EventPublisherGrpc.EventPublisherI
     String clusterId = msg.getAttributes().getOrDefault(CLUSTER_ID_IDENTIFIER, "MISSING_CLUSTER_ID");
     String messageType = msg.getType();
 
-    try (MessagesMetricsGroupContext _ = new MessagesMetricsGroupContext(accountId, clusterId, messageType)) {
+    try (MessagesMetricsGroupContext x = new MessagesMetricsGroupContext(accountId, clusterId, messageType)) {
       metricService.incCounter(EventServiceMetricNames.INCOMING_MESSAGE_COUNT);
     }
   }
@@ -137,7 +137,7 @@ public class EventPublisherServerImpl extends EventPublisherGrpc.EventPublisherI
     final String SYNC_MSG_TYPE = "io.harness.perpetualtask.k8s.watch.K8SClusterSyncEvent";
     if (AnyUtils.toFqcn(msg.getPayload()).equals(SYNC_MSG_TYPE)) {
       String clusterId = msg.getAttributesMap().getOrDefault(CLUSTER_ID_IDENTIFIER, "MISSING_CLUSTER_ID");
-      try (ClusterResourcesMetricsGroup _ = new ClusterResourcesMetricsGroup(accountId, clusterId)) {
+      try (ClusterResourcesMetricsGroup x = new ClusterResourcesMetricsGroup(accountId, clusterId)) {
         K8SClusterSyncEvent ev = AnyUtils.findClassAndUnpack(msg.getPayload());
         metricService.recordMetric(EventServiceMetricNames.POD_COUNT, ev.getActivePodUidsMapMap().size());
         metricService.recordMetric(EventServiceMetricNames.NODE_COUNT, ev.getActiveNodeUidsMapMap().size());

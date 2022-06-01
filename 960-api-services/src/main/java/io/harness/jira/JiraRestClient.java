@@ -22,6 +22,10 @@ import retrofit2.http.Query;
 
 @OwnedBy(CDC)
 public interface JiraRestClient {
+  @GET("user/search")
+  Call<List<JiraUserData>> getUsers(@Query("query") String userQuery, @Query("accountId") String accountId,
+      @Query("maxResults") String maxResults, @Query("startAt") String startAt);
+
   @GET("project") Call<List<JiraProjectBasicNG>> getProjects();
 
   @GET("issue/{issueKey}")

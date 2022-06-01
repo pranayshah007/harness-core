@@ -1107,6 +1107,7 @@
 9701:io.harness.logging.UnitProgress
 9702:io.harness.logging.UnitStatus
 9709:io.harness.jira.JiraIssueTypeNG
+9710:io.harness.jira.JiraUserData
 10001:io.harness.capability.CapabilityParameters
 10002:io.harness.capability.CapabilitySubjectPermission.PermissionResult
 10003:com.google.protobuf.UnknownFieldSet
@@ -2007,6 +2008,9 @@
 543518:io.harness.delegate.beans.connector.awsconnector.AwsCFTaskResponse
 543519:io.harness.delegate.task.helm.HelmFetchFileConfig
 543520:io.harness.delegate.task.helm.HelmFetchFileResult
+543521:io.harness.delegate.beans.azure.response.AzureWebAppNamesResponse
+543522:io.harness.delegate.beans.azure.response.AzureDeploymentSlotsResponse
+543523:io.harness.delegate.beans.azure.response.AzureDeploymentSlotResponse
 543526:io.harness.delegate.beans.WinRmTaskParams
 549966:io.harness.secretmanagerclient.dto.EncryptedDataMigrationDTO
 553286:io.harness.delegate.task.scm.ScmPushTaskParams

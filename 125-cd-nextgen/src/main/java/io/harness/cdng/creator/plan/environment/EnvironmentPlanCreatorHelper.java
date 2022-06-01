@@ -27,6 +27,7 @@ import io.harness.pms.contracts.advisers.AdviserType;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.Dependency;
+import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.contracts.plan.YamlUpdates;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
@@ -40,6 +41,7 @@ import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.KryoSerializer;
 import io.harness.utils.YamlPipelineUtils;
+import io.harness.yaml.core.variables.NGServiceOverrides;
 
 import com.google.protobuf.ByteString;
 import java.io.IOException;
@@ -78,13 +80,20 @@ public class EnvironmentPlanCreatorHelper {
 
   // TODO: currently this function do not handle runtime inputs value in Environment and Infrastructure Entities. Need
   // to handle this in future
-  public EnvironmentPlanCreatorConfig getResolvedEnvRefs(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, EnvironmentYamlV2 environmentV2, boolean gitOpsEnabled,
-      EnvironmentService environmentService, InfrastructureEntityService infrastructure) {
+  public EnvironmentPlanCreatorConfig getResolvedEnvRefs(PlanCreationContextValue metadata,
+      EnvironmentYamlV2 environmentV2, boolean gitOpsEnabled, String serviceRef, EnvironmentService environmentService,
+      InfrastructureEntityService infrastructure) {
+    String accountIdentifier = metadata.getAccountIdentifier();
+    String orgIdentifier = metadata.getOrgIdentifier();
+    String projectIdentifier = metadata.getProjectIdentifier();
+
     // TODO: check the case when its a runtime value if its possible for it to have here
     Optional<Environment> environment = environmentService.get(
         accountIdentifier, orgIdentifier, projectIdentifier, environmentV2.getEnvironmentRef().getValue(), false);
 
+    // Fetch service overrides
+    NGServiceOverrides serviceOverride =
+        null; // TODO: (prashantSharma) need to make a db call using serviceRef and environmentRef
     String envIdentifier = environmentV2.getEnvironmentRef().getValue();
     if (!environment.isPresent()) {
       throw new InvalidRequestException(
@@ -96,9 +105,10 @@ public class EnvironmentPlanCreatorHelper {
       List<InfrastructureEntity> infrastructureEntityList = getInfraStructureEntityList(
           accountIdentifier, orgIdentifier, projectIdentifier, environmentV2, infrastructure);
       return EnvironmentPlanCreatorConfigMapper.toEnvironmentPlanCreatorConfig(
-          environment.get(), infrastructureEntityList);
+          environment.get(), infrastructureEntityList, serviceOverride);
     } else {
-      return EnvironmentPlanCreatorConfigMapper.toEnvPlanCreatorConfigWithGitops(environment.get(), environmentV2);
+      return EnvironmentPlanCreatorConfigMapper.toEnvPlanCreatorConfigWithGitops(
+          environment.get(), environmentV2, serviceOverride);
     }
   }
 

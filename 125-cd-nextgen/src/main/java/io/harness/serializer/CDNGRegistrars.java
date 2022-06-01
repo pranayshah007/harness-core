@@ -45,6 +45,7 @@ import io.harness.yaml.schema.beans.YamlSchemaRootClass;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import io.serializer.kryo.PollingKryoRegistrar;
+import java.util.Arrays;
 import java.util.Collections;
 import lombok.experimental.UtilityClass;
 
@@ -224,7 +225,7 @@ public class CDNGRegistrars {
                    .clazz(TerraformApplyStepNode.class)
                    .yamlSchemaMetadata(YamlSchemaMetadata.builder()
                                            .namespace(SchemaNamespaceConstants.CD)
-                                           .modulesSupported(Collections.singletonList(ModuleType.CD))
+                                           .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS))
                                            .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
                                            .build())
                    .build())
@@ -236,7 +237,7 @@ public class CDNGRegistrars {
                    .clazz(TerraformPlanStepNode.class)
                    .yamlSchemaMetadata(YamlSchemaMetadata.builder()
                                            .namespace(SchemaNamespaceConstants.CD)
-                                           .modulesSupported(Collections.singletonList(ModuleType.CD))
+                                           .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS))
                                            .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
                                            .build())
                    .build())
@@ -248,7 +249,7 @@ public class CDNGRegistrars {
                    .clazz(TerraformDestroyStepNode.class)
                    .yamlSchemaMetadata(YamlSchemaMetadata.builder()
                                            .namespace(SchemaNamespaceConstants.CD)
-                                           .modulesSupported(Collections.singletonList(ModuleType.CD))
+                                           .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS))
                                            .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
                                            .build())
                    .build())
@@ -260,7 +261,7 @@ public class CDNGRegistrars {
                    .clazz(TerraformRollbackStepNode.class)
                    .yamlSchemaMetadata(YamlSchemaMetadata.builder()
                                            .namespace(SchemaNamespaceConstants.CD)
-                                           .modulesSupported(Collections.singletonList(ModuleType.CD))
+                                           .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS))
                                            .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
                                            .build())
                    .build())
@@ -296,7 +297,7 @@ public class CDNGRegistrars {
                    .clazz(CloudformationCreateStackStepNode.class)
                    .yamlSchemaMetadata(YamlSchemaMetadata.builder()
                                            .namespace(SchemaNamespaceConstants.CD)
-                                           .modulesSupported(Collections.singletonList(ModuleType.CD))
+                                           .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS))
                                            .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
                                            .build())
                    .build())
@@ -308,7 +309,7 @@ public class CDNGRegistrars {
                    .clazz(CloudformationDeleteStackStepNode.class)
                    .yamlSchemaMetadata(YamlSchemaMetadata.builder()
                                            .namespace(SchemaNamespaceConstants.CD)
-                                           .modulesSupported(Collections.singletonList(ModuleType.CD))
+                                           .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS))
                                            .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
                                            .build())
                    .build())
@@ -344,7 +345,7 @@ public class CDNGRegistrars {
                    .clazz(CloudformationRollbackStepNode.class)
                    .yamlSchemaMetadata(YamlSchemaMetadata.builder()
                                            .namespace(SchemaNamespaceConstants.CD)
-                                           .modulesSupported(Collections.singletonList(ModuleType.CD))
+                                           .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS))
                                            .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
                                            .build())
                    .build())

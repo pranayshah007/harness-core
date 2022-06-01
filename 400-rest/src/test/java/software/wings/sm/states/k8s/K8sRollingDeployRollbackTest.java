@@ -22,6 +22,7 @@ import static software.wings.utils.WingsTestConstants.APP_ID;
 import static software.wings.utils.WingsTestConstants.STATE_NAME;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyList;
 import static org.mockito.Matchers.anyListOf;
@@ -203,7 +204,8 @@ public class K8sRollingDeployRollbackTest extends CategoryTest {
     ExecutionResponse executionResponse = k8sRollingDeployRollback.handleAsyncResponse(context, response);
 
     assertThat(executionResponse.getExecutionStatus()).isEqualTo(ExecutionStatus.SUCCESS);
-    verify(activityService, times(1)).updateStatus(anyString(), anyString(), any(ExecutionStatus.class));
+    verify(activityService, times(1))
+        .updateStatus(nullable(String.class), nullable(String.class), any(ExecutionStatus.class));
   }
 
   @Test(expected = InvalidRequestException.class)

@@ -21,6 +21,7 @@ import io.harness.delegate.task.azure.arm.AzureARMTaskParameters;
 import io.harness.delegate.task.azure.arm.AzureARMTaskResponse;
 import io.harness.delegate.task.azure.arm.request.AzureBlueprintDeploymentParameters;
 import io.harness.delegate.task.azure.arm.response.AzureBlueprintDeploymentResponse;
+import io.harness.delegate.task.azure.common.validator.Validators;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.serializer.JsonUtils;
 
@@ -31,7 +32,6 @@ import software.wings.delegatetasks.azure.arm.deployment.validator.ArtifactsJson
 import software.wings.delegatetasks.azure.arm.deployment.validator.AssignmentJsonValidator;
 import software.wings.delegatetasks.azure.arm.deployment.validator.BlueprintJsonValidator;
 import software.wings.delegatetasks.azure.arm.deployment.validator.DeploymentBlueprintContextValidator;
-import software.wings.delegatetasks.azure.common.validator.Validators;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;

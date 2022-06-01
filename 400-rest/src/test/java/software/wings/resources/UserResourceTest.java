@@ -28,7 +28,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
@@ -178,14 +177,17 @@ public class UserResourceTest extends WingsBaseTest {
   @Owner(developers = DEEPAK)
   @Category(UnitTests.class)
   public void shouldLoginUserUsingPostRequest() {
-    when(AUTHENTICATION_MANAGER.defaultLoginAccount(anyString(), anyString())).thenReturn(new User());
+    String basicAuthToken = UUIDGenerator.generateUuid();
     String username = "userEmail";
     String password = "userPassword";
     String actualString = username + ":" + password;
     String BasicBase64format = Base64.getEncoder().encodeToString(actualString.getBytes());
     String authorization = "Basic " + BasicBase64format;
-    userResource.login(LoginRequest.builder().authorization(authorization).build(), null, null);
-    verify(AUTHENTICATION_MANAGER, times(1)).defaultLoginAccount(anyString(), anyString());
+    LoginRequest loginRequest = LoginRequest.builder().authorization(authorization).build();
+    when(AUTHENTICATION_MANAGER.extractToken(loginRequest.getAuthorization(), "Basic")).thenReturn(basicAuthToken);
+    when(AUTHENTICATION_MANAGER.defaultLoginAccount(basicAuthToken, null)).thenReturn(new User());
+    userResource.login(loginRequest, null, null);
+    verify(AUTHENTICATION_MANAGER, times(1)).defaultLoginAccount(basicAuthToken, null);
   }
 
   @Test
@@ -234,7 +236,7 @@ public class UserResourceTest extends WingsBaseTest {
     list.add(MediaType.valueOf(MediaType.TEXT_HTML));
     list.add(MediaType.valueOf(MediaType.APPLICATION_JSON));
     when(httpServletRequest.getHeader(com.google.common.net.HttpHeaders.REFERER)).thenReturn("headervalue");
-    when(AUTHENTICATION_MANAGER.samlLogin(eq("headervalue"), anyString(), anyString(), anyString()))
+    when(AUTHENTICATION_MANAGER.samlLogin(eq("headervalue"), any(), any(), any()))
         .thenReturn(Response.status(200).build());
     Response responseWithAccountId = RESOURCES.client()
                                          .target("/users/saml-login")

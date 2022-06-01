@@ -232,9 +232,11 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
           infraNode, infraDefPlanNode.getUuid(), pipelineInfrastructure, kryoSerializer, infraNode.getUuid()));
     } else {
       final boolean gitOpsEnabled = isGitopsEnabled(ctx, stageNode.getDeploymentStageConfig().getService());
+
+      // serviceRef will be used to fetch serviceOverride of this service in the environment
+      String serviceRef = stageNode.getDeploymentStageConfig().getService().getServiceRef().getValue();
       EnvironmentPlanCreatorConfig environmentPlanCreatorConfig = EnvironmentPlanCreatorHelper.getResolvedEnvRefs(
-          ctx.getMetadata().getAccountIdentifier(), ctx.getMetadata().getOrgIdentifier(),
-          ctx.getMetadata().getProjectIdentifier(), environmentV2, gitOpsEnabled, environmentService, infrastructure);
+          ctx.getMetadata(), environmentV2, gitOpsEnabled, serviceRef, environmentService, infrastructure);
 
       EnvironmentPlanCreatorHelper.addEnvironmentV2Dependency(planCreationResponseMap, environmentPlanCreatorConfig,
           specField.getNode().getField(YamlTypes.ENVIRONMENT_YAML), gitOpsEnabled, environmentUuid, infraSectionUuid,

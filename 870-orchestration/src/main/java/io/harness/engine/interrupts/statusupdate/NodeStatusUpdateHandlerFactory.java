@@ -23,6 +23,7 @@ public class NodeStatusUpdateHandlerFactory {
   @Inject ApprovalStepStatusUpdate approvalStepStatusUpdate;
   @Inject InterventionWaitStepStatusUpdate interventionWaitStepStatusUpdate;
   @Inject PausedStepStatusUpdate pausedStepStatusUpdate;
+  @Inject InputWaitingStepStatusUpdate inputWaitingStepStatusUpdate;
   @Inject ResumeStepStatusUpdate resumeStepStatusUpdate;
   @Inject TerminalStepStatusUpdate terminalStepStatusUpdate;
   @Inject AbortAndRunningStepStatusUpdate abortAndRunningStepStatusUpdate;
@@ -35,6 +36,8 @@ public class NodeStatusUpdateHandlerFactory {
         return interventionWaitStepStatusUpdate;
       case PAUSED:
         return pausedStepStatusUpdate;
+      case INPUT_WAITING:
+        return inputWaitingStepStatusUpdate;
       case QUEUED:
         return resumeStepStatusUpdate;
       case ABORTED:

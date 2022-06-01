@@ -82,6 +82,7 @@ public class OwnerRule implements TestRule {
   public static final String ABHIJITH = "abhijith.pradeep";
   public static final String ABHINAV = "abhinav.singh";
   public static final String ABHINAV2 = "abhinav.singh2";
+  public static final String ABHISHEK = "abhishek.abhishek";
   public static final String ACHYUTH = "achyuth.prakash";
   public static final String ADWAIT = "adwait.bhandare";
   public static final String ADARSH = "adarsh.agarwal";
@@ -270,6 +271,7 @@ public class OwnerRule implements TestRule {
   public static final String SERGEY = "sergey.bobrov";
   public static final String RAGHAV_GUPTA = "raghav.gupta";
   public static final String SOUMYAJIT = "soumyajit.das";
+  public static final String vivekveman = "vivek.karnati";
   @Deprecated public static final String UNKNOWN = "unknown";
 
   private static UserInfoBuilder defaultUserInfo(String user) {
@@ -282,6 +284,7 @@ public class OwnerRule implements TestRule {
           .put(ABHIJEET, defaultUserInfo(ABHIJEET).slack("U0395DJBXS7").team(CE).build())
           .put(ABHIJITH, defaultUserInfo(ABHIJITH).slack("U0270PE0T24").team(CV).build())
           .put(ABHINAV, defaultUserInfo(ABHINAV).slack("UQQPR8M6Y").team(DX).build())
+          .put(ABHISHEK, defaultUserInfo(ABHISHEK).slack("U03F6BDAKTN").team(CDC).build())
           .put(ACHYUTH, defaultUserInfo(ACHYUTH).slack("U024FAWEZL7").team(CDP).build())
           .put(ADARSH, defaultUserInfo(ADARSH).slack("U01Q02K5LUR").team(CE).build())
           .put(ADITHYA, defaultUserInfo(ADITHYA).slack("U03AKHX2LTB").team(PL).build())
@@ -471,6 +474,7 @@ public class OwnerRule implements TestRule {
           .put(SERGEY, defaultUserInfo(SERGEY).slack("U02N2AF83FA").team(STO).build())
           .put(RAGHAV_GUPTA, defaultUserInfo(RAGHAV_GUPTA).slack("U039P8DQPL5").team(CI).build())
           .put(SOUMYAJIT, defaultUserInfo(SOUMYAJIT).slack("U03ANK6F7RA").team(CI).build())
+          .put(vivekveman, defaultUserInfo(vivekveman).slack("U03F5PKBWP5").team(CDC).build())
           .build();
 
   private static String prDeveloperId = findDeveloperId(System.getenv(GHPRB_PULL_AUTHOR_EMAIL));

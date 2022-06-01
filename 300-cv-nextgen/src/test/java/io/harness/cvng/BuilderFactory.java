@@ -41,6 +41,12 @@ import io.harness.cvng.beans.cvnglog.TraceableType;
 import io.harness.cvng.beans.job.Sensitivity;
 import io.harness.cvng.cdng.beans.CVNGStepInfo;
 import io.harness.cvng.cdng.beans.CVNGStepInfo.CVNGStepInfoBuilder;
+import io.harness.cvng.cdng.beans.ConfiguredMonitoredServiceSpec;
+import io.harness.cvng.cdng.beans.ConfiguredMonitoredServiceSpec.ConfiguredMonitoredServiceSpecBuilder;
+import io.harness.cvng.cdng.beans.DefaultMonitoredServiceSpec;
+import io.harness.cvng.cdng.beans.DefaultMonitoredServiceSpec.DefaultMonitoredServiceSpecBuilder;
+import io.harness.cvng.cdng.beans.TemplateMonitoredServiceSpec;
+import io.harness.cvng.cdng.beans.TemplateMonitoredServiceSpec.TemplateMonitoredServiceSpecBuilder;
 import io.harness.cvng.cdng.beans.TestVerificationJobSpec;
 import io.harness.cvng.cdng.entities.CVNGStepTask;
 import io.harness.cvng.cdng.entities.CVNGStepTask.CVNGStepTaskBuilder;
@@ -1116,6 +1122,22 @@ public class BuilderFactory {
                                           .userGroups(Arrays.asList("testUserGroup"))
                                           .build())
                                 .build());
+  }
+
+  public DefaultMonitoredServiceSpecBuilder getDefaultMonitoredServiceSpecBuilder() {
+    return DefaultMonitoredServiceSpec.builder();
+  }
+
+  public ConfiguredMonitoredServiceSpecBuilder getConfiguredMonitoredServiceSpecBuilder() {
+    return ConfiguredMonitoredServiceSpec.builder().monitoredServiceRef(
+        ParameterField.<String>builder().value(context.getMonitoredServiceIdentifier()).build());
+  }
+
+  public TemplateMonitoredServiceSpecBuilder getTemplateMonitoredServiceSpecBuilder() {
+    return TemplateMonitoredServiceSpec.builder()
+        .monitoredServiceTemplateRef(
+            ParameterField.<String>builder().value(context.getMonitoredServiceIdentifier()).build())
+        .versionLabel("1");
   }
 
   private List<NotificationRuleCondition> getNotificationRuleConditions(NotificationRuleType type) {

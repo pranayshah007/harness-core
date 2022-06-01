@@ -55,16 +55,6 @@ if [[ $DEPLOY_MODE == "KUBERNETES" ]]; then
   JVM_URL_BASE_PATH=$JVM_URL_BASE_PATH/public/shared
 fi
 
-if [ "$JRE_VERSION" != "" ] && [ "$JRE_VERSION" != "1.8.0_242" ]; then
-  echo Unsupported JRE version $JRE_VERSION - using 1.8.0_242 instead
-fi
-
-JRE_TAR_FILE=jre_x64_linux_8u242b08.tar.gz
-JRE_DIR=jdk8u242-b08-jre
-JVM_URL=$JVM_URL_BASE_PATH/jre/openjdk-8u242/$JRE_TAR_FILE
-
-JRE_BINARY=$JRE_DIR/bin/java
-
 SOURCE="${BASH_SOURCE[0]}"
 while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symlink
   DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
@@ -157,27 +147,6 @@ if [[ $ACCOUNT_STATUS == "DELETED" ]]; then
   while true; do sleep 60s; done
 fi
 
-if [ -f "$JRE_TAR_FILE" ]; then
-  echo "untar jre"
-  tar -xzf $JRE_TAR_FILE
-  rm -f $JRE_TAR_FILE
-fi
-
-if [ ! -d $JRE_DIR -o ! -e $JRE_BINARY ]; then
-  echo "Downloading JRE packages..."
-  JVM_TAR_FILENAME=$(basename "$JVM_URL")
-  curl $MANAGER_PROXY_CURL -#kLO $JVM_URL
-  echo "Extracting JRE packages..."
-  rm -rf $JRE_DIR
-  tar xzf $JVM_TAR_FILENAME
-  rm -f $JVM_TAR_FILENAME
-fi
-
-if [ ! -d $JRE_DIR  -o ! -e $JRE_BINARY ]; then
-  echo "No JRE available. Exiting."
-  exit 1
-fi
-
 DESIRED_VERSION=$HELM_DESIRED_VERSION
 if [[ $DESIRED_VERSION != "" ]]; then
   export DESIRED_VERSION
@@ -228,6 +197,34 @@ if [[ $DEPLOY_MODE != "KUBERNETES" ]]; then
       curl $MANAGER_PROXY_CURL -#k $REMOTE_DELEGATE_URL -o delegate.jar
     fi
   fi
+fi
+
+WATCHER_VERSION=$(echo $REMOTE_WATCHER_VERSION | cut -d "." -f3)
+if [ $WATCHER_VERSION -ge 75276 ]; then
+  echo "using JRE11 with watcher $WATCHER_VERSION"
+  JRE_DIR="jdk-11.0.14+9-jre"
+  JVM_URL=$JVM_URL_BASE_PATH/jre/openjdk-11.0.14_9/OpenJDK11U-jre_x64_linux_hotspot_11.0.14_9.tar.gz
+else
+  echo "using JRE8 with watcher $WATCHER_VERSION"
+  JRE_DIR="jdk8u242-b08-jre"
+  JVM_URL=$JVM_URL_BASE_PATH/jre/openjdk-8u242/jre_x64_linux_8u242b08.tar.gz
+fi
+
+JRE_BINARY=$JRE_DIR/bin/java
+
+if [ ! -d $JRE_DIR -o ! -e $JRE_BINARY ]; then
+  echo "Downloading JRE packages..."
+  JVM_TAR_FILENAME=$(basename "$JVM_URL")
+  curl $MANAGER_PROXY_CURL -#kLO $JVM_URL
+  echo "Extracting JRE packages..."
+  rm -rf $JRE_DIR
+  tar xzf $JVM_TAR_FILENAME
+  rm -f $JVM_TAR_FILENAME
+fi
+
+if [ ! -d $JRE_DIR  -o ! -e $JRE_BINARY ]; then
+  echo "No JRE available. Exiting."
+  exit 1
 fi
 
 if [ ! -e config-watcher.yml ]; then
@@ -346,26 +343,19 @@ if [[ $1 == "upgrade" ]]; then
   WATCHER_CURRENT_VERSION=$(jar_app_version watcher.jar)
   mkdir -p watcherBackup.$WATCHER_CURRENT_VERSION
   cp watcher.jar watcherBackup.$WATCHER_CURRENT_VERSION
-  $JRE_BINARY $PROXY_SYS_PROPS $OVERRIDE_TMP_PROPS -Dwatchersourcedir="$DIR" -Xmx192m -XX:+HeapDumpOnOutOfMemoryError -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:mygclogfilename.gc -XX:+UseParallelGC -XX:MaxGCPauseMillis=500 -Dfile.encoding=UTF-8 $WATCHER_JAVA_OPTS -jar watcher.jar config-watcher.yml upgrade $2
+  $JRE_BINARY $PROXY_SYS_PROPS $OVERRIDE_TMP_PROPS -Dwatchersourcedir="$DIR" -Xmx192m -XX:+HeapDumpOnOutOfMemoryError -Xloggc:mygclogfilename.gc -XX:+UseParallelGC -XX:MaxGCPauseMillis=500 -Dfile.encoding=UTF-8 $WATCHER_JAVA_OPTS -jar watcher.jar config-watcher.yml upgrade $2
 else
   if `pgrep -f "\-Dwatchersourcedir=$DIR"> /dev/null`; then
     echo "Watcher already running"
   else
-    nohup $JRE_BINARY $PROXY_SYS_PROPS $OVERRIDE_TMP_PROPS -Dwatchersourcedir="$DIR" -Xmx192m -XX:+HeapDumpOnOutOfMemoryError -XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:mygclogfilename.gc -XX:+UseParallelGC -XX:MaxGCPauseMillis=500 -Dfile.encoding=UTF-8 $WATCHER_JAVA_OPTS -jar watcher.jar config-watcher.yml >nohup-watcher.out 2>&1 &
-    sleep 1
-    if [ -s nohup-watcher.out ]; then
-      echo "Failed to start Watcher."
-      echo "$(cat nohup-watcher.out)"
-      exit 1
+    nohup $JRE_BINARY $PROXY_SYS_PROPS $OVERRIDE_TMP_PROPS -Dwatchersourcedir="$DIR" -Xmx192m -XX:+HeapDumpOnOutOfMemoryError -Xloggc:mygclogfilename.gc -XX:+UseParallelGC -XX:MaxGCPauseMillis=500 -Dfile.encoding=UTF-8 $WATCHER_JAVA_OPTS -jar watcher.jar config-watcher.yml >nohup-watcher.out 2>&1 &
+    sleep 5
+    if `pgrep -f "\-Dwatchersourcedir=$DIR"> /dev/null`; then
+      echo "Watcher started"
     else
-      sleep 3
-      if `pgrep -f "\-Dwatchersourcedir=$DIR"> /dev/null`; then
-        echo "Watcher started"
-      else
-        echo "Failed to start Watcher."
-        echo "$(tail -n 30 watcher.log)"
-        exit 1
-      fi
+      echo "Failed to start Watcher."
+      echo "$(tail -n 30 watcher.log)"
+      exit 1
     fi
   fi
 fi
