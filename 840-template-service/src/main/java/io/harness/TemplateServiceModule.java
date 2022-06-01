@@ -10,6 +10,7 @@ package io.harness;
 import static io.harness.AuthorizationServiceHeader.TEMPLATE_SERVICE;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.lock.DistributedLockImplementation.MONGO;
+import static io.harness.ng.core.template.TemplateEntityConstants.MONITORED_SERVICE;
 import static io.harness.ng.core.template.TemplateEntityConstants.PIPELINE;
 import static io.harness.ng.core.template.TemplateEntityConstants.STAGE;
 import static io.harness.ng.core.template.TemplateEntityConstants.STEP;
@@ -246,6 +247,8 @@ public class TemplateServiceModule extends AbstractModule {
     templateYamlConversionHandlerRegistry.register(STAGE, injector.getInstance(TemplateYamlConversionHandler.class));
     templateYamlConversionHandlerRegistry.register(
         PIPELINE, injector.getInstance(PipelineTemplateYamlConversionHandler.class));
+    templateYamlConversionHandlerRegistry.register(
+        MONITORED_SERVICE, injector.getInstance(TemplateYamlConversionHandler.class));
     return templateYamlConversionHandlerRegistry;
   }
 

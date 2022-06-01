@@ -244,8 +244,7 @@ public class GitCommandCallbackTest extends CategoryTest {
                                            .build();
     doReturn(Arrays.asList(gitSyncError1, gitSyncError2))
         .when(gitSyncErrorService)
-        .getActiveGitToHarnessSyncErrors(
-            eq(ACCOUNT_ID), eq("gitconnectorid"), eq("branchname"), anyString(), anyLong());
+        .getActiveGitToHarnessSyncErrors(eq(ACCOUNT_ID), eq("gitconnectorid"), eq("branchname"), any(), anyLong());
 
     diffCommandCallback.addActiveGitSyncErrorsToProcessAgain(gitDiffResult, ACCOUNT_ID);
     final List<GitFileChange> modifiedGitFileChangeSetList = gitDiffResult.getGitFileChanges();

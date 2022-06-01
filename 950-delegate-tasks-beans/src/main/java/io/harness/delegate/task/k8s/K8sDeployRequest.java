@@ -82,8 +82,7 @@ public interface K8sDeployRequest extends TaskParameters, ExecutionCapabilityDem
         KustomizeManifestDelegateConfig kustomizeManifestConfig =
             (KustomizeManifestDelegateConfig) getManifestDelegateConfig();
         if (isNotEmpty(kustomizeManifestConfig.getPluginPath())) {
-          capabilities.add(
-              KustomizeCapability.builder().pluginRootDir(kustomizeManifestConfig.getPluginPath()).build());
+          capabilities.add(new KustomizeCapability(kustomizeManifestConfig.getPluginPath()));
         }
       }
 

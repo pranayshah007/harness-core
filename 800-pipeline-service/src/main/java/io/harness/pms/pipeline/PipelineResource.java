@@ -22,7 +22,6 @@ import io.harness.accesscontrol.ProjectIdentifier;
 import io.harness.accesscontrol.ResourceIdentifier;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.ExecutionNode;
-import io.harness.beans.FeatureName;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.governance.PolicyEvaluationFailureException;
 import io.harness.exception.EntityNotFoundException;
@@ -172,8 +171,7 @@ public class PipelineResource implements YamlSchemaResource {
     PipelineEntity pipelineEntity = PMSPipelineDtoMapper.toPipelineEntity(accountId, orgId, projectId, yaml);
     log.info(String.format("Creating pipeline with identifier %s in project %s, org %s, account %s",
         pipelineEntity.getIdentifier(), projectId, orgId, accountId));
-    GovernanceMetadata governanceMetadata = pipelineServiceHelper.validatePipelineYamlAndSetTemplateRefIfAny(
-        pipelineEntity, pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.OPA_PIPELINE_GOVERNANCE));
+    GovernanceMetadata governanceMetadata = pipelineServiceHelper.validatePipelineYaml(pipelineEntity);
     if (governanceMetadata.getDeny()) {
       List<String> denyingPolicySetIds = governanceMetadata.getDetailsList()
                                              .stream()
@@ -216,8 +214,7 @@ public class PipelineResource implements YamlSchemaResource {
     log.info(String.format("Creating pipeline with identifier %s in project %s, org %s, account %s",
         pipelineEntity.getIdentifier(), projectId, orgId, accountId));
 
-    GovernanceMetadata governanceMetadata = pipelineServiceHelper.validatePipelineYamlAndSetTemplateRefIfAny(
-        pipelineEntity, pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.OPA_PIPELINE_GOVERNANCE));
+    GovernanceMetadata governanceMetadata = pipelineServiceHelper.validatePipelineYaml(pipelineEntity);
     if (governanceMetadata.getDeny()) {
       return ResponseDTO.newResponse(PipelineSaveResponse.builder().governanceMetadata(governanceMetadata).build());
     }
@@ -421,8 +418,7 @@ public class PipelineResource implements YamlSchemaResource {
     if (!pipelineEntity.getIdentifier().equals(pipelineId)) {
       throw new InvalidRequestException("Pipeline identifier in URL does not match pipeline identifier in yaml");
     }
-    GovernanceMetadata governanceMetadata = pipelineServiceHelper.validatePipelineYamlAndSetTemplateRefIfAny(
-        pipelineEntity, pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.OPA_PIPELINE_GOVERNANCE));
+    GovernanceMetadata governanceMetadata = pipelineServiceHelper.validatePipelineYaml(pipelineEntity);
     if (governanceMetadata.getDeny()) {
       List<String> denyingPolicySetIds = governanceMetadata.getDetailsList()
                                              .stream()
@@ -471,8 +467,7 @@ public class PipelineResource implements YamlSchemaResource {
       throw new InvalidRequestException("Pipeline identifier in URL does not match pipeline identifier in yaml");
     }
 
-    GovernanceMetadata governanceMetadata = pipelineServiceHelper.validatePipelineYamlAndSetTemplateRefIfAny(
-        pipelineEntity, pmsFeatureFlagHelper.isEnabled(accountId, FeatureName.OPA_PIPELINE_GOVERNANCE));
+    GovernanceMetadata governanceMetadata = pipelineServiceHelper.validatePipelineYaml(pipelineEntity);
     if (governanceMetadata.getDeny()) {
       return ResponseDTO.newResponse(PipelineSaveResponse.builder().governanceMetadata(governanceMetadata).build());
     }
@@ -780,7 +775,7 @@ public class PipelineResource implements YamlSchemaResource {
     PipelineEntity pipelineEntity = PMSPipelineDtoMapper.toPipelineEntity(accountId, orgId, projectId, yaml);
     log.info(String.format("Validating the pipeline YAML with identifier %s in project %s, org %s, account %s",
         pipelineEntity.getIdentifier(), projectId, orgId, accountId));
-    pipelineServiceHelper.validatePipelineYamlAndSetTemplateRefIfAny(pipelineEntity, false);
+    pipelineServiceHelper.validatePipelineYaml(pipelineEntity, false);
     return ResponseDTO.newResponse(pipelineEntity.getIdentifier());
   }
 
@@ -809,7 +804,7 @@ public class PipelineResource implements YamlSchemaResource {
       PipelineEntity pipelineEntity = entityOptional.get();
       log.info(String.format("Validating the pipeline with identifier %s in project %s, org %s, account %s",
           pipelineEntity.getIdentifier(), projectId, orgId, accountId));
-      pipelineServiceHelper.validatePipelineYamlAndSetTemplateRefIfAny(pipelineEntity, false);
+      pipelineServiceHelper.validatePipelineYaml(pipelineEntity, false);
       return ResponseDTO.newResponse(pipelineEntity.getIdentifier());
     } else {
       throw new EntityNotFoundException(

@@ -30,22 +30,19 @@ import io.harness.rule.Owner;
 
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.powermock.api.mockito.PowerMockito;
+import org.mockito.Mockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 @OwnedBy(HarnessTeam.PIPELINE)
-@RunWith(PowerMockRunner.class)
 @PrepareForTest({SweepingOutputServiceGrpc.SweepingOutputServiceBlockingStub.class})
 public class ExecutionSweepingGrpcOutputServiceTest extends PmsSdkCoreTestBase {
   @Mock SweepingOutputServiceGrpc.SweepingOutputServiceBlockingStub sweepingOutputServiceBlockingStub;
   @InjectMocks ExecutionSweepingGrpcOutputService executionSweepingGrpcOutputService;
 
   public void initialize() {
-    PowerMockito.mock(sweepingOutputServiceBlockingStub.getClass());
+    Mockito.mock(sweepingOutputServiceBlockingStub.getClass());
     executionSweepingGrpcOutputService = new ExecutionSweepingGrpcOutputService(sweepingOutputServiceBlockingStub);
   }
 

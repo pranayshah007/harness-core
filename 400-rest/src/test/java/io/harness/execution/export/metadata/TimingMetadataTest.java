@@ -32,7 +32,7 @@ public class TimingMetadataTest extends CategoryTest {
   public void testFromStartAndEndTimeObjects() {
     assertThat(TimingMetadata.fromStartAndEndTimeObjects(Long.valueOf(-1), Long.valueOf(-1))).isNull();
 
-    Instant now = Instant.now();
+    Instant now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
     Instant minuteAgo = now.minus(1, ChronoUnit.MINUTES);
     TimingMetadata timingMetadata =
         TimingMetadata.fromStartAndEndTimeObjects(minuteAgo.toEpochMilli(), now.toEpochMilli());
@@ -49,7 +49,7 @@ public class TimingMetadataTest extends CategoryTest {
     assertThat(TimingMetadata.fromStartAndEndTime(-1, -1)).isNull();
     assertThat(TimingMetadata.fromStartAndEndTime(10, 8)).isNull();
 
-    Instant now = Instant.now();
+    Instant now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
     TimingMetadata timingMetadata = TimingMetadata.fromStartAndEndTime(now.toEpochMilli(), -1);
     assertThat(timingMetadata).isNotNull();
     assertThat(timingMetadata.getStartTime().toInstant()).isEqualTo(now);
@@ -83,7 +83,7 @@ public class TimingMetadataTest extends CategoryTest {
     executionDetailsMap.put("startTs", ExecutionDataValue.builder().value(-8).build());
     assertThat(TimingMetadata.extractFromExecutionDetails(executionDetailsMap)).isNull();
 
-    Instant now = Instant.now();
+    Instant now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
     executionDetailsMap.put("startTs", ExecutionDataValue.builder().value(now.toEpochMilli()).build());
     TimingMetadata timingMetadata = TimingMetadata.extractFromExecutionDetails(executionDetailsMap);
     assertThat(timingMetadata).isNotNull();

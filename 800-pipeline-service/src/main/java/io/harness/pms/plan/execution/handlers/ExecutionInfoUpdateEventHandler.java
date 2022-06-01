@@ -56,19 +56,23 @@ public class ExecutionInfoUpdateEventHandler implements PlanStatusUpdateObserver
       }
       Status status = planExecutionService.get(ambiance.getPlanExecutionId()).getStatus();
       ExecutionSummaryInfo executionSummaryInfo = pipelineEntity.get().getExecutionSummaryInfo();
-      executionSummaryInfo.setLastExecutionStatus(ExecutionStatus.getExecutionStatus(status));
-      if (StatusUtils.brokeStatuses().contains(status)) {
-        Map<String, Integer> errors = executionSummaryInfo.getNumOfErrors();
-        Date date = new Date();
-        SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy");
-        String strDate = formatter.format(date);
-        if (errors.containsKey(strDate)) {
-          errors.put(strDate, errors.get(strDate) + 1);
-        } else {
-          errors.put(strDate, 1);
+      if (executionSummaryInfo != null) {
+        executionSummaryInfo.setLastExecutionStatus(ExecutionStatus.getExecutionStatus(status));
+        if (StatusUtils.brokeStatuses().contains(status)) {
+          Map<String, Integer> errors = executionSummaryInfo.getNumOfErrors();
+          Date date = new Date();
+          SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy");
+          String strDate = formatter.format(date);
+          if (errors.containsKey(strDate)) {
+            errors.put(strDate, errors.get(strDate) + 1);
+          } else {
+            errors.put(strDate, 1);
+          }
         }
+        pmsPipelineService.saveExecutionInfo(accountId, orgId, projectId, pipelineId, executionSummaryInfo);
+      } else {
+        log.error("ExecutionSummaryInfo is null for executionId - " + ambiance.getPlanExecutionId());
       }
-      pmsPipelineService.saveExecutionInfo(accountId, orgId, projectId, pipelineId, executionSummaryInfo);
     } catch (Exception e) {
       log.error("Error while updating Plan Status for execution with ID " + ambiance.getPlanExecutionId() + ": "
               + ExceptionUtils.getMessage(e),

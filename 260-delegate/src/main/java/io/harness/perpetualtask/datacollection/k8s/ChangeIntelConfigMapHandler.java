@@ -74,10 +74,11 @@ public class ChangeIntelConfigMapHandler extends BaseChangeHandler<V1ConfigMap> 
     if (oldResource.getMetadata().getAnnotations() != null && newResource.getMetadata().getAnnotations() != null) {
       String renewTokenKey = "renewTime";
       String oldValue = oldResource.getMetadata().getAnnotations().get(leaderKey);
-      Map<String, Object> oldMap = JsonUtils.asMap(oldValue);
-      oldMap.remove(renewTokenKey);
-      oldResource.getMetadata().getAnnotations().put(leaderKey, JsonUtils.asJson(oldMap));
-
+      if (oldValue != null) {
+        Map<String, Object> oldMap = JsonUtils.asMap(oldValue);
+        oldMap.remove(renewTokenKey);
+        oldResource.getMetadata().getAnnotations().put(leaderKey, JsonUtils.asJson(oldMap));
+      }
       String newValue = newResource.getMetadata().getAnnotations().get(leaderKey);
       Map<String, Object> newMap = JsonUtils.asMap(newValue);
       newMap.remove(renewTokenKey);

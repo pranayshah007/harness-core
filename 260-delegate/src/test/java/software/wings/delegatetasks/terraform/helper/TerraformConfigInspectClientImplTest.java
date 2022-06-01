@@ -18,6 +18,7 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
 
+import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
@@ -43,7 +44,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 @PrepareForTest({InstallUtils.class})
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 @OwnedBy(CDP)
-public class TerraformConfigInspectClientImplTest {
+public class TerraformConfigInspectClientImplTest extends CategoryTest {
   private static final String GIT_REPO_DIRECTORY = "repository/terraformTest";
   private static final boolean useLatestVersion = true;
   TerraformConfigInspectClientImpl terraformConfigInspectClientSpy = spy(new TerraformConfigInspectClientImpl());
@@ -51,7 +52,7 @@ public class TerraformConfigInspectClientImplTest {
   @Before
   public void setUp() {
     mockStatic(InstallUtils.class);
-    PowerMockito.when(InstallUtils.getPath(any(), any())).thenReturn("/tmp/dummypath/tool");
+    PowerMockito.when(InstallUtils.getPath(any(), any())).thenAnswer(invocationOnMock -> "/tmp/dummypath/tool");
   }
 
   @Test

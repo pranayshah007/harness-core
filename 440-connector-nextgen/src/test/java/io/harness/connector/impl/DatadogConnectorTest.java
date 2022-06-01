@@ -60,6 +60,8 @@ public class DatadogConnectorTest extends CategoryTest {
   String identifier = "datadogIdentifier";
   String name = "Datadog";
   String accountIdentifier = "accountIdentifier";
+  String projectIdentifier = "projectIdentifier";
+  String orgIdentifier = "orgIdentifier";
   String apiKeyRef = "apiKeyRef";
   String applicationKeyRef = "appKeyRef";
 
@@ -107,7 +109,7 @@ public class DatadogConnectorTest extends CategoryTest {
              anyString(), anyString(), anyString(), anyString(), anyBoolean()))
         .thenReturn(Optional.of(datadogConnector));
     ConnectorResponseDTO connectorResponseDTOFromGet =
-        connectorService.get(accountIdentifier, null, null, identifier).get();
+        connectorService.get(accountIdentifier, orgIdentifier, projectIdentifier, identifier).get();
     assertThat(connectorResponseDTO).isEqualTo(connectorResponseDTOFromGet);
   }
 

@@ -26,7 +26,6 @@ import static org.mockito.Mockito.when;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.category.element.UnitTests;
 import io.harness.common.EntityReference;
@@ -39,7 +38,6 @@ import io.harness.git.model.ChangeType;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.ng.core.EntityDetail;
 import io.harness.plancreator.pipeline.PipelineConfig;
-import io.harness.pms.PmsFeatureFlagService;
 import io.harness.pms.contracts.governance.GovernanceMetadata;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
@@ -63,7 +61,6 @@ import org.mockito.MockitoAnnotations;
 public class PipelineEntityGitSyncHelperTest extends CategoryTest {
   @Mock private PMSPipelineService pipelineService;
   @Mock private PMSPipelineServiceHelper pipelineServiceHelper;
-  @Mock private PmsFeatureFlagService pmsFeatureFlagService;
   @InjectMocks PipelineEntityGitSyncHelper pipelineEntityGitSyncHelper;
   static String accountId = "accountId";
   static String orgId = "orgId";
@@ -86,7 +83,6 @@ public class PipelineEntityGitSyncHelperTest extends CategoryTest {
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
-    doReturn(false).when(pmsFeatureFlagService).isEnabled(accountId, FeatureName.OPA_PIPELINE_GOVERNANCE);
   }
 
   @Test
@@ -130,8 +126,7 @@ public class PipelineEntityGitSyncHelperTest extends CategoryTest {
   public void testSave() throws IOException {
     doReturn(GovernanceMetadata.newBuilder().setDeny(false).build())
         .when(pipelineServiceHelper)
-        .validatePipelineYamlAndSetTemplateRefIfAny(
-            PMSPipelineDtoMapper.toPipelineEntity(accountId, pipelineYaml), false);
+        .validatePipelineYaml(PMSPipelineDtoMapper.toPipelineEntity(accountId, pipelineYaml));
     doReturn(PipelineEntity.builder().orgIdentifier(orgId).projectIdentifier(projectId).yaml(pipelineYaml).build())
         .when(pipelineService)
         .create(any());
@@ -147,11 +142,9 @@ public class PipelineEntityGitSyncHelperTest extends CategoryTest {
     doReturn(PipelineEntity.builder().orgIdentifier(orgId).projectIdentifier(projectId).yaml(pipelineYaml).build())
         .when(pipelineService)
         .create(any());
-    doReturn(true).when(pmsFeatureFlagService).isEnabled(accountId, FeatureName.OPA_PIPELINE_GOVERNANCE);
     doReturn(GovernanceMetadata.newBuilder().setDeny(false).build())
         .when(pipelineServiceHelper)
-        .validatePipelineYamlAndSetTemplateRefIfAny(
-            PMSPipelineDtoMapper.toPipelineEntity(accountId, pipelineYaml), true);
+        .validatePipelineYaml(PMSPipelineDtoMapper.toPipelineEntity(accountId, pipelineYaml));
     PipelineConfig pipelineConfig = pipelineEntityGitSyncHelper.save(accountId, pipelineYaml);
     verify(pipelineService, times(1)).create(any());
     assertEquals(pipelineConfig, YamlUtils.read(pipelineYaml, PipelineConfig.class));
@@ -163,8 +156,7 @@ public class PipelineEntityGitSyncHelperTest extends CategoryTest {
   public void testUpdate() throws IOException {
     doReturn(GovernanceMetadata.newBuilder().setDeny(false).build())
         .when(pipelineServiceHelper)
-        .validatePipelineYamlAndSetTemplateRefIfAny(
-            PMSPipelineDtoMapper.toPipelineEntity(accountId, pipelineYaml), false);
+        .validatePipelineYaml(PMSPipelineDtoMapper.toPipelineEntity(accountId, pipelineYaml));
     PipelineEntity pipelineEntity =
         PipelineEntity.builder().orgIdentifier(orgId).projectIdentifier(projectId).yaml(pipelineYaml).build();
     doReturn(pipelineEntity).when(pipelineService).updatePipelineYaml(any(), any());
