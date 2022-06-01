@@ -18,6 +18,7 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import io.harness.account.AccountClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureFlag;
@@ -29,8 +30,10 @@ import io.harness.cf.client.api.CfClient;
 import io.harness.cf.client.dto.Target;
 import io.harness.configuration.DeployMode;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ng.core.dto.AccountDTO;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.PersistentEntity;
+import io.harness.remote.client.RestClientUtils;
 import io.harness.serializer.JsonUtils;
 
 import com.google.common.base.Splitter;
@@ -61,6 +64,7 @@ import org.mongodb.morphia.query.UpdateOperations;
 @OwnedBy(HarnessTeam.PL)
 public class FeatureFlagServiceImpl implements FeatureFlagService {
   private final HPersistence persistence;
+  @Inject(optional = true) @Nullable private AccountClient accountClient;
   @Inject(optional = true) @Nullable private long lastEpoch;
   private final Map<FeatureName, FeatureFlag> cache;
   private final CfMigrationService cfMigrationService;
@@ -223,7 +227,12 @@ public class FeatureFlagServiceImpl implements FeatureFlagService {
        */
       accountId = FeatureFlagConstants.STATIC_ACCOUNT_ID;
     }
-    Target target = Target.builder().identifier(accountId).name(accountId).build();
+    String name = accountId;
+    if (accountClient != null) {
+      AccountDTO accountDTO = RestClientUtils.getResponse(accountClient.getAccountDTO(accountId));
+      name = accountDTO.getName();
+    }
+    Target target = Target.builder().identifier(accountId).name(name).build();
     return cfClient.get().boolVariation(featureName.name(), target, false);
   }
 

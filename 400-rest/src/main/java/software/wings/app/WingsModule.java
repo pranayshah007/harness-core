@@ -26,6 +26,7 @@ import io.harness.CgOrchestrationModule;
 import io.harness.SecretManagementCoreModule;
 import io.harness.accesscontrol.AccessControlAdminClientConfiguration;
 import io.harness.accesscontrol.AccessControlAdminClientModule;
+import io.harness.account.AccountClientModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.annotations.retry.MethodExecutionHelper;
@@ -928,7 +929,8 @@ public class WingsModule extends AbstractModule implements ServersModule {
 
     install(new EventsFrameworkModule(configuration.getEventsFrameworkConfiguration(),
         configuration.isEventsFrameworkAvailableInOnPrem(), StartupMode.DELEGATE_SERVICE.equals(startupMode)));
-    install(FeatureFlagModule.getInstance());
+    install(FeatureFlagModule.getInstance(new AccountClientModule(configuration.getManagerServiceHttpClientConfig(),
+        configuration.getPortal().getJwtManagerServiceSecret(), MANAGER.getServiceId())));
     install(AccessControlAdminClientModule.getInstance(
         AccessControlAdminClientConfiguration.builder()
             .accessControlServiceConfig(

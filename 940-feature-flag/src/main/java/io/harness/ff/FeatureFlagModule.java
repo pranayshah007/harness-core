@@ -7,12 +7,15 @@
 
 package io.harness.ff;
 
+import io.harness.account.AccountClientModule;
 import io.harness.lock.PersistentLockModule;
 
 import com.google.inject.AbstractModule;
 
 public class FeatureFlagModule extends AbstractModule {
   private static volatile FeatureFlagModule instance;
+
+  private AccountClientModule accountClientModule;
 
   private FeatureFlagModule() {}
 
@@ -24,9 +27,18 @@ public class FeatureFlagModule extends AbstractModule {
     return instance;
   }
 
+  public static FeatureFlagModule getInstance(AccountClientModule accountClientModule) {
+    FeatureFlagModule featureFlagModule = getInstance();
+    featureFlagModule.accountClientModule = accountClientModule;
+    return featureFlagModule;
+  }
+
   @Override
   protected void configure() {
     install(PersistentLockModule.getInstance());
+    if (accountClientModule != null) {
+      install(accountClientModule);
+    }
     bind(FeatureFlagService.class).to(FeatureFlagServiceImpl.class);
   }
 }

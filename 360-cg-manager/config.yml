@@ -347,6 +347,7 @@ portal:
   jwtIdentityServiceSecret: HVSKUYqD4e5Rxu12hFDdCJKGM64sxgEynvdDhaOHaTHhwwn0K4Ttr0uoOxSsEVYNrUU=
   jwtDataHandlerSecret: RdL7j9ZdCz6TVSHO7obJRS6ywYLJjH8tdfPP39i4MbevKjVodvjdhakdhashsh4371dasjldas
   jwtNextGenManagerSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
+  jwtManagerServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
   delegateDockerImage: harness/delegate:latest
   externalGraphQLRateLimitPerMinute: 500
   customDashGraphQLRateLimitPerMinute: 1000
@@ -618,6 +619,10 @@ ngManagerServiceHttpClientConfig:
   readTimeOutSeconds: 15
   enableHttpLogging: ${ENABLE_HTTP_LOGGING:-false}
 
+managerServiceHttpClientConfig:
+  baseUrl: http://localhost:3457/api/
+  connectTimeOutSeconds: 15
+  readTimeOutSeconds: 15
 
 eventsFramework:
   redis:
