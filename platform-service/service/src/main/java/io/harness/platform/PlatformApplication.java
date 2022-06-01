@@ -135,6 +135,9 @@ public class PlatformApplication extends Application<PlatformConfiguration> {
         appConfig.getCommonPoolConfig().getTimeUnit(),
         new ThreadFactoryBuilder().setNameFormat("main-app-pool-%d").build()));
     log.info("Starting Platform Application ...");
+    // todo take the following line out after testing
+    log.info("Platform Service config -> SMTP USE SSL: {}",
+        appConfig.getNotificationServiceConfig().getSmtpConfig().isUseSSL());
     ConfigSecretUtils.resolveSecrets(appConfig.getSecretsConfiguration(), appConfig);
     MaintenanceController.forceMaintenance(true);
     GodInjector godInjector = new GodInjector();
