@@ -73,6 +73,7 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
+
 @OwnedBy(HarnessTeam.CDP)
 public class ServerlessAwsLambdaRollbackStepTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
@@ -94,7 +95,7 @@ public class ServerlessAwsLambdaRollbackStepTest {
   private final ManifestsOutcome manifestsOutcome = new ManifestsOutcome();
 
   private final String previousVersionTimeStamp = "1234";
-  private final Boolean isFirstDeployment = false;
+  private final boolean isFirstDeployment = false;
   private final StepInputPackage stepInputPackage = StepInputPackage.builder().build();
   private final ServerlessAwsLambdaRollbackDataOutcome serverlessAwsLambdaRollbackDataOutcome =
       ServerlessAwsLambdaRollbackDataOutcome.builder()

@@ -159,7 +159,7 @@ public class ServerlessAwsLambdaStepHelper implements ServerlessStepHelper {
     return serverlessAwsLambdaDeployResult.getPreviousVersionTimeStamp();
   }
 
-  public Boolean getIsFirstDeployment(ServerlessDeployResponse serverlessDeployResponse) {
+  public boolean getIsFirstDeployment(ServerlessDeployResponse serverlessDeployResponse) {
     ServerlessAwsLambdaDeployResult serverlessAwsLambdaDeployResult =
         (ServerlessAwsLambdaDeployResult) serverlessDeployResponse.getServerlessDeployResult();
     return serverlessAwsLambdaDeployResult.isFirstDeployment();
