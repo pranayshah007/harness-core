@@ -15,6 +15,7 @@ import static io.harness.persistence.HQuery.excludeAuthority;
 import static io.harness.rule.OwnerRule.ARPITJ;
 import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
 import static io.harness.rule.OwnerRule.KAMAL;
+import static io.harness.rule.OwnerRule.KAPIL;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.data.Offset.offset;
@@ -370,6 +371,17 @@ public class SLIRecordServiceImplTest extends CvNextGenTestBase {
       }
     }
     testGraphCalculation(sliStates, SLIMissingDataType.GOOD, expectedSLITrend, expectedBurndown, 35, 4, 0);
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testGetErrorBudgetBurnRate() {
+    Instant startTime = Instant.parse("2020-07-27T10:50:00Z").minus(Duration.ofMinutes(10));
+    List<SLIState> sliStates = Arrays.asList(BAD, GOOD, GOOD, NO_DATA, GOOD, GOOD, BAD, BAD, BAD, BAD);
+    createData(startTime, sliStates);
+    double errorBudgetBurnRate = sliRecordService.getErrorBudgetBurnRate(sliId, Duration.ofMinutes(10).toMillis(), 120);
+    assertThat(errorBudgetBurnRate).isCloseTo(3.333, offset(0.001));
   }
 
   private void createData(Instant startTime, List<SLIState> sliStates) {

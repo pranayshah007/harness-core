@@ -3,14 +3,14 @@ spec:
     steps:
     - step:
         name: "ServiceNow Create"
-        identifier: serviceNowCreate
+        identifier: dd6ca19c-f757-5801-b7ad-82b3ca4833e5
         type: ServiceNowCreate
         timeout: 5m
         spec:
           fields: []
     - step:
         name: "ServiceNow Approval"
-        identifier: serviceNowApproval
+        identifier: b0aa1f25-128d-5553-ad35-5741ee6a3a5e
         type: ServiceNowApproval
         timeout: 1d
         spec:
@@ -26,7 +26,7 @@ spec:
               conditions: []
     - step:
         name: "ServiceNow Update"
-        identifier: serviceNowUpdate
+        identifier: 2359052e-388c-5502-89c8-094b13d0167a
         type: ServiceNowUpdate
         timeout: 5m
         spec:

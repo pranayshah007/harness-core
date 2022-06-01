@@ -24,6 +24,7 @@ public class ArtifactoryRegistryArtifactInfoBuilder implements PollingInfoBuilde
         .repository(pollingPayloadData.getArtifactoryRegistryPayload().getRepository())
         .artifactDirectory(pollingPayloadData.getArtifactoryRegistryPayload().getArtifactDirectory())
         .repositoryFormat(pollingPayloadData.getArtifactoryRegistryPayload().getRepositoryFormat())
+        .repositoryUrl(pollingPayloadData.getArtifactoryRegistryPayload().getRepositoryUrl())
         .build();
   }
 }

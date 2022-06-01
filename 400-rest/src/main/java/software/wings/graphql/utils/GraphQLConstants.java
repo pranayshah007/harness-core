@@ -40,4 +40,6 @@ public class GraphQLConstants {
   public static final String CREATE_API_KEY = "createApiKey";
   public static final String UPDATE_API_KEY = "updateApiKey";
   public static final String DELETE_API_KEY = "deleteApiKey";
+  public static final String NOT_AUTHORIZED_SUPPORT_USER_FOR_MUTATION =
+      "None of the graphql can contain mutation for support user";
 }

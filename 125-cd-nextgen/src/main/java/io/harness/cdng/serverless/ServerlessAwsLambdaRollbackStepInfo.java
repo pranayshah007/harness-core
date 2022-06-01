@@ -72,4 +72,9 @@ public class ServerlessAwsLambdaRollbackStepInfo
         .delegateSelectors(this.getDelegateSelectors())
         .build();
   }
+
+  @Override
+  public ParameterField<List<TaskSelectorYaml>> fetchDelegateSelectors() {
+    return getDelegateSelectors();
+  }
 }

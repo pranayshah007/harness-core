@@ -33,6 +33,7 @@ import io.harness.steps.approval.stage.ApprovalStageNode;
 import io.harness.steps.approval.step.harness.HarnessApprovalStepNode;
 import io.harness.steps.approval.step.jira.JiraApprovalStepNode;
 import io.harness.steps.approval.step.servicenow.ServiceNowApprovalStepNode;
+import io.harness.steps.customstage.CustomStageNode;
 import io.harness.steps.jira.create.JiraCreateStepNode;
 import io.harness.steps.jira.update.JiraUpdateStepNode;
 import io.harness.steps.policy.PolicyStepNode;
@@ -120,6 +121,18 @@ public class OrchestrationStepsModuleRegistrars {
                    .clazz(ApprovalStageNode.class)
                    .yamlSchemaMetadata(YamlSchemaMetadata.builder()
                                            .namespace(SchemaNamespaceConstants.APPROVAL)
+                                           .modulesSupported(ImmutableList.of(ModuleType.PMS))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STAGE.name()).build())
+                                           .build())
+                   .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.CUSTOM_STAGE)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .availableAtAccountLevel(false)
+                   .clazz(CustomStageNode.class)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .namespace(SchemaNamespaceConstants.CUSTOM)
                                            .modulesSupported(ImmutableList.of(ModuleType.PMS))
                                            .yamlGroup(YamlGroup.builder().group(StepCategory.STAGE.name()).build())
                                            .build())

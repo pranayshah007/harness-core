@@ -14,6 +14,7 @@ import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.service.instancesynchandler.AbstractInstanceSyncHandler;
 import io.harness.service.instancesynchandler.K8sInstanceSyncHandler;
 import io.harness.service.instancesynchandler.NativeHelmInstanceSyncHandler;
+import io.harness.service.instancesynchandler.ServerlessAwsLambdaInstanceSyncHandler;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -25,6 +26,7 @@ import lombok.AllArgsConstructor;
 public class InstanceSyncHandlerFactoryServiceImpl implements InstanceSyncHandlerFactoryService {
   private final K8sInstanceSyncHandler k8sInstanceSyncHandler;
   private final NativeHelmInstanceSyncHandler nativeHelmInstanceSyncHandler;
+  private final ServerlessAwsLambdaInstanceSyncHandler serverlessAwsLambdaInstanceSyncHandler;
   @Override
   public AbstractInstanceSyncHandler getInstanceSyncHandler(final String deploymentType) {
     switch (deploymentType) {
@@ -32,8 +34,10 @@ public class InstanceSyncHandlerFactoryServiceImpl implements InstanceSyncHandle
         return k8sInstanceSyncHandler;
       case ServiceSpecType.NATIVE_HELM:
         return nativeHelmInstanceSyncHandler;
+      case ServiceSpecType.SERVERLESS_AWS_LAMBDA:
+        return serverlessAwsLambdaInstanceSyncHandler;
       default:
-        throw new UnexpectedException("No instance sync handler registered for infrastructure kind: " + deploymentType);
+        throw new UnexpectedException("No instance sync handler registered for deploymentType: " + deploymentType);
     }
   }
 }

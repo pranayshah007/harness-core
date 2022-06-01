@@ -41,8 +41,8 @@ import software.wings.service.impl.ThirdPartyApiCallLog;
 import software.wings.service.impl.ThirdPartyApiCallLog.FieldType;
 import software.wings.service.impl.ThirdPartyApiCallLog.ThirdPartyApiCallField;
 
+import com.splunk.Args;
 import com.splunk.Job;
-import com.splunk.JobArgs;
 import com.splunk.JobCollection;
 import com.splunk.SavedSearch;
 import com.splunk.SavedSearchCollection;
@@ -136,7 +136,7 @@ public class SplunkDelegateServiceImplTest extends CategoryTest {
     when(savedSearch.getSearch()).thenReturn("search query");
     when(savedSearch.getTitle()).thenReturn("search query title");
     when(savedSearchCollection.values()).thenReturn(Lists.newArrayList(savedSearch));
-    when(service.getSavedSearches(any(JobArgs.class))).thenReturn(savedSearchCollection);
+    when(service.getSavedSearches(any(Args.class))).thenReturn(savedSearchCollection);
     when(secretDecryptionService.decrypt(any(), any())).thenReturn(splunkConnectorDTO);
     List<SplunkSavedSearch> splunkSavedSearches =
         splunkDelegateService.getSavedSearches(splunkConnectorDTO, new ArrayList<>(), requestGuid);
@@ -175,7 +175,7 @@ public class SplunkDelegateServiceImplTest extends CategoryTest {
     when(savedSearch.getSearch()).thenReturn("search query");
     when(savedSearch.getTitle()).thenReturn("search query title");
     when(savedSearchCollection.values()).thenReturn(Lists.newArrayList(savedSearch));
-    when(service.getSavedSearches(any(JobArgs.class))).thenThrow(new RuntimeException("from test"));
+    when(service.getSavedSearches(any(Args.class))).thenThrow(new RuntimeException("from test"));
     assertThatThrownBy(() -> splunkDelegateService.getSavedSearches(splunkConnectorDTO, new ArrayList<>(), requestGuid))
         .hasMessage("from test");
   }

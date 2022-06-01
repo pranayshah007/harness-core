@@ -7,7 +7,7 @@
 
 package io.harness.cvng.notification.channelDetails;
 
-import io.harness.Team;
+import io.harness.notification.Team;
 import io.harness.notification.channeldetails.EmailChannel;
 import io.harness.notification.channeldetails.NotificationChannel;
 

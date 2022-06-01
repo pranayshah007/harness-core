@@ -29,8 +29,6 @@ import io.harness.ccm.communication.entities.CESlackWebhook;
 import io.harness.rule.Owner;
 import io.harness.timescaledb.TimeScaleDBService;
 
-import software.wings.beans.Account;
-
 import com.slack.api.Slack;
 import com.slack.api.webhook.Payload;
 import com.slack.api.webhook.WebhookResponse;
@@ -78,8 +76,7 @@ public class AnomalyAlertsServiceImplTest extends CategoryTest {
     when(timeScaleDBService.isValid()).thenReturn(true);
     when(mockConnection.createStatement()).thenReturn(mockStatement);
     when(emailNotificationService.send(any())).thenReturn(true);
-    when(accountShardService.getCeEnabledAccounts())
-        .thenReturn(Arrays.asList(Account.Builder.anAccount().withUuid(ACCOUNT_ID).build()));
+    when(accountShardService.getCeEnabledAccountIds()).thenReturn(Arrays.asList(ACCOUNT_ID));
 
     ceSlackWebhook = CESlackWebhook.builder()
                          .accountId(ACCOUNT_ID)

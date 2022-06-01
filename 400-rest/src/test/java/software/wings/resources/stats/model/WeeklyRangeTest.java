@@ -69,9 +69,9 @@ public class WeeklyRangeTest extends CategoryTest {
       WeeklyRange weeklyRange = new WeeklyRange(null, "Monday", "7:00 PM", "Tuesday", "5:00 AM", "Asia/Kolkata");
       TimeRangeBasedFreezeConfig timeRangeBasedFreezeConfig =
           new TimeRangeBasedFreezeConfig(true, Collections.emptyList(), Collections.singletonList(EnvironmentType.PROD),
-              range, null, null, false, null, null, "uuid");
+              range, null, null, false, null, null, "uuid", null);
       WeeklyFreezeConfig weeklyFreezeConfig = new WeeklyFreezeConfig(true, Collections.emptyList(),
-          Collections.singletonList(EnvironmentType.PROD), weeklyRange, null, null, false, null, null, "uuid");
+          Collections.singletonList(EnvironmentType.PROD), weeklyRange, null, null, false, null, null, "uuid", null);
 
       GovernanceConfig.builder()
           .accountId(accountId)

@@ -19,7 +19,7 @@ import io.harness.serializer.JsonUtils;
 
 import software.wings.beans.servicenow.ServiceNowCreateUpdateParams;
 import software.wings.beans.servicenow.ServiceNowFields;
-import software.wings.service.impl.servicenow.ServiceNowServiceImpl.ServiceNowTicketType;
+import software.wings.beans.servicenow.ServiceNowTicketType;
 
 import java.util.Collections;
 import java.util.HashMap;

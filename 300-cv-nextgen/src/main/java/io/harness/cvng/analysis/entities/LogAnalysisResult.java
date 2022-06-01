@@ -121,14 +121,20 @@ public final class LogAnalysisResult implements PersistentEntity, UuidAware, Cre
   }
 
   public enum RadarChartTag {
-    KNOWN_EVENT(0),
-    UNEXPECTED_FREQUENCY(1),
-    UNKNOWN_EVENT(2);
+    KNOWN_EVENT(0, "Known"),
+    UNEXPECTED_FREQUENCY(1, "Unexpected Frequency"),
+    UNKNOWN_EVENT(2, "Unknown");
 
     private Integer severity;
+    private String displayName;
 
-    RadarChartTag(int severity) {
+    public String getDisplayName() {
+      return displayName;
+    }
+
+    RadarChartTag(int severity, String displayName) {
       this.severity = severity;
+      this.displayName = displayName;
     }
     public static Set<RadarChartTag> getAnomalousTags() {
       return Sets.newHashSet(UNKNOWN_EVENT, UNEXPECTED_FREQUENCY);

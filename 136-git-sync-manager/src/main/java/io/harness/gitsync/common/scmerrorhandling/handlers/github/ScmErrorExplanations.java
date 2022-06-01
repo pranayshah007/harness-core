@@ -21,4 +21,5 @@ public class ScmErrorExplanations {
       + "2. The given branch or repo is invalid";
   public static final String INVALID_CONNECTOR_CREDS =
       "The credentials provided in the connector are invalid or have expired.";
+  public static final String REPO_NOT_FOUND = "Provided Github repository does not exist or has been deleted.";
 }

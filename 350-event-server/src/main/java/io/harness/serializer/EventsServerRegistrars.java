@@ -8,7 +8,8 @@
 package io.harness.serializer;
 
 import io.harness.morphia.MorphiaRegistrar;
-import io.harness.serializer.kryo.CvNextGenCommonsBeansKryoRegistrar;
+import io.harness.serializer.kryo.CvNextGenBeansKryoRegistrar;
+import io.harness.serializer.kryo.CvNextGenCommonsKryoRegistrar;
 import io.harness.serializer.kryo.DelegateAgentBeansKryoRegister;
 import io.harness.serializer.kryo.DelegateAgentKryoRegister;
 import io.harness.serializer.kryo.ManagerKryoRegistrar;
@@ -40,12 +41,12 @@ public class EventsServerRegistrars {
           .add(ProjectAndOrgKryoRegistrar.class)
           .addAll(NGCoreRegistrars.kryoRegistrars)
           .add(SecretManagerClientKryoRegistrar.class)
-          .add(CvNextGenCommonsBeansKryoRegistrar.class)
+          .add(CvNextGenCommonsKryoRegistrar.class)
+          .add(CvNextGenBeansKryoRegistrar.class)
           // temporary:
           .add(DelegateAgentKryoRegister.class)
           .add(DelegateAgentBeansKryoRegister.class)
           .add(WatcherBeansKryoRegister.class)
-          .add(CvNextGenCommonsBeansKryoRegistrar.class)
           .build();
 
   public static final ImmutableSet<Class<? extends MorphiaRegistrar>> morphiaRegistrars =

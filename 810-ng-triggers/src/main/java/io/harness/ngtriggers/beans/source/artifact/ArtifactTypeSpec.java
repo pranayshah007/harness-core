@@ -8,7 +8,7 @@
 package io.harness.ngtriggers.beans.source.artifact;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-import static io.harness.ngtriggers.Constants.ARTIFACTORY_GENERIC_REGISTRY;
+import static io.harness.ngtriggers.Constants.ACR;
 import static io.harness.ngtriggers.Constants.ARTIFACTORY_REGISTRY;
 import static io.harness.ngtriggers.Constants.DOCKER_REGISTRY;
 import static io.harness.ngtriggers.Constants.ECR;
@@ -32,7 +32,7 @@ import java.util.List;
       @JsonSubTypes.Type(value = DockerRegistrySpec.class, name = DOCKER_REGISTRY),
       @JsonSubTypes.Type(value = NexusRegistrySpec.class, name = NEXUS3_REGISTRY),
       @JsonSubTypes.Type(value = ArtifactoryRegistrySpec.class, name = ARTIFACTORY_REGISTRY),
-      @JsonSubTypes.Type(value = ArtifactoryGenericRegistrySpec.class, name = ARTIFACTORY_GENERIC_REGISTRY)
+      @JsonSubTypes.Type(value = AcrSpec.class, name = ACR)
 })
 
 @OwnedBy(PIPELINE)

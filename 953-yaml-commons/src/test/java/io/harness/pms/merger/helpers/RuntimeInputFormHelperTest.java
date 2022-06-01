@@ -9,8 +9,13 @@ package io.harness.pms.merger.helpers;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.pms.merger.helpers.RuntimeInputFormHelper.createRuntimeInputForm;
+import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.NAMAN;
 
+import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertFalse;
+import static junit.framework.TestCase.assertNotNull;
+import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CategoryTest;
@@ -19,6 +24,10 @@ import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.rule.Owner;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -48,5 +57,48 @@ public class RuntimeInputFormHelperTest extends CategoryTest {
     String resFile = "pipeline-extensive-template.yml";
     String resTemplate = readFile(resFile);
     assertThat(templateYaml).isEqualTo(resTemplate);
+  }
+
+  @Test
+  @Owner(developers = BRIJESH)
+  @Category(UnitTests.class)
+  public void testCreateExecutionInputFormAndUpdateYamlField() throws JsonProcessingException {
+    String filename = "execution-input-pipeline.yaml";
+    String yaml = readFile(filename);
+    ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
+    JsonNode jsonNode = mapper.readTree(yaml);
+    String templateYaml = RuntimeInputFormHelper.createExecutionInputFormAndUpdateYamlField(jsonNode);
+    assertNotNull(templateYaml);
+    assertFalse(jsonNode.toString().contains("<+input>.executionInput()()"));
+    assertTrue(yaml.contains("<+input>.executionInput()"));
+    assertEquals(jsonNode.get("pipeline")
+                     .get("stages")
+                     .get(0)
+                     .get("stage")
+                     .get("spec")
+                     .get("execution")
+                     .get("steps")
+                     .get(0)
+                     .get("step")
+                     .get("type")
+                     .asText(),
+        "<+executionInput.pipeline.stages.sd.spec.execution.steps.ss.type>");
+    assertEquals(jsonNode.get("pipeline")
+                     .get("stages")
+                     .get(0)
+                     .get("stage")
+                     .get("spec")
+                     .get("execution")
+                     .get("steps")
+                     .get(0)
+                     .get("step")
+                     .get("spec")
+                     .get("source")
+                     .get("spec")
+                     .get("script")
+                     .asText(),
+        "<+executionInput.pipeline.stages.sd.spec.execution.steps.ss.spec.source.spec.script>");
+    assertEquals(jsonNode.get("pipeline").get("stages").get(0).get("stage").get("description").asText(),
+        "<+executionInput.pipeline.stages.sd.description>");
   }
 }

@@ -28,7 +28,8 @@ import static software.wings.beans.appmanifest.StoreType.Remote;
 import static software.wings.beans.appmanifest.StoreType.VALUES_YAML_FROM_HELM_REPO;
 import static software.wings.beans.yaml.YamlConstants.MANIFEST_FILE_FOLDER;
 import static software.wings.delegatetasks.GitFetchFilesTask.GIT_FETCH_FILES_TASK_ASYNC_TIMEOUT;
-import static software.wings.delegatetasks.k8s.K8sTaskHelper.manifestFilesFromGitFetchFilesResult;
+import static software.wings.helpers.ext.k8s.K8sManagerHelper.manifestFilesFromGitFetchFilesResult;
+import static software.wings.settings.SettingVariableTypes.OCI_HELM_REPO;
 
 import static java.lang.String.format;
 import static java.lang.String.join;
@@ -52,6 +53,7 @@ import io.harness.delegate.beans.RemoteMethodReturnValueData;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.task.manifests.request.ManifestCollectionPTaskClientParams.ManifestCollectionPTaskClientParamsKeys;
 import io.harness.eraro.ErrorCode;
+import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.expression.ExpressionEvaluator;
@@ -1056,6 +1058,17 @@ public class ApplicationManifestServiceImpl implements ApplicationManifestServic
 
       if (isNotBlank(helmChartConfig.getChartUrl())) {
         throw new InvalidRequestException("Chart url cannot be used when helm repository is selected", USER);
+      }
+      ociInvalidTagLatestCheck(helmChartConfig);
+    }
+  }
+
+  public void ociInvalidTagLatestCheck(HelmChartConfig helmChartConfig) {
+    SettingAttribute settingAttribute = settingsService.get(helmChartConfig.getConnectorId());
+    if (settingAttribute != null && settingAttribute.getValue() != null
+        && settingAttribute.getValue().getType().equals(OCI_HELM_REPO.toString())) {
+      if (helmChartConfig.getChartVersion() != null && helmChartConfig.getChartVersion().equals("latest")) {
+        throw new InvalidArgumentsException("latest tag as chart version is not support by OCI Registry", USER);
       }
     }
   }

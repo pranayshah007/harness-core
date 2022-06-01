@@ -16,14 +16,12 @@ import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.VerificationApplication;
-import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.job.Sensitivity;
 import io.harness.cvng.beans.job.TestVerificationJobDTO;
 import io.harness.cvng.beans.job.VerificationJobDTO;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.services.api.CVConfigService;
-import io.harness.cvng.models.VerificationType;
 import io.harness.cvng.verificationjob.services.api.VerificationJobService;
 import io.harness.eventsframework.entity_crud.organization.OrganizationEntityChangeDTO;
 import io.harness.persistence.PersistentEntity;
@@ -147,20 +145,6 @@ public class OrganisationChangeEventMessageProcessorTest extends CvNextGenTestBa
 
   private CVConfig createCVConfig(String accountId, String orgIdentifier) {
     return builderFactory.splunkCVConfigBuilder().accountId(accountId).orgIdentifier(orgIdentifier).build();
-  }
-
-  private void fillCommon(CVConfig cvConfig, String accountId, String orgIdentifier) {
-    cvConfig.setVerificationType(VerificationType.LOG);
-    cvConfig.setAccountId(accountId);
-    cvConfig.setConnectorIdentifier(generateUuid());
-    cvConfig.setServiceIdentifier("service");
-    cvConfig.setEnvIdentifier("env");
-    cvConfig.setOrgIdentifier(orgIdentifier);
-    cvConfig.setCategory(CVMonitoringCategory.PERFORMANCE);
-    cvConfig.setProductName(generateUuid());
-    cvConfig.setIdentifier(generateUuid());
-    cvConfig.setMonitoringSourceName(generateUuid());
-    cvConfig.setProjectIdentifier(generateUuid());
   }
 
   private VerificationJobDTO createVerificationJobDTO(String orgIdentifier) {

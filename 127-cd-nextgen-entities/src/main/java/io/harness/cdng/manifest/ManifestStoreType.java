@@ -24,6 +24,9 @@ public interface ManifestStoreType {
   String S3 = "S3";
   String GCS = "Gcs";
   String ARTIFACTORY = "Artifactory";
+  String INLINE = "Inline";
+  String S3URL = "S3Url";
+  String InheritFromManifest = "InheritFromManifest";
 
   static boolean isInGitSubset(String manifestType) {
     switch (manifestType) {

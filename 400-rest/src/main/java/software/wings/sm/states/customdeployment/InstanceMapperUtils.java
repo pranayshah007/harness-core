@@ -9,9 +9,15 @@ package software.wings.sm.states.customdeployment;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import io.harness.serializer.JsonSubtypeResolver;
 import io.harness.serializer.JsonUtils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.guava.GuavaModule;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.inject.Singleton;
 import java.util.Collections;
 import java.util.HashMap;
@@ -52,15 +58,27 @@ public class InstanceMapperUtils {
   private Function<Map<String, Object>, HostProperties> getMapHostPropertiesFunction(
       Map<String, String> hostAttributes, String hostNameKey) {
     return instance -> {
-      final String hostJson = JsonUtils.asJson(instance);
+      ObjectMapper mapper = createObjectMapper();
+      final String hostJson = JsonUtils.asJson(instance, mapper);
       Map<String, Object> otherHostProperties = hostAttributes.keySet().stream().collect(
           HashMap::new, (m, v) -> m.put(v, JsonUtils.jsonPath(hostJson, hostAttributes.get(v))), HashMap::putAll);
 
       return HostProperties.builder()
-          .hostName(JsonUtils.jsonPath(JsonUtils.asJson(instance), hostNameKey))
+          .hostName(JsonUtils.jsonPath(JsonUtils.asJson(instance, mapper), hostNameKey))
           .otherPropeties(otherHostProperties)
           .build();
     };
+  }
+
+  private ObjectMapper createObjectMapper() {
+    ObjectMapper mapper = new ObjectMapper();
+    // not including setSerializationInclusion(Include.NON_NULL) as it removes null valued field from json
+    mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+    mapper.setSubtypeResolver(new JsonSubtypeResolver(mapper.getSubtypeResolver()));
+    mapper.registerModule(new Jdk8Module());
+    mapper.registerModule(new GuavaModule());
+    mapper.registerModule(new JavaTimeModule());
+    return mapper;
   }
 
   public static String prettyJson(String json, String key) throws JsonProcessingException {

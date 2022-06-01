@@ -189,12 +189,12 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     sloErrorBudgetResetService.resetErrorBudget(builderFactory.getProjectParams(),
         builderFactory.getSLOErrorBudgetResetDTOBuilder()
             .serviceLevelObjectiveIdentifier(serviceLevelObjective.getIdentifier())
-            .errorBudgetIncrementPercentage(100.0)
+            .errorBudgetIncrementMinutes(100)
             .build());
     sloErrorBudgetResetService.resetErrorBudget(builderFactory.getProjectParams(),
         builderFactory.getSLOErrorBudgetResetDTOBuilder()
             .serviceLevelObjectiveIdentifier(serviceLevelObjective.getIdentifier())
-            .errorBudgetIncrementPercentage(50.0)
+            .errorBudgetIncrementMinutes(50)
             .build());
     PageResponse<SLODashboardWidget> pageResponse =
         sloDashboardService.getSloDashboardWidgets(builderFactory.getProjectParams(),
@@ -206,7 +206,7 @@ public class SLODashboardServiceImplTest extends CvNextGenTestBase {
     SLODashboardWidget sloDashboardWidget = sloDashboardWidgets.get(0);
 
     assertThat(sloDashboardWidget.getErrorBudgetRemaining())
-        .isEqualTo(25920); // 30 days - 30*24*60 - 20% -> 8640 -> 8640 + 8640*1 -> 17280  -> 17280 + 17280*0.5-> 25920
+        .isEqualTo(8790); // 30 days - 30*24*60 - 20% -> 8640 -> 8640 + 100 -> 8740  -> 8740 + 50-> 8790
     assertThat(sloDashboardWidget.getErrorBudgetRemainingPercentage()).isCloseTo(100, offset(0.0001));
   }
 

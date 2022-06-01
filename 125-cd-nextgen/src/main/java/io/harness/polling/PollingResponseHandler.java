@@ -10,6 +10,7 @@ package io.harness.polling;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
+import static io.harness.polling.contracts.Type.ACR;
 import static io.harness.polling.contracts.Type.ARTIFACTORY;
 import static io.harness.polling.contracts.Type.DOCKER_HUB;
 import static io.harness.polling.contracts.Type.ECR;
@@ -40,6 +41,7 @@ import io.harness.polling.artifact.ArtifactCollectionUtilsNg;
 import io.harness.polling.bean.PolledResponseResult;
 import io.harness.polling.bean.PolledResponseResult.PolledResponseResultBuilder;
 import io.harness.polling.bean.PollingDocument;
+import io.harness.polling.bean.artifact.AcrArtifactInfo;
 import io.harness.polling.bean.artifact.ArtifactInfo;
 import io.harness.polling.bean.artifact.ArtifactPolledResponse;
 import io.harness.polling.bean.artifact.ArtifactoryRegistryArtifactInfo;
@@ -292,6 +294,10 @@ public class PollingResponseHandler {
           polledResponseResultBuilder.name(((ArtifactoryRegistryArtifactInfo) artifactInfo).getArtifactPath());
         }
         polledResponseResultBuilder.type(ARTIFACTORY);
+        break;
+      case ACR:
+        polledResponseResultBuilder.name(((AcrArtifactInfo) artifactInfo).getRepository());
+        polledResponseResultBuilder.type(ACR);
         break;
       default:
         throw new InvalidRequestException("Unsupported Artifact Type" + artifactInfo.getType().getDisplayName());

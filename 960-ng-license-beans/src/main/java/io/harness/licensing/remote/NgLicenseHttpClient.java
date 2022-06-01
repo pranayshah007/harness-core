@@ -35,5 +35,5 @@ public interface NgLicenseHttpClient {
 
   @GET(MODULE_LICENSE_EXPIRY_API)
   Call<ResponseDTO<List<ModuleLicenseDTO>>> getModuleLicensesByModuleType(
-      @Query("moduleType") ModuleType moduleType, @Query("expiryTime") long expiryTime);
+      @Path("moduleType") ModuleType moduleType, @Query("expiryTime") long expiryTime);
 }

@@ -15,7 +15,7 @@ import io.harness.cvng.core.beans.params.TimeRangeParams;
 import io.harness.cvng.core.beans.params.filterParams.LiveMonitoringLogAnalysisFilter;
 import io.harness.cvng.core.beans.params.filterParams.MonitoredServiceLogAnalysisFilter;
 import io.harness.cvng.dashboard.beans.AnalyzedLogDataDTO;
-import io.harness.cvng.dashboard.beans.AnalyzedRadarChartLogDataDTO;
+import io.harness.cvng.dashboard.beans.AnalyzedRadarChartLogDataWithCountDTO;
 import io.harness.ng.beans.PageResponse;
 
 import java.util.List;
@@ -25,7 +25,7 @@ public interface LogDashboardService {
       TimeRangeParams timeRangeParams, LiveMonitoringLogAnalysisFilter liveMonitoringLogAnalysisFilter,
       PageParams pageParams);
 
-  PageResponse<AnalyzedRadarChartLogDataDTO> getAllRadarChartLogsData(MonitoredServiceParams monitoredServiceParams,
+  AnalyzedRadarChartLogDataWithCountDTO getAllRadarChartLogsData(MonitoredServiceParams monitoredServiceParams,
       MonitoredServiceLogAnalysisFilter monitoredServiceLogAnalysisFilter, PageParams pageParams);
 
   List<LiveMonitoringLogAnalysisClusterDTO> getLogAnalysisClusters(MonitoredServiceParams monitoredServiceParams,

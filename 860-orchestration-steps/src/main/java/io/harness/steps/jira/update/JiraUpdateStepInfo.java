@@ -93,4 +93,9 @@ public class JiraUpdateStepInfo implements PMSStepInfo, WithConnectorRef, WithDe
     connectorRefMap.put(YAMLFieldNameConstants.CONNECTOR_REF, connectorRef);
     return connectorRefMap;
   }
+
+  @Override
+  public ParameterField<List<TaskSelectorYaml>> fetchDelegateSelectors() {
+    return getDelegateSelectors();
+  }
 }

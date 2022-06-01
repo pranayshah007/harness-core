@@ -117,4 +117,9 @@ public class BitbucketConnectorDTO extends ConnectorConfigDTO implements ScmConn
     }
     return GitRepositoryDTO.builder().org(GitClientHelper.getGitOwner(url, true)).build();
   }
+
+  @Override
+  public void validate() {
+    GitClientHelper.validateURL(url);
+  }
 }

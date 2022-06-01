@@ -38,7 +38,6 @@ public class EnvironmentGroupConfig {
   String projectIdentifier;
 
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) String description;
-  String color;
   Map<String, String> tags;
 
   private List<String> envIdentifiers;

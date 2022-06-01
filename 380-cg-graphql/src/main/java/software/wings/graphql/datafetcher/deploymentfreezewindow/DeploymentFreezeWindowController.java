@@ -20,15 +20,18 @@ import io.harness.governance.AllAppFilter;
 import io.harness.governance.AllEnvFilter;
 import io.harness.governance.AllNonProdEnvFilter;
 import io.harness.governance.AllProdEnvFilter;
+import io.harness.governance.AllUserGroupFilter;
 import io.harness.governance.ApplicationFilter;
 import io.harness.governance.BlackoutWindowFilterType;
 import io.harness.governance.CustomAppFilter;
 import io.harness.governance.CustomEnvFilter;
+import io.harness.governance.CustomUserGroupFilter;
 import io.harness.governance.EnvironmentFilter;
 import io.harness.governance.ServiceFilter;
 import io.harness.governance.ServiceFilter.ServiceFilterType;
 import io.harness.governance.TimeRangeBasedFreezeConfig;
 import io.harness.governance.TimeRangeOccurrence;
+import io.harness.governance.UserGroupFilter;
 
 import software.wings.beans.Application;
 import software.wings.beans.Environment;
@@ -39,6 +42,7 @@ import software.wings.graphql.schema.mutation.deploymentfreezewindow.input.QLFre
 import software.wings.graphql.schema.mutation.deploymentfreezewindow.input.QLServiceTypeFilterInput;
 import software.wings.graphql.schema.mutation.deploymentfreezewindow.input.QLSetupInput;
 import software.wings.graphql.schema.mutation.deploymentfreezewindow.input.QLUpdateDeploymentFreezeWindowInput;
+import software.wings.graphql.schema.mutation.deploymentfreezewindow.input.QLUserGroupFilterInput;
 import software.wings.graphql.schema.type.deploymentfreezewindow.QLDeploymentFreezeWindow;
 import software.wings.graphql.schema.type.deploymentfreezewindow.QLFreezeWindow;
 import software.wings.graphql.schema.type.deploymentfreezewindow.QLSetup;
@@ -69,6 +73,9 @@ public class DeploymentFreezeWindowController {
     TimeRange timeRange = populateTimeRangeEntity(qlCreateDeploymentFreezeWindowInput.getSetup());
     String uuid = null;
 
+    final UserGroupFilter userGroupSelection =
+        populateUserGroupSelection(qlCreateDeploymentFreezeWindowInput.getUserGroupSelection());
+
     return TimeRangeBasedFreezeConfig.builder()
         .name(qlCreateDeploymentFreezeWindowInput.getName().trim())
         .description(qlCreateDeploymentFreezeWindowInput.getDescription())
@@ -77,7 +84,38 @@ public class DeploymentFreezeWindowController {
         .timeRange(timeRange)
         .userGroups(qlCreateDeploymentFreezeWindowInput.getNotifyTo())
         .uuid(uuid)
+        .userGroupSelection(userGroupSelection)
         .build();
+  }
+
+  private QLUserGroupFilterInput populateUserGroupSelection(UserGroupFilter userGroupsToNotify) {
+    if (userGroupsToNotify == null) {
+      return null;
+    }
+    final BlackoutWindowFilterType userGroupFilterType = userGroupsToNotify.getFilterType();
+    if (ALL.equals(userGroupFilterType)) {
+      return QLUserGroupFilterInput.builder().userGroupFilterType(ALL).build();
+    } else {
+      return QLUserGroupFilterInput.builder()
+          .userGroupFilterType(CUSTOM)
+          .userGroupIds(((CustomUserGroupFilter) userGroupsToNotify).getUserGroups())
+          .build();
+    }
+  }
+
+  private UserGroupFilter populateUserGroupSelection(QLUserGroupFilterInput userGroupsToNotify) {
+    if (userGroupsToNotify == null) {
+      return null;
+    }
+    final BlackoutWindowFilterType userGroupFilterType = userGroupsToNotify.getUserGroupFilterType();
+    if (ALL.equals(userGroupFilterType)) {
+      return AllUserGroupFilter.builder().userGroupFilterType(ALL).build();
+    } else {
+      return CustomUserGroupFilter.builder()
+          .userGroupFilterType(CUSTOM)
+          .userGroups(userGroupsToNotify.getUserGroupIds())
+          .build();
+    }
   }
 
   private TimeRange populateTimeRangeEntity(QLSetupInput qlSetupInput) {
@@ -446,6 +484,7 @@ public class DeploymentFreezeWindowController {
         .notifyTo(timeRangeBasedFreezeConfig.getUserGroups())
         .freezeWindows(qlFreezeWindowList)
         .setup(qlSetup)
+        .userGroupSelection(populateUserGroupSelection(timeRangeBasedFreezeConfig.getUserGroupSelection()))
         .build();
   }
 
@@ -520,9 +559,24 @@ public class DeploymentFreezeWindowController {
 
   private void validateUserGroups(TimeRangeBasedFreezeConfig timeRangeBasedFreezeConfig, String accountId) {
     List<String> userGroups = timeRangeBasedFreezeConfig.getUserGroups();
-    if (isEmpty(userGroups)) {
+    if (isEmpty(userGroups) && timeRangeBasedFreezeConfig.getUserGroupSelection() == null) {
       throw new InvalidRequestException("User Groups cannot be empty");
     }
+    if (timeRangeBasedFreezeConfig.getUserGroupSelection() != null) {
+      if (CUSTOM.equals(timeRangeBasedFreezeConfig.getUserGroupSelection().getFilterType())) {
+        final CustomUserGroupFilter userGroupSelection =
+            (CustomUserGroupFilter) timeRangeBasedFreezeConfig.getUserGroupSelection();
+        if (isEmpty(userGroupSelection.getUserGroups())) {
+          throw new InvalidRequestException("User Groups cannot be empty in custom filter");
+        }
+        validateUserGroups(accountId, userGroupSelection.getUserGroups());
+      }
+    } else {
+      validateUserGroups(accountId, userGroups);
+    }
+  }
+
+  private void validateUserGroups(String accountId, List<String> userGroups) {
     for (String userGroupId : userGroups) {
       if (userGroupId.isEmpty()) {
         throw new InvalidRequestException("User group Id cannot be empty");

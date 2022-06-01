@@ -122,11 +122,11 @@ public class AwsCFHelperServiceDelegateImpl
   }
 
   @Override
-  public List<String> getCapabilities(AwsInternalConfig awsConfig, String region, String data, String type) {
+  public List<String> getCapabilities(AwsInternalConfig awsConfig, String region, String data, String templateType) {
     try (CloseableAmazonWebServiceClient<AmazonCloudFormationClient> closeableAmazonCloudFormationClient =
              new CloseableAmazonWebServiceClient(getAmazonCloudFormationClient(Regions.fromName(region), awsConfig))) {
       GetTemplateSummaryRequest request = new GetTemplateSummaryRequest();
-      if ("s3".equalsIgnoreCase(type)) {
+      if ("s3".equalsIgnoreCase(templateType)) {
         request.withTemplateURL(normalizeS3TemplatePath(data));
       } else {
         request.withTemplateBody(data);

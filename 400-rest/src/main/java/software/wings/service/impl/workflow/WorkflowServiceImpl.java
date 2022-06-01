@@ -216,6 +216,7 @@ import software.wings.beans.command.ServiceCommand;
 import software.wings.beans.concurrency.ConcurrencyStrategy;
 import software.wings.beans.concurrency.ConcurrencyStrategy.UnitType;
 import software.wings.beans.container.KubernetesContainerTask;
+import software.wings.beans.container.KubernetesContainerTaskUtils;
 import software.wings.beans.deployment.DeploymentMetadata;
 import software.wings.beans.deployment.DeploymentMetadata.DeploymentMetadataBuilder;
 import software.wings.beans.deployment.DeploymentMetadata.Include;
@@ -1048,14 +1049,14 @@ public class WorkflowServiceImpl implements WorkflowService {
     KubernetesContainerTask containerTask =
         (KubernetesContainerTask) serviceResourceService.getContainerTaskByDeploymentType(
             appId, serviceId, KUBERNETES.name());
-    return containerTask != null && containerTask.checkDaemonSet();
+    return containerTask != null && KubernetesContainerTaskUtils.checkDaemonSet(containerTask.getAdvancedConfig());
   }
 
   private boolean isStatefulSet(String appId, String serviceId) {
     KubernetesContainerTask containerTask =
         (KubernetesContainerTask) serviceResourceService.getContainerTaskByDeploymentType(
             appId, serviceId, KUBERNETES.name());
-    return containerTask != null && containerTask.checkStatefulSet();
+    return containerTask != null && KubernetesContainerTaskUtils.checkStatefulSet(containerTask.getAdvancedConfig());
   }
 
   private void updateKeywordsAndLinkedTemplateUuids(Workflow workflow, List<String> linkedTemplateUuids) {
@@ -1670,6 +1671,9 @@ public class WorkflowServiceImpl implements WorkflowService {
         propertiesMap.put("workspace",
             isTerraformInheritState(step) ? provisionerIdWorkspaceMap.get(step.getProperties().get("provisionerId"))
                                           : step.getProperties().get("workspace"));
+        if (step.getProperties().get("templateExpressions") != null) {
+          propertiesMap.put("templateExpressions", step.getProperties().get("templateExpressions"));
+        }
         rollbackProvisionerNodes.add(GraphNode.builder()
                                          .type(stateType.name())
                                          .rollback(true)
@@ -2605,7 +2609,8 @@ public class WorkflowServiceImpl implements WorkflowService {
         deploymentMetadataBuilder.artifactVariables(artifactVariables);
         updateArtifactVariables(appId, workflow, artifactVariables, withDefaultArtifact, workflowExecution);
         resolveArtifactStreamMetadata(appId, artifactVariables, workflowExecution);
-        if (featureFlagService.isEnabled(FeatureName.DISABLE_ARTIFACT_COLLECTION, accountId) && withDefaultArtifact) {
+        if (featureFlagService.isEnabled(FeatureName.ARTIFACT_COLLECTION_CONFIGURABLE, accountId)
+            && withDefaultArtifact) {
           addArtifactInputToArtifactVariables(artifactVariables, workflowExecution);
         }
       }

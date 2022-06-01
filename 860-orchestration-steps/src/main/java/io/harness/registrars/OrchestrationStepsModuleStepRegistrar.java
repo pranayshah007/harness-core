@@ -23,6 +23,7 @@ import io.harness.steps.barriers.BarrierStep;
 import io.harness.steps.cf.FeatureFlagStageStep;
 import io.harness.steps.cf.FlagConfigurationStep;
 import io.harness.steps.common.pipeline.PipelineSetupStep;
+import io.harness.steps.customstage.CustomStageStep;
 import io.harness.steps.http.HttpStep;
 import io.harness.steps.jira.create.JiraCreateStep;
 import io.harness.steps.jira.update.JiraUpdateStep;
@@ -58,6 +59,7 @@ public class OrchestrationStepsModuleStepRegistrar {
     engineSteps.put(ServiceNowCreateStep.STEP_TYPE, ServiceNowCreateStep.class);
     engineSteps.put(ServiceNowUpdateStep.STEP_TYPE, ServiceNowUpdateStep.class);
     engineSteps.put(StagesStep.STEP_TYPE, StagesStep.class);
+    engineSteps.put(CustomStageStep.STEP_TYPE, CustomStageStep.class);
 
     // Feature Flag
     engineSteps.put(FlagConfigurationStep.STEP_TYPE, FlagConfigurationStep.class);

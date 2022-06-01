@@ -17,8 +17,10 @@ import io.harness.cvng.notification.beans.NotificationRuleRef;
 import io.harness.cvng.servicelevelobjective.beans.DayOfWeek;
 import io.harness.cvng.servicelevelobjective.beans.SLOCalenderType;
 import io.harness.cvng.servicelevelobjective.beans.SLODashboardDetail.TimeRangeFilter;
+import io.harness.cvng.servicelevelobjective.beans.SLOErrorBudgetResetDTO;
 import io.harness.cvng.servicelevelobjective.beans.SLOTargetType;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorType;
+import io.harness.data.structure.CollectionUtils;
 import io.harness.iterator.PersistentRegularIterable;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
@@ -106,12 +108,15 @@ public class ServiceLevelObjective
   }
 
   public int getActiveErrorBudgetMinutes(
-      List<Double> orderedErrorBudgetIncrementPercentages, LocalDateTime currentDateTime) {
-    int activeErrorBudget = getTotalErrorBudgetMinutes(currentDateTime);
-    for (Double incrementPercentage : orderedErrorBudgetIncrementPercentages) {
-      activeErrorBudget = activeErrorBudget + (int) Math.floor((activeErrorBudget * incrementPercentage) / 100);
-    }
-    return activeErrorBudget;
+      List<SLOErrorBudgetResetDTO> sloErrorBudgetResets, LocalDateTime currentDateTime) {
+    int totalErrorBudgetMinutes = getTotalErrorBudgetMinutes(currentDateTime);
+    long totalErrorBudgetIncrementMinutesFromReset =
+        CollectionUtils.emptyIfNull(sloErrorBudgetResets)
+            .stream()
+            .mapToLong(sloErrorBudgetResetDTO -> sloErrorBudgetResetDTO.getErrorBudgetIncrementMinutes())
+            .sum();
+    return Math.toIntExact(Math.min(getCurrentTimeRange(currentDateTime).totalMinutes(),
+        totalErrorBudgetMinutes + totalErrorBudgetIncrementMinutesFromReset));
   }
 
   public int getTotalErrorBudgetMinutes(LocalDateTime currentDateTime) {

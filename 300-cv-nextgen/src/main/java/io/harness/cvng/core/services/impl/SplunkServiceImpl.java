@@ -12,9 +12,6 @@ import io.harness.cvng.beans.SplunkSavedSearch;
 import io.harness.cvng.beans.splunk.SplunkLatestHistogramDataCollectionRequest;
 import io.harness.cvng.beans.splunk.SplunkSampleDataCollectionRequest;
 import io.harness.cvng.beans.splunk.SplunkSavedSearchRequest;
-import io.harness.cvng.client.NextGenService;
-import io.harness.cvng.client.RequestExecutor;
-import io.harness.cvng.client.VerificationManagerClient;
 import io.harness.cvng.core.beans.OnboardingRequestDTO;
 import io.harness.cvng.core.beans.OnboardingResponseDTO;
 import io.harness.cvng.core.services.api.OnboardingService;
@@ -29,10 +26,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 
 public class SplunkServiceImpl implements SplunkService {
-  @Inject private VerificationManagerClient verificationManagerClient;
-  @Inject private RequestExecutor requestExecutor;
-  @Inject private NextGenService nextGenService;
-
   @Inject private OnboardingService onboardingService;
 
   @Override

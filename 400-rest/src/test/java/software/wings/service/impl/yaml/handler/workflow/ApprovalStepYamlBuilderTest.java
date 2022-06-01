@@ -22,7 +22,7 @@ import io.harness.serializer.JsonUtils;
 
 import software.wings.beans.approval.JiraApprovalParams;
 import software.wings.beans.approval.ServiceNowApprovalParams;
-import software.wings.service.impl.servicenow.ServiceNowServiceImpl.ServiceNowTicketType;
+import software.wings.beans.servicenow.ServiceNowTicketType;
 
 import java.util.ArrayList;
 import java.util.HashMap;

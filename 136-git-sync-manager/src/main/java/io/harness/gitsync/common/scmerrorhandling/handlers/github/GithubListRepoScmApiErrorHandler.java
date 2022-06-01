@@ -21,8 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(PL)
 public class GithubListRepoScmApiErrorHandler implements ScmApiErrorHandler {
-  public static final String LIST_REPO_WITH_INVALID_CREDS =
-      "Listing repositories from Github failed. " + ScmErrorExplanations.INVALID_CONNECTOR_CREDS;
+  public static final String LIST_REPO_FAILED_MESSAGE = "Listing repositories from Github failed. ";
 
   @Override
   public void handleError(int statusCode, String errorMessage) throws WingsException {
@@ -30,7 +29,8 @@ public class GithubListRepoScmApiErrorHandler implements ScmApiErrorHandler {
       case 401:
       case 403:
         throw NestedExceptionUtils.hintWithExplanationException(ScmErrorHints.INVALID_CREDENTIALS,
-            LIST_REPO_WITH_INVALID_CREDS, new ScmUnauthorizedException(errorMessage));
+            LIST_REPO_FAILED_MESSAGE + ScmErrorExplanations.INVALID_CONNECTOR_CREDS,
+            new ScmUnauthorizedException(errorMessage));
       default:
         log.error(String.format("Error while listing github repos: [%s: %s]", statusCode, errorMessage));
         throw new ScmUnexpectedException(errorMessage);

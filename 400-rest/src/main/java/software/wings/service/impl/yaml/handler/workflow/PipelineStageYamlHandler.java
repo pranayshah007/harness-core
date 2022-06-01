@@ -292,7 +292,8 @@ public class PipelineStageYamlHandler extends BaseYamlHandler<Yaml, PipelineStag
         .build();
   }
 
-  private void generateYamlForApprovalStage(
+  @VisibleForTesting
+  void generateYamlForApprovalStage(
       String appId, PipelineStageElement stageElement, Map<String, Object> outputProperties) {
     Map<String, Object> properties = stageElement.getProperties();
 
@@ -313,7 +314,7 @@ public class PipelineStageYamlHandler extends BaseYamlHandler<Yaml, PipelineStag
         if (!shouldBeIgnored(name)) {
           if (USER_GROUPS.equals(name)) {
             outputProperties.put(name,
-                ("userGroups".equals(name) && value != null)
+                ("userGroups".equals(name) && value instanceof List)
                     ? getUserGroupNames((List<String>) value, appService.getAccountIdByAppId(appId))
                     : value);
           } else {

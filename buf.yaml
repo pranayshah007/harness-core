@@ -7,6 +7,8 @@ lint:
   except:
     - ENUM_VALUE_PREFIX
     - PACKAGE_VERSION_SUFFIX
+  ignore:
+    - io/harness/notification/notification_request.proto
 breaking:
   use:
     - WIRE_JSON

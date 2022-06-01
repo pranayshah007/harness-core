@@ -8,10 +8,10 @@
 package io.harness.cdng.envGroup.mappers;
 
 import static io.harness.NGConstants.HARNESS_BLUE;
-import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ng.core.mapper.TagMapper.convertToList;
 import static io.harness.ng.core.mapper.TagMapper.convertToMap;
-import static io.harness.ng.core.utils.NGUtils.validate;
 
 import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
@@ -25,6 +25,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.sdk.EntityGitDetailsMapper;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.envGroup.dto.EnvironmentGroupDeleteResponse;
+import io.harness.ng.core.envGroup.dto.EnvironmentGroupRequestDTO;
 import io.harness.ng.core.envGroup.dto.EnvironmentGroupResponse;
 import io.harness.ng.core.envGroup.dto.EnvironmentGroupResponseDTO;
 import io.harness.ng.core.environment.dto.EnvironmentResponse;
@@ -35,7 +36,7 @@ import java.util.List;
 import java.util.Optional;
 import lombok.experimental.UtilityClass;
 
-@OwnedBy(PIPELINE)
+@OwnedBy(CDC)
 @UtilityClass
 public class EnvironmentGroupMapper {
   public EnvironmentGroupResponseDTO writeDTO(
@@ -76,42 +77,51 @@ public class EnvironmentGroupMapper {
         .build();
   }
 
-  public EnvironmentGroupEntity toEnvironmentEntity(String accId, String orgId, String projectId, String yaml) {
-    EnvironmentGroupWrapperConfig environmentGroupWrapperConfig;
-    try {
-      environmentGroupWrapperConfig = YamlUtils.read(yaml, EnvironmentGroupWrapperConfig.class);
-    } catch (IOException e) {
-      throw new InvalidRequestException(String.format(" Environment Group could not be created - %s", e.getMessage()));
+  public EnvironmentGroupEntity toEnvironmentGroupEntity(
+      String accId, EnvironmentGroupRequestDTO environmentGroupRequestDTO) {
+    if (isNotEmpty(environmentGroupRequestDTO.getYaml())) {
+      try {
+        EnvironmentGroupConfig environmentGroupConfig =
+            YamlUtils.read(environmentGroupRequestDTO.getYaml(), EnvironmentGroupWrapperConfig.class)
+                .getEnvironmentGroupConfig();
+        validateYamlOfEnvGroup(environmentGroupConfig, environmentGroupRequestDTO);
+        return EnvironmentGroupEntity.builder()
+            .accountId(accId)
+            .projectIdentifier(environmentGroupRequestDTO.getProjectIdentifier())
+            .orgIdentifier(environmentGroupRequestDTO.getOrgIdentifier())
+            .identifier(environmentGroupRequestDTO.getIdentifier().trim())
+            .name(environmentGroupConfig.getName().trim())
+            .color(environmentGroupRequestDTO.getColor())
+            .description(environmentGroupConfig.getDescription())
+            .tags(convertToList(environmentGroupConfig.getTags()))
+            .yaml(environmentGroupRequestDTO.getYaml())
+            .envIdentifiers(CollectionUtils.emptyIfNull(environmentGroupConfig.getEnvIdentifiers()))
+            .build();
+      } catch (IOException e) {
+        throw new InvalidRequestException("Cannot create environment config due to " + e.getMessage());
+      }
     }
-    // Validates nonEmpty checks for environmentGroupWrapperConfig variables
-    EnvironmentGroupConfig environmentGroupConfig = environmentGroupWrapperConfig.getEnvironmentGroupConfig();
-    validate(environmentGroupConfig);
 
-    validateOrgAndProjIdForEnvironmentGroup(accId, orgId, projectId, environmentGroupConfig);
-    return EnvironmentGroupEntity.builder()
-        .accountId(accId)
-        .projectIdentifier(projectId)
-        .orgIdentifier(orgId)
-        .identifier(environmentGroupConfig.getIdentifier().trim())
-        .name(environmentGroupConfig.getName().trim())
-        .color(environmentGroupConfig.getColor())
-        .description(environmentGroupConfig.getDescription())
-        .tags(convertToList(environmentGroupConfig.getTags()))
-        .envIdentifiers(CollectionUtils.emptyIfNull(environmentGroupConfig.getEnvIdentifiers()))
-        .yaml(yaml)
-        .build();
+    return null;
   }
 
-  private static void validateOrgAndProjIdForEnvironmentGroup(
-      String accId, String orgId, String projectId, EnvironmentGroupConfig environmentGroupConfig) {
-    // validate Org Id
-    if (!environmentGroupConfig.getOrgIdentifier().equals(orgId)) {
-      throw new InvalidRequestException("Organization Identifier passed in query param is not same as passed in yaml");
+  public void validateYamlOfEnvGroup(EnvironmentGroupConfig config, EnvironmentGroupRequestDTO dto) {
+    if (!config.getOrgIdentifier().equals(dto.getOrgIdentifier())) {
+      throw new InvalidRequestException(
+          String.format("Org Identifier %s passed in yaml is not same as passed in query params %s",
+              config.getOrgIdentifier(), dto.getOrgIdentifier()));
     }
 
-    // validate Pro Id
-    if (!environmentGroupConfig.getProjectIdentifier().equals(projectId)) {
-      throw new InvalidRequestException("Project Identifier passed in query param is not same as passed in yaml");
+    if (!config.getProjectIdentifier().equals(dto.getProjectIdentifier())) {
+      throw new InvalidRequestException(
+          String.format("Project Identifier %s passed in yaml is not same as passed in query params %s",
+              config.getProjectIdentifier(), dto.getProjectIdentifier()));
+    }
+
+    if (!config.getIdentifier().equals(dto.getIdentifier())) {
+      throw new InvalidRequestException(
+          String.format("Environment Group Identifier %s passed in yaml is not same as passed in query params %s",
+              config.getIdentifier(), dto.getIdentifier()));
     }
   }
 

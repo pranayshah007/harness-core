@@ -7,12 +7,12 @@
 
 package io.harness.notification.service;
 
-import static io.harness.NotificationRequest.MSTeam;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eraro.ErrorCode.DEFAULT_ERROR_CODE;
 import static io.harness.exception.WingsException.USER;
+import static io.harness.notification.NotificationRequest.MSTeam;
 import static io.harness.notification.NotificationServiceConstants.TEST_MSTEAMS_TEMPLATE;
 import static io.harness.notification.constant.NotificationConstants.ABORTED_COLOR;
 import static io.harness.notification.constant.NotificationConstants.BLUE_COLOR;
@@ -28,14 +28,14 @@ import static org.apache.commons.lang3.StringUtils.SPACE;
 import static org.apache.commons.lang3.StringUtils.stripToNull;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
 
-import io.harness.NotificationRequest;
-import io.harness.Team;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.delegate.beans.MicrosoftTeamsTaskParams;
 import io.harness.delegate.beans.NotificationProcessingResponse;
 import io.harness.delegate.beans.NotificationTaskResponse;
 import io.harness.notification.NotificationChannelType;
+import io.harness.notification.NotificationRequest;
+import io.harness.notification.Team;
 import io.harness.notification.exception.NotificationException;
 import io.harness.notification.remote.dto.MSTeamSettingDTO;
 import io.harness.notification.remote.dto.NotificationSettingDTO;

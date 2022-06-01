@@ -28,8 +28,6 @@ import io.harness.delegate.beans.connector.CEFeatures;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.ceawsconnector.CEAwsConnectorDTO;
 
-import software.wings.beans.Account;
-
 import com.amazonaws.services.organizations.AWSOrganizationsClient;
 import com.amazonaws.services.organizations.model.Tag;
 import com.google.cloud.bigquery.BigQuery;
@@ -66,19 +64,19 @@ public class AwsAccountTagsCollectionService {
   @Autowired NGConnectorHelper ngConnectorHelper;
 
   public void update() {
-    List<Account> accounts = accountShardService.getCeEnabledAccounts();
-    log.info("accounts size: {}", accounts.size());
-    for (Account account : accounts) {
-      log.info("Fetching connectors for accountName {}, accountId {}", account.getAccountName(), account.getUuid());
-      List<ConnectorResponseDTO> nextGenAwsConnectorResponses = getNextGenAwsConnectorResponses(account.getUuid());
+    List<String> accountIds = accountShardService.getCeEnabledAccountIds();
+    log.info("accounts size: {}", accountIds.size());
+    for (String accountId : accountIds) {
+      log.info("Fetching connectors for accountId {}", accountId);
+      List<ConnectorResponseDTO> nextGenAwsConnectorResponses = getNextGenAwsConnectorResponses(accountId);
       for (ConnectorResponseDTO connector : nextGenAwsConnectorResponses) {
         ConnectorInfoDTO connectorInfo = connector.getConnector();
         CEAwsConnectorDTO ceAwsConnectorDTO = (CEAwsConnectorDTO) connectorInfo.getConnectorConfig();
         try {
-          processAndInsertTags(ceAwsConnectorDTO, account);
+          processAndInsertTags(ceAwsConnectorDTO, accountId);
         } catch (Exception e) {
           log.warn("Exception processing aws tags for connectorId: {} for CCM accountId: {}",
-              connectorInfo.getIdentifier(), account.getUuid(), e);
+              connectorInfo.getIdentifier(), accountId, e);
         }
       }
     }
@@ -89,8 +87,8 @@ public class AwsAccountTagsCollectionService {
         accountId, Arrays.asList(ConnectorType.CE_AWS), Arrays.asList(CEFeatures.BILLING), Collections.emptyList());
   }
 
-  public void processAndInsertTags(CEAwsConnectorDTO ceAwsConnectorDTO, Account account) {
-    String tableName = createBQTable(account); // This can be moved to connector creation part
+  public void processAndInsertTags(CEAwsConnectorDTO ceAwsConnectorDTO, String accountId) {
+    String tableName = createBQTable(accountId); // This can be moved to connector creation part
     log.info("awsAccountId: {}, roleArn: {}, externalId: {}", ceAwsConnectorDTO.getAwsAccountId(),
         ceAwsConnectorDTO.getCrossAccountAccess().getCrossAccountRoleArn(),
         ceAwsConnectorDTO.getCrossAccountAccess().getExternalId());
@@ -115,9 +113,8 @@ public class AwsAccountTagsCollectionService {
     }
   }
 
-  public String createBQTable(Account account) {
-    String accountId = account.getUuid();
-    String accountName = account.getAccountName();
+  public String createBQTable(String accountId) {
+    String accountName = accountId;
     String dataSetName =
         String.format(DATA_SET_NAME_TEMPLATE, BillingDataPipelineUtils.modifyStringToComplyRegex(accountId));
     String description = getDataSetDescription(accountId, accountName);

@@ -172,6 +172,7 @@ public class ShellScriptParameters implements TaskParameters, ActivityAccess, Ex
         .workingDirectory(workingDirectory)
         .environment(disableWinRMEnvVariables ? Collections.emptyMap() : getResolvedEnvironmentVariables())
         .useNoProfile(winrmConnectionAttributes.isUseNoProfile())
+        .commandParameters(winrmConnectionAttributes.getParameters())
         .build();
   }
 

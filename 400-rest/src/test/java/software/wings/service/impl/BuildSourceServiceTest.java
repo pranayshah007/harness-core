@@ -66,7 +66,7 @@ import software.wings.beans.artifact.AmazonS3ArtifactStream;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.beans.artifact.ArtifactStreamType;
-import software.wings.beans.artifact.AzureArtifactsArtifactStream.ProtocolType;
+import software.wings.beans.artifact.AzureArtifactsArtifactStreamProtocolType;
 import software.wings.beans.artifact.BambooArtifactStream;
 import software.wings.beans.artifact.CustomArtifactStream;
 import software.wings.beans.artifact.JenkinsArtifactStream;
@@ -77,6 +77,7 @@ import software.wings.beans.config.NexusConfig;
 import software.wings.beans.settings.azureartifacts.AzureArtifactsPATConfig;
 import software.wings.beans.template.artifactsource.CustomRepositoryMapping;
 import software.wings.delegatetasks.DelegateProxyFactory;
+import software.wings.delegatetasks.GcbDelegateResponse;
 import software.wings.helpers.ext.azure.devops.AzureArtifactsFeed;
 import software.wings.helpers.ext.azure.devops.AzureArtifactsPackage;
 import software.wings.helpers.ext.azure.devops.AzureDevopsProject;
@@ -100,7 +101,6 @@ import software.wings.service.intfc.SettingsService;
 import software.wings.service.intfc.SftpBuildService;
 import software.wings.service.intfc.SmbBuildService;
 import software.wings.service.intfc.artifact.CustomBuildSourceService;
-import software.wings.sm.states.GcbState;
 import software.wings.utils.ArtifactType;
 import software.wings.utils.RepositoryFormat;
 import software.wings.utils.RepositoryType;
@@ -541,7 +541,7 @@ public class BuildSourceServiceTest extends WingsBaseTest {
                                             .build();
     when(settingsService.get(SETTING_ID)).thenReturn(settingAttribute);
     when(delegateProxyFactory.get(any(), any(SyncTaskContext.class))).thenReturn(amazonS3BuildService);
-    when(amazonS3BuildService.getArtifactPaths(anyString(), anyString(), any(), anyList()))
+    when(amazonS3BuildService.getArtifactPaths(any(), any(), any(), anyList()))
         .thenReturn(asList("todolist.war", "todolist.jar"));
     Set<String> artifactPaths = buildSourceService.getArtifactPaths(
         APP_ID, "aaditi-todolist-test", SETTING_ID, null, ArtifactStreamType.AMAZON_S3.name());
@@ -603,7 +603,7 @@ public class BuildSourceServiceTest extends WingsBaseTest {
                                                         .jobname("aaditi-todolist-test")
                                                         .artifactPaths(asList("todolist.war"))
                                                         .build();
-    when(artifactStreamServiceBindingService.getService(anyString(), anyString(), anyBoolean()))
+    when(artifactStreamServiceBindingService.getService(any(), any(), anyBoolean()))
         .thenReturn(Service.builder().artifactType(ArtifactType.WAR).build());
     when(artifactStreamService.get(anyString())).thenReturn(amazonS3ArtifactStream);
     when(settingsService.get(SETTING_ID)).thenReturn(settingAttribute);
@@ -662,7 +662,7 @@ public class BuildSourceServiceTest extends WingsBaseTest {
                                                       .build();
     when(artifactStreamService.get(anyString())).thenReturn(jenkinsArtifactStream);
     when(settingsService.get(SETTING_ID)).thenReturn(settingAttribute);
-    when(artifactStreamServiceBindingService.getService(anyString(), anyString(), anyBoolean()))
+    when(artifactStreamServiceBindingService.getService(any(), any(), anyBoolean()))
         .thenReturn(Service.builder().artifactType(ArtifactType.JAR).build());
     when(delegateProxyFactory.get(any(), any(SyncTaskContext.class))).thenReturn(jenkinsBuildService);
     Map<String, String> map = new HashMap<>();
@@ -756,7 +756,7 @@ public class BuildSourceServiceTest extends WingsBaseTest {
                                             .build();
     when(settingsService.get(SETTING_ID)).thenReturn(settingAttribute);
     when(delegateProxyFactory.get(any(), any(SyncTaskContext.class))).thenReturn(amazonS3BuildService);
-    when(amazonS3BuildService.getArtifactPaths(anyString(), anyString(), any(), anyList()))
+    when(amazonS3BuildService.getArtifactPaths(any(), any(), any(), anyList()))
         .thenReturn(asList("todolist.war", "todolist.jar"));
     Set<String> artifactPaths = buildSourceService.getArtifactPaths(
         "aaditi-todolist-test", SETTING_ID, null, ArtifactStreamType.AMAZON_S3.name());
@@ -905,7 +905,7 @@ public class BuildSourceServiceTest extends WingsBaseTest {
             .build();
 
     when(bambooBuildService.getBuilds(anyString(), any(), any(), any())).thenReturn(asList(bd2, bd1));
-    when(artifactStreamServiceBindingService.getService(anyString(), anyString(), anyBoolean()))
+    when(artifactStreamServiceBindingService.getService(any(), any(), anyBoolean()))
         .thenReturn(Service.builder().build());
     List<BuildDetails> buildDetails = buildSourceService.getBuilds(APP_ID, ARTIFACT_STREAM_ID, SETTING_ID);
     assertThat(buildDetails).isNotEmpty();
@@ -1051,7 +1051,7 @@ public class BuildSourceServiceTest extends WingsBaseTest {
     when(azureArtifactsBuildService.getPackages(any(), any(), any(), any(), any()))
         .thenReturn(Collections.singletonList(aPackage));
     List<AzureArtifactsPackage> packages =
-        buildSourceService.getPackages(SETTING_ID, null, "FEED", ProtocolType.maven.name());
+        buildSourceService.getPackages(SETTING_ID, null, "FEED", AzureArtifactsArtifactStreamProtocolType.maven.name());
     assertThat(packages).isNotEmpty();
     assertThat(packages).hasSize(1).extracting(AzureArtifactsPackage::getId).containsExactly("id1");
   }
@@ -1069,7 +1069,7 @@ public class BuildSourceServiceTest extends WingsBaseTest {
     when(delegateProxyFactory.get(any(), any(SyncTaskContext.class))).thenReturn(bambooBuildService);
 
     List<AzureArtifactsPackage> packages =
-        buildSourceService.getPackages(SETTING_ID, null, "FEED", ProtocolType.maven.name());
+        buildSourceService.getPackages(SETTING_ID, null, "FEED", AzureArtifactsArtifactStreamProtocolType.maven.name());
     assertThat(packages).isEmpty();
   }
 
@@ -1188,8 +1188,8 @@ public class BuildSourceServiceTest extends WingsBaseTest {
   @Owner(developers = AGORODETKI)
   @Category(UnitTests.class)
   public void shouldReturnListOfTriggerNames() throws InterruptedException {
-    GcbState.GcbDelegateResponse delegateResponse =
-        new GcbState.GcbDelegateResponse(ExecutionStatus.NEW, null, GcbTaskParams.builder().build(), null, false);
+    GcbDelegateResponse delegateResponse =
+        new GcbDelegateResponse(ExecutionStatus.NEW, null, GcbTaskParams.builder().build(), null, false);
     delegateResponse.setTriggers(Collections.singletonList(TRIGGER_NAME));
     GcbTrigger gcbTrigger = new GcbTrigger();
     gcbTrigger.setId(TRIGGER_ID);
@@ -1229,8 +1229,8 @@ public class BuildSourceServiceTest extends WingsBaseTest {
   @Owner(developers = ABHINAV_MITTAL)
   @Category(UnitTests.class)
   public void shouldReturnExceptionWhenDelegateResponseGivesError() throws InterruptedException {
-    GcbState.GcbDelegateResponse delegateResponse = new GcbState.GcbDelegateResponse(
-        ExecutionStatus.FAILED, null, GcbTaskParams.builder().build(), "erorMessage", false);
+    GcbDelegateResponse delegateResponse =
+        new GcbDelegateResponse(ExecutionStatus.FAILED, null, GcbTaskParams.builder().build(), "erorMessage", false);
     delegateResponse.setTriggers(Collections.singletonList(TRIGGER_NAME));
     GcbTrigger gcbTrigger = new GcbTrigger();
     gcbTrigger.setId(TRIGGER_ID);

@@ -12,10 +12,11 @@ import io.harness.beans.executionargs.CIExecutionArgs;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.stages.stage.StageElementConfig;
+import io.harness.pms.contracts.ambiance.Ambiance;
 
 import java.util.List;
 
 public interface InitializeStepInfoBuilder {
   BuildJobEnvInfo getInitializeStepInfoBuilder(StageElementConfig stageElementConfig, Infrastructure infrastructure,
-      CIExecutionArgs ciExecutionArgs, List<ExecutionWrapperConfig> steps, String accountId);
+      CIExecutionArgs ciExecutionArgs, List<ExecutionWrapperConfig> steps, Ambiance ambiance);
 }

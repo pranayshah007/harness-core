@@ -8,6 +8,7 @@
 package software.wings.service.impl.pipeline;
 
 import static io.harness.rule.OwnerRule.DHRUV;
+import static io.harness.rule.OwnerRule.FERNANDOD;
 import static io.harness.rule.OwnerRule.POOJA;
 import static io.harness.rule.OwnerRule.PRABU;
 
@@ -16,6 +17,7 @@ import static software.wings.beans.PipelineStage.PipelineStageElement;
 import static software.wings.beans.PipelineStage.PipelineStageElement.builder;
 import static software.wings.beans.Variable.VariableBuilder.aVariable;
 import static software.wings.service.impl.pipeline.PipelineServiceValidator.validateTemplateExpressions;
+import static software.wings.service.impl.pipeline.PipelineServiceValidator.validateUserGroupExpression;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -38,6 +40,7 @@ import software.wings.beans.security.UserGroup;
 import software.wings.service.intfc.UserGroupService;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -52,6 +55,49 @@ public class PipelineServiceValidatorTest extends WingsBaseTest {
   @Mock UserGroupService userGroupService;
 
   @InjectMocks @Inject PipelineServiceValidator pipelineServiceValidator;
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldValidateUserGroupExpression() {
+    HashMap<String, Object> properties = new HashMap<>();
+    properties.put("approvalStateType", "USER_GROUP");
+    properties.put("userGroupAsExpression", true);
+    properties.put("userGroupExpression", "${userGroup}");
+    properties.put("templateExpressions", "");
+    properties.put("sweepingOutputName", "");
+    properties.put("variables", Lists.newArrayList());
+
+    PipelineStageElement pipelineStageElement =
+        builder().type("APPROVAL").name("test").properties(properties).parallelIndex(0).build();
+    PipelineStage pipelineStage =
+        PipelineStage.builder().pipelineStageElements(Arrays.asList(pipelineStageElement)).parallel(false).build();
+    Pipeline pipeline = Pipeline.builder().pipelineStages(Arrays.asList(pipelineStage)).build();
+
+    validateUserGroupExpression(pipeline);
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldValidateTemplateExpressionsWhenUsingUserGroupExpression() {
+    HashMap<String, Object> properties = new HashMap<>();
+    properties.put("approvalStateType", "USER_GROUP");
+    properties.put("userGroupAsExpression", true);
+    properties.put("userGroupExpression", "${userGroup}");
+    properties.put("templateExpressions", "");
+    properties.put("sweepingOutputName", "");
+    properties.put("variables", Lists.newArrayList());
+
+    PipelineStageElement pipelineStageElement =
+        builder().type("APPROVAL").name("test").properties(properties).parallelIndex(0).build();
+    PipelineStage pipelineStage =
+        PipelineStage.builder().pipelineStageElements(Arrays.asList(pipelineStageElement)).parallel(false).build();
+    Pipeline pipeline = Pipeline.builder().pipelineStages(Arrays.asList(pipelineStage)).build();
+
+    boolean valid = validateTemplateExpressions(pipeline);
+    assertThat(valid).isEqualTo(true);
+  }
 
   @Test
   @Owner(developers = DHRUV)

@@ -18,7 +18,7 @@ import io.harness.cvng.core.beans.params.TimeRangeParams;
 import io.harness.cvng.core.beans.params.filterParams.LiveMonitoringLogAnalysisFilter;
 import io.harness.cvng.core.beans.params.filterParams.MonitoredServiceLogAnalysisFilter;
 import io.harness.cvng.dashboard.beans.AnalyzedLogDataDTO;
-import io.harness.cvng.dashboard.beans.AnalyzedRadarChartLogDataDTO;
+import io.harness.cvng.dashboard.beans.AnalyzedRadarChartLogDataWithCountDTO;
 import io.harness.cvng.dashboard.services.api.LogDashboardService;
 import io.harness.ng.beans.PageResponse;
 import io.harness.rest.RestResponse;
@@ -136,7 +136,7 @@ public class LogDashboardResource {
   @Timed
   @ExceptionMetered
   @ApiOperation(value = "get all log data for a time range and filters", nickname = "getAllRadarChartLogsData")
-  public RestResponse<PageResponse<AnalyzedRadarChartLogDataDTO>> getAllLogsRadarChartData(
+  public RestResponse<AnalyzedRadarChartLogDataWithCountDTO> getAllLogsRadarChartData(
       @NotNull @BeanParam ProjectParams projectParams,
       @QueryParam("monitoredServiceIdentifier") String monitoredServiceIdentifier,
       @BeanParam MonitoredServiceLogAnalysisFilter monitoredServiceLogAnalysisFilter,

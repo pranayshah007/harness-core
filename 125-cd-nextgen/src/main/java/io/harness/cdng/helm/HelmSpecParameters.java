@@ -11,7 +11,7 @@ import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.yaml.ParameterField;
 
-import software.wings.beans.command.HelmDummyCommandUnit;
+import software.wings.beans.command.HelmDummyCommandUnitConstants;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.Arrays;
@@ -24,7 +24,8 @@ public interface HelmSpecParameters extends SpecParameters {
   @Nonnull
   @JsonIgnore
   default List<String> getCommandUnits() {
-    return Arrays.asList(HelmDummyCommandUnit.FetchFiles, HelmDummyCommandUnit.Init, HelmDummyCommandUnit.Prepare,
-        HelmDummyCommandUnit.InstallUpgrade, HelmDummyCommandUnit.WaitForSteadyState, HelmDummyCommandUnit.WrapUp);
+    return Arrays.asList(HelmDummyCommandUnitConstants.FetchFiles, HelmDummyCommandUnitConstants.Init,
+        HelmDummyCommandUnitConstants.Prepare, HelmDummyCommandUnitConstants.InstallUpgrade,
+        HelmDummyCommandUnitConstants.WaitForSteadyState, HelmDummyCommandUnitConstants.WrapUp);
   }
 }

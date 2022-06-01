@@ -22,20 +22,21 @@ import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.envGroup.beans.EnvironmentGroupConfig;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity.EnvironmentGroupKeys;
+import io.harness.cdng.envGroup.beans.EnvironmentGroupWrapperConfig;
 import io.harness.cdng.envGroup.mappers.EnvironmentGroupMapper;
 import io.harness.cdng.envGroup.services.EnvironmentGroupService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.envGroup.dto.EnvironmentGroupDeleteResponse;
+import io.harness.ng.core.envGroup.dto.EnvironmentGroupRequestDTO;
 import io.harness.ng.core.envGroup.dto.EnvironmentGroupResponse;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.dto.EnvironmentResponse;
 import io.harness.ng.core.environment.services.EnvironmentService;
-import io.harness.pms.yaml.YamlField;
-import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rbac.CDNGRbacPermissions;
 import io.harness.rule.Owner;
@@ -75,6 +76,7 @@ public class EnvironmentGroupResourceTest extends CategoryTest {
   public void setUp() {
     MockitoAnnotations.initMocks(this);
   }
+
   private EnvironmentGroupEntity getEntity() {
     return EnvironmentGroupEntity.builder()
         .accountId(ACC_ID)
@@ -87,6 +89,19 @@ public class EnvironmentGroupResourceTest extends CategoryTest {
         .createdAt(1L)
         .lastModifiedAt(2L)
         .yaml("yaml")
+        .build();
+  }
+
+  private EnvironmentGroupRequestDTO getRequestDto(String yaml) throws IOException {
+    EnvironmentGroupConfig environmentGroupConfig =
+        YamlUtils.read(yaml, EnvironmentGroupWrapperConfig.class).getEnvironmentGroupConfig();
+
+    return EnvironmentGroupRequestDTO.builder()
+        .orgIdentifier(environmentGroupConfig.getOrgIdentifier())
+        .projectIdentifier(environmentGroupConfig.getProjectIdentifier())
+        .identifier(environmentGroupConfig.getIdentifier())
+        .color("newCol")
+        .yaml(yaml)
         .build();
   }
 
@@ -130,28 +145,30 @@ public class EnvironmentGroupResourceTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCreate() throws IOException {
     String yaml = getYamlFieldFromGivenFileName("cdng/envGroup/mappers/validEnvGroup.yml");
-    YamlField yamlField = YamlUtils.readTree(yaml);
-    YamlField environmentGroupYamlField = yamlField.getNode().getField("environmentGroup");
-    String projectIdentifier = environmentGroupYamlField.getNode().getStringValue("projectIdentifier");
-    String orgIdentifier = environmentGroupYamlField.getNode().getStringValue("orgIdentifier");
-    String name = environmentGroupYamlField.getNode().getStringValue("name");
-    String identifier = environmentGroupYamlField.getNode().getStringValue("identifier");
-    List<YamlNode> envIdentifiers = environmentGroupYamlField.getNode().getField("envIdentifiers").getNode().asArray();
-    EnvironmentGroupEntity environmentGroupEntity =
-        EnvironmentGroupMapper.toEnvironmentEntity(ACC_ID, orgIdentifier, projectIdentifier, yaml);
+    EnvironmentGroupRequestDTO environmentGroupRequestDTO = getRequestDto(yaml);
 
+    EnvironmentGroupConfig environmentGroupConfig =
+        YamlUtils.read(yaml, EnvironmentGroupWrapperConfig.class).getEnvironmentGroupConfig();
+    String projectIdentifier = environmentGroupRequestDTO.getProjectIdentifier();
+    String orgIdentifier = environmentGroupRequestDTO.getOrgIdentifier();
+    String name = environmentGroupConfig.getName();
+    String identifier = environmentGroupRequestDTO.getIdentifier();
+    List<String> envIdentifiers = environmentGroupConfig.getEnvIdentifiers();
+
+    EnvironmentGroupEntity environmentGroupEntity =
+        EnvironmentGroupMapper.toEnvironmentGroupEntity(ACC_ID, environmentGroupRequestDTO);
     doReturn(environmentGroupEntity).when(environmentGroupService).create(environmentGroupEntity);
     doReturn(new ArrayList<>())
         .when(environmentService)
         .fetchesNonDeletedEnvironmentFromListOfIdentifiers(
             ACC_ID, orgIdentifier, projectIdentifier, environmentGroupEntity.getEnvIdentifiers());
     ResponseDTO<EnvironmentGroupResponse> responseDTO =
-        environmentGroupResource.create(ACC_ID, orgIdentifier, projectIdentifier, yaml, null);
+        environmentGroupResource.create(ACC_ID, environmentGroupRequestDTO, null);
     assertThat(responseDTO).isNotNull();
     assertThat(responseDTO.getData().getEnvGroup().getIdentifier()).isEqualTo(identifier);
     assertThat(responseDTO.getData().getEnvGroup().getName()).isEqualTo(name);
     assertThat(responseDTO.getData().getEnvGroup().getEnvIdentifiers())
-        .containsExactly(envIdentifiers.get(0).asText(), envIdentifiers.get(1).asText());
+        .containsExactly(envIdentifiers.get(0), envIdentifiers.get(1));
   }
 
   @Test
@@ -211,21 +228,20 @@ public class EnvironmentGroupResourceTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testUpdate() throws IOException {
     String yaml = getYamlFieldFromGivenFileName("cdng/envGroup/mappers/validEnvGroup.yml");
-    YamlField yamlField = YamlUtils.readTree(yaml);
-    YamlField environmentGroupYamlField = yamlField.getNode().getField("environmentGroup");
-    String projectIdentifier = environmentGroupYamlField.getNode().getStringValue("projectIdentifier");
-    String orgIdentifier = environmentGroupYamlField.getNode().getStringValue("orgIdentifier");
-    String identifier = environmentGroupYamlField.getNode().getStringValue("identifier");
 
+    EnvironmentGroupRequestDTO environmentGroupRequestDTO = getRequestDto(yaml);
     EnvironmentGroupEntity environmentGroupEntity =
-        EnvironmentGroupMapper.toEnvironmentEntity(ACC_ID, orgIdentifier, projectIdentifier, yaml);
+        EnvironmentGroupMapper.toEnvironmentGroupEntity(ACC_ID, environmentGroupRequestDTO);
+
+    String projectIdentifier = environmentGroupRequestDTO.getProjectIdentifier();
+    String orgIdentifier = environmentGroupRequestDTO.getOrgIdentifier();
+    String identifier = environmentGroupRequestDTO.getIdentifier();
 
     // case1: updating identifier of envGroup
     doReturn(environmentGroupEntity).when(environmentGroupService).create(environmentGroupEntity);
     // passing identifier in api different from that of in yaml
-    assertThat(ENV_GROUP_ID).isNotEqualTo(identifier);
     assertThatThrownBy(
-        () -> environmentGroupResource.update(null, ENV_GROUP_ID, ACC_ID, orgIdentifier, projectIdentifier, yaml, null))
+        () -> environmentGroupResource.update(null, "ENV_GROUP_ID", ACC_ID, environmentGroupRequestDTO, null))
         .isInstanceOf(InvalidRequestException.class);
 
     // case2: testing other updates
@@ -234,8 +250,7 @@ public class EnvironmentGroupResourceTest extends CategoryTest {
         .fetchesNonDeletedEnvironmentFromListOfIdentifiers(
             ACC_ID, orgIdentifier, projectIdentifier, environmentGroupEntity.getEnvIdentifiers());
     doReturn(environmentGroupEntity.withVersion(10L)).when(environmentGroupService).update(environmentGroupEntity);
-    assertThatCode(
-        () -> environmentGroupResource.update(null, identifier, ACC_ID, orgIdentifier, projectIdentifier, yaml, null))
+    assertThatCode(() -> environmentGroupResource.update(null, identifier, ACC_ID, environmentGroupRequestDTO, null))
         .doesNotThrowAnyException();
   }
 

@@ -24,6 +24,7 @@ import io.harness.enforcement.client.EnforcementClientConfiguration;
 import io.harness.eventsframework.EventsFrameworkConfiguration;
 import io.harness.ff.FeatureFlagConfig;
 import io.harness.file.FileServiceConfiguration;
+import io.harness.gitops.GitopsResourceClientConfig;
 import io.harness.gitsync.GitSdkConfiguration;
 import io.harness.grpc.client.GrpcClientConfig;
 import io.harness.grpc.server.GrpcServerConfig;
@@ -127,8 +128,10 @@ public class NextGenConfiguration extends Configuration {
   public static final String NG_GLOBAL_KMS_RESOURCE_PACKAGE = "io.harness.ng.core.globalkms.resource";
   public static final String AZURE_RESOURCES_PACKAGE = "io.harness.ng.core.resources.azure";
   public static final String NG_TRIAL_SIGNUP_PACKAGE = "io.harness.ng.trialsignup";
-  public static final String FILE_STORE_RESOURCE_PACKAGE = "io.harness.ng.core.filestore.remote";
+  public static final String AWS_PACKAGE = "io.harness.ng.core.aws.resources";
+  public static final String FILE_STORE_RESOURCE_PACKAGE = "io.harness.filestore.resource";
   public static final String GITOPS_RESOURCE_PACKAGE = "io.harness.ng.gitops.resource";
+  public static final String INFRA_RESOURCE_PACKAGE = "io.harness.ng.core.infrastructure.resource";
   public static final Collection<Class<?>> HARNESS_RESOURCE_CLASSES = getResourceClasses();
 
   @JsonProperty("swagger") private SwaggerBundleConfiguration swaggerBundleConfiguration;
@@ -197,6 +200,7 @@ public class NextGenConfiguration extends Configuration {
   @JsonProperty("cacheConfig") private CacheConfig cacheConfig;
   @JsonProperty(value = "scopeAccessCheckEnabled", defaultValue = "false") private boolean isScopeAccessCheckEnabled;
   @JsonProperty(value = "signupTargetEnv") private String signupTargetEnv;
+  @JsonProperty(value = "delegateStatusEndpoint") private String delegateStatusEndpoint;
   @JsonProperty("hostname") String hostname = "localhost";
   @JsonProperty("basePathPrefix") String basePathPrefix = "";
   @JsonProperty("enforcementClientConfiguration") EnforcementClientConfiguration enforcementClientConfiguration;
@@ -204,6 +208,7 @@ public class NextGenConfiguration extends Configuration {
   @JsonProperty("secretsConfiguration") private SecretsConfiguration secretsConfiguration;
   @JsonProperty("pmsPlanCreatorServicePoolConfig") private ThreadPoolConfig pmsPlanCreatorServicePoolConfig;
   @JsonProperty("ffServerClientConfig") ServiceHttpClientConfig ffServerClientConfig;
+  @ConfigSecret @JsonProperty("gitopsResourceClientConfig") GitopsResourceClientConfig gitopsResourceClientConfig;
 
   // [secondary-db]: Uncomment this and the corresponding config in yaml file if you want to connect to another database
   //  @JsonProperty("secondary-mongo") MongoConfig secondaryMongoConfig;
@@ -237,7 +242,7 @@ public class NextGenConfiguration extends Configuration {
                 INVITE_PACKAGE, USER_PACKAGE, INSTANCE_NG_PACKAGE, LICENSING_USAGE_PACKAGE, SMTP_NG_RESOURCE,
                 SERVICENOW_PACKAGE, SCIM_NG_RESOURCE, NG_GLOBAL_KMS_RESOURCE_PACKAGE, ACCOUNT_SETTING_PACKAGE,
                 ENV_GROUP_RESOURCE, AZURE_RESOURCES_PACKAGE, NG_TRIAL_SIGNUP_PACKAGE, VARIABLE_RESOURCE_PACKAGE,
-                FILE_STORE_RESOURCE_PACKAGE, GITOPS_RESOURCE_PACKAGE))
+                FILE_STORE_RESOURCE_PACKAGE, GITOPS_RESOURCE_PACKAGE, INFRA_RESOURCE_PACKAGE, AWS_PACKAGE))
         .collect(Collectors.toSet());
   }
 

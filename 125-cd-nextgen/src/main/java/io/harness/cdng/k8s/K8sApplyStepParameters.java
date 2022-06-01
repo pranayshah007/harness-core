@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.k8s.K8sCommandUnitConstants;
 import io.harness.plancreator.steps.TaskSelectorYaml;
@@ -36,8 +37,9 @@ import org.springframework.data.annotation.TypeAlias;
 public class K8sApplyStepParameters extends K8sApplyBaseStepInfo implements K8sSpecParameters {
   @Builder(builderMethodName = "infoBuilder")
   public K8sApplyStepParameters(ParameterField<Boolean> skipDryRun, ParameterField<Boolean> skipSteadyStateCheck,
-      ParameterField<List<String>> filePaths, ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
-    super(skipDryRun, skipSteadyStateCheck, filePaths, delegateSelectors);
+      ParameterField<List<String>> filePaths, ParameterField<List<TaskSelectorYaml>> delegateSelectors,
+      List<ManifestConfigWrapper> overrides) {
+    super(skipDryRun, skipSteadyStateCheck, filePaths, delegateSelectors, overrides);
   }
 
   @Nonnull

@@ -30,7 +30,7 @@ import org.springframework.data.annotation.TypeAlias;
 public class K8BuildJobEnvInfo implements BuildJobEnvInfo {
   @NotEmpty private PodsSetupInfo podsSetupInfo;
   @NotEmpty private String workDir;
-  private Map<String, ConnectorConversionInfo> stepConnectorRefs;
+  private Map<String, List<ConnectorConversionInfo>> stepConnectorRefs;
 
   @Override
   public Type getType() {

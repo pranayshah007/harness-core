@@ -60,7 +60,12 @@ public class ServerlessAwsLambdaDeployCommandTaskHandlerTest extends CategoryTes
   @Mock private ServerlessAwsCommandTaskHelper serverlessAwsCommandTaskHelper;
   @Mock private ILogStreamingTaskClient iLogStreamingTaskClient;
   @Mock private LogCallback initLogCallback;
+  @Mock private LogCallback setupDirectoryLogCallback;
   @Mock private LogCallback deployLogCallback;
+  @Mock private LogCallback artifactLogCallback;
+  @Mock private LogCallback configureCredsLogCallback;
+  @Mock private LogCallback pluginLogCallback;
+  @Mock private LogCallback prepareRollbackLogCallback;
 
   @InjectMocks private ServerlessAwsLambdaDeployCommandTaskHandler serverlessAwsLambdaDeployCommandTaskHandler;
 
@@ -68,6 +73,7 @@ public class ServerlessAwsLambdaDeployCommandTaskHandlerTest extends CategoryTes
   private String accountId = "account";
   private String output = "output";
   private String previousVersionTimeStamp = "123";
+  private String manifestContent = "manifest";
   private String service = "serv";
   private String region = "regi";
   private String stage = "stag";
@@ -81,6 +87,7 @@ public class ServerlessAwsLambdaDeployCommandTaskHandlerTest extends CategoryTes
                                                                   .serverlessInfraConfig(serverlessInfraConfig)
                                                                   .serverlessManifestConfig(serverlessManifestConfig)
                                                                   .serverlessDeployConfig(serverlessDeployConfig)
+                                                                  .manifestContent(manifestContent)
                                                                   .accountId(accountId)
                                                                   .build();
   private ServerlessDelegateTaskParams serverlessDelegateTaskParams =
@@ -109,6 +116,26 @@ public class ServerlessAwsLambdaDeployCommandTaskHandlerTest extends CategoryTes
         .when(serverlessTaskHelperBase)
         .getLogCallback(
             iLogStreamingTaskClient, ServerlessCommandUnitConstants.init.toString(), true, commandUnitsProgress);
+    doReturn(setupDirectoryLogCallback)
+        .when(serverlessTaskHelperBase)
+        .getLogCallback(iLogStreamingTaskClient, ServerlessCommandUnitConstants.setupDirectory.toString(), true,
+            commandUnitsProgress);
+    doReturn(artifactLogCallback)
+        .when(serverlessTaskHelperBase)
+        .getLogCallback(
+            iLogStreamingTaskClient, ServerlessCommandUnitConstants.artifact.toString(), true, commandUnitsProgress);
+    doReturn(configureCredsLogCallback)
+        .when(serverlessTaskHelperBase)
+        .getLogCallback(iLogStreamingTaskClient, ServerlessCommandUnitConstants.configureCred.toString(), true,
+            commandUnitsProgress);
+    doReturn(pluginLogCallback)
+        .when(serverlessTaskHelperBase)
+        .getLogCallback(
+            iLogStreamingTaskClient, ServerlessCommandUnitConstants.plugin.toString(), true, commandUnitsProgress);
+    doReturn(prepareRollbackLogCallback)
+        .when(serverlessTaskHelperBase)
+        .getLogCallback(iLogStreamingTaskClient, ServerlessCommandUnitConstants.rollbackData.toString(), true,
+            commandUnitsProgress);
     doReturn(deployLogCallback)
         .when(serverlessTaskHelperBase)
         .getLogCallback(
@@ -125,12 +152,14 @@ public class ServerlessAwsLambdaDeployCommandTaskHandlerTest extends CategoryTes
         .when(serverlessAwsCommandTaskHelper)
         .configCredential(serverlessClient, serverlessAwsLambdaConfig, serverlessDelegateTaskParams, initLogCallback,
             true, (long) (serverlessCommandRequest.getTimeoutIntervalInMin() * 60000));
-
     doReturn(intiServerlessCliResponse)
         .when(serverlessAwsCommandTaskHelper)
-        .deployList(serverlessClient, serverlessDelegateTaskParams, initLogCallback,
-            (ServerlessAwsLambdaInfraConfig) serverlessInfraConfig,
-            (long) (serverlessCommandRequest.getTimeoutIntervalInMin() * 60000),
+        .configCredential(serverlessClient, serverlessAwsLambdaConfig, serverlessDelegateTaskParams,
+            configureCredsLogCallback, true, timeout * 60000);
+    doReturn(intiServerlessCliResponse)
+        .when(serverlessAwsCommandTaskHelper)
+        .deployList(serverlessClient, serverlessDelegateTaskParams, prepareRollbackLogCallback,
+            (ServerlessAwsLambdaInfraConfig) serverlessInfraConfig, timeout * 60000,
             (ServerlessAwsLambdaManifestConfig) serverlessManifestConfig);
     doReturn(Optional.of(previousVersionTimeStamp))
         .when(serverlessAwsCommandTaskHelper)
@@ -140,10 +169,13 @@ public class ServerlessAwsLambdaDeployCommandTaskHandlerTest extends CategoryTes
         .when(serverlessAwsCommandTaskHelper)
         .deploy(serverlessClient, serverlessDelegateTaskParams, deployLogCallback,
             (ServerlessAwsLambdaDeployConfig) serverlessDeployConfig,
-            (ServerlessAwsLambdaInfraConfig) serverlessInfraConfig,
-            (long) (serverlessCommandRequest.getTimeoutIntervalInMin() * 60000),
+            (ServerlessAwsLambdaInfraConfig) serverlessInfraConfig, timeout * 60000,
             (ServerlessAwsLambdaManifestConfig) serverlessManifestConfig);
 
+    doReturn(serverlessAwsLambdaManifestSchema)
+        .when(serverlessAwsCommandTaskHelper)
+        .parseServerlessManifest(
+            setupDirectoryLogCallback, ((ServerlessDeployRequest) serverlessCommandRequest).getManifestContent());
     doReturn(serverlessAwsLambdaFunctionsList)
         .when(serverlessAwsCommandTaskHelper)
         .fetchFunctionOutputFromCloudFormationTemplate(any());

@@ -77,6 +77,8 @@ import software.wings.beans.artifact.Artifact;
 import software.wings.beans.artifact.ArtifactStream;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.beans.artifact.ArtifactStreamType;
+import software.wings.beans.artifact.DockerArtifactStream;
+import software.wings.beans.artifact.JenkinsArtifactStream;
 import software.wings.beans.command.AzureWebAppCommandUnit;
 import software.wings.beans.command.Command;
 import software.wings.beans.command.CommandUnit;
@@ -1231,5 +1233,43 @@ public class AzureVMSSStateHelperTest extends CategoryTest {
     Optional<Artifact> artifact = azureVMSSStateHelper.getWebAppPackageArtifactForRollback(context, serviceId);
     assertThat(artifact.isPresent()).isTrue();
     assertThat(artifact.get()).isEqualTo(rollbackArtifact);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.VAIBHAV_KUMAR)
+  @Category(UnitTests.class)
+  public void testMetadataOnlyArtifactStreamTypes() {
+    String serviceId = "serviceUUID";
+    String appId = "appId";
+    List<String> artifactPaths = Collections.singletonList("artifactPath");
+    ExecutionContext context = mock(ExecutionContext.class);
+    Artifact artifact = new Artifact();
+    ServiceElement serviceElement = ServiceElement.builder().uuid(serviceId).build();
+    PhaseElement phaseElement = PhaseElement.builder().serviceElement(serviceElement).build();
+
+    when(context.getAppId()).thenReturn(appId);
+    when(context.getContextElement(any(), any())).thenReturn(phaseElement);
+    when(serviceResourceService.getWithDetails(any(), any())).thenReturn(Service.builder().build());
+
+    // Case 1: JENKINS
+    // Expected behaviour: metadataOnly flag must be set to true
+    JenkinsArtifactStream jenkinsArtifactStream =
+        JenkinsArtifactStream.builder().artifactPaths(artifactPaths).metadataOnly(true).build();
+    when(artifactStreamService.get(any())).thenReturn(jenkinsArtifactStream);
+
+    ArtifactConnectorMapper jenkinsArtifactConnectorMapper = azureVMSSStateHelper.getConnectorMapper(context, artifact);
+
+    assertThat(jenkinsArtifactConnectorMapper.artifactStreamAttributes().isMetadataOnly()).isTrue();
+
+    // Case 2: DOCKER
+    // Expected behaviour: metadataOnly flag must be set to false
+    DockerArtifactStream dockerArtifactStream = DockerArtifactStream.builder().metadataOnly(true).build();
+    Service service = Service.builder().artifactType(ArtifactType.DOCKER).build();
+    when(artifactStreamService.get(any())).thenReturn(dockerArtifactStream);
+    when(serviceResourceService.getWithDetails(any(), any())).thenReturn(service);
+
+    ArtifactConnectorMapper dockerArtifactConnectorMapper = azureVMSSStateHelper.getConnectorMapper(context, artifact);
+
+    assertThat(dockerArtifactConnectorMapper.artifactStreamAttributes().isMetadataOnly()).isFalse();
   }
 }

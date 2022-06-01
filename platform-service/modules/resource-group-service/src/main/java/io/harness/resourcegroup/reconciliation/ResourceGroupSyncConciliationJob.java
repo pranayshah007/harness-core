@@ -30,6 +30,7 @@ import io.harness.resourcegroup.framework.v2.service.ResourceGroupService;
 import io.harness.resourcegroup.v1.remote.dto.ManagedFilter;
 import io.harness.resourcegroup.v1.remote.dto.ResourceGroupFilterDTO;
 import io.harness.resourcegroup.v1.remote.dto.ResourceSelectorFilter;
+import io.harness.resourcegroup.v2.model.ResourceFilter;
 import io.harness.resourcegroup.v2.model.ResourceSelector;
 import io.harness.resourcegroup.v2.remote.dto.ResourceGroupDTO;
 import io.harness.resourcegroup.v2.remote.dto.ResourceGroupResponse;
@@ -38,6 +39,7 @@ import io.harness.security.dto.ServicePrincipal;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -215,7 +217,13 @@ public class ResourceGroupSyncConciliationJob implements Runnable {
             .filter(Objects::nonNull)
             .filter(rs -> rs.getResourceType().equals(resource.getResourceType()))
             .collect(Collectors.toList());
-
-    resourceSelectors.forEach(rs -> rs.getIdentifiers().remove(resource.getResourceIdentifier()));
+    for (Iterator<ResourceSelector> iterator = resourceSelectors.iterator(); iterator.hasNext();) {
+      ResourceSelector resourceSelector = iterator.next();
+      resourceSelector.getIdentifiers().remove(resource.getResourceIdentifier());
+      if (resourceSelector.getIdentifiers().isEmpty()) {
+        iterator.remove();
+      }
+    }
+    resourceGroup.setResourceFilter(ResourceFilter.builder().resources(resourceSelectors).build());
   }
 }

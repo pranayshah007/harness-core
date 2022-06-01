@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ngtriggers.beans.source.NGTriggerSourceV2;
 
+import java.util.List;
 import java.util.Map;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
@@ -30,5 +31,7 @@ public class NGTriggerConfigV2 implements NGTriggerInterface {
   Map<String, String> tags;
   String inputYaml;
   NGTriggerSourceV2 source;
+  String pipelineBranchName;
+  List<String> inputSetRefs;
   @Builder.Default Boolean enabled = Boolean.TRUE;
 }

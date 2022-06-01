@@ -8,7 +8,6 @@
 package io.harness.ng.opa;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.security.dto.PrincipalType.USER;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -29,6 +28,7 @@ import io.harness.security.SourcePrincipalContextBuilder;
 import io.harness.security.dto.UserPrincipal;
 import io.harness.serializer.JsonUtils;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -37,7 +37,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.AllArgsConstructor;
@@ -53,13 +52,10 @@ public class OpaServiceImpl implements OpaService {
       String projectIdentifier, String identifier, String action, String key) {
     OpaEvaluationResponseHolder response;
     try {
-      String name = identifier;
       String userIdentifier = getUserIdentifier();
-      String entityString = getEntityString(accountId, orgIdentifier, projectIdentifier, identifier);
-      String entityMetadata = getEntityMetadataString(accountId, orgIdentifier, projectIdentifier, identifier, name);
-
+      String entityMetadata = getEntityMetadataString(identifier);
       response = SafeHttpCall.executeWithExceptions(opaServiceClient.evaluateWithCredentials(key, accountId,
-          orgIdentifier, projectIdentifier, action, entityString, entityMetadata, userIdentifier, context));
+          orgIdentifier, projectIdentifier, action, identifier, entityMetadata, userIdentifier, context));
     } catch (Exception ex) {
       log.error("Exception while evaluating OPA rules", ex);
       throw new InvalidRequestException("Exception while evaluating OPA rules: " + ex.getMessage(), ex);
@@ -131,27 +127,10 @@ public class OpaServiceImpl implements OpaService {
     return policyMetadataList;
   }
 
-  private String getEntityMetadataString(String accountId, String orgIdentifier, String projectIdentifier,
-      String identifier, String name) throws UnsupportedEncodingException {
-    Map<String, String> metadataMap = new HashMap<>();
+  private String getEntityMetadataString(String name) throws UnsupportedEncodingException {
+    Map<String, String> metadataMap = ImmutableMap.<String, String>builder().put("entityName", name).build();
 
-    metadataMap.put("accountIdentifier", accountId);
-    metadataMap.put("identifier", identifier);
-    metadataMap.put("name", name);
-    if (isNotEmpty(orgIdentifier)) {
-      metadataMap.put("orgIdentifier", orgIdentifier);
-    }
-    if (isNotEmpty(projectIdentifier)) {
-      metadataMap.put("projectIdentifier", projectIdentifier);
-    }
     return URLEncoder.encode(JsonUtils.asJson(metadataMap), StandardCharsets.UTF_8.toString());
-  }
-
-  private String getEntityString(String accountId, String orgIdentifier, String projectIdentifier, String identifier)
-      throws UnsupportedEncodingException {
-    String entityStringRaw = String.format("accountIdentifier:%s/orgIdentifier:%s/projectIdentifier:%s/identifier:%s",
-        accountId, orgIdentifier, projectIdentifier, identifier);
-    return URLEncoder.encode(entityStringRaw, StandardCharsets.UTF_8.toString());
   }
 
   public OpaEvaluationContext createEvaluationContext(String yaml, String key) throws IOException {

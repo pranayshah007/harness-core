@@ -93,6 +93,22 @@ public class ScmPushTask extends AbstractDelegateRunnableTask {
             .changeType(scmPushTaskParams.getChangeType())
             .build();
       }
+      case ADD_V2:
+        CreateFileResponse createFileResponse = scmDelegateClient.processScmRequest(c
+            -> scmServiceClient.createFile(scmPushTaskParams.getScmConnector(), scmPushTaskParams.getGitFileDetails(),
+                SCMGrpc.newBlockingStub(c)));
+        return ScmPushTaskResponseData.builder()
+            .createFileResponse(createFileResponse.toByteArray())
+            .changeType(scmPushTaskParams.getChangeType())
+            .build();
+      case UPDATE_V2:
+        UpdateFileResponse updateFileResponse = scmDelegateClient.processScmRequest(c
+            -> scmServiceClient.updateFile(scmPushTaskParams.getScmConnector(), scmPushTaskParams.getGitFileDetails(),
+                SCMGrpc.newBlockingStub(c)));
+        return ScmPushTaskResponseData.builder()
+            .updateFileResponse(updateFileResponse.toByteArray())
+            .changeType(scmPushTaskParams.getChangeType())
+            .build();
       case RENAME:
       case NONE:
         throw new NotImplementedException("Not Implemented");

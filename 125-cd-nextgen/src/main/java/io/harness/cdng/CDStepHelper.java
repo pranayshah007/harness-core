@@ -8,9 +8,6 @@
 package io.harness.cdng;
 
 import static io.harness.beans.FeatureName.OPTIMIZED_GIT_FETCH_FILES;
-import static io.harness.cdng.infra.yaml.InfrastructureKind.KUBERNETES_AZURE;
-import static io.harness.cdng.infra.yaml.InfrastructureKind.KUBERNETES_DIRECT;
-import static io.harness.cdng.infra.yaml.InfrastructureKind.KUBERNETES_GCP;
 import static io.harness.common.ParameterFieldHelper.getBooleanParameterFieldValue;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
@@ -21,9 +18,16 @@ import static io.harness.data.structure.ListUtils.trimStrings;
 import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.UnitStatus.RUNNING;
+import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_AZURE;
+import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_DIRECT;
+import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_GCP;
 import static io.harness.validation.Validator.notEmptyCheck;
 
+import static software.wings.beans.appmanifest.ManifestFile.VALUES_YAML_KEY;
+
 import static java.lang.String.format;
+import static java.util.Collections.emptyList;
+import static java.util.Objects.isNull;
 import static org.apache.commons.lang3.StringUtils.trim;
 import static org.apache.commons.lang3.StringUtils.trimToEmpty;
 
@@ -34,22 +38,34 @@ import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
+import io.harness.cdng.k8s.K8sApplyStepParameters;
 import io.harness.cdng.k8s.K8sEntityHelper;
 import io.harness.cdng.k8s.beans.GitFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.HelmValuesFetchResponsePassThroughData;
 import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.manifest.ManifestStoreType;
 import io.harness.cdng.manifest.ManifestType;
+import io.harness.cdng.manifest.mappers.ManifestOutcomeMapper;
 import io.harness.cdng.manifest.mappers.ManifestOutcomeValidator;
 import io.harness.cdng.manifest.steps.ManifestsOutcome;
 import io.harness.cdng.manifest.yaml.GcsStoreConfig;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
+import io.harness.cdng.manifest.yaml.HelmChartManifestOutcome;
 import io.harness.cdng.manifest.yaml.HttpStoreConfig;
+import io.harness.cdng.manifest.yaml.InheritFromManifestStoreConfig;
+import io.harness.cdng.manifest.yaml.InlineStoreConfig;
+import io.harness.cdng.manifest.yaml.K8sManifestOutcome;
+import io.harness.cdng.manifest.yaml.KustomizeManifestOutcome;
+import io.harness.cdng.manifest.yaml.KustomizePatchesManifestOutcome;
+import io.harness.cdng.manifest.yaml.ManifestAttributes;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
+import io.harness.cdng.manifest.yaml.OpenshiftManifestOutcome;
+import io.harness.cdng.manifest.yaml.OpenshiftParamManifestOutcome;
 import io.harness.cdng.manifest.yaml.S3StoreConfig;
 import io.harness.cdng.manifest.yaml.ValuesManifestOutcome;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.common.NGTimeConversionHelper;
+import io.harness.common.ParameterFieldHelper;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.helper.GitApiAccessDecryptionHelper;
 import io.harness.connector.services.ConnectorService;
@@ -78,21 +94,25 @@ import io.harness.delegate.beans.connector.scm.gitlab.GitlabHttpCredentialsDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabTokenSpecDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabUsernameTokenDTO;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
+import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.beans.storeconfig.GcsHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.HttpHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.S3HelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
+import io.harness.delegate.task.helm.HelmFetchFileConfig;
+import io.harness.delegate.task.helm.HelmFetchFileResult;
 import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
 import io.harness.encryption.SecretRefData;
 import io.harness.eraro.Level;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
-import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.StepConstants;
 import io.harness.expression.EngineExpressionEvaluator;
+import io.harness.git.model.FetchFilesResult;
+import io.harness.git.model.GitFile;
 import io.harness.k8s.model.HelmVersion;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
@@ -117,12 +137,16 @@ import io.harness.pms.yaml.validation.ExpressionUtils;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.steps.EntityReferenceExtractorUtils;
+import io.harness.validation.Validator;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -306,12 +330,43 @@ public class CDStepHelper {
     GitStoreDelegateConfig gitStoreDelegateConfig =
         getGitStoreDelegateConfig(gitStoreConfig, connectorDTO, manifestOutcome, gitFilePaths, ambiance);
 
+    return getGitFetchFilesConfigFromBuilder(
+        manifestOutcome.getIdentifier(), manifestOutcome.getType(), false, gitStoreDelegateConfig);
+  }
+
+  public GitFetchFilesConfig getGitFetchFilesConfigFromBuilder(String identifier, String manifestType,
+      boolean succeedIfFileNotFound, GitStoreDelegateConfig gitStoreDelegateConfig) {
+    return GitFetchFilesConfig.builder()
+        .identifier(identifier)
+        .manifestType(manifestType)
+        .succeedIfFileNotFound(succeedIfFileNotFound)
+        .gitStoreDelegateConfig(gitStoreDelegateConfig)
+        .build();
+  }
+
+  public GitFetchFilesConfig getPathsFromInheritFromManifestStoreConfig(
+      Ambiance ambiance, String validationMessage, ManifestOutcome manifestOutcome, GitStoreConfig gitStoreConfig) {
+    InheritFromManifestStoreConfig inheritFromManifestStoreConfig =
+        (InheritFromManifestStoreConfig) manifestOutcome.getStore();
+    String connectorId = gitStoreConfig.getConnectorRef().getValue();
+    ConnectorInfoDTO connectorDTO = getConnector(connectorId, ambiance);
+    validateManifest(gitStoreConfig.getKind(), connectorDTO, validationMessage);
+    List<String> gitFilePaths = new ArrayList<>(getParameterFieldValue(inheritFromManifestStoreConfig.getPaths()));
+
+    GitStoreDelegateConfig gitStoreDelegateConfig =
+        getGitStoreDelegateConfig(gitStoreConfig, connectorDTO, manifestOutcome, gitFilePaths, ambiance);
     return GitFetchFilesConfig.builder()
         .identifier(manifestOutcome.getIdentifier())
         .manifestType(manifestOutcome.getType())
-        .succeedIfFileNotFound(false)
         .gitStoreDelegateConfig(gitStoreDelegateConfig)
         .build();
+  }
+
+  public static HelmFetchFileConfig getInheritFromManifestFetchFileConfig(
+      String identifier, String manifestType, InheritFromManifestStoreConfig inheritFromManifestStoreConfig) {
+    List<String> filePaths = new ArrayList<>(getParameterFieldValue(inheritFromManifestStoreConfig.getPaths()));
+
+    return HelmFetchFileConfig.builder().identifier(identifier).manifestType(manifestType).filePaths(filePaths).build();
   }
 
   public List<EncryptedDataDetail> getEncryptedDataDetails(
@@ -417,6 +472,20 @@ public class CDStepHelper {
     return aggregateValuesManifests;
   }
 
+  public static List<HelmFetchFileConfig> mapValuesManifestsToHelmFetchFileConfig(
+      List<ValuesManifestOutcome> aggregatedValuesManifests) {
+    if (isEmpty(aggregatedValuesManifests)) {
+      return emptyList();
+    }
+    return aggregatedValuesManifests.stream()
+        .filter(valuesManifestOutcome
+            -> ManifestStoreType.InheritFromManifest.equals(valuesManifestOutcome.getStore().getKind()))
+        .map(valuesManifestOutcome
+            -> getInheritFromManifestFetchFileConfig(valuesManifestOutcome.getIdentifier(),
+                valuesManifestOutcome.getType(), (InheritFromManifestStoreConfig) valuesManifestOutcome.getStore()))
+        .collect(Collectors.toList());
+  }
+
   // miscellaneous common methods
   public ConnectorInfoDTO getConnector(String connectorId, Ambiance ambiance) {
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
@@ -475,6 +544,8 @@ public class CDStepHelper {
         }
         break;
 
+      case ManifestStoreType.INLINE:
+        break;
       default:
         throw new UnsupportedOperationException(format("Unknown manifest store type: [%s]", manifestStoreType));
     }
@@ -579,6 +650,9 @@ public class CDStepHelper {
     return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.NEW_KUBECTL_VERSION);
   }
 
+  public boolean shouldCleanUpIncompleteCanaryDeployRelease(String accountId) {
+    return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.CLEANUP_INCOMPLETE_CANARY_DEPLOY_RELEASE);
+  }
   public boolean isSkipAddingTrackSelectorToDeployment(String accountId) {
     return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.SKIP_ADDING_TRACK_LABEL_SELECTOR_IN_ROLLING);
   }
@@ -594,7 +668,7 @@ public class CDStepHelper {
   }
 
   public UnitProgressData completeUnitProgressData(
-      UnitProgressData currentProgressData, Ambiance ambiance, Exception exception) {
+      UnitProgressData currentProgressData, Ambiance ambiance, String exceptionMessage) {
     if (currentProgressData == null) {
       return UnitProgressData.builder().unitProgresses(new ArrayList<>()).build();
     }
@@ -605,7 +679,7 @@ public class CDStepHelper {
             .map(unitProgress -> {
               if (unitProgress.getStatus() == RUNNING) {
                 LogCallback logCallback = getLogCallback(unitProgress.getUnitName(), ambiance, false);
-                logCallback.saveExecutionLog(ExceptionUtils.getMessage(exception), LogLevel.ERROR, FAILURE);
+                logCallback.saveExecutionLog(exceptionMessage, LogLevel.ERROR, FAILURE);
                 return UnitProgress.newBuilder(unitProgress)
                     .setStatus(UnitStatus.FAILURE)
                     .setEndTime(System.currentTimeMillis())
@@ -663,5 +737,129 @@ public class CDStepHelper {
     });
 
     pipelineRbacHelper.checkRuntimePermissions(ambiance, entityDetails);
+  }
+
+  public void validateGitStoreConfig(GitStoreConfig gitStoreConfig) {
+    Validator.notNullCheck("Git Store Config is null", gitStoreConfig);
+    FetchType gitFetchType = gitStoreConfig.getGitFetchType();
+    switch (gitFetchType) {
+      case BRANCH:
+        Validator.notEmptyCheck("Branch is Empty in Git Store config",
+            ParameterFieldHelper.getParameterFieldValue(gitStoreConfig.getBranch()));
+        break;
+      case COMMIT:
+        Validator.notEmptyCheck("Commit Id is Empty in Git Store config",
+            ParameterFieldHelper.getParameterFieldValue(gitStoreConfig.getCommitId()));
+        break;
+      default:
+        throw new InvalidRequestException(format("Unrecognized git fetch type: [%s]", gitFetchType.name()));
+    }
+  }
+
+  public static List<HelmFetchFileConfig> mapHelmChartManifestsToHelmFetchFileConfig(
+      String identifier, List<String> valuesPaths, String manifestType) {
+    List<HelmFetchFileConfig> helmFetchFileConfigList = new ArrayList<>();
+    helmFetchFileConfigList.add(
+        createHelmFetchFileConfig(identifier, manifestType, Arrays.asList(VALUES_YAML_KEY), true));
+    if (isNotEmpty(valuesPaths)) {
+      helmFetchFileConfigList.add(createHelmFetchFileConfig(identifier, manifestType, valuesPaths, false));
+    }
+    return helmFetchFileConfigList;
+  }
+
+  public static HelmFetchFileConfig createHelmFetchFileConfig(
+      String identifier, String manifestType, List<String> valuesPaths, boolean succeedIfFileNotFound) {
+    return HelmFetchFileConfig.builder()
+        .identifier(identifier)
+        .manifestType(manifestType)
+        .filePaths(valuesPaths)
+        .succeedIfFileNotFound(succeedIfFileNotFound)
+        .build();
+  }
+
+  public List<String> getManifestFilesContents(Map<String, FetchFilesResult> gitFetchFilesResultMap,
+      List<ManifestOutcome> valuesManifests, Map<String, HelmFetchFileResult> helmChartFetchFilesResultMap) {
+    List<String> valuesFileContents = new ArrayList<>();
+
+    for (ManifestOutcome valuesManifest : valuesManifests) {
+      StoreConfig store = extractStoreConfigFromManifestOutcome(valuesManifest);
+      String valuesIdentifier = valuesManifest.getIdentifier();
+      if (ManifestStoreType.INLINE.equals(store.getKind())) {
+        valuesFileContents.add(((InlineStoreConfig) store).extractContent());
+      } else if (isNotEmpty(gitFetchFilesResultMap) && gitFetchFilesResultMap.containsKey(valuesIdentifier)) {
+        FetchFilesResult gitFetchFilesResult = gitFetchFilesResultMap.get(valuesIdentifier);
+        if (!isNull(gitFetchFilesResult)) {
+          valuesFileContents.addAll(
+              gitFetchFilesResult.getFiles().stream().map(GitFile::getFileContent).collect(Collectors.toList()));
+        }
+      } else if (isNotEmpty(helmChartFetchFilesResultMap)
+          && helmChartFetchFilesResultMap.containsKey(valuesIdentifier)) {
+        List<String> helmChartValuesFileContent =
+            helmChartFetchFilesResultMap.get(valuesIdentifier).getValuesFileContents();
+        if (isNotEmpty(helmChartValuesFileContent)) {
+          valuesFileContents.addAll(helmChartValuesFileContent);
+        }
+      }
+      // TODO: for local store, add files directly
+    }
+    return valuesFileContents;
+  }
+
+  public StoreConfig extractStoreConfigFromManifestOutcome(ManifestOutcome manifestOutcome) {
+    switch (manifestOutcome.getType()) {
+      case ManifestType.K8Manifest:
+        K8sManifestOutcome k8sManifestOutcome = (K8sManifestOutcome) manifestOutcome;
+        return k8sManifestOutcome.getStore();
+
+      case ManifestType.HelmChart:
+        HelmChartManifestOutcome helmChartManifestOutcome = (HelmChartManifestOutcome) manifestOutcome;
+        return helmChartManifestOutcome.getStore();
+
+      case ManifestType.VALUES:
+        ValuesManifestOutcome valuesManifestOutcome = (ValuesManifestOutcome) manifestOutcome;
+        return valuesManifestOutcome.getStore();
+
+      case ManifestType.KustomizePatches:
+        KustomizePatchesManifestOutcome kustomizePatchesManifestOutcome =
+            (KustomizePatchesManifestOutcome) manifestOutcome;
+        return kustomizePatchesManifestOutcome.getStore();
+
+      case ManifestType.OpenshiftParam:
+        OpenshiftParamManifestOutcome openshiftParamManifestOutcome = (OpenshiftParamManifestOutcome) manifestOutcome;
+        return openshiftParamManifestOutcome.getStore();
+
+      case ManifestType.OpenshiftTemplate:
+        OpenshiftManifestOutcome openshiftManifestOutcome = (OpenshiftManifestOutcome) manifestOutcome;
+        return openshiftManifestOutcome.getStore();
+
+      case ManifestType.Kustomize:
+        KustomizeManifestOutcome kustomizeManifestOutcome = (KustomizeManifestOutcome) manifestOutcome;
+        return kustomizeManifestOutcome.getStore();
+
+      default:
+        throw new UnsupportedOperationException(format("Unsupported Manifest type: [%s]", manifestOutcome.getType()));
+    }
+  }
+
+  public List<ManifestOutcome> getStepLevelManifestOutcomes(StepElementParameters stepElementParameters) {
+    if (!(stepElementParameters.getSpec() instanceof K8sApplyStepParameters)) {
+      return Collections.emptyList();
+    }
+    if (((K8sApplyStepParameters) stepElementParameters.getSpec()).getOverrides() == null) {
+      return Collections.emptyList();
+    }
+    List<ManifestOutcome> manifestOutcomes = new ArrayList<>();
+    List<ManifestAttributes> manifestAttributesList =
+        ((K8sApplyStepParameters) stepElementParameters.getSpec())
+            .getOverrides()
+            .stream()
+            .map(manifestConfigWrapper -> manifestConfigWrapper.getManifest().getSpec())
+            .collect(Collectors.toList());
+
+    for (int i = 0; i < manifestAttributesList.size(); i++) {
+      ManifestAttributes manifestAttributes = manifestAttributesList.get(i);
+      manifestOutcomes.add(ManifestOutcomeMapper.toManifestOutcome(manifestAttributes, i));
+    }
+    return manifestOutcomes;
   }
 }

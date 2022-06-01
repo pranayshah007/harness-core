@@ -1,0 +1,16 @@
+template:
+  projectIdentifier: projId
+  orgIdentifier: orgId
+  identifier: httpTemplate
+  versionLabel: 1
+  name: template1
+  type: Step
+  spec:
+    type: Http
+    spec:
+      url: <+input>
+      method: <+input>.allowedValues(POST, PUT, GET)
+      headers: []
+      outputVariables: []
+      requestBody: <+input>
+    timeout: 10s

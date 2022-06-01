@@ -13,7 +13,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.gitsync.beans.GitProcessRequest;
 import io.harness.gitsync.branching.EntityGitBranchMetadata;
 import io.harness.gitsync.persistance.GitSyncableEntity;
-import io.harness.gitsync.v2.GitAware;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.morphia.MorphiaRegistrarHelperPut;
 
@@ -26,7 +25,6 @@ public class GitSyncSdkMorphiaRegistrar implements MorphiaRegistrar {
     set.add(GitSyncableEntity.class);
     set.add(EntityGitBranchMetadata.class);
     set.add(GitProcessRequest.class);
-    set.add(GitAware.class);
   }
 
   @Override

@@ -16,6 +16,7 @@ import static org.mockito.Matchers.anyList;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -70,6 +71,8 @@ public class K8sApplyBaseHandlerTest extends CategoryTest {
     List<KubernetesResource> workloads =
         Arrays.asList(KubernetesResource.builder().spec("Spec").resourceId(deployment).build());
     K8sApplyHandlerConfig config = new K8sApplyHandlerConfig();
+    Kubectl client = mock(Kubectl.class);
+    config.setClient(client);
     config.setWorkloads(workloads);
     config.setCustomWorkloads(Collections.emptyList());
 
@@ -107,6 +110,8 @@ public class K8sApplyBaseHandlerTest extends CategoryTest {
     KubernetesResource crdResource = KubernetesResource.builder().spec("Spec").resourceId(crd).build();
     List<KubernetesResource> workloads = Arrays.asList(crdResource);
     K8sApplyHandlerConfig config = new K8sApplyHandlerConfig();
+    Kubectl client = mock(Kubectl.class);
+    config.setClient(client);
     config.setWorkloads(Collections.emptyList());
     config.setCustomWorkloads(workloads);
 
@@ -150,6 +155,9 @@ public class K8sApplyBaseHandlerTest extends CategoryTest {
     List<KubernetesResource> customWorkloads = Arrays.asList(crdResource);
     List<KubernetesResource> managedWorkloads = Arrays.asList(deploymentResource);
     K8sApplyHandlerConfig config = new K8sApplyHandlerConfig();
+
+    Kubectl client = mock(Kubectl.class);
+    config.setClient(client);
     config.setWorkloads(managedWorkloads);
     config.setCustomWorkloads(customWorkloads);
 
@@ -193,6 +201,8 @@ public class K8sApplyBaseHandlerTest extends CategoryTest {
     List<KubernetesResource> customWorkloads = Arrays.asList(crdResource);
     List<KubernetesResource> managedWorkloads = Arrays.asList(deploymentResource);
     K8sApplyHandlerConfig config = new K8sApplyHandlerConfig();
+    Kubectl client = mock(Kubectl.class);
+    config.setClient(client);
     config.setWorkloads(managedWorkloads);
     config.setCustomWorkloads(customWorkloads);
 
@@ -236,6 +246,8 @@ public class K8sApplyBaseHandlerTest extends CategoryTest {
     List<KubernetesResource> customWorkloads = Arrays.asList(crdResource);
     List<KubernetesResource> managedWorkloads = Arrays.asList(deploymentResource);
     K8sApplyHandlerConfig config = new K8sApplyHandlerConfig();
+    Kubectl client = mock(Kubectl.class);
+    config.setClient(client);
     config.setWorkloads(managedWorkloads);
     config.setCustomWorkloads(customWorkloads);
 

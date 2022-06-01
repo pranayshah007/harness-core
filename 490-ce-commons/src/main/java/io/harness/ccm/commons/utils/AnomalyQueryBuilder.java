@@ -8,6 +8,8 @@
 package io.harness.ccm.commons.utils;
 
 import static io.harness.ccm.commons.entities.CCMField.ALL;
+import static io.harness.ccm.commons.entities.CCMField.ANOMALOUS_SPEND;
+import static io.harness.ccm.commons.entities.CCMField.COST_IMPACT;
 import static io.harness.ccm.commons.entities.CCMOperator.LIKE;
 import static io.harness.ccm.commons.utils.TimeUtils.toOffsetDateTime;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -23,11 +25,11 @@ import io.harness.ccm.commons.entities.CCMTimeFilter;
 import io.harness.exception.InvalidRequestException;
 import io.harness.timescaledb.tables.records.AnomaliesRecord;
 
-import com.sun.istack.internal.NotNull;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.jooq.Condition;
 import org.jooq.OrderField;
@@ -37,14 +39,21 @@ import org.jooq.impl.DSL;
 @Slf4j
 public class AnomalyQueryBuilder {
   private static final List<TableField<AnomaliesRecord, String>> ANOMALY_TABLE_ENTITIES =
-      new ArrayList<>(Arrays.asList(ANOMALIES.WORKLOADNAME, ANOMALIES.NAMESPACE, ANOMALIES.CLUSTERNAME,
-          ANOMALIES.AWSACCOUNT, ANOMALIES.AWSSERVICE, ANOMALIES.AWSINSTANCETYPE, ANOMALIES.AWSUSAGETYPE,
-          ANOMALIES.GCPPRODUCT, ANOMALIES.GCPPROJECT, ANOMALIES.GCPSKUDESCRIPTION, ANOMALIES.GCPSKUID));
+      Arrays.asList(ANOMALIES.WORKLOADNAME, ANOMALIES.NAMESPACE, ANOMALIES.CLUSTERNAME, ANOMALIES.AWSACCOUNT,
+          ANOMALIES.AWSSERVICE, ANOMALIES.AWSINSTANCETYPE, ANOMALIES.AWSUSAGETYPE, ANOMALIES.GCPPRODUCT,
+          ANOMALIES.GCPPROJECT, ANOMALIES.GCPSKUDESCRIPTION, ANOMALIES.GCPSKUID);
+
+  // Fields which don't directly correspond to a column in anomalies table
+  private static final List<CCMField> NON_TABLE_FIELDS = Arrays.asList(ANOMALOUS_SPEND, COST_IMPACT, ALL);
 
   @NotNull
   public List<OrderField<?>> getOrderByFields(@NotNull List<CCMSort> sortList) {
     List<OrderField<?>> orderByFields = new ArrayList<>();
-    sortList.forEach(sortField -> orderByFields.add(getOrderByField(sortField)));
+    sortList.forEach(sortField -> {
+      if (!NON_TABLE_FIELDS.contains(sortField.getField())) {
+        orderByFields.add(getOrderByField(sortField));
+      }
+    });
     return orderByFields;
   }
 
@@ -63,6 +72,27 @@ public class AnomalyQueryBuilder {
   @NotNull
   public Condition applyAllFilters(@NotNull CCMFilter filter) {
     Condition condition = DSL.noCondition();
+
+    if (filter.getNumericFilters() != null) {
+      condition = applyNumericFilters(filter.getNumericFilters(), condition);
+    }
+
+    if (filter.getStringFilters() != null) {
+      // Todo: Remove perspectiveId filter if present
+      condition = applyStringFilters(filter.getStringFilters(), condition);
+    }
+
+    if (filter.getTimeFilters() != null) {
+      condition = applyTimeFilters(filter.getTimeFilters(), condition);
+    }
+
+    return condition;
+  }
+
+  @NotNull
+  public Condition applyAllFilters(@NotNull CCMFilter filter, @NotNull List<CCMFilter> ruleFilters) {
+    Condition condition = DSL.noCondition();
+    condition = applyPerspectiveRuleFilters(ruleFilters);
 
     if (filter.getNumericFilters() != null) {
       condition = applyNumericFilters(filter.getNumericFilters(), condition);
@@ -118,6 +148,19 @@ public class AnomalyQueryBuilder {
       }
     }
     return condition;
+  }
+
+  @NotNull
+  private Condition applyPerspectiveRuleFilters(@NotNull List<CCMFilter> filters) {
+    Condition overallCondition = DSL.noCondition();
+    for (CCMFilter filter : filters) {
+      Condition ruleCondition = DSL.noCondition();
+      if (filter.getStringFilters() != null) {
+        ruleCondition = applyStringFilters(filter.getStringFilters(), ruleCondition);
+      }
+      overallCondition = overallCondition.or(ruleCondition);
+    }
+    return overallCondition;
   }
 
   @NotNull

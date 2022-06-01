@@ -63,8 +63,7 @@ public class ConnectorInstrumentationHelper extends InstrumentationHelper {
         String userId = getUserId();
         return CompletableFuture.runAsync(
             ()
-                -> telemetryReporter.sendTrackEvent("connector_creation_finished", userId, accountId,
-                    eventPropertiesMap,
+                -> telemetryReporter.sendTrackEvent("Connector Created", userId, accountId, eventPropertiesMap,
                     ImmutableMap.<Destination, Boolean>builder()
                         .put(Destination.AMPLITUDE, true)
                         .put(Destination.ALL, false)

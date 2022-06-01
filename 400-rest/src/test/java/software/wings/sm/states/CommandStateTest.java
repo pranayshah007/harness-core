@@ -68,7 +68,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
@@ -131,6 +130,7 @@ import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.beans.command.AbstractCommandUnit;
 import software.wings.beans.command.Command;
 import software.wings.beans.command.CommandExecutionContext;
+import software.wings.beans.command.CommandMapper;
 import software.wings.beans.command.CopyConfigCommandUnit;
 import software.wings.beans.command.ExecCommandUnit;
 import software.wings.beans.command.ScpCommandUnit;
@@ -226,6 +226,9 @@ public class CommandStateTest extends WingsBaseTest {
                                .addCommandUnits(anExecCommandUnit().withCommandString("${var2}").build())
                                .build())
           .build();
+
+  private static final software.wings.beans.dto.Command COMMANDDTO = CommandMapper.toCommandDTO(COMMAND);
+
   private static final Service SERVICE = Service.builder().uuid(SERVICE_ID).name("SERVICE_NAME").build();
   private static final ServiceTemplate SERVICE_TEMPLATE =
       aServiceTemplate().withUuid(TEMPLATE_ID).withServiceId(SERVICE.getUuid()).build();
@@ -400,7 +403,7 @@ public class CommandStateTest extends WingsBaseTest {
                         .uuid(SERVICE_INSTANCE_ID)
                         .serviceTemplateElement(aServiceTemplateElement().withUuid(TEMPLATE_ID).build())
                         .build());
-    when(context.renderExpression(anyString())).thenAnswer(invocationOnMock -> invocationOnMock.getArguments()[0]);
+    when(context.renderExpression(any())).thenAnswer(invocationOnMock -> invocationOnMock.getArguments()[0]);
     when(context.getServiceVariables()).thenReturn(emptyMap());
     when(context.getWorkflowId()).thenReturn(UUID.randomUUID().toString());
     ServiceTemplate serviceTemplate = aServiceTemplate().withUuid(TEMPLATE_ID).withServiceId(SERVICE.getUuid()).build();
@@ -408,12 +411,12 @@ public class CommandStateTest extends WingsBaseTest {
     when(serviceTemplateHelper.fetchServiceTemplate(any())).thenReturn(serviceTemplate);
     when(hostService.getHostByEnv(APP_ID, ENV_ID, HOST_ID)).thenReturn(HOST);
     commandState.setExecutorService(executorService);
-    when(secretManager.getEncryptionDetails(anyObject(), anyString(), anyString())).thenReturn(Collections.emptyList());
+    when(secretManager.getEncryptionDetails(any(), any(), any())).thenReturn(Collections.emptyList());
     doReturn(null).when(mockAwsCommandHelper).getAwsConfigTagsFromContext(any());
     FieldUtils.writeField(commandState, "secretManager", secretManager, true);
 
-    when(activityHelperService.createAndSaveActivity(any(ExecutionContext.class), any(Activity.Type.class), anyString(),
-             anyString(), anyList(), any(Artifact.class)))
+    when(activityHelperService.createAndSaveActivity(
+             any(ExecutionContext.class), any(Activity.Type.class), any(), any(), anyList(), any()))
         .thenReturn(ACTIVITY_WITH_ID);
 
     FieldUtils.writeField(
@@ -431,7 +434,7 @@ public class CommandStateTest extends WingsBaseTest {
     commandState.setConnectionType(CommandState.ConnectionType.WINRM);
     SettingAttribute settingAttribute = new SettingAttribute();
     settingAttribute.setValue(WinRmConnectionAttributes.builder().build());
-    when(serviceCommandExecutorService.execute(eq(COMMAND), any())).thenReturn(SUCCESS);
+    when(serviceCommandExecutorService.execute(eq(COMMANDDTO), any())).thenReturn(SUCCESS);
     when(settingsService.get("WINRM_CONNECTION_ATTRIBUTES")).thenReturn(settingAttribute);
 
     when(templateService.get(eq("123454"), any()))
@@ -458,8 +461,8 @@ public class CommandStateTest extends WingsBaseTest {
     verify(settingsService, times(4)).getByName(eq(ACCOUNT_ID), eq(APP_ID), eq(ENV_ID), anyString());
     verify(settingsService, times(2)).get(anyString());
 
-    verify(workflowExecutionService).incrementInProgressCount(eq(APP_ID), anyString(), eq(1));
-    verify(workflowExecutionService).incrementSuccess(eq(APP_ID), anyString(), eq(1));
+    verify(workflowExecutionService).incrementInProgressCount(eq(APP_ID), any(), eq(1));
+    verify(workflowExecutionService).incrementSuccess(eq(APP_ID), any(), eq(1));
     verifyNoMoreInteractions(serviceInstanceService, serviceCommandExecutorService, settingsService,
         workflowExecutionService, artifactStreamService);
     verify(activityService).getCommandUnits(APP_ID, ACTIVITY_ID);
@@ -477,7 +480,7 @@ public class CommandStateTest extends WingsBaseTest {
     SettingAttribute settingAttribute = new SettingAttribute();
     settingAttribute.setValue(WinRmConnectionAttributes.builder().build());
     when(context.getContextElement(ContextElementType.INSTANCE)).thenReturn(null);
-    when(serviceCommandExecutorService.execute(eq(COMMAND), any())).thenReturn(SUCCESS);
+    when(serviceCommandExecutorService.execute(eq(COMMANDDTO), any())).thenReturn(SUCCESS);
     when(settingsService.get("WINRM_CONNECTION_ATTRIBUTES")).thenReturn(settingAttribute);
 
     when(templateService.get(eq("123454"), any()))
@@ -501,7 +504,7 @@ public class CommandStateTest extends WingsBaseTest {
     commandState.setConnectionType(CommandState.ConnectionType.WINRM);
     SettingAttribute settingAttribute = new SettingAttribute();
     settingAttribute.setValue(WinRmConnectionAttributes.builder().build());
-    when(serviceCommandExecutorService.execute(eq(COMMAND), any())).thenReturn(SUCCESS);
+    when(serviceCommandExecutorService.execute(eq(COMMANDDTO), any())).thenReturn(SUCCESS);
     when(settingsService.get("WINRM_CONNECTION_ATTRIBUTES")).thenReturn(settingAttribute);
 
     when(templateService.get(eq("123454"), any()))
@@ -526,8 +529,8 @@ public class CommandStateTest extends WingsBaseTest {
     verify(context, times(4)).renderExpression(anyString());
 
     verify(settingsService, times(4)).getByName(eq(ACCOUNT_ID), eq(APP_ID), eq(ENV_ID), anyString());
-    verify(workflowExecutionService).incrementInProgressCount(eq(APP_ID), anyString(), eq(1));
-    verify(workflowExecutionService).incrementSuccess(eq(APP_ID), anyString(), eq(1));
+    verify(workflowExecutionService).incrementInProgressCount(eq(APP_ID), any(), eq(1));
+    verify(workflowExecutionService).incrementSuccess(eq(APP_ID), any(), eq(1));
     verifyNoMoreInteractions(serviceInstanceService, serviceCommandExecutorService, settingsService,
         workflowExecutionService, artifactStreamService);
     verify(activityService).getCommandUnits(APP_ID, ACTIVITY_ID);
@@ -562,7 +565,7 @@ public class CommandStateTest extends WingsBaseTest {
     commandState.setTemplateUuid(TEMPLATE_ID);
     commandState.setHost(HOST_NAME);
     commandState.setSshKeyRef("ssh_key_ref");
-    when(serviceCommandExecutorService.execute(eq(COMMAND), any())).thenReturn(SUCCESS);
+    when(serviceCommandExecutorService.execute(eq(COMMANDDTO), any())).thenReturn(SUCCESS);
     when(settingsService.get("ssh_key_ref")).thenReturn(new SettingAttribute());
 
     when(templateService.get(eq("123454"), any()))
@@ -589,8 +592,8 @@ public class CommandStateTest extends WingsBaseTest {
     verify(settingsService, times(4)).getByName(eq(ACCOUNT_ID), eq(APP_ID), eq(ENV_ID), anyString());
     verify(settingsService, times(2)).get(anyString());
 
-    verify(workflowExecutionService).incrementInProgressCount(eq(APP_ID), anyString(), eq(1));
-    verify(workflowExecutionService).incrementSuccess(eq(APP_ID), anyString(), eq(1));
+    verify(workflowExecutionService).incrementInProgressCount(eq(APP_ID), any(), eq(1));
+    verify(workflowExecutionService).incrementSuccess(eq(APP_ID), any(), eq(1));
     verifyNoMoreInteractions(serviceInstanceService, serviceCommandExecutorService, settingsService,
         workflowExecutionService, artifactStreamService);
     verify(activityService).getCommandUnits(APP_ID, ACTIVITY_ID);
@@ -600,7 +603,7 @@ public class CommandStateTest extends WingsBaseTest {
   @Owner(developers = SAHIL)
   @Category(UnitTests.class)
   public void testExecuteWithTemplateUUID() {
-    when(serviceCommandExecutorService.execute(eq(COMMAND), any())).thenReturn(SUCCESS);
+    when(serviceCommandExecutorService.execute(eq(COMMANDDTO), any())).thenReturn(SUCCESS);
 
     when(serviceResourceService.getCommandByName(APP_ID, SERVICE_ID, ENV_ID, "START"))
         .thenReturn(aServiceCommand().withTargetToAllEnv(true).withCommand(COMMAND).withTemplateUuid("123454").build());
@@ -642,8 +645,8 @@ public class CommandStateTest extends WingsBaseTest {
     verify(settingsService, times(4)).getByName(eq(ACCOUNT_ID), eq(APP_ID), eq(ENV_ID), anyString());
     verify(settingsService, times(2)).get(anyString());
 
-    verify(workflowExecutionService).incrementInProgressCount(eq(APP_ID), anyString(), eq(1));
-    verify(workflowExecutionService).incrementSuccess(eq(APP_ID), anyString(), eq(1));
+    verify(workflowExecutionService).incrementInProgressCount(eq(APP_ID), any(), eq(1));
+    verify(workflowExecutionService).incrementSuccess(eq(APP_ID), any(), eq(1));
     verifyNoMoreInteractions(serviceInstanceService, serviceCommandExecutorService, settingsService,
         workflowExecutionService, artifactStreamService);
     verify(activityService).getCommandUnits(APP_ID, ACTIVITY_ID);
@@ -653,7 +656,7 @@ public class CommandStateTest extends WingsBaseTest {
   @Owner(developers = SAHIL)
   @Category(UnitTests.class)
   public void executeWithServiceTemplateUuidNewFlow() {
-    when(serviceCommandExecutorService.execute(eq(COMMAND), any())).thenReturn(SUCCESS);
+    when(serviceCommandExecutorService.execute(eq(COMMANDDTO), any())).thenReturn(SUCCESS);
 
     when(serviceResourceService.getCommandByName(APP_ID, SERVICE_ID, ENV_ID, "START"))
         .thenReturn(aServiceCommand().withTargetToAllEnv(true).withCommand(COMMAND).withTemplateUuid("123454").build());
@@ -695,8 +698,8 @@ public class CommandStateTest extends WingsBaseTest {
     verify(settingsService, times(4)).getByName(eq(ACCOUNT_ID), eq(APP_ID), eq(ENV_ID), anyString());
     verify(settingsService, times(2)).get(anyString());
 
-    verify(workflowExecutionService).incrementInProgressCount(eq(APP_ID), anyString(), eq(1));
-    verify(workflowExecutionService).incrementSuccess(eq(APP_ID), anyString(), eq(1));
+    verify(workflowExecutionService).incrementInProgressCount(eq(APP_ID), any(), eq(1));
+    verify(workflowExecutionService).incrementSuccess(eq(APP_ID), any(), eq(1));
     verifyNoMoreInteractions(serviceInstanceService, serviceCommandExecutorService, settingsService,
         workflowExecutionService, artifactStreamService);
     verify(activityService).getCommandUnits(APP_ID, ACTIVITY_ID);
@@ -730,7 +733,7 @@ public class CommandStateTest extends WingsBaseTest {
     when(artifactStream.fetchArtifactStreamAttributes(featureFlagService)).thenReturn(artifactStreamAttributes);
     when(artifactStream.getSettingId()).thenReturn(SETTING_ID);
     when(artifactStream.getUuid()).thenReturn(ARTIFACT_STREAM_ID);
-    when(serviceCommandExecutorService.execute(command,
+    when(serviceCommandExecutorService.execute(CommandMapper.toCommandDTO(command),
              aCommandExecutionContext()
                  .appId(APP_ID)
                  .backupPath(BACKUP_PATH)
@@ -753,8 +756,7 @@ public class CommandStateTest extends WingsBaseTest {
     verify(serviceResourceService).getDeploymentType(any(), any(), any());
     verify(serviceInstanceService).get(APP_ID, ENV_ID, SERVICE_INSTANCE_ID);
     verify(activityHelperService)
-        .createAndSaveActivity(any(ExecutionContext.class), any(Activity.Type.class), anyString(), anyString(),
-            anyList(), any(Artifact.class));
+        .createAndSaveActivity(any(ExecutionContext.class), any(Activity.Type.class), any(), any(), anyList(), any());
     verify(activityHelperService).updateStatus(ACTIVITY_ID, APP_ID, ExecutionStatus.SUCCESS);
     verify(serviceResourceService).getFlattenCommandUnitList(APP_ID, SERVICE_ID, ENV_ID, "START");
 
@@ -777,8 +779,8 @@ public class CommandStateTest extends WingsBaseTest {
     verify(settingsService, times(4)).getByName(eq(ACCOUNT_ID), eq(APP_ID), eq(ENV_ID), anyString());
     verify(settingsService, times(3)).get(anyString());
 
-    verify(workflowExecutionService).incrementInProgressCount(eq(APP_ID), anyString(), eq(1));
-    verify(workflowExecutionService).incrementSuccess(eq(APP_ID), anyString(), eq(1));
+    verify(workflowExecutionService).incrementInProgressCount(eq(APP_ID), any(), eq(1));
+    verify(workflowExecutionService).incrementSuccess(eq(APP_ID), any(), eq(1));
     verify(artifactStreamService).get(ARTIFACT_STREAM_ID);
     verifyNoMoreInteractions(serviceResourceService, serviceInstanceService, activityHelperService,
         serviceCommandExecutorService, settingsService, workflowExecutionService, artifactStreamService);
@@ -815,7 +817,7 @@ public class CommandStateTest extends WingsBaseTest {
     when(artifactStream.fetchArtifactStreamAttributes(featureFlagService)).thenReturn(artifactStreamAttributes);
     when(artifactStream.getSettingId()).thenReturn(SETTING_ID);
     when(artifactStream.getUuid()).thenReturn(ARTIFACT_STREAM_ID);
-    when(serviceCommandExecutorService.execute(command,
+    when(serviceCommandExecutorService.execute(CommandMapper.toCommandDTO(command),
              aCommandExecutionContext()
                  .appId(APP_ID)
                  .backupPath(BACKUP_PATH)
@@ -848,8 +850,7 @@ public class CommandStateTest extends WingsBaseTest {
 
     verify(serviceInstanceService).get(APP_ID, ENV_ID, SERVICE_INSTANCE_ID);
     verify(activityHelperService)
-        .createAndSaveActivity(any(ExecutionContext.class), any(Activity.Type.class), anyString(), anyString(),
-            anyList(), any(Artifact.class));
+        .createAndSaveActivity(any(ExecutionContext.class), any(Activity.Type.class), any(), any(), anyList(), any());
     verify(activityHelperService).updateStatus(ACTIVITY_ID, APP_ID, ExecutionStatus.SUCCESS);
     verify(serviceResourceService).getFlattenCommandUnitList(APP_ID, SERVICE_ID, ENV_ID, "START");
 
@@ -872,8 +873,8 @@ public class CommandStateTest extends WingsBaseTest {
     verify(settingsService, times(4)).getByName(eq(ACCOUNT_ID), eq(APP_ID), eq(ENV_ID), anyString());
     verify(settingsService, times(3)).get(anyString());
 
-    verify(workflowExecutionService).incrementInProgressCount(eq(APP_ID), anyString(), eq(1));
-    verify(workflowExecutionService).incrementSuccess(eq(APP_ID), anyString(), eq(1));
+    verify(workflowExecutionService).incrementInProgressCount(eq(APP_ID), any(), eq(1));
+    verify(workflowExecutionService).incrementSuccess(eq(APP_ID), any(), eq(1));
     verify(artifactStreamService).get(ARTIFACT_STREAM_ID);
     verifyNoMoreInteractions(serviceResourceService, serviceInstanceService, activityHelperService,
         serviceCommandExecutorService, settingsService, workflowExecutionService, artifactStreamService);
@@ -884,7 +885,7 @@ public class CommandStateTest extends WingsBaseTest {
   @Owner(developers = SRINIVAS)
   @Category(UnitTests.class)
   public void execute() {
-    when(serviceCommandExecutorService.execute(eq(COMMAND), any())).thenReturn(SUCCESS);
+    when(serviceCommandExecutorService.execute(eq(COMMANDDTO), any())).thenReturn(SUCCESS);
 
     commandState.setHost(HOST_NAME);
     commandState.setSshKeyRef("ssh_key_ref");
@@ -907,8 +908,7 @@ public class CommandStateTest extends WingsBaseTest {
     verify(serviceInstanceService).get(APP_ID, ENV_ID, SERVICE_INSTANCE_ID);
 
     verify(activityHelperService)
-        .createAndSaveActivity(any(ExecutionContext.class), any(Activity.Type.class), anyString(), anyString(),
-            anyList(), any(Artifact.class));
+        .createAndSaveActivity(any(ExecutionContext.class), any(Activity.Type.class), any(), any(), anyList(), any());
     verify(activityHelperService).updateStatus(ACTIVITY_ID, APP_ID, ExecutionStatus.SUCCESS);
 
     verify(context, times(4)).getContextElement(ContextElementType.STANDARD);
@@ -924,8 +924,8 @@ public class CommandStateTest extends WingsBaseTest {
     verify(settingsService, times(4)).getByName(eq(ACCOUNT_ID), eq(APP_ID), eq(ENV_ID), anyString());
     verify(settingsService, times(2)).get(anyString());
 
-    verify(workflowExecutionService).incrementInProgressCount(eq(APP_ID), anyString(), eq(1));
-    verify(workflowExecutionService).incrementSuccess(eq(APP_ID), anyString(), eq(1));
+    verify(workflowExecutionService).incrementInProgressCount(eq(APP_ID), any(), eq(1));
+    verify(workflowExecutionService).incrementSuccess(eq(APP_ID), any(), eq(1));
     verify(serviceResourceService).getCommandByName(APP_ID, SERVICE_ID, ENV_ID, "Start");
     verifyNoMoreInteractions(serviceInstanceService, serviceCommandExecutorService, activityHelperService,
         settingsService, workflowExecutionService, artifactStreamService);
@@ -1001,7 +1001,7 @@ public class CommandStateTest extends WingsBaseTest {
     when(artifactStream.fetchArtifactStreamAttributes(featureFlagService)).thenReturn(artifactStreamAttributes);
     when(artifactStream.getSettingId()).thenReturn(SETTING_ID);
     when(artifactStream.getUuid()).thenReturn(ARTIFACT_STREAM_ID);
-    when(serviceCommandExecutorService.execute(command,
+    when(serviceCommandExecutorService.execute(CommandMapper.toCommandDTO(command),
              aCommandExecutionContext()
                  .appId(APP_ID)
                  .backupPath(BACKUP_PATH)
@@ -1025,8 +1025,7 @@ public class CommandStateTest extends WingsBaseTest {
 
     verify(serviceInstanceService).get(APP_ID, ENV_ID, SERVICE_INSTANCE_ID);
     verify(activityHelperService)
-        .createAndSaveActivity(any(ExecutionContext.class), any(Activity.Type.class), anyString(), anyString(),
-            anyList(), any(Artifact.class));
+        .createAndSaveActivity(any(ExecutionContext.class), any(Activity.Type.class), any(), any(), anyList(), any());
     verify(activityHelperService).updateStatus(ACTIVITY_ID, APP_ID, ExecutionStatus.SUCCESS);
     verify(serviceResourceService).getFlattenCommandUnitList(APP_ID, SERVICE_ID, ENV_ID, "START");
 
@@ -1049,8 +1048,8 @@ public class CommandStateTest extends WingsBaseTest {
     verify(settingsService, times(4)).getByName(eq(ACCOUNT_ID), eq(APP_ID), eq(ENV_ID), anyString());
     verify(settingsService, times(3)).get(anyString());
 
-    verify(workflowExecutionService).incrementInProgressCount(eq(APP_ID), anyString(), eq(1));
-    verify(workflowExecutionService).incrementSuccess(eq(APP_ID), anyString(), eq(1));
+    verify(workflowExecutionService).incrementInProgressCount(eq(APP_ID), any(), eq(1));
+    verify(workflowExecutionService).incrementSuccess(eq(APP_ID), any(), eq(1));
     verify(artifactStreamService).get(ARTIFACT_STREAM_ID);
     verifyNoMoreInteractions(serviceResourceService, serviceInstanceService, activityHelperService,
         serviceCommandExecutorService, settingsService, workflowExecutionService, artifactStreamService);
@@ -1108,7 +1107,7 @@ public class CommandStateTest extends WingsBaseTest {
     when(artifactStream.fetchArtifactStreamAttributes(featureFlagService)).thenReturn(artifactStreamAttributes);
     when(artifactStream.getSettingId()).thenReturn(SETTING_ID);
     when(artifactStream.getUuid()).thenReturn(ARTIFACT_STREAM_ID);
-    when(serviceCommandExecutorService.execute(command,
+    when(serviceCommandExecutorService.execute(CommandMapper.toCommandDTO(command),
              aCommandExecutionContext()
                  .appId(APP_ID)
                  .backupPath(BACKUP_PATH)
@@ -1134,8 +1133,8 @@ public class CommandStateTest extends WingsBaseTest {
 
     // verify that activity is created using rollback artifact
     verify(activityHelperService)
-        .createAndSaveActivity(any(ExecutionContext.class), any(Activity.Type.class), anyString(), anyString(),
-            anyList(), eq(rollbackArtifact));
+        .createAndSaveActivity(
+            any(ExecutionContext.class), any(Activity.Type.class), any(), anyString(), anyList(), eq(rollbackArtifact));
     verify(activityHelperService).updateStatus(ACTIVITY_ID, APP_ID, ExecutionStatus.SUCCESS);
     verify(serviceResourceService).getFlattenCommandUnitList(APP_ID, SERVICE_ID, ENV_ID, "START");
     verify(serviceResourceService).findPreviousArtifact(any(), any(), any());
@@ -1159,8 +1158,8 @@ public class CommandStateTest extends WingsBaseTest {
     verify(settingsService, times(4)).getByName(eq(ACCOUNT_ID), eq(APP_ID), eq(ENV_ID), anyString());
     verify(settingsService, times(1)).get(anyString());
 
-    verify(workflowExecutionService).incrementInProgressCount(eq(APP_ID), anyString(), eq(1));
-    verify(workflowExecutionService).incrementSuccess(eq(APP_ID), anyString(), eq(1));
+    verify(workflowExecutionService).incrementInProgressCount(eq(APP_ID), any(), eq(1));
+    verify(workflowExecutionService).incrementSuccess(eq(APP_ID), any(), eq(1));
     verify(artifactStreamService).get(ARTIFACT_STREAM_ID);
     verifyNoMoreInteractions(serviceResourceService, serviceInstanceService, activityHelperService,
         serviceCommandExecutorService, settingsService, workflowExecutionService, artifactStreamService);
@@ -1331,8 +1330,7 @@ public class CommandStateTest extends WingsBaseTest {
     verify(serviceResourceService).getDeploymentType(any(), any(), any());
 
     verify(activityHelperService)
-        .createAndSaveActivity(any(ExecutionContext.class), any(Activity.Type.class), anyString(), anyString(),
-            anyList(), any(Artifact.class));
+        .createAndSaveActivity(any(ExecutionContext.class), any(Activity.Type.class), any(), any(), anyList(), any());
     verify(activityHelperService).updateStatus(ACTIVITY_ID, APP_ID, ExecutionStatus.SUCCESS);
 
     verify(context, times(3)).getContextElement(ContextElementType.STANDARD);
@@ -1541,7 +1539,7 @@ public class CommandStateTest extends WingsBaseTest {
     commandState.setExecuteOnDelegate(true);
     commandState.setConnectionType(null);
 
-    when(serviceCommandExecutorService.execute(eq(COMMAND), any())).thenReturn(SUCCESS);
+    when(serviceCommandExecutorService.execute(eq(COMMANDDTO), any())).thenReturn(SUCCESS);
     when(serviceResourceService.getWithDetails(APP_ID, null)).thenReturn(SERVICE);
     when(templateService.get(eq("123454"), any()))
         .thenReturn(Template.builder()
@@ -1565,8 +1563,8 @@ public class CommandStateTest extends WingsBaseTest {
     verify(context, times(5)).renderExpression(anyString());
     verify(serviceInstanceService).get(APP_ID, ENV_ID, SERVICE_INSTANCE_ID);
     verify(settingsService, times(4)).getByName(eq(ACCOUNT_ID), eq(APP_ID), eq(ENV_ID), anyString());
-    verify(workflowExecutionService).incrementInProgressCount(eq(APP_ID), anyString(), eq(1));
-    verify(workflowExecutionService).incrementSuccess(eq(APP_ID), anyString(), eq(1));
+    verify(workflowExecutionService).incrementInProgressCount(eq(APP_ID), any(), eq(1));
+    verify(workflowExecutionService).incrementSuccess(eq(APP_ID), any(), eq(1));
     verifyNoMoreInteractions(serviceInstanceService, serviceCommandExecutorService, settingsService,
         workflowExecutionService, artifactStreamService);
     verify(activityService).getCommandUnits(APP_ID, ACTIVITY_ID);
@@ -1584,7 +1582,7 @@ public class CommandStateTest extends WingsBaseTest {
     SettingAttribute settingAttribute = new SettingAttribute();
     settingAttribute.setValue(WinRmConnectionAttributes.builder().build());
 
-    when(serviceCommandExecutorService.execute(eq(COMMAND), any())).thenReturn(SUCCESS);
+    when(serviceCommandExecutorService.execute(eq(COMMANDDTO), any())).thenReturn(SUCCESS);
     when(settingsService.get("WINRM_CONNECTION_ATTRIBUTES")).thenReturn(settingAttribute);
 
     when(serviceResourceService.getWithDetails(APP_ID, null)).thenReturn(SERVICE);
@@ -1611,8 +1609,8 @@ public class CommandStateTest extends WingsBaseTest {
     verify(settingsService, times(4)).getByName(eq(ACCOUNT_ID), eq(APP_ID), eq(ENV_ID), anyString());
     verify(settingsService, times(2)).get(anyString());
 
-    verify(workflowExecutionService).incrementInProgressCount(eq(APP_ID), anyString(), eq(1));
-    verify(workflowExecutionService).incrementSuccess(eq(APP_ID), anyString(), eq(1));
+    verify(workflowExecutionService).incrementInProgressCount(eq(APP_ID), any(), eq(1));
+    verify(workflowExecutionService).incrementSuccess(eq(APP_ID), any(), eq(1));
     verifyNoMoreInteractions(serviceInstanceService, serviceCommandExecutorService, settingsService,
         workflowExecutionService, artifactStreamService);
     verify(activityService).getCommandUnits(APP_ID, ACTIVITY_ID);
@@ -1632,7 +1630,7 @@ public class CommandStateTest extends WingsBaseTest {
     SettingAttribute settingAttribute = new SettingAttribute();
     settingAttribute.setValue(WinRmConnectionAttributes.builder().build());
 
-    when(serviceCommandExecutorService.execute(eq(COMMAND), any())).thenReturn(SUCCESS);
+    when(serviceCommandExecutorService.execute(eq(COMMANDDTO), any())).thenReturn(SUCCESS);
     when(settingsService.get("WINRM_CONNECTION_ATTRIBUTES")).thenReturn(settingAttribute);
 
     when(serviceResourceService.getWithDetails(APP_ID, null)).thenReturn(SERVICE);
@@ -1668,7 +1666,7 @@ public class CommandStateTest extends WingsBaseTest {
     SettingAttribute settingAttribute = new SettingAttribute();
     settingAttribute.setValue(WinRmConnectionAttributes.builder().build());
 
-    when(serviceCommandExecutorService.execute(eq(COMMAND), any())).thenReturn(SUCCESS);
+    when(serviceCommandExecutorService.execute(eq(COMMANDDTO), any())).thenReturn(SUCCESS);
     when(settingsService.get("WINRM_CONNECTION_ATTRIBUTES")).thenReturn(settingAttribute);
 
     when(serviceResourceService.getWithDetails(APP_ID, null)).thenReturn(SERVICE);
@@ -1705,7 +1703,7 @@ public class CommandStateTest extends WingsBaseTest {
     settingAttribute.setValue(WinRmConnectionAttributes.builder().build());
 
     when(context.getApp()).thenReturn(application);
-    when(serviceCommandExecutorService.execute(eq(COMMAND), any())).thenReturn(SUCCESS);
+    when(serviceCommandExecutorService.execute(eq(COMMANDDTO), any())).thenReturn(SUCCESS);
     when(settingsService.get("WINRM_CONNECTION_ATTRIBUTES")).thenReturn(null);
     when(settingsService.getSettingAttributeByName(ACCOUNT_ID, "WINRM_CONNECTION_ATTRIBUTES")).thenReturn(null);
 
@@ -1737,7 +1735,7 @@ public class CommandStateTest extends WingsBaseTest {
     settingAttribute.setValue(WinRmConnectionAttributes.builder().build());
 
     when(context.getApp()).thenReturn(application);
-    when(serviceCommandExecutorService.execute(eq(COMMAND), any())).thenReturn(SUCCESS);
+    when(serviceCommandExecutorService.execute(eq(COMMANDDTO), any())).thenReturn(SUCCESS);
     when(settingsService.get("WINRM_CONNECTION_ATTRIBUTES")).thenReturn(null);
     when(settingsService.get("UUID")).thenReturn(settingAttribute);
     when(settingsService.getSettingAttributeByName(ACCOUNT_ID, "WINRM_CONNECTION_ATTRIBUTES"))
@@ -1765,7 +1763,7 @@ public class CommandStateTest extends WingsBaseTest {
     SettingAttribute settingAttribute = new SettingAttribute();
     settingAttribute.setValue(null);
 
-    when(serviceCommandExecutorService.execute(eq(COMMAND), any())).thenReturn(SUCCESS);
+    when(serviceCommandExecutorService.execute(eq(COMMANDDTO), any())).thenReturn(SUCCESS);
     when(settingsService.get("WINRM_CONNECTION_ATTRIBUTES")).thenReturn(settingAttribute);
 
     when(serviceResourceService.getWithDetails(APP_ID, null)).thenReturn(SERVICE);
@@ -1789,7 +1787,7 @@ public class CommandStateTest extends WingsBaseTest {
     SettingAttribute settingAttribute = new SettingAttribute();
     settingAttribute.setValue(HostConnectionAttributes.Builder.aHostConnectionAttributes().build());
 
-    when(serviceCommandExecutorService.execute(eq(COMMAND), any())).thenReturn(SUCCESS);
+    when(serviceCommandExecutorService.execute(eq(COMMANDDTO), any())).thenReturn(SUCCESS);
     when(settingsService.get("ssh_key_ref")).thenReturn(settingAttribute);
     when(serviceResourceService.getWithDetails(APP_ID, null)).thenReturn(SERVICE);
 
@@ -1819,8 +1817,8 @@ public class CommandStateTest extends WingsBaseTest {
     verify(settingsService, times(4)).getByName(eq(ACCOUNT_ID), eq(APP_ID), eq(ENV_ID), anyString());
     verify(settingsService, times(2)).get(anyString());
 
-    verify(workflowExecutionService).incrementInProgressCount(eq(APP_ID), anyString(), eq(1));
-    verify(workflowExecutionService).incrementSuccess(eq(APP_ID), anyString(), eq(1));
+    verify(workflowExecutionService).incrementInProgressCount(eq(APP_ID), any(), eq(1));
+    verify(workflowExecutionService).incrementSuccess(eq(APP_ID), any(), eq(1));
     verifyNoMoreInteractions(serviceInstanceService, serviceCommandExecutorService, settingsService,
         workflowExecutionService, artifactStreamService);
     verify(activityService).getCommandUnits(APP_ID, ACTIVITY_ID);
@@ -1838,7 +1836,7 @@ public class CommandStateTest extends WingsBaseTest {
     SettingAttribute settingAttribute = new SettingAttribute();
     settingAttribute.setValue(HostConnectionAttributes.Builder.aHostConnectionAttributes().build());
 
-    when(serviceCommandExecutorService.execute(eq(COMMAND), any())).thenReturn(SUCCESS);
+    when(serviceCommandExecutorService.execute(eq(COMMANDDTO), any())).thenReturn(SUCCESS);
     when(settingsService.get("ssh_key_ref")).thenReturn(settingAttribute);
     when(serviceResourceService.getWithDetails(APP_ID, null)).thenReturn(SERVICE);
 
@@ -1867,8 +1865,8 @@ public class CommandStateTest extends WingsBaseTest {
     verify(settingsService, times(4)).getByName(eq(ACCOUNT_ID), eq(APP_ID), eq(ENV_ID), anyString());
     verify(settingsService, times(2)).get(anyString());
 
-    verify(workflowExecutionService).incrementInProgressCount(eq(APP_ID), anyString(), eq(1));
-    verify(workflowExecutionService).incrementSuccess(eq(APP_ID), anyString(), eq(1));
+    verify(workflowExecutionService).incrementInProgressCount(eq(APP_ID), any(), eq(1));
+    verify(workflowExecutionService).incrementSuccess(eq(APP_ID), any(), eq(1));
     verifyNoMoreInteractions(serviceInstanceService, serviceCommandExecutorService, settingsService,
         workflowExecutionService, artifactStreamService);
     verify(activityService).getCommandUnits(APP_ID, ACTIVITY_ID);
@@ -1887,7 +1885,7 @@ public class CommandStateTest extends WingsBaseTest {
     SettingAttribute settingAttribute = new SettingAttribute();
     settingAttribute.setValue(HostConnectionAttributes.Builder.aHostConnectionAttributes().build());
 
-    when(serviceCommandExecutorService.execute(eq(COMMAND), any())).thenReturn(SUCCESS);
+    when(serviceCommandExecutorService.execute(eq(COMMANDDTO), any())).thenReturn(SUCCESS);
     when(settingsService.get("ssh_key_ref")).thenReturn(settingAttribute);
     when(serviceResourceService.getWithDetails(APP_ID, null)).thenReturn(SERVICE);
 
@@ -1919,7 +1917,7 @@ public class CommandStateTest extends WingsBaseTest {
     SettingAttribute settingAttribute = new SettingAttribute();
     settingAttribute.setValue(HostConnectionAttributes.Builder.aHostConnectionAttributes().build());
 
-    when(serviceCommandExecutorService.execute(eq(COMMAND), any())).thenReturn(SUCCESS);
+    when(serviceCommandExecutorService.execute(eq(COMMANDDTO), any())).thenReturn(SUCCESS);
     when(settingsService.get("ssh_key_ref")).thenReturn(settingAttribute);
     when(serviceResourceService.getWithDetails(APP_ID, null)).thenReturn(SERVICE);
 
@@ -1954,7 +1952,7 @@ public class CommandStateTest extends WingsBaseTest {
     SettingAttribute settingAttribute = new SettingAttribute();
     settingAttribute.setValue(HostConnectionAttributes.Builder.aHostConnectionAttributes().build());
 
-    when(serviceCommandExecutorService.execute(eq(COMMAND), any())).thenReturn(SUCCESS);
+    when(serviceCommandExecutorService.execute(eq(COMMANDDTO), any())).thenReturn(SUCCESS);
     when(settingsService.get("ssh_key_ref")).thenReturn(settingAttribute);
     when(serviceResourceService.getWithDetails(APP_ID, null)).thenReturn(SERVICE);
 
@@ -1991,7 +1989,7 @@ public class CommandStateTest extends WingsBaseTest {
     SettingAttribute settingAttribute = new SettingAttribute();
     settingAttribute.setValue(HostConnectionAttributes.Builder.aHostConnectionAttributes().build());
 
-    when(serviceCommandExecutorService.execute(eq(COMMAND), any())).thenReturn(SUCCESS);
+    when(serviceCommandExecutorService.execute(eq(COMMANDDTO), any())).thenReturn(SUCCESS);
     when(settingsService.get("ssh_key_ref")).thenReturn(settingAttribute);
     when(serviceResourceService.getWithDetails(APP_ID, null)).thenReturn(SERVICE);
 
@@ -2021,7 +2019,7 @@ public class CommandStateTest extends WingsBaseTest {
     SettingAttribute settingAttribute = new SettingAttribute();
     settingAttribute.setValue(HostConnectionAttributes.Builder.aHostConnectionAttributes().build());
 
-    when(serviceCommandExecutorService.execute(eq(COMMAND), any())).thenReturn(SUCCESS);
+    when(serviceCommandExecutorService.execute(eq(COMMANDDTO), any())).thenReturn(SUCCESS);
     when(settingsService.get("ssh_key_ref")).thenReturn(settingAttribute);
     when(serviceResourceService.getWithDetails(APP_ID, null)).thenReturn(SERVICE);
 
@@ -2047,7 +2045,7 @@ public class CommandStateTest extends WingsBaseTest {
     settingAttribute.setValue(HostConnectionAttributes.Builder.aHostConnectionAttributes().build());
 
     when(context.getContextElement(ContextElementType.INSTANCE)).thenReturn(null);
-    when(serviceCommandExecutorService.execute(eq(COMMAND), any())).thenReturn(SUCCESS);
+    when(serviceCommandExecutorService.execute(eq(COMMANDDTO), any())).thenReturn(SUCCESS);
     when(settingsService.get("ssh_key_ref")).thenReturn(settingAttribute);
     when(serviceResourceService.getWithDetails(APP_ID, null)).thenReturn(SERVICE);
 
@@ -2073,7 +2071,7 @@ public class CommandStateTest extends WingsBaseTest {
     settingAttribute.setValue(HostConnectionAttributes.Builder.aHostConnectionAttributes().build());
 
     when(serviceInstanceService.get(APP_ID, ENV_ID, SERVICE_INSTANCE_ID)).thenReturn(null);
-    when(serviceCommandExecutorService.execute(eq(COMMAND), any())).thenReturn(SUCCESS);
+    when(serviceCommandExecutorService.execute(eq(COMMANDDTO), any())).thenReturn(SUCCESS);
     when(settingsService.get("ssh_key_ref")).thenReturn(settingAttribute);
     when(serviceResourceService.getWithDetails(APP_ID, null)).thenReturn(SERVICE);
 
@@ -2124,7 +2122,7 @@ public class CommandStateTest extends WingsBaseTest {
     SettingAttribute settingAttribute = new SettingAttribute();
     settingAttribute.setValue(HostConnectionAttributes.Builder.aHostConnectionAttributes().build());
 
-    when(serviceCommandExecutorService.execute(eq(COMMAND), any())).thenReturn(SUCCESS);
+    when(serviceCommandExecutorService.execute(eq(COMMANDDTO), any())).thenReturn(SUCCESS);
     when(settingsService.get("ssh_key_ref")).thenReturn(settingAttribute);
     when(serviceResourceService.getWithDetails(APP_ID, null)).thenReturn(SERVICE);
 
@@ -2155,8 +2153,8 @@ public class CommandStateTest extends WingsBaseTest {
     verify(settingsService, times(4)).getByName(eq(ACCOUNT_ID), eq(APP_ID), eq(ENV_ID), anyString());
     verify(settingsService, times(2)).get(anyString());
 
-    verify(workflowExecutionService).incrementInProgressCount(eq(APP_ID), anyString(), eq(1));
-    verify(workflowExecutionService).incrementSuccess(eq(APP_ID), anyString(), eq(1));
+    verify(workflowExecutionService).incrementInProgressCount(eq(APP_ID), any(), eq(1));
+    verify(workflowExecutionService).incrementSuccess(eq(APP_ID), any(), eq(1));
     verifyNoMoreInteractions(serviceInstanceService, serviceCommandExecutorService, settingsService,
         workflowExecutionService, artifactStreamService);
     verify(activityService).getCommandUnits(APP_ID, ACTIVITY_ID);
@@ -2180,7 +2178,7 @@ public class CommandStateTest extends WingsBaseTest {
     SettingAttribute settingAttribute = new SettingAttribute();
     settingAttribute.setValue(HostConnectionAttributes.Builder.aHostConnectionAttributes().build());
 
-    when(serviceCommandExecutorService.execute(eq(COMMAND), any())).thenReturn(SUCCESS);
+    when(serviceCommandExecutorService.execute(eq(COMMANDDTO), any())).thenReturn(SUCCESS);
     when(settingsService.get("ssh_key_ref")).thenReturn(settingAttribute);
     when(serviceResourceService.getWithDetails(APP_ID, null)).thenReturn(SERVICE);
 
@@ -2211,8 +2209,8 @@ public class CommandStateTest extends WingsBaseTest {
     verify(settingsService, times(4)).getByName(eq(ACCOUNT_ID), eq(APP_ID), eq(ENV_ID), anyString());
     verify(settingsService, times(2)).get(anyString());
 
-    verify(workflowExecutionService).incrementInProgressCount(eq(APP_ID), anyString(), eq(1));
-    verify(workflowExecutionService).incrementSuccess(eq(APP_ID), anyString(), eq(1));
+    verify(workflowExecutionService).incrementInProgressCount(eq(APP_ID), any(), eq(1));
+    verify(workflowExecutionService).incrementSuccess(eq(APP_ID), any(), eq(1));
     verifyNoMoreInteractions(serviceInstanceService, serviceCommandExecutorService, settingsService,
         workflowExecutionService, artifactStreamService);
     verify(activityService).getCommandUnits(APP_ID, ACTIVITY_ID);
@@ -2241,7 +2239,7 @@ public class CommandStateTest extends WingsBaseTest {
     SettingAttribute settingAttribute = new SettingAttribute();
     settingAttribute.setValue(HostConnectionAttributes.Builder.aHostConnectionAttributes().build());
 
-    when(serviceCommandExecutorService.execute(eq(COMMAND), any())).thenReturn(SUCCESS);
+    when(serviceCommandExecutorService.execute(eq(COMMANDDTO), any())).thenReturn(SUCCESS);
     when(settingsService.get("ssh_key_ref")).thenReturn(settingAttribute);
     when(serviceResourceService.getWithDetails(APP_ID, null)).thenReturn(SERVICE);
 
@@ -2283,7 +2281,7 @@ public class CommandStateTest extends WingsBaseTest {
     SettingAttribute settingAttribute = new SettingAttribute();
     settingAttribute.setValue(HostConnectionAttributes.Builder.aHostConnectionAttributes().build());
 
-    when(serviceCommandExecutorService.execute(eq(COMMAND), any())).thenReturn(SUCCESS);
+    when(serviceCommandExecutorService.execute(eq(COMMANDDTO), any())).thenReturn(SUCCESS);
     when(settingsService.get("ssh_key_ref")).thenReturn(settingAttribute);
     when(serviceResourceService.getWithDetails(APP_ID, null)).thenReturn(SERVICE);
 
@@ -2313,7 +2311,7 @@ public class CommandStateTest extends WingsBaseTest {
     SettingAttribute settingAttribute = new SettingAttribute();
     settingAttribute.setValue(HostConnectionAttributes.Builder.aHostConnectionAttributes().build());
 
-    when(serviceCommandExecutorService.execute(eq(COMMAND), any())).thenReturn(SUCCESS);
+    when(serviceCommandExecutorService.execute(eq(COMMANDDTO), any())).thenReturn(SUCCESS);
     when(settingsService.get("ssh_key_ref")).thenReturn(settingAttribute);
     when(serviceResourceService.getWithDetails(APP_ID, null)).thenReturn(SERVICE);
 
@@ -2359,8 +2357,8 @@ public class CommandStateTest extends WingsBaseTest {
     verify(settingsService, times(4)).getByName(eq(ACCOUNT_ID), eq(APP_ID), eq(ENV_ID), anyString());
     verify(settingsService, times(2)).get(anyString());
 
-    verify(workflowExecutionService).incrementInProgressCount(eq(APP_ID), anyString(), eq(1));
-    verify(workflowExecutionService).incrementSuccess(eq(APP_ID), anyString(), eq(1));
+    verify(workflowExecutionService).incrementInProgressCount(eq(APP_ID), any(), eq(1));
+    verify(workflowExecutionService).incrementSuccess(eq(APP_ID), any(), eq(1));
     verifyNoMoreInteractions(serviceInstanceService, serviceCommandExecutorService, settingsService,
         workflowExecutionService, artifactStreamService);
     verify(activityService).getCommandUnits(APP_ID, ACTIVITY_ID);
@@ -2409,7 +2407,7 @@ public class CommandStateTest extends WingsBaseTest {
     when(artifactStream.fetchArtifactStreamAttributes(featureFlagService)).thenReturn(artifactStreamAttributes);
     when(artifactStream.getSettingId()).thenReturn(SETTING_ID);
     when(artifactStream.getUuid()).thenReturn(ARTIFACT_STREAM_ID);
-    when(serviceCommandExecutorService.execute(command,
+    when(serviceCommandExecutorService.execute(CommandMapper.toCommandDTO(command),
              aCommandExecutionContext()
                  .appId(APP_ID)
                  .backupPath(BACKUP_PATH)
@@ -2433,8 +2431,7 @@ public class CommandStateTest extends WingsBaseTest {
 
     verify(serviceInstanceService).get(APP_ID, ENV_ID, SERVICE_INSTANCE_ID);
     verify(activityHelperService)
-        .createAndSaveActivity(any(ExecutionContext.class), any(Activity.Type.class), anyString(), anyString(),
-            anyList(), any(Artifact.class));
+        .createAndSaveActivity(any(ExecutionContext.class), any(Activity.Type.class), any(), any(), anyList(), any());
     verify(activityHelperService).updateStatus(ACTIVITY_ID, APP_ID, ExecutionStatus.SUCCESS);
     verify(serviceResourceService).getFlattenCommandUnitList(APP_ID, SERVICE_ID, ENV_ID, "START");
 
@@ -2457,8 +2454,8 @@ public class CommandStateTest extends WingsBaseTest {
     verify(settingsService, times(4)).getByName(eq(ACCOUNT_ID), eq(APP_ID), eq(ENV_ID), anyString());
     verify(settingsService, times(2)).get(anyString());
 
-    verify(workflowExecutionService).incrementInProgressCount(eq(APP_ID), anyString(), eq(1));
-    verify(workflowExecutionService).incrementSuccess(eq(APP_ID), anyString(), eq(1));
+    verify(workflowExecutionService).incrementInProgressCount(eq(APP_ID), any(), eq(1));
+    verify(workflowExecutionService).incrementSuccess(eq(APP_ID), any(), eq(1));
     verifyNoMoreInteractions(serviceResourceService, serviceInstanceService, activityHelperService,
         serviceCommandExecutorService, settingsService, workflowExecutionService, artifactStreamService);
     verify(activityService).getCommandUnits(APP_ID, ACTIVITY_ID);

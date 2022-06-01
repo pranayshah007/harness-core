@@ -135,8 +135,8 @@ public class CIK8JavaClientHandler {
       if (isResourceNotFoundException(exception.getCode())) {
         return null;
       }
-      String defaultMessage = format("Failed to get %s/%s. Code: %s, message: %s", namespace, secretName,
-          exception.getCode(), exception.getResponseBody());
+      String defaultMessage = format("Failed to get %s/%s. Code: %s, Message: %s \n Cause: %s", namespace, secretName,
+          exception.getCode(), exception.getResponseBody(), exception.getMessage());
       log.error(defaultMessage);
       String message = parseApiExceptionMessage(exception.getResponseBody(), defaultMessage);
       throw new InvalidRequestException(message, exception, USER);

@@ -1,0 +1,125 @@
+{
+  "pipeline": {
+    "name": "hahah",
+    "identifier": "hahah",
+    "projectIdentifier": "test",
+    "orgIdentifier": "default",
+    "tags": {
+      "__uuid": "hcQDEp6wQTiPMQ5FxwIzag"
+    },
+    "stages": [
+      {
+        "stage": {
+          "name": "foo",
+          "identifier": "foo",
+          "description": "",
+          "type": "Deployment",
+          "spec": {
+            "serviceConfig": {
+              "serviceRef": "foo",
+              "serviceDefinition": {
+                "type": "Kubernetes",
+                "spec": {
+                  "variables": [],
+                  "__uuid": "pgmc2DlYQu-FX0bhVPwtSw"
+                },
+                "__uuid": "mH5FBTZWRIO4xjxP1qD_Kw"
+              },
+              "__uuid": "f2c-JGgNRHyTInK_c7EFmA"
+            },
+            "infrastructure": {
+              "environmentRef": "bar",
+              "infrastructureDefinition": {
+                "type": "KubernetesDirect",
+                "spec": {
+                  "connectorRef": "bar",
+                  "namespace": "nana",
+                  "releaseName": "release-\u003c+INFRA_KEY\u003e",
+                  "__uuid": "IBGR0ge_RnqPxodoJnCuRw"
+                },
+                "provisioner": {
+                  "steps": [
+                    {
+                      "step": {
+                        "type": "DeleteStack",
+                        "name": "cfdeletestack",
+                        "identifier": "cfdeletestack",
+                        "timeout": "10m",
+                        "spec": {
+                          "provisionerIdentifier": "provisionerId",
+                          "configuration": {
+                            "type": "Inherited",
+                            "spec": {
+                              "provisionerIdentifier": "identifier",
+                              "__uuid": "tI_a2MbRTIiH7NMlU40g0Q"
+                            },
+                            "__uuid": "aCe7TogKQRWMLrp68TM1MQ"
+                          },
+                          "__uuid": "jyl_7fnqTUSCLwCcuz0O0w"
+                        },
+                        "__uuid": "j_AwEoTKSGCDZYD9ahGLNQ"
+                      },
+                      "__uuid": "cbf0QTp3TQm78FIBFKQH5Q"
+                    }
+                  ],
+                  "__uuid": "roueH5IeRRq5j13EGH3XNw"
+                },
+                "__uuid": "oc248D3MQcKmKEdOCfRdzA"
+              },
+              "allowSimultaneousDeployments": false,
+              "__uuid": "B0b_emajTFi1vs70TIDnLw"
+            },
+            "execution": {
+              "steps": [
+                {
+                  "step": {
+                    "type": "K8sApply",
+                    "name": "babar",
+                    "identifier": "babar",
+                    "spec": {
+                      "filePaths": [
+                        "bababab"
+                      ],
+                      "skipDryRun": false,
+                      "skipSteadyStateCheck": false,
+                      "__uuid": "vznV7j6FRzecVUkPqpSsvw"
+                    },
+                    "timeout": "30m",
+                    "__uuid": "Ssn07mpcRK2OGtsqoygOsA"
+                  },
+                  "__uuid": "uTIDn2iwRXOMlcqM93AZWQ"
+                }
+              ],
+              "rollbackSteps": [],
+              "__uuid": "-IGvV7v6T2CFnmwsgeEtsg"
+            },
+            "serviceDependencies": [],
+            "__uuid": "uZCsU7LzRuqaiQf1bVmxGw"
+          },
+          "tags": {
+            "__uuid": "_JoPMcG3TL-UwAZY7deQnQ"
+          },
+          "failureStrategies": [
+            {
+              "onFailure": {
+                "errors": [
+                  "AllErrors"
+                ],
+                "action": {
+                  "type": "StageRollback",
+                  "__uuid": "Uy81WnF3SdScfbE0SoapWw"
+                },
+                "__uuid": "eiLoegyQQqeIHu-6hx4yaA"
+              },
+              "__uuid": "5XwCBhpeQfWir8bAWgQeJQ"
+            }
+          ],
+          "__uuid": "Rwy2eQN5StisGnHfvYz6-g"
+        },
+        "__uuid": "LJi1Lz31QVKEufLF7z2hBg"
+      }
+    ],
+    "__uuid": "G4xVK1iwTtuJ4EV1_y7xTg"
+  },
+  "__uuid": "A4kBkrRlRTqZkIiwS6SQ4A"
+}

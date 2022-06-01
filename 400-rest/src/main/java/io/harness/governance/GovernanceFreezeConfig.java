@@ -40,6 +40,7 @@ public abstract class GovernanceFreezeConfig implements UuidAware {
   @EqualsAndHashCode.Exclude private boolean applicable; // Corresponds to the on/off button for each window
   private List<ApplicationFilter> appSelections;
   private List<String> userGroups; // User groups to be notified
+  private UserGroupFilter userGroupSelection;
 
   @JsonCreator
   public GovernanceFreezeConfig(@JsonProperty("freezeForAllApps") boolean freezeForAllApps,
@@ -47,7 +48,8 @@ public abstract class GovernanceFreezeConfig implements UuidAware {
       @JsonProperty("environmentTypes") List<EnvironmentType> environmentTypes, @JsonProperty("name") String name,
       @JsonProperty("description") String description, @JsonProperty("applicable") boolean applicable,
       @JsonProperty("appSelections") List<ApplicationFilter> appSelections,
-      @JsonProperty("userGroups") List<String> userGroups, @JsonProperty("uuid") String uuid) {
+      @JsonProperty("userGroups") List<String> userGroups, @JsonProperty("uuid") String uuid,
+      @JsonProperty("userGroupSelection") UserGroupFilter userGroupSelection) {
     this.freezeForAllApps = freezeForAllApps;
     this.appIds = appIds;
     this.environmentTypes = environmentTypes;
@@ -57,6 +59,7 @@ public abstract class GovernanceFreezeConfig implements UuidAware {
     this.appSelections = appSelections;
     this.uuid = EmptyPredicate.isEmpty(uuid) ? generateUuid() : uuid;
     this.userGroups = userGroups;
+    this.userGroupSelection = userGroupSelection;
   }
 
   public List<String> getAppIds() {

@@ -10,6 +10,11 @@ package io.harness.ngtriggers.eventmapper.filters.impl;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.delegate.beans.connector.ConnectorType.BITBUCKET;
+import static io.harness.delegate.beans.connector.ConnectorType.CODECOMMIT;
+import static io.harness.delegate.beans.connector.ConnectorType.GIT;
+import static io.harness.delegate.beans.connector.ConnectorType.GITHUB;
+import static io.harness.delegate.beans.connector.ConnectorType.GITLAB;
 import static io.harness.ngtriggers.Constants.BITBUCKET_LOWER_CASE;
 import static io.harness.ngtriggers.Constants.CHANGED_FILES;
 import static io.harness.ngtriggers.Constants.COMMIT_FILE_ADDED;
@@ -26,8 +31,12 @@ import io.harness.beans.DelegateTaskRequest.DelegateTaskRequestBuilder;
 import io.harness.beans.IdentifierRef;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
+import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
+import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitConnectorDTO;
+import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitUrlType;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
+import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
 import io.harness.delegate.task.scm.ScmPathFilterEvaluationTaskParams;
@@ -35,6 +44,7 @@ import io.harness.delegate.task.scm.ScmPathFilterEvaluationTaskParams.ScmPathFil
 import io.harness.delegate.task.scm.ScmPathFilterEvaluationTaskResponse;
 import io.harness.exception.TriggerException;
 import io.harness.exception.WingsException;
+import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
 import io.harness.ngtriggers.beans.dto.TriggerDetails;
 import io.harness.ngtriggers.beans.dto.eventmapping.WebhookEventMappingResponse;
@@ -73,6 +83,7 @@ import java.util.Map;
 import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
@@ -245,6 +256,15 @@ public class FilepathTriggerFilter implements TriggerFilter {
       if (connector == null) {
         return null;
       }
+      ScmConnector scmConnector = (ScmConnector) connectorDetails.getConnectorConfig();
+      String completeUrl = scmConnector.getUrl();
+      GitConnectionType gitConnectionType = getGitConnectionType(connectorDetails);
+      if (isNotEmpty(webhook.getGit().getRepoName())
+          && (gitConnectionType == null || gitConnectionType == GitConnectionType.ACCOUNT)) {
+        completeUrl = StringUtils.stripEnd(scmConnector.getUrl(), "/") + "/"
+            + StringUtils.stripStart(webhook.getGit().getRepoName(), "/");
+      }
+      scmConnector.setUrl(completeUrl);
 
       ScmPathFilterEvaluationTaskParamsBuilder paramsBuilder =
           ScmPathFilterEvaluationTaskParams.builder()
@@ -271,8 +291,11 @@ public class FilepathTriggerFilter implements TriggerFilter {
               .taskType(TaskType.SCM_PATH_FILTER_EVALUATION_TASK.toString())
               .taskParameters(params)
               .executionTimeout(Duration.ofMinutes(1l))
-              .taskSetupAbstraction("orgIdentifier", connectorDetails.getOrgIdentifier())
               .taskSetupAbstraction("ng", "true");
+
+      if (connectorDetails.getOrgIdentifier() != null) {
+        delegateTaskRequestBuilder.taskSetupAbstraction("orgIdentifier", connectorDetails.getOrgIdentifier());
+      }
 
       if (connectorDetails.getProjectIdentifier() != null) {
         delegateTaskRequestBuilder
@@ -304,6 +327,32 @@ public class FilepathTriggerFilter implements TriggerFilter {
     }
 
     return null;
+  }
+
+  public GitConnectionType getGitConnectionType(ConnectorDetails gitConnector) {
+    if (gitConnector == null) {
+      return null;
+    }
+
+    if (gitConnector.getConnectorType() == GITHUB) {
+      GithubConnectorDTO gitConfigDTO = (GithubConnectorDTO) gitConnector.getConnectorConfig();
+      return gitConfigDTO.getConnectionType();
+    } else if (gitConnector.getConnectorType() == GITLAB) {
+      GitlabConnectorDTO gitConfigDTO = (GitlabConnectorDTO) gitConnector.getConnectorConfig();
+      return gitConfigDTO.getConnectionType();
+    } else if (gitConnector.getConnectorType() == BITBUCKET) {
+      BitbucketConnectorDTO gitConfigDTO = (BitbucketConnectorDTO) gitConnector.getConnectorConfig();
+      return gitConfigDTO.getConnectionType();
+    } else if (gitConnector.getConnectorType() == CODECOMMIT) {
+      AwsCodeCommitConnectorDTO gitConfigDTO = (AwsCodeCommitConnectorDTO) gitConnector.getConnectorConfig();
+      return gitConfigDTO.getUrlType() == AwsCodeCommitUrlType.REPO ? GitConnectionType.REPO
+                                                                    : GitConnectionType.ACCOUNT;
+    } else if (gitConnector.getConnectorType() == GIT) {
+      GitConfigDTO gitConfigDTO = (GitConfigDTO) gitConnector.getConnectorConfig();
+      return gitConfigDTO.getGitConnectionType();
+    } else {
+      throw new CIStageExecutionException("Unsupported git connector type" + gitConnector.getConnectorType());
+    }
   }
 
   // Github, gitlab docs say, payload would contains details about 20 commits.

@@ -12,12 +12,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum OSType {
-  @JsonProperty("Linux") LINUX("Linux"),
-  @JsonProperty("Osx") OSX("Osx"),
-  @JsonProperty("Windows") WINDOWS("Windows");
+  @JsonProperty("Linux") Linux("Linux"),
+  @JsonProperty("MacOS") MacOS("MacOS"),
+  @JsonProperty("Windows") Windows("Windows");
   private final String yamlName;
 
-  @JsonCreator
+  @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
   public static OSType getOSType(@JsonProperty("osType") String yamlName) {
     for (OSType osType : OSType.values()) {
       if (osType.yamlName.equalsIgnoreCase(yamlName)) {

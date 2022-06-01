@@ -46,6 +46,7 @@ import static software.wings.settings.SettingVariableTypes.KUBERNETES_CLUSTER;
 import static software.wings.settings.SettingVariableTypes.LOGZ;
 import static software.wings.settings.SettingVariableTypes.NEW_RELIC;
 import static software.wings.settings.SettingVariableTypes.NEXUS;
+import static software.wings.settings.SettingVariableTypes.OCI_HELM_REPO;
 import static software.wings.settings.SettingVariableTypes.PCF;
 import static software.wings.settings.SettingVariableTypes.PHYSICAL_DATA_CENTER;
 import static software.wings.settings.SettingVariableTypes.PROMETHEUS;
@@ -277,7 +278,7 @@ public class SettingAttribute
     SETTING(Lists.newArrayList(
         HOST_CONNECTION_ATTRIBUTES, BASTION_HOST_CONNECTION_ATTRIBUTES, STRING, WINRM_CONNECTION_ATTRIBUTES)),
 
-    HELM_REPO(Lists.newArrayList(HTTP_HELM_REPO, AMAZON_S3_HELM_REPO, GCS_HELM_REPO)),
+    HELM_REPO(Lists.newArrayList(HTTP_HELM_REPO, AMAZON_S3_HELM_REPO, GCS_HELM_REPO, OCI_HELM_REPO)),
 
     AZURE_ARTIFACTS(Lists.newArrayList(AZURE_ARTIFACTS_PAT)),
 

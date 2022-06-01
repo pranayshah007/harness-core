@@ -14,6 +14,7 @@ import static io.harness.pms.sdk.core.steps.io.StepResponse.builder;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eraro.ErrorCode;
 import io.harness.eraro.Level;
+import io.harness.exception.UnexpectedException;
 import io.harness.opaclient.model.OpaConstants;
 import io.harness.opaclient.model.OpaEvaluationResponseHolder;
 import io.harness.opaclient.model.OpaPolicySetEvaluationResponse;
@@ -24,9 +25,15 @@ import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.serializer.JsonUtils;
 
+import com.google.common.collect.ImmutableMap;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
@@ -65,6 +72,15 @@ public class PolicyStepHelper {
 
   public StepResponse buildFailureStepResponse(ErrorCode errorCode, String message, FailureType failureType) {
     return buildFailureStepResponse(errorCode, message, failureType, null);
+  }
+
+  public String getEntityMetadataString(String stepName) {
+    Map<String, String> metadataMap = ImmutableMap.<String, String>builder().put("entityName", stepName).build();
+    try {
+      return URLEncoder.encode(JsonUtils.asJson(metadataMap), StandardCharsets.UTF_8.toString());
+    } catch (UnsupportedEncodingException e) {
+      throw new UnexpectedException("Unable to encode entity metadata JSON into URL String");
+    }
   }
 
   public StepResponse buildFailureStepResponse(

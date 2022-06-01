@@ -81,7 +81,7 @@ public class ClusterRepositoryCustomImpl implements ClusterRepositoryCustom {
 
   private Update getUpdateOperations(Cluster cluster) {
     // Todo(yogesh): decide what needs to be updated for gitops
-    return new Update().set(ClusterKeys.envRef, cluster.getEnvRef()).set(ClusterKeys.name, cluster.getName());
+    return new Update().set(ClusterKeys.envRef, cluster.getEnvRef());
   }
 
   private RetryPolicy<Object> getRetryPolicy(String failedAttemptMessage, String failureMessage) {

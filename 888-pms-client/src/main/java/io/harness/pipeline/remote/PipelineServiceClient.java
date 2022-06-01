@@ -15,6 +15,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.gitsync.sdk.GitSyncApiConstants;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.pms.inputset.MergeInputSetRequestDTOPMS;
 import io.harness.pms.inputset.MergeInputSetResponseDTOPMS;
 import io.harness.pms.inputset.MergeInputSetTemplateRequestDTO;
 import io.harness.pms.pipeline.PMSPipelineResponseDTO;
@@ -76,4 +77,15 @@ public interface PipelineServiceClient {
       @Query(GitSyncApiConstants.BRANCH_KEY) String branch,
       @Query(GitSyncApiConstants.REPO_IDENTIFIER_KEY) String yamlGitConfigId,
       @Query(GitSyncApiConstants.DEFAULT_FROM_OTHER_REPO) Boolean defaultFromOtherRepo);
+
+  /**
+   * this is only for non git synced and simplified git experience pipelines/input sets
+   */
+  @POST(PIPELINE_INPUT_SET_ENDPOINT + "merge/")
+  Call<ResponseDTO<MergeInputSetResponseDTOPMS>> getMergeInputSetFromPipelineTemplate(
+      @Query(value = NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @Query(value = NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Query(value = NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @Query(value = NGCommonEntityConstants.PIPELINE_KEY) String pipelineIdentifier,
+      @Query(GitSyncApiConstants.BRANCH_KEY) String branch, @Body MergeInputSetRequestDTOPMS mergeInputSetRequestDTO);
 }

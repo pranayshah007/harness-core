@@ -7,6 +7,8 @@
 
 package io.harness.cvng.notification.beans;
 
+import java.time.Duration;
+import java.time.Instant;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
@@ -16,4 +18,10 @@ import lombok.Data;
 public class NotificationRuleRef {
   @NotNull String notificationRuleRef;
   @NotNull boolean enabled;
+  @NotNull Instant lastSuccessFullNotificationSent;
+
+  public boolean isEligible(Instant currentInstant, Duration coolOffDuration) {
+    int comparator = Duration.between(lastSuccessFullNotificationSent, currentInstant).compareTo(coolOffDuration);
+    return enabled && comparator >= 0;
+  }
 }

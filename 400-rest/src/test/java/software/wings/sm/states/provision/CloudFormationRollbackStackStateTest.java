@@ -35,7 +35,6 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -136,7 +135,7 @@ public class CloudFormationRollbackStackStateTest extends WingsBaseTest {
                                        .build();
     when(morphiaIterator.next()).thenReturn(cloudFormationRollbackConfig);
     when(mockQuery.fetch()).thenReturn(morphiaIterator);
-    when(mockQuery.filter(anyString(), any(Object.class))).thenReturn(mockQuery);
+    when(mockQuery.filter(any(), any())).thenReturn(mockQuery);
     when(mockQuery.order(any(Sort.class))).thenReturn(mockQuery);
 
     Environment env = anEnvironment().appId(APP_ID).uuid(ENV_ID).name(ENV_NAME).build();
@@ -147,7 +146,7 @@ public class CloudFormationRollbackStackStateTest extends WingsBaseTest {
     doReturn(env).when(workflowStandardParamsExtensionService).fetchRequiredEnv(mockParams);
 
     awsConfig = aSettingAttribute().withValue(AwsConfig.builder().tag(TAG_NAME).build()).build();
-    doReturn(awsConfig).when(mockSettingsService).get(anyString());
+    doReturn(awsConfig).when(mockSettingsService).get(any());
 
     when(featureFlagService.isEnabled(CF_ROLLBACK_CONFIG_FILTER, ACCOUNT_ID)).thenReturn(true);
   }
@@ -171,8 +170,8 @@ public class CloudFormationRollbackStackStateTest extends WingsBaseTest {
 
     Query mockQuery = mock(Query.class);
     doReturn(mockQuery).when(mockWingsPersistence).createQuery(any());
-    doReturn(mockQuery).when(mockQuery).filter(anyString(), anyString());
-    doReturn(mockQuery).when(mockQuery).order(any(Sort[].class));
+    doReturn(mockQuery).when(mockQuery).filter(any(), any());
+    doReturn(mockQuery).when(mockQuery).order(any(Sort.class));
     MorphiaIterator mockIterator = mock(MorphiaIterator.class);
     doReturn(mockIterator).when(mockQuery).fetch();
     doReturn(false).when(mockIterator).hasNext();
@@ -394,7 +393,7 @@ public class CloudFormationRollbackStackStateTest extends WingsBaseTest {
     verify(mockActivityService).updateStatus(eq(ACTIVITY_ID), eq(APP_ID), eq(ExecutionStatus.SUCCESS));
     ArgumentCaptor<Map> captor = ArgumentCaptor.forClass(Map.class);
     verify(mockInfrastructureProvisionerService)
-        .regenerateInfrastructureMappings(anyString(), any(), captor.capture(), any(), any());
+        .regenerateInfrastructureMappings(any(), any(), captor.capture(), any(), any());
     Map<String, Object> map = captor.getValue();
     assertThat(1).isEqualTo(map.size());
     assertThat("v1").isEqualTo(map.get("k1"));

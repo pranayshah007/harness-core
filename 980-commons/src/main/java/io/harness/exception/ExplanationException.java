@@ -29,6 +29,7 @@ public class ExplanationException extends WingsException {
       "\nCross account role ARN or External Id is invalid or User / IAM Role on delegate / IRSA role doesn't have permission to perform sts:AssumeRole. \nAssumed Cross account role may not have permissions to describe regions.";
   public static String EXPLANATION_AWS_AM_ROLE_CHECK =
       "IAM role on delegate ec2 doesn't exist or doesn't have required permissions to describe regions.";
+  public static String EXPLANATION_LITE_ENGINE_CHECK = "Delegate is not able to connect to the created build farm";
   public static String EXPLANATION_AWS_CLIENT_UNKNOWN_ISSUE = "Seems to encounter unknown AWS client issue";
   public static String EXPLANATION_UNEXPECTED_ERROR = "Unexpected error while handling task";
   public static String IMAGE_TAG_METADATA_NOT_FOUND =
@@ -57,6 +58,7 @@ public class ExplanationException extends WingsException {
   public static String INVALID_GIT_REPO = "Provided repo url is invalid.";
   public static String INVALID_GIT_AUTHORIZATION = "Provided credentials are not authorized.";
   public static String INVALID_GIT_AUTHENTICATION = "Authentication is not supported.";
+  public static String GIT_TIME_OUT = "Git connection timed out";
 
   public static String INVALID_GIT_API_AUTHORIZATION = "Provided api access credentials are not authorized.";
 

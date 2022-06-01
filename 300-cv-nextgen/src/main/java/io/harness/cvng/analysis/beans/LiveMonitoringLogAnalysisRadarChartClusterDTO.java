@@ -17,7 +17,7 @@ import lombok.Data;
 @Data
 @Builder
 public class LiveMonitoringLogAnalysisRadarChartClusterDTO {
-  String text;
+  String message;
   String clusterId;
   Risk risk;
   Double angle;

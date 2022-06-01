@@ -14,9 +14,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EmbeddedUser;
 
+import software.wings.beans.servicenow.ServiceNowTicketType;
 import software.wings.security.PermissionAttribute;
 import software.wings.security.annotations.Scope;
-import software.wings.service.impl.servicenow.ServiceNowServiceImpl.ServiceNowTicketType;
 import software.wings.sm.states.ApprovalState.ApprovalStateType;
 
 import lombok.Builder;

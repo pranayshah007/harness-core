@@ -147,7 +147,7 @@ public class DelegateController {
 
   public static List<QLEnvironmentType> populateQLEnvironmentTypeList(List<EnvironmentType> environmentTypeList) {
     List<QLEnvironmentType> qlEnvironmentTypeList = new ArrayList<>();
-    if (environmentTypeList.isEmpty()) {
+    if (isEmpty(environmentTypeList)) {
       return qlEnvironmentTypeList;
     }
     qlEnvironmentTypeList = environmentTypeList.stream()

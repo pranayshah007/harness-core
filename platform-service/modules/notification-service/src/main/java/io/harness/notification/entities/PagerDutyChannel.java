@@ -7,8 +7,8 @@
 
 package io.harness.notification.entities;
 
-import static io.harness.NotificationRequest.PagerDuty;
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.notification.NotificationRequest.PagerDuty;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.notification.NotificationChannelType;

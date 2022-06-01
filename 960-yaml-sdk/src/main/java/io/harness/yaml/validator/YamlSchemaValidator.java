@@ -100,12 +100,8 @@ public class YamlSchemaValidator {
     if (!processValidationMessages.isEmpty()) {
       List<YamlSchemaErrorDTO> errorDTOS = new ArrayList<>();
       for (ValidationMessage validationMessage : processValidationMessages) {
-        // Skipping Additional properties messages until Library Upgrade.
-        if (validationMessage.getCode().equals(ValidatorTypeCode.ADDITIONAL_PROPERTIES.getErrorCode())) {
-          continue;
-        }
         errorDTOS.add(YamlSchemaErrorDTO.builder()
-                          .message(validationMessage.getMessage())
+                          .message(removeFqnFromErrorMessage(validationMessage.getMessage()))
                           .stageInfo(SchemaValidationUtils.getStageErrorInfo(validationMessage.getPath(), jsonNode))
                           .stepInfo(SchemaValidationUtils.getStepErrorInfo(validationMessage.getPath(), jsonNode))
                           .fqn(validationMessage.getPath())
@@ -167,6 +163,10 @@ public class YamlSchemaValidator {
 
   protected Set<ValidationMessage> processValidationMessages(
       Collection<ValidationMessage> validationMessages, JsonNode jsonNode) {
+    // Skipping Additional properties messages until Library Upgrade.
+    validationMessages = validationMessages.stream()
+                             .filter(o -> !o.getCode().equals(ValidatorTypeCode.ADDITIONAL_PROPERTIES.getErrorCode()))
+                             .collect(Collectors.toList());
     Map<String, List<ValidationMessage>> validationMessageCodeMap =
         SchemaValidationUtils.getValidationMessageCodeMap(validationMessages);
     Set<ValidationMessage> validationMessageList = new HashSet<>();

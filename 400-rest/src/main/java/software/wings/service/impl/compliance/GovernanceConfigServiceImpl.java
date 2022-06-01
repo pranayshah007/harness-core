@@ -7,6 +7,7 @@
 
 package software.wings.service.impl.compliance;
 
+import static io.harness.data.structure.CollectionUtils.emptyIfNull;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
@@ -20,17 +21,18 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EmbeddedUser;
 import io.harness.beans.EnvironmentType;
 import io.harness.beans.FeatureName;
-import io.harness.data.structure.CollectionUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.event.handler.impl.segment.SegmentHelper;
 import io.harness.event.model.EventType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
+import io.harness.governance.AllUserGroupFilter;
 import io.harness.governance.ApplicationFilter;
 import io.harness.governance.BlackoutWindowFilterType;
 import io.harness.governance.CustomAppFilter;
 import io.harness.governance.CustomEnvFilter;
+import io.harness.governance.CustomUserGroupFilter;
 import io.harness.governance.DeploymentFreezeInfo;
 import io.harness.governance.EnvironmentFilter.EnvironmentFilterType;
 import io.harness.governance.GovernanceFreezeConfig;
@@ -125,7 +127,22 @@ public class GovernanceConfigServiceImpl implements GovernanceConfigService {
       }
       toggleExpiredWindows(governanceConfig, accountId);
       populateWindowsStatus(governanceConfig, accountId);
+      populateUserGroupInBackwardCompatibleManner(governanceConfig, accountId);
       return governanceConfig;
+    }
+  }
+
+  private void populateUserGroupInBackwardCompatibleManner(GovernanceConfig governanceConfig, String accountId) {
+    if (featureFlagService.isEnabled(FeatureName.NEW_DEPLOYMENT_FREEZE, accountId)
+        && isNotEmpty(governanceConfig.getTimeRangeBasedFreezeConfigs())) {
+      governanceConfig.getTimeRangeBasedFreezeConfigs().forEach(timeRangeBasedFreezeConfig -> {
+        if (timeRangeBasedFreezeConfig.getUserGroups() != null) {
+          timeRangeBasedFreezeConfig.setUserGroupSelection(CustomUserGroupFilter.builder()
+                                                               .userGroupFilterType(BlackoutWindowFilterType.CUSTOM)
+                                                               .userGroups(timeRangeBasedFreezeConfig.getUserGroups())
+                                                               .build());
+        }
+      });
     }
   }
 
@@ -162,6 +179,7 @@ public class GovernanceConfigServiceImpl implements GovernanceConfigService {
         resetReadOnlyProperties(governanceConfig.getTimeRangeBasedFreezeConfigs(), accountId, oldSetting);
         checkForWindowActivationAndSendNotification(
             governanceConfig.getTimeRangeBasedFreezeConfigs(), oldSetting.getTimeRangeBasedFreezeConfigs(), accountId);
+        checkIfOnlyOneTypeOfUserGroupIsSet(governanceConfig.getTimeRangeBasedFreezeConfigs(), accountId);
       }
 
       Query<GovernanceConfig> query =
@@ -217,6 +235,22 @@ public class GovernanceConfigServiceImpl implements GovernanceConfigService {
       populateWindowsStatus(updatedSetting, accountId);
       return updatedSetting;
     }
+  }
+
+  private void checkIfOnlyOneTypeOfUserGroupIsSet(
+      List<TimeRangeBasedFreezeConfig> timeRangeBasedFreezeConfigs, String accountId) {
+    emptyIfNull(timeRangeBasedFreezeConfigs).forEach(timeRangeBasedFreezeConfig -> {
+      if (isNotEmpty(timeRangeBasedFreezeConfig.getUserGroups())
+          && timeRangeBasedFreezeConfig.getUserGroupSelection() != null) {
+        if (timeRangeBasedFreezeConfig.getUserGroupSelection() instanceof AllUserGroupFilter) {
+          throw new InvalidRequestException("Only one of user group list or UserGroupSelection can be set");
+        } else if (!((CustomUserGroupFilter) timeRangeBasedFreezeConfig.getUserGroupSelection())
+                        .getUserGroups()
+                        .equals(timeRangeBasedFreezeConfig.getUserGroups())) {
+          throw new InvalidRequestException("User group selection can't be different then user group");
+        }
+      }
+    });
   }
 
   private void checkForWindowActivationAndSendNotification(
@@ -377,7 +411,7 @@ public class GovernanceConfigServiceImpl implements GovernanceConfigService {
       if (appSelection.getFilterType() == BlackoutWindowFilterType.CUSTOM) {
         allEnvFrozenApps.addAll(((CustomAppFilter) appSelection).getApps());
       } else {
-        allEnvFrozenApps.addAll(CollectionUtils.emptyIfNull(appService.getAppIdsByAccountId(accountId)));
+        allEnvFrozenApps.addAll(emptyIfNull(appService.getAppIdsByAccountId(accountId)));
       }
     }
   }
@@ -498,7 +532,11 @@ public class GovernanceConfigServiceImpl implements GovernanceConfigService {
             throw new InvalidRequestException("Cannot update expired freeze window: " + entry.getName());
           }
         }
-        validateUserGroups(entry.getUserGroups(), accountId);
+        if (entry.getUserGroupSelection() == null) {
+          validateUserGroups(entry.getUserGroups(), accountId);
+        } else if (entry.getUserGroupSelection() instanceof CustomUserGroupFilter) {
+          validateUserGroups(((CustomUserGroupFilter) entry.getUserGroupSelection()).getUserGroups(), accountId);
+        }
       }
     }
   }
@@ -516,13 +554,16 @@ public class GovernanceConfigServiceImpl implements GovernanceConfigService {
           "Please select a valid time zone. Eg. Asia/Calcutta for freeze window: " + name);
     }
     if (timeRange.getFrom() > timeRange.getTo()) {
-      throw new InvalidRequestException("Window Start time is less than Window end Time");
+      throw new InvalidRequestException("Window Start time is less than Window end Time for freeze window: " + name);
     }
     if (timeRange.getTo() - timeRange.getFrom() < MIN_FREEZE_WINDOW_TIME) {
-      throw new InvalidRequestException("Freeze window time should be at least 30 minutes");
+      throw new InvalidRequestException("Freeze window time should be at least 30 minutes for window : " + name);
     }
     if (timeRange.getTo() - timeRange.getFrom() > MAX_FREEZE_WINDOW_TIME) {
-      throw new InvalidRequestException("Freeze window time should be less than 365 days");
+      throw new InvalidRequestException("Freeze window time should be less than 365 days for window : " + name);
+    }
+    if (timeRange.getTo() < System.currentTimeMillis()) {
+      throw new InvalidRequestException("Freeze window '" + name + "' expired");
     }
   }
 

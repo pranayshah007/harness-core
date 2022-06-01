@@ -7,8 +7,8 @@
 
 package io.harness.notification.remote;
 
-import io.harness.Team;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.notification.Team;
 import io.harness.notification.remote.dto.NotificationSettingDTO;
 import io.harness.notification.remote.dto.TemplateDTO;
 

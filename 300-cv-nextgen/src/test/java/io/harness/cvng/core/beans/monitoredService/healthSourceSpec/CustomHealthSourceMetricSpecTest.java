@@ -265,8 +265,6 @@ public class CustomHealthSourceMetricSpecTest extends CvNextGenTestBase {
             .metricDefinitions(new ArrayList<CustomHealthMetricCVConfig.CustomHealthCVConfigMetricDefinition>() {
               { add(metricDefinition); }
             })
-            .serviceIdentifier(serviceRef)
-            .envIdentifier(environmentRef)
             .orgIdentifier(orgIdentifier)
             .category(CVMonitoringCategory.INFRASTRUCTURE)
             .enabled(false)
@@ -286,9 +284,7 @@ public class CustomHealthSourceMetricSpecTest extends CvNextGenTestBase {
                 add(metricDefinition3);
               }
             })
-            .serviceIdentifier(serviceRef)
             .queryType(HealthSourceQueryType.HOST_BASED)
-            .envIdentifier(environmentRef)
             .orgIdentifier(orgIdentifier)
             .queryType(HealthSourceQueryType.HOST_BASED)
             .category(CVMonitoringCategory.INFRASTRUCTURE)

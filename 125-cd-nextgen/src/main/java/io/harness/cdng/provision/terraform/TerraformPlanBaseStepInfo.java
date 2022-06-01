@@ -22,11 +22,13 @@ import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.experimental.FieldNameConstants;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @OwnedBy(HarnessTeam.CDP)
+@FieldNameConstants(innerTypeName = "TerraformPlanBaseStepInfoKeys")
 public class TerraformPlanBaseStepInfo {
   @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> provisionerIdentifier;
   @YamlSchemaTypes(value = {runtime})

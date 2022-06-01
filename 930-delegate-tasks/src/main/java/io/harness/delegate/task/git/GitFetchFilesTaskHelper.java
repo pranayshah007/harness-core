@@ -24,6 +24,7 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 
 @Singleton
 public class GitFetchFilesTaskHelper {
+  private static final String ERROR_MESSAGE_FORMAT = "Reason: %s, %s";
   private static final String ERROR_MESSAGE_WITH_ROOT_CAUSE_FORMAT = "Reason: %s, %s%nRoot Cause: %s";
   private static final String ROOT_CAUSE_MESSAGE_FORMAT = "%s: %s";
   public void printFileNamesInExecutionLogs(LogCallback executionLogCallback, List<GitFile> files) {
@@ -52,8 +53,11 @@ public class GitFetchFilesTaskHelper {
   public String extractErrorMessage(Exception exception) {
     String reason = exception.getCause() != null ? exception.getCause().getMessage() : "";
     Throwable rootCause = ExceptionUtils.getRootCause(exception);
-    String rootCauseMessage =
-        String.format(ROOT_CAUSE_MESSAGE_FORMAT, rootCause.getClass().toString(), rootCause.getMessage());
-    return String.format(ERROR_MESSAGE_WITH_ROOT_CAUSE_FORMAT, exception.getMessage(), reason, rootCauseMessage);
+    if (rootCause != null) {
+      String rootCauseMessage =
+          String.format(ROOT_CAUSE_MESSAGE_FORMAT, rootCause.getClass().getCanonicalName(), rootCause.getMessage());
+      return String.format(ERROR_MESSAGE_WITH_ROOT_CAUSE_FORMAT, exception.getMessage(), reason, rootCauseMessage);
+    }
+    return String.format(ERROR_MESSAGE_FORMAT, exception.getMessage(), reason);
   }
 }

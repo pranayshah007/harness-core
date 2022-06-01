@@ -47,6 +47,7 @@ import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.dashboard.beans.AnalyzedLogDataDTO;
 import io.harness.cvng.dashboard.beans.AnalyzedRadarChartLogDataDTO;
+import io.harness.cvng.dashboard.beans.AnalyzedRadarChartLogDataWithCountDTO;
 import io.harness.cvng.dashboard.services.api.LogDashboardService;
 import io.harness.ng.beans.PageResponse;
 import io.harness.persistence.HPersistence;
@@ -104,11 +105,11 @@ public class LogDashboardServiceImplTest extends CvNextGenTestBase {
     FieldUtils.writeField(logDashboardService, "cvConfigService", mockCvConfigService, true);
     FieldUtils.writeField(logDashboardService, "verificationTaskService", mockVerificationTaskService, true);
     when(mockVerificationTaskService.getServiceGuardVerificationTaskId(anyString(), anyString()))
-        .thenAnswer(invocation -> invocation.getArgumentAt(1, String.class));
+        .thenAnswer(invocation -> invocation.getArgument(1, String.class));
 
     when(mockVerificationTaskService.createLiveMonitoringVerificationTask(
              anyString(), anyString(), any(DataSourceType.class)))
-        .thenAnswer(invocation -> invocation.getArgumentAt(1, String.class));
+        .thenAnswer(invocation -> invocation.getArgument(1, String.class));
   }
 
   @Test
@@ -185,14 +186,16 @@ public class LogDashboardServiceImplTest extends CvNextGenTestBase {
 
     MonitoredServiceLogAnalysisFilter monitoredServiceLogAnalysisFilter =
         MonitoredServiceLogAnalysisFilter.builder()
-            .clusterTypes(LogAnalysisResult.RadarChartTag.getAnomalousTags().stream().collect(Collectors.toList()))
+            .clusterTypes(RadarChartTag.getAnomalousTags().stream().collect(Collectors.toList()))
             .startTimeMillis(startTime.toEpochMilli())
             .endTimeMillis(endTime.toEpochMilli())
             .build();
 
-    PageResponse<AnalyzedRadarChartLogDataDTO> pageResponse = logDashboardService.getAllRadarChartLogsData(
-        builderFactory.getContext().getMonitoredServiceParams(), monitoredServiceLogAnalysisFilter, pageParams);
-
+    AnalyzedRadarChartLogDataWithCountDTO analyzedRadarChartLogDataWithCountDTO =
+        logDashboardService.getAllRadarChartLogsData(
+            builderFactory.getContext().getMonitoredServiceParams(), monitoredServiceLogAnalysisFilter, pageParams);
+    PageResponse<AnalyzedRadarChartLogDataDTO> pageResponse =
+        analyzedRadarChartLogDataWithCountDTO.getLogAnalysisRadarCharts();
     ArgumentCaptor<String> cvConfigIdCapture = ArgumentCaptor.forClass(String.class);
     verify(mockLogAnalysisService, times(1)).getAnalysisResults(cvConfigIdCapture.capture(), any(), any());
     assertThat(cvConfigIdCapture.getValue()).isNotEqualTo(errorTrackingCvConfigId);
@@ -200,19 +203,132 @@ public class LogDashboardServiceImplTest extends CvNextGenTestBase {
     verify(mockCvConfigService).list(builderFactory.getContext().getMonitoredServiceParams());
     assertThat(pageResponse).isNotNull();
     assertThat(pageResponse.getContent()).isNotEmpty();
+    List<AnalyzedRadarChartLogDataWithCountDTO.LiveMonitoringEventCount> eventCounts =
+        analyzedRadarChartLogDataWithCountDTO.getEventCounts();
+    assertThat(eventCounts.get(0).getClusterType()).isEqualTo(RadarChartTag.KNOWN_EVENT);
+    assertThat(eventCounts.get(0).getCount()).isEqualTo(0);
+    assertThat(eventCounts.get(1).getClusterType()).isEqualTo(RadarChartTag.UNEXPECTED_FREQUENCY);
+    assertThat(eventCounts.get(1).getCount()).isEqualTo(2);
+    assertThat(eventCounts.get(2).getClusterType()).isEqualTo(RadarChartTag.UNKNOWN_EVENT);
+    assertThat(eventCounts.get(2).getCount()).isEqualTo(2);
     pageResponse.getContent().forEach(analyzedLogDataDTO -> {
       assertThat(Arrays.asList(LogAnalysisTag.UNKNOWN, LogAnalysisTag.UNEXPECTED)
-                     .contains(analyzedLogDataDTO.getLogData().getClusterType()));
+                     .contains(analyzedLogDataDTO.getClusterType()));
+      if (analyzedLogDataDTO.getClusterType().equals(RadarChartTag.UNEXPECTED_FREQUENCY)) {
+        assertThat(analyzedLogDataDTO.getRadius()).isBetween(1.0, 2.0);
+      } else {
+        assertThat(analyzedLogDataDTO.getRadius()).isBetween(2.0, 3.0);
+      }
     });
 
     boolean containsKnown = false;
     for (AnalyzedRadarChartLogDataDTO analyzedRadarChartLogDataDTO : pageResponse.getContent()) {
-      if (analyzedRadarChartLogDataDTO.getLogData().getClusterType().equals(LogAnalysisTag.KNOWN)) {
+      if (analyzedRadarChartLogDataDTO.getClusterType().equals(LogAnalysisTag.KNOWN)) {
         containsKnown = true;
         break;
       }
     }
     assertThat(containsKnown).isFalse();
+  }
+
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testGetAllRadarChartLogsData_sortedOrderAnolomousLogs() {
+    String cvConfigId = generateUuid();
+    String errorTrackingCvConfigId = generateUuid();
+    Instant startTime = clock.instant().minus(10, ChronoUnit.MINUTES);
+    Instant endTime = clock.instant().minus(5, ChronoUnit.MINUTES);
+    PageParams pageParams = PageParams.builder().page(0).size(10).build();
+
+    List<Long> labelList = Arrays.asList(1234l, 123455l, 12334l, 12345l);
+    List<LogAnalysisResult> resultList = buildLogAnalysisResults(cvConfigId, true, startTime, endTime, labelList);
+    when(mockCvConfigService.list(builderFactory.getContext().getMonitoredServiceParams()))
+        .thenReturn(Arrays.asList(createCvConfig(cvConfigId, serviceIdentifier),
+            createErrorTrackingCvConfig(errorTrackingCvConfigId, serviceIdentifier)));
+    when(mockLogAnalysisService.getAnalysisResults(anyString(), any(), any())).thenReturn(resultList);
+    when(mockLogAnalysisService.getAnalysisClusters(cvConfigId, new HashSet<>(labelList)))
+        .thenReturn(buildLogAnalysisClusters(labelList));
+
+    MonitoredServiceLogAnalysisFilter monitoredServiceLogAnalysisFilter =
+        MonitoredServiceLogAnalysisFilter.builder()
+            .clusterTypes(RadarChartTag.getAnomalousTags().stream().collect(Collectors.toList()))
+            .startTimeMillis(startTime.toEpochMilli())
+            .endTimeMillis(endTime.toEpochMilli())
+            .build();
+
+    AnalyzedRadarChartLogDataWithCountDTO analyzedRadarChartLogDataWithCountDTO =
+        logDashboardService.getAllRadarChartLogsData(
+            builderFactory.getContext().getMonitoredServiceParams(), monitoredServiceLogAnalysisFilter, pageParams);
+    PageResponse<AnalyzedRadarChartLogDataDTO> pageResponse =
+        analyzedRadarChartLogDataWithCountDTO.getLogAnalysisRadarCharts();
+    ArgumentCaptor<String> cvConfigIdCapture = ArgumentCaptor.forClass(String.class);
+    verify(mockLogAnalysisService, times(1)).getAnalysisResults(cvConfigIdCapture.capture(), any(), any());
+    assertThat(cvConfigIdCapture.getValue()).isNotEqualTo(errorTrackingCvConfigId);
+
+    verify(mockCvConfigService).list(builderFactory.getContext().getMonitoredServiceParams());
+    assertThat(pageResponse).isNotNull();
+    assertThat(pageResponse.getContent()).isNotEmpty();
+    List<AnalyzedRadarChartLogDataWithCountDTO.LiveMonitoringEventCount> eventCounts =
+        analyzedRadarChartLogDataWithCountDTO.getEventCounts();
+    assertThat(eventCounts.get(0).getClusterType()).isEqualTo(RadarChartTag.KNOWN_EVENT);
+    assertThat(eventCounts.get(0).getCount()).isEqualTo(0);
+    assertThat(eventCounts.get(1).getClusterType()).isEqualTo(RadarChartTag.UNEXPECTED_FREQUENCY);
+    assertThat(eventCounts.get(1).getCount()).isEqualTo(2);
+    assertThat(eventCounts.get(2).getClusterType()).isEqualTo(RadarChartTag.UNKNOWN_EVENT);
+    assertThat(eventCounts.get(2).getCount()).isEqualTo(2);
+
+    List<AnalyzedRadarChartLogDataDTO> analyzedRadarChartLogDataDTOS = pageResponse.getContent();
+
+    assertThat(analyzedRadarChartLogDataDTOS.get(0).getClusterType()).isEqualTo(RadarChartTag.UNKNOWN_EVENT);
+    assertThat(analyzedRadarChartLogDataDTOS.get(1).getClusterType()).isEqualTo(RadarChartTag.UNKNOWN_EVENT);
+    assertThat(analyzedRadarChartLogDataDTOS.get(2).getClusterType()).isEqualTo(RadarChartTag.UNEXPECTED_FREQUENCY);
+    assertThat(analyzedRadarChartLogDataDTOS.get(3).getClusterType()).isEqualTo(RadarChartTag.UNEXPECTED_FREQUENCY);
+  }
+
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testGetAllRadarChartLogsData_sortedOrderKnowLogs() {
+    String cvConfigId = generateUuid();
+    Instant startTime = clock.instant().minus(10, ChronoUnit.MINUTES);
+    Instant endTime = clock.instant().minus(5, ChronoUnit.MINUTES);
+    PageParams pageParams = PageParams.builder().page(0).size(10).build();
+    List<Long> labelList = Arrays.asList(1234l, 12345l, 123455l, 12334l);
+    List<LogAnalysisResult> resultList = buildLogAnalysisResults(cvConfigId, false, startTime, endTime, labelList);
+    when(mockCvConfigService.list(builderFactory.getContext().getMonitoredServiceParams()))
+        .thenReturn(Arrays.asList(createCvConfig(cvConfigId, serviceIdentifier)));
+    when(mockLogAnalysisService.getAnalysisResults(anyString(), any(), any())).thenReturn(resultList);
+    when(mockLogAnalysisService.getAnalysisClusters(cvConfigId, new HashSet<>(labelList)))
+        .thenReturn(buildLogAnalysisClusters(labelList));
+
+    MonitoredServiceLogAnalysisFilter monitoredServiceLogAnalysisFilter = MonitoredServiceLogAnalysisFilter.builder()
+                                                                              .startTimeMillis(startTime.toEpochMilli())
+                                                                              .endTimeMillis(endTime.toEpochMilli())
+                                                                              .build();
+
+    AnalyzedRadarChartLogDataWithCountDTO analyzedRadarChartLogDataWithCountDTO =
+        logDashboardService.getAllRadarChartLogsData(
+            builderFactory.getContext().getMonitoredServiceParams(), monitoredServiceLogAnalysisFilter, pageParams);
+
+    PageResponse<AnalyzedRadarChartLogDataDTO> pageResponse =
+        analyzedRadarChartLogDataWithCountDTO.getLogAnalysisRadarCharts();
+
+    List<AnalyzedRadarChartLogDataWithCountDTO.LiveMonitoringEventCount> eventCounts =
+        analyzedRadarChartLogDataWithCountDTO.getEventCounts();
+    assertThat(eventCounts.get(0).getClusterType()).isEqualTo(RadarChartTag.KNOWN_EVENT);
+    assertThat(eventCounts.get(0).getCount()).isEqualTo(2);
+    assertThat(eventCounts.get(1).getClusterType()).isEqualTo(RadarChartTag.UNEXPECTED_FREQUENCY);
+    assertThat(eventCounts.get(1).getCount()).isEqualTo(0);
+    assertThat(eventCounts.get(2).getClusterType()).isEqualTo(RadarChartTag.UNKNOWN_EVENT);
+    assertThat(eventCounts.get(2).getCount()).isEqualTo(2);
+
+    List<AnalyzedRadarChartLogDataDTO> analyzedRadarChartLogDataDTOS = pageResponse.getContent();
+
+    assertThat(analyzedRadarChartLogDataDTOS.get(0).getClusterType()).isEqualTo(RadarChartTag.UNKNOWN_EVENT);
+    assertThat(analyzedRadarChartLogDataDTOS.get(1).getClusterType()).isEqualTo(RadarChartTag.UNKNOWN_EVENT);
+    assertThat(analyzedRadarChartLogDataDTOS.get(2).getClusterType()).isEqualTo(RadarChartTag.KNOWN_EVENT);
+    assertThat(analyzedRadarChartLogDataDTOS.get(3).getClusterType()).isEqualTo(RadarChartTag.KNOWN_EVENT);
   }
 
   @Test
@@ -282,8 +398,11 @@ public class LogDashboardServiceImplTest extends CvNextGenTestBase {
             .endTimeMillis(endTime.toEpochMilli())
             .build();
 
-    PageResponse<AnalyzedRadarChartLogDataDTO> pageResponse = logDashboardService.getAllRadarChartLogsData(
-        builderFactory.getContext().getMonitoredServiceParams(), monitoredServiceLogAnalysisFilter, pageParams);
+    PageResponse<AnalyzedRadarChartLogDataDTO> pageResponse =
+        logDashboardService
+            .getAllRadarChartLogsData(
+                builderFactory.getContext().getMonitoredServiceParams(), monitoredServiceLogAnalysisFilter, pageParams)
+            .getLogAnalysisRadarCharts();
     verify(mockCvConfigService).list(builderFactory.getContext().getMonitoredServiceParams());
     assertThat(pageResponse).isNotNull();
     assertThat(pageResponse.getContent()).isNotEmpty();
@@ -292,7 +411,7 @@ public class LogDashboardServiceImplTest extends CvNextGenTestBase {
     assertThat(pageResponse.getTotalPages()).isGreaterThan(1);
     pageResponse.getContent().forEach(analyzedLogDataDTO -> {
       assertThat(Arrays.asList(LogAnalysisTag.UNKNOWN, LogAnalysisTag.UNEXPECTED)
-                     .contains(analyzedLogDataDTO.getLogData().getClusterType()));
+                     .contains(analyzedLogDataDTO.getClusterType()));
     });
   }
 
@@ -351,8 +470,11 @@ public class LogDashboardServiceImplTest extends CvNextGenTestBase {
             .endTimeMillis(endTime.toEpochMilli())
             .build();
 
-    PageResponse<AnalyzedRadarChartLogDataDTO> pageResponse = logDashboardService.getAllRadarChartLogsData(
-        builderFactory.getContext().getMonitoredServiceParams(), monitoredServiceLogAnalysisFilter, pageParams);
+    PageResponse<AnalyzedRadarChartLogDataDTO> pageResponse =
+        logDashboardService
+            .getAllRadarChartLogsData(
+                builderFactory.getContext().getMonitoredServiceParams(), monitoredServiceLogAnalysisFilter, pageParams)
+            .getLogAnalysisRadarCharts();
 
     verify(mockCvConfigService).list(builderFactory.getContext().getMonitoredServiceParams());
     assertThat(pageResponse).isNotNull();
@@ -416,15 +538,18 @@ public class LogDashboardServiceImplTest extends CvNextGenTestBase {
                                                                               .endTimeMillis(endTime.toEpochMilli())
                                                                               .build();
 
-    PageResponse<AnalyzedRadarChartLogDataDTO> pageResponse = logDashboardService.getAllRadarChartLogsData(
-        builderFactory.getContext().getMonitoredServiceParams(), monitoredServiceLogAnalysisFilter, pageParams);
+    PageResponse<AnalyzedRadarChartLogDataDTO> pageResponse =
+        logDashboardService
+            .getAllRadarChartLogsData(
+                builderFactory.getContext().getMonitoredServiceParams(), monitoredServiceLogAnalysisFilter, pageParams)
+            .getLogAnalysisRadarCharts();
 
     verify(mockCvConfigService).list(builderFactory.getContext().getMonitoredServiceParams());
     assertThat(pageResponse).isNotNull();
     assertThat(pageResponse.getContent()).isNotEmpty();
     boolean containsKnown = false;
     for (AnalyzedRadarChartLogDataDTO analyzedLogDataDTO : pageResponse.getContent()) {
-      if (analyzedLogDataDTO.getLogData().getClusterType().equals(RadarChartTag.KNOWN_EVENT)) {
+      if (analyzedLogDataDTO.getClusterType().equals(RadarChartTag.KNOWN_EVENT)) {
         containsKnown = true;
         break;
       }
@@ -704,7 +829,7 @@ public class LogDashboardServiceImplTest extends CvNextGenTestBase {
     verify(mockCvConfigService).list(builderFactory.getContext().getMonitoredServiceParams());
     assertThat(response.size()).isEqualTo(labelList.size());
     for (LiveMonitoringLogAnalysisRadarChartClusterDTO liveMonitoringLogAnalysisRadarChartClusterDTO : response) {
-      assertThat(liveMonitoringLogAnalysisRadarChartClusterDTO.getText()).isNotEmpty();
+      assertThat(liveMonitoringLogAnalysisRadarChartClusterDTO.getMessage()).isNotEmpty();
       assertThat(liveMonitoringLogAnalysisRadarChartClusterDTO.getRadius()).isNotNull();
       assertThat(liveMonitoringLogAnalysisRadarChartClusterDTO.getAngle()).isNotNull();
       assertThat(liveMonitoringLogAnalysisRadarChartClusterDTO.getClusterType())
@@ -713,6 +838,79 @@ public class LogDashboardServiceImplTest extends CvNextGenTestBase {
         assertThat(liveMonitoringLogAnalysisRadarChartClusterDTO.getRisk()).isEqualTo(Risk.UNHEALTHY);
       } else {
         assertThat(liveMonitoringLogAnalysisRadarChartClusterDTO.getRisk()).isEqualTo(Risk.HEALTHY);
+      }
+    }
+  }
+
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testGetLogAnalysisRadarChartClusters_sortingOrder() {
+    String cvConfigId = generateUuid();
+    Instant startTime = clock.instant().minus(10, ChronoUnit.MINUTES);
+    Instant endTime = clock.instant().minus(5, ChronoUnit.MINUTES);
+    List<Long> labelList = Arrays.asList(1234l, 12345l, 123455l, 12334l);
+    List<LogAnalysisResult> resultList = buildLogAnalysisResults(cvConfigId, false, startTime, endTime, labelList);
+    when(mockCvConfigService.list(builderFactory.getContext().getMonitoredServiceParams()))
+        .thenReturn(Arrays.asList(createCvConfig(cvConfigId, serviceIdentifier)));
+    when(mockLogAnalysisService.getAnalysisResults(anyString(), any(), any())).thenReturn(resultList);
+    when(mockLogAnalysisService.getAnalysisClusters(cvConfigId, new HashSet<>(labelList)))
+        .thenReturn(buildLogAnalysisClusters(labelList));
+
+    MonitoredServiceLogAnalysisFilter monitoredServiceLogAnalysisFilter = MonitoredServiceLogAnalysisFilter.builder()
+                                                                              .startTimeMillis(startTime.toEpochMilli())
+                                                                              .endTimeMillis(endTime.toEpochMilli())
+                                                                              .build();
+
+    List<LiveMonitoringLogAnalysisRadarChartClusterDTO> response = logDashboardService.getLogAnalysisRadarChartClusters(
+        builderFactory.getContext().getMonitoredServiceParams(), monitoredServiceLogAnalysisFilter);
+
+    verify(mockCvConfigService).list(builderFactory.getContext().getMonitoredServiceParams());
+    assertThat(response.size()).isEqualTo(labelList.size());
+
+    assertThat(response.get(0).getClusterType()).isEqualTo(RadarChartTag.UNKNOWN_EVENT);
+    assertThat(response.get(1).getClusterType()).isEqualTo(RadarChartTag.UNKNOWN_EVENT);
+    assertThat(response.get(2).getClusterType()).isEqualTo(RadarChartTag.KNOWN_EVENT);
+    assertThat(response.get(3).getClusterType()).isEqualTo(RadarChartTag.KNOWN_EVENT);
+  }
+
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testGetLogAnalysisRadarChartClusters_radius() {
+    String cvConfigId = generateUuid();
+    Instant startTime = clock.instant().minus(10, ChronoUnit.MINUTES);
+    Instant endTime = clock.instant().minus(5, ChronoUnit.MINUTES);
+    List<Long> labelList = Arrays.asList(1234l, 12345l, 123455l, 12334l);
+    List<LogAnalysisResult> resultList = buildLogAnalysisResults(cvConfigId, false, startTime, endTime, labelList);
+    when(mockCvConfigService.list(builderFactory.getContext().getMonitoredServiceParams()))
+        .thenReturn(Arrays.asList(createCvConfig(cvConfigId, serviceIdentifier)));
+    when(mockLogAnalysisService.getAnalysisResults(anyString(), any(), any())).thenReturn(resultList);
+    when(mockLogAnalysisService.getAnalysisClusters(cvConfigId, new HashSet<>(labelList)))
+        .thenReturn(buildLogAnalysisClusters(labelList));
+
+    MonitoredServiceLogAnalysisFilter monitoredServiceLogAnalysisFilter = MonitoredServiceLogAnalysisFilter.builder()
+                                                                              .startTimeMillis(startTime.toEpochMilli())
+                                                                              .endTimeMillis(endTime.toEpochMilli())
+                                                                              .build();
+
+    List<LiveMonitoringLogAnalysisRadarChartClusterDTO> response = logDashboardService.getLogAnalysisRadarChartClusters(
+        builderFactory.getContext().getMonitoredServiceParams(), monitoredServiceLogAnalysisFilter);
+
+    verify(mockCvConfigService).list(builderFactory.getContext().getMonitoredServiceParams());
+    assertThat(response.size()).isEqualTo(labelList.size());
+    for (LiveMonitoringLogAnalysisRadarChartClusterDTO liveMonitoringLogAnalysisRadarChartClusterDTO : response) {
+      assertThat(liveMonitoringLogAnalysisRadarChartClusterDTO.getMessage()).isNotEmpty();
+      assertThat(liveMonitoringLogAnalysisRadarChartClusterDTO.getRadius()).isNotNull();
+      assertThat(liveMonitoringLogAnalysisRadarChartClusterDTO.getAngle()).isNotNull();
+      assertThat(liveMonitoringLogAnalysisRadarChartClusterDTO.getClusterType())
+          .isIn(RadarChartTag.UNKNOWN_EVENT, RadarChartTag.KNOWN_EVENT);
+      if (liveMonitoringLogAnalysisRadarChartClusterDTO.getClusterType().equals(RadarChartTag.UNKNOWN_EVENT)) {
+        assertThat(liveMonitoringLogAnalysisRadarChartClusterDTO.getRisk()).isEqualTo(Risk.UNHEALTHY);
+        assertThat(liveMonitoringLogAnalysisRadarChartClusterDTO.getRadius()).isBetween(2.0, 3.0);
+      } else {
+        assertThat(liveMonitoringLogAnalysisRadarChartClusterDTO.getRisk()).isEqualTo(Risk.HEALTHY);
+        assertThat(liveMonitoringLogAnalysisRadarChartClusterDTO.getRadius()).isBetween(1.0, 2.0);
       }
     }
   }
@@ -785,7 +983,7 @@ public class LogDashboardServiceImplTest extends CvNextGenTestBase {
     verify(mockCvConfigService).list(builderFactory.getContext().getMonitoredServiceParams());
     assertThat(response.size()).isEqualTo(2);
     for (LiveMonitoringLogAnalysisRadarChartClusterDTO liveMonitoringLogAnalysisRadarChartClusterDTO : response) {
-      assertThat(liveMonitoringLogAnalysisRadarChartClusterDTO.getText()).isNotEmpty();
+      assertThat(liveMonitoringLogAnalysisRadarChartClusterDTO.getMessage()).isNotEmpty();
       assertThat(liveMonitoringLogAnalysisRadarChartClusterDTO.getRadius()).isNotNull();
       assertThat(liveMonitoringLogAnalysisRadarChartClusterDTO.getAngle()).isNotNull();
       assertThat(liveMonitoringLogAnalysisRadarChartClusterDTO.getClusterType()).isEqualTo(RadarChartTag.KNOWN_EVENT);
@@ -867,7 +1065,7 @@ public class LogDashboardServiceImplTest extends CvNextGenTestBase {
     verify(mockCvConfigService).list(builderFactory.getContext().getMonitoredServiceParams(), healthSourceIds);
     assertThat(response.size()).isEqualTo(labelList.size());
     for (LiveMonitoringLogAnalysisRadarChartClusterDTO liveMonitoringLogAnalysisRadarChartClusterDTO : response) {
-      assertThat(liveMonitoringLogAnalysisRadarChartClusterDTO.getText()).isNotEmpty();
+      assertThat(liveMonitoringLogAnalysisRadarChartClusterDTO.getMessage()).isNotEmpty();
       assertThat(liveMonitoringLogAnalysisRadarChartClusterDTO.getRadius()).isNotNull();
       assertThat(liveMonitoringLogAnalysisRadarChartClusterDTO.getAngle()).isNotNull();
       assertThat(liveMonitoringLogAnalysisRadarChartClusterDTO.getClusterType())
@@ -954,15 +1152,18 @@ public class LogDashboardServiceImplTest extends CvNextGenTestBase {
             .endTimeMillis(endTime.toEpochMilli())
             .build();
 
-    PageResponse<AnalyzedRadarChartLogDataDTO> pageResponse = logDashboardService.getAllRadarChartLogsData(
-        builderFactory.getContext().getMonitoredServiceParams(), monitoredServiceLogAnalysisFilter, pageParams);
+    PageResponse<AnalyzedRadarChartLogDataDTO> pageResponse =
+        logDashboardService
+            .getAllRadarChartLogsData(
+                builderFactory.getContext().getMonitoredServiceParams(), monitoredServiceLogAnalysisFilter, pageParams)
+            .getLogAnalysisRadarCharts();
 
     verify(mockCvConfigService).list(builderFactory.getContext().getMonitoredServiceParams(), healthSourceIds);
     assertThat(pageResponse).isNotNull();
     assertThat(pageResponse.getContent()).isNotEmpty();
     boolean containsKnown = false;
     for (AnalyzedRadarChartLogDataDTO analyzedRadarChartLogDataDTO : pageResponse.getContent()) {
-      if (analyzedRadarChartLogDataDTO.getLogData().getClusterType().equals(RadarChartTag.KNOWN_EVENT)) {
+      if (analyzedRadarChartLogDataDTO.getClusterType().equals(RadarChartTag.KNOWN_EVENT)) {
         containsKnown = true;
         break;
       }
@@ -1049,8 +1250,11 @@ public class LogDashboardServiceImplTest extends CvNextGenTestBase {
                                                                               .endTimeMillis(endTime.toEpochMilli())
                                                                               .build();
 
-    PageResponse<AnalyzedRadarChartLogDataDTO> pageResponse = logDashboardService.getAllRadarChartLogsData(
-        builderFactory.getContext().getMonitoredServiceParams(), monitoredServiceLogAnalysisFilter, pageParams);
+    PageResponse<AnalyzedRadarChartLogDataDTO> pageResponse =
+        logDashboardService
+            .getAllRadarChartLogsData(
+                builderFactory.getContext().getMonitoredServiceParams(), monitoredServiceLogAnalysisFilter, pageParams)
+            .getLogAnalysisRadarCharts();
 
     verify(mockCvConfigService).list(builderFactory.getContext().getMonitoredServiceParams());
     assertThat(pageResponse).isNotNull();
@@ -1177,8 +1381,11 @@ public class LogDashboardServiceImplTest extends CvNextGenTestBase {
                                                                               .endTimeMillis(endTime.toEpochMilli())
                                                                               .build();
 
-    PageResponse<AnalyzedRadarChartLogDataDTO> pageResponse = logDashboardService.getAllRadarChartLogsData(
-        builderFactory.getContext().getMonitoredServiceParams(), monitoredServiceLogAnalysisFilter, pageParams);
+    PageResponse<AnalyzedRadarChartLogDataDTO> pageResponse =
+        logDashboardService
+            .getAllRadarChartLogsData(
+                builderFactory.getContext().getMonitoredServiceParams(), monitoredServiceLogAnalysisFilter, pageParams)
+            .getLogAnalysisRadarCharts();
 
     verify(mockCvConfigService).list(builderFactory.getContext().getMonitoredServiceParams());
     assertThat(pageResponse).isNotNull();
@@ -1191,8 +1398,10 @@ public class LogDashboardServiceImplTest extends CvNextGenTestBase {
                                             .endTimeMillis(endTime.toEpochMilli())
                                             .build();
 
-    pageResponse = logDashboardService.getAllRadarChartLogsData(
-        builderFactory.getContext().getMonitoredServiceParams(), monitoredServiceLogAnalysisFilter, pageParams);
+    pageResponse = logDashboardService
+                       .getAllRadarChartLogsData(builderFactory.getContext().getMonitoredServiceParams(),
+                           monitoredServiceLogAnalysisFilter, pageParams)
+                       .getLogAnalysisRadarCharts();
     assertThat(pageResponse).isNotNull();
     assertThat(pageResponse.getContent()).isNotEmpty();
     assertThat(pageResponse.getContent().size()).isEqualTo(1);
@@ -1203,8 +1412,10 @@ public class LogDashboardServiceImplTest extends CvNextGenTestBase {
                                             .endTimeMillis(endTime.toEpochMilli())
                                             .build();
 
-    pageResponse = logDashboardService.getAllRadarChartLogsData(
-        builderFactory.getContext().getMonitoredServiceParams(), monitoredServiceLogAnalysisFilter, pageParams);
+    pageResponse = logDashboardService
+                       .getAllRadarChartLogsData(builderFactory.getContext().getMonitoredServiceParams(),
+                           monitoredServiceLogAnalysisFilter, pageParams)
+                       .getLogAnalysisRadarCharts();
     assertThat(pageResponse).isNotNull();
     assertThat(pageResponse.getContent()).isNotEmpty();
     assertThat(pageResponse.getContent().size()).isEqualTo(1);
@@ -1215,8 +1426,10 @@ public class LogDashboardServiceImplTest extends CvNextGenTestBase {
                                             .endTimeMillis(endTime.toEpochMilli())
                                             .build();
 
-    pageResponse = logDashboardService.getAllRadarChartLogsData(
-        builderFactory.getContext().getMonitoredServiceParams(), monitoredServiceLogAnalysisFilter, pageParams);
+    pageResponse = logDashboardService
+                       .getAllRadarChartLogsData(builderFactory.getContext().getMonitoredServiceParams(),
+                           monitoredServiceLogAnalysisFilter, pageParams)
+                       .getLogAnalysisRadarCharts();
     assertThat(pageResponse).isNotNull();
     assertThat(pageResponse.getContent()).isNotEmpty();
     assertThat(pageResponse.getContent().size()).isEqualTo(1);
@@ -1417,7 +1630,7 @@ public class LogDashboardServiceImplTest extends CvNextGenTestBase {
 
     assertThat(response.size()).isEqualTo(1);
     for (LiveMonitoringLogAnalysisRadarChartClusterDTO liveMonitoringLogAnalysisRadarChartClusterDTO : response) {
-      assertThat(liveMonitoringLogAnalysisRadarChartClusterDTO.getText()).isNotEmpty();
+      assertThat(liveMonitoringLogAnalysisRadarChartClusterDTO.getMessage()).isNotEmpty();
       assertThat(liveMonitoringLogAnalysisRadarChartClusterDTO.getRadius()).isNotNull();
       assertThat(liveMonitoringLogAnalysisRadarChartClusterDTO.getAngle()).isNotNull();
       assertThat(liveMonitoringLogAnalysisRadarChartClusterDTO.getClusterType())
@@ -1458,7 +1671,7 @@ public class LogDashboardServiceImplTest extends CvNextGenTestBase {
 
     assertThat(response.size()).isEqualTo(1);
     for (LiveMonitoringLogAnalysisRadarChartClusterDTO liveMonitoringLogAnalysisRadarChartClusterDTO : response) {
-      assertThat(liveMonitoringLogAnalysisRadarChartClusterDTO.getText()).isNotEmpty();
+      assertThat(liveMonitoringLogAnalysisRadarChartClusterDTO.getMessage()).isNotEmpty();
       assertThat(liveMonitoringLogAnalysisRadarChartClusterDTO.getRadius()).isNotNull();
       assertThat(liveMonitoringLogAnalysisRadarChartClusterDTO.getAngle()).isNotNull();
       assertThat(liveMonitoringLogAnalysisRadarChartClusterDTO.getClusterType())
@@ -1502,8 +1715,11 @@ public class LogDashboardServiceImplTest extends CvNextGenTestBase {
             .endTimeMillis(endTime.toEpochMilli())
             .build();
 
-    PageResponse<AnalyzedRadarChartLogDataDTO> pageResponse = logDashboardService.getAllRadarChartLogsData(
-        builderFactory.getContext().getMonitoredServiceParams(), monitoredServiceLogAnalysisFilter, pageParams);
+    PageResponse<AnalyzedRadarChartLogDataDTO> pageResponse =
+        logDashboardService
+            .getAllRadarChartLogsData(
+                builderFactory.getContext().getMonitoredServiceParams(), monitoredServiceLogAnalysisFilter, pageParams)
+            .getLogAnalysisRadarCharts();
 
     assertThat(pageResponse).isNotNull();
     assertThat(pageResponse.getContent().size()).isEqualTo(1);
@@ -1534,8 +1750,11 @@ public class LogDashboardServiceImplTest extends CvNextGenTestBase {
                                                                               .endTimeMillis(endTime.toEpochMilli())
                                                                               .build();
 
-    PageResponse<AnalyzedRadarChartLogDataDTO> pageResponse = logDashboardService.getAllRadarChartLogsData(
-        builderFactory.getContext().getMonitoredServiceParams(), monitoredServiceLogAnalysisFilter, pageParams);
+    PageResponse<AnalyzedRadarChartLogDataDTO> pageResponse =
+        logDashboardService
+            .getAllRadarChartLogsData(
+                builderFactory.getContext().getMonitoredServiceParams(), monitoredServiceLogAnalysisFilter, pageParams)
+            .getLogAnalysisRadarCharts();
 
     assertThat(pageResponse).isNotNull();
     assertThat(pageResponse.getContent().size()).isEqualTo(1);
@@ -1597,7 +1816,6 @@ public class LogDashboardServiceImplTest extends CvNextGenTestBase {
   private CVConfig createCvConfig(String cvConfigId, String serviceIdentifier) {
     SplunkCVConfig splunkCVConfig = new SplunkCVConfig();
     splunkCVConfig.setUuid(cvConfigId);
-    splunkCVConfig.setServiceIdentifier(serviceIdentifier);
     return splunkCVConfig;
   }
 

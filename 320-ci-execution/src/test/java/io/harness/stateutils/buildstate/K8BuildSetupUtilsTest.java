@@ -200,7 +200,7 @@ public class K8BuildSetupUtilsTest extends CIExecutionTestBase {
 
     CIK8PodParams<CIK8ContainerParams> podParams = k8BuildSetupUtils.getPodParams(ngAccess, k8PodDetails,
         ciExecutionPlanTestHelper.getExpectedLiteEngineTaskInfoOnFirstPodWithSetCallbackId(), true, "workspace",
-        ambiance, null, null, null, null, null, null, null, null, infraNamepsace, null, null, null, OSType.LINUX);
+        ambiance, null, null, null, null, null, null, null, null, infraNamepsace, null, null, null, OSType.Linux);
 
     List<SecretVariableDetails> secretVariableDetails =
         new ArrayList<>(ciExecutionPlanTestHelper.getSecretVariableDetails());

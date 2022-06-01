@@ -30,4 +30,5 @@ public class ServerlessAwsLambdaInfraConfig implements ServerlessInfraConfig, Ne
   List<EncryptedDataDetail> encryptionDataDetails;
   @NonFinal @Expression(ALLOW_SECRETS) String region;
   @NonFinal @Expression(ALLOW_SECRETS) String stage;
+  String infraStructureKey;
 }

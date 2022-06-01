@@ -27,7 +27,6 @@ import static java.util.regex.Pattern.quote;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
-import io.harness.Team;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
@@ -63,6 +62,7 @@ import io.harness.ng.core.invites.utils.InviteUtils;
 import io.harness.ng.core.user.UserInfo;
 import io.harness.ng.core.user.remote.dto.UserMetadataDTO;
 import io.harness.ng.core.user.service.NgUserService;
+import io.harness.notification.Team;
 import io.harness.notification.channeldetails.EmailChannel;
 import io.harness.notification.channeldetails.EmailChannel.EmailChannelBuilder;
 import io.harness.notification.notificationclient.NotificationClient;
@@ -650,10 +650,11 @@ public class InviteServiceImpl implements InviteService {
     // flush all events so that event queue is empty
     telemetryReporter.flush();
 
+    properties.put("platform", "NG");
     // Wait 20 seconds, to ensure identify is sent before track
     ScheduledExecutorService tempExecutor = Executors.newSingleThreadScheduledExecutor();
     tempExecutor.schedule(()
-                              -> telemetryReporter.sendTrackEvent("Invited Accepted", userEmail, accountId, properties,
+                              -> telemetryReporter.sendTrackEvent("Invite  Accepted", userEmail, accountId, properties,
                                   ImmutableMap.<Destination, Boolean>builder()
                                       .put(Destination.MARKETO, true)
                                       .put(Destination.AMPLITUDE, true)

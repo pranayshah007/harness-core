@@ -215,7 +215,7 @@ public class AzureVMSSSetupTaskHandlerTest extends WingsBaseTest {
 
     doReturn(azureMachineImageArtifact)
         .when(azureVMSSSetupTaskHandler)
-        .getAzureMachineImageArtifact(any(AzureConfig.class), any(AzureMachineImageArtifactDTO.class), any());
+        .getAzureMachineImageArtifact(any(), any(), any());
 
     AzureVMSSTaskExecutionResponse response =
         azureVMSSSetupTaskHandler.executeTaskInternal(azureVMSSSetupTaskParameters, azureConfig);
@@ -478,21 +478,21 @@ public class AzureVMSSSetupTaskHandlerTest extends WingsBaseTest {
     doReturn(desiredInstances).when(azureVMSSAutoScaleSettingsData).getDesiredInstances();
     doReturn(azureVMSSAutoScaleSettingsData)
         .when(mockAzureAutoScaleHelper)
-        .getVMSSAutoScaleInstanceLimits(any(), any(), any(), anyBoolean(), anyString());
+        .getVMSSAutoScaleInstanceLimits(any(), any(), any(), anyBoolean(), any());
     doReturn(Collections.singletonList("{baseScalingPolicies: {...}}"))
         .when(mockAzureAutoScaleHelper)
-        .getVMSSAutoScaleSettingsJSONs(any(), anyString(), anyString(), anyString());
+        .getVMSSAutoScaleSettingsJSONs(any(), any(), any(), any());
     doReturn(Collections.singletonList("{mostRecentScalingPolicies: {...}}"))
         .when(mockAzureAutoScaleHelper)
-        .getVMSSAutoScaleSettingsJSONs(any(), anyString(), any());
+        .getVMSSAutoScaleSettingsJSONs(any(), any(), any());
   }
 
   private ExecutionLogCallback mockExecutionLogCallbackMethods() throws Exception {
     ExecutionLogCallback mockCallback = mock(ExecutionLogCallback.class);
-    doNothing().when(mockCallback).saveExecutionLog(anyString());
-    doNothing().when(mockCallback).saveExecutionLog(anyString(), any(), any());
+    doNothing().when(mockCallback).saveExecutionLog(any());
+    doNothing().when(mockCallback).saveExecutionLog(any(), any(), any());
     HTimeLimiterMocker.mockCallInterruptible(timeLimiter).thenReturn(Boolean.TRUE);
-    doReturn(mockCallback).when(azureVMSSSetupTaskHandler).getLogCallBack(any(), anyString());
+    doReturn(mockCallback).when(azureVMSSSetupTaskHandler).getLogCallBack(any(), any());
     return mockCallback;
   }
 }

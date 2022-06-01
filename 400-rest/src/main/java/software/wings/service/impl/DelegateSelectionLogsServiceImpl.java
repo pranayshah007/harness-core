@@ -69,6 +69,7 @@ public class DelegateSelectionLogsServiceImpl implements DelegateSelectionLogsSe
   private static final String TASK_ASSIGNED = "Delegate assigned for task execution";
   public static final String NO_ELIGIBLE_DELEGATES = "No eligible delegate(s) in account to execute task. ";
   public static final String ELIGIBLE_DELEGATES = "Delegate(s) eligible to execute task";
+  public static final String PRE_ASSIGNED_ELIGIBLE_DELEGATES = "Pre assigned delegate(s) eligible to execute task";
   public static final String BROADCASTING_DELEGATES = "Broadcasting to delegate(s)";
   public static final String CAN_NOT_ASSIGN_TASK_GROUP = "Delegate(s) not supported for task type";
   public static final String CAN_NOT_ASSIGN_CG_NG_TASK_GROUP =
@@ -110,15 +111,17 @@ public class DelegateSelectionLogsServiceImpl implements DelegateSelectionLogsSe
   }
 
   @Override
-  public void logEligibleDelegatesToExecuteTask(Set<String> delegateIds, DelegateTask delegateTask) {
+  public void logEligibleDelegatesToExecuteTask(
+      Set<String> delegateIds, DelegateTask delegateTask, boolean preAssigned) {
     if (!delegateTask.isSelectionLogsTrackingEnabled()) {
       return;
     }
     if (Objects.isNull(delegateIds)) {
       return;
     }
-    String message = String.format("%s : [%s]", ELIGIBLE_DELEGATES,
-        String.join(", ", getDelegateHostNames(delegateTask.getAccountId(), delegateIds)));
+    String message_prefix = preAssigned ? PRE_ASSIGNED_ELIGIBLE_DELEGATES : ELIGIBLE_DELEGATES;
+    String message = String.format(
+        "%s : [%s]", message_prefix, String.join(", ", getDelegateHostNames(delegateTask.getAccountId(), delegateIds)));
     save(DelegateSelectionLog.builder()
              .accountId(delegateTask.getAccountId())
              .taskId(delegateTask.getUuid())

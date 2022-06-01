@@ -26,6 +26,8 @@ public class YAMLFieldNameConstants {
   public final String SPEC = "spec";
   public final String STAGE = "stage";
   public final String STAGES = "stages";
+  public final String STRATEGY = "strategy";
+
   public final String STEP = "step";
   public final String STEPS = "steps";
   public final String STEP_GROUP = "stepGroup";
@@ -49,6 +51,7 @@ public class YAMLFieldNameConstants {
   public final String ENVIRONMENT = "environment";
   public final String PROVISIONER = "provisioner";
   public final String CONNECTOR_REF = "connectorRef";
+  public final String FILE_REF = "fileRef";
   public final String CODEBASE_CONNECTOR_REF = "ciCodebase.connectorRef";
   public final String USE_ROLLBACK_STRATEGY = "useRollbackStrategy";
   public final String FAILED_CHILDREN_OUTPUT = "failedChildrenOutput";
@@ -63,4 +66,10 @@ public class YAMLFieldNameConstants {
   public final String CONFIGURATION = "configuration";
   public final String TEMPLATE = "template";
   public final String TEMPLATE_INPUTS = "templateInputs";
+
+  public final String BASE_IMAGE_CONNECTOR_REFS = "baseImageConnectorRefs";
+  public final String HARNESS_IMAGE_CONNECTOR_REF = "harnessImageConnectorRef";
+
+  public final String CHILD_NODE_OF_SPEC = "childNodeOfSpec";
+  public final String GITOPS_ENABLED = "gitOpsEnabled";
 }

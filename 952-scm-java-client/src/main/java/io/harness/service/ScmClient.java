@@ -101,4 +101,9 @@ public interface ScmClient {
   GetUserRepoResponse getRepoDetails(ScmConnector scmConnector);
 
   GetUserReposResponse getAllUserRepos(ScmConnector scmConnector);
+
+  CreateBranchResponse createNewBranchV2(ScmConnector scmConnector, String newBranchName, String baseBranchName);
+
+  CreatePRResponse createPullRequestV2(
+      ScmConnector scmConnector, String sourceBranchName, String targetBranchName, String prTitle);
 }

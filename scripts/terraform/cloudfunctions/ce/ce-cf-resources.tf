@@ -77,6 +77,12 @@ resource "google_pubsub_topic" "ce-aws-connector-crud-topic" {
   project = "${var.projectId}"
 }
 
+# PubSub topic for GCP Connector CRUD events init. ce-nextgen pushes into this
+resource "google_pubsub_topic" "ce-gcp-connector-crud-topic" {
+  name = "ce-gcp-connector-crud"
+  project = "${var.projectId}"
+}
+
 # PubSub topic for AZURE data pipeline. CF1 pushes into this
 resource "google_pubsub_topic" "ce-azure-billing-cf-topic" {
   name = "ce-azure-billing-cf"
@@ -222,6 +228,19 @@ data "archive_file" "ce-aws-inventory-init" {
   output_path = "${path.module}/files/ce-aws-inventory-init.zip"
   source {
     content  = "${file("${path.module}/src/python/aws_inventory_init_main.py")}"
+    filename = "main.py"
+  }
+  source {
+    content  = "${file("${path.module}/src/python/requirements.txt")}"
+    filename = "requirements.txt"
+  }
+}
+
+data "archive_file" "ce-gcp-inventory-init" {
+  type        = "zip"
+  output_path = "${path.module}/files/ce-gcp-inventory-init.zip"
+  source {
+    content  = "${file("${path.module}/src/python/gcp_inventory_init_main.py")}"
     filename = "main.py"
   }
   source {
@@ -647,6 +666,13 @@ resource "google_storage_bucket_object" "ce-aws-inventory-init-archive" {
   bucket = "${google_storage_bucket.bucket1.name}"
   source = "${path.module}/files/ce-aws-inventory-init.zip"
   depends_on = ["data.archive_file.ce-aws-inventory-init"]
+}
+
+resource "google_storage_bucket_object" "ce-gcp-inventory-init-archive" {
+  name = "ce-gcp.${data.archive_file.ce-gcp-inventory-init.output_md5}.zip"
+  bucket = "${google_storage_bucket.bucket1.name}"
+  source = "${path.module}/files/ce-gcp-inventory-init.zip"
+  depends_on = ["data.archive_file.ce-gcp-inventory-init"]
 }
 
 resource "google_storage_bucket_object" "ce-gcp-instance-inventory-data-archive" {
@@ -1077,6 +1103,33 @@ resource "google_cloudfunctions_function" "ce-aws-inventory-init-function" {
   event_trigger {
     event_type = "google.pubsub.topic.publish"
     resource   = "${google_pubsub_topic.ce-aws-connector-crud-topic.name}"
+    failure_policy {
+      retry = false
+    }
+  }
+}
+
+resource "google_cloudfunctions_function" "ce-gcp-inventory-init-function" {
+  name                      = "ce-gcp-inventory-init-terraform"
+  description               = "This cloudfunction gets triggered upon event in a pubsub topic"
+  entry_point               = "main"
+  available_memory_mb       = 256
+  timeout                   = 540
+  runtime                   = "python38"
+  project                   = "${var.projectId}"
+  region                    = "${var.region}"
+  source_archive_bucket     = "${google_storage_bucket.bucket1.name}"
+  source_archive_object     = "${google_storage_bucket_object.ce-gcp-inventory-init-archive.name}"
+
+  environment_variables = {
+    disabled = "false"
+    enable_for_accounts = ""
+    GCP_PROJECT = "${var.projectId}"
+  }
+
+  event_trigger {
+    event_type = "google.pubsub.topic.publish"
+    resource   = "${google_pubsub_topic.ce-gcp-connector-crud-topic.name}"
     failure_policy {
       retry = false
     }

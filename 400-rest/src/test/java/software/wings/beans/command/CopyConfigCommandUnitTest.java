@@ -25,6 +25,7 @@ import io.harness.rule.Owner;
 import software.wings.WingsBaseTest;
 import software.wings.beans.Application;
 import software.wings.beans.ConfigFile;
+import software.wings.beans.ConfigFileDto;
 import software.wings.beans.EntityType;
 import software.wings.beans.Service;
 import software.wings.beans.infrastructure.Host;
@@ -68,9 +69,9 @@ public class CopyConfigCommandUnitTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldCopyConfigForWinRm() throws IOException {
     // Create a test web.config file
-    List<ConfigFile> configFiles = new ArrayList<>();
+    List<ConfigFileDto> configFiles = new ArrayList<>();
     ConfigFile webConfigFile = getConfigFile("web.config");
-    configFiles.add(webConfigFile);
+    configFiles.add(webConfigFile.toDto());
 
     // Copy 1 config file
     when(delegateConfigService.getConfigFiles(winRmContext.getAppId(), winRmContext.getEnvId(),
@@ -96,7 +97,7 @@ public class CopyConfigCommandUnitTest extends WingsBaseTest {
 
     // Copy 2 config files
     ConfigFile webConfigFile2 = getConfigFile("web2.config");
-    configFiles.add(webConfigFile2);
+    configFiles.add(webConfigFile2.toDto());
     assertThat(configFiles).isNotNull().hasSize(2);
     when(copyConfigCommandUnit.executeInternal(winRmContext)).thenReturn(CommandExecutionStatus.SUCCESS);
     assertThat(copyConfigCommandUnit.executeInternal(winRmContext))

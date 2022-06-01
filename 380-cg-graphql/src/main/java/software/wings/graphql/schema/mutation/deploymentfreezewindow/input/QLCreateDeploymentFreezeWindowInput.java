@@ -31,4 +31,5 @@ public class QLCreateDeploymentFreezeWindowInput implements QLMutationInput {
   List<QLFreezeWindowInput> freezeWindows;
   QLSetupInput setup;
   List<String> notifyTo;
+  QLUserGroupFilterInput userGroupSelection;
 }

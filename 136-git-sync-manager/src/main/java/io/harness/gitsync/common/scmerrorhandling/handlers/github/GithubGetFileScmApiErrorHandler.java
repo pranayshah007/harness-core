@@ -8,34 +8,36 @@
 package io.harness.gitsync.common.scmerrorhandling.handlers.github;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.gitsync.common.scmerrorhandling.handlers.github.ScmErrorHints.INVALID_CREDENTIALS;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.SCMExceptionErrorMessages;
-import io.harness.exception.ScmResourceNotFoundException;
+import io.harness.exception.ScmBadRequestException;
 import io.harness.exception.ScmUnauthorizedException;
 import io.harness.exception.ScmUnexpectedException;
 import io.harness.exception.WingsException;
 import io.harness.gitsync.common.scmerrorhandling.handlers.ScmApiErrorHandler;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @OwnedBy(PL)
 public class GithubGetFileScmApiErrorHandler implements ScmApiErrorHandler {
-  public static final String GET_FILE_WITH_INVALID_CREDS =
-      "The requested file could not be fetched from Github. " + ScmErrorExplanations.INVALID_CONNECTOR_CREDS;
+  public static final String GET_FILE_FAILED = "The requested file could not be fetched from Github. ";
 
   @Override
   public void handleError(int statusCode, String errorMessage) throws WingsException {
     switch (statusCode) {
       case 401:
       case 403:
-        throw NestedExceptionUtils.hintWithExplanationException(
-            INVALID_CREDENTIALS, GET_FILE_WITH_INVALID_CREDS, new ScmUnauthorizedException(errorMessage));
+        throw NestedExceptionUtils.hintWithExplanationException(ScmErrorHints.INVALID_CREDENTIALS,
+            GET_FILE_FAILED + ScmErrorExplanations.INVALID_CONNECTOR_CREDS, new ScmUnauthorizedException(errorMessage));
       case 404:
         throw NestedExceptionUtils.hintWithExplanationException(ScmErrorHints.FILE_NOT_FOUND,
             ScmErrorExplanations.FILE_NOT_FOUND,
-            new ScmResourceNotFoundException(SCMExceptionErrorMessages.FILE_NOT_FOUND_ERROR));
+            new ScmBadRequestException(SCMExceptionErrorMessages.FILE_NOT_FOUND_ERROR));
       default:
+        log.error(String.format("Error while getting github file: [%s: %s]", statusCode, errorMessage));
         throw new ScmUnexpectedException(errorMessage);
     }
   }

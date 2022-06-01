@@ -16,8 +16,6 @@ import static io.harness.exception.WingsException.USER;
 import static freemarker.template.Configuration.VERSION_2_3_23;
 import static org.apache.commons.lang3.StringUtils.stripToNull;
 
-import io.harness.NotificationRequest;
-import io.harness.Team;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.delegate.beans.MailTaskParams;
@@ -25,7 +23,9 @@ import io.harness.delegate.beans.NotificationProcessingResponse;
 import io.harness.delegate.beans.NotificationTaskResponse;
 import io.harness.exception.ExceptionUtils;
 import io.harness.notification.NotificationChannelType;
+import io.harness.notification.NotificationRequest;
 import io.harness.notification.SmtpConfig;
+import io.harness.notification.Team;
 import io.harness.notification.exception.NotificationException;
 import io.harness.notification.remote.SmtpConfigResponse;
 import io.harness.notification.remote.dto.EmailSettingDTO;

@@ -19,7 +19,6 @@ import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.template.beans.yaml.NGTemplateConfig;
 import io.harness.template.entity.TemplateEntity;
-import io.harness.template.services.NGTemplateService;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -41,7 +40,6 @@ import lombok.extern.slf4j.Slf4j;
  * Aim -> to have the refresh code together in a separate class rather than in the TemplateMergeServiceImpl
  */
 public class TemplateInputsRefreshHelper {
-  @Inject NGTemplateService templateService;
   @Inject private TemplateMergeServiceHelper templateMergeServiceHelper;
 
   // Returns the refreshed YAML when a YAML String is passed.
@@ -68,7 +66,7 @@ public class TemplateInputsRefreshHelper {
         getRefreshedTemplateInputsMap(accountId, orgId, projectId, yamlNode, templateCacheMap);
 
     // Returning the Refreshed YAML corresponding to the ResMap
-    return YamlUtils.write(refreshedTemplateInputsMap).replace("---\n", "");
+    return YamlPipelineUtils.writeYamlString(refreshedTemplateInputsMap);
   }
 
   // Gets the Updated ResMap -> Key,Value pairs of the YAML with Refreshed Template Inputs

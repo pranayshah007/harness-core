@@ -28,6 +28,7 @@ import io.harness.ci.integrationstage.VmInitializeStepUtils;
 import io.harness.executionplan.CIExecutionTestBase;
 import io.harness.ff.CIFeatureFlagService;
 import io.harness.plancreator.stages.stage.StageElementConfig;
+import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 
@@ -70,6 +71,7 @@ public class BuildJobEnvInfoBuilderTest extends CIExecutionTestBase {
   @Category(UnitTests.class)
   public void getVmBuildJobEnvInfo() {
     when(featureFlagService.isEnabled(FeatureName.CI_VM_INFRASTRUCTURE, "accountId")).thenReturn(true);
+    Ambiance ambiance = getAmbiance();
     StageElementConfig stageElementConfig = vmBuildJobTestHelper.getVmStage("test");
     Map<String, String> volToMountPath = new HashMap<>();
     volToMountPath.put("harness", "/harness");
@@ -82,7 +84,7 @@ public class BuildJobEnvInfoBuilderTest extends CIExecutionTestBase {
         VmInfraYaml.builder()
             .spec(VmPoolYaml.builder().spec(VmPoolYamlSpec.builder().identifier("test").build()).build())
             .build(),
-        null, new ArrayList<>(), ACCOUNT_ID);
+        null, new ArrayList<>(), ambiance);
     assertThat(actual).isEqualTo(expected);
   }
 
@@ -91,6 +93,7 @@ public class BuildJobEnvInfoBuilderTest extends CIExecutionTestBase {
   @Category(UnitTests.class)
   public void getVmBuildJobEnvInfoOSX() {
     when(featureFlagService.isEnabled(FeatureName.CI_VM_INFRASTRUCTURE, "accountId")).thenReturn(true);
+    Ambiance ambiance = getAmbiance();
     StageElementConfig stageElementConfig = vmBuildJobTestHelper.getVmStage("test");
     Map<String, String> volToMountPath = new HashMap<>();
     volToMountPath.put("harness", OSX_STEP_MOUNT_PATH);
@@ -102,10 +105,18 @@ public class BuildJobEnvInfoBuilderTest extends CIExecutionTestBase {
     BuildJobEnvInfo actual = buildJobEnvInfoBuilder.getCIBuildJobEnvInfo(stageElementConfig,
         VmInfraYaml.builder()
             .spec(VmPoolYaml.builder()
-                      .spec(VmPoolYamlSpec.builder().os(ParameterField.createValueField(OSType.OSX)).build())
+                      .spec(VmPoolYamlSpec.builder().os(ParameterField.createValueField(OSType.MacOS)).build())
                       .build())
             .build(),
-        null, new ArrayList<>(), ACCOUNT_ID);
+        null, new ArrayList<>(), ambiance);
     assertThat(actual).isEqualTo(expected);
+  }
+
+  private Ambiance getAmbiance() {
+    return Ambiance.newBuilder()
+        .putSetupAbstractions("accountId", ACCOUNT_ID)
+        .putSetupAbstractions("projectIdentifier", "test-project")
+        .putSetupAbstractions("orgIdentifier", "test-org")
+        .build();
   }
 }

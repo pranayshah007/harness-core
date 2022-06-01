@@ -14,7 +14,8 @@ import lombok.Data;
 @Builder
 public class SLOErrorBudgetResetDTO {
   String serviceLevelObjectiveIdentifier;
-  Double errorBudgetIncrementPercentage;
+  @Deprecated Double errorBudgetIncrementPercentage;
+  Integer errorBudgetIncrementMinutes;
   Integer remainingErrorBudgetAtReset;
   Integer errorBudgetAtReset;
   String reason;

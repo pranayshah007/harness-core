@@ -73,6 +73,7 @@ public class SecretSetupUsageBuilderRegistry {
     registeredSecretSetupUsageBuilders.put(
         SettingVariableTypes.WINRM_CONNECTION_ATTRIBUTES, SETTING_ATTRIBUTE_SETUP_USAGE_BUILDER);
     registeredSecretSetupUsageBuilders.put(SettingVariableTypes.HTTP_HELM_REPO, SETTING_ATTRIBUTE_SETUP_USAGE_BUILDER);
+    registeredSecretSetupUsageBuilders.put(SettingVariableTypes.OCI_HELM_REPO, SETTING_ATTRIBUTE_SETUP_USAGE_BUILDER);
     registeredSecretSetupUsageBuilders.put(
         SettingVariableTypes.AZURE_ARTIFACTS_PAT, SETTING_ATTRIBUTE_SETUP_USAGE_BUILDER);
     registeredSecretSetupUsageBuilders.put(

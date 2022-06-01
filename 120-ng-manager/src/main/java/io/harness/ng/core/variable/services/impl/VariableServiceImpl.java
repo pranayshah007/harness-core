@@ -7,6 +7,7 @@
 
 package io.harness.ng.core.variable.services.impl;
 
+import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER_SRE;
@@ -18,6 +19,7 @@ import static io.harness.utils.PageUtils.getPageRequest;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.NGResourceFilterConstants;
+import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SortOrder;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
@@ -48,14 +50,18 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.ws.rs.NotFoundException;
+import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.transaction.support.TransactionTemplate;
 
+@OwnedBy(PL)
+@Slf4j
 public class VariableServiceImpl implements VariableService {
   private final VariableRepository variableRepository;
   private final VariableMapper variableMapper;
@@ -63,6 +69,7 @@ public class VariableServiceImpl implements VariableService {
   private final OutboxService outboxService;
   private final ProjectService projectService;
   private final OrganizationService organizationService;
+  @Inject private MongoTemplate mongoTemplate;
 
   @Inject
   public VariableServiceImpl(VariableRepository variableRepository, VariableMapper variableMapper,
@@ -82,7 +89,8 @@ public class VariableServiceImpl implements VariableService {
       throw new InvalidRequestException("Variable config cannot be null");
     }
     variableDTO.getVariableConfig().validate();
-    assureThatTheProjectAndOrgExists(variableDTO, accountIdentifier);
+    assureThatTheProjectAndOrgExists(
+        accountIdentifier, variableDTO.getOrgIdentifier(), variableDTO.getProjectIdentifier());
     try {
       Variable variable = variableMapper.toVariable(accountIdentifier, variableDTO);
       return Failsafe.with(DEFAULT_TRANSACTION_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
@@ -92,10 +100,7 @@ public class VariableServiceImpl implements VariableService {
       }));
     } catch (DuplicateKeyException de) {
       throw new DuplicateFieldException(
-          String.format(
-              "A variable with identifier [%s] and orgIdentifier [%s] and projectIdentifier [%s] already present.",
-              variableDTO.getIdentifier(), variableDTO.getOrgIdentifier(), variableDTO.getProjectIdentifier()),
-          USER_SRE, de);
+          String.format("Variable with identifier [%s] already exists in this scope.", variableDTO.getIdentifier()));
     }
   }
 
@@ -166,7 +171,8 @@ public class VariableServiceImpl implements VariableService {
         variableRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(accountIdentifier,
             variableDTO.getOrgIdentifier(), variableDTO.getProjectIdentifier(), variableDTO.getIdentifier());
     validateTheUpdateRequestIsValid(accountIdentifier, variableDTO, existingVariable);
-    assureThatTheProjectAndOrgExists(variableDTO, accountIdentifier);
+    assureThatTheProjectAndOrgExists(
+        accountIdentifier, variableDTO.getOrgIdentifier(), variableDTO.getProjectIdentifier());
     try {
       Variable newVariable = variableMapper.toVariable(accountIdentifier, variableDTO);
       newVariable.setLastModifiedAt(System.currentTimeMillis());
@@ -210,6 +216,41 @@ public class VariableServiceImpl implements VariableService {
     return false;
   }
 
+  @Override
+  public void deleteBatch(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, List<String> variableIdentifiersList) {
+    for (String variableIdentifier : variableIdentifiersList) {
+      try {
+        delete(accountIdentifier, orgIdentifier, projectIdentifier, variableIdentifier);
+      } catch (NotFoundException ex) {
+        log.error(String.format(
+            "Unable to delete Variable. No Variable found with orgIdentifier- [%s], projectIdentifier- [%s] and variableIdentifier- [%s]",
+            orgIdentifier, projectIdentifier, variableIdentifier));
+      }
+    }
+  }
+
+  private Criteria getCriteriaForVariableExpressions(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    return Criteria.where(VariableKeys.accountIdentifier)
+        .is(accountIdentifier)
+        .orOperator(Criteria.where(VariableKeys.orgIdentifier).is(null),
+            Criteria.where(VariableKeys.orgIdentifier)
+                .is(orgIdentifier)
+                .orOperator(Criteria.where(VariableKeys.projectIdentifier).is(null),
+                    Criteria.where(VariableKeys.projectIdentifier).is(projectIdentifier)));
+  }
+
+  @Override
+  public List<String> getExpressions(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
+    assureThatTheProjectAndOrgExists(accountIdentifier, orgIdentifier, projectIdentifier);
+    Criteria criteria = getCriteriaForVariableExpressions(accountIdentifier, orgIdentifier, projectIdentifier);
+    return variableRepository.findAll(criteria)
+        .stream()
+        .map(entity -> entity.getExpression())
+        .collect(Collectors.toList());
+  }
+
   public void validateTheUpdateRequestIsValid(
       String accountIdentifier, VariableDTO variableDTO, Optional<Variable> existingVariable) {
     if (!existingVariable.isPresent()) {
@@ -229,10 +270,7 @@ public class VariableServiceImpl implements VariableService {
     }
   }
 
-  void assureThatTheProjectAndOrgExists(VariableDTO variableDTO, String accountIdentifier) {
-    String orgIdentifier = variableDTO.getOrgIdentifier();
-    String projectIdentifier = variableDTO.getProjectIdentifier();
-
+  void assureThatTheProjectAndOrgExists(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     if (isNotEmpty(projectIdentifier)) {
       // its a project level variable
       if (isEmpty(orgIdentifier)) {

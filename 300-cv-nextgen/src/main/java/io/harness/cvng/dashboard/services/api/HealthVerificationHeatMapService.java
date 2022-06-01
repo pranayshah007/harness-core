@@ -19,7 +19,6 @@ public interface HealthVerificationHeatMapService {
   void updateRisk(String verificationTaskId, Double overallRisk, Instant endTime,
       HealthVerificationPeriod healthVerificationPeriod);
   Optional<Risk> getVerificationRisk(String accountId, String verificationJobInstanceId);
-  Set<CategoryRisk> getAggregatedRisk(String activityId, HealthVerificationPeriod healthVerificationPeriod);
 
   Set<CategoryRisk> getVerificationJobInstanceAggregatedRisk(
       String accountId, String verificationJobInstanceId, HealthVerificationPeriod healthVerificationPeriod);

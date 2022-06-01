@@ -86,6 +86,8 @@ public final class MonitoredService
   private boolean enabled;
   List<NotificationRuleRef> notificationRuleRefs;
   @FdIndex private long nextNotificationIteration;
+  String templateIdentifier;
+  String templateVersionLabel;
 
   @NotNull @Singular @Size(max = 128) List<NGTag> tags;
 

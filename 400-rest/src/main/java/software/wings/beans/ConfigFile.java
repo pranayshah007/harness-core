@@ -33,6 +33,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.DefaultValue;
 import lombok.AllArgsConstructor;
@@ -213,6 +214,13 @@ public class ConfigFile extends BaseFile implements EncryptableSetting {
   @Override
   public void setDecrypted(boolean decrypted) {
     //
+  }
+
+  public ConfigFileDto toDto() {
+    Map<String, Integer> envVersionMap = getEnvIdVersionMap().entrySet().stream().collect(
+        Collectors.toMap(e -> e.getKey(), e -> e.getValue().getVersion()));
+    return new ConfigFileDto(
+        getUuid(), getRelativeFilePath(), envVersionMap, getSize(), isEncrypted(), getDefaultVersion());
   }
 
   @Data

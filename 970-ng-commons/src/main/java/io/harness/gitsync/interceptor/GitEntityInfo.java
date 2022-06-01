@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.exception.InvalidRequestException;
+import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.sdk.EntityGitDetails;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -27,7 +27,7 @@ import lombok.experimental.Wither;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @OwnedBy(DX)
 public class GitEntityInfo {
-  String branch;
+  @Setter String branch;
   String yamlGitConfigId;
   @Wither @Setter String folderPath;
   @Wither @Setter String filePath;
@@ -40,19 +40,17 @@ public class GitEntityInfo {
   String commitId; // used for passing commitId in case of g2h.
   Boolean isFullSyncFlow;
   String resolvedConflictCommitId;
+  @Setter StoreType storeType;
   String connectorRef;
-  String repoName;
+  @Setter String repoName;
+  @Wither String lastCommitId;
 
   public boolean isNull() {
     // todo @Abhinav Maybe we should use null in place of default
     final String DEFAULT = "__default__";
     boolean isRepoNull = isEmpty(yamlGitConfigId) || yamlGitConfigId.equals(DEFAULT);
     boolean isBranchNull = isEmpty(branch) || branch.equals(DEFAULT);
-    if (!isRepoNull && isBranchNull || isRepoNull && !isBranchNull) {
-      throw new InvalidRequestException(String.format(
-          "The repo should be provided with the branch, the request has repo %s, branch %s", yamlGitConfigId, branch));
-    }
-    return isRepoNull;
+    return isRepoNull && isBranchNull;
   }
 
   public EntityGitDetails toEntityGitDetails() {
@@ -64,6 +62,7 @@ public class GitEntityInfo {
         .repoIdentifier(yamlGitConfigId)
         .rootFolder(folderPath)
         .filePath(filePath)
+        .repoName(repoName)
         .build();
   }
 }

@@ -10,6 +10,7 @@ package io.harness.terraform;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ROHITKARELIA;
+import static io.harness.rule.OwnerRule.VLICA;
 
 import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -25,6 +26,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.apache.commons.io.FileUtils;
@@ -39,6 +41,25 @@ public class TerraformHelperUtilsTest extends CategoryTest {
   public void testgenerateCommandFlagsString() {
     List<String> listofArgs = Arrays.asList("arg1", "arg2");
     String result = TerraformHelperUtils.generateCommandFlagsString(listofArgs, "-command");
+    assertThat(result).isNotNull();
+    result.equals("-command=arg1 -command=arg2");
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testGenerateCommandFlagsStringWithEmptyListOfArguments() {
+    List<String> emptyListOfArgs = new ArrayList<>();
+    String result = TerraformHelperUtils.generateCommandFlagsString(emptyListOfArgs, "-command");
+    assertThat(result).isEmpty();
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testGenerateCommandFlagsStringContainingEmptyArguments() {
+    List<String> listOfArgs = Arrays.asList("arg1", "", "", "arg2");
+    String result = TerraformHelperUtils.generateCommandFlagsString(listOfArgs, "-command");
     assertThat(result).isNotNull();
     result.equals("-command=arg1 -command=arg2");
   }

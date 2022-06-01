@@ -68,7 +68,7 @@ public class AnalysisInfo {
   public static class DeploymentVerification {
     boolean enabled;
     // TODO: Make it healthSource type specific
-    String serviceInstanceMetricPath;
+    @Deprecated String serviceInstanceMetricPath;
   }
 
   @Data

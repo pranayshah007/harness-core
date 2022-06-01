@@ -29,6 +29,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import java.util.Collections;
 import java.util.List;
@@ -119,7 +120,7 @@ public class CdPartialYamlSchemaResource implements YamlSchemaResource {
 
   @GET
   @Path("/entityYaml")
-  @ApiOperation(value = "Get Entity Yaml Schema", nickname = "getEntityYamlSchema", hidden = true)
+  @Hidden
   public ResponseDTO<JsonNode> getEntityYamlSchema(
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,

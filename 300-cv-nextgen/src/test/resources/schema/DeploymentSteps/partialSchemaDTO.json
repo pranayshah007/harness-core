@@ -1,5 +1,5 @@
 {
-  "schema" : {
+  "schema": {
     "type": "object",
     "required": [
       "identifier",
@@ -77,6 +77,9 @@
             "type"
           ],
           "properties": {
+            "monitoredService": {
+              "$ref": "#/definitions/cvng/MonitoredServiceNode"
+            },
             "type": {
               "type": "string"
             }
@@ -220,6 +223,36 @@
           ],
           "$schema": "http://json-schema.org/draft-07/schema#"
         },
+        "ConfiguredMonitoredServiceSpec": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/cvng/MonitoredServiceSpec"
+            },
+            {
+              "type": "object",
+              "required": [
+                "monitoredServiceRef"
+              ],
+              "properties": {
+                "monitoredServiceRef": {
+                  "type": "string"
+                }
+              }
+            }
+          ],
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "DefaultMonitoredServiceSpec": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/cvng/MonitoredServiceSpec"
+            },
+            {
+              "type": "object"
+            }
+          ],
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
         "ImprovisedCanaryVerificationJobSpec": {
           "allOf": [
             {
@@ -235,6 +268,73 @@
               }
             }
           ],
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "MonitoredServiceNode": {
+          "type": "object",
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "type": "string"
+            }
+          },
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "type": {
+                    "const": "CONFIGURED"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "spec": {
+                    "$ref": "#/definitions/cvng/ConfiguredMonitoredServiceSpec"
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "type": {
+                    "const": "DEFAULT"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "spec": {
+                    "$ref": "#/definitions/cvng/DefaultMonitoredServiceSpec"
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "type": {
+                    "const": "TEMPLATE"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "spec": {
+                    "$ref": "#/definitions/cvng/TemplateMonitoredServiceSpec"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "MonitoredServiceSpec": {
+          "type": "object",
+          "discriminator": "type",
           "$schema": "http://json-schema.org/draft-07/schema#"
         },
         "StepWhenCondition": {
@@ -257,6 +357,29 @@
           },
           "$schema": "http://json-schema.org/draft-07/schema#"
         },
+        "TemplateMonitoredServiceSpec": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/cvng/MonitoredServiceSpec"
+            },
+            {
+              "type": "object",
+              "required": [
+                "monitoredServiceTemplateRef",
+                "versionLabel"
+              ],
+              "properties": {
+                "monitoredServiceTemplateRef": {
+                  "type": "string"
+                },
+                "versionLabel": {
+                  "type": "string"
+                }
+              }
+            }
+          ],
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
         "TestVerificationJobSpec": {
           "allOf": [
             {
@@ -264,7 +387,9 @@
             },
             {
               "type": "object",
-              "properties": {}
+              "properties": {
+
+              }
             }
           ],
           "$schema": "http://json-schema.org/draft-07/schema#"
@@ -296,9 +421,9 @@
       }
     }
   },
-  "nodeType" : "Verify",
-  "nodeName" : "CVNGStageInfo",
-  "namespace" : "cvng",
-  "skipStageSchema" : true,
-  "moduleType" : "CV"
+  "nodeType": "Verify",
+  "nodeName": "CVNGStageInfo",
+  "namespace": "cvng",
+  "skipStageSchema": true,
+  "moduleType": "CV"
 }

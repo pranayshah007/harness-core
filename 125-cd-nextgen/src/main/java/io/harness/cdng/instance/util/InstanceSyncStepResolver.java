@@ -18,6 +18,7 @@ import io.harness.cdng.k8s.K8sBlueGreenStep;
 import io.harness.cdng.k8s.K8sCanaryStep;
 import io.harness.cdng.k8s.K8sRollingRollbackStep;
 import io.harness.cdng.k8s.K8sRollingStep;
+import io.harness.cdng.serverless.ServerlessAwsLambdaDeployStep;
 import io.harness.pms.contracts.steps.StepType;
 
 import com.google.common.collect.Sets;
@@ -28,10 +29,10 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(CDP)
 @UtilityClass
 public class InstanceSyncStepResolver {
-  public final Set<String> INSTANCE_SYN_STEP_TYPES =
-      Collections.unmodifiableSet(Sets.newHashSet(K8sRollingStep.STEP_TYPE.getType(), K8sCanaryStep.STEP_TYPE.getType(),
-          K8sBlueGreenStep.STEP_TYPE.getType(), K8sRollingRollbackStep.STEP_TYPE.getType(),
-          HelmDeployStep.STEP_TYPE.getType(), HelmRollbackStep.STEP_TYPE.getType()));
+  public final Set<String> INSTANCE_SYN_STEP_TYPES = Collections.unmodifiableSet(Sets.newHashSet(
+      K8sRollingStep.STEP_TYPE.getType(), K8sCanaryStep.STEP_TYPE.getType(), K8sBlueGreenStep.STEP_TYPE.getType(),
+      K8sRollingRollbackStep.STEP_TYPE.getType(), HelmDeployStep.STEP_TYPE.getType(),
+      HelmRollbackStep.STEP_TYPE.getType(), ServerlessAwsLambdaDeployStep.STEP_TYPE.getType()));
 
   public boolean shouldRunInstanceSync(StepType stepType) {
     return nonNull(stepType) && INSTANCE_SYN_STEP_TYPES.contains(stepType.getType());

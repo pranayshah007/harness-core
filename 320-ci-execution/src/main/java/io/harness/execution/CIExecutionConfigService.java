@@ -7,6 +7,8 @@
 
 package io.harness.execution;
 
+import static java.util.Collections.emptyList;
+
 import io.harness.beans.steps.CIStepInfoType;
 import io.harness.ci.beans.entities.CIExecutionConfig;
 import io.harness.ci.beans.entities.CIExecutionImages;
@@ -146,95 +148,99 @@ public class CIExecutionConfigService {
 
   public StepImageConfig getPluginVersion(CIStepInfoType stepInfoType, String accountId) {
     Optional<CIExecutionConfig> existingConfig = configRepository.findFirstByAccountIdentifier(accountId);
-    List<String> entrypoint;
-    String image;
+    StepImageConfig stepImageConfig = getStepImageConfig(stepInfoType, ciExecutionServiceConfig);
+    String image = stepImageConfig.getImage();
     switch (stepInfoType) {
       case DOCKER:
-        entrypoint = ciExecutionServiceConfig.getStepConfig().getBuildAndPushDockerRegistryConfig().getEntrypoint();
         if (existingConfig.isPresent()) {
           image = existingConfig.get().getBuildAndPushDockerRegistryImage();
-        } else {
-          image = ciExecutionServiceConfig.getStepConfig().getBuildAndPushDockerRegistryConfig().getImage();
         }
         break;
       case GCR:
-        entrypoint = ciExecutionServiceConfig.getStepConfig().getBuildAndPushGCRConfig().getEntrypoint();
         if (existingConfig.isPresent()) {
           image = existingConfig.get().getBuildAndPushGCRImage();
-        } else {
-          image = ciExecutionServiceConfig.getStepConfig().getBuildAndPushGCRConfig().getImage();
         }
         break;
       case ECR:
-        entrypoint = ciExecutionServiceConfig.getStepConfig().getBuildAndPushECRConfig().getEntrypoint();
         if (existingConfig.isPresent()) {
           image = existingConfig.get().getBuildAndPushECRImage();
-        } else {
-          image = ciExecutionServiceConfig.getStepConfig().getBuildAndPushECRConfig().getImage();
         }
         break;
       case RESTORE_CACHE_S3:
       case SAVE_CACHE_S3:
-        entrypoint = ciExecutionServiceConfig.getStepConfig().getCacheS3Config().getEntrypoint();
         if (existingConfig.isPresent()) {
           image = existingConfig.get().getCacheS3Tag();
-        } else {
-          image = ciExecutionServiceConfig.getStepConfig().getCacheS3Config().getImage();
         }
         break;
       case UPLOAD_S3:
-        entrypoint = ciExecutionServiceConfig.getStepConfig().getS3UploadConfig().getEntrypoint();
         if (existingConfig.isPresent()) {
           image = existingConfig.get().getS3UploadImage();
-        } else {
-          image = ciExecutionServiceConfig.getStepConfig().getS3UploadConfig().getImage();
         }
         break;
       case UPLOAD_GCS:
-        entrypoint = ciExecutionServiceConfig.getStepConfig().getGcsUploadConfig().getEntrypoint();
         if (existingConfig.isPresent()) {
           image = existingConfig.get().getGcsUploadImage();
-        } else {
-          image = ciExecutionServiceConfig.getStepConfig().getGcsUploadConfig().getImage();
         }
         break;
       case SAVE_CACHE_GCS:
       case RESTORE_CACHE_GCS:
-        entrypoint = ciExecutionServiceConfig.getStepConfig().getCacheGCSConfig().getEntrypoint();
         if (existingConfig.isPresent()) {
           image = existingConfig.get().getCacheGCSTag();
-        } else {
-          image = ciExecutionServiceConfig.getStepConfig().getCacheGCSConfig().getImage();
         }
         break;
       case SECURITY:
-        entrypoint = ciExecutionServiceConfig.getStepConfig().getSecurityConfig().getEntrypoint();
         if (existingConfig.isPresent()) {
           image = existingConfig.get().getSecurityImage();
-        } else {
-          image = ciExecutionServiceConfig.getStepConfig().getSecurityConfig().getImage();
         }
         break;
       case UPLOAD_ARTIFACTORY:
-        entrypoint = ciExecutionServiceConfig.getStepConfig().getArtifactoryUploadConfig().getEntrypoint();
         if (existingConfig.isPresent()) {
           image = existingConfig.get().getArtifactoryUploadTag();
-        } else {
-          image = ciExecutionServiceConfig.getStepConfig().getArtifactoryUploadConfig().getImage();
         }
         break;
       case GIT_CLONE:
-        entrypoint = ciExecutionServiceConfig.getStepConfig().getGitCloneConfig().getEntrypoint();
         if (existingConfig.isPresent()) {
           image = existingConfig.get().getGitCloneImage();
-        } else {
-          image = ciExecutionServiceConfig.getStepConfig().getGitCloneConfig().getImage();
         }
         break;
       default:
         throw new IllegalStateException("Unexpected value: " + stepInfoType);
     }
-    return StepImageConfig.builder().entrypoint(entrypoint).image(image).build();
+    return StepImageConfig.builder()
+        .entrypoint(stepImageConfig.getEntrypoint())
+        .windowsEntrypoint(Optional.ofNullable(stepImageConfig.getWindowsEntrypoint()).orElse(emptyList()))
+        .image(image)
+        .build();
+  }
+
+  private static StepImageConfig getStepImageConfig(
+      CIStepInfoType stepInfoType, CIExecutionServiceConfig ciExecutionServiceConfig) {
+    switch (stepInfoType) {
+      case DOCKER:
+        return ciExecutionServiceConfig.getStepConfig().getBuildAndPushDockerRegistryConfig();
+      case GCR:
+        return ciExecutionServiceConfig.getStepConfig().getBuildAndPushGCRConfig();
+      case ECR:
+        return ciExecutionServiceConfig.getStepConfig().getBuildAndPushECRConfig();
+      case RESTORE_CACHE_S3:
+      case SAVE_CACHE_S3:
+        return ciExecutionServiceConfig.getStepConfig().getCacheS3Config();
+      case UPLOAD_S3:
+        return ciExecutionServiceConfig.getStepConfig().getS3UploadConfig();
+      case UPLOAD_GCS:
+        return ciExecutionServiceConfig.getStepConfig().getGcsUploadConfig();
+      case SAVE_CACHE_GCS:
+      case RESTORE_CACHE_GCS:
+        return ciExecutionServiceConfig.getStepConfig().getCacheGCSConfig();
+      case SECURITY:
+        return ciExecutionServiceConfig.getStepConfig().getSecurityConfig();
+      case UPLOAD_ARTIFACTORY:
+        return ciExecutionServiceConfig.getStepConfig().getArtifactoryUploadConfig();
+      case GIT_CLONE:
+        return ciExecutionServiceConfig.getStepConfig().getGitCloneConfig();
+      default:
+        throw new IllegalStateException("Unexpected value: " + stepInfoType);
+    }
   }
 
   public Boolean deleteCIExecutionConfig(String accountIdentifier) {

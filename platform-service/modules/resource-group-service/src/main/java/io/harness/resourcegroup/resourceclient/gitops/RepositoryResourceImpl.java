@@ -20,6 +20,7 @@ import io.harness.eventsframework.consumer.Message;
 import io.harness.eventsframework.entity_crud.EntityChangeDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitops.models.Repository;
+import io.harness.gitops.models.RepositoryQuery;
 import io.harness.gitops.remote.GitopsResourceClient;
 import io.harness.ng.beans.PageResponse;
 import io.harness.resourcegroup.beans.ValidatorType;
@@ -92,10 +93,15 @@ public class RepositoryResourceImpl implements Resource {
     Map<String, Object> filter = ImmutableMap.of("identifier", ImmutableMap.of("$in", resourceIds));
     Response<PageResponse<Repository>> response = null;
     try {
-      response = gitopsResourceClient
-                     .listRepositories(scope.getAccountIdentifier(), scope.getOrgIdentifier(),
-                         scope.getProjectIdentifier(), 0, resourceIds.size(), filter)
-                     .execute();
+      final RepositoryQuery query = RepositoryQuery.builder()
+                                        .accountId(scope.getAccountIdentifier())
+                                        .orgIdentifier(scope.getOrgIdentifier())
+                                        .projectIdentifier(scope.getProjectIdentifier())
+                                        .pageIndex(0)
+                                        .pageSize(resourceIds.size())
+                                        .filter(filter)
+                                        .build();
+      response = gitopsResourceClient.listRepositories(query).execute();
     } catch (IOException e) {
       throw new InvalidRequestException("failed to verify repository identifiers");
     }

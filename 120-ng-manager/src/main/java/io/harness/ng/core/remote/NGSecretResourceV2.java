@@ -17,6 +17,7 @@ import static io.harness.secrets.SecretPermissions.SECRET_DELETE_PERMISSION;
 import static io.harness.secrets.SecretPermissions.SECRET_EDIT_PERMISSION;
 import static io.harness.secrets.SecretPermissions.SECRET_RESOURCE_TYPE;
 import static io.harness.secrets.SecretPermissions.SECRET_VIEW_PERMISSION;
+import static io.harness.utils.PageUtils.getNGPageResponse;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.NGResourceFilterConstants;
@@ -290,8 +291,9 @@ public class NGSecretResourceV2 {
     if (secretType != null) {
       secretTypes.add(secretType);
     }
-    return ResponseDTO.newResponse(ngSecretService.list(accountIdentifier, orgIdentifier, projectIdentifier,
-        identifiers, secretTypes, includeSecretsFromEverySubScope, searchTerm, page, size, sourceCategory));
+    return ResponseDTO.newResponse(
+        getNGPageResponse(ngSecretService.list(accountIdentifier, orgIdentifier, projectIdentifier, identifiers,
+            secretTypes, includeSecretsFromEverySubScope, searchTerm, page, size, sourceCategory)));
   }
 
   @POST
@@ -317,10 +319,10 @@ public class NGSecretResourceV2 {
     secretPermissionValidator.checkForAccessOrThrow(
         ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier), Resource.of(SECRET_RESOURCE_TYPE, null),
         SECRET_VIEW_PERMISSION, null);
-    return ResponseDTO.newResponse(ngSecretService.list(accountIdentifier, orgIdentifier, projectIdentifier,
-        secretResourceFilterDTO.getIdentifiers(), secretResourceFilterDTO.getSecretTypes(),
+    return ResponseDTO.newResponse(getNGPageResponse(ngSecretService.list(accountIdentifier, orgIdentifier,
+        projectIdentifier, secretResourceFilterDTO.getIdentifiers(), secretResourceFilterDTO.getSecretTypes(),
         secretResourceFilterDTO.isIncludeSecretsFromEverySubScope(), secretResourceFilterDTO.getSearchTerm(), page,
-        size, secretResourceFilterDTO.getSourceCategory()));
+        size, secretResourceFilterDTO.getSourceCategory())));
   }
 
   @GET
@@ -556,7 +558,8 @@ public class NGSecretResourceV2 {
   @InternalApi
   public ResponseDTO<List<EncryptedDataDetail>>
   getEncryptionDetails(@NotNull NGAccessWithEncryptionConsumer ngAccessWithEncryptionConsumer,
-      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier) {
+      @Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotNull @AccountIdentifier @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier) {
     NGAccess ngAccess = ngAccessWithEncryptionConsumer.getNgAccess();
     DecryptableEntity decryptableEntity = ngAccessWithEncryptionConsumer.getDecryptableEntity();
     if (ngAccess == null || decryptableEntity == null) {

@@ -30,7 +30,11 @@ import io.harness.utils.PageUtils;
 
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
+import java.time.Clock;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -44,6 +48,7 @@ public class NotificationRuleServiceImpl implements NotificationRuleService {
   private Map<NotificationRuleType, NotificationRuleConditionTransformer>
       notificationRuleTypeNotificationRuleConditionTransformerMap;
   @Inject private Map<NotificationRuleType, NotificationRuleUpdatableEntity> notificationRuleMapBinder;
+  @Inject Clock clock;
 
   @Override
   public NotificationRuleResponse create(ProjectParams projectParams, NotificationRuleDTO notificationRuleDTO) {
@@ -161,6 +166,7 @@ public class NotificationRuleServiceImpl implements NotificationRuleService {
             -> NotificationRuleRef.builder()
                    .notificationRuleRef(notificationRuleRefDTO.getNotificationRuleRef())
                    .enabled(notificationRuleRefDTO.isEnabled())
+                   .lastSuccessFullNotificationSent(clock.instant())
                    .build())
         .collect(Collectors.toList());
   }
@@ -173,6 +179,25 @@ public class NotificationRuleServiceImpl implements NotificationRuleService {
                    .notificationRuleRef(notificationRuleRef.getNotificationRuleRef())
                    .enabled(notificationRuleRef.isEnabled())
                    .build())
+        .collect(Collectors.toList());
+  }
+
+  @Override
+  public List<NotificationRuleResponse> getNotificationRuleResponse(
+      ProjectParams projectParams, List<NotificationRuleRef> notificationRuleRefList) {
+    if (!isNotEmpty(notificationRuleRefList)) {
+      return Collections.emptyList();
+    }
+    Map<String, Boolean> NOTIFICATION_RULE_REF_TO_ENABLED_MAP = new HashMap<>();
+    notificationRuleRefList.forEach(
+        ref -> NOTIFICATION_RULE_REF_TO_ENABLED_MAP.put(ref.getNotificationRuleRef(), ref.isEnabled()));
+
+    List<NotificationRule> notificationRuleList =
+        getEntities(projectParams, new ArrayList<>(NOTIFICATION_RULE_REF_TO_ENABLED_MAP.keySet()));
+    return notificationRuleList.stream()
+        .map(notificationRule
+            -> notificationRuleEntityToResponse(
+                notificationRule, NOTIFICATION_RULE_REF_TO_ENABLED_MAP.get(notificationRule.getIdentifier())))
         .collect(Collectors.toList());
   }
 
@@ -205,6 +230,19 @@ public class NotificationRuleServiceImpl implements NotificationRuleService {
             .build();
     return NotificationRuleResponse.builder()
         .notificationRule(notificationRuleDTO)
+        .createdAt(notificationRule.getCreatedAt())
+        .lastModifiedAt(notificationRule.getLastUpdatedAt())
+        .build();
+  }
+
+  private NotificationRuleResponse notificationRuleEntityToResponse(
+      NotificationRule notificationRule, boolean enabled) {
+    NotificationRuleDTO notificationRuleDTO =
+        notificationRuleTypeNotificationRuleConditionTransformerMap.get(notificationRule.getType())
+            .getDto(notificationRule);
+    return NotificationRuleResponse.builder()
+        .notificationRule(notificationRuleDTO)
+        .enabled(enabled)
         .createdAt(notificationRule.getCreatedAt())
         .lastModifiedAt(notificationRule.getLastUpdatedAt())
         .build();

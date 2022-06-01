@@ -7,7 +7,7 @@
 
 package io.harness.notification.eventbackbone;
 
-import static io.harness.NotificationRequest.ChannelCase.SLACK;
+import static io.harness.notification.NotificationRequest.ChannelCase.SLACK;
 import static io.harness.rule.OwnerRule.ANKUSH;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -15,9 +15,9 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
-import io.harness.NotificationRequest;
 import io.harness.category.element.UnitTests;
 import io.harness.manage.GlobalContextManager;
+import io.harness.notification.NotificationRequest;
 import io.harness.notification.entities.MongoNotificationRequest;
 import io.harness.notification.service.api.NotificationService;
 import io.harness.notification.utils.NotificationRequestTestUtils;

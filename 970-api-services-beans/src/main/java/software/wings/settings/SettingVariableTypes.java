@@ -298,7 +298,8 @@ public enum SettingVariableTypes {
 
   GCP_SECRETS_MANAGER,
 
-  TRIGGER;
+  TRIGGER,
+  OCI_HELM_REPO("OCI Registry Helm Repository");
 
   @Getter private String displayName;
 

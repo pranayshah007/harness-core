@@ -506,6 +506,7 @@ public class AccountServiceImpl implements AccountService {
     } else if (account.isCreatedFromNG()) {
       updateNextGenEnabled(account.getUuid(), true);
     }
+    featureFlagService.enableAccount(FeatureName.USE_IMMUTABLE_DELEGATE, account.getUuid());
   }
 
   List<Role> createDefaultRoles(Account account) {
@@ -1018,22 +1019,21 @@ public class AccountServiceImpl implements AccountService {
   }
 
   @Override
+  public List<String> getWatcherVersion(String accountId) {
+    return delegateVersionService.getWatcherJarVersions(accountId);
+  }
+
+  @Override
   public String getAccountPrimaryDelegateVersion(String accountId) {
     if (licenseService.isAccountDeleted(accountId)) {
       throw new InvalidRequestException("Deleted AccountId: " + accountId);
     }
-    Account account = wingsPersistence.createQuery(Account.class, excludeAuthorityCount)
-                          .filter(AccountKeys.uuid, accountId)
-                          .project("delegateConfiguration", true)
-                          .get();
-    if (account.getDelegateConfiguration() == null) {
+
+    DelegateConfiguration delegateConfig = getDelegateConfiguration(accountId);
+    if (delegateConfig == null) {
       return null;
     }
-    return account.getDelegateConfiguration()
-        .getDelegateVersions()
-        .stream()
-        .reduce((first, last) -> last)
-        .orElse(EMPTY);
+    return delegateConfig.getDelegateVersions().stream().reduce((first, last) -> last).orElse(EMPTY);
   }
 
   @Override

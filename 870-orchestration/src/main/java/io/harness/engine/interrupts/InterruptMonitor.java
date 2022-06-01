@@ -74,6 +74,7 @@ public class InterruptMonitor implements Handler<Interrupt> {
   @Inject private ExpiryHelper expiryHelper;
 
   public void registerIterators(IteratorConfig iteratorConfig) {
+    // todo - RDM -  should we follow this lead and use %d on the naming when not provided?
     PumpExecutorOptions executorOptions = PumpExecutorOptions.builder()
                                               .name("InterruptMonitor-%d")
                                               .poolSize(iteratorConfig.getThreadPoolCount())

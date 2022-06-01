@@ -7,6 +7,8 @@
 
 package io.harness.core.ci.services;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+
 import io.harness.app.beans.entities.BuildActiveInfo;
 import io.harness.app.beans.entities.BuildCount;
 import io.harness.app.beans.entities.BuildExecutionInfo;
@@ -41,7 +43,9 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
 @Singleton
@@ -205,16 +209,22 @@ public class CIOverviewDashboardServiceImpl implements CIOverviewDashboardServic
         statement.setLong(3, timestamp - 30 * DAY_IN_MS);
         resultSet = statement.executeQuery();
         List<ReferenceDTO> usageReferences = new ArrayList<>();
+        Set<String> uniqueIds = new HashSet<>();
         while (resultSet != null && resultSet.next()) {
+          String id = resultSet.getString("moduleinfo_author_id");
+          if (isEmpty(id)) {
+            continue;
+          }
           ReferenceDTO reference = ReferenceDTO.builder()
-                                       .identifier(resultSet.getString("moduleinfo_author_id"))
+                                       .identifier(id)
                                        .projectIdentifier(resultSet.getString("projectidentifier"))
                                        .orgIdentifier(resultSet.getString("orgidentifier"))
                                        .build();
+          uniqueIds.add(id);
           usageReferences.add(reference);
         }
         return UsageDataDTO.builder()
-            .count(usageReferences.size())
+            .count(uniqueIds.size())
             .displayName("Last 30 Days")
             .references(usageReferences)
             .build();

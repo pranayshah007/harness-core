@@ -47,6 +47,8 @@ public class AppDynamicsHealthSourceSpecTransformer
               return AppDMetricDefinitions.builder()
                   .baseFolder(metricInfo.getBaseFolder())
                   .metricPath(metricInfo.getMetricPath())
+                  .completeServiceInstanceMetricPath(metricInfo.getCompleteServiceInstanceMetricPath())
+                  .completeMetricPath(metricInfo.getCompleteMetricPath())
                   .identifier(metricInfo.getIdentifier())
                   .metricName(metricInfo.getMetricName())
                   .riskProfile(riskProfile)

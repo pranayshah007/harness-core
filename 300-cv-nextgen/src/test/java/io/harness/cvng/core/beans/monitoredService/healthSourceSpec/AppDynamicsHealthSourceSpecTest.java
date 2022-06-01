@@ -104,7 +104,7 @@ public class AppDynamicsHealthSourceSpecTest extends CvNextGenTestBase {
                                                    .build())
                                   .deploymentVerification(DeploymentVerificationDTO.builder()
                                                               .enabled(true)
-                                                              .serviceInstanceMetricPath("path")
+                                                              .serviceInstanceMetricPath("Individual Nodes|*|path")
                                                               .build())
                                   .liveMonitoring(LiveMonitoringDTO.builder().enabled(true).build())
                                   .build())
@@ -122,7 +122,7 @@ public class AppDynamicsHealthSourceSpecTest extends CvNextGenTestBase {
                                                    .build())
                                   .deploymentVerification(DeploymentVerificationDTO.builder()
                                                               .enabled(true)
-                                                              .serviceInstanceMetricPath("path")
+                                                              .serviceInstanceMetricPath("Individual Nodes|*|path")
                                                               .build())
                                   .liveMonitoring(LiveMonitoringDTO.builder().enabled(true).build())
                                   .build())
@@ -140,7 +140,7 @@ public class AppDynamicsHealthSourceSpecTest extends CvNextGenTestBase {
                                                    .build())
                                   .deploymentVerification(DeploymentVerificationDTO.builder()
                                                               .enabled(true)
-                                                              .serviceInstanceMetricPath("path")
+                                                              .serviceInstanceMetricPath("Individual Nodes|*|path")
                                                               .build())
                                   .liveMonitoring(LiveMonitoringDTO.builder().enabled(true).build())
                                   .build())
@@ -221,7 +221,7 @@ public class AppDynamicsHealthSourceSpecTest extends CvNextGenTestBase {
     assertThat(group1CVConfig.getMetricInfos().size()).isEqualTo(2);
     assertThat(group1CVConfig.getMetricInfos().get(0).getDeploymentVerification().isEnabled()).isTrue();
     assertThat(group1CVConfig.getMetricInfos().get(0).getDeploymentVerification().getServiceInstanceMetricPath())
-        .isEqualTo("path");
+        .isEqualTo("Individual Nodes|*|path");
     assertThat(group1CVConfig.getMetricInfos().get(0).getSli().isEnabled()).isTrue();
     AppDynamicsCVConfig appDynamicsCVConfig = (AppDynamicsCVConfig) result.getAdded().get(0);
     assertThat(appDynamicsCVConfig.getMetricPack().getCategory()).isEqualTo(CVMonitoringCategory.ERRORS);
@@ -250,8 +250,6 @@ public class AppDynamicsHealthSourceSpecTest extends CvNextGenTestBase {
     assertThat(cvConfig.getApplicationName()).isEqualTo(applicationName);
     assertThat(cvConfig.getTierName()).isEqualTo(tierName);
     assertThat(cvConfig.getConnectorIdentifier()).isEqualTo(connectorIdentifier);
-    assertThat(cvConfig.getEnvIdentifier()).isEqualTo(envIdentifier);
-    assertThat(cvConfig.getServiceIdentifier()).isEqualTo(serviceIdentifier);
     assertThat(cvConfig.getIdentifier()).isEqualTo(identifier);
     assertThat(cvConfig.getProductName()).isEqualTo(feature);
     assertThat(cvConfig.getMonitoringSourceName()).isEqualTo(name);

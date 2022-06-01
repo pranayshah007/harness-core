@@ -159,8 +159,6 @@ public class NewRelicHealthSourceSpecTest extends CvNextGenTestBase {
     assertThat(cvConfig.getApplicationName()).isEqualTo(applicationName);
     assertThat(cvConfig.getApplicationId()).isEqualTo(Long.valueOf(applicationId));
     assertThat(cvConfig.getConnectorIdentifier()).isEqualTo(connectorIdentifier);
-    assertThat(cvConfig.getEnvIdentifier()).isEqualTo(envIdentifier);
-    assertThat(cvConfig.getServiceIdentifier()).isEqualTo(serviceIdentifier);
     assertThat(cvConfig.getIdentifier()).isEqualTo(identifier);
     assertThat(cvConfig.getProductName()).isEqualTo(feature);
     assertThat(cvConfig.getMonitoringSourceName()).isEqualTo(name);

@@ -30,6 +30,7 @@ import io.harness.cvng.dashboard.beans.AnalyzedLogDataDTO;
 import io.harness.cvng.dashboard.beans.AnalyzedLogDataDTO.FrequencyDTO;
 import io.harness.cvng.dashboard.beans.AnalyzedLogDataDTO.LogData;
 import io.harness.cvng.dashboard.beans.AnalyzedRadarChartLogDataDTO;
+import io.harness.cvng.dashboard.beans.AnalyzedRadarChartLogDataWithCountDTO;
 import io.harness.cvng.dashboard.services.api.LogDashboardService;
 import io.harness.cvng.utils.CVNGParallelExecutor;
 import io.harness.ng.beans.PageResponse;
@@ -54,6 +55,7 @@ import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
@@ -81,8 +83,7 @@ public class LogDashboardServiceImpl implements LogDashboardService {
   }
 
   @Override
-  public PageResponse<AnalyzedRadarChartLogDataDTO> getAllRadarChartLogsData(
-      MonitoredServiceParams monitoredServiceParams,
+  public AnalyzedRadarChartLogDataWithCountDTO getAllRadarChartLogsData(MonitoredServiceParams monitoredServiceParams,
       MonitoredServiceLogAnalysisFilter monitoredServiceLogAnalysisFilter, PageParams pageParams) {
     TimeRangeParams timeRangeParams =
         TimeRangeParams.builder()
@@ -106,11 +107,9 @@ public class LogDashboardServiceImpl implements LogDashboardService {
     List<LogAnalysisTag> tags = liveMonitoringLogAnalysisFilter.filterByClusterTypes()
         ? liveMonitoringLogAnalysisFilter.getClusterTypes()
         : Arrays.asList(LogAnalysisTag.values());
-    return getRadarChartLogs(monitoredServiceParams.getAccountIdentifier(),
-        monitoredServiceParams.getProjectIdentifier(), monitoredServiceParams.getOrgIdentifier(),
-        monitoredServiceParams.getServiceIdentifier(), monitoredServiceParams.getEnvironmentIdentifier(), tags,
-        timeRangeParams.getStartTime(), timeRangeParams.getEndTime(), cvConfigIds, pageParams.getPage(),
-        pageParams.getSize(), monitoredServiceLogAnalysisFilter);
+    return getRadarChartLogs(monitoredServiceParams.getAccountIdentifier(), tags, timeRangeParams.getStartTime(),
+        timeRangeParams.getEndTime(), cvConfigIds, pageParams.getPage(), pageParams.getSize(),
+        monitoredServiceLogAnalysisFilter);
   }
 
   @Override
@@ -211,7 +210,7 @@ public class LogDashboardServiceImpl implements LogDashboardService {
                                .toString())
                 .clusterType(
                     LogAnalysisResult.LogAnalysisTagToRadarChartTag(labelTagMap.get(logAnalysisCluster.getLabel())))
-                .text(logAnalysisCluster.getText())
+                .message(logAnalysisCluster.getText())
                 .build());
       });
     });
@@ -219,8 +218,11 @@ public class LogDashboardServiceImpl implements LogDashboardService {
     List<LiveMonitoringLogAnalysisRadarChartClusterDTO> sortedList =
         liveMonitoringLogAnalysisRadarChartClusterDTOS.stream()
             .filter(cluster -> tags.contains(LogAnalysisResult.RadarChartTagToLogAnalysisTag(cluster.getClusterType())))
-            .sorted(Comparator.comparing(LiveMonitoringLogAnalysisRadarChartClusterDTO::getClusterId))
+            .sorted(Comparator.comparing(LiveMonitoringLogAnalysisRadarChartClusterDTO::getClusterType)
+                        .thenComparing(LiveMonitoringLogAnalysisRadarChartClusterDTO::getClusterId))
             .collect(Collectors.toList());
+
+    Collections.reverse(sortedList);
 
     if (monitoredServiceLogAnalysisFilter.hasClusterIdFilter()) {
       sortedList = sortedList.stream()
@@ -263,10 +265,10 @@ public class LogDashboardServiceImpl implements LogDashboardService {
   }
 
   private double getRandomRadiusInExpectedRange(RadarChartTag tag, Random random) {
-    if (tag.equals(LogAnalysisTag.KNOWN)) {
-      return random.nextDouble() * 0.5 + 0.5;
-    } else {
+    if (tag.equals(RadarChartTag.KNOWN_EVENT) || tag.equals(RadarChartTag.UNEXPECTED_FREQUENCY)) {
       return random.nextDouble() + 1;
+    } else {
+      return random.nextDouble() + 2;
     }
   }
 
@@ -356,8 +358,7 @@ public class LogDashboardServiceImpl implements LogDashboardService {
     return PageUtils.offsetAndLimit(sortedList, page, size);
   }
 
-  private PageResponse<AnalyzedRadarChartLogDataDTO> getRadarChartLogs(String accountId, String projectIdentifier,
-      String orgIdentifier, String serviceIdentifier, String environmentIdentifer, List<LogAnalysisTag> tags,
+  private AnalyzedRadarChartLogDataWithCountDTO getRadarChartLogs(String accountId, List<LogAnalysisTag> tags,
       Instant startTime, Instant endTime, List<String> cvConfigIds, int page, int size,
       MonitoredServiceLogAnalysisFilter monitoredServiceLogAnalysisFilter) {
     // for each cvConfigId, get the list of unknown and unexpected analysis results.
@@ -365,7 +366,7 @@ public class LogDashboardServiceImpl implements LogDashboardService {
     // type as LOG
     Map<String, List<AnalysisResult>> cvConfigAnalysisResultMap = new ConcurrentHashMap<>();
 
-    List<AnalyzedRadarChartLogDataDTO.LogData> logDataToBeReturned = Collections.synchronizedList(new ArrayList<>());
+    List<AnalyzedRadarChartLogDataDTO> logDataToBeReturned = Collections.synchronizedList(new ArrayList<>());
     List<Callable<Map<String, List<AnalysisResult>>>> callables = new ArrayList<>();
     cvConfigIds.forEach(cvConfigId -> {
       callables.add(() -> {
@@ -379,7 +380,7 @@ public class LogDashboardServiceImpl implements LogDashboardService {
     allResults.forEach(result -> cvConfigAnalysisResultMap.putAll(result));
 
     // for each cvConfigId, make a call to get the labels/texts
-    List<Callable<List<AnalyzedRadarChartLogDataDTO.LogData>>> logDataCallables = new ArrayList<>();
+    List<Callable<List<AnalyzedRadarChartLogDataDTO>>> logDataCallables = new ArrayList<>();
     cvConfigAnalysisResultMap.keySet().forEach(cvConfigId -> {
       logDataCallables.add(() -> {
         List<AnalysisResult> analysisResults = cvConfigAnalysisResultMap.get(cvConfigId);
@@ -390,31 +391,38 @@ public class LogDashboardServiceImpl implements LogDashboardService {
       });
     });
 
-    List<List<AnalyzedRadarChartLogDataDTO.LogData>> logDataResults =
-        cvngParallelExecutor.executeParallel(logDataCallables);
+    List<List<AnalyzedRadarChartLogDataDTO>> logDataResults = cvngParallelExecutor.executeParallel(logDataCallables);
     logDataResults.forEach(result -> logDataToBeReturned.addAll(result));
 
     List<AnalyzedRadarChartLogDataDTO> sortedList = new ArrayList<>();
     // create the sorted set first. Then form the page response.
     logDataToBeReturned.stream()
-        .filter(logData -> tags.contains(LogAnalysisResult.RadarChartTagToLogAnalysisTag(logData.getClusterType())))
-        .forEach(logData
+        .filter(analyzedRadarChartLogDataDTO
+            -> tags.contains(
+                LogAnalysisResult.RadarChartTagToLogAnalysisTag(analyzedRadarChartLogDataDTO.getClusterType())))
+        .forEach(analyzedRadarChartLogDataDTO
             -> sortedList.add(AnalyzedRadarChartLogDataDTO.builder()
-                                  .projectIdentifier(projectIdentifier)
-                                  .orgIdentifier(orgIdentifier)
-                                  .serviceIdentifier(serviceIdentifier)
-                                  .environmentIdentifier(environmentIdentifer)
-                                  .logData(logData)
+                                  .message(analyzedRadarChartLogDataDTO.getMessage())
+                                  .label(analyzedRadarChartLogDataDTO.getLabel())
+                                  .clusterId(analyzedRadarChartLogDataDTO.getClusterId())
+                                  .count(analyzedRadarChartLogDataDTO.getCount())
+                                  .riskScore(analyzedRadarChartLogDataDTO.getRiskScore())
+                                  .risk(analyzedRadarChartLogDataDTO.getRisk())
+                                  .frequencyData(analyzedRadarChartLogDataDTO.getFrequencyData())
+                                  .clusterType(analyzedRadarChartLogDataDTO.getClusterType())
                                   .build()));
     List<AnalyzedRadarChartLogDataDTO> sortedAnalyzedRadarChartLogDataDTOS =
         sortedList.stream()
-            .sorted(Comparator.comparing(x -> x.getLogData().getClusterId()))
+            .sorted(Comparator.comparing(AnalyzedRadarChartLogDataDTO::getClusterType)
+                        .thenComparing(AnalyzedRadarChartLogDataDTO::getClusterId))
             .collect(Collectors.toList());
+
+    Collections.reverse(sortedAnalyzedRadarChartLogDataDTOS);
 
     if (monitoredServiceLogAnalysisFilter.hasClusterIdFilter()) {
       sortedAnalyzedRadarChartLogDataDTOS = sortedAnalyzedRadarChartLogDataDTOS.stream()
                                                 .filter(analyzedRadarChartLogDataDTO
-                                                    -> analyzedRadarChartLogDataDTO.getLogData().getClusterId().equals(
+                                                    -> analyzedRadarChartLogDataDTO.getClusterId().equals(
                                                         monitoredServiceLogAnalysisFilter.getClusterId()))
                                                 .collect(Collectors.toList());
       Preconditions.checkState(
@@ -425,13 +433,33 @@ public class LogDashboardServiceImpl implements LogDashboardService {
       setAngleAndRadiusForRadarChartData(sortedAnalyzedRadarChartLogDataDTOS.stream()
                                              .filter(analyzedRadarChartLogDataDTO
                                                  -> tags.contains(LogAnalysisResult.RadarChartTagToLogAnalysisTag(
-                                                     analyzedRadarChartLogDataDTO.getLogData().getClusterType())))
+                                                     analyzedRadarChartLogDataDTO.getClusterType())))
                                              .collect(Collectors.toList()));
     }
 
     sortedAnalyzedRadarChartLogDataDTOS =
         filterDataByAngle(sortedAnalyzedRadarChartLogDataDTOS, monitoredServiceLogAnalysisFilter);
-    return PageUtils.offsetAndLimit(sortedAnalyzedRadarChartLogDataDTOS, page, size);
+
+    PageResponse<AnalyzedRadarChartLogDataDTO> analyzedRadarChartLogDataDTOs =
+        PageUtils.offsetAndLimit(sortedAnalyzedRadarChartLogDataDTOS, page, size);
+
+    Map<RadarChartTag, Long> eventCountByEventTypeMap =
+        sortedAnalyzedRadarChartLogDataDTOS.stream()
+            .map(analyzedRadarChartLogDataDTO -> analyzedRadarChartLogDataDTO.getClusterType())
+            .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+
+    return AnalyzedRadarChartLogDataWithCountDTO.builder()
+        .totalClusters(sortedAnalyzedRadarChartLogDataDTOS.size())
+        .eventCounts(Arrays.asList(RadarChartTag.values())
+                         .stream()
+                         .map(clusterType
+                             -> AnalyzedRadarChartLogDataWithCountDTO.LiveMonitoringEventCount.builder()
+                                    .clusterType(clusterType)
+                                    .count(eventCountByEventTypeMap.getOrDefault(clusterType, 0L).intValue())
+                                    .build())
+                         .collect(Collectors.toList()))
+        .logAnalysisRadarCharts(analyzedRadarChartLogDataDTOs)
+        .build();
   }
 
   private void setAngleAndRadiusForRadarChartData(List<AnalyzedRadarChartLogDataDTO> analyzedRadarChartLogDataDTOList) {
@@ -443,9 +471,9 @@ public class LogDashboardServiceImpl implements LogDashboardService {
 
     for (int i = 0; i < analyzedRadarChartLogDataDTOList.size(); i++) {
       AnalyzedRadarChartLogDataDTO analyzedRadarChartLogDataDTO = analyzedRadarChartLogDataDTOList.get(i);
-      analyzedRadarChartLogDataDTO.getLogData().setAngle(angle);
-      analyzedRadarChartLogDataDTO.getLogData().setRadius(
-          getRandomRadiusInExpectedRange(analyzedRadarChartLogDataDTO.getLogData().getClusterType(), random));
+      analyzedRadarChartLogDataDTO.setAngle(angle);
+      analyzedRadarChartLogDataDTO.setRadius(
+          getRandomRadiusInExpectedRange(analyzedRadarChartLogDataDTO.getClusterType(), random));
       angle += angleDifference;
       angle = Math.min(angle, 360);
     }
@@ -461,14 +489,14 @@ public class LogDashboardServiceImpl implements LogDashboardService {
           "Angle filter range should be between 0 and 360");
       filteredLogs = analyzedRadarChartLogDataDTOList.stream()
                          .filter(result
-                             -> result.getLogData().getAngle() >= monitoredServiceLogAnalysisFilter.getMinAngle()
-                                 && result.getLogData().getAngle() <= monitoredServiceLogAnalysisFilter.getMaxAngle())
+                             -> result.getAngle() >= monitoredServiceLogAnalysisFilter.getMinAngle()
+                                 && result.getAngle() <= monitoredServiceLogAnalysisFilter.getMaxAngle())
                          .collect(Collectors.toList());
     }
     return filteredLogs;
   }
 
-  private List<AnalyzedRadarChartLogDataDTO.LogData> mergeClusterWithRadarChartResults(
+  private List<AnalyzedRadarChartLogDataDTO> mergeClusterWithRadarChartResults(
       List<AnalysisResult> analysisResults, List<LogAnalysisCluster> analysisClusters, Instant start, Instant end) {
     Map<Long, AnalysisResult> labelTagMap = new HashMap<>();
 
@@ -479,7 +507,7 @@ public class LogDashboardServiceImpl implements LogDashboardService {
       }
     });
 
-    List<AnalyzedRadarChartLogDataDTO.LogData> logDataList = new ArrayList<>();
+    List<AnalyzedRadarChartLogDataDTO> logDataList = new ArrayList<>();
 
     analysisClusters.forEach(cluster -> {
       Map<Long, Integer> trendMap =
@@ -506,18 +534,18 @@ public class LogDashboardServiceImpl implements LogDashboardService {
         analysisResult.setRiskScore(1.0);
       }
 
-      AnalyzedRadarChartLogDataDTO.LogData data =
-          AnalyzedRadarChartLogDataDTO.LogData.builder()
-              .text(cluster.getText())
+      AnalyzedRadarChartLogDataDTO data =
+          AnalyzedRadarChartLogDataDTO.builder()
+              .message(cluster.getText())
               .label(cluster.getLabel())
               .clusterId(UUID.nameUUIDFromBytes(
                                  (cluster.getVerificationTaskId() + ":" + cluster.getLabel()).getBytes(Charsets.UTF_8))
                              .toString())
               .count(trendMap.values().stream().collect(Collectors.summingInt(Integer::intValue)))
-              .trend(frequencies)
+              .frequencyData(frequencies)
               .clusterType(LogAnalysisResult.LogAnalysisTagToRadarChartTag(analysisResult.getTag()))
               .riskScore(analysisResult.getRiskScore())
-              .riskStatus(analysisResult.getRisk())
+              .risk(analysisResult.getRisk())
               .build();
       logDataList.add(data);
     });

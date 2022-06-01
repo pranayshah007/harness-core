@@ -8,6 +8,8 @@
 package io.harness.delegate.task.cloudformation;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.logging.LogLevel.ERROR;
+import static io.harness.logging.LogLevel.INFO;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateResponseData;
@@ -22,6 +24,7 @@ import io.harness.delegate.task.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.cloudformation.handlers.CloudformationAbstractTaskHandler;
 import io.harness.exception.UnexpectedTypeException;
+import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 
 import com.google.inject.Inject;
@@ -30,7 +33,6 @@ import java.util.Map;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.NotImplementedException;
 import org.jose4j.lang.JoseException;
 
 @OwnedBy(CDP)
@@ -45,7 +47,7 @@ public class CloudformationTaskNG extends AbstractDelegateRunnableTask {
 
   @Override
   public DelegateResponseData run(Object[] parameters) {
-    throw new NotImplementedException("Not implemented");
+    return null;
   }
 
   @Override
@@ -63,6 +65,11 @@ public class CloudformationTaskNG extends AbstractDelegateRunnableTask {
     try {
       CloudformationTaskNGResponse response =
           handler.executeTask(taskParameters, getDelegateId(), getTaskId(), logCallback);
+      if (response.getCommandExecutionStatus().equals(CommandExecutionStatus.SUCCESS)) {
+        logCallback.saveExecutionLog("Success", INFO, CommandExecutionStatus.SUCCESS);
+      } else {
+        logCallback.saveExecutionLog("Failure", ERROR, CommandExecutionStatus.FAILURE);
+      }
       response.setUnitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress));
       return response;
     } catch (Exception e) {

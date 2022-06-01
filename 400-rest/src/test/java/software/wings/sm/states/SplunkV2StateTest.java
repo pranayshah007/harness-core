@@ -285,7 +285,7 @@ public class SplunkV2StateTest extends APMStateVerificationTestBase {
   public void handleAsyncSummaryPassNoData() {
     doReturn("exception").when(executionContext).renderExpression(anyString());
     CVActivityLogger activityLogger = mock(CVActivityLogger.class);
-    when(cvActivityLogService.getLoggerByStateExecutionId(anyString(), anyString())).thenReturn(activityLogger);
+    when(cvActivityLogService.getLoggerByStateExecutionId(any(), any())).thenReturn(activityLogger);
     VerificationStateAnalysisExecutionData logAnalysisExecutionData =
         VerificationStateAnalysisExecutionData.builder()
             .correlationId(UUID.randomUUID().toString())

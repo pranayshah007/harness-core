@@ -8,6 +8,7 @@
 package software.wings.service.impl.yaml;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
+import static io.harness.beans.FeatureName.HELM_OCI_SUPPORT;
 import static io.harness.rule.OwnerRule.ADWAIT;
 import static io.harness.rule.OwnerRule.ARVIND;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
@@ -46,6 +47,7 @@ import static org.mockito.Mockito.doReturn;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.ff.FeatureFlagService;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.yaml.BaseYaml;
@@ -75,12 +77,14 @@ import org.mockito.MockitoAnnotations;
 public class YamlResourceServiceImplTest extends CategoryTest {
   @Mock ApplicationManifestService applicationManifestService;
   @Mock SettingsService settingsService;
+  @Mock private FeatureFlagService featureFlagService;
   @Mock YamlHandlerFactory yamlHandlerFactory;
   @InjectMocks @Inject YamlResourceServiceImpl yamlResourceService;
 
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
+    doReturn(true).when(featureFlagService).isEnabled(eq(HELM_OCI_SUPPORT), any());
   }
 
   @Test

@@ -15,9 +15,9 @@ import software.wings.api.ServiceNowExecutionData;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.approval.ApprovalPollingJobEntity;
 import software.wings.beans.approval.ServiceNowApprovalParams;
-import software.wings.service.impl.servicenow.ServiceNowServiceImpl.ServiceNowFieldType;
-import software.wings.service.impl.servicenow.ServiceNowServiceImpl.ServiceNowMetaDTO;
-import software.wings.service.impl.servicenow.ServiceNowServiceImpl.ServiceNowTicketType;
+import software.wings.beans.servicenow.ServiceNowFieldType;
+import software.wings.beans.servicenow.ServiceNowMetaDTO;
+import software.wings.beans.servicenow.ServiceNowTicketType;
 
 import java.util.List;
 import java.util.Map;

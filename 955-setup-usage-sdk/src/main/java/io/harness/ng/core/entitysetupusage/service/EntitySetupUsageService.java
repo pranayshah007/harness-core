@@ -30,6 +30,9 @@ public interface EntitySetupUsageService {
   List<EntitySetupUsageDTO> listAllReferredUsages(int page, int size, String accountIdentifier,
       String referredByEntityFQN, EntityType referredEntityType, String searchTerm);
 
+  List<EntitySetupUsageDTO> listAllReferredUsages(
+      String accountIdentifier, String referredByEntityFQN, EntityType referredEntityType);
+
   Page<EntitySetupUsageDTO> list(int page, int size, String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String referredEntityIdentifier, EntityType referredEntityType, String searchTerm);
 

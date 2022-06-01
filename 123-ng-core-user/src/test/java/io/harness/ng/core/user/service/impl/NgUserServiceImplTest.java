@@ -32,7 +32,6 @@ import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import io.harness.CategoryTest;
-import io.harness.Team;
 import io.harness.accesscontrol.AccessControlAdminClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
@@ -56,6 +55,7 @@ import io.harness.ng.core.user.entities.UserMetadata.UserMetadataKeys;
 import io.harness.ng.core.user.exception.InvalidUserRemoveRequestException;
 import io.harness.ng.core.user.remote.dto.UserFilter;
 import io.harness.ng.core.user.service.LastAdminCheckService;
+import io.harness.notification.Team;
 import io.harness.notification.channeldetails.EmailChannel;
 import io.harness.notification.channeldetails.NotificationChannel;
 import io.harness.notification.notificationclient.NotificationClient;

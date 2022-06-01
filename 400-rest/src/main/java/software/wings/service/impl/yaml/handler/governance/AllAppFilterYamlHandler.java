@@ -7,6 +7,7 @@
 
 package software.wings.service.impl.yaml.handler.governance;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.exception.InvalidRequestException;
@@ -65,6 +66,13 @@ public class AllAppFilterYamlHandler extends ApplicationFilterYamlHandler<AllApp
       AllAppFilter bean, ChangeContext<AllAppFilter.Yaml> changeContext, List<ChangeContext> changeSetContext) {
     AllAppFilter.Yaml yaml = changeContext.getYaml();
 
+    if (isEmpty(yaml.getEnvSelection())) {
+      throw new InvalidRequestException("Environment Selection Missing in Yaml");
+    }
+    if (isEmpty(yaml.getServiceSelection())) {
+      throw new InvalidRequestException("Service Selection Missing in Yaml");
+    }
+
     EnvironmentFilterYamlHandler environmentFilterYamlHandler =
         yamlHandlerFactory.getYamlHandler(YamlType.ENV_FILTER, yaml.getEnvSelection().get(0).getFilterType().name());
     ServiceFilterYamlHandler serviceFilterYamlHandler = yamlHandlerFactory.getYamlHandler(YamlType.SERVICE_FILTER);
@@ -74,17 +82,16 @@ public class AllAppFilterYamlHandler extends ApplicationFilterYamlHandler<AllApp
     }
 
     List<EnvironmentFilter> environmentFilters = new ArrayList<>();
+
     for (EnvironmentFilterYaml entry : yaml.getEnvSelection()) {
       ChangeContext clonedContext = cloneFileChangeContext(changeContext, entry).build();
       environmentFilters.add(environmentFilterYamlHandler.upsertFromYaml(clonedContext, changeSetContext));
     }
 
     List<ServiceFilter> serviceFilters = new ArrayList<>();
-    if (isNotEmpty(yaml.getServiceSelection())) {
-      for (ServiceFilter.Yaml entry : yaml.getServiceSelection()) {
-        ChangeContext clonedContext = cloneFileChangeContext(changeContext, entry).build();
-        serviceFilters.add(serviceFilterYamlHandler.upsertFromYaml(clonedContext, changeSetContext));
-      }
+    for (ServiceFilter.Yaml entry : yaml.getServiceSelection()) {
+      ChangeContext clonedContext = cloneFileChangeContext(changeContext, entry).build();
+      serviceFilters.add(serviceFilterYamlHandler.upsertFromYaml(clonedContext, changeSetContext));
     }
 
     bean.setFilterType(yaml.getFilterType());

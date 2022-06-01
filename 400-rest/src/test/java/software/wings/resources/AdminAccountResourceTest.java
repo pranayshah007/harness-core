@@ -150,7 +150,7 @@ public class AdminAccountResourceTest extends CategoryTest {
         .target("/admin/accounts/")
         .request()
         .post(entity(account, MediaType.APPLICATION_JSON), new GenericType<RestResponse<Boolean>>() {});
-    verify(adminAccountService).createAccount(eq(account), anyString());
+    verify(adminAccountService).createAccount(eq(account), any());
   }
 
   @Test
@@ -174,7 +174,7 @@ public class AdminAccountResourceTest extends CategoryTest {
         .request()
         .put(
             entity(moduleLicenseDTO, MediaType.APPLICATION_JSON), new GenericType<RestResponse<ModuleLicenseDTO>>() {});
-    verify(adminLicenseHttpClient).updateModuleLicense(anyString(), eq(accountId), eq(moduleLicenseDTO));
+    verify(adminLicenseHttpClient).updateModuleLicense(any(), eq(accountId), eq(moduleLicenseDTO));
   }
 
   @Test
@@ -194,6 +194,6 @@ public class AdminAccountResourceTest extends CategoryTest {
         .queryParam("accountIdentifier", accountId)
         .request()
         .delete(new GenericType<RestResponse<Void>>() {});
-    verify(adminLicenseHttpClient).deleteModuleLicense(anyString(), anyString());
+    verify(adminLicenseHttpClient).deleteModuleLicense(any(), any());
   }
 }

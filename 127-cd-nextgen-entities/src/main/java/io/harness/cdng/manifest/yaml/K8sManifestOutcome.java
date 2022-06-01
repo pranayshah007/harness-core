@@ -16,6 +16,7 @@ import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.pms.yaml.ParameterField;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.util.List;
 import lombok.Builder;
 import lombok.Value;
 import lombok.experimental.FieldNameConstants;
@@ -33,4 +34,5 @@ public class K8sManifestOutcome implements ManifestOutcome {
   String type = ManifestType.K8Manifest;
   StoreConfig store;
   ParameterField<Boolean> skipResourceVersioning;
+  ParameterField<List<String>> valuesPaths;
 }

@@ -1,0 +1,147 @@
+{
+  "pipeline": {
+    "name": "test",
+    "identifier": "test",
+    "projectIdentifier": "test",
+    "orgIdentifier": "default",
+    "tags": {
+      "__uuid": "Lo-qDCWYTem1FbShAaSJbQ"
+    },
+    "stages": [
+      {
+        "stage": {
+          "name": "foo",
+          "identifier": "foo",
+          "description": "",
+          "type": "Deployment",
+          "spec": {
+            "serviceConfig": {
+              "serviceRef": "foo",
+              "serviceDefinition": {
+                "type": "Kubernetes",
+                "spec": {
+                  "variables": [],
+                  "__uuid": "xkraBbciSnOpKXv4m3s2uw"
+                },
+                "__uuid": "75y2OR4ST_6iR_sOOCu3jA"
+              },
+              "__uuid": "cRqn3OD4SS63erhDdzSvaw"
+            },
+            "infrastructure": {
+              "environmentRef": "bar",
+              "infrastructureDefinition": {
+                "type": "KubernetesDirect",
+                "spec": {
+                  "namespace": "nana",
+                  "releaseName": "release-\u003c+INFRA_KEY\u003e",
+                  "connectorRef": "bar",
+                  "__uuid": "Z5-RPYh-T9mFrDGVY0ruhw"
+                },
+                "provisioner": {
+                  "steps": [
+                    {
+                      "step": {
+                        "type": "CreateStack",
+                        "name": "Create Stack",
+                        "identifier": "createStack",
+                        "timeout": "10m",
+                        "spec": {
+                          "provisionerIdentifier": "foobar",
+                          "configuration": {
+                            "connectorRef": "barbar",
+                            "region": "us-west-2",
+                            "templateFile": {
+                              "type": "S3URL",
+                              "spec": {
+                                "templateUrl": "https://satyam-cf-test.s3.amazonaws.com/template-with-vars.yaml",
+                                "__uuid": "5ZTbGhzJSRy2yR9IAXZJWA"
+                              },
+                              "__uuid": "Li_pwJUaRsC7OESl5Q7vQQ"
+                            },
+                            "parameters": [
+                              {
+                                "identifier": "parametersid1",
+                                "store": {
+                                  "type": "Github",
+                                  "spec": {
+                                    "gitFetchType": "Branch",
+                                    "connectorRef": "cftest",
+                                    "branch": "master",
+                                    "paths": [
+                                      "parameters1.json",
+                                      "parameters2.json"
+                                    ],
+                                    "__uuid": "7nbIbzF_RRiyzjpSNZiydA"
+                                  },
+                                  "__uuid": "9NroAcM8Tm-UEDe31qeOMQ"
+                                },
+                                "__uuid": "CphTVIkOSsmSSjuq7BrL4A"
+                              }
+                            ],
+                            "stackName": "ofofo",
+                            "__uuid": "cIZXHiJsTAGwIXFFh22nbQ"
+                          },
+                          "__uuid": "stWEat8GRP6cjTgvMCFAsQ"
+                        },
+                        "__uuid": "F-kNglznTeuGMGn6BWD11A"
+                      },
+                      "__uuid": "GwSeYcrRSeCgFeBdsYihTA"
+                    }
+                  ],
+                  "__uuid": "qJyE7IX2Qe2_BvQG8Axabg"
+                },
+                "__uuid": "fxMy9saWRQyt3UobkaHUXA"
+              },
+              "allowSimultaneousDeployments": false,
+              "__uuid": "H-B_2PizRqu9R8tCbTiqIg"
+            },
+            "execution": {
+              "steps": [
+                {
+                  "step": {
+                    "type": "K8sApply",
+                    "name": "babar",
+                    "identifier": "babar",
+                    "spec": {
+                      "filePaths": [
+                        "bababab"
+                      ],
+                      "skipDryRun": false,
+                      "skipSteadyStateCheck": false,
+                      "__uuid": "C_81Qg2nTZKXZdLkDlgV1w"
+                    },
+                    "timeout": "10m",
+                    "__uuid": "ryFFe5h7TTOK29Rth4PBMQ"
+                  },
+                  "__uuid": "R5n-pucLTsuB98PmmhvZ5A"
+                }
+              ],
+              "rollbackSteps": [],
+              "__uuid": "bbAVIDYBTbevm0hOE4S7TQ"
+            },
+            "__uuid": "muT9XdtMQz25RzK-U8azAw"
+          },
+          "failureStrategies": [
+            {
+              "onFailure": {
+                "errors": [
+                  "AllErrors"
+                ],
+                "action": {
+                  "type": "StageRollback",
+                  "__uuid": "u1kTZsMITBuDG7J6V2wG_g"
+                },
+                "__uuid": "_hNqZYpFQN2RBXQgGUMY4g"
+              },
+              "__uuid": "QFWbggSQTeifDrnKf1DrnQ"
+            }
+          ],
+          "__uuid": "bZyzA5mKSKCrI5w161pAkg"
+        },
+        "__uuid": "KYiuo-NdTWCr6phlny7VCw"
+      }
+    ],
+    "__uuid": "r5wwSyrKSLyP_W3LTsYGew"
+  },
+  "__uuid": "iooRhdO9TwmteSmJ96IjJw"
+}

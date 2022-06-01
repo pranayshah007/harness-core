@@ -12,6 +12,7 @@ import static io.harness.distribution.constraint.Consumer.State.ACTIVE;
 import static io.harness.distribution.constraint.Consumer.State.BLOCKED;
 import static io.harness.distribution.constraint.Consumer.State.FINISHED;
 import static io.harness.rule.OwnerRule.ALEXEI;
+import static io.harness.rule.OwnerRule.FERNANDOD;
 import static io.harness.rule.OwnerRule.PRASHANT;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -28,6 +29,7 @@ import io.harness.OrchestrationStepsTestBase;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.distribution.constraint.Constraint;
 import io.harness.distribution.constraint.Consumer.State;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanExecutionService;
@@ -43,8 +45,9 @@ import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.repositories.ResourceRestraintInstanceRepository;
 import io.harness.rule.Owner;
+import io.harness.steps.resourcerestraint.beans.HoldingScope;
+import io.harness.steps.resourcerestraint.beans.ResourceRestraint;
 import io.harness.steps.resourcerestraint.beans.ResourceRestraintInstance;
-import io.harness.testlib.RealMongo;
 
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
@@ -61,8 +64,6 @@ import org.mockito.Spy;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class ResourceRestraintInstanceServiceImplTest extends OrchestrationStepsTestBase {
-  private static final String PLAN = "PLAN";
-  private static final String OTHER = "OTHER";
   @Inject private ResourceRestraintInstanceRepository restraintInstanceRepository;
 
   @Mock private PlanExecutionService planExecutionService;
@@ -72,7 +73,6 @@ public class ResourceRestraintInstanceServiceImplTest extends OrchestrationSteps
   @Test
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
-  @RealMongo
   public void shouldTestSave() {
     ResourceRestraintInstance instance = ResourceRestraintInstance.builder()
                                              .releaseEntityId(generateUuid())
@@ -90,7 +90,6 @@ public class ResourceRestraintInstanceServiceImplTest extends OrchestrationSteps
   @Test
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
-  @RealMongo
   public void shouldTestActivateBlockedInstance() {
     ResourceRestraintInstance instance = ResourceRestraintInstance.builder()
                                              .releaseEntityId(generateUuid())
@@ -113,7 +112,6 @@ public class ResourceRestraintInstanceServiceImplTest extends OrchestrationSteps
   @Test
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
-  @RealMongo
   public void shouldTestActivateBlockedInstance_InvalidRequestException() {
     ResourceRestraintInstance instance = ResourceRestraintInstance.builder()
                                              .releaseEntityId(generateUuid())
@@ -136,7 +134,6 @@ public class ResourceRestraintInstanceServiceImplTest extends OrchestrationSteps
   @Test
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
-  @RealMongo
   public void shouldTestFinishActiveInstance() {
     ResourceRestraintInstance instance = ResourceRestraintInstance.builder()
                                              .releaseEntityId(generateUuid())
@@ -159,7 +156,6 @@ public class ResourceRestraintInstanceServiceImplTest extends OrchestrationSteps
   @Test
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
-  @RealMongo
   public void shouldTestFinishActiveInstance_InvalidRequestException() {
     ResourceRestraintInstance instance = ResourceRestraintInstance.builder()
                                              .releaseEntityId(generateUuid())
@@ -182,9 +178,8 @@ public class ResourceRestraintInstanceServiceImplTest extends OrchestrationSteps
   @Test
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
-  @RealMongo
   public void shouldUpdateActiveConstraintsForInstance_ForPlan() {
-    ResourceRestraintInstance instance = saveInstance(BLOCKED, PLAN);
+    ResourceRestraintInstance instance = saveInstance(BLOCKED, HoldingScope.PIPELINE);
 
     when(planExecutionService.get(any())).thenReturn(PlanExecution.builder().status(Status.SUCCEEDED).build());
 
@@ -199,9 +194,8 @@ public class ResourceRestraintInstanceServiceImplTest extends OrchestrationSteps
   @Test
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
-  @RealMongo
   public void shouldUpdateActiveConstraintsForInstance_ForPlan_InvalidRequestException() {
-    ResourceRestraintInstance instance = saveInstance(BLOCKED, PLAN);
+    ResourceRestraintInstance instance = saveInstance(BLOCKED, HoldingScope.PIPELINE);
 
     when(planExecutionService.get(any())).thenThrow(new InvalidRequestException(""));
 
@@ -212,16 +206,15 @@ public class ResourceRestraintInstanceServiceImplTest extends OrchestrationSteps
   @Test
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
-  @RealMongo
   public void shouldUpdateActiveConstraintsForInstance_ForOther() {
     Ambiance ambiance = Ambiance.newBuilder()
                             .setPlanExecutionId(generateUuid())
                             .addAllLevels(Collections.singletonList(
                                 Level.newBuilder().setRuntimeId(generateUuid()).setSetupId(generateUuid()).build()))
                             .build();
-    ResourceRestraintInstance instance = saveInstance(BLOCKED, OTHER);
+    ResourceRestraintInstance instance = saveInstance(BLOCKED, HoldingScope.STAGE);
 
-    when(nodeExecutionService.getByPlanNodeUuid(any(), any()))
+    when(nodeExecutionService.getWithFieldsIncluded(any(), any()))
         .thenReturn(
             NodeExecution.builder()
                 .ambiance(ambiance)
@@ -247,9 +240,8 @@ public class ResourceRestraintInstanceServiceImplTest extends OrchestrationSteps
   @Test
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
-  @RealMongo
   public void shouldUpdateActiveConstraintsForInstance_ForOther_InvalidRequestException() {
-    ResourceRestraintInstance instance = saveInstance(BLOCKED, OTHER);
+    ResourceRestraintInstance instance = saveInstance(BLOCKED, HoldingScope.STAGE);
 
     when(nodeExecutionService.getByPlanNodeUuid(any(), any())).thenThrow(new InvalidRequestException(""));
 
@@ -260,9 +252,8 @@ public class ResourceRestraintInstanceServiceImplTest extends OrchestrationSteps
   @Test
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
-  @RealMongo
   public void shouldGetAllByRestraintIdAndResourceUnitAndStates() {
-    ResourceRestraintInstance instance = saveInstance(ACTIVE, PLAN);
+    ResourceRestraintInstance instance = saveInstance(ACTIVE, HoldingScope.PIPELINE);
 
     List<ResourceRestraintInstance> instances =
         resourceRestraintInstanceService.getAllByRestraintIdAndResourceUnitAndStates(
@@ -276,11 +267,10 @@ public class ResourceRestraintInstanceServiceImplTest extends OrchestrationSteps
   @Test
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
-  @RealMongo
   public void shouldGetMaxOrder() {
     String resourceRestraintId = generateUuid();
-    ResourceRestraintInstance instance = saveInstance(resourceRestraintId, ACTIVE, PLAN, 1);
-    saveInstance(resourceRestraintId, ACTIVE, PLAN, 2);
+    ResourceRestraintInstance instance = saveInstance(resourceRestraintId, ACTIVE, HoldingScope.PIPELINE, 1);
+    saveInstance(resourceRestraintId, ACTIVE, HoldingScope.PIPELINE, 2);
 
     int maxOrder = resourceRestraintInstanceService.getMaxOrder(instance.getResourceRestraintId());
     assertThat(maxOrder).isEqualTo(2);
@@ -289,37 +279,36 @@ public class ResourceRestraintInstanceServiceImplTest extends OrchestrationSteps
   @Test
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
-  @RealMongo
   public void shouldGetAllCurrentlyAcquiredPermits() {
     String releaseEntityId = generateUuid();
     ResourceRestraintInstance instance = saveInstance(releaseEntityId);
     saveInstance(releaseEntityId);
 
     int maxOrder = resourceRestraintInstanceService.getAllCurrentlyAcquiredPermits(
-        instance.getReleaseEntityType(), instance.getReleaseEntityId());
+        HoldingScope.valueOf(instance.getReleaseEntityType()), instance.getReleaseEntityId());
     assertThat(maxOrder).isEqualTo(2);
   }
 
   private ResourceRestraintInstance saveInstance(String releaseEntityId) {
-    return saveInstance(generateUuid(), ACTIVE, PLAN, releaseEntityId, 1);
+    return saveInstance(generateUuid(), ACTIVE, HoldingScope.PIPELINE, releaseEntityId, 1);
   }
 
-  private ResourceRestraintInstance saveInstance(State state, String releaseEntityType) {
-    return saveInstance(generateUuid(), state, releaseEntityType,
-        releaseEntityType.equals(PLAN) ? generateUuid() : generateUuid() + '|' + generateUuid(), 1);
-  }
-
-  private ResourceRestraintInstance saveInstance(
-      String resourceRestraintId, State state, String releaseEntityType, int order) {
-    return saveInstance(resourceRestraintId, state, releaseEntityType,
-        releaseEntityType.equals(PLAN) ? generateUuid() : generateUuid() + '|' + generateUuid(), order);
+  private ResourceRestraintInstance saveInstance(State state, HoldingScope scope) {
+    return saveInstance(generateUuid(), state, scope,
+        scope == HoldingScope.PIPELINE ? generateUuid() : generateUuid() + '|' + generateUuid(), 1);
   }
 
   private ResourceRestraintInstance saveInstance(
-      String resourceRestraintId, State state, String releaseEntityType, String releaseEntityId, int order) {
+      String resourceRestraintId, State state, HoldingScope scope, int order) {
+    return saveInstance(resourceRestraintId, state, scope,
+        scope == HoldingScope.PIPELINE ? generateUuid() : generateUuid() + '|' + generateUuid(), order);
+  }
+
+  private ResourceRestraintInstance saveInstance(
+      String resourceRestraintId, State state, HoldingScope releaseEntityType, String releaseEntityId, int order) {
     ResourceRestraintInstance instance = ResourceRestraintInstance.builder()
                                              .releaseEntityId(releaseEntityId)
-                                             .releaseEntityType(releaseEntityType)
+                                             .releaseEntityType(releaseEntityType.name())
                                              .resourceUnit(generateUuid())
                                              .order(order)
                                              .permits(1)
@@ -368,5 +357,20 @@ public class ResourceRestraintInstanceServiceImplTest extends OrchestrationSteps
 
   private ResourceRestraintInstance getResourceRestraint(State state) {
     return ResourceRestraintInstance.builder().resourceRestraintId(generateUuid()).state(state).build();
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldCreateAbstraction() {
+    ResourceRestraint resourceRestraint =
+        ResourceRestraint.builder().uuid("UUID").capacity(1010).strategy(Constraint.Strategy.ASAP).build();
+    Constraint constraint = resourceRestraintInstanceService.createAbstraction(resourceRestraint);
+    assertThat(constraint).isNotNull();
+    assertThat(constraint.getId()).isNotNull();
+    assertThat(constraint.getId().getValue()).isEqualTo("UUID");
+    assertThat(constraint.getSpec()).isNotNull();
+    assertThat(constraint.getSpec().getLimits()).isEqualTo(1010);
+    assertThat(constraint.getSpec().getStrategy()).isEqualTo(Constraint.Strategy.ASAP);
   }
 }

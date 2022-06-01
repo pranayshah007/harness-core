@@ -61,6 +61,7 @@ import software.wings.beans.command.CodeDeployCommandExecutionData;
 import software.wings.beans.command.CodeDeployParams;
 import software.wings.beans.command.Command;
 import software.wings.beans.command.CommandExecutionContext;
+import software.wings.beans.command.CommandMapper;
 import software.wings.delegatetasks.aws.AwsCommandHelper;
 import software.wings.service.impl.AwsHelperService;
 import software.wings.service.impl.aws.model.AwsCodeDeployS3LocationData;
@@ -241,7 +242,7 @@ public class AwsCodeDeployState extends State {
             .data(TaskData.builder()
                       .async(true)
                       .taskType(TaskType.COMMAND.name())
-                      .parameters(new Object[] {command, commandExecutionContext})
+                      .parameters(new Object[] {CommandMapper.toCommandDTO(command), commandExecutionContext})
                       .timeout(getTaskTimeout())
                       .build())
             .setupAbstraction(Cd1SetupFields.ENV_ID_FIELD, envId)

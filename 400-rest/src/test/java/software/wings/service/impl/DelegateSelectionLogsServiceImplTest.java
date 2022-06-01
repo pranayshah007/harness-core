@@ -119,7 +119,7 @@ public class DelegateSelectionLogsServiceImplTest extends WingsBaseTest {
     Set<String> delegateIds = Sets.newHashSet(delegate);
     DelegateTask task =
         DelegateTask.builder().uuid(taskId).accountId(accountId).selectionLogsTrackingEnabled(true).build();
-    delegateSelectionLogsService.logEligibleDelegatesToExecuteTask(delegateIds, task);
+    delegateSelectionLogsService.logEligibleDelegatesToExecuteTask(delegateIds, task, false);
     List<DelegateSelectionLogParams> delegateSelectionLogParams =
         delegateSelectionLogsService.fetchTaskSelectionLogs(accountId, taskId);
 
@@ -182,7 +182,7 @@ public class DelegateSelectionLogsServiceImplTest extends WingsBaseTest {
                             .accountId(generateUuid())
                             .selectionLogsTrackingEnabled(true)
                             .build();
-    assertThatCode(() -> delegateSelectionLogsService.logEligibleDelegatesToExecuteTask(Sets.newHashSet(), task))
+    assertThatCode(() -> delegateSelectionLogsService.logEligibleDelegatesToExecuteTask(Sets.newHashSet(), task, false))
         .doesNotThrowAnyException();
   }
 

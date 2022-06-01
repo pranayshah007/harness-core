@@ -18,6 +18,7 @@ import software.wings.beans.SettingAttribute;
 import software.wings.beans.yaml.ChangeContext;
 import software.wings.infra.AzureVMSSInfra;
 import software.wings.service.impl.yaml.handler.CloudProviderInfrastructure.CloudProviderInfrastructureYamlHandler;
+import software.wings.service.impl.yaml.service.YamlHelper;
 import software.wings.service.intfc.SettingsService;
 
 import com.google.inject.Inject;
@@ -25,6 +26,7 @@ import java.util.List;
 
 public class AzureVMSSInfraYamlHandler extends CloudProviderInfrastructureYamlHandler<Yaml, AzureVMSSInfra> {
   @Inject private SettingsService settingsService;
+  @Inject private YamlHelper yamlHelper;
 
   @Override
   public Yaml toYaml(AzureVMSSInfra bean, String appId) {
@@ -70,8 +72,10 @@ public class AzureVMSSInfraYamlHandler extends CloudProviderInfrastructureYamlHa
   private void toBean(AzureVMSSInfra bean, ChangeContext<Yaml> changeContext) {
     Yaml yaml = changeContext.getYaml();
     String accountId = changeContext.getChange().getAccountId();
+    String appId = yamlHelper.getAppId(accountId, changeContext.getChange().getFilePath());
     SettingAttribute cloudProvider = settingsService.getSettingAttributeByName(accountId, yaml.getCloudProviderName());
     notNullCheck("Cloud Provider is NULL", cloudProvider);
+    settingsService.checkRbacOnSettingAttribute(appId, cloudProvider);
     notNullCheck("Subscription Id is NULL", yaml.getSubscriptionId());
     notNullCheck("Resource Group Name is NULL", yaml.getResourceGroupName());
     notNullCheck("Base Scale Set Name is NULL", yaml.getBaseVMSSName());

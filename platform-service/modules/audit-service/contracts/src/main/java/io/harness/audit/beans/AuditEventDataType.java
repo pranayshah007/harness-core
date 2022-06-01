@@ -16,6 +16,7 @@ public enum AuditEventDataType {
   UserInvitationAuditEventData(AuditEventDataTypeConstants.USER_INVITATION_AUDIT_EVENT_DATA),
   AddCollaboratorAuditEventData(AuditEventDataTypeConstants.ADD_COLLABORATOR_AUDIT_EVENT_DATA),
   TemplateAuditEventData(AuditEventDataTypeConstants.TEMPLATE_AUDIT_EVENT_DATA),
+  OpaAuditEventData(AuditEventDataTypeConstants.OPA_AUDIT_EVENT_DATA),
 
   // Deprecated
   USER_INVITE(AuditEventDataTypeConstants.USER_INVITE),

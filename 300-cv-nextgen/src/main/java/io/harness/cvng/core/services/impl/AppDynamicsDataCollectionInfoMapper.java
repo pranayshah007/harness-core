@@ -30,13 +30,10 @@ public class AppDynamicsDataCollectionInfoMapper
                     .stream()
                     .map(metricInfo
                         -> AppMetricInfoDTO.builder()
-                               .baseFolder(metricInfo.getBaseFolder())
                                .metricName(metricInfo.getMetricName())
                                .metricIdentifier(metricInfo.getIdentifier())
-                               .metricPath(metricInfo.getMetricPath())
-                               .serviceInstanceMetricPath(metricInfo.getDeploymentVerification() == null
-                                       ? null
-                                       : metricInfo.getDeploymentVerification().getServiceInstanceMetricPath())
+                               .completeMetricPath(metricInfo.getCompleteMetricPath())
+                               .completeServiceInstanceMetricPath(metricInfo.getCompleteServiceInstanceMetricPath())
                                .build())
                     .collect(Collectors.toList()))
             .build();

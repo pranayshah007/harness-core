@@ -20,6 +20,7 @@ import software.wings.beans.yaml.ChangeContext;
 import software.wings.infra.PcfInfraStructure;
 import software.wings.infra.PcfInfraStructure.Yaml;
 import software.wings.service.impl.yaml.handler.CloudProviderInfrastructure.CloudProviderInfrastructureYamlHandler;
+import software.wings.service.impl.yaml.service.YamlHelper;
 import software.wings.service.intfc.SettingsService;
 
 import com.google.inject.Inject;
@@ -28,6 +29,8 @@ import java.util.List;
 @OwnedBy(CDP)
 public class PcfInfraStructureYamlHandler extends CloudProviderInfrastructureYamlHandler<Yaml, PcfInfraStructure> {
   @Inject private SettingsService settingsService;
+  @Inject private YamlHelper yamlHelper;
+
   @Override
   public Yaml toYaml(PcfInfraStructure bean, String appId) {
     SettingAttribute cloudProvider = settingsService.get(bean.getCloudProviderId());
@@ -51,8 +54,10 @@ public class PcfInfraStructureYamlHandler extends CloudProviderInfrastructureYam
   private void toBean(PcfInfraStructure bean, ChangeContext<Yaml> changeContext) {
     Yaml yaml = changeContext.getYaml();
     String accountId = changeContext.getChange().getAccountId();
+    String appId = yamlHelper.getAppId(accountId, changeContext.getChange().getFilePath());
     SettingAttribute cloudProvider = settingsService.getSettingAttributeByName(accountId, yaml.getCloudProviderName());
     notNullCheck(format("Cloud Provider with name %s does not exist", yaml.getCloudProviderName()), cloudProvider);
+    settingsService.checkRbacOnSettingAttribute(appId, cloudProvider);
     bean.setCloudProviderId(cloudProvider.getUuid());
     bean.setOrganization(yaml.getOrganization());
     bean.setRouteMaps(yaml.getRouteMaps());

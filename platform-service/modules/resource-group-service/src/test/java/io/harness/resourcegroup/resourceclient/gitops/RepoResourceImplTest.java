@@ -12,7 +12,6 @@ import static io.harness.rule.OwnerRule.YOGESH;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyInt;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
@@ -70,11 +69,6 @@ public class RepoResourceImplTest extends CategoryTest {
   @Test
   @Owner(developers = YOGESH)
   @Category(UnitTests.class)
-  public void getResourceInfoFromEvent() {}
-
-  @Test
-  @Owner(developers = YOGESH)
-  @Category(UnitTests.class)
   public void validateEmptyResourceList() {
     assertThat(repositoryResource.validate(
                    new ArrayList<>(), Scope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER)))
@@ -96,7 +90,7 @@ public class RepoResourceImplTest extends CategoryTest {
 
     when(call.execute())
         .thenReturn(Response.success(PageResponse.<Repository>builder().content(repositories.subList(0, 30)).build()));
-    doReturn(call).when(gitopsResourceClient).listRepositories(any(), any(), any(), anyInt(), anyInt(), any());
+    doReturn(call).when(gitopsResourceClient).listRepositories(any());
 
     final List<Boolean> validate =
         repositoryResource.validate(resourceIds, Scope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER));

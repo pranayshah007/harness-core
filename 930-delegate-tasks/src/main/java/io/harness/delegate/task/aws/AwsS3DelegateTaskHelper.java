@@ -17,9 +17,10 @@ import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsManualConfigSpecDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsS3BucketResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsTaskParams;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
+import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
 
-import software.wings.delegatetasks.ExceptionMessageSanitizer;
 import software.wings.service.impl.AwsApiHelperService;
 
 import com.google.inject.Inject;
@@ -41,8 +42,7 @@ public class AwsS3DelegateTaskHelper {
   @Inject private final AwsNgConfigMapper awsNgConfigMapper;
 
   public DelegateResponseData getS3Buckets(AwsTaskParams awsTaskParams) {
-    decryptRequestDTOs(awsTaskParams);
-
+    decryptRequestDTOs(awsTaskParams.getAwsConnector(), awsTaskParams.getEncryptionDetails());
     AwsInternalConfig awsInternalConfig = getAwsInternalConfig(awsTaskParams);
     List<String> buckets = awsApiHelperService.listS3Buckets(awsInternalConfig, awsTaskParams.getRegion());
     return AwsS3BucketResponse.builder()
@@ -58,13 +58,12 @@ public class AwsS3DelegateTaskHelper {
     return awsInternalConfig;
   }
 
-  private void decryptRequestDTOs(AwsTaskParams awsTaskParams) {
-    AwsConnectorDTO awsConnectorDTO = awsTaskParams.getAwsConnector();
+  public void decryptRequestDTOs(AwsConnectorDTO awsConnectorDTO, List<EncryptedDataDetail> encryptionDetails) {
     if (awsConnectorDTO.getCredential() != null && awsConnectorDTO.getCredential().getConfig() != null) {
       secretDecryptionService.decrypt(
-          (AwsManualConfigSpecDTO) awsConnectorDTO.getCredential().getConfig(), awsTaskParams.getEncryptionDetails());
+          (AwsManualConfigSpecDTO) awsConnectorDTO.getCredential().getConfig(), encryptionDetails);
       ExceptionMessageSanitizer.storeAllSecretsForSanitizing(
-          (AwsManualConfigSpecDTO) awsConnectorDTO.getCredential().getConfig(), awsTaskParams.getEncryptionDetails());
+          (AwsManualConfigSpecDTO) awsConnectorDTO.getCredential().getConfig(), encryptionDetails);
     }
   }
 }

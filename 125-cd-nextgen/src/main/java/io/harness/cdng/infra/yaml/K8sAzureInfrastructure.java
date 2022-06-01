@@ -15,6 +15,7 @@ import io.harness.cdng.infra.beans.InfraMapping;
 import io.harness.cdng.infra.beans.K8sAzureInfraMapping;
 import io.harness.filters.ConnectorRefExtractorHelper;
 import io.harness.filters.WithConnectorRef;
+import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.SkipAutoEvaluation;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
@@ -78,11 +79,11 @@ public class K8sAzureInfrastructure implements Infrastructure, Visitable, WithCo
   @Override
   public InfraMapping getInfraMapping() {
     return K8sAzureInfraMapping.builder()
-        .gcpConnector(connectorRef.getValue())
+        .azureConnector(connectorRef.getValue())
         .namespace(namespace.getValue())
         .cluster(cluster.getValue())
-        .subscription(cluster.getValue())
-        .resourceGroup(cluster.getValue())
+        .subscription(subscriptionId.getValue())
+        .resourceGroup(resourceGroup.getValue())
         .build();
   }
 

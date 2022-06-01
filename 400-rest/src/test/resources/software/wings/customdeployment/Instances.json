@@ -104,7 +104,7 @@
       {
         "access_ip_v4": "10.244.12.17",
         "access_ip_v6": "10.20.30.40",
-        "admin_pass": "",
+        "admin_pass": null,
         "all_metadata": {
           "type": "app-vm"
         },

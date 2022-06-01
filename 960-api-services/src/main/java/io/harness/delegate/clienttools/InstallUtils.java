@@ -8,7 +8,6 @@
 package io.harness.delegate.clienttools;
 
 import static io.harness.annotations.dev.HarnessTeam.DEL;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.HarnessStringUtils.join;
 import static io.harness.filesystem.FileIo.createDirectoryIfDoesNotExist;
 import static io.harness.network.Http.getBaseUrl;
@@ -22,9 +21,9 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Table;
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
@@ -43,11 +42,12 @@ import org.zeroturnaround.exec.stream.LogOutputStream;
 @Slf4j
 @OwnedBy(DEL)
 public class InstallUtils {
-  private static final Table<ClientTool, ClientToolVersion, String> toolPaths = HashBasedTable.create();
+  private static final Table<ClientTool, ClientToolVersion, Path> toolPaths = HashBasedTable.create();
 
   public static String getPath(final ClientTool tool, final ClientToolVersion version) {
-    if (toolPaths.contains(tool, version)) {
-      return toolPaths.get(tool, version);
+    final Path toolPath = toolPaths.get(tool, version);
+    if (toolPath != null) {
+      return toolPath.toString();
     }
     final String msg = String.format("%s is not installed for version %s. Available versions are: %s",
         tool.getBinaryName(), version, toolPaths.row(tool).keySet());
@@ -79,15 +79,11 @@ public class InstallUtils {
   static void initTool(final ClientTool tool, final ClientToolVersion version) {
     final String initCommand = getInitCommand(tool, version);
     if (StringUtils.isNotBlank(initCommand)) {
-      try {
-        final String toolPath = toolPaths.get(tool, version);
-        if (StringUtils.isNotBlank(toolPath)) {
-          runCommand(Paths.get(toolPath).getParent().toString(), initCommand);
-        } else {
-          log.warn("Tool {} is not installed for version {}, skipping init", tool, version);
-        }
-      } catch (final IOException | InterruptedException | TimeoutException e) {
-        log.error("Failed to initialize {} for version {}", tool, version, e);
+      final Path toolPath = toolPaths.get(tool, version);
+      if (toolPath != null) {
+        runToolCommand(toolPath, initCommand);
+      } else {
+        log.warn("Tool {} is not installed for version {}, skipping init", tool, version);
       }
     } else {
       log.info("No init command for {} version {}", tool, version);
@@ -102,17 +98,16 @@ public class InstallUtils {
   }
 
   private static String getHelmInitCommand(final ClientToolVersion helmVersion) {
-    return HelmVersion.V2.equals(helmVersion) ? "./helm init -c --skip-refresh \n" : StringUtils.EMPTY;
+    return HelmVersion.V2.equals(helmVersion) ? "init -c --skip-refresh \n" : StringUtils.EMPTY;
   }
 
-  private static Map<ClientToolVersion, String> installTool(
+  private static Map<ClientToolVersion, Path> installTool(
       final ClientTool tool, final List<ClientToolVersion> versions, final DelegateConfiguration configuration) {
-    final ImmutableMap.Builder<ClientToolVersion, String> mapBuilder = ImmutableMap.builder();
+    final ImmutableMap.Builder<ClientToolVersion, Path> mapBuilder = ImmutableMap.builder();
     for (final ClientToolVersion version : versions) {
-      final String versionedDir = installTool(tool, version, configuration);
-      if (isNotEmpty(versionedDir)) {
-        final String pathToBinary = Paths.get(versionedDir, tool.getBinaryName()).toString();
-        mapBuilder.put(version, pathToBinary);
+      final Path versionedPath = installTool(tool, version, configuration);
+      if (versionedPath != null) {
+        mapBuilder.put(version, versionedPath);
       } else {
         log.error("Failed to install {} for version {}", tool.getBinaryName(), version);
       }
@@ -120,31 +115,26 @@ public class InstallUtils {
     return mapBuilder.build();
   }
 
-  private static String installTool(
+  private static Path installTool(
       final ClientTool tool, final ClientToolVersion version, final DelegateConfiguration configuration) {
     // 1. Check if custom path is configured for a tool (assume it's installed there)
-    final String customPath = getCustomPath(tool, version, configuration);
-    if (!isNullOrEmpty(customPath)) {
-      final String customDir = Paths.get(customPath).normalize().toAbsolutePath().getParent().toString();
-      if (validateToolExists(customDir, tool)) {
-        log.info("Custom {} is installed at {}", tool, customDir);
-        return customDir;
-      }
-      log.warn("Custom path configured for {} at {}, but the tool does not exist there.", tool, customPath);
-      return StringUtils.EMPTY;
+    final String customPathStr = getCustomPath(tool, version, configuration);
+    if (!isNullOrEmpty(customPathStr)) {
+      log.info("Custom {} is installed at {}", tool.getBinaryName(), customPathStr);
+      return Paths.get(customPathStr).normalize().toAbsolutePath();
     }
     // 2. Check if tool is already installed
-    final String versionedDirectory = getVersionedDirectory(tool, version);
-    if (validateToolExists(versionedDirectory, tool)) {
-      log.info("{} already installed at {}", tool.getBinaryName(), versionedDirectory);
-      return versionedDirectory;
+    final Path versionedToolPath = getVersionedPath(tool, version);
+    if (validateToolExists(versionedToolPath, tool)) {
+      log.info("{} already installed at {}", tool.getBinaryName(), versionedToolPath);
+      return versionedToolPath;
     }
 
     // 3. Download the tool
     if (!configuration.isClientToolsDownloadDisabled()) {
       try {
-        log.info("{} not found at {}. Installing.", tool.getBinaryName(), versionedDirectory);
-        createDirectoryIfDoesNotExist(versionedDirectory);
+        log.info("{} not found at {}. Installing.", tool.getBinaryName(), versionedToolPath);
+        createDirectoryIfDoesNotExist(versionedToolPath.getParent());
 
         final String downloadUrl = getDownloadUrl(tool, version, configuration);
         log.info("{} download url is {}", tool.getBinaryName(), downloadUrl);
@@ -152,31 +142,31 @@ public class InstallUtils {
 
         final String script = "curl $MANAGER_PROXY_CURL -kLO " + downloadUrl + "\n" + permissionsCommand;
 
-        final boolean isInstalled = runCommand(versionedDirectory, script);
+        final boolean isInstalled = runCommand(versionedToolPath.getParent(), script);
         if (isInstalled) {
-          if (validateToolExists(versionedDirectory, tool)) {
-            log.info("{} successfully installed to {}", tool.getBinaryName(), versionedDirectory);
-            return versionedDirectory;
+          if (validateToolExists(versionedToolPath, tool)) {
+            log.info("{} successfully installed to {}", tool.getBinaryName(), versionedToolPath);
+            return versionedToolPath;
           } else {
-            log.error("{} not validated after download {}", tool.getBinaryName(), versionedDirectory);
-            return StringUtils.EMPTY;
+            log.error("{} not validated after download {}", tool.getBinaryName(), versionedToolPath);
+            return null;
           }
         } else {
-          log.error("Failed installing {} to {}", tool.getBinaryName(), versionedDirectory);
-          return StringUtils.EMPTY;
+          log.error("Failed installing {} to {}", tool.getBinaryName(), versionedToolPath);
+          return null;
         }
       } catch (final Exception e) {
         log.error("Exception installing " + tool.getBinaryName(), e);
-        return StringUtils.EMPTY;
+        return null;
       }
     } else {
       log.info("{} download disabled. Skipping install.", tool.getBinaryName());
-      return StringUtils.EMPTY;
+      return null;
     }
   }
 
-  private static String getVersionedDirectory(final ClientTool tool, final ClientToolVersion toolVersion) {
-    return Paths.get(tool.getBaseDir(), toolVersion.getVersion()).toAbsolutePath().normalize().toString();
+  private static Path getVersionedPath(final ClientTool tool, final ClientToolVersion toolVersion) {
+    return Paths.get(tool.getBaseDir(), toolVersion.getVersion(), tool.getBinaryName()).toAbsolutePath().normalize();
   }
 
   private static String getDownloadUrl(
@@ -230,24 +220,30 @@ public class InstallUtils {
   }
 
   @VisibleForTesting
-  static boolean validateToolExists(final String toolDirectory, final ClientTool tool) {
-    try {
-      if (!Files.exists(Paths.get(toolDirectory, tool.getBinaryName()))) {
-        return false;
-      }
+  static boolean validateToolExists(final Path toolPath, final ClientTool tool) {
+    if (!Files.exists(toolPath)) {
+      log.error("{} does not exist", toolPath);
+      return false;
+    }
+    return runToolCommand(toolPath, tool.getValidateCommandArgs());
+  }
 
-      return runCommand(toolDirectory, tool.getValidateCommand());
+  private static boolean runToolCommand(final Path toolPath, final String script) {
+    final String binaryName = toolPath.getFileName().toString();
+    final String command = String.format("./%s %s", binaryName, script);
+    try {
+      return runCommand(toolPath.getParent(), command);
     } catch (final Exception e) {
-      log.error("Error validating if tool {} exists using {}", tool, tool.getValidateCommand(), e);
+      log.error("Failed running {} command: {}", binaryName, command, e);
       return false;
     }
   }
 
-  private static boolean runCommand(final String toolDirectory, final String script)
+  private static boolean runCommand(final Path dir, final String script)
       throws IOException, InterruptedException, TimeoutException {
     final ProcessExecutor processExecutor = new ProcessExecutor()
                                                 .timeout(5, TimeUnit.MINUTES)
-                                                .directory(new File(toolDirectory))
+                                                .directory(dir.toFile())
                                                 .command("/bin/bash", "-c", script)
                                                 .readOutput(true)
                                                 .redirectOutput(new LogOutputStream() {

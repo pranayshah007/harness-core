@@ -7,10 +7,10 @@
 
 package io.harness.notification.channelDetails;
 
-import io.harness.Team;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
+import io.harness.notification.Team;
 import io.harness.notification.channeldetails.NotificationChannel;
 import io.harness.notification.channeldetails.SlackChannel;
 import io.harness.pms.yaml.ParameterField;

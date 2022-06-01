@@ -10,6 +10,7 @@ package io.harness.cdng.manifest.steps;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 
 import static java.lang.String.format;
+import static java.util.Objects.isNull;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -76,7 +77,7 @@ public class ManifestStep implements SyncExecutable<ManifestStepParameters> {
         .status(Status.SUCCEEDED)
         .stepOutcome(StepOutcome.builder()
                          .name("output")
-                         .outcome(ManifestOutcomeMapper.toManifestOutcome(finalManifest, stepParameters))
+                         .outcome(ManifestOutcomeMapper.toManifestOutcome(finalManifest, stepParameters.getOrder()))
                          .build())
         .build();
   }
@@ -110,6 +111,9 @@ public class ManifestStep implements SyncExecutable<ManifestStepParameters> {
   private void getConnector(ManifestAttributes manifestAttributes, Ambiance ambiance) {
     // In some cases (eg. in k8s manifests) we're skipping auto evaluation, in this case we can skip connector
     // validation for now. It will be done when all expression will be resolved
+    if (isNull(manifestAttributes.getStoreConfig().getConnectorReference())) {
+      return;
+    }
     if (manifestAttributes.getStoreConfig().getConnectorReference().isExpression()) {
       return;
     }

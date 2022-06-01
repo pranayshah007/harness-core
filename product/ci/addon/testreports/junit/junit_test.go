@@ -23,6 +23,7 @@ var (
 	prefix  = "junit_test_999/"
 	report1 = "testdata/reportWithPassFail.xml"
 	report2 = "testdata/reportWithSkipError.xml"
+	report3 = "testdata/reportWithNestedTestSuite.xml"
 )
 
 func getBaseDir() string {
@@ -136,6 +137,59 @@ func expectedErrorTest() *types.TestCase {
 	}
 }
 
+func expectedNestedTests() []*types.TestCase {
+	test1 := &types.TestCase{
+		Name: "test1",
+		ClassName: "t.st.c.ApiControllerTest",
+		SuiteName: "t\\st\\c\\ApiControllerTest",
+		Result: types.Result{
+			Status: types.StatusPassed,
+		},
+		DurationMs: 1000,
+	}
+
+	test2 := &types.TestCase{
+		Name: "test17",
+		ClassName: "t.st.c.ApiControllerTest",
+		SuiteName: "t\\st\\c\\ApiControllerTest",
+		Result: types.Result{
+			Status: types.StatusPassed,
+		},
+		DurationMs: 1000,
+	}
+
+	test3 := &types.TestCase{
+		Name: "test20",
+		ClassName: "t.st.c.RedirectControllerTest",
+		SuiteName: "t\\st\\c\\RedirectControllerTest",
+		Result: types.Result{
+			Status: types.StatusPassed,
+		},
+		DurationMs: 2000,
+	}
+
+	test4 := &types.TestCase{
+		Name: "test29",
+		ClassName: "t.st.c.RouteDispatcherTest",
+		SuiteName: "t\\st\\c\\RouteDispatcherTest",
+		Result: types.Result{
+			Status: types.StatusPassed,
+		},
+		DurationMs: 2000,
+	}
+
+	test5 := &types.TestCase{
+		Name: "test40",
+		ClassName: "t.st.c.PdoAdapterTest",
+		SuiteName: "t\\st\\c\\PdoAdapterTest",
+		Result: types.Result{
+			Status: types.StatusPassed,
+		},
+		DurationMs: 2000,
+	}
+	return []*types.TestCase{test1, test2, test3, test4, test5}
+}
+
 func TestGetTests_All(t *testing.T) {
 	err := createNestedDir("a/b/c/d")
 	if err != nil {
@@ -146,6 +200,10 @@ func TestGetTests_All(t *testing.T) {
 		t.Fatal(err)
 	}
 	err = copy(report2, "a/b/c/d/report2.xml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = copy(report3, "a/b/report3.xml")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -160,6 +218,7 @@ func TestGetTests_All(t *testing.T) {
 		tests = append(tests, tc)
 	}
 	exp := []*types.TestCase{expectedPassedTest(), expectedErrorTest(), expectedFailedTest(), expectedSkippedTest()}
+	exp = append(exp, expectedNestedTests()...)
 	assert.ElementsMatch(t, exp, tests)
 	//assert.NotNil(t, nil)
 }

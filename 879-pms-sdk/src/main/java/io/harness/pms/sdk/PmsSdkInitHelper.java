@@ -104,6 +104,7 @@ public class PmsSdkInitHelper {
       ServiceManager serviceManager =
           injector.getInstance(Key.get(ServiceManager.class, Names.named("pmsSDKServiceManager"))).startAsync();
       serviceManager.awaitHealthy();
+
       Runtime.getRuntime().addShutdownHook(new Thread(() -> serviceManager.stopAsync().awaitStopped()));
       registerSdk(injector, config);
     }

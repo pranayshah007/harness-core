@@ -56,7 +56,11 @@
         "identifier": {
           "type": "string"
         },
-        "lastUpdatedBy": {
+        "lastModifiedAt": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "lastModifiedBy": {
           "$ref": "#/definitions/EmbeddedUserDetailsDTO"
         },
         "mimeType": {

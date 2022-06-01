@@ -10,7 +10,7 @@ package io.harness.cdng.helm;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
 
-import software.wings.beans.command.HelmDummyCommandUnit;
+import software.wings.beans.command.HelmDummyCommandUnitConstants;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.Arrays;
@@ -28,7 +28,8 @@ public class HelmDeployStepParams extends HelmDeployBaseStepInfo implements Helm
   @Override
   @JsonIgnore
   public List<String> getCommandUnits() {
-    return Arrays.asList(HelmDummyCommandUnit.FetchFiles, HelmDummyCommandUnit.Init, HelmDummyCommandUnit.Prepare,
-        HelmDummyCommandUnit.InstallUpgrade, HelmDummyCommandUnit.WaitForSteadyState, HelmDummyCommandUnit.WrapUp);
+    return Arrays.asList(HelmDummyCommandUnitConstants.FetchFiles, HelmDummyCommandUnitConstants.Init,
+        HelmDummyCommandUnitConstants.Prepare, HelmDummyCommandUnitConstants.InstallUpgrade,
+        HelmDummyCommandUnitConstants.WaitForSteadyState, HelmDummyCommandUnitConstants.WrapUp);
   }
 }

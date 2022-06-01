@@ -12,9 +12,9 @@ import static io.harness.notification.NotificationServiceConstants.MSTEAMSSERVIC
 import static io.harness.notification.NotificationServiceConstants.PAGERDUTYSERVICE;
 import static io.harness.notification.NotificationServiceConstants.SLACKSERVICE;
 
-import io.harness.NotificationRequest;
 import io.harness.delegate.beans.NotificationProcessingResponse;
 import io.harness.notification.NotificationChannelType;
+import io.harness.notification.NotificationRequest;
 import io.harness.notification.remote.dto.NotificationSettingDTO;
 import io.harness.notification.service.api.ChannelService;
 

@@ -114,7 +114,7 @@ public class ServerlessAwsLambdaStepHelper implements ServerlessStepHelper {
 
   @Override
   public List<ServerInstanceInfo> getServerlessDeployFunctionInstanceInfo(
-      ServerlessDeployResult serverlessDeployResult) {
+      ServerlessDeployResult serverlessDeployResult, String infraStructureKey) {
     if (serverlessDeployResult instanceof ServerlessAwsLambdaDeployResult) {
       ServerlessAwsLambdaDeployResult serverlessAwsLambdaDeployResult =
           (ServerlessAwsLambdaDeployResult) serverlessDeployResult;
@@ -123,7 +123,7 @@ public class ServerlessAwsLambdaStepHelper implements ServerlessStepHelper {
       }
       return ServerlessAwsLambdaFunctionToServerInstanceInfoMapper.toServerInstanceInfoList(
           serverlessAwsLambdaDeployResult.getFunctions(), serverlessAwsLambdaDeployResult.getRegion(),
-          serverlessAwsLambdaDeployResult.getStage(), serverlessAwsLambdaDeployResult.getService());
+          serverlessAwsLambdaDeployResult.getStage(), serverlessAwsLambdaDeployResult.getService(), infraStructureKey);
     }
     throw new UnsupportedOperationException(
         format("Unsupported serverless deploy instance: [%s]", serverlessDeployResult.getClass()));

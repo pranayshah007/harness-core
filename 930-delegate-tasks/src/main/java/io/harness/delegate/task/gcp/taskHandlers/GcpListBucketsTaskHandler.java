@@ -21,11 +21,10 @@ import io.harness.delegate.task.gcp.response.GcpBucketDetails;
 import io.harness.delegate.task.gcp.response.GcpListBucketsResponse;
 import io.harness.delegate.task.gcp.response.GcpResponse;
 import io.harness.errorhandling.NGErrorHelper;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.secret.SecretSanitizerThreadLocal;
 import io.harness.security.encryption.SecretDecryptionService;
-
-import software.wings.delegatetasks.ExceptionMessageSanitizer;
 
 import com.google.api.services.storage.Storage;
 import com.google.api.services.storage.model.Buckets;

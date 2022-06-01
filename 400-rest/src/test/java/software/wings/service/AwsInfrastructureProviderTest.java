@@ -134,7 +134,7 @@ public class AwsInfrastructureProviderTest extends WingsBaseTest {
             .build();
     doReturn(singletonList(new Filter("instance-state-name", asList("running"))))
         .when(mockAwsUtils)
-        .getAwsFilters(awsInfrastructureMapping, null);
+        .getFilters(null, awsInfrastructureMapping.getAwsInstanceFilter());
     PageResponse<Host> hosts = infrastructureProvider.listHosts(
         awsInfrastructureMapping, awsSetting, Collections.emptyList(), new PageRequest<>());
     assertThat(hosts)
@@ -167,7 +167,7 @@ public class AwsInfrastructureProviderTest extends WingsBaseTest {
             .build();
     doReturn(singletonList(new Filter("instance-state-name", asList("running"))))
         .when(mockAwsUtils)
-        .getAwsFilters(awsInfrastructureMapping, null);
+        .getFilters(null, awsInfrastructureMapping.getAwsInstanceFilter());
     PageResponse<Host> hosts = infrastructureProvider.listHosts(
         awsInfrastructureMapping, awsSetting, Collections.emptyList(), new PageRequest<>());
     assertThat(hosts)
@@ -198,7 +198,7 @@ public class AwsInfrastructureProviderTest extends WingsBaseTest {
             .build();
     doReturn(singletonList(new Filter("instance-state-name", asList("running"))))
         .when(mockAwsUtils)
-        .getAwsFilters(awsInfrastructureMapping, null);
+        .getFilters(null, awsInfrastructureMapping.getAwsInstanceFilter());
     PageResponse<Host> hosts = infrastructureProvider.listHosts(
         awsInfrastructureMapping, awsSetting, Collections.emptyList(), new PageRequest<>());
     assertThat(hosts).hasSize(0);

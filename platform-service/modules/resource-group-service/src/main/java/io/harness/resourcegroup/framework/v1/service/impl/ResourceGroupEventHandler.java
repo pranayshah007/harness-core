@@ -33,8 +33,8 @@ import io.harness.outbox.api.OutboxEventHandler;
 import io.harness.resourcegroup.framework.v1.events.ResourceGroupCreateEvent;
 import io.harness.resourcegroup.framework.v1.events.ResourceGroupDeleteEvent;
 import io.harness.resourcegroup.framework.v1.events.ResourceGroupUpdateEvent;
-import io.harness.resourcegroup.v1.remote.dto.ResourceGroupDTO;
-import io.harness.resourcegroup.v1.remote.dto.ResourceGroupRequest;
+import io.harness.resourcegroup.v2.remote.dto.ResourceGroupDTO;
+import io.harness.resourcegroup.v2.remote.dto.ResourceGroupRequest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
@@ -84,13 +84,13 @@ public class ResourceGroupEventHandler implements OutboxEventHandler {
     ResourceGroupCreateEvent resourceGroupCreateEvent =
         objectMapper.readValue(outboxEvent.getEventData(), ResourceGroupCreateEvent.class);
     boolean publishedToRedis =
-        publishEvent(resourceGroupCreateEvent.getResourceGroup(), EventsFrameworkMetadataConstants.CREATE_ACTION);
+        publishEvent(resourceGroupCreateEvent.getResourceGroupV2(), EventsFrameworkMetadataConstants.CREATE_ACTION);
     AuditEntry auditEntry =
         AuditEntry.builder()
             .action(Action.CREATE)
             .module(ModuleType.CORE)
             .newYaml(getYamlString(
-                ResourceGroupRequest.builder().resourceGroup(resourceGroupCreateEvent.getResourceGroup()).build()))
+                ResourceGroupRequest.builder().resourceGroup(resourceGroupCreateEvent.getResourceGroupV2()).build()))
             .timestamp(outboxEvent.getCreatedAt())
             .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
             .resourceScope(ResourceScopeDTO.fromResourceScope(outboxEvent.getResourceScope()))
@@ -104,15 +104,15 @@ public class ResourceGroupEventHandler implements OutboxEventHandler {
     ResourceGroupUpdateEvent resourceGroupUpdateEvent =
         objectMapper.readValue(outboxEvent.getEventData(), ResourceGroupUpdateEvent.class);
     boolean publishedToRedis =
-        publishEvent(resourceGroupUpdateEvent.getNewResourceGroup(), EventsFrameworkMetadataConstants.UPDATE_ACTION);
+        publishEvent(resourceGroupUpdateEvent.getNewResourceGroupV2(), EventsFrameworkMetadataConstants.UPDATE_ACTION);
     AuditEntry auditEntry =
         AuditEntry.builder()
             .action(Action.UPDATE)
             .module(ModuleType.CORE)
             .newYaml(getYamlString(
-                ResourceGroupRequest.builder().resourceGroup(resourceGroupUpdateEvent.getNewResourceGroup()).build()))
+                ResourceGroupRequest.builder().resourceGroup(resourceGroupUpdateEvent.getNewResourceGroupV2()).build()))
             .oldYaml(getYamlString(
-                ResourceGroupRequest.builder().resourceGroup(resourceGroupUpdateEvent.getOldResourceGroup()).build()))
+                ResourceGroupRequest.builder().resourceGroup(resourceGroupUpdateEvent.getOldResourceGroupV2()).build()))
             .timestamp(outboxEvent.getCreatedAt())
             .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
             .resourceScope(ResourceScopeDTO.fromResourceScope(outboxEvent.getResourceScope()))
@@ -126,13 +126,13 @@ public class ResourceGroupEventHandler implements OutboxEventHandler {
     ResourceGroupDeleteEvent resourceGroupDeleteEvent =
         objectMapper.readValue(outboxEvent.getEventData(), ResourceGroupDeleteEvent.class);
     boolean publishedToRedis =
-        publishEvent(resourceGroupDeleteEvent.getResourceGroup(), EventsFrameworkMetadataConstants.DELETE_ACTION);
+        publishEvent(resourceGroupDeleteEvent.getResourceGroupV2(), EventsFrameworkMetadataConstants.DELETE_ACTION);
     AuditEntry auditEntry =
         AuditEntry.builder()
             .action(Action.DELETE)
             .module(ModuleType.CORE)
             .oldYaml(getYamlString(
-                ResourceGroupRequest.builder().resourceGroup(resourceGroupDeleteEvent.getResourceGroup()).build()))
+                ResourceGroupRequest.builder().resourceGroup(resourceGroupDeleteEvent.getResourceGroupV2()).build()))
             .timestamp(outboxEvent.getCreatedAt())
             .resource(ResourceDTO.fromResource(outboxEvent.getResource()))
             .resourceScope(ResourceScopeDTO.fromResourceScope(outboxEvent.getResourceScope()))

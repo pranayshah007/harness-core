@@ -43,3 +43,8 @@ io.harness.steps.section.chain.SectionChainStepParameters
 io.harness.steps.common.NGSectionStepParameters
 io.harness.steps.common.steps.stepgroup.StepGroupStepParameters
 io.harness.steps.fork.ForkStepParameters
+io.harness.plancreator.strategy.AxisConfig
+io.harness.plancreator.strategy.ExcludeConfig
+io.harness.plancreator.strategy.MatrixConfig
+io.harness.plancreator.strategy.StrategyConfig
+io.harness.plancreator.strategy.HarnessForConfig

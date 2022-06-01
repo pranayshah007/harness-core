@@ -127,8 +127,6 @@ public class AppDynamicsHealthSourceSpec extends MetricHealthSourceSpec {
                                                     .productName(feature)
                                                     .applicationName(applicationName)
                                                     .tierName(tierName)
-                                                    .envIdentifier(environmentRef)
-                                                    .serviceIdentifier(serviceRef)
                                                     .metricPack(metricPackFromDb)
                                                     .category(metricPackFromDb.getCategory())
                                                     .build();
@@ -151,8 +149,6 @@ public class AppDynamicsHealthSourceSpec extends MetricHealthSourceSpec {
                                    .productName(feature)
                                    .applicationName(applicationName)
                                    .tierName(tierName)
-                                   .envIdentifier(environmentRef)
-                                   .serviceIdentifier(serviceRef)
                                    .monitoredServiceIdentifier(monitoredServiceIdentifier)
                                    .groupName(mdList.get(0).getGroupName())
                                    .category(mdList.get(0).getRiskProfile().getCategory())
@@ -162,6 +158,18 @@ public class AppDynamicsHealthSourceSpec extends MetricHealthSourceSpec {
                            return appDynamicsCVConfig;
                          })
                          .collect(Collectors.toList()));
+    cvConfigs.stream()
+        .filter(cvConfig -> CollectionUtils.isNotEmpty(cvConfig.getMetricInfos()))
+        .flatMap(cvConfig -> cvConfig.getMetricInfos().stream())
+        .forEach(metricInfo -> {
+          if (metricInfo.getDeploymentVerification().isEnabled()) {
+            Preconditions.checkNotNull(metricInfo.getCompleteServiceInstanceMetricPath(),
+                "ServiceInstanceMetricPath should be set for Deployment Verification");
+            Preconditions.checkArgument(
+                metricInfo.getCompleteServiceInstanceMetricPath().contains("|Individual Nodes|*|"),
+                "ServiceInstanceMetricPath should contain |Individual Nodes|*|");
+          }
+        });
     return cvConfigs;
   }
 
@@ -169,7 +177,6 @@ public class AppDynamicsHealthSourceSpec extends MetricHealthSourceSpec {
     return Key.builder()
         .appName(appDynamicsCVConfig.getApplicationName())
         .metricPack(appDynamicsCVConfig.getMetricPack())
-        .serviceIdentifier(appDynamicsCVConfig.getServiceIdentifier())
         .tierName(appDynamicsCVConfig.getTierName())
         .groupName(appDynamicsCVConfig.getGroupName())
         .build();
@@ -181,8 +188,10 @@ public class AppDynamicsHealthSourceSpec extends MetricHealthSourceSpec {
   @FieldDefaults(level = AccessLevel.PRIVATE)
   public static class AppDMetricDefinitions extends HealthSourceMetricDefinition {
     String groupName;
-    String baseFolder;
-    String metricPath;
+    @Deprecated String baseFolder;
+    @Deprecated String metricPath;
+    String completeMetricPath;
+    String completeServiceInstanceMetricPath;
   }
 
   @Value
@@ -190,7 +199,6 @@ public class AppDynamicsHealthSourceSpec extends MetricHealthSourceSpec {
   private static class Key {
     String appName;
     String tierName;
-    String serviceIdentifier;
     MetricPack metricPack;
     String groupName;
   }

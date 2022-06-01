@@ -8,6 +8,7 @@
 package io.harness.ngtriggers.eventmapper.filters.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.delegate.beans.connector.scm.GitAuthType.HTTP;
 import static io.harness.ngtriggers.Constants.CHANGED_FILES;
 import static io.harness.ngtriggers.conditionchecker.ConditionOperator.EQUALS;
 import static io.harness.ngtriggers.conditionchecker.ConditionOperator.REGEX;
@@ -31,11 +32,29 @@ import io.harness.beans.DelegateTaskRequest;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
+import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.delegate.beans.connector.scm.GitAuthType;
+import io.harness.delegate.beans.connector.scm.GitConnectionType;
+import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubAuthenticationDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubHttpAuthenticationType;
+import io.harness.delegate.beans.connector.scm.github.GithubHttpCredentialsDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubTokenSpecDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubUsernamePasswordDTO;
+import io.harness.delegate.beans.connector.scm.gitlab.GitlabApiAccessDTO;
+import io.harness.delegate.beans.connector.scm.gitlab.GitlabApiAccessType;
+import io.harness.delegate.beans.connector.scm.gitlab.GitlabAuthenticationDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
+import io.harness.delegate.beans.connector.scm.gitlab.GitlabHttpAuthenticationType;
+import io.harness.delegate.beans.connector.scm.gitlab.GitlabHttpCredentialsDTO;
+import io.harness.delegate.beans.connector.scm.gitlab.GitlabTokenSpecDTO;
+import io.harness.delegate.beans.connector.scm.gitlab.GitlabUsernamePasswordDTO;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.scm.ScmPathFilterEvaluationTaskParams;
 import io.harness.delegate.task.scm.ScmPathFilterEvaluationTaskResponse;
+import io.harness.encryption.SecretRefData;
+import io.harness.encryption.SecretRefHelper;
 import io.harness.ng.core.NGAccess;
 import io.harness.ngtriggers.beans.dto.TriggerDetails;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
@@ -169,7 +188,23 @@ public class TriggerFilePathConditionFilterTest extends CategoryTest {
     // Init Data
     TriggerDetails triggerDetails = generateTriggerDetails();
 
-    GithubConnectorDTO githubConnectorDTO = GithubConnectorDTO.builder().build();
+    GithubConnectorDTO githubConnectorDTO =
+        GithubConnectorDTO.builder()
+            .connectionType(GitConnectionType.ACCOUNT)
+            .url("http://localhost")
+            .apiAccess(GithubApiAccessDTO.builder().spec(GithubTokenSpecDTO.builder().build()).build())
+            .authentication(GithubAuthenticationDTO.builder()
+                                .authType(GitAuthType.HTTP)
+                                .credentials(GithubHttpCredentialsDTO.builder()
+                                                 .type(GithubHttpAuthenticationType.USERNAME_AND_PASSWORD)
+                                                 .httpCredentialsSpec(GithubUsernamePasswordDTO.builder()
+                                                                          .username("usermane")
+                                                                          .passwordRef(SecretRefData.builder().build())
+                                                                          .build())
+                                                 .build())
+                                .build())
+            .build();
+
     List<EncryptedDataDetail> encryptedDataDetails = emptyList();
     TriggerEventDataCondition pathCondition =
         TriggerEventDataCondition.builder().key(CHANGED_FILES).operator(EQUALS).value("test").build();
@@ -185,6 +220,7 @@ public class TriggerFilePathConditionFilterTest extends CategoryTest {
     // Mock apis
     doReturn(ConnectorDetails.builder()
                  .connectorConfig(githubConnectorDTO)
+                 .connectorType(ConnectorType.GITHUB)
                  .encryptedDataDetails(encryptedDataDetails)
                  .build())
         .when(connectorUtils)
@@ -245,9 +281,35 @@ public class TriggerFilePathConditionFilterTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testInitiateDeleteTaskAndEvaluateForPush() {
     // Init Data
+    final String url = "url";
+    final String validationRepo = "validationRepo";
     TriggerDetails triggerDetails = generateTriggerDetails();
 
-    GitlabConnectorDTO gitlabConnectorDTO = GitlabConnectorDTO.builder().build();
+    final GitlabAuthenticationDTO gitlabAuthenticationDTO =
+        GitlabAuthenticationDTO.builder()
+            .authType(HTTP)
+            .credentials(GitlabHttpCredentialsDTO.builder()
+                             .type(GitlabHttpAuthenticationType.USERNAME_AND_PASSWORD)
+                             .httpCredentialsSpec(GitlabUsernamePasswordDTO.builder()
+                                                      .passwordRef(SecretRefHelper.createSecretRef("passwordRef"))
+                                                      .username("username")
+                                                      .build())
+                             .build())
+            .build();
+
+    final GitlabApiAccessDTO gitlabApiAccessDTO =
+        GitlabApiAccessDTO.builder()
+            .type(GitlabApiAccessType.TOKEN)
+            .spec(GitlabTokenSpecDTO.builder().tokenRef(SecretRefHelper.createSecretRef("privateKeyRef")).build())
+            .build();
+
+    GitlabConnectorDTO gitlabConnectorDTO = GitlabConnectorDTO.builder()
+                                                .url(url)
+                                                .validationRepo(validationRepo)
+                                                .connectionType(GitConnectionType.ACCOUNT)
+                                                .authentication(gitlabAuthenticationDTO)
+                                                .apiAccess(gitlabApiAccessDTO)
+                                                .build();
     List<EncryptedDataDetail> encryptedDataDetails = emptyList();
     TriggerEventDataCondition pathCondition =
         TriggerEventDataCondition.builder().key(CHANGED_FILES).operator(EQUALS).value("test").build();
@@ -263,6 +325,9 @@ public class TriggerFilePathConditionFilterTest extends CategoryTest {
     // Mock apis
     doReturn(ConnectorDetails.builder()
                  .connectorConfig(gitlabConnectorDTO)
+                 .orgIdentifier("org")
+                 .connectorType(ConnectorType.GITLAB)
+                 .projectIdentifier("proj")
                  .encryptedDataDetails(encryptedDataDetails)
                  .build())
         .when(connectorUtils)

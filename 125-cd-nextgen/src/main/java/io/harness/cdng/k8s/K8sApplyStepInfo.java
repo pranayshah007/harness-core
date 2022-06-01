@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.cdng.pipeline.CDStepInfo;
 import io.harness.cdng.visitor.helpers.cdstepinfo.K8sApplyStepInfoVisitorHelper;
 import io.harness.executions.steps.StepSpecTypeConstants;
@@ -53,8 +54,9 @@ public class K8sApplyStepInfo extends K8sApplyBaseStepInfo implements CDStepInfo
 
   @Builder(builderMethodName = "infoBuilder")
   public K8sApplyStepInfo(ParameterField<Boolean> skipDryRun, ParameterField<Boolean> skipSteadyStateCheck,
-      ParameterField<List<String>> filePaths, ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
-    super(skipDryRun, skipSteadyStateCheck, filePaths, delegateSelectors);
+      ParameterField<List<String>> filePaths, ParameterField<List<TaskSelectorYaml>> delegateSelectors,
+      List<ManifestConfigWrapper> overrides) {
+    super(skipDryRun, skipSteadyStateCheck, filePaths, delegateSelectors, overrides);
   }
 
   @Override
@@ -74,6 +76,12 @@ public class K8sApplyStepInfo extends K8sApplyBaseStepInfo implements CDStepInfo
         .skipDryRun(this.getSkipDryRun())
         .skipSteadyStateCheck(skipSteadyStateCheck)
         .delegateSelectors(delegateSelectors)
+        .overrides(overrides)
         .build();
+  }
+
+  @Override
+  public ParameterField<List<TaskSelectorYaml>> fetchDelegateSelectors() {
+    return getDelegateSelectors();
   }
 }

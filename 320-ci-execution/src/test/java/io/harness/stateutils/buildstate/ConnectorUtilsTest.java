@@ -21,6 +21,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.beans.DecryptableEntity;
+import io.harness.beans.FeatureName;
 import io.harness.beans.sweepingoutputs.K8StageInfraDetails;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml.K8sDirectInfraYamlSpec;
@@ -33,11 +34,14 @@ import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.docker.DockerAuthCredentialsDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesAuthCredentialDTO;
+import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitHttpsCredentialsSpecDTO;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitAuthenticationDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubHttpCredentialsSpecDTO;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.executionplan.CIExecutionPlanTestHelper;
 import io.harness.executionplan.CIExecutionTestBase;
+import io.harness.ff.CIFeatureFlagService;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -71,7 +75,7 @@ import retrofit2.Response;
 
 public class ConnectorUtilsTest extends CIExecutionTestBase {
   @Inject CIExecutionPlanTestHelper ciExecutionPlanTestHelper;
-
+  @Mock CIFeatureFlagService featureFlagService;
   @Mock private ConnectorResourceClient connectorResourceClient;
   @Mock private SecretManagerClientService secretManagerClientService;
   @InjectMocks ConnectorUtils connectorUtils;
@@ -135,7 +139,8 @@ public class ConnectorUtilsTest extends CIExecutionTestBase {
     assertThat(connectorDetails.getProjectIdentifier())
         .isEqualTo(gitHubConnectorDto.getConnectorInfo().getProjectIdentifier());
     verify(connectorResourceClient, times(1)).get(eq(connectorId01), eq(ACCOUNT_ID), eq(ORG_ID), eq(PROJ_ID));
-    verify(secretManagerClientService, times(1)).getEncryptionDetails(eq(ngAccess), any(GitAuthenticationDTO.class));
+    verify(secretManagerClientService, times(1))
+        .getEncryptionDetails(eq(ngAccess), any(GithubHttpCredentialsSpecDTO.class));
   }
 
   @Test
@@ -323,7 +328,8 @@ public class ConnectorUtilsTest extends CIExecutionTestBase {
     assertThat(connectorDetails.getProjectIdentifier())
         .isEqualTo(awsCodeCommitConnectorDto.getConnectorInfo().getProjectIdentifier());
     verify(connectorResourceClient, times(1)).get(eq(connectorId05), eq(ACCOUNT_ID), eq(ORG_ID), eq(PROJ_ID));
-    verify(secretManagerClientService, times(1)).getEncryptionDetails(eq(ngAccess), any(GitAuthenticationDTO.class));
+    verify(secretManagerClientService, times(1))
+        .getEncryptionDetails(eq(ngAccess), any(AwsCodeCommitHttpsCredentialsSpecDTO.class));
   }
 
   @Test
@@ -332,9 +338,11 @@ public class ConnectorUtilsTest extends CIExecutionTestBase {
   public void shouldAddDelegateSelector() throws IOException {
     Call<ResponseDTO<Optional<ConnectorDTO>>> getConnectorResourceCall = mock(Call.class);
     ResponseDTO<Optional<ConnectorDTO>> responseDTO = ResponseDTO.newResponse(Optional.of(k8sConnectorFromDelegate));
+    when(featureFlagService.isEnabled(FeatureName.DISABLE_CI_STAGE_DEL_SELECTOR, "accountId")).thenReturn(false);
+
     when(getConnectorResourceCall.execute()).thenReturn(Response.success(responseDTO));
     when(connectorResourceClient.get(any(), any(), any(), any())).thenReturn(getConnectorResourceCall);
-
+    when(featureFlagService.isEnabled(FeatureName.DISABLE_CI_STAGE_DEL_SELECTOR, "accountId")).thenReturn(false);
     when(executionSweepingOutputResolver.resolveOptional(
              ambiance, RefObjectUtils.getSweepingOutputRefObject(STAGE_INFRA_DETAILS)))
         .thenReturn(OptionalSweepingOutput.builder()

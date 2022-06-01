@@ -59,10 +59,10 @@ public class JiraIssueUtilsNGTest extends CategoryTest {
     JiraIssueCreateMetadataNG createMetadata = new JiraIssueCreateMetadataNG(node);
     JiraIssueTypeNG issueType = createMetadata.getProjects().get("JEL").getIssueTypes().get("Story");
     assertThat(issueType).isNotNull();
-    assertThat(issueType.getFields().size()).isEqualTo(19);
+    assertThat(issueType.getFields().size()).isEqualTo(22);
 
     issueType.removeField(JiraConstantsNG.STATUS_NAME);
-    assertThat(issueType.getFields().size()).isEqualTo(18);
+    assertThat(issueType.getFields().size()).isEqualTo(21);
 
     Map<String, Object> currFieldsTmp = new HashMap<>();
     assertThatThrownBy(()
@@ -99,10 +99,11 @@ public class JiraIssueUtilsNGTest extends CategoryTest {
     fields.put("customtime", "2021-03-25T18:58:16.535+0000");
     fields.put("Original Estimate", "3d");
     fields.put("Remaining Estimate", "2d");
+    fields.put("Reporter", "userid");
 
     Map<String, Object> currFields = new HashMap<>();
     JiraIssueUtilsNG.updateFieldValues(currFields, issueType.getFields(), fields, true);
-    assertThat(currFields.size()).isEqualTo(15);
+    assertThat(currFields.size()).isEqualTo(16);
     assertThat(currFields.get("summary")).isEqualTo("summary");
     assertThat(currFields.get("description")).isEqualTo("description");
     assertThat(((List<JiraFieldAllowedValueNG>) currFields.get("components"))
@@ -129,6 +130,8 @@ public class JiraIssueUtilsNGTest extends CategoryTest {
     assertThat((Double) currFields.get("customfield_10207")).isCloseTo(18.18, offset(0.000001));
     assertThat(currFields.get("customfield_10210")).isEqualTo("2021-03-25");
     assertThat(currFields.get("customfield_10211")).isEqualTo("2021-03-25T18:58:16.535+0000");
+    JiraFieldUserPickerNG reporter = (JiraFieldUserPickerNG) currFields.get("reporter");
+    assertThat(reporter.getAccountId()).isEqualTo("userid");
 
     assertThat(((JiraTimeTrackingFieldNG) currFields.get("timetracking")).getOriginalEstimate()).isEqualTo("3d");
     assertThat(((JiraTimeTrackingFieldNG) currFields.get("timetracking")).getRemainingEstimate()).isEqualTo("2d");

@@ -8,12 +8,16 @@
 package io.harness.pms.merger.helpers;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.expression.EngineExpressionEvaluator.EXPR_END_ESC;
+import static io.harness.expression.EngineExpressionEvaluator.EXPR_START;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.common.NGExpressionUtils;
+import io.harness.jackson.JsonNodeUtils;
 import io.harness.pms.merger.YamlConfig;
 import io.harness.pms.merger.fqn.FQN;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import lombok.experimental.UtilityClass;
@@ -37,6 +41,23 @@ public class RuntimeInputFormHelper {
         templateMap.put(key, fullMap.get(key));
       }
     });
+    return (new YamlConfig(templateMap, yamlConfig.getYamlMap())).getYaml();
+  }
+
+  public String createExecutionInputFormAndUpdateYamlField(JsonNode jsonNode) {
+    YamlConfig yamlConfig = new YamlConfig(jsonNode);
+    Map<FQN, Object> fullMap = yamlConfig.getFqnToValueMap();
+    Map<FQN, Object> templateMap = new LinkedHashMap<>();
+    fullMap.keySet().forEach(key -> {
+      String value = fullMap.get(key).toString().replace("\"", "");
+      if (NGExpressionUtils.matchesExecutionInputPattern(value)) {
+        templateMap.put(key, fullMap.get(key));
+        fullMap.put(key,
+            EXPR_START + NGExpressionUtils.EXPRESSION_INPUT_CONSTANT + "." + key.getExpressionFqn() + EXPR_END_ESC);
+      }
+    });
+    // Updating the executionInput field to expression in jsonNode.
+    JsonNodeUtils.merge(jsonNode, (new YamlConfig(fullMap, yamlConfig.getYamlMap())).getYamlMap());
     return (new YamlConfig(templateMap, yamlConfig.getYamlMap())).getYaml();
   }
 }

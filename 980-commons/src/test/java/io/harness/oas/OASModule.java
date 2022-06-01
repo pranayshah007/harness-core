@@ -9,7 +9,6 @@ package io.harness.oas;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import io.harness.security.annotations.PublicApi;
 import io.harness.testing.TestExecution;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -48,7 +47,6 @@ public class OASModule extends AbstractModule {
   public static final String ACCOUNT_ID = "accountId";
   public static final String EXCLUSION_FILE = "/oas/exclusion-file";
   public static final String TAG_EXCLUSION = "tag-exclusion";
-  public static final String ENDPOINT_EXCLUSION = "endpoint-exclusion";
   public static final String DTO_EXCLUSION = "dto-exclusion";
   public static final String PARAM_DESCRIPTION_EXCLUSION = "param-description-exclusion";
   public static final String HIDDEN_EXCLUSION = "hidden-exclusion";
@@ -62,7 +60,6 @@ public class OASModule extends AbstractModule {
 
   public void testOASAdoption(Collection<Class<?>> classes) {
     Set<String> classWithoutTagNameOrDescription = new HashSet<>();
-    Set<String> endpointsWithoutAccountParam = new HashSet<>();
     Set<String> dtoWithoutDescriptionToField = new HashSet<>();
     Set<String> methodsWithoutDescriptionToParam = new HashSet<>();
     Set<String> methodsHiddenFromSwaggerButNotOpenApi = new HashSet<>();
@@ -85,7 +82,6 @@ public class OASModule extends AbstractModule {
             if (method.isAnnotationPresent(Operation.class) && !isHiddenFromOpenApi(method)) {
               methodsWithoutDescriptionToParam.addAll(checkParamAnnotation(method));
               dtoWithoutDescriptionToField.addAll(checkDtoFieldsDescription(method));
-              endpointsWithoutAccountParam.addAll(checkAccountIdentifierParam(method));
               methodsWithoutOperationProperties.addAll(checkOperationAnnotation(method));
             }
             methodsHiddenFromSwaggerButNotOpenApi.addAll(checkHiddenMethod(method));
@@ -98,8 +94,6 @@ public class OASModule extends AbstractModule {
         "All the tags in DTO should have name and description, but found below : ");
     finalAssertion(dtoWithoutDescriptionToField, DTO_EXCLUSION,
         "All the fields in DTO should have description, but found below : ");
-    finalAssertion(endpointsWithoutAccountParam, ENDPOINT_EXCLUSION,
-        "There should not be endpoints without account identifier as path OR query param, but found below : ");
     finalAssertion(methodsWithoutDescriptionToParam, PARAM_DESCRIPTION_EXCLUSION,
         "All the params and request body in DTO should have description, but found below : ");
     finalAssertion(methodsHiddenFromSwaggerButNotOpenApi, HIDDEN_EXCLUSION,
@@ -324,39 +318,6 @@ public class OASModule extends AbstractModule {
       methodsWithoutParameter.add(method.getName());
     }
     return methodsWithoutParameter;
-  }
-
-  private List<String> checkAccountIdentifierParam(Method method) {
-    List<String> endpointsWithoutAccountParam = new ArrayList<>();
-    boolean hasAccountIdentifierQueryParam = false;
-    boolean hasAccountIdentifierPathParam = false;
-    boolean isPublicApi = false;
-
-    Annotation[][] parametersAnnotationsList = method.getParameterAnnotations();
-    for (Annotation[] annotations : parametersAnnotationsList) {
-      if (hasAccountIdentifierQueryParam || hasAccountIdentifierPathParam || isPublicApi) {
-        break;
-      }
-      for (Annotation parameterAnnotation : annotations) {
-        if (parameterAnnotation.annotationType() == QueryParam.class) {
-          QueryParam queryParameter = (QueryParam) parameterAnnotation;
-          hasAccountIdentifierQueryParam =
-              ACCOUNT_IDENTIFIER.equals(queryParameter.value()) || ACCOUNT_ID.equals(queryParameter.value());
-        }
-        if (parameterAnnotation.annotationType() == PathParam.class) {
-          PathParam pathParameter = (PathParam) parameterAnnotation;
-          hasAccountIdentifierPathParam =
-              ACCOUNT_IDENTIFIER.equals(pathParameter.value()) || ACCOUNT_ID.equals(pathParameter.value());
-        }
-        if (parameterAnnotation.annotationType() == PublicApi.class) {
-          isPublicApi = true;
-        }
-      }
-    }
-    if (!hasAccountIdentifierQueryParam && !hasAccountIdentifierPathParam && !isPublicApi) {
-      endpointsWithoutAccountParam.add(method.getDeclaringClass().getName() + "." + method.getName());
-    }
-    return endpointsWithoutAccountParam;
   }
 
   @Override

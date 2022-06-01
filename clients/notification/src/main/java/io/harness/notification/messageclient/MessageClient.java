@@ -7,7 +7,7 @@
 
 package io.harness.notification.messageclient;
 
-import io.harness.NotificationRequest;
+import io.harness.notification.NotificationRequest;
 
 public interface MessageClient {
   void send(NotificationRequest notificationRequest, String accountId);

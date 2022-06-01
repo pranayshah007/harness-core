@@ -23,7 +23,7 @@ public enum CVNGNotificationChannelType {
   @JsonProperty("Pagerduty") PAGERDUTY("Pagerduty"),
   @JsonProperty("Msteams") MSTEAMS("Msteams");
 
-  @Getter private String identifier;
+  @Getter private String templateSuffixIdentifier;
 
   private static Map<String, CVNGNotificationChannelType> STRING_TO_TYPE_MAP;
 
@@ -31,10 +31,10 @@ public enum CVNGNotificationChannelType {
     if (MapUtils.isEmpty(STRING_TO_TYPE_MAP)) {
       STRING_TO_TYPE_MAP =
           Arrays.stream(CVNGNotificationChannelType.values())
-              .collect(Collectors.toMap(CVNGNotificationChannelType::getIdentifier, Function.identity()));
+              .collect(Collectors.toMap(CVNGNotificationChannelType::getTemplateSuffixIdentifier, Function.identity()));
     }
     if (!STRING_TO_TYPE_MAP.containsKey(stringValue)) {
-      throw new IllegalArgumentException("SLOTargetType should be in : " + STRING_TO_TYPE_MAP.keySet());
+      throw new IllegalArgumentException("CVNGNotificationChannelType should be in : " + STRING_TO_TYPE_MAP.keySet());
     }
     return STRING_TO_TYPE_MAP.get(stringValue);
   }

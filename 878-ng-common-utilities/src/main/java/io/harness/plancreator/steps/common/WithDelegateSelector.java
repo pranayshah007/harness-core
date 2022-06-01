@@ -14,7 +14,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.List;
 
 public interface WithDelegateSelector {
-  @JsonIgnore ParameterField<List<TaskSelectorYaml>> getDelegateSelectors();
+  @JsonIgnore ParameterField<List<TaskSelectorYaml>> fetchDelegateSelectors();
 
   void setDelegateSelectors(ParameterField<List<TaskSelectorYaml>> delegateSelectors);
 }

@@ -126,9 +126,9 @@ public class GovernanceConfigServiceTest extends IntegrationTestBase {
     WeeklyRange weeklyRange = new WeeklyRange(null, "Tuesday", "7:00 PM", "Monday", "5:00 AM", "Asia/Kolkata");
     TimeRangeBasedFreezeConfig timeRangeBasedFreezeConfig =
         new TimeRangeBasedFreezeConfig(true, Collections.emptyList(), Collections.singletonList(EnvironmentType.PROD),
-            range, null, null, false, null, null, "uuid");
+            range, null, null, false, null, null, "uuid", null);
     WeeklyFreezeConfig weeklyFreezeConfig = new WeeklyFreezeConfig(true, Collections.emptyList(),
-        Collections.singletonList(EnvironmentType.PROD), weeklyRange, null, null, false, null, null, "uuid");
+        Collections.singletonList(EnvironmentType.PROD), weeklyRange, null, null, false, null, null, "uuid", null);
 
     inputConfig = GovernanceConfig.builder()
                       .accountId(accountId)

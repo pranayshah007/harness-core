@@ -173,8 +173,10 @@ public class ResourceConstraintState extends State {
           WorkflowStandardParams workflowStandardParams = context.getContextElement(ContextElementType.STANDARD);
           String pipelineDeploymentUuid = workflowStandardParams.getWorkflowElement().getPipelineDeploymentUuid();
           if (pipelineDeploymentUuid == null) {
-            throw new InvalidRequestException(
-                "Resource constraint with holding scope 'Pipeline' cannot be used outside a pipeline");
+            // for direct workflow executions, the scope should be workflow
+            releaseEntityId = ResourceConstraintService.releaseEntityId(context.getWorkflowExecutionId());
+            this.setHoldingScope(WORKFLOW.name());
+            break;
           }
           releaseEntityId = ResourceConstraintService.releaseEntityId(pipelineDeploymentUuid);
           break;

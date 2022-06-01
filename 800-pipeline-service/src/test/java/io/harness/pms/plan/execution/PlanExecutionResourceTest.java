@@ -89,7 +89,6 @@ public class PlanExecutionResourceTest extends CategoryTest {
                  .identifier(PIPELINE_IDENTIFIER)
                  .name(PIPELINE_IDENTIFIER)
                  .yaml(yaml)
-                 .allowStageExecutions(true)
                  .build();
   }
 

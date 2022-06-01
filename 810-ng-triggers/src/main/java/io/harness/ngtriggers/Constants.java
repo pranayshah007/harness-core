@@ -69,6 +69,7 @@ public interface Constants {
   String TRIGGER_ERROR_LOG = "TRIGGER_ERROR_LOG: ";
   String TRIGGER_INFO_LOG = "TRIGGER_INFO_LOG: ";
   String TRIGGER_PAYLOAD_COMMITS = "<+trigger.payload.commits>";
+  String TRIGGER_PAYLOAD_BRANCH = "<+trigger.payload.branch>";
   String COMMIT_FILE_ADDED = "added";
   String COMMIT_FILE_MODIFIED = "modified";
   String COMMIT_FILE_REMOVED = "removed";
@@ -87,10 +88,10 @@ public interface Constants {
   String DOCKER_REGISTRY = "DockerRegistry";
   String NEXUS3_REGISTRY = "Nexus3Registry";
   String ARTIFACTORY_REGISTRY = "ArtifactoryRegistry";
-  String ARTIFACTORY_GENERIC_REGISTRY = "ArtifactoryGenericRegistry";
   String GCR = "Gcr";
   String ECR = "Ecr";
   String HELM_CHART = "HelmChart";
+  String ACR = "Acr";
 
   String MANIFEST_VERSION = "<+trigger.manifest.version>";
   String ARTIFACT_VERSION = "<+trigger.artifact.build>";

@@ -174,4 +174,28 @@ public class PlanCreationResponse implements AsyncCreatorResponse {
     }
     yamlUpdates = yamlUpdates.toBuilder().putAllFqnToYaml(otherYamlUpdates.getFqnToYamlMap()).build();
   }
+
+  public boolean checkIfSinglePlanNodeInResponse() {
+    if (EmptyPredicate.isEmpty(nodes)) {
+      return true;
+    }
+    if (nodes.size() > 1 || planNode != null) {
+      return false;
+    }
+    return true;
+  }
+
+  public void setExecutionInputTemplateInPlanNode(String executionInputTemplate) {
+    if (!checkIfSinglePlanNodeInResponse()) {
+      return;
+    }
+    if (planNode != null) {
+      planNode.setExecutionInputTemplate(executionInputTemplate);
+    }
+    if (nodes != null) {
+      for (PlanNode node : nodes.values()) {
+        node.setExecutionInputTemplate(executionInputTemplate);
+      }
+    }
+  }
 }

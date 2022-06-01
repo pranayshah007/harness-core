@@ -89,14 +89,12 @@ public class ErrorTrackingSourceSpecTransformerTest extends CvNextGenTestBase {
     return (ErrorTrackingCVConfig) builderFactory.errorTrackingCVConfigBuilder()
         .queryName(PRODUCT_NAME)
         .query(serviceIdentifier + ":" + envIdentifier)
-        .envIdentifier(envIdentifier)
         .connectorIdentifier(connectorIdentifier)
         .productName(PRODUCT_NAME)
         .projectIdentifier(projectIdentifier)
         .accountId(accountId)
         .identifier(identifier)
         .monitoringSourceName(monitoringSourceName)
-        .serviceIdentifier(serviceIdentifier)
         .build();
   }
 }

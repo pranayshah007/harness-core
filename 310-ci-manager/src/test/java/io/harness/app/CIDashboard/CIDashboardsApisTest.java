@@ -605,4 +605,40 @@ public class CIDashboardsApisTest extends CategoryTest {
         UsageDataDTO.builder().count(2).displayName("Last 30 Days").references(usageReferences).build();
     assertThat(usage).isEqualTo(ciOverviewDashboardServiceImpl.getActiveCommitter("accountId", 0L));
   }
+
+  @Test
+  @Owner(developers = JAMIE)
+  @Category(UnitTests.class)
+  public void testGetActiveCommittersUniqueId() throws SQLException {
+    ResultSet resultSet = mock(ResultSet.class);
+    Connection connection = mock(Connection.class);
+    PreparedStatement statement = mock(PreparedStatement.class);
+    when(statement.executeQuery()).thenReturn(resultSet);
+    when(connection.prepareStatement(any())).thenReturn(statement);
+    when(timeScaleDBService.getDBConnection()).thenReturn(connection);
+    final int[] count = {0};
+    when(resultSet.next()).then((Answer<Boolean>) invocation -> {
+      if (count[0] <= 1) {
+        count[0]++;
+        return true;
+      }
+      return false;
+    });
+    // ID does not change here
+    when(resultSet.getString("moduleinfo_author_id")).then((Answer<String>) invocation -> "authoerId");
+    when(resultSet.getString("projectidentifier")).then((Answer<String>) invocation -> "projectId" + count[0]);
+    when(resultSet.getString("orgidentifier")).then((Answer<String>) invocation -> "orgId" + count[0]);
+
+    List<ReferenceDTO> usageReferences = new ArrayList<>();
+    ReferenceDTO reference1 =
+        ReferenceDTO.builder().identifier("authoerId").projectIdentifier("projectId1").orgIdentifier("orgId1").build();
+    usageReferences.add(reference1);
+    ReferenceDTO reference2 =
+        ReferenceDTO.builder().identifier("authoerId").projectIdentifier("projectId2").orgIdentifier("orgId2").build();
+    usageReferences.add(reference2);
+
+    UsageDataDTO usage =
+        UsageDataDTO.builder().count(1).displayName("Last 30 Days").references(usageReferences).build();
+    assertThat(usage).isEqualTo(ciOverviewDashboardServiceImpl.getActiveCommitter("accountId", 0L));
+  }
 }

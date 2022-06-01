@@ -72,4 +72,9 @@ public class ServerlessAwsLambdaDeployStepInfo
         .commandOptions(commandOptions)
         .build();
   }
+
+  @Override
+  public ParameterField<List<TaskSelectorYaml>> fetchDelegateSelectors() {
+    return getDelegateSelectors();
+  }
 }

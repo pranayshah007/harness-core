@@ -1050,6 +1050,9 @@
             "tags"
           ],
           "properties": {
+            "baseImageConnectorRefs": {
+              "$ref": "#/definitions/ParameterFieldListString"
+            },
             "buildArgs": {
               "oneOf": [
                 {
@@ -1153,6 +1156,19 @@
           "properties": {
             "account": {
               "type": "string"
+            },
+            "baseImageConnectorRefs": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ]
             },
             "buildArgs": {
               "oneOf": [
@@ -1474,6 +1490,9 @@
             "tags"
           ],
           "properties": {
+            "baseImageConnectorRefs": {
+              "$ref": "#/definitions/ParameterFieldListString"
+            },
             "buildArgs": {
               "oneOf": [
                 {
@@ -1606,22 +1625,6 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
-    "HoldingScope": {
-      "type": "object",
-      "required": [
-        "nodeSetupId",
-        "scope"
-      ],
-      "properties": {
-        "nodeSetupId": {
-          "type": "string"
-        },
-        "scope": {
-          "type": "string"
-        }
-      },
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
     "HostPathVolume": {
       "allOf": [
         {
@@ -1725,6 +1728,21 @@
           "properties": {
             "assertion": {
               "type": "string"
+            },
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "minLength": 1
+                }
+              ]
             },
             "headers": {
               "type": "array",
@@ -2137,6 +2155,21 @@
             "connectorRef": {
               "type": "string"
             },
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "minLength": 1
+                }
+              ]
+            },
             "issueKey": {
               "type": "string"
             },
@@ -2163,6 +2196,21 @@
           "properties": {
             "connectorRef": {
               "type": "string"
+            },
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "minLength": 1
+                }
+              ]
             },
             "fields": {
               "type": "array",
@@ -2212,6 +2260,21 @@
             "connectorRef": {
               "type": "string"
             },
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "minLength": 1
+                }
+              ]
+            },
             "fields": {
               "type": "array",
               "items": {
@@ -2247,7 +2310,10 @@
             "stepConnectorRefs": {
               "type": "object",
               "additionalProperties": {
-                "$ref": "#/definitions/ConnectorConversionInfo"
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/ConnectorConversionInfo"
+                }
               }
             },
             "workDir": {
@@ -2334,6 +2400,9 @@
             }
           ]
         },
+        "harnessImageConnectorRef": {
+          "type": "string"
+        },
         "initTimeout": {
           "type": "string"
         },
@@ -2374,7 +2443,7 @@
               "type": "string",
               "enum": [
                 "Linux",
-                "Osx",
+                "MacOS",
                 "Windows"
               ]
             },
@@ -3562,7 +3631,13 @@
               ]
             },
             "holdingScope": {
-              "$ref": "#/definitions/HoldingScope"
+              "type": "string",
+              "enum": [
+                "PLAN",
+                "PIPELINE",
+                "STAGE",
+                "STEP_GROUP"
+              ]
             },
             "name": {
               "type": "string"
@@ -3607,6 +3682,9 @@
                   "minLength": 1
                 }
               ]
+            },
+            "baseImageConnectorRefs": {
+              "$ref": "#/definitions/ParameterFieldListString"
             },
             "bucket": {
               "type": "string"
@@ -3674,6 +3752,9 @@
                   "minLength": 1
                 }
               ]
+            },
+            "baseImageConnectorRefs": {
+              "$ref": "#/definitions/ParameterFieldListString"
             },
             "bucket": {
               "type": "string"
@@ -3924,6 +4005,22 @@
             "args": {
               "type": "string"
             },
+            "buildEnvironment": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "Core",
+                    "Framework"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "minLength": 1
+                }
+              ]
+            },
             "buildTool": {
               "oneOf": [
                 {
@@ -3956,6 +4053,22 @@
                 },
                 {
                   "type": "string"
+                }
+              ]
+            },
+            "frameworkVersion": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "5.0",
+                    "6.0"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "minLength": 1
                 }
               ]
             },
@@ -3994,6 +4107,9 @@
                   "minLength": 1
                 }
               ]
+            },
+            "namespaces": {
+              "type": "string"
             },
             "outputVariables": {
               "oneOf": [
@@ -4123,6 +4239,9 @@
                 }
               ]
             },
+            "baseImageConnectorRefs": {
+              "$ref": "#/definitions/ParameterFieldListString"
+            },
             "bucket": {
               "type": "string"
             },
@@ -4203,6 +4322,9 @@
                   "minLength": 1
                 }
               ]
+            },
+            "baseImageConnectorRefs": {
+              "$ref": "#/definitions/ParameterFieldListString"
             },
             "bucket": {
               "type": "string"
@@ -4398,6 +4520,9 @@
             "connectorRef"
           ],
           "properties": {
+            "baseImageConnectorRefs": {
+              "$ref": "#/definitions/ParameterFieldListString"
+            },
             "connectorRef": {
               "type": "string"
             },
@@ -4506,6 +4631,21 @@
             "connectorRef": {
               "type": "string"
             },
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "minLength": 1
+                }
+              ]
+            },
             "rejectionCriteria": {
               "$ref": "#/definitions/CriteriaSpecWrapper"
             },
@@ -4535,6 +4675,21 @@
           "properties": {
             "connectorRef": {
               "type": "string"
+            },
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "minLength": 1
+                }
+              ]
             },
             "fields": {
               "type": "array",
@@ -4588,6 +4743,21 @@
           "properties": {
             "connectorRef": {
               "type": "string"
+            },
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "minLength": 1
+                }
+              ]
             },
             "fields": {
               "type": "array",
@@ -4854,6 +5024,21 @@
             "source"
           ],
           "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "minLength": 1
+                }
+              ]
+            },
             "environmentVariables": {
               "type": "array",
               "items": {
@@ -5702,6 +5887,9 @@
             "target"
           ],
           "properties": {
+            "baseImageConnectorRefs": {
+              "$ref": "#/definitions/ParameterFieldListString"
+            },
             "connectorRef": {
               "type": "string"
             },
@@ -5743,6 +5931,9 @@
             "sourcePath"
           ],
           "properties": {
+            "baseImageConnectorRefs": {
+              "$ref": "#/definitions/ParameterFieldListString"
+            },
             "bucket": {
               "type": "string"
             },
@@ -5788,6 +5979,9 @@
             "sourcePath"
           ],
           "properties": {
+            "baseImageConnectorRefs": {
+              "$ref": "#/definitions/ParameterFieldListString"
+            },
             "bucket": {
               "type": "string"
             },
@@ -5982,6 +6176,9 @@
     "VmPoolYamlSpec": {
       "type": "object",
       "properties": {
+        "harnessImageConnectorRef": {
+          "type": "string"
+        },
         "identifier": {
           "type": "string"
         },
@@ -5991,7 +6188,7 @@
               "type": "string",
               "enum": [
                 "Linux",
-                "Osx",
+                "MacOS",
                 "Windows"
               ]
             },

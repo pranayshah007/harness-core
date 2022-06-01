@@ -8,6 +8,7 @@
 package io.harness.ci.plan.creator.filter;
 
 import static io.harness.beans.yaml.extended.infrastrucutre.Infrastructure.Type.KUBERNETES_DIRECT;
+import static io.harness.beans.yaml.extended.infrastrucutre.Infrastructure.Type.VM;
 import static io.harness.filters.FilterCreatorHelper.convertToEntityDetailProtoDTO;
 import static io.harness.git.GitClientHelper.getGitRepo;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.CI;
@@ -40,12 +41,14 @@ import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.stateutils.buildstate.ConnectorUtils;
 import io.harness.steps.StepSpecTypeConstants;
+import io.harness.util.InfrastructureUtils;
 import io.harness.walktree.visitor.SimpleVisitorFactory;
 import io.harness.yaml.extended.ci.codebase.CodeBase;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
@@ -57,7 +60,7 @@ public class CIStageFilterJsonCreator extends GenericStageFilterJsonCreator {
 
   @Override
   public Set<String> getSupportedStageTypes() {
-    return ImmutableSet.of(StepSpecTypeConstants.CI_STAGE, StepSpecTypeConstants.SECURITY_STAGE);
+    return ImmutableSet.of(StepSpecTypeConstants.CI_STAGE);
   }
 
   @Override
@@ -167,8 +170,35 @@ public class CIStageFilterJsonCreator extends GenericStageFilterJsonCreator {
               EntityTypeProtoEnum.CONNECTORS));
         }
       }
+      Optional<EntityDetailProtoDTO> harnessImageConnectorOptional =
+          getHarnessImageConnectorReferredEntity(filterCreationContext, integrationStage.getInfrastructure(),
+              accountIdentifier, orgIdentifier, projectIdentifier);
+      harnessImageConnectorOptional.ifPresent(result::add);
     }
 
     return result;
+  }
+
+  private Optional<EntityDetailProtoDTO> getHarnessImageConnectorReferredEntity(
+      FilterCreationContext filterCreationContext, Infrastructure infrastructure, String accountIdentifier,
+      String orgIdentifier, String projectIdentifier) {
+    Optional<EntityDetailProtoDTO> optionalHarnessImageConnector = Optional.empty();
+    Optional<ParameterField<String>> optionalHarnessImageConnectorValue =
+        InfrastructureUtils.getHarnessImageConnector(infrastructure);
+
+    if (optionalHarnessImageConnectorValue.isPresent()) {
+      String fullQualifiedDomainName =
+          YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode()) + PATH_CONNECTOR
+          + YAMLFieldNameConstants.SPEC + PATH_CONNECTOR + YAMLFieldNameConstants.PIPELINE_INFRASTRUCTURE
+          + PATH_CONNECTOR + YAMLFieldNameConstants.SPEC + PATH_CONNECTOR;
+      if (infrastructure.getType() == VM) {
+        fullQualifiedDomainName += YAMLFieldNameConstants.SPEC + PATH_CONNECTOR;
+      }
+      fullQualifiedDomainName += YAMLFieldNameConstants.HARNESS_IMAGE_CONNECTOR_REF;
+      optionalHarnessImageConnector =
+          Optional.of(convertToEntityDetailProtoDTO(accountIdentifier, orgIdentifier, projectIdentifier,
+              fullQualifiedDomainName, optionalHarnessImageConnectorValue.get(), EntityTypeProtoEnum.CONNECTORS));
+    }
+    return optionalHarnessImageConnector;
   }
 }

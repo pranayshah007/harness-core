@@ -13,6 +13,7 @@ import static io.harness.telemetry.Destination.AMPLITUDE;
 import static io.harness.telemetry.filter.APIAuthTelemetryResponseFilter.ACCOUNT_IDENTIFIER;
 import static io.harness.telemetry.filter.APIAuthTelemetryResponseFilter.API_ENDPOINT;
 import static io.harness.telemetry.filter.APIAuthTelemetryResponseFilter.API_ENDPOINTS_ERRORED_RESPONSE;
+import static io.harness.telemetry.filter.APIAuthTelemetryResponseFilter.API_PATTERN;
 import static io.harness.telemetry.filter.APIAuthTelemetryResponseFilter.API_TYPE;
 import static io.harness.telemetry.filter.APIAuthTelemetryResponseFilter.AUTH_TYPE;
 import static io.harness.telemetry.filter.APIAuthTelemetryResponseFilter.DEFAULT_RATE_LIMIT;
@@ -35,13 +36,16 @@ import io.harness.telemetry.TelemetryReporter;
 
 import io.github.resilience4j.ratelimiter.RateLimiterConfig;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerResponseContext;
 import javax.ws.rs.core.MultivaluedMap;
 import lombok.extern.slf4j.Slf4j;
 import org.glassfish.jersey.server.internal.routing.UriRoutingContext;
+import org.glassfish.jersey.uri.UriTemplate;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -62,6 +66,7 @@ public class APIAuthTelemetryResponseFilterTest extends CategoryTest {
   public static final String SOME_API_ENDPOINT = "/some-api-endpoint";
   public static final String GET = "GET";
   public static final int CUSTOM_REQUEST_LIMIT = 10;
+  public static final String SOME_API_PATTERN = "some-api-pattern";
   @Mock private TelemetryReporter telemetryReporter;
   @Mock private ContainerRequestContext containerRequestContext;
   @Mock private ContainerResponseContext containerResponseContext;
@@ -85,6 +90,9 @@ public class APIAuthTelemetryResponseFilterTest extends CategoryTest {
     when(uriRoutingContext.getPath()).thenReturn(SOME_API_ENDPOINT);
     when(uriRoutingContext.getQueryParameters()).thenReturn(parametersMap);
     when(uriRoutingContext.getPathParameters()).thenReturn(parametersMap);
+    List<UriTemplate> templates = new ArrayList<>();
+    templates.add(new UriTemplate(SOME_API_PATTERN));
+    when(uriRoutingContext.getMatchedTemplates()).thenReturn(templates);
 
     when(parametersMap.getFirst(NGCommonEntityConstants.ACCOUNT_KEY)).thenReturn(SOME_ACCOUNT_ID);
 
@@ -96,6 +104,7 @@ public class APIAuthTelemetryResponseFilterTest extends CategoryTest {
     properties.put(RESPONSE_CODE, ERROR_RESPONSE_CODE);
     properties.put(ERROR_MESSAGE, SOME_ERROR_MESSAGE);
     properties.put(API_TYPE, GET);
+    properties.put(API_PATTERN, SOME_API_PATTERN);
   }
 
   @Test

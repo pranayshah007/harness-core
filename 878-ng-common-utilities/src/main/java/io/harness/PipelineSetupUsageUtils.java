@@ -19,12 +19,15 @@ import io.harness.pms.yaml.YamlUtils;
 import io.harness.preflight.PreFlightCheckMetadata;
 import io.harness.utils.IdentifierRefHelper;
 
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -52,22 +55,36 @@ public class PipelineSetupUsageUtils {
       if (!metadata.containsKey(PreFlightCheckMetadata.EXPRESSION)) {
         entityDetails.add(referredUsage.getReferredEntity());
       } else if (fqnToObjectMapMergedYaml.containsKey(fqn)) {
-        String finalValue = ((TextNode) fqnToObjectMapMergedYaml.get(fqn)).asText();
-        if (NGExpressionUtils.isRuntimeOrExpressionField(finalValue)) {
-          continue;
+        Object finalNode = fqnToObjectMapMergedYaml.get(fqn);
+        if (finalNode instanceof ArrayNode) {
+          ((ArrayNode) finalNode)
+              .forEach(node
+                  -> entityDetails.add(getEntityDetailFromTextNode(
+                      accountIdentifier, orgIdentifier, projectIdentifier, (TextNode) node, referredUsage, metadata)));
+        } else {
+          entityDetails.add(getEntityDetailFromTextNode(
+              accountIdentifier, orgIdentifier, projectIdentifier, (TextNode) finalNode, referredUsage, metadata));
         }
-        if (ParameterField.containsInputSetValidator(finalValue)) {
-          finalValue = ParameterField.getValueFromParameterFieldWithInputSetValidator(finalValue);
-        }
-        IdentifierRef identifierRef = IdentifierRefHelper.getIdentifierRef(
-            finalValue, accountIdentifier, orgIdentifier, projectIdentifier, metadata);
-        entityDetails.add(EntityDetail.builder()
-                              .name(referredUsage.getReferredEntity().getName())
-                              .type(referredUsage.getReferredEntity().getType())
-                              .entityRef(identifierRef)
-                              .build());
       }
     }
-    return entityDetails;
+    return entityDetails.stream().filter(Objects::nonNull).collect(Collectors.toList());
+  }
+
+  private EntityDetail getEntityDetailFromTextNode(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, TextNode node, EntitySetupUsageDTO referredUsage, Map<String, String> metadata) {
+    String finalValue = node.asText();
+    if (NGExpressionUtils.isRuntimeOrExpressionField(finalValue)) {
+      return null;
+    }
+    if (ParameterField.containsInputSetValidator(finalValue)) {
+      finalValue = ParameterField.getValueFromParameterFieldWithInputSetValidator(finalValue);
+    }
+    IdentifierRef identifierRef =
+        IdentifierRefHelper.getIdentifierRef(finalValue, accountIdentifier, orgIdentifier, projectIdentifier, metadata);
+    return EntityDetail.builder()
+        .name(referredUsage.getReferredEntity().getName())
+        .type(referredUsage.getReferredEntity().getType())
+        .entityRef(identifierRef)
+        .build();
   }
 }

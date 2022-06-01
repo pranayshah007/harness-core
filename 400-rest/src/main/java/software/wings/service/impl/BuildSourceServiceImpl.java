@@ -58,6 +58,7 @@ import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.beans.command.GcbTaskParams;
 import software.wings.beans.settings.azureartifacts.AzureArtifactsConfig;
 import software.wings.delegatetasks.DelegateProxyFactory;
+import software.wings.delegatetasks.GcbDelegateResponse;
 import software.wings.helpers.ext.azure.devops.AzureArtifactsFeed;
 import software.wings.helpers.ext.azure.devops.AzureArtifactsPackage;
 import software.wings.helpers.ext.azure.devops.AzureDevopsProject;
@@ -78,7 +79,6 @@ import software.wings.service.intfc.artifact.CustomBuildSourceService;
 import software.wings.service.intfc.security.SecretManager;
 import software.wings.settings.SettingValue;
 import software.wings.settings.SettingVariableTypes;
-import software.wings.sm.states.GcbState;
 import software.wings.utils.RepositoryFormat;
 import software.wings.utils.RepositoryType;
 
@@ -784,7 +784,7 @@ public class BuildSourceServiceImpl implements BuildSourceService {
     }
     List<EncryptedDataDetail> encryptedDataDetails = getEncryptedDataDetails((EncryptableSetting) settingValue);
     GcpConfig gcpConfig = (GcpConfig) settingValue;
-    GcbState.GcbDelegateResponse delegateResponseData = null;
+    GcbDelegateResponse delegateResponseData = null;
     try {
       delegateResponseData = delegateService.executeTask(
           DelegateTask.builder()

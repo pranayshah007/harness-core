@@ -309,18 +309,18 @@ public class SpotInstSetupTaskHandlerTest extends WingsBaseTest {
                      .listenerArn(stageListenerArn)
                      .build()))
         .when(mockAwsElbHelperServiceDelegate)
-        .getElbListenersForLoadBalaner(any(), anyList(), anyString(), anyString());
+        .getElbListenersForLoadBalaner(any(), anyList(), any(), any());
     String stageElastiGroupOldId = "STAGE_ELASTI_GROUP_OLD_ID";
     String prodElastiGroupOldId = "PROD_ELASTI_GROUP_OLD_ID";
     String stageElastiGroupNewId = "STAGE_ELASTI_GROUP_NEW_ID";
     doReturn(Optional.of(ElastiGroup.builder().id(stageElastiGroupOldId).name("foo__STAGE__Harness").build()))
         .doReturn(Optional.of(ElastiGroup.builder().id(prodElastiGroupOldId).name("foo").build()))
         .when(mockSpotInstHelperServiceDelegate)
-        .getElastiGroupByName(anyString(), anyString(), anyString());
-    doReturn("JSON").when(spotInstSetupTaskHandler).generateFinalJson(any(), anyString());
+        .getElastiGroupByName(any(), any(), any());
+    doReturn("JSON").when(spotInstSetupTaskHandler).generateFinalJson(any(), any());
     ExecutionLogCallback mockCallback = mock(ExecutionLogCallback.class);
-    doNothing().when(mockCallback).saveExecutionLog(anyString());
-    doNothing().when(mockCallback).saveExecutionLog(anyString(), any(), any());
+    doNothing().when(mockCallback).saveExecutionLog(any());
+    doNothing().when(mockCallback).saveExecutionLog(any(), any(), any());
     SpotInstSetupTaskParameters parameters =
         SpotInstSetupTaskParameters.builder()
             .blueGreen(true)
@@ -338,7 +338,7 @@ public class SpotInstSetupTaskHandlerTest extends WingsBaseTest {
         .doReturn(new Listener().withDefaultActions(
             new Action().withTargetGroupArn(stageTargetGroupArn).withType(FORWARD_LISTENER_ACTION)))
         .when(mockAwsElbHelperServiceDelegate)
-        .getElbListener(any(), anyList(), anyString(), anyString());
+        .getElbListener(any(), any(), any(), any());
     doReturn(prodTargetGroupArn)
         .doReturn(stageTargetGroupArn)
         .when(mockAwsElbHelperServiceDelegate)
@@ -347,10 +347,10 @@ public class SpotInstSetupTaskHandlerTest extends WingsBaseTest {
         .doReturn(
             Optional.of(new TargetGroup().withTargetGroupArn(stageTargetGroupArn).withTargetGroupName("STAGE_TGT")))
         .when(mockAwsElbHelperServiceDelegate)
-        .getTargetGroup(any(), anyList(), anyString(), anyString());
+        .getTargetGroup(any(), anyList(), any(), any());
     doReturn(ElastiGroup.builder().id(stageElastiGroupNewId).name("foo__STAGE__Harness").build())
         .when(mockSpotInstHelperServiceDelegate)
-        .createElastiGroup(anyString(), anyString(), anyString());
+        .createElastiGroup(any(), any(), any());
     SpotInstTaskExecutionResponse response = spotInstSetupTaskHandler.executeTaskInternalForBlueGreen(
         parameters, "SPOTINST_ACCOUNT_ID", "TOKEN", AwsConfig.builder().build(), mockCallback);
     assertThat(response).isNotNull();

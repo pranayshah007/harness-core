@@ -16,8 +16,6 @@ import lombok.Value;
 public class ECSUtilizationData {
   private double maxCpuUtilization;
   private double maxMemoryUtilization;
-  private double avgCpuUtilization;
-  private double avgMemoryUtilization;
   private Instant startTime;
   private Instant endTime;
 }

@@ -42,6 +42,11 @@ public class GraphQLUtils {
         Response.status(Status.UNAUTHORIZED).entity(getUnauthorizedErrorMessage()).build());
   }
 
+  WebApplicationException getUnauthorizedExceptionForSupportUserWithMutation() {
+    return new WebApplicationException(
+        Response.status(Status.UNAUTHORIZED).entity(getUnauthorizedErrorMessageForSupportUserWithMutation()).build());
+  }
+
   WebApplicationException getInvalidTokenException() {
     return new WebApplicationException(
         Response.status(Status.UNAUTHORIZED).entity(getInvalidTokenErrorMessage()).build());
@@ -70,6 +75,11 @@ public class GraphQLUtils {
 
   private String getUnauthorizedErrorMessage() {
     String message = GraphQLConstants.NOT_AUTHORIZED;
+    return getErrorMessage(message);
+  }
+
+  private String getUnauthorizedErrorMessageForSupportUserWithMutation() {
+    String message = GraphQLConstants.NOT_AUTHORIZED_SUPPORT_USER_FOR_MUTATION;
     return getErrorMessage(message);
   }
 

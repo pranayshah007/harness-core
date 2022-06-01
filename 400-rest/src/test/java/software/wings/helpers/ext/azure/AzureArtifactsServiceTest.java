@@ -38,7 +38,7 @@ import software.wings.WingsBaseTest;
 import software.wings.beans.artifact.ArtifactFile;
 import software.wings.beans.artifact.ArtifactMetadataKeys;
 import software.wings.beans.artifact.ArtifactStreamAttributes;
-import software.wings.beans.artifact.AzureArtifactsArtifactStream.ProtocolType;
+import software.wings.beans.artifact.AzureArtifactsArtifactStreamProtocolType;
 import software.wings.beans.settings.azureartifacts.AzureArtifactsConfig;
 import software.wings.beans.settings.azureartifacts.AzureArtifactsPATConfig;
 import software.wings.delegatetasks.DelegateFileManager;
@@ -71,8 +71,8 @@ import retrofit2.Response;
 public class AzureArtifactsServiceTest extends WingsBaseTest {
   private static final String DEFAULT_AZURE_ARTIFACTS_URL_WITHOUT_SLASH = "http://localhost:9891/azureartifacts";
   private static final String DEFAULT_AZURE_ARTIFACTS_URL = DEFAULT_AZURE_ARTIFACTS_URL_WITHOUT_SLASH + "/";
-  private static final String MAVEN = ProtocolType.maven.name();
-  private static final String NUGET = ProtocolType.nuget.name();
+  private static final String MAVEN = AzureArtifactsArtifactStreamProtocolType.maven.name();
+  private static final String NUGET = AzureArtifactsArtifactStreamProtocolType.nuget.name();
   private static final String FEED = "FEED";
   private static final String PACKAGE_ID = "PACKAGE_ID";
   private static final String GROUP_ID = "GROUP_ID";
@@ -424,8 +424,7 @@ public class AzureArtifactsServiceTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldNotListFilesForInvalidVersion() {
     azureArtifactsService.listFiles(azureArtifactsConfig, null,
-        ArtifactStreamAttributes.builder().protocolType(ProtocolType.maven.name()).build(), Collections.emptyMap(),
-        false);
+        ArtifactStreamAttributes.builder().protocolType(MAVEN).build(), Collections.emptyMap(), false);
   }
 
   @Test

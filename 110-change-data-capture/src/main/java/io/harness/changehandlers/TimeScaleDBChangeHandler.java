@@ -34,7 +34,7 @@ public class TimeScaleDBChangeHandler implements ChangeHandler {
 
   @Override
   public boolean handleChange(ChangeEvent<?> changeEvent, String tableName, String[] fields) {
-    log.info("In TimeScale Change Handler: {}, {}, {}", changeEvent, tableName, fields);
+    log.trace("In TimeScale Change Handler: {}, {}, {}", changeEvent, tableName, fields);
     switch (changeEvent.getChangeType()) {
       case INSERT:
         dbOperation(insertSQL(tableName, getColumnValueMapping(changeEvent, fields)));
@@ -54,7 +54,7 @@ public class TimeScaleDBChangeHandler implements ChangeHandler {
 
   public boolean dbOperation(String query) {
     boolean successfulOperation = false;
-    log.info("In dbOperation, Query: {}", query);
+    log.trace("In dbOperation, Query: {}", query);
     if (timeScaleDBService.isValid()) {
       int retryCount = 0;
       while (!successfulOperation && retryCount < MAX_RETRY_COUNT) {

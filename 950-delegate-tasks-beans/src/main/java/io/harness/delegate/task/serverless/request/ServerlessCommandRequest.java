@@ -68,19 +68,21 @@ public interface ServerlessCommandRequest extends TaskParameters, ExecutionCapab
       }
       capabilities.addAll(AwsCapabilityHelper.fetchRequiredExecutionCapabilities(awsConnectorDTO, maskingEvaluator));
     }
-    if (serverlessManifestConfig instanceof ServerlessAwsLambdaManifestConfig) {
-      ServerlessAwsLambdaManifestConfig serverlessAwsLambdaManifestConfig =
-          (ServerlessAwsLambdaManifestConfig) serverlessManifestConfig;
-      if (serverlessAwsLambdaManifestConfig.getGitStoreDelegateConfig().getType() == GIT) {
-        GitStoreDelegateConfig gitStoreDelegateConfig = serverlessAwsLambdaManifestConfig.getGitStoreDelegateConfig();
-        capabilities.addAll(GitCapabilityHelper.fetchRequiredExecutionCapabilities(
-            ScmConnectorMapper.toGitConfigDTO(gitStoreDelegateConfig.getGitConfigDTO()),
-            gitStoreDelegateConfig.getEncryptedDataDetails(), gitStoreDelegateConfig.getSshKeySpecDTO()));
-        capabilities.addAll(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
-            gitStoreDelegateConfig.getEncryptedDataDetails(), maskingEvaluator));
+    if (getServerlessManifestConfig() != null) {
+      if (serverlessManifestConfig instanceof ServerlessAwsLambdaManifestConfig) {
+        ServerlessAwsLambdaManifestConfig serverlessAwsLambdaManifestConfig =
+            (ServerlessAwsLambdaManifestConfig) serverlessManifestConfig;
+        if (serverlessAwsLambdaManifestConfig.getGitStoreDelegateConfig().getType() == GIT) {
+          GitStoreDelegateConfig gitStoreDelegateConfig = serverlessAwsLambdaManifestConfig.getGitStoreDelegateConfig();
+          capabilities.addAll(GitCapabilityHelper.fetchRequiredExecutionCapabilities(
+              ScmConnectorMapper.toGitConfigDTO(gitStoreDelegateConfig.getGitConfigDTO()),
+              gitStoreDelegateConfig.getEncryptedDataDetails(), gitStoreDelegateConfig.getSshKeySpecDTO()));
+          capabilities.addAll(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
+              gitStoreDelegateConfig.getEncryptedDataDetails(), maskingEvaluator));
+        }
       }
     }
-    if (serverlessArtifactConfig != null) {
+    if (getServerlessArtifactConfig() != null) {
       if (serverlessArtifactConfig instanceof ServerlessArtifactoryArtifactConfig) {
         ServerlessArtifactoryArtifactConfig serverlessArtifactoryArtifactConfig =
             (ServerlessArtifactoryArtifactConfig) serverlessArtifactConfig;

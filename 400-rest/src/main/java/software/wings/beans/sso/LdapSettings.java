@@ -24,7 +24,6 @@ import io.harness.iterator.PersistentCronIterable;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.helpers.ext.ldap.LdapConstants;
-import software.wings.service.intfc.security.EncryptionService;
 import software.wings.service.intfc.security.SecretManager;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -133,14 +132,6 @@ public class LdapSettings extends SSOSettings implements ExecutionCapabilityDema
       connectionSettings.setEncryptedBindSecret(null);
     } else {
       connectionSettings.setBindPassword(LdapConstants.MASKED_STRING);
-    }
-  }
-
-  public void decryptFields(
-      @NotNull EncryptedDataDetail encryptedDataDetail, @NotNull EncryptionService encryptionService) {
-    if (connectionSettings.getBindPassword().equals(LdapConstants.MASKED_STRING)) {
-      String bindPassword = new String(encryptionService.getDecryptedValue(encryptedDataDetail, false));
-      connectionSettings.setBindPassword(bindPassword);
     }
   }
 

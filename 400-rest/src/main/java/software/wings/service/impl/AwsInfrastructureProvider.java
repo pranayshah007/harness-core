@@ -282,7 +282,7 @@ public class AwsInfrastructureProvider implements InfrastructureProvider {
       List<EncryptedDataDetail> encryptedDataDetails) {
     DeploymentType deploymentType = serviceResourceService.getDeploymentType(
         awsInfrastructureMapping, null, awsInfrastructureMapping.getServiceId());
-    List<Filter> filters = awsUtils.getAwsFilters(awsInfrastructureMapping, deploymentType);
+    List<Filter> filters = awsUtils.getFilters(deploymentType, awsInfrastructureMapping.getAwsInstanceFilter());
     try {
       return awsEc2HelperServiceManager.listEc2Instances(awsConfig, encryptedDataDetails,
           awsInfrastructureMapping.getRegion(), filters, awsInfrastructureMapping.getAppId());
@@ -294,7 +294,7 @@ public class AwsInfrastructureProvider implements InfrastructureProvider {
 
   private List<Instance> listFilteredHosts(AwsInstanceInfrastructure awsInstanceInfrastructure, AwsConfig awsConfig,
       List<EncryptedDataDetail> encryptedDataDetails, DeploymentType deploymentType, String appId) {
-    List<Filter> filters = awsUtils.getAwsFilters(awsInstanceInfrastructure, deploymentType);
+    List<Filter> filters = awsUtils.getFilters(deploymentType, awsInstanceInfrastructure.getAwsInstanceFilter());
     try {
       return awsEc2HelperServiceManager.listEc2Instances(
           awsConfig, encryptedDataDetails, awsInstanceInfrastructure.getRegion(), filters, appId);

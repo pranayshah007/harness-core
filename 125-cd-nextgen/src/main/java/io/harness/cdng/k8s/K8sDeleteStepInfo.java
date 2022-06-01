@@ -74,4 +74,9 @@ public class K8sDeleteStepInfo extends K8sDeleteBaseStepInfo implements CDStepIn
         .delegateSelectors(this.getDelegateSelectors())
         .build();
   }
+
+  @Override
+  public ParameterField<List<TaskSelectorYaml>> fetchDelegateSelectors() {
+    return getDelegateSelectors();
+  }
 }

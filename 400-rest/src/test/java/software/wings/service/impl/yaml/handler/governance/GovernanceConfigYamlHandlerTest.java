@@ -7,6 +7,7 @@
 
 package software.wings.service.impl.yaml.handler.governance;
 
+import static io.harness.rule.OwnerRule.ATHARVA;
 import static io.harness.rule.OwnerRule.HINGER;
 
 import static software.wings.beans.Application.Builder.anApplication;
@@ -39,6 +40,8 @@ import io.harness.governance.CustomAppFilter;
 import io.harness.governance.CustomEnvFilter;
 import io.harness.governance.EnvironmentFilter;
 import io.harness.governance.EnvironmentFilter.EnvironmentFilterType;
+import io.harness.governance.ServiceFilter;
+import io.harness.governance.ServiceFilter.ServiceFilterType;
 import io.harness.rule.Owner;
 
 import software.wings.beans.Application;
@@ -77,6 +80,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import lombok.SneakyThrows;
 import lombok.experimental.UtilityClass;
 import org.apache.commons.io.FileUtils;
 import org.junit.Before;
@@ -110,6 +114,7 @@ public class GovernanceConfigYamlHandlerTest extends YamlHandlerTestBase {
   @InjectMocks @Inject private AllEnvFilterYamlHandler allEnvFilterYamlHandler;
   @InjectMocks @Inject private AllProdEnvFilterYamlHandler allProdEnvFilterYamlHandler;
   @InjectMocks @Inject private AllNonProdEnvFilterYamlHandler allNonProdEnvFilterYamlHandler;
+  @InjectMocks @Inject private ServiceFilterYamlHandler serviceFilterYamlHandler;
 
   @InjectMocks @Inject private ArtifactTriggerConditionHandler artifactTriggerConditionHandler;
   @InjectMocks @Inject private PipelineTriggerConditionHandler pipelineTriggerConditionHandler;
@@ -160,6 +165,10 @@ public class GovernanceConfigYamlHandlerTest extends YamlHandlerTestBase {
     private final String GovernanceConfig17 = "governance_config17.yaml";
     // Recurring Window
     private final String GovernanceConfig18 = "governance_config18.yaml";
+    // Missing Environment
+    private final String GovernanceConfig19 = "governance_config19.yaml";
+    // Missing Service
+    private final String GovernanceConfig20 = "governance_config20.yaml";
   }
 
   private ArgumentCaptor<GovernanceConfig> captor = ArgumentCaptor.forClass(GovernanceConfig.class);
@@ -186,6 +195,7 @@ public class GovernanceConfigYamlHandlerTest extends YamlHandlerTestBase {
     doReturn(allNonProdEnvFilterYamlHandler)
         .when(mockYamlHandlerFactory)
         .getYamlHandler(YamlType.ENV_FILTER, "ALL_NON_PROD");
+    doReturn(serviceFilterYamlHandler).when(mockYamlHandlerFactory).getYamlHandler(YamlType.SERVICE_FILTER);
 
     // user group
     UserGroup userGroup = new UserGroup();
@@ -213,8 +223,9 @@ public class GovernanceConfigYamlHandlerTest extends YamlHandlerTestBase {
     Application testApp = Application.Builder.anApplication().name("test").uuid(APP_ID).environments(testEnvs).build();
     CustomEnvFilter environmentFilter = new CustomEnvFilter(
         EnvironmentFilterType.CUSTOM, testEnvs.stream().map(Environment::getUuid).collect(Collectors.toList()));
-    CustomAppFilter applicationFilter = new CustomAppFilter(
-        BlackoutWindowFilterType.CUSTOM, environmentFilter, Collections.singletonList(testApp.getUuid()), null);
+    ServiceFilter serviceFilter = new ServiceFilter(ServiceFilterType.ALL, null);
+    CustomAppFilter applicationFilter = new CustomAppFilter(BlackoutWindowFilterType.CUSTOM, environmentFilter,
+        Collections.singletonList(testApp.getUuid()), serviceFilter);
 
     doReturn(testApp).when(appService).getAppByName(anyString(), anyString());
     doReturn(prodEnv).when(environmentService).getEnvironmentByName(eq(APP_ID), eq("prod"));
@@ -230,7 +241,8 @@ public class GovernanceConfigYamlHandlerTest extends YamlHandlerTestBase {
                                                .build();
 
     doReturn(oldGovernanceConfig).when(governanceConfigService).get(eq(ACCOUNT_ID));
-    testCRUDGovernanceConfig(validGovernanceConfigFiles.GovernanceConfig1, applicationFilter, environmentFilter);
+    testCRUDGovernanceConfig(
+        validGovernanceConfigFiles.GovernanceConfig1, applicationFilter, environmentFilter, serviceFilter);
   }
 
   @Test
@@ -246,8 +258,10 @@ public class GovernanceConfigYamlHandlerTest extends YamlHandlerTestBase {
     Application testApp = Application.Builder.anApplication().name("test").uuid(APP_ID).environments(testEnvs).build();
     CustomEnvFilter environmentFilter = new CustomEnvFilter(
         EnvironmentFilterType.CUSTOM, testEnvs.stream().map(Environment::getUuid).collect(Collectors.toList()));
-    CustomAppFilter applicationFilter = new CustomAppFilter(
-        BlackoutWindowFilterType.CUSTOM, environmentFilter, Collections.singletonList(testApp.getUuid()), null);
+    ServiceFilter serviceFilter = new ServiceFilter(ServiceFilterType.ALL, null);
+
+    CustomAppFilter applicationFilter = new CustomAppFilter(BlackoutWindowFilterType.CUSTOM, environmentFilter,
+        Collections.singletonList(testApp.getUuid()), serviceFilter);
 
     doReturn(testApp).when(appService).getAppByName(anyString(), anyString());
     doReturn(prodEnv).when(environmentService).getEnvironmentByName(eq(APP_ID), eq("prod"));
@@ -263,7 +277,8 @@ public class GovernanceConfigYamlHandlerTest extends YamlHandlerTestBase {
                                                .build();
 
     doReturn(oldGovernanceConfig).when(governanceConfigService).get(eq(ACCOUNT_ID));
-    testUpsertForExpires(validGovernanceConfigFiles.GovernanceConfig16, applicationFilter, environmentFilter);
+    testUpsertForExpires(
+        validGovernanceConfigFiles.GovernanceConfig16, applicationFilter, environmentFilter, serviceFilter);
   }
 
   @Test
@@ -279,8 +294,10 @@ public class GovernanceConfigYamlHandlerTest extends YamlHandlerTestBase {
     Application testApp = Application.Builder.anApplication().name("test").uuid(APP_ID).environments(testEnvs).build();
     CustomEnvFilter environmentFilter = new CustomEnvFilter(
         EnvironmentFilterType.CUSTOM, testEnvs.stream().map(Environment::getUuid).collect(Collectors.toList()));
-    CustomAppFilter applicationFilter = new CustomAppFilter(
-        BlackoutWindowFilterType.CUSTOM, environmentFilter, Collections.singletonList(testApp.getUuid()), null);
+    ServiceFilter serviceFilter = new ServiceFilter(ServiceFilterType.ALL, null);
+
+    CustomAppFilter applicationFilter = new CustomAppFilter(BlackoutWindowFilterType.CUSTOM, environmentFilter,
+        Collections.singletonList(testApp.getUuid()), serviceFilter);
 
     doReturn(testApp).when(appService).getAppByName(anyString(), anyString());
     doReturn(prodEnv).when(environmentService).getEnvironmentByName(eq(APP_ID), eq("prod"));
@@ -296,7 +313,8 @@ public class GovernanceConfigYamlHandlerTest extends YamlHandlerTestBase {
                                                .build();
 
     doReturn(oldGovernanceConfig).when(governanceConfigService).get(eq(ACCOUNT_ID));
-    testUpsertForExpires(validGovernanceConfigFiles.GovernanceConfig17, applicationFilter, environmentFilter);
+    testUpsertForExpires(
+        validGovernanceConfigFiles.GovernanceConfig17, applicationFilter, environmentFilter, serviceFilter);
   }
 
   @Test
@@ -312,8 +330,9 @@ public class GovernanceConfigYamlHandlerTest extends YamlHandlerTestBase {
     Application testApp = Application.Builder.anApplication().name("test").uuid(APP_ID).environments(testEnvs).build();
     CustomEnvFilter environmentFilter = new CustomEnvFilter(
         EnvironmentFilterType.CUSTOM, testEnvs.stream().map(Environment::getUuid).collect(Collectors.toList()));
-    CustomAppFilter applicationFilter = new CustomAppFilter(
-        BlackoutWindowFilterType.CUSTOM, environmentFilter, Collections.singletonList(testApp.getUuid()), null);
+    ServiceFilter serviceFilter = new ServiceFilter(ServiceFilterType.ALL, null);
+    CustomAppFilter applicationFilter = new CustomAppFilter(BlackoutWindowFilterType.CUSTOM, environmentFilter,
+        Collections.singletonList(testApp.getUuid()), serviceFilter);
 
     doReturn(testApp).when(appService).getAppByName(anyString(), anyString());
     doReturn(prodEnv).when(environmentService).getEnvironmentByName(eq(APP_ID), eq("prod"));
@@ -330,7 +349,7 @@ public class GovernanceConfigYamlHandlerTest extends YamlHandlerTestBase {
 
     doReturn(oldGovernanceConfig).when(governanceConfigService).get(eq(ACCOUNT_ID));
     testUpsertForRecurringWindowExpires(
-        validGovernanceConfigFiles.GovernanceConfig18, applicationFilter, environmentFilter);
+        validGovernanceConfigFiles.GovernanceConfig18, applicationFilter, environmentFilter, serviceFilter);
   }
 
   @Test
@@ -345,9 +364,10 @@ public class GovernanceConfigYamlHandlerTest extends YamlHandlerTestBase {
 
     Application testApp = Application.Builder.anApplication().name("test").uuid(APP_ID).environments(testEnvs).build();
     AllEnvFilter environmentFilter = new AllEnvFilter(EnvironmentFilterType.ALL);
+    ServiceFilter serviceFilter = new ServiceFilter(ServiceFilterType.ALL, null);
 
-    CustomAppFilter applicationFilter = new CustomAppFilter(
-        BlackoutWindowFilterType.CUSTOM, environmentFilter, Collections.singletonList(testApp.getUuid()), null);
+    CustomAppFilter applicationFilter = new CustomAppFilter(BlackoutWindowFilterType.CUSTOM, environmentFilter,
+        Collections.singletonList(testApp.getUuid()), serviceFilter);
 
     doReturn(testApp).when(appService).getAppByName(anyString(), anyString());
 
@@ -360,7 +380,8 @@ public class GovernanceConfigYamlHandlerTest extends YamlHandlerTestBase {
                                                .build();
 
     doReturn(oldGovernanceConfig).when(governanceConfigService).get(eq(ACCOUNT_ID));
-    testCRUDGovernanceConfig(validGovernanceConfigFiles.GovernanceConfig3, applicationFilter, environmentFilter);
+    testCRUDGovernanceConfig(
+        validGovernanceConfigFiles.GovernanceConfig3, applicationFilter, environmentFilter, serviceFilter);
   }
 
   @Test
@@ -376,9 +397,10 @@ public class GovernanceConfigYamlHandlerTest extends YamlHandlerTestBase {
     Application testApp = Application.Builder.anApplication().name("test").uuid(APP_ID).environments(testEnvs).build();
 
     AllProdEnvFilter environmentFilter = new AllProdEnvFilter(EnvironmentFilterType.ALL_PROD);
+    ServiceFilter serviceFilter = new ServiceFilter(ServiceFilterType.ALL, null);
 
-    CustomAppFilter applicationFilter = new CustomAppFilter(
-        BlackoutWindowFilterType.CUSTOM, environmentFilter, Collections.singletonList(testApp.getUuid()), null);
+    CustomAppFilter applicationFilter = new CustomAppFilter(BlackoutWindowFilterType.CUSTOM, environmentFilter,
+        Collections.singletonList(testApp.getUuid()), serviceFilter);
 
     doReturn(testApp).when(appService).getAppByName(anyString(), anyString());
     doReturn(Collections.singletonList(testApp)).when(appService).getAppsByIds(any());
@@ -390,7 +412,8 @@ public class GovernanceConfigYamlHandlerTest extends YamlHandlerTestBase {
                                                .build();
 
     doReturn(oldGovernanceConfig).when(governanceConfigService).get(eq(ACCOUNT_ID));
-    testCRUDGovernanceConfig(validGovernanceConfigFiles.GovernanceConfig4, applicationFilter, environmentFilter);
+    testCRUDGovernanceConfig(
+        validGovernanceConfigFiles.GovernanceConfig4, applicationFilter, environmentFilter, serviceFilter);
   }
 
   @Test
@@ -406,9 +429,9 @@ public class GovernanceConfigYamlHandlerTest extends YamlHandlerTestBase {
     Application testApp = Application.Builder.anApplication().name("test").uuid(APP_ID).environments(testEnvs).build();
 
     AllNonProdEnvFilter environmentFilter = new AllNonProdEnvFilter(EnvironmentFilterType.ALL_NON_PROD);
-
-    CustomAppFilter applicationFilter = new CustomAppFilter(
-        BlackoutWindowFilterType.CUSTOM, environmentFilter, Collections.singletonList(testApp.getUuid()), null);
+    ServiceFilter serviceFilter = new ServiceFilter(ServiceFilterType.ALL, null);
+    CustomAppFilter applicationFilter = new CustomAppFilter(BlackoutWindowFilterType.CUSTOM, environmentFilter,
+        Collections.singletonList(testApp.getUuid()), serviceFilter);
 
     doReturn(testApp).when(appService).getAppByName(anyString(), anyString());
     doReturn(Collections.singletonList(testApp)).when(appService).getAppsByIds(any());
@@ -420,7 +443,8 @@ public class GovernanceConfigYamlHandlerTest extends YamlHandlerTestBase {
                                                .build();
 
     doReturn(oldGovernanceConfig).when(governanceConfigService).get(eq(ACCOUNT_ID));
-    testCRUDGovernanceConfig(validGovernanceConfigFiles.GovernanceConfig5, applicationFilter, environmentFilter);
+    testCRUDGovernanceConfig(
+        validGovernanceConfigFiles.GovernanceConfig5, applicationFilter, environmentFilter, serviceFilter);
   }
 
   @Test
@@ -436,9 +460,9 @@ public class GovernanceConfigYamlHandlerTest extends YamlHandlerTestBase {
     Application testApp = Application.Builder.anApplication().name("test").uuid(APP_ID).environments(testEnvs).build();
 
     AllNonProdEnvFilter environmentFilter = new AllNonProdEnvFilter(EnvironmentFilterType.ALL_NON_PROD);
-
-    CustomAppFilter applicationFilter = new CustomAppFilter(
-        BlackoutWindowFilterType.CUSTOM, environmentFilter, Collections.singletonList(testApp.getUuid()), null);
+    ServiceFilter serviceFilter = new ServiceFilter(ServiceFilterType.ALL, null);
+    CustomAppFilter applicationFilter = new CustomAppFilter(BlackoutWindowFilterType.CUSTOM, environmentFilter,
+        Collections.singletonList(testApp.getUuid()), serviceFilter);
 
     doReturn(testApp).when(appService).getAppByName(anyString(), anyString());
     doReturn(Collections.singletonList(testApp)).when(appService).getAppsByIds(any());
@@ -450,7 +474,8 @@ public class GovernanceConfigYamlHandlerTest extends YamlHandlerTestBase {
                                                .build();
 
     doReturn(oldGovernanceConfig).when(governanceConfigService).get(eq(ACCOUNT_ID));
-    testUpsertGovernanceConfig(validGovernanceConfigFiles.GovernanceConfig6, applicationFilter, environmentFilter);
+    testUpsertGovernanceConfig(
+        validGovernanceConfigFiles.GovernanceConfig6, applicationFilter, environmentFilter, serviceFilter);
   }
 
   @Test
@@ -466,7 +491,8 @@ public class GovernanceConfigYamlHandlerTest extends YamlHandlerTestBase {
     Application testApp = Application.Builder.anApplication().name("test").uuid(APP_ID).environments(testEnvs).build();
 
     AllEnvFilter environmentFilter = new AllEnvFilter(EnvironmentFilterType.ALL);
-    AllAppFilter applicationFilter = new AllAppFilter(BlackoutWindowFilterType.ALL, environmentFilter, null);
+    ServiceFilter serviceFilter = new ServiceFilter(ServiceFilterType.ALL, null);
+    AllAppFilter applicationFilter = new AllAppFilter(BlackoutWindowFilterType.ALL, environmentFilter, serviceFilter);
 
     doReturn(testApp).when(appService).getAppByName(anyString(), anyString());
     doReturn(Collections.singletonList(testApp)).when(appService).getAppsByIds(any());
@@ -478,7 +504,8 @@ public class GovernanceConfigYamlHandlerTest extends YamlHandlerTestBase {
                                                .build();
 
     doReturn(oldGovernanceConfig).when(governanceConfigService).get(eq(ACCOUNT_ID));
-    testCRUDGovernanceConfig(validGovernanceConfigFiles.GovernanceConfig7, applicationFilter, environmentFilter);
+    testCRUDGovernanceConfig(
+        validGovernanceConfigFiles.GovernanceConfig7, applicationFilter, environmentFilter, serviceFilter);
   }
 
   @Test
@@ -494,7 +521,8 @@ public class GovernanceConfigYamlHandlerTest extends YamlHandlerTestBase {
     Application testApp = Application.Builder.anApplication().name("test").uuid(APP_ID).environments(testEnvs).build();
 
     AllProdEnvFilter environmentFilter = new AllProdEnvFilter(EnvironmentFilterType.ALL_PROD);
-    AllAppFilter applicationFilter = new AllAppFilter(BlackoutWindowFilterType.ALL, environmentFilter, null);
+    ServiceFilter serviceFilter = new ServiceFilter(ServiceFilterType.ALL, null);
+    AllAppFilter applicationFilter = new AllAppFilter(BlackoutWindowFilterType.ALL, environmentFilter, serviceFilter);
 
     doReturn(testApp).when(appService).getAppByName(anyString(), anyString());
     doReturn(Collections.singletonList(testApp)).when(appService).getAppsByIds(any());
@@ -506,7 +534,8 @@ public class GovernanceConfigYamlHandlerTest extends YamlHandlerTestBase {
                                                .build();
 
     doReturn(oldGovernanceConfig).when(governanceConfigService).get(eq(ACCOUNT_ID));
-    testCRUDGovernanceConfig(validGovernanceConfigFiles.GovernanceConfig8, applicationFilter, environmentFilter);
+    testCRUDGovernanceConfig(
+        validGovernanceConfigFiles.GovernanceConfig8, applicationFilter, environmentFilter, serviceFilter);
   }
 
   @Test
@@ -522,7 +551,8 @@ public class GovernanceConfigYamlHandlerTest extends YamlHandlerTestBase {
     Application testApp = Application.Builder.anApplication().name("test").uuid(APP_ID).environments(testEnvs).build();
 
     AllNonProdEnvFilter environmentFilter = new AllNonProdEnvFilter(EnvironmentFilterType.ALL_NON_PROD);
-    AllAppFilter applicationFilter = new AllAppFilter(BlackoutWindowFilterType.ALL, environmentFilter, null);
+    ServiceFilter serviceFilter = new ServiceFilter(ServiceFilterType.ALL, null);
+    AllAppFilter applicationFilter = new AllAppFilter(BlackoutWindowFilterType.ALL, environmentFilter, serviceFilter);
 
     doReturn(testApp).when(appService).getAppByName(anyString(), anyString());
     doReturn(Collections.singletonList(testApp)).when(appService).getAppsByIds(any());
@@ -534,7 +564,8 @@ public class GovernanceConfigYamlHandlerTest extends YamlHandlerTestBase {
                                                .build();
 
     doReturn(oldGovernanceConfig).when(governanceConfigService).get(eq(ACCOUNT_ID));
-    testCRUDGovernanceConfig(validGovernanceConfigFiles.GovernanceConfig9, applicationFilter, environmentFilter);
+    testCRUDGovernanceConfig(
+        validGovernanceConfigFiles.GovernanceConfig9, applicationFilter, environmentFilter, serviceFilter);
   }
 
   @Test
@@ -554,7 +585,7 @@ public class GovernanceConfigYamlHandlerTest extends YamlHandlerTestBase {
     doReturn(testApp).when(appService).getAppByName(anyString(), eq("test"));
     doReturn(sampleApp).when(appService).getAppByName(anyString(), eq("sample"));
 
-    assertThatThrownBy(() -> testCRUDGovernanceConfig(validGovernanceConfigFiles.GovernanceConfig2, null, null))
+    assertThatThrownBy(() -> testCRUDGovernanceConfig(validGovernanceConfigFiles.GovernanceConfig2, null, null, null))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Application filter should have exactly one app when environment filter type is CUSTOM");
   }
@@ -563,7 +594,7 @@ public class GovernanceConfigYamlHandlerTest extends YamlHandlerTestBase {
   @Owner(developers = HINGER)
   @Category(UnitTests.class)
   public void testCRUDGovernanceConfig_AllAppCustomEnv_Error() throws IOException, HarnessException {
-    assertThatThrownBy(() -> testCRUDGovernanceConfig(validGovernanceConfigFiles.GovernanceConfig10, null, null))
+    assertThatThrownBy(() -> testCRUDGovernanceConfig(validGovernanceConfigFiles.GovernanceConfig10, null, null, null))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("CUSTOM Environments can be selected with only selecting 1 app");
   }
@@ -590,7 +621,7 @@ public class GovernanceConfigYamlHandlerTest extends YamlHandlerTestBase {
                                                .build();
     doReturn(oldGovernanceConfig).when(governanceConfigService).get(eq(ACCOUNT_ID));
 
-    assertThatThrownBy(() -> testCRUDGovernanceConfig(validGovernanceConfigFiles.GovernanceConfig11, null, null))
+    assertThatThrownBy(() -> testCRUDGovernanceConfig(validGovernanceConfigFiles.GovernanceConfig11, null, null, null))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Invalid App name: testUnknown");
   }
@@ -618,7 +649,7 @@ public class GovernanceConfigYamlHandlerTest extends YamlHandlerTestBase {
                                                .build();
     doReturn(oldGovernanceConfig).when(governanceConfigService).get(eq(ACCOUNT_ID));
 
-    assertThatThrownBy(() -> testCRUDGovernanceConfig(validGovernanceConfigFiles.GovernanceConfig12, null, null))
+    assertThatThrownBy(() -> testCRUDGovernanceConfig(validGovernanceConfigFiles.GovernanceConfig12, null, null, null))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Invalid Environment: prodUnknown");
   }
@@ -627,7 +658,7 @@ public class GovernanceConfigYamlHandlerTest extends YamlHandlerTestBase {
   @Owner(developers = HINGER)
   @Category(UnitTests.class)
   public void testCRUDGovernanceConfig_throwErrorWithoutName() throws IOException, HarnessException {
-    assertThatThrownBy(() -> testCRUDGovernanceConfig(validGovernanceConfigFiles.GovernanceConfig13, null, null))
+    assertThatThrownBy(() -> testCRUDGovernanceConfig(validGovernanceConfigFiles.GovernanceConfig13, null, null, null))
         .isInstanceOf(GeneralException.class)
         .hasMessage("Name is required");
   }
@@ -664,13 +695,46 @@ public class GovernanceConfigYamlHandlerTest extends YamlHandlerTestBase {
                                                .build();
 
     doReturn(oldGovernanceConfig).when(governanceConfigService).get(eq(ACCOUNT_ID));
-    assertThatThrownBy(() -> testCRUDGovernanceConfig(validGovernanceConfigFiles.GovernanceConfig15, null, null))
+    assertThatThrownBy(() -> testCRUDGovernanceConfig(validGovernanceConfigFiles.GovernanceConfig15, null, null, null))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("Start Time should be strictly smaller than End Time");
   }
+  @SneakyThrows
+  @Test
+  @Owner(developers = ATHARVA)
+  @Category(UnitTests.class)
+  public void testCRUDGovernanceConfig_MissingEnv() {
+    File yamlFile = null;
+    yamlFile = new File(resourcePath + PATH_DELIMITER + validGovernanceConfigFiles.GovernanceConfig19);
+    assertThat(yamlFile).isNotNull();
+    String yamlString = FileUtils.readFileToString(yamlFile, "UTF-8");
+    ChangeContext<GovernanceConfig.Yaml> changeContext = getChangeContext(yamlString);
+    GovernanceConfig.Yaml yaml = (GovernanceConfig.Yaml) getYaml(yamlString, GovernanceConfig.Yaml.class);
+    changeContext.setYaml(yaml);
+    assertThatThrownBy(() -> handler.upsertFromYaml(changeContext, Arrays.asList(changeContext)))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Environment Selection Missing in Yaml");
+  }
+
+  @SneakyThrows
+  @Test
+  @Owner(developers = ATHARVA)
+  @Category(UnitTests.class)
+  public void testCRUDGovernanceConfig_MissingService() {
+    File yamlFile = null;
+    yamlFile = new File(resourcePath + PATH_DELIMITER + validGovernanceConfigFiles.GovernanceConfig20);
+    assertThat(yamlFile).isNotNull();
+    String yamlString = FileUtils.readFileToString(yamlFile, "UTF-8");
+    ChangeContext<GovernanceConfig.Yaml> changeContext = getChangeContext(yamlString);
+    GovernanceConfig.Yaml yaml = (GovernanceConfig.Yaml) getYaml(yamlString, GovernanceConfig.Yaml.class);
+    changeContext.setYaml(yaml);
+    assertThatThrownBy(() -> handler.upsertFromYaml(changeContext, Arrays.asList(changeContext)))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Service Selection Missing in Yaml");
+  }
 
   private void testCRUDGovernanceConfig(String yamlFileName, ApplicationFilter applicationFilter,
-      EnvironmentFilter environmentFilter) throws IOException, HarnessException {
+      EnvironmentFilter environmentFilter, ServiceFilter serviceFilter) throws IOException, HarnessException {
     File yamlFile = null;
     yamlFile = new File(resourcePath + PATH_DELIMITER + yamlFileName);
 
@@ -691,6 +755,12 @@ public class GovernanceConfigYamlHandlerTest extends YamlHandlerTestBase {
     assertThat(environmentFilter)
         .isEqualTo(
             savedGovernanceConfig.getTimeRangeBasedFreezeConfigs().get(0).getAppSelections().get(0).getEnvSelection());
+    assertThat(serviceFilter)
+        .isEqualTo(savedGovernanceConfig.getTimeRangeBasedFreezeConfigs()
+                       .get(0)
+                       .getAppSelections()
+                       .get(0)
+                       .getServiceSelection());
 
     yaml = handler.toYaml(savedGovernanceConfig, APP_ID);
 
@@ -709,7 +779,7 @@ public class GovernanceConfigYamlHandlerTest extends YamlHandlerTestBase {
   }
 
   private void testUpsertGovernanceConfig(String yamlFileName, ApplicationFilter applicationFilter,
-      EnvironmentFilter environmentFilter) throws IOException, HarnessException {
+      EnvironmentFilter environmentFilter, ServiceFilter serviceFilter) throws IOException, HarnessException {
     File yamlFile = null;
     yamlFile = new File(resourcePath + PATH_DELIMITER + yamlFileName);
 
@@ -730,10 +800,16 @@ public class GovernanceConfigYamlHandlerTest extends YamlHandlerTestBase {
     assertThat(environmentFilter)
         .isEqualTo(
             savedGovernanceConfig.getTimeRangeBasedFreezeConfigs().get(0).getAppSelections().get(0).getEnvSelection());
+    assertThat(serviceFilter)
+        .isEqualTo(savedGovernanceConfig.getTimeRangeBasedFreezeConfigs()
+                       .get(0)
+                       .getAppSelections()
+                       .get(0)
+                       .getServiceSelection());
   }
 
   private void testUpsertForExpires(String yamlFileName, ApplicationFilter applicationFilter,
-      EnvironmentFilter environmentFilter) throws IOException, HarnessException {
+      EnvironmentFilter environmentFilter, ServiceFilter serviceFilter) throws IOException, HarnessException {
     File yamlFile = null;
     yamlFile = new File(resourcePath + PATH_DELIMITER + yamlFileName);
 
@@ -756,10 +832,16 @@ public class GovernanceConfigYamlHandlerTest extends YamlHandlerTestBase {
     assertThat(environmentFilter)
         .isEqualTo(
             savedGovernanceConfig.getTimeRangeBasedFreezeConfigs().get(0).getAppSelections().get(0).getEnvSelection());
+    assertThat(serviceFilter)
+        .isEqualTo(savedGovernanceConfig.getTimeRangeBasedFreezeConfigs()
+                       .get(0)
+                       .getAppSelections()
+                       .get(0)
+                       .getServiceSelection());
   }
 
   private void testUpsertForRecurringWindowExpires(String yamlFileName, ApplicationFilter applicationFilter,
-      EnvironmentFilter environmentFilter) throws IOException, HarnessException {
+      EnvironmentFilter environmentFilter, ServiceFilter serviceFilter) throws IOException, HarnessException {
     File yamlFile = null;
     yamlFile = new File(resourcePath + PATH_DELIMITER + yamlFileName);
 
@@ -782,6 +864,12 @@ public class GovernanceConfigYamlHandlerTest extends YamlHandlerTestBase {
     assertThat(environmentFilter)
         .isEqualTo(
             savedGovernanceConfig.getTimeRangeBasedFreezeConfigs().get(0).getAppSelections().get(0).getEnvSelection());
+    assertThat(serviceFilter)
+        .isEqualTo(savedGovernanceConfig.getTimeRangeBasedFreezeConfigs()
+                       .get(0)
+                       .getAppSelections()
+                       .get(0)
+                       .getServiceSelection());
   }
 
   private ChangeContext<GovernanceConfig.Yaml> getChangeContext(String validYamlContent) {

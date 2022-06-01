@@ -20,12 +20,12 @@ import io.harness.cvng.migration.list.AddMonitoredServiceToHeatMapMigration;
 import io.harness.cvng.migration.list.AddMonitoredServiceToWebhookMigration;
 import io.harness.cvng.migration.list.AddMonitoringSourcesToVerificationJobMigration;
 import io.harness.cvng.migration.list.AddTaskInfoToVerificationTask;
+import io.harness.cvng.migration.list.AppDCVConfigCompleteMetricPathMigration;
 import io.harness.cvng.migration.list.AppDCustomMetricForExistingProjects;
 import io.harness.cvng.migration.list.CVNGBaseMigration;
 import io.harness.cvng.migration.list.CleanUpMonitoringSourcePerpetualTask;
 import io.harness.cvng.migration.list.CleanUpOldDocuments;
 import io.harness.cvng.migration.list.CleanupDeprecatedDocuments;
-import io.harness.cvng.migration.list.CreateDefaultVerificationJobsMigration;
 import io.harness.cvng.migration.list.CustomHealthCustomPackForExistingProjects;
 import io.harness.cvng.migration.list.DeleteInvalidOrchestratorsMigration;
 import io.harness.cvng.migration.list.DeleteOldAnalysisOrchestratorMigration;
@@ -39,7 +39,7 @@ import io.harness.cvng.migration.list.NewRelicCustomPackForExistingProjects;
 import io.harness.cvng.migration.list.NoOppMigration;
 import io.harness.cvng.migration.list.RecoverMonitoringSourceWorkerId;
 import io.harness.cvng.migration.list.RecreateMetricPackAndThresholdMigration;
-import io.harness.cvng.migration.list.UpdateActivitySourceTasksMigration;
+import io.harness.cvng.migration.list.SetNotRequiredActivityAnalysisStatusToIgnored;
 import io.harness.cvng.migration.list.UpdateActivityStatusMigration;
 import io.harness.cvng.migration.list.UpdateApdexMetricCriteria;
 import io.harness.cvng.migration.list.UpdateCvConfigPerpetualTasksMigration;
@@ -67,11 +67,11 @@ public class CVNGBackgroundMigrationList {
         .add(Pair.of(5, UpdateActivityStatusMigration.class))
         .add(Pair.of(6, UpdateRiskIntToRiskEnum.class))
         .add(Pair.of(7, UpdateCvConfigPerpetualTasksMigration.class))
-        .add(Pair.of(8, UpdateActivitySourceTasksMigration.class))
+        .add(Pair.of(8, NoOppMigration.class))
         .add(Pair.of(9, AddDeploymentMonitoringSourcePerpetualTask.class))
         .add(Pair.of(10, RecoverMonitoringSourceWorkerId.class))
         .add(Pair.of(11, FixRuntimeParamsInDefaultHealthJob.class))
-        .add(Pair.of(12, CreateDefaultVerificationJobsMigration.class))
+        .add(Pair.of(12, NoOppMigration.class))
         .add(Pair.of(13, FixRuntimeParamInCanaryBlueGreenVerificationJob.class))
         .add(Pair.of(14, UpdateApdexMetricCriteria.class))
         .add(Pair.of(15, FixRuntimeParamInCanaryBlueGreenVerificationJob.class))
@@ -107,6 +107,8 @@ public class CVNGBackgroundMigrationList {
         .add(Pair.of(44, DeleteOldAnalysisOrchestratorMigration.class))
         .add(Pair.of(45, AddMetricIdentifierInCVConfigsAndMetricPacks.class))
         .add(Pair.of(46, AddMetricIdentifierToTimeSeriesThreshold.class))
+        .add(Pair.of(47, AppDCVConfigCompleteMetricPathMigration.class))
+        .add(Pair.of(48, SetNotRequiredActivityAnalysisStatusToIgnored.class))
         .build();
   }
 }

@@ -8,10 +8,10 @@
 package software.wings.service.impl.yaml.handler.workflow;
 
 import static io.harness.rule.OwnerRule.AGORODETKI;
+import static io.harness.servicenow.ServiceNowTicketTypeNG.CHANGE_TASK;
+import static io.harness.servicenow.ServiceNowTicketTypeNG.INCIDENT;
 
 import static software.wings.beans.servicenow.ServiceNowFields.CHANGE_REQUEST_NUMBER;
-import static software.wings.service.impl.servicenow.ServiceNowServiceImpl.ServiceNowTicketType.CHANGE_TASK;
-import static software.wings.service.impl.servicenow.ServiceNowServiceImpl.ServiceNowTicketType.INCIDENT;
 
 import static org.junit.runners.Parameterized.Parameters;
 

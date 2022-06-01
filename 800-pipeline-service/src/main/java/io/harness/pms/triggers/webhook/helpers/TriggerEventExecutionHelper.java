@@ -8,6 +8,7 @@
 package io.harness.pms.triggers.webhook.helpers;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.INVALID_RUNTIME_INPUT_YAML;
 import static io.harness.ngtriggers.beans.response.TriggerEventResponse.FinalStatus.TARGET_EXECUTION_REQUESTED;
@@ -18,6 +19,7 @@ import static io.harness.ngtriggers.beans.source.WebhookTriggerType.GITHUB;
 import static io.harness.ngtriggers.beans.source.WebhookTriggerType.GITLAB;
 import static io.harness.pms.contracts.triggers.Type.WEBHOOK;
 
+import io.harness.AuthorizationServiceHeader;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.execution.PlanExecution;
 import io.harness.ngtriggers.beans.dto.TriggerDetails;
@@ -33,6 +35,8 @@ import io.harness.ngtriggers.beans.source.NGTriggerType;
 import io.harness.ngtriggers.helpers.TriggerEventResponseHelper;
 import io.harness.ngtriggers.helpers.TriggerHelper;
 import io.harness.ngtriggers.helpers.WebhookEventMapperHelper;
+import io.harness.ngtriggers.utils.WebhookEventPayloadParser;
+import io.harness.pipeline.remote.PipelineServiceClient;
 import io.harness.pms.contracts.triggers.ArtifactData;
 import io.harness.pms.contracts.triggers.ManifestData;
 import io.harness.pms.contracts.triggers.ParsedPayload;
@@ -43,6 +47,9 @@ import io.harness.pms.contracts.triggers.Type;
 import io.harness.pms.triggers.TriggerExecutionHelper;
 import io.harness.polling.contracts.PollingResponse;
 import io.harness.product.ci.scm.proto.ParseWebhookResponse;
+import io.harness.security.SecurityContextBuilder;
+import io.harness.security.SourcePrincipalContextBuilder;
+import io.harness.security.dto.ServicePrincipal;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
@@ -57,6 +64,8 @@ import lombok.extern.slf4j.Slf4j;
 public class TriggerEventExecutionHelper {
   private final WebhookEventMapperHelper webhookEventMapperHelper;
   private final TriggerExecutionHelper triggerExecutionHelper;
+  private final WebhookEventPayloadParser webhookEventPayloadParser;
+  private final PipelineServiceClient pipelineServiceClient;
 
   public WebhookEventProcessingResult handleTriggerWebhookEvent(TriggerMappingRequestData mappingRequestData) {
     WebhookEventMappingResponse webhookEventMappingResponse =
@@ -125,8 +134,16 @@ public class TriggerEventExecutionHelper {
     String runtimeInputYaml = null;
     NGTriggerEntity ngTriggerEntity = triggerDetails.getNgTriggerEntity();
     try {
-      runtimeInputYaml = triggerDetails.getNgTriggerConfigV2().getInputYaml();
-
+      if (isEmpty(triggerDetails.getNgTriggerConfigV2().getPipelineBranchName())
+          && isEmpty(triggerDetails.getNgTriggerConfigV2().getInputSetRefs())) {
+        runtimeInputYaml = triggerDetails.getNgTriggerConfigV2().getInputYaml();
+      } else {
+        SecurityContextBuilder.setContext(
+            new ServicePrincipal(AuthorizationServiceHeader.PIPELINE_SERVICE.getServiceId()));
+        SourcePrincipalContextBuilder.setSourcePrincipal(
+            new ServicePrincipal(AuthorizationServiceHeader.PIPELINE_SERVICE.getServiceId()));
+        runtimeInputYaml = triggerExecutionHelper.fetchInputSetYAML(triggerDetails, triggerWebhookEvent);
+      }
       PlanExecution response = triggerExecutionHelper.resolveRuntimeInputAndSubmitExecutionRequest(
           triggerDetails, triggerPayload, triggerWebhookEvent, payload);
       return generateEventHistoryForSuccess(
@@ -176,7 +193,17 @@ public class TriggerEventExecutionHelper {
                                           .createdAt(System.currentTimeMillis())
                                           .build();
     try {
-      runtimeInputYaml = triggerDetails.getNgTriggerConfigV2().getInputYaml();
+      if (isEmpty(triggerDetails.getNgTriggerConfigV2().getPipelineBranchName())
+          && isEmpty(triggerDetails.getNgTriggerConfigV2().getInputSetRefs())) {
+        runtimeInputYaml = triggerDetails.getNgTriggerConfigV2().getInputYaml();
+      } else {
+        SecurityContextBuilder.setContext(
+            new ServicePrincipal(AuthorizationServiceHeader.PIPELINE_SERVICE.getServiceId()));
+        SourcePrincipalContextBuilder.setSourcePrincipal(
+            new ServicePrincipal(AuthorizationServiceHeader.PIPELINE_SERVICE.getServiceId()));
+        runtimeInputYaml = triggerExecutionHelper.fetchInputSetYAML(triggerDetails, pseudoEvent);
+      }
+
       Type buildType = ngTriggerEntity.getType() == NGTriggerType.ARTIFACT ? Type.ARTIFACT : Type.MANIFEST;
       Builder triggerPayloadBuilder = TriggerPayload.newBuilder().setType(buildType);
 

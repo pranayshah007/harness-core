@@ -1,0 +1,84 @@
+serviceDefinition:
+  type: Kubernetes
+  spec:
+    artifacts:
+      primary:
+        type: DockerRegistry
+        spec:
+          connectorRef: org.DockerConnectorForAutomationTest
+          imagePath: harness/todolist-sample
+          tag: "10"
+      sidecars:
+        - sidecar:
+            identifier: sidecar1
+            type: DockerRegistry
+            spec:
+              connectorRef: org.DockerConnectorForAutomationTest
+              imagePath: harness/todolist-sample
+              tag: "10"
+    manifests:
+      - manifest:
+          identifier: manifestIdentifier
+          spec:
+            store:
+              type: Git
+              spec:
+                connectorRef: org.GitConnectorForAutomationTest
+                gitFetchType: Branch
+                repoName: https://github.com/wings-software/sample-k8s-manifests.git
+                paths:
+                  - ng-automation/k8s/templates/
+                branch: master
+          type: K8sManifest
+      - manifest:
+          identifier: valuesmanifest
+          spec:
+            store:
+              type: Git
+              spec:
+                connectorRef: org.GitConnectorForAutomationTest
+                gitFetchType: Branch
+                repoName: https://github.com/wings-software/sample-k8s-manifests.git
+                paths:
+                  - ng-automation/k8s/valuesWithClusterTypeService.yaml
+                branch: master
+          type: Values
+    configFiles:
+      - configFile:
+          identifier: gitConfigFileIdentifier
+          spec:
+            store:
+              type: Git
+              spec:
+                connectorRef: gitConnectorIdentifier
+                gitFetchType: Branch
+                paths:
+                  - test/1
+                repoName: repoName
+                branch: test
+            type: Remote
+      - configFile:
+          identifier: harnessFSConfigFileIdentifier
+          spec:
+            store:
+              type: Harness
+              spec:
+                fileReference: harnessFSFileIdentifier
+                filePath: Root/folder_1/filename.txt
+                fileType: FileStore
+            type: LocalFile
+      - configFile:
+          identifier: harnessEncConfigFileIdentifier
+          spec:
+            store:
+              type: Harness
+              spec:
+                fileReference: harnessEncFileIdentifier
+                filePath: secretManagerIdentifier
+                fileType: Encrypted
+            type: Encrypted
+    manifestOverrideSets: []
+    variables: []
+service:
+  name: service
+  identifier: service1

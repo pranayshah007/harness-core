@@ -11,14 +11,24 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.plan.Node;
 import io.harness.pms.contracts.ambiance.Level;
+import io.harness.pms.contracts.execution.StrategyMetadata;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PmsLevelUtils {
   public static Level buildLevelFromNode(String runtimeId, Node node) {
-    return buildLevelFromNode(runtimeId, 0, node);
+    return buildLevelFromNode(runtimeId, 0, node, null);
   }
 
   public static Level buildLevelFromNode(String runtimeId, int retryIndex, Node node) {
+    return buildLevelFromNode(runtimeId, retryIndex, node, null);
+  }
+
+  public static Level buildLevelFromNode(String runtimeId, Node node, StrategyMetadata strategyMetadata) {
+    return buildLevelFromNode(runtimeId, 0, node, strategyMetadata);
+  }
+
+  public static Level buildLevelFromNode(
+      String runtimeId, int retryIndex, Node node, StrategyMetadata strategyMetadata) {
     Level.Builder levelBuilder = Level.newBuilder()
                                      .setSetupId(node.getUuid())
                                      .setRuntimeId(runtimeId)
@@ -30,6 +40,9 @@ public class PmsLevelUtils {
                                      .setNodeType(node.getNodeType().toString());
     if (node.getGroup() != null) {
       levelBuilder.setGroup(node.getGroup());
+    }
+    if (strategyMetadata != null) {
+      levelBuilder.setStrategyMetadata(strategyMetadata);
     }
     return levelBuilder.build();
   }

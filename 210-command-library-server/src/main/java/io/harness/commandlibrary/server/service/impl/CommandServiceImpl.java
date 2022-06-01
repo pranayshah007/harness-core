@@ -7,12 +7,12 @@
 
 package io.harness.commandlibrary.server.service.impl;
 
-import static io.harness.commandlibrary.server.utils.CommandUtils.populateCommandDTO;
+import static io.harness.commandlibrary.server.utils.CommandUtils.populateCommandEntityDTO;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
-import io.harness.commandlibrary.api.dto.CommandDTO;
+import io.harness.commandlibrary.api.dto.CommandEntityDTO;
 import io.harness.commandlibrary.server.beans.CommandManifest;
 import io.harness.commandlibrary.server.beans.CommandType;
 import io.harness.commandlibrary.server.service.intfc.CommandService;
@@ -44,11 +44,11 @@ public class CommandServiceImpl implements CommandService {
   }
 
   @Override
-  public Optional<CommandDTO> getCommandDetails(String commandStoreName, String commandName) {
-    return getCommandEntity(commandStoreName, commandName).map(this::getCommandDTOFromEntity);
+  public Optional<CommandEntityDTO> getCommandDetails(String commandStoreName, String commandName) {
+    return getCommandEntity(commandStoreName, commandName).map(this::getDTOFromEntity);
   }
 
-  private CommandDTO getCommandDTOFromEntity(CommandEntity commandEntity) {
+  private CommandEntityDTO getDTOFromEntity(CommandEntity commandEntity) {
     String commandStoreName = commandEntity.getCommandStoreName();
     String commandName = commandEntity.getName();
     final CommandVersionEntity commandVersionEntity =
@@ -56,7 +56,9 @@ public class CommandServiceImpl implements CommandService {
             .orElse(null);
     final List<CommandVersionEntity> allVersionEntityList =
         commandVersionService.getAllVersionEntitiesForCommand(commandStoreName, commandName);
-    return populateCommandDTO(CommandDTO.builder(), commandEntity, commandVersionEntity, allVersionEntityList).build();
+    return populateCommandEntityDTO(
+        CommandEntityDTO.builder(), commandEntity, commandVersionEntity, allVersionEntityList)
+        .build();
   }
 
   @Override

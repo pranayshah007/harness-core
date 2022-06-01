@@ -29,7 +29,6 @@ import io.harness.ff.FeatureFlagService;
 import io.harness.telemetry.Category;
 import io.harness.telemetry.TelemetryReporter;
 
-import software.wings.beans.Account;
 import software.wings.beans.SettingAttribute;
 import software.wings.service.intfc.instance.CloudToHarnessMappingService;
 import software.wings.settings.SettingVariableTypes;
@@ -39,7 +38,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -59,8 +57,7 @@ public class CEMetaDataRecordUpdateService {
   @Autowired private NGConnectorHelper ngConnectorHelper;
 
   public void updateCloudProviderMetadata() {
-    List<Account> ceEnabledAccounts = accountShardService.getCeEnabledAccounts();
-    List<String> accountIds = ceEnabledAccounts.stream().map(Account::getUuid).collect(Collectors.toList());
+    List<String> accountIds = accountShardService.getCeEnabledAccountIds();
     accountIds.forEach(this::updateCloudProviderMetadata);
   }
 

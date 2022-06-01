@@ -10,6 +10,7 @@ Abhinav Singh abhinav.singh2@harness.io
 Achyuth Prakash achyuth.prakash@harness.io
 Adam Hancock adam.hancock@harness.io
 Adarsh Agarwal adarsh.agarwal@harness.io
+Adithya Viswanathan adithya.viswanathan@harness.io
 Adwait Bhandare adwait.bhandare@harness.io
 Akash Nagarajan akash.nagarajan@harness.io
 akriti-harness akriti.garg@harness.io
@@ -171,6 +172,7 @@ Shalini Agrawal shalini.agarwal@harness.io
 Shashank Singh shashank.singh@harness.io
 Shaswat Deep shaswat.deep@harness.io
 Shivakumar Ningappa shivakumar.ningappa@harness.io
+Shreyas Singh shreyas.singh@harness.io
 Shubham Agrawal shubham.agrawal@harness.io
 Shubhanshu Verma shubhanshu.verma@harness.io
 Sowmya K sowmya.k@harness.io
@@ -206,6 +208,7 @@ Vikas Naiyar vikas.naiyar@harness.io
 Vikas Singh vikas.singh@harness.io
 VikasMaddukuriHarness vikas.maddukuri@harness.io
 Vistaar Juneja vistaar.juneja@harness.io
+Vivek Veman vivek.karnati@harness.io
 Vladimir Peric vladimir.peric@harness.io
 Vojin Djukic vojin.djukic@harness.io
 Vuk Skobalj vuk.harness@harness.io
@@ -260,6 +263,7 @@ Naman Goenka naman.goenka@harness.io
 Aleksa Buha aleksa.buha@harness.io
 alebuh aleksa.buha@harness.io
 Satyam Goel satyam.goel@harness.io
+Vasile Lica vasile.lica@harness.io
 Hen Amar hen.amar@harness.io
 Utkarsh Choubey utkarsh.choubey@harness.io
 Sahildeep Singh sahildeep.singh@harness.io
@@ -269,3 +273,10 @@ Miloš Vasić milos.vasic@harness.io
 James Cox james.cox@harness.io
 Soumyajit Das soumyajit.das@harness.io
 smjt-h soumyajit.das@harness.io
+Avinash Madhwani avinash.m@harness.io
+Raj Das rajbabu.das@harness.io
+Vansh Bhatia vansh.bhatia@harness.io
+Saranya Jena saranya.jena@harness.io
+Amit Kumar Das amit.das@harness.io
+Sarthak Jain sarthak.jain@harness.io
+Abhishek Abhishek abhishek.abhishek@harness.io

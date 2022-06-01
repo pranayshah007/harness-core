@@ -404,6 +404,8 @@ public class YamlSchemaUtils {
       return "ce/";
     } else if (moduleType == ModuleType.CF) {
       return "cf/";
+    } else if (moduleType == ModuleType.STO) {
+      return "sto/";
     }
     return "";
   }

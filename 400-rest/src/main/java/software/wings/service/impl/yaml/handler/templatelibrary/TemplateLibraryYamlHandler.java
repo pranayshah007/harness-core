@@ -32,7 +32,7 @@ import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.template.TemplateGalleryService;
 import software.wings.service.intfc.template.TemplateService;
 import software.wings.yaml.templatelibrary.TemplateLibraryYaml;
-import software.wings.yaml.templatelibrary.TemplateLibraryYaml.TemplateVariableYaml;
+import software.wings.yaml.templatelibrary.TemplateVariableYaml;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;

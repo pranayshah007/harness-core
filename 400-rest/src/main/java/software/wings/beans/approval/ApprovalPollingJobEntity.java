@@ -19,7 +19,7 @@ import io.harness.iterator.PersistentRegularIterable;
 import io.harness.mongo.index.FdIndex;
 import io.harness.persistence.AccountAccess;
 
-import software.wings.service.impl.servicenow.ServiceNowServiceImpl.ServiceNowTicketType;
+import software.wings.beans.servicenow.ServiceNowTicketType;
 import software.wings.sm.states.ApprovalState.ApprovalStateType;
 
 import java.util.List;

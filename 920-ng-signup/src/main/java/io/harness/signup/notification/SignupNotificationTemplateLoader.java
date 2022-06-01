@@ -9,7 +9,7 @@ package io.harness.signup.notification;
 
 import static io.harness.remote.client.NGRestUtils.getResponse;
 
-import io.harness.Team;
+import io.harness.notification.Team;
 import io.harness.notification.remote.NotificationHTTPClient;
 import io.harness.signup.SignupNotificationConfiguration;
 import io.harness.templates.google.DownloadResult;

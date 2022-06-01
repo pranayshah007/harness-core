@@ -34,7 +34,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.plugin.compatible.PluginCompatibleStep;
 import io.harness.beans.serializer.RunTimeInputHandler;
-import io.harness.beans.steps.CIStepInfo;
+import io.harness.beans.steps.CIStepInfoType;
 import io.harness.beans.steps.stepinfo.DockerStepInfo;
 import io.harness.beans.steps.stepinfo.ECRStepInfo;
 import io.harness.beans.steps.stepinfo.GCRStepInfo;
@@ -131,9 +131,15 @@ public class PluginSettingUtils {
         "connectorRef", stepType, stepInfo.getIdentifier(), stepInfo.getConnectorRef(), true);
   }
 
-  public Map<EnvVariableEnum, String> getConnectorSecretEnvMap(CIStepInfo stepInfo) {
+  public List<String> getBaseImageConnectorRefs(PluginCompatibleStep stepInfo) {
+    String stepType = stepInfo.getNonYamlInfo().getStepInfoType().getDisplayName();
+    return RunTimeInputHandler.resolveListParameter(
+        "baseImageConnectorRefs", stepType, stepInfo.getIdentifier(), stepInfo.getBaseImageConnectorRefs(), false);
+  }
+
+  public Map<EnvVariableEnum, String> getConnectorSecretEnvMap(CIStepInfoType stepInfoType) {
     Map<EnvVariableEnum, String> map = new HashMap<>();
-    switch (stepInfo.getNonYamlInfo().getStepInfoType()) {
+    switch (stepInfoType) {
       case ECR:
         map.put(EnvVariableEnum.AWS_ACCESS_KEY, PLUGIN_ACCESS_KEY);
         map.put(EnvVariableEnum.AWS_SECRET_KEY, PLUGIN_SECRET_KEY);
@@ -164,7 +170,7 @@ public class PluginSettingUtils {
         map.put(EnvVariableEnum.ARTIFACTORY_PASSWORD, PLUGIN_PASSW);
         return map;
       default:
-        throw new IllegalStateException("Unexpected value: " + stepInfo.getNonYamlInfo().getStepInfoType());
+        throw new IllegalStateException("Unexpected value: " + stepInfoType);
     }
   }
 

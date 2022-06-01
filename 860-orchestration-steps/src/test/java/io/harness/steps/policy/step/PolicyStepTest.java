@@ -42,18 +42,13 @@ import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 import retrofit2.Call;
 
-@RunWith(PowerMockRunner.class)
 @OwnedBy(PIPELINE)
-@PrepareForTest({SafeHttpCall.class, PolicyStepOutcomeMapper.class})
 public class PolicyStepTest extends CategoryTest {
   @InjectMocks PolicyStep policyStep;
   @Mock OpaServiceClient opaServiceClient;
@@ -62,15 +57,16 @@ public class PolicyStepTest extends CategoryTest {
   String accountId = "acc";
   String orgId = "org";
   String projectId = "proj";
+  String stepName = "step name";
   List<String> projLevelPolicySet;
   StepElementParameters stepParameters;
   Call<OpaEvaluationResponseHolder> request;
 
   @Before
   public void setUp() {
-    MockitoAnnotations.initMocks(this);
-    PowerMockito.mockStatic(SafeHttpCall.class);
-    PowerMockito.mockStatic(PolicyStepOutcomeMapper.class);
+    MockitoAnnotations.openMocks(this);
+    Mockito.mockStatic(SafeHttpCall.class);
+    Mockito.mockStatic(PolicyStepOutcomeMapper.class);
     ambiance = Ambiance.newBuilder()
                    .putSetupAbstractions("accountId", accountId)
                    .putSetupAbstractions("orgIdentifier", orgId)
@@ -142,10 +138,11 @@ public class PolicyStepTest extends CategoryTest {
             .type("Custom")
             .policySpec(CustomPolicyStepSpec.builder().payload(ParameterField.createValueField(payload)).build())
             .build();
-    stepParameters = StepElementParameters.builder().spec(policyStepSpecParameters).build();
+    stepParameters = StepElementParameters.builder().name(stepName).spec(policyStepSpecParameters).build();
 
     String urlPolicySets = "ps1";
-    when(opaServiceClient.evaluateWithCredentialsByID(accountId, orgId, projectId, urlPolicySets, payloadObj))
+    when(opaServiceClient.evaluateWithCredentialsByID(accountId, orgId, projectId, urlPolicySets,
+             PolicyStepHelper.getEntityMetadataString(stepName), payloadObj))
         .thenReturn(request);
     when(SafeHttpCall.executeWithErrorMessage(request)).thenThrow(new HttpResponseException(400, "My Invalid Request"));
     StepResponse stepResponse = policyStep.executeSync(ambiance, stepParameters, null, null);
@@ -166,10 +163,11 @@ public class PolicyStepTest extends CategoryTest {
             .type("Custom")
             .policySpec(CustomPolicyStepSpec.builder().payload(ParameterField.createValueField(payload)).build())
             .build();
-    stepParameters = StepElementParameters.builder().spec(policyStepSpecParameters).build();
+    stepParameters = StepElementParameters.builder().name(stepName).spec(policyStepSpecParameters).build();
 
     String urlPolicySets = "ps1";
-    when(opaServiceClient.evaluateWithCredentialsByID(accountId, orgId, projectId, urlPolicySets, payloadObj))
+    when(opaServiceClient.evaluateWithCredentialsByID(accountId, orgId, projectId, urlPolicySets,
+             PolicyStepHelper.getEntityMetadataString(stepName), payloadObj))
         .thenReturn(request);
     String errorString = "{\n"
         + "    \"identifier\" : \"thisSet\",\n"
@@ -194,10 +192,11 @@ public class PolicyStepTest extends CategoryTest {
             .type("Custom")
             .policySpec(CustomPolicyStepSpec.builder().payload(ParameterField.createValueField(payload)).build())
             .build();
-    stepParameters = StepElementParameters.builder().spec(policyStepSpecParameters).build();
+    stepParameters = StepElementParameters.builder().name(stepName).spec(policyStepSpecParameters).build();
 
     String urlPolicySets = "ps1";
-    when(opaServiceClient.evaluateWithCredentialsByID(accountId, orgId, projectId, urlPolicySets, payloadObj))
+    when(opaServiceClient.evaluateWithCredentialsByID(accountId, orgId, projectId, urlPolicySets,
+             PolicyStepHelper.getEntityMetadataString(stepName), payloadObj))
         .thenReturn(request);
 
     OpaEvaluationResponseHolder evaluationResponse =
@@ -227,10 +226,11 @@ public class PolicyStepTest extends CategoryTest {
             .type("Custom")
             .policySpec(CustomPolicyStepSpec.builder().payload(ParameterField.createValueField(payload)).build())
             .build();
-    stepParameters = StepElementParameters.builder().spec(policyStepSpecParameters).build();
+    stepParameters = StepElementParameters.builder().name(stepName).spec(policyStepSpecParameters).build();
 
     String urlPolicySets = "ps1";
-    when(opaServiceClient.evaluateWithCredentialsByID(accountId, orgId, projectId, urlPolicySets, payloadObj))
+    when(opaServiceClient.evaluateWithCredentialsByID(accountId, orgId, projectId, urlPolicySets,
+             PolicyStepHelper.getEntityMetadataString(stepName), payloadObj))
         .thenReturn(request);
 
     OpaEvaluationResponseHolder evaluationResponse = OpaEvaluationResponseHolder.builder().status("pass").build();

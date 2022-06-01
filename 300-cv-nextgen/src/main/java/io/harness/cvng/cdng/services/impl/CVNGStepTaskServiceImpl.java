@@ -148,14 +148,15 @@ public class CVNGStepTaskServiceImpl implements CVNGStepTaskService {
     Set<HealthSourceDTO> healthSourceDTOS = new HashSet<>();
     List<VerificationJobInstance> verificationJobInstances =
         verificationJobInstanceService.get(Arrays.asList(getByCallBackId(callBackId).getVerificationJobInstanceId()));
-    verificationJobInstances.forEach(verificationJobInstance -> {
-      verificationJobInstance.getCvConfigMap().forEach((s, cvConfig) -> {
-        HealthSourceDTO healthSourceDTO = HealthSourceDTO.toHealthSourceDTO(
-            HealthSourceDTO.toHealthSource(Arrays.asList(cvConfig), dataSourceTypeToHealthSourceTransformerMap));
-        healthSourceDTO.setIdentifier(cvConfig.getFullyQualifiedIdentifier());
-        healthSourceDTOS.add(healthSourceDTO);
-      });
-    });
+    verificationJobInstances.forEach(verificationJobInstance
+        -> verificationJobInstance.getCvConfigMap().forEach(
+            (s, cvConfig)
+                -> healthSourceDTOS.add(HealthSourceDTO.builder()
+                                            .name(cvConfig.getMonitoringSourceName())
+                                            .identifier(cvConfig.getFullyQualifiedIdentifier())
+                                            .type(cvConfig.getType())
+                                            .verificationType(cvConfig.getVerificationType())
+                                            .build())));
     return healthSourceDTOS;
   }
 

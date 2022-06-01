@@ -1130,6 +1130,17 @@ public class SettingsServiceImpl implements SettingsService {
     return settingAttribute;
   }
 
+  @Override
+  public void checkRbacOnSettingAttribute(String appId, SettingAttribute settingAttribute) {
+    if (featureFlagService.isEnabled(FeatureName.USAGE_SCOPE_RBAC, settingAttribute.getAccountId())) {
+      final List<SettingAttribute> filteredSettingAttributes =
+          getFilteredSettingAttributes(asList(settingAttribute), appId, null, false);
+      if (isEmpty(filteredSettingAttributes)) {
+        throw new InvalidRequestException("Not authorized");
+      }
+    }
+  }
+
   private void resetUnchangedEncryptedFields(
       SettingAttribute existingSettingAttribute, SettingAttribute newSettingAttribute) {
     if (EncryptableSetting.class.isInstance(existingSettingAttribute.getValue())) {

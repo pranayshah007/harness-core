@@ -18,6 +18,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.artifact.bean.ArtifactConfig;
+import io.harness.cdng.artifact.bean.yaml.AcrArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
 import io.harness.cdng.artifact.bean.yaml.ArtifactoryRegistryArtifactConfig;
 import io.harness.cdng.artifact.bean.yaml.DockerHubArtifactConfig;
@@ -227,6 +228,25 @@ public class ArtifactUtilsTest extends CategoryTest {
         ArtifactoryRegistryArtifactConfig.builder().primaryArtifact(true).identifier("ARTIFACT1").build();
     ArtifactoryRegistryArtifactConfig sidecarArtifact =
         ArtifactoryRegistryArtifactConfig.builder().primaryArtifact(false).identifier("ARTIFACT2").build();
+    ArtifactListConfig artifactListConfig =
+        ArtifactListConfig.builder()
+            .primary(PrimaryArtifact.builder().spec(primaryArtifact).build())
+            .sidecar(SidecarArtifactWrapper.builder()
+                         .sidecar(SidecarArtifact.builder().spec(sidecarArtifact).build())
+                         .build())
+            .build();
+    List<ArtifactConfig> artifactsList = ArtifactUtils.convertArtifactListIntoArtifacts(artifactListConfig, null);
+    assertThat(artifactsList).containsOnly(primaryArtifact, sidecarArtifact);
+  }
+
+  @Test
+  @Owner(developers = MLUKIC)
+  @Category(UnitTests.class)
+  public void testAcr_ConvertArtifactListConfig() {
+    AcrArtifactConfig primaryArtifact =
+        AcrArtifactConfig.builder().primaryArtifact(true).identifier("ARTIFACT1").build();
+    AcrArtifactConfig sidecarArtifact =
+        AcrArtifactConfig.builder().primaryArtifact(false).identifier("ARTIFACT2").build();
     ArtifactListConfig artifactListConfig =
         ArtifactListConfig.builder()
             .primary(PrimaryArtifact.builder().spec(primaryArtifact).build())

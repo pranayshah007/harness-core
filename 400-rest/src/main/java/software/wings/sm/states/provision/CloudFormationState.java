@@ -145,7 +145,7 @@ public abstract class CloudFormationState extends State {
   public CloudFormationState(String name, String stateType) {
     super(name, stateType);
   }
-  protected abstract List<String> commandUnits();
+  protected abstract List<String> commandUnits(CloudFormationInfrastructureProvisioner provisioner);
   protected abstract String mainCommandUnit();
   protected abstract ExecutionResponse buildAndQueueDelegateTask(ExecutionContextImpl executionContext,
       CloudFormationInfrastructureProvisioner provisioner, AwsConfig awsConfig, String activityId);
@@ -291,10 +291,13 @@ public abstract class CloudFormationState extends State {
             .commandType(getStateType())
             .workflowExecutionId(executionContext.getWorkflowExecutionId())
             .workflowId(executionContext.getWorkflowId())
-            .commandUnits(commandUnits()
-                              .stream()
-                              .map(s -> Builder.aCommand().withName(s).withCommandType(CommandType.OTHER).build())
-                              .collect(Collectors.toList()))
+            .commandUnits(
+                commandUnits(infrastructureProvisionerService.get(executionContext.getAppId(), provisionerId) != null
+                        ? getProvisioner(executionContext)
+                        : null)
+                    .stream()
+                    .map(s -> Builder.aCommand().withName(s).withCommandType(CommandType.OTHER).build())
+                    .collect(Collectors.toList()))
             .status(ExecutionStatus.RUNNING)
             .triggeredBy(TriggeredBy.builder()
                              .email(workflowStandardParams.getCurrentUser().getEmail())

@@ -402,7 +402,7 @@ public class APMVerificationState extends AbstractMetricAnalysisState {
             .startTime(dataCollectionStartTimeStamp)
             .dataCollectionMinute(0)
             .dataCollectionFrequency(getDataCollectionRate())
-            .dataCollectionTotalTime(Integer.parseInt(getTimeDuration()))
+            .dataCollectionTotalTime(Integer.parseInt(getTimeDuration(context)))
             .metricEndpoints(apmMetricInfos)
             .canaryMetricInfos(canaryMetricInfos)
             .accountId(accountId)
@@ -430,7 +430,7 @@ public class APMVerificationState extends AbstractMetricAnalysisState {
                       .async(true)
                       .taskType(TaskType.APM_METRIC_DATA_COLLECTION_TASK.name())
                       .parameters(new Object[] {dataCollectionInfo})
-                      .timeout(TimeUnit.MINUTES.toMillis(Integer.parseInt(getTimeDuration()) + 120))
+                      .timeout(TimeUnit.MINUTES.toMillis(Integer.parseInt(getTimeDuration(context)) + 120))
                       .build())
             .setupAbstraction(Cd1SetupFields.ENV_ID_FIELD, envId)
             .setupAbstraction(Cd1SetupFields.INFRASTRUCTURE_MAPPING_ID_FIELD, infrastructureMappingId)
@@ -441,7 +441,7 @@ public class APMVerificationState extends AbstractMetricAnalysisState {
             .stateExecutionId(context.getStateExecutionInstanceId())
             .dataCollectionStartTime(dataCollectionStartTimeStamp)
             .dataCollectionEndTime(
-                dataCollectionStartTimeStamp + TimeUnit.MINUTES.toMillis(Integer.parseInt(getTimeDuration())))
+                dataCollectionStartTimeStamp + TimeUnit.MINUTES.toMillis(Integer.parseInt(getTimeDuration(context))))
             .executionData(executionData)
             .build(),
         waitId);

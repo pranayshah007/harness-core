@@ -45,6 +45,7 @@ import io.harness.persistence.UuidAware;
 import io.harness.reflection.ReflectionUtils;
 
 import software.wings.annotation.EncryptableSetting;
+import software.wings.audit.AuditHeader;
 import software.wings.beans.Base;
 import software.wings.beans.ServiceVariable;
 import software.wings.beans.ServiceVariableType;
@@ -366,6 +367,8 @@ public class WingsMongoPersistence extends MongoPersistence implements WingsPers
         UserPermissionInfo userPermissionInfo = userRequestContext.getUserPermissionInfo();
         if (AccountAccess.class.isAssignableFrom(beanClass) && userPermissionInfo.isHasAllAppAccess()) {
           query.field("accountId").equal(userRequestContext.getAccountId());
+        } else if (beanClass == AuditHeader.class) {
+          query.field("entityAuditRecords.appId").in(userRequestContext.getAppIds());
         } else {
           query.field("appId").in(userRequestContext.getAppIds());
         }

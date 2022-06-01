@@ -43,6 +43,7 @@ import static org.apache.commons.codec.binary.Hex.encodeHexString;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.GitClientException;
 import io.harness.exception.GitConnectionDelegateException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NonPersistentLockException;
 import io.harness.exception.YamlException;
 import io.harness.filesystem.FileIo;
@@ -75,6 +76,7 @@ import org.eclipse.jgit.api.errors.RefNotFoundException;
 import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.errors.MissingObjectException;
 import org.eclipse.jgit.errors.TransportException;
+import org.jetbrains.annotations.NotNull;
 
 @OwnedBy(CDP)
 @Singleton
@@ -163,6 +165,11 @@ public class GitClientHelper {
     return host.equals("bitbucket.org") || host.equals("www.bitbucket.org");
   }
 
+  public static boolean isAzureRepoSAAS(String url) {
+    String host = getGitSCM(url);
+    return host.equals("dev.azure.com") || host.equals("www.dev.azure.com");
+  }
+
   public static String getGithubApiURL(String url) {
     if (GitClientHelper.isGithubSAAS(url)) {
       return "https://api.github.com/";
@@ -190,10 +197,15 @@ public class GitClientHelper {
   }
 
   public static String getAzureRepoApiURL(String url) {
-    return "https://dev.azure.com/";
+    if (isAzureRepoSAAS(url)) {
+      return "https://dev.azure.com/";
+    } else {
+      String domain = GitClientHelper.getGitSCM(url);
+      return "https://" + domain + "/";
+    }
   }
 
-  public static String getAzureRepoOrgAndProject(String url) {
+  public static String getAzureRepoOrgAndProjectHTTP(String url) {
     String temp = StringUtils.substringBeforeLast(url, "/_git/");
     return StringUtils.substringAfter(temp, "dev.azure.com/");
   }
@@ -204,6 +216,11 @@ public class GitClientHelper {
 
   public static String getAzureRepoProject(String orgAndProject) {
     return StringUtils.substringAfter(orgAndProject, "/");
+  }
+
+  public static String getAzureRepoOrgAndProjectSSH(String url) {
+    String temp = StringUtils.substringBeforeLast(url, "/");
+    return StringUtils.substringAfter(temp, "/");
   }
 
   private static String getGitSCMHost(String url) {
@@ -436,5 +453,14 @@ public class GitClientHelper {
         unhandled(gitDiffChangeType);
     }
     return null;
+  }
+
+  public static void validateURL(@NotNull String url) {
+    Matcher m = GIT_URL_NO_OWNER.matcher(url);
+    log.info("url==" + url);
+    if (!(m.find())) {
+      throw new InvalidRequestException(
+          format("Invalid repo url  %s,should start with either http:// , https:// , ssh:// or git@", url));
+    }
   }
 }

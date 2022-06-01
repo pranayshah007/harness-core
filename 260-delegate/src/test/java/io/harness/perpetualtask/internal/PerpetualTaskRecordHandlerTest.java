@@ -140,7 +140,7 @@ public class PerpetualTaskRecordHandlerTest extends CategoryTest {
   @Owner(developers = XIN)
   @Category(UnitTests.class)
   public void testReassignToSameConnectedDelegate() {
-    Account account = anAccount().build();
+    Account account = anAccount().withUuid("uuid").build();
 
     record = PerpetualTaskRecord.builder()
                  .accountId(accountId)

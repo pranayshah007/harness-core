@@ -78,7 +78,6 @@ public class DelegateTaskExpiryCheckIterator implements MongoPersistenceIterator
     if (isDelegateExpiryCheckDoneAlready(delegate)) {
       return;
     }
-
     log.info("Expiring all tasks for delegate [{}], accountId: [{}]", delegate.getUuid(), delegate.getAccountId());
     try (AutoLogContext ignore1 = new DelegateLogContext(delegate.getUuid(), OVERRIDE_ERROR);
          AccountLogContext ignore2 = new AccountLogContext(delegate.getAccountId(), OVERRIDE_ERROR)) {

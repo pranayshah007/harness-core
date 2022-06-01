@@ -370,4 +370,43 @@ public class CIK8BuildTaskHandlerTestHelper {
     decryptedSecrets.putAll(getGcpSecret());
     return decryptedSecrets;
   }
+
+  public static CIK8InitializeTaskParams buildTaskParamsWithWhitespace() {
+    ImageDetails imageDetails = ImageDetails.builder().name(imageName).tag(tag).registryUrl(registryUrl).build();
+    ImageDetails imageDetailsWithoutRegistry = ImageDetails.builder().name(imageName).tag(tag).build();
+
+    List<CIK8ContainerParams> containerParamsList = new ArrayList<>();
+    containerParamsList.add(
+        CIK8ContainerParams.builder()
+            .name(containerName1)
+            .containerType(CIContainerType.ADD_ON)
+            .imageDetailsWithConnector(ImageDetailsWithConnector.builder()
+                                           .imageConnectorDetails(getDockerConnectorDetails())
+                                           .imageDetails(imageDetails)
+                                           .build())
+            .containerSecrets(
+                ContainerSecrets.builder().connectorDetailsMap(getPublishArtifactConnectorDetails()).build())
+            .build());
+    containerParamsList.add(
+        CIK8ContainerParams.builder()
+            .containerSecrets(ContainerSecrets.builder().secretVariableDetails(getSecretVariableDetails()).build())
+            .name(containerName2)
+            .containerType(CIContainerType.STEP_EXECUTOR)
+            .imageDetailsWithConnector(
+                ImageDetailsWithConnector.builder().imageDetails(imageDetailsWithoutRegistry).build())
+            .build());
+
+    CIK8PodParams<CIK8ContainerParams> cik8PodParams = CIK8PodParams.<CIK8ContainerParams>builder()
+                                                           .name(podName)
+                                                           .namespace(namespace + " ")
+                                                           .gitConnector(getGitConnector())
+                                                           .containerParamsList(containerParamsList)
+                                                           .build();
+
+    return CIK8InitializeTaskParams.builder()
+        .k8sConnector(getK8sConnector())
+        .cik8PodParams(cik8PodParams)
+        .podMaxWaitUntilReadySecs(timeout)
+        .build();
+  }
 }

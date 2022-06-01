@@ -28,6 +28,7 @@ import io.harness.ccm.commons.entities.CCMStringFilter;
 import io.harness.ccm.commons.entities.CCMTimeFilter;
 import io.harness.ccm.views.dto.PerspectiveQueryDTO;
 import io.harness.ccm.views.entities.CEView;
+import io.harness.ccm.views.entities.ViewCondition;
 import io.harness.ccm.views.entities.ViewField;
 import io.harness.ccm.views.entities.ViewIdCondition;
 import io.harness.ccm.views.entities.ViewRule;
@@ -127,8 +128,10 @@ public class PerspectiveToAnomalyQueryHelper {
                 CCMField.GCP_SKU_DESCRIPTION, filter.getIdFilter().getValues(), filter.getIdFilter().getOperator()));
             break;
           case AWS_ACCOUNT_FIELD_ID:
-            stringFilters.add(buildStringFilter(
-                CCMField.AWS_ACCOUNT, filter.getIdFilter().getValues(), filter.getIdFilter().getOperator()));
+            stringFilters.add(buildStringFilter(CCMField.AWS_ACCOUNT,
+                AwsAccountFieldHelper.removeAwsAccountNameFromValues(Arrays.asList(filter.getIdFilter().getValues()))
+                    .toArray(new String[0]),
+                filter.getIdFilter().getOperator()));
             break;
           case AWS_SERVICE_FIELD_ID:
             stringFilters.add(buildStringFilter(
@@ -193,10 +196,25 @@ public class PerspectiveToAnomalyQueryHelper {
     // Filters from perspective query
     allFilters.add(convertFilters(
         perspectiveQuery.getFilters() != null ? perspectiveQuery.getFilters() : Collections.emptyList()));
-    // Default perspective filters
-    allFilters.add(convertFilters(getPerspectiveDefaultFilters(view)));
 
     return combineFilters(allFilters);
+  }
+
+  public List<CCMFilter> getConvertedRulesForPerspective(CEView view) {
+    List<CCMFilter> convertedRuleFilters = new ArrayList<>();
+    List<ViewRule> viewRules = view.getViewRules();
+
+    for (ViewRule rule : viewRules) {
+      List<QLCEViewFilterWrapper> ruleFilters = new ArrayList<>();
+      for (ViewCondition condition : rule.getViewConditions()) {
+        ruleFilters.add(QLCEViewFilterWrapper.builder()
+                            .idFilter(viewsQueryBuilder.mapConditionToFilter((ViewIdCondition) condition))
+                            .build());
+      }
+      convertedRuleFilters.add(convertFilters(ruleFilters));
+    }
+
+    return convertedRuleFilters;
   }
 
   private CCMFilter combineFilters(List<CCMFilter> filters) {
@@ -236,7 +254,6 @@ public class PerspectiveToAnomalyQueryHelper {
 
   public List<QLCEViewFilterWrapper> getPerspectiveDefaultFilters(CEView view) {
     List<QLCEViewFilterWrapper> defaultFilters = new ArrayList<>();
-
     List<ViewRule> viewRules = view.getViewRules();
 
     for (ViewRule rule : viewRules) {

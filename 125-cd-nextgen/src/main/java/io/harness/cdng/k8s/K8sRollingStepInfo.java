@@ -75,4 +75,9 @@ public class K8sRollingStepInfo extends K8sRollingBaseStepInfo implements CDStep
         .canaryStepFqn(canaryStepFqn)
         .build();
   }
+
+  @Override
+  public ParameterField<List<TaskSelectorYaml>> fetchDelegateSelectors() {
+    return getDelegateSelectors();
+  }
 }

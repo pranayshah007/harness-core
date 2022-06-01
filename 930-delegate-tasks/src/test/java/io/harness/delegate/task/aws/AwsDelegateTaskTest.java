@@ -10,6 +10,7 @@ package io.harness.delegate.task.aws;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.ACHYUTH;
+import static io.harness.rule.OwnerRule.VLICA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -29,9 +30,12 @@ import io.harness.connector.ConnectivityStatus;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.TaskData;
+import io.harness.delegate.beans.connector.awsconnector.AwsCFTaskParamsRequest;
+import io.harness.delegate.beans.connector.awsconnector.AwsCFTaskResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialType;
+import io.harness.delegate.beans.connector.awsconnector.AwsIAMRolesResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsS3BucketResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsTaskParams;
 import io.harness.delegate.beans.connector.awsconnector.AwsTaskType;
@@ -40,7 +44,11 @@ import io.harness.errorhandling.NGErrorHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.rule.Owner;
 
+import software.wings.service.impl.aws.model.AwsCFTemplateParamsData;
+
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import org.apache.commons.lang3.NotImplementedException;
 import org.junit.Rule;
 import org.junit.Test;
@@ -57,7 +65,8 @@ public class AwsDelegateTaskTest extends CategoryTest {
   @Mock private AwsNgConfigMapper awsNgConfigMapper;
   @Mock private NGErrorHelper ngErrorHelper;
   @Mock private AwsS3DelegateTaskHelper awsS3DelegateTaskHelper;
-
+  @Mock private AwsCFDelegateTaskHelper awsCFDelegateTaskHelper;
+  @Mock private AwsIAMDelegateTaskHelper awsIAMDelegateTaskHelper;
   @InjectMocks
   private AwsDelegateTask task =
       new AwsDelegateTask(DelegateTaskPackage.builder().data(TaskData.builder().build()).build(), null, null, null);
@@ -94,6 +103,53 @@ public class AwsDelegateTaskTest extends CategoryTest {
     assertThat(result).isEqualTo(response);
 
     verify(awsS3DelegateTaskHelper, times(1)).getS3Buckets(eq(awsTaskParams));
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testShouldListCFParams() {
+    AwsCFTaskParamsRequest awsTaskParams =
+        AwsCFTaskParamsRequest.builder().awsTaskType(AwsTaskType.CF_LIST_PARAMS).build();
+    AwsCFTaskResponse response =
+        AwsCFTaskResponse.builder()
+            .commandExecutionStatus(SUCCESS)
+            .listOfParams(
+                Arrays.asList(AwsCFTemplateParamsData.builder().paramType("param-Type").paramKey("param-Key").build()))
+            .build();
+
+    doReturn(response).when(awsCFDelegateTaskHelper).getCFParamsList(eq(awsTaskParams));
+
+    AwsCFTaskResponse result = (AwsCFTaskResponse) task.run(awsTaskParams);
+    assertThat(result).isNotNull();
+    assertThat(result).isEqualTo(response);
+    assertThat(result).isInstanceOf(AwsCFTaskResponse.class);
+    assertThat(result.getListOfParams().get(0).getParamKey()).isEqualTo("param-Key");
+    assertThat(result.getListOfParams().get(0).getParamType()).isEqualTo("param-Type");
+    verify(awsCFDelegateTaskHelper, times(1)).getCFParamsList(eq(awsTaskParams));
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testShouldListIAMRoles() {
+    AwsTaskParams awsTaskParams = AwsTaskParams.builder().awsTaskType(AwsTaskType.LIST_IAM_ROLES).build();
+
+    AwsIAMRolesResponse response = AwsIAMRolesResponse.builder()
+                                       .commandExecutionStatus(SUCCESS)
+                                       .roles(new HashMap<String, String>() {
+                                         { put("iamRole-Name", "iamRole-Value"); }
+                                       })
+                                       .build();
+
+    doReturn(response).when(awsIAMDelegateTaskHelper).getIAMRoleList(eq(awsTaskParams));
+
+    AwsIAMRolesResponse result = (AwsIAMRolesResponse) task.run(awsTaskParams);
+    assertThat(result).isNotNull();
+    assertThat(result).isInstanceOf(AwsIAMRolesResponse.class);
+    assertThat(result).isEqualTo(response);
+    assertThat(result.getRoles().get("iamRole-Name")).isEqualTo("iamRole-Value");
+    verify(awsIAMDelegateTaskHelper, times(1)).getIAMRoleList(eq(awsTaskParams));
   }
 
   @Test

@@ -76,4 +76,18 @@ public abstract class Variable implements PersistentEntity, NGAccountAccess {
                  .build())
         .build();
   }
+
+  public String getScope() {
+    if (orgIdentifier != null) {
+      if (projectIdentifier != null) {
+        return "project";
+      }
+      return "org";
+    }
+    return "account";
+  }
+
+  public String getExpression() {
+    return "variable" + (getScope().equals("project") ? "" : "." + getScope()) + "." + getIdentifier();
+  }
 }

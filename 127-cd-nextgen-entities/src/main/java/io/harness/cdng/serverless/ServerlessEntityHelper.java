@@ -23,7 +23,6 @@ import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryGenericArtifactOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.ServerlessAwsLambdaInfrastructureOutcome;
-import io.harness.cdng.infra.yaml.InfrastructureKind;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
@@ -35,6 +34,7 @@ import io.harness.delegate.task.serverless.ServerlessAwsLambdaInfraConfig;
 import io.harness.delegate.task.serverless.ServerlessInfraConfig;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.NGAccess;
+import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.utils.IdentifierRefHelper;
@@ -101,6 +101,7 @@ public class ServerlessEntityHelper {
             .serverlessInfraType(AWS_INFRA)
             .region(serverlessAwsLambdaInfrastructureOutcome.getRegion())
             .stage(serverlessAwsLambdaInfrastructureOutcome.getStage())
+            .infraStructureKey(serverlessAwsLambdaInfrastructureOutcome.getInfrastructureKey())
             .build();
       default:
         throw new UnsupportedOperationException(

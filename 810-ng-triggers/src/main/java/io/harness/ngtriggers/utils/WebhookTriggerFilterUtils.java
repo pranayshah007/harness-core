@@ -265,7 +265,7 @@ public class WebhookTriggerFilterUtils {
         webhookPayloadData.getOriginalEvent().getHeaders(), webhookPayloadData.getOriginalEvent().getPayload());
   }
 
-  TriggerExpressionEvaluator generatorPMSExpressionEvaluator(
+  public TriggerExpressionEvaluator generatorPMSExpressionEvaluator(
       ParseWebhookResponse parseWebhookResponse, List<HeaderConfig> headerConfigs, String payload) {
     return new TriggerExpressionEvaluator(parseWebhookResponse, headerConfigs, payload);
   }

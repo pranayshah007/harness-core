@@ -182,17 +182,16 @@ public class AppDynamicsDataCollectionDSLTest extends HoverflyCVNextGenTestBase 
                             .findFirst()
                             .get()
                             .toDTO())
-            .customMetrics(Arrays.asList(AppMetricInfoDTO.builder()
-                                             .metricIdentifier("calls_number")
-                                             .baseFolder("Overall Application Performance")
-                                             .metricName("Calls Number")
-                                             .metricPath("Average Response Time (ms)")
-                                             .build(),
+            .customMetrics(Arrays.asList(
+                AppMetricInfoDTO.builder()
+                    .metricIdentifier("calls_number")
+                    .completeMetricPath("Overall Application Performance|docker-tier|Average Response Time (ms)")
+                    .metricName("Calls Number")
+                    .build(),
                 AppMetricInfoDTO.builder()
                     .metricIdentifier("stall_number")
-                    .baseFolder("Overall Application Performance")
+                    .completeMetricPath("Overall Application Performance|docker-tier|Stall Count")
                     .metricName("Stall Count")
-                    .metricPath("Stall Count")
                     .build()))
             .build();
     Map<String, Object> params =
@@ -234,19 +233,20 @@ public class AppDynamicsDataCollectionDSLTest extends HoverflyCVNextGenTestBase 
                             .findFirst()
                             .get()
                             .toDTO())
-            .customMetrics(Arrays.asList(AppMetricInfoDTO.builder()
-                                             .metricIdentifier("calls_number")
-                                             .baseFolder("Overall Application Performance")
-                                             .metricName("Calls Number")
-                                             .serviceInstanceMetricPath("Individual Nodes|*|Average Response Time (ms)")
-                                             .metricPath("Average Response Time (ms)")
-                                             .build(),
+            .customMetrics(Arrays.asList(
+                AppMetricInfoDTO.builder()
+                    .metricIdentifier("calls_number")
+                    .completeMetricPath("Overall Application Performance|docker-tier|Average Response Time (ms)")
+                    .completeServiceInstanceMetricPath(
+                        "Overall Application Performance|docker-tier|Individual Nodes|*|Average Response Time (ms)")
+                    .metricName("Calls Number")
+                    .build(),
                 AppMetricInfoDTO.builder()
                     .metricIdentifier("stall_number")
-                    .baseFolder("Overall Application Performance")
+                    .completeMetricPath("Overall Application Performance|docker-tier|Stall Count")
+                    .completeServiceInstanceMetricPath(
+                        "Overall Application Performance|docker-tier|Individual Nodes|*|Stall Count")
                     .metricName("Stall Count")
-                    .serviceInstanceMetricPath("Individual Nodes|*|Stall Count")
-                    .metricPath("Stall Count")
                     .build()))
             .build();
     appDynamicsDataCollectionInfo.setCollectHostData(true);

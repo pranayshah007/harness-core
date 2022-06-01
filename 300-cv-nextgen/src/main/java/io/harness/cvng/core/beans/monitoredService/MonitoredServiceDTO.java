@@ -11,6 +11,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.cvng.beans.MonitoredServiceType;
 import io.harness.cvng.core.beans.dependency.ServiceDependencyMetadata;
+import io.harness.cvng.core.beans.template.TemplateDTO;
 import io.harness.cvng.notification.beans.NotificationRuleRefDTO;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.NGEntityName;
@@ -49,6 +50,7 @@ public class MonitoredServiceDTO {
   @Valid Sources sources;
   @Valid Set<ServiceDependencyDTO> dependencies;
   List<NotificationRuleRefDTO> notificationRuleRefs;
+  @Valid TemplateDTO template;
 
   public List<String> getEnvironmentRefList() {
     // For migration. Remove once envRefList is populated from UI.

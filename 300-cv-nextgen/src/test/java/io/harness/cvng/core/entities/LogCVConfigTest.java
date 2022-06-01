@@ -99,8 +99,7 @@ public class LogCVConfigTest extends CategoryTest {
     cvConfig.setVerificationType(VerificationType.LOG);
     cvConfig.setAccountId(accountId);
     cvConfig.setConnectorIdentifier(connectorId);
-    cvConfig.setServiceIdentifier(generateUuid());
-    cvConfig.setEnvIdentifier(generateUuid());
+    cvConfig.setMonitoredServiceIdentifier(generateUuid());
     cvConfig.setProjectIdentifier(generateUuid());
     cvConfig.setIdentifier(groupId);
     cvConfig.setMonitoringSourceName(generateUuid());

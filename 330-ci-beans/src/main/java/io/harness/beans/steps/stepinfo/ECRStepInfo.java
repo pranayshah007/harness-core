@@ -20,6 +20,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.plugin.compatible.PluginCompatibleStep;
 import io.harness.beans.steps.CIStepInfoType;
 import io.harness.beans.steps.TypeInfo;
+import io.harness.beans.steps.utils.PluginUtils;
 import io.harness.filters.WithConnectorRef;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
@@ -94,16 +95,21 @@ public class ECRStepInfo implements PluginCompatibleStep, WithConnectorRef {
   @YamlSchemaTypes({string}) @ApiModelProperty(dataType = INTEGER_CLASSPATH) private ParameterField<Integer> runAsUser;
   @YamlSchemaTypes({string}) @ApiModelProperty(dataType = BOOLEAN_CLASSPATH) private ParameterField<Boolean> optimize;
   @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> remoteCacheImage;
+  @YamlSchemaTypes(value = {string})
+  @ApiModelProperty(dataType = STRING_LIST_CLASSPATH)
+  private ParameterField<List<String>> baseImageConnectorRefs;
 
   @Builder
   @ConstructorProperties({"identifier", "name", "retry", "connectorRef", "resources", "account", "region", "imageName",
-      "tags", "context", "dockerfile", "target", "labels", "buildArgs", "runAsUser", "optimize", "remoteCacheImage"})
+      "tags", "context", "dockerfile", "target", "labels", "buildArgs", "runAsUser", "optimize", "remoteCacheImage",
+      "baseImageConnectorRefs"})
   public ECRStepInfo(String identifier, String name, Integer retry, ParameterField<String> connectorRef,
       ContainerResource resources, ParameterField<String> account, ParameterField<String> region,
       ParameterField<String> imageName, ParameterField<List<String>> tags, ParameterField<String> context,
       ParameterField<String> dockerfile, ParameterField<String> target, ParameterField<Map<String, String>> labels,
       ParameterField<Map<String, String>> buildArgs, ParameterField<Integer> runAsUser,
-      ParameterField<Boolean> optimize, ParameterField<String> remoteCacheImage) {
+      ParameterField<Boolean> optimize, ParameterField<String> remoteCacheImage,
+      ParameterField<List<String>> baseImageConnectorRefs) {
     this.identifier = identifier;
     this.name = name;
     this.retry = Optional.ofNullable(retry).orElse(DEFAULT_RETRY);
@@ -121,6 +127,7 @@ public class ECRStepInfo implements PluginCompatibleStep, WithConnectorRef {
     this.runAsUser = runAsUser;
     this.optimize = optimize;
     this.remoteCacheImage = remoteCacheImage;
+    this.baseImageConnectorRefs = baseImageConnectorRefs;
   }
 
   @Override
@@ -142,6 +149,7 @@ public class ECRStepInfo implements PluginCompatibleStep, WithConnectorRef {
   public Map<String, ParameterField<String>> extractConnectorRefs() {
     Map<String, ParameterField<String>> connectorRefMap = new HashMap<>();
     connectorRefMap.put(YAMLFieldNameConstants.CONNECTOR_REF, connectorRef);
+    connectorRefMap.putAll(PluginUtils.extractBaseImageConnectorRefs(baseImageConnectorRefs));
     return connectorRefMap;
   }
 }

@@ -44,7 +44,10 @@ import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.stages.stage.StageElementConfig;
 import io.harness.plancreator.steps.ParallelStepElementConfig;
 import io.harness.plancreator.steps.StepElementConfig;
+import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.stateutils.buildstate.PluginSettingUtils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -63,7 +66,7 @@ public class VmInitializeStepUtils {
 
   public BuildJobEnvInfo getInitializeStepInfoBuilder(StageElementConfig stageElementConfig,
       Infrastructure infrastructure, CIExecutionArgs ciExecutionArgs, List<ExecutionWrapperConfig> steps,
-      String accountId) {
+      Ambiance ambiance) {
     ArrayList<String> connectorIdentifiers = new ArrayList<>();
     for (ExecutionWrapperConfig executionWrapper : steps) {
       if (executionWrapper.getStep() != null && !executionWrapper.getStep().isNull()) {
@@ -93,7 +96,7 @@ public class VmInitializeStepUtils {
       }
     }
     IntegrationStageConfig integrationStageConfig = IntegrationStageUtils.getIntegrationStageConfig(stageElementConfig);
-    validateStageConfig(integrationStageConfig, accountId);
+    validateStageConfig(integrationStageConfig, AmbianceUtils.getAccountId(ambiance));
     List<DependencyElement> serviceDependencies = null;
     if (integrationStageConfig.getServiceDependencies() != null
         && integrationStageConfig.getServiceDependencies().getValue() != null) {
@@ -114,7 +117,7 @@ public class VmInitializeStepUtils {
   }
 
   private String getStepMountPath(OSType os) {
-    if (os.equals(OSType.OSX)) {
+    if (os.equals(OSType.MacOS)) {
       return OSX_STEP_MOUNT_PATH;
     }
     return STEP_MOUNT_PATH;
@@ -154,6 +157,9 @@ public class VmInitializeStepUtils {
         case RUN_TESTS:
           validateRunTestsStepConnector((RunTestsStepInfo) ciStepInfo);
           break;
+        case ECR:
+          validatePluginStepConnector((PluginCompatibleStep) ciStepInfo);
+          break;
         default:
           return;
       }
@@ -175,6 +181,13 @@ public class VmInitializeStepUtils {
     }
     if (runStepInfo.getImage() == null && runStepInfo.getConnectorRef() != null) {
       throw new CIStageExecutionException("image can't be empty if connector ref is provided");
+    }
+  }
+
+  private void validatePluginStepConnector(PluginCompatibleStep pluginStepInfo) {
+    List<String> baseImageConnectorRefs = PluginSettingUtils.getBaseImageConnectorRefs(pluginStepInfo);
+    if (baseImageConnectorRefs != null) {
+      throw new CIStageExecutionException("Base image connector is not allowed for VM Infrastructure.");
     }
   }
 

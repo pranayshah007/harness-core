@@ -36,7 +36,10 @@ public enum ResourceType {
   DELEGATE_TOKEN(ResourceTypeConstants.DELEGATE_TOKEN),
   GOVERNANCE_POLICY(ResourceTypeConstants.GOVERNANCE_POLICY),
   GOVERNANCE_POLICY_SET(ResourceTypeConstants.GOVERNANCE_POLICY_SET),
-  VARIABLE(ResourceTypeConstants.VARIABLE);
+  VARIABLE(ResourceTypeConstants.VARIABLE),
+  CHAOS_HUB(ResourceTypeConstants.CHAOS_HUB),
+  MONITORED_SERVICE(ResourceTypeConstants.MONITORED_SERVICE),
+  CHAOS_AGENT(ResourceTypeConstants.CHAOS_AGENT);
 
   ResourceType(String resourceType) {
     if (!this.name().equals(resourceType)) {

@@ -28,6 +28,7 @@ import io.harness.exception.AzureAuthenticationException;
 import io.harness.exception.AzureContainerRegistryException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
+import io.harness.exception.WingsException;
 
 import software.wings.helpers.ext.azure.AcrGetRepositoryTagsResponse;
 import software.wings.helpers.ext.azure.AcrGetTokenResponse;
@@ -169,13 +170,13 @@ public class AzureContainerRegistryClientImpl extends AzureClient implements Azu
       throw NestedExceptionUtils.hintWithExplanationException("Check Service Principal/Managed Identity permissions",
           String.format("Error occurred while getting repositories for subscriptionId/registry: %s/%s", subscriptionId,
               registryUrl),
-          new AzureContainerRegistryException(e.getMessage()));
+          new AzureContainerRegistryException(e.getMessage(), WingsException.USER, e));
     }
   }
 
   @Override
   public String getAcrRefreshToken(String registryUrl, String azureAccessToken) {
-    String errMsg;
+    WingsException we;
     try {
       AzureContainerRegistryRestClient acrRestClient =
           getAzureRestClient(buildRepositoryHostUrl(registryUrl), AzureContainerRegistryRestClient.class);
@@ -184,15 +185,17 @@ public class AzureContainerRegistryClientImpl extends AzureClient implements Azu
       if (response.isSuccessful()) {
         return response.body().getRefreshToken();
       } else {
-        errMsg = format("Get ACR refresh token in exchange for Azure access token has failed: %s with status code %s",
-            response.message(), response.code());
+        we = new AzureAuthenticationException(
+            format("Get ACR refresh token in exchange for Azure access token has failed: %s with status code %s",
+                response.message(), response.code()));
       }
     } catch (IOException e) {
-      errMsg = e.getMessage();
+      we = new AzureAuthenticationException(e.getMessage(), WingsException.USER, e);
     }
+
     throw NestedExceptionUtils.hintWithExplanationException(
         format("Retrieving ACR refresh token for %s has failed", registryUrl),
-        "Please recheck your azure connector config", new AzureAuthenticationException(errMsg));
+        "Please recheck your azure connector config", we);
   }
 
   @Override

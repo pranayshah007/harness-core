@@ -13,9 +13,6 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.ExplanationException;
-import io.harness.exception.NestedExceptionUtils;
-import io.harness.exception.SCMExceptionExplanations;
-import io.harness.exception.SCMExceptionHints;
 import io.harness.exception.ScmException;
 import io.harness.exception.UnexpectedException;
 import io.harness.exception.WingsException;
@@ -32,9 +29,6 @@ public class DefaultScmApiErrorHandler implements ScmApiErrorHandler {
       if (errorCode == ErrorCode.UNEXPECTED) {
         log.error("Encountered new status code: [{}] with message: [{}] from scm", statusCode, errorMessage);
         throw new UnexpectedException("Unexpected error occurred while doing scm operation");
-      } else if (errorCode == ErrorCode.SCM_NOT_FOUND_ERROR) {
-        throw NestedExceptionUtils.hintWithExplanationException(SCMExceptionHints.INVALID_CREDENTIALS,
-            SCMExceptionExplanations.UNABLE_TO_PUSH_TO_REPO_WITH_USER_CREDENTIALS, new ScmException(errorCode));
       }
       if (isNotEmpty(errorMessage)) {
         throw new ExplanationException(errorMessage, new ScmException(errorCode));
@@ -48,17 +42,17 @@ public class DefaultScmApiErrorHandler implements ScmApiErrorHandler {
     switch (statusCode) {
       case 304:
         return ErrorCode.SCM_NOT_MODIFIED;
+      case 400:
       case 404:
-        return ErrorCode.SCM_NOT_FOUND_ERROR;
-      case 409:
-        return ErrorCode.SCM_CONFLICT_ERROR;
       case 422:
-        return ErrorCode.SCM_UNPROCESSABLE_ENTITY;
+        return ErrorCode.SCM_BAD_REQUEST;
       case 401:
       case 403:
-        return ErrorCode.SCM_UNAUTHORIZED;
+        return ErrorCode.SCM_UNAUTHORIZED_ERROR_V2;
+      case 409:
+        return ErrorCode.SCM_CONFLICT_ERROR_V2;
       case 500:
-        return ErrorCode.SCM_INTERNAL_SERVER_ERROR;
+        return ErrorCode.SCM_INTERNAL_SERVER_ERROR_V2;
       default:
         return ErrorCode.UNEXPECTED;
     }

@@ -71,4 +71,9 @@ public class K8sBlueGreenStepInfo extends K8sBlueGreenBaseStepInfo implements CD
   public SpecParameters getSpecParameters() {
     return K8sBlueGreenStepParameters.infoBuilder().skipDryRun(skipDryRun).delegateSelectors(delegateSelectors).build();
   }
+
+  @Override
+  public ParameterField<List<TaskSelectorYaml>> fetchDelegateSelectors() {
+    return getDelegateSelectors();
+  }
 }

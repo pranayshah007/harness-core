@@ -9,6 +9,7 @@ package io.harness.exception.exceptionmanager;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.exceptionmanager.exceptionhandler.CILiteEngineExceptionHandler;
 import io.harness.exception.exceptionmanager.exceptionhandler.ExceptionHandler;
 import io.harness.exception.exceptionmanager.exceptionhandler.GeneralExceptionHandler;
 import io.harness.exception.exceptionmanager.exceptionhandler.JGitExceptionHandler;
@@ -40,5 +41,7 @@ public class ExceptionModule extends AbstractModule {
         exception -> exceptionHandlerMapBinder.addBinding(exception).to(JexlRuntimeExceptionHandler.class));
     JGitExceptionHandler.exceptions().forEach(
         exception -> exceptionHandlerMapBinder.addBinding(exception).to(JGitExceptionHandler.class));
+    CILiteEngineExceptionHandler.exceptions().forEach(
+        exception -> exceptionHandlerMapBinder.addBinding(exception).to(CILiteEngineExceptionHandler.class));
   }
 }

@@ -31,6 +31,8 @@ public class HintException extends WingsException {
       "\nCheck if Cross account role ARN, External Id are valid. \nCheck if User / IAM Role on delegate / IRSA role has permission to perform sts:AssumeRole. \nCheck if assumed Cross account role has permissions to describe regions.";
   public static final String HINT_AWS_IAM_ROLE_CHECK =
       "Check if the IAM role on ec2 delegate has the permissions to describe regions.";
+  public static final String HINT_CI_LITE_ENGINE_CONNECTIVITY =
+      "Check if the delegate is installed in the same cluster where build is running, Try by adding delegate selector in infrastructure connector.";
   public static final String HINT_AWS_CONNECTOR_NG_DOCUMENTATION =
       "\nRefer Harness NG documentation for configuring AWS connector settings: https://ngdocs.harness.io/article/m5vkql35ca-aws-connector-settings-reference";
   public static final String IAM_DETAILS_COMMAND =
@@ -94,6 +96,8 @@ public class HintException extends WingsException {
   public static final String HINT_INVALID_GIT_REPO = "Please provide valid git repository url";
   public static final String HINT_INVALID_GIT_HOST =
       "Please provide valid git repository url and ensure delegate to git provider connectivity";
+  public static final String HINT_GIT_CONNECTIVITY =
+      "Please ensure that git scm has connectivity from delegate or harness platform";
   public static final String HINT_INVALID_GIT_AUTHORIZATION = "Please ensure that the credentials are correct.";
   public static final String HINT_INVALID_GIT_AUTHENTICATION =
       "Please ensure that the authentication is supported by git provider.";

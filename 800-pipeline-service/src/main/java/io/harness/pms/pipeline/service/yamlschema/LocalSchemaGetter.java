@@ -16,6 +16,7 @@ import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.pipeline.service.yamlschema.approval.ApprovalYamlSchemaService;
+import io.harness.pms.pipeline.service.yamlschema.customstage.CustomStageYamlSchemaService;
 import io.harness.pms.pipeline.service.yamlschema.featureflag.FeatureFlagYamlService;
 import io.harness.yaml.schema.YamlSchemaProvider;
 import io.harness.yaml.schema.beans.PartialSchemaDTO;
@@ -31,16 +32,18 @@ public class LocalSchemaGetter implements SchemaGetter {
   private final ModuleType moduleType;
   private YamlSchemaProvider yamlSchemaProvider;
   private final ApprovalYamlSchemaService approvalYamlSchemaService;
+  private final CustomStageYamlSchemaService customStageYamlSchemaService;
   private final FeatureFlagYamlService featureFlagYamlService;
   private final PmsYamlSchemaHelper pmsYamlSchemaHelper;
 
   public LocalSchemaGetter(String accountIdentifier, ModuleType moduleType, YamlSchemaProvider yamlSchemaProvider,
-      ApprovalYamlSchemaService approvalYamlSchemaService, FeatureFlagYamlService featureFlagYamlService,
-      PmsYamlSchemaHelper pmsYamlSchemaHelper) {
+      ApprovalYamlSchemaService approvalYamlSchemaService, CustomStageYamlSchemaService customStageYamlSchemaService,
+      FeatureFlagYamlService featureFlagYamlService, PmsYamlSchemaHelper pmsYamlSchemaHelper) {
     this.accountIdentifier = accountIdentifier;
     this.moduleType = moduleType;
     this.yamlSchemaProvider = yamlSchemaProvider;
     this.approvalYamlSchemaService = approvalYamlSchemaService;
+    this.customStageYamlSchemaService = customStageYamlSchemaService;
     this.featureFlagYamlService = featureFlagYamlService;
     this.pmsYamlSchemaHelper = pmsYamlSchemaHelper;
   }
@@ -51,6 +54,8 @@ public class LocalSchemaGetter implements SchemaGetter {
     partialSchemaDTOList.add(approvalYamlSchemaService.getApprovalYamlSchema(
         accountIdentifier, null, null, null, yamlSchemaWithDetailsList));
     partialSchemaDTOList.add(featureFlagYamlService.getFeatureFlagYamlSchema(
+        accountIdentifier, null, null, null, yamlSchemaWithDetailsList));
+    partialSchemaDTOList.add(customStageYamlSchemaService.getCustomStageYamlSchema(
         accountIdentifier, null, null, null, yamlSchemaWithDetailsList));
     return partialSchemaDTOList;
   }
@@ -76,6 +81,11 @@ public class LocalSchemaGetter implements SchemaGetter {
       } else if (entityType.getYamlName().equals(EntityTypeConstants.FEATURE_FLAG_STAGE)) {
         return featureFlagYamlService
             .getFeatureFlagYamlSchema(
+                accountIdentifier, projectIdentifier, orgIdentifier, scope, yamlSchemaWithDetailsList)
+            .getSchema();
+      } else if (entityType.getYamlName().equals(EntityTypeConstants.CUSTOM_STAGE)) {
+        return customStageYamlSchemaService
+            .getCustomStageYamlSchema(
                 accountIdentifier, projectIdentifier, orgIdentifier, scope, yamlSchemaWithDetailsList)
             .getSchema();
       }

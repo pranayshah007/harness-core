@@ -38,6 +38,7 @@ import software.wings.beans.security.UserGroup;
 import software.wings.beans.security.UserGroup.UserGroupKeys;
 import software.wings.beans.sso.LdapGroupResponse;
 import software.wings.beans.sso.LdapSettings;
+import software.wings.beans.sso.LdapSettingsMapper;
 import software.wings.beans.sso.LdapTestResponse;
 import software.wings.beans.sso.LdapTestResponse.Status;
 import software.wings.beans.sso.LdapUserResponse;
@@ -251,7 +252,7 @@ public class LdapGroupSyncJobHelper {
           log.info("LDAPIterator: user found from by email Id {} is {}", ldapUserResponse.getEmail(), user);
 
           if (featureFlagService.isEnabled(FeatureName.LDAP_SYNC_WITH_USERID, accountId)) {
-            user = userService.getUserByUserId(ldapUserResponse.getUserId());
+            user = userService.getUserByUserId(accountId, ldapUserResponse.getUserId());
             log.info("LDAPIterator: Fetching user with user Id {}", ldapUserResponse.getUserId());
           }
           log.info("LDAPIterator: user found from system is {}", user);
@@ -300,7 +301,8 @@ public class LdapGroupSyncJobHelper {
                                           .timeout(ldapSyncTimeout)
                                           .build();
     LdapGroupResponse groupResponse = delegateProxyFactory.get(LdapDelegateService.class, syncTaskContext)
-                                          .fetchGroupByDn(ldapSettings, encryptedDataDetail, userGroup.getSsoGroupId());
+                                          .fetchGroupByDn(LdapSettingsMapper.ldapSettingsDTO(ldapSettings),
+                                              encryptedDataDetail, userGroup.getSsoGroupId());
     if (null == groupResponse) {
       String message = String.format(LdapConstants.USER_GROUP_SYNC_INVALID_REMOTE_GROUP, userGroup.getName());
       log.info("LDAPIterator: Group Response from delegate is null");

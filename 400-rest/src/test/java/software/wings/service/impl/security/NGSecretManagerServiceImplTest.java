@@ -15,10 +15,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -66,13 +64,17 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnitRunner;
 
 @OwnedBy(PL)
 @TargetModule(_890_SM_CORE)
 @Slf4j
+@RunWith(MockitoJUnitRunner.class)
 public class NGSecretManagerServiceImplTest extends CategoryTest {
-  private VaultService vaultService;
+  @Mock private VaultService vaultService;
   @Mock private AzureSecretsManagerService azureSecretsManagerService;
   @Mock private LocalSecretManagerService localSecretManagerService;
   @Mock private GcpSecretsManagerService gcpSecretsManagerService;
@@ -84,12 +86,7 @@ public class NGSecretManagerServiceImplTest extends CategoryTest {
 
   @Before
   public void doSetup() {
-    vaultService = mock(VaultService.class);
-    azureSecretsManagerService = mock(AzureSecretsManagerService.class);
-    localSecretManagerService = mock(LocalSecretManagerService.class);
-    gcpSecretsManagerService = mock(GcpSecretsManagerService.class);
-    secretManagerConfigService = mock(SecretManagerConfigService.class);
-    wingsPersistence = mock(WingsPersistence.class);
+    MockitoAnnotations.initMocks(this);
     ngSecretManagerServiceTest = new NGSecretManagerServiceImpl(vaultService, azureSecretsManagerService,
         localSecretManagerService, gcpSecretsManagerService, kmsService, secretManagerConfigService, wingsPersistence);
     ngSecretManagerService = spy(ngSecretManagerServiceTest);
@@ -99,7 +96,7 @@ public class NGSecretManagerServiceImplTest extends CategoryTest {
   @Owner(developers = PHOENIKX)
   @Category(UnitTests.class)
   public void testCreate() {
-    doReturn(false).when(ngSecretManagerService).checkForDuplicate(anyString(), anyString(), anyString(), anyString());
+    doReturn(false).when(ngSecretManagerService).checkForDuplicate(any(), any(), any(), any());
     when(vaultService.saveOrUpdateVaultConfig(any(), any(), anyBoolean())).thenReturn("abcde");
 
     SecretManagerConfig secretManagerConfig = ngSecretManagerService.create(
@@ -107,14 +104,12 @@ public class NGSecretManagerServiceImplTest extends CategoryTest {
     assertThat(secretManagerConfig).isNotNull();
     assertThat(secretManagerConfig.getEncryptionType()).isEqualTo(EncryptionType.VAULT);
 
-    doReturn(false).when(ngSecretManagerService).checkForDuplicate(anyString(), anyString(), anyString(), anyString());
     when(gcpSecretsManagerService.saveGcpKmsConfig(any(), any(), anyBoolean())).thenReturn("abcde");
     secretManagerConfig = ngSecretManagerService.create(
         GcpKmsConfig.builder().ngMetadata(NGSecretManagerMetadata.builder().build()).build());
     assertThat(secretManagerConfig).isNotNull();
     assertThat(secretManagerConfig.getEncryptionType()).isEqualTo(EncryptionType.GCP_KMS);
 
-    doReturn(false).when(ngSecretManagerService).checkForDuplicate(anyString(), anyString(), anyString(), anyString());
     when(localSecretManagerService.saveLocalEncryptionConfig(any(), any())).thenReturn("abcde");
     secretManagerConfig = ngSecretManagerService.create(
         LocalEncryptionConfig.builder().ngMetadata(NGSecretManagerMetadata.builder().build()).build());
@@ -126,7 +121,7 @@ public class NGSecretManagerServiceImplTest extends CategoryTest {
   @Owner(developers = PHOENIKX)
   @Category(UnitTests.class)
   public void testCreate_shouldFailDueToInvalidEncryptionType() {
-    doReturn(false).when(ngSecretManagerService).checkForDuplicate(anyString(), anyString(), anyString(), anyString());
+    doReturn(false).when(ngSecretManagerService).checkForDuplicate(any(), any(), any(), any());
 
     try {
       ngSecretManagerService.create(
@@ -141,7 +136,7 @@ public class NGSecretManagerServiceImplTest extends CategoryTest {
   @Owner(developers = PHOENIKX)
   @Category(UnitTests.class)
   public void testCreate_shouldFailDueToSecretManagerAlreadyExists() {
-    doReturn(true).when(ngSecretManagerService).checkForDuplicate(anyString(), anyString(), anyString(), anyString());
+    doReturn(true).when(ngSecretManagerService).checkForDuplicate(any(), any(), any(), any());
     try {
       ngSecretManagerService.create(
           VaultConfig.builder().ngMetadata(NGSecretManagerMetadata.builder().build()).build());
@@ -156,7 +151,7 @@ public class NGSecretManagerServiceImplTest extends CategoryTest {
   public void testTestConnection() {
     doReturn(Optional.ofNullable(VaultConfig.builder().build()))
         .when(ngSecretManagerService)
-        .get(anyString(), anyString(), anyString(), anyString(), eq(true));
+        .get(any(), any(), any(), any(), eq(true));
     ConnectorValidationResult connectorValidationResult =
         ngSecretManagerService.testConnection("account", null, null, "identifier");
     assertThat(connectorValidationResult).isNotNull();
@@ -165,7 +160,7 @@ public class NGSecretManagerServiceImplTest extends CategoryTest {
 
     doReturn(Optional.ofNullable(GcpKmsConfig.builder().build()))
         .when(ngSecretManagerService)
-        .get(anyString(), anyString(), anyString(), anyString(), eq(true));
+        .get(any(), any(), any(), any(), eq(true));
     connectorValidationResult = ngSecretManagerService.testConnection("account", null, null, "identifier");
     assertThat(connectorValidationResult).isNotNull();
     assertThat(connectorValidationResult.getStatus()).isEqualTo(ConnectivityStatus.SUCCESS);
@@ -173,7 +168,7 @@ public class NGSecretManagerServiceImplTest extends CategoryTest {
 
     doReturn(Optional.ofNullable(LocalEncryptionConfig.builder().build()))
         .when(ngSecretManagerService)
-        .get(anyString(), anyString(), anyString(), anyString(), eq(true));
+        .get(any(), any(), any(), any(), eq(true));
     connectorValidationResult = ngSecretManagerService.testConnection("account", null, null, "identifier");
     assertThat(connectorValidationResult).isNotNull();
     assertThat(connectorValidationResult.getStatus()).isEqualTo(ConnectivityStatus.SUCCESS);
@@ -184,9 +179,7 @@ public class NGSecretManagerServiceImplTest extends CategoryTest {
   @Owner(developers = PHOENIKX)
   @Category(UnitTests.class)
   public void testTestConnection_shouldFailDueToSecretManagerNotPresent() {
-    doReturn(Optional.empty())
-        .when(ngSecretManagerService)
-        .get(anyString(), anyString(), anyString(), anyString(), eq(true));
+    doReturn(Optional.empty()).when(ngSecretManagerService).get(any(), any(), any(), any(), eq(true));
     ConnectorValidationResult connectorValidationResult =
         ngSecretManagerService.testConnection("account", null, null, "identifier");
     assertThat(connectorValidationResult.getStatus()).isEqualTo(ConnectivityStatus.FAILURE);

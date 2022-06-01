@@ -57,7 +57,8 @@ public class StepVariableCreatorTestUtils {
         .getField(YAMLFieldNameConstants.STEP);
   }
 
-  public YamlField getNthInfraStepFromPipelineYamlField(YamlField pipelineYamlField, int n) {
+  public YamlField getNthInfraStepFromPipelineYamlField(
+      YamlField pipelineYamlField, String provisionerStepType, int n) {
     return pipelineYamlField.getNode()
         .getField(YAMLFieldNameConstants.PIPELINE)
         .getNode()
@@ -75,7 +76,7 @@ public class StepVariableCreatorTestUtils {
         .getNode()
         .getField(YAMLFieldNameConstants.PROVISIONER)
         .getNode()
-        .getField(YAMLFieldNameConstants.STEPS)
+        .getField(provisionerStepType)
         .getNode()
         .asArray()
         .get(n)
@@ -103,7 +104,21 @@ public class StepVariableCreatorTestUtils {
   public <T extends AbstractStepNode> List<String> getInfraFqnPropertiesForParentNodeV2(
       String resource, GenericStepVariableCreator<T> variableCreator, Class<T> stepNodeClass) throws IOException {
     YamlField pipelineYamlField = StepVariableCreatorTestUtils.getPipelineYamlField(resource);
-    YamlField stepYamlField = StepVariableCreatorTestUtils.getNthInfraStepFromPipelineYamlField(pipelineYamlField, 0);
+    YamlField stepYamlField = StepVariableCreatorTestUtils.getNthInfraStepFromPipelineYamlField(
+        pipelineYamlField, YAMLFieldNameConstants.STEPS, 0);
+    VariableCreationContext context = VariableCreationContext.builder().currentField(stepYamlField).build();
+
+    VariableCreationResponse response = variableCreator.createVariablesForParentNodeV2(
+        context, YamlUtils.read(stepYamlField.getNode().toString(), stepNodeClass));
+
+    return response.getYamlProperties().values().stream().map(YamlProperties::getFqn).collect(Collectors.toList());
+  }
+
+  public <T extends AbstractStepNode> List<String> getInfraRollbackFqnPropertiesForParentNodeV2(
+      String resource, GenericStepVariableCreator<T> variableCreator, Class<T> stepNodeClass) throws IOException {
+    YamlField pipelineYamlField = StepVariableCreatorTestUtils.getPipelineYamlField(resource);
+    YamlField stepYamlField = StepVariableCreatorTestUtils.getNthInfraStepFromPipelineYamlField(
+        pipelineYamlField, YAMLFieldNameConstants.ROLLBACK_STEPS, 0);
     VariableCreationContext context = VariableCreationContext.builder().currentField(stepYamlField).build();
 
     VariableCreationResponse response = variableCreator.createVariablesForParentNodeV2(

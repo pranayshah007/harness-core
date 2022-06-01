@@ -434,10 +434,7 @@ public class AwsLambdaState extends State {
         }
         return artifact.getArtifactFileMetadata().get(0).getUrl();
       case ARTIFACTORY:
-        String artifactUrl = artifactStreamAttributes.getMetadata().get(URL);
-        return "."
-            + artifactUrl.substring(artifactUrl.lastIndexOf(artifactStreamAttributes.getJobName())
-                + artifactStreamAttributes.getJobName().length());
+        return artifactStreamAttributes.getMetadata().get("artifactPath");
       default:
         return artifactStreamAttributes.getMetadata().get(URL);
     }

@@ -79,6 +79,10 @@ if [[ "" != "$S3_UPLOAD_IMAGE" ]]; then
   yq write -i $CONFIG_FILE ciExecutionServiceConfig.stepConfig.s3UploadConfig.image "$S3_UPLOAD_IMAGE"
 fi
 
+if [[ "" != "$SECURITY_IMAGE" ]]; then
+  yq write -i $CONFIG_FILE ciExecutionServiceConfig.stepConfig.securityConfig.image "$SECURITY_IMAGE"
+fi
+
 if [[ "" != "$ARTIFACTORY_UPLOAD_IMAGE" ]]; then
   yq write -i $CONFIG_FILE ciExecutionServiceConfig.stepConfig.artifactoryUploadConfig.image "$ARTIFACTORY_UPLOAD_IMAGE"
 fi

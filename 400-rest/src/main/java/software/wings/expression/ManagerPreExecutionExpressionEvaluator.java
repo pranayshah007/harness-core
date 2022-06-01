@@ -90,6 +90,7 @@ public class ManagerPreExecutionExpressionEvaluator extends ExpressionEvaluator 
                                                                       .accountId(accountId)
                                                                       .expressionFunctorToken(expressionFunctorToken)
                                                                       .secretManager(secretManager)
+                                                                      .secretsCache(secretsCache)
                                                                       .ngSecretService(ngSecretService);
 
     if (EmptyPredicate.isNotEmpty(taskSetupAbstractions)) {

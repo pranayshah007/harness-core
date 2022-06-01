@@ -8,6 +8,7 @@
 package io.harness.ng.core.service.mappers;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.ng.core.mapper.TagMapper.convertToList;
 import static io.harness.ng.core.mapper.TagMapper.convertToMap;
 
@@ -35,8 +36,12 @@ public class ServiceElementMapper {
                                       .tags(convertToList(serviceRequestDTO.getTags()))
                                       .yaml(serviceRequestDTO.getYaml())
                                       .build();
+    // This also validates the service yaml
     NGServiceConfig ngServiceConfig = NGServiceEntityMapper.toNGServiceConfig(serviceEntity);
-    serviceEntity.setYaml(NGServiceEntityMapper.toYaml(ngServiceConfig));
+    if (isEmpty(serviceEntity.getYaml())) {
+      serviceEntity.setYaml(NGServiceEntityMapper.toYaml(ngServiceConfig));
+    }
+    serviceEntity.setGitOpsEnabled(ngServiceConfig.getNgServiceV2InfoConfig().getGitOpsEnabled());
     return serviceEntity;
   }
 

@@ -7,9 +7,9 @@
 
 package io.harness.cdng.creator.variables;
 
-import io.harness.cdng.infra.yaml.InfrastructureKind;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.pms.contracts.plan.YamlProperties;
 import io.harness.pms.sdk.core.variables.VariableCreatorHelper;
 import io.harness.pms.sdk.core.variables.beans.VariableCreationResponse;

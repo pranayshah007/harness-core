@@ -10,6 +10,7 @@ package io.harness.ng.core.dto;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ng.core.usergroups.filter.UserGroupFilterType;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Set;
@@ -28,4 +29,7 @@ public class UserGroupFilterDTO {
   @Schema(description = "Filter by organization using account identifier") String orgIdentifier;
   @Schema(description = "Filter by project using account identifier") String projectIdentifier;
   @Schema(description = "Filter by search term matching entities by name/identifier") String searchTerm;
+  @Schema(description = "Filter by user group filterType")
+  @Builder.Default
+  UserGroupFilterType filterType = UserGroupFilterType.EXCLUDE_INHERITED_GROUPS;
 }

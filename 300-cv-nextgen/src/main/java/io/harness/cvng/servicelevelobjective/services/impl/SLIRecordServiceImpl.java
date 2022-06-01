@@ -212,7 +212,7 @@ public class SLIRecordServiceImpl implements SLIRecordService {
   @Override
   public List<SLIRecord> getSLIRecordsForLookBackDuration(String sliId, long lookBackDuration) {
     Instant startTime = clock.instant().minusMillis(lookBackDuration);
-    Instant endTime = clock.instant();
+    Instant endTime = clock.instant().minusMillis(Duration.ofMinutes(1).toMillis());
     List<Instant> minutes = new ArrayList<>();
     minutes.add(startTime);
     minutes.add(endTime);
@@ -227,8 +227,10 @@ public class SLIRecordServiceImpl implements SLIRecordService {
   @Override
   public double getErrorBudgetBurnRate(String sliId, long lookBackDuration, int totalErrorBudgetMinutes) {
     List<SLIRecord> sliRecords = getSLIRecordsForLookBackDuration(sliId, lookBackDuration);
-    return (Math.round(sliRecords.get(1).getRunningBadCount() - sliRecords.get(0).getRunningBadCount()) * 100)
-        / totalErrorBudgetMinutes;
+    return sliRecords.size() < 2
+        ? 0
+        : (((double) (sliRecords.get(1).getRunningBadCount() - sliRecords.get(0).getRunningBadCount()) * 100)
+            / totalErrorBudgetMinutes);
   }
 
   private List<SLIRecord> sliRecords(String sliId, Instant startTime, Instant endTime, TimeRangeParams filter) {

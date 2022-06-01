@@ -7,9 +7,9 @@
 
 package io.harness.service.instancesyncperpetualtask.instancesyncperpetualtaskhandler.k8s;
 
-import static io.harness.cdng.infra.yaml.InfrastructureKind.KUBERNETES_AZURE;
-import static io.harness.cdng.infra.yaml.InfrastructureKind.KUBERNETES_DIRECT;
-import static io.harness.cdng.infra.yaml.InfrastructureKind.KUBERNETES_GCP;
+import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_AZURE;
+import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_DIRECT;
+import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_GCP;
 
 import static java.lang.String.format;
 

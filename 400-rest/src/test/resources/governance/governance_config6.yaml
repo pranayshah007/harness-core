@@ -11,6 +11,8 @@ timeRangeBasedFreezeConfigs:
       - prod
       - qa
       filterType: ALL_NON_PROD
+    serviceSelection:
+    - filterType: ALL
     filterType: CUSTOM
   applicable: false
   description: git sync

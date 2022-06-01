@@ -21,10 +21,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.powermock.api.mockito.PowerMockito.spy;
-import static org.powermock.api.mockito.PowerMockito.when;
+import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
@@ -42,6 +43,7 @@ import io.harness.exception.UnexpectedException;
 import io.harness.product.ci.scm.proto.Commit;
 import io.harness.product.ci.scm.proto.CreateBranchResponse;
 import io.harness.product.ci.scm.proto.CreateFileResponse;
+import io.harness.product.ci.scm.proto.CreatePRResponse;
 import io.harness.product.ci.scm.proto.CreateWebhookRequest;
 import io.harness.product.ci.scm.proto.CreateWebhookResponse;
 import io.harness.product.ci.scm.proto.GetLatestCommitOnFileResponse;
@@ -66,13 +68,10 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
+@RunWith(MockitoJUnitRunner.class)
 @OwnedBy(HarnessTeam.PL)
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({SCMGrpc.SCMBlockingStub.class, Provider.class, ScmGitWebhookHelper.class})
 public class ScmServiceClientImplTest extends CategoryTest {
   @InjectMocks ScmServiceClientImpl scmServiceClient;
   @Mock ScmGitProviderHelper scmGitProviderHelper;
@@ -240,7 +239,7 @@ public class ScmServiceClientImplTest extends CategoryTest {
   @Owner(developers = OwnerRule.MOHIT_GARG)
   @Category(UnitTests.class)
   public void testErrorForCreateWebhookAPI() {
-    PowerMockito.mockStatic(ScmGitWebhookHelper.class);
+    mockStatic(ScmGitWebhookHelper.class);
     ScmServiceClientImpl scmService = spy(scmServiceClient);
 
     when(scmGitProviderHelper.getSlug(any())).thenReturn(slug);
@@ -263,6 +262,52 @@ public class ScmServiceClientImplTest extends CategoryTest {
             GetUserRepoResponse.newBuilder().setRepo(Repository.newBuilder().setBranch(branch).build()).build());
     GetUserRepoResponse getUserRepoResponse = scmServiceClient.getRepoDetails(scmConnector, scmBlockingStub);
     assertThat(getUserRepoResponse.getRepo().getBranch()).isEqualTo(branch);
+  }
+
+  @Test
+  @Owner(developers = BHAVYA)
+  @Category(UnitTests.class)
+  public void testCreateNewBranchV2_WhenGetLatestCommitFails() {
+    when(scmGitProviderHelper.getSlug(any())).thenReturn(slug);
+    when(scmGitProviderMapper.mapToSCMGitProvider(any())).thenReturn(getGitProviderDefault());
+    when(scmBlockingStub.getLatestCommit(any()))
+        .thenReturn(GetLatestCommitResponse.newBuilder().setStatus(404).setError(error).build());
+    CreateBranchResponse createBranchResponse =
+        scmServiceClient.createNewBranchV2(scmConnector, branch, baseBranchName, scmBlockingStub);
+    assertThat(createBranchResponse.getError()).isEqualTo(error);
+    assertThat(createBranchResponse.getStatus()).isEqualTo(404);
+  }
+
+  @Test
+  @Owner(developers = BHAVYA)
+  @Category(UnitTests.class)
+  public void testCreateNewBranchV2() {
+    when(scmGitProviderHelper.getSlug(any())).thenReturn(slug);
+    when(scmGitProviderMapper.mapToSCMGitProvider(any())).thenReturn(getGitProviderDefault());
+    when(scmBlockingStub.getLatestCommit(any()))
+        .thenReturn(GetLatestCommitResponse.newBuilder()
+                        .setStatus(200)
+                        .setCommit(Commit.newBuilder().setSha(sha).build())
+                        .build());
+    when(scmBlockingStub.createBranch(any())).thenReturn(CreateBranchResponse.newBuilder().setStatus(200).build());
+    CreateBranchResponse createBranchResponse =
+        scmServiceClient.createNewBranchV2(scmConnector, branch, baseBranchName, scmBlockingStub);
+
+    assertThat(createBranchResponse.getStatus()).isEqualTo(200);
+  }
+
+  @Test
+  @Owner(developers = BHAVYA)
+  @Category(UnitTests.class)
+  public void testCreatePullRequestV2() {
+    when(scmGitProviderHelper.getSlug(any())).thenReturn(slug);
+    when(scmGitProviderMapper.mapToSCMGitProvider(any())).thenReturn(getGitProviderDefault());
+    when(scmBlockingStub.createPR(any())).thenReturn(CreatePRResponse.newBuilder().setStatus(200).setError("").build());
+
+    CreatePRResponse createPRResponse =
+        scmServiceClient.createPullRequestV2(scmConnector, baseBranchName, branch, "pr title", scmBlockingStub);
+
+    assertThat(createPRResponse.getStatus()).isEqualTo(200);
   }
 
   private GitFileDetails getGitFileDetailsDefault() {

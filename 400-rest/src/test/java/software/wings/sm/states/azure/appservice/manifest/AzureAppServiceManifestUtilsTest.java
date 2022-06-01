@@ -12,7 +12,6 @@ import static io.harness.rule.OwnerRule.JELENA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -97,7 +96,7 @@ public class AzureAppServiceManifestUtilsTest extends WingsBaseTest {
     ApplicationManifest serviceAppManifest = ApplicationManifest.builder().storeType(StoreType.Local).build();
     serviceAppManifest.setAppId("APP_ID");
     serviceAppManifest.setUuid("SERVICE_UUID");
-    doReturn(serviceAppManifest).when(applicationManifestService).getByServiceId(anyString(), anyString(), any());
+    doReturn(serviceAppManifest).when(applicationManifestService).getByServiceId(any(), any(), any());
 
     doReturn(ImmutableList.of(
                  ManifestFile.builder().fileName("appsettings").fileContent(appSettingsServiceAppManifest).build(),

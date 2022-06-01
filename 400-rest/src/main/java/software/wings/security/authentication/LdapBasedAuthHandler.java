@@ -31,6 +31,7 @@ import software.wings.beans.Account;
 import software.wings.beans.SyncTaskContext;
 import software.wings.beans.User;
 import software.wings.beans.sso.LdapSettings;
+import software.wings.beans.sso.LdapSettingsMapper;
 import software.wings.delegatetasks.DelegateProxyFactory;
 import software.wings.helpers.ext.ldap.LdapResponse;
 import software.wings.helpers.ext.ldap.LdapResponse.Status;
@@ -103,9 +104,9 @@ public class LdapBasedAuthHandler implements AuthHandler {
                                             .appId(GLOBAL_APP_ID)
                                             .timeout(DEFAULT_SYNC_CALL_TIMEOUT)
                                             .build();
-      LdapResponse authenticationResponse =
-          delegateProxyFactory.get(LdapDelegateService.class, syncTaskContext)
-              .authenticate(settings, settingsEncryptedDataDetail, username, passwordEncryptedDataDetail);
+      LdapResponse authenticationResponse = delegateProxyFactory.get(LdapDelegateService.class, syncTaskContext)
+                                                .authenticate(LdapSettingsMapper.ldapSettingsDTO(settings),
+                                                    settingsEncryptedDataDetail, username, passwordEncryptedDataDetail);
       if (authenticationResponse.getStatus() == Status.SUCCESS) {
         return new AuthenticationResponse(user);
       }

@@ -32,6 +32,7 @@ public class VmStageInfraDetails implements StageInfraDetails {
   String poolId;
   String workDir;
   Map<String, String> volToMountPathMap; // host volume name to mount path mapping
+  String harnessImageConnectorRef;
   @Id @NotNull(groups = {Update.class}) @SchemaIgnore private String uuid;
 
   @Builder.Default @NotNull private Type type = Type.VM;

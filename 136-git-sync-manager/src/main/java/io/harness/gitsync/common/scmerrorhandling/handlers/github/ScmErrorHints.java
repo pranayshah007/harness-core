@@ -16,8 +16,8 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 @OwnedBy(PL)
 public class ScmErrorHints {
-  public static final String INVALID_CREDENTIALS = "Please check your Github credentials if they are valid or not.";
-  public static final String REPO_NOT_FOUND = "Please check if requested Github repository exists or not.";
+  public static final String INVALID_CREDENTIALS = "Please check if your Github credentials are valid.";
+  public static final String REPO_NOT_FOUND = "Please check if the requested Github repository exists.";
   public static final String FILE_NOT_FOUND =
       "Please check the requested file path / branch / Github repo name if they exist or not.";
 }

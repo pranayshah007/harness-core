@@ -17,6 +17,7 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.utils.ConstraintViolationHandlerUtils;
 
 import software.wings.beans.SettingAttribute;
@@ -48,6 +49,7 @@ public class UpdateConnectorDataFetcher
   @Inject private ConnectorsController connectorsController;
   @Inject private SecretManager secretManager;
   @Inject private UsageScopeController usageScopeController;
+  @Inject private FeatureFlagService featureFlagService;
 
   public UpdateConnectorDataFetcher() {
     super(QLUpdateConnectorInput.class, QLUpdateConnectorPayload.class);
@@ -77,8 +79,8 @@ public class UpdateConnectorDataFetcher
     QLUpdateConnectorPayloadBuilder builder =
         QLUpdateConnectorPayload.builder().clientMutationId(input.getClientMutationId());
 
-    Connector connector = ConnectorFactory.getConnector(
-        input.getConnectorType(), connectorsController, secretManager, settingsService, usageScopeController);
+    Connector connector = ConnectorFactory.getConnector(input.getConnectorType(), connectorsController, secretManager,
+        settingsService, usageScopeController, featureFlagService);
     connector.checkInputExists(input);
     connector.checkSecrets(input, settingAttribute);
     connector.updateSettingAttribute(settingAttribute, input);

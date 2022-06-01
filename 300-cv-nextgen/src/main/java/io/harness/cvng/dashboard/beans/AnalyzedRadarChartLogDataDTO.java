@@ -14,33 +14,21 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.List;
 import lombok.Builder;
 import lombok.Data;
-import lombok.Value;
 import org.jetbrains.annotations.NotNull;
 
-@Value
+@Data
 @Builder
 public class AnalyzedRadarChartLogDataDTO implements Comparable<AnalyzedRadarChartLogDataDTO> {
-  String projectIdentifier;
-  String orgIdentifier;
-  String environmentIdentifier;
-  String serviceIdentifier;
-
-  LogData logData;
-
-  @Data
-  @Builder
-  public static class LogData {
-    String text;
-    String clusterId;
-    Long label;
-    int count;
-    @JsonIgnore Double angle;
-    @JsonIgnore Double radius;
-    double riskScore;
-    Risk riskStatus;
-    List<AnalyzedLogDataDTO.FrequencyDTO> trend;
-    RadarChartTag clusterType;
-  }
+  String message;
+  String clusterId;
+  Long label;
+  int count;
+  @JsonIgnore Double angle;
+  @JsonIgnore Double radius;
+  double riskScore;
+  Risk risk;
+  List<AnalyzedLogDataDTO.FrequencyDTO> frequencyData;
+  RadarChartTag clusterType;
 
   @Data
   @Builder
@@ -51,9 +39,9 @@ public class AnalyzedRadarChartLogDataDTO implements Comparable<AnalyzedRadarCha
 
   @Override
   public int compareTo(@NotNull AnalyzedRadarChartLogDataDTO o) {
-    int result = o.getLogData().getClusterType().compareTo(logData.getClusterType());
+    int result = o.getClusterType().compareTo(clusterType);
     if (result == 0) {
-      result = Integer.compare(o.logData.getCount(), logData.getCount());
+      result = Integer.compare(o.getCount(), count);
     }
     return result;
   }

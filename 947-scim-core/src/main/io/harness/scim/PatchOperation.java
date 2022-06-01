@@ -13,6 +13,7 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
+import lombok.ToString;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "op")
 @JsonSubTypes({
@@ -23,6 +24,7 @@ import java.util.List;
       @JsonSubTypes.Type(value = OktaRemoveOperation.class, name = "remove"),
       @JsonSubTypes.Type(value = OktaReplaceOperation.class, name = "replace")
 })
+@ToString
 public abstract class PatchOperation {
   @JsonProperty private String path;
 

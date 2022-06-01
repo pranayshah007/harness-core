@@ -231,7 +231,7 @@ public class InstanceSyncServiceImpl implements InstanceSyncService {
       AbstractInstanceSyncHandler instanceSyncHandler, boolean isNewDeploymentSync) {
     List<InstanceDTO> instancesInDB = instanceService.getActiveInstancesByInfrastructureMappingId(
         infrastructureMappingDTO.getAccountIdentifier(), infrastructureMappingDTO.getOrgIdentifier(),
-        infrastructureMappingDTO.getProjectIdentifier(), infrastructureMappingDTO.getId(), System.currentTimeMillis());
+        infrastructureMappingDTO.getProjectIdentifier(), infrastructureMappingDTO.getId());
     List<InstanceInfoDTO> instanceInfosFromServer =
         instanceSyncHandler.getInstanceDetailsFromServerInstances(serverInstanceInfoList);
 

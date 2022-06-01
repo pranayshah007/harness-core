@@ -7,6 +7,7 @@
 
 package software.wings.graphql.datafetcher.connector;
 
+import static io.harness.beans.FeatureName.HELM_OCI_SUPPORT;
 import static io.harness.rule.OwnerRule.MILOS;
 import static io.harness.rule.OwnerRule.TMACARI;
 
@@ -31,6 +32,7 @@ import static software.wings.security.PermissionAttribute.PermissionType.MANAGE_
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -42,6 +44,7 @@ import io.harness.CategoryTest;
 import io.harness.beans.EncryptedData;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
 import io.harness.utils.RequestField;
 
@@ -94,6 +97,7 @@ public class CreateConnectorDataFetcherTest extends CategoryTest {
   @Mock private software.wings.graphql.datafetcher.connector.ConnectorsController connectorsController;
   @Mock private SecretManager secretManager;
   @Mock private UsageScopeController usageScopeController;
+  @Mock private FeatureFlagService featureFlagService;
 
   @InjectMocks
   private software.wings.graphql.datafetcher.connector.CreateConnectorDataFetcher dataFetcher =
@@ -102,6 +106,7 @@ public class CreateConnectorDataFetcherTest extends CategoryTest {
   @Before
   public void setup() throws SQLException {
     MockitoAnnotations.initMocks(this);
+    doReturn(true).when(featureFlagService).isEnabled(eq(HELM_OCI_SUPPORT), any());
   }
 
   @Test
@@ -525,6 +530,7 @@ public class CreateConnectorDataFetcherTest extends CategoryTest {
                                                     .httpServerPlatformDetails(RequestField.absent())
                                                     .gcsPlatformDetails(RequestField.absent())
                                                     .amazonS3PlatformDetails(RequestField.absent())
+                                                    .ociPlatformDetails(RequestField.absent())
                                                     .build())
                                  .build();
     MutationContext mutationContext = MutationContext.builder().accountId(ACCOUNT_ID).build();
@@ -548,6 +554,7 @@ public class CreateConnectorDataFetcherTest extends CategoryTest {
                     .httpServerPlatformDetails(RequestField.ofNullable(getQlHttpServerPlatformInputBuilder().build()))
                     .gcsPlatformDetails(RequestField.ofNullable(getQlGCSPlatformInputBuilder().build()))
                     .amazonS3PlatformDetails(RequestField.absent())
+                    .ociPlatformDetails(RequestField.absent())
                     .build())
             .build();
     MutationContext mutationContext = MutationContext.builder().accountId(ACCOUNT_ID).build();
@@ -570,6 +577,7 @@ public class CreateConnectorDataFetcherTest extends CategoryTest {
                                .httpServerPlatformDetails(RequestField.absent())
                                .gcsPlatformDetails(RequestField.ofNullable(getQlGCSPlatformInputBuilder().build()))
                                .amazonS3PlatformDetails(RequestField.absent())
+                               .ociPlatformDetails(RequestField.absent())
                                .build())
             .build();
     MutationContext mutationContext = MutationContext.builder().accountId(ACCOUNT_ID).build();

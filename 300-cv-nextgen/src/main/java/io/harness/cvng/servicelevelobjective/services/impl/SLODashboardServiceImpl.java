@@ -30,7 +30,6 @@ import io.harness.cvng.servicelevelobjective.services.api.SLODashboardService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOErrorBudgetResetService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveService;
-import io.harness.data.structure.CollectionUtils;
 import io.harness.ng.beans.PageResponse;
 
 import com.google.common.base.Preconditions;
@@ -120,13 +119,8 @@ public class SLODashboardServiceImpl implements SLODashboardService {
     Instant currentTimeMinute = DateTimeUtils.roundDownTo1MinBoundary(clock.instant());
     List<SLOErrorBudgetResetDTO> errorBudgetResetDTOS =
         sloErrorBudgetResetService.getErrorBudgetResets(projectParams, slo.getIdentifier());
-    int totalErrorBudgetMinutes = serviceLevelObjective.getActiveErrorBudgetMinutes(
-        CollectionUtils.emptyIfNull(errorBudgetResetDTOS)
-            .stream()
-            .sorted((dto1, dto2) -> dto1.getCreatedAt().compareTo(dto2.getCreatedAt()))
-            .map(dto -> dto.getErrorBudgetIncrementPercentage())
-            .collect(Collectors.toList()),
-        currentLocalDate);
+    int totalErrorBudgetMinutes =
+        serviceLevelObjective.getActiveErrorBudgetMinutes(errorBudgetResetDTOS, currentLocalDate);
     SLODashboardWidget.SLOGraphData sloGraphData = sliRecordService.getGraphData(serviceLevelIndicator.getUuid(),
         timePeriod.getStartTime(serviceLevelObjective.getZoneOffset()), currentTimeMinute, totalErrorBudgetMinutes,
         serviceLevelIndicator.getSliMissingDataType(), serviceLevelIndicator.getVersion(), filter);

@@ -77,6 +77,7 @@ import io.harness.connector.entities.embedded.gitlabconnector.GitlabUsernamePass
 import io.harness.connector.entities.embedded.gitlabconnector.GitlabUsernameToken;
 import io.harness.connector.entities.embedded.helm.HttpHelmConnector;
 import io.harness.connector.entities.embedded.helm.HttpHelmUsernamePasswordAuthentication;
+import io.harness.connector.entities.embedded.jenkins.JenkinsConnector;
 import io.harness.connector.entities.embedded.jira.JiraConnector;
 import io.harness.connector.entities.embedded.kubernetescluster.K8sClientKeyCert;
 import io.harness.connector.entities.embedded.kubernetescluster.K8sOpenIdConnect;
@@ -143,6 +144,7 @@ public class ConnectorMorphiaClassesRegistrar implements MorphiaRegistrar {
     set.add(ErrorTrackingConnector.class);
     set.add(AzureConfig.class);
     set.add(AzureRepoConnector.class);
+    set.add(JenkinsConnector.class);
   }
 
   @Override

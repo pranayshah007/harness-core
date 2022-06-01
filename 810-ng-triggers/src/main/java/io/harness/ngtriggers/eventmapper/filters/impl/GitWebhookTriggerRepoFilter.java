@@ -56,6 +56,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -220,6 +221,14 @@ public class GitWebhookTriggerRepoFilter implements TriggerFilter {
     Map<String, ConnectorConfigDTO> connectorMap = new HashMap<>();
     List<ConnectorResponseDTO> connectors =
         ngTriggerService.fetchConnectorsByFQN(accountId, new ArrayList<>(triggerToConnectorMap.keySet()));
+    log.info("Trigger Connectors list count {} , received connectors counts from NG {}, triggerDetails count {} ",
+        triggerToConnectorMap.keySet().size(), connectors.size(), triggerDetails.size());
+    log.info("Eligible connectors list {}  ",
+        String.join(",",
+            connectors.stream()
+                .map(connectorResponseDTO -> connectorResponseDTO.getConnector().getIdentifier())
+                .sorted()
+                .collect(Collectors.toList())));
     connectors.forEach(connector
         -> connectorMap.put(
             FullyQualifiedIdentifierHelper.getFullyQualifiedIdentifier(accountId,

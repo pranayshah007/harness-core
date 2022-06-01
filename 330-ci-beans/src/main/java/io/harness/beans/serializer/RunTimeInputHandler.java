@@ -20,6 +20,8 @@ import io.harness.beans.yaml.extended.ArchiveFormat;
 import io.harness.beans.yaml.extended.CIShellType;
 import io.harness.beans.yaml.extended.ImagePullPolicy;
 import io.harness.beans.yaml.extended.TIBuildTool;
+import io.harness.beans.yaml.extended.TIDotNetBuildEnvName;
+import io.harness.beans.yaml.extended.TIDotNetVersion;
 import io.harness.beans.yaml.extended.TILanguage;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.beans.yaml.extended.infrastrucutre.k8.Toleration;
@@ -82,7 +84,7 @@ public class RunTimeInputHandler {
 
   public OSType resolveOSType(ParameterField<OSType> osType) {
     if (osType == null || osType.isExpression() || osType.getValue() == null) {
-      return OSType.LINUX;
+      return OSType.Linux;
     } else {
       return OSType.fromString(osType.fetchFinalValue().toString());
     }
@@ -109,6 +111,22 @@ public class RunTimeInputHandler {
       return null;
     } else {
       return TILanguage.fromString(language.fetchFinalValue().toString()).getYamlName();
+    }
+  }
+
+  public String resolveDotNetBuildEnvName(ParameterField<TIDotNetBuildEnvName> buildEnv) {
+    if (buildEnv == null || buildEnv.isExpression() || buildEnv.getValue() == null) {
+      return null;
+    } else {
+      return TIDotNetBuildEnvName.fromString(buildEnv.fetchFinalValue().toString()).getYamlName();
+    }
+  }
+
+  public String resolveDotNetVersion(ParameterField<TIDotNetVersion> version) {
+    if (version == null || version.isExpression() || version.getValue() == null) {
+      return null;
+    } else {
+      return TIDotNetVersion.fromString(version.fetchFinalValue().toString()).getYamlName();
     }
   }
 
@@ -282,6 +300,7 @@ public class RunTimeInputHandler {
             format("Failed to resolve mandatory field %s in step type %s with identifier %s", fieldName, stepType,
                 stepIdentifier));
       }
+      return null;
     }
 
     if (parameterField.isExpression()) {

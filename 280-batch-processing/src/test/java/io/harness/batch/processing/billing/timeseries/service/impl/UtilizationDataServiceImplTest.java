@@ -156,8 +156,6 @@ public class UtilizationDataServiceImplTest extends CategoryTest {
     List<ECSUtilizationData> utilizationData = utilizationMap.get(clusterIdAndServiceArn);
     assertThat(utilizationData.get(0).getMaxCpuUtilization()).isEqualTo(CPU_UTILIZATION);
     assertThat(utilizationData.get(0).getMaxMemoryUtilization()).isEqualTo(MEMORY_UTILIZATION);
-    assertThat(utilizationData.get(0).getAvgCpuUtilization()).isEqualTo(CPU_UTILIZATION);
-    assertThat(utilizationData.get(0).getAvgMemoryUtilization()).isEqualTo(MEMORY_UTILIZATION);
   }
 
   @Test

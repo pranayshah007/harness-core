@@ -10,6 +10,7 @@ package io.harness.delegate.beans.instancesync.info;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
+import io.harness.serverless.model.AwsLambdaFunctionDetails;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import lombok.Builder;
@@ -22,12 +23,39 @@ import lombok.EqualsAndHashCode;
 @Builder
 @EqualsAndHashCode(callSuper = true)
 public class ServerlessAwsLambdaServerInstanceInfo extends ServerInstanceInfo {
-  private String serviceName;
+  // serverless details
+  private String serverlessServiceName;
+  private String serverlessStage;
+
   private String region;
-  private String stage;
+
+  // lambda function details
   private String functionName;
   private String handler;
   private String memorySize;
   private String runTime;
-  private String timeout;
+  private Integer timeout;
+
+  // todo
+  private int invocationsCount;
+  private int errorsCount;
+
+  // harness
+  private String infraStructureKey;
+
+  public static ServerlessAwsLambdaServerInstanceInfo getServerlessAwsLambdaServerInstanceInfo(
+      String serverlessServiceName, String serverlessStage, String region,
+      AwsLambdaFunctionDetails awsLambdaFunctionDetails, String infraStructureKey) {
+    return ServerlessAwsLambdaServerInstanceInfo.builder()
+        .serverlessServiceName(serverlessServiceName)
+        .serverlessStage(serverlessStage)
+        .region(region)
+        .functionName(awsLambdaFunctionDetails.getFunctionName())
+        .handler(awsLambdaFunctionDetails.getHandler())
+        .memorySize(awsLambdaFunctionDetails.getMemorySize())
+        .runTime(awsLambdaFunctionDetails.getRunTime())
+        .timeout(awsLambdaFunctionDetails.getTimeout())
+        .infraStructureKey(infraStructureKey)
+        .build();
+  }
 }

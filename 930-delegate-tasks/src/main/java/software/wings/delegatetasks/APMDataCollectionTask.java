@@ -47,7 +47,6 @@ import software.wings.service.impl.apm.APMMetricInfo;
 import software.wings.service.impl.apm.APMResponseParser;
 import software.wings.service.impl.newrelic.NewRelicMetricDataRecord;
 import software.wings.service.intfc.analysis.ClusterLevel;
-import software.wings.service.intfc.newrelic.NewRelicDelegateService;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.BiMap;
@@ -96,8 +95,6 @@ public class APMDataCollectionTask extends AbstractDelegateDataCollectionTask {
   private static final int FIVE_MINS_IN_SECONDS = 5 * 60;
   private static final int TWO_MINS_IN_SECONDS = 2 * 60;
 
-  @Inject private NewRelicDelegateService newRelicDelegateService;
-  @Inject private DelegateLogService delegateLogService;
   @Inject private RequestExecutor requestExecutor;
 
   private int collectionWindow = 1;
@@ -754,7 +751,7 @@ public class APMDataCollectionTask extends AbstractDelegateDataCollectionTask {
         }
         // Heartbeat
         int heartbeatCounter = 0;
-        records.put(HARNESS_HEARTBEAT_METRIC_NAME + group, (long) heartbeatCounter++,
+        NewRelicMetricDataRecord heartbeat =
             NewRelicMetricDataRecord.builder()
                 .stateType(getStateType())
                 .name(HARNESS_HEARTBEAT_METRIC_NAME)
@@ -768,7 +765,9 @@ public class APMDataCollectionTask extends AbstractDelegateDataCollectionTask {
                 .timeStamp(collectionStartTime)
                 .level(ClusterLevel.H0)
                 .groupName(group)
-                .build());
+                .build();
+        log.info("adding heartbeat: {}", heartbeat);
+        records.put(HARNESS_HEARTBEAT_METRIC_NAME + group, (long) heartbeatCounter++, heartbeat);
       }
     }
   }

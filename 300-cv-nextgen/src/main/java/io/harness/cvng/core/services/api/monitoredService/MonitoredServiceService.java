@@ -16,6 +16,7 @@ import io.harness.cvng.core.beans.monitoredService.DurationDTO;
 import io.harness.cvng.core.beans.monitoredService.HealthScoreDTO;
 import io.harness.cvng.core.beans.monitoredService.HistoricalTrend;
 import io.harness.cvng.core.beans.monitoredService.MetricDTO;
+import io.harness.cvng.core.beans.monitoredService.MonitoredServiceChangeDetailSLO;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceListItemDTO;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceResponse;
@@ -29,6 +30,7 @@ import io.harness.cvng.core.beans.params.TimeRangeParams;
 import io.harness.cvng.core.beans.params.logsFilterParams.LiveMonitoringLogsFilter;
 import io.harness.cvng.core.entities.MonitoredService;
 import io.harness.cvng.core.services.api.DeleteEntityByHandler;
+import io.harness.cvng.notification.beans.NotificationRuleResponse;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.environment.dto.EnvironmentResponse;
 
@@ -56,7 +58,7 @@ public interface MonitoredServiceService extends DeleteEntityByHandler<Monitored
   // use with MonitoredServiceParams instead
   @Deprecated MonitoredService getMonitoredService(ProjectParams projectParams, String identifier);
   MonitoredService getMonitoredService(MonitoredServiceParams monitoredServiceParams);
-
+  MonitoredServiceDTO getExpandedMonitoredServiceFromYaml(ProjectParams projectParams, String yaml);
   Optional<MonitoredService> getApplicationMonitoredService(ServiceEnvironmentParams serviceEnvironmentParams);
 
   List<MonitoredService> list(
@@ -99,5 +101,10 @@ public interface MonitoredServiceService extends DeleteEntityByHandler<Monitored
       ProjectParams projectParams, List<String> services, List<String> environments);
   PageResponse<CVNGLogDTO> getCVNGLogs(MonitoredServiceParams monitoredServiceParams,
       LiveMonitoringLogsFilter liveMonitoringLogsFilter, PageParams pageParams);
+
+  List<MonitoredServiceChangeDetailSLO> getMonitoredServiceChangeDetails(
+      ProjectParams projectParams, String monitoredServiceIdentifier, Long startTime, Long endTime);
   void sendNotification(MonitoredService monitoredService);
+  PageResponse<NotificationRuleResponse> getNotificationRules(
+      ProjectParams projectParams, String monitoredServiceIdentifier, PageParams pageParams);
 }

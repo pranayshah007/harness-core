@@ -55,14 +55,18 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import retrofit2.Call;
 import retrofit2.Response;
 
 @RunWith(PowerMockRunner.class)
+@PowerMockIgnore({"javax.management.*", "com.sun.org.apache.xerces.*", "javax.xml.*", "org.xml.*", "org.w3c.dom.*",
+    "com.sun.org.apache.xalan.*", "javax.activation.*", "jdk.internal.reflect.*"})
 @OwnedBy(PIPELINE)
 @PrepareForTest(NGRestUtils.class)
 public class ApprovalResourceServiceImplTest extends CategoryTest {
@@ -98,7 +102,7 @@ public class ApprovalResourceServiceImplTest extends CategoryTest {
   @Owner(developers = BRIJESH)
   @Category(UnitTests.class)
   public void testAddHarnessApprovalActivity() throws IOException {
-    PowerMockito.mockStatic(NGRestUtils.class);
+    MockedStatic<NGRestUtils> aStatic = Mockito.mockStatic(NGRestUtils.class);
     String uuid = "uuid";
     String id = "dummy";
     Ambiance ambiance = Ambiance.newBuilder()
@@ -117,7 +121,7 @@ public class ApprovalResourceServiceImplTest extends CategoryTest {
     when(approvalInstanceService.getHarnessApprovalInstance(id)).thenReturn(harnessApprovalInstance);
     List<UserGroupDTO> userGroupDTOS = Collections.singletonList(UserGroupDTO.builder().build());
     when(userGroupClient.getFilteredUserGroups(any())).thenReturn(null);
-    when(NGRestUtils.getResponse(any())).thenReturn(userGroupDTOS);
+    aStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(userGroupDTOS);
     when(currentUserHelper.getPrincipalFromSecurityContext())
         .thenReturn(new UserPrincipal("email@harness.io", "name", "user", "ACCOUNTID"));
     Call userCall = mock(Call.class);

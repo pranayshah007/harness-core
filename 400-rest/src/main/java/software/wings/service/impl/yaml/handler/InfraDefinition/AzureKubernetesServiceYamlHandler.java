@@ -17,6 +17,7 @@ import software.wings.beans.yaml.ChangeContext;
 import software.wings.infra.AzureKubernetesService;
 import software.wings.infra.AzureKubernetesService.Yaml;
 import software.wings.service.impl.yaml.handler.CloudProviderInfrastructure.CloudProviderInfrastructureYamlHandler;
+import software.wings.service.impl.yaml.service.YamlHelper;
 import software.wings.service.intfc.SettingsService;
 
 import com.google.inject.Inject;
@@ -27,6 +28,8 @@ import java.util.List;
 public class AzureKubernetesServiceYamlHandler
     extends CloudProviderInfrastructureYamlHandler<Yaml, AzureKubernetesService> {
   @Inject private SettingsService settingsService;
+  @Inject private YamlHelper yamlHelper;
+
   @Override
   public Yaml toYaml(AzureKubernetesService bean, String appId) {
     SettingAttribute cloudProvider = settingsService.get(bean.getCloudProviderId());
@@ -52,8 +55,10 @@ public class AzureKubernetesServiceYamlHandler
   private void toBean(AzureKubernetesService bean, ChangeContext<Yaml> changeContext) {
     Yaml yaml = changeContext.getYaml();
     String accountId = changeContext.getChange().getAccountId();
+    String appId = yamlHelper.getAppId(accountId, changeContext.getChange().getFilePath());
     SettingAttribute cloudProvider = settingsService.getSettingAttributeByName(accountId, yaml.getCloudProviderName());
     notNullCheck(format("Cloud Provider with name %s does not exist", yaml.getCloudProviderName()), cloudProvider);
+    settingsService.checkRbacOnSettingAttribute(appId, cloudProvider);
     bean.setClusterName(yaml.getClusterName());
     bean.setCloudProviderId(cloudProvider.getUuid());
     bean.setNamespace(yaml.getNamespace());

@@ -6,6 +6,8 @@ timeRangeBasedFreezeConfigs:
   appSelections:
   - envSelection:
     - filterType: CUSTOM
+    serviceSelection:
+    - filterType: ALL
     filterType: ALL
   applicable: false
   description: git sync

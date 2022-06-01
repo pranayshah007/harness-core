@@ -9,6 +9,8 @@ timeRangeBasedFreezeConfigs:
     envSelection:
     - filterType: ALL_PROD
     filterType: CUSTOM
+    serviceSelection:
+    - filterType: ALL
   applicable: false
   description: git sync
   name: customAppAllEnv

@@ -1,0 +1,127 @@
+{
+  "pipeline": {
+    "name": "test",
+    "identifier": "test",
+    "projectIdentifier": "test",
+    "orgIdentifier": "default",
+    "tags": {
+      "__uuid": "rfB8XK5ASRqZO9EyurMXyw"
+    },
+    "stages": [
+      {
+        "stage": {
+          "name": "foo",
+          "identifier": "foo",
+          "description": "",
+          "type": "Deployment",
+          "spec": {
+            "serviceConfig": {
+              "serviceRef": "foo",
+              "serviceDefinition": {
+                "type": "Kubernetes",
+                "spec": {
+                  "variables": [],
+                  "__uuid": "6gXEPMdJRRenNm1_yIs3RA"
+                },
+                "__uuid": "4cxGWTo5SQGMpQYBXxhzsQ"
+              },
+              "__uuid": "yoWgrP9PRjueiiciLu786Q"
+            },
+            "infrastructure": {
+              "environmentRef": "bar",
+              "infrastructureDefinition": {
+                "type": "KubernetesDirect",
+                "spec": {
+                  "namespace": "nana",
+                  "releaseName": "release-\u003c+INFRA_KEY\u003e",
+                  "connectorRef": "bar",
+                  "__uuid": "-_7QtxTGQx6FUOnD3fFjfw"
+                },
+                "provisioner": {
+                  "steps": [
+                    {
+                      "step": {
+                        "type": "CreateStack",
+                        "name": "Create Stack",
+                        "identifier": "createStackId",
+                        "timeout": "10m",
+                        "spec": {
+                          "provisionerIdentifier": "foobar",
+                          "configuration": {
+                            "connectorRef": "barbar",
+                            "region": "us-west-2",
+                            "templateFile": {
+                              "type": "S3URL",
+                              "spec": {
+                                "templateUrl": "https://satyam-cf-test.s3.amazonaws.com/template-with-vars.yaml",
+                                "__uuid": "LpINsbA2TGSKWE447MGy5A"
+                              },
+                              "__uuid": "RuUV4390SZeyn6QyCrvoNA"
+                            },
+                            "stackName": "ofofo",
+                            "__uuid": "zYUCrhF4Rxy2s7RfsGinyw"
+                          },
+                          "__uuid": "AhJFhsajRIyqv5S96LCJ2A"
+                        },
+                        "__uuid": "muLUWZ7hRuCYM4bnrHvegg"
+                      },
+                      "__uuid": "Ra-OMGl5TKS-vWWZaAjvHw"
+                    }
+                  ],
+                  "__uuid": "YKYRVJYGSi-OwPpPt-iGhw"
+                },
+                "__uuid": "TC4fYCadRUqTZNyIl2A-Qg"
+              },
+              "allowSimultaneousDeployments": false,
+              "__uuid": "WiG3-CPYRxCIKzgJAs2MKw"
+            },
+            "execution": {
+              "steps": [
+                {
+                  "step": {
+                    "type": "K8sApply",
+                    "name": "babar",
+                    "identifier": "babar",
+                    "spec": {
+                      "filePaths": [
+                        "bababab"
+                      ],
+                      "skipDryRun": false,
+                      "skipSteadyStateCheck": false,
+                      "__uuid": "gF9ngAZ1SF6PV86YI2ZTyQ"
+                    },
+                    "timeout": "10m",
+                    "__uuid": "bDU5GpvvRUeBAmjJ3dd2cA"
+                  },
+                  "__uuid": "FmBZoR6bR6ehal7H38OKBw"
+                }
+              ],
+              "rollbackSteps": [],
+              "__uuid": "naxH-RytSpWBW_cTZzsUmA"
+            },
+            "__uuid": "wc6UwT9qSnumb-cZafQL5w"
+          },
+          "failureStrategies": [
+            {
+              "onFailure": {
+                "errors": [
+                  "AllErrors"
+                ],
+                "action": {
+                  "type": "StageRollback",
+                  "__uuid": "pOnsueX6SV64b0bGpfQ47Q"
+                },
+                "__uuid": "vo4oHo3_ReeAMeOjqnFT_w"
+              },
+              "__uuid": "7nEKz3ftSQGB_lq8fk36OA"
+            }
+          ],
+          "__uuid": "RPaGtjruTDuFOTM6A_O_kg"
+        },
+        "__uuid": "3p5t0zHYS5yH6qsPKnzqkw"
+      }
+    ],
+    "__uuid": "A224qKrBTkWhvZcV6PRbsQ"
+  },
+  "__uuid": "mDa1tojoQp6GmOqdFtsGaw"
+}

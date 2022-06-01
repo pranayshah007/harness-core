@@ -25,9 +25,11 @@ import java.util.List;
 @OwnedBy(CDP)
 public interface AwsCFHelperServiceDelegate {
   String getStackBody(AwsInternalConfig awsConfig, String region, String stackId);
+
   List<AwsCFTemplateParamsData> getParamsData(AwsInternalConfig awsConfig, String region, String data, String type,
       GitFileConfig gitFileConfig, GitConfig gitConfig, List<EncryptedDataDetail> sourceRepoEncryptedDetail);
-  List<String> getCapabilities(AwsInternalConfig awsConfig, String region, String data, String type);
+
+  List<String> getCapabilities(AwsInternalConfig awsConfig, String region, String data, String templateType);
 
   String normalizeS3TemplatePath(String s3Path);
 }

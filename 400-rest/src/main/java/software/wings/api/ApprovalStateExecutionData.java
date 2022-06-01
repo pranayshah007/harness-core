@@ -20,7 +20,7 @@ import io.harness.delegate.beans.DelegateTaskNotifyResponseData;
 import software.wings.beans.NameValuePair;
 import software.wings.beans.approval.Criteria;
 import software.wings.beans.security.UserGroup;
-import software.wings.service.impl.servicenow.ServiceNowServiceImpl.ServiceNowTicketType;
+import software.wings.beans.servicenow.ServiceNowTicketType;
 import software.wings.service.intfc.UserGroupService;
 import software.wings.service.intfc.WorkflowExecutionService;
 import software.wings.sm.StateExecutionData;
@@ -64,6 +64,7 @@ public class ApprovalStateExecutionData extends StateExecutionData implements De
 
   /** User group Approval */
   private List<String> userGroups;
+  private boolean autoRejectPreviousDeployments;
 
   /** Jira Approval */
   private String issueUrl;
@@ -101,7 +102,7 @@ public class ApprovalStateExecutionData extends StateExecutionData implements De
   @Transient private transient boolean isAuthorized;
 
   // Used to return information in graphQL Apis for approval Data
-  @Transient private transient String stageName;
+  private String stageName;
   @Transient private transient String executionUuid;
 
   @Transient @Inject private transient WorkflowExecutionService workflowExecutionService;
@@ -194,6 +195,8 @@ public class ApprovalStateExecutionData extends StateExecutionData implements De
     }
 
     putNotNull(executionDetails, "approvalViaApiKey", ExecutionDataValue.builder().value(approvalViaApiKey).build());
+    putNotNull(executionDetails, "autoRejectPreviousDeployments",
+        ExecutionDataValue.builder().value(autoRejectPreviousDeployments).build());
 
     if (approvedBy != null) {
       String approvalDisplayName =

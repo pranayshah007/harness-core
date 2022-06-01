@@ -48,10 +48,13 @@ replace_key_value eventsFramework.redis.sslConfig.CATrustStorePassword $EVENTS_F
 
 replace_key_value gcpConfig.gcpProjectId "$GCP_PROJECT_ID"
 replace_key_value gcpConfig.gcpAwsConnectorCrudPubSubTopic "$GCP_AWS_CONNECTOR_CRUD_PUBSUB_TOPIC"
+replace_key_value gcpConfig.gcpGcpConnectorCrudPubSubTopic "$GCP_GCP_CONNECTOR_CRUD_PUBSUB_TOPIC"
 
 replace_key_value ceAzureSetupConfig.azureAppClientId "$AZURE_APP_CLIENT_ID"
 replace_key_value ceAzureSetupConfig.azureAppClientSecret "$AZURE_APP_CLIENT_SECRET"
 replace_key_value ceAzureSetupConfig.enableFileCheckAtSource "$AZURE_ENABLE_FILE_CHECK_AT_SOURCE"
+
+replace_key_value ceGcpSetupConfig.enableServiceAccountPermissionsCheck "$GCP_ENABLE_SERVICE_ACCOUNT_PERMISSIONS_CHECK"
 
 replace_key_value awsConfig.accessKey "$AWS_ACCESS_KEY"
 replace_key_value awsConfig.secretKey "$AWS_SECRET_KEY"
@@ -69,6 +72,7 @@ replace_key_value featureFlagConfig.syncFeaturesToCF "$SYNC_FEATURES_TO_CF"
 
 replace_key_value grpcClient.target "$MANAGER_TARGET"
 replace_key_value grpcClient.authority "$MANAGER_AUTHORITY"
+replace_key_value awsConnectorCreatedInstantForPolicyCheck $AWS_CONNECTOR_CREATED_INSTANT_FOR_POLICY_CHECK
 
 if [[ "" != "$EVENTS_FRAMEWORK_REDIS_SENTINELS" ]]; then
   IFS=',' read -ra SENTINEL_URLS <<< "$EVENTS_FRAMEWORK_REDIS_SENTINELS"

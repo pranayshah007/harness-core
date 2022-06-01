@@ -8,12 +8,14 @@
 package io.harness.stateutils.buildstate;
 
 import static io.harness.rule.OwnerRule.ALEKSANDAR;
+import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.plugin.compatible.PluginCompatibleStep;
 import io.harness.beans.steps.stepinfo.DockerStepInfo;
 import io.harness.beans.steps.stepinfo.ECRStepInfo;
 import io.harness.beans.steps.stepinfo.GCRStepInfo;
@@ -31,8 +33,10 @@ import io.harness.executionplan.CIExecutionTestBase;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -412,6 +416,24 @@ public class PluginSettingUtilsTest extends CIExecutionTestBase {
 
     Map<String, String> actual =
         PluginSettingUtils.getPluginCompatibleEnvVariables(uploadToS3StepInfo, "identifier", 100, Type.K8);
+    assertThat(actual).isEqualTo(expected);
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void shouldGetPluginCompatibleStepInfoBaseImageConnectorRefs() {
+    PluginCompatibleStep stepInfo = ECRStepInfo.builder()
+                                        .account(ParameterField.createValueField("6874654867"))
+                                        .region(ParameterField.createValueField("eu-central-1"))
+                                        .imageName(ParameterField.createValueField("harness"))
+                                        .tags(ParameterField.createValueField(asList("tag1", "tag2")))
+                                        .baseImageConnectorRefs(ParameterField.createValueField(asList("docker")))
+                                        .build();
+
+    List<String> expected = new ArrayList<>();
+    expected.add("docker");
+    List<String> actual = PluginSettingUtils.getBaseImageConnectorRefs(stepInfo);
     assertThat(actual).isEqualTo(expected);
   }
 }

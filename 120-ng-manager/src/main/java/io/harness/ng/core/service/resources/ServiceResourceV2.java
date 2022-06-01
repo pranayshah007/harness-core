@@ -63,6 +63,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -396,6 +397,15 @@ public class ServiceResourceV2 {
     List<AccessControlDTO> accessControlList =
         accessControlClient.checkForAccess(permissionCheckDTOS).getAccessControlList();
     return ResponseDTO.newResponse(filterByPermissionAndId(accessControlList, serviceList));
+  }
+
+  @GET
+  @Path("/dummy-serviceConfig-api")
+  @ApiOperation(value = "This is dummy api to expose NGServiceConfig", nickname = "dummyNGServiceConfigApi")
+  @Hidden
+  // do not delete this.
+  public ResponseDTO<NGServiceConfig> getNGServiceConfig() {
+    return ResponseDTO.newResponse(NGServiceConfig.builder().build());
   }
 
   private List<ServiceResponse> filterByPermissionAndId(

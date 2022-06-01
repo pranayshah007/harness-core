@@ -151,6 +151,7 @@ import software.wings.sm.StateExecutionContext;
 import software.wings.sm.WorkflowStandardParams;
 import software.wings.sm.WorkflowStandardParamsExtensionService;
 import software.wings.utils.ApplicationManifestUtils;
+import software.wings.utils.ManifestFileMapper;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
@@ -259,8 +260,8 @@ public abstract class AbstractK8sState extends State implements K8sStateExecutor
     StoreType storeType = appManifest.getStoreType();
     switch (storeType) {
       case Local:
-        manifestConfigBuilder.manifestFiles(
-            applicationManifestService.getManifestFilesByAppManifestId(appManifest.getAppId(), appManifest.getUuid()));
+        manifestConfigBuilder.manifestFiles(ManifestFileMapper.manifestFileDTOList(
+            applicationManifestService.getManifestFilesByAppManifestId(appManifest.getAppId(), appManifest.getUuid())));
         break;
 
       case KustomizeSourceRepo:

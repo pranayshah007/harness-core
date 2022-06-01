@@ -18,7 +18,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.environment.EnvironmentMapper;
 import io.harness.cdng.environment.yaml.EnvironmentYaml;
-import io.harness.cdng.infra.beans.InfraUseFromStage;
 import io.harness.cdng.infra.steps.InfraSectionStepParameters;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.data.structure.EmptyPredicate;
@@ -70,32 +69,16 @@ public class InfraStepUtils {
   }
 
   public EnvironmentOutcome processEnvironment(EnvironmentService environmentService, Ambiance ambiance,
-      InfraUseFromStage useFromStage, EnvironmentYaml environment, ParameterField<String> environmentRef) {
-    EnvironmentYaml environmentOverrides = null;
-
-    if (useFromStage != null && useFromStage.getOverrides() != null) {
-      environmentOverrides = useFromStage.getOverrides().getEnvironment();
-      if (EmptyPredicate.isEmpty(environmentOverrides.getName())) {
-        environmentOverrides.setName(environmentOverrides.getIdentifier());
-      }
-    }
-    return processEnvironment(environmentService, environmentOverrides, ambiance, environment, environmentRef);
-  }
-
-  private EnvironmentOutcome processEnvironment(EnvironmentService environmentService,
-      EnvironmentYaml environmentOverrides, Ambiance ambiance, EnvironmentYaml environmentYaml,
-      ParameterField<String> environmentRef) {
+      EnvironmentYaml environmentYaml, ParameterField<String> environmentRef) {
     if (environmentYaml == null) {
       environmentYaml = createEnvYamlFromEnvRef(environmentService, ambiance, environmentRef);
     }
     if (EmptyPredicate.isEmpty(environmentYaml.getName())) {
       environmentYaml.setName(environmentYaml.getIdentifier());
     }
-    EnvironmentYaml finalEnvironmentYaml =
-        environmentOverrides != null ? environmentYaml.applyOverrides(environmentOverrides) : environmentYaml;
-    Environment environment = getEnvironmentObject(finalEnvironmentYaml, ambiance);
+    Environment environment = getEnvironmentObject(environmentYaml, ambiance);
     environmentService.upsert(environment);
-    return EnvironmentMapper.toOutcome(finalEnvironmentYaml);
+    return EnvironmentMapper.toOutcome(environmentYaml);
   }
 
   private Environment getEnvironmentObject(EnvironmentYaml environmentYaml, Ambiance ambiance) {

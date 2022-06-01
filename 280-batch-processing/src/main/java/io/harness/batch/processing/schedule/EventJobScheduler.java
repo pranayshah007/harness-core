@@ -14,6 +14,8 @@ import static java.lang.String.format;
 import io.harness.batch.processing.YamlPropertyLoaderFactory;
 import io.harness.batch.processing.billing.timeseries.service.impl.BillingDataServiceImpl;
 import io.harness.batch.processing.billing.timeseries.service.impl.K8sUtilizationGranularDataServiceImpl;
+import io.harness.batch.processing.billing.timeseries.service.impl.PodCountComputationServiceImpl;
+import io.harness.batch.processing.billing.timeseries.service.impl.UtilizationDataServiceImpl;
 import io.harness.batch.processing.billing.timeseries.service.impl.WeeklyReportServiceImpl;
 import io.harness.batch.processing.budgets.service.impl.BudgetAlertsServiceImpl;
 import io.harness.batch.processing.budgets.service.impl.BudgetCostUpdateService;
@@ -91,6 +93,8 @@ public class EventJobScheduler {
   @Autowired private ConnectorsHealthUpdateService connectorsHealthUpdateService;
   @Autowired private K8SWorkloadService k8SWorkloadService;
   @Autowired private AwsAccountTagsCollectionService awsAccountTagsCollectionService;
+  @Autowired private UtilizationDataServiceImpl utilizationDataService;
+  @Autowired private PodCountComputationServiceImpl podCountComputationService;
 
   @PostConstruct
   public void orderJobs() {
@@ -141,10 +145,10 @@ public class EventJobScheduler {
   }
 
   private void runCloudEfficiencyEventJobs(BatchJobBucket batchJobBucket, boolean runningMode) {
-    accountShardService.getCeEnabledAccounts().forEach(account
+    accountShardService.getCeEnabledAccountIds().forEach(account
         -> jobs.stream()
                .filter(job -> BatchJobType.fromJob(job).getBatchJobBucket() == batchJobBucket)
-               .forEach(job -> runJob(account.getUuid(), job, runningMode)));
+               .forEach(job -> runJob(account, job, runningMode)));
   }
 
   @Scheduled(cron = "0 0 */6 ? * *")
@@ -161,8 +165,7 @@ public class EventJobScheduler {
 
   @Scheduled(cron = "0 * * ? * *")
   public void runGcpScheduledQueryJobs() {
-    accountShardService.getCeEnabledAccounts().forEach(
-        account -> gcpScheduledQueryTriggerAction.execute(account.getUuid()));
+    accountShardService.getCeEnabledAccountIds().forEach(account -> gcpScheduledQueryTriggerAction.execute(account));
   }
 
   @Scheduled(cron = "0 0 8 * * ?")
@@ -171,6 +174,24 @@ public class EventJobScheduler {
     if (masterPod) {
       try {
         k8sUtilizationGranularDataService.purgeOldKubernetesUtilData();
+      } catch (Exception ex) {
+        log.error("Exception while running runTimescalePurgeJob", ex);
+      }
+
+      try {
+        utilizationDataService.purgeUtilisationData();
+      } catch (Exception ex) {
+        log.error("Exception while running runTimescalePurgeJob", ex);
+      }
+
+      try {
+        podCountComputationService.purgeActivePodCount();
+      } catch (Exception ex) {
+        log.error("Exception while running runTimescalePurgeJob", ex);
+      }
+
+      try {
+        billingDataService.purgeOldBillingData();
       } catch (Exception ex) {
         log.error("Exception while running runTimescalePurgeJob", ex);
       }
@@ -331,8 +352,8 @@ public class EventJobScheduler {
     if (cfClient == null) {
       return;
     }
-    accountShardService.getCeEnabledAccounts().forEach(account -> {
-      Target target = Target.builder().name(account.getAccountName()).identifier(account.getUuid()).build();
+    accountShardService.getCeEnabledAccountIds().forEach(account -> {
+      Target target = Target.builder().name(account).identifier(account).build();
       boolean result = cfClient.boolVariation("cf_sample_flag", target, false);
       log.info(format(
           "The feature flag cf_sample_flag resolves to %s for account %s", Boolean.toString(result), target.getName()));

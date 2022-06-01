@@ -35,6 +35,10 @@ public class GitFetchFilesTaskHelperTest extends CategoryTest {
 
     String extractedMessage = gitFetchFilesTaskHelper.extractErrorMessage(exception);
     assertThat(extractedMessage).contains("Reason: exception, exception reason");
-    assertThat(extractedMessage).contains("Root Cause: class java.nio.file.NoSuchFileException: rootCause");
+    assertThat(extractedMessage).contains("Root Cause: java.nio.file.NoSuchFileException: rootCause");
+
+    InvalidRequestException singleLevelException = new InvalidRequestException("exception");
+    extractedMessage = gitFetchFilesTaskHelper.extractErrorMessage(singleLevelException);
+    assertThat(extractedMessage).isEqualTo("Reason: exception, ");
   }
 }

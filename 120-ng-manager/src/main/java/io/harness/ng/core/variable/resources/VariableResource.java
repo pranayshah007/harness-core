@@ -46,12 +46,14 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.List;
 import java.util.Optional;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -220,5 +222,24 @@ public class VariableResource {
       @Parameter(description = "Variable ID") @PathParam(IDENTIFIER_KEY) @NotBlank String variableIdentifier) {
     boolean deleted = variableService.delete(accountIdentifier, orgIdentifier, projectIdentifier, variableIdentifier);
     return ResponseDTO.newResponse(deleted);
+  }
+
+  @GET
+  @Path("expressions")
+  @ApiOperation(value = "Gets a map of variable expressions", nickname = "listVariablesExpression")
+  @Operation(operationId = "listVariableExpressions", summary = "Returns a map of variable expressions",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns the Variable expressions.")
+      })
+  @Hidden
+  public ResponseDTO<List<String>>
+  expressions(@Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotNull @QueryParam(
+                  ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(ORG_KEY) @OrgIdentifier String orgIdentifier,
+      @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(
+          PROJECT_KEY) @ProjectIdentifier String projectIdentifier) {
+    return ResponseDTO.newResponse(variableService.getExpressions(accountIdentifier, orgIdentifier, projectIdentifier));
   }
 }

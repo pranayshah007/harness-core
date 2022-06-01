@@ -100,4 +100,5 @@ public class NGCommonEntityConstants {
 
   // Environment Group
   public static final String ENVIRONMENT_GROUP_KEY = "envGroupIdentifier";
+  public static final String ENV_PARAM_MESSAGE = "Environment Identifier for the Entity.";
 }

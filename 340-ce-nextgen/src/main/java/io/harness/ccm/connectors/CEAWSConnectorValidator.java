@@ -20,6 +20,7 @@ import io.harness.delegate.beans.connector.awsconnector.CrossAccountAccessDTO;
 import io.harness.delegate.beans.connector.ceawsconnector.AwsCurAttributesDTO;
 import io.harness.delegate.beans.connector.ceawsconnector.CEAwsConnectorDTO;
 import io.harness.exception.InvalidArgumentsException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.ErrorDetail;
 
 import com.amazonaws.auth.AWSCredentialsProvider;
@@ -30,7 +31,6 @@ import com.amazonaws.auth.policy.Statement;
 import com.amazonaws.services.costandusagereport.model.ReportDefinition;
 import com.amazonaws.services.identitymanagement.model.AmazonIdentityManagementException;
 import com.amazonaws.services.identitymanagement.model.EvaluationResult;
-import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.amazonaws.services.securitytoken.model.AWSSecurityTokenServiceException;
@@ -58,7 +58,7 @@ public class CEAWSConnectorValidator extends io.harness.ccm.connectors.AbstractC
   private final String TIME_GRANULARITY = "HOURLY";
   private final String REPORT_VERSIONING = "OVERWRITE_REPORT";
   private final String RESOURCES = "RESOURCES";
-
+  private Instant connectorCreatedInstantForPolicyCheck;
   private final String GENERIC_LOGGING_ERROR =
       "Failed to validate accountIdentifier:{} orgIdentifier:{} projectIdentifier:{} connectorIdentifier:{}";
 
@@ -68,8 +68,10 @@ public class CEAWSConnectorValidator extends io.harness.ccm.connectors.AbstractC
 
   @Override
   public ConnectorValidationResult validate(ConnectorResponseDTO connectorResponseDTO, String accountIdentifier) {
+    connectorCreatedInstantForPolicyCheck = Instant.parse(configuration.getAwsConnectorCreatedInstantForPolicyCheck());
     final CEAwsConnectorDTO ceAwsConnectorDTO =
         (CEAwsConnectorDTO) connectorResponseDTO.getConnector().getConnectorConfig();
+    Long createdAt = connectorResponseDTO.getCreatedAt();
     final List<CEFeatures> featuresEnabled = ceAwsConnectorDTO.getFeaturesEnabled();
     final CrossAccountAccessDTO crossAccountAccessDTO = ceAwsConnectorDTO.getCrossAccountAccess();
     final AwsCurAttributesDTO awsCurAttributesDTO = ceAwsConnectorDTO.getCurAttributes();
@@ -119,8 +121,7 @@ public class CEAWSConnectorValidator extends io.harness.ccm.connectors.AbstractC
         }
       }
 
-      verifyPoliciesPerFeature(
-          featuresEnabled, credentialsProvider, awsCurAttributesDTO, crossAccountAccessDTO, errorList);
+      verifyPoliciesPerFeature(featuresEnabled, credentialsProvider, ceAwsConnectorDTO, errorList, createdAt);
       if (!errorList.isEmpty()) {
         return ConnectorValidationResult.builder()
             .status(ConnectivityStatus.FAILURE)
@@ -139,7 +140,7 @@ public class CEAWSConnectorValidator extends io.harness.ccm.connectors.AbstractC
                   .reason("Either the " + crossAccountAccessDTO.getCrossAccountRoleArn()
                       + " doesn't exist or Harness isn't a trusted entity on it or wrong externalId.")
                   .message(
-                      "Verify if the roleArn and externalId are entered correctly. For more information, refer to the documentation.")
+                      "Verify if the roleArn and externalId are entered correctly for this connector. For more information, refer to the documentation.")
                   .build()))
           .errorSummary(ex.getErrorMessage())
           .testedAt(Instant.now().toEpochMilli())
@@ -147,12 +148,13 @@ public class CEAWSConnectorValidator extends io.harness.ccm.connectors.AbstractC
     } catch (AmazonIdentityManagementException ex) {
       // assuming only one possible reason for AmazonIdentityManagementException here
       return ConnectorValidationResult.builder()
-          .errors(Collections.singletonList(ErrorDetail.builder()
-                                                .code(ex.getStatusCode())
-                                                .message("Please allow crossAccountAccessDTO.getCrossAccountRoleArn()"
-                                                    + " to perform 'iam:SimulatePrincipalPolicy' on itself")
-                                                .reason(ex.getErrorMessage())
-                                                .build()))
+          .errors(
+              Collections.singletonList(ErrorDetail.builder()
+                                            .code(ex.getStatusCode())
+                                            .message("Please allow " + crossAccountAccessDTO.getCrossAccountRoleArn()
+                                                + " to perform 'iam:SimulatePrincipalPolicy' on itself")
+                                            .reason(ex.getErrorMessage())
+                                            .build()))
           .errorSummary(ex.getErrorMessage())
           .status(ConnectivityStatus.FAILURE)
           .build();
@@ -201,16 +203,17 @@ public class CEAWSConnectorValidator extends io.harness.ccm.connectors.AbstractC
   }
 
   private void verifyPoliciesPerFeature(List<CEFeatures> featuresEnabled, AWSCredentialsProvider credentialsProvider,
-      AwsCurAttributesDTO awsCurAttributesDTO, CrossAccountAccessDTO crossAccountAccessDTO,
-      List<ErrorDetail> errorList) {
+      CEAwsConnectorDTO ceAwsConnectorDTO, List<ErrorDetail> errorList, long createdAt) {
+    CrossAccountAccessDTO crossAccountAccessDTO = ceAwsConnectorDTO.getCrossAccountAccess();
+    AwsCurAttributesDTO awsCurAttributesDTO = ceAwsConnectorDTO.getCurAttributes();
     if (featuresEnabled.contains(CEFeatures.VISIBILITY)) {
-      final Policy eventsPolicy = getRequiredEventsPolicy();
+      final Policy eventsPolicy = getRequiredEventsPolicy(createdAt);
       validateIfPolicyIsCorrect(credentialsProvider, crossAccountAccessDTO.getCrossAccountRoleArn(),
           CEFeatures.VISIBILITY, errorList, eventsPolicy);
     }
 
     if (featuresEnabled.contains(CEFeatures.OPTIMIZATION)) {
-      final Policy optimizationPolicy = getRequiredOptimizationPolicy();
+      final Policy optimizationPolicy = getRequiredOptimizationPolicy(createdAt);
       validateIfPolicyIsCorrect(credentialsProvider, crossAccountAccessDTO.getCrossAccountRoleArn(),
           CEFeatures.OPTIMIZATION, errorList, optimizationPolicy);
     }
@@ -219,7 +222,7 @@ public class CEAWSConnectorValidator extends io.harness.ccm.connectors.AbstractC
       log.info("Getting required CUR policy for destination bucket: {}",
           configuration.getAwsConfig().getDestinationBucket());
       final Policy curPolicy = getRequiredCurPolicy(
-          awsCurAttributesDTO.getS3BucketName(), configuration.getAwsConfig().getDestinationBucket());
+          awsCurAttributesDTO.getS3BucketName(), configuration.getAwsConfig().getDestinationBucket(), createdAt);
       validateIfPolicyIsCorrect(credentialsProvider, crossAccountAccessDTO.getCrossAccountRoleArn(), CEFeatures.BILLING,
           errorList, curPolicy);
     }
@@ -228,24 +231,35 @@ public class CEAWSConnectorValidator extends io.harness.ccm.connectors.AbstractC
   private void validateIfPolicyIsCorrect(AWSCredentialsProvider credentialsProvider, String crossAccountRoleArn,
       CEFeatures feature, List<ErrorDetail> errorList, @NotNull Policy policy) {
     int errorSize = errorList.size();
+    String reason = "";
     log.info("Verifying policy for features enabled {}", feature.name());
     for (Statement statement : policy.getStatements()) {
       List<String> actions = statement.getActions().stream().map(Action::getActionName).collect(Collectors.toList());
       List<String> resources = statement.getResources().stream().map(Resource::getId).collect(Collectors.toList());
 
       List<EvaluationResult> evaluationResults =
-          awsClient.simulatePrincipalPolicy(credentialsProvider, crossAccountRoleArn, actions, resources)
-              .stream()
-              .filter(x -> !"allowed".equals(x.getEvalDecision()))
-              .collect(Collectors.toList());
+          awsClient.simulatePrincipalPolicy(credentialsProvider, crossAccountRoleArn, actions, resources);
+      log.info(evaluationResults.toString());
+      evaluationResults =
+          evaluationResults.stream().filter(x -> !"allowed".equals(x.getEvalDecision())).collect(Collectors.toList());
 
       for (EvaluationResult result : evaluationResults) {
-        errorList.add(ErrorDetail.builder()
-                          .message("Review AWS access permissions as per the documentation.")
-                          .reason("Action: " + result.getEvalActionName()
-                              + " not allowed on Resource: " + result.getEvalResourceName())
-                          .code(403)
-                          .build());
+        if (result.getOrganizationsDecisionDetail() != null
+            && !result.getOrganizationsDecisionDetail().isAllowedByOrganizations()) {
+          reason = "Action: " + result.getEvalActionName() + " not allowed (" + result.getEvalDecision()
+              + ") on Resource: " + result.getEvalResourceName();
+        } else {
+          reason =
+              "Action: " + result.getEvalActionName() + " not allowed on Resource: " + result.getEvalResourceName();
+        }
+
+        errorList.add(
+            ErrorDetail.builder()
+                .message(
+                    "Check organization service control policy in your AWS account. Review AWS access permissions as per the documentation.")
+                .reason(reason)
+                .code(403)
+                .build());
       }
     }
     if (errorSize == errorList.size()) {
@@ -354,7 +368,7 @@ public class CEAWSConnectorValidator extends io.harness.ccm.connectors.AbstractC
                 .reason(reason)
                 .build());
       }
-    } catch (AmazonS3Exception ex) {
+    } catch (InvalidRequestException ex) {
       String reason = String.format(
           "Either bucket '%s' doesn't exist or there is a mismatch between bucketName entered in connector and the name present in the role policy.",
           s3BucketName);
@@ -367,8 +381,9 @@ public class CEAWSConnectorValidator extends io.harness.ccm.connectors.AbstractC
     }
   }
 
-  private Policy getRequiredOptimizationPolicy() {
-    final String policyDocument = "{"
+  private Policy getRequiredOptimizationPolicy(long createdAt) {
+    String policyDocumentFinal = "";
+    final String policyDocument1 = "{"
         + "  \"Version\": \"2012-10-17\","
         + "  \"Statement\": ["
         + "    {"
@@ -399,16 +414,52 @@ public class CEAWSConnectorValidator extends io.harness.ccm.connectors.AbstractC
         + "        \"route53:ListResourceRecordSets\","
         + "        \"route53:GetHealthCheck\","
         + "        \"route53:GetHealthCheckStatus\","
-        + "        \"cloudwatch:GetMetricStatistics\""
-        + "      ],"
+        + "        \"cloudwatch:GetMetricStatistics\"";
+
+    final String policyDocument2 = "        \"ecs:ListClusters\","
+        + "        \"ecs:ListContainerInstances\","
+        + "        \"ecs:ListServices\","
+        + "        \"ecs:ListTaskDefinitions\","
+        + "        \"ecs:ListTasks\","
+        + "        \"ecs:DescribeCapacityProviders\","
+        + "        \"ecs:DescribeClusters\","
+        + "        \"ecs:DescribeContainerInstances\","
+        + "        \"ecs:DescribeServices\","
+        + "        \"ecs:DescribeTaskDefinition\","
+        + "        \"ecs:DescribeTasks\","
+        + "        \"ecs:DescribeTaskSets\","
+        + "        \"ecs:RunTask\","
+        + "        \"ecs:StopTask\","
+        + "        \"ecs:StartTask\","
+        + "        \"ecs:UpdateService\","
+        + "        \"rds:DescribeDBClusters\","
+        + "        \"rds:DescribeDBInstances\","
+        + "        \"rds:ListTagsForResource\","
+        + "        \"rds:AddTagsToResource\","
+        + "        \"rds:RemoveTagsFromResource\","
+        + "        \"rds:ModifyDBInstance\","
+        + "        \"rds:StartDBCluster\","
+        + "        \"rds:StartDBInstance\","
+        + "        \"rds:StopDBCluster\","
+        + "        \"rds:StopDBInstance\"";
+    final String policyDocument3 = "      ],"
         + "      \"Resource\": \"*\""
         + "    }"
         + "  ]"
         + "}";
-    return Policy.fromJson(policyDocument);
+
+    if (createdAt > connectorCreatedInstantForPolicyCheck.toEpochMilli()) {
+      log.info("Adding new policies for verification for optimization");
+      policyDocumentFinal = policyDocument1 + "," + policyDocument2 + policyDocument3;
+    } else {
+      policyDocumentFinal = policyDocument1 + policyDocument3;
+    }
+    log.info(policyDocumentFinal);
+    return Policy.fromJson(policyDocumentFinal);
   }
 
-  private Policy getRequiredCurPolicy(final String customerBucketName, final String destinationBucketName) {
+  private Policy getRequiredCurPolicy(
+      final String customerBucketName, final String destinationBucketName, long createdAt) {
     final String policyDocument = "{"
         + "  \"Version\": \"2012-10-17\","
         + "  \"Statement\": ["
@@ -443,8 +494,9 @@ public class CEAWSConnectorValidator extends io.harness.ccm.connectors.AbstractC
     return Policy.fromJson(policyDocument);
   }
 
-  private Policy getRequiredEventsPolicy() {
-    final String policyDocument = "{"
+  private Policy getRequiredEventsPolicy(long createdAt) {
+    String policyDocumentFinal = "";
+    final String policyDocument1 = "{"
         + "  \"Version\": \"2012-10-17\","
         + "  \"Statement\": ["
         + "    {"
@@ -462,12 +514,26 @@ public class CEAWSConnectorValidator extends io.harness.ccm.connectors.AbstractC
         + "        \"ec2:DescribeRegions\","
         + "        \"cloudwatch:GetMetricData\","
         + "        \"ec2:DescribeVolumes\","
-        + "        \"ec2:DescribeSnapshots\""
-        + "      ],"
+        + "        \"ec2:DescribeSnapshots\"";
+
+    final String policyDocument2 = "         \"rds:DescribeDBSnapshots\","
+        + "         \"rds:DescribeDBInstances\","
+        + "         \"rds:DescribeDBClusters\","
+        + "         \"rds:DescribeDBSnapshotAttributes\"";
+
+    final String policyDocument3 = "      ],"
         + "      \"Resource\": \"*\""
         + "    }"
         + "  ]"
         + "}";
-    return Policy.fromJson(policyDocument);
+
+    if (createdAt > connectorCreatedInstantForPolicyCheck.toEpochMilli()) {
+      log.info("Adding new policies for verification for visibility");
+      policyDocumentFinal = policyDocument1 + "," + policyDocument2 + policyDocument3;
+    } else {
+      policyDocumentFinal = policyDocument1 + policyDocument3;
+    }
+    log.info(policyDocumentFinal);
+    return Policy.fromJson(policyDocumentFinal);
   }
 }

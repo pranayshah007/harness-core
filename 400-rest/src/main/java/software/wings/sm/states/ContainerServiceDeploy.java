@@ -64,6 +64,7 @@ import software.wings.beans.SettingAttribute;
 import software.wings.beans.TaskType;
 import software.wings.beans.command.Command;
 import software.wings.beans.command.CommandExecutionContext;
+import software.wings.beans.command.CommandMapper;
 import software.wings.beans.command.ContainerResizeParams;
 import software.wings.beans.command.KubernetesResizeParams;
 import software.wings.beans.command.ResizeCommandUnitExecutionData;
@@ -240,7 +241,8 @@ public abstract class ContainerServiceDeploy extends State {
               .data(TaskData.builder()
                         .async(true)
                         .taskType(TaskType.COMMAND.name())
-                        .parameters(new Object[] {contextData.command, commandExecutionContext})
+                        .parameters(
+                            new Object[] {CommandMapper.toCommandDTO(contextData.command), commandExecutionContext})
                         .timeout(TimeUnit.HOURS.toMillis(1))
                         .build())
               .setupAbstraction(Cd1SetupFields.ENV_ID_FIELD, contextData.env.getUuid())

@@ -1,0 +1,22 @@
+pipeline:
+  name: pipeline
+  identifier: pipeline
+  stages:
+    - stage:
+        name: dev
+        identifier: dev
+        type: Deployment
+        spec:
+          serviceConfig:
+            serviceDefinition:
+              type: ServerlessAwsLambda
+              spec:
+                artifacts:
+                  primary:
+                    type: ArtifactoryRegistry
+                    spec:
+                      connectorRef: <+input>
+                      artifactPath: <+input>
+                      repository: <+input>
+                      artifactDirectory: <+input>
+                      repositoryFormat: <+input>

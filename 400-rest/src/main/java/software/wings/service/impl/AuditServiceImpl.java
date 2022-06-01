@@ -108,7 +108,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-import javax.activity.InvalidActivityException;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
 import org.jetbrains.annotations.NotNull;
@@ -116,6 +115,7 @@ import org.mongodb.morphia.query.FindOptions;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.Sort;
 import org.mongodb.morphia.query.UpdateOperations;
+import org.omg.CORBA.INVALID_ACTIVITY;
 
 /**
  * Audit Service Implementation class.
@@ -456,7 +456,7 @@ public class AuditServiceImpl implements AuditService {
   private Optional<String> fetchAuditHeaderIdFromGlobalContext() {
     try {
       return Optional.ofNullable(getAuditHeaderIdFromGlobalContext());
-    } catch (InvalidActivityException iae) {
+    } catch (INVALID_ACTIVITY iae) {
       return Optional.empty();
     }
   }
@@ -669,16 +669,16 @@ public class AuditServiceImpl implements AuditService {
     }
   }
 
-  public String getAuditHeaderIdFromGlobalContext() throws InvalidActivityException {
+  public String getAuditHeaderIdFromGlobalContext() throws INVALID_ACTIVITY {
     GlobalContextData globalContextData;
     try {
       globalContextData = GlobalContextManager.get(AUDIT_ID);
     } catch (Exception e) {
       log.error("Exception thrown while getting audit header id ", e);
-      throw new InvalidActivityException("Audit header Id not found in Global Context");
+      throw new INVALID_ACTIVITY("Audit header Id not found in Global Context");
     }
     if (!(globalContextData instanceof AuditGlobalContextData)) {
-      throw new InvalidActivityException("Object of unknown class returned when querying for audit header Id");
+      throw new INVALID_ACTIVITY("Object of unknown class returned when querying for audit header Id");
     }
     return ((AuditGlobalContextData) globalContextData).getAuditId();
   }

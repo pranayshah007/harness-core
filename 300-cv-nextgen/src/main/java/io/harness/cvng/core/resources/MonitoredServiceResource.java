@@ -29,6 +29,7 @@ import io.harness.cvng.core.beans.monitoredService.DurationDTO;
 import io.harness.cvng.core.beans.monitoredService.HealthScoreDTO;
 import io.harness.cvng.core.beans.monitoredService.HistoricalTrend;
 import io.harness.cvng.core.beans.monitoredService.MetricDTO;
+import io.harness.cvng.core.beans.monitoredService.MonitoredServiceChangeDetailSLO;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceListItemDTO;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceResponse;
@@ -41,6 +42,7 @@ import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
 import io.harness.cvng.core.beans.params.TimeRangeParams;
 import io.harness.cvng.core.beans.params.logsFilterParams.LiveMonitoringLogsFilter;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
+import io.harness.cvng.notification.beans.NotificationRuleResponse;
 import io.harness.cvng.utils.NGAccessControlClientCheck;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -52,7 +54,6 @@ import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
-import com.sun.istack.internal.NotNull;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -60,6 +61,7 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -453,5 +455,35 @@ public class MonitoredServiceResource {
                                                 .monitoredServiceIdentifier(monitoredServiceIdentifier)
                                                 .build(),
             liveMonitoringLogsFilter, pageParams));
+  }
+
+  @GET
+  @Timed
+  @ExceptionMetered
+  @Path("{monitoredServiceIdentifier}/change-details")
+  @ApiOperation(value = "get monitored service change details", nickname = "getMonitoredServiceChangeDetails")
+  @NGAccessControlCheck(resourceType = MONITORED_SERVICE, permission = VIEW_PERMISSION)
+  public RestResponse<List<MonitoredServiceChangeDetailSLO>> getMonitoredServiceChangeDetails(
+      @NotNull @Valid @BeanParam ProjectParams projectParams,
+      @ApiParam(required = true) @NotNull @PathParam("monitoredServiceIdentifier")
+      @ResourceIdentifier String monitoredServiceIdentifier, @QueryParam("sloIdentifiers") List<String> sloIdentifiers,
+      @QueryParam("startTime") Long startTime, @QueryParam("endTime") Long endTime) {
+    return new RestResponse<>(monitoredServiceService.getMonitoredServiceChangeDetails(
+        projectParams, monitoredServiceIdentifier, startTime, endTime));
+  }
+
+  @GET
+  @Timed
+  @ExceptionMetered
+  @Path("{identifier}/notification-rules")
+  @ApiOperation(
+      value = "get notification rules for MonitoredService", nickname = "getNotificationRulesForMonitoredService")
+  @NGAccessControlCheck(resourceType = MONITORED_SERVICE, permission = VIEW_PERMISSION)
+  public ResponseDTO<PageResponse<NotificationRuleResponse>>
+  getNotificationRulesForMonitoredService(@NotNull @BeanParam ProjectParams projectParams,
+      @ApiParam(required = true) @NotNull @PathParam("identifier")
+      @ResourceIdentifier String monitoredServiceIdentifier, @BeanParam PageParams pageParams) {
+    return ResponseDTO.newResponse(
+        monitoredServiceService.getNotificationRules(projectParams, monitoredServiceIdentifier, pageParams));
   }
 }

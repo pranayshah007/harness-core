@@ -1,0 +1,146 @@
+{
+  "pipeline": {
+    "name": "test",
+    "identifier": "test",
+    "projectIdentifier": "test",
+    "orgIdentifier": "default",
+    "tags": {
+      "__uuid": "zfsmb89KRl-YNEMi-Zexxg"
+    },
+    "stages": [
+      {
+        "stage": {
+          "name": "foo",
+          "identifier": "foo",
+          "description": "",
+          "type": "Deployment",
+          "spec": {
+            "serviceConfig": {
+              "serviceRef": "foo",
+              "serviceDefinition": {
+                "type": "Kubernetes",
+                "spec": {
+                  "variables": [],
+                  "__uuid": "adfBUVDSTyC2SehVNb6EWA"
+                },
+                "__uuid": "g316om4wRUyDn88gUF6F0A"
+              },
+              "__uuid": "N8a1S5oXRo2NDcVey-E68A"
+            },
+            "infrastructure": {
+              "environmentRef": "bar",
+              "infrastructureDefinition": {
+                "type": "KubernetesDirect",
+                "spec": {
+                  "namespace": "nana",
+                  "releaseName": "release-\u003c+INFRA_KEY\u003e",
+                  "connectorRef": "bar",
+                  "__uuid": "JLrHT7F7Rl-Bg0JG9ZyrLQ"
+                },
+                "provisioner": {
+                  "steps": [
+                    {
+                      "step": {
+                        "type": "CreateStack",
+                        "name": "Create Stack",
+                        "identifier": "createStack",
+                        "timeout": "10m",
+                        "spec": {
+                          "provisionerIdentifier": "foobar",
+                          "configuration": {
+                            "connectorRef": "barbar",
+                            "region": "us-west-2",
+                            "templateFile": {
+                              "type": "Inline",
+                              "spec": {
+                                "templateBody": "superBody",
+                                "__uuid": "W6GyVd7eT-6cU-RUpB615g"
+                              },
+                              "__uuid": "uvMRQYlERKiHh_bPW8Jaqw"
+                            },
+                            "parameters": [
+                              {
+                                "identifier": "parametersid1",
+                                "store": {
+                                  "type": "S3Url",
+                                  "spec": {
+                                    "connectorRef": "cftest",
+                                    "region": "us-east-1",
+                                    "urls": [
+                                      "parameters1.json",
+                                      "parameters2.json"
+                                    ],
+                                    "__uuid": "c4KvtL0dReOm1FpWlt90CQ"
+                                  },
+                                  "__uuid": "FH-bsS_CRLypnEBpfpt8SQ"
+                                },
+                                "__uuid": "HzIwQRJVTjussDDGXZJvPw"
+                              }
+                            ],
+                            "stackName": "ofofo",
+                            "__uuid": "TnY3XplPTCueV5X30p-elA"
+                          },
+                          "__uuid": "xRzHRfx7Q8uPj-qHIteihg"
+                        },
+                        "__uuid": "eiyviPfOR72B_O9i_OUowg"
+                      },
+                      "__uuid": "ElkulwCgSM60KjmK-Pk_zQ"
+                    }
+                  ],
+                  "__uuid": "2TRUsB1vRxK32yXrzjGZfQ"
+                },
+                "__uuid": "t-9LBMyXS-i2q9n0zA0PRQ"
+              },
+              "allowSimultaneousDeployments": false,
+              "__uuid": "tCWunzTyTrSsOamkz6ZvFg"
+            },
+            "execution": {
+              "steps": [
+                {
+                  "step": {
+                    "type": "K8sApply",
+                    "name": "babar",
+                    "identifier": "babar",
+                    "spec": {
+                      "filePaths": [
+                        "bababab"
+                      ],
+                      "skipDryRun": false,
+                      "skipSteadyStateCheck": false,
+                      "__uuid": "pLaEb0aWR1ufJlvq7DFO9w"
+                    },
+                    "timeout": "10m",
+                    "__uuid": "7JaKT0S4RPqSiojo02Oi1A"
+                  },
+                  "__uuid": "5DwX8GQDSZKqW9hJU4qQdA"
+                }
+              ],
+              "rollbackSteps": [],
+              "__uuid": "0hlSW0abR32vifWh-E1HYg"
+            },
+            "__uuid": "Ufs4kz_-QQ66h72WpIb6Jw"
+          },
+          "failureStrategies": [
+            {
+              "onFailure": {
+                "errors": [
+                  "AllErrors"
+                ],
+                "action": {
+                  "type": "StageRollback",
+                  "__uuid": "MgP0j5xbSiO5oFOEE2M37g"
+                },
+                "__uuid": "wP3QE98kS06moSkUmD4jDw"
+              },
+              "__uuid": "Ppn0QyOuRZeVVSso9h5MqA"
+            }
+          ],
+          "__uuid": "6PodJNSeR36LJdIMFJdo5Q"
+        },
+        "__uuid": "YyKxcGvCTbSaq4jI9nmkvQ"
+      }
+    ],
+    "__uuid": "B0HzjTj_Rzekl7X3TA9TCA"
+  },
+  "__uuid": "ZuyfQ81jTJyDeWL5NP3ZJA"
+}

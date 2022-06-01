@@ -246,6 +246,7 @@ public class NGTriggerElementMapper {
                                                .metadata(toMetadata(config.getSource()))
                                                .enabled(config.getEnabled())
                                                .tags(TagMapper.convertToList(config.getTags()));
+
     if (config.getSource().getType() == NGTriggerType.SCHEDULED) {
       entityBuilder.nextIterations(new ArrayList<>());
     }

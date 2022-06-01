@@ -23,7 +23,7 @@ import io.harness.logging.LogLevel;
 import io.harness.logging.NoopExecutionCallback;
 import io.harness.rule.Owner;
 
-import software.wings.beans.container.HelmChartSpecification;
+import software.wings.beans.dto.HelmChartSpecification;
 import software.wings.helpers.ext.helm.request.HelmCommandRequest;
 import software.wings.helpers.ext.helm.request.HelmInstallCommandRequest;
 import software.wings.helpers.ext.helm.request.HelmRollbackCommandRequest;

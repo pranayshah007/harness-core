@@ -79,4 +79,9 @@ public class ShellScriptStepInfo
         .delegateSelectors(getDelegateSelectors())
         .build();
   }
+
+  @Override
+  public ParameterField<List<TaskSelectorYaml>> fetchDelegateSelectors() {
+    return getDelegateSelectors();
+  }
 }

@@ -21,5 +21,5 @@ public class ServerlessAwsLambdaFunction {
   private String handler;
   private String memorySize;
   private String runTime;
-  private String timeout;
+  private Integer timeout;
 }

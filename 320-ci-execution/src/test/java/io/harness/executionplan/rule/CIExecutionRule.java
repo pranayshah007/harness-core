@@ -28,6 +28,8 @@ import io.harness.ci.config.StepImageConfig;
 import io.harness.delegate.DelegateServiceGrpc;
 import io.harness.engine.pms.tasks.NgDelegate2TaskExecutor;
 import io.harness.entitysetupusageclient.EntitySetupUsageClientModule;
+import io.harness.exception.exceptionmanager.exceptionhandler.CILiteEngineExceptionHandler;
+import io.harness.exception.exceptionmanager.exceptionhandler.ExceptionHandler;
 import io.harness.factory.ClosingFactory;
 import io.harness.factory.ClosingFactoryModule;
 import io.harness.ff.CIFeatureFlagNoopServiceImpl;
@@ -63,6 +65,7 @@ import com.google.inject.Module;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
+import com.google.inject.multibindings.MapBinder;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import io.grpc.inprocess.InProcessChannelBuilder;
@@ -189,6 +192,11 @@ public class CIExecutionRule implements MethodRule, InjectorRuleMixin, MongoRule
     modules.add(new AbstractModule() {
       @Override
       protected void configure() {
+        MapBinder<Class<? extends Exception>, ExceptionHandler> exceptionHandlerMapBinder = MapBinder.newMapBinder(
+            binder(), new TypeLiteral<Class<? extends Exception>>() {}, new TypeLiteral<ExceptionHandler>() {});
+        CILiteEngineExceptionHandler.exceptions().forEach(
+            exception -> exceptionHandlerMapBinder.addBinding(exception).to(CILiteEngineExceptionHandler.class));
+
         bind(new TypeLiteral<Supplier<DelegateCallbackToken>>() {
         }).toInstance(Suppliers.ofInstance(DelegateCallbackToken.newBuilder().build()));
 

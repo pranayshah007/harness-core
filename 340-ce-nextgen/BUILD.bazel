@@ -6,6 +6,7 @@ HarnessTeam = "CE"
 
 shared_dependencies = [
     "@maven//:io_netty_netty_all",
+    "@ce-nextgen//:com_azure_azure_core",
 ] + [
     "//374-ceng-graphql:module",
     "//440-connector-nextgen:module",
@@ -100,7 +101,7 @@ java_library(
         "@maven//:junit_junit",
         "@maven//:org_assertj_assertj_core",
         "@maven//:org_mockito_mockito_core",
-        "@maven//:org_powermock_powermock_api_mockito",
+        "@maven//:org_powermock_powermock_api_mockito2",
     ],
 )
 

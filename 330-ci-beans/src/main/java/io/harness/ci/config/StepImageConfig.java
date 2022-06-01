@@ -16,4 +16,5 @@ import lombok.Value;
 public class StepImageConfig {
   String image;
   List<String> entrypoint;
+  List<String> windowsEntrypoint;
 }

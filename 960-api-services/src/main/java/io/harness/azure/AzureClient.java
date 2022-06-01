@@ -25,6 +25,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.AzureAuthenticationException;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.NestedExceptionUtils;
+import io.harness.exception.WingsException;
 import io.harness.network.Http;
 
 import com.auth0.jwt.JWT;
@@ -89,6 +90,7 @@ public class AzureClient {
 
   protected void handleAzureAuthenticationException(Exception e) {
     String message = null;
+
     Throwable e1 = e;
     while (e1.getCause() != null) {
       e1 = e1.getCause();
@@ -104,8 +106,8 @@ public class AzureClient {
       message = e.getMessage();
     }
 
-    throw NestedExceptionUtils.hintWithExplanationException(
-        "Check your Azure credentials", "Failed to connect to Azure", new AzureAuthenticationException(message));
+    throw NestedExceptionUtils.hintWithExplanationException("Check your Azure credentials",
+        "Failed to connect to Azure", new AzureAuthenticationException(message, WingsException.USER, e));
   }
 
   protected AzureManagementRestClient getAzureManagementRestClient(AzureEnvironmentType azureEnvironmentType) {

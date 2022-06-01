@@ -127,7 +127,7 @@ public class AwsSshPerpetualTaskServiceClientTest extends WingsBaseTest {
     doReturn(DeploymentType.SSH)
         .when(serviceResourceService)
         .getDeploymentType(infraMapping, null, infraMapping.getServiceId());
-    doReturn(new ArrayList<>()).when(awsUtils).getAwsFilters(infraMapping, DeploymentType.SSH);
+    doReturn(new ArrayList<>()).when(awsUtils).getFilters(DeploymentType.SSH, infraMapping.getAwsInstanceFilter());
     doReturn(SettingAttribute.Builder.aSettingAttribute().withValue(awsConfig).build())
         .when(settingsService)
         .get(InstanceSyncTestConstants.COMPUTE_PROVIDER_SETTING_ID);

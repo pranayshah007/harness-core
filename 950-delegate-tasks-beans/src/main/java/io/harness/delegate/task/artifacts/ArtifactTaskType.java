@@ -24,7 +24,9 @@ public enum ArtifactTaskType {
   GET_FEEDS("Get Feeds"),
   GET_IMAGE_URL("Get Image URL"),
   GET_AUTH_TOKEN("Get Auth Token"),
-  GET_IMAGES("Get Images");
+  GET_IMAGES("Get Images"),
+  GET_JOBS("Get Jobs"),
+  GET_ARTIFACT_PATH("Get Artifact Path");
 
   @Getter private final String displayName;
 

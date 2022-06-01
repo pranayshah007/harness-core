@@ -34,6 +34,7 @@ import io.harness.perpetualtask.instancesync.K8sInstanceSyncPerpetualTaskParams;
 import io.harness.perpetualtask.instancesync.NativeHelmInstanceSyncPerpetualTaskParams;
 import io.harness.perpetualtask.instancesync.PcfInstanceSyncPerpetualTaskParams;
 import io.harness.perpetualtask.instancesync.PdcInstanceSyncPerpetualTaskParams;
+import io.harness.perpetualtask.instancesync.ServerlessAwsLambdaInstanceSyncPerpetualTaskParams;
 import io.harness.perpetualtask.instancesync.SpotinstAmiInstanceSyncPerpetualTaskParams;
 import io.harness.perpetualtask.k8s.watch.K8SWatchTaskExecutor;
 import io.harness.perpetualtask.k8s.watch.K8sWatchTaskParams;
@@ -107,6 +108,9 @@ public class PerpetualTaskWorkerModule extends AbstractModule {
         .to(ManifestPerpetualTaskExecutorNg.class);
     mapBinder.addBinding(ArtifactCollectionTaskParamsNg.class.getSimpleName())
         .to(ArtifactPerpetualTaskExecutorNg.class);
+    mapBinder.addBinding(ServerlessAwsLambdaInstanceSyncPerpetualTaskParams.class.getSimpleName())
+        .to(ServerlessAwsLambdaInstanceSyncPerpetualTaskExecutor.class);
+
     install(new FactoryModuleBuilder()
                 .implement(PodWatcher.class, PodWatcher.class)
                 .implement(NodeWatcher.class, NodeWatcher.class)
