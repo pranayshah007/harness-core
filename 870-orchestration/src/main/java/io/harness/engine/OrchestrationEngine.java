@@ -20,6 +20,7 @@ import io.harness.plan.Node;
 import io.harness.pms.contracts.advisers.AdviserResponse;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.StrategyMetadata;
 import io.harness.pms.contracts.execution.events.SdkResponseEventProto;
 import io.harness.pms.contracts.facilitators.FacilitatorResponseProto;
 import io.harness.pms.contracts.steps.io.StepResponseProto;
@@ -55,6 +56,16 @@ public class OrchestrationEngine {
       @NonNull String runtimeId, PmsNodeExecutionMetadata metadata) {
     Node node = planService.fetchNode(ambiance.getPlanId(), nodeId);
     Ambiance clonedAmbiance = AmbianceUtils.cloneForChild(ambiance, PmsLevelUtils.buildLevelFromNode(runtimeId, node));
+    NodeExecutionStrategy strategy = strategyFactory.obtainStrategy(node.getNodeType());
+    return (T) strategy.runNode(clonedAmbiance, node, metadata);
+  }
+
+  public <T extends PmsNodeExecution> T initiateNode(@NonNull Ambiance ambiance, @NonNull String nodeId,
+      @NonNull String runtimeId, PmsNodeExecutionMetadata metadata, StrategyMetadata strategyMetadata,
+      boolean shouldStart) {
+    Node node = planService.fetchNode(ambiance.getPlanId(), nodeId);
+    Ambiance clonedAmbiance =
+        AmbianceUtils.cloneForChild(ambiance, PmsLevelUtils.buildLevelFromNode(runtimeId, node, strategyMetadata));
     NodeExecutionStrategy strategy = strategyFactory.obtainStrategy(node.getNodeType());
     return (T) strategy.runNode(clonedAmbiance, node, metadata);
   }

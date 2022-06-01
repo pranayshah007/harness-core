@@ -170,7 +170,7 @@ public class APMVerificationStateTest extends APMStateVerificationTestBase {
     FieldUtils.writeField(
         executionContext, "workflowStandardParamsExtensionService", workflowStandardParamsExtensionService, true);
     when(executionContext.renderExpression(anyString()))
-        .thenAnswer(invocation -> invocation.getArgumentAt(0, String.class));
+        .thenAnswer(invocation -> invocation.getArgument(0, String.class));
     when(executionContext.renderExpression("${workflow.variable.jsonPath}")).thenReturn("$.rendered.jsonPath");
     Map<String, List<APMMetricInfo>> apmMetricInfos = APMVerificationState.buildMetricInfoMap(
         apmVerificationState.getMetricCollectionInfos(), Optional.of(executionContext));

@@ -59,7 +59,7 @@ public class KryoRegistrationTest extends CategoryTest {
 
     // Add HKryo exclusions
     ClassResolver resolver = new ClassResolver();
-    HKryo _ = new HKryo(resolver);
+    HKryo hKryo = new HKryo(resolver);
     exclusions.addAll(resolver.getClassRegistrations()
                           .values()
                           .toArray()

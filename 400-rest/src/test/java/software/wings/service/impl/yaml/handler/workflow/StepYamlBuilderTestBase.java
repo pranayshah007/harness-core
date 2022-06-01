@@ -70,11 +70,11 @@ public class StepYamlBuilderTestBase extends CategoryTest {
   public void setup() {
     initMocks(this);
     when(userGroupService.fetchUserGroupByName(eq(ACCOUNT_ID), any())).thenAnswer(invocation -> {
-      String s = invocation.getArgumentAt(1, String.class);
+      String s = invocation.getArgument(1, String.class);
       return UserGroup.builder().uuid(USER_GROUP_ID + s.charAt(s.length() - 1)).name(s).build();
     });
     when(userGroupService.get(anyString())).thenAnswer(invocation -> {
-      String s = invocation.getArgumentAt(0, String.class);
+      String s = invocation.getArgument(0, String.class);
       return UserGroup.builder().uuid(s).name(USER_GROUP_NAME + s.charAt(s.length() - 1)).build();
     });
 

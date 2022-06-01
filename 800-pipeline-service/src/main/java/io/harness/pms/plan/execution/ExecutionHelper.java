@@ -33,6 +33,7 @@ import io.harness.notification.bean.NotificationRules;
 import io.harness.plan.Plan;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
 import io.harness.pms.contracts.plan.ExecutionTriggerInfo;
+import io.harness.pms.contracts.plan.PipelineStoreType;
 import io.harness.pms.contracts.plan.PlanCreationBlobResponse;
 import io.harness.pms.contracts.plan.RerunInfo;
 import io.harness.pms.contracts.plan.RetryExecutionInfo;
@@ -220,6 +221,13 @@ public class ExecutionHelper {
         pipelineEntity, pipelineEntity.getStoreType(), pipelineEntity.getRepo());
     if (gitSyncBranchContext != null) {
       builder.setGitSyncBranchContext(gitSyncBranchContext);
+    }
+    PipelineStoreType pipelineStoreType = StoreTypeMapper.fromStoreType(pipelineEntity.getStoreType());
+    if (pipelineStoreType != null) {
+      builder.setPipelineStoreType(pipelineStoreType);
+    }
+    if (pipelineEntity.getConnectorRef() != null) {
+      builder.setPipelineConnectorRef(pipelineEntity.getConnectorRef());
     }
     return builder.build();
   }

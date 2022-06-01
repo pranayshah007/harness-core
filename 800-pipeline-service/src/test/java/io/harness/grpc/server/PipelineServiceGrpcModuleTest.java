@@ -12,6 +12,8 @@ import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.NAMAN;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.doCallRealMethod;
+import static org.mockito.Mockito.mock;
 
 import io.harness.ModuleType;
 import io.harness.PipelineServiceConfiguration;
@@ -45,7 +47,6 @@ import javax.net.ssl.SSLException;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mockito.Mockito;
 
 @OwnedBy(PIPELINE)
 public class PipelineServiceGrpcModuleTest extends PipelineServiceTestBase {
@@ -63,15 +64,23 @@ public class PipelineServiceGrpcModuleTest extends PipelineServiceTestBase {
   @Before
   public void setUp() {
     pipelineServiceGrpcModule = PipelineServiceGrpcModule.getInstance();
-    pmsSdkInstanceService = Mockito.mock(PmsSdkInstanceService.class);
-    pmsExecutionGrpcService = Mockito.mock(PmsExecutionGrpcService.class);
-    sweepingOutputService = Mockito.mock(SweepingOutputServiceImpl.class);
-    outcomeServiceGrpcServer = Mockito.mock(OutcomeServiceGrpcServerImpl.class);
-    engineExpressionGrpcService = Mockito.mock(EngineExpressionGrpcServiceImpl.class);
-    interruptGrpcService = Mockito.mock(InterruptGrpcService.class);
-    entityReferenceGrpcService = Mockito.mock(EntityReferenceGrpcService.class);
-    variablesService = Mockito.mock(VariablesServiceImpl.class);
+    pmsSdkInstanceService = mock(PmsSdkInstanceService.class);
+    pmsExecutionGrpcService = mock(PmsExecutionGrpcService.class);
+    sweepingOutputService = mock(SweepingOutputServiceImpl.class);
+    outcomeServiceGrpcServer = mock(OutcomeServiceGrpcServerImpl.class);
+    engineExpressionGrpcService = mock(EngineExpressionGrpcServiceImpl.class);
+    interruptGrpcService = mock(InterruptGrpcService.class);
+    entityReferenceGrpcService = mock(EntityReferenceGrpcService.class);
+    variablesService = mock(VariablesServiceImpl.class);
     healthStatusManager = new HealthStatusManager();
+    doCallRealMethod().when(sweepingOutputService).bindService();
+    doCallRealMethod().when(entityReferenceGrpcService).bindService();
+    doCallRealMethod().when(pmsSdkInstanceService).bindService();
+    doCallRealMethod().when(variablesService).bindService();
+    doCallRealMethod().when(interruptGrpcService).bindService();
+    doCallRealMethod().when(outcomeServiceGrpcServer).bindService();
+    doCallRealMethod().when(pmsExecutionGrpcService).bindService();
+    doCallRealMethod().when(engineExpressionGrpcService).bindService();
   }
 
   @Test
@@ -134,6 +143,7 @@ public class PipelineServiceGrpcModuleTest extends PipelineServiceTestBase {
     Set<BindableService> bindableServices = pipelineServiceGrpcModule.bindableServices(healthStatusManager,
         pmsSdkInstanceService, pmsExecutionGrpcService, sweepingOutputService, outcomeServiceGrpcServer,
         engineExpressionGrpcService, interruptGrpcService, entityReferenceGrpcService, variablesService);
+
     Service service = pipelineServiceGrpcModule.pmsGrpcService(
         configuration, healthStatusManager, bindableServices, Sets.newHashSet(new PipelineServiceGrpcErrorHandler()));
     assertThat(service).isNotNull();

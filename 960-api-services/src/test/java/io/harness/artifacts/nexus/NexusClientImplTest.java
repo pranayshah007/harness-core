@@ -17,6 +17,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
 
+import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.artifact.ArtifactMetadataKeys;
@@ -54,7 +55,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({HTimeLimiter.class})
 @OwnedBy(HarnessTeam.CDP)
-public class NexusClientImplTest {
+public class NexusClientImplTest extends CategoryTest {
   @InjectMocks private NexusClientImpl nexusClient;
   @Mock NexusThreeClientImpl nexusThreeService;
 

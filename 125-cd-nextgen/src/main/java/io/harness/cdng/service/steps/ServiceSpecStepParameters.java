@@ -10,7 +10,6 @@ package io.harness.cdng.service.steps;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.variables.beans.NGVariableOverrideSetWrapper;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.SkipAutoEvaluation;
@@ -28,7 +27,6 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.cdng.service.steps.ServiceSpecStepParameters")
 public class ServiceSpecStepParameters implements StepParameters {
   @SkipAutoEvaluation ParameterField<List<NGVariable>> originalVariables;
-  @SkipAutoEvaluation ParameterField<List<NGVariableOverrideSetWrapper>> originalVariableOverrideSets;
   @SkipAutoEvaluation ParameterField<List<NGVariable>> stageOverrideVariables;
 
   List<String> childrenNodeIds;

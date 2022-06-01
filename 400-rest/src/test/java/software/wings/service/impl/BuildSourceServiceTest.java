@@ -541,7 +541,7 @@ public class BuildSourceServiceTest extends WingsBaseTest {
                                             .build();
     when(settingsService.get(SETTING_ID)).thenReturn(settingAttribute);
     when(delegateProxyFactory.get(any(), any(SyncTaskContext.class))).thenReturn(amazonS3BuildService);
-    when(amazonS3BuildService.getArtifactPaths(anyString(), anyString(), any(), anyList()))
+    when(amazonS3BuildService.getArtifactPaths(any(), any(), any(), anyList()))
         .thenReturn(asList("todolist.war", "todolist.jar"));
     Set<String> artifactPaths = buildSourceService.getArtifactPaths(
         APP_ID, "aaditi-todolist-test", SETTING_ID, null, ArtifactStreamType.AMAZON_S3.name());
@@ -603,7 +603,7 @@ public class BuildSourceServiceTest extends WingsBaseTest {
                                                         .jobname("aaditi-todolist-test")
                                                         .artifactPaths(asList("todolist.war"))
                                                         .build();
-    when(artifactStreamServiceBindingService.getService(anyString(), anyString(), anyBoolean()))
+    when(artifactStreamServiceBindingService.getService(any(), any(), anyBoolean()))
         .thenReturn(Service.builder().artifactType(ArtifactType.WAR).build());
     when(artifactStreamService.get(anyString())).thenReturn(amazonS3ArtifactStream);
     when(settingsService.get(SETTING_ID)).thenReturn(settingAttribute);
@@ -662,7 +662,7 @@ public class BuildSourceServiceTest extends WingsBaseTest {
                                                       .build();
     when(artifactStreamService.get(anyString())).thenReturn(jenkinsArtifactStream);
     when(settingsService.get(SETTING_ID)).thenReturn(settingAttribute);
-    when(artifactStreamServiceBindingService.getService(anyString(), anyString(), anyBoolean()))
+    when(artifactStreamServiceBindingService.getService(any(), any(), anyBoolean()))
         .thenReturn(Service.builder().artifactType(ArtifactType.JAR).build());
     when(delegateProxyFactory.get(any(), any(SyncTaskContext.class))).thenReturn(jenkinsBuildService);
     Map<String, String> map = new HashMap<>();
@@ -756,7 +756,7 @@ public class BuildSourceServiceTest extends WingsBaseTest {
                                             .build();
     when(settingsService.get(SETTING_ID)).thenReturn(settingAttribute);
     when(delegateProxyFactory.get(any(), any(SyncTaskContext.class))).thenReturn(amazonS3BuildService);
-    when(amazonS3BuildService.getArtifactPaths(anyString(), anyString(), any(), anyList()))
+    when(amazonS3BuildService.getArtifactPaths(any(), any(), any(), anyList()))
         .thenReturn(asList("todolist.war", "todolist.jar"));
     Set<String> artifactPaths = buildSourceService.getArtifactPaths(
         "aaditi-todolist-test", SETTING_ID, null, ArtifactStreamType.AMAZON_S3.name());
@@ -905,7 +905,7 @@ public class BuildSourceServiceTest extends WingsBaseTest {
             .build();
 
     when(bambooBuildService.getBuilds(anyString(), any(), any(), any())).thenReturn(asList(bd2, bd1));
-    when(artifactStreamServiceBindingService.getService(anyString(), anyString(), anyBoolean()))
+    when(artifactStreamServiceBindingService.getService(any(), any(), anyBoolean()))
         .thenReturn(Service.builder().build());
     List<BuildDetails> buildDetails = buildSourceService.getBuilds(APP_ID, ARTIFACT_STREAM_ID, SETTING_ID);
     assertThat(buildDetails).isNotEmpty();

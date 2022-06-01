@@ -321,7 +321,7 @@ public class TimeSeriesAnalysisServiceImplTest extends VerificationBase {
     List<String> workflowIds = Lists.newArrayList(workflowExecutionId);
     doReturn(workflowIds)
         .when(timeSeriesAnalysisService)
-        .getLastSuccessfulWorkflowExecutionIds(anyString(), anyString(), anyString());
+        .getLastSuccessfulWorkflowExecutionIds(anyString(), anyString(), any());
     List<TimeSeriesMLScores> returnedResults =
         timeSeriesAnalysisService.getTimeSeriesMLScores(appId, workflowId, currentEpochMinute, 1);
     assertThat(returnedResults).hasSize(1);

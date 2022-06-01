@@ -13,7 +13,7 @@ import static software.wings.service.InstanceSyncConstants.HARNESS_APPLICATION_I
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 
@@ -83,7 +83,7 @@ public class PdcInstanceHandlerTest extends WingsBaseTest {
                                 .withUuid(INFRA_ID)
                                 .build();
     when(infrastructureMappingService.get(APP_ID, INFRA_ID)).thenReturn(infrastructureMapping);
-    when(settingsService.get(anyString()))
+    when(settingsService.get(any()))
         .thenReturn(SettingAttribute.Builder.aSettingAttribute().withValue(hostConnectionAttributes).build());
     when(secretManager.getEncryptionDetails(hostConnectionAttributes, null, null)).thenReturn(Collections.emptyList());
   }

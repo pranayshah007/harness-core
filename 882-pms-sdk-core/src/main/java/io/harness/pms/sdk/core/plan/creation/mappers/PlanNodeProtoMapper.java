@@ -64,6 +64,9 @@ public class PlanNodeProtoMapper {
     if (node.getStepParameters() != null && node.getStepParameters().toViewJson() != null) {
       builder.setStepInputs(node.getStepParameters().toViewJson());
     }
+    if (node.getExecutionInputTemplate() != null) {
+      builder.setExecutionInputTemplate(node.getExecutionInputTemplate());
+    }
     return builder.build();
   }
 

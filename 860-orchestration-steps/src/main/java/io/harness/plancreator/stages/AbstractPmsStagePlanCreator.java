@@ -16,6 +16,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.plancreator.steps.common.StageElementParameters.StageElementParametersBuilder;
 import io.harness.plancreator.steps.common.StepParametersUtils;
+import io.harness.plancreator.strategy.StageStrategyUtils;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.steps.StepType;
@@ -66,15 +67,8 @@ public abstract class AbstractPmsStagePlanCreator<T extends PmsAbstractStageNode
     YamlField specField =
         Preconditions.checkNotNull(ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.SPEC));
     stageParameters.specConfig(getSpecParameters(specField.getNode().getUuid(), ctx, stageNode));
-    YamlField strategyField = ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.STRATEGY);
-    // Since strategy is a child of stage but in execution we want to wrap stage around strategy,
-    // we are swapping the uuid of stage and strategy node.
-    String planNodeId = stageNode.getUuid();
-    if (strategyField != null) {
-      planNodeId = strategyField.getNode().getUuid();
-    }
     return PlanNode.builder()
-        .uuid(planNodeId)
+        .uuid(StageStrategyUtils.getSwappedPlanNodeId(ctx, stageNode))
         .name(stageNode.getName())
         .identifier(stageNode.getIdentifier())
         .group(StepOutcomeGroup.STAGE.name())

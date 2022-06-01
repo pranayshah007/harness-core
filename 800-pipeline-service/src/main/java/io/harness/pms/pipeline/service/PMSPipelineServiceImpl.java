@@ -14,7 +14,6 @@ import static io.harness.pms.pipeline.service.PMSPipelineServiceStepHelper.LIBRA
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.eventsframework.api.EventsFrameworkDownException;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
@@ -39,7 +38,6 @@ import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.scm.EntityObjectIdUtils;
 import io.harness.grpc.utils.StringValueUtils;
-import io.harness.pms.PmsFeatureFlagService;
 import io.harness.pms.contracts.governance.GovernanceMetadata;
 import io.harness.pms.contracts.steps.StepInfo;
 import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
@@ -87,14 +85,13 @@ import org.springframework.data.mongodb.core.query.Update;
 @Slf4j
 @OwnedBy(PIPELINE)
 public class PMSPipelineServiceImpl implements PMSPipelineService {
-  @Inject private PMSPipelineRepository pmsPipelineRepository;
-  @Inject private PmsSdkInstanceService pmsSdkInstanceService;
-  @Inject private PMSPipelineServiceHelper pmsPipelineServiceHelper;
-  @Inject private PMSPipelineServiceStepHelper pmsPipelineServiceStepHelper;
-  @Inject private GitSyncSdkService gitSyncSdkService;
-  @Inject private CommonStepInfo commonStepInfo;
-  @Inject private PmsFeatureFlagService pmsFeatureFlagService;
-  @Inject private PipelineCloneHelper pipelineCloneHelper;
+  @Inject private final PMSPipelineRepository pmsPipelineRepository;
+  @Inject private final PmsSdkInstanceService pmsSdkInstanceService;
+  @Inject private final PMSPipelineServiceHelper pmsPipelineServiceHelper;
+  @Inject private final PMSPipelineServiceStepHelper pmsPipelineServiceStepHelper;
+  @Inject private final GitSyncSdkService gitSyncSdkService;
+  @Inject private final CommonStepInfo commonStepInfo;
+  @Inject private final PipelineCloneHelper pipelineCloneHelper;
 
   public static String CREATING_PIPELINE = "creating new pipeline";
   public static String UPDATING_PIPELINE = "updating existing pipeline";
@@ -153,10 +150,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
         PMSPipelineDtoMapper.toPipelineEntity(accountId, clonePipelineDTO.getDestinationConfig().getOrgIdentifier(),
             clonePipelineDTO.getDestinationConfig().getProjectIdentifier(), destYaml);
 
-    boolean isGovernanceEnabled =
-        pmsFeatureFlagService.isEnabled(destPipelineEntity.getAccountId(), FeatureName.OPA_PIPELINE_GOVERNANCE);
-    GovernanceMetadata destGovernanceMetadata =
-        pmsPipelineServiceHelper.validatePipelineYamlAndSetTemplateRefIfAny(destPipelineEntity, isGovernanceEnabled);
+    GovernanceMetadata destGovernanceMetadata = pmsPipelineServiceHelper.validatePipelineYaml(destPipelineEntity);
     if (destGovernanceMetadata.getDeny()) {
       return PipelineSaveResponse.builder().governanceMetadata(destGovernanceMetadata).build();
     }

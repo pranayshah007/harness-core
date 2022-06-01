@@ -17,7 +17,9 @@ def harness_proto_library(**kwargs):
     )
 
 PROTO_DEPS = [
+    "@maven//:com_google_guava_guava",
     "@maven//:com_google_protobuf_protobuf_java",
+    "@maven//:javax_annotation_javax_annotation_api",
 ]
 
 def harness_grpc_library(**kwargs):
@@ -35,10 +37,22 @@ def harness_grpc_library(**kwargs):
         name = kwargs.get("name"),
         srcs = [name_pb],
         deps = GRPC_DEPS,
+        runtime_deps = ["@maven//:io_grpc_grpc_netty"],
         visibility = kwargs.get("visibility"),
     )
 
 GRPC_DEPS = [
+    "@maven//:com_google_guava_guava",
+    "@maven//:com_google_protobuf_protobuf_java",
+    "@maven//:com_google_protobuf_protobuf_java_util",
+    "@maven//:javax_annotation_javax_annotation_api",
+    "@maven//:io_grpc_grpc_core",
     "@maven//:io_grpc_grpc_protobuf",
     "@maven//:io_grpc_grpc_stub",
+    "@maven//:io_grpc_grpc_alts",
+    "@maven//:io_grpc_grpc_api",
+    "@maven//:io_grpc_grpc_auth",
+    "@maven//:io_grpc_grpc_context",
+    "@maven//:io_grpc_grpc_grpclb",
+    "@maven//:io_grpc_grpc_netty_shaded",
 ]

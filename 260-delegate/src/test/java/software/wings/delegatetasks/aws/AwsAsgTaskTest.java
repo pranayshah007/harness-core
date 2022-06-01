@@ -14,8 +14,6 @@ import static io.harness.rule.OwnerRule.SATYAM;
 import static org.joor.Reflect.on;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.verify;
 
 import io.harness.annotations.dev.HarnessModule;
@@ -64,17 +62,15 @@ public class AwsAsgTaskTest extends WingsBaseTest {
   public void testRun() {
     AwsAsgRequest request = AwsAsgListAllNamesRequest.builder().build();
     task.run(request);
-    verify(mockAwsAsgHelperServiceDelegate).listAutoScalingGroupNames(any(), anyList(), anyString());
+    verify(mockAwsAsgHelperServiceDelegate).listAutoScalingGroupNames(any(), any(), any());
     request = AwsAsgListInstancesRequest.builder().build();
     task.run(request);
-    verify(mockAwsAsgHelperServiceDelegate)
-        .listAutoScalingGroupInstances(any(), anyList(), anyString(), anyString(), anyBoolean());
+    verify(mockAwsAsgHelperServiceDelegate).listAutoScalingGroupInstances(any(), any(), any(), any(), anyBoolean());
     request = AwsAsgListDesiredCapacitiesRequest.builder().build();
     task.run(request);
-    verify(mockAwsAsgHelperServiceDelegate).getDesiredCapacitiesOfAsgs(any(), anyList(), anyString(), anyList());
+    verify(mockAwsAsgHelperServiceDelegate).getDesiredCapacitiesOfAsgs(any(), any(), any(), any());
     request = AwsAsgGetRunningCountRequest.builder().build();
     task.run(request);
-    verify(mockAwsAsgHelperServiceDelegate)
-        .getCurrentlyRunningInstanceCount(any(), anyList(), anyString(), anyString());
+    verify(mockAwsAsgHelperServiceDelegate).getCurrentlyRunningInstanceCount(any(), any(), any(), any());
   }
 }

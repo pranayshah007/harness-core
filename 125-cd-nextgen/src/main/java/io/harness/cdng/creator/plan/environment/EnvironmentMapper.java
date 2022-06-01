@@ -17,6 +17,7 @@ import io.harness.yaml.utils.NGVariablesUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Map;
 import lombok.experimental.UtilityClass;
 
 @OwnedBy(HarnessTeam.CDC)
@@ -40,6 +41,7 @@ public class EnvironmentMapper {
   }
 
   public EnvironmentOutcome toEnvironmentOutcome(EnvironmentStepParameters stepParameters) {
+    overrideServiceVariables(stepParameters.getVariables(), stepParameters.getServiceOverrides());
     return EnvironmentOutcome.builder()
         .identifier(stepParameters.getIdentifier())
         .name(stepParameters.getName() != null ? stepParameters.getName() : "")
@@ -49,5 +51,11 @@ public class EnvironmentMapper {
         .environmentRef(stepParameters.getEnvironmentRef().getValue())
         .variables(stepParameters.getVariables())
         .build();
+  }
+
+  private void overrideServiceVariables(Map<String, Object> variables, Map<String, Object> serviceOverrides) {
+    if (variables != null && serviceOverrides != null) {
+      variables.putAll(serviceOverrides);
+    }
   }
 }

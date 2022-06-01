@@ -14,9 +14,10 @@ import static io.harness.rule.OwnerRule.PIYUSH;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
-import static org.powermock.api.mockito.PowerMockito.doNothing;
-import static org.powermock.api.mockito.PowerMockito.doReturn;
-import static org.powermock.api.mockito.PowerMockito.when;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.beans.SecretText;
@@ -45,13 +46,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(SecretManagerServiceClient.class)
 public class GcpSecretsManagerEncryptorTest extends CategoryTest {
   private GcpSecretsManagerEncryptor gcpSecretsManagerEncryptor;
   private SecretManagerServiceClient secretManagerServiceClient;
@@ -73,10 +68,10 @@ public class GcpSecretsManagerEncryptorTest extends CategoryTest {
 
   @Before
   public void setup() throws IOException {
-    gcpSecretsManagerEncryptor = PowerMockito.mock(GcpSecretsManagerEncryptor.class);
-    googleCredentials = PowerMockito.mock(GoogleCredentials.class);
-    gcpSecretsManagerConfig = PowerMockito.mock(GcpSecretsManagerConfig.class);
-    secretManagerServiceClient = PowerMockito.mock(SecretManagerServiceClient.class);
+    gcpSecretsManagerEncryptor = mock(GcpSecretsManagerEncryptor.class);
+    googleCredentials = mock(GoogleCredentials.class);
+    gcpSecretsManagerConfig = mock(GcpSecretsManagerConfig.class);
+    secretManagerServiceClient = mock(SecretManagerServiceClient.class);
     when(gcpSecretsManagerEncryptor.getGoogleCredentials(gcpSecretsManagerConfig)).thenReturn(googleCredentials);
     when(gcpSecretsManagerEncryptor.getGcpSecretsManagerClient(any(GoogleCredentials.class)))
         .thenReturn(secretManagerServiceClient);

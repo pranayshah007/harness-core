@@ -106,7 +106,7 @@ public class SpotInstSyncTaskHandlerTest extends WingsBaseTest {
         .when(handler)
         .getAllEc2InstancesOfElastiGroup(any(), anyString(), anyString(), anyString(), anyString());
     SpotInstListElastigroupInstancesParameters parameters =
-        SpotInstListElastigroupInstancesParameters.builder().elastigroupId("id").build();
+        SpotInstListElastigroupInstancesParameters.builder().elastigroupId("id").awsRegion("west-1").build();
     SpotInstTaskExecutionResponse response = handler.executeTaskInternal(parameters,
         SpotInstConfig.builder().spotInstAccountId("SPOTINST_ACCOUNT_ID").spotInstToken(new char[] {'a', 'b'}).build(),
         AwsConfig.builder().build());

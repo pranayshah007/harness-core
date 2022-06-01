@@ -12,11 +12,13 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import io.harness.OrchestrationPublisherName;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.pms.resume.EngineResumeCallback;
 import io.harness.execution.InitiateNodeHelper;
 import io.harness.execution.NodeExecution.NodeExecutionKeys;
 import io.harness.logging.AutoLogContext;
+import io.harness.pms.PmsFeatureFlagService;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse.Child;
 import io.harness.pms.contracts.execution.ExecutableResponse;
@@ -40,6 +42,7 @@ public class SpawnChildrenRequestProcessor implements SdkResponseProcessor {
   @Inject private NodeExecutionService nodeExecutionService;
   @Inject private WaitNotifyEngine waitNotifyEngine;
   @Inject private InitiateNodeHelper initiateNodeHelper;
+  @Inject private PmsFeatureFlagService pmsFeatureFlagService;
   @Inject @Named(OrchestrationPublisherName.PUBLISHER_NAME) private String publisherName;
 
   @Override
@@ -52,7 +55,11 @@ public class SpawnChildrenRequestProcessor implements SdkResponseProcessor {
       for (Child child : request.getChildren().getChildrenList()) {
         String uuid = generateUuid();
         callbackIds.add(uuid);
-        initiateNodeHelper.publishEvent(ambiance, child.getChildNodeId(), uuid);
+        if (pmsFeatureFlagService.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.PIPELINE_MATRIX)) {
+          initiateNodeHelper.publishEvent(ambiance, child.getChildNodeId(), uuid, child.getStrategyMetadata(), true);
+        } else {
+          initiateNodeHelper.publishEvent(ambiance, child.getChildNodeId(), uuid);
+        }
       }
 
       // Attach a Callback to the parent for the child

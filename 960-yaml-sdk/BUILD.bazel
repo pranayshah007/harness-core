@@ -47,7 +47,7 @@ java_library(
         "@maven//:org_assertj_assertj_core",
         "@maven//:org_hibernate_hibernate_validator",
         "@maven//:org_mockito_mockito_core",
-        "@maven//:org_powermock_powermock_api_mockito",
+        "@maven//:org_powermock_powermock_api_mockito2",
         "@maven//:org_powermock_powermock_core",
         "@maven//:org_powermock_powermock_module_junit4",
     ],

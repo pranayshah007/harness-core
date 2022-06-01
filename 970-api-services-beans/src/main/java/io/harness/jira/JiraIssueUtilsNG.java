@@ -73,6 +73,9 @@ public class JiraIssueUtilsNG {
     }
 
     Map<String, JiraFieldNG> finalIssueTypeFields = issueTypeFields;
+
+    fields = parseFieldsForCGCalls(finalIssueTypeFields, fields);
+
     Set<String> invalidFields =
         fields.keySet().stream().filter(k -> !finalIssueTypeFields.containsKey(k)).collect(Collectors.toSet());
     if (EmptyPredicate.isNotEmpty(invalidFields)) {
@@ -104,6 +107,18 @@ public class JiraIssueUtilsNG {
     addTimeTrackingField(currFieldValues, fields);
 
     fieldKeys.forEach(key -> addKey(currFieldValues, key, finalIssueTypeFields.get(key), finalFields.get(key)));
+  }
+
+  private Map<String, String> parseFieldsForCGCalls(
+      Map<String, JiraFieldNG> finalIssueTypeFields, Map<String, String> fields) {
+    Map<String, String> fieldIdsMapToName =
+        finalIssueTypeFields.entrySet().stream().collect(Collectors.toMap(e -> e.getValue().getKey(), e -> e.getKey()));
+    return fields.entrySet().stream().collect(Collectors.toMap(field -> {
+      if (fieldIdsMapToName.containsKey(field.getKey()) && !finalIssueTypeFields.containsKey(field.getKey())) {
+        return fieldIdsMapToName.get(field.getKey());
+      }
+      return field.getKey();
+    }, Map.Entry::getValue));
   }
 
   private void addTimeTrackingField(Map<String, Object> currFieldValues, Map<String, String> fields) {
@@ -140,6 +155,8 @@ public class JiraIssueUtilsNG {
 
   private Object convertToFinalValue(JiraFieldNG field, String name, String value) {
     switch (field.getSchema().getType()) {
+      case USER:
+        return new JiraFieldUserPickerNG(value);
       case STRING:
         return value;
       case NUMBER:

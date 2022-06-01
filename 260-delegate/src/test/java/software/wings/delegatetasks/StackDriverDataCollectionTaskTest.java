@@ -164,8 +164,8 @@ public class StackDriverDataCollectionTaskTest extends WingsBaseTest {
     when(monitoringTimeSeriesList.setFilter(anyString())).thenReturn(monitoringTimeSeriesList);
     when(monitoringTimeSeriesList.setAggregationGroupByFields(any())).thenReturn(monitoringTimeSeriesList);
     when(monitoringTimeSeriesList.setAggregationAlignmentPeriod(anyString())).thenReturn(monitoringTimeSeriesList);
-    when(monitoringTimeSeriesList.setIntervalStartTime(anyString())).thenReturn(monitoringTimeSeriesList);
-    when(monitoringTimeSeriesList.setIntervalEndTime(anyString())).thenReturn(monitoringTimeSeriesList);
+    when(monitoringTimeSeriesList.setIntervalStartTime(any())).thenReturn(monitoringTimeSeriesList);
+    when(monitoringTimeSeriesList.setIntervalEndTime(any())).thenReturn(monitoringTimeSeriesList);
     when(monitoringTimeSeriesList.setAggregationPerSeriesAligner(anyString())).thenReturn(monitoringTimeSeriesList);
     when(monitoringTimeSeriesList.execute()).thenReturn(respObject);
   }
