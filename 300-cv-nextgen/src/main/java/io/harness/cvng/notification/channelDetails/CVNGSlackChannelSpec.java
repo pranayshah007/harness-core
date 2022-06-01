@@ -7,20 +7,19 @@
 
 package io.harness.cvng.notification.channelDetails;
 
-import io.harness.Team;
-import io.harness.notification.channeldetails.NotificationChannel;
-import io.harness.notification.channeldetails.SlackChannel;
-
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.collect.Lists;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import io.harness.notification.channeldetails.NotificationChannel;
+import io.harness.notification.channeldetails.SlackChannel;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.SuperBuilder;
+
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Data
 @SuperBuilder
@@ -41,7 +40,6 @@ public class CVNGSlackChannelSpec extends CVNGNotificationChannelSpec {
       String templateId, Map<String, String> templateData) {
     return SlackChannel.builder()
         .accountId(accountId)
-        .team(Team.CV)
         .templateData(templateData)
         .templateId(templateId)
         .userGroups(

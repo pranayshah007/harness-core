@@ -7,13 +7,11 @@
 
 package io.harness.cvng.core.services.impl.monitoredService;
 
-import static io.harness.cvng.core.beans.params.ServiceEnvironmentParams.builderWithProjectParams;
-import static io.harness.cvng.notification.utils.NotificationRuleCommonUtils.COOL_OFF_DURATION;
-import static io.harness.cvng.notification.utils.NotificationRuleCommonUtils.getNotificationTemplateData;
-import static io.harness.cvng.notification.utils.NotificationRuleCommonUtils.getNotificationTemplateId;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Preconditions;
+import com.google.common.io.Resources;
+import com.google.inject.Inject;
+import com.mongodb.DuplicateKeyException;
 import io.harness.cvng.activity.entities.Activity;
 import io.harness.cvng.activity.services.api.ActivityService;
 import io.harness.cvng.analysis.beans.Risk;
@@ -99,12 +97,17 @@ import io.harness.notification.notificationclient.NotificationResult;
 import io.harness.persistence.HPersistence;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.utils.PageUtils;
+import lombok.NonNull;
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.mongodb.morphia.query.Query;
+import org.mongodb.morphia.query.Sort;
+import org.mongodb.morphia.query.UpdateOperations;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Preconditions;
-import com.google.common.io.Resources;
-import com.google.inject.Inject;
-import com.mongodb.DuplicateKeyException;
+import javax.annotation.Nullable;
+import javax.ws.rs.NotFoundException;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
@@ -125,16 +128,13 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import javax.annotation.Nullable;
-import javax.ws.rs.NotFoundException;
-import lombok.NonNull;
-import lombok.SneakyThrows;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.RandomStringUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.Sort;
-import org.mongodb.morphia.query.UpdateOperations;
+
+import static io.harness.cvng.core.beans.params.ServiceEnvironmentParams.builderWithProjectParams;
+import static io.harness.cvng.notification.utils.NotificationRuleCommonUtils.COOL_OFF_DURATION;
+import static io.harness.cvng.notification.utils.NotificationRuleCommonUtils.getNotificationTemplateData;
+import static io.harness.cvng.notification.utils.NotificationRuleCommonUtils.getNotificationTemplateId;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 @Slf4j
 public class MonitoredServiceServiceImpl implements MonitoredServiceService {
@@ -233,7 +233,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
   }
 
   @SneakyThrows
-  private MonitoredServiceDTO getExpandedMonitoredServiceFromYaml(ProjectParams projectParams, String yaml) {
+  public MonitoredServiceDTO getExpandedMonitoredServiceFromYaml(ProjectParams projectParams, String yaml) {
     String templateResolvedYaml = templateFacade.resolveYaml(projectParams, yaml);
     MonitoredServiceYamlExpressionEvaluator yamlExpressionEvaluator =
         new MonitoredServiceYamlExpressionEvaluator(templateResolvedYaml);

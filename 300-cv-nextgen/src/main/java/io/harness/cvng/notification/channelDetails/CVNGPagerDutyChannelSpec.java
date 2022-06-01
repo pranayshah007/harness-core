@@ -7,20 +7,19 @@
 
 package io.harness.cvng.notification.channelDetails;
 
-import io.harness.Team;
-import io.harness.notification.channeldetails.NotificationChannel;
-import io.harness.notification.channeldetails.PagerDutyChannel;
-
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.collect.Lists;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import io.harness.notification.channeldetails.NotificationChannel;
+import io.harness.notification.channeldetails.PagerDutyChannel;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.SuperBuilder;
+
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Data
 @SuperBuilder
@@ -45,7 +44,6 @@ public class CVNGPagerDutyChannelSpec extends CVNGNotificationChannelSpec {
             userGroups.stream()
                 .map(e -> CVNGNotificationChannelUtils.getUserGroups(e, accountId, orgIdentifier, projectIdentifier))
                 .collect(Collectors.toList()))
-        .team(Team.CV)
         .templateId(templateId)
         .integrationKeys(Lists.newArrayList(integrationKey))
         .templateData(templateData)

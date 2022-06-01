@@ -7,19 +7,18 @@
 
 package io.harness.cvng.notification.channelDetails;
 
-import io.harness.Team;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.harness.notification.channeldetails.MSTeamChannel;
 import io.harness.notification.channeldetails.NotificationChannel;
-
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.SuperBuilder;
+
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Data
 @SuperBuilder
@@ -41,7 +40,6 @@ public class CVNGMSTeamsChannelSpec extends CVNGNotificationChannelSpec {
     return MSTeamChannel.builder()
         .msTeamKeys(msTeamKeys)
         .accountId(accountId)
-        .team(Team.CV)
         .templateData(templateData)
         .templateId(templateId)
         .userGroups(

@@ -7,29 +7,8 @@
 
 package io.harness.cvng.core.services.impl.monitoredService;
 
-import static io.harness.cvng.core.utils.DateTimeUtils.roundDownTo5MinBoundary;
-import static io.harness.cvng.dashboard.entities.HeatMap.HeatMapResolution.FIVE_MIN;
-import static io.harness.data.structure.UUIDGenerator.generateUuid;
-import static io.harness.rule.OwnerRule.ABHIJITH;
-import static io.harness.rule.OwnerRule.ANJAN;
-import static io.harness.rule.OwnerRule.ARPITJ;
-import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
-import static io.harness.rule.OwnerRule.KAMAL;
-import static io.harness.rule.OwnerRule.KANHAIYA;
-import static io.harness.rule.OwnerRule.KAPIL;
-import static io.harness.rule.OwnerRule.PRAVEEN;
-import static io.harness.rule.OwnerRule.SOWMYA;
-
-import static java.util.stream.Collectors.toList;
-import static org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
+import com.google.common.collect.Sets;
+import com.google.inject.Inject;
 import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
@@ -130,9 +109,16 @@ import io.harness.ng.core.mapper.TagMapper;
 import io.harness.notification.notificationclient.NotificationResultWithoutStatus;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
+import lombok.AccessLevel;
+import lombok.SneakyThrows;
+import lombok.experimental.FieldDefaults;
+import org.apache.commons.lang3.reflect.FieldUtils;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.mockito.Mock;
+import org.mockito.Mockito;
 
-import com.google.common.collect.Sets;
-import com.google.inject.Inject;
 import java.net.SocketTimeoutException;
 import java.time.Clock;
 import java.time.Instant;
@@ -149,15 +135,28 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import lombok.AccessLevel;
-import lombok.SneakyThrows;
-import lombok.experimental.FieldDefaults;
-import org.apache.commons.lang3.reflect.FieldUtils;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.mockito.Mock;
-import org.mockito.Mockito;
+
+import static io.harness.cvng.core.utils.DateTimeUtils.roundDownTo5MinBoundary;
+import static io.harness.cvng.dashboard.entities.HeatMap.HeatMapResolution.FIVE_MIN;
+import static io.harness.data.structure.UUIDGenerator.generateUuid;
+import static io.harness.rule.OwnerRule.ABHIJITH;
+import static io.harness.rule.OwnerRule.ANJAN;
+import static io.harness.rule.OwnerRule.ARPITJ;
+import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
+import static io.harness.rule.OwnerRule.KAMAL;
+import static io.harness.rule.OwnerRule.KANHAIYA;
+import static io.harness.rule.OwnerRule.KAPIL;
+import static io.harness.rule.OwnerRule.PRAVEEN;
+import static io.harness.rule.OwnerRule.SOWMYA;
+import static java.util.stream.Collectors.toList;
+import static org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
@@ -432,8 +431,6 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
             .orgIdentifier(orgIdentifier)
             .projectIdentifier(projectIdentifier)
             .connectorIdentifier(connectorIdentifier)
-            .serviceIdentifier(serviceIdentifier)
-            .envIdentifier(environmentIdentifier)
             .monitoringSourceName(healthSourceName)
             .productName(feature)
             .category(CVMonitoringCategory.ERRORS)
@@ -2429,8 +2426,6 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     assertThat(cvConfig.getAccountId()).isEqualTo(accountId);
     assertThat(cvConfig.getOrgIdentifier()).isEqualTo(orgIdentifier);
     assertThat(cvConfig.getProjectIdentifier()).isEqualTo(projectIdentifier);
-    assertThat(cvConfig.getEnvIdentifier()).isEqualTo(environmentIdentifier);
-    assertThat(cvConfig.getServiceIdentifier()).isEqualTo(serviceIdentifier);
     assertThat(cvConfig.getProductName()).isEqualTo(feature);
     assertThat(cvConfig.getMonitoringSourceName()).isEqualTo(healthSourceName);
     assertThat(cvConfig.getConnectorIdentifier()).isEqualTo(connectorIdentifier);

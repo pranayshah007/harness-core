@@ -7,19 +7,18 @@
 
 package io.harness.cvng.notification.channelDetails;
 
-import io.harness.Team;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.harness.notification.channeldetails.EmailChannel;
 import io.harness.notification.channeldetails.NotificationChannel;
-
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.SuperBuilder;
+
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Data
 @SuperBuilder
@@ -45,7 +44,6 @@ public class CVNGEmailChannelSpec extends CVNGNotificationChannelSpec {
             userGroups.stream()
                 .map(e -> CVNGNotificationChannelUtils.getUserGroups(e, accountId, orgIdentifier, projectIdentifier))
                 .collect(Collectors.toList()))
-        .team(Team.CV)
         .templateData(templateData)
         .templateId(templateId)
         .build();
