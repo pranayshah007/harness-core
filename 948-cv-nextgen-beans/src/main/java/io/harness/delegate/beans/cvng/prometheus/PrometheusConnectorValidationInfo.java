@@ -32,6 +32,6 @@ public class PrometheusConnectorValidationInfo extends ConnectorValidationInfo<P
 
   @Override
   public Map<String, String> collectionHeaders() {
-    return Collections.emptyMap();
+    return PrometheusUtils.getHeaders(connectorConfigDTO);
   }
 }
