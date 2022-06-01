@@ -134,7 +134,7 @@ public class ServerlessAwsCommandTaskHelperTest extends CategoryTest {
   @Test
   @Owner(developers = PIYUSH_BHUWALKA)
   @Category(UnitTests.class)
-  public void cloudFormationTemplateExistsTest() throws Exception {
+  public void cloudFormationStackExistsTest() throws Exception {
     String serverlessManifest = "service: ABC";
     ServerlessAwsLambdaInfraConfig serverlessAwsLambdaInfraConfig = ServerlessAwsLambdaInfraConfig.builder()
                                                                         .region("us-east-2")
@@ -146,8 +146,7 @@ public class ServerlessAwsCommandTaskHelperTest extends CategoryTest {
         + "-"
         + "dev";
     when(awsNgConfigMapper.createAwsInternalConfig(awsConnectorDTO)).thenReturn(awsInternalConfig);
-    serverlessAwsCommandTaskHelper.cloudFormationTemplateExists(
-        logCallback, serverlessCommandRequest, serverlessManifest);
+    serverlessAwsCommandTaskHelper.cloudFormationStackExists(logCallback, serverlessCommandRequest, serverlessManifest);
     verify(awsNgConfigMapper, times(1)).createAwsInternalConfig(awsConnectorDTO);
     verify(awsCFHelperServiceDelegate, times(1))
         .stackExists(awsInternalConfig, serverlessAwsLambdaInfraConfig.getRegion(), cloudFormationStackName);

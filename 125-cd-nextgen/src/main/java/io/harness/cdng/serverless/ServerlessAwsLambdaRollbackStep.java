@@ -108,12 +108,11 @@ public class ServerlessAwsLambdaRollbackStep extends TaskExecutableWithRollbackA
         (ServerlessAwsLambdaRollbackDataOutcome) serverlessRollbackDataOptionalOutput.getOutput();
     ServerlessGitFetchOutcome serverlessGitFetchOutcome =
         (ServerlessGitFetchOutcome) serverlessGitFetchOptionalOutput.getOutput();
-    if (rollbackDataOutcome.isFirstDeployment() == false
+    if (!rollbackDataOutcome.isFirstDeployment()
         && EmptyPredicate.isEmpty(rollbackDataOutcome.getPreviousVersionTimeStamp())) {
       return TaskRequest.newBuilder()
-          .setSkipTaskRequest(SkipTaskRequest.newBuilder()
-                                  .setMessage("Serverless Aws Lambda Deploy step was not executed. Skipping rollback.")
-                                  .build())
+          .setSkipTaskRequest(
+              SkipTaskRequest.newBuilder().setMessage("No previous version exist. Skipping rollback.").build())
           .build();
     }
     InfrastructureOutcome infrastructureOutcome = (InfrastructureOutcome) outcomeService.resolve(

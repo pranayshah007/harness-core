@@ -147,7 +147,7 @@ public class ServerlessAwsLambdaDeployCommandTaskHandlerTest extends CategoryTes
             initLogCallback, ((ServerlessDeployRequest) serverlessCommandRequest).getManifestContent());
     doReturn(true)
         .when(serverlessAwsCommandTaskHelper)
-        .cloudFormationTemplateExists(prepareRollbackLogCallback, serverlessCommandRequest, manifestContent);
+        .cloudFormationStackExists(prepareRollbackLogCallback, serverlessCommandRequest, manifestContent);
     ServerlessClient serverlessClient = ServerlessClient.client(serverlessDelegateTaskParams.getServerlessClientPath());
 
     doReturn(intiServerlessCliResponse)
@@ -239,7 +239,7 @@ public class ServerlessAwsLambdaDeployCommandTaskHandlerTest extends CategoryTes
             initLogCallback, ((ServerlessDeployRequest) serverlessCommandRequest).getManifestContent());
     doReturn(false)
         .when(serverlessAwsCommandTaskHelper)
-        .cloudFormationTemplateExists(prepareRollbackLogCallback, serverlessCommandRequest, manifestContent);
+        .cloudFormationStackExists(prepareRollbackLogCallback, serverlessCommandRequest, manifestContent);
     ServerlessClient serverlessClient = ServerlessClient.client(serverlessDelegateTaskParams.getServerlessClientPath());
 
     doReturn(intiServerlessCliResponse)

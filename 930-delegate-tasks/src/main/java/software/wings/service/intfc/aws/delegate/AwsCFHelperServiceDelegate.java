@@ -26,7 +26,7 @@ import java.util.List;
 public interface AwsCFHelperServiceDelegate {
   String getStackBody(AwsInternalConfig awsConfig, String region, String stackId);
 
-  Boolean stackExists(AwsInternalConfig awsConfig, String region, String stackId);
+  boolean stackExists(AwsInternalConfig awsConfig, String region, String stackId);
 
   List<AwsCFTemplateParamsData> getParamsData(AwsInternalConfig awsConfig, String region, String data, String type,
       GitFileConfig gitFileConfig, GitConfig gitConfig, List<EncryptedDataDetail> sourceRepoEncryptedDetail);

@@ -124,7 +124,7 @@ public class ServerlessAwsCommandTaskHelper {
         command, serverlessDelegateTaskParams.getWorkingDirectory(), executionLogCallback, true, timeoutInMillis);
   }
 
-  public boolean cloudFormationTemplateExists(
+  public boolean cloudFormationStackExists(
       LogCallback executionLogCallback, ServerlessCommandRequest serverlessCommandRequest, String manifestContent) {
     ServerlessAwsLambdaManifestSchema serverlessManifestSchema =
         parseServerlessManifest(executionLogCallback, manifestContent);

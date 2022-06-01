@@ -317,7 +317,7 @@ public class ServerlessAwsLambdaRollbackCommandTaskHandlerTest extends CategoryT
 
     doReturn(false)
         .when(serverlessAwsCommandTaskHelper)
-        .cloudFormationTemplateExists(rollbackLogCallback, serverlessCommandRequest, manifestContent);
+        .cloudFormationStackExists(rollbackLogCallback, serverlessCommandRequest, manifestContent);
 
     ServerlessAwsLambdaRollbackResult serverlessAwsLambdaRollbackResult =
         ServerlessAwsLambdaRollbackResult.builder().service(service).region(region).stage(stage).build();
@@ -327,7 +327,7 @@ public class ServerlessAwsLambdaRollbackCommandTaskHandlerTest extends CategoryT
             serverlessCommandRequest, serverlessDelegateTaskParams, iLogStreamingTaskClient, commandUnitsProgress);
 
     verify(serverlessAwsCommandTaskHelper, times(1))
-        .cloudFormationTemplateExists(rollbackLogCallback, serverlessCommandRequest, manifestContent);
+        .cloudFormationStackExists(rollbackLogCallback, serverlessCommandRequest, manifestContent);
     assertThat(serverlessRollbackResponse.getServerlessRollbackResult()).isEqualTo(serverlessAwsLambdaRollbackResult);
     assertThat(serverlessRollbackResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
   }
@@ -335,7 +335,7 @@ public class ServerlessAwsLambdaRollbackCommandTaskHandlerTest extends CategoryT
   @Test
   @Owner(developers = PIYUSH_BHUWALKA)
   @Category(UnitTests.class)
-  public void executeTaskInternalTestWhenFirstDeploymentAndCloudFormationTemplateExists() throws Exception {
+  public void executeTaskInternalTestWhenFirstDeploymentAndCloudFormationStackExists() throws Exception {
     ServerlessRollbackConfig serverlessRollbackConfig =
         ServerlessAwsLambdaRollbackConfig.builder().isFirstDeployment(true).build();
     ServerlessCommandRequest serverlessCommandRequest = ServerlessRollbackRequest.builder()
@@ -396,7 +396,7 @@ public class ServerlessAwsLambdaRollbackCommandTaskHandlerTest extends CategoryT
 
     doReturn(true)
         .when(serverlessAwsCommandTaskHelper)
-        .cloudFormationTemplateExists(rollbackLogCallback, serverlessCommandRequest, manifestContent);
+        .cloudFormationStackExists(rollbackLogCallback, serverlessCommandRequest, manifestContent);
 
     ServerlessAwsLambdaRollbackResult serverlessAwsLambdaRollbackResult =
         ServerlessAwsLambdaRollbackResult.builder().service(service).region(region).stage(stage).build();
@@ -406,7 +406,7 @@ public class ServerlessAwsLambdaRollbackCommandTaskHandlerTest extends CategoryT
             serverlessCommandRequest, serverlessDelegateTaskParams, iLogStreamingTaskClient, commandUnitsProgress);
 
     verify(serverlessAwsCommandTaskHelper, times(1))
-        .cloudFormationTemplateExists(rollbackLogCallback, serverlessCommandRequest, manifestContent);
+        .cloudFormationStackExists(rollbackLogCallback, serverlessCommandRequest, manifestContent);
     verify(serverlessAwsCommandTaskHelper, times(1))
         .remove(serverlessClient, serverlessDelegateTaskParams, rollbackLogCallback,
             (long) (serverlessCommandRequest.getTimeoutIntervalInMin() * 60000),

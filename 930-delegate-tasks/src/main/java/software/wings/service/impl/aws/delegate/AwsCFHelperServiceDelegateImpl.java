@@ -105,7 +105,7 @@ public class AwsCFHelperServiceDelegateImpl
   }
 
   @Override
-  public Boolean stackExists(AwsInternalConfig awsConfig, String region, String stackId) {
+  public boolean stackExists(AwsInternalConfig awsConfig, String region, String stackId) {
     try (CloseableAmazonWebServiceClient<AmazonCloudFormationClient> closeableAmazonCloudFormationClient =
              new CloseableAmazonWebServiceClient(getAmazonCloudFormationClient(Regions.fromName(region), awsConfig))) {
       DescribeStacksRequest describeStacksRequest = new DescribeStacksRequest().withStackName(stackId);

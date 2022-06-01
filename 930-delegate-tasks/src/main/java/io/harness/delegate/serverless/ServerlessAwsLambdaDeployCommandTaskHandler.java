@@ -79,7 +79,7 @@ public class ServerlessAwsLambdaDeployCommandTaskHandler extends ServerlessComma
   private ServerlessAwsLambdaInfraConfig serverlessAwsLambdaInfraConfig;
   private long timeoutInMillis;
   private String previousDeployTimeStamp;
-  private Boolean firstDeployment;
+  private boolean firstDeployment;
 
   @Override
   protected ServerlessCommandResponse executeTaskInternal(ServerlessCommandRequest serverlessCommandRequest,
@@ -213,7 +213,7 @@ public class ServerlessAwsLambdaDeployCommandTaskHandler extends ServerlessComma
   private void prepareRollbackData(ServerlessDeployRequest serverlessDeployRequest, LogCallback executionLogCallback,
       ServerlessDelegateTaskParams serverlessDelegateTaskParams) throws Exception {
     executionLogCallback.saveExecutionLog(format("Preparing Rollback Data..%n%n"));
-    if (!serverlessAwsCommandTaskHelper.cloudFormationTemplateExists(
+    if (!serverlessAwsCommandTaskHelper.cloudFormationStackExists(
             executionLogCallback, serverlessDeployRequest, serverlessDeployRequest.getManifestContent())) {
       firstDeployment = true;
       executionLogCallback.saveExecutionLog(

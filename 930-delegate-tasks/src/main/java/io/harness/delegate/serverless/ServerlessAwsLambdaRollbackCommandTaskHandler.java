@@ -65,7 +65,6 @@ public class ServerlessAwsLambdaRollbackCommandTaskHandler extends ServerlessCom
   private ServerlessAwsLambdaInfraConfig serverlessAwsLambdaInfraConfig;
   private ServerlessAwsLambdaConfig serverlessAwsLambdaConfig;
   private long timeoutInMillis;
-  private boolean addTimestampToResponse;
 
   @Override
   protected ServerlessCommandResponse executeTaskInternal(ServerlessCommandRequest serverlessCommandRequest,
@@ -179,7 +178,6 @@ public class ServerlessAwsLambdaRollbackCommandTaskHandler extends ServerlessCom
     ServerlessCliResponse response;
     ServerlessAwsLambdaRollbackConfig serverlessAwsLambdaRollbackConfig =
         (ServerlessAwsLambdaRollbackConfig) serverlessRollbackRequest.getServerlessRollbackConfig();
-    addTimestampToResponse = true;
     ServerlessAwsLambdaRollbackResultBuilder serverlessAwsLambdaRollbackResultBuilder =
         ServerlessAwsLambdaRollbackResult.builder();
     serverlessAwsLambdaRollbackResultBuilder.service(serverlessManifestSchema.getService());
@@ -188,7 +186,7 @@ public class ServerlessAwsLambdaRollbackCommandTaskHandler extends ServerlessCom
     ServerlessRollbackResponseBuilder serverlessRollbackResponseBuilder = ServerlessRollbackResponse.builder();
 
     if (serverlessAwsLambdaRollbackConfig.isFirstDeployment()) {
-      if (!serverlessAwsCommandTaskHelper.cloudFormationTemplateExists(
+      if (!serverlessAwsCommandTaskHelper.cloudFormationStackExists(
               executionLogCallback, serverlessRollbackRequest, serverlessRollbackRequest.getManifestContent())) {
         executionLogCallback.saveExecutionLog(
             format("Nothing to Remove..%n"), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
@@ -198,7 +196,6 @@ public class ServerlessAwsLambdaRollbackCommandTaskHandler extends ServerlessCom
       } else {
         response = serverlessAwsCommandTaskHelper.remove(serverlessClient, serverlessDelegateTaskParams,
             executionLogCallback, timeoutInMillis, serverlessManifestConfig, serverlessAwsLambdaInfraConfig);
-        addTimestampToResponse = false;
       }
     } else {
       if (EmptyPredicate.isEmpty(serverlessAwsLambdaRollbackConfig.getPreviousVersionTimeStamp())) {
@@ -215,7 +212,7 @@ public class ServerlessAwsLambdaRollbackCommandTaskHandler extends ServerlessCom
     }
 
     if (response.getCommandExecutionStatus() == CommandExecutionStatus.SUCCESS) {
-      if (addTimestampToResponse) {
+      if (EmptyPredicate.isNotEmpty(serverlessAwsLambdaRollbackConfig.getPreviousVersionTimeStamp())) {
         serverlessAwsLambdaRollbackResultBuilder.rollbackTimeStamp(
             serverlessAwsLambdaRollbackConfig.getPreviousVersionTimeStamp());
       }
