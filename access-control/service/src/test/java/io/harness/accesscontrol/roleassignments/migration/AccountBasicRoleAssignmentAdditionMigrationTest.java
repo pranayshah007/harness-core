@@ -1,6 +1,7 @@
 package io.harness.accesscontrol.roleassignments.migration;
 
 import io.harness.accesscontrol.AccessControlTestBase;
+import io.harness.accesscontrol.commons.helpers.FeatureFlagHelperService;
 import io.harness.accesscontrol.principals.PrincipalType;
 import io.harness.accesscontrol.roleassignments.persistence.RoleAssignmentDBO;
 import io.harness.accesscontrol.roleassignments.persistence.repositories.RoleAssignmentRepository;
@@ -8,15 +9,13 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
 import com.google.inject.Inject;
-import io.harness.beans.FeatureFlag;
 import io.harness.beans.ScopeLevel;
 import io.harness.category.element.UnitTests;
-//import io.harness.ff.FeatureFlagService;
-import io.harness.ff.FeatureFlagsClient;
 import io.harness.rule.Owner;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.Mock;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.mongodb.core.query.Criteria;
 
@@ -29,15 +28,14 @@ import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 @OwnedBy(HarnessTeam.PL)
 public class AccountBasicRoleAssignmentAdditionMigrationTest extends AccessControlTestBase {
     @Inject private RoleAssignmentRepository roleAssignmentRepository;
-  //  @Inject private FeatureFlagService featureFlagService;
-    @Inject private FeatureFlagsClient featureFlagsClient;
+    @Mock private FeatureFlagHelperService featureFlagHelperService;
     AccountBasicRoleAssignmentAdditionMigration accountBasicRoleAssignmentAdditionMigration;
     private static final String ACCOUNT_VIEWER_ROLE = "_account_viewer";
     private static final String ACCOUNT_BASIC_ROLE = "_account_basic";
 
     @Before
     public void setup() {
-        accountBasicRoleAssignmentAdditionMigration = new AccountBasicRoleAssignmentAdditionMigration(roleAssignmentRepository, featureFlagsClient);
+        accountBasicRoleAssignmentAdditionMigration = new AccountBasicRoleAssignmentAdditionMigration(roleAssignmentRepository, featureFlagHelperService);
     }
 
     @Test
