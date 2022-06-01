@@ -8,6 +8,7 @@
 package io.harness.cvng.analysis.services.impl;
 
 import static io.harness.cvng.CVConstants.BULK_OPERATION_THRESHOLD;
+import static io.harness.cvng.CVNGTestConstants.TIME_FOR_TESTS;
 import static io.harness.cvng.beans.DataSourceType.APP_DYNAMICS;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.persistence.HQuery.excludeAuthority;
@@ -127,8 +128,8 @@ public class LogAnalysisServiceImplTest extends CvNextGenTestBase {
   public void scheduleLogAnalysisTask() {
     AnalysisInput input = AnalysisInput.builder()
                               .verificationTaskId(verificationTaskId)
-                              .startTime(Instant.now().minus(10, ChronoUnit.MINUTES))
-                              .endTime(Instant.now())
+                              .startTime(TIME_FOR_TESTS.minus(10, ChronoUnit.MINUTES))
+                              .endTime(TIME_FOR_TESTS)
                               .build();
     String taskId = logAnalysisService.scheduleServiceGuardLogAnalysisTask(input);
 

@@ -72,16 +72,14 @@ import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 @OwnedBy(PIPELINE)
-@RunWith(PowerMockRunner.class)
 @PrepareForTest({PlanExecutionUtils.class, UUIDGenerator.class})
 public class ExecutionHelperTest extends CategoryTest {
   @InjectMocks ExecutionHelper executionHelper;
@@ -467,8 +465,8 @@ public class ExecutionHelperTest extends CategoryTest {
   }
 
   private void buildExecutionArgsMocks() {
-    PowerMockito.mockStatic(UUIDGenerator.class);
-    when(UUIDGenerator.generateUuid()).thenReturn(generatedExecutionId);
+    MockedStatic<UUIDGenerator> aStatic = Mockito.mockStatic(UUIDGenerator.class);
+    aStatic.when(UUIDGenerator::generateUuid).thenReturn(generatedExecutionId);
 
     doReturn(executionPrincipalInfo).when(principalInfoHelper).getPrincipalInfoFromSecurityContext();
     doReturn(394).when(pipelineMetadataService).incrementRunSequence(any());
@@ -569,8 +567,8 @@ public class ExecutionHelperTest extends CategoryTest {
 
     PlanExecution planExecution = PlanExecution.builder().build();
     Plan plan = PlanExecutionUtils.extractPlan(planCreationBlobResponse);
-    PowerMockito.mockStatic(PlanExecutionUtils.class);
-    when(PlanExecutionUtils.extractPlan(planCreationBlobResponse)).thenReturn(plan);
+    MockedStatic<PlanExecutionUtils> aStatic = Mockito.mockStatic(PlanExecutionUtils.class);
+    aStatic.when(() -> PlanExecutionUtils.extractPlan(planCreationBlobResponse)).thenReturn(plan);
     ImmutableMap<String, String> abstractions = ImmutableMap.<String, String>builder()
                                                     .put(SetupAbstractionKeys.accountId, accountId)
                                                     .put(SetupAbstractionKeys.orgIdentifier, orgId)

@@ -47,9 +47,10 @@ import java.util.Objects;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.mockito.BDDMockito;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
@@ -206,9 +207,9 @@ public class HttpStepTest extends CategoryTest {
   @Owner(developers = PRASHANTSHARMA)
   @Category(UnitTests.class)
   public void testObtainTask() {
-    PowerMockito.mockStatic(StepUtils.class);
-    BDDMockito.given(StepUtils.prepareTaskRequestWithTaskSelector(any(), any(), any(), any()))
-        .willReturn(TaskRequest.newBuilder().build());
+    MockedStatic<StepUtils> aStatic = Mockito.mockStatic(StepUtils.class);
+    aStatic.when(() -> StepUtils.prepareTaskRequestWithTaskSelector(any(), any(), any(), any()))
+        .thenReturn(TaskRequest.newBuilder().build());
     ambiance = Ambiance.newBuilder().build();
     httpStepParameters = HttpStepParameters.infoBuilder()
                              .method(ParameterField.createValueField("GET"))

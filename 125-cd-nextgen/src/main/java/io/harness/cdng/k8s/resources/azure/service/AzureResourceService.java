@@ -11,8 +11,10 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.k8s.resources.azure.dtos.AzureClustersDTO;
+import io.harness.cdng.k8s.resources.azure.dtos.AzureDeploymentSlotsDTO;
 import io.harness.cdng.k8s.resources.azure.dtos.AzureResourceGroupsDTO;
 import io.harness.cdng.k8s.resources.azure.dtos.AzureSubscriptionsDTO;
+import io.harness.cdng.k8s.resources.azure.dtos.AzureWebAppNamesDTO;
 
 @OwnedBy(HarnessTeam.CDP)
 public interface AzureResourceService {
@@ -23,4 +25,10 @@ public interface AzureResourceService {
 
   AzureClustersDTO getClusters(IdentifierRef connectorRef, String orgIdentifier, String projectIdentifier,
       String subscriptionId, String resourceGroup);
+
+  AzureWebAppNamesDTO getWebAppNames(IdentifierRef connectorRef, String orgIdentifier, String projectIdentifier,
+      String subscriptionId, String resourceGroup);
+
+  AzureDeploymentSlotsDTO getAppServiceDeploymentSlots(IdentifierRef connectorRef, String orgIdentifier,
+      String projectIdentifier, String subscriptionId, String resourceGroup, String webAppName);
 }

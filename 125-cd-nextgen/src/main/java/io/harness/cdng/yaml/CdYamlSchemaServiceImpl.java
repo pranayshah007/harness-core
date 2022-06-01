@@ -155,6 +155,8 @@ public class CdYamlSchemaServiceImpl implements CdYamlSchemaService {
             yamlSchemaRootClasses, StepCategory.STEP.name(), enabledFeatureFlags, featureRestrictionsMap),
         CD_NAMESPACE);
     if (stepSchemaWithDetails != null) {
+      stepSchemaWithDetails =
+          stepSchemaWithDetails.stream().filter(o -> o.getModuleType() != ModuleType.CD).collect(Collectors.toList());
       YamlSchemaUtils.addOneOfInExecutionWrapperConfig(deploymentStageSchema.get(DEFINITIONS_NODE),
           stepSchemaWithDetails, ModuleType.CD, enabledFeatureFlags, featureRestrictionsMap);
     }

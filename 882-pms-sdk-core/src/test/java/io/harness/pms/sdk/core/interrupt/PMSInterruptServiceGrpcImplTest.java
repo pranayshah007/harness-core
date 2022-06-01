@@ -23,14 +23,14 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 @OwnedBy(HarnessTeam.PIPELINE)
-@RunWith(PowerMockRunner.class)
+@RunWith(MockitoJUnitRunner.class)
 @PrepareForTest(InterruptProtoServiceBlockingStub.class)
 public class PMSInterruptServiceGrpcImplTest extends PmsSdkCoreTestBase {
-  private static String NOTIFY_ID = "notifyId";
+  private static final String NOTIFY_ID = "notifyId";
   @Mock InterruptProtoServiceBlockingStub interruptProtoServiceBlockingStub;
   @InjectMocks PMSInterruptServiceGrpcImpl pmsInterruptServiceGrpc;
 

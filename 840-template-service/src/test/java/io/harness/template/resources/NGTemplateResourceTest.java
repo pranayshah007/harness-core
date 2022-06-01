@@ -16,7 +16,6 @@ import static java.lang.Boolean.TRUE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -328,7 +327,7 @@ public class NGTemplateResourceTest extends CategoryTest {
     Pageable pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, TemplateEntityKeys.createdAt));
     PageImpl<TemplateEntity> templateEntities =
         new PageImpl<>(Collections.singletonList(entityWithMongoVersion), pageable, 1);
-    doReturn(templateEntities).when(templateService).list(any(), any(), any(), any(), any(), anyBoolean());
+    doReturn(templateEntities).when(templateService).list(any(), any(), any(), any(), any(), any());
     List<TemplateSummaryResponseDTO> content =
         templateResource
             .listTemplates(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, 0, 25, null, null, null,

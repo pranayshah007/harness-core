@@ -413,7 +413,7 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
         .thenReturn(null);
     connectorService.validate(connectorRequestDTO, accountIdentifier);
     verify(kubernetesConnectionValidator, times(1))
-        .validate((ConnectorConfigDTO) any(), anyString(), any(), anyString(), anyString());
+        .validate((ConnectorConfigDTO) any(), anyString(), any(), any(), anyString());
   }
 
   @Test
@@ -427,7 +427,7 @@ public class DefaultConnectorServiceImplTest extends ConnectorsTestBase {
         .thenReturn(ConnectorValidationResult.builder().status(SUCCESS).build());
     connectorService.testConnection(accountIdentifier, null, null, identifier);
     verify(kubernetesConnectionValidator, times(1))
-        .validate((ConnectorConfigDTO) any(), anyString(), anyString(), anyString(), anyString());
+        .validate((ConnectorConfigDTO) any(), anyString(), any(), any(), anyString());
   }
 
   @Test

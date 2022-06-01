@@ -72,7 +72,7 @@ public class OpaServiceImplTest extends NgManagerTestBase {
 
       OpaEvaluationResponseHolder evaluationResponse =
           OpaEvaluationResponseHolder.builder().status("pass").id("id").build();
-      when(SafeHttpCall.executeWithExceptions(request)).thenReturn(evaluationResponse);
+      when(SafeHttpCall.executeWithExceptions(request)).thenAnswer(invocationOnMock -> evaluationResponse);
 
       GovernanceMetadata governanceMetadata = opaService.evaluate(
           opaEvaluationContext, "accountId", "orgIdentifier", "projectIdentifier", "identifier", "onsave", "key");
@@ -102,7 +102,7 @@ public class OpaServiceImplTest extends NgManagerTestBase {
 
       OpaEvaluationResponseHolder evaluationResponse =
           OpaEvaluationResponseHolder.builder().status("error").id("id").build();
-      when(SafeHttpCall.executeWithExceptions(request)).thenReturn(evaluationResponse);
+      when(SafeHttpCall.executeWithExceptions(request)).thenAnswer(invocationOnMock -> evaluationResponse);
 
       GovernanceMetadata governanceMetadata = opaService.evaluate(
           opaEvaluationContext, "accountId", "orgIdentifier", "projectIdentifier", "identifier", "onsave", "key");
@@ -133,7 +133,7 @@ public class OpaServiceImplTest extends NgManagerTestBase {
 
       OpaEvaluationResponseHolder evaluationResponse =
           OpaEvaluationResponseHolder.builder().status("error").id("id").build();
-      when(SafeHttpCall.executeWithExceptions(request)).thenReturn(null);
+      when(SafeHttpCall.executeWithExceptions(request)).thenAnswer(invocationOnMock -> null);
 
       GovernanceMetadata governanceMetadata = opaService.evaluate(
           opaEvaluationContext, "accountId", "orgIdentifier", "projectIdentifier", "identifier", "onsave", "key");
@@ -159,7 +159,7 @@ public class OpaServiceImplTest extends NgManagerTestBase {
 
       OpaEvaluationResponseHolder evaluationResponse =
           OpaEvaluationResponseHolder.builder().status("error").id("id").build();
-      when(SafeHttpCall.executeWithExceptions(request)).thenReturn(evaluationResponse);
+      when(SafeHttpCall.executeWithExceptions(request)).thenAnswer(invocationOnMock -> evaluationResponse);
 
       GovernanceMetadata governanceMetadata =
           opaService.evaluate(null, "accountId", "orgIdentifier", "projectIdentifier", "identifier", "onsave", "key");
@@ -190,7 +190,7 @@ public class OpaServiceImplTest extends NgManagerTestBase {
 
       OpaEvaluationResponseHolder evaluationResponse =
           OpaEvaluationResponseHolder.builder().status("pass").id("id").build();
-      when(SafeHttpCall.executeWithExceptions(request)).thenReturn(evaluationResponse);
+      when(SafeHttpCall.executeWithExceptions(request)).thenAnswer(invocationOnMock -> evaluationResponse);
 
       GovernanceMetadata governanceMetadata = opaService.evaluate(
           opaEvaluationContext, "accountId", "orgIdentifier", "projectIdentifier", "identifier", "onsave", "key");

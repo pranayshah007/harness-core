@@ -140,9 +140,8 @@ public class StatusUtils {
       case TASK_WAITING:
       case PAUSING:
       case SKIPPED:
-        return EnumSet.of(QUEUED, RUNNING);
       case INPUT_WAITING:
-        return EnumSet.of(QUEUED);
+        return EnumSet.of(QUEUED, RUNNING);
       case PAUSED:
         return EnumSet.of(QUEUED, RUNNING, PAUSING);
       case DISCONTINUING:

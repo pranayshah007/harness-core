@@ -18,16 +18,15 @@ import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyMap;
-import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.powermock.api.mockito.PowerMockito.doThrow;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.spy;
 import static org.powermock.api.mockito.PowerMockito.when;
 
@@ -91,6 +90,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
@@ -679,12 +679,13 @@ public class JiraTaskTest extends CategoryTest {
     doReturn(jiraClient).when(spyJiraTask).getJiraClient(taskParameters);
     JSONArray jsonArray = new JSONArray();
     when(jiraClient.getRestClient()).thenReturn(restClient);
-    when(restClient.get(any(URI.class))).thenReturn(json);
-    mockStatic(JSONArray.class);
-    when(JSONArray.fromObject(json)).thenReturn(jsonArray);
-    JiraExecutionData jiraExecutionData =
-        JiraExecutionData.builder().projects(jsonArray).executionStatus(ExecutionStatus.SUCCESS).build();
-    runTaskAndAssertResponse(taskParameters, jiraExecutionData);
+    when(restClient.get(nullable(URI.class))).thenReturn(json);
+    try (MockedStatic<JSONArray> jsonArrayMockedStatic = Mockito.mockStatic(JSONArray.class)) {
+      when(JSONArray.fromObject(json)).thenReturn(jsonArray);
+      JiraExecutionData jiraExecutionData =
+          JiraExecutionData.builder().projects(jsonArray).executionStatus(ExecutionStatus.SUCCESS).build();
+      runTaskAndAssertResponse(taskParameters, jiraExecutionData);
+    }
   }
 
   @Test
@@ -830,12 +831,12 @@ public class JiraTaskTest extends CategoryTest {
     when(json.getJSONObject("schema")).thenReturn(json);
     when(json.containsKey("allowedValues")).thenReturn(false);
     when(json.get("key")).thenReturn("");
-    mockStatic(JSONObject.class);
-    when(JSONObject.fromObject(anyObject())).thenReturn(json);
-    DelegateResponseData responseData = spyJiraTask.run(new Object[] {taskParameters});
-
-    assertThat(((JiraExecutionData) responseData).getCreateMetadata()).isNotNull();
-    assertThat(((JiraExecutionData) responseData).getExecutionStatus()).isEqualTo(ExecutionStatus.SUCCESS);
+    try (MockedStatic<JSONObject> jsonArrayMockedStatic = Mockito.mockStatic(JSONObject.class)) {
+      when(JSONObject.fromObject(any())).thenReturn(json);
+      DelegateResponseData responseData = spyJiraTask.run(new Object[] {taskParameters});
+      assertThat(((JiraExecutionData) responseData).getCreateMetadata()).isNotNull();
+      assertThat(((JiraExecutionData) responseData).getExecutionStatus()).isEqualTo(ExecutionStatus.SUCCESS);
+    }
   }
 
   @Test

@@ -57,7 +57,6 @@ fi
 BAZEL_MODULES="\
   //100-migrator:module \
   //270-verification:module \
-  //280-batch-processing:module \
   //290-dashboard-service:module \
   //295-cdng-contracts:module \
   //300-cv-nextgen:module \
@@ -198,11 +197,7 @@ BAZEL_MODULES="\
   //990-commons-test:module \
   //999-annotations:module \
   //access-control/service:module \
-  //access-control/libs/aggregator:module \
-  //access-control/libs/core:module \
   //access-control/contracts:module \
-  //clients/access-control/admin-client:module \
-  //clients/access-control/sdk:module \
   //product/ci/engine/proto:all \
   //product/ci/scm/proto:all \
 "
