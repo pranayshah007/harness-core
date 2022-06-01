@@ -84,7 +84,7 @@ function replaceconfigs(){
 
     sed -i 's|keyStorePath: keystore.jks||' $MANAGER_DIR/config.yml
     sed -i 's|keyStorePassword: password||' $MANAGER_DIR/config.yml
-    sed -i "s|trustStorePath: \${JAVA_HOME}/jre/lib/security/cacerts||" $MANAGER_DIR/config.yml
+    sed -i "s|trustStorePath: \${JAVA_HOME}/lib/security/cacerts||" $MANAGER_DIR/config.yml
     sed -i 's|certAlias: localhost||' $MANAGER_DIR/config.yml
     sed -i 's|validateCerts: false||' $MANAGER_DIR/config.yml
 
@@ -170,7 +170,7 @@ function replaceconfigs(){
 
     sed -i 's|keyStorePath: keystore.jks||' $VERIFICATION_DIR/verification-config.yml
     sed -i 's|keyStorePassword: password||' $VERIFICATION_DIR/verification-config.yml
-    sed -i "s|trustStorePath: \${JAVA_HOME}/jre/lib/security/cacerts||" $VERIFICATION_DIR/verification-config.yml
+    sed -i "s|trustStorePath: \${JAVA_HOME}/lib/security/cacerts||" $VERIFICATION_DIR/verification-config.yml
     sed -i 's|certAlias: localhost||' $VERIFICATION_DIR/verification-config.yml
     sed -i 's|validateCerts: false||' $VERIFICATION_DIR/verification-config.yml
     sed -i "s|port: 7070|port: $verificationPort|" $VERIFICATION_DIR/verification-config.yml

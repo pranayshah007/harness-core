@@ -1,4 +1,4 @@
-FROM harness/alpine:safe-alpine3.12-sec1338
+FROM us.gcr.io/platform-205701/alpine:safe-alpine3.15.4-bt1276
 
 # Add the capsule JAR and config.yml
 COPY ng-dashboard-service.jar config.yml  /opt/harness/

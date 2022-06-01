@@ -12,7 +12,6 @@ import static io.harness.rule.OwnerRule.VAIBHAV_SI;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
@@ -44,9 +43,10 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
-import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
@@ -81,8 +81,8 @@ public class ShellScriptStepTest extends CategoryTest {
     doReturn(taskParametersNG)
         .when(shellScriptHelperService)
         .buildShellScriptTaskParametersNG(ambiance, stepParameters);
-    mockStatic(StepUtils.class);
-    PowerMockito.when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
+    MockedStatic<StepUtils> aStatic = Mockito.mockStatic(StepUtils.class);
+    aStatic.when(() -> StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(TaskRequest.newBuilder().build());
 
     TaskRequest taskRequest = shellScriptStep.obtainTask(ambiance, stepElementParameters, null);

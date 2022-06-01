@@ -29,7 +29,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -207,13 +206,12 @@ public class InstancePartitionExpressionProcessorTest extends WingsBaseTest {
     processor.setFeatureFlagService(featureFlagService);
     on(processor).set("hostService", hostService);
 
-    when(serviceTemplateService.get(anyString(), anyString(), eq(TEMPLATE_ID), anyBoolean(), any()))
-        .thenReturn(serviceTemplate);
-    when(serviceResourceServiceMock.getWithDetails(anyString(), anyString()))
+    when(serviceTemplateService.get(any(), any(), eq(TEMPLATE_ID), anyBoolean(), any())).thenReturn(serviceTemplate);
+    when(serviceResourceServiceMock.getWithDetails(any(), any()))
         .thenReturn(Service.builder().uuid(SERVICE_ID).name(SERVICE_NAME).build());
 
     instances.forEach(instance
-        -> when(hostService.getHostByEnv(anyString(), anyString(), eq(instance.getHostId())))
+        -> when(hostService.getHostByEnv(any(), any(), eq(instance.getHostId())))
                .thenReturn(aHost().withUuid(instance.getHostId()).withHostName(instance.getHostName()).build()));
 
     List<PartitionElement> partitions = processor.partitions(log, "2", "30 %", "50 %");

@@ -36,23 +36,27 @@ import io.harness.repositories.spring.TriggerEventHistoryRepository;
 import io.harness.rule.Owner;
 
 import java.util.Collections;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.powermock.api.mockito.PowerMockito;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 @OwnedBy(PIPELINE)
-@RunWith(PowerMockRunner.class)
 @PrepareForTest(TriggerEventResponseHelper.class)
 public class PollingEventStreamListenerTest extends CategoryTest {
   @Mock private BuildTriggerEventMapper mapper;
   @Mock private TriggerEventExecutionHelper triggerEventExecutionHelper;
   @Mock private TriggerEventHistoryRepository triggerEventHistoryRepository;
   @InjectMocks PollingEventStreamListener pollingEventStreamListener;
+
+  @Before
+  public void setUp() {
+    MockitoAnnotations.initMocks(this);
+  }
 
   @Test
   @Owner(developers = BRIJESH)
@@ -76,7 +80,7 @@ public class PollingEventStreamListenerTest extends CategoryTest {
         .when(triggerEventExecutionHelper)
         .processTriggersForActivation(any(), any());
     assertThatThrownBy(() -> pollingEventStreamListener.handleMessage(message));
-    PowerMockito.mockStatic(TriggerEventResponseHelper.class);
+    Mockito.mockStatic(TriggerEventResponseHelper.class);
     pollingEventStreamListener.handleMessage(message);
     verify(triggerEventHistoryRepository, times(1)).save(any());
   }

@@ -19,7 +19,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.Description;
-import org.powermock.core.classloader.MockClassLoader;
+import org.powermock.core.classloader.javassist.JavassistMockClassLoader;
 
 public class ExtendsCategoryEnforcerTest extends CategoryTest {
   private ExtendsCategoryEnforcer extendsCategoryEnforcer;
@@ -53,7 +53,7 @@ public class ExtendsCategoryEnforcerTest extends CategoryTest {
   @Owner(developers = AVMOHAN)
   @Category(UnitTests.class)
   public void shouldNotFailCompliantTestFromDifferentClassloader() throws Exception {
-    ClassLoader powermockCl = new MockClassLoader(null, null, null);
+    ClassLoader powermockCl = new JavassistMockClassLoader(null, null, null);
     assertThatCode(()
                        -> extendsCategoryEnforcer.testStarted(Description.createTestDescription(
                            powermockCl.loadClass(CompliantTest.class.getName()), "testName")))

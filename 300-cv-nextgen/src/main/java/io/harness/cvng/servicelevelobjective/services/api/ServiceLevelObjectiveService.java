@@ -53,5 +53,4 @@ public interface ServiceLevelObjectiveService {
   void sendNotification(ServiceLevelObjective serviceLevelObjective);
   PageResponse<NotificationRuleResponse> getNotificationRules(
       ProjectParams projectParams, String sloIdentifier, PageParams pageParams);
-  void beforeNotificationRuleDelete(ProjectParams projectParams, String notificationRuleRef);
 }

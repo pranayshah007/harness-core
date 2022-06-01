@@ -99,8 +99,7 @@ public class ManifestPerpetualTaskExecutorTest extends DelegateTestBase {
     ArgumentCaptor<RequestBody> captor = ArgumentCaptor.forClass(RequestBody.class);
 
     // Chart versions are published 2 times because of batching.
-    verify(delegateAgentManagerClient, times(2))
-        .publishManifestCollectionResult(anyString(), anyString(), captor.capture());
+    verify(delegateAgentManagerClient, times(2)).publishManifestCollectionResult(anyString(), any(), captor.capture());
 
     Buffer bufferedSink = new Buffer();
     captor.getValue().writeTo(bufferedSink);
@@ -148,7 +147,7 @@ public class ManifestPerpetualTaskExecutorTest extends DelegateTestBase {
     verify(manifestRepositoryService, times(1)).collectManifests(any(ManifestCollectionParams.class));
 
     verify(delegateAgentManagerClient, times(1))
-        .publishManifestCollectionResult(anyString(), anyString(), any(RequestBody.class));
+        .publishManifestCollectionResult(anyString(), any(), any(RequestBody.class));
     verify(call, times(1)).execute();
   }
 
@@ -164,7 +163,7 @@ public class ManifestPerpetualTaskExecutorTest extends DelegateTestBase {
 
     ArgumentCaptor<RequestBody> responseArgumentCaptor = ArgumentCaptor.forClass(RequestBody.class);
     verify(delegateAgentManagerClient, times(1))
-        .publishManifestCollectionResult(anyString(), anyString(), responseArgumentCaptor.capture());
+        .publishManifestCollectionResult(anyString(), any(), responseArgumentCaptor.capture());
     verify(call, times(1)).execute();
 
     Buffer bufferedSink = new Buffer();
@@ -231,7 +230,7 @@ public class ManifestPerpetualTaskExecutorTest extends DelegateTestBase {
                                                                     .setAppManifestId(APP_MANIFEST_ID)
                                                                     .setManifestCollectionParams(bytes)
                                                                     .build();
-    when(delegateAgentManagerClient.publishManifestCollectionResult(anyString(), anyString(), any(RequestBody.class)))
+    when(delegateAgentManagerClient.publishManifestCollectionResult(any(), any(), any(RequestBody.class)))
         .thenReturn(call);
     when(call.execute())
         .thenReturn(throwErrorWhilePublishing

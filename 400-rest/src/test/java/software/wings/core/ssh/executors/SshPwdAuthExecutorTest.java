@@ -189,6 +189,7 @@ public class SshPwdAuthExecutorTest extends WingsBaseTest {
   @Test
   @Owner(developers = YOGESH)
   @Category(UnitTests.class)
+  @Ignore(value = "TODO")
   // Too unstable to keep even with repeats
   public void shouldReturnSuccessForSuccessfulCommandExecution() {
     executor = new ScriptSshExecutor(logCallback, true, configBuilder.but().build());

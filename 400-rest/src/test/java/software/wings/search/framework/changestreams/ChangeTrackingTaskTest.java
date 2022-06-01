@@ -111,7 +111,7 @@ public class ChangeTrackingTaskTest extends WingsBaseTest {
     doAnswer(i -> {
       try {
         ChangeStreamDocument<DBObject> changeStreamDocument = mock(ChangeStreamDocument.class);
-        Consumer<ChangeStreamDocument<DBObject>> changeStreamSubscriberConsumer = i.getArgumentAt(0, Consumer.class);
+        Consumer<ChangeStreamDocument<DBObject>> changeStreamSubscriberConsumer = i.getArgument(0, Consumer.class);
         changeStreamSubscriberConsumer.accept(changeStreamDocument);
         testLatch.countDown();
         Thread.sleep(Long.MAX_VALUE);

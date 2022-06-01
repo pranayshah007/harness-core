@@ -7,6 +7,7 @@
 
 package io.harness.cvng.core.entities;
 
+import static io.harness.cvng.CVNGTestConstants.TIME_FOR_TESTS;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.KANHAIYA;
 
@@ -45,10 +46,10 @@ public class CVNGLogTest extends CategoryTest {
   public void setup() {
     accountId = generateUuid();
     traceableId = generateUuid();
-    requestTime = Instant.now();
-    responseTime = Instant.now().minusSeconds(5);
-    startTime = Instant.now();
-    endTime = Instant.now();
+    requestTime = TIME_FOR_TESTS;
+    responseTime = TIME_FOR_TESTS.minusSeconds(5);
+    startTime = TIME_FOR_TESTS;
+    endTime = TIME_FOR_TESTS;
   }
 
   @Test

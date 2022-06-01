@@ -91,7 +91,6 @@ import java.util.Map;
 import java.util.Set;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -99,9 +98,7 @@ import org.mongodb.morphia.query.Query;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
-@RunWith(PowerMockRunner.class)
 @PrepareForTest(PipelineServiceImpl.class)
 @PowerMockIgnore({"javax.security.*", "javax.net.*"})
 @OwnedBy(CDC)
@@ -994,7 +991,7 @@ public class PipelineServiceImplTest extends WingsBaseTest {
     Pipeline pipeline = Pipeline.builder().pipelineStages(Collections.singletonList(pipelineStage)).build();
     pipeline.setWorkflowIds(Collections.singletonList(WORKFLOW_ID));
 
-    doReturn(workflow).when(mockWorkflowService).readWorkflowWithoutServices(anyString(), eq(WORKFLOW_ID));
+    doReturn(workflow).when(mockWorkflowService).readWorkflowWithoutServices(any(), eq(WORKFLOW_ID));
     pipelineServiceImpl.setServicesAndPipelineVariables(pipeline);
     assertThat(pipeline.isValid()).isFalse();
     assertThat(pipelineStage.isValid()).isFalse();

@@ -19,6 +19,7 @@ import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyListOf;
@@ -258,7 +259,7 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
     doNothing().when(spyRequestHandler).prepareForCanary(canaryDeployRequest, delegateTaskParams, logCallback);
     doReturn(true)
         .when(k8sTaskHelperBase)
-        .doStatusCheck(any(Kubectl.class), eq(k8sCanaryHandlerConfig.getCanaryWorkload().getResourceId()),
+        .doStatusCheck(nullable(Kubectl.class), eq(k8sCanaryHandlerConfig.getCanaryWorkload().getResourceId()),
             eq(delegateTaskParams), eq(logCallback));
     doReturn(Arrays.asList(K8sPod.builder().build()))
         .when(k8sCanaryBaseHandler)
@@ -266,7 +267,7 @@ public class K8sCanaryRequestHandlerTest extends CategoryTest {
 
     K8sDeployResponse k8sDeployResponse =
         spyRequestHandler.executeTask(canaryDeployRequest, delegateTaskParams, iLogStreamingTaskClient, null);
-    verify(k8sCanaryBaseHandler, times(1)).wrapUp(any(Kubectl.class), eq(delegateTaskParams), eq(logCallback));
+    verify(k8sCanaryBaseHandler, times(1)).wrapUp(nullable(Kubectl.class), eq(delegateTaskParams), eq(logCallback));
     verify(k8sTaskHelperBase, times(1))
         .saveReleaseHistoryInConfigMap(kubernetesConfig, releaseName, releaseHistory.getAsYaml());
     K8sCanaryDeployResponse canaryDeployResponse = (K8sCanaryDeployResponse) k8sDeployResponse.getK8sNGTaskResponse();

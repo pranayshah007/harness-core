@@ -9,6 +9,7 @@ package io.harness.cdng.k8s.resources.azure.service;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.MLUKIC;
+import static io.harness.rule.OwnerRule.VLICA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
@@ -24,11 +25,16 @@ import io.harness.beans.IdentifierRef;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.azure.AzureHelperService;
 import io.harness.cdng.k8s.resources.azure.dtos.AzureClustersDTO;
+import io.harness.cdng.k8s.resources.azure.dtos.AzureDeploymentSlotsDTO;
 import io.harness.cdng.k8s.resources.azure.dtos.AzureResourceGroupsDTO;
 import io.harness.cdng.k8s.resources.azure.dtos.AzureSubscriptionsDTO;
+import io.harness.cdng.k8s.resources.azure.dtos.AzureWebAppNamesDTO;
 import io.harness.delegate.beans.azure.response.AzureClustersResponse;
+import io.harness.delegate.beans.azure.response.AzureDeploymentSlotResponse;
+import io.harness.delegate.beans.azure.response.AzureDeploymentSlotsResponse;
 import io.harness.delegate.beans.azure.response.AzureResourceGroupsResponse;
 import io.harness.delegate.beans.azure.response.AzureSubscriptionsResponse;
+import io.harness.delegate.beans.azure.response.AzureWebAppNamesResponse;
 import io.harness.delegate.beans.connector.azureconnector.AzureAuthDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureClientSecretKeyDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
@@ -45,6 +51,7 @@ import io.harness.encryption.SecretRefData;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.rule.Owner;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -63,6 +70,7 @@ public class AzureResourceServiceImplTest extends CategoryTest {
   private static String PROJECT_IDENTIFIER = "projectIdentifier";
   private final String ACR_SUBSCRIPTION_ID = "123456-5432-5432-543213";
   private final String ACR_RESOURCE_GROUP = "test-rg";
+  private final String WEB_APP_NAME = "test-web-app";
   private final String ACR_SECRET_KEY = "secret";
   private final String ACR_SECRET_CERT = "certificate";
   private final String ACR_CLIENT_ID = "098766-5432-3456-765432";
@@ -143,6 +151,77 @@ public class AzureResourceServiceImplTest extends CategoryTest {
     assertThat(azureResourceGroupsDTO.getResourceGroups().get(0).getResourceGroup()).isEqualTo("rg1");
     assertThat(azureResourceGroupsDTO.getResourceGroups().get(1).getResourceGroup()).isEqualTo("rg2");
     assertThat(azureResourceGroupsDTO.getResourceGroups().get(2).getResourceGroup()).isEqualTo("rg3");
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testGetWebAppNamesSuccess() {
+    IdentifierRef identifierRef = IdentifierRef.builder()
+                                      .accountIdentifier(ACCOUNT_ID)
+                                      .identifier("identifier")
+                                      .projectIdentifier(PROJECT_IDENTIFIER)
+                                      .orgIdentifier(ORG_IDENTIFIER)
+                                      .build();
+    AzureConnectorDTO azureConnectorDTO = getSPConnector(AzureSecretType.SECRET_KEY);
+
+    when(azureHelperService.getConnector(identifierRef)).thenReturn(azureConnectorDTO);
+
+    List<String> webAppNames = Arrays.asList("test-web-app-1", "test-web-app-2", "test-web-app-3");
+    when(azureHelperService.executeSyncTask(any(), any(), anyString(), any()))
+        .thenReturn(AzureWebAppNamesResponse.builder()
+                        .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                        .webAppNames(webAppNames)
+                        .build());
+
+    AzureWebAppNamesDTO azureWebAppNamesDTO = azureResourceService.getWebAppNames(
+        identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER, ACR_SUBSCRIPTION_ID, ACR_RESOURCE_GROUP);
+
+    assertThat(azureWebAppNamesDTO).isNotNull();
+    assertThat(azureWebAppNamesDTO.getWebAppNames().size()).isEqualTo(3);
+
+    verify(azureHelperService, times(1)).executeSyncTask(any(), any(), anyString(), any());
+
+    assertThat(azureWebAppNamesDTO.getWebAppNames().get(0)).isEqualTo("test-web-app-1");
+    assertThat(azureWebAppNamesDTO.getWebAppNames().get(1)).isEqualTo("test-web-app-2");
+    assertThat(azureWebAppNamesDTO.getWebAppNames().get(2)).isEqualTo("test-web-app-3");
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testGetWebAppDeploymentSlotsSuccess() {
+    IdentifierRef identifierRef = IdentifierRef.builder()
+                                      .accountIdentifier(ACCOUNT_ID)
+                                      .identifier("identifier")
+                                      .projectIdentifier(PROJECT_IDENTIFIER)
+                                      .orgIdentifier(ORG_IDENTIFIER)
+                                      .build();
+    AzureConnectorDTO azureConnectorDTO = getSPConnector(AzureSecretType.SECRET_KEY);
+
+    when(azureHelperService.getConnector(identifierRef)).thenReturn(azureConnectorDTO);
+
+    List<AzureDeploymentSlotResponse> deploymentSlots =
+        Arrays.asList(AzureDeploymentSlotResponse.builder().name("depSlot-1-name").type("depSlot-1-type").build(),
+            AzureDeploymentSlotResponse.builder().name("depSlot-2-name").type("depSlot-2-type").build());
+    when(azureHelperService.executeSyncTask(any(), any(), anyString()))
+        .thenReturn(AzureDeploymentSlotsResponse.builder()
+                        .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                        .deploymentSlots(deploymentSlots)
+                        .build());
+
+    AzureDeploymentSlotsDTO azureDeploymentSlotsResponse = azureResourceService.getAppServiceDeploymentSlots(
+        identifierRef, ORG_IDENTIFIER, PROJECT_IDENTIFIER, ACR_SUBSCRIPTION_ID, ACR_RESOURCE_GROUP, WEB_APP_NAME);
+
+    assertThat(azureDeploymentSlotsResponse).isNotNull();
+    assertThat(azureDeploymentSlotsResponse.getDeploymentSlots().size()).isEqualTo(2);
+
+    verify(azureHelperService, times(1)).executeSyncTask(any(), any(), anyString());
+
+    assertThat(azureDeploymentSlotsResponse.getDeploymentSlots().get(0).getName()).isEqualTo("depSlot-1-name");
+    assertThat(azureDeploymentSlotsResponse.getDeploymentSlots().get(0).getType()).isEqualTo("depSlot-1-type");
+    assertThat(azureDeploymentSlotsResponse.getDeploymentSlots().get(1).getName()).isEqualTo("depSlot-2-name");
+    assertThat(azureDeploymentSlotsResponse.getDeploymentSlots().get(1).getType()).isEqualTo("depSlot-2-type");
   }
 
   @Test

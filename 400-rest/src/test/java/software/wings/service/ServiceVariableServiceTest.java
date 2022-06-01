@@ -137,6 +137,7 @@ public class ServiceVariableServiceTest extends WingsBaseTest {
     ENCRYPTED_SERVICE_VARIABLE.setUuid(SERVICE_VARIABLE_ID + "2");
     ENCRYPTED_SERVICE_VARIABLE.setAppId(APP_ID);
   }
+
   /**
    * The Query.
    */
@@ -846,6 +847,7 @@ public class ServiceVariableServiceTest extends WingsBaseTest {
         .thenReturn(EncryptedData.builder().encryptedValue("enc".toCharArray()).build());
     when(wingsPersistence.getWithAppId(ServiceVariable.class, APP_ID, SERVICE_VARIABLE_ID)).thenAnswer(new Answer() {
       private int count = 0;
+
       @Override
       public Object answer(InvocationOnMock invocationOnMock) {
         if (count == 0) {
@@ -900,6 +902,7 @@ public class ServiceVariableServiceTest extends WingsBaseTest {
         .thenReturn(EncryptedData.builder().encryptedValue("enc".toCharArray()).build());
     when(wingsPersistence.getWithAppId(ServiceVariable.class, APP_ID, SERVICE_VARIABLE_ID)).thenAnswer(new Answer() {
       private int count = 0;
+
       @Override
       public Object answer(InvocationOnMock invocationOnMock) {
         if (count == 0) {
@@ -942,7 +945,7 @@ public class ServiceVariableServiceTest extends WingsBaseTest {
     variable.setAccountId(ACCOUNT_ID);
     variable.setUuid(SERVICE_VARIABLE_ID);
     when(wingsPersistence.getWithAppId(ServiceVariable.class, APP_ID, SERVICE_VARIABLE_ID)).thenReturn(variable);
-    when(wingsPersistence.get(eq(EncryptedData.class), anyString()))
+    when(wingsPersistence.get(eq(EncryptedData.class), any()))
         .thenReturn(EncryptedData.builder().encryptedValue("enc".toCharArray()).build());
     when(wingsPersistence.delete(any(Query.class))).thenReturn(false);
     when(wingsPersistence.createQuery(ServiceVariable.class)).thenReturn(query);

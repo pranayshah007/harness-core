@@ -394,7 +394,7 @@ public class ScimGroupServiceTest extends WingsBaseTest {
                               .memberIds(Collections.emptyList())
                               .build();
 
-    when(userGroupService.get(eq(account.getUuid()), anyString())).thenReturn(userGroup);
+    when(userGroupService.get(eq(account.getUuid()), any())).thenReturn(userGroup);
     when(wingsPersistence.createQuery(UserGroup.class)).thenReturn(userGroupQuery);
 
     ScimGroup scimGroupCreated = scimGroupService.createGroup(scimGroup, account.getUuid());
@@ -451,7 +451,7 @@ public class ScimGroupServiceTest extends WingsBaseTest {
     User user = new User();
     user.setUuid(generateUuid());
 
-    when(userGroupService.get(eq(account.getUuid()), anyString())).thenReturn(userGroup);
+    when(userGroupService.get(eq(account.getUuid()), any())).thenReturn(userGroup);
     when(wingsPersistence.get(eq(User.class), anyString())).thenReturn(user);
     when(wingsPersistence.createQuery(UserGroup.class)).thenReturn(userGroupQuery);
 

@@ -15,7 +15,7 @@ import static software.wings.beans.Workflow.WorkflowBuilder.aWorkflow;
 import static software.wings.sm.StateExecutionInstance.Builder.aStateExecutionInstance;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.HarnessModule;
@@ -57,7 +57,7 @@ public class PipelineStageExecutionAdvisorTest extends WingsBaseTest {
     StateExecutionInstance stateExecutionInstance = aStateExecutionInstance().build();
     ExecutionEvent executionEvent =
         ExecutionEvent.builder().state(envState).context(new ExecutionContextImpl(stateExecutionInstance)).build();
-    when(workflowService.readWorkflowWithoutServices(anyString(), anyString()))
+    when(workflowService.readWorkflowWithoutServices(any(), any()))
         .thenReturn(aWorkflow().orchestrationWorkflow(aCanaryOrchestrationWorkflow().build()).build());
     ExecutionEventAdvice executionEventAdvice = pipelineStageExecutionAdvisor.onExecutionEvent(executionEvent);
     assertThat(executionEventAdvice).isNotNull();

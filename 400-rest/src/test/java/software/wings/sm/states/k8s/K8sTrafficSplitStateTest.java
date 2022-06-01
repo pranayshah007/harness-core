@@ -16,9 +16,9 @@ import static software.wings.sm.StateType.K8S_TRAFFIC_SPLIT;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyMap;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
@@ -124,7 +124,7 @@ public class K8sTrafficSplitStateTest extends CategoryTest {
     k8sTrafficSplitState.execute(context);
     verify(k8sStateHelper, times(1)).fetchContainerInfrastructureMapping(any(ExecutionContext.class));
     verify(k8sTrafficSplitState, times(1))
-        .queueK8sDelegateTask(any(ExecutionContext.class), any(K8sTaskParameters.class), anyMap());
+        .queueK8sDelegateTask(any(ExecutionContext.class), any(K8sTaskParameters.class), nullable(Map.class));
   }
 
   @Test
@@ -158,7 +158,8 @@ public class K8sTrafficSplitStateTest extends CategoryTest {
 
     ExecutionResponse executionResponse = k8sTrafficSplitState.handleAsyncResponse(context, response);
     assertThat(executionResponse.getExecutionStatus()).isEqualTo(ExecutionStatus.SUCCESS);
-    verify(activityService, times(1)).updateStatus(anyString(), anyString(), any(ExecutionStatus.class));
+    verify(activityService, times(1))
+        .updateStatus(nullable(String.class), nullable(String.class), any(ExecutionStatus.class));
   }
 
   @Test
@@ -173,7 +174,7 @@ public class K8sTrafficSplitStateTest extends CategoryTest {
 
     doThrow(exceptionToBeThrown)
         .when(activityService)
-        .updateStatus(anyString(), anyString(), any(ExecutionStatus.class));
+        .updateStatus(nullable(String.class), nullable(String.class), any(ExecutionStatus.class));
 
     assertThatThrownBy(() -> k8sTrafficSplitState.handleAsyncResponse(context, response)).isSameAs(exceptionToBeThrown);
   }
@@ -190,7 +191,7 @@ public class K8sTrafficSplitStateTest extends CategoryTest {
 
     doThrow(exceptionToBeThrown)
         .when(activityService)
-        .updateStatus(anyString(), anyString(), any(ExecutionStatus.class));
+        .updateStatus(nullable(String.class), nullable(String.class), any(ExecutionStatus.class));
 
     assertThatThrownBy(() -> k8sTrafficSplitState.handleAsyncResponse(context, response))
         .isInstanceOf(InvalidRequestException.class);

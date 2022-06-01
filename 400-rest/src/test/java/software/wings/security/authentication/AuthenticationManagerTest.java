@@ -70,7 +70,6 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.Optional;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Test;
@@ -185,8 +184,7 @@ public class AuthenticationManagerTest extends WingsBaseTest {
 
     when(mockUser.getAccounts()).thenReturn(Arrays.asList(account1, account2));
     when(AUTHENTICATION_UTL.getUser(Matchers.anyString(), any(EnumSet.class))).thenReturn(mockUser);
-    when(USER_SERVICE.getAccountByIdIfExistsElseGetDefaultAccount(any(User.class), Optional.of(anyString())))
-        .thenReturn(account1);
+    when(USER_SERVICE.getAccountByIdIfExistsElseGetDefaultAccount(any(User.class), any())).thenReturn(account1);
     LoginTypeResponse loginTypeResponse = authenticationManager.getLoginTypeResponse("testUser");
     assertThat(loginTypeResponse.getAuthenticationMechanism()).isEqualTo(USER_PASSWORD);
     assertThat(loginTypeResponse.getSSORequest()).isNull();
@@ -221,8 +219,7 @@ public class AuthenticationManagerTest extends WingsBaseTest {
     doNothing().when(failedLoginAttemptCountChecker).check(Mockito.any(User.class));
 
     when(mockUser.getAccounts()).thenReturn(Arrays.asList(account1));
-    when(USER_SERVICE.getAccountByIdIfExistsElseGetDefaultAccount(any(User.class), Optional.of(anyString())))
-        .thenReturn(account1);
+    when(USER_SERVICE.getAccountByIdIfExistsElseGetDefaultAccount(any(User.class), any())).thenReturn(account1);
     when(AUTHENTICATION_UTL.getUser(Matchers.anyString(), any(EnumSet.class))).thenReturn(mockUser);
     try {
       authenticationManager.getLoginTypeResponse("testUser");
@@ -418,7 +415,7 @@ public class AuthenticationManagerTest extends WingsBaseTest {
     doNothing().when(AUTHSERVICE).auditLogin(any(), any());
     when(accountService.get(accountId)).thenReturn(account);
     Call<ResponseDTO<Boolean>> request = mock(Call.class);
-    doReturn(request).when(userMembershipClient).isUserAdmin(anyString(), anyString());
+    doReturn(request).when(userMembershipClient).isUserAdmin(any(), anyString());
     ResponseDTO<Boolean> mockResponse = ResponseDTO.newResponse(true);
     doReturn(Response.success(mockResponse)).when(request).execute();
     assertThat(authenticationManager.loginUsingHarnessPassword(basicToken, accountId)).isEqualTo(authenticatedUser);
@@ -436,13 +433,12 @@ public class AuthenticationManagerTest extends WingsBaseTest {
         + ":password")
                                                       .getBytes());
     AuthenticationResponse authenticationResponse = spy(new AuthenticationResponse(mockUser));
-    when(PASSWORD_BASED_AUTH_HANDLER.authenticate(Matchers.anyString(), Matchers.anyString()))
-        .thenReturn(authenticationResponse);
+    when(PASSWORD_BASED_AUTH_HANDLER.authenticate(any(), any())).thenReturn(authenticationResponse);
     when(AUTHSERVICE.generateBearerTokenForUser(mockUser)).thenReturn(authenticatedUser);
     doNothing().when(AUTHSERVICE).auditLogin(any(), any());
     when(accountService.get(accountId)).thenReturn(account);
     Call<ResponseDTO<Boolean>> request = mock(Call.class);
-    doReturn(request).when(userMembershipClient).isUserAdmin(anyString(), anyString());
+    doReturn(request).when(userMembershipClient).isUserAdmin(any(), anyString());
     ResponseDTO<Boolean> mockResponse = ResponseDTO.newResponse(false);
     doReturn(Response.success(mockResponse)).when(request).execute();
     authenticationManager.loginUsingHarnessPassword(basicToken, accountId);
