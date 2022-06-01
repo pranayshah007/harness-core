@@ -43,10 +43,10 @@ public final class Budget implements PersistentEntity, UuidAware, AccountAccess,
   @Id String uuid;
   @NotBlank @FdIndex String accountId;
   @Size(min = 1, max = 80, message = "for budget name must be between 1 and 80 characters long") @NotBlank String name;
-  @NotNull BudgetScope scope; // referred to as "Applies to" in the UI
-  @NotNull BudgetType type;
-  @NotNull Double budgetAmount;
-  @NotNull BudgetPeriod period;
+  BudgetScope scope; // referred to as "Applies to" in the UI
+  BudgetType type;
+  Double budgetAmount;
+  BudgetPeriod period;
   Double growthRate;
   Double actualCost;
   Double forecastCost;
