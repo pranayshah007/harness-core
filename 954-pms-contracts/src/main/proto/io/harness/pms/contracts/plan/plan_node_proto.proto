@@ -35,4 +35,5 @@ message PlanNodeProto {
   string whenCondition = 16;
   bool skipUnresolvedExpressionsCheck = 17;
   string stageFqn = 18;
+  string executionInputTemplate = 19;
 }

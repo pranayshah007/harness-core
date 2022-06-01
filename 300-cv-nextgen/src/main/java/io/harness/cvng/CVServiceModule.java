@@ -243,20 +243,14 @@ import io.harness.cvng.dashboard.services.impl.TimeSeriesDashboardServiceImpl;
 import io.harness.cvng.migration.impl.CVNGMigrationServiceImpl;
 import io.harness.cvng.migration.service.CVNGMigrationService;
 import io.harness.cvng.notification.beans.NotificationRuleType;
-import io.harness.cvng.notification.channelDetails.CVNGNotificationChannelType;
 import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule.MonitoredServiceNotificationRuleUpdatableEntity;
 import io.harness.cvng.notification.entities.NotificationRule.NotificationRuleUpdatableEntity;
 import io.harness.cvng.notification.entities.SLONotificationRule.SLONotificationRuleUpdatableEntity;
 import io.harness.cvng.notification.services.api.NotificationRuleService;
 import io.harness.cvng.notification.services.impl.NotificationRuleServiceImpl;
-import io.harness.cvng.notification.transformer.EmailNotificationMethodTransformer;
-import io.harness.cvng.notification.transformer.MSTeamsNotificationMethodTransformer;
 import io.harness.cvng.notification.transformer.MonitoredServiceNotificationRuleConditionTransformer;
-import io.harness.cvng.notification.transformer.NotificationMethodTransformer;
 import io.harness.cvng.notification.transformer.NotificationRuleConditionTransformer;
-import io.harness.cvng.notification.transformer.PagerDutyNotificationMethodTransformer;
 import io.harness.cvng.notification.transformer.SLONotificationRuleConditionTransformer;
-import io.harness.cvng.notification.transformer.SlackNotificationMethodTransformer;
 import io.harness.cvng.servicelevelobjective.beans.SLIMetricType;
 import io.harness.cvng.servicelevelobjective.beans.SLOTargetType;
 import io.harness.cvng.servicelevelobjective.entities.RatioServiceLevelIndicator.RatioServiceLevelIndicatorUpdatableEntity;
@@ -797,21 +791,6 @@ public class CVServiceModule extends AbstractModule {
         .in(Scopes.SINGLETON);
     notificationRuleMapBinder.addBinding(NotificationRuleType.MONITORED_SERVICE)
         .to(MonitoredServiceNotificationRuleUpdatableEntity.class)
-        .in(Scopes.SINGLETON);
-    MapBinder<CVNGNotificationChannelType, NotificationMethodTransformer>
-        channelTypeNotificationMethodTransformerMapBinder =
-            MapBinder.newMapBinder(binder(), CVNGNotificationChannelType.class, NotificationMethodTransformer.class);
-    channelTypeNotificationMethodTransformerMapBinder.addBinding(CVNGNotificationChannelType.EMAIL)
-        .to(EmailNotificationMethodTransformer.class)
-        .in(Scopes.SINGLETON);
-    channelTypeNotificationMethodTransformerMapBinder.addBinding(CVNGNotificationChannelType.SLACK)
-        .to(SlackNotificationMethodTransformer.class)
-        .in(Scopes.SINGLETON);
-    channelTypeNotificationMethodTransformerMapBinder.addBinding(CVNGNotificationChannelType.PAGERDUTY)
-        .to(PagerDutyNotificationMethodTransformer.class)
-        .in(Scopes.SINGLETON);
-    channelTypeNotificationMethodTransformerMapBinder.addBinding(CVNGNotificationChannelType.MSTEAMS)
-        .to(MSTeamsNotificationMethodTransformer.class)
         .in(Scopes.SINGLETON);
     bindRetryOnExceptionInterceptor();
   }

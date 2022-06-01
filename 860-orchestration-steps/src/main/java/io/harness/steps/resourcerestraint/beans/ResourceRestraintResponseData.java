@@ -18,4 +18,7 @@ import lombok.Value;
 @OwnedBy(CDC)
 @Value
 @Builder
-public class ResourceRestraintResponseData implements ResponseData {}
+public class ResourceRestraintResponseData implements ResponseData {
+  String resourceRestraintId;
+  String resourceUnit;
+}

@@ -19,6 +19,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyMap;
 import static org.mockito.Matchers.anyString;
@@ -174,11 +175,11 @@ public class K8sRollingBaseHandlerTest extends CategoryTest {
 
     doReturn("3")
         .when(k8sTaskHelperBase)
-        .getLatestRevision(any(Kubectl.class), any(KubernetesResourceId.class), any(K8sDelegateTaskParams.class));
+        .getLatestRevision(nullable(Kubectl.class), any(KubernetesResourceId.class), any(K8sDelegateTaskParams.class));
 
     doReturn(KubernetesResourceId.builder().kind(Kind.Deployment.name()).build()).when(deploymentId).getWorkload();
-    doReturn(KubernetesResourceId.builder().kind(Kind.StatefulSet.name()).build()).when(deploymentId).getWorkload();
-    doReturn(KubernetesResourceId.builder().kind(Kind.DaemonSet.name()).build()).when(deploymentId).getWorkload();
+    doReturn(KubernetesResourceId.builder().kind(Kind.StatefulSet.name()).build()).when(statefulSetId).getWorkload();
+    doReturn(KubernetesResourceId.builder().kind(Kind.DaemonSet.name()).build()).when(daemonSetId).getWorkload();
 
     k8sRollingBaseHandler.updateManagedWorkloadsRevision(delegateTaskParams, release, null);
     verify(deploymentId, times(1)).setRevision("3");

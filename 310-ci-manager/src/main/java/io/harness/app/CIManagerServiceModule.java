@@ -16,9 +16,7 @@ import io.harness.account.AccountClientModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.app.impl.CIYamlSchemaServiceImpl;
-import io.harness.app.impl.STOYamlSchemaServiceImpl;
 import io.harness.app.intfc.CIYamlSchemaService;
-import io.harness.app.intfc.STOYamlSchemaService;
 import io.harness.callback.DelegateCallback;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.callback.MongoDatabase;
@@ -172,7 +170,6 @@ public class CIManagerServiceModule extends AbstractModule {
     bind(HPersistence.class).to(MongoPersistence.class).in(Singleton.class);
     bind(BuildNumberService.class).to(BuildNumberServiceImpl.class);
     bind(CIYamlSchemaService.class).to(CIYamlSchemaServiceImpl.class).in(Singleton.class);
-    bind(STOYamlSchemaService.class).to(STOYamlSchemaServiceImpl.class).in(Singleton.class);
     bind(CIFeatureFlagService.class).to(CIFeatureFlagServiceImpl.class).in(Singleton.class);
     bind(CIOverviewDashboardService.class).to(CIOverviewDashboardServiceImpl.class);
     try {

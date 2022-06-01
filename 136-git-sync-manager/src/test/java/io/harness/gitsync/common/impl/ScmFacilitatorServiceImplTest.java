@@ -25,7 +25,7 @@ import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.exception.ExceptionUtils;
-import io.harness.exception.ScmResourceNotFoundException;
+import io.harness.exception.ScmBadRequestException;
 import io.harness.exception.WingsException;
 import io.harness.gitsync.GitSyncTestBase;
 import io.harness.gitsync.common.dtos.GitBranchesResponseDTO;
@@ -160,7 +160,7 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
       scmFacilitatorService.createNewBranch(
           scope, (ScmConnector) connectorInfo.getConnectorConfig(), branch, defaultBranch);
     } catch (Exception ex) {
-      WingsException exception = ExceptionUtils.cause(ScmResourceNotFoundException.class, ex);
+      WingsException exception = ExceptionUtils.cause(ScmBadRequestException.class, ex);
       assertThat(exception).isNotNull();
       assertThat(exception.getMessage()).isEqualTo(errorMessage);
     }

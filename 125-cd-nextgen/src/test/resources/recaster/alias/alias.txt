@@ -61,6 +61,7 @@ io.harness.cdng.provision.terraform.TerraformPlanStepInfo
 io.harness.cdng.manifest.yaml.HelmChartManifestOutcome
 io.harness.cdng.service.beans.ServiceUseFromStage$Overrides
 io.harness.cdng.provision.terraform.TerraformApplyOutcome
+io.harness.cdng.provision.terraform.outcome.TerraformPlanOutcome
 io.harness.steps.approval.step.harness.HarnessApprovalStepInfo
 io.harness.steps.http.HttpOutcome
 io.harness.cdng.infra.yaml.K8SDirectInfrastructure
@@ -367,3 +368,5 @@ io.harness.cdng.configfile.steps.ConfigFileStepParameters
 io.harness.cdng.configfile.ConfigFileAttributes
 io.harness.cdng.configfile.steps.ConfigFilesOutcome
 io.harness.cdng.manifest.yaml.harness.HarnessStore
+io.harness.cdng.gitops.steps.ClusterStepParameters
+io.harness.steps.customstage.CustomStageSpecParams

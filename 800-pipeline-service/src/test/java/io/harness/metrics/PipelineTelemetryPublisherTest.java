@@ -17,7 +17,6 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.account.AccountClient;
@@ -41,8 +40,9 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -69,7 +69,10 @@ public class PipelineTelemetryPublisherTest extends CategoryTest {
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testRecordTelemetry() {
-    mockForAccountId();
+    List<AccountDTO> accounts = Collections.singletonList(AccountDTO.builder().identifier(acc).build());
+
+    Call<RestResponse<List<AccountDTO>>> requestCall = mock(Call.class);
+    doReturn(requestCall).when(accountClient).getAllAccounts();
 
     long pipelinesCreatedInADay = 20L;
     doReturn(pipelinesCreatedInADay).when(pmsPipelineService).countAllPipelines(any());
@@ -91,28 +94,29 @@ public class PipelineTelemetryPublisherTest extends CategoryTest {
     map.put("pipelines_executed_in_a_day", executionsInADay);
     map.put("total_pipeline_executions", executionsTotal);
 
-    telemetryPublisher.recordTelemetry();
+    try (MockedStatic<RestClientUtils> mockStatic = Mockito.mockStatic(RestClientUtils.class)) {
+      mockStatic.when(() -> RestClientUtils.getResponse(requestCall)).thenReturn(accounts);
 
-    verify(telemetryReporter, times(1))
-        .sendGroupEvent(acc, null, map, Collections.singletonMap(AMPLITUDE, true),
-            TelemetryOption.builder().sendForCommunity(true).build());
+      telemetryPublisher.recordTelemetry();
+
+      verify(telemetryReporter, times(1))
+          .sendGroupEvent(acc, null, map, Collections.singletonMap(AMPLITUDE, true),
+              TelemetryOption.builder().sendForCommunity(true).build());
+    }
   }
 
   @Test
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testGetAccountId() {
-    mockForAccountId();
-    String accountId = telemetryPublisher.getAccountId();
-    assertThat(accountId).isEqualTo(acc);
-  }
-
-  private void mockForAccountId() {
     List<AccountDTO> accounts = Collections.singletonList(AccountDTO.builder().identifier(acc).build());
 
     Call<RestResponse<List<AccountDTO>>> requestCall = mock(Call.class);
     doReturn(requestCall).when(accountClient).getAllAccounts();
-    PowerMockito.mockStatic(RestClientUtils.class);
-    when(RestClientUtils.getResponse(requestCall)).thenReturn(accounts);
+    try (MockedStatic<RestClientUtils> mockStatic = Mockito.mockStatic(RestClientUtils.class)) {
+      mockStatic.when(() -> RestClientUtils.getResponse(requestCall)).thenReturn(accounts);
+      String accountId = telemetryPublisher.getAccountId();
+      assertThat(accountId).isEqualTo(acc);
+    }
   }
 }

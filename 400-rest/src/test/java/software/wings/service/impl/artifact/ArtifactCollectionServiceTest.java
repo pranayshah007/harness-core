@@ -643,11 +643,9 @@ public class ArtifactCollectionServiceTest extends WingsBaseTest {
             .withAccountId(ACCOUNT_ID)
             .build();
     when(settingsService.get(SETTING_ID)).thenReturn(settingAttribute);
-    when(secretManager.getEncryptionDetails(any(), anyString(), anyString())).thenReturn(null);
-    when(awsEcrHelperServiceManager.getEcrImageUrl(any(), any(), anyString(), anyString(), anyString()))
-        .thenReturn("ecrurl.com");
-    when(awsEcrHelperServiceManager.getAmazonEcrAuthToken(any(), any(), anyString(), anyString(), anyString()))
-        .thenReturn("auth_token");
+    when(secretManager.getEncryptionDetails(any(), any(), any())).thenReturn(null);
+    when(awsEcrHelperServiceManager.getEcrImageUrl(any(), any(), any(), any(), any())).thenReturn("ecrurl.com");
+    when(awsEcrHelperServiceManager.getAmazonEcrAuthToken(any(), any(), any(), any(), any())).thenReturn("auth_token");
     ImageDetails imageDetails = artifactCollectionUtils.fetchContainerImageDetails(artifact, WORKFLOW_EXECUTION_ID);
     assertThat(imageDetails).isNotNull();
     assertThat(imageDetails.getName()).isEqualTo("ecrurl.com");

@@ -223,6 +223,7 @@ public class TerraformApplyStepTest extends CategoryTest {
     StepInputPackage stepInputPackage = StepInputPackage.builder().build();
     doReturn("test-account/test-org/test-project/Id").when(terraformStepHelper).generateFullIdentifier(any(), any());
     doReturn(gitFetchFilesConfig).when(terraformStepHelper).getGitFetchFilesConfig(any(), any(), any());
+    doReturn(true).when(cdFeatureFlagHelper).isEnabled("test-account", FeatureName.EXPORT_TF_PLAN_JSON_NG);
     doReturn(EnvironmentType.NON_PROD).when(stepHelper).getEnvironmentType(any());
     mockStatic(StepUtils.class);
     PowerMockito.when(StepUtils.prepareCDTaskRequest(any(), any(), any(), any(), any(), any(), any()))
@@ -237,6 +238,9 @@ public class TerraformApplyStepTest extends CategoryTest {
     TerraformTaskNGParameters taskParameters =
         (TerraformTaskNGParameters) taskDataArgumentCaptor.getValue().getParameters()[0];
     assertThat(taskParameters.getTaskType()).isEqualTo(TFTaskType.APPLY);
+    verify(terraformStepHelper)
+        .cleanupTfPlanJsonForProvisioner(
+            ambiance, applyStepParameters.getPlanStepsFqn(), applyStepParameters.getProvisionerIdentifier().getValue());
   }
   @Test
   @Owner(developers = NAMAN_TALAYCHA)

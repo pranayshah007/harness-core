@@ -20,6 +20,8 @@ import static software.wings.helpers.ext.jenkins.model.ParamPropertyType.Boolean
 import static java.util.stream.Collectors.toList;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.artifacts.jenkins.service.JenkinsRegistryUtils;
+import io.harness.delegate.task.artifacts.mappers.JenkinsRequestResponseMapper;
 import io.harness.exception.ArtifactServerException;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
@@ -68,6 +70,7 @@ public class JenkinsBuildServiceImpl implements JenkinsBuildService {
 
   @Inject private EncryptionService encryptionService;
   @Inject private JenkinsUtils jenkinsUtil;
+  @Inject private JenkinsRegistryUtils jenkinsRegistryUtils;
 
   @Override
   public List<BuildDetails> getBuilds(String appId, ArtifactStreamAttributes artifactStreamAttributes,
@@ -200,9 +203,7 @@ public class JenkinsBuildServiceImpl implements JenkinsBuildService {
       throw new ArtifactServerException("Could not reach Jenkins Server at : " + jenkinsConfig.getJenkinsUrl(), USER);
     }
 
-    Jenkins jenkins = jenkinsUtil.getJenkins(jenkinsConfig);
-
-    return jenkins.isRunning();
+    return jenkinsRegistryUtils.isRunning(JenkinsRequestResponseMapper.toJenkinsInternalConfig(jenkinsConfig));
   }
 
   @Override
@@ -210,8 +211,8 @@ public class JenkinsBuildServiceImpl implements JenkinsBuildService {
     try {
       log.info("Retrieving Job with details for Job: {}", jobName);
       encryptionService.decrypt(jenkinsConfig, encryptionDetails, false);
-      Jenkins jenkins = jenkinsUtil.getJenkins(jenkinsConfig);
-      JobWithDetails jobWithDetails = jenkins.getJobWithDetails(jobName);
+      JobWithDetails jobWithDetails = jenkinsRegistryUtils.getJobWithDetails(
+          JenkinsRequestResponseMapper.toJenkinsInternalConfig(jenkinsConfig), jobName);
       List<JobParameter> parameters = new ArrayList<>();
       if (jobWithDetails != null) {
         JobWithExtendedDetails jobWithExtendedDetails = (JobWithExtendedDetails) jobWithDetails;

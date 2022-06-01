@@ -17,6 +17,9 @@ import io.harness.beans.IdentifierRef;
 import io.harness.common.NGExpressionUtils;
 import io.harness.encryption.ScopeHelper;
 import io.harness.exception.InvalidRequestException;
+import io.harness.gitaware.helper.GitAwareContextHelper;
+import io.harness.gitsync.beans.StoreType;
+import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.gitsync.sdk.EntityGitDetailsMapper;
 import io.harness.gitsync.sdk.EntityValidityDetails;
 import io.harness.ng.core.EntityDetail;
@@ -43,11 +46,22 @@ public class PMSPipelineDtoMapper {
         .yamlPipeline(pipelineEntity.getYaml())
         .version(pipelineEntity.getVersion())
         .modules(pipelineEntity.getFilters().keySet())
-        .gitDetails(EntityGitDetailsMapper.mapEntityGitDetails(pipelineEntity))
-        .entityValidityDetails(pipelineEntity.isEntityInvalid()
-                ? EntityValidityDetails.builder().valid(false).invalidYaml(pipelineEntity.getYaml()).build()
-                : EntityValidityDetails.builder().valid(true).build())
+        .gitDetails(getEntityGitDetails(pipelineEntity))
+        .entityValidityDetails(getEntityValidityDetails(pipelineEntity))
         .build();
+  }
+
+  public EntityGitDetails getEntityGitDetails(PipelineEntity pipelineEntity) {
+    return pipelineEntity.getStoreType() == null ? EntityGitDetailsMapper.mapEntityGitDetails(pipelineEntity)
+        : pipelineEntity.getStoreType() == StoreType.REMOTE
+        ? GitAwareContextHelper.getEntityGitDetailsFromScmGitMetadata()
+        : null;
+  }
+
+  public EntityValidityDetails getEntityValidityDetails(PipelineEntity pipelineEntity) {
+    return pipelineEntity.getStoreType() != null || !pipelineEntity.isEntityInvalid()
+        ? EntityValidityDetails.builder().valid(true).build()
+        : EntityValidityDetails.builder().valid(false).invalidYaml(pipelineEntity.getYaml()).build();
   }
 
   public PipelineEntity toPipelineEntity(String accountId, String orgId, String projectId, String yaml) {
@@ -73,6 +87,22 @@ public class PMSPipelineDtoMapper {
   }
 
   public PMSPipelineSummaryResponseDTO preparePipelineSummary(PipelineEntity pipelineEntity) {
+    return preparePipelineSummary(pipelineEntity, getEntityGitDetails(pipelineEntity));
+  }
+
+  public PMSPipelineSummaryResponseDTO preparePipelineSummaryForListView(PipelineEntity pipelineEntity) {
+    // For List View, getEntityGitDetails(...) method cant be used because for REMOTE pipelines. That is because
+    // GitAwareContextHelper.getEntityGitDetailsFromScmGitMetadata() cannot be used, because there won't be any
+    // SCM Context set in the List call.
+    EntityGitDetails entityGitDetails = pipelineEntity.getStoreType() == null
+        ? EntityGitDetailsMapper.mapEntityGitDetails(pipelineEntity)
+        : pipelineEntity.getStoreType() == StoreType.REMOTE ? GitAwareContextHelper.getEntityGitDetails(pipelineEntity)
+                                                            : null;
+    return preparePipelineSummary(pipelineEntity, entityGitDetails);
+  }
+
+  private PMSPipelineSummaryResponseDTO preparePipelineSummary(
+      PipelineEntity pipelineEntity, EntityGitDetails entityGitDetails) {
     return PMSPipelineSummaryResponseDTO.builder()
         .identifier(pipelineEntity.getIdentifier())
         .description(pipelineEntity.getDescription())
@@ -86,10 +116,10 @@ public class PMSPipelineDtoMapper {
         .modules(pipelineEntity.getFilters().keySet())
         .filters(ModuleInfoMapper.getModuleInfo(pipelineEntity.getFilters()))
         .stageNames(pipelineEntity.getStageNames())
-        .gitDetails(EntityGitDetailsMapper.mapEntityGitDetails(pipelineEntity))
-        .entityValidityDetails(pipelineEntity.isEntityInvalid()
-                ? EntityValidityDetails.builder().valid(false).invalidYaml(pipelineEntity.getYaml()).build()
-                : EntityValidityDetails.builder().valid(true).build())
+        .storeType(pipelineEntity.getStoreType())
+        .connectorRef(pipelineEntity.getConnectorRef())
+        .gitDetails(entityGitDetails)
+        .entityValidityDetails(getEntityValidityDetails(pipelineEntity))
         .build();
   }
 

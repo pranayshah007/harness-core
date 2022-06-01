@@ -20,6 +20,8 @@ service HarnessToGitPushInfoService {
   rpc pushFromHarness(PushInfo) returns (PushResponse);
   rpc pushFile(FileInfo) returns (PushFileResponse);
   rpc isGitSyncEnabledForScope(io.harness.eventsframework.schemas.entity.EntityScopeInfo) returns (IsGitSyncEnabled);
+  rpc isGitSimplificationEnabledForScope(io.harness.eventsframework.schemas.entity.EntityScopeInfo)
+      returns (IsGitSimplificationEnabled);
   rpc getDefaultBranch(RepoDetails) returns (BranchDetails);
   rpc getFile(GetFileRequest) returns (GetFileResponse);
   rpc createFile(CreateFileRequest) returns (CreateFileResponse);
@@ -75,6 +77,10 @@ message PushFileResponse {
 }
 
 message IsGitSyncEnabled {
+  bool enabled = 1;
+}
+
+message IsGitSimplificationEnabled {
   bool enabled = 1;
 }
 

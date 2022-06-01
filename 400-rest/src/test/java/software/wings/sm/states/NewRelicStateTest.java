@@ -503,9 +503,8 @@ public class NewRelicStateTest extends APMStateVerificationTestBase {
     String applicationId = "" + 74878374747L;
 
     String message = "exception occurred";
-    when(newRelicService.resolveApplicationId(anyString(), anyString(), anyString(), anyString()))
-        .thenThrow(new UnexpectedException(message));
-    when(newRelicService.resolveApplicationName(anyString(), anyString(), anyString(), anyString()))
+    when(newRelicService.resolveApplicationId(any(), any(), any(), any())).thenThrow(new UnexpectedException(message));
+    when(newRelicService.resolveApplicationName(any(), any(), any(), any()))
         .thenThrow(new UnexpectedException(message));
     doReturn(applicationId).when(spyState).getResolvedFieldValue(any(), any(), any());
     assertThatThrownBy(() -> spyState.createDataCollectionInfo(executionContext, hosts))

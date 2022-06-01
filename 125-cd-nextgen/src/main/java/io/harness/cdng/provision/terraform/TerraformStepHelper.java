@@ -9,6 +9,8 @@ package io.harness.cdng.provision.terraform;
 
 import static io.harness.cdng.provision.terraform.TerraformPlanCommand.APPLY;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.provision.TerraformConstants.TF_DESTROY_NAME_PREFIX;
 import static io.harness.provision.TerraformConstants.TF_NAME_PREFIX;
 import static io.harness.validation.Validator.notEmptyCheck;
@@ -40,6 +42,7 @@ import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.cdng.provision.terraform.TerraformConfig.TerraformConfigBuilder;
 import io.harness.cdng.provision.terraform.TerraformConfig.TerraformConfigKeys;
 import io.harness.cdng.provision.terraform.TerraformInheritOutput.TerraformInheritOutputBuilder;
+import io.harness.cdng.provision.terraform.output.TerraformPlanJsonOutput;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.validator.scmValidators.GitConfigAuthenticationInfoHelper;
@@ -69,6 +72,7 @@ import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
 import io.harness.persistence.HPersistence;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
@@ -98,6 +102,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
+import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.mongodb.morphia.query.Query;
@@ -315,6 +320,51 @@ public class TerraformStepHelper {
     executionSweepingOutputService.consume(ambiance, inheritOutputName, builder.build(), StepOutcomeGroup.STAGE.name());
   }
 
+  @Nullable
+  public String saveTerraformPlanJsonOutput(
+      Ambiance ambiance, TerraformTaskNGResponse response, String provisionIdentifier) {
+    if (isEmpty(response.getTfPlanJsonFileId())) {
+      return null;
+    }
+
+    TerraformPlanJsonOutput planJsonOutput = TerraformPlanJsonOutput.builder()
+                                                 .provisionerIdentifier(provisionIdentifier)
+                                                 .tfPlanFileId(response.getTfPlanJsonFileId())
+                                                 .tfPlanFileBucket(FileBucket.TERRAFORM_PLAN_JSON.name())
+                                                 .build();
+
+    String outputName = TerraformPlanJsonOutput.getOutputName(provisionIdentifier);
+    executionSweepingOutputService.consume(ambiance, outputName, planJsonOutput, StepCategory.STEP.name());
+
+    return outputName;
+  }
+
+  public void cleanupTfPlanJsonForProvisioner(Ambiance ambiance, List<String> planStepFQNs, String provisioner) {
+    for (String planStepFQN : planStepFQNs) {
+      OptionalSweepingOutput tfPlanJsonSweepingOutput = executionSweepingOutputService.resolveOptional(ambiance,
+          RefObjectUtils.getSweepingOutputRefObject(TerraformPlanJsonOutput.getOutputName(planStepFQN, provisioner)));
+      if (tfPlanJsonSweepingOutput == null || !tfPlanJsonSweepingOutput.isFound()) {
+        continue;
+      }
+
+      TerraformPlanJsonOutput tfPlanJsonOutput = (TerraformPlanJsonOutput) tfPlanJsonSweepingOutput.getOutput();
+      if (isNotEmpty(tfPlanJsonOutput.getProvisionerIdentifier())
+          && provisioner.equals(tfPlanJsonOutput.getProvisionerIdentifier())) {
+        if (isNotEmpty(tfPlanJsonOutput.getTfPlanFileId()) && isNotEmpty(tfPlanJsonOutput.getTfPlanFileBucket())) {
+          try {
+            FileBucket fileBucket = FileBucket.valueOf(tfPlanJsonOutput.getTfPlanFileBucket());
+            log.info("Remove terraform plan json file [{}] from bucket [{}] for provisioner [{}]",
+                tfPlanJsonOutput.getTfPlanFileId(), fileBucket, tfPlanJsonOutput.getProvisionerIdentifier());
+            RestClientUtils.getResponse(fileService.get().deleteFile(tfPlanJsonOutput.getTfPlanFileId(), fileBucket));
+          } catch (Exception e) {
+            log.warn("Failed to remove terraform plan json file [{}] for provisioner [{}]",
+                tfPlanJsonOutput.getTfPlanFileId(), tfPlanJsonOutput.getProvisionerIdentifier(), e);
+          }
+        }
+      }
+    }
+  }
+
   public String getTerraformPlanName(TerraformPlanCommand terraformPlanCommand, Ambiance ambiance) {
     String prefix = TerraformPlanCommand.DESTROY == terraformPlanCommand ? TF_DESTROY_NAME_PREFIX : TF_NAME_PREFIX;
     return format(prefix, ambiance.getPlanExecutionId()).replaceAll("_", "-");
@@ -332,7 +382,7 @@ public class TerraformStepHelper {
   }
 
   public Map<String, String> getEnvironmentVariablesMap(Map<String, Object> inputVariables) {
-    if (EmptyPredicate.isEmpty(inputVariables)) {
+    if (isEmpty(inputVariables)) {
       return new HashMap<>();
     }
     Map<String, String> res = new LinkedHashMap<>();
@@ -343,7 +393,7 @@ public class TerraformStepHelper {
 
   private GitStoreConfig getStoreConfigAtCommitId(StoreConfig storeConfig, String commitId) {
     GitStoreConfig gitStoreConfig = (GitStoreConfig) storeConfig.cloneInternal();
-    if (EmptyPredicate.isEmpty(commitId) || FetchType.COMMIT == gitStoreConfig.getGitFetchType()) {
+    if (isEmpty(commitId) || FetchType.COMMIT == gitStoreConfig.getGitFetchType()) {
       return gitStoreConfig;
     }
     ParameterField<String> commitIdField = ParameterField.createValueField(commitId);
@@ -522,7 +572,7 @@ public class TerraformStepHelper {
 
   public Map<String, Object> parseTerraformOutputs(String terraformOutputString) {
     Map<String, Object> outputs = new LinkedHashMap<>();
-    if (EmptyPredicate.isEmpty(terraformOutputString)) {
+    if (isEmpty(terraformOutputString)) {
       return outputs;
     }
     try {

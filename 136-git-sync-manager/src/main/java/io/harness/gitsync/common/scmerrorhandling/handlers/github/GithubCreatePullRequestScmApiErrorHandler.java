@@ -12,13 +12,15 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.SCMExceptionErrorMessages;
-import io.harness.exception.ScmResourceNotFoundException;
+import io.harness.exception.ScmBadRequestException;
 import io.harness.exception.ScmUnauthorizedException;
 import io.harness.exception.ScmUnexpectedException;
-import io.harness.exception.ScmUnprocessableEntityException;
 import io.harness.exception.WingsException;
 import io.harness.gitsync.common.scmerrorhandling.handlers.ScmApiErrorHandler;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @OwnedBy(PL)
 public class GithubCreatePullRequestScmApiErrorHandler implements ScmApiErrorHandler {
   public static final String CREATE_PULL_REQUEST_FAILURE = "The pull request could not be created in Github. ";
@@ -43,12 +45,13 @@ public class GithubCreatePullRequestScmApiErrorHandler implements ScmApiErrorHan
       case 404:
         throw NestedExceptionUtils.hintWithExplanationException(ScmErrorHints.REPO_NOT_FOUND,
             CREATE_PULL_REQUEST_FAILURE + ScmErrorExplanations.REPO_NOT_FOUND,
-            new ScmResourceNotFoundException(SCMExceptionErrorMessages.REPOSITORY_NOT_FOUND_ERROR));
+            new ScmBadRequestException(SCMExceptionErrorMessages.REPOSITORY_NOT_FOUND_ERROR));
       case 422:
         throw NestedExceptionUtils.hintWithExplanationException(CREATE_PULL_REQUEST_VALIDATION_FAILED_HINT,
             CREATE_PULL_REQUEST_VALIDATION_FAILED_EXPLANATION,
-            new ScmUnprocessableEntityException(SCMExceptionErrorMessages.CREATE_PULL_REQUEST_VALIDATION_FAILED));
+            new ScmBadRequestException(SCMExceptionErrorMessages.CREATE_PULL_REQUEST_VALIDATION_FAILED));
       default:
+        log.error(String.format("Error while creating github pull request: [%s: %s]", statusCode, errorMessage));
         throw new ScmUnexpectedException(errorMessage);
     }
   }

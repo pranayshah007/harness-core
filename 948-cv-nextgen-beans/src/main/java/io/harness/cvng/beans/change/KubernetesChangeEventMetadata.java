@@ -31,6 +31,7 @@ public class KubernetesChangeEventMetadata extends ChangeEventMetadata {
   String reason;
   String message;
   String resourceVersion;
+  String dependentMonitoredService;
   public enum Action { Add, Update, Delete }
   public enum KubernetesResourceType { Deployment, ReplicaSet, Secret, Pod, ConfigMap, StatefulSet }
 

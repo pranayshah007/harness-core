@@ -44,7 +44,6 @@ import static org.assertj.core.data.MapEntry.entry;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
@@ -53,7 +52,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.ArtifactMetadata;
 import io.harness.beans.EmbeddedUser;
 import io.harness.category.element.UnitTests;
-import io.harness.delegate.beans.FileBucket;
 import io.harness.exception.WingsException;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.HQuery;
@@ -164,7 +162,7 @@ public class ArtifactServiceTest extends WingsBaseTest {
   public void setUp() {
     persistence.save(Service.builder().appId(APP_ID).artifactType(ArtifactType.WAR).uuid(SERVICE_ID).build());
     persistence.save(CustomArtifactStream.builder().uuid(ARTIFACT_STREAM_ID).name(ARTIFACT_STREAM_NAME).build());
-    when(appQuery.filter(anyString(), anyObject())).thenReturn(appQuery);
+    when(appQuery.filter(any(), anyObject())).thenReturn(appQuery);
 
     when(appService.exist(APP_ID)).thenReturn(true);
     when(artifactStreamService.get(ARTIFACT_STREAM_ID)).thenReturn(jenkinsArtifactStream);
@@ -392,8 +390,8 @@ public class ArtifactServiceTest extends WingsBaseTest {
       savedArtifact.setArtifactFiles(Lists.newArrayList(artifactFile));
       savedArtifact.setStatus(READY);
       persistence.save(savedArtifact);
-      when(fileService.download(anyString(), any(File.class), any(FileBucket.class))).thenAnswer(invocation -> {
-        File inputFile = invocation.getArgumentAt(1, File.class);
+      when(fileService.download(any(), any(), any())).thenAnswer(invocation -> {
+        File inputFile = invocation.getArgument(1, File.class);
         Files.write("Dummy".getBytes(), inputFile);
         return inputFile;
       });

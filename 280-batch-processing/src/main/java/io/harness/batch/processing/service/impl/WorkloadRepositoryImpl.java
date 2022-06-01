@@ -62,6 +62,8 @@ public class WorkloadRepositoryImpl implements WorkloadRepository {
       saved.get(cacheKey,
           key
           -> (hPersistence.upsert(hPersistence.createQuery(K8sWorkload.class)
+                                      .field(K8sWorkloadKeys.accountId)
+                                      .equal(accountId)
                                       .field(K8sWorkloadKeys.clusterId)
                                       .equal(key.clusterId)
                                       .field(K8sWorkloadKeys.uid)

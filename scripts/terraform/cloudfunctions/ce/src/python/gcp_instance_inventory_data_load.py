@@ -67,19 +67,19 @@ def load_into_main_table(jsonData):
     last_updated_at = datetime.datetime.utcnow()
     query = """MERGE `%s` T
                 USING `%s` S
-                ON T.instanceId = S.instanceId and T.projectNumberPartition = s.projectNumberPartition
+                ON T.instanceId = S.instanceId and T.creationTime = s.creationTime
                 WHEN MATCHED THEN
                   UPDATE SET networkInterfaces = s.networkInterfaces, status = s.status, lastUpdatedAt = '%s', 
                   labels = s.labels, disks = s.disks, lastStartTimestamp = s.lastStartTimestamp
                 WHEN NOT MATCHED THEN
                   INSERT (instanceId, name, creationTime, zone, 
-                    region, machineType, projectId, projectNumber, status, canIpForward,
+                    region, machineType, projectId, status, canIpForward,
                      selfLink, startRestricted, deletionProtection, networkInterfaces, labels, disks,
-                      lastStartTimestamp, lastUpdatedAt, projectNumberPartition) 
+                      lastStartTimestamp, lastUpdatedAt) 
                   VALUES(instanceId, name, creationTime, zone, 
-                    region, machineType, projectId, projectNumber, status, canIpForward,
+                    region, machineType, projectId, status, canIpForward,
                      selfLink, startRestricted, deletionProtection, networkInterfaces, labels, disks, lastStartTimestamp,
-                      lastUpdatedAt, projectNumberPartition) 
+                      lastUpdatedAt) 
                 """ % (jsonData["targetTableId"], jsonData["sourceTableId"], last_updated_at)
     try:
         query_job = client.query(query)

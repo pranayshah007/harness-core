@@ -26,19 +26,30 @@ import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
+import io.harness.pms.contracts.plan.Dependency;
+import io.harness.pms.contracts.plan.PlanCreationContextValue;
+import io.harness.pms.contracts.plan.YamlUpdates;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
 import io.harness.pms.sdk.core.plan.PlanNode;
+import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
+import io.harness.pms.yaml.DependenciesUtils;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.serializer.KryoSerializer;
 import io.harness.utils.YamlPipelineUtils;
+import io.harness.yaml.core.variables.NGServiceOverrides;
 
 import com.google.protobuf.ByteString;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
@@ -69,13 +80,20 @@ public class EnvironmentPlanCreatorHelper {
 
   // TODO: currently this function do not handle runtime inputs value in Environment and Infrastructure Entities. Need
   // to handle this in future
-  public EnvironmentPlanCreatorConfig getResolvedEnvRefs(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, EnvironmentYamlV2 environmentV2, boolean gitOpsEnabled,
-      EnvironmentService environmentService, InfrastructureEntityService infrastructure) {
+  public EnvironmentPlanCreatorConfig getResolvedEnvRefs(PlanCreationContextValue metadata,
+      EnvironmentYamlV2 environmentV2, boolean gitOpsEnabled, String serviceRef, EnvironmentService environmentService,
+      InfrastructureEntityService infrastructure) {
+    String accountIdentifier = metadata.getAccountIdentifier();
+    String orgIdentifier = metadata.getOrgIdentifier();
+    String projectIdentifier = metadata.getProjectIdentifier();
+
     // TODO: check the case when its a runtime value if its possible for it to have here
     Optional<Environment> environment = environmentService.get(
         accountIdentifier, orgIdentifier, projectIdentifier, environmentV2.getEnvironmentRef().getValue(), false);
 
+    // Fetch service overrides
+    NGServiceOverrides serviceOverride =
+        null; // TODO: (prashantSharma) need to make a db call using serviceRef and environmentRef
     String envIdentifier = environmentV2.getEnvironmentRef().getValue();
     if (!environment.isPresent()) {
       throw new InvalidRequestException(
@@ -87,11 +105,11 @@ public class EnvironmentPlanCreatorHelper {
       List<InfrastructureEntity> infrastructureEntityList = getInfraStructureEntityList(
           accountIdentifier, orgIdentifier, projectIdentifier, environmentV2, infrastructure);
       return EnvironmentPlanCreatorConfigMapper.toEnvironmentPlanCreatorConfig(
-          environment.get(), infrastructureEntityList);
+          environment.get(), infrastructureEntityList, serviceOverride);
+    } else {
+      return EnvironmentPlanCreatorConfigMapper.toEnvPlanCreatorConfigWithGitops(
+          environment.get(), environmentV2, serviceOverride);
     }
-    // TODO: need to handle gitOps cluster
-    throw new InvalidRequestException(
-        String.format("Environment with id %s does not exists or has been deleted", envIdentifier));
   }
 
   private List<InfrastructureEntity> getInfraStructureEntityList(String accountIdentifier, String orgIdentifier,
@@ -128,5 +146,47 @@ public class EnvironmentPlanCreatorHelper {
     } catch (IOException e) {
       throw new InvalidRequestException("Invalid environment yaml", e);
     }
+  }
+
+  public static Map<String, ByteString> prepareMetadata(String serviceSpecNodeId, String infraSectionUuid,
+      String environmentUuid, boolean gitOpsEnabled, KryoSerializer kryoSerializer) {
+    Map<String, ByteString> metadataDependency = new HashMap<>();
+
+    metadataDependency.put(YamlTypes.NEXT_UUID, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(serviceSpecNodeId)));
+    metadataDependency.put(
+        YamlTypes.INFRA_SECTION_UUID, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(infraSectionUuid)));
+    metadataDependency.put(YamlTypes.UUID, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(environmentUuid)));
+    metadataDependency.put(
+        YAMLFieldNameConstants.GITOPS_ENABLED, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(gitOpsEnabled)));
+
+    return metadataDependency;
+  }
+
+  public void addEnvironmentV2Dependency(LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap,
+      EnvironmentPlanCreatorConfig environmentPlanCreatorConfig, YamlField originalEnvironmentField,
+      boolean gitOpsEnabled, String environmentUuid, String infraSectionUuid, String serviceSpecNodeUuid,
+      KryoSerializer kryoSerializer) throws IOException {
+    YamlField updatedEnvironmentYamlField = EnvironmentPlanCreatorHelper.fetchEnvironmentPlanCreatorConfigYaml(
+        environmentPlanCreatorConfig, originalEnvironmentField);
+    Map<String, YamlField> environmentYamlFieldMap = new HashMap<>();
+    environmentYamlFieldMap.put(environmentUuid, updatedEnvironmentYamlField);
+
+    // preparing meta data
+    final Dependency envDependency = Dependency.newBuilder()
+                                         .putAllMetadata(prepareMetadata(environmentUuid, infraSectionUuid,
+                                             serviceSpecNodeUuid, gitOpsEnabled, kryoSerializer))
+                                         .build();
+
+    planCreationResponseMap.put(environmentUuid,
+        PlanCreationResponse.builder()
+            .dependencies(DependenciesUtils.toDependenciesProto(environmentYamlFieldMap)
+                              .toBuilder()
+                              .putDependencyMetadata(environmentUuid, envDependency)
+                              .build())
+            .yamlUpdates(YamlUpdates.newBuilder()
+                             .putFqnToYaml(updatedEnvironmentYamlField.getYamlPath(),
+                                 YamlUtils.writeYamlString(updatedEnvironmentYamlField).replace("---\n", ""))
+                             .build())
+            .build());
   }
 }

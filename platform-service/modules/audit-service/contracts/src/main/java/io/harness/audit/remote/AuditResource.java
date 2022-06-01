@@ -25,6 +25,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -65,6 +66,7 @@ import javax.ws.rs.QueryParam;
     })
 public interface AuditResource {
   @POST
+  @Hidden
   @ApiOperation(hidden = true, value = "Create an Audit", nickname = "postAudit")
   @Operation(operationId = "postAuditEvent", summary = "Creates an Audit Event",
       responses =

@@ -17,14 +17,20 @@ public class PolicyEvaluationFailureException extends WingsException {
   private static final String MESSAGE_KEY = "message";
 
   GovernanceMetadata governanceMetadata;
+  String yaml;
 
-  public PolicyEvaluationFailureException(String message, GovernanceMetadata governanceMetadata) {
+  public PolicyEvaluationFailureException(String message, GovernanceMetadata governanceMetadata, String yaml) {
     super(message, null, POLICY_EVALUATION_FAILURE, Level.ERROR, null, null);
     param(MESSAGE_KEY, message);
     this.governanceMetadata = governanceMetadata;
+    this.yaml = yaml;
   }
 
   public GovernanceMetadata getGovernanceMetadata() {
     return governanceMetadata;
+  }
+
+  public String getYaml() {
+    return yaml;
   }
 }

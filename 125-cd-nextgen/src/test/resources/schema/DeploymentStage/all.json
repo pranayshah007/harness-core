@@ -580,12 +580,12 @@
           "oneOf": [
             {
               "required": [
-                "folderPath"
+                "commitId"
               ]
             },
             {
               "required": [
-                "paths"
+                "branch"
               ]
             }
           ]
@@ -594,12 +594,12 @@
           "oneOf": [
             {
               "required": [
-                "commitId"
+                "folderPath"
               ]
             },
             {
               "required": [
-                "branch"
+                "paths"
               ]
             }
           ]
@@ -2000,12 +2000,12 @@
           "oneOf": [
             {
               "required": [
-                "folderPath"
+                "commitId"
               ]
             },
             {
               "required": [
-                "paths"
+                "branch"
               ]
             }
           ]
@@ -2014,12 +2014,12 @@
           "oneOf": [
             {
               "required": [
-                "commitId"
+                "folderPath"
               ]
             },
             {
               "required": [
-                "branch"
+                "paths"
               ]
             }
           ]
@@ -2082,12 +2082,12 @@
           "oneOf": [
             {
               "required": [
-                "folderPath"
+                "commitId"
               ]
             },
             {
               "required": [
-                "paths"
+                "branch"
               ]
             }
           ]
@@ -2096,12 +2096,12 @@
           "oneOf": [
             {
               "required": [
-                "commitId"
+                "folderPath"
               ]
             },
             {
               "required": [
-                "branch"
+                "paths"
               ]
             }
           ]
@@ -2164,12 +2164,12 @@
           "oneOf": [
             {
               "required": [
-                "folderPath"
+                "commitId"
               ]
             },
             {
               "required": [
-                "paths"
+                "branch"
               ]
             }
           ]
@@ -2178,12 +2178,12 @@
           "oneOf": [
             {
               "required": [
-                "commitId"
+                "folderPath"
               ]
             },
             {
               "required": [
-                "branch"
+                "paths"
               ]
             }
           ]
@@ -2410,22 +2410,6 @@
           }
         }
       ],
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "HoldingScope": {
-      "type": "object",
-      "required": [
-        "nodeSetupId",
-        "scope"
-      ],
-      "properties": {
-        "nodeSetupId": {
-          "type": "string"
-        },
-        "scope": {
-          "type": "string"
-        }
-      },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "HttpHeaderConfig": {
@@ -4178,12 +4162,12 @@
           "oneOf": [
             {
               "required": [
-                "tagRegex"
+                "repositoryPort"
               ]
             },
             {
               "required": [
-                "tag"
+                "repositoryUrl"
               ]
             }
           ]
@@ -4192,12 +4176,12 @@
           "oneOf": [
             {
               "required": [
-                "repositoryPort"
+                "tagRegex"
               ]
             },
             {
               "required": [
-                "repositoryUrl"
+                "tag"
               ]
             }
           ]
@@ -4788,12 +4772,12 @@
           "oneOf": [
             {
               "required": [
-                "useFromStage"
+                "environment"
               ]
             },
             {
               "required": [
-                "infrastructureDefinition"
+                "environmentRef"
               ]
             }
           ]
@@ -4802,12 +4786,12 @@
           "oneOf": [
             {
               "required": [
-                "environment"
+                "useFromStage"
               ]
             },
             {
               "required": [
-                "environmentRef"
+                "infrastructureDefinition"
               ]
             }
           ]
@@ -4893,7 +4877,8 @@
             "Nexus3Registry",
             "ArtifactoryRegistry",
             "CustomArtifact",
-            "Acr"
+            "Acr",
+            "Jenkins"
           ]
         }
       },
@@ -5191,7 +5176,13 @@
               ]
             },
             "holdingScope": {
-              "$ref": "#/definitions/HoldingScope"
+              "type": "string",
+              "enum": [
+                "PLAN",
+                "PIPELINE",
+                "STAGE",
+                "STEP_GROUP"
+              ]
             },
             "name": {
               "type": "string"
@@ -5550,7 +5541,12 @@
             },
             {
               "required": [
-                "serviceDefinition"
+                "service"
+              ]
+            },
+            {
+              "required": [
+                "serviceRef"
               ]
             }
           ]
@@ -5564,12 +5560,7 @@
             },
             {
               "required": [
-                "service"
-              ]
-            },
-            {
-              "required": [
-                "serviceRef"
+                "serviceDefinition"
               ]
             }
           ]
@@ -6272,7 +6263,8 @@
             "Nexus3Registry",
             "ArtifactoryRegistry",
             "CustomArtifact",
-            "Acr"
+            "Acr",
+            "Jenkins"
           ]
         }
       },
@@ -7709,6 +7701,16 @@
               }
             ]
           }
+        },
+        "exportTerraformPlanJson": {
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "string"
+            }
+          ]
         },
         "secretManagerRef": {
           "type": "string"

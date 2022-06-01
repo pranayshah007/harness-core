@@ -19,6 +19,8 @@ public enum AuthorizationServiceHeader {
   NG_MANAGER("NextGenManager"),
   BATCH_PROCESSING("BatchProcessing"),
   CI_MANAGER("CIManager"),
+
+  STO_MANAGER("STOManager"),
   CV_NEXT_GEN("CVNextGen"),
   CE_NEXT_GEN("CENextGen"),
   CUSTOM_DASHBOARDS("CustomDashboards"),

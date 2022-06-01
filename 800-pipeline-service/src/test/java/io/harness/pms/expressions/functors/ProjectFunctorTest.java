@@ -35,15 +35,13 @@ import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
-@RunWith(PowerMockRunner.class)
 @OwnedBy(HarnessTeam.PIPELINE)
 @PrepareForTest({SafeHttpCall.class})
 public class ProjectFunctorTest extends CategoryTest {
@@ -65,7 +63,7 @@ public class ProjectFunctorTest extends CategoryTest {
   @Owner(developers = BRIJESH)
   @Category(UnitTests.class)
   public void testBind() throws IOException {
-    PowerMockito.mockStatic(SafeHttpCall.class);
+    MockedStatic<SafeHttpCall> aStatic = Mockito.mockStatic(SafeHttpCall.class);
 
     Optional<ProjectResponse> resData =
         Optional.of(ProjectResponse.builder().project(ProjectDTO.builder().build()).build());
@@ -79,7 +77,7 @@ public class ProjectFunctorTest extends CategoryTest {
     when(projectClient.getProject(anyString(), anyString(), anyString())).thenReturn(null);
     // Should throw exception due to NPE
     assertThatThrownBy(() -> projectFunctor.bind()).isInstanceOf(EngineFunctorException.class);
-    when(SafeHttpCall.execute(any())).thenReturn(responseDTO);
+    aStatic.when(() -> SafeHttpCall.execute(any())).thenReturn(responseDTO);
     assertEquals(projectFunctor.bind(), resData.get().getProject());
   }
 }

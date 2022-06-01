@@ -94,6 +94,13 @@ public class JsonNodeUtils {
     set.forEach(arrayNode::add);
   }
 
+  // To update the json node directly
+  public static JsonNode updatePropertyInObjectNode(JsonNode objectNode, String key, String... values) {
+    deletePropertiesInJsonNode((ObjectNode) objectNode, key);
+    upsertPropertyInObjectNode(objectNode, key, values);
+    return objectNode;
+  }
+
   public static JsonNode deletePropertiesInJsonNode(ObjectNode jsonNode, String... properties) {
     if (isEmpty(properties) || jsonNode == null) {
       return jsonNode;
@@ -114,6 +121,16 @@ public class JsonNodeUtils {
       if (jsonNode.has(property.getKey())) {
         jsonNode.put(property.getKey(), property.getValue());
       }
+    }
+    return jsonNode;
+  }
+
+  public static JsonNode upsertPropertiesInJsonNode(ObjectNode jsonNode, Map<String, String> properties) {
+    if (isEmpty(properties) || jsonNode == null) {
+      return jsonNode;
+    }
+    for (Map.Entry<String, String> property : properties.entrySet()) {
+      jsonNode.put(property.getKey(), property.getValue());
     }
     return jsonNode;
   }

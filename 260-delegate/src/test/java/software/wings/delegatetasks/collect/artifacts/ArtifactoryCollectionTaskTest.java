@@ -12,8 +12,6 @@ import static io.harness.rule.OwnerRule.SRINIVAS;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyMap;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
@@ -78,8 +76,7 @@ public class ArtifactoryCollectionTaskTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldCollectNoMavenStyleFiles() {
     ListNotifyResponseData res = ListNotifyResponseData.Builder.aListNotifyResponseData().build();
-    when(artifactoryService.downloadArtifacts(
-             any(ArtifactoryConfigRequest.class), anyString(), anyMap(), anyString(), anyString(), anyString()))
+    when(artifactoryService.downloadArtifacts(any(ArtifactoryConfigRequest.class), any(), any(), any(), any(), any()))
         .thenReturn(res);
     res = artifactoryCollectionTask.run(taskData.getParameters());
     assertThat(res).isNotNull();

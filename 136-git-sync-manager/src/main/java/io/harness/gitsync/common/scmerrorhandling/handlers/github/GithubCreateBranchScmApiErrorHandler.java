@@ -11,10 +11,9 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.NestedExceptionUtils;
-import io.harness.exception.ScmResourceNotFoundException;
+import io.harness.exception.ScmBadRequestException;
 import io.harness.exception.ScmUnauthorizedException;
 import io.harness.exception.ScmUnexpectedException;
-import io.harness.exception.ScmUnprocessableEntityException;
 import io.harness.exception.WingsException;
 import io.harness.gitsync.common.scmerrorhandling.handlers.ScmApiErrorHandler;
 
@@ -45,15 +44,15 @@ public class GithubCreateBranchScmApiErrorHandler implements ScmApiErrorHandler 
       case 404:
         throw NestedExceptionUtils.hintWithExplanationException(ScmErrorHints.REPO_NOT_FOUND,
             CREATE_BRANCH_FAILED_MESSAGE + ScmErrorExplanations.REPO_NOT_FOUND,
-            new ScmResourceNotFoundException(errorMessage));
+            new ScmBadRequestException(errorMessage));
       case 409:
         throw NestedExceptionUtils.hintWithExplanationException(CREATE_BRANCH_CONFLICT_ERROR_HINT,
             CREATE_BRANCH_FAILED_MESSAGE + CREATE_BRANCH_CONFLICT_ERROR_EXPLANATION,
-            new ScmUnprocessableEntityException(errorMessage));
+            new ScmBadRequestException(errorMessage));
       case 422:
         throw NestedExceptionUtils.hintWithExplanationException(CREATE_BRANCH_UNPROCESSABLE_ENTITY_ERROR_HINT,
             CREATE_BRANCH_FAILED_MESSAGE + CREATE_BRANCH_UNPROCESSABLE_ENTITY_ERROR_EXPLANATION,
-            new ScmUnprocessableEntityException(errorMessage));
+            new ScmBadRequestException(errorMessage));
       default:
         log.error(String.format("Error while creating github branch: [%s: %s]", statusCode, errorMessage));
         throw new ScmUnexpectedException(errorMessage);

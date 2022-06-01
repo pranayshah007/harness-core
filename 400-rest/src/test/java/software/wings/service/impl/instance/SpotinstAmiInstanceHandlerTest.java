@@ -52,7 +52,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
 import static wiremock.com.google.common.collect.Lists.newArrayList;
@@ -132,15 +131,13 @@ public class SpotinstAmiInstanceHandlerTest extends WingsBaseTest {
     doReturn(spotInstSettingAttribute).when(mockSettingService).get(SPOTINST_CLOUD_PROVIDER);
     doReturn(awsSettingAttribute).when(mockSettingService).get(COMPUTE_PROVIDER_SETTING_ID);
 
-    doReturn(anApplication().name(APP_NAME).uuid(APP_ID).accountId(ACCOUNT_ID).build())
-        .when(mockAppService)
-        .get(anyString());
+    doReturn(anApplication().name(APP_NAME).uuid(APP_ID).accountId(ACCOUNT_ID).build()).when(mockAppService).get(any());
     doReturn(anEnvironment().environmentType(EnvironmentType.PROD).name(ENV_NAME).build())
         .when(mockEnvironmentService)
-        .get(anyString(), anyString(), anyBoolean());
+        .get(any(), any(), anyBoolean());
     doReturn(Service.builder().name(SERVICE_NAME).build())
         .when(mockServiceResourceService)
-        .getWithDetails(anyString(), anyString());
+        .getWithDetails(any(), any());
   }
 
   @Test
@@ -172,7 +169,7 @@ public class SpotinstAmiInstanceHandlerTest extends WingsBaseTest {
         .getInstancesForAppAndInframapping(APP_ID, INFRA_MAPPING_ID);
     doReturn(newArrayList(ec2Instance2, ec2Instance3))
         .when(mockSpotinstHelperServiceManager)
-        .listElastigroupInstances(any(), anyList(), any(), anyList(), anyString(), anyString(), anyString());
+        .listElastigroupInstances(any(), anyList(), any(), anyList(), any(), any(), any());
 
     spotinstAmiInstanceHandler.syncInstances(APP_ID, INFRA_MAPPING_ID, InstanceSyncFlow.ITERATOR);
 
@@ -270,7 +267,7 @@ public class SpotinstAmiInstanceHandlerTest extends WingsBaseTest {
         .getInstancesForAppAndInframapping(APP_ID, INFRA_MAPPING_ID);
     doReturn(newArrayList(ec2Instance2, ec2Instance3))
         .when(mockSpotinstHelperServiceManager)
-        .listElastigroupInstances(any(), anyList(), any(), anyList(), anyString(), anyString(), anyString());
+        .listElastigroupInstances(any(), anyList(), any(), anyList(), any(), any(), any());
 
     spotinstAmiInstanceHandler.handleNewDeployment(
         singletonList(deploymentSummary), false, OnDemandRollbackInfo.builder().build());

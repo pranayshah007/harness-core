@@ -9,6 +9,7 @@ package io.harness.pms.plan.execution.handlers;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.executions.plan.PlanService;
 import io.harness.engine.executions.retry.RetryExecutionMetadata;
@@ -33,6 +34,7 @@ import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.mappers.GraphLayoutDtoMapper;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.plan.creation.NodeTypeLookupService;
+import io.harness.pms.plan.execution.StoreTypeMapper;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys;
 import io.harness.pms.plan.execution.beans.dto.GraphLayoutNodeDTO;
@@ -160,6 +162,9 @@ public class ExecutionSummaryCreateEventHandler implements OrchestrationStartObs
             .allowStagesExecution(planExecutionMetadata.isStagesExecutionAllowed())
             .governanceMetadata(planExecution.getGovernanceMetadata())
             .stagesExecutionMetadata(planExecutionMetadata.getStagesExecutionMetadata())
+            .storeType(StoreTypeMapper.fromPipelineStoreType(metadata.getPipelineStoreType()))
+            .connectorRef(
+                EmptyPredicate.isEmpty(metadata.getPipelineConnectorRef()) ? null : metadata.getPipelineConnectorRef())
             .build();
     pmsExecutionSummaryRespository.save(pipelineExecutionSummaryEntity);
     notificationHelper.sendNotification(

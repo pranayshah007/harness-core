@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.sdk.GitSyncApiConstants;
 
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Schema;
 import javax.ws.rs.QueryParam;
@@ -62,6 +63,11 @@ public class GitEntityUpdateInfoDTO {
   @QueryParam(GitSyncApiConstants.CONNECTOR_REF)
   String connectorRef;
   @Parameter(description = GitSyncApiConstants.STORE_TYPE_PARAM_MESSAGE)
+  @Hidden
   @QueryParam(GitSyncApiConstants.STORE_TYPE)
   StoreType storeType;
+  @Parameter(description = "last commit id of the file")
+  @Hidden
+  @QueryParam(GitSyncApiConstants.LAST_COMMIT_ID)
+  String lastCommitId; // used for bitbucket update use-case
 }

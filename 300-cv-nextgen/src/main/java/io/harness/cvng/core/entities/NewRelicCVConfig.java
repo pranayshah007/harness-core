@@ -30,6 +30,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.google.common.base.Preconditions;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -114,6 +115,14 @@ public class NewRelicCVConfig extends MetricCVConfig<NewRelicMetricInfo> {
   @Override
   public Optional<String> maybeGetGroupName() {
     return Optional.ofNullable(groupName);
+  }
+
+  @Override
+  public List<NewRelicMetricInfo> getMetricInfos() {
+    if (metricInfos == null) {
+      return Collections.emptyList();
+    }
+    return metricInfos;
   }
 
   public static class NewRelicCVConfigUpdatableEntity

@@ -25,15 +25,26 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import java.util.concurrent.atomic.AtomicReference;
 
 @OwnedBy(PL)
 public class NGFileServiceModule extends AbstractModule {
+  private static final AtomicReference<NGFileServiceModule> instanceRef = new AtomicReference<>();
+
   private final DataStorageMode dataStorageMode;
   private final String clusterName;
 
-  public NGFileServiceModule(DataStorageMode dataStorageMode, String clusterName) {
+  private NGFileServiceModule(DataStorageMode dataStorageMode, String clusterName) {
     this.dataStorageMode = dataStorageMode;
     this.clusterName = clusterName;
+  }
+
+  public static NGFileServiceModule getInstance(DataStorageMode dataStorageMode, String clusterName) {
+    if (instanceRef.get() == null) {
+      instanceRef.compareAndSet(null, new NGFileServiceModule(dataStorageMode, clusterName));
+    }
+
+    return instanceRef.get();
   }
 
   @Override

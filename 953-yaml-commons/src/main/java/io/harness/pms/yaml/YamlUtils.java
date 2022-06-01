@@ -453,6 +453,9 @@ public class YamlUtils {
 
   public YamlField getMatchingFieldNameFromParentUsingValueAsText(YamlNode parent, String value) {
     for (YamlField field : parent.fields()) {
+      if (parent.getField(field.getName()) == null) {
+        continue;
+      }
       if (value.equals(parent.getField(field.getName()).getNode().getCurrJsonNode().asText())) {
         return field;
       }

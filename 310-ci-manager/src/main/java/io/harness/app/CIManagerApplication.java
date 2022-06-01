@@ -51,6 +51,7 @@ import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.Store;
 import io.harness.persistence.UserProvider;
 import io.harness.pms.contracts.plan.JsonExpansionInfo;
+import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.events.base.PipelineEventConsumerController;
 import io.harness.pms.listener.NgOrchestrationNotifyEventListener;
 import io.harness.pms.sdk.PmsSdkConfiguration;
@@ -58,6 +59,7 @@ import io.harness.pms.sdk.PmsSdkInitHelper;
 import io.harness.pms.sdk.PmsSdkModule;
 import io.harness.pms.sdk.core.SdkDeployMode;
 import io.harness.pms.sdk.core.governance.JsonExpansionHandlerInfo;
+import io.harness.pms.sdk.core.steps.Step;
 import io.harness.pms.sdk.execution.events.facilitators.FacilitatorEventRedisConsumer;
 import io.harness.pms.sdk.execution.events.interrupts.InterruptEventRedisConsumer;
 import io.harness.pms.sdk.execution.events.node.advise.NodeAdviseEventRedisConsumer;
@@ -83,7 +85,6 @@ import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.OrchestrationRegistrars;
 import io.harness.serializer.PersistenceRegistrars;
 import io.harness.serializer.PrimaryVersionManagerRegistrars;
-import io.harness.serializer.StoBeansRegistrars;
 import io.harness.serializer.YamlBeansModuleRegistrars;
 import io.harness.service.impl.DelegateAsyncServiceImpl;
 import io.harness.service.impl.DelegateProgressServiceImpl;
@@ -248,10 +249,7 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
       @Provides
       @Singleton
       List<YamlSchemaRootClass> yamlSchemaRootClasses() {
-        return ImmutableList.<YamlSchemaRootClass>builder()
-            .addAll(CiBeansRegistrars.yamlSchemaRegistrars)
-            .addAll(StoBeansRegistrars.yamlSchemaRegistrars)
-            .build();
+        return ImmutableList.<YamlSchemaRootClass>builder().addAll(CiBeansRegistrars.yamlSchemaRegistrars).build();
       }
     });
 
@@ -277,9 +275,10 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
 
     modules.add(YamlSdkModule.getInstance());
 
-    // Pipeline Service Modules
-    PmsSdkConfiguration pmsSdkConfiguration = getPmsSdkConfiguration(configuration);
-    modules.add(PmsSdkModule.getInstance(pmsSdkConfiguration));
+    PmsSdkConfiguration ciPmsSdkConfiguration = getPmsSdkConfiguration(
+        configuration, ModuleType.CI, ExecutionRegistrar.getEngineSteps(), CIPipelineServiceInfoProvider.class);
+    modules.add(PmsSdkModule.getInstance(ciPmsSdkConfiguration));
+
     modules.add(PipelineServiceUtilityModule.getInstance());
 
     Injector injector = Guice.createInjector(modules);
@@ -344,17 +343,21 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
   }
 
   private void registerPMSSDK(CIManagerConfiguration config, Injector injector) {
-    PmsSdkConfiguration sdkConfig = getPmsSdkConfiguration(config);
-    if (sdkConfig.getDeploymentMode().equals(SdkDeployMode.REMOTE)) {
+    PmsSdkConfiguration ciSDKConfig = getPmsSdkConfiguration(
+        config, ModuleType.CI, ExecutionRegistrar.getEngineSteps(), CIPipelineServiceInfoProvider.class);
+    if (ciSDKConfig.getDeploymentMode().equals(SdkDeployMode.REMOTE)) {
       try {
-        PmsSdkInitHelper.initializeSDKInstance(injector, sdkConfig);
+        PmsSdkInitHelper.initializeSDKInstance(injector, ciSDKConfig);
       } catch (Exception e) {
         throw new GeneralException("Fail to start ci manager because pms sdk registration failed", e);
       }
     }
   }
 
-  private PmsSdkConfiguration getPmsSdkConfiguration(CIManagerConfiguration config) {
+  private PmsSdkConfiguration getPmsSdkConfiguration(CIManagerConfiguration config, ModuleType moduleType,
+      Map<StepType, Class<? extends Step>> engineSteps,
+      Class<? extends io.harness.pms.sdk.core.plan.creation.creators.PipelineServiceInfoProvider>
+          pipelineServiceInfoProviderClass) {
     boolean remote = false;
     if (config.getShouldConfigureWithPMS() != null && config.getShouldConfigureWithPMS()) {
       remote = true;
@@ -362,12 +365,12 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
 
     return PmsSdkConfiguration.builder()
         .deploymentMode(remote ? SdkDeployMode.REMOTE : SdkDeployMode.LOCAL)
-        .moduleType(ModuleType.CI)
-        .pipelineServiceInfoProviderClass(CIPipelineServiceInfoProvider.class)
+        .moduleType(moduleType)
+        .pipelineServiceInfoProviderClass(pipelineServiceInfoProviderClass)
         .grpcServerConfig(config.getPmsSdkGrpcServerConfig())
         .pmsGrpcClientConfig(config.getPmsGrpcClientConfig())
         .filterCreationResponseMerger(new CIFilterCreationResponseMerger())
-        .engineSteps(ExecutionRegistrar.getEngineSteps())
+        .engineSteps(engineSteps)
         .executionSummaryModuleInfoProviderClass(CIModuleInfoProvider.class)
         .engineAdvisers(ExecutionAdvisers.getEngineAdvisers())
         .engineEventHandlersMap(OrchestrationExecutionEventHandlerRegistrar.getEngineEventHandlers())
