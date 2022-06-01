@@ -7,6 +7,8 @@
 
 package io.harness.cvng;
 
+import static io.harness.AuthorizationServiceHeader.CE_NEXT_GEN;
+import static io.harness.AuthorizationServiceHeader.CV_NEXT_GEN;
 import static io.harness.cvng.beans.change.ChangeSourceType.HARNESS_CD;
 import static io.harness.cvng.cdng.services.impl.CVNGNotifyEventListener.CVNG_ORCHESTRATION;
 import static io.harness.eventsframework.EventsFrameworkConstants.SRM_STATEMACHINE_EVENT;
@@ -319,6 +321,7 @@ import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceServi
 import io.harness.cvng.verificationjob.services.api.VerificationJobService;
 import io.harness.cvng.verificationjob.services.impl.VerificationJobInstanceServiceImpl;
 import io.harness.cvng.verificationjob.services.impl.VerificationJobServiceImpl;
+import io.harness.enforcement.client.EnforcementClientModule;
 import io.harness.eventsframework.EventsFrameworkMetadataConstants;
 import io.harness.govern.ProviderMethodInterceptor;
 import io.harness.lock.DistributedLockImplementation;
@@ -406,7 +409,7 @@ public class CVServiceModule extends AbstractModule {
                 .build()));
     install(PrimaryVersionManagerModule.getInstance());
     install(new TemplateResourceClientModule(verificationConfiguration.getTemplateServiceClientConfig(),
-        verificationConfiguration.getTemplateServiceSecret(), AuthorizationServiceHeader.CV_NEXT_GEN.getServiceId()));
+        verificationConfiguration.getTemplateServiceSecret(), CV_NEXT_GEN.getServiceId()));
     bind(HPersistence.class).to(MongoPersistence.class);
     bind(TimeSeriesRecordService.class).to(TimeSeriesRecordServiceImpl.class);
     bind(OrchestrationService.class).to(OrchestrationServiceImpl.class);
@@ -845,7 +848,7 @@ public class CVServiceModule extends AbstractModule {
         .in(Scopes.SINGLETON);
     ServiceHttpClientConfig serviceHttpClientConfig = this.verificationConfiguration.getAuditClientConfig();
     String secret = this.verificationConfiguration.getTemplateServiceSecret();
-    String serviceId = AuthorizationServiceHeader.CV_NEXT_GEN.getServiceId();
+    String serviceId = CV_NEXT_GEN.getServiceId();
     bind(OutboxDao.class).to(OutboxDaoImpl.class);
     bind(OutboxService.class).to(OutboxServiceImpl.class);
     install(new AuditClientModule(
@@ -857,6 +860,9 @@ public class CVServiceModule extends AbstractModule {
         .to(MonitoredServiceOutboxEventHandler.class);
     bind(OutboxEventHandler.class).to(CVServiceOutboxEventHandler.class);
     bindRetryOnExceptionInterceptor();
+    install(EnforcementClientModule.getInstance(verificationConfiguration.getNgManagerClientConfig(),
+        verificationConfiguration.getNgManagerServiceSecret(), CV_NEXT_GEN.getServiceId(),
+        verificationConfiguration.getEnforcementClientConfiguration()));
   }
 
   private void bindChangeSourceUpdatedEntity() {

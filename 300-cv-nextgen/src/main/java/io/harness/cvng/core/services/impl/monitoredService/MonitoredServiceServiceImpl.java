@@ -91,6 +91,8 @@ import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.services.api.SLODashboardService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveService;
+import io.harness.enforcement.client.services.EnforcementClientService;
+import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageResponse;
@@ -179,6 +181,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
   @Inject private NotificationClient notificationClient;
   @Inject private ActivityService activityService;
   @Inject private OutboxService outboxService;
+  @Inject private EnforcementClientService enforcementClientService;
 
   private static final String templateIdentifierName = "monitoredServiceName";
 
@@ -1114,6 +1117,10 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
   @Override
   public HealthMonitoringFlagResponse setHealthMonitoringFlag(
       ProjectParams projectParams, String identifier, boolean enable) {
+    if (enable == true) {
+      enforcementClientService.checkAvailabilityWithIncrement(
+          FeatureRestrictionName.MAX_TOTAL_SERVICES, projectParams.getAccountIdentifier(), 1);
+    }
     MonitoredService monitoredService = getMonitoredService(projectParams, identifier);
     Preconditions.checkNotNull(monitoredService, "Monitored service with identifier %s does not exists", identifier);
     healthSourceService.setHealthMonitoringFlag(projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
