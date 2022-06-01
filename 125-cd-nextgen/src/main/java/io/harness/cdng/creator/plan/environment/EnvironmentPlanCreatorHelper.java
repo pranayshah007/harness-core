@@ -121,9 +121,8 @@ public class EnvironmentPlanCreatorHelper {
   public String mergeEnvironmentInputs(String originalEnvYaml, Map<String, Object> environmentInputs) {
     Map<String, Object> environmentInputYaml = new HashMap<>();
     environmentInputYaml.put(YamlTypes.ENVIRONMENT_YAML, environmentInputs);
-    String mergedEnvYaml = MergeHelper.mergeInputSetFormatYamlToOriginYaml(
+    return MergeHelper.mergeInputSetFormatYamlToOriginYaml(
         originalEnvYaml, YamlPipelineUtils.writeYamlString(environmentInputYaml));
-    return mergedEnvYaml;
   }
 
   private List<InfrastructureEntity> getInfraStructureEntityList(String accountIdentifier, String orgIdentifier,
