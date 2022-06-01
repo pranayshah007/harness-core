@@ -183,8 +183,14 @@ public class ConnectorEntityCRUDStreamListener implements MessageListener {
       case CREATE_ACTION:
         gcpEntityChangeEventService.processGCPEntityCreateEvent(entityChangeDTO);
         break;
+      case UPDATE_ACTION:
+        gcpEntityChangeEventService.processGCPEntityUpdateEvent(entityChangeDTO);
+        break;
+      case DELETE_ACTION:
+        gcpEntityChangeEventService.processGCPEntityDeleteEvent(entityChangeDTO);
+        break;
       default:
-        log.error("Change Event of type %s, not handled", action);
+        log.error("GCP Entity Change Event of type {}, not handled", action);
     }
     return true;
   }

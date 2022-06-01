@@ -48,6 +48,7 @@ import io.harness.plancreator.steps.common.WithDelegateSelector;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.tasks.DelegateTaskRequest;
 import io.harness.pms.contracts.execution.tasks.TaskCategory;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
@@ -94,18 +95,26 @@ public class StepUtils {
 
   public static StepResponse createStepResponseFromChildResponse(Map<String, ResponseData> responseDataMap) {
     StepResponseBuilder responseBuilder = StepResponse.builder().status(Status.SUCCEEDED);
-
+    FailureInfo.Builder failureInfoBuilder = FailureInfo.newBuilder();
     List<Status> childStatuses = new LinkedList<>();
     String nodeExecutionId = "";
-
+    boolean hasFailureInfo = false;
     for (ResponseData responseData : responseDataMap.values()) {
       StepResponseNotifyData responseNotifyData = (StepResponseNotifyData) responseData;
       Status executionStatus = responseNotifyData.getStatus();
       childStatuses.add(executionStatus);
       nodeExecutionId = responseNotifyData.getNodeUuid();
       if (StatusUtils.brokeStatuses().contains(executionStatus)) {
-        responseBuilder.failureInfo(responseNotifyData.getFailureInfo());
+        if (responseNotifyData.getFailureInfo() != null) {
+          failureInfoBuilder.addAllFailureData(responseNotifyData.getFailureInfo().getFailureDataList());
+          failureInfoBuilder.addAllFailureTypes(responseNotifyData.getFailureInfo().getFailureTypesList());
+          failureInfoBuilder.setErrorMessage(responseNotifyData.getFailureInfo().getErrorMessage());
+          hasFailureInfo = true;
+        }
       }
+    }
+    if (hasFailureInfo) {
+      responseBuilder.failureInfo(failureInfoBuilder.build());
     }
     responseBuilder.status(StatusUtils.calculateStatusForNode(childStatuses, nodeExecutionId));
     return responseBuilder.build();

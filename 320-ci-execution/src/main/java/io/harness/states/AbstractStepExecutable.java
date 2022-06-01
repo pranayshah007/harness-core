@@ -10,7 +10,6 @@ package io.harness.states;
 import static io.harness.annotations.dev.HarnessTeam.CI;
 import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.CODE_BASE_CONNECTOR_REF;
 import static io.harness.beans.sweepingoutputs.ContainerPortDetails.PORT_DETAILS;
-import static io.harness.beans.sweepingoutputs.PodCleanupDetails.CLEANUP_DETAILS;
 import static io.harness.beans.sweepingoutputs.StageInfraDetails.STAGE_INFRA_DETAILS;
 import static io.harness.common.CIExecutionConstants.LITE_ENGINE_PORT;
 import static io.harness.common.CIExecutionConstants.TMP_PATH;
@@ -39,10 +38,13 @@ import io.harness.beans.steps.stepinfo.RunTestsStepInfo;
 import io.harness.beans.sweepingoutputs.CodeBaseConnectorRefSweepingOutput;
 import io.harness.beans.sweepingoutputs.ContainerPortDetails;
 import io.harness.beans.sweepingoutputs.ContextElement;
+import io.harness.beans.sweepingoutputs.K8StageInfraDetails;
 import io.harness.beans.sweepingoutputs.StageDetails;
 import io.harness.beans.sweepingoutputs.StageInfraDetails;
 import io.harness.beans.sweepingoutputs.VmStageInfraDetails;
+import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.ci.config.CIExecutionServiceConfig;
+import io.harness.ci.integrationstage.IntegrationStageUtils;
 import io.harness.ci.serializer.PluginCompatibleStepSerializer;
 import io.harness.ci.serializer.PluginStepProtobufSerializer;
 import io.harness.ci.serializer.RunStepProtobufSerializer;
@@ -189,13 +191,14 @@ public abstract class AbstractStepExecutable implements AsyncExecutableWithRbac<
       stringTimeout = (String) timeout.fetchFinalValue();
     }
 
-    StageInfraDetails.Type stageInfraType = getStageInfraType(ambiance);
+    StageInfraDetails stageInfraDetails = getStageInfra(ambiance);
+    StageInfraDetails.Type stageInfraType = stageInfraDetails.getType();
     if (stageInfraType == StageInfraDetails.Type.K8) {
       return executeK8AsyncAfterRbac(ambiance, stepIdentifier, runtimeId, ciStepInfo, stepParametersName, accountId,
-          logKey, timeoutInMillis, stringTimeout);
+          logKey, timeoutInMillis, stringTimeout, (K8StageInfraDetails) stageInfraDetails);
     } else if (stageInfraType == StageInfraDetails.Type.VM) {
-      return executeVmAsyncAfterRbac(
-          ambiance, stepIdentifier, runtimeId, ciStepInfo, accountId, logKey, timeoutInMillis, stringTimeout);
+      return executeVmAsyncAfterRbac(ambiance, stepIdentifier, runtimeId, ciStepInfo, accountId, logKey,
+          timeoutInMillis, stringTimeout, (VmStageInfraDetails) stageInfraDetails);
     } else {
       throw new CIStageExecutionException(format("Invalid infra type: %s", stageInfraType));
     }
@@ -218,10 +221,11 @@ public abstract class AbstractStepExecutable implements AsyncExecutableWithRbac<
 
   private AsyncExecutableResponse executeK8AsyncAfterRbac(Ambiance ambiance, String stepIdentifier, String runtimeId,
       CIStepInfo ciStepInfo, String stepParametersName, String accountId, String logKey, long timeoutInMillis,
-      String stringTimeout) {
+      String stringTimeout, K8StageInfraDetails k8StageInfraDetails) {
     String parkedTaskId = queueParkedDelegateTask(ambiance, timeoutInMillis, accountId, ciDelegateTaskExecutor);
+    OSType os = IntegrationStageUtils.getK8OS(k8StageInfraDetails.getInfrastructure());
     UnitStep unitStep = serialiseStep(ciStepInfo, parkedTaskId, logKey, stepIdentifier,
-        getPort(ambiance, stepIdentifier), accountId, stepParametersName, stringTimeout);
+        getPort(ambiance, stepIdentifier), accountId, stepParametersName, stringTimeout, os);
     String liteEngineTaskId =
         queueK8DelegateTask(ambiance, timeoutInMillis, accountId, ciDelegateTaskExecutor, unitStep, runtimeId);
 
@@ -236,7 +240,8 @@ public abstract class AbstractStepExecutable implements AsyncExecutableWithRbac<
   }
 
   private AsyncExecutableResponse executeVmAsyncAfterRbac(Ambiance ambiance, String stepIdentifier, String runtimeId,
-      CIStepInfo ciStepInfo, String accountId, String logKey, long timeoutInMillis, String stringTimeout) {
+      CIStepInfo ciStepInfo, String accountId, String logKey, long timeoutInMillis, String stringTimeout,
+      VmStageInfraDetails vmStageInfraDetails) {
     OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputResolver.resolveOptional(
         ambiance, RefObjectUtils.getSweepingOutputRefObject(ContextElement.stageDetails));
     if (!optionalSweepingOutput.isFound()) {
@@ -254,13 +259,6 @@ public abstract class AbstractStepExecutable implements AsyncExecutableWithRbac<
       throw new CIStageExecutionException("Ip address in initialise outcome cannot be empty");
     }
 
-    OptionalSweepingOutput optionalInfraSweepingOutput = executionSweepingOutputResolver.resolveOptional(
-        ambiance, RefObjectUtils.getSweepingOutputRefObject(STAGE_INFRA_DETAILS));
-    if (!optionalInfraSweepingOutput.isFound()) {
-      throw new CIStageExecutionException("Stage infra details sweeping output cannot be empty");
-    }
-    VmStageInfraDetails vmStageInfraDetails = (VmStageInfraDetails) optionalInfraSweepingOutput.getOutput();
-
     VmStepInfo vmStepInfo = vmStepSerializer.serialize(ambiance, ciStepInfo, vmStageInfraDetails, stepIdentifier,
         ParameterField.createValueField(Timeout.fromString(stringTimeout)));
     Set<String> secrets = vmStepSerializer.getStepSecrets(vmStepInfo, ambiance);
@@ -276,7 +274,13 @@ public abstract class AbstractStepExecutable implements AsyncExecutableWithRbac<
                                            .logKey(logKey)
                                            .workingDir(vmStageInfraDetails.getWorkDir())
                                            .build();
-    String taskId = queueDelegateTask(ambiance, timeoutInMillis, accountId, ciDelegateTaskExecutor, params);
+    List<String> eligibleToExecuteDelegateIds = new ArrayList<>();
+    if (isNotEmpty(vmDetailsOutcome.getDelegateId())) {
+      eligibleToExecuteDelegateIds.add(vmDetailsOutcome.getDelegateId());
+    }
+    String taskId = queueDelegateTask(ambiance, timeoutInMillis, accountId, ciDelegateTaskExecutor, params,
+        new ArrayList<>(), eligibleToExecuteDelegateIds);
+
     return AsyncExecutableResponse.newBuilder()
         .addCallbackIds(taskId)
         .addAllLogKeys(CollectionUtils.emptyIfNull(singletonList(logKey)))
@@ -313,7 +317,8 @@ public abstract class AbstractStepExecutable implements AsyncExecutableWithRbac<
     String stepIdentifier = AmbianceUtils.obtainStepIdentifier(ambiance);
     log.info("Received response for step {}", stepIdentifier);
 
-    StageInfraDetails.Type stageInfraType = getStageInfraType(ambiance);
+    StageInfraDetails stageInfraDetails = getStageInfra(ambiance);
+    StageInfraDetails.Type stageInfraType = stageInfraDetails.getType();
     if (stageInfraType == StageInfraDetails.Type.K8) {
       return handleK8AsyncResponse(ambiance, stepParameters, responseDataMap);
     } else if (stageInfraType == StageInfraDetails.Type.VM) {
@@ -459,7 +464,7 @@ public abstract class AbstractStepExecutable implements AsyncExecutableWithRbac<
       Ambiance ambiance, StepElementParameters stepParameters, AsyncExecutableResponse executableResponse) {}
 
   private UnitStep serialiseStep(CIStepInfo ciStepInfo, String taskId, String logKey, String stepIdentifier,
-      Integer port, String accountId, String stepName, String timeout) {
+      Integer port, String accountId, String stepName, String timeout, OSType os) {
     switch (ciStepInfo.getNonYamlInfo().getStepInfoType()) {
       case RUN:
         return runStepProtobufSerializer.serializeStepWithStepParameters((RunStepInfo) ciStepInfo, port, taskId, logKey,
@@ -480,7 +485,7 @@ public abstract class AbstractStepExecutable implements AsyncExecutableWithRbac<
       case RESTORE_CACHE_S3:
         return pluginCompatibleStepSerializer.serializeStepWithStepParameters((PluginCompatibleStep) ciStepInfo, port,
             taskId, logKey, stepIdentifier, ParameterField.createValueField(Timeout.fromString(timeout)), accountId,
-            stepName);
+            stepName, os);
       case RUN_TESTS:
         return runTestsStepProtobufSerializer.serializeStepWithStepParameters((RunTestsStepInfo) ciStepInfo, port,
             taskId, logKey, stepIdentifier, ParameterField.createValueField(Timeout.fromString(timeout)), accountId,
@@ -513,11 +518,14 @@ public abstract class AbstractStepExecutable implements AsyncExecutableWithRbac<
             .isLocal(ciExecutionServiceConfig.isLocal())
             .delegateSvcEndpoint(ciExecutionServiceConfig.getDelegateServiceEndpointVariableValue())
             .build();
-    return queueDelegateTask(ambiance, timeout, accountId, executor, params);
+    List<TaskSelector> taskSelectors = fetchDelegateSelector(ambiance);
+    return queueDelegateTask(ambiance, timeout, accountId, executor, params,
+        taskSelectors.stream().map(TaskSelector::getSelector).collect(Collectors.toList()), new ArrayList<>());
   }
 
   private String queueDelegateTask(Ambiance ambiance, long timeout, String accountId, CIDelegateTaskExecutor executor,
-      CIExecuteStepTaskParams ciExecuteStepTaskParams) {
+      CIExecuteStepTaskParams ciExecuteStepTaskParams, List<String> taskSelectors,
+      List<String> eligibleToExecuteDelegateIds) {
     final TaskData taskData = TaskData.builder()
                                   .async(true)
                                   .parked(false)
@@ -531,10 +539,7 @@ public abstract class AbstractStepExecutable implements AsyncExecutableWithRbac<
 
     HDelegateTask task = (HDelegateTask) StepUtils.prepareDelegateTaskInput(accountId, taskData, abstractions);
 
-    List<TaskSelector> taskSelectors = fetchDelegateSelector(ambiance);
-
-    return executor.queueTask(
-        abstractions, task, taskSelectors.stream().map(TaskSelector::getSelector).collect(Collectors.toList()));
+    return executor.queueTask(abstractions, task, taskSelectors, eligibleToExecuteDelegateIds);
   }
 
   private String queueParkedDelegateTask(
@@ -550,7 +555,7 @@ public abstract class AbstractStepExecutable implements AsyncExecutableWithRbac<
     Map<String, String> abstractions = buildAbstractions(ambiance, Scope.PROJECT);
     HDelegateTask task = (HDelegateTask) StepUtils.prepareDelegateTaskInput(accountId, taskData, abstractions);
 
-    return executor.queueTask(abstractions, task, new ArrayList<>());
+    return executor.queueTask(abstractions, task, new ArrayList<>(), new ArrayList<>());
   }
 
   private String getLogKey(Ambiance ambiance) {
@@ -592,21 +597,13 @@ public abstract class AbstractStepExecutable implements AsyncExecutableWithRbac<
         .orElse(null);
   }
 
-  private StageInfraDetails.Type getStageInfraType(Ambiance ambiance) {
+  private StageInfraDetails getStageInfra(Ambiance ambiance) {
     OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputResolver.resolveOptional(
         ambiance, RefObjectUtils.getSweepingOutputRefObject(STAGE_INFRA_DETAILS));
-    if (optionalSweepingOutput.isFound()) {
-      StageInfraDetails stageInfraDetails = (StageInfraDetails) optionalSweepingOutput.getOutput();
-      return stageInfraDetails.getType();
+    if (!optionalSweepingOutput.isFound()) {
+      throw new CIStageExecutionException("Stage infra details sweeping output cannot be empty");
     }
 
-    // At upgrade time, stage infra sweeping output may not be set. Check whether cleanup sweeping output is set or not.
-    OptionalSweepingOutput optionalPodSweepingOutput = executionSweepingOutputResolver.resolveOptional(
-        ambiance, RefObjectUtils.getSweepingOutputRefObject(CLEANUP_DETAILS));
-    if (optionalPodSweepingOutput.isFound()) {
-      return StageInfraDetails.Type.K8;
-    }
-
-    throw new CIStageExecutionException("Unknown stage infra type");
+    return (StageInfraDetails) optionalSweepingOutput.getOutput();
   }
 }

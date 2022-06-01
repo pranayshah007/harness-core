@@ -133,6 +133,22 @@ if [[ "" != "$CI_MANAGER_SERVICE_SECRET" ]]; then
   yq write -i $CONFIG_FILE yamlSchemaClientConfig.yamlSchemaHttpClientMap.ci.secret $CI_MANAGER_SERVICE_SECRET
 fi
 
+if [[ "" != "$STO_MANAGER_BASE_URL" ]]; then
+  yq write -i $CONFIG_FILE yamlSchemaClientConfig.yamlSchemaHttpClientMap.sto.serviceHttpClientConfig.baseUrl $STO_MANAGER_BASE_URL
+fi
+
+if [[ "" != "$STO_MANAGER_SERVICE_CONNECT_TIMEOUT_IN_SECONDS" ]]; then
+  yq write -i $CONFIG_FILE yamlSchemaClientConfig.yamlSchemaHttpClientMap.sto.serviceHttpClientConfig.connectTimeOutSeconds $STO_MANAGER_SERVICE_CONNECT_TIMEOUT_IN_SECONDS
+fi
+
+if [[ "" != "$STO_MANAGER_SERVICE_READ_TIMEOUT_IN_SECONDS" ]]; then
+  yq write -i $CONFIG_FILE yamlSchemaClientConfig.yamlSchemaHttpClientMap.sto.serviceHttpClientConfig.readTimeOutSeconds $STO_MANAGER_SERVICE_READ_TIMEOUT_IN_SECONDS
+fi
+
+if [[ "" != "$STO_MANAGER_SERVICE_SECRET" ]]; then
+  yq write -i $CONFIG_FILE yamlSchemaClientConfig.yamlSchemaHttpClientMap.sto.secret $STO_MANAGER_SERVICE_SECRET
+fi
+
 if [[ "" != "$NG_MANAGER_BASE_URL" ]]; then
   yq write -i $CONFIG_FILE yamlSchemaClientConfig.yamlSchemaHttpClientMap.cd.serviceHttpClientConfig.baseUrl $NG_MANAGER_BASE_URL
 fi
@@ -187,6 +203,14 @@ fi
 
 if [[ "" != "$CI_MANAGER_AUTHORITY" ]]; then
   yq write -i $CONFIG_FILE grpcClientConfigs.ci.authority $CI_MANAGER_AUTHORITY
+fi
+
+if [[ "" != "$STO_MANAGER_TARGET" ]]; then
+  yq write -i $CONFIG_FILE grpcClientConfigs.sto.target $STO_MANAGER_TARGET
+fi
+
+if [[ "" != "$STO_MANAGER_AUTHORITY" ]]; then
+  yq write -i $CONFIG_FILE grpcClientConfigs.sto.authority $STO_MANAGER_AUTHORITY
 fi
 
 if [[ "" != "$NG_MANAGER_GITSYNC_TARGET" ]]; then

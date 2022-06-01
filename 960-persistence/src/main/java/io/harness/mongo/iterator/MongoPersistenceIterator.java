@@ -231,7 +231,7 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
       try {
         semaphore.acquire();
       } catch (InterruptedException e) {
-        log.info("Working on entity was interrupted", e);
+        log.error("Working on entity was interrupted", e);
         iteratorMetricsService.recordIteratorMetrics(iteratorName, ITERATOR_ERROR);
         Thread.currentThread().interrupt();
         return;
@@ -249,13 +249,13 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
 
         long delay = nextIteration == null || nextIteration == 0 ? 0 : startTime - nextIteration;
         try (DelayLogContext ignore2 = new DelayLogContext(delay, OVERRIDE_ERROR)) {
-          log.info("Working on entity");
+          log.debug("Working on entity");
           iteratorMetricsService.recordIteratorMetrics(iteratorName, ITERATOR_WORKING_ON_ENTITY);
           iteratorMetricsService.recordIteratorMetricsWithDuration(
               iteratorName, Duration.ofMillis(delay), ITERATOR_DELAY);
 
           if (delay >= acceptableNoAlertDelay.toMillis()) {
-            log.error(
+            log.debug(
                 "Working on entity but the delay is more than the acceptable {}", acceptableNoAlertDelay.toMillis());
           }
         }
@@ -273,13 +273,13 @@ public class MongoPersistenceIterator<T extends PersistentIterable, F extends Fi
         semaphore.release();
 
         long processTime = currentTimeMillis() - startTime;
-        log.info("Done with entity");
+        log.debug("Done with entity");
         iteratorMetricsService.recordIteratorMetricsWithDuration(
             iteratorName, Duration.ofMillis(processTime), ITERATOR_PROCESSING_TIME);
 
         try (ProcessTimeLogContext ignore2 = new ProcessTimeLogContext(processTime, OVERRIDE_ERROR)) {
           if (acceptableExecutionTime != null && processTime > acceptableExecutionTime.toMillis()) {
-            log.error("Done with entity but took too long acceptable {}", acceptableExecutionTime.toMillis());
+            log.debug("Done with entity but took too long acceptable {}", acceptableExecutionTime.toMillis());
           }
         } catch (Throwable exception) {
           log.error("Exception while recording the processing of entity", exception);

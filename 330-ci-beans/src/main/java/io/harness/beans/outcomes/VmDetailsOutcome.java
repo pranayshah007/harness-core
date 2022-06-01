@@ -30,6 +30,7 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.beans.outcomes.VmDetailsOutcome")
 public class VmDetailsOutcome implements Outcome {
   String ipAddress;
+  String delegateId;
   public static final String VM_DETAILS_OUTCOME = "vmDetailsOutcome";
   @Id @NotNull(groups = {Update.class}) @SchemaIgnore private String uuid;
 }

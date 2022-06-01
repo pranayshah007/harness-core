@@ -30,7 +30,7 @@ import io.harness.eventsframework.entity_crud.project.ProjectEntityChangeDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.AutoLogContext;
 import io.harness.ng.core.api.SecretCrudService;
-import io.harness.utils.featureflaghelper.NGFeatureFlagHelperServiceImpl;
+import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -45,12 +45,12 @@ import org.jetbrains.annotations.NotNull;
 public class SecretEntityCRUDStreamListener implements MessageListener {
   private final SecretCrudService secretCrudService;
   private final SecretEntityCRUDEventHandler secretEntityCRUDEventHandler;
-  private final NGFeatureFlagHelperServiceImpl ngFeatureFlagHelperService;
+  private final NGFeatureFlagHelperService ngFeatureFlagHelperService;
 
   @Inject
   public SecretEntityCRUDStreamListener(SecretCrudService secretCrudService,
       SecretEntityCRUDEventHandler secretEntityCRUDEventHandler,
-      NGFeatureFlagHelperServiceImpl ngFeatureFlagHelperService) {
+      NGFeatureFlagHelperService ngFeatureFlagHelperService) {
     this.secretCrudService = secretCrudService;
     this.secretEntityCRUDEventHandler = secretEntityCRUDEventHandler;
     this.ngFeatureFlagHelperService = ngFeatureFlagHelperService;

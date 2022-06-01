@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.gitsync.serializer.GitSyncSdkRegistrar;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.serializer.AccessControlClientRegistrars;
+import io.harness.serializer.CvNextGenBeansRegistrars;
 import io.harness.serializer.DelegateServiceDriverRegistrars;
 import io.harness.serializer.DelegateTaskRegistrars;
 import io.harness.serializer.KryoRegistrar;
@@ -41,6 +42,7 @@ public class ResourceGroupSerializer {
           .addAll(SMCoreRegistrars.kryoRegistrars)
           .addAll(AccessControlClientRegistrars.kryoRegistrars)
           .add(DelegateTasksKryoRegistrar.class)
+          .addAll(CvNextGenBeansRegistrars.kryoRegistrars)
           .add(DelegateServiceBeansKryoRegistrar.class)
           .build();
 

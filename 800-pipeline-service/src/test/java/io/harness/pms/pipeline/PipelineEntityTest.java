@@ -12,7 +12,7 @@ import static io.harness.rule.OwnerRule.NAMAN;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.category.element.UnitTests;
-import io.harness.gitsync.v2.StoreType;
+import io.harness.gitsync.beans.StoreType;
 import io.harness.rule.Owner;
 
 import org.junit.Test;

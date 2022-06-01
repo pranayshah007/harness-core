@@ -13,6 +13,7 @@ import static io.harness.common.CIExecutionConstants.PLUGIN_ARTIFACT_FILE_VALUE;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.plugin.compatible.PluginCompatibleStep;
 import io.harness.beans.sweepingoutputs.StageInfraDetails.Type;
+import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.execution.CIExecutionConfigService;
@@ -37,7 +38,7 @@ public class PluginCompatibleStepSerializer implements ProtobufStepSerializer<Pl
 
   public UnitStep serializeStepWithStepParameters(PluginCompatibleStep pluginCompatibleStep, Integer port,
       String callbackId, String logKey, String identifier, ParameterField<Timeout> parameterFieldTimeout,
-      String accountId, String stepName) {
+      String accountId, String stepName, OSType os) {
     if (port == null) {
       throw new CIStageExecutionException("Port can not be null");
     }
@@ -57,7 +58,7 @@ public class PluginCompatibleStepSerializer implements ProtobufStepSerializer<Pl
                                 .setImage(CIStepInfoUtils.getPluginCustomStepImage(
                                     pluginCompatibleStep, ciExecutionConfigService, Type.K8, accountId))
                                 .addAllEntrypoint(CIStepInfoUtils.getK8PluginCustomStepEntrypoint(
-                                    pluginCompatibleStep, ciExecutionConfigService, accountId))
+                                    pluginCompatibleStep, ciExecutionConfigService, accountId, os))
                                 .setContext(stepContext)
                                 .addAllEnvVarOutputs(outputVarNames)
                                 .putAllEnvironment(envVarMap)

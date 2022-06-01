@@ -173,7 +173,7 @@ public class ServerlessTaskHelperBase {
     }
 
     StringBuilder sb = new StringBuilder(1024);
-    sb.append("%nFetching files within this path: %n");
+    sb.append("Fetching files within this path: ");
     gitStoreDelegateConfig.getPaths().forEach(
         filePath -> sb.append(color(format("- %s", filePath), Gray)).append(System.lineSeparator()));
     executionLogCallback.saveExecutionLog(sb.toString());
@@ -301,7 +301,7 @@ public class ServerlessTaskHelperBase {
                 format(DOWNLOAD_FROM_ARTIFACTORY_FAILED, artifactoryArtifactConfig.getIdentifier())));
       }
       IOUtils.copy(artifactInputStream, outputStream);
-      executionLogCallback.saveExecutionLog(color("Successfully downloaded artifact..%n", White, Bold));
+      executionLogCallback.saveExecutionLog(color("Successfully downloaded artifact..", White, Bold));
     } catch (Exception e) {
       Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
       log.error("Failure in downloading artifact from artifactory", sanitizedException);

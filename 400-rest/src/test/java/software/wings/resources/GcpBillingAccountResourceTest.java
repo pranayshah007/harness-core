@@ -11,7 +11,7 @@ import static io.harness.rule.OwnerRule.HANTANG;
 
 import static java.lang.String.format;
 import static javax.ws.rs.client.Entity.entity;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.mock;
@@ -110,6 +110,6 @@ public class GcpBillingAccountResourceTest extends CategoryTest {
         .target(format("/billing-accounts/%s/?accountId=%s", billingAccountId, accountId))
         .request()
         .delete();
-    verify(gcpBillingAccountService).delete(eq(accountId), anyString(), eq(billingAccountId));
+    verify(gcpBillingAccountService).delete(eq(accountId), any(), eq(billingAccountId));
   }
 }

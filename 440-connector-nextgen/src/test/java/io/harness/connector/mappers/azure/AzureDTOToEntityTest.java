@@ -24,6 +24,7 @@ import io.harness.connector.entities.embedded.azureconnector.AzureManagedIdentit
 import io.harness.connector.entities.embedded.azureconnector.AzureManualCredential;
 import io.harness.connector.mappers.azuremapper.AzureDTOToEntity;
 import io.harness.delegate.beans.connector.azureconnector.AzureAuthDTO;
+import io.harness.delegate.beans.connector.azureconnector.AzureClientKeyCertDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureClientSecretKeyDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureCredentialDTO;
@@ -59,7 +60,7 @@ public class AzureDTOToEntityTest extends CategoryTest {
   @Test
   @Owner(developers = BUHA)
   @Category(UnitTests.class)
-  public void testManualCredentialsConnectorToConnectorEntity() {
+  public void testManualCredentialsConnectorWithSecretToConnectorEntity() {
     String clientId = "clientId";
     String tenantId = "tenantId";
     SecretRefData keySecretRef = SecretRefData.builder().identifier("secretRef").scope(Scope.ACCOUNT).build();
@@ -89,6 +90,41 @@ public class AzureDTOToEntityTest extends CategoryTest {
     assertThat(azureManualCredential.getClientId()).isEqualTo(clientId);
     assertThat(azureManualCredential.getTenantId()).isEqualTo(tenantId);
     assertThat(azureManualCredential.getSecretKeyRef()).isEqualTo(keySecretRef.toSecretRefStringValue());
+  }
+
+  @Test
+  @Owner(developers = MLUKIC)
+  @Category(UnitTests.class)
+  public void testManualCredentialsConnectorWithCertificateToConnectorEntity() {
+    String clientId = "clientId";
+    String tenantId = "tenantId";
+    SecretRefData secretCertRef = SecretRefData.builder().identifier("certRef").scope(Scope.ACCOUNT).build();
+    AzureAuthDTO azureAuthDTO = AzureAuthDTO.builder()
+                                    .azureSecretType(AzureSecretType.KEY_CERT)
+                                    .credentials(AzureClientKeyCertDTO.builder().clientCertRef(secretCertRef).build())
+                                    .build();
+    AzureCredentialSpecDTO azureCredentialSpecDTO =
+        AzureManualDetailsDTO.builder().clientId(clientId).tenantId(tenantId).authDTO(azureAuthDTO).build();
+
+    AzureCredentialDTO azureCredentialDTO =
+        AzureCredentialDTO.builder().azureCredentialType(MANUAL_CREDENTIALS).config(azureCredentialSpecDTO).build();
+
+    AzureConnectorDTO azureConnectorDTO = AzureConnectorDTO.builder()
+                                              .azureEnvironmentType(AzureEnvironmentType.AZURE)
+                                              .credential(azureCredentialDTO)
+                                              .build();
+    final AzureConfig azureConfig = azureDTOToEntity.toConnectorEntity(azureConnectorDTO);
+
+    assertThat(azureConfig).isNotNull();
+    assertThat(azureConfig.getCredentialType()).isEqualTo(AzureCredentialType.MANUAL_CREDENTIALS);
+    assertThat(azureConfig.getAzureEnvironmentType()).isEqualTo(AzureEnvironmentType.AZURE);
+    assertThat(azureConfig.getCredential()).isNotNull();
+
+    AzureManualCredential azureManualCredential = (AzureManualCredential) azureConfig.getCredential();
+    assertThat(azureManualCredential.getAzureSecretType()).isEqualTo(AzureSecretType.KEY_CERT);
+    assertThat(azureManualCredential.getClientId()).isEqualTo(clientId);
+    assertThat(azureManualCredential.getTenantId()).isEqualTo(tenantId);
+    assertThat(azureManualCredential.getSecretKeyRef()).isEqualTo(secretCertRef.toSecretRefStringValue());
   }
 
   @Test

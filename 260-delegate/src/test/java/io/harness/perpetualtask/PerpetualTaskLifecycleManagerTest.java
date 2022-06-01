@@ -104,7 +104,9 @@ public class PerpetualTaskLifecycleManagerTest extends CategoryTest {
   public void testRunOnceWhenTimeout() {
     PerpetualTaskResponse perpetualTaskResponse =
         PerpetualTaskResponse.builder().responseCode(408).responseMessage("failed").build();
-    when(perpetualTaskExecutor.runOnce(any(), any(), any())).thenThrow(UncheckedTimeoutException.class);
+    when(perpetualTaskExecutor.runOnce(any(), any(), any())).thenAnswer(invocation -> {
+      throw new UncheckedTimeoutException();
+    });
     when(currentlyExecutingPerpetualTasksCount.get()).thenReturn(1);
     perpetualTaskLifecycleManager.call();
     verify(perpetualTaskServiceGrpcClient)
@@ -123,7 +125,7 @@ public class PerpetualTaskLifecycleManagerTest extends CategoryTest {
   public void testRunOnceWhenExceptionWhileExecuting() {
     PerpetualTaskResponse perpetualTaskResponse =
         PerpetualTaskResponse.builder().responseCode(500).responseMessage("failed").build();
-    when(perpetualTaskExecutor.runOnce(any(), any(), any())).thenThrow(Exception.class);
+    when(perpetualTaskExecutor.runOnce(any(), any(), any())).thenAnswer(invocation -> { throw new Exception(); });
     when(currentlyExecutingPerpetualTasksCount.get()).thenReturn(1);
     perpetualTaskLifecycleManager.call();
     verify(perpetualTaskServiceGrpcClient)

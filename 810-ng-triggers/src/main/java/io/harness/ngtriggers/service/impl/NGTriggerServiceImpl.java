@@ -610,12 +610,12 @@ public class NGTriggerServiceImpl implements NGTriggerService {
   }
 
   public MergeInputSetResponseDTOPMS validateInputSetsInternal(TriggerDetails triggerDetails) {
-    if (isEmpty(triggerDetails.getNgTriggerEntity().getPipelineBranchName())) {
+    if (isEmpty(triggerDetails.getNgTriggerConfigV2().getPipelineBranchName())) {
       validatePipelineRef(triggerDetails);
       return null;
     } else {
       NGTriggerEntity ngTriggerEntity = triggerDetails.getNgTriggerEntity();
-      if (isEmpty(ngTriggerEntity.getInputSetRefs())) {
+      if (isEmpty(triggerDetails.getNgTriggerConfigV2().getInputSetRefs())) {
         return null;
       }
       NGTriggerConfigV2 triggerConfigV2 = ngTriggerElementMapper.toTriggerConfigV2(ngTriggerEntity);

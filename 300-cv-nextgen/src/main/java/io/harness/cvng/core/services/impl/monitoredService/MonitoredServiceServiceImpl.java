@@ -76,14 +76,13 @@ import io.harness.cvng.dashboard.services.api.TimeSeriesDashboardService;
 import io.harness.cvng.notification.beans.NotificationRuleRef;
 import io.harness.cvng.notification.beans.NotificationRuleRefDTO;
 import io.harness.cvng.notification.beans.NotificationRuleResponse;
-import io.harness.cvng.notification.beans.NotificationRuleType;
+import io.harness.cvng.notification.channelDetails.CVNGNotificationChannel;
 import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule;
 import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule.MonitoredServiceChangeImpactCondition;
 import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule.MonitoredServiceChangeObservedCondition;
 import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule.MonitoredServiceHealthScoreCondition;
 import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule.MonitoredServiceNotificationRuleCondition;
 import io.harness.cvng.notification.entities.NotificationRule;
-import io.harness.cvng.notification.entities.NotificationRule.CVNGNotificationChannel;
 import io.harness.cvng.notification.services.api.NotificationRuleService;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective;
@@ -128,10 +127,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import javax.ws.rs.NotFoundException;
-import lombok.Builder;
 import lombok.NonNull;
 import lombok.SneakyThrows;
-import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -236,7 +233,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
   }
 
   @SneakyThrows
-  private MonitoredServiceDTO getExpandedMonitoredServiceFromYaml(ProjectParams projectParams, String yaml) {
+  public MonitoredServiceDTO getExpandedMonitoredServiceFromYaml(ProjectParams projectParams, String yaml) {
     String templateResolvedYaml = templateFacade.resolveYaml(projectParams, yaml);
     MonitoredServiceYamlExpressionEvaluator yamlExpressionEvaluator =
         new MonitoredServiceYamlExpressionEvaluator(templateResolvedYaml);
@@ -361,8 +358,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
                                       .projectIdentifier(monitoredService.getProjectIdentifier())
                                       .build();
     updateOperations.set(MonitoredServiceKeys.notificationRuleRefs,
-        notificationRuleService.getNotificationRuleRefs(projectParams, monitoredServiceDTO.getNotificationRuleRefs(),
-            NotificationRuleType.MONITORED_SERVICE, Instant.ofEpochSecond(0)));
+        notificationRuleService.getNotificationRuleRefs(monitoredServiceDTO.getNotificationRuleRefs()));
     validateDependencyMetadata(projectParams, monitoredServiceDTO.getDependencies());
     serviceDependencyService.updateDependencies(
         projectParams, monitoredService.getIdentifier(), monitoredServiceDTO.getDependencies());
@@ -798,9 +794,8 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
             .type(monitoredServiceDTO.getType())
             .enabled(getMonitoredServiceEnableStatus())
             .tags(TagMapper.convertToList(monitoredServiceDTO.getTags()))
-            .notificationRuleRefs(notificationRuleService.getNotificationRuleRefs(projectParams,
-                monitoredServiceDTO.getNotificationRuleRefs(), NotificationRuleType.MONITORED_SERVICE,
-                Instant.ofEpochSecond(0)))
+            .notificationRuleRefs(
+                notificationRuleService.getNotificationRuleRefs(monitoredServiceDTO.getNotificationRuleRefs()))
             .build();
     if (monitoredServiceDTO.getTemplate() != null) {
       monitoredServiceEntity.setTemplateIdentifier(monitoredServiceDTO.getTemplate().getTemplateRef());
@@ -1444,14 +1439,14 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
 
   @Override
   public void sendNotification(MonitoredService monitoredService) {
-    ProjectParams projectParams = ProjectParams.builder()
-                                      .accountIdentifier(monitoredService.getAccountId())
-                                      .orgIdentifier(monitoredService.getOrgIdentifier())
-                                      .projectIdentifier(monitoredService.getProjectIdentifier())
-                                      .build();
     List<NotificationRule> notificationRules = getNotificationRules(monitoredService);
     Map<String, String> templateData =
-        getNotificationTemplateData(projectParams, templateIdentifierName, monitoredService.getName());
+        getNotificationTemplateData(ProjectParams.builder()
+                                        .accountIdentifier(monitoredService.getAccountId())
+                                        .orgIdentifier(monitoredService.getOrgIdentifier())
+                                        .projectIdentifier(monitoredService.getProjectIdentifier())
+                                        .build(),
+            templateIdentifierName, monitoredService.getName());
     Set<String> notificationRuleRefsWithChange = new HashSet<>();
 
     for (NotificationRule notificationRule : notificationRules) {
@@ -1462,7 +1457,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
           CVNGNotificationChannel notificationChannel = notificationRule.getNotificationMethod();
           String templateId = getNotificationTemplateId(notificationRule.getType(), notificationChannel.getType());
           NotificationResult notificationResult =
-              notificationClient.sendNotificationAsync(notificationChannel.toNotificationChannel(
+              notificationClient.sendNotificationAsync(notificationChannel.getSpec().toNotificationChannel(
                   monitoredService.getAccountId(), monitoredService.getOrgIdentifier(),
                   monitoredService.getProjectIdentifier(), templateId, templateData));
           log.info("Notification with Notification ID {} sent", notificationResult.getNotificationId());
@@ -1470,8 +1465,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
         }
       }
     }
-    updateNotificationRuleRefInMonitoredService(
-        projectParams, monitoredService, new ArrayList<>(notificationRuleRefsWithChange));
+    updateNotificationRuleRefInMonitoredService(monitoredService, new ArrayList<>(notificationRuleRefsWithChange));
   }
 
   @Override
@@ -1497,44 +1491,8 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
         .build();
   }
 
-  @Override
-  public void beforeNotificationRuleDelete(ProjectParams projectParams, String notificationRuleRef) {
-    List<MonitoredService> monitoredServices =
-        get(projectParams, Filter.builder().notificationRuleRef(notificationRuleRef).build());
-    Preconditions.checkArgument(isEmpty(monitoredServices),
-        "Deleting notification rule is used in Monitored Services, "
-            + "Please delete the notification rule inside Monitored Services before deleting notification rule. Monitored Services : "
-            + String.join(", ",
-                monitoredServices.stream()
-                    .map(monitoredService -> monitoredService.getName())
-                    .collect(Collectors.toList())));
-  }
-
-  private List<MonitoredService> get(ProjectParams projectParams, Filter filter) {
-    List<MonitoredService> monitoredServiceList =
-        hPersistence.createQuery(MonitoredService.class)
-            .disableValidation()
-            .filter(MonitoredServiceKeys.accountId, projectParams.getAccountIdentifier())
-            .filter(MonitoredServiceKeys.orgIdentifier, projectParams.getOrgIdentifier())
-            .filter(MonitoredServiceKeys.projectIdentifier, projectParams.getProjectIdentifier())
-            .asList();
-    if (filter.getNotificationRuleRef() != null) {
-      monitoredServiceList =
-          monitoredServiceList.stream()
-              .filter(monitoredService
-                  -> monitoredService.getNotificationRuleRefs()
-                          .stream()
-                          .filter(ref -> ref.getNotificationRuleRef().equals(filter.getNotificationRuleRef()))
-                          .collect(Collectors.toList())
-                          .size()
-                      > 0)
-              .collect(Collectors.toList());
-    }
-    return monitoredServiceList;
-  }
-
   private void updateNotificationRuleRefInMonitoredService(
-      ProjectParams projectParams, MonitoredService monitoredService, List<String> notificationRuleRefs) {
+      MonitoredService monitoredService, List<String> notificationRuleRefs) {
     List<NotificationRuleRef> allNotificationRuleRefs = new ArrayList<>();
     List<NotificationRuleRef> notificationRuleRefsWithoutChange =
         monitoredService.getNotificationRuleRefs()
@@ -1546,8 +1504,8 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
             .map(notificationRuleRef
                 -> NotificationRuleRefDTO.builder().notificationRuleRef(notificationRuleRef).enabled(true).build())
             .collect(Collectors.toList());
-    List<NotificationRuleRef> notificationRuleRefsWithChange = notificationRuleService.getNotificationRuleRefs(
-        projectParams, notificationRuleRefDTOs, NotificationRuleType.MONITORED_SERVICE, clock.instant());
+    List<NotificationRuleRef> notificationRuleRefsWithChange =
+        notificationRuleService.getNotificationRuleRefs(notificationRuleRefDTOs);
     allNotificationRuleRefs.addAll(notificationRuleRefsWithChange);
     allNotificationRuleRefs.addAll(notificationRuleRefsWithoutChange);
     UpdateOperations<MonitoredService> updateOperations = hPersistence.createUpdateOperations(MonitoredService.class);
@@ -1578,7 +1536,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
             changeEventType -> changeObservedActivityTypes.addAll(changeEventType.getActivityTypes()));
         return activityService
             .getAnyEventFromListOfActivityTypes(monitoredServiceParams, changeObservedActivityTypes,
-                clock.instant().minus(5, ChronoUnit.MINUTES), clock.instant())
+                clock.instant().minus(10, ChronoUnit.MINUTES), clock.instant())
             .isPresent();
       case CHANGE_IMPACT:
         MonitoredServiceChangeImpactCondition changeImpactCondition = (MonitoredServiceChangeImpactCondition) condition;
@@ -1599,11 +1557,5 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
       default:
         return false;
     }
-  }
-
-  @Value
-  @Builder
-  private static class Filter {
-    String notificationRuleRef;
   }
 }

@@ -599,6 +599,25 @@ public class MonitoredServiceResourceTest extends CvNextGenTestBase {
                    .get();
     assertThat(response.getStatus()).isEqualTo(200);
     assertThat(response.readEntity(String.class)).contains("\"totalItems\":1");
+
+    response = RESOURCES.client()
+                   .target("http://localhost:9998/monitored-service/"
+                       + "MSIdentifier1"
+                       + "/notification-rules")
+                   .queryParam("accountId", builderFactory.getContext().getAccountId())
+                   .queryParam("orgIdentifier", builderFactory.getContext().getOrgIdentifier())
+                   .queryParam("projectIdentifier", builderFactory.getContext().getProjectIdentifier())
+                   .queryParam("pageNumber", 0)
+                   .queryParam("pageSize", 10)
+                   .request(MediaType.APPLICATION_JSON_TYPE)
+                   .get();
+    assertThat(response.getStatus()).isEqualTo(500);
+    assertThat(response.readEntity(String.class))
+        .contains(String.format(
+            "\"message\":\"io.harness.exception.InvalidRequestException: Monitored Service  with identifier MSIdentifier1, "
+                + "accountId %s, orgIdentifier %s and projectIdentifier %s  is not present\"",
+            builderFactory.getContext().getAccountId(), builderFactory.getContext().getOrgIdentifier(),
+            builderFactory.getContext().getProjectIdentifier()));
   }
 
   private static String convertToJson(String yamlString) {

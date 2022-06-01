@@ -9,14 +9,17 @@ package io.harness.notification.remote.dto;
 
 import io.harness.notification.SmtpConfig;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 
 @Data
 @Builder
+@Schema(name = "AccountNotificationSetting", description = "This has the Account Notification settings.")
 public class AccountNotificationSettingDTO {
-  @NotNull String accountId;
+  @Schema(description = "Account Identifier.") @NotNull String accountId;
+  @Schema(description = "Specify if notifications should be sent through Delegate.")
   Boolean sendNotificationViaDelegate;
-  SmtpConfig smtpConfig;
+  @Schema(description = "SMTP configuration.") SmtpConfig smtpConfig;
 }

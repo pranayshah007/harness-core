@@ -49,7 +49,8 @@ public class ServiceStepsHelper {
     List<Level> levels = ambiance.getLevelsList();
     for (int i = levels.size() - 1; i >= 0; i--) {
       Level level = levels.get(i);
-      if (ServiceConfigStep.STEP_TYPE.equals(level.getStepType())) {
+      if (ServiceConfigStep.STEP_TYPE.equals(level.getStepType())
+          || ServiceSectionStep.STEP_TYPE.equals(level.getStepType())) {
         return AmbianceUtils.clone(ambiance, i + 1);
       }
     }

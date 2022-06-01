@@ -128,17 +128,17 @@ public class ServiceYamlHandlerTest extends YamlHandlerTestBase {
     when(appContainerService.getByName(anyString(), anyString()))
         .thenReturn(AppContainer.Builder.anAppContainer().withName("Tomcat 7").build());
     when(serviceResourceService.save(any(), anyBoolean(), anyBoolean()))
-        .thenAnswer(invocationOnMock -> invocationOnMock.getArgumentAt(0, Service.class));
+        .thenAnswer(invocationOnMock -> invocationOnMock.getArgument(0, Service.class));
     when(serviceResourceService.update(any(), anyBoolean()))
-        .thenAnswer(invocationOnMock -> invocationOnMock.getArgumentAt(0, Service.class));
+        .thenAnswer(invocationOnMock -> invocationOnMock.getArgument(0, Service.class));
     when(serviceVariableService.save(any(), anyBoolean()))
-        .thenAnswer(invocationOnMock -> invocationOnMock.getArgumentAt(0, ServiceVariable.class));
+        .thenAnswer(invocationOnMock -> invocationOnMock.getArgument(0, ServiceVariable.class));
     when(appService.get(APP_ID)).thenReturn(application);
     when(yamlHelper.getApplicationIfPresent(ACCOUNT_ID, validYamlFilePath)).thenReturn(Optional.of(application));
     when(yamlHelper.extractEncryptedRecordId(eq("safeharness:some-secret"), anyString())).thenReturn("some-secret");
     when(yamlHelper.extractEncryptedRecordId(eq("amazonkms:other-secret"), anyString())).thenReturn("other-secret");
     when(serviceVariableService.update(any(), anyBoolean()))
-        .thenAnswer(invocationOnMock -> invocationOnMock.getArgumentAt(0, ServiceVariable.class));
+        .thenAnswer(invocationOnMock -> invocationOnMock.getArgument(0, ServiceVariable.class));
     when(customDeploymentTypeService.fetchDeploymentTemplateUri(WingsTestConstants.TEMPLATE_ID))
         .thenReturn("template-uri");
     when(customDeploymentTypeService.fetchDeploymentTemplateIdFromUri(anyString(), eq("template-uri")))

@@ -9,6 +9,7 @@ package software.wings.sm.states.k8s;
 
 import static io.harness.annotations.dev.HarnessModule._870_CG_ORCHESTRATION;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.beans.FeatureName.CLEANUP_INCOMPLETE_CANARY_DEPLOY_RELEASE;
 import static io.harness.beans.FeatureName.NEW_KUBECTL_VERSION;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.exception.WingsException.USER;
@@ -195,6 +196,8 @@ public class K8sCanaryDeploy extends AbstractK8sState {
                 appManifestMap.get(K8sValuesLocation.Service).getSkipVersioningForAllK8sObjects())
             .useLatestKustomizeVersion(isUseLatestKustomizeVersion(context.getAccountId()))
             .useNewKubectlVersion(featureFlagService.isEnabled(NEW_KUBECTL_VERSION, infraMapping.getAccountId()))
+            .cleanUpIncompleteCanaryDeployRelease(
+                featureFlagService.isEnabled(CLEANUP_INCOMPLETE_CANARY_DEPLOY_RELEASE, infraMapping.getAccountId()))
             .build();
 
     return queueK8sDelegateTask(context, k8sTaskParameters, appManifestMap);

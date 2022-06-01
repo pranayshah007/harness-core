@@ -47,7 +47,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.powermock.api.mockito.PowerMockito;
+import org.mockito.Mockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
@@ -77,7 +77,7 @@ public class ApprovalNotificationHandlerImplTest extends CategoryTest {
   public void testSendNotification() {
     String url =
         "https://qa.harness.io/ng/#/account/zEaak-FLS425IEO7OLzMUg/cd/orgs/CV/projects/Brijesh_Dhakar/pipelines/DockerTest/executions/szmvyw4wQR2W4_iKkq9bfQ/pipeline";
-    PowerMockito.mockStatic(NGRestUtils.class);
+    Mockito.mockStatic(NGRestUtils.class);
     Ambiance ambiance = Ambiance.newBuilder()
                             .putSetupAbstractions("accountId", accountId)
                             .putSetupAbstractions("orgIdentifier", orgIdentifier)

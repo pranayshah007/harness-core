@@ -10,6 +10,7 @@ package io.harness.pms.pipeline;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.gitsync.sdk.EntityValidityDetails;
 
@@ -48,4 +49,6 @@ public class PMSPipelineSummaryResponseDTO {
   List<String> stageNames;
   EntityGitDetails gitDetails;
   EntityValidityDetails entityValidityDetails;
+  StoreType storeType;
+  String connectorRef;
 }

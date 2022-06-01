@@ -64,8 +64,8 @@ public class ArtifactStreamServiceBindingServiceTest extends WingsBaseTest {
     when(appService.getAccountIdByAppId(APP_ID)).thenReturn(ACCOUNT_ID);
 
     when(serviceResourceService.removeArtifactStreamId(any(), any())).thenAnswer(invocation -> {
-      Service service = invocation.getArgumentAt(0, Service.class);
-      String artifactStreamId = invocation.getArgumentAt(1, String.class);
+      Service service = invocation.getArgument(0, Service.class);
+      String artifactStreamId = invocation.getArgument(1, String.class);
       List<String> artifactStreamIds = service.getArtifactStreamIds();
       if (EmptyPredicate.isEmpty(artifactStreamId) || !artifactStreamIds.contains(artifactStreamId)) {
         return service;

@@ -37,6 +37,7 @@ import static io.harness.delegate.message.MessageConstants.DELEGATE_START_GRPC;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_STOP_ACQUIRING;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_STOP_GRPC;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_SWITCH_STORAGE;
+import static io.harness.delegate.message.MessageConstants.DELEGATE_TOKEN_NAME;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_UPGRADE_NEEDED;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_UPGRADE_PENDING;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_UPGRADE_STARTED;
@@ -438,6 +439,32 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   @SuppressWarnings("unchecked")
   public void run(final boolean watched, final boolean isImmutableDelegate) {
     this.isImmutableDelegate = isImmutableDelegate;
+
+    try {
+      // Initialize delegate process in background.
+      backgroundExecutor.submit(() -> { initDelegateProcess(watched); });
+
+      if (!this.isImmutableDelegate) {
+        // Wait till we receive notify event.
+        log.info("Waiting indefinitely for stop event");
+        synchronized (waiter) {
+          while (waiter.get()) {
+            waiter.wait();
+          }
+        }
+        log.info("Got stop message from watcher, shutting down now");
+        clearData();
+      }
+
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      log.error("Exception while starting/running delegate", e);
+    } catch (Exception e) {
+      log.error("Exception while starting/running delegate", e);
+    }
+  }
+
+  private void initDelegateProcess(final boolean watched) {
     try {
       accountId = delegateConfiguration.getAccountId();
       if (perpetualTaskWorker != null) {
@@ -644,20 +671,6 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
           delegateLogService.registerLogSanitizer(new GenericLogSanitizer(new HashSet<>(localSecrets.values())));
         }
       }
-
-      if (!this.isImmutableDelegate) {
-        synchronized (waiter) {
-          while (waiter.get()) {
-            waiter.wait();
-          }
-        }
-
-        clearData();
-      }
-
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-      log.error("Exception while starting/running delegate", e);
     } catch (RuntimeException | IOException e) {
       log.error("Exception while starting/running delegate", e);
     }
@@ -717,6 +730,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       URIBuilder uriBuilder =
           new URIBuilder(delegateConfiguration.getManagerUrl().replace("/api/", "/stream/") + "delegate/" + accountId)
               .addParameter("delegateId", delegateId)
+              .addParameter("delegateTokenName", DelegateAgentCommonVariables.getDelegateTokenName())
               .addParameter("delegateConnectionId", delegateConnectionId)
               .addParameter("token", tokenGenerator.getToken("https", "localhost", 9090, HOST_NAME))
               .addParameter("sequenceNum", getSequenceNumForEcsDelegate())
@@ -1503,13 +1517,14 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       statusData.put(DELEGATE_SHUTDOWN_PENDING, !acquireTasks.get());
       // dont pass null delegateId, instead pass "Unregistered" as delegateId
       statusData.put(DELEGATE_ID, getDelegateId().orElse(UNREGISTERED));
+      statusData.put(DELEGATE_TOKEN_NAME, DelegateAgentCommonVariables.getDelegateTokenName());
       if (switchStorage.get() && !switchStorageMsgSent) {
         statusData.put(DELEGATE_SWITCH_STORAGE, TRUE);
         log.info("Switch storage message sent");
         switchStorageMsgSent = true;
       }
       if (sendJreInformationToWatcher) {
-        log.debug("Sending Delegate JRE: {} MigrateTo JRE: {} to watcher", System.getProperty(JAVA_VERSION),
+        log.info("Sending Delegate JRE: {} MigrateTo JRE: {} to watcher", System.getProperty(JAVA_VERSION),
             migrateToJreVersion);
         statusData.put(DELEGATE_JRE_VERSION, System.getProperty(JAVA_VERSION));
         statusData.put(MIGRATE_TO_JRE_VERSION, migrateToJreVersion);

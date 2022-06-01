@@ -58,9 +58,9 @@ import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyMap;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
@@ -673,11 +673,11 @@ public class PcfMapRouteStateTest extends WingsBaseTest {
     assertThat(executionResponse.getExecutionStatus()).isEqualTo(ExecutionStatus.SUCCESS);
     assertThat(executionResponse.getStateExecutionData().getStatus()).isEqualTo(ExecutionStatus.SUCCESS);
 
-    doThrow(WingsException.class).when(activityService).updateStatus(any(), any(), any());
+    doAnswer(invocation -> { throw new WingsException(""); }).when(activityService).updateStatus(any(), any(), any());
     assertThatThrownBy(() -> pcfRouteSwapState.handleAsyncResponse(context, ImmutableMap.of(ACTIVITY_ID, response)))
         .isInstanceOf(WingsException.class);
 
-    doThrow(Exception.class).when(activityService).updateStatus(any(), any(), any());
+    doAnswer(invocation -> { throw new Exception(); }).when(activityService).updateStatus(any(), any(), any());
     assertThatThrownBy(() -> pcfRouteSwapState.handleAsyncResponse(context, ImmutableMap.of(ACTIVITY_ID, response)))
         .isInstanceOf(InvalidRequestException.class);
   }

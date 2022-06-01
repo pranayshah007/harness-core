@@ -10,7 +10,7 @@ package software.wings.sm.states;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.ExecutionStatus.FAILED;
 import static io.harness.beans.ExecutionStatus.SUCCESS;
-import static io.harness.beans.FeatureName.DISABLE_ARTIFACT_COLLECTION;
+import static io.harness.beans.FeatureName.ARTIFACT_COLLECTION_CONFIGURABLE;
 import static io.harness.beans.OrchestrationWorkflowType.BUILD;
 import static io.harness.rule.OwnerRule.AADITI;
 import static io.harness.rule.OwnerRule.GEORGE;
@@ -36,6 +36,7 @@ import static software.wings.utils.WingsTestConstants.SETTING_ID;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyMap;
@@ -241,7 +242,7 @@ public class ArtifactCollectionStateTest extends CategoryTest {
     ExecutionResponse executionResponse = artifactCollectionState.execute(executionContext);
     assertThat(executionResponse).isNotNull().hasFieldOrPropertyWithValue("async", true);
     verify(artifactStreamService).get(ARTIFACT_STREAM_ID);
-    verify(delayEventHelper).delay(anyInt(), any());
+    verify(delayEventHelper).delay(anyLong(), any());
   }
 
   @Test
@@ -251,7 +252,7 @@ public class ArtifactCollectionStateTest extends CategoryTest {
     artifactCollectionState.handleAsyncResponse(executionContext,
         ImmutableMap.of(
             ACTIVITY_ID, ArtifactCollectionExecutionData.builder().artifactStreamId(ARTIFACT_STREAM_ID).build()));
-    verify(workflowExecutionService).refreshBuildExecutionSummary(anyString(), any());
+    verify(workflowExecutionService).refreshBuildExecutionSummary(any(), any());
   }
 
   @Test
@@ -264,7 +265,7 @@ public class ArtifactCollectionStateTest extends CategoryTest {
     artifactCollectionState.handleAsyncResponse(executionContext,
         ImmutableMap.of(
             ACTIVITY_ID, ArtifactCollectionExecutionData.builder().artifactStreamId(ARTIFACT_STREAM_ID).build()));
-    verify(workflowExecutionService).refreshBuildExecutionSummary(anyString(), any());
+    verify(workflowExecutionService).refreshBuildExecutionSummary(any(), any());
   }
 
   @Test
@@ -278,7 +279,7 @@ public class ArtifactCollectionStateTest extends CategoryTest {
     artifactCollectionState.handleAsyncResponse(executionContext,
         ImmutableMap.of(
             ACTIVITY_ID, ArtifactCollectionExecutionData.builder().artifactStreamId(ARTIFACT_STREAM_ID).build()));
-    verify(workflowExecutionService).refreshBuildExecutionSummary(anyString(), any());
+    verify(workflowExecutionService).refreshBuildExecutionSummary(any(), any());
   }
 
   @Test
@@ -327,7 +328,7 @@ public class ArtifactCollectionStateTest extends CategoryTest {
         .thenReturn(anArtifact().withAppId(APP_ID).withStatus(Status.APPROVED).build());
     artifactCollectionState.execute(executionContext);
     verify(artifactStreamService).get(ARTIFACT_STREAM_ID);
-    verify(workflowExecutionService).refreshBuildExecutionSummary(anyString(), any());
+    verify(workflowExecutionService).refreshBuildExecutionSummary(any(), any());
   }
 
   @Test
@@ -344,8 +345,7 @@ public class ArtifactCollectionStateTest extends CategoryTest {
     when(artifactService.getArtifactByBuildNumberAndSourceName(
              nexusArtifactStream, "1.1", false, "${repo}/${groupId}/${path}"))
         .thenReturn(null);
-    when(buildSourceService.getBuild(anyString(), anyString(), anyString(), any()))
-        .thenReturn(aBuildDetails().withNumber("1.1").build());
+    when(buildSourceService.getBuild(any(), any(), any(), any())).thenReturn(aBuildDetails().withNumber("1.1").build());
     Map<String, String> map = new HashMap<>();
     map.put("buildNo", "1.1");
     Artifact artifact =
@@ -354,7 +354,7 @@ public class ArtifactCollectionStateTest extends CategoryTest {
     when(artifactService.create(artifact, nexusArtifactStream, false)).thenReturn(artifact);
     artifactCollectionState.execute(executionContext);
     verify(artifactStreamService).get(ARTIFACT_STREAM_ID);
-    verify(workflowExecutionService).refreshBuildExecutionSummary(anyString(), any());
+    verify(workflowExecutionService).refreshBuildExecutionSummary(any(), any());
     assertThat(runtimeValues.get("buildNo")).isEqualTo("1.1");
   }
 
@@ -400,7 +400,7 @@ public class ArtifactCollectionStateTest extends CategoryTest {
     when(artifactService.getArtifactByBuildNumberAndSourceName(
              nexusArtifactStream, "1.1", false, "${repo}/${groupId}/${path}"))
         .thenReturn(null);
-    when(buildSourceService.getBuild(anyString(), anyString(), anyString(), any())).thenReturn(null);
+    when(buildSourceService.getBuild(any(), any(), any(), any())).thenReturn(null);
     ExecutionResponse executionResponse = artifactCollectionState.execute(executionContext);
     assertThat(executionResponse).isNotNull();
     assertThat(executionResponse.getExecutionStatus()).isEqualTo(ExecutionStatus.FAILED);
@@ -478,7 +478,7 @@ public class ArtifactCollectionStateTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCollectJenkinsArtifactWithBuildNumFFEnabled() {
     String delegateTaskId = "delegateTaskId";
-    when(featureFlagService.isEnabled(eq(DISABLE_ARTIFACT_COLLECTION), anyString())).thenReturn(true);
+    when(featureFlagService.isEnabled(eq(ARTIFACT_COLLECTION_CONFIGURABLE), anyString())).thenReturn(true);
     artifactCollectionState.setBuildNo("1.0");
     when(settingsService.get(anyString())).thenReturn(SettingAttribute.Builder.aSettingAttribute().build());
     when(artifactCollectionUtils.getBuildSourceParameters(any(), any(), eq(false), eq(false)))
@@ -505,7 +505,7 @@ public class ArtifactCollectionStateTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCollectJenkinsArtifactWithEmptyBuildNumFFEnabled() {
     String delegateTaskId = "delegateTaskId";
-    when(featureFlagService.isEnabled(eq(DISABLE_ARTIFACT_COLLECTION), anyString())).thenReturn(true);
+    when(featureFlagService.isEnabled(eq(ARTIFACT_COLLECTION_CONFIGURABLE), anyString())).thenReturn(true);
     when(settingsService.get(anyString())).thenReturn(SettingAttribute.Builder.aSettingAttribute().build());
     when(artifactCollectionUtils.getBuildSourceParameters(any(), any(), eq(false), eq(false)))
         .thenReturn(BuildSourceParameters.builder().build());
@@ -541,7 +541,7 @@ public class ArtifactCollectionStateTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCollectCustomArtifactWithBuildNumFFEnabled() {
     String delegateTaskId = "delegateTaskId";
-    when(featureFlagService.isEnabled(eq(DISABLE_ARTIFACT_COLLECTION), anyString())).thenReturn(true);
+    when(featureFlagService.isEnabled(eq(ARTIFACT_COLLECTION_CONFIGURABLE), anyString())).thenReturn(true);
     when(artifactStreamService.get(ARTIFACT_STREAM_ID)).thenReturn(customArtifactStream);
     artifactCollectionState.setBuildNo("1.0");
     when(settingsService.get(anyString())).thenReturn(SettingAttribute.Builder.aSettingAttribute().build());
@@ -576,7 +576,7 @@ public class ArtifactCollectionStateTest extends CategoryTest {
     runtimeValues.put("repo", "harness-maven");
     runtimeValues.put("group", "mygroup");
     runtimeValues.put("artifactId", "todolist");
-    when(featureFlagService.isEnabled(eq(DISABLE_ARTIFACT_COLLECTION), anyString())).thenReturn(true);
+    when(featureFlagService.isEnabled(eq(ARTIFACT_COLLECTION_CONFIGURABLE), anyString())).thenReturn(true);
     when(artifactStreamService.get(ARTIFACT_STREAM_ID)).thenReturn(nexusArtifactStream);
     artifactCollectionState.setBuildNo("1.0");
     artifactCollectionState.setRuntimeValues(runtimeValues);
@@ -605,7 +605,7 @@ public class ArtifactCollectionStateTest extends CategoryTest {
   @Owner(developers = INDER)
   @Category(UnitTests.class)
   public void testHandleAsyncResponseWithSuccessfulJenkinsArtifactCollectionFFEnabled() {
-    when(featureFlagService.isEnabled(eq(DISABLE_ARTIFACT_COLLECTION), anyString())).thenReturn(true);
+    when(featureFlagService.isEnabled(eq(ARTIFACT_COLLECTION_CONFIGURABLE), anyString())).thenReturn(true);
     when(artifactStreamService.get(ARTIFACT_STREAM_ID)).thenReturn(jenkinsArtifactStream);
     artifactCollectionState.setBuildNo("1.0");
     BuildDetails buildDetails = aBuildDetails().build();
@@ -621,7 +621,7 @@ public class ArtifactCollectionStateTest extends CategoryTest {
     ExecutionResponse executionResponse = artifactCollectionState.handleAsyncResponse(
         executionContext, Collections.singletonMap("response", buildSourceExecutionResponse));
     verify(artifactService).create(artifact, jenkinsArtifactStream, false);
-    verify(workflowExecutionService).refreshBuildExecutionSummary(anyString(), any());
+    verify(workflowExecutionService).refreshBuildExecutionSummary(any(), any());
     assertThat(executionResponse.getExecutionStatus()).isEqualTo(SUCCESS);
     assertThat(executionResponse.getStateExecutionData()).isNotNull();
   }
@@ -630,7 +630,7 @@ public class ArtifactCollectionStateTest extends CategoryTest {
   @Owner(developers = INDER)
   @Category(UnitTests.class)
   public void testHandleAsyncResponseWithFailJenkinsArtifactCollectionFFEnabled() {
-    when(featureFlagService.isEnabled(eq(DISABLE_ARTIFACT_COLLECTION), anyString())).thenReturn(true);
+    when(featureFlagService.isEnabled(eq(ARTIFACT_COLLECTION_CONFIGURABLE), anyString())).thenReturn(true);
     when(artifactStreamService.get(ARTIFACT_STREAM_ID)).thenReturn(jenkinsArtifactStream);
     artifactCollectionState.setBuildNo("1.0");
     BuildDetails buildDetails = aBuildDetails().build();
@@ -656,7 +656,7 @@ public class ArtifactCollectionStateTest extends CategoryTest {
   @Owner(developers = INDER)
   @Category(UnitTests.class)
   public void testHandleAsyncResponseWithSuccessfulParameterisedArtifactCollectionFFEnabled() {
-    when(featureFlagService.isEnabled(eq(DISABLE_ARTIFACT_COLLECTION), anyString())).thenReturn(true);
+    when(featureFlagService.isEnabled(eq(ARTIFACT_COLLECTION_CONFIGURABLE), anyString())).thenReturn(true);
     when(artifactStreamService.get(ARTIFACT_STREAM_ID)).thenReturn(nexusArtifactStream);
     Map<String, Object> runtimeValues = new HashMap<>();
     runtimeValues.put("repo", "harness-maven");
@@ -677,7 +677,7 @@ public class ArtifactCollectionStateTest extends CategoryTest {
     ExecutionResponse executionResponse = artifactCollectionState.handleAsyncResponse(
         executionContext, Collections.singletonMap("response", buildSourceExecutionResponse));
     verify(artifactService).create(artifact, nexusArtifactStream, false);
-    verify(workflowExecutionService).refreshBuildExecutionSummary(anyString(), any());
+    verify(workflowExecutionService).refreshBuildExecutionSummary(any(), any());
     verify(artifactStreamHelper).resolveArtifactStreamRuntimeValues(any(), anyMap());
     assertThat(executionResponse.getExecutionStatus()).isEqualTo(SUCCESS);
     assertThat(executionResponse.getStateExecutionData()).isNotNull();
@@ -687,7 +687,7 @@ public class ArtifactCollectionStateTest extends CategoryTest {
   @Owner(developers = INDER)
   @Category(UnitTests.class)
   public void testHandleAsyncResponseWithSuccessfulDuplicateJenkinsArtifactCollectionFFEnabled() {
-    when(featureFlagService.isEnabled(eq(DISABLE_ARTIFACT_COLLECTION), anyString())).thenReturn(true);
+    when(featureFlagService.isEnabled(eq(ARTIFACT_COLLECTION_CONFIGURABLE), anyString())).thenReturn(true);
     when(artifactStreamService.get(ARTIFACT_STREAM_ID)).thenReturn(jenkinsArtifactStream);
     artifactCollectionState.setBuildNo("1.0");
     BuildDetails buildDetails = aBuildDetails().build();
@@ -705,8 +705,8 @@ public class ArtifactCollectionStateTest extends CategoryTest {
     ExecutionResponse executionResponse = artifactCollectionState.handleAsyncResponse(
         executionContext, Collections.singletonMap("response", buildSourceExecutionResponse));
     verify(artifactService).create(artifact, jenkinsArtifactStream, false);
-    verify(workflowExecutionService).refreshBuildExecutionSummary(anyString(), any());
-    verify(artifactService).updateMetadataAndRevision(anyString(), anyString(), anyMap(), anyString());
+    verify(workflowExecutionService).refreshBuildExecutionSummary(any(), any());
+    verify(artifactService).updateMetadataAndRevision(any(), any(), any(), any());
     assertThat(executionResponse.getExecutionStatus()).isEqualTo(SUCCESS);
     assertThat(executionResponse.getStateExecutionData()).isNotNull();
   }

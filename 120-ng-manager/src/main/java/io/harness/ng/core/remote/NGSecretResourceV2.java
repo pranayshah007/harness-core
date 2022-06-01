@@ -558,7 +558,8 @@ public class NGSecretResourceV2 {
   @InternalApi
   public ResponseDTO<List<EncryptedDataDetail>>
   getEncryptionDetails(@NotNull NGAccessWithEncryptionConsumer ngAccessWithEncryptionConsumer,
-      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier) {
+      @Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotNull @AccountIdentifier @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier) {
     NGAccess ngAccess = ngAccessWithEncryptionConsumer.getNgAccess();
     DecryptableEntity decryptableEntity = ngAccessWithEncryptionConsumer.getDecryptableEntity();
     if (ngAccess == null || decryptableEntity == null) {

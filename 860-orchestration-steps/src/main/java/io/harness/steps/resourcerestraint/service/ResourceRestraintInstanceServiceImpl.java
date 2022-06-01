@@ -13,6 +13,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.distribution.constraint.Consumer.State.ACTIVE;
 import static io.harness.distribution.constraint.Consumer.State.BLOCKED;
 import static io.harness.distribution.constraint.Consumer.State.FINISHED;
+import static io.harness.execution.NodeExecution.NodeExecutionKeys;
 import static io.harness.pms.contracts.execution.Status.DISCONTINUING;
 
 import static java.util.stream.Collectors.toList;
@@ -34,8 +35,8 @@ import io.harness.execution.PlanExecution;
 import io.harness.logging.AutoLogContext;
 import io.harness.persistence.HPersistence;
 import io.harness.pms.execution.utils.StatusUtils;
-import io.harness.pms.utils.PmsConstants;
 import io.harness.repositories.ResourceRestraintInstanceRepository;
+import io.harness.steps.resourcerestraint.beans.HoldingScope;
 import io.harness.steps.resourcerestraint.beans.ResourceRestraint;
 import io.harness.steps.resourcerestraint.beans.ResourceRestraintInstance;
 import io.harness.steps.resourcerestraint.beans.ResourceRestraintInstance.ResourceRestraintInstanceKeys;
@@ -99,39 +100,37 @@ public class ResourceRestraintInstanceServiceImpl implements ResourceRestraintIn
 
   @Override
   public boolean updateActiveConstraintsForInstance(ResourceRestraintInstance instance) {
-    boolean isConstraint = false;
     boolean finished;
     String releaseEntityId = instance.getReleaseEntityId();
-
-    if (PmsConstants.RELEASE_ENTITY_TYPE_PLAN.equals(instance.getReleaseEntityType())) {
-      try {
-        PlanExecution planExecution = planExecutionService.get(releaseEntityId);
-        finished = planExecution != null && StatusUtils.finalStatuses().contains(planExecution.getStatus());
-      } catch (InvalidRequestException e) {
-        log.error("", e);
-        return false;
+    try {
+      HoldingScope scope = HoldingScope.valueOf(instance.getReleaseEntityType());
+      switch (scope) {
+        case PLAN:
+        case PIPELINE:
+          PlanExecution planExecution = planExecutionService.get(releaseEntityId);
+          finished = planExecution != null && StatusUtils.finalStatuses().contains(planExecution.getStatus());
+          break;
+        case STAGE:
+          NodeExecution nodeExecution =
+              nodeExecutionService.getWithFieldsIncluded(releaseEntityId, ImmutableSet.of(NodeExecutionKeys.status));
+          finished = nodeExecution != null
+              && (StatusUtils.finalStatuses().contains(nodeExecution.getStatus())
+                  || DISCONTINUING == nodeExecution.getStatus());
+          break;
+        default:
+          throw new IllegalStateException(String.format("Scope [%s] not supported", scope));
       }
-    } else {
-      try {
-        NodeExecution nodeExecution = nodeExecutionService.getByPlanNodeUuid(
-            ResourceRestraintInstanceService.getSetupNodeIdFromReleaseEntityId(releaseEntityId),
-            ResourceRestraintInstanceService.getPlanExecutionIdFromReleaseEntityId(releaseEntityId));
-        finished = nodeExecution != null
-            && (StatusUtils.finalStatuses().contains(nodeExecution.getStatus())
-                || DISCONTINUING == nodeExecution.getStatus());
-      } catch (InvalidRequestException e) {
-        log.error("", e);
-        return false;
-      }
+    } catch (Exception ex) {
+      log.error("Error Updating active constraints", ex);
+      return false;
     }
 
-    if (finished) {
-      if (resourceRestraintRegistry.consumerFinished(new ConstraintId(instance.getResourceRestraintId()),
-              new ConstraintUnit(instance.getResourceUnit()), new ConsumerId(instance.getUuid()), ImmutableMap.of())) {
-        isConstraint = true;
-      }
+    if (!finished) {
+      return false;
     }
-    return isConstraint;
+
+    return resourceRestraintRegistry.consumerFinished(new ConstraintId(instance.getResourceRestraintId()),
+        new ConstraintUnit(instance.getResourceUnit()), new ConsumerId(instance.getUuid()), ImmutableMap.of());
   }
 
   @Override
@@ -216,11 +215,11 @@ public class ResourceRestraintInstanceServiceImpl implements ResourceRestraintIn
   }
 
   @Override
-  public int getAllCurrentlyAcquiredPermits(String scope, String releaseEntityId) {
+  public int getAllCurrentlyAcquiredPermits(HoldingScope scope, String releaseEntityId) {
     int currentPermits = 0;
 
     List<ResourceRestraintInstance> instances =
-        restraintInstanceRepository.findByReleaseEntityTypeAndReleaseEntityId(scope, releaseEntityId);
+        restraintInstanceRepository.findByReleaseEntityTypeAndReleaseEntityId(scope.name(), releaseEntityId);
     if (isNotEmpty(instances)) {
       for (ResourceRestraintInstance instance : instances) {
         currentPermits += instance.getPermits();

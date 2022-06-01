@@ -20,6 +20,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.ExecutionCheck;
 import io.harness.plan.Node;
+import io.harness.plan.PlanNode;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.rule.Owner;
 
@@ -43,7 +44,7 @@ public class AbstractPreFacilitationCheckerTest extends OrchestrationTestBase {
         .when(sChecker)
         .performCheck(any(Ambiance.class), any(Node.class));
 
-    rChecker.check(any(Ambiance.class), any(Node.class));
+    rChecker.check(Ambiance.newBuilder().getDefaultInstanceForType(), PlanNode.builder().build());
 
     verify(rChecker).performCheck(any(Ambiance.class), any(Node.class));
     verify(sChecker).performCheck(any(Ambiance.class), any(Node.class));

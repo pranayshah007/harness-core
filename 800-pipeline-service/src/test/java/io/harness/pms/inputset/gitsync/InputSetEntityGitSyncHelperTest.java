@@ -102,15 +102,13 @@ public class InputSetEntityGitSyncHelperTest extends CategoryTest {
     String objectId = "objectId";
     doReturn(Optional.of(InputSetEntity.builder().objectIdOfYaml(objectId).build()))
         .when(pmsInputSetService)
-        .get(anyString(), anyString(), anyString(), anyString(), anyString(), anyBoolean());
+        .get(anyString(), any(), any(), any(), anyString(), anyBoolean());
     EntityGitDetails returnedEntity =
         inputSetEntityGitSyncHelper.getEntityDetailsIfExists(accountId, inputSetYaml).get();
-    verify(pmsInputSetService, times(1))
-        .get(anyString(), anyString(), anyString(), anyString(), anyString(), anyBoolean());
+    verify(pmsInputSetService, times(1)).get(anyString(), any(), any(), any(), anyString(), anyBoolean());
     assertEquals(returnedEntity.getObjectId(), objectId);
     returnedEntity = inputSetEntityGitSyncHelper.getEntityDetailsIfExists(accountId, overLayYaml).get();
-    verify(pmsInputSetService, times(2))
-        .get(anyString(), anyString(), anyString(), anyString(), anyString(), anyBoolean());
+    verify(pmsInputSetService, times(2)).get(anyString(), any(), any(), any(), anyString(), anyBoolean());
     assertEquals(returnedEntity.getObjectId(), objectId);
   }
 

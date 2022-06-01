@@ -68,17 +68,14 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 import retrofit2.Call;
 import retrofit2.Response;
 
-@RunWith(PowerMockRunner.class)
 @Slf4j
 @PrepareForTest({NGRestUtils.class})
 @OwnedBy(PIPELINE)
@@ -209,7 +206,7 @@ public class PipelineSetupUsageHelperTest extends PipelineServiceTestBase {
                                        .build())
                    .build());
       when(request.execute()).thenReturn(Response.success(ResponseDTO.newResponse(list)));
-      PowerMockito.mockStatic(NGRestUtils.class);
+      Mockito.mockStatic(NGRestUtils.class);
       when(NGRestUtils.getResponseWithRetry(any(), any())).thenReturn(list);
     } catch (IOException ex) {
       log.info("Encountered exception ", ex);
@@ -307,7 +304,7 @@ public class PipelineSetupUsageHelperTest extends PipelineServiceTestBase {
       log.info("Encountered exception ", e);
     }
 
-    PowerMockito.mockStatic(NGRestUtils.class);
+    Mockito.mockStatic(NGRestUtils.class);
     when(NGRestUtils.getResponseWithRetry(any(), any())).thenReturn(list);
     List<EntityDetail> referencesOfPipeline = pipelineSetupUsageHelper.getReferencesOfPipeline(
         accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, pipelineYaml, null);

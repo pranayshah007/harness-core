@@ -50,7 +50,7 @@ public class ConnectorFilterPropertiesDTO extends FilterPropertiesDTO {
   @Schema(description = ConnectorConstants.CONNECTOR_CATEGORY_LIST) List<ConnectorCategory> categories;
   @Schema(description = ConnectorConstants.CONNECTOR_STATUS_LIST) List<ConnectivityStatus> connectivityStatuses;
   @Schema(description = ConnectorConstants.INHERIT_FROM_DELEGATE) Boolean inheritingCredentialsFromDelegate;
-  @Hidden CcmConnectorFilter ccmConnectorFilter;
+  @Schema(description = "CCM Connector filter.", hidden = true) @Hidden CcmConnectorFilter ccmConnectorFilter;
 
   @Override
   public FilterType getFilterType() {

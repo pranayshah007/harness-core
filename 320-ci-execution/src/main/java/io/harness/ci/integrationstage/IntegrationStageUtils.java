@@ -9,6 +9,7 @@ package io.harness.ci.integrationstage;
 
 import static io.harness.beans.execution.WebhookEvent.Type.BRANCH;
 import static io.harness.beans.execution.WebhookEvent.Type.PR;
+import static io.harness.beans.serializer.RunTimeInputHandler.resolveOSType;
 import static io.harness.common.CIExecutionConstants.GIT_URL_SUFFIX;
 import static io.harness.common.CIExecutionConstants.IMAGE_PATH_SPLIT_REGEX;
 import static io.harness.common.CIExecutionConstants.PATH_SEPARATOR;
@@ -34,6 +35,9 @@ import io.harness.beans.execution.PRWebhookEvent;
 import io.harness.beans.execution.WebhookExecutionSource;
 import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.stages.IntegrationStageConfig;
+import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
+import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
+import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
@@ -419,5 +423,23 @@ public class IntegrationStageUtils {
     }
 
     return null;
+  }
+
+  // Returns os for kubernetes infrastructure
+  public OSType getK8OS(Infrastructure infrastructure) {
+    if (infrastructure == null) {
+      throw new CIStageExecutionException("Input infrastructure can not be empty");
+    }
+
+    if (infrastructure.getType() != Infrastructure.Type.KUBERNETES_DIRECT) {
+      return OSType.Linux;
+    }
+
+    if (((K8sDirectInfraYaml) infrastructure).getSpec() == null) {
+      throw new CIStageExecutionException("Input infrastructure can not be empty");
+    }
+
+    K8sDirectInfraYaml k8sDirectInfraYaml = (K8sDirectInfraYaml) infrastructure;
+    return resolveOSType(k8sDirectInfraYaml.getSpec().getOs());
   }
 }

@@ -15,6 +15,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.google.inject.Inject;
+import io.swagger.v3.oas.annotations.media.Schema;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -34,10 +35,11 @@ import lombok.Setter;
       @JsonSubTypes.Type(value = PagerDutySettingDTO.class, name = "PAGERDUTY"),
 })
 @JsonIgnoreProperties(ignoreUnknown = true)
+@Schema(name = "NotificationSetting", description = "Details of the Notification settings configured in Harness.")
 public abstract class NotificationSettingDTO {
-  @NotNull String accountId;
-  @NotNull String recipient;
-  @NotNull String notificationId;
+  @Schema(description = "Account Identifier.") @NotNull String accountId;
+  @Schema(description = "Recipient of the notification.") @NotNull String recipient;
+  @Schema(description = "Identifier of the notification.") @NotNull String notificationId;
 
   public NotificationSettingDTO(String accountId, String recipient) {
     this.accountId = accountId;

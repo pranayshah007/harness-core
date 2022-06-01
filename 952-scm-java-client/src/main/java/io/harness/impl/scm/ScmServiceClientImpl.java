@@ -98,6 +98,7 @@ import io.harness.service.ScmServiceClient;
 import io.harness.utils.ScmGrpcClientUtils;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Strings;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
@@ -144,6 +145,7 @@ public class ScmServiceClientImpl implements ScmServiceClient {
         .setContent(gitFileDetails.getFileContent())
         .setMessage(gitFileDetails.getCommitMessage())
         .setProvider(gitProvider)
+        .setCommitId(Strings.nullToEmpty(gitFileDetails.getCommitId()))
         .setSignature(Signature.newBuilder()
                           .setEmail(gitFileDetails.getUserEmail())
                           .setName(gitFileDetails.getUserName())
@@ -161,7 +163,7 @@ public class ScmServiceClientImpl implements ScmServiceClient {
 
     final FileModifyRequest.Builder fileModifyRequestBuilder = getFileModifyRequest(scmConnector, gitFileDetails);
     final FileModifyRequest fileModifyRequest =
-        fileModifyRequestBuilder.setBlobId(gitFileDetails.getOldFileSha()).build();
+        fileModifyRequestBuilder.setBlobId(Strings.nullToEmpty(gitFileDetails.getOldFileSha())).build();
     UpdateFileResponse updateFileResponse =
         ScmGrpcClientUtils.retryAndProcessException(scmBlockingStub::updateFile, fileModifyRequest);
 
@@ -740,7 +742,7 @@ public class ScmServiceClientImpl implements ScmServiceClient {
         GetUserReposRequest.newBuilder()
             .setPagination(PageRequest.newBuilder().setPage(pageRequest.getPageIndex() + 1).build())
             .setProvider(gitProvider)
-            .setFetchAllRepos(false)
+            .setFetchAllRepos(pageRequest.isFetchAll())
             .build());
   }
 

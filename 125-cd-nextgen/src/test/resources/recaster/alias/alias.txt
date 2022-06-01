@@ -49,6 +49,7 @@ io.harness.cdng.manifest.steps.ManifestsOutcome
 io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper
 io.harness.cdng.service.beans.ServiceOutcome$StageOverridesOutcome
 io.harness.cdng.service.steps.ServiceStepParameters
+io.harness.cdng.service.steps.ServiceStepParametersV2
 io.harness.beans.common.VariablesSweepingOutput
 io.harness.cdng.pipeline.beans.RollbackOptionalChildrenParameters
 io.harness.pms.sdk.core.data.StringOutcome
@@ -60,10 +61,12 @@ io.harness.cdng.provision.terraform.TerraformPlanStepInfo
 io.harness.cdng.manifest.yaml.HelmChartManifestOutcome
 io.harness.cdng.service.beans.ServiceUseFromStage$Overrides
 io.harness.cdng.provision.terraform.TerraformApplyOutcome
+io.harness.cdng.provision.terraform.outcome.TerraformPlanOutcome
 io.harness.steps.approval.step.harness.HarnessApprovalStepInfo
 io.harness.steps.http.HttpOutcome
 io.harness.cdng.infra.yaml.K8SDirectInfrastructure
 io.harness.cdng.infra.yaml.PdcInfrastructure
+io.harness.cdng.infra.yaml.SshWinRmAzureInfrastructure
 io.harness.advisers.rollback.OnFailRollbackParameters
 io.harness.ngpipeline.artifact.bean.GcrArtifactOutcome
 io.harness.cdng.infra.beans.K8sDirectInfraMapping
@@ -79,6 +82,7 @@ io.harness.cdng.provision.terraform.TerraformPlanExecutionDataParameters
 io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome
 io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome
 io.harness.cdng.infra.beans.PdcInfrastructureOutcome
+io.harness.cdng.infra.beans.SshWinRmAzureInfrastructureOutcome
 io.harness.cdng.manifest.yaml.S3StoreConfig
 io.harness.cdng.manifest.yaml.InlineStoreConfig
 io.harness.cdng.infra.beans.InfraUseFromStage
@@ -107,6 +111,7 @@ io.harness.steps.shellscript.K8sInfraDelegateConfigOutput
 io.harness.cdng.infra.beans.K8sGcpInfraMapping
 io.harness.cdng.infra.beans.K8sAzureInfraMapping
 io.harness.cdng.infra.beans.PdcInfraMapping
+io.harness.cdng.infra.beans.SshWinRmAzureInfraMapping
 io.harness.steps.common.pipeline.PipelineSetupStepParameters
 io.harness.cdng.k8s.InstanceSelectionWrapper
 io.harness.cdng.artifact.steps.ArtifactStepParameters
@@ -118,6 +123,7 @@ io.harness.plancreator.flowcontrol.FlowControlConfig
 io.harness.steps.approval.step.jira.beans.KeyValuesCriteriaSpec
 io.harness.cdng.provision.terraform.InlineTerraformBackendConfigSpec
 io.harness.cdng.service.steps.ServiceConfigStepParameters
+io.harness.cdng.service.steps.ServiceSectionStepParameters
 io.harness.ngpipeline.artifact.bean.ArtifactsOutcome
 io.harness.cdng.instance.outcome.DeploymentInfoOutcome
 io.harness.cdng.tasks.manifestFetch.step.ManifestFetchParameters
@@ -355,3 +361,12 @@ io.harness.plancreator.strategy.ExcludeConfig
 io.harness.plancreator.strategy.MatrixConfig
 io.harness.plancreator.strategy.StrategyConfig
 io.harness.plancreator.strategy.HarnessForConfig
+io.harness.cdng.configfile.ConfigFileWrapper
+io.harness.cdng.configfile.ConfigFile
+io.harness.cdng.configfile.ConfigFileOutcome
+io.harness.cdng.configfile.steps.ConfigFileStepParameters
+io.harness.cdng.configfile.ConfigFileAttributes
+io.harness.cdng.configfile.steps.ConfigFilesOutcome
+io.harness.cdng.manifest.yaml.harness.HarnessStore
+io.harness.cdng.gitops.steps.ClusterStepParameters
+io.harness.steps.customstage.CustomStageSpecParams

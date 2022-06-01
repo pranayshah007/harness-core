@@ -9,6 +9,7 @@ package io.harness.pms.plan.execution.service;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.MLUKIC;
+import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static io.harness.rule.OwnerRule.SAMARTH;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -18,6 +19,7 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import io.harness.ModuleType;
 import io.harness.PipelineServiceTestBase;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
@@ -34,6 +36,7 @@ import com.google.common.io.Resources;
 import com.mongodb.client.result.UpdateResult;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
 import org.junit.Before;
@@ -120,6 +123,27 @@ public class PMSExecutionServiceImplTest extends PipelineServiceTestBase {
     assertThat(form.getCriteriaObject().get("pipelineDeleted")).isNotEqualTo(true);
     assertThat(form.getCriteriaObject().containsKey("executionTriggerInfo")).isEqualTo(false);
     assertThat(form.getCriteriaObject().get("isLatestExecution")).isNotEqualTo(false);
+  }
+
+  @Test
+  @Owner(developers = PRASHANTSHARMA)
+  @Category(UnitTests.class)
+  public void testFormCriteriaWithModuleName() {
+    Criteria form =
+        pmsExecutionService.formCriteria(null, null, null, null, null, null, "cd", null, null, false, true, null, true);
+    Criteria criteria = new Criteria();
+
+    Criteria moduleCriteria = new Criteria();
+    Criteria searchCriteria = new Criteria();
+    moduleCriteria.orOperator(
+        Criteria.where(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.modules).is(Collections.emptyList()),
+        Criteria.where(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.modules)
+            .is(Collections.singletonList(ModuleType.PMS.name().toLowerCase())),
+        Criteria.where(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.modules).in("cd"));
+
+    criteria.andOperator(searchCriteria, moduleCriteria, searchCriteria, searchCriteria);
+
+    assertThat(form.getCriteriaObject().get("$and")).isEqualTo(criteria.getCriteriaObject().get("$and"));
   }
 
   @Test

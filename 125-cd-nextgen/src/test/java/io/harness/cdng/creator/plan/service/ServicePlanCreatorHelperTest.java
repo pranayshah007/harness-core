@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.cdng.creator.plan.service;
 
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
@@ -29,7 +36,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 public class ServicePlanCreatorHelperTest extends CategoryTest {
-  @Mock KryoSerializer kryoSerializer1;
+  @Mock KryoSerializer kryoSerializer;
 
   @Before
   public void setUp() {
@@ -44,7 +51,7 @@ public class ServicePlanCreatorHelperTest extends CategoryTest {
 
     String serviceNodeId = serviceField.getNode().getUuid();
     byte[] dummyValue = new byte[10];
-    doReturn(dummyValue).when(kryoSerializer1).asDeflatedBytes(any());
+    doReturn(dummyValue).when(kryoSerializer).asDeflatedBytes(any());
     Dependencies dependencies = ServicePlanCreatorHelper.getDependenciesForService(serviceField,
         DeploymentStageNode.builder()
             .deploymentStageConfig(DeploymentStageConfig.builder()
@@ -52,7 +59,7 @@ public class ServicePlanCreatorHelperTest extends CategoryTest {
                                        .infrastructure(PipelineInfrastructure.builder().build())
                                        .build())
             .build(),
-        kryoSerializer1);
+        "environmentUuid", "infraSectionUuid", kryoSerializer);
     assertThat(dependencies).isNotEqualTo(null);
     assertThat(dependencies.getDependenciesMap().containsKey(serviceNodeId)).isEqualTo(true);
     assertThat(dependencies.getDependencyMetadataMap()

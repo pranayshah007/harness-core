@@ -1,0 +1,42 @@
+stageOverrides:
+  artifacts: []
+  manifests: []
+  configFiles:
+    - configFile:
+        identifier: gitConfigFileIdentifier
+        spec:
+          store:
+            type: Git
+            spec:
+              connectorRef: gitConnectorIdentifier
+              gitFetchType: Branch
+              paths:
+                - test/1
+              repoName: repoName
+              branch: test
+          type: Remote
+    - configFile:
+        identifier: harnessFSConfigFileIdentifier
+        spec:
+          store:
+            type: Harness
+            spec:
+              fileReference: harnessFSFileIdentifier
+              filePath: Root/folder_1/filename.txt
+              fileType: FileStore
+          type: LocalFile
+    - configFile:
+        identifier: harnessEncConfigFileIdentifier
+        spec:
+          store:
+            type: Harness
+            spec:
+              fileReference: harnessEncFileIdentifier
+              filePath: secretManagerIdentifier
+              fileType: Encrypted
+          type: Encrypted
+  manifestOverrideSets: []
+  variables: []
+service:
+  name: service
+  identifier: service1

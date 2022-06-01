@@ -123,7 +123,9 @@ public class ScmManagerFacilitatorServiceImpl extends AbstractScmClientFacilitat
   @Override
   public CreatePRResponse createPullRequest(
       Scope scope, String connectorRef, String repoName, String sourceBranch, String targetBranch, String title) {
-    return null;
+    ScmConnector decryptedConnector = gitSyncConnectorHelper.getDecryptedConnectorForGivenRepo(
+        scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), connectorRef, repoName);
+    return scmClient.createPullRequestV2(decryptedConnector, sourceBranch, targetBranch, title);
   }
 
   @Override
@@ -302,6 +304,10 @@ public class ScmManagerFacilitatorServiceImpl extends AbstractScmClientFacilitat
     return scmClient.listBranchesWithDefault(decryptedConnector, pageRequest);
   }
 
+  private CreateBranchResponse createBranch(String branch, String baseBranch, ScmConnector scmConnector) {
+    return scmClient.createNewBranch(scmConnector, branch, baseBranch);
+  }
+
   @Override
   public GetUserRepoResponse getRepoDetails(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, ScmConnector scmConnector) {
@@ -309,7 +315,6 @@ public class ScmManagerFacilitatorServiceImpl extends AbstractScmClientFacilitat
         gitSyncConnectorHelper.getDecryptedConnector(accountIdentifier, orgIdentifier, projectIdentifier, scmConnector);
     return scmClient.getRepoDetails(decryptedConnector);
   }
-
   @Override
   public CreateBranchResponse createNewBranch(
       Scope scope, ScmConnector scmConnector, String newBranchName, String baseBranchName) {
@@ -334,9 +339,5 @@ public class ScmManagerFacilitatorServiceImpl extends AbstractScmClientFacilitat
         scope.getOrgIdentifier(), scope.getProjectIdentifier(), updateGitFileRequestDTO.getScmConnector());
     GitFileDetails gitFileDetails = getGitFileDetails(updateGitFileRequestDTO);
     return scmClient.updateFile(decryptedConnector, gitFileDetails);
-  }
-
-  private CreateBranchResponse createBranch(String branch, String baseBranch, ScmConnector scmConnector) {
-    return scmClient.createNewBranch(scmConnector, branch, baseBranch);
   }
 }

@@ -43,6 +43,7 @@ public class AccountSettingsDTO {
   @JsonProperty("type")
   AccountSettingType type;
 
+  @Schema(description = "Configuration of the Account Settings.")
   @JsonTypeInfo(
       use = JsonTypeInfo.Id.NAME, property = "type", include = JsonTypeInfo.As.EXTERNAL_PROPERTY, visible = true)
   @Valid

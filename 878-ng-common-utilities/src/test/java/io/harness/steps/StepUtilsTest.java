@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.JENNY;
 import static io.harness.rule.OwnerRule.PRABU;
+import static io.harness.rule.OwnerRule.SAHIL;
 import static io.harness.rule.OwnerRule.SAMARTH;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
 
@@ -37,6 +38,7 @@ import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.failure.FailureData;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.tasks.TaskCategory;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
@@ -262,6 +264,30 @@ public class StepUtilsTest extends CategoryTest {
         StepResponseNotifyData.builder().failureInfo(FailureInfo.newBuilder().build()).status(Status.FAILED).build());
     stepResponse = StepUtils.createStepResponseFromChildResponse(responseDataMap);
     assertNotNull(stepResponse.getFailureInfo());
+    assertEquals(stepResponse.getStatus(), Status.FAILED);
+  }
+
+  @Test
+  @Owner(developers = SAHIL)
+  @Category(UnitTests.class)
+  public void testCreateStepResponseFromChildResponseMultipleFailures() {
+    Map<String, ResponseData> responseDataMap = new HashMap<>();
+    responseDataMap.put("key1",
+        StepResponseNotifyData.builder()
+            .nodeUuid("nodeUuid")
+            .status(Status.FAILED)
+            .failureInfo(
+                FailureInfo.newBuilder().addFailureData(FailureData.newBuilder().setMessage("abcd").build()).build())
+            .build());
+    StepResponse stepResponse = StepUtils.createStepResponseFromChildResponse(responseDataMap);
+    responseDataMap.put("key2",
+        StepResponseNotifyData.builder()
+            .failureInfo(FailureInfo.newBuilder().addFailureData(FailureData.newBuilder().build()).build())
+            .status(Status.FAILED)
+            .build());
+    stepResponse = StepUtils.createStepResponseFromChildResponse(responseDataMap);
+    assertNotNull(stepResponse.getFailureInfo());
+    assertEquals(stepResponse.getFailureInfo().getFailureDataCount(), 2);
     assertEquals(stepResponse.getStatus(), Status.FAILED);
   }
 

@@ -35,6 +35,7 @@ import org.mongodb.morphia.converters.TypeConverter;
 public class CvNextGenRegistrars {
   public static final ImmutableSet<Class<? extends KryoRegistrar>> kryoRegistrars =
       ImmutableSet.<Class<? extends KryoRegistrar>>builder()
+          .addAll(CvNextGenBeansRegistrars.kryoRegistrars)
           .addAll(CvNextGenCommonsRegistrars.kryoRegistrars)
           .addAll(ConnectorNextGenRegistrars.kryoRegistrars)
           .add(CVNGKryoRegistrar.class)

@@ -23,7 +23,7 @@ import retrofit2.http.Query;
 public interface RunnerRestClient {
   @POST("pool_owner")
   @Headers("Accept: application/json")
-  Call<PoolOwnerStepResponse> poolOwner(@Query("pool") String pool);
+  Call<PoolOwnerStepResponse> poolOwner(@Query("pool") String pool, @Query("stageId") String stageId);
 
   @POST("setup") @Headers("Accept: application/json") Call<SetupVmResponse> setup(@Body SetupVmRequest setupVmRequest);
 

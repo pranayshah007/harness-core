@@ -204,7 +204,7 @@ public class StackDriverState extends AbstractMetricAnalysisState {
             .stateExecutionId(context.getStateExecutionInstanceId())
             .dataCollectionStartTime(dataCollectionStartTimeStamp)
             .dataCollectionEndTime(
-                dataCollectionStartTimeStamp + TimeUnit.MINUTES.toMillis(Integer.parseInt(getTimeDuration())))
+                dataCollectionStartTimeStamp + TimeUnit.MINUTES.toMillis(Integer.parseInt(getTimeDuration(context))))
             .executionData(executionData)
             .build(),
         waitId);

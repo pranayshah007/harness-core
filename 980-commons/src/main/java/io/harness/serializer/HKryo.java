@@ -70,6 +70,7 @@ import java.math.BigInteger;
 import java.net.SocketException;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
@@ -194,6 +195,7 @@ public class HKryo extends Kryo {
     register(java.util.LinkedList.class, 78);
     register(ArrayListMultimap.class, new ArrayListMultimapSerializer(), 51);
     register(HashMultimap.class, new HashMultimapSerializer(), 52);
+    register(Instant.class, 7235);
 
     // External Serializers
     UnmodifiableCollectionsSerializer.registerSerializers(this);

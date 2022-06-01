@@ -14,14 +14,22 @@ import io.harness.gitsync.common.beans.ScmApis;
 import io.harness.gitsync.common.dtos.RepoProviders;
 import io.harness.gitsync.common.scmerrorhandling.handlers.DefaultScmApiErrorHandler;
 import io.harness.gitsync.common.scmerrorhandling.handlers.ScmApiErrorHandler;
-import io.harness.gitsync.common.scmerrorhandling.handlers.bitbucket.BitbucketCreateBranchScmApiErrorHandler;
-import io.harness.gitsync.common.scmerrorhandling.handlers.bitbucket.BitbucketCreateFileScmApiErrorHandler;
-import io.harness.gitsync.common.scmerrorhandling.handlers.bitbucket.BitbucketCreatePullRequestScmApiErrorHandler;
-import io.harness.gitsync.common.scmerrorhandling.handlers.bitbucket.BitbucketGetDefaultBranchScmApiErrorHandler;
-import io.harness.gitsync.common.scmerrorhandling.handlers.bitbucket.BitbucketGetFileScmApiErrorHandler;
-import io.harness.gitsync.common.scmerrorhandling.handlers.bitbucket.BitbucketListBranchesScmApiErrorHandler;
-import io.harness.gitsync.common.scmerrorhandling.handlers.bitbucket.BitbucketListRepoScmApiErrorHandler;
-import io.harness.gitsync.common.scmerrorhandling.handlers.bitbucket.BitbucketUpdateFileScmApiErrorHandler;
+import io.harness.gitsync.common.scmerrorhandling.handlers.bitbucketcloud.BitbucketCreateBranchScmApiErrorHandler;
+import io.harness.gitsync.common.scmerrorhandling.handlers.bitbucketcloud.BitbucketCreateFileScmApiErrorHandler;
+import io.harness.gitsync.common.scmerrorhandling.handlers.bitbucketcloud.BitbucketCreatePullRequestScmApiErrorHandler;
+import io.harness.gitsync.common.scmerrorhandling.handlers.bitbucketcloud.BitbucketGetDefaultBranchScmApiErrorHandler;
+import io.harness.gitsync.common.scmerrorhandling.handlers.bitbucketcloud.BitbucketGetFileScmApiErrorHandler;
+import io.harness.gitsync.common.scmerrorhandling.handlers.bitbucketcloud.BitbucketListBranchesScmApiErrorHandler;
+import io.harness.gitsync.common.scmerrorhandling.handlers.bitbucketcloud.BitbucketListRepoScmApiErrorHandler;
+import io.harness.gitsync.common.scmerrorhandling.handlers.bitbucketcloud.BitbucketUpdateFileScmApiErrorHandler;
+import io.harness.gitsync.common.scmerrorhandling.handlers.bitbucketserver.BitbucketServerCreateBranchScmApiErrorHandler;
+import io.harness.gitsync.common.scmerrorhandling.handlers.bitbucketserver.BitbucketServerCreateFileScmApiErrorHandler;
+import io.harness.gitsync.common.scmerrorhandling.handlers.bitbucketserver.BitbucketServerCreatePullRequestScmApiErrorHandler;
+import io.harness.gitsync.common.scmerrorhandling.handlers.bitbucketserver.BitbucketServerGetDefaultBranchScmApiErrorHandler;
+import io.harness.gitsync.common.scmerrorhandling.handlers.bitbucketserver.BitbucketServerGetFileScmApiErrorHandler;
+import io.harness.gitsync.common.scmerrorhandling.handlers.bitbucketserver.BitbucketServerListBranchesScmApiErrorHandler;
+import io.harness.gitsync.common.scmerrorhandling.handlers.bitbucketserver.BitbucketServerListRepoScmApiErrorHandler;
+import io.harness.gitsync.common.scmerrorhandling.handlers.bitbucketserver.BitbucketServerUpdateFileScmApiErrorHandler;
 import io.harness.gitsync.common.scmerrorhandling.handlers.github.GithubCreateBranchScmApiErrorHandler;
 import io.harness.gitsync.common.scmerrorhandling.handlers.github.GithubCreateFileScmApiErrorHandler;
 import io.harness.gitsync.common.scmerrorhandling.handlers.github.GithubCreatePullRequestScmApiErrorHandler;
@@ -42,27 +50,53 @@ import org.apache.commons.lang3.tuple.Pair;
 @OwnedBy(PL)
 class ScmApiErrorHandlerFactory {
   private final Map<Pair<ScmApis, RepoProviders>, Class<? extends ScmApiErrorHandler>> scmApiErrorHandlerMap =
-      ImmutableMap.<Pair<ScmApis, RepoProviders>, Class<? extends ScmApiErrorHandler>>builder()
+      ImmutableMap
+          .<Pair<ScmApis, RepoProviders>, Class<? extends ScmApiErrorHandler>>builder()
+          // List Repository Handlers
           .put(Pair.of(ScmApis.LIST_REPOSITORIES, RepoProviders.BITBUCKET), BitbucketListRepoScmApiErrorHandler.class)
           .put(Pair.of(ScmApis.LIST_REPOSITORIES, RepoProviders.GITHUB), GithubListRepoScmApiErrorHandler.class)
+          .put(Pair.of(ScmApis.LIST_REPOSITORIES, RepoProviders.BITBUCKET_SERVER),
+              BitbucketServerListRepoScmApiErrorHandler.class)
+
+          // Get File Handlers
           .put(Pair.of(ScmApis.GET_FILE, RepoProviders.BITBUCKET), BitbucketGetFileScmApiErrorHandler.class)
           .put(Pair.of(ScmApis.GET_FILE, RepoProviders.GITHUB), GithubGetFileScmApiErrorHandler.class)
+          .put(
+              Pair.of(ScmApis.GET_FILE, RepoProviders.BITBUCKET_SERVER), BitbucketServerGetFileScmApiErrorHandler.class)
+
           .put(Pair.of(ScmApis.CREATE_PULL_REQUEST, RepoProviders.BITBUCKET),
               BitbucketCreatePullRequestScmApiErrorHandler.class)
           .put(Pair.of(ScmApis.CREATE_PULL_REQUEST, RepoProviders.GITHUB),
               GithubCreatePullRequestScmApiErrorHandler.class)
+          .put(Pair.of(ScmApis.CREATE_PULL_REQUEST, RepoProviders.BITBUCKET_SERVER),
+              BitbucketServerCreatePullRequestScmApiErrorHandler.class)
+
           .put(Pair.of(ScmApis.CREATE_FILE, RepoProviders.BITBUCKET), BitbucketCreateFileScmApiErrorHandler.class)
           .put(Pair.of(ScmApis.CREATE_FILE, RepoProviders.GITHUB), GithubCreateFileScmApiErrorHandler.class)
+          .put(Pair.of(ScmApis.CREATE_FILE, RepoProviders.BITBUCKET_SERVER),
+              BitbucketServerCreateFileScmApiErrorHandler.class)
+
           .put(Pair.of(ScmApis.UPDATE_FILE, RepoProviders.BITBUCKET), BitbucketUpdateFileScmApiErrorHandler.class)
           .put(Pair.of(ScmApis.UPDATE_FILE, RepoProviders.GITHUB), GithubUpdateFileScmApiErrorHandler.class)
+          .put(Pair.of(ScmApis.UPDATE_FILE, RepoProviders.BITBUCKET_SERVER),
+              BitbucketServerUpdateFileScmApiErrorHandler.class)
+
           .put(Pair.of(ScmApis.CREATE_BRANCH, RepoProviders.BITBUCKET), BitbucketCreateBranchScmApiErrorHandler.class)
           .put(Pair.of(ScmApis.CREATE_BRANCH, RepoProviders.GITHUB), GithubCreateBranchScmApiErrorHandler.class)
+          .put(Pair.of(ScmApis.CREATE_BRANCH, RepoProviders.BITBUCKET_SERVER),
+              BitbucketServerCreateBranchScmApiErrorHandler.class)
+
           .put(Pair.of(ScmApis.LIST_BRANCHES, RepoProviders.BITBUCKET), BitbucketListBranchesScmApiErrorHandler.class)
           .put(Pair.of(ScmApis.LIST_BRANCHES, RepoProviders.GITHUB), GithubListBranchesScmApiErrorHandler.class)
+          .put(Pair.of(ScmApis.LIST_BRANCHES, RepoProviders.BITBUCKET_SERVER),
+              BitbucketServerListBranchesScmApiErrorHandler.class)
+
           .put(Pair.of(ScmApis.GET_DEFAULT_BRANCH, RepoProviders.BITBUCKET),
               BitbucketGetDefaultBranchScmApiErrorHandler.class)
           .put(
               Pair.of(ScmApis.GET_DEFAULT_BRANCH, RepoProviders.GITHUB), GithubGetDefaultBranchScmApiErrorHandler.class)
+          .put(Pair.of(ScmApis.GET_DEFAULT_BRANCH, RepoProviders.BITBUCKET_SERVER),
+              BitbucketServerGetDefaultBranchScmApiErrorHandler.class)
           .build();
 
   public ScmApiErrorHandler getHandler(ScmApis scmApi, RepoProviders repoProvider) {

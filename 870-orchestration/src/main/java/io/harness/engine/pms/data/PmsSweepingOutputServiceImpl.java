@@ -83,6 +83,18 @@ public class PmsSweepingOutputServiceImpl implements PmsSweepingOutputService {
   }
 
   @Override
+  public List<RawOptionalSweepingOutput> findOutputsUsingExecutionIds(
+      Ambiance ambiance, String name, List<String> nodeIds) {
+    Query query = query(where(ExecutionSweepingOutputKeys.planExecutionId).is(ambiance.getPlanExecutionId()))
+                      .addCriteria(where(ExecutionSweepingOutputKeys.name).is(name))
+                      .addCriteria(where(ExecutionSweepingOutputKeys.producedBy + ".runtimeId").in(nodeIds));
+    List<ExecutionSweepingOutputInstance> instances = mongoTemplate.find(query, ExecutionSweepingOutputInstance.class);
+    return instances.stream()
+        .map(instance -> RawOptionalSweepingOutput.builder().found(true).output(instance.getOutputValueJson()).build())
+        .collect(Collectors.toList());
+  }
+
+  @Override
   public List<ExecutionSweepingOutputInstance> fetchOutcomeInstanceByRuntimeId(String runtimeId) {
     Query query = query(where(ExecutionSweepingOutputKeys.producedBy + "."
         + "runtimeId")

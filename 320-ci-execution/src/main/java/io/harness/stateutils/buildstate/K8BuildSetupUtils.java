@@ -304,11 +304,11 @@ public class K8BuildSetupUtils {
 
     List<CIK8ContainerParams> containerParamsList =
         getContainerParamsList(k8PodDetails, podSetupInfo, ngAccess, harnessInternalImageConnector, gitEnvVars,
-            runtimeCodebaseVars, initializeStepInfo, securityContext, logPrefix, ambiance);
+            runtimeCodebaseVars, initializeStepInfo, securityContext, logPrefix, ambiance, os);
 
     CIK8ContainerParams setupAddOnContainerParams = internalContainerParamsProvider.getSetupAddonContainerParams(
         harnessInternalImageConnector, podSetupInfo.getVolumeToMountPath(), podSetupInfo.getWorkDirPath(),
-        getCtrSecurityContext(securityContext), ngAccess.getAccountIdentifier(), os);
+        getCtrSecurityContext(securityContext, os), ngAccess.getAccountIdentifier(), os);
 
     // Service identifier usage in host alias requires that service identifier does not have capital letter characters
     // or _. For now, removing host alias usage otherwise pod creation itself fails.
@@ -379,7 +379,7 @@ public class K8BuildSetupUtils {
   public List<CIK8ContainerParams> getContainerParamsList(K8PodDetails k8PodDetails, PodSetupInfo podSetupInfo,
       NGAccess ngAccess, ConnectorDetails harnessInternalImageConnector, Map<String, String> gitEnvVars,
       Map<String, String> runtimeCodebaseVars, InitializeStepInfo initializeStepInfo, SecurityContext securityContext,
-      String logPrefix, Ambiance ambiance) {
+      String logPrefix, Ambiance ambiance, OSType os) {
     String accountId = AmbianceUtils.getAccountId(ambiance);
     Map<String, String> logEnvVars = getLogServiceEnvVariables(k8PodDetails, accountId);
     Map<String, String> tiEnvVars = getTIServiceEnvVariables(accountId);
@@ -398,7 +398,7 @@ public class K8BuildSetupUtils {
 
     Map<String, ConnectorDetails> githubApiTokenFunctorConnectors =
         resolveGitAppFunctor(ngAccess, initializeStepInfo, ambiance);
-    ContainerSecurityContext ctrSecurityContext = getCtrSecurityContext(securityContext);
+    ContainerSecurityContext ctrSecurityContext = getCtrSecurityContext(securityContext, os);
 
     CIK8ContainerParams liteEngineContainerParams = createLiteEngineContainerParams(harnessInternalImageConnector,
         k8PodDetails, podSetupInfo.getStageCpuRequest(), podSetupInfo.getStageMemoryRequest(), logEnvVars, tiEnvVars,
@@ -414,7 +414,7 @@ public class K8BuildSetupUtils {
       CIK8ContainerParams cik8ContainerParams =
           createCIK8ContainerParams(ngAccess, containerDefinitionInfo, harnessInternalImageConnector, commonEnvVars,
               stoEnvVars, stepConnectors, podSetupInfo.getVolumeToMountPath(), podSetupInfo.getWorkDirPath(),
-              securityContext, logPrefix, secretVariableDetails, githubApiTokenFunctorConnectors);
+              securityContext, logPrefix, secretVariableDetails, githubApiTokenFunctorConnectors, os);
       containerParams.add(cik8ContainerParams);
     }
     return containerParams;
@@ -477,8 +477,8 @@ public class K8BuildSetupUtils {
       Map<String, String> commonEnvVars, Map<String, String> stoEnvVars,
       Map<String, List<ConnectorConversionInfo>> connectorRefs, Map<String, String> volumeToMountPath,
       String workDirPath, SecurityContext securityContext, String logPrefix,
-      List<SecretVariableDetails> secretVariableDetails,
-      Map<String, ConnectorDetails> githubApiTokenFunctorConnectors) {
+      List<SecretVariableDetails> secretVariableDetails, Map<String, ConnectorDetails> githubApiTokenFunctorConnectors,
+      OSType os) {
     Map<String, String> envVars = new HashMap<>();
     if (isNotEmpty(containerDefinitionInfo.getEnvVars())) {
       envVars.putAll(containerDefinitionInfo.getEnvVars()); // Put customer input env variables
@@ -525,7 +525,7 @@ public class K8BuildSetupUtils {
           format("%s/serviceId:%s", logPrefix, containerDefinitionInfo.getStepIdentifier()));
     }
 
-    ContainerSecurityContext ctrSecurityContext = getCtrSecurityContext(securityContext);
+    ContainerSecurityContext ctrSecurityContext = getCtrSecurityContext(securityContext, os);
     if (containerDefinitionInfo.getPrivileged() != null) {
       ctrSecurityContext.setPrivileged(containerDefinitionInfo.getPrivileged());
     }
@@ -553,11 +553,15 @@ public class K8BuildSetupUtils {
             .args(containerDefinitionInfo.getArgs())
             .imageDetailsWithConnector(imageDetailsWithConnector)
             .volumeToMountPath(volumeToMountPath)
-            .privileged(privileged)
-            .runAsUser(containerDefinitionInfo.getRunAsUser())
             .imagePullPolicy(containerDefinitionInfo.getImagePullPolicy())
             .securityContext(ctrSecurityContext)
             .build();
+
+    if (os != OSType.Windows) {
+      cik8ContainerParams.setPrivileged(privileged);
+      cik8ContainerParams.setRunAsUser(containerDefinitionInfo.getRunAsUser());
+    }
+
     if (containerDefinitionInfo.getContainerType() != CIContainerType.SERVICE) {
       cik8ContainerParams.setWorkingDir(workDirPath);
     }
@@ -807,8 +811,8 @@ public class K8BuildSetupUtils {
         .onFailure(event -> log.error(failureMessage, event.getAttemptCount(), event.getFailure()));
   }
 
-  private ContainerSecurityContext getCtrSecurityContext(SecurityContext securityContext) {
-    if (securityContext == null) {
+  private ContainerSecurityContext getCtrSecurityContext(SecurityContext securityContext, OSType os) {
+    if (securityContext == null || os == OSType.Windows) {
       return ContainerSecurityContext.builder().build();
     }
     return ContainerSecurityContext.builder()

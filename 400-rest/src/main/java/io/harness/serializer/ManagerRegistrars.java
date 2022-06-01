@@ -14,7 +14,6 @@ import io.harness.ccm.serializer.morphia.CECommonsMorphiaRegistrar;
 import io.harness.morphia.CgOrchestrationBeansMorphiaRegistrar;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.serializer.kryo.CgOrchestrationBeansKryoRegistrar;
-import io.harness.serializer.kryo.CvNextGenCommonsBeansKryoRegistrar;
 import io.harness.serializer.kryo.DelegateAgentBeansKryoRegister;
 import io.harness.serializer.kryo.DelegateAgentKryoRegister;
 import io.harness.serializer.kryo.DelegateServiceKryoRegister;
@@ -47,6 +46,7 @@ import org.springframework.core.convert.converter.Converter;
 public class ManagerRegistrars {
   public static final ImmutableSet<Class<? extends KryoRegistrar>> kryoRegistrars =
       ImmutableSet.<Class<? extends KryoRegistrar>>builder()
+          .addAll(CvNextGenBeansRegistrars.kryoRegistrars)
           .addAll(CvNextGenCommonsRegistrars.kryoRegistrars)
           .addAll(ConnectorBeansRegistrars.kryoRegistrars)
           .addAll(DelegateTasksBeansRegistrars.kryoRegistrars)
@@ -60,7 +60,6 @@ public class ManagerRegistrars {
           .addAll(SMCoreRegistrars.kryoRegistrars)
           .addAll(FileServiceCommonsRegistrars.kryoRegistrars)
           .add(NotificationBeansKryoRegistrar.class)
-          .add(CvNextGenCommonsBeansKryoRegistrar.class)
           .addAll(LicenseBeanRegistrar.kryoRegistrars)
           // temporary:
           .add(NotificationDelegateTasksKryoRegistrar.class)

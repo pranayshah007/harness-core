@@ -96,7 +96,9 @@ public abstract class AbstractDelegateDataCollectionTask extends AbstractDelegat
      * from the worker threads before the job is aborted
      */
     completed.set(true);
-    future.cancel(true);
+    if (future != null) {
+      future.cancel(true);
+    }
     synchronized (lockObject) {
       lockObject.notifyAll();
     }

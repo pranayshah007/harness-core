@@ -103,19 +103,19 @@ public class ConfigFileOverrideYamlHandlerTest extends YamlHandlerTestBase {
   private void getApplication() {
     Application application =
         Application.Builder.anApplication().uuid(APP_ID).accountId(ACCOUNT_ID).appId(APP_ID).build();
-    when(appService.getAppByName(anyString(), anyString())).thenReturn(application);
+    when(appService.getAppByName(any(), any())).thenReturn(application);
   }
 
   private void getEnvironment() {
     Environment environment = Environment.Builder.anEnvironment().uuid(ENV_ID).accountId(ACCOUNT_ID).build();
-    when(environmentService.getEnvironmentByName(anyString(), anyString())).thenReturn(environment);
+    when(environmentService.getEnvironmentByName(any(), any())).thenReturn(environment);
   }
 
   private void getServiceAndServiceTemplateId() {
     Service service = Service.builder().uuid(SERVICE_ID).build();
-    when(serviceResourceService.getServiceByName(anyString(), anyString())).thenReturn(service);
+    when(serviceResourceService.getServiceByName(any(), any())).thenReturn(service);
     ServiceTemplate serviceTemplate = ServiceTemplate.Builder.aServiceTemplate().withUuid(SERVICE_TEMPLATE_ID).build();
-    when(serviceTemplateService.get(anyString(), anyString(), anyString())).thenReturn(serviceTemplate);
+    when(serviceTemplateService.get(any(), any(), any())).thenReturn(serviceTemplate);
   }
 
   private GitFileChange getGitFileChange(String yamlFilePath, String yamlString) {

@@ -7,6 +7,7 @@
 
 package io.harness.cdng.provision.cloudformation;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
 import io.harness.annotation.RecasterAlias;
@@ -76,8 +77,10 @@ public class CloudformationCreateStackStepConfiguration {
             .parameterOverrides(NGVariablesUtils.getMapOfVariables(parameterOverrides, 0L));
 
     LinkedHashMap<String, CloudformationParametersFileSpec> parameters = new LinkedHashMap<>();
-    parametersFilesSpecs.forEach(cloudformationParametersFileSpec
-        -> parameters.put(cloudformationParametersFileSpec.getIdentifier(), cloudformationParametersFileSpec));
+    if (isNotEmpty(parametersFilesSpecs)) {
+      parametersFilesSpecs.forEach(cloudformationParametersFileSpec
+          -> parameters.put(cloudformationParametersFileSpec.getIdentifier(), cloudformationParametersFileSpec));
+    }
 
     return builder.parameters(parameters).build();
   }

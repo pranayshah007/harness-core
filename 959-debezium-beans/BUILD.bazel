@@ -15,7 +15,6 @@ java_library(
         "//:lombok",
         "//959-debezium-beans/src/main/proto:959_debezium_beans_java_proto",
         "//960-persistence:module",
-        "@maven//:com_google_code_findbugs_annotations",
         "@maven//:org_redisson_redisson",
     ],
 )

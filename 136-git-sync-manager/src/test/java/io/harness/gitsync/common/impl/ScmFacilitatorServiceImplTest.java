@@ -25,7 +25,7 @@ import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.exception.ExceptionUtils;
-import io.harness.exception.ScmResourceNotFoundException;
+import io.harness.exception.ScmBadRequestException;
 import io.harness.exception.WingsException;
 import io.harness.gitsync.GitSyncTestBase;
 import io.harness.gitsync.common.dtos.GitBranchesResponseDTO;
@@ -35,6 +35,7 @@ import io.harness.gitsync.common.dtos.ScmCreateFileRequestDTO;
 import io.harness.gitsync.common.dtos.ScmCreatePRRequestDTO;
 import io.harness.gitsync.common.dtos.ScmCreatePRResponseDTO;
 import io.harness.gitsync.common.dtos.ScmGetFileByBranchRequestDTO;
+import io.harness.gitsync.common.dtos.ScmGetFileByCommitIdRequestDTO;
 import io.harness.gitsync.common.dtos.ScmGetFileResponseDTO;
 import io.harness.gitsync.common.dtos.ScmUpdateFileRequestDTO;
 import io.harness.gitsync.common.helper.GitSyncConnectorHelper;
@@ -159,7 +160,7 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
       scmFacilitatorService.createNewBranch(
           scope, (ScmConnector) connectorInfo.getConnectorConfig(), branch, defaultBranch);
     } catch (Exception ex) {
-      WingsException exception = ExceptionUtils.cause(ScmResourceNotFoundException.class, ex);
+      WingsException exception = ExceptionUtils.cause(ScmBadRequestException.class, ex);
       assertThat(exception).isNotNull();
       assertThat(exception.getMessage()).isEqualTo(errorMessage);
     }
@@ -260,6 +261,33 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
         ()
             -> scmFacilitatorService.getFileByBranch(
                 ScmGetFileByBranchRequestDTO.builder().scope(getDefaultScope()).branchName(branch).build()))
+        .isInstanceOf(WingsException.class);
+  }
+
+  @Test
+  @Owner(developers = MOHIT_GARG)
+  @Category(UnitTests.class)
+  public void testGetFileByCommitIdWhenSCMAPIsucceeds() {
+    FileContent fileContent =
+        FileContent.newBuilder().setContent(content).setBlobId(blobId).setCommitId(commitId).setPath(filePath).build();
+    when(scmOrchestratorService.processScmRequestUsingConnectorSettings(any(), any())).thenReturn(fileContent);
+    ScmGetFileResponseDTO scmGetFileResponseDTO = scmFacilitatorService.getFileByCommitId(
+        ScmGetFileByCommitIdRequestDTO.builder().scope(getDefaultScope()).commitId(commitId).build());
+    assertThat(scmGetFileResponseDTO.getBlobId()).isEqualTo(blobId);
+    assertThat(scmGetFileResponseDTO.getCommitId()).isEqualTo(commitId);
+    assertThat(scmGetFileResponseDTO.getFileContent()).isEqualTo(content);
+  }
+
+  @Test
+  @Owner(developers = MOHIT_GARG)
+  @Category(UnitTests.class)
+  public void testGetFileByCommitIdWhenSCMAPIfails() {
+    FileContent fileContent = FileContent.newBuilder().setStatus(400).build();
+    when(scmOrchestratorService.processScmRequestUsingConnectorSettings(any(), any())).thenReturn(fileContent);
+    assertThatThrownBy(
+        ()
+            -> scmFacilitatorService.getFileByCommitId(
+                ScmGetFileByCommitIdRequestDTO.builder().scope(getDefaultScope()).commitId(commitId).build()))
         .isInstanceOf(WingsException.class);
   }
 

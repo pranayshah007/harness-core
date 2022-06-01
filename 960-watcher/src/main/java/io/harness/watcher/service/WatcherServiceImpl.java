@@ -28,6 +28,7 @@ import static io.harness.delegate.message.MessageConstants.DELEGATE_START_GRPC;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_STOP_ACQUIRING;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_STOP_GRPC;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_SWITCH_STORAGE;
+import static io.harness.delegate.message.MessageConstants.DELEGATE_TOKEN_NAME;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_UPGRADE_NEEDED;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_UPGRADE_PENDING;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_UPGRADE_STARTED;
@@ -81,6 +82,7 @@ import static org.apache.commons.lang3.StringUtils.substringBefore;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.UUIDGenerator;
+import io.harness.delegate.DelegateAgentCommonVariables;
 import io.harness.delegate.beans.DelegateConfiguration;
 import io.harness.delegate.beans.DelegateScripts;
 import io.harness.delegate.message.Message;
@@ -225,15 +227,6 @@ public class WatcherServiceImpl implements WatcherService {
   private final AtomicInteger minMinorVersion = new AtomicInteger(0);
   private final Set<Integer> illegalVersions = new HashSet<>();
   private final Map<String, Long> delegateVersionMatchedAt = new HashMap<>();
-  private static volatile String delegateId;
-
-  private void setDelegateId(String delegateId) {
-    this.delegateId = delegateId;
-  }
-
-  public static String getDelegateId() {
-    return isEmpty(delegateId) ? UNREGISTERED : delegateId;
-  }
 
   @Override
   public void run(boolean upgrade) {
@@ -628,9 +621,14 @@ public class WatcherServiceImpl implements WatcherService {
                 upgradeJre(delegateJreVersion, migrateToJreVersion);
               }
 
-              if (UNREGISTERED.equals(getDelegateId())) {
+              if (UNREGISTERED.equals(DelegateAgentCommonVariables.getDelegateId())) {
                 String delegateIdFromAgent = (String) delegateData.get(DELEGATE_ID);
-                this.setDelegateId(delegateIdFromAgent);
+                DelegateAgentCommonVariables.setDelegateId(delegateIdFromAgent);
+              }
+
+              if (UNREGISTERED.equals(DelegateAgentCommonVariables.getDelegateTokenName())) {
+                String delegateTokenName = (String) delegateData.get(DELEGATE_TOKEN_NAME);
+                DelegateAgentCommonVariables.setDelegateTokenName(delegateTokenName);
               }
 
               String delegateVersion = (String) delegateData.get(DELEGATE_VERSION);

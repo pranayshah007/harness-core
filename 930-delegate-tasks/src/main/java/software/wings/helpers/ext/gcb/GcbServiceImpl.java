@@ -32,7 +32,6 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.hazelcast.core.RuntimeInterruptedException;
 import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.util.HashMap;
@@ -77,7 +76,7 @@ public class GcbServiceImpl implements GcbService {
       return response.body();
     } catch (InterruptedIOException e) {
       log.error("Failed to create GCB build due to: ", e);
-      throw new RuntimeInterruptedException();
+      throw new RuntimeException(e);
     } catch (IOException e) {
       throw new GcbClientException(GCP_ERROR_MESSAGE, e);
     }
@@ -97,7 +96,7 @@ public class GcbServiceImpl implements GcbService {
       return response.body();
     } catch (InterruptedIOException e) {
       log.error("Failed to fetch GCB build due to: ", e);
-      throw new RuntimeInterruptedException();
+      throw new RuntimeException(e);
     } catch (IOException e) {
       throw new GcbClientException(GCP_ERROR_MESSAGE, e);
     }
@@ -117,7 +116,7 @@ public class GcbServiceImpl implements GcbService {
       throw new GcbClientException(extractErrorMessage(response));
     } catch (InterruptedIOException e) {
       log.error("Failed to run GCB trigger due to: ", e);
-      throw new RuntimeInterruptedException();
+      throw new RuntimeException(e);
     } catch (IOException e) {
       throw new GcbClientException(GCP_ERROR_MESSAGE, e);
     }
@@ -141,7 +140,7 @@ public class GcbServiceImpl implements GcbService {
       return response.body().string();
     } catch (InterruptedIOException e) {
       log.error("GCB_TASK - Failed to fetch GCB build logs due to: ", e);
-      throw new RuntimeInterruptedException();
+      throw new RuntimeException(e);
     } catch (IOException e) {
       throw new GcbClientException(GCP_ERROR_MESSAGE, e);
     }

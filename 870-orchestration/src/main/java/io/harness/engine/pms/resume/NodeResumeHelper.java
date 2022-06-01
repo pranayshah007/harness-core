@@ -54,12 +54,13 @@ public class NodeResumeHelper {
         StepResponseNotifyData notifyData = StepResponseNotifyData.builder()
                                                 .nodeUuid(ce.getNodeId())
                                                 .identifier(ce.getIdentifier())
+                                                .nodeExecutionId(ce.getUuid())
                                                 .status(ce.getStatus())
                                                 .failureInfo(ce.getFailureInfo())
                                                 .stepOutcomeRefs(refMap.get(ce.getUuid()))
                                                 .adviserResponse(ce.getAdviserResponse())
                                                 .build();
-        byteResponseMap.put(ce.getNodeId(), ByteString.copyFrom(kryoSerializer.asDeflatedBytes(notifyData)));
+        byteResponseMap.put(ce.getUuid(), ByteString.copyFrom(kryoSerializer.asDeflatedBytes(notifyData)));
       }
       return byteResponseMap;
     }

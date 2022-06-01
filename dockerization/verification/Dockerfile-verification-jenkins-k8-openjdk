@@ -1,4 +1,4 @@
-FROM harness/manager-openjdk-8u242:x86_64-alpine-jdk8u242-b08
+FROM harness/java-docker-base:smp_jdk11
 
 COPY --chown=65534:65534 keystore.jks /opt/harness/
 COPY --chown=65534:65534 verification-config.yml /opt/harness/

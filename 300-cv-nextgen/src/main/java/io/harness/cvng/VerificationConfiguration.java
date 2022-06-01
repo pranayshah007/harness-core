@@ -24,6 +24,9 @@ import io.harness.mongo.MongoConfig;
 import io.harness.notification.NotificationClientConfiguration;
 import io.harness.remote.ManagerAuthConfig;
 import io.harness.remote.client.ServiceHttpClientConfig;
+import io.harness.secret.ConfigSecret;
+
+import software.wings.app.PortalConfig;
 
 import ch.qos.logback.access.spi.IAccessEvent;
 import ch.qos.logback.classic.Level;
@@ -59,7 +62,6 @@ public class VerificationConfiguration extends Configuration {
   @JsonProperty("pmsSdkGrpcServerConfig") private GrpcServerConfig pmsSdkGrpcServerConfig;
   @JsonProperty("pmsGrpcClientConfig") private GrpcClientConfig pmsGrpcClientConfig;
   @JsonProperty("shouldConfigureWithPMS") private Boolean shouldConfigureWithPMS;
-  @JsonProperty("shouldConfigureWithNotification") private Boolean shouldConfigureWithNotification;
   @JsonProperty("cfClientConfig") private CfClientConfig cfClientConfig;
   @JsonProperty("featureFlagConfig") private FeatureFlagConfig featureFlagConfig;
   @JsonProperty("cacheConfig") private CacheConfig cacheConfig;
@@ -68,6 +70,9 @@ public class VerificationConfiguration extends Configuration {
   private DistributedLockImplementation distributedLockImplementation = DistributedLockImplementation.MONGO;
   private ServiceHttpClientConfig templateServiceClientConfig;
   private String templateServiceSecret;
+  @JsonProperty("auditClientConfig") private ServiceHttpClientConfig auditClientConfig;
+  @JsonProperty(value = "enableAudit") private boolean enableAudit;
+  @JsonProperty @ConfigSecret private PortalConfig portal = new PortalConfig();
 
   private String portalUrl;
   /**

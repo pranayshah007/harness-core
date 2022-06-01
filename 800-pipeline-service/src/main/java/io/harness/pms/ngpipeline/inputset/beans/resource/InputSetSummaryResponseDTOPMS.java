@@ -10,8 +10,10 @@ package io.harness.pms.ngpipeline.inputset.beans.resource;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.gitsync.sdk.EntityValidityDetails;
+import io.harness.gitsync.sdk.GitSyncApiConstants;
 import io.harness.pms.inputset.InputSetErrorWrapperDTOPMS;
 import io.harness.pms.inputset.InputSetSchemaConstants;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntityType;
@@ -52,4 +54,6 @@ public class InputSetSummaryResponseDTOPMS {
   Map<String, String> overlaySetErrorDetails;
   @Schema(description = PipelineResourceConstants.GIT_VALIDITY_MESSAGE) EntityValidityDetails entityValidityDetails;
   @Schema(description = InputSetSchemaConstants.INPUT_SET_MODULES_MESSAGE) Set<String> modules;
+  @Schema(description = GitSyncApiConstants.STORE_TYPE_RESPONSE_PARAM_MESSAGE, hidden = true) StoreType storeType;
+  @Schema(description = GitSyncApiConstants.GIT_CONNECTOR_REF_PARAM_MESSAGE, hidden = true) String connectorRef;
 }

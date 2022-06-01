@@ -659,4 +659,13 @@ public class EntitySetupUsageServiceImplTest extends EntitySetupUsageTestBase {
         entityReferencesDTO.getEntitySetupUsageBatchList().get(1).getReferredByEntity().equals(referredByEntityFQN1)
         && entityReferencesDTO.getEntitySetupUsageBatchList().get(1).getReferredEntities().size() == 1);
   }
+
+  @Test
+  @Owner(developers = OwnerRule.VLAD)
+  @Category(UnitTests.class)
+  public void verifyListAllWhenReferreByTypeIsEmpty() {
+    Page<EntitySetupUsageDTO> result = entitySetupUsageService.listAllEntityUsagePerEntityScope(
+        0, 10, accountIdentifier, referredByEntityName, EntityType.FILES, null, null);
+    assertThat(result).isEqualTo(Page.empty());
+  }
 }

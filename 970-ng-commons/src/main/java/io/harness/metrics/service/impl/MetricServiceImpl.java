@@ -23,7 +23,7 @@ import io.harness.serializer.YamlUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
-import groovy.lang.Singleton;
+import com.google.inject.Singleton;
 import io.opencensus.common.Duration;
 import io.opencensus.common.Scope;
 import io.opencensus.exporter.stats.prometheus.PrometheusStatsCollector;

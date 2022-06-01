@@ -19,6 +19,7 @@ import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.exception.InvalidArgumentsException;
+import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
 
@@ -87,11 +88,15 @@ public class RancherResolveClustersTask extends AbstractDelegateRunnableTask {
                       .collect(Collectors.toList()),
             LogLevel.INFO);
       } else {
-        logCallback.saveExecutionLog("Rancher returned an empty list of clusters.", LogLevel.ERROR);
+        logCallback.saveExecutionLog(
+            "Rancher returned an empty list of clusters.", LogLevel.ERROR, CommandExecutionStatus.FAILURE);
         return RancherResolveClustersResponse.builder().executionStatus(ExecutionStatus.FAILED).build();
       }
     } catch (Exception e) {
       log.error("Caught exception while fetching clusters data from rancher", e);
+      logCallback.saveExecutionLog(
+          "Error while fetching clusters data from Rancher. Exception: " + e.getLocalizedMessage(), LogLevel.ERROR,
+          CommandExecutionStatus.FAILURE);
       RancherResolveClustersResponse response =
           RancherResolveClustersResponse.builder().executionStatus(ExecutionStatus.FAILED).build();
       response.setErrorMessage(e.getLocalizedMessage());
@@ -103,12 +108,13 @@ public class RancherResolveClustersTask extends AbstractDelegateRunnableTask {
     List<String> filteredClusters = filterClustersForCriteria(rancherClusterData, selectionParams);
 
     if (CollectionUtils.isEmpty(filteredClusters)) {
-      logCallback.saveExecutionLog("No eligible cluster found after filtering", LogLevel.ERROR);
+      logCallback.saveExecutionLog(
+          "No eligible cluster found after filtering", LogLevel.ERROR, CommandExecutionStatus.FAILURE);
       return RancherResolveClustersResponse.builder().executionStatus(ExecutionStatus.FAILED).build();
     }
 
-    logCallback.saveExecutionLog(
-        "Eligible clusters list after applying label filters: " + filteredClusters, LogLevel.INFO);
+    logCallback.saveExecutionLog("Eligible clusters list after applying label filters: " + filteredClusters,
+        LogLevel.INFO, CommandExecutionStatus.SUCCESS);
     return RancherResolveClustersResponse.builder()
         .executionStatus(ExecutionStatus.SUCCESS)
         .clusters(filteredClusters)

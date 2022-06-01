@@ -348,6 +348,7 @@ public class NgUserServiceImpl implements NgUserService {
                               .filter(principal -> USER.equals(principal.getType()))
                               .map(PrincipalDTO::getIdentifier)
                               .collect(Collectors.toCollection(HashSet::new));
+    // multiple filters
     List<String> userGroupIds =
         principals.stream()
             .filter(principal

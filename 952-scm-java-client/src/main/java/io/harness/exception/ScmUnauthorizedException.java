@@ -14,7 +14,10 @@ import io.harness.eraro.ErrorCode;
 
 @OwnedBy(PL)
 public class ScmUnauthorizedException extends ScmException {
+  private static final String MESSAGE_ARG = "message";
+
   public ScmUnauthorizedException(String errorMessage) {
-    super(errorMessage, null, ErrorCode.SCM_UNAUTHORIZED);
+    super(errorMessage, null, ErrorCode.SCM_UNAUTHORIZED_ERROR_V2);
+    super.param(MESSAGE_ARG, errorMessage);
   }
 }

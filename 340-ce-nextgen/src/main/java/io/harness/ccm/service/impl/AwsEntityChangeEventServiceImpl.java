@@ -19,7 +19,6 @@ import io.harness.aws.AwsClient;
 import io.harness.ccm.CENextGenConfiguration;
 import io.harness.ccm.bigQuery.BigQueryService;
 import io.harness.ccm.commons.beans.config.AwsConfig;
-import io.harness.ccm.commons.beans.config.GcpConfig;
 import io.harness.ccm.commons.dao.AWSConnectorToBucketMappingDao;
 import io.harness.ccm.commons.dao.CECloudAccountDao;
 import io.harness.ccm.commons.entities.AWSConnectorToBucketMapping;
@@ -42,20 +41,11 @@ import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.services.costandusagereport.model.ReportDefinition;
 import com.amazonaws.services.organizations.model.AWSOrganizationsNotInUseException;
 import com.amazonaws.services.organizations.model.AccessDeniedException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.api.core.ApiFuture;
-import com.google.api.gax.core.FixedCredentialsProvider;
-import com.google.auth.oauth2.ServiceAccountCredentials;
-import com.google.cloud.pubsub.v1.Publisher;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
-import com.google.protobuf.ByteString;
-import com.google.pubsub.v1.PubsubMessage;
-import com.google.pubsub.v1.TopicName;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -106,7 +96,10 @@ public class AwsEntityChangeEventServiceImpl implements AwsEntityChangeEventServ
               ceAwsConnectorDTO.getCrossAccountAccess().getExternalId(),
               ceAwsConnectorDTO.getCrossAccountAccess().getCrossAccountRoleArn(), ceAwsConnectorDTO.getAwsAccountId(),
               entityChangeEvents);
-          publishMessage(entityChangeEvents);
+          EntityChangeEventServiceHelper.publishMessage(entityChangeEvents,
+              configuration.getGcpConfig().getGcpProjectId(),
+              configuration.getGcpConfig().getGcpAwsConnectorCrudPubSubTopic(),
+              bigQueryService.getCredentials(GOOGLE_CREDENTIALS_PATH));
         }
         log.info("CEAwsConnectorDTO: {}", ceAwsConnectorDTO);
         List<CECloudAccount> awsAccounts = new ArrayList<>();
@@ -147,12 +140,18 @@ public class AwsEntityChangeEventServiceImpl implements AwsEntityChangeEventServ
               ceAwsConnectorDTO.getCrossAccountAccess().getExternalId(),
               ceAwsConnectorDTO.getCrossAccountAccess().getCrossAccountRoleArn(), ceAwsConnectorDTO.getAwsAccountId(),
               entityChangeEvents);
-          publishMessage(entityChangeEvents);
+          EntityChangeEventServiceHelper.publishMessage(entityChangeEvents,
+              configuration.getGcpConfig().getGcpProjectId(),
+              configuration.getGcpConfig().getGcpAwsConnectorCrudPubSubTopic(),
+              bigQueryService.getCredentials(GOOGLE_CREDENTIALS_PATH));
         }
         break;
       case DELETE_ACTION:
         updateEventData(action, identifier, accountIdentifier, "", "", "", entityChangeEvents);
-        publishMessage(entityChangeEvents);
+        EntityChangeEventServiceHelper.publishMessage(entityChangeEvents,
+            configuration.getGcpConfig().getGcpProjectId(),
+            configuration.getGcpConfig().getGcpAwsConnectorCrudPubSubTopic(),
+            bigQueryService.getCredentials(GOOGLE_CREDENTIALS_PATH));
         break;
       default:
         log.info("Not processing AWS Event, action: {}, entityChangeDTO: {}", action, entityChangeDTO);
@@ -227,47 +226,5 @@ public class AwsEntityChangeEventServiceImpl implements AwsEntityChangeEventServ
             crossAccountAccessDTO.getCrossAccountRoleArn(), crossAccountAccessDTO.getExternalId());
     credentialsProvider.getCredentials();
     return credentialsProvider;
-  }
-
-  public void publishMessage(ArrayList<ImmutableMap<String, String>> entityChangeEvents) {
-    if (entityChangeEvents.isEmpty()) {
-      log.info("Visibility is not enabled. Not sending event");
-      return;
-    }
-    GcpConfig gcpConfig = configuration.getGcpConfig();
-    String harnessGcpProjectId = gcpConfig.getGcpProjectId();
-    String inventoryPubSubTopic = gcpConfig.getGcpAwsConnectorCrudPubSubTopic();
-    ServiceAccountCredentials sourceGcpCredentials = bigQueryService.getCredentials(GOOGLE_CREDENTIALS_PATH);
-    TopicName topicName = TopicName.of(harnessGcpProjectId, inventoryPubSubTopic);
-    Publisher publisher = null;
-    log.info("Publishing event to topic: {}", topicName);
-    try {
-      // Create a publisher instance with default settings bound to the topic
-      publisher = Publisher.newBuilder(topicName)
-                      .setCredentialsProvider(FixedCredentialsProvider.create(sourceGcpCredentials))
-                      .build();
-      ObjectMapper objectMapper = new ObjectMapper();
-      String message = objectMapper.writeValueAsString(entityChangeEvents);
-      ByteString data = ByteString.copyFromUtf8(message);
-      log.info("Sending event with data: {}", data);
-      PubsubMessage pubsubMessage = PubsubMessage.newBuilder().setData(data).build();
-
-      // Once published, returns a server-assigned message id (unique within the topic)
-      ApiFuture<String> messageIdFuture = publisher.publish(pubsubMessage);
-      String messageId = messageIdFuture.get();
-      log.info("Published event with data: {}, messageId: {}", message, messageId);
-    } catch (Exception e) {
-      log.error("Error occurred while sending event in pubsub\n", e);
-    }
-
-    if (publisher != null) {
-      // When finished with the publisher, shutdown to free up resources.
-      publisher.shutdown();
-      try {
-        publisher.awaitTermination(1, TimeUnit.MINUTES);
-      } catch (InterruptedException e) {
-        log.error("Error occurred while terminating pubsub publisher\n", e);
-      }
-    }
   }
 }

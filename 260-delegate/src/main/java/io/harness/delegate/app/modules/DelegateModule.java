@@ -150,6 +150,9 @@ import io.harness.delegate.task.artifacts.docker.DockerArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.docker.DockerArtifactTaskNG;
 import io.harness.delegate.task.artifacts.ecr.EcrArtifactTaskNG;
 import io.harness.delegate.task.artifacts.gcr.GcrArtifactTaskNG;
+import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactTaskHandler;
+import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactTaskNG;
 import io.harness.delegate.task.artifacts.nexus.NexusArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.nexus.NexusArtifactTaskHandler;
 import io.harness.delegate.task.artifacts.nexus.NexusArtifactTaskNG;
@@ -197,6 +200,8 @@ import io.harness.delegate.task.helm.HelmDeployServiceNG;
 import io.harness.delegate.task.helm.HelmValuesFetchTaskNG;
 import io.harness.delegate.task.helm.HttpHelmConnectivityDelegateTask;
 import io.harness.delegate.task.helm.HttpHelmValidationHandler;
+import io.harness.delegate.task.jenkins.JenkinsTestConnectionDelegateTask;
+import io.harness.delegate.task.jenkins.JenkinsValidationHandler;
 import io.harness.delegate.task.jira.JiraTaskNG;
 import io.harness.delegate.task.jira.JiraValidationHandler;
 import io.harness.delegate.task.jira.connection.JiraTestConnectionTaskNG;
@@ -471,7 +476,6 @@ import software.wings.helpers.ext.artifactory.ArtifactoryService;
 import software.wings.helpers.ext.artifactory.ArtifactoryServiceImpl;
 import software.wings.helpers.ext.azure.AcrService;
 import software.wings.helpers.ext.azure.AcrServiceImpl;
-import software.wings.helpers.ext.azure.AzureHelperService;
 import software.wings.helpers.ext.azure.devops.AzureArtifactsService;
 import software.wings.helpers.ext.azure.devops.AzureArtifactsServiceImpl;
 import software.wings.helpers.ext.bamboo.BambooService;
@@ -734,7 +738,7 @@ public class DelegateModule extends AbstractModule {
   @Singleton
   @Named("backgroundExecutor")
   public ExecutorService backgroundExecutor() {
-    return ThreadPool.create(1, 1, 5, TimeUnit.SECONDS,
+    return ThreadPool.create(1, 5, 5, TimeUnit.SECONDS,
         new ThreadFactoryBuilder().setNameFormat("background-%d").setPriority(Thread.MIN_PRIORITY).build());
   }
 
@@ -938,7 +942,6 @@ public class DelegateModule extends AbstractModule {
     bind(AcrService.class).to(AcrServiceImpl.class);
     bind(AcrBuildService.class).to(AcrBuildServiceImpl.class);
     bind(AmiBuildService.class).to(AmiBuildServiceImpl.class);
-    bind(AzureHelperService.class);
     bind(AzureMachineImageBuildService.class).to(AzureMachineImageBuildServiceImpl.class);
     bind(CustomBuildService.class).to(CustomBuildServiceImpl.class);
     bind(CustomRepositoryService.class).to(CustomRepositoryServiceImpl.class);
@@ -1162,6 +1165,13 @@ public class DelegateModule extends AbstractModule {
         .toInstance(DockerArtifactTaskHandler.class);
 
     MapBinder<Class<? extends ArtifactSourceDelegateRequest>, Class<? extends DelegateArtifactTaskHandler>>
+        jenkinsArtifactServiceMapBinder =
+            MapBinder.newMapBinder(binder(), new TypeLiteral<Class<? extends ArtifactSourceDelegateRequest>>() {},
+                new TypeLiteral<Class<? extends DelegateArtifactTaskHandler>>() {});
+    artifactServiceMapBinder.addBinding(JenkinsArtifactDelegateRequest.class)
+        .toInstance(JenkinsArtifactTaskHandler.class);
+
+    MapBinder<Class<? extends ArtifactSourceDelegateRequest>, Class<? extends DelegateArtifactTaskHandler>>
         nexusArtifactServiceMapBinder =
             MapBinder.newMapBinder(binder(), new TypeLiteral<Class<? extends ArtifactSourceDelegateRequest>>() {},
                 new TypeLiteral<Class<? extends DelegateArtifactTaskHandler>>() {});
@@ -1173,6 +1183,13 @@ public class DelegateModule extends AbstractModule {
             MapBinder.newMapBinder(binder(), new TypeLiteral<Class<? extends ArtifactSourceDelegateRequest>>() {},
                 new TypeLiteral<Class<? extends DelegateArtifactTaskHandler>>() {});
     artifactoryDockerArtifactServiceMapBinder.addBinding(ArtifactoryArtifactDelegateRequest.class)
+        .toInstance(ArtifactoryArtifactTaskHandler.class);
+
+    MapBinder<Class<? extends ArtifactSourceDelegateRequest>, Class<? extends DelegateArtifactTaskHandler>>
+        artifactoryJenkinsArtifactServiceMapBinder =
+            MapBinder.newMapBinder(binder(), new TypeLiteral<Class<? extends ArtifactSourceDelegateRequest>>() {},
+                new TypeLiteral<Class<? extends DelegateArtifactTaskHandler>>() {});
+    artifactoryJenkinsArtifactServiceMapBinder.addBinding(ArtifactoryArtifactDelegateRequest.class)
         .toInstance(ArtifactoryArtifactTaskHandler.class);
 
     MapBinder<Class<? extends ArtifactSourceDelegateRequest>, Class<? extends DelegateArtifactTaskHandler>>
@@ -1281,6 +1298,7 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.DOCKER_VALIDATE_ARTIFACT_SERVER).toInstance(ServiceImplDelegateTask.class);
     mapBinder.addBinding(TaskType.DOCKER_VALIDATE_ARTIFACT_STREAM).toInstance(ServiceImplDelegateTask.class);
     mapBinder.addBinding(TaskType.DOCKER_GET_ARTIFACT_META_INFO).toInstance(ServiceImplDelegateTask.class);
+    mapBinder.addBinding(TaskType.JENKINS_VALIDATE_ARTIFACT_SERVER).toInstance(ServiceImplDelegateTask.class);
     mapBinder.addBinding(TaskType.ECR_GET_BUILDS).toInstance(ServiceImplDelegateTask.class);
     mapBinder.addBinding(TaskType.ECR_VALIDATE_ARTIFACT_SERVER).toInstance(ServiceImplDelegateTask.class);
     mapBinder.addBinding(TaskType.ECR_GET_PLANS).toInstance(ServiceImplDelegateTask.class);
@@ -1517,6 +1535,7 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.GIT_FETCH_NEXT_GEN_TASK).toInstance(GitFetchTaskNG.class);
     mapBinder.addBinding(TaskType.BUILD_SOURCE_TASK).toInstance(BuildSourceTask.class);
     mapBinder.addBinding(TaskType.DOCKER_ARTIFACT_TASK_NG).toInstance(DockerArtifactTaskNG.class);
+    mapBinder.addBinding(TaskType.JENKINS_ARTIFACT_TASK_NG).toInstance(JenkinsArtifactTaskNG.class);
     mapBinder.addBinding(TaskType.GCR_ARTIFACT_TASK_NG).toInstance(GcrArtifactTaskNG.class);
     mapBinder.addBinding(TaskType.ECR_ARTIFACT_TASK_NG).toInstance(EcrArtifactTaskNG.class);
     mapBinder.addBinding(TaskType.ACR_ARTIFACT_TASK_NG).toInstance(AcrArtifactTaskNG.class);
@@ -1554,6 +1573,7 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.NG_WINRM_VALIDATION).toInstance(WinRmConfigValidationDelegateTask.class);
     mapBinder.addBinding(TaskType.NG_HOST_CONNECTIVITY_TASK).toInstance(HostConnectivityValidationDelegateTask.class);
     mapBinder.addBinding(TaskType.DOCKER_CONNECTIVITY_TEST_TASK).toInstance(DockerTestConnectionDelegateTask.class);
+    mapBinder.addBinding(TaskType.JENKINS_CONNECTIVITY_TEST_TASK).toInstance(JenkinsTestConnectionDelegateTask.class);
     mapBinder.addBinding(TaskType.NG_AWS_TASK).toInstance(AwsDelegateTask.class);
     mapBinder.addBinding(TaskType.JIRA_CONNECTIVITY_TASK_NG).toInstance(JiraTestConnectionTaskNG.class);
     mapBinder.addBinding(TaskType.JIRA_TASK_NG).toInstance(JiraTaskNG.class);
@@ -1674,6 +1694,8 @@ public class DelegateModule extends AbstractModule {
         .to(GitValidationHandler.class);
     connectorTypeToConnectorValidationHandlerMap.addBinding(ConnectorType.DOCKER.getDisplayName())
         .to(DockerValidationHandler.class);
+    connectorTypeToConnectorValidationHandlerMap.addBinding(ConnectorType.JENKINS.getDisplayName())
+        .to(JenkinsValidationHandler.class);
     connectorTypeToConnectorValidationHandlerMap.addBinding(ConnectorType.HTTP_HELM_REPO.getDisplayName())
         .to(HttpHelmValidationHandler.class);
 

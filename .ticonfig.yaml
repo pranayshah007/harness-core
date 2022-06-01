@@ -2,6 +2,7 @@ config:
   ignore:
     - "README.md"
     - ".ticonfig.yaml"
+    - "jira-projects.txt"
     - "**/*.go"
     - "**/*.md"
     - "**/Dockerfile*"

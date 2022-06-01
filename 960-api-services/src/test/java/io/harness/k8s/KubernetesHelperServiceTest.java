@@ -116,4 +116,18 @@ public class KubernetesHelperServiceTest extends CategoryTest {
   public void testValidateCluster() {
     assertThatThrownBy(() -> helperService.validateCluster("")).isInstanceOf(InvalidArgumentsException.class);
   }
+
+  @Test
+  @Owner(developers = OwnerRule.MLUKIC)
+  @Category(UnitTests.class)
+  public void testValidateSubscription() {
+    assertThatThrownBy(() -> helperService.validateSubscription("")).isInstanceOf(InvalidArgumentsException.class);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.MLUKIC)
+  @Category(UnitTests.class)
+  public void testValidateResourceGroup() {
+    assertThatThrownBy(() -> helperService.validateResourceGroup("")).isInstanceOf(InvalidArgumentsException.class);
+  }
 }

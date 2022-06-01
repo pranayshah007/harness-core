@@ -20,6 +20,7 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -27,8 +28,10 @@ import static org.mockito.Mockito.when;
 import io.harness.OrchestrationTestBase;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.ExecutionCheck;
+import io.harness.engine.execution.WaitForExecutionInputHelper;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.executions.plan.PlanService;
 import io.harness.engine.facilitation.facilitator.publisher.FacilitateEventPublisher;
@@ -44,6 +47,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.NodeExecution.NodeExecutionBuilder;
 import io.harness.plan.PlanNode;
+import io.harness.pms.PmsFeatureFlagService;
 import io.harness.pms.contracts.advisers.AdviseType;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserResponse;
@@ -98,7 +102,8 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
   @Mock private PlanService planService;
   @Mock private SdkResponseProcessorFactory processorFactory;
   @Mock private AdviserResponseRequestProcessor adviserResponseProcessor;
-
+  @Mock private WaitForExecutionInputHelper waitForExecutionInputHelper;
+  @Mock private PmsFeatureFlagService pmsFeatureFlagService;
   @Inject @InjectMocks @Spy PlanNodeExecutionStrategy executionStrategy;
 
   private static final StepType TEST_STEP_TYPE =
@@ -139,8 +144,37 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
     doReturn(NodeExecution.builder().build())
         .when(executionStrategy)
         .createNodeExecution(ambiance, planNode, null, null, null, null);
+    doReturn(false).when(pmsFeatureFlagService).isEnabled(any(), any(FeatureName.class));
     executionStrategy.runNode(ambiance, planNode, null);
     verify(executorService).submit(any(Runnable.class));
+    // waitForExecutionInputHelper.waitForExecutionInput() will not be called.FF is off.
+    verify(waitForExecutionInputHelper, never()).waitForExecutionInput(any(), any(), any());
+
+    doReturn(true).when(pmsFeatureFlagService).isEnabled(any(), any(FeatureName.class));
+    executionStrategy.runNode(ambiance, planNode, null);
+    verify(executorService, times(2)).submit(any(Runnable.class));
+    // waitForExecutionInputHelper.waitForExecutionInput() will not be called.FF is on but executionInputTemplate is
+    // empty.
+    verify(waitForExecutionInputHelper, never()).waitForExecutionInput(any(), any(), any());
+
+    planNode = PlanNode.builder()
+                   .name("Test Node")
+                   .uuid(generateUuid())
+                   .identifier("test")
+                   .stepType(TEST_STEP_TYPE)
+                   .executionInputTemplate("executionInputTemplate")
+                   .facilitatorObtainment(
+                       FacilitatorObtainment.newBuilder()
+                           .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.SYNC).build())
+                           .build())
+                   .build();
+
+    executionStrategy.runNode(ambiance, planNode, null);
+    // executorService.submit will not be called this time because execution will pause for user input.
+    verify(executorService, times(2)).submit(any(Runnable.class));
+    // waitForExecutionInputHelper.waitForExecutionInput() will be called once.FF is on and executionInputTemplate is
+    // non empty.
+    verify(waitForExecutionInputHelper, times(1)).waitForExecutionInput(any(), any(), eq("executionInputTemplate"));
   }
 
   @Test

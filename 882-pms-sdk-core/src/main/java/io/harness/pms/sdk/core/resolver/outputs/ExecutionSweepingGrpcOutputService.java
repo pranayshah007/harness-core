@@ -90,4 +90,22 @@ public class ExecutionSweepingGrpcOutputService implements ExecutionSweepingOutp
     }
     return optionalSweepingOutputs;
   }
+
+  @Override
+  public List<OptionalSweepingOutput> listOutputsWithGivenNameAndRuntimeIds(
+      Ambiance ambiance, String name, List<String> nodeIds) {
+    SweepingOutputListResponse resolve =
+        PmsGrpcClientUtils.retryAndProcessException(sweepingOutputServiceBlockingStub::listOutputsUsingExecutionIds,
+            SweepingOutputListRequest.newBuilder().setAmbiance(ambiance).setName(name).addAllNodeIds(nodeIds).build());
+    List<OptionalSweepingOutput> optionalSweepingOutputs = new ArrayList<>();
+    for (OptionalSweepingOutputResolveBlobResponse rawOptionalSweepingOutput :
+        resolve.getSweepingOutputResolveBlobResponsesList()) {
+      optionalSweepingOutputs.add(OptionalSweepingOutput.builder()
+                                      .output(RecastOrchestrationUtils.fromJson(
+                                          rawOptionalSweepingOutput.getStepTransput(), ExecutionSweepingOutput.class))
+                                      .found(rawOptionalSweepingOutput.getFound())
+                                      .build());
+    }
+    return optionalSweepingOutputs;
+  }
 }

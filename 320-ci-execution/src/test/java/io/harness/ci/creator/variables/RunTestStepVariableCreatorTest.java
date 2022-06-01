@@ -96,7 +96,10 @@ public class RunTestStepVariableCreatorTest extends CategoryTest {
             "pipeline.stages.run_test.spec.execution.steps.ti.spec.packages",
             "pipeline.stages.run_test.spec.execution.steps.ti.spec.shell",
             "pipeline.stages.run_test.spec.execution.steps.ti.spec.image",
-            "pipeline.stages.run_test.spec.execution.steps.ti.spec.resources.limits.cpu");
+            "pipeline.stages.run_test.spec.execution.steps.ti.spec.resources.limits.cpu",
+            "pipeline.stages.run_test.spec.execution.steps.ti.spec.namespaces",
+            "pipeline.stages.run_test.spec.execution.steps.ti.spec.frameworkVersion",
+            "pipeline.stages.run_test.spec.execution.steps.ti.spec.buildEnvironment");
 
     // yaml extra properties
     List<String> fqnExtraPropertiesList = variablesForParentNodeV2.getYamlExtraProperties()

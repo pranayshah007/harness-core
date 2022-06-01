@@ -42,7 +42,8 @@ public class ServerlessAwsLambdaRollbackStepParameters
   @Override
   @JsonIgnore
   public List<String> getCommandUnits() {
-    return Arrays.asList(
-        ServerlessCommandUnitConstants.init.toString(), ServerlessCommandUnitConstants.rollback.toString());
+    return Arrays.asList(ServerlessCommandUnitConstants.setupDirectory.toString(),
+        ServerlessCommandUnitConstants.configureCred.toString(), ServerlessCommandUnitConstants.plugin.toString(),
+        ServerlessCommandUnitConstants.rollback.toString());
   }
 }

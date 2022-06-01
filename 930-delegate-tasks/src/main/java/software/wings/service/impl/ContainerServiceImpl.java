@@ -48,11 +48,11 @@ import com.amazonaws.services.ecs.model.DescribeTasksResult;
 import com.amazonaws.services.ecs.model.ListTasksRequest;
 import com.amazonaws.services.ecs.model.ListTasksResult;
 import com.amazonaws.services.ecs.model.Task;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.hazelcast.internal.util.Preconditions;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.kubernetes.client.openapi.models.V1Pod;
 import java.util.ArrayList;
@@ -330,8 +330,8 @@ public class ContainerServiceImpl implements ContainerService {
 
   private KubernetesConfig getKubernetesConfigFromParams(ContainerServiceParams containerServiceParams) {
     SettingValue value = containerServiceParams.getSettingAttribute().getValue();
-    Preconditions.checkInstanceOf(
-        KubernetesClusterConfig.class, value, "SettingAttribute should be instanceof KubernetesClusterConfig.");
+    Preconditions.checkState(
+        value instanceof KubernetesClusterConfig, "SettingAttribute should be instanceof KubernetesClusterConfig.");
 
     KubernetesClusterConfig kubernetesClusterConfig = (KubernetesClusterConfig) value;
     return kubernetesClusterConfig.createKubernetesConfig(containerServiceParams.getNamespace());

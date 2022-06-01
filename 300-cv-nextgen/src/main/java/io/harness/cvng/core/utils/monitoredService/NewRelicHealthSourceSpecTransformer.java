@@ -35,7 +35,7 @@ public class NewRelicHealthSourceSpecTransformer
         "Application feature name should be same for List of all configs.");
 
     List<NewRelicCVConfig> configsWithoutCustom =
-        cvConfigs.stream().filter(cvConfig -> cvConfig.getMetricInfos() == null).collect(Collectors.toList());
+        cvConfigs.stream().filter(cvConfig -> cvConfig.getMetricInfos().isEmpty()).collect(Collectors.toList());
     if (isNotEmpty(configsWithoutCustom)) {
       Preconditions.checkArgument(
           configsWithoutCustom.stream().map(NewRelicCVConfig::getApplicationId).distinct().count() == 1,

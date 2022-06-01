@@ -61,10 +61,16 @@ type View {
   chartType: ViewChartType
   viewType: ViewType
   viewState: ViewState
+  viewPreferences: ViewPreferences
   groupBy: viewField
   timeRange: ViewTimeRangeType
   dataSources: [ViewFieldIdentifier]
   isReportScheduledConfigured: Boolean
+}
+
+type ViewPreferences {
+  includeOthers: Boolean
+  includeUnallocatedCost: Boolean
 }
 
 enum ViewTimeRangeType {

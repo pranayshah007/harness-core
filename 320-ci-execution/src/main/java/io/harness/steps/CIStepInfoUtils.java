@@ -13,6 +13,7 @@ import io.harness.beans.plugin.compatible.PluginCompatibleStep;
 import io.harness.beans.steps.stepinfo.SecurityStepInfo;
 import io.harness.beans.sweepingoutputs.StageInfraDetails.Type;
 import io.harness.beans.yaml.extended.ImagePullPolicy;
+import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.config.StepImageConfig;
 import io.harness.execution.CIExecutionConfigService;
@@ -68,8 +69,12 @@ public class CIStepInfoUtils {
   }
 
   public static List<String> getK8PluginCustomStepEntrypoint(
-      PluginCompatibleStep step, CIExecutionConfigService ciExecutionConfigService, String accountId) {
-    return getK8PluginCustomStepImageConfig(step, ciExecutionConfigService, accountId).getEntrypoint();
+      PluginCompatibleStep step, CIExecutionConfigService ciExecutionConfigService, String accountId, OSType os) {
+    StepImageConfig stepImageConfig = getK8PluginCustomStepImageConfig(step, ciExecutionConfigService, accountId);
+    if (os == OSType.Windows) {
+      return stepImageConfig.getWindowsEntrypoint();
+    }
+    return stepImageConfig.getEntrypoint();
   }
 
   private static StepImageConfig getK8PluginCustomStepImageConfig(

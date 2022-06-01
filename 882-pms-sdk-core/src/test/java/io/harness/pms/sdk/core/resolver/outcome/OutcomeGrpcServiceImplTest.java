@@ -38,13 +38,9 @@ import io.fabric8.utils.Lists;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
-@RunWith(PowerMockRunner.class)
 @PrepareForTest(OutcomeProtoServiceBlockingStub.class)
 public class OutcomeGrpcServiceImplTest extends PmsSdkCoreTestBase {
   public static String PLAN_EXECUTION_ID = "planExecutionId";
@@ -54,7 +50,7 @@ public class OutcomeGrpcServiceImplTest extends PmsSdkCoreTestBase {
 
   @Before
   public void setup() {
-    outcomeProtoServiceBlockingStub = PowerMockito.mock(OutcomeProtoServiceBlockingStub.class);
+    outcomeProtoServiceBlockingStub = Mockito.mock(OutcomeProtoServiceBlockingStub.class);
     outcomeGrpcService = new OutcomeGrpcServiceImpl(outcomeProtoServiceBlockingStub);
   }
 

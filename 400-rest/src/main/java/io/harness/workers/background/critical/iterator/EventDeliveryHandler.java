@@ -69,6 +69,7 @@ public class EventDeliveryHandler implements Handler<Event> {
     PersistenceIterator iterator = persistenceIteratorFactory.createIterator(EventDeliveryHandler.class,
         MongoPersistenceIterator.<Event, MorphiaFilterExpander<Event>>builder()
             .mode(ProcessMode.PUMP)
+            .iteratorName("EventDelivery")
             .clazz(Event.class)
             .fieldName(EventsKeys.nextIteration)
             .targetInterval(ofSeconds(5))

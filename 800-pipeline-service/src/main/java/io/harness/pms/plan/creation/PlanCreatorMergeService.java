@@ -13,6 +13,7 @@ import static io.harness.pms.async.plan.PlanNotifyEventConsumer.PMS_PLAN_CREATIO
 import io.harness.ModuleType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.pms.commons.events.PmsEventSender;
 import io.harness.exception.InvalidRequestException;
@@ -20,6 +21,7 @@ import io.harness.exception.UnexpectedException;
 import io.harness.exception.YamlException;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.logging.AutoLogContext;
+import io.harness.pms.PmsFeatureFlagService;
 import io.harness.pms.async.plan.PartialPlanResponseCallback;
 import io.harness.pms.contracts.plan.CreatePartialPlanEvent;
 import io.harness.pms.contracts.plan.Dependencies;
@@ -71,18 +73,21 @@ public class PlanCreatorMergeService {
   PmsEventSender pmsEventSender;
   PlanCreationValidator planCreationValidator;
   private final Integer planCreatorMergeServiceDependencyBatch;
+  private final PmsFeatureFlagService pmsFeatureFlagService;
 
   @Inject
   public PlanCreatorMergeService(PmsSdkHelper pmsSdkHelper, PmsEventSender pmsEventSender,
       WaitNotifyEngine waitNotifyEngine, PlanCreationValidator planCreationValidator,
       @Named("PlanCreatorMergeExecutorService") Executor executor,
-      @Named("planCreatorMergeServiceDependencyBatch") Integer planCreatorMergeServiceDependencyBatch) {
+      @Named("planCreatorMergeServiceDependencyBatch") Integer planCreatorMergeServiceDependencyBatch,
+      PmsFeatureFlagService pmsFeatureFlagService) {
     this.pmsSdkHelper = pmsSdkHelper;
     this.pmsEventSender = pmsEventSender;
     this.waitNotifyEngine = waitNotifyEngine;
     this.planCreationValidator = planCreationValidator;
     this.executor = executor;
     this.planCreatorMergeServiceDependencyBatch = planCreatorMergeServiceDependencyBatch;
+    this.pmsFeatureFlagService = pmsFeatureFlagService;
   }
 
   public String getPublisher() {
@@ -145,10 +150,12 @@ public class PlanCreatorMergeService {
   Map<String, PlanCreationContextValue> createInitialPlanCreationContext(String accountId, String orgIdentifier,
       String projectIdentifier, ExecutionMetadata metadata, TriggerPayload triggerPayload) {
     Map<String, PlanCreationContextValue> planCreationContextMap = new HashMap<>();
-    PlanCreationContextValue.Builder builder = PlanCreationContextValue.newBuilder()
-                                                   .setAccountIdentifier(accountId)
-                                                   .setOrgIdentifier(orgIdentifier)
-                                                   .setProjectIdentifier(projectIdentifier);
+    PlanCreationContextValue.Builder builder =
+        PlanCreationContextValue.newBuilder()
+            .setAccountIdentifier(accountId)
+            .setOrgIdentifier(orgIdentifier)
+            .setProjectIdentifier(projectIdentifier)
+            .setIsExecutionInputEnabled(pmsFeatureFlagService.isEnabled(accountId, FeatureName.NG_EXECUTION_INPUT));
     if (metadata != null) {
       builder.setMetadata(metadata);
     }

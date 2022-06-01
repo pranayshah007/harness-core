@@ -231,8 +231,6 @@ import io.harness.timescaledb.TimeScaleDBConfig;
 import io.harness.timescaledb.TimeScaleDBService;
 import io.harness.timescaledb.TimeScaleDBServiceImpl;
 import io.harness.usermembership.UserMembershipClientModule;
-import io.harness.utils.featureflaghelper.CGFeatureFlagHelperServiceImpl;
-import io.harness.utils.featureflaghelper.FeatureFlagHelperService;
 import io.harness.version.VersionModule;
 
 import software.wings.DataStorageMode;
@@ -1449,7 +1447,6 @@ public class WingsModule extends AbstractModule implements ServersModule {
     bind(OutboxEventHandler.class).to(WingsOutboxEventHandler.class);
     install(new CVCommonsServiceModule());
     bind(CDChangeSourceIntegrationService.class).to(CDChangeSourceIntegrationServiceImpl.class);
-    bind(FeatureFlagHelperService.class).to(CGFeatureFlagHelperServiceImpl.class);
 
     install(new MetricsModule(OPEN_CENSUS_EXPORT_INTERVAL_MINUTES));
     bind(MetricsPublisher.class).to(DelegateMetricsPublisher.class).in(Scopes.SINGLETON);

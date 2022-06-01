@@ -193,6 +193,7 @@ public class IdentityNodeExecutionStrategy
                                                 .failureInfo(nodeExecution.getFailureInfo())
                                                 .identifier(level.getIdentifier())
                                                 .status(nodeExecution.getStatus())
+                                                .nodeExecutionId(level.getRuntimeId())
                                                 .adviserResponse(nodeExecution.getAdviserResponse())
                                                 .build();
       waitNotifyEngine.doneWith(nodeExecution.getNotifyId(), responseData);
