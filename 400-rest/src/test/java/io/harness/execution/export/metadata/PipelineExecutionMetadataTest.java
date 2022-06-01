@@ -20,6 +20,7 @@ import io.harness.rule.Owner;
 import software.wings.beans.WorkflowExecution;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -57,7 +58,7 @@ public class PipelineExecutionMetadataTest extends CategoryTest {
                    WorkflowExecution.builder().workflowType(WorkflowType.ORCHESTRATION).build()))
         .isNull();
 
-    Instant now = Instant.now();
+    Instant now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
     PipelineExecutionMetadata pipelineExecutionMetadata =
         PipelineExecutionMetadata.fromWorkflowExecution(MetadataTestUtils.preparePipelineWorkflowExecution(now));
     MetadataTestUtils.validatePipelineWorkflowExecutionMetadata(pipelineExecutionMetadata, now);

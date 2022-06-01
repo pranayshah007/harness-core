@@ -1524,7 +1524,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         switchStorageMsgSent = true;
       }
       if (sendJreInformationToWatcher) {
-        log.debug("Sending Delegate JRE: {} MigrateTo JRE: {} to watcher", System.getProperty(JAVA_VERSION),
+        log.info("Sending Delegate JRE: {} MigrateTo JRE: {} to watcher", System.getProperty(JAVA_VERSION),
             migrateToJreVersion);
         statusData.put(DELEGATE_JRE_VERSION, System.getProperty(JAVA_VERSION));
         statusData.put(MIGRATE_TO_JRE_VERSION, migrateToJreVersion);

@@ -11,11 +11,29 @@ harness-core Project Dev environment setup instructions
 ```
 
 
-2. Download and Install Java 8
+~~2. DEPRECATED STEPS DO NOT USE Download and Install Java 8
 
    *Note: Brew will download and install the latest version of OpenJDK/JRE, its recommended to install OpenJDK/JRE_1.8.0_242 to be in sync with the version everyone is using in the team.*
 
-   To setup the recommended version, download the OpenJDK 1.8-242 (jdk8u242-b08) JRE .pkg from [AdoptOpenJDK](https://github.com/AdoptOpenJDK/openjdk8-binaries/releases/tag/jdk8u242-b08) and install it. Make sure to update `JAVA_HOME` and `PATH` accordingly (see step 5).
+   To setup the recommended version, download the OpenJDK 1.8-242 (jdk8u242-b08) JRE .pkg from [AdoptOpenJDK](https://github.com/AdoptOpenJDK/openjdk8-binaries/releases/tag/jdk8u242-b08) and install it. Make sure to update `JAVA_HOME` and `PATH` accordingly (see step 5).~~
+
+2. Install JDK11 locally - 11.0.15 Temurin build 
+   
+Download JDK 11 for MAC
+`curl -OL https://github.com/adoptium/temurin11-binaries/releases/download/jdk-11.0.15%2B10/OpenJDK11U-jdk_x64_mac_hotspot_11.0.15_10.tar.gz`
+
+Untar it
+`tar -xzf OpenJDK11U-jdk_x64_mac_hotspot_11.0.15_10.tar.gz`
+
+Update java home (Also update in .bashrc/.zshrc)
+`export JAVA_HOME=path_to_folder/jdk-11.0.15+10/Contents/Home`
+
+Update path (Also update in .bashrc/.zshrc)
+`export PATH=$JAVA_HOME/bin:$PATH`
+
+Check java version, should be 11
+`java --version`
+
 
 3. Install bazel:
 ```

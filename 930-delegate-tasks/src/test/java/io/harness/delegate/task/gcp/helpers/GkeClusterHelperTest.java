@@ -25,8 +25,6 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.powermock.api.mockito.PowerMockito.doReturn;
-import static org.powermock.api.mockito.PowerMockito.spy;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
@@ -46,8 +44,6 @@ import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.client.http.HttpHeaders;
 import com.google.api.client.http.HttpResponseException;
 import com.google.api.client.http.HttpStatusCodes;
-import com.google.api.client.http.HttpTransport;
-import com.google.api.client.json.JsonFactory;
 import com.google.api.client.util.store.DataStore;
 import com.google.api.services.container.Container;
 import com.google.api.services.container.model.Cluster;
@@ -77,6 +73,8 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
@@ -308,18 +306,21 @@ public class GkeClusterHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldGetClusterWithNoGkeTokenSupplierIfInheritingCredentials() throws Exception {
     // given
-    spy(GoogleCredential.class);
-    doReturn(GoogleCredential.fromStream(new ByteArrayInputStream(DUMMY_GCP_KEY.getBytes(StandardCharsets.UTF_8))))
-        .when(GoogleCredential.class, "getApplicationDefault", any(HttpTransport.class), any(JsonFactory.class));
-    when(clustersGet.execute()).thenReturn(CLUSTER_1_19);
+    GoogleCredential googleCredential =
+        GoogleCredential.fromStream(new ByteArrayInputStream(DUMMY_GCP_KEY.getBytes(StandardCharsets.UTF_8)));
+    try (MockedStatic<GoogleCredential> mockStatic = Mockito.mockStatic(GoogleCredential.class)) {
+      mockStatic.when(() -> GoogleCredential.getApplicationDefault(any(), any())).thenReturn(googleCredential);
+      mockStatic.when(() -> GoogleCredential.getApplicationDefault()).thenReturn(googleCredential);
+      when(clustersGet.execute()).thenReturn(CLUSTER_1_19);
 
-    // when
-    KubernetesConfig config = gkeClusterHelper.getCluster(DUMMY_GCP_KEY.toCharArray(), true, ZONE_CLUSTER, "default");
+      // when
+      KubernetesConfig config = gkeClusterHelper.getCluster(DUMMY_GCP_KEY.toCharArray(), true, ZONE_CLUSTER, "default");
 
-    // then
-    verify(clusters).get(anyString());
-    assertThat(config.getServiceAccountTokenSupplier()).isInstanceOf(GcpAccessTokenSupplier.class);
-    assertThat(config.getGcpAccountKeyFileContent()).isEmpty();
+      // then
+      verify(clusters).get(anyString());
+      assertThat(config.getServiceAccountTokenSupplier()).isInstanceOf(GcpAccessTokenSupplier.class);
+      assertThat(config.getGcpAccountKeyFileContent()).isEmpty();
+    }
   }
 
   @Test

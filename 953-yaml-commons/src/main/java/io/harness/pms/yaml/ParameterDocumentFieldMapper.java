@@ -15,12 +15,12 @@ import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.pms.yaml.ParameterDocumentField.ParameterDocumentFieldKeys;
 import io.harness.utils.RecastReflectionUtils;
 
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Map;
 import java.util.Optional;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
-import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 @UtilityClass
@@ -135,17 +135,17 @@ public class ParameterDocumentFieldMapper {
     if (parameterField != null && parameterField.getValue() != null) {
       return parameterField.getValue().getClass();
     }
-    if (castedField == null || !(castedField.getGenericType() instanceof ParameterizedTypeImpl)) {
+    if (castedField == null || !(castedField.getGenericType() instanceof ParameterizedType)) {
       return null;
     }
-    return getFinalClass(((ParameterizedTypeImpl) castedField.getGenericType()).getActualTypeArguments()[0]);
+    return getFinalClass(((ParameterizedType) castedField.getGenericType()).getActualTypeArguments()[0]);
   }
 
   private Class<?> getFinalClass(Type type) {
     if (type instanceof Class<?>) {
       return (Class<?>) type;
-    } else if (type instanceof ParameterizedTypeImpl) {
-      return ((ParameterizedTypeImpl) type).getRawType();
+    } else if (type instanceof ParameterizedType) {
+      return ((ParameterizedType) type).getRawType().getClass();
     }
     return null;
   }

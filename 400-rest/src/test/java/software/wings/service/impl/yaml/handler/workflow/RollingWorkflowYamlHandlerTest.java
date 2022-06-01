@@ -24,10 +24,10 @@ import static software.wings.utils.WingsTestConstants.APP_ID;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.when;
 
 import io.harness.category.element.UnitTests;
@@ -52,7 +52,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 
 public class RollingWorkflowYamlHandlerTest extends WorkflowYamlHandlerTestBase {
   private String workflowName = "rolling";
@@ -109,7 +108,7 @@ public class RollingWorkflowYamlHandlerTest extends WorkflowYamlHandlerTestBase 
     ChangeContext<RollingWorkflowYaml> changeContext1 =
         getChangeContext(yamlFileContent1, ROLLING_VALID_YAML_FILE_PATH, yamlHandler);
 
-    when(limitCheckerFactory.getInstance(new Action(Mockito.anyString(), ActionType.CREATE_WORKFLOW)))
+    when(limitCheckerFactory.getInstance(new Action(any(), ActionType.CREATE_WORKFLOW)))
         .thenReturn(new WingsTestConstants.MockChecker(true, ActionType.CREATE_WORKFLOW));
     when(workflowServiceHelper.isK8sV2Service(any(), any())).thenReturn(true);
     when(workflowServiceHelper.getCategory(any(), any())).thenReturn(AbstractWorkflowFactory.Category.GENERAL);
@@ -158,7 +157,7 @@ public class RollingWorkflowYamlHandlerTest extends WorkflowYamlHandlerTestBase 
 
   private void testCRUDrolling(String rollingYamlContentResourcePath)
       throws IOException, io.harness.exception.HarnessException {
-    when(limitCheckerFactory.getInstance(new Action(Mockito.anyString(), ActionType.CREATE_WORKFLOW)))
+    when(limitCheckerFactory.getInstance(new Action(any(), ActionType.CREATE_WORKFLOW)))
         .thenReturn(new WingsTestConstants.MockChecker(true, ActionType.CREATE_WORKFLOW));
     when(workflowServiceHelper.isK8sV2Service(any(), any())).thenReturn(true);
     when(workflowServiceHelper.getCategory(any(), any())).thenReturn(AbstractWorkflowFactory.Category.GENERAL);

@@ -78,7 +78,9 @@ public class GitChangeSetRunnableTest extends GitSyncTestBase {
     gitChangeSetRunnable.run();
     verify(gitChangeSetRunnable, times(2)).processChangeSet(argumentCaptor.capture());
     assertThat(argumentCaptor.getAllValues().size()).isEqualTo(2);
-    assertThat(argumentCaptor.getAllValues().get(0).getEventType()).isEqualTo(YamlChangeSetEventType.BRANCH_SYNC);
-    assertThat(argumentCaptor.getAllValues().get(1).getEventType()).isEqualTo(YamlChangeSetEventType.BRANCH_PUSH);
+    assertThat(argumentCaptor.getAllValues().stream().anyMatch(
+        yamlChangeSet -> yamlChangeSet.getEventType().equals(YamlChangeSetEventType.BRANCH_SYNC)));
+    assertThat(argumentCaptor.getAllValues().stream().anyMatch(
+        yamlChangeSet -> yamlChangeSet.getEventType().equals(YamlChangeSetEventType.BRANCH_PUSH)));
   }
 }

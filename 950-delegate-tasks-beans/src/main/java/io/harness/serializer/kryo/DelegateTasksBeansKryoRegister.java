@@ -75,11 +75,14 @@ import io.harness.delegate.beans.azure.appservicesettings.AzureAppServiceSetting
 import io.harness.delegate.beans.azure.registry.AzureRegistryType;
 import io.harness.delegate.beans.azure.response.AzureAcrTokenTaskResponse;
 import io.harness.delegate.beans.azure.response.AzureClustersResponse;
+import io.harness.delegate.beans.azure.response.AzureDeploymentSlotResponse;
+import io.harness.delegate.beans.azure.response.AzureDeploymentSlotsResponse;
 import io.harness.delegate.beans.azure.response.AzureRegistriesResponse;
 import io.harness.delegate.beans.azure.response.AzureRepositoriesResponse;
 import io.harness.delegate.beans.azure.response.AzureResourceGroupsResponse;
 import io.harness.delegate.beans.azure.response.AzureSubscriptionsResponse;
 import io.harness.delegate.beans.azure.response.AzureValidateTaskResponse;
+import io.harness.delegate.beans.azure.response.AzureWebAppNamesResponse;
 import io.harness.delegate.beans.ccm.K8sClusterInfo;
 import io.harness.delegate.beans.ci.CIClusterType;
 import io.harness.delegate.beans.ci.CIInitializeTaskParams;
@@ -1370,6 +1373,9 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AwsCFTaskResponse.class, 543518);
     kryo.register(HelmFetchFileConfig.class, 543519);
     kryo.register(HelmFetchFileResult.class, 543520);
+    kryo.register(AzureWebAppNamesResponse.class, 543521);
+    kryo.register(AzureDeploymentSlotsResponse.class, 543522);
+    kryo.register(AzureDeploymentSlotResponse.class, 543523);
     kryo.register(HostValidationResponse.class, 5167);
     kryo.register(HostReachabilityInfo.class, 5172);
     kryo.register(HttpHelmRepoConfig.class, 7159);

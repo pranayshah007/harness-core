@@ -38,8 +38,8 @@ import static java.util.Collections.emptySet;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -362,7 +362,7 @@ public class K8sStateHelperTest extends WingsBaseTest {
     when(delegateService.executeTask(any())).thenReturn(response);
     Environment env = new Environment();
     env.setEnvironmentType(EnvironmentType.PROD);
-    when(environmentService.get(anyString(), anyString())).thenReturn(env);
+    when(environmentService.get(nullable(String.class), nullable(String.class))).thenReturn(env);
 
     SettingAttribute settingAttribute = aSettingAttribute()
                                             .withUuid(SETTING_ID)

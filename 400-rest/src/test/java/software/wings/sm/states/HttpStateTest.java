@@ -818,7 +818,7 @@ public class HttpStateTest extends WingsBaseTest {
     on(context).set("contextElementParamMapperFactory", contextElementParamMapperFactory);
 
     doAnswer(invocation -> {
-      DelegateTask task = invocation.getArgumentAt(0, DelegateTask.class);
+      DelegateTask task = invocation.getArgument(0, DelegateTask.class);
 
       DelegateRunnableTask delegateRunnableTask =
           new HttpTask(DelegateTaskPackage.builder().data(task.getData()).delegateId(DELEGATE_ID).build(), null,

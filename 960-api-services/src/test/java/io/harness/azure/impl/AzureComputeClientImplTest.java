@@ -12,6 +12,7 @@ import static io.harness.azure.model.AzureConstants.NAME_TAG;
 import static io.harness.azure.model.AzureConstants.VMSS_CREATED_TIME_STAMP_TAG_NAME;
 import static io.harness.rule.OwnerRule.IVAN;
 import static io.harness.rule.OwnerRule.TATHAGAT;
+import static io.harness.rule.OwnerRule.VLICA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
@@ -37,6 +38,10 @@ import com.microsoft.azure.Page;
 import com.microsoft.azure.PagedList;
 import com.microsoft.azure.credentials.ApplicationTokenCredentials;
 import com.microsoft.azure.management.Azure;
+import com.microsoft.azure.management.appservice.DeploymentSlot;
+import com.microsoft.azure.management.appservice.DeploymentSlots;
+import com.microsoft.azure.management.appservice.WebApp;
+import com.microsoft.azure.management.appservice.WebApps;
 import com.microsoft.azure.management.compute.UpgradeMode;
 import com.microsoft.azure.management.compute.VirtualMachineScaleSet;
 import com.microsoft.azure.management.compute.VirtualMachineScaleSet.UpdateStages.WithApply;
@@ -128,6 +133,62 @@ public class AzureComputeClientImplTest extends CategoryTest {
 
     assertThat(response).isNotNull();
     assertThat(response.size()).isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testListWebAppNamesBySubscriptionIdAndResourceGroup() throws Exception {
+    when(authenticated.withSubscription("subscriptionId")).thenReturn(azure);
+    WebApp webApp = mock(WebApp.class);
+    WebApp webApp1 = mock(WebApp.class);
+    WebApps webApps = mock(WebApps.class);
+
+    PagedList<WebApp> pageList = getPageList();
+    pageList.add(webApp);
+    pageList.add(webApp1);
+    when(webApp.name()).thenReturn("test-web-app-1");
+    when(webApp1.name()).thenReturn("test-web-app-2");
+
+    when(azure.webApps()).thenReturn(webApps);
+    when(webApps.listByResourceGroup(anyString())).thenReturn(pageList);
+
+    List<String> response = azureComputeClient.listWebAppNamesBySubscriptionIdAndResourceGroup(
+        getAzureComputeConfig(), "subscriptionId", "resourceGroup");
+
+    assertThat(response).isNotNull();
+    assertThat(response.size()).isEqualTo(2);
+    assertThat(response.get(0)).isEqualTo("test-web-app-1");
+    assertThat(response.get(1)).isEqualTo("test-web-app-2");
+  }
+
+  @Test
+  @Owner(developers = VLICA)
+  @Category(UnitTests.class)
+  public void testListWebAppDeploymentSlots() throws Exception {
+    when(authenticated.withSubscription("subscriptionId")).thenReturn(azure);
+    WebApp webApp = mock(WebApp.class);
+    WebApps webApps = mock(WebApps.class);
+
+    DeploymentSlot deploymentSlot = mock(DeploymentSlot.class);
+    DeploymentSlots deploymentSlots = mock(DeploymentSlots.class);
+
+    PagedList<DeploymentSlot> pageList = getPageList();
+    pageList.add(deploymentSlot);
+
+    when(webApp.name()).thenReturn("test-web-app-1");
+    when(deploymentSlot.name()).thenReturn("test-deployment-slot");
+    when(azure.webApps()).thenReturn(webApps);
+    when(webApps.getByResourceGroup(anyString(), anyString())).thenReturn(webApp);
+    when(webApp.deploymentSlots()).thenReturn(deploymentSlots);
+    when(deploymentSlots.list()).thenReturn(pageList);
+
+    List<DeploymentSlot> response = azureComputeClient.listWebAppDeploymentSlots(
+        getAzureComputeConfig(), "subscriptionId", "resourceGroup", "webAppName");
+
+    assertThat(response).isNotNull();
+    assertThat(response.size()).isEqualTo(1);
+    assertThat(response.get(0).name()).isEqualTo("test-deployment-slot");
   }
 
   @Test

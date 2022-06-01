@@ -12,7 +12,6 @@ import static io.harness.delegate.beans.TaskData.DEFAULT_ASYNC_CALL_TIMEOUT;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -80,7 +79,7 @@ public class HttpHelmConnectivityDelegateTaskTest extends CategoryTest {
                                                     .encryptionDetails(Collections.emptyList())
                                                     .build();
 
-    doReturn(SUCCESS).when(httpHelmValidationHandler).validate(any(), anyString());
+    doReturn(SUCCESS).when(httpHelmValidationHandler).validate(any(), any());
     DelegateResponseData responseData = delegateTask.run(taskParams);
     assertThat(responseData).isNotNull();
     assertThat(responseData).isInstanceOf(HttpHelmConnectivityTaskResponse.class);
@@ -89,7 +88,7 @@ public class HttpHelmConnectivityDelegateTaskTest extends CategoryTest {
 
     ArgumentCaptor<ConnectorValidationParams> paramsArgumentCaptor =
         ArgumentCaptor.forClass(ConnectorValidationParams.class);
-    verify(httpHelmValidationHandler, times(1)).validate(paramsArgumentCaptor.capture(), anyString());
+    verify(httpHelmValidationHandler, times(1)).validate(paramsArgumentCaptor.capture(), any());
     ConnectorValidationParams connectorValidationParams = paramsArgumentCaptor.getValue();
     assertThat(connectorValidationParams).isNotNull();
     assertThat(connectorValidationParams).isInstanceOf(HttpHelmValidationParams.class);
@@ -120,7 +119,7 @@ public class HttpHelmConnectivityDelegateTaskTest extends CategoryTest {
                                                     .encryptionDetails(Collections.emptyList())
                                                     .build();
 
-    doReturn(SUCCESS).when(httpHelmValidationHandler).validate(any(), anyString());
+    doReturn(SUCCESS).when(httpHelmValidationHandler).validate(any(), any());
     DelegateResponseData responseData = delegateTask.run(taskParams);
     assertThat(responseData).isNotNull();
     assertThat(responseData).isInstanceOf(HttpHelmConnectivityTaskResponse.class);
@@ -129,7 +128,7 @@ public class HttpHelmConnectivityDelegateTaskTest extends CategoryTest {
 
     ArgumentCaptor<ConnectorValidationParams> paramsArgumentCaptor =
         ArgumentCaptor.forClass(ConnectorValidationParams.class);
-    verify(httpHelmValidationHandler, times(1)).validate(paramsArgumentCaptor.capture(), anyString());
+    verify(httpHelmValidationHandler, times(1)).validate(paramsArgumentCaptor.capture(), any());
     ConnectorValidationParams connectorValidationParams = paramsArgumentCaptor.getValue();
     assertThat(connectorValidationParams).isNotNull();
     assertThat(connectorValidationParams).isInstanceOf(HttpHelmValidationParams.class);

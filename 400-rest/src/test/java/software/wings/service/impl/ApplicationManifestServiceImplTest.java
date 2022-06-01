@@ -365,7 +365,7 @@ public class ApplicationManifestServiceImplTest extends WingsBaseTest {
     assertThat(savedApplicationManifest).isNotNull();
     assertThat(manifest).isEqualTo(savedApplicationManifest);
     verify(yamlPushService, times(1))
-        .pushYamlChangeSet(anyString(), eq(null), eq(savedApplicationManifest), eq(Type.CREATE), eq(false), eq(false));
+        .pushYamlChangeSet(eq(null), eq(null), eq(savedApplicationManifest), eq(Type.CREATE), eq(false), eq(false));
   }
 
   @Test
@@ -376,7 +376,7 @@ public class ApplicationManifestServiceImplTest extends WingsBaseTest {
     doNothing().when(applicationManifestServiceImpl).sanitizeApplicationManifestConfigs(any(ApplicationManifest.class));
     doNothing().when(applicationManifestServiceImpl).resetReadOnlyProperties(any(ApplicationManifest.class));
     doReturn(true).when(applicationManifestServiceImpl).exists(any(ApplicationManifest.class));
-    doReturn("accountId").when(appService).getAccountIdByAppId(anyString());
+    doReturn("accountId").when(appService).getAccountIdByAppId(any());
     doReturn(false).when(featureFlagService).isEnabled(FeatureName.HELM_CHART_AS_ARTIFACT, "accountId");
 
     ApplicationManifest manifest = buildKustomizeAppManifest();
@@ -385,8 +385,8 @@ public class ApplicationManifestServiceImplTest extends WingsBaseTest {
     assertThat(savedApplicationManifest).isNotNull();
     assertThat(manifest).isEqualTo(savedApplicationManifest);
     verify(yamlPushService, times(1))
-        .pushYamlChangeSet(anyString(), eq(savedApplicationManifest), eq(savedApplicationManifest), eq(Type.UPDATE),
-            eq(false), eq(false));
+        .pushYamlChangeSet(
+            any(), eq(savedApplicationManifest), eq(savedApplicationManifest), eq(Type.UPDATE), eq(false), eq(false));
     verify(applicationManifestServiceImpl, times(1)).resetReadOnlyProperties(manifest);
   }
 
@@ -685,12 +685,12 @@ public class ApplicationManifestServiceImplTest extends WingsBaseTest {
 
     savedAppManifest.setPollForChanges(true);
 
-    when(applicationManifestServiceImpl.getById(anyString(), anyString())).thenReturn(savedAppManifest);
+    when(applicationManifestServiceImpl.getById(any(), any())).thenReturn(savedAppManifest);
 
     // savedAppManifest -> True, applicationManifest -> null
     applicationManifestServiceImpl.checkForUpdates(savedAppManifest, applicationManifest);
     verify(applicationManifestServiceImpl, times(1)).deletePerpetualTask(savedAppManifest);
-    verify(helmChartService, times(1)).deleteByAppManifest(anyString(), anyString());
+    verify(helmChartService, times(1)).deleteByAppManifest(any(), any());
   }
 
   @Test
@@ -705,10 +705,10 @@ public class ApplicationManifestServiceImplTest extends WingsBaseTest {
     applicationManifest.setHelmChartConfig(HelmChartConfig.builder().connectorId("c1").build());
 
     // savedAppManifest -> True, applicationManifest -> True with different connector id
-    when(applicationManifestServiceImpl.getById(anyString(), anyString())).thenReturn(savedAppManifest);
+    when(applicationManifestServiceImpl.getById(any(), any())).thenReturn(savedAppManifest);
 
     applicationManifestServiceImpl.checkForUpdates(savedAppManifest, applicationManifest);
-    verify(helmChartService, times(1)).deleteByAppManifest(anyString(), anyString());
+    verify(helmChartService, times(1)).deleteByAppManifest(any(), any());
     verify(applicationManifestServiceImpl, times(1)).resetPerpetualTask(applicationManifest);
   }
 
@@ -991,12 +991,12 @@ public class ApplicationManifestServiceImplTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldSetPollForChangesFromEnableCollection() {
     enableFeatureFlag();
-    when(appService.getAccountIdByAppId(anyString())).thenReturn(ACCOUNT_ID);
+    when(appService.getAccountIdByAppId(any())).thenReturn(ACCOUNT_ID);
     ApplicationManifest applicationManifest = getHelmChartApplicationManifest();
 
     applicationManifest.setEnableCollection(null);
 
-    when(serviceResourceService.get(any(), anyString(), eq(false)))
+    when(serviceResourceService.get(any(), any(), eq(false)))
         .thenReturn(Service.builder().isK8sV2(true).artifactFromManifest(true).build());
 
     // savedAppManifest -> False, applicationManifest -> True

@@ -29,6 +29,7 @@ import static org.powermock.api.mockito.PowerMockito.doNothing;
 import static org.powermock.api.mockito.PowerMockito.doReturn;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
 
+import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.FunctionalTests;
 import io.harness.category.element.UnitTests;
@@ -46,7 +47,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 @OwnedBy(DEL)
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({InstallUtils.class})
-public class InstallUtilsTest {
+public class InstallUtilsTest extends CategoryTest {
   private static final String PWD = Paths.get(".").toAbsolutePath().normalize().toString();
 
   private static final String DEFAULT_KUSTOMIZE_3_PATH = PWD + "/client-tools/kustomize/v3.5.4/kustomize";
