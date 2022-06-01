@@ -46,6 +46,7 @@ import io.harness.pms.pipeline.mappers.NodeExecutionToExecutioNodeMapper;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipeline.service.PMSPipelineServiceHelper;
 import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
+import io.harness.pms.pipeline.service.PipelineCRUDResult;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.variables.VariableCreatorMergeService;
 import io.harness.rule.Owner;
@@ -162,10 +163,12 @@ public class PipelineResourceTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCreatePipeline() {
     doReturn(false).when(featureFlagHelper).isEnabled(ACCOUNT_ID, FeatureName.OPA_PIPELINE_GOVERNANCE);
-    doReturn(GovernanceMetadata.newBuilder().setDeny(false).build())
-        .when(pmsPipelineServiceHelper)
-        .validatePipelineYaml(entity);
-    doReturn(entityWithVersion).when(pmsPipelineService).create(entity);
+    doReturn(PipelineCRUDResult.builder()
+                 .pipelineEntity(entityWithVersion)
+                 .governanceMetadata(GovernanceMetadata.newBuilder().setDeny(false).build())
+                 .build())
+        .when(pmsPipelineService)
+        .create(entity);
     TemplateMergeResponseDTO templateMergeResponseDTO =
         TemplateMergeResponseDTO.builder().mergedPipelineYaml(yaml).build();
     doReturn(templateMergeResponseDTO).when(pipelineTemplateHelper).resolveTemplateRefsInPipeline(entity);
@@ -180,26 +183,16 @@ public class PipelineResourceTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCreatePipelineV2() {
     doReturn(true).when(featureFlagHelper).isEnabled(ACCOUNT_ID, FeatureName.OPA_PIPELINE_GOVERNANCE);
-    doReturn(entityWithVersion).when(pmsPipelineService).create(entity);
-    doReturn(GovernanceMetadata.newBuilder().setDeny(true).build())
-        .when(pmsPipelineServiceHelper)
-        .validatePipelineYaml(entity);
+    doReturn(PipelineCRUDResult.builder()
+                 .pipelineEntity(entityWithVersion)
+                 .governanceMetadata(GovernanceMetadata.newBuilder().setDeny(true).build())
+                 .build())
+        .when(pmsPipelineService)
+        .create(entity);
     ResponseDTO<PipelineSaveResponse> responseDTO =
         pipelineResource.createPipelineV2(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, null, null, null, null, yaml);
     assertThat(responseDTO.getData().getGovernanceMetadata()).isNotNull();
     assertThat(responseDTO.getData().getGovernanceMetadata().getDeny()).isTrue();
-  }
-
-  @Test
-  @Owner(developers = SAMARTH)
-  @Category(UnitTests.class)
-  public void testCreatePipelineWithSchemaErrors() {
-    doReturn(false).when(featureFlagHelper).isEnabled(ACCOUNT_ID, FeatureName.OPA_PIPELINE_GOVERNANCE);
-    doThrow(JsonSchemaValidationException.class).when(pmsPipelineServiceHelper).validatePipelineYaml(entity);
-    assertThatThrownBy(()
-                           -> pipelineResource.createPipeline(
-                               ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, null, null, null, null, yaml))
-        .isInstanceOf(JsonSchemaValidationException.class);
   }
 
   @Test
