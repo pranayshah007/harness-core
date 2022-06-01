@@ -223,7 +223,7 @@ public class ServerlessAwsLambdaDeployStepTest extends AbstractServerlessStepExe
     StepResponse stepResponse = StepResponse.builder().status(Status.FAILED).build();
     PassThroughData passThroughData = ServerlessExecutionPassThroughData.builder().build();
 
-    Exception e = new ServerlessNGException(new Exception(), "234");
+    Exception e = new ServerlessNGException(new Exception(), "234", false);
 
     doReturn(stepResponse)
         .when(serverlessStepHelper)
