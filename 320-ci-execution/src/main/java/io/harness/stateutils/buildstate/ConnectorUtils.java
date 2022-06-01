@@ -180,7 +180,7 @@ public class ConnectorUtils {
     String accountID = AmbianceUtils.getAccountId(ambiance);
     if (featureFlagService.isEnabled(FeatureName.DISABLE_CI_STAGE_DEL_SELECTOR, accountID)
         || accountID.equals(AXA_ACCOUNT_ID)) {
-      log.info("DISABLE_CI_STAGE_DEL_SELECTOR Feature flag is enabled for account {}", accountID);
+      log.info("DISABLE_CI_STAGE_DEL_SELECTOR Feature  flag is enabled for account {}", accountID);
       return Collections.emptyList();
     }
 
