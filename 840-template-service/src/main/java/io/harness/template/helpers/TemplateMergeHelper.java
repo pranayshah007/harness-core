@@ -284,7 +284,7 @@ public class TemplateMergeHelper {
       if (yamlNode.getCurrJsonNode().isValueNode()) {
         arrayList.add(arrayElement);
       } else if (arrayElement.isArray()) {
-        arrayList.add(mergeTemplateInputsInArray(accountId, orgId, projectId, yamlNode, templateCacheMap));
+        arrayList.add(mergeTemplateInputsInArray(accountId, orgId, projectId, arrayElement, templateCacheMap));
       } else {
         arrayList.add(mergeTemplateInputsInObject(accountId, orgId, projectId, arrayElement, templateCacheMap));
       }
@@ -345,7 +345,7 @@ public class TemplateMergeHelper {
         arrayListWithTemplateRef.add(arrayElement);
       } else if (arrayElement.isArray()) {
         ArrayListForMergedTemplateRef arrayListForMergedTemplateRef =
-            mergeTemplateInputsInArrayWithOpaPolicy(accountId, orgId, projectId, yamlNode, templateCacheMap);
+            mergeTemplateInputsInArrayWithOpaPolicy(accountId, orgId, projectId, arrayElement, templateCacheMap);
         arrayList.add(arrayListForMergedTemplateRef.getArrayList());
         arrayListWithTemplateRef.add(arrayListForMergedTemplateRef.getArrayListWithTemplateRef());
       } else {
