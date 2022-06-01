@@ -10,6 +10,7 @@ package io.harness.delegate.task.helm;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.HTTP_HELM;
+import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.OCI_HELM;
 import static io.harness.delegate.task.helm.HelmCommandRequestNG.HelmCommandType.RELEASE_HISTORY;
 import static io.harness.delegate.task.helm.HelmTaskHelperBase.getChartDirectory;
 import static io.harness.exception.WingsException.USER;
@@ -633,6 +634,7 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
       case HTTP_HELM:
       case S3_HELM:
       case GCS_HELM:
+      case OCI_HELM:
         fetchChartRepo(commandRequest, timeoutInMillis);
         break;
       default:
@@ -719,6 +721,9 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
 
       if (HTTP_HELM == manifestDelegateConfig.getStoreDelegateConfig().getType()) {
         helmTaskHelperBase.downloadChartFilesFromHttpRepo(
+            helmChartManifestConfig, destinationDirectory, timeoutInMillis);
+      } else if (OCI_HELM == manifestDelegateConfig.getStoreDelegateConfig().getType()) {
+        helmTaskHelperBase.downloadChartFilesFromOciRepo(
             helmChartManifestConfig, destinationDirectory, timeoutInMillis);
       } else {
         helmTaskHelperBase.downloadChartFilesUsingChartMuseum(
@@ -813,7 +818,8 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
             .filter(Objects::nonNull)
             .filter(storeType
                 -> storeType == StoreDelegateConfigType.S3_HELM || storeType == StoreDelegateConfigType.HTTP_HELM
-                    || storeType == StoreDelegateConfigType.GIT || storeType == StoreDelegateConfigType.GCS_HELM);
+                    || storeType == StoreDelegateConfigType.GIT || storeType == StoreDelegateConfigType.GCS_HELM
+                    || storeType == OCI_HELM);
 
     if (!storeTypeOpt.isPresent()) {
       log.warn("Unsupported store type, storeType: {}",
@@ -931,6 +937,7 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
         case HTTP_HELM:
         case GCS_HELM:
         case S3_HELM:
+        case OCI_HELM:
           helmChartInfo.setRepoUrl(getRepoUrlForHelmRepoConfig(helmChartManifestDelegateConfig));
           break;
         default:

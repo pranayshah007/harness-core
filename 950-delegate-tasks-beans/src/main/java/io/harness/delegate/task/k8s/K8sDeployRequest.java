@@ -29,6 +29,7 @@ import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.storeconfig.GcsHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.HttpHelmStoreDelegateConfig;
+import io.harness.delegate.beans.storeconfig.OciHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.S3HelmStoreDelegateConfig;
 import io.harness.delegate.capability.EncryptedDataDetailsCapabilityHelper;
 import io.harness.delegate.task.TaskParameters;
@@ -115,6 +116,17 @@ public interface K8sDeployRequest extends TaskParameters, ExecutionCapabilityDem
                 httpHelmStoreConfig.getEncryptedDataDetails(), maskingEvaluator));
             populateDelegateSelectorCapability(
                 capabilities, httpHelmStoreConfig.getHttpHelmConnector().getDelegateSelectors());
+            break;
+
+          case OCI_HELM:
+            OciHelmStoreDelegateConfig ociHelmStoreConfig =
+                (OciHelmStoreDelegateConfig) helManifestConfig.getStoreDelegateConfig();
+            capabilities.add(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
+                ociHelmStoreConfig.getOciHelmConnector().getHelmRepoUrl(), maskingEvaluator));
+            capabilities.addAll(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
+                ociHelmStoreConfig.getEncryptedDataDetails(), maskingEvaluator));
+            populateDelegateSelectorCapability(
+                capabilities, ociHelmStoreConfig.getOciHelmConnector().getDelegateSelectors());
             break;
 
           case S3_HELM:

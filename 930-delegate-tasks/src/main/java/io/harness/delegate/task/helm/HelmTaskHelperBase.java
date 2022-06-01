@@ -15,6 +15,7 @@ import static io.harness.data.structure.UUIDGenerator.convertBase64UuidToCanonic
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.GCS_HELM;
 import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.HTTP_HELM;
+import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.OCI_HELM;
 import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.S3_HELM;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.filesystem.FileIo.createDirectoryIfDoesNotExist;
@@ -41,6 +42,7 @@ import static io.harness.logging.LogLevel.WARN;
 import static software.wings.beans.LogColor.White;
 import static software.wings.beans.LogHelper.color;
 import static software.wings.beans.LogWeight.Bold;
+import static software.wings.delegatetasks.helm.HelmTaskHelper.REGISTRY_URL_PREFIX;
 
 import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
@@ -59,6 +61,7 @@ import io.harness.delegate.beans.connector.helm.OciHelmConnectorDTO;
 import io.harness.delegate.beans.connector.helm.OciHelmUsernamePasswordDTO;
 import io.harness.delegate.beans.storeconfig.GcsHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.HttpHelmStoreDelegateConfig;
+import io.harness.delegate.beans.storeconfig.OciHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.S3HelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
 import io.harness.delegate.chartmuseum.NgChartmuseumClientFactory;
@@ -526,22 +529,7 @@ public class HelmTaskHelperBase {
     String username = getHttpHelmUsername(httpHelmConnector);
     char[] password = getHttpHelmPassword(httpHelmConnector);
 
-    String cacheDir = "";
-    if (manifest.isUseRepoFlags()) {
-      if (manifest.isDeleteRepoCacheDir()) {
-        cacheDir = Paths
-                       .get(RESOURCE_DIR_BASE, storeDelegateConfig.getRepoName(),
-                           RandomStringUtils.randomAlphabetic(5).toLowerCase(Locale.ROOT), "cache")
-                       .toAbsolutePath()
-                       .normalize()
-                       .toString();
-      } else {
-        cacheDir = Paths.get(RESOURCE_DIR_BASE, storeDelegateConfig.getRepoName(), "cache")
-                       .toAbsolutePath()
-                       .normalize()
-                       .toString();
-      }
-    }
+    String cacheDir = getCacheDir(manifest, storeDelegateConfig.getRepoName());
 
     try {
       addRepo(storeDelegateConfig.getRepoName(), storeDelegateConfig.getRepoDisplayName(),
@@ -560,6 +548,56 @@ public class HelmTaskHelperBase {
         }
       }
     }
+  }
+
+  public void downloadChartFilesFromOciRepo(
+      HelmChartManifestDelegateConfig manifest, String destinationDirectory, long timeoutInMillis) {
+    if (!(manifest.getStoreDelegateConfig() instanceof OciHelmStoreDelegateConfig)) {
+      throw new InvalidArgumentsException(
+          Pair.of("storeDelegateConfig", "Must be instance of OciHelmStoreDelegateConfig"));
+    }
+
+    OciHelmStoreDelegateConfig storeDelegateConfig = (OciHelmStoreDelegateConfig) manifest.getStoreDelegateConfig();
+    OciHelmConnectorDTO ociHelmConnector = storeDelegateConfig.getOciHelmConnector();
+
+    String username = getOciHelmUsername(ociHelmConnector);
+    char[] password = getOciHelmPassword(ociHelmConnector);
+
+    String cacheDir = getCacheDir(manifest, storeDelegateConfig.getRepoName());
+
+    try {
+      String repoName = String.format(REGISTRY_URL_PREFIX,
+          Paths.get(ociHelmConnector.getHelmRepoUrl(), storeDelegateConfig.getBasePath()).normalize());
+      fetchChartFromRepo(repoName, storeDelegateConfig.getRepoDisplayName(), manifest.getChartName(),
+          manifest.getChartVersion(), destinationDirectory, HelmVersion.V3, manifest.getHelmCommandFlag(),
+          timeoutInMillis, manifest.isCheckIncorrectChartVersion(), cacheDir);
+    } finally {
+      if (manifest.isUseRepoFlags() && manifest.isDeleteRepoCacheDir()) {
+        try {
+          FileUtils.forceDelete(new File(cacheDir));
+        } catch (IOException ie) {
+          log.error("Deletion of charts folder failed due to : {}",
+              ExceptionMessageSanitizer.sanitizeException(ie).getMessage());
+        }
+      }
+    }
+  }
+
+  private String getCacheDir(HelmChartManifestDelegateConfig manifest, String repoName) {
+    String cacheDir = "";
+    if (manifest.isUseRepoFlags()) {
+      if (manifest.isDeleteRepoCacheDir()) {
+        cacheDir = Paths
+                       .get(RESOURCE_DIR_BASE, repoName, RandomStringUtils.randomAlphabetic(5).toLowerCase(Locale.ROOT),
+                           "cache")
+                       .toAbsolutePath()
+                       .normalize()
+                       .toString();
+      } else {
+        cacheDir = Paths.get(RESOURCE_DIR_BASE, repoName, "cache").toAbsolutePath().normalize().toString();
+      }
+    }
+    return cacheDir;
   }
 
   public void downloadChartFilesUsingChartMuseum(
@@ -585,19 +623,7 @@ public class HelmTaskHelperBase {
 
     repoName = repoName + "-" + bucketName;
 
-    String cacheDir = "";
-    if (manifest.isUseRepoFlags()) {
-      if (manifest.isDeleteRepoCacheDir()) {
-        cacheDir = Paths
-                       .get(RESOURCE_DIR_BASE, repoName, RandomStringUtils.randomAlphabetic(5).toLowerCase(Locale.ROOT),
-                           "cache")
-                       .toAbsolutePath()
-                       .normalize()
-                       .toString();
-      } else {
-        cacheDir = Paths.get(RESOURCE_DIR_BASE, repoName, "cache").toAbsolutePath().normalize().toString();
-      }
-    }
+    String cacheDir = getCacheDir(manifest, repoName);
 
     try {
       resourceDirectory = createNewDirectoryAtPath(RESOURCE_DIR_BASE);
@@ -716,6 +742,13 @@ public class HelmTaskHelperBase {
             (HttpHelmStoreDelegateConfig) manifestDelegateConfig.getStoreDelegateConfig();
         repoDisplayName = httpStoreDelegateConfig.getRepoDisplayName();
         chartRepoUrl = httpStoreDelegateConfig.getHttpHelmConnector().getHelmRepoUrl();
+        break;
+
+      case OCI_HELM:
+        OciHelmStoreDelegateConfig ociStoreDelegateConfig =
+            (OciHelmStoreDelegateConfig) manifestDelegateConfig.getStoreDelegateConfig();
+        repoDisplayName = ociStoreDelegateConfig.getRepoDisplayName();
+        chartRepoUrl = ociStoreDelegateConfig.getOciHelmConnector().getHelmRepoUrl();
         break;
 
       case S3_HELM:
@@ -867,6 +900,8 @@ public class HelmTaskHelperBase {
 
     if (HTTP_HELM == helmStoreDelegateConfig.getType()) {
       downloadChartFilesFromHttpRepo(helmChartManifestDelegateConfig, destinationDirectory, timeoutInMillis);
+    } else if (OCI_HELM == helmStoreDelegateConfig.getType()) {
+      downloadChartFilesFromOciRepo(helmChartManifestDelegateConfig, destinationDirectory, timeoutInMillis);
     } else {
       downloadChartFilesUsingChartMuseum(helmChartManifestDelegateConfig, destinationDirectory, timeoutInMillis);
     }

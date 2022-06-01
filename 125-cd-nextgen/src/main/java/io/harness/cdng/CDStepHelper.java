@@ -48,21 +48,7 @@ import io.harness.cdng.manifest.ManifestType;
 import io.harness.cdng.manifest.mappers.ManifestOutcomeMapper;
 import io.harness.cdng.manifest.mappers.ManifestOutcomeValidator;
 import io.harness.cdng.manifest.steps.ManifestsOutcome;
-import io.harness.cdng.manifest.yaml.GcsStoreConfig;
-import io.harness.cdng.manifest.yaml.GitStoreConfig;
-import io.harness.cdng.manifest.yaml.HelmChartManifestOutcome;
-import io.harness.cdng.manifest.yaml.HttpStoreConfig;
-import io.harness.cdng.manifest.yaml.InheritFromManifestStoreConfig;
-import io.harness.cdng.manifest.yaml.InlineStoreConfig;
-import io.harness.cdng.manifest.yaml.K8sManifestOutcome;
-import io.harness.cdng.manifest.yaml.KustomizeManifestOutcome;
-import io.harness.cdng.manifest.yaml.KustomizePatchesManifestOutcome;
-import io.harness.cdng.manifest.yaml.ManifestAttributes;
-import io.harness.cdng.manifest.yaml.ManifestOutcome;
-import io.harness.cdng.manifest.yaml.OpenshiftManifestOutcome;
-import io.harness.cdng.manifest.yaml.OpenshiftParamManifestOutcome;
-import io.harness.cdng.manifest.yaml.S3StoreConfig;
-import io.harness.cdng.manifest.yaml.ValuesManifestOutcome;
+import io.harness.cdng.manifest.yaml.*;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.common.NGTimeConversionHelper;
 import io.harness.common.ParameterFieldHelper;
@@ -74,6 +60,7 @@ import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConne
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
 import io.harness.delegate.beans.connector.helm.HttpHelmConnectorDTO;
+import io.harness.delegate.beans.connector.helm.OciHelmConnectorDTO;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
@@ -98,6 +85,7 @@ import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.beans.storeconfig.GcsHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.HttpHelmStoreDelegateConfig;
+import io.harness.delegate.beans.storeconfig.OciHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.S3HelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
@@ -578,6 +566,22 @@ public class CDStepHelper {
           .repoName(helmConnectorDTO.getIdentifier())
           .repoDisplayName(helmConnectorDTO.getName())
           .httpHelmConnector((HttpHelmConnectorDTO) helmConnectorDTO.getConnectorConfig())
+          .encryptedDataDetails(
+              k8sEntityHelper.getEncryptionDataDetails(helmConnectorDTO, AmbianceUtils.getNgAccess(ambiance)))
+          .build();
+    }
+
+    if (ManifestStoreType.OCI.equals(storeConfig.getKind())) {
+      OciStoreConfig ociStoreConfig = (OciStoreConfig) storeConfig;
+      ConnectorInfoDTO helmConnectorDTO =
+          getConnector(getParameterFieldValue(ociStoreConfig.getConnectorReference()), ambiance);
+      validateManifest(storeConfig.getKind(), helmConnectorDTO, validationErrorMessage);
+
+      return OciHelmStoreDelegateConfig.builder()
+          .repoName(helmConnectorDTO.getIdentifier())
+          .basePath(getParameterFieldValue(ociStoreConfig.getBasePath()))
+          .repoDisplayName(helmConnectorDTO.getName())
+          .ociHelmConnector((OciHelmConnectorDTO) helmConnectorDTO.getConnectorConfig())
           .encryptedDataDetails(
               k8sEntityHelper.getEncryptionDataDetails(helmConnectorDTO, AmbianceUtils.getNgAccess(ambiance)))
           .build();
