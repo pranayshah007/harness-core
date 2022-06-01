@@ -110,11 +110,10 @@ public class PMSInputSetRepositoryCustomImpl implements PMSInputSetRepositoryCus
                                   .build());
     GitAwareContextHelper.initDefaultScmGitMetaData();
     GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
-    if (gitSyncSdkService.isGitSimplificationEnabled(entityToSave.getAccountIdentifier(),
-            entityToSave.getOrgIdentifier(), entityToSave.getProjectIdentifier())) {
-      if (gitEntityInfo == null) {
-        throw new InvalidRequestException("No Git Details provided");
-      }
+    boolean isRemoteFlow = gitEntityInfo != null && gitEntityInfo.getStoreType() == StoreType.REMOTE;
+    if (gitSyncSdkService.isGitSimplificationEnabled(
+            entityToSave.getAccountIdentifier(), entityToSave.getOrgIdentifier(), entityToSave.getProjectIdentifier())
+        && isRemoteFlow) {
       Scope scope = Scope.builder()
                         .accountIdentifier(entityToSave.getAccountIdentifier())
                         .orgIdentifier(entityToSave.getOrgIdentifier())

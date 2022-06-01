@@ -13,8 +13,6 @@ import static io.harness.rule.OwnerRule.SATYAM;
 
 import static org.joor.Reflect.on;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.verify;
 
 import io.harness.annotations.dev.HarnessModule;
@@ -61,9 +59,9 @@ public class AwsEcrTaskTest extends WingsBaseTest {
   public void testRun() {
     AwsEcrRequest request = AwsEcrGetImageUrlRequest.builder().build();
     task.run(new Object[] {request});
-    verify(mockEcrServiceDelegate).getEcrImageUrl(any(), anyList(), anyString(), anyString());
+    verify(mockEcrServiceDelegate).getEcrImageUrl(any(), any(), any(), any());
     request = AwsEcrGetAuthTokenRequest.builder().build();
     task.run(new Object[] {request});
-    verify(mockEcrServiceDelegate).getAmazonEcrAuthToken(any(), anyList(), anyString(), anyString());
+    verify(mockEcrServiceDelegate).getAmazonEcrAuthToken(any(), any(), any(), any());
   }
 }

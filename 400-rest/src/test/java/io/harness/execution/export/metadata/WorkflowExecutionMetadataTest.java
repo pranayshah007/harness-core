@@ -57,7 +57,7 @@ public class WorkflowExecutionMetadataTest extends CategoryTest {
   public void testFromWorkflowExecutions() {
     assertThat(WorkflowExecutionMetadata.fromWorkflowExecutions(null)).isNull();
 
-    Instant now = Instant.now();
+    Instant now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
     List<WorkflowExecutionMetadata> workflowExecutionMetadataList =
         WorkflowExecutionMetadata.fromWorkflowExecutions(asList(null, MetadataTestUtils.prepareWorkflowExecution(now)));
     assertThat(workflowExecutionMetadataList).isNotNull();
@@ -74,7 +74,7 @@ public class WorkflowExecutionMetadataTest extends CategoryTest {
                    WorkflowExecution.builder().workflowType(WorkflowType.PIPELINE).build()))
         .isNull();
 
-    Instant now = Instant.now();
+    Instant now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
     WorkflowExecutionMetadata workflowExecutionMetadata =
         WorkflowExecutionMetadata.fromWorkflowExecution(MetadataTestUtils.prepareWorkflowExecution(now));
     validateWorkflowExecutionMetadata(workflowExecutionMetadata, now, true);

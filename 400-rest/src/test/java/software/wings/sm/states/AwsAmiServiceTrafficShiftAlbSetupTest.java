@@ -30,9 +30,9 @@ import static org.joor.Reflect.on;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -231,7 +231,7 @@ public class AwsAmiServiceTrafficShiftAlbSetupTest extends WingsBaseTest {
     doNothing().when(stateExecutionService).appendDelegateTaskDetails(anyString(), any());
     doReturn(false).when(featureFlagService).isEnabled(any(), anyString());
     if (!isSuccess) {
-      doThrow(Exception.class).when(delegateService).queueTask(any());
+      doAnswer(invocation -> { throw new Exception(); }).when(delegateService).queueTask(any());
     }
   }
 

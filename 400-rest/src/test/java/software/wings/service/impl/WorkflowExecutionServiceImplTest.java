@@ -2589,7 +2589,7 @@ public class WorkflowExecutionServiceImplTest extends WingsBaseTest {
                                                   .name("testNexus")
                                                   .build();
     when(artifactStreamService.get(ARTIFACT_STREAM_ID)).thenReturn(nexusArtifactStream);
-    when(buildSourceService.getBuild(anyString(), anyString(), anyString(), any()))
+    when(buildSourceService.getBuild(any(), any(), any(), any()))
         .thenReturn(BuildDetails.Builder.aBuildDetails().withNumber("1.0").build());
     Map<String, String> map = new HashMap<>();
     map.put("buildNo", "1.0");
@@ -2715,7 +2715,7 @@ public class WorkflowExecutionServiceImplTest extends WingsBaseTest {
                                                   .name("testNexus")
                                                   .build();
     when(artifactStreamService.get(ARTIFACT_STREAM_ID)).thenReturn(nexusArtifactStream);
-    when(buildSourceService.getBuild(anyString(), anyString(), anyString(), any()))
+    when(buildSourceService.getBuild(any(), any(), any(), any()))
         .thenReturn(BuildDetails.Builder.aBuildDetails().withNumber("1.0").build());
     Map<String, String> map = new HashMap<>();
     map.put("buildNo", "1.0");
@@ -3151,7 +3151,7 @@ public class WorkflowExecutionServiceImplTest extends WingsBaseTest {
                                                   .name("testNexus")
                                                   .build();
     when(artifactStreamService.get(ARTIFACT_STREAM_ID)).thenReturn(nexusArtifactStream);
-    when(buildSourceService.getBuild(anyString(), anyString(), anyString(), any()))
+    when(buildSourceService.getBuild(any(), any(), any(), any()))
         .thenReturn(BuildDetails.Builder.aBuildDetails().withNumber("1.0").build());
     Map<String, String> map = new HashMap<>();
     map.put("buildNo", "1.0");

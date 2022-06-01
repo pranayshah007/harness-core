@@ -15,8 +15,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
-import static org.powermock.api.mockito.PowerMockito.when;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
@@ -45,14 +45,10 @@ import java.util.List;
 import org.apache.sshd.common.file.util.MockPath;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 import org.zeroturnaround.exec.ProcessOutput;
 import org.zeroturnaround.exec.ProcessResult;
 import org.zeroturnaround.exec.StartedProcess;
@@ -61,9 +57,6 @@ import org.zeroturnaround.exec.StartedProcess;
  * Put All tests that use powermock here
  */
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({Utils.class, K8sTaskHelperBase.class})
-@PowerMockIgnore({"javax.security.*", "javax.net.*"})
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 @OwnedBy(CDP)
 public class K8sTaskHelperSecondaryTest extends WingsBaseTest {
@@ -159,7 +152,7 @@ public class K8sTaskHelperSecondaryTest extends WingsBaseTest {
   }
 
   private void setupForDoStatusCheckForAllResources() throws Exception {
-    PowerMockito.mockStatic(Utils.class);
+    mockStatic(Utils.class);
     ProcessResult processResult = new ProcessResult(0, new ProcessOutput(" ".getBytes()));
     when(Utils.executeScript(anyString(), anyString(), any(), any(), any())).thenReturn(processResult);
 

@@ -13,8 +13,8 @@ import static io.harness.rule.OwnerRule.ACASIAN;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
@@ -72,7 +72,7 @@ public class S3ResourceServiceImplTest extends CategoryTest {
             .build();
     doReturn(awsConnectorDTO).when(serviceHelper).getAwsConnector(awsConnectorRef);
 
-    doReturn(baseNGAccess).when(serviceHelper).getBaseNGAccess(anyString(), anyString(), anyString());
+    doReturn(baseNGAccess).when(serviceHelper).getBaseNGAccess(any(), any(), any());
     doReturn(encryptionDetails).when(serviceHelper).getAwsEncryptionDetails(awsConnectorDTO, baseNGAccess);
   }
 
@@ -88,7 +88,7 @@ public class S3ResourceServiceImplTest extends CategoryTest {
                                        .build();
     doReturn(response)
         .when(serviceHelper)
-        .getResponseData(eq(baseNGAccess), any(AwsTaskParams.class), eq(TaskType.NG_AWS_TASK.name()));
+        .getResponseData(eq(baseNGAccess), nullable(AwsTaskParams.class), eq(TaskType.NG_AWS_TASK.name()));
 
     Map<String, String> result = s3ResourceServiceImpl.getBuckets(awsConnectorRef, region, "test-org", "test-proj");
     assertThat(result).isNotNull();
@@ -117,7 +117,7 @@ public class S3ResourceServiceImplTest extends CategoryTest {
                                            .build();
     doReturn(response)
         .when(serviceHelper)
-        .getResponseData(eq(baseNGAccess), any(AwsTaskParams.class), eq(TaskType.NG_AWS_TASK.name()));
+        .getResponseData(eq(baseNGAccess), nullable(AwsTaskParams.class), eq(TaskType.NG_AWS_TASK.name()));
 
     try {
       s3ResourceServiceImpl.getBuckets(awsConnectorRef, region, "test-org", "test-proj");

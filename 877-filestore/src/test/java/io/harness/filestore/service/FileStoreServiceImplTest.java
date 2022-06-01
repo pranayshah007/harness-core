@@ -19,6 +19,7 @@ import static io.harness.rule.OwnerRule.VLAD;
 import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
@@ -692,7 +693,7 @@ public class FileStoreServiceImplTest extends CategoryTest {
 
   private void givenThatFileExistsInDatabase() {
     when(fileStoreRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(
-             anyString(), anyString(), anyString(), anyString()))
+             nullable(String.class), nullable(String.class), nullable(String.class), nullable(String.class)))
         .thenReturn(Optional.of(builder().build()));
   }
 

@@ -12,6 +12,7 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.UJJAWAL;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -88,9 +89,9 @@ public class NGScimUserServiceImplTest extends NgManagerTestBase {
     UserInvite userInvite = new UserInvite();
     userInvite.setEmail("username@harness.io");
 
-    when(ngUserService.getUserInfoByEmailFromCG(anyString())).thenReturn(Optional.ofNullable(userInfo));
+    when(ngUserService.getUserInfoByEmailFromCG(any())).thenReturn(Optional.ofNullable(userInfo));
     when(ngUserService.getUserByEmail(userInfo.getEmail(), true)).thenReturn(Optional.ofNullable(userMetadataDTO));
-    when(ngUserService.getUserById(anyString())).thenReturn(Optional.ofNullable(userInfo));
+    when(ngUserService.getUserById(any())).thenReturn(Optional.ofNullable(userInfo));
     Response response = scimUserService.createUser(scimUser, account.getUuid());
 
     assertThat(response).isNotNull();
@@ -159,9 +160,9 @@ public class NGScimUserServiceImplTest extends NgManagerTestBase {
                                                      .build())
                                           .orElse(null);
 
-    when(ngUserService.getUserInfoByEmailFromCG(anyString())).thenReturn(Optional.ofNullable(userInfo));
+    when(ngUserService.getUserInfoByEmailFromCG(any())).thenReturn(Optional.ofNullable(userInfo));
     when(ngUserService.getUserByEmail(userInfo.getEmail(), true)).thenReturn(Optional.ofNullable(userMetadataDTO));
-    when(ngUserService.getUserById(anyString())).thenReturn(Optional.ofNullable(userInfo));
+    when(ngUserService.getUserById(any())).thenReturn(Optional.ofNullable(userInfo));
     Response response = scimUserService.createUser(scimUser, account.getUuid());
 
     assertThat(response).isNotNull();

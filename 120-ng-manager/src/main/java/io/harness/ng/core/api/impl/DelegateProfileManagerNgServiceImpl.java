@@ -72,22 +72,24 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.validation.executable.ValidateOnExecution;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Singleton
 @ValidateOnExecution
 @Slf4j
 @OwnedBy(HarnessTeam.DEL)
+@RequiredArgsConstructor(onConstructor_ = @Inject)
 public class DelegateProfileManagerNgServiceImpl implements DelegateProfileManagerNgService {
   public static final String ENVIRONMENT_TYPE = "Environment Type";
   public static final String ENVIRONMENT = "Environment";
   public static final String PRODUCTION = "Production";
   public static final String NON_PRODUCTION = "Non-Production";
 
-  @Inject private DelegateProfileServiceGrpcClient delegateProfileServiceGrpcClient;
-  @Inject private HPersistence hPersistence;
-  @Inject private OutboxService outboxService;
-  @Inject private FilterService filterService;
+  private final DelegateProfileServiceGrpcClient delegateProfileServiceGrpcClient;
+  private final HPersistence hPersistence;
+  private final OutboxService outboxService;
+  private final FilterService filterService;
 
   @Override
   public PageResponse<DelegateProfileDetailsNg> list(
@@ -696,7 +698,7 @@ public class DelegateProfileManagerNgServiceImpl implements DelegateProfileManag
     return delegateProfileDetailsNgBuilder.build();
   }
 
-  private PageRequestGrpc convert(PageRequest pageRequest) {
+  private PageRequestGrpc convert(final PageRequest<DelegateProfileDetailsNg> pageRequest) {
     PageRequestGrpc.Builder pageRequestGrpcBuilder = PageRequestGrpc.newBuilder();
 
     if (isNotBlank(pageRequest.getLimit())) {
@@ -751,8 +753,8 @@ public class DelegateProfileManagerNgServiceImpl implements DelegateProfileManag
     return requestBuilder.build();
   }
 
-  private String extractScopingEntityId(Map<String, ScopingValues> scopingEntitiesMap, String entityId) {
-    ScopingValues scopingValues = scopingEntitiesMap.get(entityId);
+  private String extractScopingEntityId(Map<String, ScopingValues> scopingEntitiesMap) {
+    ScopingValues scopingValues = scopingEntitiesMap.get(ENV_TYPE_FIELD);
 
     if (scopingValues == null) {
       return null;
@@ -761,8 +763,8 @@ public class DelegateProfileManagerNgServiceImpl implements DelegateProfileManag
     return scopingValues.getValueList().get(0);
   }
 
-  private Set<String> extractScopingEntityIds(Map<String, ScopingValues> scopingEntitiesMap, String entityId) {
-    ScopingValues scopingValues = scopingEntitiesMap.get(entityId);
+  private Set<String> extractScopingEntityIds(Map<String, ScopingValues> scopingEntitiesMap) {
+    ScopingValues scopingValues = scopingEntitiesMap.get(ENV_ID_FIELD);
 
     if (scopingValues == null) {
       return null;
@@ -813,8 +815,8 @@ public class DelegateProfileManagerNgServiceImpl implements DelegateProfileManag
         .map(grpcScopingRule
             -> ScopingRuleDetailsNg.builder()
                    .description(grpcScopingRule.getDescription())
-                   .environmentTypeId(extractScopingEntityId(grpcScopingRule.getScopingEntitiesMap(), ENV_TYPE_FIELD))
-                   .environmentIds(extractScopingEntityIds(grpcScopingRule.getScopingEntitiesMap(), ENV_ID_FIELD))
+                   .environmentTypeId(extractScopingEntityId(grpcScopingRule.getScopingEntitiesMap()))
+                   .environmentIds(extractScopingEntityIds(grpcScopingRule.getScopingEntitiesMap()))
                    .build())
         .collect(Collectors.toList());
   }

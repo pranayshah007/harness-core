@@ -31,10 +31,9 @@ import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -112,7 +111,7 @@ public class AwsAmiServiceTrafficShiftAlbDeployStateTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testExecuteSuccess() {
     ExecutionContextImpl mockContext = initializeMockSetup(true);
-    doNothing().when(stateExecutionService).appendDelegateTaskDetails(anyString(), any());
+    doNothing().when(stateExecutionService).appendDelegateTaskDetails(any(), any());
     ExecutionResponse response = state.execute(mockContext);
     verifyDelegateTaskCreationResult(response);
   }
@@ -152,7 +151,9 @@ public class AwsAmiServiceTrafficShiftAlbDeployStateTest extends WingsBaseTest {
             .delegateMetaInfo(DelegateMetaInfo.builder().build())
             .instancesAdded(Collections.singletonList(new Instance()))
             .build();
-    doThrow(Exception.class).when(state.awsAmiServiceHelper).populateAlbTrafficShiftSetupData(any());
+    doAnswer(invocation -> { throw new Exception(); })
+        .when(state.awsAmiServiceHelper)
+        .populateAlbTrafficShiftSetupData(any());
     ExecutionResponse response =
         state.handleAsyncResponse(mockContext, ImmutableMap.of(ACTIVITY_ID, amiServiceDeployResponse));
     assertThat(response).isNotNull();
@@ -165,7 +166,7 @@ public class AwsAmiServiceTrafficShiftAlbDeployStateTest extends WingsBaseTest {
     state.setInstanceCountExpr("100");
 
     ExecutionContextImpl mockContext = mock(ExecutionContextImpl.class);
-    when(mockContext.renderExpression(anyString())).thenAnswer((Answer<String>) invocation -> {
+    when(mockContext.renderExpression(any())).thenAnswer((Answer<String>) invocation -> {
       Object[] args = invocation.getArguments();
       return (String) args[0];
     });
@@ -230,7 +231,7 @@ public class AwsAmiServiceTrafficShiftAlbDeployStateTest extends WingsBaseTest {
             .build();
     doReturn(trafficShiftAlbData).when(awsAmiServiceHelper).populateAlbTrafficShiftSetupData(mockContext);
 
-    doReturn(AmiArtifactStream.builder().build()).when(artifactStreamService).get(anyString());
+    doReturn(AmiArtifactStream.builder().build()).when(artifactStreamService).get(any());
     doReturn(Activity.builder().uuid(ACTIVITY_ID).commandUnits(singletonList(new AmiCommandUnit())).build())
         .when(activityService)
         .save(any());
@@ -244,7 +245,7 @@ public class AwsAmiServiceTrafficShiftAlbDeployStateTest extends WingsBaseTest {
 
     SweepingOutputInstanceBuilder instanceBuilder = SweepingOutputInstance.builder();
     doReturn(instanceBuilder).when(mockContext).prepareSweepingOutputBuilder(any());
-    doReturn("ExecutionId").when(mockContext).appendStateExecutionId(anyString());
+    doReturn("ExecutionId").when(mockContext).appendStateExecutionId(any());
     doReturn(SweepingOutputInstance.builder().build()).when(sweepingOutputService).save(any());
 
     InstanceElement instanceElement = new InstanceElement();
@@ -252,17 +253,17 @@ public class AwsAmiServiceTrafficShiftAlbDeployStateTest extends WingsBaseTest {
     instanceElement.setUuid("id");
     instanceElement.setHostName("ec2-instance");
     doReturn(singletonList(instanceElement)).when(awsStateHelper).generateInstanceElements(any(), any(), any());
-    doReturn(false).when(featureFlagService).isEnabled(any(), anyString());
+    doReturn(false).when(featureFlagService).isEnabled(any(), any());
 
     if (!isSuccess) {
-      doThrow(Exception.class).when(delegateService).queueTask(any());
+      doAnswer(invocation -> { throw new Exception(); }).when(delegateService).queueTask(any());
     }
 
     AwsAmiDeployStateExecutionData awsAmiDeployStateExecutionData = AwsAmiDeployStateExecutionData.builder().build();
     doReturn(awsAmiDeployStateExecutionData).when(mockContext).getStateExecutionData();
     doReturn(Activity.builder().uuid(ACTIVITY_ID).commandUnits(singletonList(new AmiCommandUnit())).build())
         .when(state.activityService)
-        .get(anyString(), anyString());
+        .get(any(), any());
     return mockContext;
   }
 

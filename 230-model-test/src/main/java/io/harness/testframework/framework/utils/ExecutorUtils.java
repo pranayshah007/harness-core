@@ -39,8 +39,6 @@ public class ExecutorUtils {
   public static void addGCVMOptions(List<String> command) {
     command.add("-Xmx4096m");
     command.add("-XX:+HeapDumpOnOutOfMemoryError");
-    command.add("-XX:+PrintGCDetails");
-    command.add("-XX:+PrintGCDateStamps");
     command.add("-Xloggc:mygclogfilename.gc");
     command.add("-XX:+UseParallelGC");
     command.add("-XX:MaxGCPauseMillis=500");

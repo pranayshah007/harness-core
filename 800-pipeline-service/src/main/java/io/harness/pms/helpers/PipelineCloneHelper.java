@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.pms.helpers;
 
 import io.harness.accesscontrol.acl.api.Resource;
@@ -86,8 +93,8 @@ public class PipelineCloneHelper {
     }
     if (clonePipelineDTO.getDestinationConfig().getTags() != null) {
       Map<String, String> tags = clonePipelineDTO.getDestinationConfig().getTags();
-
-      JsonNodeUtils.upsertPropertiesInJsonNode((ObjectNode) jsonNode.get("pipeline").get("tags"), tags);
+      ObjectMapper jsonMapper = new ObjectMapper();
+      ((ObjectNode) jsonNode.get("pipeline")).set("tags", jsonMapper.convertValue(tags, JsonNode.class));
     }
     if (destPipelineName != null) {
       JsonNodeUtils.updatePropertyInObjectNode(jsonNode.get("pipeline"), "name", destPipelineName);

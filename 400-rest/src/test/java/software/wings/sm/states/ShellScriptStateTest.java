@@ -171,7 +171,7 @@ public class ShellScriptStateTest extends WingsBaseTest {
             .build();
     when(executionContext.getGlobalSettingValue(ACCOUNT_ID, SETTING_ID)).thenReturn(hostConnectionAttributes);
     when(executionContext.renderExpression(anyString()))
-        .thenAnswer(invocation -> invocation.getArgumentAt(0, String.class));
+        .thenAnswer(invocation -> invocation.getArgument(0, String.class));
     when(activityHelperService.createAndSaveActivity(executionContext, Type.Verification, shellScriptState.getName(),
              shellScriptState.getStateType(),
              asList(aCommand().withName(ShellScriptParameters.CommandUnit).withCommandType(CommandType.OTHER).build())))
@@ -297,7 +297,7 @@ public class ShellScriptStateTest extends WingsBaseTest {
     assertThat(delegateTask.getTags()).contains("T1", "T2");
 
     verify(activityHelperService).createAndSaveActivity(any(), any(), any(), any(), any());
-    verify(stateExecutionService).appendDelegateTaskDetails(anyString(), any(DelegateTaskDetails.class));
+    verify(stateExecutionService).appendDelegateTaskDetails(any(), any(DelegateTaskDetails.class));
   }
 
   @Test
@@ -353,7 +353,7 @@ public class ShellScriptStateTest extends WingsBaseTest {
     assertThat(delegateTask.getTags()).contains("T1", "T2");
 
     verify(activityHelperService).createAndSaveActivity(any(), any(), any(), any(), any());
-    verify(stateExecutionService).appendDelegateTaskDetails(anyString(), any(DelegateTaskDetails.class));
+    verify(stateExecutionService).appendDelegateTaskDetails(any(), any(DelegateTaskDetails.class));
 
     // Test when expression could not be evaluated
 
