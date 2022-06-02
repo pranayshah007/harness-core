@@ -542,24 +542,16 @@ public class NgUserServiceImpl implements NgUserService {
       UserMembershipUpdateSource source) {
     ensureUserMetadata(userId);
     if (ngFeatureFlagHelperService.isEnabled(scope.getAccountIdentifier(), FeatureName.ACCOUNT_BASIC_ROLE)) {
-      addUserToScopeInternal(userId, source, scope, getDefaultManagedRoleIdentifier(scope), true);
+      addUserToScopeInternal(userId, source, scope, getDefaultManagedRoleIdentifier(scope));
       addUserToParentScope(userId, scope, source, true);
-      //assign Account admin assigned Default Role
-      addUserToNonManagedDefaultRole(userId, source, scope);
     }
     else
     {
-      addUserToScopeInternal(userId, source, scope, getDefaultRoleIdentifier(scope), true);
+      addUserToScopeInternal(userId, source, scope, getDefaultRoleIdentifier(scope));
       addUserToParentScope(userId, scope, source, false);
     }
     createRoleAssignments(userId, scope, createRoleAssignmentDTOs(roleBindings, userId, scope));
     userGroupService.addUserToUserGroups(scope, userId, getValidUserGroups(scope, userGroups));
-  }
-
-  private void addUserToNonManagedDefaultRole(String userId, UserMembershipUpdateSource source, Scope scope) {
-    if (isBlank(scope.getOrgIdentifier()) && isBlank(scope.getProjectIdentifier())) {
-      addUserToScopeInternal(userId, source, scope,  ACCOUNT_VIEWER, false);
-    }
   }
 
   private List<String> getValidUserGroups(Scope scope, List<String> userGroupIdentifiers) {
@@ -668,24 +660,24 @@ public class NgUserServiceImpl implements NgUserService {
                            .accountIdentifier(scope.getAccountIdentifier())
                            .orgIdentifier(scope.getOrgIdentifier())
                            .build();
-      addUserToScopeInternal(userId, source, orgScope, ORGANIZATION_VIEWER, true);
+      addUserToScopeInternal(userId, source, orgScope, ORGANIZATION_VIEWER);
     }
 
     if (!isBlank(scope.getOrgIdentifier())) {
       Scope accountScope = Scope.builder().accountIdentifier(scope.getAccountIdentifier()).build();
       if (accountBasicRoleFeatureFlag) {
-        addUserToScopeInternal(userId, source, accountScope, ACCOUNT_VIEWER, false);
+        addUserToScopeInternal(userId, source, accountScope, ACCOUNT_BASIC);
       }
       else
       {
-        addUserToScopeInternal(userId, source, accountScope, ACCOUNT_VIEWER, true);
+        addUserToScopeInternal(userId, source, accountScope, ACCOUNT_VIEWER);
       }
     }
   }
 
   @VisibleForTesting
   protected void addUserToScopeInternal(
-      String userId, UserMembershipUpdateSource source, Scope scope, String roleIdentifier, boolean isManaged) {
+      String userId, UserMembershipUpdateSource source, Scope scope, String roleIdentifier) {
     Optional<UserMetadata> userMetadata = userMetadataRepository.findDistinctByUserId(userId);
     String publicIdentifier = userMetadata.map(UserMetadata::getEmail).orElse(userId);
 
@@ -712,7 +704,7 @@ public class NgUserServiceImpl implements NgUserService {
                                                 .roleIdentifier(roleIdentifier)
                                                 .build();
       NGRestUtils.getResponse(accessControlAdminClient.createMultiRoleAssignment(scope.getAccountIdentifier(),
-          scope.getOrgIdentifier(), scope.getProjectIdentifier(), isManaged,
+          scope.getOrgIdentifier(), scope.getProjectIdentifier(), true,
           RoleAssignmentCreateRequestDTO.builder().roleAssignments(singletonList(roleAssignmentDTO)).build()));
     } catch (Exception e) {
       /**
