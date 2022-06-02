@@ -21,6 +21,7 @@ import static io.harness.ng.core.template.TemplateEntityConstants.STEP_ROOT_FIEL
 
 import static java.util.Arrays.asList;
 
+import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -28,23 +29,28 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
 import java.util.Arrays;
 import java.util.List;
+import lombok.Getter;
 
 @OwnedBy(CDC)
 public enum TemplateEntityType {
-  @JsonProperty(STEP) STEP_TEMPLATE(STEP, STEP_ROOT_FIELD, asList(IDENTIFIER_KEY, NAME_KEY)),
-  @JsonProperty(STAGE) STAGE_TEMPLATE(STAGE, STAGE_ROOT_FIELD, asList(IDENTIFIER_KEY, NAME_KEY)),
-  @JsonProperty(PIPELINE) PIPELINE_TEMPLATE(PIPELINE, PIPELINE_ROOT_FIELD, asList(IDENTIFIER_KEY, NAME_KEY)),
+  @JsonProperty(STEP) STEP_TEMPLATE(STEP, STEP_ROOT_FIELD, asList(IDENTIFIER_KEY, NAME_KEY), HarnessTeam.PIPELINE),
+  @JsonProperty(STAGE) STAGE_TEMPLATE(STAGE, STAGE_ROOT_FIELD, asList(IDENTIFIER_KEY, NAME_KEY), HarnessTeam.PIPELINE),
+  @JsonProperty(PIPELINE)
+  PIPELINE_TEMPLATE(PIPELINE, PIPELINE_ROOT_FIELD, asList(IDENTIFIER_KEY, NAME_KEY), HarnessTeam.PIPELINE),
   @JsonProperty(MONITORED_SERVICE)
-  MONITORED_SERVICE_TEMPLATE(MONITORED_SERVICE, MONITORED_SERVICE_ROOT_FIELD, asList(IDENTIFIER_KEY, NAME_KEY));
+  MONITORED_SERVICE_TEMPLATE(
+      MONITORED_SERVICE, MONITORED_SERVICE_ROOT_FIELD, asList(IDENTIFIER_KEY, NAME_KEY), HarnessTeam.CV);
 
   private final String yamlType;
   private String rootYamlName;
   private final List<String> yamlFieldKeys;
+  @Getter private HarnessTeam ownerTeam;
 
-  TemplateEntityType(String yamlType, String rootYamlName, List<String> yamlFieldKeys) {
+  TemplateEntityType(String yamlType, String rootYamlName, List<String> yamlFieldKeys, HarnessTeam ownerTeam) {
     this.yamlType = yamlType;
     this.rootYamlName = rootYamlName;
     this.yamlFieldKeys = yamlFieldKeys;
+    this.ownerTeam = ownerTeam;
   }
 
   @JsonCreator(mode = JsonCreator.Mode.DELEGATING)

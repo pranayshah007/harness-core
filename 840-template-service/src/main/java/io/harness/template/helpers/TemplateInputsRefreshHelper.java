@@ -113,7 +113,7 @@ public class TemplateInputsRefreshHelper {
         arrayList.add(arrayElement);
       } else if (arrayElement.isArray()) {
         // Value -> Array
-        arrayList.add(getRefreshedTemplateInputsInArray(accountId, orgId, projectId, yamlNode, templateCacheMap));
+        arrayList.add(getRefreshedTemplateInputsInArray(accountId, orgId, projectId, arrayElement, templateCacheMap));
       } else {
         // Value -> Object
         arrayList.add(getRefreshedTemplateInputsMap(accountId, orgId, projectId, arrayElement, templateCacheMap));
