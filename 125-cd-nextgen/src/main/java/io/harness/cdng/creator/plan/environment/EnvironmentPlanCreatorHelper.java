@@ -47,7 +47,6 @@ import com.google.protobuf.ByteString;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -162,7 +161,7 @@ public class EnvironmentPlanCreatorHelper {
     return metadataDependency;
   }
 
-  public void addEnvironmentV2Dependency(LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap,
+  public void addEnvironmentV2Dependency(Map<String, PlanCreationResponse> planCreationResponseMap,
       EnvironmentPlanCreatorConfig environmentPlanCreatorConfig, YamlField originalEnvironmentField,
       boolean gitOpsEnabled, String environmentUuid, String infraSectionUuid, String serviceSpecNodeUuid,
       KryoSerializer kryoSerializer) throws IOException {
