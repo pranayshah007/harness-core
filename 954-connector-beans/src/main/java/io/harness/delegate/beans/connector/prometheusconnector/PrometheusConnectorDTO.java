@@ -14,11 +14,16 @@ import io.harness.connector.DelegateSelectable;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.connector.customhealthconnector.CustomHealthKeyAndValue;
 import io.harness.encryption.SecretRefData;
+import io.harness.encryption.SecretReference;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import io.swagger.annotations.ApiModelProperty;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -37,10 +42,10 @@ import org.hibernate.validator.constraints.NotBlank;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @OwnedBy(HarnessTeam.CV)
-public class PrometheusConnectorDTO extends ConnectorConfigDTO implements DelegateSelectable {
+public class PrometheusConnectorDTO extends ConnectorConfigDTO implements DecryptableEntity, DelegateSelectable {
   @NotNull @NotBlank String url;
   String username;
-  SecretRefData passwordRef;
+  @ApiModelProperty(dataType = "string") @SecretReference SecretRefData passwordRef;
   List<CustomHealthKeyAndValue> headers;
 
   Set<String> delegateSelectors;
@@ -56,6 +61,11 @@ public class PrometheusConnectorDTO extends ConnectorConfigDTO implements Delega
   }
   @Override
   public List<DecryptableEntity> getDecryptableEntities() {
-    return Collections.emptyList();
+    List<CustomHealthKeyAndValue> headerList = headers != null ? headers : new LinkedList();
+    List<DecryptableEntity> decryptableEntities = new ArrayList<>();
+    decryptableEntities.addAll(
+        headerList.stream().filter(keyAndValue -> keyAndValue.isValueEncrypted()).collect(Collectors.toList()));
+    decryptableEntities.add(this);
+    return decryptableEntities;
   }
 }
