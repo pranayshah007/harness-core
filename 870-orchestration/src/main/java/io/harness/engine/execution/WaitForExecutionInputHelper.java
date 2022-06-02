@@ -14,7 +14,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.execution.ExecutionInputInstance;
-import io.harness.execution.NodeExecution;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.waiter.WaitNotifyEngine;
@@ -31,20 +30,19 @@ public class WaitForExecutionInputHelper {
   @Inject private WaitNotifyEngine waitNotifyEngine;
   @Inject private ExecutionInputService executionInputService;
   @Inject @Named(OrchestrationPublisherName.PUBLISHER_NAME) private String publisherName;
-  public void waitForExecutionInput(Ambiance ambiance, NodeExecution nodeExecution, String executionInputTemplate) {
+  public void waitForExecutionInput(Ambiance ambiance, String nodeExecutionId, String executionInputTemplate) {
     String inputInstanceId = UUIDGenerator.generateUuid();
     WaitForExecutionInputCallback waitForExecutionInputCallback = WaitForExecutionInputCallback.builder()
-                                                                      .nodeExecutionId(nodeExecution.getUuid())
+                                                                      .nodeExecutionId(nodeExecutionId)
                                                                       .ambiance(ambiance)
                                                                       .inputInstanceId(inputInstanceId)
                                                                       .build();
     waitNotifyEngine.waitForAllOn(publisherName, waitForExecutionInputCallback, inputInstanceId);
     executionInputService.save(ExecutionInputInstance.builder()
                                    .inputInstanceId(inputInstanceId)
-                                   .nodeExecutionId(nodeExecution.getUuid())
+                                   .nodeExecutionId(nodeExecutionId)
                                    .template(executionInputTemplate)
                                    .build());
-    nodeExecutionService.updateStatusWithOps(
-        nodeExecution.getUuid(), Status.INPUT_WAITING, null, EnumSet.noneOf(Status.class));
+    nodeExecutionService.updateStatusWithOps(nodeExecutionId, Status.INPUT_WAITING, null, EnumSet.noneOf(Status.class));
   }
 }

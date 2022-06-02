@@ -35,15 +35,17 @@ public final class FileNodeDTO extends FileStoreNodeDTO {
   @Schema(description = "Description of the File Store Node") private String description;
   @Schema(description = "Tags of the File Store Node") private List<NGTag> tags;
   @Schema(description = "Mime type of the File Store Node") private String mimeType;
+  @Schema(description = "Content of the file") private String content;
 
   @Builder
   public FileNodeDTO(String identifier, String parentIdentifier, String name, Long lastModifiedAt,
-      EmbeddedUserDetailsDTO lastModifiedBy, FileUsage fileUsage, String description, List<NGTag> tags,
-      String mimeType) {
+      EmbeddedUserDetailsDTO lastModifiedBy, FileUsage fileUsage, String description, List<NGTag> tags, String mimeType,
+      String content) {
     super(NGFileType.FILE, identifier, parentIdentifier, name, lastModifiedAt, lastModifiedBy);
     this.fileUsage = fileUsage;
     this.description = description;
     this.tags = tags;
     this.mimeType = mimeType;
+    this.content = content;
   }
 }

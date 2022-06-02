@@ -28,6 +28,7 @@ import io.harness.morphia.MorphiaRegistrarHelperPut;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.service.entity.ServiceEntity;
+import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 
 import java.util.Set;
 
@@ -38,6 +39,7 @@ public class NGEntitiesMorphiaRegistrar implements MorphiaRegistrar {
     set.add(Cluster.class);
     set.add(Environment.class);
     set.add(InfrastructureEntity.class);
+    set.add(NGServiceOverridesEntity.class);
   }
 
   @Override

@@ -15,15 +15,13 @@ import lombok.experimental.UtilityClass;
 
 @UtilityClass
 public class CVNGNotificationChannelUtils {
-  io.harness.notification.NotificationRequest.UserGroup getUserGroups(
+  public static io.harness.notification.NotificationRequest.UserGroup getUserGroups(
       String identifier, String accountId, String orgIdentifier, String projectIdentifier) {
     IdentifierRef identifierRef =
         IdentifierRefHelper.getIdentifierRef(identifier, accountId, orgIdentifier, projectIdentifier);
 
     if (identifierRef.getScope() == Scope.ACCOUNT) {
-      return io.harness.notification.NotificationRequest.UserGroup.newBuilder()
-          .setIdentifier(identifierRef.getIdentifier())
-          .build();
+      return io.harness.notification.NotificationRequest.UserGroup.newBuilder().setIdentifier(identifierRef.getIdentifier()).build();
     }
     if (identifierRef.getScope() == Scope.ORG) {
       return io.harness.notification.NotificationRequest.UserGroup.newBuilder()

@@ -155,3 +155,8 @@ secretsConfiguration:
   gcpSecretManagerProject: ccm-play
 
 awsConnectorCreatedInstantForPolicyCheck: "2022-05-05T00:00:00.00Z"
+
+segmentConfiguration:
+  enabled: true
+  url: https://api.segment.io/v1/
+  apiKey: UvSVfxy6KzApDrrlhCqSjJBlgPeEDBdf

@@ -301,7 +301,7 @@ public class StatusUtilsTest extends CategoryTest {
     assertThat(StatusUtils.nodeAllowedStartSet(Status.RESOURCE_WAITING)).containsExactlyInAnyOrder(QUEUED, RUNNING);
     assertThat(StatusUtils.nodeAllowedStartSet(Status.TASK_WAITING)).containsExactlyInAnyOrder(QUEUED, RUNNING);
     assertThat(StatusUtils.nodeAllowedStartSet(Status.PAUSING)).containsExactlyInAnyOrder(QUEUED, RUNNING);
-    assertThat(StatusUtils.nodeAllowedStartSet(INPUT_WAITING)).containsExactlyInAnyOrder(QUEUED);
+    assertThat(StatusUtils.nodeAllowedStartSet(INPUT_WAITING)).containsExactlyInAnyOrder(QUEUED, RUNNING);
     assertThat(StatusUtils.nodeAllowedStartSet(Status.SKIPPED)).containsExactlyInAnyOrder(QUEUED, RUNNING);
     assertThat(StatusUtils.nodeAllowedStartSet(Status.PAUSED)).containsExactlyInAnyOrder(QUEUED, RUNNING, PAUSING);
     assertThat(StatusUtils.nodeAllowedStartSet(Status.DISCONTINUING))
@@ -341,7 +341,7 @@ public class StatusUtilsTest extends CategoryTest {
     assertThat(StatusUtils.planAllowedStartSet(Status.RESOURCE_WAITING)).containsExactlyInAnyOrder(QUEUED, RUNNING);
     assertThat(StatusUtils.planAllowedStartSet(Status.TASK_WAITING)).containsExactlyInAnyOrder(QUEUED, RUNNING);
     assertThat(StatusUtils.planAllowedStartSet(Status.PAUSING)).containsExactlyInAnyOrder(QUEUED, RUNNING);
-    assertThat(StatusUtils.nodeAllowedStartSet(INPUT_WAITING)).containsExactlyInAnyOrder(QUEUED);
+    assertThat(StatusUtils.nodeAllowedStartSet(INPUT_WAITING)).containsExactlyInAnyOrder(QUEUED, RUNNING);
     assertThat(StatusUtils.planAllowedStartSet(Status.SKIPPED)).containsExactlyInAnyOrder(QUEUED, RUNNING);
     assertThat(StatusUtils.planAllowedStartSet(Status.DISCONTINUING))
         .containsExactlyInAnyOrder(RUNNING, INTERVENTION_WAITING, TIMED_WAITING, ASYNC_WAITING, TASK_WAITING, PAUSING,
