@@ -494,6 +494,21 @@ public class YamlUtils {
     return null;
   }
 
+  /**
+   * returns only the pipeline Identifier at pipeline level from the fqn
+   */
+  public String getPipelineTemplateNameFromFqn(String fqn) {
+    // TODO : Add Proper Implementation
+    String[] strings = fqn.split("\\.");
+    if (strings.length < 2) {
+      return null;
+    }
+    if (strings[1].equals("template")) {
+      return "pipelineIdentifier";
+    }
+    return null;
+  }
+
   private String getErrorNodePartialFQN(String startingFQN, IOException e) {
     if (!(e.getClass().isAssignableFrom(JsonMappingException.class))) {
       return startingFQN;
