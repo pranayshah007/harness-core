@@ -139,6 +139,7 @@ public class JiraApprovalHelperServiceImpl implements JiraApprovalHelperService 
           String.format("Jira url: %s", jiraTaskNGParameters.getJiraConnectorDTO().getJiraUrl()));
 
       String taskId = queueTask(ambiance, instanceId, jiraTaskNGParameters);
+      log.info("Jira Approval Instance queued task with taskId - {}", taskId);
       logCallback.saveExecutionLog(String.format("Jira task: %s", taskId));
     } catch (Exception ex) {
       logCallback.saveExecutionLog(
