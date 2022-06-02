@@ -1643,7 +1643,7 @@
                 "mirror_urls": [
                     "http://jfrogdev.dev.harness.io:80/artifactory/portal-maven/com/fasterxml/jackson/dataformat/jackson-dataformat-yaml/2.13.1/jackson-dataformat-yaml-2.13.1.jar",
                     "https://harness.jfrog.io/artifactory/harness-internal/com/fasterxml/jackson/dataformat/jackson-dataformat-yaml/2.13.1/jackson-dataformat-yaml-2.13.1.jar",
-                    "https://harness.jfrog.io/harness/thirdparty-an\tmodified:   scripts/jenkins/bazel-ccm-selective-build.shnonymous/com/fasterxml/jackson/dataformat/jackson-dataformat-yaml/2.13.1/jackson-dataformat-yaml-2.13.1.jar"
+                    "https://harness.jfrog.io/harness/thirdparty-annonymous/com/fasterxml/jackson/dataformat/jackson-dataformat-yaml/2.13.1/jackson-dataformat-yaml-2.13.1.jar"
                 ],
                 "sha256": "541a49de3795aaa618d2adc88987acba8fcc296d47cef63cdc4e5bbb24a8d72a",
                 "url": "http://jfrogdev.dev.harness.io:80/artifactory/portal-maven/com/fasterxml/jackson/dataformat/jackson-dataformat-yaml/2.13.1/jackson-dataformat-yaml-2.13.1.jar"

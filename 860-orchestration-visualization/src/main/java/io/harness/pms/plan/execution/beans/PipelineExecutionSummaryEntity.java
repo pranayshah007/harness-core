@@ -110,7 +110,7 @@ public class PipelineExecutionSummaryEntity implements PersistentEntity, UuidAwa
   @Singular @Size(max = 128) List<NGTag> tags;
 
   @Builder.Default Map<String, org.bson.Document> moduleInfo = new HashMap<>();
-  @Builder.Default Map<String, GraphLayoutNodeDTO> layoutNodeMap = new HashMap<>();
+  @Setter @NonFinal @Builder.Default Map<String, GraphLayoutNodeDTO> layoutNodeMap = new HashMap<>();
   List<String> modules;
   Set<String> executedModules;
   String startingNodeId;

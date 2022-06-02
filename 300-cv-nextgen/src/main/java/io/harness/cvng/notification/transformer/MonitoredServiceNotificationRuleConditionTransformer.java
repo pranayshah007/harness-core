@@ -15,6 +15,7 @@ import io.harness.cvng.notification.beans.NotificationRuleCondition;
 import io.harness.cvng.notification.beans.NotificationRuleConditionSpec;
 import io.harness.cvng.notification.beans.NotificationRuleDTO;
 import io.harness.cvng.notification.beans.NotificationRuleType;
+import io.harness.cvng.notification.channelDetails.CVNGNotificationChannelType;
 import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule;
 import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule.MonitoredServiceChangeImpactCondition;
 import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule.MonitoredServiceChangeObservedCondition;
@@ -23,11 +24,17 @@ import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule.Mo
 import io.harness.cvng.notification.utils.NotificationRuleCommonUtils;
 import io.harness.exception.InvalidArgumentsException;
 
+import com.google.inject.Inject;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class MonitoredServiceNotificationRuleConditionTransformer
     extends NotificationRuleConditionTransformer<MonitoredServiceNotificationRule, NotificationRuleConditionSpec> {
+  @Inject
+  Map<CVNGNotificationChannelType, NotificationMethodTransformer>
+      notificationChannelTypeNotificationMethodTransformerMap;
+
   @Override
   public MonitoredServiceNotificationRule getEntity(
       ProjectParams projectParams, NotificationRuleDTO notificationRuleDTO) {
@@ -38,7 +45,9 @@ public class MonitoredServiceNotificationRuleConditionTransformer
         .identifier(notificationRuleDTO.getIdentifier())
         .name(notificationRuleDTO.getName())
         .type(NotificationRuleType.MONITORED_SERVICE)
-        .notificationMethod(notificationRuleDTO.getNotificationMethod())
+        .notificationMethod(notificationChannelTypeNotificationMethodTransformerMap
+                                .get(notificationRuleDTO.getNotificationMethod().getType())
+                                .getEntityNotificationMethod(notificationRuleDTO.getNotificationMethod().getSpec()))
         .conditions(notificationRuleDTO.getConditions()
                         .stream()
                         .map(condition -> getEntityCondition(condition))

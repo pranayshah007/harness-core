@@ -28,7 +28,7 @@ import org.springframework.data.mongodb.core.query.Update;
 
 @OwnedBy(PIPELINE)
 public interface PMSPipelineService {
-  PipelineEntity create(PipelineEntity pipelineEntity);
+  PipelineCRUDResult create(PipelineEntity pipelineEntity);
 
   PipelineSaveResponse clone(ClonePipelineDTO clonePipelineDTO, String accountId);
 

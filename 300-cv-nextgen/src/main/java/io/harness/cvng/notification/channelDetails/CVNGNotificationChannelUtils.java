@@ -15,7 +15,7 @@ import lombok.experimental.UtilityClass;
 
 @UtilityClass
 public class CVNGNotificationChannelUtils {
-  io.harness.notification.NotificationRequest.UserGroup getUserGroups(
+  public static io.harness.notification.NotificationRequest.UserGroup getUserGroups(
       String identifier, String accountId, String orgIdentifier, String projectIdentifier) {
     IdentifierRef identifierRef =
         IdentifierRefHelper.getIdentifierRef(identifier, accountId, orgIdentifier, projectIdentifier);

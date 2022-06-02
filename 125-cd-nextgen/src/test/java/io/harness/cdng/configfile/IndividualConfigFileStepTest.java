@@ -32,7 +32,11 @@ import io.harness.cdng.service.steps.ServiceStepsHelper;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
+import io.harness.filestore.dto.node.FileNodeDTO;
+import io.harness.filestore.dto.node.FileStoreNodeDTO;
+import io.harness.filestore.service.FileStoreService;
 import io.harness.gitsync.sdk.EntityValidityDetails;
+import io.harness.ng.core.filestore.FileUsage;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
@@ -56,9 +60,11 @@ import org.mockito.Mock;
 public class IndividualConfigFileStepTest extends CDNGTestBase {
   private static final String IDENTIFIER = "identifier";
   private static final String FILE_PATH = "file/path";
-  private static final String FILE_REFERENCE = "account.fileReference";
+  private static final String FILE_REFERENCE_WITH_ACCOUNT_SCOUPE = "account.fileReference";
+  private static final String FILE_REFERENCE = "fileReference";
   private static final String FILE_PATH_OVERRIDE = "file/path/override";
-  private static final String FILE_REFERENCE_OVERRIDE = "account.fileReferenceOverride";
+  private static final String FILE_REFERENCE_OVERRIDE_WITH_ACCOUNT_SCOUPE = "account.fileReferenceOverride";
+  private static final String FILE_REFERENCE_OVERRIDE = "fileReferenceOverride";
   private static final String MASTER = "master";
   private static final String COMMIT_ID = "commitId";
   private static final String CONNECTOR_REF = "connectorRef";
@@ -67,10 +73,14 @@ public class IndividualConfigFileStepTest extends CDNGTestBase {
   private static final String ORG_IDENTIFIER = "orgIdentifier";
   private static final String PROJECT_IDENTIFIER = "projectIdentifier";
   private static final String CONNECTOR_NAME = "connectorName";
+  private static final String CONFIG_FILE_NAME = "configFileName";
+  private static final String CONFIG_FILE_IDENTIFIER = "configFileIdentifier";
+  private static final String CONFIG_FILE_PARENT_IDENTIFIER = "configFileParentIdentifier";
 
   @Mock private ServiceStepsHelper serviceStepsHelper;
   @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
   @Mock private ConnectorService connectorService;
+  @Mock private FileStoreService fileStoreService;
 
   @InjectMocks private IndividualConfigFileStep individualConfigFileStep;
 
@@ -93,6 +103,8 @@ public class IndividualConfigFileStepTest extends CDNGTestBase {
     when(executionSweepingOutputService.listOutputsWithGivenNameAndSetupIds(
              any(), eq(FAILED_CHILDREN_OUTPUT), anyList()))
         .thenReturn(Collections.emptyList());
+    when(fileStoreService.get(ACCOUNT_IDENTIFIER, null, null, FILE_REFERENCE, false))
+        .thenReturn(Optional.of(getFileStoreNode()));
 
     ConfigFileStepParameters stepParameters = ConfigFileStepParameters.builder()
                                                   .identifier(IDENTIFIER)
@@ -113,8 +125,17 @@ public class IndividualConfigFileStepTest extends CDNGTestBase {
     assertThat(configFileOutcome.getStore().getKind()).isEqualTo(StoreConfigType.HARNESS.getDisplayName());
     HarnessStore store = (HarnessStore) configFileOutcome.getStore();
     assertThat(store.getFilePath().getValue()).isEqualTo(FILE_PATH);
-    assertThat(store.getFileReference().getValue()).isEqualTo(FILE_REFERENCE);
+    assertThat(store.getFileReference().getValue()).isEqualTo(FILE_REFERENCE_WITH_ACCOUNT_SCOUPE);
     assertThat(store.getFileType()).isEqualTo(HarnessFileType.FILE_STORE);
+  }
+
+  private FileStoreNodeDTO getFileStoreNode() {
+    return FileNodeDTO.builder()
+        .name(CONFIG_FILE_NAME)
+        .identifier(CONFIG_FILE_IDENTIFIER)
+        .fileUsage(FileUsage.CONFIG)
+        .parentIdentifier(CONFIG_FILE_PARENT_IDENTIFIER)
+        .build();
   }
 
   @Test
@@ -129,6 +150,8 @@ public class IndividualConfigFileStepTest extends CDNGTestBase {
     when(executionSweepingOutputService.listOutputsWithGivenNameAndSetupIds(
              any(), eq(FAILED_CHILDREN_OUTPUT), anyList()))
         .thenReturn(Collections.emptyList());
+    when(fileStoreService.get(ACCOUNT_IDENTIFIER, null, null, FILE_REFERENCE_OVERRIDE, false))
+        .thenReturn(Optional.of(getFileStoreNode()));
 
     ConfigFileAttributes spec = getConfigFileAttributesWithHarnessStore();
     ConfigFileStepParameters stepParameters = ConfigFileStepParameters.builder()
@@ -154,7 +177,7 @@ public class IndividualConfigFileStepTest extends CDNGTestBase {
     assertThat(configFileOutcome.getStore().getKind()).isEqualTo(StoreConfigType.HARNESS.getDisplayName());
     HarnessStore store = (HarnessStore) configFileOutcome.getStore();
     assertThat(store.getFilePath().getValue()).isEqualTo(FILE_PATH_OVERRIDE);
-    assertThat(store.getFileReference().getValue()).isEqualTo(FILE_REFERENCE_OVERRIDE);
+    assertThat(store.getFileReference().getValue()).isEqualTo(FILE_REFERENCE_OVERRIDE_WITH_ACCOUNT_SCOUPE);
     assertThat(store.getFileType()).isEqualTo(HarnessFileType.FILE_STORE);
   }
 
@@ -226,7 +249,7 @@ public class IndividualConfigFileStepTest extends CDNGTestBase {
                 .spec(HarnessStore.builder()
                           .filePath(ParameterField.createValueField(FILE_PATH))
                           .fileType(HarnessFileType.FILE_STORE)
-                          .fileReference(ParameterField.createValueField(FILE_REFERENCE))
+                          .fileReference(ParameterField.createValueField(FILE_REFERENCE_WITH_ACCOUNT_SCOUPE))
                           .build())
                 .build()))
         .build();
@@ -241,7 +264,7 @@ public class IndividualConfigFileStepTest extends CDNGTestBase {
                 .spec(HarnessStore.builder()
                           .filePath(ParameterField.createValueField(FILE_PATH_OVERRIDE))
                           .fileType(HarnessFileType.FILE_STORE)
-                          .fileReference(ParameterField.createValueField(FILE_REFERENCE_OVERRIDE))
+                          .fileReference(ParameterField.createValueField(FILE_REFERENCE_OVERRIDE_WITH_ACCOUNT_SCOUPE))
                           .build())
                 .build()))
         .build();
