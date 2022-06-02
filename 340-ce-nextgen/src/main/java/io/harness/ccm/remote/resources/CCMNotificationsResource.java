@@ -71,6 +71,7 @@ public class CCMNotificationsResource {
   sendNotification(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
                        NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @RequestBody(required = true, description = "Notification channel") NotificationChannel notificationChannel) {
+    log.info("Inside send notification api");
     return ResponseDTO.newResponse(notificationClient.sendNotificationAsync(notificationChannel));
   }
 }

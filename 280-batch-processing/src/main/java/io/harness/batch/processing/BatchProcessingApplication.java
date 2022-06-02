@@ -7,7 +7,6 @@
 
 package io.harness.batch.processing;
 
-import io.harness.springdata.HMongoTemplate;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
 import org.springframework.boot.WebApplicationType;
@@ -18,16 +17,13 @@ import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration;
 import org.springframework.boot.autoconfigure.mongo.embedded.EmbeddedMongoAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
-import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.PropertySource;
-import org.springframework.guice.module.SpringModule;
 
 @SpringBootApplication(
     exclude = {DataSourceAutoConfiguration.class, MongoAutoConfiguration.class, MongoDataAutoConfiguration.class,
         EmbeddedMongoAutoConfiguration.class, HazelcastAutoConfiguration.class})
 @EnableBatchProcessing(modular = true)
 @PropertySource("classpath:batch.properties")
-//@ComponentScan("io.harness.notification")
 @Slf4j
 public class BatchProcessingApplication {
   public static void main(String[] args) {

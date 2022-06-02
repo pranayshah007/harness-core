@@ -36,6 +36,7 @@ import io.harness.notification.channeldetails.MSTeamChannel;
 import io.harness.notification.channeldetails.MSTeamChannel.MSTeamChannelBuilder;
 import io.harness.notification.channeldetails.SlackChannel;
 import io.harness.notification.channeldetails.SlackChannel.SlackChannelBuilder;
+import io.harness.notifications.NotificationResourceClient;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -51,9 +52,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
-import io.harness.notification.module.NotificationClientModule;
-import io.harness.notification.notificationclient.NotificationClient;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -72,7 +70,7 @@ public class AnomalyAlertsServiceImpl implements AnomalyAlertsService {
   @Autowired private CEViewService viewService;
   @Autowired private PerspectiveAnomalyService perspectiveAnomalyService;
   @Autowired private CCMNotificationsDao notificationSettingsDao;
-  @Autowired private NotificationClient notificationClient;
+  @Autowired private NotificationResourceClient notificationResourceClient;
 
   int MAX_RETRY = 3;
 
@@ -145,18 +143,18 @@ public class AnomalyAlertsServiceImpl implements AnomalyAlertsService {
   @Override
   public void testAnomalyAlerts() {
     EmailChannelBuilder emailChannelBuilder = EmailChannel.builder()
-        .accountId("wdwdawd")
-        .recipients(Collections.singletonList("dwdwda"))
-        .team(Team.OTHER)
-        .templateId("email_ccm_anomaly_alert.txt")
-        .userGroups(Collections.emptyList());
+                                                  .accountId("wdwdawd")
+                                                  .recipients(Collections.singletonList("dwdwda"))
+                                                  .team(Team.OTHER)
+                                                  .templateId("email_ccm_anomaly_alert.txt")
+                                                  .userGroups(Collections.emptyList());
     Map<String, String> templateData = new HashMap<>();
     templateData.put("perspective_name", "dawdad");
     templateData.put("anomalies", "wwddeaew");
 
     // Sending email alerts
     emailChannelBuilder.templateData(templateData);
-    notificationClient.sendNotificationAsync(emailChannelBuilder.build());
+    notificationResourceClient.sendNotification("", emailChannelBuilder.build());
     log.info("done");
   }
 
@@ -211,7 +209,7 @@ public class AnomalyAlertsServiceImpl implements AnomalyAlertsService {
 
     // Sending email alerts
     emailChannelBuilder.templateData(templateData);
-    notificationClient.sendNotificationAsync(emailChannelBuilder.build());
+    notificationResourceClient.sendNotification(accountId, emailChannelBuilder.build());
   }
 
   public List<CCMPerspectiveNotificationChannelsDTO> listNotificationChannelsPerPerspective(String accountId) {

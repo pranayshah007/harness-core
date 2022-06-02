@@ -267,6 +267,7 @@ public class CENextGenApplication extends Application<CENextGenConfiguration> {
   private void registerInternalApiAuthFilter(CENextGenConfiguration configuration, Environment environment) {
     Map<String, String> serviceToSecretMapping = new HashMap<>();
     serviceToSecretMapping.put(DEFAULT.getServiceId(), configuration.getNgManagerServiceSecret());
+    log.info("CE NG serviceToSourceMapping: {}", serviceToSecretMapping);
 
     environment.jersey().register(
         new InternalApiAuthFilter(getAuthFilterPredicate(InternalApi.class), null, serviceToSecretMapping));
