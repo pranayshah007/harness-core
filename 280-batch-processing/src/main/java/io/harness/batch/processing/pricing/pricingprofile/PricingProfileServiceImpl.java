@@ -29,6 +29,7 @@ public class PricingProfileServiceImpl implements PricingProfileService {
   @Override
   public PricingProfile fetchPricingProfile(String accountId, InstanceCategory instanceCategory) {
     PricingProfile returnProfile = pricingProfileDao.fetchPricingProfile(accountId);
+    log.info("Return pricing pfofile {}", returnProfile);
     if (returnProfile == null) {
       double cpuPricePerHr = 0.0016;
       double memoryPricePerHr = 0.008;
