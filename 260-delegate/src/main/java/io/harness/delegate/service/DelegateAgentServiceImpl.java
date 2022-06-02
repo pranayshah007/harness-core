@@ -94,6 +94,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.DelegateHeartbeatResponse;
 import io.harness.beans.DelegateTaskEventsResponse;
+import io.harness.beans.TaskResponseType;
 import io.harness.concurrent.HTimeLimiter;
 import io.harness.configuration.DeployMode;
 import io.harness.data.structure.NullSafeImmutableMap;
@@ -2038,7 +2039,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     DelegateRunnableTask delegateRunnableTask = delegateTaskFactory.getDelegateRunnableTask(
         TaskType.valueOf(taskData.getTaskType()), delegateTaskPackage, logStreamingTaskClient,
         getPostExecutionFunction(delegateTaskPackage.getDelegateTaskId(), sanitizer.orElse(null),
-            logStreamingTaskClient, delegateExpressionEvaluator),
+            logStreamingTaskClient, delegateExpressionEvaluator, taskData.getTaskResponseType()),
         getPreExecutionFunction(delegateTaskPackage, sanitizer.orElse(null), logStreamingTaskClient));
     if (delegateRunnableTask instanceof AbstractDelegateRunnableTask) {
       ((AbstractDelegateRunnableTask) delegateRunnableTask).setDelegateHostname(HOST_NAME);
@@ -2255,7 +2256,8 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   }
 
   private Consumer<DelegateTaskResponse> getPostExecutionFunction(String taskId, LogSanitizer sanitizer,
-      ILogStreamingTaskClient logStreamingTaskClient, DelegateExpressionEvaluator delegateExpressionEvaluator) {
+      ILogStreamingTaskClient logStreamingTaskClient, DelegateExpressionEvaluator delegateExpressionEvaluator,
+      TaskResponseType taskResponseType) {
     return taskResponse -> {
       if (logStreamingTaskClient != null) {
         try {
@@ -2270,7 +2272,12 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       try {
         int retries = 5;
         for (int attempt = 0; attempt < retries; attempt++) {
-          response = delegateAgentManagerClient.sendTaskStatus(delegateId, taskId, accountId, taskResponse).execute();
+          if (taskResponseType.equals(TaskResponseType.JSON)) {
+            response =
+                delegateAgentManagerClient.sendTaskStatusJson(delegateId, taskId, accountId, taskResponse).execute();
+          } else {
+            response = delegateAgentManagerClient.sendTaskStatus(delegateId, taskId, accountId, taskResponse).execute();
+          }
           if (response != null && response.code() >= 200 && response.code() <= 299) {
             log.info("Task {} response sent to manager", taskId);
             break;
@@ -2642,11 +2649,16 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
             .response(ErrorNotifyResponseData.builder().errorMessage(ExceptionUtils.getMessage(exception)).build())
             .build();
     log.info("Sending error response for task{}", taskId);
+    boolean isJsonResponse = delegateTaskPackage.getData().getTaskResponseType().equals(TaskResponseType.JSON);
     try {
       Response<ResponseBody> resp;
       int retries = 5;
       for (int attempt = 0; attempt < retries; attempt++) {
-        resp = delegateAgentManagerClient.sendTaskStatus(delegateId, taskId, accountId, taskResponse).execute();
+        if (isJsonResponse) {
+          resp = delegateAgentManagerClient.sendTaskStatusJson(delegateId, taskId, accountId, taskResponse).execute();
+        } else {
+          resp = delegateAgentManagerClient.sendTaskStatus(delegateId, taskId, accountId, taskResponse).execute();
+        }
         if (resp != null && resp.code() >= 200 && resp.code() <= 299) {
           log.info("Task {} response sent to manager", taskId);
           return;

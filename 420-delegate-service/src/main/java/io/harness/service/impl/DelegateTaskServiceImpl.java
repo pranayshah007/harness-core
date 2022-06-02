@@ -15,11 +15,13 @@ import static java.lang.System.currentTimeMillis;
 
 import io.harness.beans.DelegateTask;
 import io.harness.beans.DelegateTask.DelegateTaskKeys;
+import io.harness.beans.TaskResponseType;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.DelegateSyncTaskResponse;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.task.TaskLogContext;
 import io.harness.exception.InvalidArgumentsException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.logging.AutoLogContext;
 import io.harness.logging.DelegateDriverLogContext;
 import io.harness.metrics.intfc.DelegateMetricsService;
@@ -41,6 +43,8 @@ import software.wings.beans.DelegateTaskUsageInsightsEventType;
 import software.wings.beans.TaskType;
 import software.wings.service.impl.DelegateTaskStatusObserver;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -66,6 +70,7 @@ public class DelegateTaskServiceImpl implements DelegateTaskService {
   @Inject private RemoteObserverInformer remoteObserverInformer;
 
   @Inject private DelegateMetricsService delegateMetricsService;
+  @Inject private ObjectMapper objectMapper;
 
   @Override
   public void touchExecutingTasks(String accountId, String delegateId, List<String> delegateTaskIds) {
@@ -178,14 +183,27 @@ public class DelegateTaskServiceImpl implements DelegateTaskService {
 
       if (delegateTask.getData().isAsync()) {
         delegateCallbackService.publishAsyncTaskResponse(
-            delegateTask.getUuid(), kryoSerializer.asDeflatedBytes(response.getResponse()));
+            delegateTask.getUuid(), getResponseData(response, delegateTask));
       } else {
         delegateCallbackService.publishSyncTaskResponse(
-            delegateTask.getUuid(), kryoSerializer.asDeflatedBytes(response.getResponse()));
+            delegateTask.getUuid(), getResponseData(response, delegateTask));
       }
     } catch (Exception ex) {
       log.error("Failed publishing task response", ex);
     }
+  }
+
+  private byte[] getResponseData(DelegateTaskResponse response, DelegateTask delegateTask) {
+    if (delegateTask.getTaskResponseType() == TaskResponseType.JSON) {
+      try {
+        // later if we want to skip deserialization we can do that too by having special impl of delegatetaskresponse
+        // and have instanceof check here
+        return objectMapper.readValue(objectMapper.writeValueAsString(response.getResponse()), byte[].class);
+      } catch (JsonProcessingException e) {
+        throw new InvalidRequestException("The response object cannot be serialized", e);
+      }
+    }
+    return kryoSerializer.asDeflatedBytes(response.getResponse());
   }
 
   private void handleInprocResponse(DelegateTask delegateTask, DelegateTaskResponse response) {
@@ -199,7 +217,7 @@ public class DelegateTaskServiceImpl implements DelegateTaskService {
     } else {
       persistence.save(DelegateSyncTaskResponse.builder()
                            .uuid(delegateTask.getUuid())
-                           .responseData(kryoSerializer.asDeflatedBytes(response.getResponse()))
+                           .responseData(getResponseData(response, delegateTask))
                            .build());
     }
   }

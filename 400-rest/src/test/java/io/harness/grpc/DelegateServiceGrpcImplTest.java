@@ -72,6 +72,7 @@ import software.wings.WingsBaseTest;
 import software.wings.service.intfc.DelegateService;
 import software.wings.service.intfc.DelegateTaskServiceClassic;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Duration;
@@ -121,7 +122,7 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
   private Server server;
   private Logger mockClientLogger;
   private Logger mockServerLogger;
-
+  private ObjectMapper objectMapper;
   @Before
   public void setUp() throws Exception {
     mockClientLogger = mock(Logger.class);
@@ -144,8 +145,9 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
     delegateService = mock(DelegateService.class);
     delegateTaskServiceClassic = mock(DelegateTaskServiceClassic.class);
     delegateTaskService = mock(DelegateTaskService.class);
+    objectMapper = mock(ObjectMapper.class);
     delegateServiceGrpcImpl = new DelegateServiceGrpcImpl(delegateCallbackRegistry, perpetualTaskService,
-        delegateService, delegateTaskService, kryoSerializer, delegateTaskServiceClassic);
+        delegateService, delegateTaskService, kryoSerializer, delegateTaskServiceClassic, objectMapper);
 
     server =
         InProcessServerBuilder.forName(serverName).directExecutor().addService(delegateServiceGrpcImpl).build().start();

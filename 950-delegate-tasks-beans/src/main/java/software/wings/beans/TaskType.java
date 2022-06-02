@@ -12,7 +12,9 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.TaskGroup;
+import io.harness.delegate.task.TaskParameters;
 
 @OwnedBy(CDC)
 @TargetModule(HarnessModule._955_DELEGATE_BEANS)
@@ -356,14 +358,29 @@ public enum TaskType {
 
   private final TaskGroup taskGroup;
   private final String displayName;
+  // All the task params which have json serializable request and response need to populate this param
+  private final Class<TaskParameters> taskRequestParameters;
+  private final Class<DelegateResponseData> taskResponseParameters;
 
   TaskType(TaskGroup taskGroup) {
     this.taskGroup = taskGroup;
     this.displayName = null;
+    this.taskResponseParameters = null;
+    this.taskRequestParameters = null;
   }
   TaskType(TaskGroup taskGroup, String displayName) {
     this.taskGroup = taskGroup;
     this.displayName = displayName;
+    this.taskResponseParameters = null;
+    this.taskRequestParameters = null;
+  }
+
+  TaskType(TaskGroup taskGroup, String displayName, Class<TaskParameters> taskRequestParameters,
+      Class<DelegateResponseData> responseData) {
+    this.taskGroup = taskGroup;
+    this.displayName = displayName;
+    this.taskResponseParameters = responseData;
+    this.taskRequestParameters = taskRequestParameters;
   }
 
   public TaskGroup getTaskGroup() {
@@ -371,5 +388,13 @@ public enum TaskType {
   }
   public String getDisplayName() {
     return displayName != null ? displayName : name();
+  }
+
+  public Class<TaskParameters> getTaskRequestParameters() {
+    return taskRequestParameters;
+  }
+
+  public Class<DelegateResponseData> getTaskResponseParameters() {
+    return taskResponseParameters;
   }
 }

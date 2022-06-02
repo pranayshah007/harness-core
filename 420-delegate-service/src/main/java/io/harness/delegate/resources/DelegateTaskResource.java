@@ -66,4 +66,23 @@ public class DelegateTaskResource {
       }
     }
   }
+
+  @DelegateAuth
+  @POST
+  @Path("{taskId}/delegates/{delegateId}/v2")
+  @Timed
+  @ExceptionMetered
+  public void updateTaskResponseV2(@PathParam("delegateId") String delegateId, @PathParam("taskId") String taskId,
+      @QueryParam("accountId") @NotEmpty String accountId, DelegateTaskResponse delegateTaskResponse) {
+    try (AutoLogContext ignore1 = new TaskLogContext(taskId, OVERRIDE_ERROR);
+         AutoLogContext ignore2 = new AccountLogContext(accountId, OVERRIDE_ERROR);
+         AutoLogContext ignore3 = new DelegateLogContext(delegateId, OVERRIDE_ERROR)) {
+      try {
+        delegateTaskService.processDelegateResponse(accountId, delegateId, taskId, delegateTaskResponse);
+      } catch (Exception exception) {
+        log.error("Error during update task response. delegateId: {}, taskId: {}, delegateTaskResponse: {}.",
+            delegateId, taskId, delegateTaskResponse, exception);
+      }
+    }
+  }
 }

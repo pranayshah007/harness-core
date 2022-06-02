@@ -32,4 +32,5 @@ public class DelegateTaskRequest {
   boolean forceExecute;
   int expressionFunctorToken;
   List<String> eligibleToExecuteDelegateIds;
+  boolean returnJsonResponse;
 }
