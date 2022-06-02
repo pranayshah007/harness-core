@@ -49,6 +49,7 @@ import io.harness.filestore.dto.node.FolderNodeDTO;
 import io.harness.filestore.entities.NGFile;
 import io.harness.filestore.service.FileFailsafeService;
 import io.harness.filestore.service.FileStoreService;
+import io.harness.filestore.service.FileStructureService;
 import io.harness.filter.dto.FilterDTO;
 import io.harness.filter.service.FilterService;
 import io.harness.ng.core.dto.EmbeddedUserDetailsDTO;
@@ -70,6 +71,7 @@ import java.io.File;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
@@ -96,6 +98,7 @@ public class FileStoreServiceImpl implements FileStoreService {
   private final FileReferenceServiceImpl fileReferenceService;
   private final FilterService filterService;
   private final FileFailsafeService fileFailsafeService;
+  private final FileStructureService fileStructureService;
 
   @Override
   public FileDTO create(@NotNull FileDTO fileDto, InputStream content) {
@@ -136,6 +139,39 @@ public class FileStoreServiceImpl implements FileStoreService {
     }
 
     return fileFailsafeService.updateAndPublish(oldNGFileClone, updatedNGFile);
+  }
+
+  @Override
+  public Optional<FileStoreNodeDTO> get(@NotNull final String accountIdentifier, final String orgIdentifier,
+      final String projectIdentifier, @NotNull final String identifier, boolean includeContent) {
+    if (isEmpty(accountIdentifier)) {
+      throw new InvalidArgumentsException("Account identifier cannot be null or empty");
+    }
+    if (isEmpty(identifier)) {
+      throw new InvalidArgumentsException("File or folder identifier cannot be null or empty");
+    }
+
+    Optional<NGFile> ngFileOpt =
+        fileStoreRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(
+            accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+
+    if (!ngFileOpt.isPresent()) {
+      return Optional.empty();
+    }
+
+    NGFile ngFile = ngFileOpt.get();
+    if (ngFile.isFile()) {
+      String fileContent = null;
+      if (includeContent) {
+        fileContent = fileStructureService.getFileContent(ngFile.getFileUuid());
+      }
+      return Optional.of(FileStoreNodeDTOMapper.getFileNodeDTO(ngFile, fileContent));
+    }
+
+    FolderNodeDTO folderNodeDTO = FileStoreNodeDTOMapper.getFolderNodeDTO(ngFile);
+    fileStructureService.createFolderTreeStructure(
+        folderNodeDTO, Scope.of(accountIdentifier, orgIdentifier, projectIdentifier), includeContent);
+    return Optional.of(folderNodeDTO);
   }
 
   @Override
@@ -347,7 +383,7 @@ public class FileStoreServiceImpl implements FileStoreService {
         .filter(Objects::nonNull)
         .map(ngFile
             -> ngFile.isFolder() ? FileStoreNodeDTOMapper.getFolderNodeDTO(ngFile)
-                                 : FileStoreNodeDTOMapper.getFileNodeDTO(ngFile))
+                                 : FileStoreNodeDTOMapper.getFileNodeDTO(ngFile, null))
         .collect(Collectors.toList());
   }
 

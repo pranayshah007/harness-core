@@ -19,6 +19,7 @@ import lombok.Getter;
  */
 @OwnedBy(HarnessTeam.PL)
 public enum FeatureName {
+  NG_GITOPS,
   APPD_CV_TASK,
   ARGO_PHASE1,
   ARGO_PHASE2_MANAGED,

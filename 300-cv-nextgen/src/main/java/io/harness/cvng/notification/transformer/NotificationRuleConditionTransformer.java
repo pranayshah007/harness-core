@@ -11,13 +11,20 @@ import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.notification.beans.NotificationRuleCondition;
 import io.harness.cvng.notification.beans.NotificationRuleConditionSpec;
 import io.harness.cvng.notification.beans.NotificationRuleDTO;
+import io.harness.cvng.notification.channelDetails.CVNGNotificationChannelType;
 import io.harness.cvng.notification.entities.NotificationRule;
 
+import com.google.inject.Inject;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public abstract class NotificationRuleConditionTransformer<E extends NotificationRule, S
                                                                extends NotificationRuleConditionSpec> {
+  @Inject
+  Map<CVNGNotificationChannelType, NotificationMethodTransformer>
+      notificationChannelTypeNotificationMethodTransformerMap;
+
   public abstract E getEntity(ProjectParams projectParams, NotificationRuleDTO notificationRuleDTO);
 
   public final NotificationRuleDTO getDto(E notificationRule) {
@@ -27,7 +34,9 @@ public abstract class NotificationRuleConditionTransformer<E extends Notificatio
         .identifier(notificationRule.getIdentifier())
         .name(notificationRule.getName())
         .type(notificationRule.getType())
-        .notificationMethod(notificationRule.getNotificationMethod())
+        .notificationMethod(notificationChannelTypeNotificationMethodTransformerMap
+                                .get(notificationRule.getNotificationMethod().getType())
+                                .getDTONotificationMethod(notificationRule.getNotificationMethod()))
         .conditions(getConditions((List<NotificationRuleConditionSpec>) getSpec(notificationRule)))
         .build();
   }

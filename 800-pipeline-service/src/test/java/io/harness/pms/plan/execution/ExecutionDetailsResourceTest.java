@@ -161,12 +161,14 @@ public class ExecutionDetailsResourceTest extends CategoryTest {
     doReturn(executionSummaryEntity)
         .when(pmsExecutionService)
         .getPipelineExecutionSummaryEntity(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PLAN_EXECUTION_ID, false);
-    doReturn(orchestrationGraph).when(pmsExecutionService).getOrchestrationGraph(STAGE_NODE_ID, PLAN_EXECUTION_ID);
+    doReturn(orchestrationGraph)
+        .when(pmsExecutionService)
+        .getOrchestrationGraph(STAGE_NODE_ID, PLAN_EXECUTION_ID, null);
 
     doNothing().when(accessControlClient).checkForAccessOrThrow(any(), any(), any());
 
     ResponseDTO<PipelineExecutionDetailDTO> executionDetails = executionDetailsResource.getExecutionDetail(
-        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, STAGE_NODE_ID, PLAN_EXECUTION_ID);
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, STAGE_NODE_ID, null, PLAN_EXECUTION_ID);
 
     assertThat(executionDetails.getData().getPipelineExecutionSummary().getPipelineIdentifier())
         .isEqualTo(PIPELINE_IDENTIFIER);
@@ -189,8 +191,8 @@ public class ExecutionDetailsResourceTest extends CategoryTest {
         .getPipelineExecutionSummaryEntity(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, invalidPlanExecutionId, false);
 
     assertThatThrownBy(()
-                           -> executionDetailsResource.getExecutionDetail(
-                               ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, STAGE_NODE_ID, invalidPlanExecutionId))
+                           -> executionDetailsResource.getExecutionDetail(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
+                               STAGE_NODE_ID, null, invalidPlanExecutionId))
         .isInstanceOf(InvalidRequestException.class);
   }
 }

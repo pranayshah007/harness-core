@@ -53,6 +53,7 @@ import io.harness.pms.pipeline.mappers.PMSPipelineDtoMapper;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipeline.service.PMSPipelineServiceHelper;
 import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
+import io.harness.pms.pipeline.service.PipelineCRUDResult;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.pms.variables.VariableCreatorMergeService;
 import io.harness.pms.variables.VariableMergeServiceResponse;
@@ -171,7 +172,9 @@ public class PipelineResource implements YamlSchemaResource {
     PipelineEntity pipelineEntity = PMSPipelineDtoMapper.toPipelineEntity(accountId, orgId, projectId, yaml);
     log.info(String.format("Creating pipeline with identifier %s in project %s, org %s, account %s",
         pipelineEntity.getIdentifier(), projectId, orgId, accountId));
-    GovernanceMetadata governanceMetadata = pipelineServiceHelper.validatePipelineYaml(pipelineEntity);
+
+    PipelineCRUDResult pipelineCRUDResult = pmsPipelineService.create(pipelineEntity);
+    GovernanceMetadata governanceMetadata = pipelineCRUDResult.getGovernanceMetadata();
     if (governanceMetadata.getDeny()) {
       List<String> denyingPolicySetIds = governanceMetadata.getDetailsList()
                                              .stream()
@@ -181,7 +184,7 @@ public class PipelineResource implements YamlSchemaResource {
       throw new InvalidRequestException(
           "Pipeline does not follow the Policies in these Policy Sets: " + denyingPolicySetIds.toString());
     }
-    PipelineEntity createdEntity = pmsPipelineService.create(pipelineEntity);
+    PipelineEntity createdEntity = pipelineCRUDResult.getPipelineEntity();
     return ResponseDTO.newResponse(createdEntity.getVersion().toString(), createdEntity.getIdentifier());
   }
 
@@ -214,12 +217,12 @@ public class PipelineResource implements YamlSchemaResource {
     log.info(String.format("Creating pipeline with identifier %s in project %s, org %s, account %s",
         pipelineEntity.getIdentifier(), projectId, orgId, accountId));
 
-    GovernanceMetadata governanceMetadata = pipelineServiceHelper.validatePipelineYaml(pipelineEntity);
+    PipelineCRUDResult pipelineCRUDResult = pmsPipelineService.create(pipelineEntity);
+    GovernanceMetadata governanceMetadata = pipelineCRUDResult.getGovernanceMetadata();
     if (governanceMetadata.getDeny()) {
       return ResponseDTO.newResponse(PipelineSaveResponse.builder().governanceMetadata(governanceMetadata).build());
     }
-
-    PipelineEntity createdEntity = pmsPipelineService.create(pipelineEntity);
+    PipelineEntity createdEntity = pipelineCRUDResult.getPipelineEntity();
     return ResponseDTO.newResponse(createdEntity.getVersion().toString(),
         PipelineSaveResponse.builder()
             .governanceMetadata(governanceMetadata)
