@@ -1119,7 +1119,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
       ProjectParams projectParams, String identifier, boolean enable) {
     if (enable == true) {
       enforcementClientService.checkAvailabilityWithIncrement(
-          FeatureRestrictionName.MAX_TOTAL_SERVICES, projectParams.getAccountIdentifier(), 1);
+          FeatureRestrictionName.SRM_SERVICES, projectParams.getAccountIdentifier(), 1);
     }
     MonitoredService monitoredService = getMonitoredService(projectParams, identifier);
     Preconditions.checkNotNull(monitoredService, "Monitored service with identifier %s does not exists", identifier);

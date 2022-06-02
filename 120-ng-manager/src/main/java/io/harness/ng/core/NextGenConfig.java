@@ -27,5 +27,5 @@ public class NextGenConfig {
   @ConfigSecret String ciManagerSecret;
   @ConfigSecret String ceNextGenServiceSecret;
   @ConfigSecret String ffServiceSecret;
-  @ConfigSecret String cvNextGenSecret;
+  @ConfigSecret String cvngServiceSecret;
 }

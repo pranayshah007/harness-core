@@ -1059,7 +1059,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
                     .put(FeatureRestrictionName.TEST3, ExampleRateLimitUsageImpl.class)
                     .put(FeatureRestrictionName.TEST6, ExampleRateLimitUsageImpl.class)
                     .put(FeatureRestrictionName.TEST7, ExampleStaticLimitUsageImpl.class)
-                    .put(FeatureRestrictionName.MAX_TOTAL_SERVICES, MaxServiceRestrictionUsageImpl.class)
+                    .put(FeatureRestrictionName.SRM_SERVICES, MaxServiceRestrictionUsageImpl.class)
                     .build())
             .build();
     CustomRestrictionRegisterConfiguration customConfig =

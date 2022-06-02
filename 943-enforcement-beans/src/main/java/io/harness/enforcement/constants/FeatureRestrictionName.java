@@ -49,7 +49,7 @@ public enum FeatureRestrictionName {
   TEMPLATE_SERVICE,
 
   // CV Features
-  MAX_TOTAL_SERVICES,
+  SRM_SERVICES,
 
   // CD Step Palette
   K8S_BG_SWAP_SERVICES,
