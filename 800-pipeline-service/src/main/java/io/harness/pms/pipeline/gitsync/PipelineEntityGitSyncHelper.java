@@ -40,6 +40,7 @@ import io.harness.pms.pipeline.mappers.PipelineYamlDtoMapper;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipeline.service.PMSPipelineServiceHelper;
 import io.harness.pms.pipeline.service.PipelineCRUDErrorResponse;
+import io.harness.pms.pipeline.service.PipelineCRUDResult;
 import io.harness.pms.pipeline.service.PipelineFullGitSyncHandler;
 
 import com.google.inject.Inject;
@@ -90,8 +91,18 @@ public class PipelineEntityGitSyncHelper extends AbstractGitSdkEntityHandler<Pip
   @Override
   public PipelineConfig save(String accountIdentifier, String yaml) {
     PipelineEntity entity = PMSPipelineDtoMapper.toPipelineEntity(accountIdentifier, yaml);
-    validate(entity);
-    PipelineEntity pipelineEntity = pmsPipelineService.create(entity);
+    PipelineCRUDResult pipelineCRUDResult = pmsPipelineService.create(entity);
+    GovernanceMetadata governanceMetadata = pipelineCRUDResult.getGovernanceMetadata();
+    if (governanceMetadata.getDeny()) {
+      List<String> denyingPolicySetIds = governanceMetadata.getDetailsList()
+                                             .stream()
+                                             .filter(PolicySetMetadata::getDeny)
+                                             .map(PolicySetMetadata::getIdentifier)
+                                             .collect(Collectors.toList());
+      throw new InvalidRequestException(
+          "Pipeline does not follow the Policies in these Policy Sets: " + denyingPolicySetIds.toString());
+    }
+    PipelineEntity pipelineEntity = pipelineCRUDResult.getPipelineEntity();
     return PipelineYamlDtoMapper.toDto(pipelineEntity);
   }
 

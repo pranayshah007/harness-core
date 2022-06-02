@@ -8,6 +8,9 @@
 package io.harness.filestore.service;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.filestore.FileStoreTestConstants.ACCOUNT_IDENTIFIER;
+import static io.harness.filestore.FileStoreTestConstants.ORG_IDENTIFIER;
+import static io.harness.filestore.FileStoreTestConstants.PROJECT_IDENTIFIER;
 import static io.harness.rule.OwnerRule.BOJAN;
 import static io.harness.rule.OwnerRule.VLAD;
 
@@ -45,10 +48,6 @@ import org.springframework.data.domain.Sort;
 @OwnedBy(CDP)
 @RunWith(MockitoJUnitRunner.class)
 public class FileReferenceServiceTest extends CategoryTest {
-  private static final String ACCOUNT_IDENTIFIER = "accountIdentifier";
-  private static final String ORG_IDENTIFIER = "orgIdentifier";
-  private static final String PROJECT_IDENTIFIER = "projectIdentifier";
-
   @Mock private EntitySetupUsageService entitySetupUsageService;
   @Mock private FileStoreRepository fileStoreRepository;
 

@@ -1103,6 +1103,9 @@
 9104:io.harness.cvng.beans.DynatraceDataCollectionInfo.MetricCollectionInfo
 9105:io.harness.cvng.beans.customhealthlog.CustomHealthLogInfo
 9106:io.harness.cvng.beans.CustomHealthLogDataCollectionInfo
+9107:io.harness.delegate.task.git.NGGitOpsTaskParams
+9108:io.harness.delegate.task.git.NGGitOpsResponse
+9109:io.harness.delegate.task.git.GitOpsTaskType
 9501:io.harness.timeout.trackers.absolute.AbsoluteTimeoutParameters
 9701:io.harness.logging.UnitProgress
 9702:io.harness.logging.UnitStatus

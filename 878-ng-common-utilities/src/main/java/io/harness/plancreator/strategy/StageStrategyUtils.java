@@ -81,10 +81,14 @@ public class StageStrategyUtils {
                            .build();
     }
 
+    StrategyType strategyType = StrategyType.FOR;
+    if (yamlField.getNode().getField(YAMLFieldNameConstants.STRATEGY).getNode().getField("matrix") != null) {
+      strategyType = StrategyType.MATRIX;
+    }
     stageYamlFieldMap.put(yamlField.getNode().getUuid(),
         GraphLayoutNode.newBuilder()
             .setNodeUUID(yamlField.getNode().getUuid())
-            .setNodeType(YAMLFieldNameConstants.STRATEGY)
+            .setNodeType(strategyType.name())
             .setName(YAMLFieldNameConstants.STRATEGY)
             .setNodeGroup(StepOutcomeGroup.STRATEGY.name())
             .setNodeIdentifier(YAMLFieldNameConstants.STRATEGY)

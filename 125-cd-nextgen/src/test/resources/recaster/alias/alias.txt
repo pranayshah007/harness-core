@@ -1,3 +1,7 @@
+io.harness.cdng.gitops.CreatePROutcome
+io.harness.cdng.gitops.CreatePRStepNode
+io.harness.cdng.gitOps.CreatePRPassThroughData
+io.harness.cdng.gitops.CreatePRStepInfo
 io.harness.cdng.k8s.K8sCanaryStepParameters
 io.harness.cdng.provision.terraform.TerraformStepConfigurationParameters
 io.harness.cdng.infra.yaml.K8sGcpInfrastructure

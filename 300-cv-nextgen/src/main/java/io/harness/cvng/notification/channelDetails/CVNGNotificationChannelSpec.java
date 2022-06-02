@@ -7,12 +7,9 @@
 
 package io.harness.cvng.notification.channelDetails;
 
-import io.harness.notification.channeldetails.NotificationChannel;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
-import java.util.Map;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
@@ -29,6 +26,4 @@ import lombok.experimental.SuperBuilder;
 })
 public abstract class CVNGNotificationChannelSpec {
   @JsonIgnore public abstract CVNGNotificationChannelType getType();
-  public abstract NotificationChannel toNotificationChannel(String accountId, String orgIdentifier,
-      String projectIdentifier, String templateId, Map<String, String> templateData);
 }

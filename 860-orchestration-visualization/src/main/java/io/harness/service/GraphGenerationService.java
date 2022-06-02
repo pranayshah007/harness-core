@@ -20,8 +20,8 @@ public interface GraphGenerationService {
 
   OrchestrationGraphDTO generateOrchestrationGraphV2(String planExecutionId);
 
-  OrchestrationGraphDTO generatePartialOrchestrationGraphFromSetupNodeId(
-      String startingSetupNodeId, String planExecutionId);
+  OrchestrationGraphDTO generatePartialOrchestrationGraphFromSetupNodeIdAndExecutionId(
+      String startingSetupNodeId, String planExecutionId, String startingExecutionId);
 
   OrchestrationGraph buildOrchestrationGraph(String planExecutionId);
 

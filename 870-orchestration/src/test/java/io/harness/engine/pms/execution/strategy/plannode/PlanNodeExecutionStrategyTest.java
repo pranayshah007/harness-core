@@ -147,6 +147,7 @@ public class PlanNodeExecutionStrategyTest extends OrchestrationTestBase {
     doReturn(false).when(pmsFeatureFlagService).isEnabled(any(), any(FeatureName.class));
     executionStrategy.runNode(ambiance, planNode, null);
     verify(executorService).submit(any(Runnable.class));
+    doReturn(NodeExecution.builder().uuid("fda").build()).when(nodeExecutionService).save(any());
     // waitForExecutionInputHelper.waitForExecutionInput() will not be called.FF is off.
     verify(waitForExecutionInputHelper, never()).waitForExecutionInput(any(), any(), any());
 

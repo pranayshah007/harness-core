@@ -15,6 +15,7 @@ import io.harness.engine.utils.OrchestrationUtils;
 import io.harness.execution.NodeExecution;
 import io.harness.plan.NodeType;
 import io.harness.pms.contracts.ambiance.Level;
+import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
@@ -35,24 +36,46 @@ public class ExecutionSummaryUpdateUtils {
     Level level = Objects.requireNonNull(AmbianceUtils.obtainCurrentLevel(nodeExecution.getAmbiance()));
     ExecutionStatus status = ExecutionStatus.getExecutionStatus(nodeExecution.getStatus());
     if (Objects.equals(level.getStepType().getType(), StepSpecTypeConstants.BARRIER)) {
+      // Todo: Check here if the nodeExecution is under strategy then use executionId instead.
       Optional<Level> stage = AmbianceUtils.getStageLevelFromAmbiance(nodeExecution.getAmbiance());
       stage.ifPresent(stageNode
           -> update.set(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.layoutNodeMap + "."
                   + stageNode.getSetupId() + ".barrierFound",
               true));
     }
+    if (nodeExecution.getStepType().getStepCategory() == StepCategory.STRATEGY) {
+      update.set(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.layoutNodeMap + "." + nodeExecution.getNodeId()
+              + ".status",
+          status);
+    }
     if (!OrchestrationUtils.isStageNode(nodeExecution)) {
       return;
     }
     // If the nodes is of type Identity, there is no need to update the status. We want to update the status only when
     // there is a PlanNode
-    String stageUuid = level.getSetupId();
+    String stageUuid = nodeExecution.getNodeId();
+    if (AmbianceUtils.getStrategyLevelFromAmbiance(nodeExecution.getAmbiance()).isPresent()) {
+      // If nodeExecution is under strategy then we use nodeExecution.getUuid rather than the planNodeId
+      stageUuid = nodeExecution.getUuid();
+      String identifierPostFix = AmbianceUtils.getStrategyPostfix(nodeExecution.getAmbiance());
+      update.set(
+          PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.layoutNodeMap + "." + stageUuid + ".nodeIdentifier",
+          nodeExecution.getIdentifier() + identifierPostFix);
+      update.set(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.layoutNodeMap + "." + stageUuid + ".name",
+          nodeExecution.getName() + identifierPostFix);
+      update.set(
+          PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.layoutNodeMap + "." + stageUuid + ".strategyMetadata",
+          AmbianceUtils.obtainCurrentLevel(nodeExecution.getAmbiance()).getStrategyMetadata());
+    }
     if (!level.getNodeType().equals(NodeType.IDENTITY_PLAN_NODE.toString())) {
       update.set(
           PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.layoutNodeMap + "." + stageUuid + ".status", status);
     }
     update.set(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.layoutNodeMap + "." + stageUuid + ".startTs",
         nodeExecution.getStartTs());
+    update.set(
+        PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.layoutNodeMap + "." + stageUuid + ".nodeExecutionId",
+        nodeExecution.getUuid());
     update.set(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.layoutNodeMap + "." + stageUuid + ".nodeRunInfo",
         nodeExecution.getNodeRunInfo());
     if (nodeExecution.getEndTs() != null) {

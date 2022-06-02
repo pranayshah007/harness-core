@@ -67,7 +67,8 @@ public abstract class AbstractNodeExecutionStrategy<P extends Node, M extends Pm
     NodeExecution savedExecution = createNodeExecution(ambiance, node, metadata, notifyId, parentId, previousId);
     if (pmsFeatureFlagService.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.NG_EXECUTION_INPUT)
         && !EmptyPredicate.isEmpty(node.getExecutionInputTemplate())) {
-      waitForExecutionInputHelper.waitForExecutionInput(ambiance, savedExecution, node.getExecutionInputTemplate());
+      waitForExecutionInputHelper.waitForExecutionInput(
+          ambiance, savedExecution.getUuid(), node.getExecutionInputTemplate());
     } else {
       executorService.submit(() -> orchestrationEngine.startNodeExecution(savedExecution.getAmbiance()));
     }
