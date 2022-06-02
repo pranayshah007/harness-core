@@ -24,10 +24,12 @@ public class PrometheusUtils {
         decryptableKeyValue -> headers.put(decryptableKeyValue.getKey(), getValue(decryptableKeyValue)));
     if (isNotEmpty(prometheusConnectorDTO.getUsername()) && prometheusConnectorDTO.getPasswordRef() != null) {
       headers.put("Authorization",
-          Base64.encodeBase64String(String
-                                        .format("%s:%s", prometheusConnectorDTO.getUsername(),
-                                            new String(prometheusConnectorDTO.getPasswordRef().getDecryptedValue()))
-                                        .getBytes(StandardCharsets.UTF_8)));
+          "Basic "
+              + Base64.encodeBase64String(
+                  String
+                      .format("%s:%s", prometheusConnectorDTO.getUsername(),
+                          new String(prometheusConnectorDTO.getPasswordRef().getDecryptedValue()))
+                      .getBytes(StandardCharsets.UTF_8)));
     }
     return headers;
   }
