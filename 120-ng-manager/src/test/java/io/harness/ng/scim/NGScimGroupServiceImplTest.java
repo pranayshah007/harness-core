@@ -153,4 +153,27 @@ public class NGScimGroupServiceImplTest extends NgManagerTestBase {
     assertThat(response.getTotalResults()).isEqualTo(1);
     assertThat(response.getStartIndex()).isEqualTo(0);
   }
+
+  @Test
+  @Owner(developers = PRATEEK)
+  @Category(UnitTests.class)
+  public void testSearchGroupByName2() {
+    String accountId = "accountId";
+
+    ScimGroup scimGroup = new ScimGroup();
+    scimGroup.setDisplayName("testDisplayName");
+    scimGroup.setId("id");
+
+    UserGroup userGroup1 = UserGroup.builder().name(scimGroup.getDisplayName()).identifier(scimGroup.getId()).build();
+
+    when(userGroupService.list(any(), any(), any())).thenReturn(new ArrayList<>() {
+      { add(userGroup1); }
+    });
+
+    ScimListResponse<ScimGroup> response =
+            scimGroupService.searchGroup("displayName eq \"testDisplayName\"", accountId, null, null);
+
+    assertThat(response.getTotalResults()).isEqualTo(1);
+    assertThat(response.getStartIndex()).isEqualTo(0);
+  }
 }
