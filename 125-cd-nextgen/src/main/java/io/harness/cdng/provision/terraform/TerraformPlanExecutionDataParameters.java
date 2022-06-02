@@ -31,4 +31,5 @@ public class TerraformPlanExecutionDataParameters {
   Map<String, Object> environmentVariables;
   TerraformPlanCommand command;
   ParameterField<String> secretManagerRef;
+  ParameterField<Boolean> exportTerraformPlanJson;
 }

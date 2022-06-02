@@ -274,7 +274,13 @@ public abstract class AbstractStepExecutable implements AsyncExecutableWithRbac<
                                            .logKey(logKey)
                                            .workingDir(vmStageInfraDetails.getWorkDir())
                                            .build();
-    String taskId = queueDelegateTask(ambiance, timeoutInMillis, accountId, ciDelegateTaskExecutor, params);
+    List<String> eligibleToExecuteDelegateIds = new ArrayList<>();
+    if (isNotEmpty(vmDetailsOutcome.getDelegateId())) {
+      eligibleToExecuteDelegateIds.add(vmDetailsOutcome.getDelegateId());
+    }
+    String taskId = queueDelegateTask(ambiance, timeoutInMillis, accountId, ciDelegateTaskExecutor, params,
+        new ArrayList<>(), eligibleToExecuteDelegateIds);
+
     return AsyncExecutableResponse.newBuilder()
         .addCallbackIds(taskId)
         .addAllLogKeys(CollectionUtils.emptyIfNull(singletonList(logKey)))
@@ -512,11 +518,14 @@ public abstract class AbstractStepExecutable implements AsyncExecutableWithRbac<
             .isLocal(ciExecutionServiceConfig.isLocal())
             .delegateSvcEndpoint(ciExecutionServiceConfig.getDelegateServiceEndpointVariableValue())
             .build();
-    return queueDelegateTask(ambiance, timeout, accountId, executor, params);
+    List<TaskSelector> taskSelectors = fetchDelegateSelector(ambiance);
+    return queueDelegateTask(ambiance, timeout, accountId, executor, params,
+        taskSelectors.stream().map(TaskSelector::getSelector).collect(Collectors.toList()), new ArrayList<>());
   }
 
   private String queueDelegateTask(Ambiance ambiance, long timeout, String accountId, CIDelegateTaskExecutor executor,
-      CIExecuteStepTaskParams ciExecuteStepTaskParams) {
+      CIExecuteStepTaskParams ciExecuteStepTaskParams, List<String> taskSelectors,
+      List<String> eligibleToExecuteDelegateIds) {
     final TaskData taskData = TaskData.builder()
                                   .async(true)
                                   .parked(false)
@@ -530,10 +539,7 @@ public abstract class AbstractStepExecutable implements AsyncExecutableWithRbac<
 
     HDelegateTask task = (HDelegateTask) StepUtils.prepareDelegateTaskInput(accountId, taskData, abstractions);
 
-    List<TaskSelector> taskSelectors = fetchDelegateSelector(ambiance);
-
-    return executor.queueTask(
-        abstractions, task, taskSelectors.stream().map(TaskSelector::getSelector).collect(Collectors.toList()));
+    return executor.queueTask(abstractions, task, taskSelectors, eligibleToExecuteDelegateIds);
   }
 
   private String queueParkedDelegateTask(
@@ -549,7 +555,7 @@ public abstract class AbstractStepExecutable implements AsyncExecutableWithRbac<
     Map<String, String> abstractions = buildAbstractions(ambiance, Scope.PROJECT);
     HDelegateTask task = (HDelegateTask) StepUtils.prepareDelegateTaskInput(accountId, taskData, abstractions);
 
-    return executor.queueTask(abstractions, task, new ArrayList<>());
+    return executor.queueTask(abstractions, task, new ArrayList<>(), new ArrayList<>());
   }
 
   private String getLogKey(Ambiance ambiance) {

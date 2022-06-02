@@ -7,6 +7,7 @@
 
 package io.harness.cdng.provision.terraform;
 
+import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 import static io.harness.rule.OwnerRule.NGONZALEZ;
 
@@ -22,9 +23,11 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EnvironmentType;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
+import io.harness.cdng.provision.terraform.functor.TerraformPlanJsonFunctor;
 import io.harness.cdng.provision.terraform.outcome.TerraformPlanOutcome;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.TaskData;
@@ -407,5 +410,47 @@ public class TerraformPlanStepTest extends CategoryTest {
     } catch (InvalidRequestException invalidRequestException) {
       assertThat(invalidRequestException.getMessage()).isEqualTo(message);
     }
+  }
+
+  @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void testHandleTaskResultWithTfPlanJsonFileId() throws Exception {
+    Ambiance ambiance = getAmbiance();
+    StepElementParameters stepElementParameters =
+        StepElementParameters.builder()
+            .spec(TerraformPlanStepParameters.infoBuilder()
+                      .stepFqn("step1")
+                      .provisionerIdentifier(ParameterField.createValueField("provisioner1"))
+                      .configuration(TerraformPlanExecutionDataParameters.builder()
+                                         .exportTerraformPlanJson(ParameterField.createValueField(true))
+                                         .build())
+                      .build())
+            .build();
+
+    doReturn(true).when(cdFeatureFlagHelper).isEnabled("test-account", FeatureName.EXPORT_TF_PLAN_JSON_NG);
+
+    TerraformTaskNGResponse ngResponse = TerraformTaskNGResponse.builder()
+                                             .tfPlanJsonFileId("fileId")
+                                             .stateFileId("fileStateId")
+                                             .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                                             .build();
+
+    doReturn("outputPlanJson")
+        .when(terraformStepHelper)
+        .saveTerraformPlanJsonOutput(ambiance, ngResponse, "provisioner1");
+
+    StepResponse stepResponse =
+        terraformPlanStep.handleTaskResultWithSecurityContext(ambiance, stepElementParameters, () -> ngResponse);
+
+    verify(terraformStepHelper).saveTerraformPlanJsonOutput(ambiance, ngResponse, "provisioner1");
+
+    assertThat(stepResponse.getStepOutcomes()).hasSize(1);
+    StepResponse.StepOutcome planOutcome = stepResponse.getStepOutcomes().iterator().next();
+    assertThat(planOutcome.getName()).isEqualTo(TerraformPlanOutcome.OUTCOME_NAME);
+    assertThat(planOutcome.getOutcome()).isInstanceOf(TerraformPlanOutcome.class);
+    TerraformPlanOutcome terraformPlanOutcome = (TerraformPlanOutcome) planOutcome.getOutcome();
+    assertThat(terraformPlanOutcome.getJsonFilePath())
+        .isEqualTo(TerraformPlanJsonFunctor.getExpression("step1", "outputPlanJson"));
   }
 }

@@ -37,7 +37,8 @@ public class BitbucketServerGetDefaultBranchScmApiErrorHandler implements ScmApi
             GET_DEFAULT_BRANCH_FAILED_MESSAGE + ScmErrorExplanations.REPO_NOT_FOUND,
             new ScmBadRequestException(errorMessage));
       default:
-        log.error(String.format("Error while fetching default bitbucket branch: [%s: %s]", statusCode, errorMessage));
+        log.error(
+            String.format("Error while fetching default bitbucket(server) branch: [%s: %s]", statusCode, errorMessage));
         throw new ScmUnexpectedException(errorMessage);
     }
   }

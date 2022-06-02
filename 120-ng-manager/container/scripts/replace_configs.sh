@@ -337,11 +337,11 @@ if [[ "" != "$LOCK_CONFIG_REDIS_URL" ]]; then
 fi
 
 if [[ "" != "$DELEGATE_STATUS_ENDPOINT" ]]; then
-  yq write -i $DELEGATE_STATUS_ENDPOINT delegateStatusEndpoint "$DELEGATE_STATUS_ENDPOINT"
+  yq write -i $CONFIG_FILE delegateStatusEndpoint "$DELEGATE_STATUS_ENDPOINT"
 fi
 
 if [[ "" != "$SIGNUP_TARGET_ENV" ]]; then
-  yq write -i $SIGNUP_TARGET_ENV signupTargetEnv "$SIGNUP_TARGET_ENV"
+  yq write -i $CONFIG_FILE signupTargetEnv "$SIGNUP_TARGET_ENV"
 fi
 
 if [[ "$LOCK_CONFIG_USE_SENTINEL" == "true" ]]; then

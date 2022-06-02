@@ -10,18 +10,16 @@ package io.harness.steps.customstage;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.plancreator.execution.ExecutionElementConfig;
-import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.stages.stage.StageInfoConfig;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.steps.StepSpecTypeConstants;
+import io.harness.yaml.core.VariableExpression;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
-import java.util.List;
 import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -44,10 +42,10 @@ public class CustomStageConfig implements StageInfoConfig {
   @ApiModelProperty(hidden = true)
   String uuid;
 
-  @NotNull @Size(min = 1) List<ExecutionWrapperConfig> steps;
+  @NotNull @VariableExpression(skipVariableExpression = true) private ExecutionElementConfig execution;
 
   @Override
   public ExecutionElementConfig getExecution() {
-    return null;
+    return execution;
   }
 }

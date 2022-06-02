@@ -12,6 +12,7 @@ import static io.harness.rule.OwnerRule.NGONZALEZ;
 import static io.harness.rule.OwnerRule.VLICA;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doNothing;
@@ -29,6 +30,8 @@ import io.harness.aws.cf.DeployStackResult;
 import io.harness.aws.cf.Status;
 import io.harness.category.element.UnitTests;
 import io.harness.concurent.HTimeLimiterMocker;
+import io.harness.exception.InvalidRequestException;
+import io.harness.exception.TimeoutException;
 import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
 
@@ -40,6 +43,7 @@ import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
 import com.amazonaws.services.cloudformation.model.CreateChangeSetRequest;
 import com.amazonaws.services.cloudformation.model.CreateChangeSetResult;
 import com.amazonaws.services.cloudformation.model.CreateStackRequest;
+import com.amazonaws.services.cloudformation.model.DeleteChangeSetRequest;
 import com.amazonaws.services.cloudformation.model.DeleteStackRequest;
 import com.amazonaws.services.cloudformation.model.DescribeChangeSetRequest;
 import com.amazonaws.services.cloudformation.model.DescribeChangeSetResult;
@@ -60,7 +64,9 @@ import com.amazonaws.services.cloudformation.model.Tag;
 import com.amazonaws.services.cloudformation.model.UpdateStackRequest;
 import com.amazonaws.services.cloudformation.waiters.AmazonCloudFormationWaiters;
 import com.amazonaws.waiters.Waiter;
+import com.amazonaws.waiters.WaiterUnrecoverableException;
 import com.google.common.util.concurrent.TimeLimiter;
+import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.google.inject.Inject;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -307,7 +313,6 @@ public class AWSCloudformationClientTest extends CategoryTest {
         ArgumentCaptor.forClass(ExecuteChangeSetRequest.class);
     doReturn(null).when(mockClient).executeChangeSet(executeChangeSetRequestArgumentCaptor.capture());
 
-    HTimeLimiterMocker.mockCallInterruptible(mockTimeLimiter).thenReturn(null);
     DeployStackResult deployStackResult = service.deployStack(region, deployStackRequest,
         AwsInternalConfig.builder().accessKey(accessKey).secretKey(secretKey).build(), Duration.ofDays(1), logCallback);
 
@@ -337,6 +342,83 @@ public class AWSCloudformationClientTest extends CategoryTest {
     ExecuteChangeSetRequest executeChangeSetRequest = executeChangeSetRequestArgumentCaptor.getValue();
     assertThat(executeChangeSetRequest.getChangeSetName()).isEqualTo(changeSetName);
     assertThat(executeChangeSetRequest.getStackName()).isEqualTo(stackName);
+  }
+
+  @Test
+  @Owner(developers = NGONZALEZ)
+  @Category(UnitTests.class)
+  public void testDeployStackFailedToCreateChangeSet() throws Exception {
+    String stackName = "Stack Name";
+    String region = "us-west-1";
+    DeployStackRequest deployStackRequest = DeployStackRequest.builder()
+                                                .stackName(stackName)
+                                                .parameters(Arrays.asList(new Parameter()
+                                                                              .withParameterKey("K1")
+                                                                              .withParameterValue("V1")
+                                                                              .withResolvedValue("RV1")
+                                                                              .withUsePreviousValue(true)))
+                                                .tags(Arrays.asList(new Tag().withKey("K1").withValue("V1")))
+                                                .roleARN("ROLE")
+                                                .capabilities(Arrays.asList("CAPABILITY_IAM"))
+                                                .templateURL("TEMPLATE_URL")
+                                                .templateBody("TEMPLATE_BODY")
+                                                .build();
+    ArgumentCaptor<CreateChangeSetRequest> changeSetRequestArgumentCaptor =
+        ArgumentCaptor.forClass(CreateChangeSetRequest.class);
+    CreateChangeSetResult createChangeSetResult = new CreateChangeSetResult().withId("ID").withStackId("STACK_ID");
+    doReturn(createChangeSetResult).when(mockClient).createChangeSet(changeSetRequestArgumentCaptor.capture());
+
+    ArgumentCaptor<DescribeChangeSetRequest> describeChangeSetRequestArgumentCaptor =
+        ArgumentCaptor.forClass(DescribeChangeSetRequest.class);
+    DescribeChangeSetResult describeChangeSetResult = new DescribeChangeSetResult().withStatus("RANDOM_STATUS");
+    doReturn(describeChangeSetResult)
+        .when(mockClient)
+        .describeChangeSet(describeChangeSetRequestArgumentCaptor.capture());
+
+    DeployStackResult deployStackResult = service.deployStack(region, deployStackRequest,
+        AwsInternalConfig.builder().accessKey(accessKey).secretKey(secretKey).build(), Duration.ofDays(1), logCallback);
+
+    assertThat(deployStackResult.getStatus()).isEqualTo(Status.FAILURE);
+    assertThat(deployStackResult.isNoUpdatesToPerform()).isEqualTo(false);
+  }
+
+  @Test
+  @Owner(developers = NGONZALEZ)
+  @Category(UnitTests.class)
+  public void testDeployStackCreateChangeSetExceptions() throws Exception {
+    String stackName = "Stack Name";
+    String region = "us-west-1";
+    DeployStackRequest deployStackRequest = DeployStackRequest.builder()
+                                                .stackName(stackName)
+                                                .parameters(Arrays.asList(new Parameter()
+                                                                              .withParameterKey("K1")
+                                                                              .withParameterValue("V1")
+                                                                              .withResolvedValue("RV1")
+                                                                              .withUsePreviousValue(true)))
+                                                .tags(Arrays.asList(new Tag().withKey("K1").withValue("V1")))
+                                                .roleARN("ROLE")
+                                                .capabilities(Arrays.asList("CAPABILITY_IAM"))
+                                                .templateURL("TEMPLATE_URL")
+                                                .templateBody("TEMPLATE_BODY")
+                                                .build();
+    ArgumentCaptor<CreateChangeSetRequest> changeSetRequestArgumentCaptor =
+        ArgumentCaptor.forClass(CreateChangeSetRequest.class);
+    CreateChangeSetResult createChangeSetResult = new CreateChangeSetResult().withId("ID").withStackId("STACK_ID");
+    doReturn(createChangeSetResult).when(mockClient).createChangeSet(changeSetRequestArgumentCaptor.capture());
+
+    HTimeLimiterMocker.mockCallInterruptible(mockTimeLimiter).thenThrow(new UncheckedTimeoutException("timeout"));
+    assertThatThrownBy(()
+                           -> service.deployStack(region, deployStackRequest,
+                               AwsInternalConfig.builder().accessKey(accessKey).secretKey(secretKey).build(),
+                               Duration.ofSeconds(5), logCallback))
+        .isInstanceOf(TimeoutException.class);
+
+    HTimeLimiterMocker.mockCallInterruptible(mockTimeLimiter).thenThrow(new RuntimeException("runtime"));
+    assertThatThrownBy(()
+                           -> service.deployStack(region, deployStackRequest,
+                               AwsInternalConfig.builder().accessKey(accessKey).secretKey(secretKey).build(),
+                               Duration.ofSeconds(5), logCallback))
+        .isInstanceOf(RuntimeException.class);
   }
 
   @Test
@@ -480,26 +562,46 @@ public class AWSCloudformationClientTest extends CategoryTest {
     DescribeStackEventsRequest describeStackEventsRequest = new DescribeStackEventsRequest().withStackName(stackName);
     CreateStackRequest createStackRequest = new CreateStackRequest().withStackName(stackName);
     UpdateStackRequest updateStackRequest = new UpdateStackRequest().withStackName(stackName);
+    CreateChangeSetRequest createChangeRequest = new CreateChangeSetRequest().withStackName(stackName);
+    DescribeChangeSetRequest describeChangeSetRequest = new DescribeChangeSetRequest().withChangeSetName(stackName);
+    ExecuteChangeSetRequest executeChangeSetRequest = new ExecuteChangeSetRequest().withChangeSetName(stackName);
+    DeleteChangeSetRequest deleteChangeSetRequest = new DeleteChangeSetRequest().withChangeSetName(stackName);
+
+    doThrow(AmazonServiceException.class).when(service).getAmazonCloudFormationClient(any(), any());
     DescribeStackResourcesRequest describeStackResourcesRequest =
         new DescribeStackResourcesRequest().withStackName(stackName);
-    doThrow(AmazonServiceException.class).when(service).getAmazonCloudFormationClient(any(), any());
+
+    service.createChangeSet(
+        region, createChangeRequest, AwsInternalConfig.builder().accessKey(accessKey).secretKey(secretKey).build());
+    service.describeChangeSet(region, describeChangeSetRequest,
+        AwsInternalConfig.builder().accessKey(accessKey).secretKey(secretKey).build());
+    service.executeChangeSet(
+        region, executeChangeSetRequest, AwsInternalConfig.builder().accessKey(accessKey).secretKey(secretKey).build());
+    service.deleteChangeSet(
+        region, deleteChangeSetRequest, AwsInternalConfig.builder().accessKey(accessKey).secretKey(secretKey).build());
     service.getAllStacks(
         region, describeStacksRequest, AwsInternalConfig.builder().accessKey(accessKey).secretKey(secretKey).build());
     service.deleteStack(
         region, deleteStackRequest, AwsInternalConfig.builder().accessKey(accessKey).secretKey(secretKey).build());
+
     service.getAllStackEvents(region, describeStackEventsRequest,
         AwsInternalConfig.builder().accessKey(accessKey).secretKey(secretKey).build(), 0L);
+
     service.createStack(
         region, createStackRequest, AwsInternalConfig.builder().accessKey(accessKey).secretKey(secretKey).build());
+
     service.updateStack(
         region, updateStackRequest, AwsInternalConfig.builder().accessKey(accessKey).secretKey(secretKey).build());
+
     service.describeStacks(
         region, describeStacksRequest, AwsInternalConfig.builder().accessKey(accessKey).secretKey(secretKey).build());
+
     service.getAllStackResources(region, describeStackResourcesRequest,
         AwsInternalConfig.builder().accessKey(accessKey).secretKey(secretKey).build());
+
     service.waitForStackDeletionCompleted(describeStacksRequest,
         AwsInternalConfig.builder().accessKey(accessKey).secretKey(secretKey).build(), region, null, 1000L);
-    verify(awsApiHelperService, times(8)).handleAmazonServiceException(any());
+    verify(awsApiHelperService, times(12)).handleAmazonServiceException(any());
   }
 
   @Test
@@ -517,23 +619,130 @@ public class AWSCloudformationClientTest extends CategoryTest {
     UpdateStackRequest updateStackRequest = new UpdateStackRequest().withStackName(stackName);
     DescribeStackResourcesRequest describeStackResourcesRequest =
         new DescribeStackResourcesRequest().withStackName(stackName);
+    CreateChangeSetRequest createChangeRequest = new CreateChangeSetRequest().withStackName(stackName);
+    DescribeChangeSetRequest describeChangeSetRequest = new DescribeChangeSetRequest().withChangeSetName(stackName);
+    ExecuteChangeSetRequest executeChangeSetRequest = new ExecuteChangeSetRequest().withChangeSetName(stackName);
+    DeleteChangeSetRequest deleteChangeSetRequest = new DeleteChangeSetRequest().withChangeSetName(stackName);
 
     doThrow(AmazonClientException.class).when(service).getAmazonCloudFormationClient(any(), any());
+    service.createChangeSet(
+        region, createChangeRequest, AwsInternalConfig.builder().accessKey(accessKey).secretKey(secretKey).build());
+    service.describeChangeSet(region, describeChangeSetRequest,
+        AwsInternalConfig.builder().accessKey(accessKey).secretKey(secretKey).build());
+    service.executeChangeSet(
+        region, executeChangeSetRequest, AwsInternalConfig.builder().accessKey(accessKey).secretKey(secretKey).build());
+    service.deleteChangeSet(
+        region, deleteChangeSetRequest, AwsInternalConfig.builder().accessKey(accessKey).secretKey(secretKey).build());
     service.getAllStacks(
         region, describeStacksRequest, AwsInternalConfig.builder().accessKey(accessKey).secretKey(secretKey).build());
     service.deleteStack(
         region, deleteStackRequest, AwsInternalConfig.builder().accessKey(accessKey).secretKey(secretKey).build());
+
     service.getAllStackEvents(region, describeStackEventsRequest,
         AwsInternalConfig.builder().accessKey(accessKey).secretKey(secretKey).build(), 0L);
+
     service.createStack(
         region, createStackRequest, AwsInternalConfig.builder().accessKey(accessKey).secretKey(secretKey).build());
+
     service.updateStack(
         region, updateStackRequest, AwsInternalConfig.builder().accessKey(accessKey).secretKey(secretKey).build());
+
     service.describeStacks(
         region, describeStacksRequest, AwsInternalConfig.builder().accessKey(accessKey).secretKey(secretKey).build());
+
     service.getAllStackResources(region, describeStackResourcesRequest,
         AwsInternalConfig.builder().accessKey(accessKey).secretKey(secretKey).build());
-    verify(awsApiHelperService, times(7)).handleAmazonClientException(any());
+
+    verify(awsApiHelperService, times(11)).handleAmazonClientException(any());
+  }
+
+  @Test
+  @Owner(developers = NGONZALEZ)
+  @Category(UnitTests.class)
+  public void checkException() {
+    char[] accessKey = "qwer".toCharArray();
+    char[] secretKey = "pqrs".toCharArray();
+    String stackName = "Stack Name";
+    String region = "us-west-1";
+    DescribeStacksRequest describeStacksRequest = new DescribeStacksRequest().withStackName(stackName);
+    DeleteStackRequest deleteStackRequest = new DeleteStackRequest().withStackName(stackName);
+    DescribeStackEventsRequest describeStackEventsRequest = new DescribeStackEventsRequest().withStackName(stackName);
+    CreateStackRequest createStackRequest = new CreateStackRequest().withStackName(stackName);
+    UpdateStackRequest updateStackRequest = new UpdateStackRequest().withStackName(stackName);
+    CreateChangeSetRequest createChangeRequest = new CreateChangeSetRequest().withStackName(stackName);
+    DescribeChangeSetRequest describeChangeSetRequest = new DescribeChangeSetRequest().withChangeSetName(stackName);
+    ExecuteChangeSetRequest executeChangeSetRequest = new ExecuteChangeSetRequest().withChangeSetName(stackName);
+    DeleteChangeSetRequest deleteChangeSetRequest = new DeleteChangeSetRequest().withChangeSetName(stackName);
+    DescribeStackResourcesRequest describeStackResourcesRequest =
+        new DescribeStackResourcesRequest().withStackName(stackName);
+    doThrow(Exception.class).when(service).getAmazonCloudFormationClient(any(), any());
+    assertThatThrownBy(()
+                           -> service.createChangeSet(region, createChangeRequest,
+                               AwsInternalConfig.builder().accessKey(accessKey).secretKey(secretKey).build()))
+        .isInstanceOf(InvalidRequestException.class);
+    assertThatThrownBy(()
+                           -> service.describeChangeSet(region, describeChangeSetRequest,
+                               AwsInternalConfig.builder().accessKey(accessKey).secretKey(secretKey).build()))
+        .isInstanceOf(InvalidRequestException.class);
+    assertThatThrownBy(()
+                           -> service.executeChangeSet(region, executeChangeSetRequest,
+                               AwsInternalConfig.builder().accessKey(accessKey).secretKey(secretKey).build()))
+        .isInstanceOf(InvalidRequestException.class);
+    assertThatThrownBy(()
+                           -> service.deleteChangeSet(region, deleteChangeSetRequest,
+                               AwsInternalConfig.builder().accessKey(accessKey).secretKey(secretKey).build()))
+        .isInstanceOf(InvalidRequestException.class);
+    assertThatThrownBy(()
+                           -> service.getAllStacks(region, describeStacksRequest,
+                               AwsInternalConfig.builder().accessKey(accessKey).secretKey(secretKey).build()))
+        .isInstanceOf(InvalidRequestException.class);
+    assertThatThrownBy(()
+                           -> service.deleteStack(region, deleteStackRequest,
+                               AwsInternalConfig.builder().accessKey(accessKey).secretKey(secretKey).build()))
+        .isInstanceOf(InvalidRequestException.class);
+
+    assertThatThrownBy(()
+                           -> service.getAllStackEvents(region, describeStackEventsRequest,
+                               AwsInternalConfig.builder().accessKey(accessKey).secretKey(secretKey).build(), 0L))
+        .isInstanceOf(InvalidRequestException.class);
+
+    assertThatThrownBy(()
+                           -> service.createStack(region, createStackRequest,
+                               AwsInternalConfig.builder().accessKey(accessKey).secretKey(secretKey).build()))
+        .isInstanceOf(InvalidRequestException.class);
+
+    assertThatThrownBy(()
+                           -> service.updateStack(region, updateStackRequest,
+                               AwsInternalConfig.builder().accessKey(accessKey).secretKey(secretKey).build()))
+        .isInstanceOf(InvalidRequestException.class);
+
+    assertThatThrownBy(()
+                           -> service.describeStacks(region, describeStacksRequest,
+                               AwsInternalConfig.builder().accessKey(accessKey).secretKey(secretKey).build()))
+        .isInstanceOf(InvalidRequestException.class);
+
+    assertThatThrownBy(()
+                           -> service.getAllStackResources(region, describeStackResourcesRequest,
+                               AwsInternalConfig.builder().accessKey(accessKey).secretKey(secretKey).build()))
+        .isInstanceOf(InvalidRequestException.class);
+
+    assertThatThrownBy(
+        ()
+            -> service.waitForStackDeletionCompleted(describeStacksRequest,
+                AwsInternalConfig.builder().accessKey(accessKey).secretKey(secretKey).build(), region, null, 1000L))
+        .isInstanceOf(InvalidRequestException.class);
+
+    assertThatThrownBy(
+        ()
+            -> service.getParamsData(
+                AwsInternalConfig.builder().accessKey(accessKey).secretKey(secretKey).build(), region, null, null))
+        .isInstanceOf(InvalidRequestException.class);
+    doThrow(WaiterUnrecoverableException.class).when(service).getAmazonCloudFormationClient(any(), any());
+    assertThatThrownBy(
+        ()
+            -> service.waitForStackDeletionCompleted(describeStacksRequest,
+                AwsInternalConfig.builder().accessKey(accessKey).secretKey(secretKey).build(), region, null, 100L))
+        .isInstanceOf(InvalidRequestException.class);
   }
 
   @Test(expected = Exception.class)

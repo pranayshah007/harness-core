@@ -19,6 +19,7 @@ import io.harness.ccm.remote.resources.perspectives.PerspectiveReportResource;
 import io.harness.ccm.views.entities.CEReportSchedule;
 import io.harness.ccm.views.service.CEReportScheduleService;
 import io.harness.rule.Owner;
+import io.harness.telemetry.TelemetryReporter;
 
 import java.io.File;
 import java.io.IOException;
@@ -27,9 +28,14 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.TemporaryFolder;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
 
+@RunWith(MockitoJUnitRunner.class)
 public class PerspectiveReportResourceTest extends CategoryTest {
   private CEReportScheduleService ceReportScheduleService = mock(CEReportScheduleService.class);
+  @Mock private TelemetryReporter telemetryReporter;
   private PerspectiveReportResource perspectiveReportResource;
 
   private final String ACCOUNT_ID = "ACCOUNT_ID";
@@ -54,9 +60,8 @@ public class PerspectiveReportResourceTest extends CategoryTest {
                          .uuid(REPORT_ID)
                          .enabled(true)
                          .build();
-
     when(ceReportScheduleService.get(REPORT_ID, ACCOUNT_ID)).thenReturn(reportSchedule);
-    perspectiveReportResource = new PerspectiveReportResource(ceReportScheduleService);
+    perspectiveReportResource = new PerspectiveReportResource(ceReportScheduleService, telemetryReporter);
   }
 
   @Test

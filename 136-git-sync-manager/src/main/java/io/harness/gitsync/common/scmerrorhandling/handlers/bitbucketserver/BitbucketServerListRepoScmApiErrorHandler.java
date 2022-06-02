@@ -31,7 +31,7 @@ public class BitbucketServerListRepoScmApiErrorHandler implements ScmApiErrorHan
         throw NestedExceptionUtils.hintWithExplanationException(ScmErrorHints.INVALID_CREDENTIALS,
             LIST_REPO_FAILED_MESSAGE + ScmErrorExplanations.REPO_NOT_FOUND, new ScmUnauthorizedException(errorMessage));
       default:
-        log.error(String.format("Error while listing bitbucket repos: [%s: %s]", statusCode, errorMessage));
+        log.error(String.format("Error while listing bitbucket(server) repos: [%s: %s]", statusCode, errorMessage));
         throw new ScmUnexpectedException(errorMessage);
     }
   }

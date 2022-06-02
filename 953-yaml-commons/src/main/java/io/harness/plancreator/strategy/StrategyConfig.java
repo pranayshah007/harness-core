@@ -28,4 +28,5 @@ import lombok.experimental.FieldDefaults;
 public class StrategyConfig {
   @JsonProperty("matrix") MatrixConfig matrixConfig;
   @JsonProperty("for") HarnessForConfig forConfig;
+  @JsonProperty("batchSize") int batchSize;
 }

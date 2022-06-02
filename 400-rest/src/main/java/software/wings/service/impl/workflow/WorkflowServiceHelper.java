@@ -164,7 +164,6 @@ import software.wings.service.intfc.ServiceResourceService;
 import software.wings.sm.StateType;
 import software.wings.sm.states.AwsCodeDeployState;
 import software.wings.sm.states.customdeployment.InstanceFetchState.InstanceFetchStateKeys;
-import software.wings.utils.ArtifactType;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
@@ -1074,19 +1073,6 @@ public class WorkflowServiceHelper {
               orchestrationWorkflowType != null ? orchestrationWorkflowType.name() : ""),
           USER);
     }
-    if (!featureFlagService.isEnabled(FeatureName.AZURE_WEBAPP_NON_CONTAINER, accountId)
-        && isAzureWebappNonContainerDeployment(appId, workflowPhase)) {
-      throw new InvalidRequestException(
-          format("Azure WebApp non-container deployment is disabled by feature flag for account id : %s", accountId),
-          USER);
-    }
-  }
-
-  private boolean isAzureWebappNonContainerDeployment(String appId, WorkflowPhase workflowPhase) {
-    Service service = serviceResourceService.getWithDetails(appId, workflowPhase.getServiceId());
-    ArtifactType artifactType = service.getArtifactType();
-    return ArtifactType.WAR.equals(artifactType) || ArtifactType.ZIP.equals(artifactType)
-        || ArtifactType.NUGET.equals(artifactType);
   }
 
   private boolean isAzureWebAppSupportedWorkflowType(OrchestrationWorkflowType workflowType) {

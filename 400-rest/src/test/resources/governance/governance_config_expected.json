@@ -22,7 +22,7 @@
       },
       "name":"freezer",
       "description":"Holiday production freeze",
-      "applicable":false,
+      "applicable":true,
       "appSelections":[
         {
           "filterType":"CUSTOM",

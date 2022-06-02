@@ -205,7 +205,7 @@ public class RunStepTest extends CIExecutionTestBase {
     when(outcomeService.resolve(ambiance, RefObjectUtils.getOutcomeRefObject(POD_DETAILS_OUTCOME)))
         .thenReturn(liteEnginePodDetailsOutcome);
     when(ciExecutionServiceConfig.isLocal()).thenReturn(false);
-    when(ciDelegateTaskExecutor.queueTask(any(), any(), any())).thenReturn(callbackId);
+    when(ciDelegateTaskExecutor.queueTask(any(), any(), any(), any())).thenReturn(callbackId);
     when(runStepProtobufSerializer.serializeStepWithStepParameters(
              any(), any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(UnitStep.newBuilder().build());
@@ -365,6 +365,47 @@ public class RunStepTest extends CIExecutionTestBase {
              ambiance, RefObjectUtils.getOutcomeRefObject(VmDetailsOutcome.VM_DETAILS_OUTCOME)))
         .thenReturn(OptionalOutcome.builder()
                         .found(true)
+                        .outcome(VmDetailsOutcome.builder().ipAddress("1.1.1.1").delegateId("test").build())
+                        .build());
+    when(executionSweepingOutputResolver.resolveOptional(
+             ambiance, RefObjectUtils.getSweepingOutputRefObject(STAGE_INFRA_DETAILS)))
+        .thenReturn(OptionalSweepingOutput.builder().found(true).output(VmStageInfraDetails.builder().build()).build());
+
+    when(vmStepSerializer.serialize(any(), any(), any(), any(), any())).thenReturn(VmRunStep.builder().build());
+    when(ciDelegateTaskExecutor.queueTask(any(), any(), any(), any())).thenReturn(callbackId);
+
+    AsyncExecutableResponse asyncExecutableResponse =
+        runStep.executeAsync(ambiance, stepElementParameters, stepInputPackage, null);
+    assertThat(asyncExecutableResponse)
+        .isEqualTo(AsyncExecutableResponse.newBuilder().addCallbackIds(callbackId).addLogKeys(key).build());
+  }
+
+  @Test
+  @Owner(developers = SHUBHAM)
+  @Category(UnitTests.class)
+  public void shouldExecuteAsyncVmWithDelegateId() {
+    Map<String, List<String>> logKeys = new HashMap<>();
+    String key =
+        "accountId:accountId/orgId:orgId/projectId:projectId/pipelineId:pipelineId/runSequence:1/level0:runStepId_1";
+    logKeys.put(STEP_ID, Collections.singletonList(key));
+
+    RefObject refObject = RefObjectUtils.getSweepingOutputRefObject(CODE_BASE_CONNECTOR_REF);
+
+    when(executionSweepingOutputResolver.resolveOptional(
+             ambiance, RefObjectUtils.getSweepingOutputRefObject(STAGE_INFRA_DETAILS)))
+        .thenReturn(OptionalSweepingOutput.builder().found(true).output(VmStageInfraDetails.builder().build()).build());
+    when(executionSweepingOutputResolver.resolveOptional(eq(ambiance), eq(refObject)))
+        .thenReturn(OptionalSweepingOutput.builder().found(true).output(codeBaseConnectorRefSweepingOutput).build());
+    when(executionSweepingOutputResolver.resolveOptional(
+             ambiance, RefObjectUtils.getSweepingOutputRefObject(ContextElement.stageDetails)))
+        .thenReturn(OptionalSweepingOutput.builder()
+                        .found(true)
+                        .output(StageDetails.builder().stageRuntimeID("test").build())
+                        .build());
+    when(outcomeService.resolveOptional(
+             ambiance, RefObjectUtils.getOutcomeRefObject(VmDetailsOutcome.VM_DETAILS_OUTCOME)))
+        .thenReturn(OptionalOutcome.builder()
+                        .found(true)
                         .outcome(VmDetailsOutcome.builder().ipAddress("1.1.1.1").build())
                         .build());
     when(executionSweepingOutputResolver.resolveOptional(
@@ -372,7 +413,7 @@ public class RunStepTest extends CIExecutionTestBase {
         .thenReturn(OptionalSweepingOutput.builder().found(true).output(VmStageInfraDetails.builder().build()).build());
 
     when(vmStepSerializer.serialize(any(), any(), any(), any(), any())).thenReturn(VmRunStep.builder().build());
-    when(ciDelegateTaskExecutor.queueTask(any(), any(), any())).thenReturn(callbackId);
+    when(ciDelegateTaskExecutor.queueTask(any(), any(), any(), any())).thenReturn(callbackId);
 
     AsyncExecutableResponse asyncExecutableResponse =
         runStep.executeAsync(ambiance, stepElementParameters, stepInputPackage, null);

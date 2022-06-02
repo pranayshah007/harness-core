@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.plancreator.strategy;
 
 import static io.harness.rule.OwnerRule.SAHIL;
@@ -70,8 +77,11 @@ public class StrategyConfigPlanCreatorTest extends NGCommonUtilitiesTestBase {
     String strategyNodeId = approvalStageYamlField.getNode().getField("strategy").getNode().getUuid();
     String childNodeId = "childNodeId";
     Map<String, ByteString> metadataMap = new HashMap<>();
-    StrategyMetadata strategyMetadata =
-        StrategyMetadata.builder().childNodeId(childNodeId).strategyNodeId(strategyNodeId).build();
+    StrategyMetadata strategyMetadata = StrategyMetadata.builder()
+                                            .childNodeId(childNodeId)
+                                            .strategyNodeId(strategyNodeId)
+                                            .adviserObtainments(new ArrayList<>())
+                                            .build();
     metadataMap.put(StrategyConstants.STRATEGY_METADATA + strategyNodeId, ByteString.EMPTY);
     Mockito.when(kryoSerializer.asInflatedObject(Mockito.any())).thenReturn(strategyMetadata);
     PlanCreationContext context = PlanCreationContext.builder()
@@ -94,7 +104,8 @@ public class StrategyConfigPlanCreatorTest extends NGCommonUtilitiesTestBase {
                 FacilitatorObtainment.newBuilder()
                     .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILDREN).build())
                     .build())
-            .skipExpressionChain(false)
+            .skipExpressionChain(true)
+            .adviserObtainments(new ArrayList<>())
             .build();
     assertThat(strategyConfigPlanCreator.createPlanForParentNode(context, strategyConfig, new ArrayList<>()))
         .isEqualTo(planNode);

@@ -9,7 +9,7 @@ shared_dependencies = [
     "@maven//:io_netty_netty_all",
 ] + [
     "//320-ci-execution:module",
-    "//323-sto-execution:module",
+    "//323-sto-utilities:module",
     "//325-sto-beans:module",
     "//330-ci-beans:module",
     "//870-cg-orchestration:module",

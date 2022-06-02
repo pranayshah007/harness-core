@@ -14,7 +14,6 @@ import io.harness.NGResourceFilterConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.dashboards.DeploymentStatsSummary;
 import io.harness.dashboards.EnvCount;
-import io.harness.dashboards.GroupBy;
 import io.harness.dashboards.LandingDashboardRequestCD;
 import io.harness.dashboards.PipelinesExecutionDashboardInfo;
 import io.harness.dashboards.ProjectsDashboardInfo;
@@ -22,6 +21,7 @@ import io.harness.dashboards.ServicesCount;
 import io.harness.dashboards.ServicesDashboardInfo;
 import io.harness.dashboards.SortBy;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.pms.dashboards.GroupBy;
 
 import javax.validation.constraints.NotNull;
 import retrofit2.Call;

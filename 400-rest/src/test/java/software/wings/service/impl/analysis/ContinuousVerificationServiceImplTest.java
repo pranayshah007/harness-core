@@ -214,7 +214,7 @@ public class ContinuousVerificationServiceImplTest extends WingsBaseTest {
     FieldUtils.writeField(
         continuousVerificationService, "workflowVerificationResultService", workflowVerificationResultService, true);
 
-    when(environmentService.get(anyString(), anyString()))
+    when(environmentService.get(any(), any()))
         .thenReturn(Environment.Builder.anEnvironment().environmentType(EnvironmentType.PROD).build());
   }
 
@@ -448,7 +448,7 @@ public class ContinuousVerificationServiceImplTest extends WingsBaseTest {
     when(settingAttribute.getValue()).thenReturn(splunkConfig);
     List<EncryptedDataDetail> encryptedDataDetails = new ArrayList<>();
     encryptedDataDetails.add(mock(EncryptedDataDetail.class));
-    when(secretManager.getEncryptionDetails(any(), anyString(), anyString())).thenReturn(encryptedDataDetails);
+    when(secretManager.getEncryptionDetails(any(), any(), any())).thenReturn(encryptedDataDetails);
 
     continuousVerificationService.collectCVData(cvTaskId, dataCollectionInfoV2);
     ArgumentCaptor<DelegateTask> argumentCaptor = ArgumentCaptor.forClass(DelegateTask.class);
@@ -808,7 +808,7 @@ public class ContinuousVerificationServiceImplTest extends WingsBaseTest {
   public void testNotifyWorkflowVerificationState_logAnalysisWithSuccessStateButNotifyFailed()
       throws IllegalAccessException {
     FieldUtils.writeField(continuousVerificationService, "wingsPersistence", persistence, true);
-    when(waitNotifyEngine.doneWith(anyString(), any())).thenThrow(new IllegalArgumentException(""));
+    when(waitNotifyEngine.doneWith(any(), any())).thenThrow(new IllegalArgumentException(""));
 
     AnalysisContext context =
         AnalysisContext.builder().stateExecutionId(stateExecutionId).stateType(ELK).accountId(accountId).build();

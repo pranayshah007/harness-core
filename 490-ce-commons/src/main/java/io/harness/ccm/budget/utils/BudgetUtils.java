@@ -7,6 +7,7 @@
 
 package io.harness.ccm.budget.utils;
 
+import static io.harness.ccm.budget.BudgetPeriod.DAILY;
 import static io.harness.ccm.budget.BudgetScopeType.PERSPECTIVE;
 import static io.harness.ccm.budget.BudgetType.SPECIFIED_AMOUNT;
 
@@ -327,6 +328,9 @@ public class BudgetUtils {
 
   public static long getBudgetStartTime(Budget budget) {
     if (budget.getStartTime() != 0) {
+      if (budget.getPeriod() == DAILY) {
+        return budget.getStartTime() - 2 * ONE_DAY_MILLIS;
+      }
       return budget.getStartTime();
     }
     return getStartOfMonth(false);

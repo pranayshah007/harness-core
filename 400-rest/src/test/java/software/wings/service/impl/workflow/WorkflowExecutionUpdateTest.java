@@ -22,6 +22,7 @@ import static software.wings.utils.WingsTestConstants.WORKFLOW_ID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.joor.Reflect.on;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyMap;
 import static org.mockito.Matchers.anyString;
@@ -157,7 +158,7 @@ public class WorkflowExecutionUpdateTest extends WingsBaseTest {
     WorkflowExecution workflowExecution = createWorkflowExecution(null);
     workflowExecution.setServiceIds(Arrays.asList(generateUuid()));
     workflowExecutionUpdate.reportDeploymentEventToSegment(workflowExecution);
-    verify(segmentHandler).reportTrackEvent(eq(account), anyString(), anyString(), anyMap(), anyMap());
+    verify(segmentHandler).reportTrackEvent(eq(account), anyString(), nullable(String.class), anyMap(), anyMap());
   }
 
   @Test
@@ -170,7 +171,7 @@ public class WorkflowExecutionUpdateTest extends WingsBaseTest {
     workflowExecution.setWorkflowType(null);
     workflowExecution.setServiceIds(null);
     workflowExecutionUpdate.reportDeploymentEventToSegment(workflowExecution);
-    verify(segmentHandler).reportTrackEvent(eq(account), anyString(), anyString(), anyMap(), anyMap());
+    verify(segmentHandler).reportTrackEvent(eq(account), anyString(), nullable(String.class), anyMap(), anyMap());
   }
 
   @Test
@@ -182,7 +183,7 @@ public class WorkflowExecutionUpdateTest extends WingsBaseTest {
     WorkflowExecution workflowExecution = createWorkflowExecution(null);
     workflowExecution.setWorkflowType(null);
     workflowExecutionUpdate.reportDeploymentEventToSegment(workflowExecution);
-    verify(segmentHandler).reportTrackEvent(eq(account), anyString(), anyString(), anyMap(), anyMap());
+    verify(segmentHandler).reportTrackEvent(eq(account), anyString(), nullable(String.class), anyMap(), anyMap());
   }
 
   @Test
@@ -193,7 +194,7 @@ public class WorkflowExecutionUpdateTest extends WingsBaseTest {
     when(accountService.getFromCacheWithFallback(anyString())).thenReturn(account);
     WorkflowExecution workflowExecution = createWorkflowExecution(null);
     workflowExecutionUpdate.reportDeploymentEventToSegment(workflowExecution);
-    verify(segmentHandler).reportTrackEvent(eq(account), anyString(), anyString(), anyMap(), anyMap());
+    verify(segmentHandler).reportTrackEvent(eq(account), anyString(), nullable(String.class), anyMap(), anyMap());
   }
 
   @Test
@@ -221,7 +222,7 @@ public class WorkflowExecutionUpdateTest extends WingsBaseTest {
   @Owner(developers = AADITI)
   @Category(UnitTests.class)
   public void shouldEvaluateAllTags() {
-    when(appService.getAccountIdByAppId(anyString())).thenReturn(ACCOUNT_ID);
+    when(appService.getAccountIdByAppId(any())).thenReturn(ACCOUNT_ID);
     List<HarnessTagLink> harnessTagLinkList = new ArrayList<>();
     harnessTagLinkList.add(constructHarnessTagLink("foo", ""));
     harnessTagLinkList.add(constructHarnessTagLink("env", "${workflow.variables.env}"));
@@ -258,7 +259,7 @@ public class WorkflowExecutionUpdateTest extends WingsBaseTest {
     harnessTagLinkList.add(constructHarnessTagLink("${app.defaults.RUNTIME_PATH}", ""));
     harnessTagLinkList.add(constructHarnessTagLink("${mytag}", ""));
     harnessTagLinkList.add(constructHarnessTagLink("${mytag1}", ""));
-    when(harnessTagService.getTagLinksWithEntityId(anyString(), anyString())).thenReturn(harnessTagLinkList);
+    when(harnessTagService.getTagLinksWithEntityId(any(), any())).thenReturn(harnessTagLinkList);
     when(context.renderExpression(eq("foo"))).thenReturn("foo");
     when(context.renderExpression(eq(""))).thenReturn("");
     when(context.renderExpression(eq("env"))).thenReturn("env");

@@ -17,6 +17,8 @@ import io.harness.walktree.visitor.utilities.VisitorParentPathUtils;
 
 @OwnedBy(CDC)
 public interface YamlTypes {
+  String GITOPS_CREATE_PR = StepSpecTypeConstants.GITOPS_CREATE_PR;
+
   String PRIMARY_ARTIFACT = "primary";
   String ARTIFACT_LIST_CONFIG = "artifacts";
   String SIDECAR_ARTIFACT_CONFIG = "sidecar";
@@ -25,6 +27,7 @@ public interface YamlTypes {
   String GITOPS_CLUSTERS = "gitopsClusters";
   String ENVIRONMENT_REF = "environmentRef";
   String INFRASTRUCTURE_DEF = "infrastructureDefinition";
+  String INFRASTRUCTURE_DEFS = "infrastructureDefinitions";
   String INFRASTRUCTURE_STEP_PARAMETERS = "infrastructureStepParameters";
   String ENVIRONMENT_NODE_ID = "environmentNodeId";
 
@@ -90,4 +93,9 @@ public interface YamlTypes {
 
   String SUBSCRIPTION = "subscription";
   String RESOURCE_GROUP = "resourceGroup";
+
+  // METADATA for Service and Environment Plan Creator
+  String SERVICE_SPEC_UUID = "service_spec_uuid";
+  String INFRA_SECTION_UUID = "infra_section_uuid";
+  String NEXT_UUID = "nextUuid";
 }

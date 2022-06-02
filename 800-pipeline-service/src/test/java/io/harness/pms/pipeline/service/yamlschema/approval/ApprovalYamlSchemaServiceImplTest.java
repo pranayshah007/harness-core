@@ -44,19 +44,16 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 @OwnedBy(HarnessTeam.PIPELINE)
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(YamlSchemaUtils.class)
+@RunWith(MockitoJUnitRunner.class)
 public class ApprovalYamlSchemaServiceImplTest {
   @Mock private YamlSchemaProvider yamlSchemaProvider;
   @Mock private PmsYamlSchemaHelper pmsYamlSchemaHelper;
   @Mock private YamlSchemaGenerator yamlSchemaGenerator;
-  ;
   @Mock private FeatureRestrictionsGetter featureRestrictionsGetter;
   @InjectMocks private ApprovalYamlSchemaServiceImpl approvalYamlSchemaService;
   @Before
@@ -68,7 +65,7 @@ public class ApprovalYamlSchemaServiceImplTest {
   @Owner(developers = BRIJESH)
   @Category(UnitTests.class)
   public void testGetSchema() throws IOException {
-    PowerMockito.mockStatic(YamlSchemaUtils.class);
+    Mockito.mockStatic(YamlSchemaUtils.class);
     String accountId = "accountId";
     String orgId = "orgId";
     String projectId = "projectId";

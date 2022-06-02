@@ -31,4 +31,5 @@ public class TemplateMergeResponseDTO {
   // Only TemplateReferences which you are directly using in your given yaml. Suppose you are referencing stage template
   // which has step template ref, then it returns only stage template.
   List<TemplateReferenceSummary> templateReferenceSummaries;
+  String mergedPipelineYamlWithTemplateRef;
 }

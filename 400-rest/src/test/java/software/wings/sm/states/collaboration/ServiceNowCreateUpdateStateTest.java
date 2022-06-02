@@ -97,7 +97,7 @@ public class ServiceNowCreateUpdateStateTest extends CategoryTest {
         .thenReturn(SettingAttribute.Builder.aSettingAttribute()
                         .withValue(ServiceNowConfig.builder().password(PASSWORD).build())
                         .build());
-    when(context.renderExpression(anyString())).thenAnswer(invocation -> invocation.getArgumentAt(0, String.class));
+    when(context.renderExpression(anyString())).thenAnswer(invocation -> invocation.getArgument(0, String.class));
     when(context.getAppId()).thenReturn(APP_ID);
     when(context.getWorkflowExecutionId()).thenReturn(WORKFLOW_EXECUTION_ID);
     when(secretManager.getEncryptionDetails(

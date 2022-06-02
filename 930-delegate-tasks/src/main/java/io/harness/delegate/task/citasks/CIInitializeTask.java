@@ -14,10 +14,12 @@ package io.harness.delegate.task.citasks;
 
 import static java.lang.String.format;
 
+import io.harness.delegate.beans.DelegateMetaInfo;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.ci.CIInitializeTaskParams;
+import io.harness.delegate.beans.ci.CITaskExecutionResponse;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.TaskParameters;
@@ -52,8 +54,10 @@ public class CIInitializeTask extends AbstractDelegateRunnableTask {
       return ciK8InitializeTaskHandler.executeTaskInternal(
           ciInitializeTaskParams, getLogStreamingTaskClient(), getTaskId());
     } else if (ciInitializeTaskParams.getType() == CIInitializeTaskParams.Type.VM) {
-      return ciVmInitializeTaskHandler.executeTaskInternal(
+      CITaskExecutionResponse response = ciVmInitializeTaskHandler.executeTaskInternal(
           ciInitializeTaskParams, getLogStreamingTaskClient(), getTaskId());
+      response.setDelegateMetaInfo(DelegateMetaInfo.builder().id(getDelegateId()).build());
+      return response;
     } else {
       throw new CIStageExecutionException(
           format("Invalid infra type for initializing stage", ciInitializeTaskParams.getType()));

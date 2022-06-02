@@ -25,6 +25,7 @@ import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -94,7 +95,8 @@ public class K8sRollingRequestHandlerTest extends CategoryTest {
     K8sRollingDeployRequest rollingDeployRequest =
         K8sRollingDeployRequest.builder()
             .releaseName("releaseName")
-            .manifestDelegateConfig(KustomizeManifestDelegateConfig.builder().build())
+            .k8sInfraDelegateConfig(mock(K8sInfraDelegateConfig.class))
+            .manifestDelegateConfig(KustomizeManifestDelegateConfig.builder().kustomizeDirPath("dir").build())
             .build();
     K8sDelegateTaskParams delegateTaskParams = K8sDelegateTaskParams.builder().build();
 
@@ -118,7 +120,8 @@ public class K8sRollingRequestHandlerTest extends CategoryTest {
   public void testExecuteTaskInternalGetPodsFailed() throws Exception {
     K8sRollingDeployRequest rollingDeployRequest =
         K8sRollingDeployRequest.builder()
-            .manifestDelegateConfig(KustomizeManifestDelegateConfig.builder().build())
+            .manifestDelegateConfig(KustomizeManifestDelegateConfig.builder().kustomizeDirPath("dir").build())
+            .k8sInfraDelegateConfig(mock(K8sInfraDelegateConfig.class))
             .releaseName("releaseName")
             .build();
     K8sDelegateTaskParams delegateTaskParams = K8sDelegateTaskParams.builder().build();

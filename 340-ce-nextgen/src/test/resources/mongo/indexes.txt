@@ -41,14 +41,10 @@ instanceData {"name": "instanceId_1", "background": true} {"instanceId": 1}
 instanceData {"name": "ttl_1", "background": true, "expireAfterSeconds": 0} {"ttl": 1}
 k8sNodeRecommendation {"name": "unique_accountId_clusterid_nodepoolname", "unique": true} {"accountId": 1, "nodePoolId.clusterid": 1, "nodePoolId.nodepoolname": 1}
 k8sNodeRecommendation {"name": "validUntil_1", "background": true, "expireAfterSeconds": 0} {"validUntil": 1}
-k8sWorkload {"name": "accountId_clusterId_labels", "background": true} {"accountId": 1, "clusterId": 1, "labels": 1}
-k8sWorkload {"name": "accountId_clusterId_name_namespace_lastUpdatedAt", "background": true} {"accountId": 1, "clusterId": 1, "name": 1, "namespace": 1, "lastUpdatedAt": -1}
-k8sWorkload {"name": "accountId_clusterId_namespace_name", "background": true} {"accountId": 1, "clusterId": 1, "namespace": 1, "name": 1}
 k8sWorkload {"name": "accountId_clusterId_namespace_name_lastUpdatedAt", "background": true} {"accountId": 1, "clusterId": 1, "namespace": 1, "name": 1, "lastUpdatedAt": -1}
-k8sWorkload {"name": "accountId_clusterId_uid", "background": true} {"accountId": 1, "clusterId": 1, "uid": 1}
-k8sWorkload {"name": "accountId_lastUpdatedAt_labels", "background": true} {"accountId": 1, "lastUpdatedAt": 1, "labels": 1}
+k8sWorkload {"name": "accountId_lastUpdatedAt", "background": true} {"accountId": 1, "lastUpdatedAt": 1}
 k8sWorkload {"name": "accountId_name_labels", "background": true} {"accountId": 1, "name": 1, "labels": 1}
-k8sWorkload {"name": "no_dup_cluster", "unique": true} {"clusterId": 1, "uid": 1}
+k8sWorkload {"name": "no_dup_cluster_uid", "unique": true} {"accountId": 1, "clusterId": 1, "uid": 1}
 k8sWorkload {"name": "ttl_1", "background": true, "expireAfterSeconds": 0} {"ttl": 1}
 k8sWorkloadRecommendation {"name": "accountId_dirty", "background": true} {"accountId": 1, "dirty": 1}
 k8sWorkloadRecommendation {"name": "estimatedSavings_1", "background": true} {"estimatedSavings": 1}

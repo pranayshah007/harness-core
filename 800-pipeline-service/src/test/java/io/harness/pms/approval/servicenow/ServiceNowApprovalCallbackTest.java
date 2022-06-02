@@ -51,7 +51,8 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.powermock.api.mockito.PowerMockito;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
@@ -84,8 +85,8 @@ public class ServiceNowApprovalCallbackTest extends CategoryTest {
   @Owner(developers = PRABU)
   @Category(UnitTests.class)
   public void testPush() {
-    PowerMockito.mockStatic(ServiceNowCriteriaEvaluator.class);
-    when(ServiceNowCriteriaEvaluator.evaluateCriteria(any(), any())).thenReturn(true);
+    MockedStatic<ServiceNowCriteriaEvaluator> mockStatic = Mockito.mockStatic(ServiceNowCriteriaEvaluator.class);
+    mockStatic.when(() -> ServiceNowCriteriaEvaluator.evaluateCriteria(any(), any())).thenReturn(true);
     on(serviceNowApprovalCallback).set("approvalInstanceId", approvalInstanceId);
     Ambiance ambiance = Ambiance.newBuilder()
                             .putSetupAbstractions("accountId", accountId)
@@ -106,7 +107,7 @@ public class ServiceNowApprovalCallbackTest extends CategoryTest {
 
     instance.setDeadline(Long.MAX_VALUE);
     when(ngErrorHelper.getErrorSummary(any()))
-        .thenAnswer(invocationOnMock -> invocationOnMock.getArgumentAt(0, String.class));
+        .thenAnswer(invocationOnMock -> invocationOnMock.getArgument(0, String.class));
     when(ServiceNowCriteriaEvaluator.evaluateCriteria(any(), any())).thenReturn(false);
     serviceNowApprovalCallback.push(response);
     verify(approvalInstanceService).finalizeStatus(approvalInstanceId, ApprovalStatus.EXPIRED);

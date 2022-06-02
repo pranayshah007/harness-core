@@ -14,7 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
@@ -119,7 +119,7 @@ public class PcfCommandTaskTest extends CategoryTest {
         .executeTask(
             eq(pcfCommandRequest), eq(encryptedDataDetails), eq(false), eq(pcfTask.getLogStreamingTaskClient()));
 
-    doThrow(Exception.class)
+    doAnswer(invocation -> { throw new Exception(); })
         .when(mockHandler)
         .executeTask(
             eq(pcfCommandRequest), eq(encryptedDataDetails), eq(false), eq(pcfTask.getLogStreamingTaskClient()));
