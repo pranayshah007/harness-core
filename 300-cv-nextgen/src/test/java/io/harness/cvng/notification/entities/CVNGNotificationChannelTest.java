@@ -1,10 +1,3 @@
-/*
- * Copyright 2022 Harness Inc. All rights reserved.
- * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
- * that can be found in the licenses directory at the root of this repository, also available at
- * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
- *//*
-
 
 package io.harness.cvng.notification.entities;
 
@@ -54,7 +47,8 @@ public class CVNGNotificationChannelTest {
   @Owner(developers = KAPIL)
   @Category(UnitTests.class)
   public void testToNotificationChannel_forSlack() {
-    CVNGSlackChannel cvngSlackChannel = CVNGSlackChannel.builder().webhookUrl("url").userGroups(userGroups).build();
+    CVNGSlackChannel cvngSlackChannel = new CVNGSlackChannel(
+        userGroups, "url"); // CVNGSlackChannel.builder().webhookUrl("url").userGroups(userGroups).build();
     NotificationChannel notificationChannel = cvngSlackChannel.toNotificationChannel(
         accountIdentifier, orgIdentifier, projectIdentifier, templateId, new HashMap<>());
 
@@ -76,8 +70,8 @@ public class CVNGNotificationChannelTest {
   public void testToNotificationChannel_forEmail() {
     List<String> recipients = new ArrayList<>();
     recipients.addAll(Arrays.asList("test_user1@harness.io", "test_user2@harness.io"));
-    CVNGEmailChannel cvngEmailChannel =
-        CVNGEmailChannel.builder().recipients(recipients).userGroups(userGroups).build();
+    CVNGEmailChannel cvngEmailChannel = new CVNGEmailChannel(userGroups, recipients);
+    // CVNGEmailChannel.builder().recipients(recipients).userGroups(userGroups).build();
     NotificationChannel notificationChannel = cvngEmailChannel.toNotificationChannel(
         accountIdentifier, orgIdentifier, projectIdentifier, templateId, new HashMap<>());
 
@@ -99,8 +93,8 @@ public class CVNGNotificationChannelTest {
   public void testToNotificationChannel_forMSTeams() {
     List<String> msTeamKeys = new ArrayList<>();
     msTeamKeys.addAll(Arrays.asList("key1", "key2"));
-    CVNGMSTeamsChannel cvngmsTeamsChannel =
-        CVNGMSTeamsChannel.builder().msTeamKeys(msTeamKeys).userGroups(userGroups).build();
+    CVNGMSTeamsChannel cvngmsTeamsChannel = new CVNGMSTeamsChannel(msTeamKeys, userGroups);
+    // CVNGMSTeamsChannel.builder().msTeamKeys(msTeamKeys).userGroups(userGroups).build();
     NotificationChannel notificationChannel = cvngmsTeamsChannel.toNotificationChannel(
         accountIdentifier, orgIdentifier, projectIdentifier, templateId, new HashMap<>());
 
@@ -120,8 +114,8 @@ public class CVNGNotificationChannelTest {
   @Owner(developers = KAPIL)
   @Category(UnitTests.class)
   public void testToNotificationChannel_forPagerduty() {
-    CVNGPagerDutyChannel cvngPagerDutyChannel =
-        CVNGPagerDutyChannel.builder().integrationKey("key1").userGroups(userGroups).build();
+    CVNGPagerDutyChannel cvngPagerDutyChannel = new CVNGPagerDutyChannel(userGroups, "key1");
+    //  CVNGPagerDutyChannel.builder().integrationKey("key1").userGroups(userGroups).build();
     NotificationChannel notificationChannel = cvngPagerDutyChannel.toNotificationChannel(
         accountIdentifier, orgIdentifier, projectIdentifier, templateId, new HashMap<>());
 
@@ -137,4 +131,3 @@ public class CVNGNotificationChannelTest {
     assertThat(notificationChannel.getUserGroups()).isEqualTo(Collections.emptyList());
   }
 }
-*/

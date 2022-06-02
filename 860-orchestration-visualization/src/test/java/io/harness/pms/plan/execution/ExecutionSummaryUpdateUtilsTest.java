@@ -95,6 +95,7 @@ public class ExecutionSummaryUpdateUtilsTest extends CategoryTest {
                                                  .setMessage("testing")
                                                  .build())
                              .build())
+
             .build();
     ExecutionSummaryUpdateUtils.addPipelineUpdateCriteria(update, nodeExecution);
     Set<String> stringSet = ((Document) update.getUpdateObject().get("$set")).keySet();
@@ -168,7 +169,13 @@ public class ExecutionSummaryUpdateUtilsTest extends CategoryTest {
                                 .setPlanExecutionId(generateUuid())
                                 .addLevels(PmsLevelUtils.buildLevelFromNode(generateUuid(), stepPlanNode))
                                 .build();
-    NodeExecution stepNodeExecution = NodeExecution.builder().status(Status.EXPIRED).ambiance(stepAmbiance).build();
+    NodeExecution stepNodeExecution = NodeExecution.builder()
+                                          .planNode(stepPlanNode)
+                                          .stepType(StepType.newBuilder().setStepCategory(StepCategory.STEP).build())
+                                          .status(Status.EXPIRED)
+                                          .stepType(StepType.newBuilder().setStepCategory(StepCategory.STEP).build())
+                                          .ambiance(stepAmbiance)
+                                          .build();
     Update update = new Update();
     ExecutionSummaryUpdateUtils.addStageUpdateCriteria(update, stepNodeExecution);
     assertThat(update.getUpdateObject().keySet().size()).isEqualTo(0);
@@ -180,7 +187,11 @@ public class ExecutionSummaryUpdateUtilsTest extends CategoryTest {
                        .addLevels(PmsLevelUtils.buildLevelFromNode(generateUuid(), stagePlanNode))
                        .addLevels(PmsLevelUtils.buildLevelFromNode(generateUuid(), stepPlanNode))
                        .build();
-    stepNodeExecution = NodeExecution.builder().status(Status.EXPIRED).ambiance(stepAmbiance).build();
+    stepNodeExecution = NodeExecution.builder()
+                            .status(Status.EXPIRED)
+                            .ambiance(stepAmbiance)
+                            .stepType(StepType.newBuilder().setStepCategory(StepCategory.STEP).build())
+                            .build();
     update = new Update();
     ExecutionSummaryUpdateUtils.addStageUpdateCriteria(update, stepNodeExecution);
     assertThat(update.getUpdateObject().keySet().size()).isEqualTo(1);
@@ -201,7 +212,9 @@ public class ExecutionSummaryUpdateUtilsTest extends CategoryTest {
     NodeExecution nodeExecution =
         NodeExecution.builder()
             .status(Status.FAILED)
+            .planNode(stagePlanNode)
             .endTs(System.currentTimeMillis())
+            .stepType(StepType.newBuilder().setType("test").setStepCategory(StepCategory.STEP).build())
             .ambiance(stageAmbiance)
             .failureInfo(FailureInfo.newBuilder()
                              .setErrorMessage("testing")
@@ -219,7 +232,7 @@ public class ExecutionSummaryUpdateUtilsTest extends CategoryTest {
     Set<String> stringSet = ((Document) update.getUpdateObject().get("$set")).keySet();
     assertThat(stringSet).containsOnly(prefixLayoutNodeMap + ".status", prefixLayoutNodeMap + ".startTs",
         prefixLayoutNodeMap + ".nodeRunInfo", prefixLayoutNodeMap + ".endTs", prefixLayoutNodeMap + ".failureInfo",
-        prefixLayoutNodeMap + ".failureInfoDTO");
+        prefixLayoutNodeMap + ".failureInfoDTO", prefixLayoutNodeMap + ".nodeExecutionId");
   }
 
   @Data

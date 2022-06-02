@@ -100,11 +100,15 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
       "Pipeline [%s] under Project[%s], Organization [%s] already exists or has been deleted.";
 
   @Override
-  public PipelineEntity create(PipelineEntity pipelineEntity) {
+  public PipelineCRUDResult create(PipelineEntity pipelineEntity) {
+    PMSPipelineServiceHelper.validatePresenceOfRequiredFields(pipelineEntity.getAccountId(),
+        pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineEntity.getIdentifier(),
+        pipelineEntity.getIdentifier());
+    GovernanceMetadata governanceMetadata = pmsPipelineServiceHelper.validatePipelineYaml(pipelineEntity);
     try {
-      PMSPipelineServiceHelper.validatePresenceOfRequiredFields(pipelineEntity.getAccountId(),
-          pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineEntity.getIdentifier(),
-          pipelineEntity.getIdentifier());
+      if (governanceMetadata.getDeny()) {
+        return PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).build();
+      }
 
       PipelineEntity entityWithUpdatedInfo = pmsPipelineServiceHelper.updatePipelineInfo(pipelineEntity);
       PipelineEntity createdEntity;
@@ -115,7 +119,7 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
         createdEntity = pmsPipelineRepository.save(entityWithUpdatedInfo);
       }
       pmsPipelineServiceHelper.sendPipelineSaveTelemetryEvent(createdEntity, CREATING_PIPELINE);
-      return createdEntity;
+      return PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).pipelineEntity(createdEntity).build();
     } catch (DuplicateKeyException ex) {
       throw new DuplicateFieldException(format(DUP_KEY_EXP_FORMAT_STRING, pipelineEntity.getIdentifier(),
                                             pipelineEntity.getProjectIdentifier(), pipelineEntity.getOrgIdentifier()),
@@ -150,11 +154,12 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
         PMSPipelineDtoMapper.toPipelineEntity(accountId, clonePipelineDTO.getDestinationConfig().getOrgIdentifier(),
             clonePipelineDTO.getDestinationConfig().getProjectIdentifier(), destYaml);
 
-    GovernanceMetadata destGovernanceMetadata = pmsPipelineServiceHelper.validatePipelineYaml(destPipelineEntity);
+    PipelineCRUDResult pipelineCRUDResult = create(destPipelineEntity);
+    GovernanceMetadata destGovernanceMetadata = pipelineCRUDResult.getGovernanceMetadata();
     if (destGovernanceMetadata.getDeny()) {
       return PipelineSaveResponse.builder().governanceMetadata(destGovernanceMetadata).build();
     }
-    PipelineEntity clonedPipelineEntity = create(destPipelineEntity);
+    PipelineEntity clonedPipelineEntity = pipelineCRUDResult.getPipelineEntity();
 
     return PipelineSaveResponse.builder()
         .governanceMetadata(destGovernanceMetadata)

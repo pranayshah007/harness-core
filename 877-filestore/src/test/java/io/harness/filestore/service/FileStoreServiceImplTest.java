@@ -7,6 +7,17 @@
 
 package io.harness.filestore.service;
 
+import static io.harness.filestore.FileStoreTestConstants.ACCOUNT_IDENTIFIER;
+import static io.harness.filestore.FileStoreTestConstants.ADMIN_USER_EMAIL;
+import static io.harness.filestore.FileStoreTestConstants.ADMIN_USER_NAME;
+import static io.harness.filestore.FileStoreTestConstants.FILE_IDENTIFIER;
+import static io.harness.filestore.FileStoreTestConstants.FILE_NAME;
+import static io.harness.filestore.FileStoreTestConstants.FILE_UUID;
+import static io.harness.filestore.FileStoreTestConstants.IDENTIFIER;
+import static io.harness.filestore.FileStoreTestConstants.ORG_IDENTIFIER;
+import static io.harness.filestore.FileStoreTestConstants.PARENT_IDENTIFIER;
+import static io.harness.filestore.FileStoreTestConstants.PROJECT_IDENTIFIER;
+import static io.harness.filestore.FileStoreTestConstants.YML_MIME_TYPE;
 import static io.harness.filestore.entities.NGFile.builder;
 import static io.harness.repositories.FileStoreRepositoryCriteriaCreator.createCriteriaByScopeAndParentIdentifier;
 import static io.harness.repositories.FileStoreRepositoryCriteriaCreator.createFilesFilterCriteria;
@@ -24,6 +35,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.notNull;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -49,11 +61,14 @@ import io.harness.filestore.FileStoreConfiguration;
 import io.harness.filestore.dto.filter.FilesFilterPropertiesDTO;
 import io.harness.filestore.dto.mapper.FileDTOMapper;
 import io.harness.filestore.dto.node.FileNodeDTO;
+import io.harness.filestore.dto.node.FileStoreNodeDTO;
 import io.harness.filestore.dto.node.FolderNodeDTO;
 import io.harness.filestore.entities.NGFile;
 import io.harness.filestore.service.impl.FileReferenceServiceImpl;
 import io.harness.filestore.service.impl.FileStoreServiceImpl;
+import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.dto.EmbeddedUserDetailsDTO;
+import io.harness.ng.core.filestore.FileUsage;
 import io.harness.ng.core.filestore.NGFileType;
 import io.harness.ng.core.filestore.dto.FileDTO;
 import io.harness.ng.core.filestore.dto.FileFilterDTO;
@@ -72,6 +87,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import org.bson.Document;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -89,18 +105,12 @@ import org.springframework.data.mongodb.core.query.Criteria;
 @OwnedBy(HarnessTeam.CDP)
 @RunWith(MockitoJUnitRunner.class)
 public class FileStoreServiceImplTest extends CategoryTest {
-  private static final String ACCOUNT_IDENTIFIER = "accountIdentifier";
-  private static final String ORG_IDENTIFIER = "orgIdentifier";
-  private static final String PROJECT_IDENTIFIER = "projectIdentifier";
-  private static final String IDENTIFIER = "identifier";
-  private static final String FILE_IDENTIFIER = "fileIdentifier";
-  private static final String FILE_NAME = "fileName";
-
   @Mock private FileStoreRepository fileStoreRepository;
   @Mock private FileService fileService;
   @Mock private FileStoreConfiguration configuration;
   @Mock private FileReferenceServiceImpl fileReferenceService;
   @Mock private FileFailsafeService fileFailsafeService;
+  @Mock private FileStructureService fileStructureService;
 
   @InjectMocks private FileStoreServiceImpl fileStoreService;
 
@@ -112,14 +122,14 @@ public class FileStoreServiceImplTest extends CategoryTest {
 
     givenThatDatabaseIsEmpty();
 
-    when(fileReferenceService.countEntitiesReferencingFile(any())).thenReturn(0l);
+    when(fileReferenceService.countEntitiesReferencingFile(any())).thenReturn(0L);
   }
 
   @Test
   @Owner(developers = BOJAN)
   @Category(UnitTests.class)
   public void testUpdate() {
-    NGFile ngFile = createNgFile();
+    NGFile ngFile = createNgFileTypeFile();
     FileDTO fileDto = createFileDto();
     when(fileStoreRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(
              any(), any(), any(), any()))
@@ -177,7 +187,7 @@ public class FileStoreServiceImplTest extends CategoryTest {
   @Owner(developers = IVAN)
   @Category(UnitTests.class)
   public void testDownloadFileWithFolder() {
-    NGFile ngFile = createNgFile();
+    NGFile ngFile = createNgFileTypeFile();
     ngFile.setType(NGFileType.FOLDER);
     when(fileStoreRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(
              ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, FILE_IDENTIFIER))
@@ -193,7 +203,7 @@ public class FileStoreServiceImplTest extends CategoryTest {
   @Owner(developers = IVAN)
   @Category(UnitTests.class)
   public void testDownloadFile() {
-    NGFile ngFile = createNgFile();
+    NGFile ngFile = createNgFileTypeFile();
     when(fileStoreRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(
              ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, FILE_IDENTIFIER))
         .thenReturn(Optional.of(ngFile));
@@ -670,6 +680,100 @@ public class FileStoreServiceImplTest extends CategoryTest {
     assertThat(createdByList.stream().findFirst().get().getName()).isEqualTo("testuser1");
   }
 
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testGetWithNullAccount() {
+    assertThatThrownBy(() -> fileStoreService.get(null, ORG_IDENTIFIER, PROJECT_IDENTIFIER, IDENTIFIER, true))
+        .isInstanceOf(InvalidArgumentsException.class)
+        .hasMessage("Account identifier cannot be null or empty");
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testGetWithNullIdentifier() {
+    assertThatThrownBy(() -> fileStoreService.get(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, null, true))
+        .isInstanceOf(InvalidArgumentsException.class)
+        .hasMessage("File or folder identifier cannot be null or empty");
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testGetWithEmptyResult() {
+    when(fileStoreRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(
+             ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, IDENTIFIER))
+        .thenReturn(Optional.empty());
+    Optional<FileStoreNodeDTO> fileStoreNodeDTO =
+        fileStoreService.get(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, IDENTIFIER, true);
+
+    assertThat(fileStoreNodeDTO).isNotNull();
+    assertThat(fileStoreNodeDTO.isPresent()).isFalse();
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testGetWitFileIncludingContent() {
+    String fileContent = "file content";
+    when(fileStoreRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(
+             ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, IDENTIFIER))
+        .thenReturn(Optional.of(createNgFileTypeFile()));
+
+    when(fileStructureService.getFileContent(FILE_UUID)).thenReturn(fileContent);
+
+    Optional<FileStoreNodeDTO> fileStoreNodeDTO =
+        fileStoreService.get(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, IDENTIFIER, true);
+
+    assertThat(fileStoreNodeDTO).isNotNull();
+    assertThat(fileStoreNodeDTO.isPresent()).isTrue();
+    FileStoreNodeDTO storeNodeDTO = fileStoreNodeDTO.get();
+    assertThat(storeNodeDTO.getType()).isEqualTo(NGFileType.FILE);
+
+    FileNodeDTO fileNodeDTO = (FileNodeDTO) storeNodeDTO;
+    assertThat(fileNodeDTO.getContent()).isEqualTo(fileContent);
+
+    assertThat(fileNodeDTO.getDescription()).isEqualTo("oldDescription");
+    assertThat(fileNodeDTO.getName()).isEqualTo("oldName");
+    assertThat(fileNodeDTO.getIdentifier()).isEqualTo("identifier1");
+    assertThat(fileNodeDTO.getFileUsage()).isEqualTo(FileUsage.MANIFEST_FILE);
+    assertThat(fileNodeDTO.getMimeType()).isEqualTo(YML_MIME_TYPE);
+    assertThat(fileNodeDTO.getParentIdentifier()).isEqualTo(PARENT_IDENTIFIER);
+    assertThat(fileNodeDTO.getTags()).isEqualTo(getNgTags());
+    assertThat(fileNodeDTO.getLastModifiedBy()).isEqualTo(getEmbeddedUserDetailsDTO());
+    assertThat(fileNodeDTO.getLastModifiedAt()).isEqualTo(1L);
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void testGetWitFolderIncludingContent() {
+    when(fileStoreRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(
+             ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, IDENTIFIER))
+        .thenReturn(Optional.of(createNgFileTypeFolder()));
+    doNothing()
+        .when(fileStructureService)
+        .createFolderTreeStructure(
+            any(FolderNodeDTO.class), eq(Scope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER)), eq(true));
+
+    Optional<FileStoreNodeDTO> fileStoreNodeDTO =
+        fileStoreService.get(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, IDENTIFIER, true);
+
+    assertThat(fileStoreNodeDTO).isNotNull();
+    assertThat(fileStoreNodeDTO.isPresent()).isTrue();
+    FileStoreNodeDTO storeNodeDTO = fileStoreNodeDTO.get();
+    assertThat(storeNodeDTO.getType()).isEqualTo(NGFileType.FOLDER);
+
+    FolderNodeDTO folderNodeDTO = (FolderNodeDTO) storeNodeDTO;
+
+    assertThat(folderNodeDTO.getName()).isEqualTo("folderName");
+    assertThat(folderNodeDTO.getIdentifier()).isEqualTo("identifier");
+    assertThat(folderNodeDTO.getParentIdentifier()).isEqualTo(PARENT_IDENTIFIER);
+    assertThat(folderNodeDTO.getLastModifiedBy()).isEqualTo(getEmbeddedUserDetailsDTO());
+    assertThat(folderNodeDTO.getLastModifiedAt()).isEqualTo(1L);
+  }
+
   private static FileDTO aFileDto() {
     return FileDTO.builder()
         .identifier("identifier")
@@ -716,12 +820,39 @@ public class FileStoreServiceImplTest extends CategoryTest {
         .build();
   }
 
-  private NGFile createNgFile() {
+  @NotNull
+  private List<NGTag> getNgTags() {
+    return Collections.singletonList(NGTag.builder().key("key").value("value").build());
+  }
+
+  private EmbeddedUserDetailsDTO getEmbeddedUserDetailsDTO() {
+    return EmbeddedUserDetailsDTO.builder().name(ADMIN_USER_NAME).email(ADMIN_USER_EMAIL).build();
+  }
+
+  private NGFile createNgFileTypeFile() {
     return builder()
         .type(NGFileType.FILE)
         .name("oldName")
         .description("oldDescription")
         .identifier("identifier1")
+        .fileUuid(FILE_UUID)
+        .fileUsage(FileUsage.MANIFEST_FILE)
+        .parentIdentifier(PARENT_IDENTIFIER)
+        .mimeType(YML_MIME_TYPE)
+        .tags(getNgTags())
+        .lastUpdatedBy(EmbeddedUser.builder().name(ADMIN_USER_NAME).email(ADMIN_USER_EMAIL).build())
+        .lastModifiedAt(1L)
+        .build();
+  }
+
+  private NGFile createNgFileTypeFolder() {
+    return builder()
+        .type(NGFileType.FOLDER)
+        .name("folderName")
+        .identifier("identifier")
+        .parentIdentifier(PARENT_IDENTIFIER)
+        .lastUpdatedBy(EmbeddedUser.builder().name(ADMIN_USER_NAME).email(ADMIN_USER_EMAIL).build())
+        .lastModifiedAt(1L)
         .build();
   }
 

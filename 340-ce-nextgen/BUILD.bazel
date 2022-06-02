@@ -12,6 +12,7 @@ shared_dependencies = [
     "//440-connector-nextgen:module",
     "//450-ce-views:module",
     "//490-ce-commons:module",
+    "//950-telemetry:module",
     "//890-sm-core:module",
     "//910-delegate-service-driver:module",
     "//930-ng-core-clients:module",
