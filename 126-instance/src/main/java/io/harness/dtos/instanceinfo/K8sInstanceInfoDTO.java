@@ -49,6 +49,11 @@ public class K8sInstanceInfoDTO extends InstanceInfoDTO {
     return InstanceSyncKey.builder().part(releaseName).build().toString();
   }
 
+  @Override
+  public String getType() {
+    return "K8s";
+  }
+
   private String getImageInStringFormat() {
     return emptyIfNull(containerList).stream().map(K8sContainer::getImage).collect(Collectors.joining());
   }

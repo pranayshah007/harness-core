@@ -42,6 +42,11 @@ public class NativeHelmInstanceInfoDTO extends InstanceInfoDTO {
   }
 
   @Override
+  public String getType() {
+    return "NativeHelm";
+  }
+
+  @Override
   public String prepareInstanceSyncHandlerKey() {
     return InstanceSyncKey.builder().part(releaseName).build().toString();
   }
