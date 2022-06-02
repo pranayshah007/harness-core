@@ -3,7 +3,6 @@ config:
     - ".ticonfig.yaml"
     - "jira-projects.txt"
     - "**/*.go"
-    - "**/*.md"
     - "**/Dockerfile*"
     - "scripts/jenkins/**/*"
     - "scripts/terraform/**/*"
