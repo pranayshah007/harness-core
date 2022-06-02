@@ -2,9 +2,12 @@ package io.harness.notifications;
 
 import io.harness.remote.client.ClientMode;
 import io.harness.remote.client.ServiceHttpClientConfig;
+import io.harness.security.ServiceTokenGenerator;
+import io.harness.serializer.kryo.KryoConverterFactory;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Inject;
+import com.google.inject.Provides;
 import com.google.inject.Scopes;
 
 public class NotificationResourceClientModule extends AbstractModule {
@@ -29,6 +32,12 @@ public class NotificationResourceClientModule extends AbstractModule {
     this.serviceSecret = serviceSecret;
     this.clientId = clientId;
     this.clientMode = ClientMode.NON_PRIVILEGED;
+  }
+
+  @Provides
+  private NotificationResourceClientFactory providesHttpClientFactory(KryoConverterFactory kryoConverterFactory) {
+    return new NotificationResourceClientFactory(this.ngManagerClientConfig, this.serviceSecret,
+        new ServiceTokenGenerator(), kryoConverterFactory, clientId, clientMode);
   }
 
   @Override
