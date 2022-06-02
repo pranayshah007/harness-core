@@ -28,6 +28,8 @@ import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.beans.Environment.EnvironmentKeys;
 import io.harness.ng.core.environment.beans.EnvironmentFilterPropertiesDTO;
 import io.harness.ng.core.mapper.TagMapper;
+import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
+import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity.NGServiceOverridesEntityKeys;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
 
 import java.util.ArrayList;
@@ -202,6 +204,19 @@ public class EnvironmentFilterHelper {
   public Update getUpdateOperationsForDelete() {
     Update update = new Update();
     update.set(EnvironmentKeys.deleted, true);
+    return update;
+  }
+
+  public Update getUpdateOperationsForServiceOverride(NGServiceOverridesEntity serviceOverridesEntity) {
+    Update update = new Update();
+    update.set(NGServiceOverridesEntityKeys.accountId, serviceOverridesEntity.getAccountId());
+    update.set(NGServiceOverridesEntityKeys.orgIdentifier, serviceOverridesEntity.getOrgIdentifier());
+    update.set(NGServiceOverridesEntityKeys.projectIdentifier, serviceOverridesEntity.getProjectIdentifier());
+    update.set(NGServiceOverridesEntityKeys.environmentRef, serviceOverridesEntity.getEnvironmentRef());
+    update.set(NGServiceOverridesEntityKeys.serviceRef, serviceOverridesEntity.getServiceRef());
+    update.set(NGServiceOverridesEntityKeys.yaml, serviceOverridesEntity.getYaml());
+    update.setOnInsert(NGServiceOverridesEntityKeys.createdAt, System.currentTimeMillis());
+    update.set(NGServiceOverridesEntityKeys.lastModifiedAt, System.currentTimeMillis());
     return update;
   }
 }

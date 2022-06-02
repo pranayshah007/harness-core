@@ -17,6 +17,8 @@ import io.harness.walktree.visitor.utilities.VisitorParentPathUtils;
 
 @OwnedBy(CDC)
 public interface YamlTypes {
+  String GITOPS_CREATE_PR = StepSpecTypeConstants.GITOPS_CREATE_PR;
+
   String PRIMARY_ARTIFACT = "primary";
   String ARTIFACT_LIST_CONFIG = "artifacts";
   String SIDECAR_ARTIFACT_CONFIG = "sidecar";
