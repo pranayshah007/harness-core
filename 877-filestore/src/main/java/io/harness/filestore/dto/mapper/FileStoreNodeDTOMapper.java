@@ -12,26 +12,33 @@ import static io.harness.filestore.dto.mapper.EmbeddedUserDTOMapper.fromEmbedded
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.filestore.dto.node.FileNodeDTO;
+import io.harness.filestore.dto.node.FileNodeDTO.FileNodeDTOBuilder;
 import io.harness.filestore.dto.node.FolderNodeDTO;
 import io.harness.filestore.entities.NGFile;
 
 import lombok.experimental.UtilityClass;
+import org.apache.commons.lang3.StringUtils;
 
 @OwnedBy(CDP)
 @UtilityClass
 public class FileStoreNodeDTOMapper {
-  public FileNodeDTO getFileNodeDTO(NGFile ngFile) {
-    return FileNodeDTO.builder()
-        .identifier(ngFile.getIdentifier())
-        .parentIdentifier(ngFile.getParentIdentifier())
-        .name(ngFile.getName())
-        .fileUsage(ngFile.getFileUsage())
-        .description(ngFile.getDescription())
-        .tags(ngFile.getTags())
-        .lastModifiedAt(ngFile.getLastModifiedAt())
-        .lastModifiedBy(fromEmbeddedUser(ngFile.getLastUpdatedBy()))
-        .mimeType(ngFile.getMimeType())
-        .build();
+  public FileNodeDTO getFileNodeDTO(NGFile ngFile, final String content) {
+    FileNodeDTOBuilder fileNodeDTOBuilder = FileNodeDTO.builder()
+                                                .identifier(ngFile.getIdentifier())
+                                                .parentIdentifier(ngFile.getParentIdentifier())
+                                                .name(ngFile.getName())
+                                                .fileUsage(ngFile.getFileUsage())
+                                                .description(ngFile.getDescription())
+                                                .tags(ngFile.getTags())
+                                                .lastModifiedAt(ngFile.getLastModifiedAt())
+                                                .lastModifiedBy(fromEmbeddedUser(ngFile.getLastUpdatedBy()))
+                                                .mimeType(ngFile.getMimeType());
+
+    if (StringUtils.isNotBlank(content)) {
+      fileNodeDTOBuilder.content(content);
+    }
+
+    return fileNodeDTOBuilder.build();
   }
 
   public FolderNodeDTO getFolderNodeDTO(NGFile ngFile) {
