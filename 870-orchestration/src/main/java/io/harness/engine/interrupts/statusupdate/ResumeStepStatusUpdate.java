@@ -8,6 +8,7 @@
 package io.harness.engine.interrupts.statusupdate;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.pms.contracts.execution.Status.INPUT_WAITING;
 import static io.harness.pms.contracts.execution.Status.PAUSED;
 import static io.harness.pms.contracts.execution.Status.RUNNING;
 
@@ -44,8 +45,8 @@ public class ResumeStepStatusUpdate implements NodeStatusUpdateHandler {
     if (nodeExecution.getParentId() == null) {
       return true;
     }
-    NodeExecution parentNodeExecution =
-        nodeExecutionService.updateStatusWithOps(nodeExecution.getParentId(), RUNNING, null, EnumSet.of(PAUSED));
+    NodeExecution parentNodeExecution = nodeExecutionService.updateStatusWithOps(
+        nodeExecution.getParentId(), RUNNING, null, EnumSet.of(INPUT_WAITING, PAUSED));
     return parentNodeExecution != null && resumeParents(parentNodeExecution);
   }
 }

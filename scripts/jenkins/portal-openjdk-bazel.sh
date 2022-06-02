@@ -207,8 +207,6 @@ cp ../../315-sto-manager/key.pem .
 cp ../../315-sto-manager/cert.pem .
 cp ../../315-sto-manager/src/main/resources/redisson-jcache.yaml .
 
-cp ../../alpn-boot-8.1.13.v20181017.jar .
-
 cp ../../dockerization/sto-manager/Dockerfile-sto-manager-jenkins-k8-openjdk ./Dockerfile
 cp ../../dockerization/sto-manager/Dockerfile-sto-manager-jenkins-k8-gcr-openjdk ./Dockerfile-gcr
 cp ../../dockerization/sto-manager/Dockerfile-sto-manager-jenkins-k8-gcr-openjdk-ubi ./Dockerfile-gcr-ubi

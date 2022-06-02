@@ -3,7 +3,8 @@
  * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
  * that can be found in the licenses directory at the root of this repository, also available at
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
- */
+ *//*
+
 
 package io.harness.cvng.core.services.impl.monitoredService;
 
@@ -243,6 +244,8 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     FieldUtils.writeField(monitoredServiceService, "changeSourceService", changeSourceService, true);
     FieldUtils.writeField(heatMapService, "clock", clock, true);
     FieldUtils.writeField(monitoredServiceService, "heatMapService", heatMapService, true);
+    FieldUtils.writeField(notificationRuleService, "clock", clock, true);
+    FieldUtils.writeField(monitoredServiceService, "notificationRuleService", notificationRuleService, true);
     FieldUtils.writeField(monitoredServiceService, "notificationClient", notificationClient, true);
   }
 
@@ -424,15 +427,20 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void testCreate_monitoredServiceHealthSourcesConfigAlreadyPresent() {
     CVConfig cvConfig =
-        builderFactory.appDynamicsCVConfigBuilder()
+        AppDynamicsCVConfig.builder()
             .identifier(HealthSourceService.getNameSpacedIdentifier(monitoredServiceIdentifier, healthSourceIdentifier))
             .accountId(accountId)
             .orgIdentifier(orgIdentifier)
             .projectIdentifier(projectIdentifier)
             .connectorIdentifier(connectorIdentifier)
+            .serviceIdentifier(serviceIdentifier)
+            .envIdentifier(environmentIdentifier)
             .monitoringSourceName(healthSourceName)
             .productName(feature)
             .category(CVMonitoringCategory.ERRORS)
+            .applicationName(applicationName)
+            .tierName(appTierName)
+            .metricPack(MetricPack.builder().build())
             .build();
     cvConfigService.save(cvConfig);
     MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTO();
@@ -2145,7 +2153,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = KAPIL)
   @Category(UnitTests.class)
-  public void testGetNotificationRules_withCoolOffLogic() {
+  public void testGetNotificationRules_withCoolOffLogic() throws IllegalAccessException {
     NotificationRuleDTO notificationRuleDTO =
         builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.MONITORED_SERVICE).build();
     NotificationRuleResponse notificationRuleResponse =
@@ -2161,6 +2169,13 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
     MonitoredService monitoredService = getMonitoredService(monitoredServiceDTO.getIdentifier());
 
+    clock = Clock.fixed(clock.instant().plus(10, ChronoUnit.MINUTES), ZoneOffset.UTC);
+    FieldUtils.writeField(monitoredServiceService, "clock", clock, true);
+    assertThat(((MonitoredServiceServiceImpl) monitoredServiceService).getNotificationRules(monitoredService).size())
+        .isEqualTo(0);
+
+    clock = Clock.fixed(clock.instant().plus(50, ChronoUnit.MINUTES), ZoneOffset.UTC);
+    FieldUtils.writeField(monitoredServiceService, "clock", clock, true);
     assertThat(((MonitoredServiceServiceImpl) monitoredServiceService).getNotificationRules(monitoredService).size())
         .isEqualTo(1);
   }
@@ -2197,7 +2212,6 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
                 .enabled(true)
                 .build()));
     monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
-    createHeatMaps(monitoredServiceDTO);
     MonitoredService monitoredService = getMonitoredService(monitoredServiceDTO.getIdentifier());
 
     clock = Clock.fixed(clock.instant().plus(1, ChronoUnit.HOURS), ZoneOffset.UTC);
@@ -2218,6 +2232,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     NotificationRuleResponse notificationRuleResponse =
         notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
 
+    Instant endTime = roundDownTo5MinBoundary(clock.instant());
     MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTOWithCustomDependencies(
         "service_1_local", environmentParams.getServiceIdentifier(), Sets.newHashSet());
     monitoredServiceDTO.setNotificationRuleRefs(
@@ -2234,32 +2249,6 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     assertThat(
         ((MonitoredServiceServiceImpl) monitoredServiceService).shouldSendNotification(monitoredService, condition))
         .isTrue();
-  }
-
-  @Test
-  @Owner(developers = KAPIL)
-  @Category(UnitTests.class)
-  public void testShouldSendNotification_withHealthScoreCondition_withNoData() {
-    NotificationRuleDTO notificationRuleDTO =
-        builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.MONITORED_SERVICE).build();
-    NotificationRuleResponse notificationRuleResponse =
-        notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
-
-    MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTOWithCustomDependencies(
-        "service_1_local", environmentParams.getServiceIdentifier(), Sets.newHashSet());
-    monitoredServiceDTO.setNotificationRuleRefs(
-        Arrays.asList(NotificationRuleRefDTO.builder()
-                          .notificationRuleRef(notificationRuleResponse.getNotificationRule().getIdentifier())
-                          .enabled(true)
-                          .build()));
-    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
-    MonitoredService monitoredService = getMonitoredService(monitoredServiceDTO.getIdentifier());
-
-    MonitoredServiceHealthScoreCondition condition =
-        MonitoredServiceHealthScoreCondition.builder().threshold(20.0).period(600000).build();
-    assertThat(
-        ((MonitoredServiceServiceImpl) monitoredServiceService).shouldSendNotification(monitoredService, condition))
-        .isFalse();
   }
 
   @Test
@@ -2358,50 +2347,11 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
         .isEqualTo(notificationRuleDTO.getIdentifier());
   }
 
-  @Test
-  @Owner(developers = KAPIL)
-  @Category(UnitTests.class)
-  public void testBeforeNotificationRuleDelete() {
-    MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTOWithCustomDependencies(
-        "service_1_local", environmentParams.getServiceIdentifier(), Sets.newHashSet());
-    monitoredServiceDTO.setNotificationRuleRefs(
-        Arrays.asList(NotificationRuleRefDTO.builder().notificationRuleRef("rule1").enabled(true).build(),
-            NotificationRuleRefDTO.builder().notificationRuleRef("rule2").enabled(true).build(),
-            NotificationRuleRefDTO.builder().notificationRuleRef("rule3").enabled(true).build()));
-    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
-    assertThatThrownBy(()
-                           -> monitoredServiceService.beforeNotificationRuleDelete(
-                               builderFactory.getContext().getProjectParams(), "rule1"))
-        .hasMessage("Deleting notification rule is used in Monitored Services, "
-            + "Please delete the notification rule inside Monitored Services before deleting notification rule. Monitored Services : service_1_local");
-  }
-
-  @Test
-  @Owner(developers = KAPIL)
-  @Category(UnitTests.class)
-  public void testCreate_withIncorrectNotificationRule() {
-    NotificationRuleDTO notificationRuleDTO =
-        builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.SLO).build();
-    NotificationRuleResponse notificationRuleResponse =
-        notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
-
-    MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTOWithCustomDependencies(
-        "service_1_local", environmentParams.getServiceIdentifier(), Sets.newHashSet());
-    monitoredServiceDTO.setNotificationRuleRefs(
-        Arrays.asList(NotificationRuleRefDTO.builder()
-                          .notificationRuleRef(notificationRuleResponse.getNotificationRule().getIdentifier())
-                          .enabled(true)
-                          .build()));
-    assertThatThrownBy(
-        () -> monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO))
-        .hasMessage("NotificationRule with identifier rule is of type SLO and cannot be added into MONITORED_SERVICE");
-  }
-
   private void createActivity(MonitoredServiceDTO monitoredServiceDTO) {
     useMockedPersistentLocker();
     Activity activity = builderFactory.getDeploymentActivityBuilder()
                             .monitoredServiceIdentifier(monitoredServiceDTO.getIdentifier())
-                            .activityStartTime(clock.instant().minus(5, ChronoUnit.MINUTES))
+                            .activityStartTime(clock.instant().minus(10, ChronoUnit.MINUTES))
                             .build();
     activityService.upsert(activity);
   }
@@ -2480,7 +2430,8 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     assertThat(cvConfig.getAccountId()).isEqualTo(accountId);
     assertThat(cvConfig.getOrgIdentifier()).isEqualTo(orgIdentifier);
     assertThat(cvConfig.getProjectIdentifier()).isEqualTo(projectIdentifier);
-    assertThat(cvConfig.getMonitoredServiceIdentifier()).isEqualTo(monitoredServiceIdentifier);
+    assertThat(cvConfig.getEnvIdentifier()).isEqualTo(environmentIdentifier);
+    assertThat(cvConfig.getServiceIdentifier()).isEqualTo(serviceIdentifier);
     assertThat(cvConfig.getProductName()).isEqualTo(feature);
     assertThat(cvConfig.getMonitoringSourceName()).isEqualTo(healthSourceName);
     assertThat(cvConfig.getConnectorIdentifier()).isEqualTo(connectorIdentifier);
@@ -2517,3 +2468,4 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     FieldUtils.writeField(monitoredServiceService, "changeSourceService", changeSourceServiceMock, true);
   }
 }
+*/

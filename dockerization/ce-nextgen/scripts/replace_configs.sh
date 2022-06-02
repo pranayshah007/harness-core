@@ -125,3 +125,11 @@ if [[ "$STACK_DRIVER_LOGGING_ENABLED" == "true" ]]; then
 else
   yq delete -i $CONFIG_FILE 'logging.appenders.(type==gke-console)'
 fi
+
+if [[ "" != "$SEGMENT_ENABLED" ]]; then
+  yq write -i $CONFIG_FILE segmentConfig.enabled "$SEGMENT_ENABLED"
+fi
+
+if [[ "" != "$SEGMENT_APIKEY" ]]; then
+  yq write -i $CONFIG_FILE segmentConfig.apiKey "$SEGMENT_APIKEY"
+fi

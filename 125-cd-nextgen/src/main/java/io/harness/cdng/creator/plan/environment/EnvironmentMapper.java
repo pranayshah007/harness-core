@@ -54,6 +54,8 @@ public class EnvironmentMapper {
   }
 
   private void overrideServiceVariables(Map<String, Object> variables, Map<String, Object> serviceOverrides) {
-    variables.putAll(serviceOverrides);
+    if (variables != null && serviceOverrides != null) {
+      variables.putAll(serviceOverrides);
+    }
   }
 }
