@@ -213,7 +213,7 @@ public class GitSyncTestRule implements InjectorRuleMixin, MethodRule, MongoRule
     });
     modules.add(new EntitySetupUsageModule());
     modules.add(new SCMGrpcClientModule(ScmConnectionConfig.builder().url("dummyurl").build()));
-    modules.add(GitSyncModule.getInstance());
+    //modules.add(GitSyncModule.getInstance());
     return modules;
   }
 
