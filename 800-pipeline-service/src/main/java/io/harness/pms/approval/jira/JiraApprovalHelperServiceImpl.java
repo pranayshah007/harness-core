@@ -125,6 +125,7 @@ public class JiraApprovalHelperServiceImpl implements JiraApprovalHelperService 
       String projectIdentifier = AmbianceUtils.getProjectIdentifier(ambiance);
       String issueKey = instance.getIssueKey();
       String connectorRef = instance.getConnectorRef();
+      log.info(String.format("Creating parameters for JiraApproval Instance with id : %s", instanceId));
 
       validateField(instanceId, ApprovalInstanceKeys.id);
       validateField(accountIdentifier, "accountIdentifier");
@@ -138,7 +139,9 @@ public class JiraApprovalHelperServiceImpl implements JiraApprovalHelperService 
       logCallback.saveExecutionLog(
           String.format("Jira url: %s", jiraTaskNGParameters.getJiraConnectorDTO().getJiraUrl()));
 
+      log.info("Queuing delegate task");
       String taskId = queueTask(ambiance, instanceId, jiraTaskNGParameters);
+      log.info(String.format("Jira task id : %s", taskId));
       logCallback.saveExecutionLog(String.format("Jira task: %s", taskId));
     } catch (Exception ex) {
       logCallback.saveExecutionLog(

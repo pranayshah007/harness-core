@@ -28,6 +28,7 @@ Anil Chowdhury anil.chowdhury@harness.io
 Anjan Balgovind anjan.balgovind@harness.io
 Ankit Singhal ankit.singhal@harness.io
 Ankush Shaw ankush.shaw@harness.io
+Anmol Maheshwari anmol.maheshwari@harness.io
 Anshul Anshul anshul@harness.io
 Anubhaw Srivastava anubhaw@harness.io
 Archit Singla archit.singla@harness.io

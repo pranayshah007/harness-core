@@ -15,6 +15,7 @@ import io.harness.cvng.notification.beans.NotificationRuleCondition;
 import io.harness.cvng.notification.beans.NotificationRuleConditionSpec;
 import io.harness.cvng.notification.beans.NotificationRuleDTO;
 import io.harness.cvng.notification.beans.NotificationRuleType;
+import io.harness.cvng.notification.channelDetails.CVNGNotificationChannelType;
 import io.harness.cvng.notification.entities.SLONotificationRule;
 import io.harness.cvng.notification.entities.SLONotificationRule.SLOErrorBudgetBurnRateCondition;
 import io.harness.cvng.notification.entities.SLONotificationRule.SLOErrorBudgetRemainingMinutesCondition;
@@ -23,11 +24,15 @@ import io.harness.cvng.notification.entities.SLONotificationRule.SLONotification
 import io.harness.cvng.notification.utils.NotificationRuleCommonUtils;
 import io.harness.exception.InvalidArgumentsException;
 
+import com.google.inject.Inject;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class SLONotificationRuleConditionTransformer
     extends NotificationRuleConditionTransformer<SLONotificationRule, NotificationRuleConditionSpec> {
+  @Inject Map<CVNGNotificationChannelType, NotificationMethodTransformer> channelTypeNotificationMethodTransformerMap;
+
   @Override
   public SLONotificationRule getEntity(ProjectParams projectParams, NotificationRuleDTO notificationRuleDTO) {
     return SLONotificationRule.builder()
@@ -37,7 +42,9 @@ public class SLONotificationRuleConditionTransformer
         .identifier(notificationRuleDTO.getIdentifier())
         .name(notificationRuleDTO.getName())
         .type(NotificationRuleType.SLO)
-        .notificationMethod(notificationRuleDTO.getNotificationMethod())
+        .notificationMethod(
+            channelTypeNotificationMethodTransformerMap.get(notificationRuleDTO.getNotificationMethod().getType())
+                .getEntityNotificationMethod(notificationRuleDTO.getNotificationMethod().getSpec()))
         .conditions(notificationRuleDTO.getConditions()
                         .stream()
                         .map(condition -> getEntityCondition(condition))
@@ -75,8 +82,7 @@ public class SLONotificationRuleConditionTransformer
                 NotificationRuleCommonUtils.getDurationInMillis(burnRateConditionSpec.getLookBackDuration()))
             .build();
       default:
-        throw new InvalidArgumentsException(
-            "Invalid Monitored Service Notification Rule Condition Type: " + condition.getType());
+        throw new InvalidArgumentsException("Invalid SLO Notification Rule Condition Type: " + condition.getType());
     }
   }
 
@@ -101,8 +107,7 @@ public class SLONotificationRuleConditionTransformer
             .lookBackDuration(NotificationRuleCommonUtils.getDurationAsString(burnRateCondition.getLookBackDuration()))
             .build();
       default:
-        throw new InvalidArgumentsException(
-            "Invalid Monitored Service Notification Rule Condition Type: " + condition.getType());
+        throw new InvalidArgumentsException("Invalid SLO Notification Rule Condition Type: " + condition.getType());
     }
   }
 }

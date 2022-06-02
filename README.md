@@ -46,24 +46,14 @@ brew install bazelisk
 brew install npm
 ```
 
-5. Set up JAVA_HOME: create or add this to your bash profile `~/.bashrc` or `~/.zshrc` file and add following line:
-```
-export JAVA_HOME=$(/usr/libexec/java_home -v1.8)
-```
-
-If bash used, the better option might be specifying full path to jdk, e.g:
-
-```
-export JAVA_HOME=/Library/Java/JavaVirtualMachines/adoptopenjdk-8.jdk/Contents/Home
-```
-6. Update /etc/hosts to reflect your hostname
+5. Update /etc/hosts to reflect your hostname
 ```
 255.255.255.255	broadcasthost
 127.0.0.1  <your hostname>
 ::1        <your hostname>
 ```
 
-7. Download and install `buf`
+6. Download and install `buf`
 Complete this step only if you are actively working with the protocol buffer files.
 ```
 brew tap bufbuild/buf
@@ -75,11 +65,11 @@ To check if your protobuf files are according to the coding standards execute in
 buf lint
 ```
 
-8. Install Docker
+7. Install Docker
 
 Official steps to install docker on mac: [docker.com](https://docs.docker.com/desktop/mac/install/).
 
-9. If you are on MacOS make sure you have Xcode installed
+8. If you are on MacOS make sure you have Xcode installed
 
 
 ### Git setup
