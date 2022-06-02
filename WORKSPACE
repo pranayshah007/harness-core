@@ -3577,8 +3577,8 @@ go_repository(
 go_repository(
     name = "com_github_rs_zerolog",
     importpath = "github.com/rs/zerolog",
-    sum = "h1:uPRuwkWF4J6fGsJ2R0Gn2jB1EQiav9k3S6CSdygQJXY=",
-    version = "v1.15.0",
+    sum = "h1:/ihwxqH+4z8UxyI70wM1z9yCvkWcfz/a3mj48k/Zngc=",
+    version = "v1.26.1",
 )
 
 go_repository(
@@ -5313,6 +5313,31 @@ java_runtime(
     strip_prefix = "jdk8u242-b08",
     urls = ["http://jfrogdev.dev.harness.io:80/artifactory/adoptjdk8u242-b08-github/download/jdk8u242-b08/OpenJDK8U-jdk_x64_mac_hotspot_8u242b08.tar.gz"],
 )
+
+#================= JAVA ================#
+
+http_archive(
+    name = "contrib_rules_jvm",
+    # sha256 = "5d9d466a5756bc4540a03e41afddf8769ea02927ec5efb820cfc551da08ce515",
+    strip_prefix = "rules_jvm-main",
+    url = "https://github.com/bazel-contrib/rules_jvm/archive/refs/heads/main.zip",
+)
+
+load("@contrib_rules_jvm//:repositories.bzl", "contrib_rules_jvm_deps", "contrib_rules_jvm_gazelle_deps")
+
+contrib_rules_jvm_deps()
+
+contrib_rules_jvm_gazelle_deps()
+
+load("@contrib_rules_jvm//:setup.bzl", "contrib_rules_jvm_setup")
+
+contrib_rules_jvm_setup()
+
+load("@contrib_rules_jvm//:gazelle_setup.bzl", "contib_rules_jvm_gazelle_setup")
+
+contib_rules_jvm_gazelle_setup()
+
+
 
 load("//tools/bazel/pmd:toolchains.bzl", "rules_pmd_toolchains")
 
