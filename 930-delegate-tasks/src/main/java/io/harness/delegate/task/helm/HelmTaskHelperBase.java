@@ -1216,6 +1216,13 @@ public class HelmTaskHelperBase {
           ExceptionMessageSanitizer.storeAllSecretsForSanitizing(entity, httpHelmStoreConfig.getEncryptedDataDetails());
         }
         break;
+      case OCI_HELM:
+        OciHelmStoreDelegateConfig ociHelmStoreConfig = (OciHelmStoreDelegateConfig) helmStoreDelegateConfig;
+        for (DecryptableEntity entity : ociHelmStoreConfig.getOciHelmConnector().getDecryptableEntities()) {
+          decryptionService.decrypt(entity, ociHelmStoreConfig.getEncryptedDataDetails());
+          ExceptionMessageSanitizer.storeAllSecretsForSanitizing(entity, ociHelmStoreConfig.getEncryptedDataDetails());
+        }
+        break;
       default:
         throw new InvalidRequestException(
             format("Store type: %s not supported for helm values fetch task NG", helmStoreDelegateConfig.getType()));

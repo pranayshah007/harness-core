@@ -512,7 +512,7 @@ public class CDStepHelper {
         }
         break;
       case ManifestStoreType.OCI:
-        if (!(connectorInfoDTO.getConnectorConfig() instanceof HttpHelmConnectorDTO)) {
+        if (!(connectorInfoDTO.getConnectorConfig() instanceof OciHelmConnectorDTO)) {
           throw new InvalidRequestException(
               format("Invalid connector selected in %s. Select Http Helm connector", message));
         }

@@ -44,7 +44,7 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName(ManifestStoreType.OCI)
 @SimpleVisitorHelper(helperClass = ConnectorRefExtractorHelper.class)
 @TypeAlias("OciStore")
-@RecasterAlias("io.harness.cdng.manifest.yaml.OciStoreConfig")
+@RecasterAlias("io.harness.cdng.manifest.yaml.OciHelmChartConfig")
 public class OciHelmChartConfig implements StoreConfig, Visitable, WithConnectorRef {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
@@ -54,7 +54,7 @@ public class OciHelmChartConfig implements StoreConfig, Visitable, WithConnector
   @EntityIdentifier String identifier;
   @Wither
   @JsonProperty("config")
-  @ApiModelProperty(dataType = "io.harness.cdng.manifest.yaml.storeConfig.OciHelmChartConfigWrapper")
+  @ApiModelProperty(dataType = "io.harness.cdng.manifest.yaml.ociHelmChartConfig.OciHelmChartStoreConfigWrapper")
   @SkipAutoEvaluation
   ParameterField<OciHelmChartStoreConfigWrapper> config;
 

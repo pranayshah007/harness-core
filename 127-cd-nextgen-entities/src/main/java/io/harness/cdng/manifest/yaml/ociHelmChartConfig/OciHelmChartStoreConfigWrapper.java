@@ -42,8 +42,8 @@ import org.springframework.data.annotation.TypeAlias;
 @NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @SimpleVisitorHelper(helperClass = OciStoreConfigWrapperVisitorHelper.class)
-@TypeAlias("ociHelmChartConfigWrapper")
-@RecasterAlias("io.harness.cdng.manifest.yaml.ociHelmChartConfig.OciHelmChartConfigWrapper")
+@TypeAlias("ociHelmChartStoreConfigWrapper")
+@RecasterAlias("io.harness.cdng.manifest.yaml.ociHelmChartConfig.OciHelmChartStoreConfigWrapper")
 public class OciHelmChartStoreConfigWrapper implements OverridesApplier<OciHelmChartStoreConfigWrapper>, Visitable {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
@@ -90,17 +90,17 @@ public class OciHelmChartStoreConfigWrapper implements OverridesApplier<OciHelmC
   }
 
   @Value
-  public static class OciHelmChartConfigWrapperParameters {
+  public static class OciHelmChartStoreConfigWrapperParameters {
     String type;
     OciHelmChartStoreConfig spec;
 
-    public static OciHelmChartConfigWrapperParameters fromOciHelmChartStoreConfigWrapper(
+    public static OciHelmChartStoreConfigWrapperParameters fromOciHelmChartStoreConfigWrapper(
         OciHelmChartStoreConfigWrapper ociHelmChartStoreConfigWrapper) {
       if (ociHelmChartStoreConfigWrapper == null) {
         return null;
       }
 
-      return new OciHelmChartConfigWrapperParameters(ociHelmChartStoreConfigWrapper.getType() == null
+      return new OciHelmChartStoreConfigWrapperParameters(ociHelmChartStoreConfigWrapper.getType() == null
               ? null
               : ociHelmChartStoreConfigWrapper.getType().getDisplayName(),
           ociHelmChartStoreConfigWrapper.getSpec());

@@ -12,5 +12,5 @@ import io.harness.annotations.dev.OwnedBy;
 
 @OwnedBy(HarnessTeam.CDP)
 public interface OciStoreConfigType {
-  String GENERIC = "GENERIC";
+  String GENERIC = "Generic";
 }

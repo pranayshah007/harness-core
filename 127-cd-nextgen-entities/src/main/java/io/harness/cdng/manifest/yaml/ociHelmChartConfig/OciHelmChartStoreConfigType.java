@@ -17,7 +17,7 @@ import java.util.Arrays;
 
 @OwnedBy(HarnessTeam.CDP)
 public enum OciHelmChartStoreConfigType {
-  @JsonProperty("Basic") BASIC("Basic");
+  @JsonProperty("Generic") GENERIC("Generic");
   private final String displayName;
 
   OciHelmChartStoreConfigType(String displayName) {

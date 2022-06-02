@@ -10,8 +10,10 @@ package io.harness.delegate.beans.connector.helm;
 import io.harness.delegate.beans.connector.ConnectorCapabilityBaseHelper;
 import io.harness.delegate.beans.connector.ConnectorConfigDTO;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
+import io.harness.delegate.beans.executioncapability.HelmInstallationCapability;
 import io.harness.delegate.task.mixin.HttpConnectionExecutionCapabilityGenerator;
 import io.harness.expression.ExpressionEvaluator;
+import io.harness.k8s.model.HelmVersion;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,8 +26,8 @@ public class OciHelmCapabilityHelper extends ConnectorCapabilityBaseHelper {
     List<ExecutionCapability> capabilityList = new ArrayList<>();
     OciHelmConnectorDTO helmConnector = (OciHelmConnectorDTO) connectorConfigDTO;
     final String helmRepoUrl = helmConnector.getHelmRepoUrl();
-    capabilityList.add(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
-        helmRepoUrl, maskingEvaluator));
+    capabilityList.add(
+        HelmInstallationCapability.builder().version(HelmVersion.V3).criteria("OCI_HELM_REPO: " + helmRepoUrl).build());
     populateDelegateSelectorCapability(capabilityList, helmConnector.getDelegateSelectors());
     return capabilityList;
   }
