@@ -79,6 +79,7 @@ public class ServerlessAwsLambdaDeployCommandTaskHandler extends ServerlessComma
   private ServerlessAwsLambdaInfraConfig serverlessAwsLambdaInfraConfig;
   private long timeoutInMillis;
   private String previousDeployTimeStamp;
+  private boolean firstDeployment;
 
   @Override
   protected ServerlessCommandResponse executeTaskInternal(ServerlessCommandRequest serverlessCommandRequest,
@@ -102,6 +103,7 @@ public class ServerlessAwsLambdaDeployCommandTaskHandler extends ServerlessComma
           Pair.of("ServerlessDeployConfig", "Must be instance of ServerlessAwsLambdaDeployConfig"));
     }
 
+    firstDeployment = false;
     timeoutInMillis = serverlessDeployRequest.getTimeoutIntervalInMin() * 60000;
     serverlessAwsLambdaInfraConfig =
         (ServerlessAwsLambdaInfraConfig) serverlessDeployRequest.getServerlessInfraConfig();
@@ -169,7 +171,7 @@ public class ServerlessAwsLambdaDeployCommandTaskHandler extends ServerlessComma
     } catch (Exception ex) {
       deployLogCallback.saveExecutionLog(color(format("%n Deployment failed."), LogColor.Red, LogWeight.Bold),
           LogLevel.ERROR, CommandExecutionStatus.FAILURE);
-      throw new ServerlessNGException(ex, previousDeployTimeStamp);
+      throw new ServerlessNGException(ex, previousDeployTimeStamp, firstDeployment);
     }
   }
 
@@ -211,6 +213,13 @@ public class ServerlessAwsLambdaDeployCommandTaskHandler extends ServerlessComma
   private void prepareRollbackData(ServerlessDeployRequest serverlessDeployRequest, LogCallback executionLogCallback,
       ServerlessDelegateTaskParams serverlessDelegateTaskParams) throws Exception {
     executionLogCallback.saveExecutionLog(format("Preparing Rollback Data..%n%n"));
+    if (!serverlessAwsCommandTaskHelper.cloudFormationStackExists(
+            executionLogCallback, serverlessDeployRequest, serverlessDeployRequest.getManifestContent())) {
+      firstDeployment = true;
+      executionLogCallback.saveExecutionLog(
+          format("Skipping as there are no previous Deployments..%n"), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+      return;
+    }
     ServerlessCliResponse response =
         serverlessAwsCommandTaskHelper.deployList(serverlessClient, serverlessDelegateTaskParams, executionLogCallback,
             serverlessAwsLambdaInfraConfig, timeoutInMillis, serverlessManifestConfig);
@@ -261,6 +270,7 @@ public class ServerlessAwsLambdaDeployCommandTaskHandler extends ServerlessComma
     serverlessAwsLambdaDeployResultBuilder.region(serverlessAwsLambdaInfraConfig.getRegion());
     serverlessAwsLambdaDeployResultBuilder.stage(serverlessAwsLambdaInfraConfig.getStage());
     serverlessAwsLambdaDeployResultBuilder.previousVersionTimeStamp(previousDeployTimeStamp);
+    serverlessAwsLambdaDeployResultBuilder.isFirstDeployment(firstDeployment);
     ServerlessDeployResponseBuilder serverlessDeployResponseBuilder = ServerlessDeployResponse.builder();
 
     if (response.getCommandExecutionStatus() == CommandExecutionStatus.SUCCESS) {

@@ -85,8 +85,7 @@ public class TemplateReferenceHelper {
     if (!isFeatureFlagEnabled(templateEntity.getAccountId())) {
       return;
     }
-    String pmsUnderstandableYaml =
-        templateYamlConversionHelper.convertTemplateYamlToPMSUnderstandableYaml(templateEntity);
+    String pmsUnderstandableYaml = templateYamlConversionHelper.convertTemplateYamlToEntityYaml(templateEntity);
     EntityReferenceRequest.Builder entityReferenceRequestBuilder =
         EntityReferenceRequest.newBuilder()
             .setYaml(pmsUnderstandableYaml)

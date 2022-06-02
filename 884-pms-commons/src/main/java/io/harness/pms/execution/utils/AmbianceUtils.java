@@ -217,14 +217,22 @@ public class AmbianceUtils {
 
   public static String getStrategyPostfix(Ambiance ambiance) {
     Level level = obtainCurrentLevel(ambiance);
-    if (level.getStrategyMetadata() == null || level.getStrategyMetadata().getMatrixMetadata() == null) {
+    return getStrategyPostfix(level);
+  }
+
+  public static String getStrategyPostfix(Level level) {
+    if (level == null || !level.hasStrategyMetadata()) {
       return StringUtils.EMPTY;
     }
-    return level.getStrategyMetadata()
-        .getMatrixMetadata()
-        .getMatrixCombinationList()
-        .stream()
-        .map(String::valueOf)
-        .collect(Collectors.joining("_"));
+    if (level.getStrategyMetadata().getMatrixMetadata().getMatrixCombinationList().isEmpty()) {
+      return StringUtils.EMPTY;
+    }
+    return "_"
+        + level.getStrategyMetadata()
+              .getMatrixMetadata()
+              .getMatrixCombinationList()
+              .stream()
+              .map(String::valueOf)
+              .collect(Collectors.joining("_"));
   }
 }
