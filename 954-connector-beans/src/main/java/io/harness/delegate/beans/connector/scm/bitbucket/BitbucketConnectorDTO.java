@@ -7,6 +7,8 @@
 
 package io.harness.delegate.beans.connector.scm.bitbucket;
 
+import static io.harness.utils.FilePathUtils.removeStartingAndEndingSlash;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
@@ -16,6 +18,7 @@ import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
+import io.harness.delegate.beans.connector.scm.utils.ScmConnectorHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.git.GitClientHelper;
 import io.harness.gitsync.beans.GitRepositoryDTO;
@@ -26,6 +29,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModel;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -37,8 +41,11 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.hibernate.validator.constraints.NotBlank;
 
+@Slf4j
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
@@ -109,17 +116,61 @@ public class BitbucketConnectorDTO extends ConnectorConfigDTO implements ScmConn
 
   @Override
   public GitRepositoryDTO getGitRepositoryDetails() {
-    if (GitConnectionType.REPO.equals(connectionType)) {
-      return GitRepositoryDTO.builder()
-          .name(GitClientHelper.getGitRepo(url))
-          .org(GitClientHelper.getGitOwner(url, false))
-          .build();
+    if (GitClientHelper.isBitBucketSAAS(url)) {
+      if (GitConnectionType.REPO.equals(connectionType)) {
+        return GitRepositoryDTO.builder()
+            .name(GitClientHelper.getGitRepo(url))
+            .org(GitClientHelper.getGitOwner(url, false))
+            .build();
+      }
+      return GitRepositoryDTO.builder().org(GitClientHelper.getGitOwner(url, true)).build();
     }
-    return GitRepositoryDTO.builder().org(GitClientHelper.getGitOwner(url, true)).build();
+    return getGitRepositoryDetailsForBitbucketServer();
+  }
+
+  @Override
+  public String getFileUrl(String branchName, String filePath) {
+    ScmConnectorHelper.validateGetFileUrlParams(connectionType, branchName, filePath);
+    String repoUrl = removeStartingAndEndingSlash(url);
+    filePath = removeStartingAndEndingSlash(filePath);
+    if (GitClientHelper.isBitBucketSAAS(url)) {
+      return String.format("%s/src/%s/%s", repoUrl, branchName, filePath);
+    }
+    return getFileUrlForBitbucketServer(branchName, filePath);
   }
 
   @Override
   public void validate() {
     GitClientHelper.validateURL(url);
+  }
+
+  private GitRepositoryDTO getGitRepositoryDetailsForBitbucketServer() {
+    String repoName = GitClientHelper.getGitRepo(url);
+    String orgName = GitClientHelper.getGitOwner(url, true);
+    String[] parts = new String[0];
+    if (orgName.equals("scm")) {
+      parts = repoName.split("/");
+    } else if (repoName.startsWith("scm/")) {
+      parts = StringUtils.removeStart(repoName, "scm/").split("/");
+    }
+    if (GitConnectionType.REPO.equals(connectionType) && parts.length == 2) {
+      return GitRepositoryDTO.builder().org(parts[0]).name(parts[1]).build();
+    } else if (GitConnectionType.ACCOUNT.equals(connectionType) && parts.length == 1) {
+      return GitRepositoryDTO.builder().org(parts[0]).build();
+    } else {
+      throw new InvalidRequestException("Bitbucket server repoUrl is not valid.");
+    }
+  }
+
+  private String getFileUrlForBitbucketServer(String branchName, String filePath) {
+    String hostUrl = "";
+    try {
+      URL url1 = new URL(url);
+      hostUrl = url1.getProtocol() + "://" + url1.getHost();
+    } catch (Exception ex) {
+      log.error("Exception occurred while parsing bitbucket server url.", ex);
+    }
+    return String.format("%s/projects/%s/repos/%s/browse/%s?at=refs/heads/%s", hostUrl,
+        getGitRepositoryDetails().getOrg(), getGitRepositoryDetails().getName(), filePath, branchName);
   }
 }
