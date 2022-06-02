@@ -55,6 +55,7 @@ public class EnvironmentYamlV2 implements Visitable {
   // environmentInputs
   Map<String, Object> environmentInputs;
 
+  Map<String, Object> serviceOverrideInputs;
   @DefaultValue("false") Boolean deployToAll;
   List<ClusterYaml> gitOpsClusters;
 }
