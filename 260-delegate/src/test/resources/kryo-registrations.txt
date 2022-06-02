@@ -1579,10 +1579,17 @@
 29117:io.harness.delegate.beans.connector.jenkins.JenkinsTestConnectionTaskParams
 29118:io.harness.delegate.beans.connector.jenkins.JenkinsTestConnectionTaskResponse
 29130:io.harness.delegate.beans.connector.jenkins.JenkinsBearerTokenDTO
+29131:io.harness.delegate.beans.connector.helm.OciHelmAuthCredentialsDTO
+29132:io.harness.delegate.beans.connector.helm.OciHelmAuthenticationDTO
+29133:io.harness.delegate.beans.connector.helm.OciHelmAuthType
+29134:io.harness.delegate.beans.connector.helm.OciHelmConnectorDTO
+29135:io.harness.delegate.beans.connector.helm.OciHelmUsernamePasswordDTO
 29300:io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateResponse
 29302:io.harness.delegate.beans.connector.jenkins.JenkinsCapabilityHelper
 29303:io.harness.delegate.beans.connector.jenkins.JenkinsValidationParams
 29304:io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateRequest
+29306:io.harness.delegate.beans.connector.helm.OciHelmConnectivityTaskParams
+29307:io.harness.delegate.beans.connector.helm.OciHelmConnectivityTaskResponse
 31010:java.lang.StackTraceElement[]
 31011:java.lang.StackTraceElement
 31012:io.harness.exception.DelegateErrorHandlerException
