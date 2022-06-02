@@ -92,12 +92,12 @@ notificationServiceConfig:
 
   smtp:
     type: SMTP
-    host: smtp.sendgrid.net
+    host: host_placeholder
     port: 465
     fromAddress: noreply@harness.io
     useSSL: true
-    username: apikey
-    password: ***REMOVED***
+    username: smtp_username_placeholder
+    password: "smtp_password_placeholder"
 
   seedDataConfiguration:
     shouldOverrideAllPredefinedTemplates: true
