@@ -13,9 +13,9 @@ import static io.harness.rule.OwnerRule.NGONZALEZ;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.doThrow;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
@@ -108,7 +108,9 @@ public class AwsCFDelegateTaskHelperTest extends CategoryTest {
     doReturn(null).when(secretDecryptionService).decrypt(any(), any());
     AwsInternalConfig awsInternalConfig = AwsInternalConfig.builder().build();
     doReturn(awsInternalConfig).when(awsNgConfigMapper).createAwsInternalConfig(any());
-    doThrow(Exception.class).when(awsCloudformationClient).getParamsData(any(), any(), any(), any());
+    doAnswer(invocationOnMock -> { throw new Exception(); })
+        .when(awsCloudformationClient)
+        .getParamsData(any(), any(), any(), any());
     assertThatThrownBy(() -> awsCFDelegateTaskHelper.getCFParamsList(awsCFTaskParamsRequest))
         .isInstanceOf(InvalidRequestException.class);
   }

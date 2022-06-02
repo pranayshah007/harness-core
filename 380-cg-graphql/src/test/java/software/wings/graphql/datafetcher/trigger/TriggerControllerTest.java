@@ -409,11 +409,9 @@ public class TriggerControllerTest extends CategoryTest {
     when(pipelineExecutionController.resolveEnvId(any(Pipeline.class), anyList())).thenReturn("envId");
     doNothing().when(deploymentAuthHandler).authorizePipelineExecution(anyString(), anyString());
     doNothing().when(authService).checkIfUserAllowedToDeployPipelineToEnv(anyString(), anyString());
-    doReturn(false)
-        .when(featureFlagService)
-        .isEnabled(eq(FeatureName.PIPELINE_PER_ENV_DEPLOYMENT_PERMISSION), anyString());
+    doReturn(false).when(featureFlagService).isEnabled(eq(FeatureName.PIPELINE_PER_ENV_DEPLOYMENT_PERMISSION), any());
 
-    when(triggerActionController.validateAndResolvePipelineVariables(anyList(), any(Pipeline.class), anyString()))
+    when(triggerActionController.validateAndResolvePipelineVariables(anyList(), any(Pipeline.class), any()))
         .thenReturn(workflowVariables);
     //    doNothing()
     //        .when(triggerController)
@@ -433,14 +431,14 @@ public class TriggerControllerTest extends CategoryTest {
     verify(pipelineExecutionController, times(1)).resolveEnvId(any(Pipeline.class), anyList(), eq(true));
     verify(deploymentAuthHandler, times(1)).authorizePipelineExecution(anyString(), anyString());
     verify(triggerActionController, times(1))
-        .validateAndResolvePipelineVariables(anyList(), any(Pipeline.class), anyString());
+        .validateAndResolvePipelineVariables(anyList(), any(Pipeline.class), any());
     verify(triggerController, times(1))
         .validateAndSetArtifactSelectionsPipeline(
             anyMap(), any(QLCreateOrUpdateTriggerInput.class), any(Pipeline.class), any(TriggerBuilder.class));
     verify(triggerActionController, times(1))
         .resolveArtifactSelections(any(QLCreateOrUpdateTriggerInput.class), anyList());
     verify(triggerConditionController, times(1)).resolveTriggerCondition(any(QLCreateOrUpdateTriggerInput.class));
-    verify(authService, times(1)).checkIfUserAllowedToDeployPipelineToEnv(anyString(), anyString());
+    verify(authService, times(1)).checkIfUserAllowedToDeployPipelineToEnv(anyString(), any());
 
     assertThat(trigger).isNotNull();
     assertThat(trigger.getUuid()).isEqualTo(qlCreateOrUpdateTriggerInput.getTriggerId());
@@ -536,7 +534,7 @@ public class TriggerControllerTest extends CategoryTest {
     Trigger trigger = triggerController.prepareTrigger(createOrUpdateTriggerInput, ACCOUNT_ID);
     verify(deploymentAuthHandler, times(1)).authorizePipelineExecution(anyString(), anyString());
 
-    verify(authService, times(1)).checkIfUserAllowedToDeployPipelineToEnv(anyString(), anyString());
+    verify(authService, times(1)).checkIfUserAllowedToDeployPipelineToEnv(any(), any());
     assertThat(trigger).isNotNull();
   }
 

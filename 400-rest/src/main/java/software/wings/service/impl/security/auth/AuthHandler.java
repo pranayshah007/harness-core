@@ -156,6 +156,7 @@ import javax.ws.rs.core.MultivaluedMap;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -800,9 +801,9 @@ public class AuthHandler {
               .entityType(executableElementFilterType)
               .build();
       if (permission.containsKey(executableElementInfo)) {
-        permission.get(executableElementInfo).addAll(envIds);
+        permission.get(executableElementInfo).addAll(ObjectUtils.clone(envIds));
       } else {
-        permission.put(executableElementInfo, envIds);
+        permission.put(executableElementInfo, ObjectUtils.clone(envIds));
       }
     });
   }
@@ -841,11 +842,9 @@ public class AuthHandler {
               .entityType(executableElementFilterType)
               .build();
       if (permission.containsKey(executableElementInfo)) {
-        permission.get(executableElementInfo).addAll(envIds);
+        permission.get(executableElementInfo).addAll(ObjectUtils.clone(envIds));
       } else {
-        Set<String> executableElementInfos = new HashSet<>();
-        executableElementInfos.addAll(envIds);
-        permission.put(executableElementInfo, envIds);
+        permission.put(executableElementInfo, ObjectUtils.clone(envIds));
       }
     });
   }

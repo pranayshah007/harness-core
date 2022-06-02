@@ -106,3 +106,8 @@ gcpConfig:
 secretsConfiguration:
   secretResolutionEnabled: false
   gcpSecretManagerProject: ccm-play
+
+segmentConfiguration:
+  enabled: true
+  url: https://api.segment.io/v1/
+  apiKey: UvSVfxy6KzApDrrlhCqSjJBlgPeEDBdf

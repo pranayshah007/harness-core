@@ -32,12 +32,17 @@ import io.harness.ccm.views.service.CEViewService;
 import io.harness.ccm.views.service.ViewCustomFieldService;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.rule.Owner;
+import io.harness.telemetry.TelemetryReporter;
 
 import java.io.IOException;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
 
+@RunWith(MockitoJUnitRunner.class)
 public class PerspectiveResourceTest extends CategoryTest {
   private CEViewService ceViewService = mock(CEViewService.class);
   private ViewCustomFieldService viewCustomFieldService = mock(ViewCustomFieldService.class);
@@ -61,6 +66,8 @@ public class PerspectiveResourceTest extends CategoryTest {
 
   private CEView perspective;
 
+  @Mock private TelemetryReporter telemetryReporter;
+
   @Before
   public void setUp() throws IllegalAccessException, IOException {
     perspective = CEView.builder()
@@ -79,7 +86,8 @@ public class PerspectiveResourceTest extends CategoryTest {
     when(notificationService.delete(PERSPECTIVE_ID, ACCOUNT_ID)).thenReturn(true);
 
     perspectiveResource = new PerspectiveResource(ceViewService, ceReportScheduleService, viewCustomFieldService,
-        bigQueryService, bigQueryHelper, budgetCostService, budgetService, notificationService, awsAccountFieldHelper);
+        bigQueryService, bigQueryHelper, budgetCostService, budgetService, notificationService, awsAccountFieldHelper,
+        telemetryReporter);
   }
 
   @Test

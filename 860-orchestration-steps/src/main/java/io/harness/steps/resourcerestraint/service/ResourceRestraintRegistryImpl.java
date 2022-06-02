@@ -29,6 +29,7 @@ import io.harness.steps.resourcerestraint.beans.ResourceRestraintInstance;
 import io.harness.steps.resourcerestraint.beans.ResourceRestraintInstance.ResourceRestraintInstanceBuilder;
 import io.harness.steps.resourcerestraint.beans.ResourceRestraintInstance.ResourceRestraintInstanceKeys;
 import io.harness.steps.resourcerestraint.beans.ResourceRestraintResponseData;
+import io.harness.tasks.ResponseData;
 import io.harness.waiter.WaitNotifyEngine;
 
 import com.google.common.collect.ImmutableMap;
@@ -60,7 +61,7 @@ public class ResourceRestraintRegistryImpl implements ResourceRestraintRegistry 
 
   @Override
   public Constraint load(ConstraintId id) throws UnableToLoadConstraintException {
-    final ResourceRestraint resourceRestraint = resourceRestraintService.get(null, id.getValue());
+    final ResourceRestraint resourceRestraint = resourceRestraintService.get(id.getValue());
     return resourceRestraintInstanceService.createAbstraction(resourceRestraint);
   }
 
@@ -86,7 +87,7 @@ public class ResourceRestraintRegistryImpl implements ResourceRestraintRegistry 
 
   @Override
   public boolean registerConsumer(ConstraintId id, ConstraintUnit unit, Consumer consumer, int currentlyRunning) {
-    ResourceRestraint resourceRestraint = resourceRestraintService.get(null, id.getValue());
+    ResourceRestraint resourceRestraint = resourceRestraintService.get(id.getValue());
     if (resourceRestraint == null) {
       throw new InvalidRequestException(format("There is no resource constraint with id: %s", id.getValue()));
     }
@@ -130,7 +131,11 @@ public class ResourceRestraintRegistryImpl implements ResourceRestraintRegistry 
   public boolean consumerUnblocked(
       ConstraintId id, ConstraintUnit unit, ConsumerId consumerId, Map<String, Object> context) {
     resourceRestraintInstanceService.activateBlockedInstance(consumerId.getValue(), unit.getValue());
-    waitNotifyEngine.doneWith(consumerId.getValue(), ResourceRestraintResponseData.builder().build());
+    ResponseData responseData = ResourceRestraintResponseData.builder()
+                                    .resourceRestraintId(id.getValue())
+                                    .resourceUnit(unit.getValue())
+                                    .build();
+    waitNotifyEngine.doneWith(consumerId.getValue(), responseData);
     return true;
   }
 

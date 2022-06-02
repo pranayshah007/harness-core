@@ -12,6 +12,7 @@ import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 import static io.harness.rule.OwnerRule.TMACARI;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
 
+import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doNothing;
@@ -63,7 +64,6 @@ import io.harness.steps.StepHelper;
 import io.harness.steps.StepUtils;
 import io.harness.telemetry.TelemetryReporter;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import org.junit.Rule;
@@ -100,11 +100,13 @@ public class TerraformRollbackStepTest extends CategoryTest {
   @Owner(developers = VAIBHAV_SI)
   @Category(UnitTests.class)
   public void testObtainTaskSkippedRollback() {
-    Ambiance ambiance = Ambiance.newBuilder().build();
+    Ambiance ambiance = Ambiance.newBuilder().putSetupAbstractions("accountId", "test-account").build();
+    final List<String> planStepsFqn = asList("step1", "step2");
     TerraformRollbackStepParameters rollbackSpec =
-        TerraformRollbackStepParameters.builder().provisionerIdentifier("id").build();
+        TerraformRollbackStepParameters.builder().provisionerIdentifier("id").planStepsFqn(planStepsFqn).build();
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(rollbackSpec).build();
 
+    doReturn(true).when(cdFeatureFlagHelper).isEnabled("test-account", FeatureName.EXPORT_TF_PLAN_JSON_NG);
     doReturn("fullId").when(terraformStepHelper).generateFullIdentifier("id", ambiance);
 
     HIterator<TerraformConfig> iterator = mock(HIterator.class);
@@ -117,6 +119,7 @@ public class TerraformRollbackStepTest extends CategoryTest {
     assertThat(taskRequest.getSkipTaskRequest().getMessage())
         .isEqualTo("No successful Provisioning found with provisionerIdentifier: [id]. Skipping rollback.");
     verify(stepHelper, times(0)).sendRollbackTelemetryEvent(any(), any(), any());
+    verify(terraformStepHelper).cleanupTfPlanJsonForProvisioner(ambiance, planStepsFqn, "id");
   }
 
   @Test
@@ -280,7 +283,7 @@ public class TerraformRollbackStepTest extends CategoryTest {
     TerraformConfig terraformConfig =
         TerraformConfig.builder()
             .pipelineExecutionId("oldExecutionId")
-            .fileStoreConfig(ArtifactoryStorageConfigDTO.builder().artifactPaths(Arrays.asList("artifactPath")).build())
+            .fileStoreConfig(ArtifactoryStorageConfigDTO.builder().artifactPaths(asList("artifactPath")).build())
             .build();
     doReturn(terraformConfig).when(iterator).next();
 
@@ -429,7 +432,7 @@ public class TerraformRollbackStepTest extends CategoryTest {
   public void testGetSpecParametersWithDelegateSelectors() {
     TerraformRollbackStepInfo terraformRollbackStepInfo = new TerraformRollbackStepInfo();
     TaskSelectorYaml taskSelectorYaml = new TaskSelectorYaml("sel1");
-    terraformRollbackStepInfo.setDelegateSelectors(ParameterField.createValueField(Arrays.asList(taskSelectorYaml)));
+    terraformRollbackStepInfo.setDelegateSelectors(ParameterField.createValueField(asList(taskSelectorYaml)));
 
     SpecParameters specParameters = terraformRollbackStepInfo.getSpecParameters();
     TerraformRollbackStepParameters terraformRollbackStepParameters = (TerraformRollbackStepParameters) specParameters;

@@ -20,6 +20,9 @@ import io.harness.exception.ScmUnexpectedException;
 import io.harness.exception.WingsException;
 import io.harness.gitsync.common.scmerrorhandling.handlers.ScmApiErrorHandler;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @OwnedBy(PL)
 public class BitbucketServerGetFileScmApiErrorHandler implements ScmApiErrorHandler {
   public static final String GET_FILE_REQUEST_FAILURE = "The requested file could not be fetched from Bitbucket. ";
@@ -36,6 +39,7 @@ public class BitbucketServerGetFileScmApiErrorHandler implements ScmApiErrorHand
         throw NestedExceptionUtils.hintWithExplanationException(FILE_NOT_FOUND, ScmErrorExplanations.FILE_NOT_FOUND,
             new ScmBadRequestException(SCMExceptionErrorMessages.FILE_NOT_FOUND_ERROR));
       default:
+        log.error(String.format("Error while getting bitbucket(server) file: [%s: %s]", statusCode, errorMessage));
         throw new ScmUnexpectedException(errorMessage);
     }
   }

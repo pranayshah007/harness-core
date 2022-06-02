@@ -18,6 +18,9 @@ import io.harness.exception.ScmUnexpectedException;
 import io.harness.exception.WingsException;
 import io.harness.gitsync.common.scmerrorhandling.handlers.ScmApiErrorHandler;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @OwnedBy(PL)
 public class GithubCreatePullRequestScmApiErrorHandler implements ScmApiErrorHandler {
   public static final String CREATE_PULL_REQUEST_FAILURE = "The pull request could not be created in Github. ";
@@ -48,6 +51,7 @@ public class GithubCreatePullRequestScmApiErrorHandler implements ScmApiErrorHan
             CREATE_PULL_REQUEST_VALIDATION_FAILED_EXPLANATION,
             new ScmBadRequestException(SCMExceptionErrorMessages.CREATE_PULL_REQUEST_VALIDATION_FAILED));
       default:
+        log.error(String.format("Error while creating github pull request: [%s: %s]", statusCode, errorMessage));
         throw new ScmUnexpectedException(errorMessage);
     }
   }

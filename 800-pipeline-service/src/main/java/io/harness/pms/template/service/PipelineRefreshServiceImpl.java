@@ -48,8 +48,7 @@ public class PipelineRefreshServiceImpl implements PipelineRefreshService {
 
   private void updatePipelineWithYaml(PipelineEntity pipelineEntity, String refreshedYaml) {
     PipelineEntity updatedPipelineEntity = pipelineEntity.withYaml(refreshedYaml);
-    GovernanceMetadata governanceMetadata =
-        pipelineServiceHelper.validatePipelineYamlAndSetTemplateRefIfAny(updatedPipelineEntity, true);
+    GovernanceMetadata governanceMetadata = pipelineServiceHelper.validatePipelineYaml(updatedPipelineEntity);
     if (governanceMetadata.getDeny()) {
       List<String> denyingPolicySetIds = governanceMetadata.getDetailsList()
                                              .stream()

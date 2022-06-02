@@ -501,9 +501,8 @@ public class TimeSeriesAnalysisServiceImpl implements TimeSeriesAnalysisService 
       timeSeriesMetricDefinitions = timeSeriesRecordService.getTimeSeriesMetricDefinitions(cvConfig);
     }
     // in LE we pass metric identifier as the metric_name, as metric_name is the identifier for LE
-    // TODO: remove toLowerCase after the migration.
     timeSeriesMetricDefinitions.forEach(timeSeriesMetricDefinition
-        -> timeSeriesMetricDefinition.setMetricName(timeSeriesMetricDefinition.getMetricIdentifier().toLowerCase()));
+        -> timeSeriesMetricDefinition.setMetricName(timeSeriesMetricDefinition.getMetricIdentifier()));
     return timeSeriesMetricDefinitions;
   }
 
@@ -513,9 +512,8 @@ public class TimeSeriesAnalysisServiceImpl implements TimeSeriesAnalysisService 
     List<TimeSeriesRecordDTO> timeSeriesRecordDTOS =
         timeSeriesRecordService.getTimeSeriesRecordDTOs(verificationTaskId, startTime, endTime);
     // in LE we pass metric identifier as the metric_name, as metric_name is the identifier for LE.
-    // TODO: remove toLowerCase after migration is successful
-    timeSeriesRecordDTOS.forEach(timeSeriesRecordDTO
-        -> timeSeriesRecordDTO.setMetricName(timeSeriesRecordDTO.getMetricIdentifier().toLowerCase()));
+    timeSeriesRecordDTOS.forEach(
+        timeSeriesRecordDTO -> timeSeriesRecordDTO.setMetricName(timeSeriesRecordDTO.getMetricIdentifier()));
     return timeSeriesRecordDTOS;
   }
 

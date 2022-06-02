@@ -23,6 +23,7 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
+import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
 import java.io.IOException;
@@ -35,6 +36,7 @@ import org.junit.experimental.categories.Category;
 
 @OwnedBy(HarnessTeam.CDC)
 public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
+  @Inject KryoSerializer kryoSerializer;
   @Inject DeploymentStagePMSPlanCreatorV2 deploymentStagePMSPlanCreator;
 
   private YamlField getYamlFieldFromPath(String path) throws IOException {
@@ -103,8 +105,8 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
     EnvironmentPlanCreatorConfig environmentPlanCreatorConfig =
         YamlUtils.read(envPlanCreatorConfigYaml, EnvironmentPlanCreatorConfig.class);
     LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap = new LinkedHashMap<>();
-    deploymentStagePMSPlanCreator.addEnvironmentV2Dependency(
-        planCreationResponseMap, environmentPlanCreatorConfig, environmentYamlV2, false);
+    EnvironmentPlanCreatorHelper.addEnvironmentV2Dependency(planCreationResponseMap, environmentPlanCreatorConfig,
+        environmentYamlV2, false, "environmentUuid", "infraSectionUuid", "serviceSpecNodeUuid", kryoSerializer);
     assertThat(planCreationResponseMap.size()).isEqualTo(1);
     String key = planCreationResponseMap.keySet().iterator().next();
     assertThat(planCreationResponseMap.get(key).getYamlUpdates().getFqnToYamlCount()).isEqualTo(1);

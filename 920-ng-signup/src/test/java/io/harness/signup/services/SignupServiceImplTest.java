@@ -17,7 +17,6 @@ import static io.harness.signup.services.impl.SignupServiceImpl.FAILED_EVENT_NAM
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
@@ -126,7 +125,7 @@ public class SignupServiceImplTest extends CategoryTest {
 
     UserInfo returnedUser = signupServiceImpl.signup(signupDTO, null);
 
-    verify(reCaptchaVerifier, times(1)).verifyInvisibleCaptcha(anyString());
+    verify(reCaptchaVerifier, times(1)).verifyInvisibleCaptcha(any());
     verify(telemetryReporter, times(1)).sendIdentifyEvent(eq(EMAIL), any(), any());
     verify(telemetryReporter, times(1))
 
@@ -152,7 +151,7 @@ public class SignupServiceImplTest extends CategoryTest {
 
     boolean result = signupServiceImpl.createSignupInvite(signupDTO, null);
 
-    verify(reCaptchaVerifier, times(1)).verifyInvisibleCaptcha(anyString());
+    verify(reCaptchaVerifier, times(1)).verifyInvisibleCaptcha(any());
     verify(telemetryReporter, times(1)).sendIdentifyEvent(eq(EMAIL), any(), any());
     verify(executorService, times(1));
     assertThat(result).isTrue();

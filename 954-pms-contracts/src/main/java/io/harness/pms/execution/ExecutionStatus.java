@@ -43,6 +43,7 @@ public enum ExecutionStatus {
   @JsonProperty("Skipped") SKIPPED(Status.SKIPPED, "Skipped"),
   @JsonProperty("Pausing") PAUSING(Status.PAUSING, "Pausing"),
   @JsonProperty("ApprovalRejected") APPROVALREJECTED(Status.APPROVAL_REJECTED, "ApprovalRejected"),
+  @JsonProperty("InputWaiting") INPUTWAITING(Status.INPUT_WAITING, "InputWaiting"),
 
   //@JsonIgnore added to not show older enums till migration is written to change their instances to new enums in DB.
   @JsonIgnore NOT_STARTED(null, true),

@@ -17,9 +17,11 @@ import static org.mockito.Mockito.doReturn;
 import io.harness.PipelineServiceTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.filter.service.FilterService;
+import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.outbox.OutboxEvent;
 import io.harness.outbox.api.impl.OutboxServiceImpl;
 import io.harness.pms.PmsFeatureFlagService;
+import io.harness.pms.contracts.governance.GovernanceMetadata;
 import io.harness.pms.filter.creation.FilterCreatorMergeService;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
 import io.harness.pms.governance.ExpansionRequestsExtractor;
@@ -50,6 +52,7 @@ public class PipelineServiceFormCriteriaTest extends PipelineServiceTestBase {
   @Mock private PMSPipelineServiceHelper pmsPipelineServiceHelperMocked;
   @Mock private OutboxServiceImpl outboxService;
   @Mock private TelemetryReporter telemetryReporter;
+  @Mock private GitSyncSdkService gitSyncSdkService;
   @Inject private PipelineMetadataService pipelineMetadataService;
   @InjectMocks private PMSPipelineServiceImpl pmsPipelineService;
   @Inject private PMSPipelineRepository pmsPipelineRepository;
@@ -96,10 +99,14 @@ public class PipelineServiceFormCriteriaTest extends PipelineServiceTestBase {
   @Owner(developers = SAMARTH)
   @Category(UnitTests.class)
   public void testFormCriteriaWithActualData() throws IOException {
+    doReturn(false).when(gitSyncSdkService).isGitSyncEnabled(accountId, ORG_IDENTIFIER, PROJ_IDENTIFIER);
     doReturn(Optional.empty()).when(pipelineMetadataService).getMetadata(any(), any(), any(), any());
     on(pmsPipelineService).set("pmsPipelineRepository", pmsPipelineRepository);
     doReturn(outboxEvent).when(outboxService).save(any());
     doReturn(updatedPipelineEntity).when(pmsPipelineServiceHelperMocked).updatePipelineInfo(pipelineEntity);
+    doReturn(GovernanceMetadata.newBuilder().setDeny(false).build())
+        .when(pmsPipelineServiceHelperMocked)
+        .validatePipelineYaml(any());
 
     pmsPipelineService.create(pipelineEntity);
 

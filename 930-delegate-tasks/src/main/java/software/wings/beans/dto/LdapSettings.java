@@ -7,6 +7,10 @@
 
 package software.wings.beans.dto;
 
+import io.harness.delegate.beans.executioncapability.ExecutionCapability;
+import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
+import io.harness.delegate.task.mixin.SocketConnectivityCapabilityGenerator;
+import io.harness.expression.ExpressionEvaluator;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.beans.sso.LdapConnectionSettings;
@@ -15,6 +19,7 @@ import software.wings.beans.sso.LdapUserSettings;
 import software.wings.helpers.ext.ldap.LdapConstants;
 import software.wings.service.intfc.security.EncryptionService;
 
+import java.util.Collections;
 import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -24,7 +29,7 @@ import org.hibernate.validator.constraints.NotBlank;
 
 @Data
 @SuperBuilder
-public class LdapSettings extends SSOSettings {
+public class LdapSettings extends SSOSettings implements ExecutionCapabilityDemander {
   @NotBlank String accountId;
   @NotNull @Valid LdapConnectionSettings connectionSettings;
   @Valid List<LdapUserSettings> userSettingsList;
@@ -41,5 +46,11 @@ public class LdapSettings extends SSOSettings {
       String bindPassword = new String(encryptionService.getDecryptedValue(encryptedDataDetail, false));
       connectionSettings.setBindPassword(bindPassword);
     }
+  }
+
+  @Override
+  public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
+    return Collections.singletonList(SocketConnectivityCapabilityGenerator.buildSocketConnectivityCapability(
+        connectionSettings.getHost(), Integer.toString(connectionSettings.getPort())));
   }
 }

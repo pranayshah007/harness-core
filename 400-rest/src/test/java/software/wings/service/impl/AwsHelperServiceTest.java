@@ -35,7 +35,6 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -424,9 +423,8 @@ public class AwsHelperServiceTest extends WingsBaseTest {
     AwsHelperService service = spy(new AwsHelperService());
     Reflect.on(service).set("tracker", tracker);
     Reflect.on(service).set("awsApiHelperService", awsApiHelperService);
-    assertThatThrownBy(() -> service.validateAwsAccountCredential(ACCESS_KEY, SECRET_KEY))
-        .isInstanceOf(InvalidRequestException.class);
-    verify(tracker, never()).trackEC2Call("Describe Regions");
+    service.validateAwsAccountCredential(ACCESS_KEY, SECRET_KEY);
+    verify(tracker).trackEC2Call("Describe Regions");
   }
 
   @Test
@@ -480,8 +478,8 @@ public class AwsHelperServiceTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testAttachCredentialsAndBackoffPolicyWithIRSA() {
     PowerMockito.mockStatic(System.class);
-    PowerMockito.when(System.getenv(SDKGlobalConfiguration.AWS_ROLE_ARN_ENV_VAR)).thenReturn("abcd");
-    PowerMockito.when(System.getenv(SDKGlobalConfiguration.AWS_WEB_IDENTITY_ENV_VAR)).thenReturn("/jkj");
+    when(System.getenv(SDKGlobalConfiguration.AWS_ROLE_ARN_ENV_VAR)).thenAnswer(i -> "abcd");
+    when(System.getenv(SDKGlobalConfiguration.AWS_WEB_IDENTITY_ENV_VAR)).thenAnswer(i -> "/jkj");
     AwsInternalConfig awsInternalConfig = mock(AwsInternalConfig.class);
     when(awsInternalConfig.isUseEc2IamCredentials()).thenReturn(false);
     when(awsInternalConfig.isUseIRSA()).thenReturn(true);

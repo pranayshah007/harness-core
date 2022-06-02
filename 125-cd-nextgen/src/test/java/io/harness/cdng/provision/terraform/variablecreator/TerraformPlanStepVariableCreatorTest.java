@@ -78,6 +78,7 @@ public class TerraformPlanStepVariableCreatorTest extends CategoryTest {
             "pipeline.stages.K8s.spec.infrastructure.infrastructureDefinition.provisioner.steps.Terraform_Plan.spec.configuration.varFiles.tfvars.spec.store.spec.branch",
             "pipeline.stages.K8s.spec.infrastructure.infrastructureDefinition.provisioner.steps.Terraform_Plan.spec.configuration.varFiles.tfvars_inline.spec.content",
             "pipeline.stages.K8s.spec.infrastructure.infrastructureDefinition.provisioner.steps.Terraform_Plan.spec.configuration.varFiles.tfvars.spec.store.spec.paths",
-            "pipeline.stages.K8s.spec.infrastructure.infrastructureDefinition.provisioner.steps.Terraform_Plan.spec.configuration.configFiles.moduleSource.useConnectorCredentials");
+            "pipeline.stages.K8s.spec.infrastructure.infrastructureDefinition.provisioner.steps.Terraform_Plan.spec.configuration.configFiles.moduleSource.useConnectorCredentials",
+            "pipeline.stages.K8s.spec.infrastructure.infrastructureDefinition.provisioner.steps.Terraform_Plan.spec.configuration.exportTerraformPlanJson");
   }
 }

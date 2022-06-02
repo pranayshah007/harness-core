@@ -97,10 +97,10 @@ public class AzureWebAppInstanceHandlerTest extends WingsBaseTest {
         .get(anyString());
     doReturn(anEnvironment().environmentType(PROD).name(ENV_NAME).build())
         .when(mockEnvironmentService)
-        .get(anyString(), anyString(), anyBoolean());
+        .get(any(), any(), anyBoolean());
     doReturn(Service.builder().name(SERVICE_NAME).build())
         .when(mockServiceResourceService)
-        .getWithDetails(anyString(), anyString());
+        .getWithDetails(any(), any());
     doReturn(getInfraMapping()).when(mockInfraMappingService).get(anyString(), anyString());
     doReturn(aSettingAttribute().withValue(AzureConfig.builder().build()).build())
         .when(mockSettingService)

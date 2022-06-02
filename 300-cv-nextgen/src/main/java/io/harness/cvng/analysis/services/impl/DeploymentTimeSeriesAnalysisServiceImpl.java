@@ -205,9 +205,12 @@ public class DeploymentTimeSeriesAnalysisServiceImpl implements DeploymentTimeSe
     List<DeploymentTimeSeriesAnalysis> latestDeploymentTimeSeriesAnalysis =
         getLatestDeploymentTimeSeriesAnalysis(accountId, verificationJobInstanceId, deploymentTimeSeriesAnalysisFilter);
     for (DeploymentTimeSeriesAnalysis timeSeriesAnalysis : latestDeploymentTimeSeriesAnalysis) {
-      timeSeriesAnalysis.getTransactionMetricSummaries().forEach(transactionMetricHostData
-          -> transactionMetricHostData.getHostData().forEach(
-              hostData -> nodeNameSet.add(hostData.getHostName().get())));
+      timeSeriesAnalysis.getTransactionMetricSummaries().forEach(
+          transactionMetricHostData -> transactionMetricHostData.getHostData().forEach(hostData -> {
+            if (hostData.getHostName().isPresent()) {
+              nodeNameSet.add(hostData.getHostName().get());
+            }
+          }));
     }
 
     return new HashSet<>(nodeNameSet);
@@ -288,9 +291,14 @@ public class DeploymentTimeSeriesAnalysisServiceImpl implements DeploymentTimeSe
           NodeRiskCountDTO.NodeRiskCount.builder().risk(risk).count(nodeCountByRiskStatusMap.get(risk)).build());
     }
     nodeRiskCounts.sort((r1, r2) -> Integer.compare(r2.getRisk().getValue(), r1.getRisk().getValue()));
+    long anomalousNodeCount = nodeCountByRiskStatusMap.entrySet()
+                                  .stream()
+                                  .filter(entry -> entry.getKey().isGreaterThan(Risk.HEALTHY))
+                                  .mapToInt(entry -> entry.getValue())
+                                  .sum();
     return NodeRiskCountDTO.builder()
         .totalNodeCount(totalNodeCount)
-        .anomalousNodeCount(totalNodeCount - nodeCountByRiskStatusMap.getOrDefault(Risk.HEALTHY, 0))
+        .anomalousNodeCount((int) anomalousNodeCount)
         .nodeRiskCounts(nodeRiskCounts)
         .build();
   }

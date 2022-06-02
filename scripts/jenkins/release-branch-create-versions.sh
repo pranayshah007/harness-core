@@ -33,22 +33,28 @@ if [ "${NEXT_VERSION}" == "" ]; then
   exit 0
 fi
 echo "Creating $NEXT_VERSION in product Jira projects"
+# Exclude projects that have been archived, replaced, deleted, or non-product
+EXCLUDE_PROJECTS=",ART,CCE,CDC,CDNG,CDP,CE,COMP,CV,CVNG,CVS,DX,ER,GIT,GTM,LWG,OENG,ONP,OPS,SEC,SWAT,"
 # Iterate over projects
 for PROJ in ${PROJECTS}
  do
-    # Call CURL and store http response code into $response
-    response=$(curl -X POST https://harness.atlassian.net/rest/api/2/version/ --write-out '%{http_code}' --output /dev/null --silent --user ${JIRA_USERNAME}:${JIRA_PASSWORD} -H "Content-Type: application/json" -d '{
-      "name": "'"$NEXT_VERSION"'",
-      "releaseDate": "'"$RELDATE"'",
-      "archived": false,
-      "released": true }')
-    # http status code 201 is "Created" - anything else is a failure
-    if  [[ "$response" -ne 201 ]] ; then
-      echo "Failed to create version $NEXT_VERSION in $PROJ - Response code: $response"
-      if [[ "$response" -eq 404 ]] ; then
-        echo "404 response indicates that user $JIRA_USERNAME does not have permissions to create versions in project $PROJ"
-      fi
+    if [[ $EXCLUDE_PROJECTS == *",$PROJ,"* ]]; then
+      echo "Skipping $PROJ - it has been archived or is not applicable"
     else
-      echo "Successfully created version $NEXT_VERSION in $PROJ"
+      # Call CURL and store http response code into $response
+      response=$(curl -X POST https://harness.atlassian.net/rest/api/2/version/ --write-out '%{http_code}' --output /dev/null --silent --user ${JIRA_USERNAME}:${JIRA_PASSWORD} -H "Content-Type: application/json" -d '{
+        "name": "'"$NEXT_VERSION"'",
+        "releaseDate": "'"$RELDATE"'",
+        "archived": false,
+        "released": true }')
+      # http status code 201 is "Created" - anything else is a failure
+      if  [[ "$response" -ne 201 ]] ; then
+        echo "Failed to create version $NEXT_VERSION in $PROJ - Response code: $response"
+        if [[ "$response" -eq 404 ]] ; then
+          echo "404 response indicates that user $JIRA_USERNAME does not have permissions to create versions in project $PROJ"
+        fi
+      else
+        echo "Successfully created version $NEXT_VERSION in $PROJ"
+      fi
     fi
  done

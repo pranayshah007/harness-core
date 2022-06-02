@@ -15,14 +15,13 @@ import static software.wings.sm.states.azure.appservices.AzureAppServiceSlotSetu
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyListOf;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.powermock.api.mockito.PowerMockito.when;
 
@@ -47,7 +46,6 @@ import software.wings.beans.AzureWebAppInfrastructureMapping;
 import software.wings.beans.Environment;
 import software.wings.beans.Service;
 import software.wings.beans.artifact.Artifact;
-import software.wings.beans.command.CommandUnit;
 import software.wings.service.impl.servicetemplates.ServiceTemplateHelper;
 import software.wings.service.intfc.ActivityService;
 import software.wings.service.intfc.DelegateService;
@@ -196,9 +194,7 @@ public class AzureWebAppSlotShiftTrafficTest extends WingsBaseTest {
     ExecutionContextImpl mockContext = mock(ExecutionContextImpl.class);
     ManagerExecutionLogCallback managerExecutionLogCallback = mock(ManagerExecutionLogCallback.class);
 
-    doReturn(activity)
-        .when(azureVMSSStateHelper)
-        .createAndSaveActivity(any(), any(), anyString(), anyString(), any(), anyListOf(CommandUnit.class));
+    doReturn(activity).when(azureVMSSStateHelper).createAndSaveActivity(any(), any(), any(), any(), any(), any());
     doReturn(managerExecutionLogCallback).when(azureVMSSStateHelper).getExecutionLogCallback(activity);
 
     if (contextElement) {
@@ -208,28 +204,26 @@ public class AzureWebAppSlotShiftTrafficTest extends WingsBaseTest {
           .getInfoFromSweepingOutput(eq(mockContext), eq(SWEEPING_OUTPUT_APP_SERVICE));
     }
 
-    doReturn(appServiceStateData)
-        .when(azureVMSSStateHelper)
-        .populateAzureAppServiceData(eq(mockContext), any(Artifact.class));
+    doReturn(appServiceStateData).when(azureVMSSStateHelper).populateAzureAppServiceData(eq(mockContext), any());
     doReturn(delegateResult).when(delegateService).queueTask(any());
     doReturn(Integer.valueOf(trafficWeight))
         .when(azureVMSSStateHelper)
-        .renderExpressionOrGetDefault(anyString(), eq(mockContext), anyInt());
+        .renderExpressionOrGetDefault(any(), eq(mockContext), anyInt());
     doReturn(Double.valueOf(trafficWeight))
         .when(azureVMSSStateHelper)
-        .renderDoubleExpression(anyString(), eq(mockContext), anyInt());
+        .renderDoubleExpression(any(), eq(mockContext), anyDouble());
     doReturn(20)
         .when(azureVMSSStateHelper)
         .getStateTimeOutFromContext(eq(mockContext), eq(ContextElementType.AZURE_WEBAPP_SETUP));
     doReturn("service-template-id").when(serviceTemplateHelper).fetchServiceTemplateId(any());
-    doNothing().when(stateExecutionService).appendDelegateTaskDetails(anyString(), any());
+    doNothing().when(stateExecutionService).appendDelegateTaskDetails(any(), any());
 
-    when(mockContext.renderExpression(anyString())).thenAnswer((Answer<String>) invocation -> {
+    when(mockContext.renderExpression(any())).thenAnswer((Answer<String>) invocation -> {
       Object[] args = invocation.getArguments();
       return (String) args[0];
     });
     if (!isSuccess) {
-      doThrow(Exception.class).when(delegateService).queueTask(any());
+      doAnswer(invocation -> { throw new Exception(); }).when(delegateService).queueTask(any());
     }
     state.setTrafficWeightExpr("20");
     return mockContext;

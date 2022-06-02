@@ -17,6 +17,9 @@ import io.harness.exception.ScmUnexpectedException;
 import io.harness.exception.WingsException;
 import io.harness.gitsync.common.scmerrorhandling.handlers.ScmApiErrorHandler;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @OwnedBy(PL)
 public class BitbucketServerCreatePullRequestScmApiErrorHandler implements ScmApiErrorHandler {
   public static final String CREATE_PULL_REQUEST_FAILURE = "The pull request could not be created in Bitbucket. ";
@@ -41,6 +44,8 @@ public class BitbucketServerCreatePullRequestScmApiErrorHandler implements ScmAp
             CREATE_PULL_REQUEST_FAILURE + ScmErrorExplanations.PR_ALREADY_EXISTS,
             new ScmBadRequestException(errorMessage));
       default:
+        log.error(
+            String.format("Error while creating bitbucket(server) pull request: [%s: %s]", statusCode, errorMessage));
         throw new ScmUnexpectedException(errorMessage);
     }
   }

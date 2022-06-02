@@ -25,7 +25,6 @@ import static junit.framework.TestCase.assertEquals;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -118,9 +117,8 @@ public class CIK8InitializeTaskHandlerTest extends CategoryTest {
         cik8InitializeTaskParams.getCik8PodParams().getContainerParamsList().get(0).getImageDetailsWithConnector();
 
     when(k8sConnectorHelper.getKubernetesConfig(any(ConnectorDetails.class))).thenReturn(kubernetesConfig);
-    doThrow(ApiException.class)
-        .when(cik8JavaClientHandler)
-        .createRegistrySecret(eq(coreV1Api), eq(namespace), any(), eq(imageDetailsWithConnector));
+    when(cik8JavaClientHandler.createRegistrySecret(eq(coreV1Api), eq(namespace), any(), eq(imageDetailsWithConnector)))
+        .thenAnswer(invocation -> { throw new ApiException(); });
 
     K8sTaskExecutionResponse response =
         cik8BuildTaskHandler.executeTaskInternal(cik8InitializeTaskParams, logStreamingTaskClient, "");
@@ -143,9 +141,8 @@ public class CIK8InitializeTaskHandlerTest extends CategoryTest {
     when(cik8JavaClientHandler.createRegistrySecret(coreV1Api, namespace, secretName, imageDetailsWithConnector))
         .thenReturn(imgSecret);
     when(podSpecBuilder.createSpec((PodParams) cik8InitializeTaskParams.getCik8PodParams())).thenReturn(podBuilder);
-    doThrow(ApiException.class)
-        .when(cik8JavaClientHandler)
-        .createOrReplacePodWithRetries(coreV1Api, podBuilder.build(), namespace);
+    when(cik8JavaClientHandler.createOrReplacePodWithRetries(coreV1Api, podBuilder.build(), namespace))
+        .thenAnswer(invocation -> { throw new ApiException(); });
 
     K8sTaskExecutionResponse response =
         cik8BuildTaskHandler.executeTaskInternal(cik8InitializeTaskParams, logStreamingTaskClient, "");

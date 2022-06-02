@@ -28,4 +28,5 @@ public class TemplateApplyRequestDTO {
   // This could be original pipeline yaml, or any other entity on which we are referring templateRef.
   @NotNull String originalEntityYaml;
   boolean checkForAccess;
+  boolean getMergedYamlWithTemplateField;
 }

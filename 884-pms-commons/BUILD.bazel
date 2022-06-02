@@ -78,7 +78,7 @@ java_library(
         "@maven//:org_jooq_jooq",
         "@maven//:org_mockito_mockito_core",
         "@maven//:org_mongodb_mongo_java_driver",
-        "@maven//:org_powermock_powermock_api_mockito",
+        "@maven//:org_powermock_powermock_api_mockito2",
         "@maven//:org_powermock_powermock_core",
         "@maven//:org_powermock_powermock_module_junit4",
         "@maven//:org_slf4j_slf4j_api",

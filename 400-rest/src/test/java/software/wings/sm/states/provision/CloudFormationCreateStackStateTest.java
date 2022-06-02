@@ -45,7 +45,6 @@ import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
@@ -183,12 +182,12 @@ public class CloudFormationCreateStackStateTest extends WingsBaseTest {
     when(mockContext.getApp()).thenReturn(application);
     when(mockContext.getEnv()).thenReturn(env);
 
-    Answer<String> doReturnSameValue = invocation -> invocation.getArgumentAt(0, String.class);
-    doAnswer(doReturnSameValue).when(mockContext).renderExpression(anyString());
+    Answer<String> doReturnSameValue = invocation -> invocation.getArgument(0, String.class);
+    doAnswer(doReturnSameValue).when(mockContext).renderExpression(any());
 
     SettingAttribute settingAttribute = aSettingAttribute().withValue(awsConfig).build();
-    doReturn(settingAttribute).when(settingsService).get(anyString());
-    doNothing().when(stateExecutionService).appendDelegateTaskDetails(anyString(), any());
+    doReturn(settingAttribute).when(settingsService).get(any());
+    doNothing().when(stateExecutionService).appendDelegateTaskDetails(any(), any());
   }
 
   @Test
@@ -251,7 +250,7 @@ public class CloudFormationCreateStackStateTest extends WingsBaseTest {
 
     GitConfig gitConfig = GitConfig.builder().urlType(GitConfig.UrlType.REPO).repoUrl(repoUrl).build();
     when(gitUtilsManager.getGitConfig("sourceRepoSettingId")).thenReturn(gitConfig);
-    when(mockInfrastructureProvisionerService.get(anyString(), anyString())).thenReturn(provisioner);
+    when(mockInfrastructureProvisionerService.get(any(), any())).thenReturn(provisioner);
     state.setFileFetched(false);
     state.setUseParametersFile(true);
     state.setParametersFilePaths(Collections.singletonList("parameters.json"));
@@ -369,7 +368,7 @@ public class CloudFormationCreateStackStateTest extends WingsBaseTest {
 
     GitConfig gitConfig = GitConfig.builder().urlType(GitConfig.UrlType.REPO).repoUrl(repoUrl).build();
     when(gitUtilsManager.getGitConfig("sourceRepoSettingId")).thenReturn(gitConfig);
-    when(mockInfrastructureProvisionerService.get(anyString(), anyString())).thenReturn(provisioner);
+    when(mockInfrastructureProvisionerService.get(any(), any())).thenReturn(provisioner);
     state.setFileFetched(false);
     state.executeInternal(mockContext, ACTIVITY_ID);
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
@@ -412,7 +411,7 @@ public class CloudFormationCreateStackStateTest extends WingsBaseTest {
 
     GitConfig gitConfig = GitConfig.builder().urlType(GitConfig.UrlType.ACCOUNT).repoUrl("http://xyz.com").build();
     when(gitUtilsManager.getGitConfig("sourceRepoSettingId")).thenReturn(gitConfig);
-    when(mockInfrastructureProvisionerService.get(anyString(), anyString())).thenReturn(provisioner);
+    when(mockInfrastructureProvisionerService.get(any(), any())).thenReturn(provisioner);
     state.setFileFetched(false);
     state.executeInternal(mockContext, ACTIVITY_ID);
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
@@ -459,7 +458,7 @@ public class CloudFormationCreateStackStateTest extends WingsBaseTest {
     doReturn(SweepingOutputInquiry.builder()).when(mockContext).prepareSweepingOutputInquiryBuilder();
     doReturn(SweepingOutputInstance.builder()).when(mockContext).prepareSweepingOutputBuilder(any());
     doReturn(ScriptStateExecutionData.builder().build()).when(mockContext).getStateExecutionData();
-    when(templateExpressionProcessor.getTemplateExpression(anyList(), anyString())).thenReturn(templateExpression);
+    when(templateExpressionProcessor.getTemplateExpression(anyList(), any())).thenReturn(templateExpression);
 
     SettingAttribute settingAttribute = mock(SettingAttribute.class);
     when(templateExpressionProcessor.resolveSettingAttributeByNameOrId(
@@ -483,7 +482,7 @@ public class CloudFormationCreateStackStateTest extends WingsBaseTest {
         "stackId", existingStackInfo, cloudFormationRollbackInfo, "UPDATE_ROLLBACK_COMPLETE");
     when(mockContext.getContextElement(ContextElementType.CLOUD_FORMATION_PROVISION))
         .thenReturn(CloudFormationOutputInfoElement.builder().build());
-    when(templateExpressionProcessor.getTemplateExpression(anyList(), anyString())).thenReturn(null);
+    when(templateExpressionProcessor.getTemplateExpression(anyList(), any())).thenReturn(null);
     state.setAwsConfigId("awsConfigId");
     cloudFormationElementList = state.handleResponse(createStackResponse, mockContext);
     verifyResponse(cloudFormationElementList, false, "awsConfigId");
@@ -504,8 +503,7 @@ public class CloudFormationCreateStackStateTest extends WingsBaseTest {
     GitConfig gitConfig = GitConfig.builder().urlType(GitConfig.UrlType.REPO).repoUrl(repoUrl).build();
     when(gitUtilsManager.getGitConfig("sourceRepoSettingId")).thenReturn(gitConfig);
 
-    when(mockInfrastructureProvisionerService.get(anyString(), anyString()))
-        .thenReturn(cloudFormationInfrastructureProvisioner);
+    when(mockInfrastructureProvisionerService.get(any(), any())).thenReturn(cloudFormationInfrastructureProvisioner);
 
     state.setUseParametersFile(true);
     state.setParametersFilePaths(Collections.singletonList("filePath"));
@@ -699,8 +697,7 @@ public class CloudFormationCreateStackStateTest extends WingsBaseTest {
     GitConfig gitConfig = GitConfig.builder().urlType(GitConfig.UrlType.REPO).repoUrl(repoUrl).build();
     when(gitUtilsManager.getGitConfig("sourceRepoSettingId")).thenReturn(gitConfig);
 
-    when(mockInfrastructureProvisionerService.get(anyString(), anyString()))
-        .thenReturn(cloudFormationInfrastructureProvisioner);
+    when(mockInfrastructureProvisionerService.get(any(), any())).thenReturn(cloudFormationInfrastructureProvisioner);
 
     state.setFileFetched(false);
     state.setTemplateExpressions(emptyList());

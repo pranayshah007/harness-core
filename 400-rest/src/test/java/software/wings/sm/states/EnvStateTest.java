@@ -210,13 +210,13 @@ public class EnvStateTest extends WingsBaseTest {
     when(artifactStreamServiceBindingService.listServiceIds("as2")).thenReturn(Collections.singletonList("s3"));
 
     when(context.prepareSweepingOutputBuilder(any(SweepingOutputInstance.Scope.class))).thenAnswer(invocation -> {
-      SweepingOutputInstance.Scope scope = invocation.getArgumentAt(0, SweepingOutputInstance.Scope.class);
+      SweepingOutputInstance.Scope scope = invocation.getArgument(0, SweepingOutputInstance.Scope.class);
       assertThat(scope).isEqualTo(SweepingOutputInstance.Scope.PIPELINE);
       return SweepingOutputInstance.builder();
     });
 
     when(sweepingOutputService.save(any(SweepingOutputInstance.class))).thenAnswer(invocation -> {
-      SweepingOutputInstance sweepingOutputInstance = invocation.getArgumentAt(0, SweepingOutputInstance.class);
+      SweepingOutputInstance sweepingOutputInstance = invocation.getArgument(0, SweepingOutputInstance.class);
       assertThat(sweepingOutputInstance.getName()).startsWith(ServiceArtifactElements.SWEEPING_OUTPUT_NAME);
       assertThat(sweepingOutputInstance.getName()).contains("seiid1");
       assertThat(sweepingOutputInstance.getValue()).isInstanceOf(ServiceArtifactElements.class);
@@ -287,13 +287,13 @@ public class EnvStateTest extends WingsBaseTest {
     when(artifactService.get("a2")).thenReturn(artifact2);
 
     when(context.prepareSweepingOutputBuilder(any(SweepingOutputInstance.Scope.class))).thenAnswer(invocation -> {
-      SweepingOutputInstance.Scope scope = invocation.getArgumentAt(0, SweepingOutputInstance.Scope.class);
+      SweepingOutputInstance.Scope scope = invocation.getArgument(0, SweepingOutputInstance.Scope.class);
       assertThat(scope).isEqualTo(SweepingOutputInstance.Scope.PIPELINE);
       return SweepingOutputInstance.builder();
     });
 
     when(sweepingOutputService.save(any(SweepingOutputInstance.class))).thenAnswer(invocation -> {
-      SweepingOutputInstance sweepingOutputInstance = invocation.getArgumentAt(0, SweepingOutputInstance.class);
+      SweepingOutputInstance sweepingOutputInstance = invocation.getArgument(0, SweepingOutputInstance.class);
       assertThat(sweepingOutputInstance.getName()).startsWith(ServiceArtifactVariableElements.SWEEPING_OUTPUT_NAME);
       assertThat(sweepingOutputInstance.getName()).contains("seiid2");
       assertThat(sweepingOutputInstance.getValue()).isInstanceOf(ServiceArtifactVariableElements.class);

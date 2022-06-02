@@ -93,11 +93,11 @@ public class ChartMuseumClientHelper {
 
     while (retries < CHART_MUSEUM_SERVER_START_RETRIES) {
       port = getNextRandomPort(random);
-      command = command.replace("${PORT}", Integer.toString(port));
+      String commandWithPort = command.replace("${PORT}", Integer.toString(port));
       log.info("Starting server at port {}. Retry #{}", port, retries);
 
       stringBuffer = new StringBuffer();
-      process = startProcess(command, environment, stringBuffer);
+      process = startProcess(commandWithPort, environment, stringBuffer);
 
       if (waitForServerReady(process, port)) {
         log.info(stringBuffer.toString());

@@ -23,7 +23,6 @@ pkg_tar(
         "//platform-service/config:keystore.jks",
     ],
     files = {
-        "@alpn_boot_8.1.13.v20181017//file": "alpn-boot-8.1.13.v20181017.jar",
         "//platform-service/service:module_deploy.jar": "platform-service-capsule.jar",
     },
     mode = "0600",

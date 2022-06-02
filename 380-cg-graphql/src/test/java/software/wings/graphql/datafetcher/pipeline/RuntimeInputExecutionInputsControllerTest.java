@@ -103,7 +103,7 @@ public class RuntimeInputExecutionInputsControllerTest extends WingsBaseTest {
     when(workflowExecutionService.fetchDeploymentMetadataRunningPipeline(
              anyString(), eq(new HashMap<>()), eq(false), eq("executionId"), eq("stageElementId")))
         .thenReturn(metadata);
-    when(serviceResourceService.list(any(PageRequest.class), eq(false), eq(false), eq(false), anyString()))
+    when(serviceResourceService.list(any(PageRequest.class), eq(false), eq(false), eq(false), any()))
         .thenReturn(response);
 
     JsonNode actual = JsonUtils.toJsonNode(controller.fetch(QLExecutionInputsToResumePipelineQueryParams.builder()

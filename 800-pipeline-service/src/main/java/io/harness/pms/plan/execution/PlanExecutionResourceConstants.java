@@ -18,6 +18,8 @@ public interface PlanExecutionResourceConstants {
   // Node Execution
   String NODE_EXECUTION_ID_PARAM_MESSAGE = "The runtime Id of the step/stage";
 
+  String INPUT_INSTANCE_ID_PARAM_MESSAGE = "The Id of the execution input instance for a step/stage";
+
   String PLAN_EXECUTION_ID_PARAM_MESSAGE = "The Pipeline Execution Id";
 
   // RETRY CONSTANTS

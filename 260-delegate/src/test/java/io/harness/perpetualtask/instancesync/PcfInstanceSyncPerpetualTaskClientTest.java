@@ -89,7 +89,7 @@ public class PcfInstanceSyncPerpetualTaskClientTest extends WingsBaseTest {
                         .organization(ORG_NAME)
                         .space(SPACE)
                         .build());
-    when(settingsService.get(anyString()))
+    when(settingsService.get(any()))
         .thenReturn(SettingAttribute.Builder.aSettingAttribute().withValue(pcfConfig).build());
     when(perpetualTaskService.getTaskRecord(TASK_ID))
         .thenReturn(PerpetualTaskRecord.builder().accountId(ACCOUNT_ID).build());

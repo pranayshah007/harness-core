@@ -31,6 +31,7 @@ import io.harness.gitsync.common.dtos.ScmGetFileByCommitIdRequestDTO;
 import io.harness.gitsync.common.dtos.ScmGetFileResponseDTO;
 import io.harness.gitsync.common.dtos.ScmUpdateFileRequestDTO;
 import io.harness.gitsync.common.dtos.UpdateGitFileRequestDTO;
+import io.harness.gitsync.common.dtos.UserRepoResponse;
 import io.harness.gitsync.common.helper.GitSyncConnectorHelper;
 import io.harness.gitsync.common.scmerrorhandling.ScmApiErrorHandlingHelper;
 import io.harness.gitsync.common.service.ScmFacilitatorService;
@@ -43,10 +44,12 @@ import io.harness.product.ci.scm.proto.FileContent;
 import io.harness.product.ci.scm.proto.GetUserRepoResponse;
 import io.harness.product.ci.scm.proto.GetUserReposResponse;
 import io.harness.product.ci.scm.proto.ListBranchesWithDefaultResponse;
+import io.harness.product.ci.scm.proto.Repository;
 import io.harness.product.ci.scm.proto.UpdateFileResponse;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -84,6 +87,24 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
     }
 
     return prepareListRepoResponse(scmConnector, response);
+  }
+
+  @Override
+  public List<UserRepoResponse> listAllReposByRefConnector(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorRef) {
+    ScmConnector scmConnector =
+        gitSyncConnectorHelper.getScmConnector(accountIdentifier, orgIdentifier, projectIdentifier, connectorRef);
+    GetUserReposResponse response =
+        scmOrchestratorService.processScmRequestUsingConnectorSettings(scmClientFacilitatorService
+            -> scmClientFacilitatorService.listUserRepos(accountIdentifier, orgIdentifier, projectIdentifier,
+                scmConnector, PageRequestDTO.builder().fetchAll(true).build()),
+            scmConnector);
+    if (isFailureResponse(response.getStatus())) {
+      ScmApiErrorHandlingHelper.processAndThrowError(ScmApis.LIST_REPOSITORIES, scmConnector.getConnectorType(),
+          scmConnector.getUrl(), response.getStatus(), response.getError());
+    }
+
+    return convertToUserRepo(response.getReposList());
   }
 
   @Override
@@ -324,5 +345,14 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
       ScmApiErrorHandlingHelper.processAndThrowError(ScmApis.CREATE_BRANCH, scmConnector.getConnectorType(),
           scmConnector.getUrl(), createBranchResponse.getStatus(), createBranchResponse.getError());
     }
+  }
+
+  private List<UserRepoResponse> convertToUserRepo(List<Repository> allUserRepos) {
+    ArrayList userRepoResponses = new ArrayList();
+    for (Repository userRepo : allUserRepos) {
+      userRepoResponses.add(
+          UserRepoResponse.builder().namespace(userRepo.getNamespace()).name(userRepo.getName()).build());
+    }
+    return userRepoResponses;
   }
 }
