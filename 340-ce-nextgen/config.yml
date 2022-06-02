@@ -6,7 +6,7 @@ server:
       port: 6340
       keyStorePath: keystore.jks
       keyStorePassword: password
-      trustStorePath: ${JAVA_HOME}/jre/lib/security/cacerts
+      trustStorePath: ${JAVA_HOME}/lib/security/cacerts
       certAlias: localhost
       validateCerts: false
       maxRequestHeaderSize: 100KiB
@@ -18,7 +18,7 @@ server:
       port: 9340
       keyStorePath: keystore.jks
       keyStorePassword: password
-      trustStorePath: ${JAVA_HOME}/jre/lib/security/cacerts
+      trustStorePath: ${JAVA_HOME}/lib/security/cacerts
       certAlias: localhost
       validateCerts: false
   requestLog:
@@ -129,11 +129,15 @@ featureFlagConfig:
 gcpConfig:
   gcpProjectId: gcpProjectIdPlaceHolder
   gcpAwsConnectorCrudPubSubTopic: "ce-aws-connector-crud"
+  gcpGcpConnectorCrudPubSubTopic: "ce-gcp-connector-crud"
 
 ceAzureSetupConfig:
   azureAppClientId: azureAppClientIdPlaceholder
   azureAppClientSecret: azureAppClientSecretplaceholder
   enableFileCheckAtSource: false
+
+ceGcpSetupConfig:
+  enableServiceAccountPermissionsCheck: false
 
 awsConfig:
   accessKey: accessKey_placeholder
@@ -166,3 +170,8 @@ notificationClient:
     readTimeOutSeconds: 15
   secrets:
     notificationClientSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
+
+segmentConfiguration:
+  enabled: true
+  url: https://api.segment.io/v1/
+  apiKey: UvSVfxy6KzApDrrlhCqSjJBlgPeEDBdf

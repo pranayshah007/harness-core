@@ -14,8 +14,9 @@ import static io.harness.rule.OwnerRule.YOGESH;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
-import static org.powermock.api.mockito.PowerMockito.when;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
@@ -49,19 +50,11 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({FileUtils.class})
-@PowerMockIgnore({"javax.security.*", "javax.net.*"})
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 @OwnedBy(CDP)
 public class TerraformInputVariablesObtainTaskTest extends WingsBaseTest {
@@ -89,7 +82,7 @@ public class TerraformInputVariablesObtainTaskTest extends WingsBaseTest {
                      .scriptPath("")
                      .build();
     when(encryptionService.decrypt(any(), any(), eq(false))).thenReturn(null);
-    PowerMockito.mockStatic(FileUtils.class);
+    mockStatic(FileUtils.class);
   }
 
   @Test
@@ -99,7 +92,7 @@ public class TerraformInputVariablesObtainTaskTest extends WingsBaseTest {
     String moduleDir = "some-dir";
     when(gitUtilsDelegate.cloneRepo(any(), any(), any())).thenReturn(GitOperationContext.builder().build());
     when(gitUtilsDelegate.resolveAbsoluteFilePath(any(), any())).thenReturn(moduleDir);
-    PowerMockito.when(FileUtils.listFiles(any(), any(), any())).thenReturn(Arrays.asList(new File(moduleDir)));
+    when(FileUtils.listFiles(any(), any(), any())).thenReturn(Arrays.asList(new File(moduleDir)));
 
     when(terraformConfigInspectService.parseFieldsUnderCategory(moduleDir, "variables", false))
         .thenReturn(Arrays.asList("var_1", "var_2"));

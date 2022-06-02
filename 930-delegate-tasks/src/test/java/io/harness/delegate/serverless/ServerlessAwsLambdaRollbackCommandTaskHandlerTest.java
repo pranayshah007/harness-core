@@ -61,6 +61,9 @@ public class ServerlessAwsLambdaRollbackCommandTaskHandlerTest extends CategoryT
   @Mock private ILogStreamingTaskClient iLogStreamingTaskClient;
   @Mock private LogCallback initLogCallback;
   @Mock private LogCallback rollbackLogCallback;
+  @Mock private LogCallback setupDirectoryLogCallback;
+  @Mock private LogCallback configureCredsLogCallback;
+  @Mock private LogCallback pluginLogCallback;
 
   @InjectMocks private ServerlessAwsLambdaRollbackCommandTaskHandler serverlessAwsLambdaRollbackCommandTaskHandler;
 
@@ -71,6 +74,7 @@ public class ServerlessAwsLambdaRollbackCommandTaskHandlerTest extends CategoryT
   private String service = "serv";
   private String region = "regi";
   private String stage = "stag";
+  private String manifestContent = "manifest";
   private String workingDir = "/asdf/";
   private ServerlessInfraConfig serverlessInfraConfig =
       ServerlessAwsLambdaInfraConfig.builder().region(region).stage(stage).build();
@@ -81,6 +85,7 @@ public class ServerlessAwsLambdaRollbackCommandTaskHandlerTest extends CategoryT
                                                                   .serverlessInfraConfig(serverlessInfraConfig)
                                                                   .serverlessManifestConfig(serverlessManifestConfig)
                                                                   .serverlessRollbackConfig(serverlessRollbackConfig)
+                                                                  .manifestContent(manifestContent)
                                                                   .accountId(accountId)
                                                                   .build();
   private ServerlessDelegateTaskParams serverlessDelegateTaskParams =
@@ -109,6 +114,18 @@ public class ServerlessAwsLambdaRollbackCommandTaskHandlerTest extends CategoryT
         .when(serverlessTaskHelperBase)
         .getLogCallback(
             iLogStreamingTaskClient, ServerlessCommandUnitConstants.init.toString(), true, commandUnitsProgress);
+    doReturn(setupDirectoryLogCallback)
+        .when(serverlessTaskHelperBase)
+        .getLogCallback(iLogStreamingTaskClient, ServerlessCommandUnitConstants.setupDirectory.toString(), true,
+            commandUnitsProgress);
+    doReturn(configureCredsLogCallback)
+        .when(serverlessTaskHelperBase)
+        .getLogCallback(iLogStreamingTaskClient, ServerlessCommandUnitConstants.configureCred.toString(), true,
+            commandUnitsProgress);
+    doReturn(pluginLogCallback)
+        .when(serverlessTaskHelperBase)
+        .getLogCallback(
+            iLogStreamingTaskClient, ServerlessCommandUnitConstants.plugin.toString(), true, commandUnitsProgress);
     doReturn(rollbackLogCallback)
         .when(serverlessTaskHelperBase)
         .getLogCallback(
@@ -117,14 +134,14 @@ public class ServerlessAwsLambdaRollbackCommandTaskHandlerTest extends CategoryT
     doReturn(serverlessAwsLambdaManifestSchema)
         .when(serverlessAwsCommandTaskHelper)
         .parseServerlessManifest(
-            initLogCallback, ((ServerlessRollbackRequest) serverlessCommandRequest).getManifestContent());
+            setupDirectoryLogCallback, ((ServerlessRollbackRequest) serverlessCommandRequest).getManifestContent());
 
     ServerlessClient serverlessClient = ServerlessClient.client(serverlessDelegateTaskParams.getServerlessClientPath());
 
     doReturn(intiServerlessCliResponse)
         .when(serverlessAwsCommandTaskHelper)
-        .configCredential(serverlessClient, serverlessAwsLambdaConfig, serverlessDelegateTaskParams, initLogCallback,
-            true, timeout * 60000);
+        .configCredential(serverlessClient, serverlessAwsLambdaConfig, serverlessDelegateTaskParams,
+            configureCredsLogCallback, true, timeout * 60000);
 
     doReturn(Optional.of(previousVersionTimeStamp))
         .when(serverlessAwsCommandTaskHelper)

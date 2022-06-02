@@ -9,6 +9,7 @@ package io.harness.notification.remote.dto;
 
 import io.harness.notification.NotificationChannelType;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -17,6 +18,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
+@Schema(name = "PagerDutySetting", description = "Details of the Pager Duty settings configured in Harness.")
 public class PagerDutySettingDTO extends NotificationSettingDTO {
   @Builder
   public PagerDutySettingDTO(String accountId, String recipient) {

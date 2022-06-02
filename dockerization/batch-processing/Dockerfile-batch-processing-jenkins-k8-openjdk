@@ -1,5 +1,5 @@
 # to be used when building in Jenkins
-FROM harness/serverjre_8:242python
+FROM us.gcr.io/platform-205701/alpine:safe-alpine3.15.4-bt1276
 
 # Add the capsule JAR and config.yml
 COPY batch-processing-capsule.jar batch-processing-config.yml  /opt/harness/

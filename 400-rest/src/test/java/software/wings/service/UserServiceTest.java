@@ -985,7 +985,7 @@ public class UserServiceTest extends WingsBaseTest {
 
     userService.addRole(USER_ID, ROLE_ID);
     verify(wingsPersistence, times(2)).get(User.class, USER_ID);
-    verify(wingsPersistence).update(any(Query.class), any(UpdateOperations.class));
+    verify(wingsPersistence).update(any(Query.class), any());
     verify(query).filter(Mapper.ID_KEY, USER_ID);
     verify(updateOperations).addToSet("roles", aRole().withUuid(ROLE_ID).withName(ROLE_NAME).build());
     verify(cache).remove(USER_ID);
@@ -1003,7 +1003,7 @@ public class UserServiceTest extends WingsBaseTest {
 
     userService.revokeRole(USER_ID, ROLE_ID);
     verify(wingsPersistence, times(2)).get(User.class, USER_ID);
-    verify(wingsPersistence).update(any(Query.class), any(UpdateOperations.class));
+    verify(wingsPersistence).update(any(Query.class), any());
     verify(query).filter(Mapper.ID_KEY, USER_ID);
     verify(updateOperations).removeAll("roles", aRole().withUuid(ROLE_ID).withName(ROLE_NAME).build());
     verify(cache).remove(USER_ID);
@@ -1041,7 +1041,7 @@ public class UserServiceTest extends WingsBaseTest {
     verify(wingsPersistence).save(any(UserInvite.class));
     verify(wingsPersistence).saveAndGet(eq(User.class), any(User.class));
     verify(auditServiceHelper, times(userInvite.getEmails().size()))
-        .reportForAuditingUsingAccountId(eq(ACCOUNT_ID), eq(null), any(UserInvite.class), eq(Type.CREATE));
+        .reportForAuditingUsingAccountId(eq(ACCOUNT_ID), eq(null), any(User.class), eq(Type.CREATE));
 
     verify(emailDataNotificationService).send(emailDataArgumentCaptor.capture());
     assertThat(emailDataArgumentCaptor.getValue().getTemplateName()).isEqualTo(INVITE_EMAIL_TEMPLATE_NAME);
@@ -1080,7 +1080,7 @@ public class UserServiceTest extends WingsBaseTest {
     verify(wingsPersistence).saveAndGet(eq(User.class), userArgumentCaptor.capture());
     assertThat(userArgumentCaptor.getValue()).hasFieldOrPropertyWithValue("email", mixedEmail.trim().toLowerCase());
     verify(auditServiceHelper, times(userInvite.getEmails().size()))
-        .reportForAuditingUsingAccountId(eq(ACCOUNT_ID), eq(null), any(UserInvite.class), eq(Type.CREATE));
+        .reportForAuditingUsingAccountId(eq(ACCOUNT_ID), eq(null), any(User.class), eq(Type.CREATE));
   }
 
   @Test

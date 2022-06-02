@@ -23,6 +23,7 @@ import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.job.VerificationJobDTO;
 import io.harness.cvng.beans.job.VerificationJobType;
 import io.harness.cvng.core.beans.TimeRange;
+import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.utils.DateTimeUtils;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
 import io.harness.mongo.index.CompoundMongoIndex;
@@ -106,7 +107,7 @@ public abstract class VerificationJob
   private String activitySourceIdentifier;
   private VerificationJobType type;
   @NotNull private String accountId;
-  @NotNull private String monitoredServiceIdentifier;
+  private String monitoredServiceIdentifier;
   @NotNull private RuntimeParameter serviceIdentifier;
   @NotNull private RuntimeParameter envIdentifier;
   @Deprecated private List<DataSourceType> dataSources;
@@ -115,6 +116,8 @@ public abstract class VerificationJob
 
   private RuntimeParameter duration;
   private boolean isDefaultJob;
+
+  private List<CVConfig> cvConfigs;
 
   public abstract VerificationJobType getType();
   public abstract VerificationJobDTO getVerificationJobDTO();
@@ -317,6 +320,7 @@ public abstract class VerificationJob
   public Instant eligibleToStartAnalysisTime(Instant startTime, Duration dataCollectionDelay, Instant createdAt) {
     return Collections.max(Arrays.asList(startTime.plus(dataCollectionDelay), createdAt));
   }
+
   @FieldNameConstants(innerTypeName = "RuntimeParameterKeys")
   @Data
   @Builder

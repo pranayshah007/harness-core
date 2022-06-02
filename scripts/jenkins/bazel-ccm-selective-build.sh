@@ -27,8 +27,6 @@ if [[ ! -z "${OVERRIDE_LOCAL_M2}" ]]; then
   local_repo=${OVERRIDE_LOCAL_M2}
 fi
 
-cat ${BAZEL_DIRS}/out/stable-status.txt
-cat ${BAZEL_DIRS}/out/volatile-status.txt
 
 build_bazel_application() {
   module=$1

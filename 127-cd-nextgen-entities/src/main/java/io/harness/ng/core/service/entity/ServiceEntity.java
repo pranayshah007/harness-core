@@ -86,6 +86,8 @@ public class ServiceEntity implements PersistentEntity {
   @Wither @LastModifiedDate Long lastModifiedAt;
   @Wither @Version Long version;
   @Builder.Default Boolean deleted = Boolean.FALSE;
+  @Builder.Default Boolean gitOpsEnabled = false;
+
   Long deletedAt;
   String yaml;
 

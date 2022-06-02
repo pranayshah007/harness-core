@@ -315,7 +315,7 @@ public class TokenServiceImpl implements TokenService {
   public long deleteAllByParentIdentifier(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       ApiKeyType apiKeyType, String parentIdentifier) {
     return tokenRepository
-        .deleteAllByAccountIdentifierAndOrgIdentifierAndParentIdentifierAndApiKeyTypeAndParentIdentifier(
+        .deleteAllByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndApiKeyTypeAndParentIdentifier(
             accountIdentifier, orgIdentifier, projectIdentifier, apiKeyType, parentIdentifier);
   }
 
@@ -323,7 +323,7 @@ public class TokenServiceImpl implements TokenService {
   public long deleteAllByApiKeyIdentifier(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       ApiKeyType apiKeyType, String parentIdentifier, String apiKeyIdentifier) {
     return tokenRepository
-        .deleteAllByAccountIdentifierAndOrgIdentifierAndParentIdentifierAndApiKeyTypeAndParentIdentifierAndApiKeyIdentifier(
+        .deleteAllByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndApiKeyTypeAndParentIdentifierAndApiKeyIdentifier(
             accountIdentifier, orgIdentifier, projectIdentifier, apiKeyType, parentIdentifier, apiKeyIdentifier);
   }
 }

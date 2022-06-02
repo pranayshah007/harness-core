@@ -29,5 +29,5 @@ import lombok.experimental.SuperBuilder;
 public abstract class MonitoredServiceSpec {
   @ApiModelProperty(hidden = true) public abstract String getType();
 
-  enum MonitoredServiceType { DEFAULT, CONFIGURED, TEMPLATE }
+  public enum MonitoredServiceSpecType { DEFAULT, CONFIGURED, TEMPLATE }
 }

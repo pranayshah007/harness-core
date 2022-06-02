@@ -961,7 +961,13 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
                 SortOrder.Builder.aSortOrder().withField(ConnectorKeys.createdAt, OrderType.DESC).build()))
             .build());
     Page<Connector> connectors = connectorRepository.findAll(
-        Criteria.where(ConnectorKeys.fullyQualifiedIdentifier).in(connectorFQN), pageable, false);
+        new Criteria().andOperator(Criteria.where(ConnectorKeys.fullyQualifiedIdentifier).in(connectorFQN),
+            new Criteria().orOperator(Criteria.where(ConnectorKeys.yamlGitConfigRef)
+                                          .exists(true)
+                                          .and(ConnectorKeys.isFromDefaultBranch)
+                                          .is(true),
+                Criteria.where(ConnectorKeys.yamlGitConfigRef).exists(false))),
+        pageable, false);
     return connectors.getContent().stream().map(connectorMapper::writeDTO).collect(toList());
   }
 

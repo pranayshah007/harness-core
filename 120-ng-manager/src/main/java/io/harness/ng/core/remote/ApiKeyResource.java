@@ -20,6 +20,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.utils.PageUtils.getPageRequest;
 
+import io.harness.NGCommonEntityConstants;
 import io.harness.NGResourceFilterConstants;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.ResourceIdentifier;
@@ -105,8 +106,9 @@ public class ApiKeyResource {
         ApiResponse(responseCode = "default", description = "Returns the created API key")
       })
   public ResponseDTO<ApiKeyDTO>
-  createApiKey(
-      @Valid ApiKeyDTO apiKeyDTO, @NotNull @QueryParam(ACCOUNT_KEY) @AccountIdentifier String accountIdentifier) {
+  createApiKey(@Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotNull @QueryParam(
+                   NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @Valid ApiKeyDTO apiKeyDTO) {
     apiKeyDTO.setAccountIdentifier(accountIdentifier);
     apiKeyService.validateParentIdentifier(apiKeyDTO.getAccountIdentifier(), apiKeyDTO.getOrgIdentifier(),
         apiKeyDTO.getProjectIdentifier(), apiKeyDTO.getApiKeyType(), apiKeyDTO.getParentIdentifier());

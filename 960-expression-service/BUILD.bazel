@@ -15,16 +15,6 @@ java_library(
         "//970-grpc:module",
         "//980-commons:module",
         "//999-annotations:module",
-        "@maven//:com_fasterxml_jackson_core_jackson_core",
-        "@maven//:com_fasterxml_jackson_core_jackson_databind",
-        "@maven//:com_fasterxml_jackson_dataformat_jackson_dataformat_yaml",
-        "@maven//:com_google_code_findbugs_annotations",
-        "@maven//:com_google_guava_guava",
-        "@maven//:com_google_inject_guice",
-        "@maven//:commons_io_commons_io",
-        "@maven//:io_grpc_grpc_api",
-        "@maven//:io_grpc_grpc_stub",
-        "@maven//:org_slf4j_slf4j_api",
     ],
 )
 

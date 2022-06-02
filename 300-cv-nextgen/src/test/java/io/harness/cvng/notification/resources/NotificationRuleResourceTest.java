@@ -196,6 +196,100 @@ public class NotificationRuleResourceTest extends CvNextGenTestBase {
     return getYAML(filePath, monitoredServiceDTO.getIdentifier());
   }
 
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testSaveNotificationRuleData_withSLO_withInvalidThresholds() throws IOException {
+    String notificationYaml = getYAML("notification/notification-rule-slo-invalid-threshold.yaml");
+    notificationYaml = notificationYaml.replace("$RemainingPercentageThreshold", "-10");
+    notificationYaml = notificationYaml.replace("$RemainingMinutesThreshold", "20");
+    notificationYaml = notificationYaml.replace("$BurnRateThreshold", "5");
+    notificationYaml = notificationYaml.replace("$Duration", "10m");
+    Response response = RESOURCES.client()
+                            .target("http://localhost:9998/notification-rule/")
+                            .queryParam("accountId", builderFactory.getContext().getAccountId())
+                            .request(MediaType.APPLICATION_JSON_TYPE)
+                            .post(Entity.json(convertToJson(notificationYaml)));
+    assertThat(response.getStatus()).isEqualTo(400);
+    assertThat(response.readEntity(String.class))
+        .contains("[{\"field\":\"threshold\",\"message\":\"must be greater than or equal to 0\"}]");
+
+    notificationYaml = getYAML("notification/notification-rule-slo-invalid-threshold.yaml");
+    notificationYaml = notificationYaml.replace("$RemainingPercentageThreshold", "10");
+    notificationYaml = notificationYaml.replace("$RemainingMinutesThreshold", "20");
+    notificationYaml = notificationYaml.replace("$BurnRateThreshold", "-5");
+    notificationYaml = notificationYaml.replace("$Duration", "10m");
+    response = RESOURCES.client()
+                   .target("http://localhost:9998/notification-rule/")
+                   .queryParam("accountId", builderFactory.getContext().getAccountId())
+                   .request(MediaType.APPLICATION_JSON_TYPE)
+                   .post(Entity.json(convertToJson(notificationYaml)));
+    assertThat(response.getStatus()).isEqualTo(400);
+    assertThat(response.readEntity(String.class))
+        .contains("[{\"field\":\"threshold\",\"message\":\"must be greater than or equal to 0\"}]");
+
+    notificationYaml = getYAML("notification/notification-rule-slo-invalid-threshold.yaml");
+    notificationYaml = notificationYaml.replace("$RemainingPercentageThreshold", "10");
+    notificationYaml = notificationYaml.replace("$RemainingMinutesThreshold", "20");
+    notificationYaml = notificationYaml.replace("$BurnRateThreshold", "5");
+    notificationYaml = notificationYaml.replace("$Duration", "-10m");
+    response = RESOURCES.client()
+                   .target("http://localhost:9998/notification-rule/")
+                   .queryParam("accountId", builderFactory.getContext().getAccountId())
+                   .request(MediaType.APPLICATION_JSON_TYPE)
+                   .post(Entity.json(convertToJson(notificationYaml)));
+    assertThat(response.getStatus()).isEqualTo(500);
+    assertThat(response.readEntity(String.class))
+        .contains("\"message\":\"java.lang.IllegalArgumentException: duration cannot be a negative value\"");
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testSaveNotificationRuleData_withMonitoredService_withInvalidThresholds() throws IOException {
+    String notificationYaml = getYAML("notification/notification-rule-monitored-service-invalid-threshold.yaml");
+    notificationYaml = notificationYaml.replace("$ChangeImpactThreshold", "-10");
+    notificationYaml = notificationYaml.replace("$ChangeImpactDuration", "20m");
+    notificationYaml = notificationYaml.replace("$HealthScoreThreshold", "10");
+    notificationYaml = notificationYaml.replace("$HealthScoreDuration", "20m");
+    Response response = RESOURCES.client()
+                            .target("http://localhost:9998/notification-rule/")
+                            .queryParam("accountId", builderFactory.getContext().getAccountId())
+                            .request(MediaType.APPLICATION_JSON_TYPE)
+                            .post(Entity.json(convertToJson(notificationYaml)));
+    assertThat(response.getStatus()).isEqualTo(400);
+    assertThat(response.readEntity(String.class))
+        .contains("[{\"field\":\"threshold\",\"message\":\"must be greater than or equal to 0\"}]");
+
+    notificationYaml = getYAML("notification/notification-rule-monitored-service-invalid-threshold.yaml");
+    notificationYaml = notificationYaml.replace("$ChangeImpactThreshold", "10");
+    notificationYaml = notificationYaml.replace("$ChangeImpactDuration", "20m");
+    notificationYaml = notificationYaml.replace("$HealthScoreThreshold", "110");
+    notificationYaml = notificationYaml.replace("$HealthScoreDuration", "20m");
+    response = RESOURCES.client()
+                   .target("http://localhost:9998/notification-rule/")
+                   .queryParam("accountId", builderFactory.getContext().getAccountId())
+                   .request(MediaType.APPLICATION_JSON_TYPE)
+                   .post(Entity.json(convertToJson(notificationYaml)));
+    assertThat(response.getStatus()).isEqualTo(400);
+    assertThat(response.readEntity(String.class))
+        .contains("[{\"field\":\"threshold\",\"message\":\"must be less than or equal to 100\"}]");
+
+    notificationYaml = getYAML("notification/notification-rule-monitored-service-invalid-threshold.yaml");
+    notificationYaml = notificationYaml.replace("$ChangeImpactThreshold", "10");
+    notificationYaml = notificationYaml.replace("$ChangeImpactDuration", "20m");
+    notificationYaml = notificationYaml.replace("$HealthScoreThreshold", "10");
+    notificationYaml = notificationYaml.replace("$HealthScoreDuration", "-20m");
+    response = RESOURCES.client()
+                   .target("http://localhost:9998/notification-rule/")
+                   .queryParam("accountId", builderFactory.getContext().getAccountId())
+                   .request(MediaType.APPLICATION_JSON_TYPE)
+                   .post(Entity.json(convertToJson(notificationYaml)));
+    assertThat(response.getStatus()).isEqualTo(500);
+    assertThat(response.readEntity(String.class))
+        .contains("\"message\":\"java.lang.IllegalArgumentException: duration cannot be a negative value\"");
+  }
+
   private String getYAML(String filePath, String monitoredServiceIdentifier) throws IOException {
     String sloYaml = getResource(filePath);
     sloYaml = sloYaml.replace("$projectIdentifier", builderFactory.getContext().getProjectIdentifier());

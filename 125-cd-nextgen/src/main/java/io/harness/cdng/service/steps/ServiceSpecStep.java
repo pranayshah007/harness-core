@@ -85,7 +85,7 @@ public class ServiceSpecStep
     StepResponse stepResponse = StepUtils.createStepResponseFromChildResponse(responseDataMap);
     if (StatusUtils.positiveStatuses().contains(stepResponse.getStatus())) {
       NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
-      logCallback.saveExecutionLog("Processed artifacts and manifests...");
+      logCallback.saveExecutionLog("Processed artifacts and manifests");
     }
     return stepResponse;
   }

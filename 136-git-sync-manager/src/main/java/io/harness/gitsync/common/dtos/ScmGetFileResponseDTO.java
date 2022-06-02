@@ -23,4 +23,5 @@ public class ScmGetFileResponseDTO {
   String fileContent;
   String commitId;
   String blobId;
+  String branchName;
 }

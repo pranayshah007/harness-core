@@ -34,9 +34,6 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyListOf;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -60,7 +57,6 @@ import io.harness.exception.WingsException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.rule.Owner;
-import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.shell.AccessType;
 
 import software.wings.WingsBaseTest;
@@ -81,7 +77,6 @@ import software.wings.beans.ScalyrConfig;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.SplunkConfig;
 import software.wings.beans.SumoConfig;
-import software.wings.beans.SyncTaskContext;
 import software.wings.beans.ValidationResult;
 import software.wings.beans.config.LogzConfig;
 import software.wings.beans.settings.helm.AmazonS3HelmRepoConfig;
@@ -196,24 +191,15 @@ public class SettingValidationServiceTest extends WingsBaseTest {
     FieldUtils.writeField(settingValidationService, "secretManager", secretManager, true);
 
     spySplunkDelegateService = spy(splunkDelegateService);
-    when(delegateProxyFactory.get(eq(SplunkDelegateService.class), any(SyncTaskContext.class)))
-        .thenReturn(spySplunkDelegateService);
-    when(delegateProxyFactory.get(eq(ElkDelegateService.class), any(SyncTaskContext.class)))
-        .thenReturn(elkDelegateService);
-    when(delegateProxyFactory.get(eq(LogzDelegateService.class), any(SyncTaskContext.class)))
-        .thenReturn(logzDelegateService);
-    when(delegateProxyFactory.get(eq(SumoDelegateService.class), any(SyncTaskContext.class)))
-        .thenReturn(sumoDelegateService);
-    when(delegateProxyFactory.get(eq(InstanaDelegateService.class), any(SyncTaskContext.class)))
-        .thenReturn(instanaDelegateService);
-    when(delegateProxyFactory.get(eq(NewRelicDelegateService.class), any(SyncTaskContext.class)))
-        .thenReturn(newRelicDelegateService);
-    when(delegateProxyFactory.get(eq(AppdynamicsDelegateService.class), any(SyncTaskContext.class)))
-        .thenReturn(appdynamicsDelegateService);
-    when(delegateProxyFactory.get(eq(DynaTraceDelegateService.class), any(SyncTaskContext.class)))
-        .thenReturn(dynaTraceDelegateService);
-    when(delegateProxyFactory.get(eq(APMDelegateService.class), any(SyncTaskContext.class)))
-        .thenReturn(apmDelegateService);
+    when(delegateProxyFactory.get(eq(SplunkDelegateService.class), any())).thenReturn(spySplunkDelegateService);
+    when(delegateProxyFactory.get(eq(ElkDelegateService.class), any())).thenReturn(elkDelegateService);
+    when(delegateProxyFactory.get(eq(LogzDelegateService.class), any())).thenReturn(logzDelegateService);
+    when(delegateProxyFactory.get(eq(SumoDelegateService.class), any())).thenReturn(sumoDelegateService);
+    when(delegateProxyFactory.get(eq(InstanaDelegateService.class), any())).thenReturn(instanaDelegateService);
+    when(delegateProxyFactory.get(eq(NewRelicDelegateService.class), any())).thenReturn(newRelicDelegateService);
+    when(delegateProxyFactory.get(eq(AppdynamicsDelegateService.class), any())).thenReturn(appdynamicsDelegateService);
+    when(delegateProxyFactory.get(eq(DynaTraceDelegateService.class), any())).thenReturn(dynaTraceDelegateService);
+    when(delegateProxyFactory.get(eq(APMDelegateService.class), any())).thenReturn(apmDelegateService);
     when(featureFlagService.isEnabled(NEW_KUBECTL_VERSION, ACCOUNT_ID)).thenReturn(false);
   }
 
@@ -223,7 +209,7 @@ public class SettingValidationServiceTest extends WingsBaseTest {
   public void testValidateConnectivity_whenInvalidCredentialsSplunkConnector() {
     com.splunk.Service splunkService = Mockito.mock(com.splunk.Service.class);
     when(splunkService.getJobs()).thenThrow(new RuntimeException("invalid credentials"));
-    doReturn(splunkService).when(spySplunkDelegateService).initSplunkService(any(SplunkConfig.class), anyList());
+    doReturn(splunkService).when(spySplunkDelegateService).initSplunkService(any(SplunkConfig.class), any());
     final ValidationResult validationResult = settingValidationService.validateConnectivity(
         aSettingAttribute().withAccountId(accountId).withName(generateUuid()).withValue(createSplunkConfig()).build());
     assertThat(validationResult.isValid()).isFalse();
@@ -242,7 +228,7 @@ public class SettingValidationServiceTest extends WingsBaseTest {
     splunkConfig.setDecrypted(true);
     com.splunk.Service splunkService = Mockito.mock(com.splunk.Service.class);
     doThrow(new DataCollectionException("HttpException: HTTP 404")).when(splunkService).getJobs();
-    doReturn(splunkService).when(spySplunkDelegateService).initSplunkService(any(SplunkConfig.class), anyList());
+    doReturn(splunkService).when(spySplunkDelegateService).initSplunkService(any(SplunkConfig.class), any());
     final ValidationResult validationResult = settingValidationService.validateConnectivity(
         aSettingAttribute().withAccountId(accountId).withName(generateUuid()).withValue(splunkConfig).build());
     assertThat(validationResult.isValid()).isFalse();
@@ -264,10 +250,10 @@ public class SettingValidationServiceTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testValidateConnectivity_whenValidSplunkConnector() {
     JobCollection jobCollection = Mockito.mock(JobCollection.class);
-    when(jobCollection.create(anyString(), any(JobArgs.class))).thenReturn(Mockito.mock(Job.class));
+    when(jobCollection.create(any(), any(JobArgs.class))).thenReturn(Mockito.mock(Job.class));
     com.splunk.Service splunkService = Mockito.mock(com.splunk.Service.class);
     when(splunkService.getJobs()).thenReturn(jobCollection);
-    doReturn(splunkService).when(spySplunkDelegateService).initSplunkService(any(SplunkConfig.class), anyList());
+    doReturn(splunkService).when(spySplunkDelegateService).initSplunkService(any(SplunkConfig.class), any());
     final ValidationResult validationResult = settingValidationService.validateConnectivity(
         aSettingAttribute().withAccountId(accountId).withName(generateUuid()).withValue(createSplunkConfig()).build());
     assertThat(validationResult.isValid()).isTrue();
@@ -338,7 +324,8 @@ public class SettingValidationServiceTest extends WingsBaseTest {
             .withValue(ElkConfig.builder().elkUrl("https://elk-example.com/").build())
             .build());
     assertThat(validationResult.isValid()).isFalse();
-    assertThat(validationResult.getErrorMessage()).isEqualTo("Error: elk-example.com: Name or service not known");
+    assertThat(validationResult.getErrorMessage())
+        .isEqualTo("Error: elk-example.com: nodename nor servname provided, or not known");
   }
 
   @Test
@@ -377,7 +364,8 @@ public class SettingValidationServiceTest extends WingsBaseTest {
     final ValidationResult validationResult = settingValidationService.validateConnectivity(
         aSettingAttribute().withAccountId(accountId).withName(generateUuid()).withValue(logzConfig).build());
     assertThat(validationResult.isValid()).isFalse();
-    assertThat(validationResult.getErrorMessage()).isEqualTo("Error: logz-example.com: Name or service not known");
+    assertThat(validationResult.getErrorMessage())
+        .isEqualTo("Error: logz-example.com: nodename nor servname provided, or not known");
   }
 
   @Test
@@ -487,7 +475,8 @@ public class SettingValidationServiceTest extends WingsBaseTest {
     final ValidationResult validationResult = settingValidationService.validateConnectivity(
         aSettingAttribute().withAccountId(accountId).withName(generateUuid()).withValue(instanaConfig).build());
     assertThat(validationResult.isValid()).isFalse();
-    assertThat(validationResult.getErrorMessage()).isEqualTo("Error: instana-example.com: Name or service not known");
+    assertThat(validationResult.getErrorMessage())
+        .isEqualTo("Error: instana-example.com: nodename nor servname provided, or not known");
   }
 
   @Test
@@ -549,7 +538,8 @@ public class SettingValidationServiceTest extends WingsBaseTest {
     final ValidationResult validationResult = settingValidationService.validateConnectivity(
         aSettingAttribute().withAccountId(accountId).withName(generateUuid()).withValue(newRelicConfig).build());
     assertThat(validationResult.isValid()).isFalse();
-    assertThat(validationResult.getErrorMessage()).isEqualTo("Error: newrelic-example.com: Name or service not known");
+    assertThat(validationResult.getErrorMessage())
+        .isEqualTo("Error: newrelic-example.com: nodename nor servname provided, or not known");
   }
 
   @Test
@@ -613,7 +603,8 @@ public class SettingValidationServiceTest extends WingsBaseTest {
     final ValidationResult validationResult = settingValidationService.validateConnectivity(
         aSettingAttribute().withAccountId(accountId).withName(generateUuid()).withValue(appDynamicsConfig).build());
     assertThat(validationResult.isValid()).isFalse();
-    assertThat(validationResult.getErrorMessage()).isEqualTo("Error: appd-example.com: Name or service not known");
+    assertThat(validationResult.getErrorMessage())
+        .isEqualTo("Error: appd-example.com: nodename nor servname provided, or not known");
   }
 
   @Test
@@ -680,7 +671,8 @@ public class SettingValidationServiceTest extends WingsBaseTest {
     final ValidationResult validationResult = settingValidationService.validateConnectivity(
         aSettingAttribute().withAccountId(accountId).withName(generateUuid()).withValue(dynaTraceConfig).build());
     assertThat(validationResult.isValid()).isFalse();
-    assertThat(validationResult.getErrorMessage()).isEqualTo("Error: dynatrace-example.com: Name or service not known");
+    assertThat(validationResult.getErrorMessage())
+        .isEqualTo("Error: dynatrace-example.com: nodename nor servname provided, or not known");
   }
 
   @Test
@@ -827,8 +819,7 @@ public class SettingValidationServiceTest extends WingsBaseTest {
     final String password = "password";
 
     when(wingsPersistence.createQuery(eq(SettingAttribute.class))).thenReturn(spyQuery);
-    when(elkAnalysisService.getVersion(anyString(), any(ElkConfig.class), anyListOf(EncryptedDataDetail.class)))
-        .thenThrow(IOException.class);
+    when(elkAnalysisService.getVersion(any(), any(ElkConfig.class), any())).thenThrow(IOException.class);
 
     ElkConfig elkConfig = new ElkConfig();
     elkConfig.setAccountId(ACCOUNT_ID);
@@ -889,10 +880,10 @@ public class SettingValidationServiceTest extends WingsBaseTest {
 
     doNothing()
         .when(awsEc2HelperServiceManager)
-        .validateAwsAccountCredential(eq((AwsConfig) attribute.getValue()), anyList());
+        .validateAwsAccountCredential(eq((AwsConfig) attribute.getValue()), any());
 
     settingValidationService.validate(attribute);
-    verify(awsEc2HelperServiceManager).validateAwsAccountCredential(eq((AwsConfig) attribute.getValue()), anyList());
+    verify(awsEc2HelperServiceManager).validateAwsAccountCredential(eq((AwsConfig) attribute.getValue()), any());
   }
 
   @Test
@@ -914,26 +905,26 @@ public class SettingValidationServiceTest extends WingsBaseTest {
     when(wingsPersistence.createQuery(eq(SettingAttribute.class))).thenReturn(spyQuery);
     doNothing()
         .when(awsEc2HelperServiceManager)
-        .validateAwsAccountCredential(eq((AwsConfig) attribute.getValue()), anyList());
+        .validateAwsAccountCredential(eq((AwsConfig) attribute.getValue()), any());
 
     when(featureFlagService.isNotEnabled(AWS_OVERRIDE_REGION, ACCOUNT_ID)).thenReturn(true);
     assertThatExceptionOfType(InvalidRequestException.class)
         .isThrownBy(() -> settingValidationService.validate(attribute))
         .withMessageContaining("AWS Override region support is not enabled");
     verify(awsEc2HelperServiceManager, times(0))
-        .validateAwsAccountCredential(eq((AwsConfig) attribute.getValue()), anyList());
+        .validateAwsAccountCredential(eq((AwsConfig) attribute.getValue()), any());
 
     when(featureFlagService.isNotEnabled(AWS_OVERRIDE_REGION, ACCOUNT_ID)).thenReturn(false);
     assertThatExceptionOfType(InvalidRequestException.class)
         .isThrownBy(() -> settingValidationService.validate(attribute))
         .withMessageContaining("Invalid AWS region provided: ");
     verify(awsEc2HelperServiceManager, times(0))
-        .validateAwsAccountCredential(eq((AwsConfig) attribute.getValue()), anyList());
+        .validateAwsAccountCredential(eq((AwsConfig) attribute.getValue()), any());
 
     when(awsHelperResourceService.getAwsRegions())
         .thenReturn(Collections.singletonList(NameValuePair.builder().value("us-east-1").build()));
     settingValidationService.validate(attribute);
-    verify(awsEc2HelperServiceManager).validateAwsAccountCredential(eq((AwsConfig) attribute.getValue()), anyList());
+    verify(awsEc2HelperServiceManager).validateAwsAccountCredential(eq((AwsConfig) attribute.getValue()), any());
   }
 
   @Test
@@ -1005,12 +996,12 @@ public class SettingValidationServiceTest extends WingsBaseTest {
     SettingAttribute attribute = new SettingAttribute();
     attribute.setValue(hostConnectionAttributes.build());
 
-    when(secretManager.getSecretById(anyString(), anyString())).thenReturn(null);
+    when(secretManager.getSecretById(any(), any())).thenReturn(null);
     assertThatThrownBy(() -> settingValidationService.validate(attribute))
         .hasMessageContaining("Specified password field doesn't exist")
         .isInstanceOf(InvalidRequestException.class);
 
-    when(secretManager.getSecretById(anyString(), anyString())).thenReturn(EncryptedData.builder().build());
+    when(secretManager.getSecretById(any(), any())).thenReturn(EncryptedData.builder().build());
     assertThatCode(() -> settingValidationService.validate(attribute)).doesNotThrowAnyException();
   }
 
@@ -1033,19 +1024,17 @@ public class SettingValidationServiceTest extends WingsBaseTest {
     SettingAttribute attribute = new SettingAttribute();
     attribute.setValue(hostConnectionAttributes.build());
 
-    when(secretManager.getSecretById(anyString(), anyString())).thenReturn(null);
+    when(secretManager.getSecretById(any(), any())).thenReturn(null);
     assertThatThrownBy(() -> settingValidationService.validate(attribute))
         .hasMessageContaining("Specified Encrypted SSH key File doesn't exist")
         .isInstanceOf(InvalidRequestException.class);
 
-    when(secretManager.getSecretById(anyString(), anyString()))
-        .thenReturn(EncryptedData.builder().build())
-        .thenReturn(null);
+    when(secretManager.getSecretById(any(), any())).thenReturn(EncryptedData.builder().build()).thenReturn(null);
     assertThatThrownBy(() -> settingValidationService.validate(attribute))
         .hasMessageContaining("Specified Encrypted Passphrase field doesn't exist")
         .isInstanceOf(InvalidRequestException.class);
 
-    when(secretManager.getSecretById(anyString(), anyString())).thenReturn(EncryptedData.builder().build());
+    when(secretManager.getSecretById(any(), any())).thenReturn(EncryptedData.builder().build());
     assertThatCode(() -> settingValidationService.validate(attribute)).doesNotThrowAnyException();
   }
 
@@ -1164,8 +1153,8 @@ public class SettingValidationServiceTest extends WingsBaseTest {
     FieldUtils.writeField(settingValidationService, "settingsService", settingsService, true);
     FieldUtils.writeField(settingValidationService, "delegateService", delegateService, true);
 
-    when(settingsService.get(anyString(), anyString())).thenReturn(connectorAttribute);
-    when(delegateService.executeTask(any(DelegateTask.class)))
+    when(settingsService.get(any(), any())).thenReturn(connectorAttribute);
+    when(delegateService.executeTask(any()))
         .thenReturn(
             HelmRepoConfigValidationResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build());
 

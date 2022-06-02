@@ -36,16 +36,29 @@ import lombok.experimental.FieldDefaults;
 @JsonInclude(NON_NULL)
 @ApiModel(value = "AccountDTO")
 @OwnedBy(PL)
-@Schema(name = "Account", description = "This is the view of an Account defined in Harness")
+@Schema(name = "Account", description = "Account details defined in Harness.")
 public class AccountDTO {
-  @EntityIdentifier(allowBlank = false) @VariableExpression(skipVariableExpression = true) String identifier;
-  @NGEntityName String name;
-  String companyName;
-  @VariableExpression(skipVariableExpression = true) String cluster;
-  @VariableExpression(skipVariableExpression = true) DefaultExperience defaultExperience;
-  @VariableExpression(skipVariableExpression = true) AuthenticationMechanism authenticationMechanism;
-  @VariableExpression(skipVariableExpression = true) ServiceAccountConfig serviceAccountConfig;
-  @VariableExpression(skipVariableExpression = true) boolean isNextGenEnabled;
+  @Schema(description = "Account Identifier.")
+  @EntityIdentifier(allowBlank = false)
+  @VariableExpression(skipVariableExpression = true)
+  String identifier;
+  @Schema(description = "Name of the Account.") @NGEntityName String name;
+  @Schema(description = "Name of the Company.") String companyName;
+  @Schema(description = "Name of the cluster associated with this Account.")
+  @VariableExpression(skipVariableExpression = true)
+  String cluster;
+  @Schema(description = "Default experience of the Account.")
+  @VariableExpression(skipVariableExpression = true)
+  DefaultExperience defaultExperience;
+  @Schema(description = "Authentication mechanism associated with the account.")
+  @VariableExpression(skipVariableExpression = true)
+  AuthenticationMechanism authenticationMechanism;
+  @Schema(description = "Service Account configuration associated with this Account.")
+  @VariableExpression(skipVariableExpression = true)
+  ServiceAccountConfig serviceAccountConfig;
+  @Schema(description = "Specifies if NextGen is enabled for this Account.")
+  @VariableExpression(skipVariableExpression = true)
+  boolean isNextGenEnabled;
 
   @Builder
   public AccountDTO(String identifier, String name, String companyName, String cluster,

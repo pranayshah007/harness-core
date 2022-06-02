@@ -77,8 +77,9 @@ public class FileDTO {
   @Schema(description = "Whether File is draft or not") @JsonProperty(access = Access.READ_ONLY) private Boolean draft;
   @Schema(description = "File created by user") @FormDataParam("createdBy") private EmbeddedUserDetailsDTO createdBy;
   @Schema(description = "File updated by user")
-  @FormDataParam("lastUpdatedBy")
-  private EmbeddedUserDetailsDTO lastUpdatedBy;
+  @FormDataParam("lastModifiedBy")
+  private EmbeddedUserDetailsDTO lastModifiedBy;
+  @Schema(description = "Last modified time for the File") @FormDataParam("lastModifiedAt") private Long lastModifiedAt;
 
   @JsonIgnore
   public boolean isFile() {
@@ -98,7 +99,8 @@ public class FileDTO {
   @Builder
   public FileDTO(String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier,
       String name, FileUsage fileUsage, NGFileType type, String parentIdentifier, String description, List<NGTag> tags,
-      String mimeType, Boolean draft, EmbeddedUserDetailsDTO createdBy, EmbeddedUserDetailsDTO lastUpdatedBy) {
+      String mimeType, Boolean draft, EmbeddedUserDetailsDTO createdBy, EmbeddedUserDetailsDTO lastModifiedBy,
+      Long lastModifiedAt) {
     this.accountIdentifier = accountIdentifier;
     this.orgIdentifier = orgIdentifier;
     this.projectIdentifier = projectIdentifier;
@@ -112,6 +114,7 @@ public class FileDTO {
     this.mimeType = mimeType;
     this.draft = draft;
     this.createdBy = createdBy;
-    this.lastUpdatedBy = lastUpdatedBy;
+    this.lastModifiedBy = lastModifiedBy;
+    this.lastModifiedAt = lastModifiedAt;
   }
 }

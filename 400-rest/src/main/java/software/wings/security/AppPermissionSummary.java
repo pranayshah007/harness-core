@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.Set;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 /**
@@ -108,6 +109,7 @@ public class AppPermissionSummary {
 
   @Data
   @Builder
+  @EqualsAndHashCode
   public static class ExecutableElementInfo {
     private String entityType;
     private String entityId;

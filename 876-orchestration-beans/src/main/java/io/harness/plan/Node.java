@@ -29,6 +29,10 @@ public interface Node extends UuidAccess {
 
   String getGroup();
 
+  default String getExecutionInputTemplate() {
+    return "";
+  }
+
   default boolean isSkipExpressionChain() {
     return false;
   }

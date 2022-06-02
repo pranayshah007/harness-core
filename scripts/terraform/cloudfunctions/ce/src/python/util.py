@@ -145,15 +145,15 @@ def createTable(client, table_ref):
         )
     elif tableName.startswith(GCPINSTANCEINVENTORY):
         fieldset = bq_schema.gcpInstanceInventorySchema
-        partition = bigquery.RangePartitioning(
-            range_=bigquery.PartitionRange(start=0, end=10000, interval=1),
-            field="projectNumberPartition"
+        partition = bigquery.TimePartitioning(
+            type_=bigquery.TimePartitioningType.DAY,
+            field="creationTime"
         )
     elif tableName.startswith(GCPDISKINVENTORY):
         fieldset = bq_schema.gcpDiskInventorySchema
-        partition = bigquery.RangePartitioning(
-            range_=bigquery.PartitionRange(start=0, end=10000, interval=1),
-            field="projectNumberPartition"
+        partition = bigquery.TimePartitioning(
+            type_=bigquery.TimePartitioningType.DAY,
+            field="creationTime"
         )
 
     for field in fieldset:
@@ -176,10 +176,10 @@ def createTable(client, table_ref):
     table = bigquery.Table("%s.%s.%s" % (table_ref.project, table_ref.dataset_id, tableName), schema=schema)
 
     if tableName in [UNIFIED, PREAGGREGATED, AWSEC2INVENTORYMETRIC, AWSEBSINVENTORYMETRICS, COSTAGGREGATED] or \
-        tableName.startswith(AWSCURPREFIX):
+            tableName.startswith(GCPINSTANCEINVENTORY) or tableName.startswith(GCPDISKINVENTORY) or \
+            tableName.startswith(AWSCURPREFIX):
         table.time_partitioning = partition
     elif tableName.startswith(AWSEC2INVENTORY) or tableName.startswith(AWSEBSINVENTORY) or \
-            tableName.startswith(GCPINSTANCEINVENTORY) or tableName.startswith(GCPDISKINVENTORY) or\
             tableName in [CLUSTERDATA, CLUSTERDATAAGGREGATED, CLUSTERDATAHOURLY, CLUSTERDATAHOURLYAGGREGATED]:
         table.range_partitioning = partition
 

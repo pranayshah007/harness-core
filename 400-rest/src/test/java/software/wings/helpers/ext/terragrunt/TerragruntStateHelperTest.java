@@ -130,7 +130,7 @@ public class TerragruntStateHelperTest extends CategoryTest {
   private static final String PATH_TO_MODULE = "aws-module";
   private static final String ENTITY_ID = "ENTITY_ID";
 
-  private final Answer<String> answer = invocation -> invocation.getArgumentAt(0, String.class) + "-rendered";
+  private final Answer<String> answer = invocation -> invocation.getArgument(0, String.class) + "-rendered";
 
   String multiModuleOutput = "{\n"
       + "  \"regiona\": {\n"
@@ -216,7 +216,7 @@ public class TerragruntStateHelperTest extends CategoryTest {
         .when(executionContext)
         .renderExpression(provisioner.getSourceRepoBranch());
     doReturn(provisioner.getCommitId()).when(executionContext).renderExpression(provisioner.getCommitId());
-    doReturn(gitConfig).when(gitUtilsManager).getGitConfig(anyString());
+    doReturn(gitConfig).when(gitUtilsManager).getGitConfig(any());
     GitConfig gitConfigOutput = terragruntStateHelper.populateAndGetGitConfig(executionContext, provisioner);
 
     assertThat(gitConfigOutput.getBranch()).isEqualTo(provisioner.getSourceRepoBranch());
@@ -228,7 +228,7 @@ public class TerragruntStateHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testResolveTargest() {
     List<String> targets = Arrays.asList("target1", "target2");
-    doAnswer(invocation -> invocation.getArgumentAt(0, String.class) + "-rendered")
+    doAnswer(invocation -> invocation.getArgument(0, String.class) + "-rendered")
         .when(executionContext)
         .renderExpression(anyString());
     assertThat(resolveTargets(targets, executionContext)).contains("target1-rendered", "target2-rendered");
@@ -363,7 +363,7 @@ public class TerragruntStateHelperTest extends CategoryTest {
 
     ArgumentCaptor<SweepingOutputInstance> sweepingOutputCaptor = ArgumentCaptor.forClass(SweepingOutputInstance.class);
     verify(sweepingOutputService, times(1)).save(sweepingOutputCaptor.capture());
-    verify(sweepingOutputService, times(1)).deleteById(anyString(), anyString());
+    verify(sweepingOutputService, times(1)).deleteById(any(), anyString());
     assertThat(((TerragruntOutputVariables) sweepingOutputCaptor.getValue().getValue()).keySet())
         .contains("output1", "output2", "existing");
   }

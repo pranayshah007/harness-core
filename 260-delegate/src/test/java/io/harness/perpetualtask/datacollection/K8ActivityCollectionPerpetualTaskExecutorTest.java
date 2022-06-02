@@ -93,7 +93,7 @@ public class K8ActivityCollectionPerpetualTaskExecutorTest extends DelegateTestB
     apiClient = Mockito.mock(ApiClient.class);
     when(apiClient.setVerifyingSsl(anyBoolean())).thenReturn(apiClient);
     when(apiClient.escapeString(anyString())).thenReturn(generateUuid());
-    when(apiClientFactory.getClient(any(KubernetesConfig.class))).thenReturn(apiClient);
+    when(apiClientFactory.getClient(any())).thenReturn(apiClient);
     on(dataCollector).set("kryoSerializer", kryoSerializer);
     accountId = generateUuid();
 

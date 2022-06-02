@@ -29,6 +29,7 @@ import java.util.List;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.UtilityClass;
 import org.hibernate.validator.constraints.NotBlank;
@@ -49,6 +50,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document("entitySetupUsage")
 @TypeAlias("io.harness.ng.core.entityReference.entity.EntitySetupUsage")
 @OwnedBy(DX)
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Entity(value = "entitySetupUsage", noClassnameStored = true)
 @StoreIn(DbAliases.NG_MANAGER)
 @StoreIn(DbAliases.PMS)
@@ -116,21 +118,21 @@ public class EntitySetupUsage implements PersistentEntity, NGAccountAccess {
   }
 
   @Id @org.mongodb.morphia.annotations.Id String id;
-  @FdIndex @NotBlank String accountIdentifier;
+  @FdIndex @NotBlank @EqualsAndHashCode.Include String accountIdentifier;
   @NotNull EntityDetail referredEntity;
   @NotNull EntityDetail referredByEntity;
   SetupUsageDetail detail;
 
-  @FdIndex @NotBlank String referredEntityFQN;
-  @NotBlank String referredEntityType;
-  String referredEntityRepoIdentifier;
-  String referredEntityBranch;
+  @FdIndex @NotBlank @EqualsAndHashCode.Include String referredEntityFQN;
+  @NotBlank @EqualsAndHashCode.Include String referredEntityType;
+  @EqualsAndHashCode.Include String referredEntityRepoIdentifier;
+  @EqualsAndHashCode.Include String referredEntityBranch;
   Boolean referredEntityIsDefault;
 
-  @FdIndex @NotBlank String referredByEntityFQN;
-  @NotBlank String referredByEntityType;
-  String referredByEntityRepoIdentifier;
-  String referredByEntityBranch;
+  @FdIndex @NotBlank @EqualsAndHashCode.Include String referredByEntityFQN;
+  @NotBlank @EqualsAndHashCode.Include String referredByEntityType;
+  @EqualsAndHashCode.Include String referredByEntityRepoIdentifier;
+  @EqualsAndHashCode.Include String referredByEntityBranch;
   Boolean referredByEntityIsDefault;
 
   @CreatedDate Long createdAt;

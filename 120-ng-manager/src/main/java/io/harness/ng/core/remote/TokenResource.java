@@ -108,8 +108,9 @@ public class TokenResource {
         ApiResponse(responseCode = "default", description = "Returns created Token details")
       })
   public ResponseDTO<String>
-  createToken(@Valid TokenDTO tokenDTO,
-      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier) {
+  createToken(@Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotNull @QueryParam(
+                  NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
+      @Valid TokenDTO tokenDTO) {
     tokenDTO.setAccountIdentifier(accountIdentifier);
     apiKeyService.validateParentIdentifier(tokenDTO.getAccountIdentifier(), tokenDTO.getOrgIdentifier(),
         tokenDTO.getProjectIdentifier(), tokenDTO.getApiKeyType(), tokenDTO.getParentIdentifier());
@@ -128,7 +129,8 @@ public class TokenResource {
   public ResponseDTO<TokenDTO>
   updateToken(@Parameter(description = "Token ID") @NotNull @PathParam("identifier") String identifier,
       @Valid TokenDTO tokenDTO,
-      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier) {
+      @Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotNull @AccountIdentifier @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier) {
     tokenDTO.setAccountIdentifier(accountIdentifier);
     apiKeyService.validateParentIdentifier(tokenDTO.getAccountIdentifier(), tokenDTO.getOrgIdentifier(),
         tokenDTO.getProjectIdentifier(), tokenDTO.getApiKeyType(), tokenDTO.getParentIdentifier());

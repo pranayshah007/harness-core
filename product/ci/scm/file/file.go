@@ -57,6 +57,12 @@ func FindFile(ctx context.Context, fileRequest *pb.GetFileRequest, log *zap.Suga
 		content.Sha, "blob id", content.BlobID, "elapsed_time_ms", utils.TimeSince(start))
 
 	commitID := string(content.Sha)
+	// If the caller has provided a ref than we return that ref as the commitId
+	if fileRequest.GetRef() != "" {
+	    commitID = fileRequest.GetRef()
+	}
+
+    // If the caller has provided a branch then we fetch latest commit of the branch
 	if commitID == "" {
 		// If the sha is not returned then we fetch the latest sha of the file
 		request := &pb.GetLatestCommitOnFileRequest{
@@ -68,7 +74,7 @@ func FindFile(ctx context.Context, fileRequest *pb.GetFileRequest, log *zap.Suga
 		response, err := git.GetLatestCommitOnFile(ctx, request, log)
 		if err != nil {
 			log.Errorw("GetLatest Commit Failed", "slug", fileRequest.GetSlug(), "path", fileRequest.GetPath(), "ref", ref, "commit id",
-				content.Sha, "blob id", content.BlobID, "elapsed_time_ms", utils.TimeSince(start))
+				content.Sha, "blob id", content.BlobID, "elapsed_time_ms", utils.TimeSince(start), zap.Error(err))
 			out = &pb.FileContent{
 				Error:  "Could not fetch the file content",
 				Status: 400,
@@ -453,7 +459,7 @@ func parseCrudResponse(ctx context.Context, client *scm.Client, body io.Reader, 
 			return "", ""
 		}
 		return out.Commit.Sha, out.Content.Sha
-	case *pb.Provider_BitbucketCloud:
+	case *pb.Provider_BitbucketCloud, *pb.Provider_BitbucketServer:
 		// Bitbucket doesn't work on blobId concept for a file, thus it will  always be empty
 		// We try to find out the latest commit on the file, which is most-likely the commit done by SCM itself
 		// It works on best-effort basis

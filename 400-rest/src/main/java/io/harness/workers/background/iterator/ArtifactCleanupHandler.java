@@ -62,6 +62,7 @@ public class ArtifactCleanupHandler implements Handler<ArtifactStream> {
     PersistenceIterator iterator = persistenceIteratorFactory.createIterator(ArtifactCleanupHandler.class,
         MongoPersistenceIterator.<ArtifactStream, MorphiaFilterExpander<ArtifactStream>>builder()
             .mode(ProcessMode.PUMP)
+            .iteratorName("ArtifactCleanup")
             .clazz(ArtifactStream.class)
             .fieldName(ArtifactStreamKeys.nextCleanupIteration)
             .targetInterval(ofHours(2))

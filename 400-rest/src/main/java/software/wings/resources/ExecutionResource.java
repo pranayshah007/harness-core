@@ -28,6 +28,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.CreatedByType;
 import io.harness.beans.ExecutionInterruptType;
+import io.harness.beans.FeatureName;
 import io.harness.beans.PageRequest;
 import io.harness.beans.PageResponse;
 import io.harness.beans.SearchFilter.Operator;
@@ -54,6 +55,8 @@ import software.wings.beans.StateExecutionElement;
 import software.wings.beans.StateExecutionInterrupt;
 import software.wings.beans.WorkflowExecution;
 import software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
+import software.wings.beans.approval.ApproveAndRejectPreviousDeploymentsBody;
+import software.wings.beans.approval.PreviousApprovalDetails;
 import software.wings.beans.artifact.Artifact;
 import software.wings.beans.baseline.WorkflowExecutionBaseline;
 import software.wings.beans.concurrency.ConcurrentExecutionResponse;
@@ -68,6 +71,7 @@ import software.wings.security.PermissionAttribute.ResourceType;
 import software.wings.security.UserThreadLocal;
 import software.wings.security.annotations.AuthRule;
 import software.wings.security.annotations.Scope;
+import software.wings.service.impl.WorkflowExecutionTimeFilterHelper;
 import software.wings.service.impl.pipeline.resume.PipelineResumeUtils;
 import software.wings.service.impl.security.auth.DeploymentAuthHandler;
 import software.wings.service.intfc.AppService;
@@ -115,7 +119,7 @@ public class ExecutionResource {
   @Inject private AuthService authService;
   @Inject private FeatureFlagService featureFlagService;
   @Inject @Named(DeploymentHistoryFeature.FEATURE_NAME) private RestrictedFeature deploymentHistoryFeature;
-
+  @Inject private WorkflowExecutionTimeFilterHelper workflowExecutionTimeFilterHelper;
   private static final String EXECUTION_DOES_NOT_EXIST = "No workflow execution exists for id: ";
 
   /**
@@ -142,6 +146,7 @@ public class ExecutionResource {
       @DefaultValue("false") @QueryParam("includeIndirectExecutions") boolean includeIndirectExecutions,
       @QueryParam("tagFilter") String tagFilter, @QueryParam("withTags") @DefaultValue("false") boolean withTags) {
     // NOTE: Any new filters added here should also be added in ExportExecutionsResource.
+    workflowExecutionTimeFilterHelper.updatePageRequestForTimeFilter(pageRequest, accountId);
     List<String> authorizedAppIds;
     if (isNotEmpty(appIds)) {
       authorizedAppIds = appIds;
@@ -438,6 +443,14 @@ public class ExecutionResource {
           approvalStateExecutionData.getApprovalStateType() + " Approval Type not supported", USER);
     }
 
+    String accountId = appService.getAccountIdByAppId(appId);
+
+    if (approvalStateExecutionData.isAutoRejectPreviousDeployments()
+        && approvalDetails.getAction() == ApprovalDetails.Action.APPROVE
+        && featureFlagService.isEnabled(FeatureName.AUTO_REJECT_PREVIOUS_APPROVALS, accountId)) {
+      workflowExecutionService.rejectPreviousDeployments(appId, workflowExecutionId, approvalDetails);
+    }
+
     if (isEmpty(approvalStateExecutionData.getUserGroups())) {
       deploymentAuthHandler.authorize(appId, workflowExecutionId);
     }
@@ -731,5 +744,31 @@ public class ExecutionResource {
       throw new InvalidRequestException("workflowExecutionId is required", USER);
     }
     return new RestResponse<>(workflowExecutionService.getWorkflowExecutionInfo(workflowExecutionId));
+  }
+
+  @GET
+  @Path("{workflowExecutionId}/previousApprovalDetails")
+  @Timed
+  @ExceptionMetered
+  @AuthRule(permissionType = DEPLOYMENT, action = EXECUTE_PIPELINE, skipAuth = true)
+  public RestResponse<PreviousApprovalDetails> getPreviousApprovalDetails(@QueryParam("appId") String appId,
+      @PathParam("workflowExecutionId") String workflowExecutionId, @QueryParam("pipelineId") String workflowId,
+      @QueryParam("approvalId") String approvalId) {
+    return new RestResponse<>(
+        workflowExecutionService.getPreviousApprovalDetails(appId, workflowExecutionId, workflowId, approvalId));
+  }
+
+  @POST
+  @Path("{workflowExecutionId}/approveAndRejectPreviousDeployments")
+  @Timed
+  @ExceptionMetered
+  @AuthRule(permissionType = DEPLOYMENT, action = EXECUTE_PIPELINE, skipAuth = true)
+  public RestResponse<Boolean> approveAndRejectPreviousDeployments(@QueryParam("accountId") String accountId,
+      @QueryParam("appId") String appId, @QueryParam("stateExecutionId") String stateExecutionId,
+      @PathParam("workflowExecutionId") String workflowExecutionId,
+      ApproveAndRejectPreviousDeploymentsBody approveAndRejectPreviousDeploymentsBody) {
+    return new RestResponse<>(workflowExecutionService.approveAndRejectPreviousExecutions(accountId, appId,
+        workflowExecutionId, stateExecutionId, approveAndRejectPreviousDeploymentsBody.getApprovalDetails(),
+        approveAndRejectPreviousDeploymentsBody.getPreviousApprovalDetails()));
   }
 }

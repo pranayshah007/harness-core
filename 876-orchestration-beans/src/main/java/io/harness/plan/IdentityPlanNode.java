@@ -37,6 +37,7 @@ public class IdentityPlanNode implements Node {
   StepType stepType;
   String originalNodeExecutionId;
   String serviceName;
+  String executionInputTemplate;
 
   @Override
   public String getStageFqn() {

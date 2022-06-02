@@ -148,6 +148,7 @@ public class K8sBGRequestHandlerTest extends CategoryTest {
     final K8sBGDeployRequest k8sBGDeployRequest =
         K8sBGDeployRequest.builder()
             .skipResourceVersioning(true)
+            .k8sInfraDelegateConfig(k8sInfraDelegateConfig)
             .manifestDelegateConfig(KustomizeManifestDelegateConfig.builder().build())
             .releaseName("releaseName")
             .build();
@@ -192,7 +193,12 @@ public class K8sBGRequestHandlerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testExecuteTaskInternalFetchManifestFilesAndWriteToDirectoryFailed() throws Exception {
     final K8sBGDeployRequest k8sBGDeployRequest =
-        K8sBGDeployRequest.builder().skipResourceVersioning(true).releaseName("releaseName").build();
+        K8sBGDeployRequest.builder()
+            .manifestDelegateConfig(KustomizeManifestDelegateConfig.builder().build())
+            .accountId("id")
+            .skipResourceVersioning(true)
+            .releaseName("releaseName")
+            .build();
     final RuntimeException thrownException = new RuntimeException("failed");
 
     doThrow(thrownException)
@@ -258,6 +264,7 @@ public class K8sBGRequestHandlerTest extends CategoryTest {
   public void testExecuteTaskInternalApplyManifestFailed() throws Exception {
     final K8sBGDeployRequest k8sBGDeployRequest =
         K8sBGDeployRequest.builder()
+            .k8sInfraDelegateConfig(k8sInfraDelegateConfig)
             .skipResourceVersioning(true)
             .manifestDelegateConfig(KustomizeManifestDelegateConfig.builder().build())
             .releaseName("releaseName")
@@ -298,6 +305,7 @@ public class K8sBGRequestHandlerTest extends CategoryTest {
     final K8sBGDeployRequest k8sBGDeployRequest =
         K8sBGDeployRequest.builder()
             .skipResourceVersioning(true)
+            .k8sInfraDelegateConfig(k8sInfraDelegateConfig)
             .manifestDelegateConfig(KustomizeManifestDelegateConfig.builder().build())
             .releaseName("releaseName")
             .build();
@@ -376,8 +384,8 @@ public class K8sBGRequestHandlerTest extends CategoryTest {
         .createKubernetesConfig(k8sInfraDelegateConfig);
     doReturn(renderedFiles)
         .when(k8sTaskHelperBase)
-        .renderTemplate(eq(k8sDelegateTaskParams), eq(k8sManifestDelegateConfig), anyString(), eq(valuesYamlFiles),
-            anyString(), eq("default"), eq(logCallback), eq(10));
+        .renderTemplate(eq(k8sDelegateTaskParams), eq(k8sManifestDelegateConfig), any(), eq(valuesYamlFiles), any(),
+            eq("default"), eq(logCallback), eq(10));
 
     if (throwException) {
       doThrow(thrownException).when(k8sTaskHelperBase).readManifests(renderedFiles, logCallback, true);

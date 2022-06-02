@@ -642,16 +642,11 @@
         {
           "type": "object",
           "required": [
-            "steps"
+            "execution"
           ],
           "properties": {
-            "steps": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/ExecutionWrapperConfig"
-              },
-              "maxItems": 2147483647,
-              "minItems": 1
+            "execution": {
+              "$ref": "#/definitions/ExecutionElementConfig"
             }
           }
         }
@@ -696,6 +691,18 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/VariationYamlSpec"
+          }
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ExcludeConfig": {
+      "type": "object",
+      "properties": {
+        "exclude": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
           }
         }
       },
@@ -891,18 +898,12 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
-    "HoldingScope": {
+    "HarnessForConfig": {
       "type": "object",
-      "required": [
-        "nodeSetupId",
-        "scope"
-      ],
       "properties": {
-        "nodeSetupId": {
-          "type": "string"
-        },
-        "scope": {
-          "type": "string"
+        "iteration": {
+          "type": "integer",
+          "format": "int32"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -1301,6 +1302,18 @@
           }
         }
       ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "MatrixConfig": {
+      "type": "object",
+      "properties": {
+        "exclude": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ExcludeConfig"
+          }
+        }
+      },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "NGProperties": {
@@ -2075,7 +2088,13 @@
               ]
             },
             "holdingScope": {
-              "$ref": "#/definitions/HoldingScope"
+              "type": "string",
+              "enum": [
+                "PLAN",
+                "PIPELINE",
+                "STAGE",
+                "STEP_GROUP"
+              ]
             },
             "name": {
               "type": "string"
@@ -2702,6 +2721,9 @@
               "type": "string",
               "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"
             },
+            "strategy": {
+              "$ref": "#/definitions/StrategyConfig"
+            },
             "template": {
               "$ref": "#/definitions/TemplateLinkConfig"
             }
@@ -2749,6 +2771,9 @@
               "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"
             },
             "spec": { },
+            "strategy": {
+              "$ref": "#/definitions/StrategyConfig"
+            },
             "tags": {
               "type": "object",
               "additionalProperties": {
@@ -3224,6 +3249,27 @@
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "StrategyConfig": {
+      "type": "object",
+      "properties": {
+        "batchSize": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "for": {
+          "$ref": "#/definitions/HarnessForConfig"
+        },
+        "matrix": {
+          "$ref": "#/definitions/MatrixConfig"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "oneOf": [ ]
+        }
+      ]
     },
     "StringNGVariable": {
       "allOf": [

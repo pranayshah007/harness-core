@@ -91,7 +91,7 @@ public class ElasticsearchBulkSyncTaskTest extends WingsBaseTest {
     when(elasticsearchIndexManager.deleteIndex(newIndexName)).thenReturn(true);
 
     doAnswer(invocationOnMock -> {
-      ChangeSubscriber<?> changeSubscriber = invocationOnMock.getArgumentAt(0, ChangeSubscriber.class);
+      ChangeSubscriber<?> changeSubscriber = invocationOnMock.getArgument(0, ChangeSubscriber.class);
       changeSubscriber.onChange(changeEvent);
       changeSubscriber.onChange(changeEvent1);
       return f;

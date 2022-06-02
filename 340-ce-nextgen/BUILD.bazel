@@ -12,6 +12,7 @@ shared_dependencies = [
     "//440-connector-nextgen:module",
     "//450-ce-views:module",
     "//490-ce-commons:module",
+    "//950-telemetry:module",
     "//890-sm-core:module",
     "//910-delegate-service-driver:module",
     "//930-ng-core-clients:module",
@@ -104,7 +105,7 @@ java_library(
         "@maven//:junit_junit",
         "@maven//:org_assertj_assertj_core",
         "@maven//:org_mockito_mockito_core",
-        "@maven//:org_powermock_powermock_api_mockito",
+        "@maven//:org_powermock_powermock_api_mockito2",
     ],
 )
 

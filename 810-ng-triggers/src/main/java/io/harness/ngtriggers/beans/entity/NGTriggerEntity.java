@@ -107,8 +107,6 @@ public class NGTriggerEntity implements PersistentEntity, PersistentNGCronIterab
   @NotEmpty String orgIdentifier;
   @NotEmpty String projectIdentifier;
   @NotEmpty String targetIdentifier;
-  String pipelineBranchName;
-  @Singular @Size(max = 128) List<String> inputSetRefs;
   @NotEmpty TargetType targetType;
 
   @NotEmpty NGTriggerMetadata metadata;

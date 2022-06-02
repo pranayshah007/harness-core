@@ -25,7 +25,7 @@ import static org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -745,7 +745,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
         HealthSourceService.getNameSpacedIdentifier(monitoredServiceIdentifier, healthSourceIdentifier));
     assertThat(cvConfigs.size()).isEqualTo(1);
 
-    doThrow(SocketTimeoutException.class)
+    doAnswer(invocation -> { throw new SocketTimeoutException(); })
         .when(pagerdutyChangeSourceUpdateHandler)
         .handleDelete(any(PagerDutyChangeSource.class));
 
@@ -1139,7 +1139,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
 
     assertThatThrownBy(() -> monitoredServiceService.list(null, null, null))
         .isInstanceOf(NullPointerException.class)
-        .hasMessage("projectParams is marked @NonNull but is null");
+        .hasMessage("projectParams is marked non-null but is null");
   }
 
   @Test
@@ -2197,6 +2197,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
                 .enabled(true)
                 .build()));
     monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    createHeatMaps(monitoredServiceDTO);
     MonitoredService monitoredService = getMonitoredService(monitoredServiceDTO.getIdentifier());
 
     clock = Clock.fixed(clock.instant().plus(1, ChronoUnit.HOURS), ZoneOffset.UTC);
@@ -2217,7 +2218,6 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     NotificationRuleResponse notificationRuleResponse =
         notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
 
-    Instant endTime = roundDownTo5MinBoundary(clock.instant());
     MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTOWithCustomDependencies(
         "service_1_local", environmentParams.getServiceIdentifier(), Sets.newHashSet());
     monitoredServiceDTO.setNotificationRuleRefs(
@@ -2234,6 +2234,32 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     assertThat(
         ((MonitoredServiceServiceImpl) monitoredServiceService).shouldSendNotification(monitoredService, condition))
         .isTrue();
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testShouldSendNotification_withHealthScoreCondition_withNoData() {
+    NotificationRuleDTO notificationRuleDTO =
+        builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.MONITORED_SERVICE).build();
+    NotificationRuleResponse notificationRuleResponse =
+        notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+
+    MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTOWithCustomDependencies(
+        "service_1_local", environmentParams.getServiceIdentifier(), Sets.newHashSet());
+    monitoredServiceDTO.setNotificationRuleRefs(
+        Arrays.asList(NotificationRuleRefDTO.builder()
+                          .notificationRuleRef(notificationRuleResponse.getNotificationRule().getIdentifier())
+                          .enabled(true)
+                          .build()));
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    MonitoredService monitoredService = getMonitoredService(monitoredServiceDTO.getIdentifier());
+
+    MonitoredServiceHealthScoreCondition condition =
+        MonitoredServiceHealthScoreCondition.builder().threshold(20.0).period(600000).build();
+    assertThat(
+        ((MonitoredServiceServiceImpl) monitoredServiceService).shouldSendNotification(monitoredService, condition))
+        .isFalse();
   }
 
   @Test

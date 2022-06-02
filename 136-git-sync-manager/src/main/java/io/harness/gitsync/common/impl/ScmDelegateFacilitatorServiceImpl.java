@@ -112,7 +112,7 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
   private SecretManagerClientService secretManagerClientService;
   private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
   private GitSyncConnectorHelper gitSyncConnectorHelper;
-  private String errorFormat =
+  private final String errorFormat =
       "Unexpected error occurred while doing scm operation for %s for accountId [%s], orgId [%s], projectId [%s]";
 
   @Inject
@@ -202,7 +202,30 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
   @Override
   public CreatePRResponse createPullRequest(
       Scope scope, String connectorRef, String repoName, String sourceBranch, String targetBranch, String title) {
-    return null;
+    final ScmConnector decryptedConnector = gitSyncConnectorHelper.getScmConnectorForGivenRepo(
+        scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), connectorRef, repoName);
+    final List<EncryptedDataDetail> encryptionDetails = getEncryptedDataDetails(
+        scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), decryptedConnector);
+    ScmPRTaskParams scmPRTaskParams = ScmPRTaskParams.builder()
+                                          .scmConnector(decryptedConnector)
+                                          .sourceBranchName(sourceBranch)
+                                          .targetBranchName(targetBranch)
+                                          .prTitle(title)
+                                          .gitPRTaskType(GitPRTaskType.CREATE_PR_V2)
+                                          .encryptedDataDetails(encryptionDetails)
+                                          .build();
+    final Map<String, String> ngTaskSetupAbstractionsWithOwner = getNGTaskSetupAbstractionsWithOwner(
+        scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier());
+    DelegateTaskRequest delegateTaskRequest = DelegateTaskRequest.builder()
+                                                  .accountId(scope.getAccountIdentifier())
+                                                  .taskSetupAbstractions(ngTaskSetupAbstractionsWithOwner)
+                                                  .taskType(TaskType.SCM_PULL_REQUEST_TASK.name())
+                                                  .taskParameters(scmPRTaskParams)
+                                                  .executionTimeout(Duration.ofMinutes(2))
+                                                  .build();
+    final DelegateResponseData delegateResponseData = executeDelegateSyncTask(delegateTaskRequest);
+    ScmPRTaskResponseData scmCreatePRResponse = (ScmPRTaskResponseData) delegateResponseData;
+    return scmCreatePRResponse.getCreatePRResponse();
   }
 
   @Override
@@ -824,18 +847,20 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
 
   private DelegateResponseData executeDelegateSyncTask(DelegateTaskRequest delegateTaskRequest) {
     final DelegateResponseData delegateResponseData;
+    String delegateDownErrorMessage = "Delegates are not available for performing operation.";
     try {
       delegateResponseData = delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
     } catch (DelegateServiceDriverException ex) {
+      log.error("Error occurred while executing delegate task.", ex);
       throw new HintException(String.format(HintException.DELEGATE_NOT_AVAILABLE_FOR_GIT_SYNC,
                                   DocumentLinksConstants.DELEGATE_INSTALLATION_LINK),
-          new DelegateNotAvailableException(ex.getCause().getMessage(), ex, WingsException.USER));
+          new DelegateNotAvailableException(delegateDownErrorMessage, WingsException.USER));
     }
 
     if (delegateResponseData instanceof ErrorNotifyResponseData) {
       throw new HintException(String.format(HintException.DELEGATE_NOT_AVAILABLE_FOR_GIT_SYNC,
                                   DocumentLinksConstants.DELEGATE_INSTALLATION_LINK),
-          new DelegateNotAvailableException("Delegates are not available", WingsException.USER));
+          new DelegateNotAvailableException(delegateDownErrorMessage, WingsException.USER));
     }
     return delegateResponseData;
   }

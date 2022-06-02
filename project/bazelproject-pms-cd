@@ -52,6 +52,7 @@ directories:
   945-account-mgmt
   948-access-control-admin-client
   948-access-control-sdk
+  948-cv-nextgen-beans
   949-access-control-commons
   950-command-library-common
   950-delegate-tasks-beans

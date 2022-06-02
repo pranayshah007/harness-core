@@ -21,10 +21,10 @@ import io.harness.timescaledb.tables.records.AnomaliesRecord;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.sun.istack.internal.Nullable;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
+import javax.annotation.Nullable;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.jooq.Condition;

@@ -219,11 +219,11 @@ public class ServiceCommandExecutorServiceTest extends WingsBaseTest {
     Command nestedCommand =
         Command.builder().name("NESTED_CMD").commandUnits(new ArrayList<>(Arrays.asList(command))).build();
     when(commandUnitExecutorServiceMap.get(DeploymentType.ECS.name())).thenReturn(sshCommandUnitExecutorService);
-    when(sshCommandUnitExecutorService.execute(any(AbstractCommandUnit.class), eq(context))).thenReturn(SUCCESS);
+    when(sshCommandUnitExecutorService.execute(any(), eq(context))).thenReturn(SUCCESS);
     CommandExecutionStatus commandExecutionStatus = cmdExecutorService.execute(nestedCommand, context);
     assertThat(commandExecutionStatus).isEqualTo(SUCCESS);
     verify(commandUnitExecutorServiceMap).get(DeploymentType.ECS.name());
-    verify(sshCommandUnitExecutorService).execute(any(AbstractCommandUnit.class), eq(context));
+    verify(sshCommandUnitExecutorService).execute(any(), eq(context));
   }
 
   @Test
@@ -248,12 +248,12 @@ public class ServiceCommandExecutorServiceTest extends WingsBaseTest {
     Command nestedCommand =
         Command.builder().name("NESTED_CMD").commandUnits(new ArrayList<>(Arrays.asList(command))).build();
     when(commandUnitExecutorServiceMap.get(DeploymentType.ECS.name())).thenReturn(sshCommandUnitExecutorService);
-    when(sshCommandUnitExecutorService.execute(any(AbstractCommandUnit.class), eq(context))).thenReturn(SUCCESS);
+    when(sshCommandUnitExecutorService.execute(any(), eq(context))).thenReturn(SUCCESS);
 
     CommandExecutionStatus commandExecutionStatus = cmdExecutorService.execute(nestedCommand, context);
 
     verify(encryptionService, times(4)).decrypt(any(), any(), eq(false));
     verify(commandUnitExecutorServiceMap).get(DeploymentType.ECS.name());
-    verify(sshCommandUnitExecutorService).execute(any(AbstractCommandUnit.class), eq(context));
+    verify(sshCommandUnitExecutorService).execute(any(), eq(context));
   }
 }

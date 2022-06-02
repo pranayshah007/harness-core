@@ -23,6 +23,7 @@ import io.harness.PipelineServiceTestBase;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
+import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.pms.inputset.InputSetErrorWrapperDTOPMS;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetTemplateResponseDTOPMS;
@@ -49,6 +50,7 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
   @InjectMocks ValidateAndMergeHelper validateAndMergeHelper;
   @Mock PMSPipelineService pmsPipelineService;
   @Mock PMSInputSetService pmsInputSetService;
+  @Mock GitSyncSdkService gitSyncSdkService;
 
   private static final String accountId = "accountId";
   private static final String orgId = "orgId";
@@ -70,6 +72,7 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testValidateInputSet() {
+    doReturn(false).when(gitSyncSdkService).isGitSyncEnabled(accountId, orgId, projectId);
     String pipelineFile = "pipeline-extensive.yml";
     String pipelineYaml = readFile(pipelineFile);
     PipelineEntity pipelineEntity = PipelineEntity.builder().yaml(pipelineYaml).build();
@@ -273,6 +276,7 @@ public class ValidateAndMergeHelperTest extends PipelineServiceTestBase {
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testMergeInputSetForInvalidInputSets() {
+    doReturn(false).when(gitSyncSdkService).isGitSyncEnabled(accountId, orgId, projectId);
     String pipelineYaml = "pipeline:\n"
         + "  stages:\n"
         + "  - stage:\n"

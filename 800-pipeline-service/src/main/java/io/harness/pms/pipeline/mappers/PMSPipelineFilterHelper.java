@@ -7,29 +7,48 @@
 
 package io.harness.pms.pipeline.mappers;
 
+import io.harness.gitsync.beans.StoreType;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
 
 import lombok.experimental.UtilityClass;
+import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Update;
 
 @UtilityClass
 public class PMSPipelineFilterHelper {
-  public Update getUpdateOperations(PipelineEntity pipelineEntity) {
+  public Update getUpdateOperations(PipelineEntity pipelineEntity, long timestamp) {
     Update update = new Update();
-    update.set(PipelineEntityKeys.accountId, pipelineEntity.getAccountId());
-    update.set(PipelineEntityKeys.orgIdentifier, pipelineEntity.getOrgIdentifier());
-    update.set(PipelineEntityKeys.projectIdentifier, pipelineEntity.getProjectIdentifier());
     update.set(PipelineEntityKeys.yaml, pipelineEntity.getYaml());
-    update.set(PipelineEntityKeys.tags, pipelineEntity.getTags());
+    update.set(PipelineEntityKeys.lastUpdatedAt, timestamp);
     update.set(PipelineEntityKeys.deleted, false);
     update.set(PipelineEntityKeys.name, pipelineEntity.getName());
     update.set(PipelineEntityKeys.description, pipelineEntity.getDescription());
-    update.set(PipelineEntityKeys.stageCount, pipelineEntity.getStageCount());
-    update.set(PipelineEntityKeys.lastUpdatedAt, System.currentTimeMillis());
+    update.set(PipelineEntityKeys.tags, pipelineEntity.getTags());
     update.set(PipelineEntityKeys.filters, pipelineEntity.getFilters());
+    update.set(PipelineEntityKeys.stageCount, pipelineEntity.getStageCount());
     update.set(PipelineEntityKeys.stageNames, pipelineEntity.getStageNames());
+    update.set(PipelineEntityKeys.allowStageExecutions, pipelineEntity.getAllowStageExecutions());
+    return update;
+  }
 
+  public PipelineEntity updateFieldsInDBEntry(
+      PipelineEntity entityFromDB, PipelineEntity fieldsToUpdate, long timeOfUpdate) {
+    return entityFromDB.withYaml(fieldsToUpdate.getYaml())
+        .withLastUpdatedAt(timeOfUpdate)
+        .withName(fieldsToUpdate.getName())
+        .withDescription(fieldsToUpdate.getDescription())
+        .withTags(fieldsToUpdate.getTags())
+        .withFilters(fieldsToUpdate.getFilters())
+        .withStageCount(fieldsToUpdate.getStageCount())
+        .withStageNames(fieldsToUpdate.getStageNames())
+        .withAllowStageExecutions(fieldsToUpdate.getAllowStageExecutions())
+        .withVersion(entityFromDB.getVersion() == null ? 1 : entityFromDB.getVersion() + 1);
+  }
+
+  public Update getUpdateOperationsForOnboardingToInline() {
+    Update update = new Update();
+    update.set(PipelineEntityKeys.storeType, StoreType.INLINE);
     return update;
   }
 
@@ -37,5 +56,19 @@ public class PMSPipelineFilterHelper {
     Update update = new Update();
     update.set(PipelineEntityKeys.deleted, true);
     return update;
+  }
+
+  public Criteria getCriteriaForFind(
+      String accountId, String orgIdentifier, String projectIdentifier, String identifier, boolean notDeleted) {
+    return Criteria.where(PipelineEntityKeys.deleted)
+        .is(!notDeleted)
+        .and(PipelineEntityKeys.identifier)
+        .is(identifier)
+        .and(PipelineEntityKeys.projectIdentifier)
+        .is(projectIdentifier)
+        .and(PipelineEntityKeys.orgIdentifier)
+        .is(orgIdentifier)
+        .and(PipelineEntityKeys.accountId)
+        .is(accountId);
   }
 }

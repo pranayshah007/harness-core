@@ -60,4 +60,28 @@ public class SCMExceptionHandlerTest extends CategoryTest {
     assertThat(actual instanceof InvalidRequestException).isTrue();
     assertThat(actual.getMessage()).isEqualTo("blah");
   }
+
+  @Test
+  @Owner(developers = DEV_MITTAL)
+  @Category(UnitTests.class)
+  public void testGitConnectionError() {
+    exception = new SCMRuntimeException("blah", ErrorCode.GIT_CONNECTION_ERROR);
+    Exception actual = scmExceptionHandler.handleException(exception);
+    assertThat(actual instanceof HintException).isTrue();
+    assertThat(actual.getMessage()).isEqualTo(HintException.HINT_INVALID_GIT_REPO);
+    assertThat(actual.getCause() instanceof ExplanationException).isTrue();
+    assertThat(actual.getCause().getCause() instanceof InvalidRequestException).isTrue();
+  }
+
+  @Test
+  @Owner(developers = DEV_MITTAL)
+  @Category(UnitTests.class)
+  public void testGitTimeoutError() {
+    exception = new SCMRuntimeException("blah", ErrorCode.CONNECTION_TIMEOUT);
+    Exception actual = scmExceptionHandler.handleException(exception);
+    assertThat(actual instanceof HintException).isTrue();
+    assertThat(actual.getMessage()).isEqualTo(HintException.HINT_GIT_CONNECTIVITY);
+    assertThat(actual.getCause() instanceof ExplanationException).isTrue();
+    assertThat(actual.getCause().getCause() instanceof InvalidRequestException).isTrue();
+  }
 }

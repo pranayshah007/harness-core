@@ -19,7 +19,6 @@ import static org.joor.Reflect.on;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -56,18 +55,17 @@ public class SpotinstTrafficShiftAlbSwapRoutesTaskHandlerTest extends WingsBaseT
   public void testExecuteInternalDeploy() throws Exception {
     SpotinstTrafficShiftAlbSwapRoutesTaskHandler handler = spy(SpotinstTrafficShiftAlbSwapRoutesTaskHandler.class);
     ExecutionLogCallback mockCallback = mock(ExecutionLogCallback.class);
-    doNothing().when(mockCallback).saveExecutionLog(anyString());
-    doNothing().when(mockCallback).saveExecutionLog(anyString(), any(), any());
-    doReturn(mockCallback).when(handler).getLogCallBack(any(), anyString());
+    doNothing().when(mockCallback).saveExecutionLog(any());
+    doNothing().when(mockCallback).saveExecutionLog(any(), any(), any());
+    doReturn(mockCallback).when(handler).getLogCallBack(any(), any());
     SpotInstHelperServiceDelegate mockHelper = mock(SpotInstHelperServiceDelegate.class);
     on(handler).set("spotInstHelperServiceDelegate", mockHelper);
     AwsElbHelperServiceDelegate mockElbHelper = mock(AwsElbHelperServiceDelegate.class);
     on(handler).set("awsElbHelperServiceDelegate", mockElbHelper);
     doNothing()
         .when(mockElbHelper)
-        .updateRulesForAlbTrafficShift(any(), anyString(), anyList(), any(), any(), anyInt(), anyString());
-    doNothing().when(handler).updateElastiGroupAndWait(
-        anyString(), anyString(), any(), anyInt(), any(), anyString(), anyString());
+        .updateRulesForAlbTrafficShift(any(), any(), anyList(), any(), any(), anyInt(), any());
+    doNothing().when(handler).updateElastiGroupAndWait(any(), any(), any(), anyInt(), any(), any(), any());
     SpotinstTrafficShiftAlbSwapRoutesParameters parameters =
         SpotinstTrafficShiftAlbSwapRoutesParameters.builder()
             .elastigroupNamePrefix("foo")
@@ -90,8 +88,7 @@ public class SpotinstTrafficShiftAlbSwapRoutesTaskHandlerTest extends WingsBaseT
     SpotInstTaskExecutionResponse response = handler.executeTaskInternal(parameters,
         SpotInstConfig.builder().spotInstAccountId("SPOTINST_ACCOUNT_ID").spotInstToken(new char[] {'a', 'b'}).build(),
         AwsConfig.builder().build());
-    verify(mockElbHelper)
-        .updateRulesForAlbTrafficShift(any(), anyString(), anyList(), anyList(), any(), anyInt(), anyString());
+    verify(mockElbHelper).updateRulesForAlbTrafficShift(any(), any(), anyList(), anyList(), any(), anyInt(), any());
     assertThat(response).isNotNull();
     assertThat(response.getCommandExecutionStatus()).isEqualTo(SUCCESS);
   }
@@ -102,18 +99,17 @@ public class SpotinstTrafficShiftAlbSwapRoutesTaskHandlerTest extends WingsBaseT
   public void testExecuteInternalRollback() throws Exception {
     SpotinstTrafficShiftAlbSwapRoutesTaskHandler handler = spy(SpotinstTrafficShiftAlbSwapRoutesTaskHandler.class);
     ExecutionLogCallback mockCallback = mock(ExecutionLogCallback.class);
-    doNothing().when(mockCallback).saveExecutionLog(anyString());
-    doNothing().when(mockCallback).saveExecutionLog(anyString(), any(), any());
-    doReturn(mockCallback).when(handler).getLogCallBack(any(), anyString());
+    doNothing().when(mockCallback).saveExecutionLog(any());
+    doNothing().when(mockCallback).saveExecutionLog(any(), any(), any());
+    doReturn(mockCallback).when(handler).getLogCallBack(any(), any());
     SpotInstHelperServiceDelegate mockHelper = mock(SpotInstHelperServiceDelegate.class);
     on(handler).set("spotInstHelperServiceDelegate", mockHelper);
     AwsElbHelperServiceDelegate mockElbHelper = mock(AwsElbHelperServiceDelegate.class);
     on(handler).set("awsElbHelperServiceDelegate", mockElbHelper);
     doNothing()
         .when(mockElbHelper)
-        .updateRulesForAlbTrafficShift(any(), anyString(), anyList(), any(), any(), anyInt(), anyString());
-    doNothing().when(handler).updateElastiGroupAndWait(
-        anyString(), anyString(), any(), anyInt(), any(), anyString(), anyString());
+        .updateRulesForAlbTrafficShift(any(), any(), anyList(), any(), any(), anyInt(), any());
+    doNothing().when(handler).updateElastiGroupAndWait(any(), any(), any(), anyInt(), any(), any(), any());
     SpotinstTrafficShiftAlbSwapRoutesParameters parameters =
         SpotinstTrafficShiftAlbSwapRoutesParameters.builder()
             .elastigroupNamePrefix("foo")
@@ -135,8 +131,7 @@ public class SpotinstTrafficShiftAlbSwapRoutesTaskHandlerTest extends WingsBaseT
     SpotInstTaskExecutionResponse response = handler.executeTaskInternal(parameters,
         SpotInstConfig.builder().spotInstAccountId("SPOTINST_ACCOUNT_ID").spotInstToken(new char[] {'a', 'b'}).build(),
         AwsConfig.builder().build());
-    verify(mockElbHelper)
-        .updateRulesForAlbTrafficShift(any(), anyString(), anyList(), anyList(), any(), anyInt(), anyString());
+    verify(mockElbHelper).updateRulesForAlbTrafficShift(any(), any(), anyList(), anyList(), any(), anyInt(), any());
     assertThat(response).isNotNull();
     assertThat(response.getCommandExecutionStatus()).isEqualTo(SUCCESS);
   }

@@ -23,4 +23,6 @@ public interface ExecutionSweepingOutputService extends Resolver<ExecutionSweepi
   OptionalSweepingOutput resolveOptional(Ambiance ambiance, RefObject refObject);
   List<OptionalSweepingOutput> listOutputsWithGivenNameAndSetupIds(
       Ambiance ambiance, String name, List<String> nodeIds);
+  List<OptionalSweepingOutput> listOutputsWithGivenNameAndRuntimeIds(
+      Ambiance ambiance, String name, List<String> nodeIds);
 }

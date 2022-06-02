@@ -11,11 +11,14 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.gitsync.beans.YamlDTO;
+import io.harness.pms.yaml.YamlNode;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.annotations.ApiModelProperty;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
+import lombok.Getter;
 import org.springframework.data.annotation.TypeAlias;
 
 @OwnedBy(CDC)
@@ -23,6 +26,11 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @TypeAlias("infrastructurePlanCreatorConfig")
 public class InfrastructurePlanCreatorConfig implements YamlDTO {
+  @JsonProperty(YamlNode.UUID_FIELD_NAME)
+  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
+  @ApiModelProperty(hidden = true)
+  private String uuid;
+
   @NotNull private String ref;
   @JsonProperty("infrastructureDefinition") InfrastructureDefinitionConfig infrastructureDefinitionConfig;
 }

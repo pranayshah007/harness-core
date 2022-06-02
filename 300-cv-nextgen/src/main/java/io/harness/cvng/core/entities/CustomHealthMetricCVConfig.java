@@ -23,6 +23,7 @@ import io.harness.cvng.core.utils.analysisinfo.AnalysisInfoUtility;
 import io.harness.exception.InvalidRequestException;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -79,6 +80,9 @@ public class CustomHealthMetricCVConfig extends MetricCVConfig<CustomHealthCVCon
 
   @Override
   public List<CustomHealthCVConfigMetricDefinition> getMetricInfos() {
+    if (metricDefinitions == null) {
+      return Collections.emptyList();
+    }
     return metricDefinitions;
   }
 

@@ -58,7 +58,7 @@ public interface MonitoredServiceService extends DeleteEntityByHandler<Monitored
   // use with MonitoredServiceParams instead
   @Deprecated MonitoredService getMonitoredService(ProjectParams projectParams, String identifier);
   MonitoredService getMonitoredService(MonitoredServiceParams monitoredServiceParams);
-
+  MonitoredServiceDTO getExpandedMonitoredServiceFromYaml(ProjectParams projectParams, String yaml);
   Optional<MonitoredService> getApplicationMonitoredService(ServiceEnvironmentParams serviceEnvironmentParams);
 
   List<MonitoredService> list(

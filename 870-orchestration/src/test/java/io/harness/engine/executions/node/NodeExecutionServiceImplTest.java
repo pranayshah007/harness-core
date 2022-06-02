@@ -12,17 +12,22 @@ import static io.harness.pms.contracts.execution.Status.ERRORED;
 import static io.harness.pms.contracts.execution.Status.RUNNING;
 import static io.harness.pms.contracts.execution.Status.SUCCEEDED;
 import static io.harness.rule.OwnerRule.ALEXEI;
+import static io.harness.rule.OwnerRule.BRIJESH;
 import static io.harness.rule.OwnerRule.PRASHANT;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static io.harness.rule.OwnerRule.SAHIL;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.joor.Reflect.on;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.OrchestrationTestBase;
@@ -54,15 +59,19 @@ import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
   @Mock OrchestrationLogConfiguration orchestrationLogConfiguration;
   @Inject @InjectMocks @Spy private NodeExecutionServiceImpl nodeExecutionService;
+  MongoTemplate mongoTemplate;
 
   @Before
   public void beforeTest() {
@@ -779,5 +788,21 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
     when(orchestrationLogConfiguration.isReduceOrchestrationLog()).thenReturn(true);
     update.set(NodeExecutionKeys.nodeId, "test");
     assertThat(nodeExecutionService.shouldLog(update)).isFalse();
+  }
+
+  @Test
+  @Owner(developers = BRIJESH)
+  @Category(UnitTests.class)
+  public void testFetchWithoutRetriesAndStatusIn() {
+    mongoTemplate = mock(MongoTemplate.class);
+
+    String planExecutionId = "tempId";
+    on(nodeExecutionService).set("mongoTemplate", mongoTemplate);
+    ArgumentCaptor<Query> argumentCaptor = ArgumentCaptor.forClass(Query.class);
+    nodeExecutionService.fetchWithoutRetriesAndStatusIn(planExecutionId, EnumSet.noneOf(Status.class));
+    verify(mongoTemplate, times(1)).find(argumentCaptor.capture(), any());
+    Query query = argumentCaptor.getValue();
+    assertThat(query.toString())
+        .isEqualTo("Query: { \"ambiance.planExecutionId\" : \"tempId\", \"oldRetry\" : false}, Fields: {}, Sort: {}");
   }
 }

@@ -992,10 +992,14 @@ public class UserServiceImpl implements UserService {
   }
 
   @Override
-  public User getUserByUserId(String userId) {
+  public User getUserByUserId(String accountId, String userId) {
     User user = null;
-    if (isNotEmpty(userId)) {
-      user = wingsPersistence.createQuery(User.class).filter(UserKeys.externalUserId, userId).get();
+    if (isNotEmpty(userId) && isNotEmpty(accountId)) {
+      user = wingsPersistence.createQuery(User.class)
+                 .filter(UserKeys.externalUserId, userId)
+                 .field(UserKeys.accounts)
+                 .hasThisOne(accountId)
+                 .get();
       loadSupportAccounts(user);
       if (user != null && isEmpty(user.getAccounts())) {
         user.setAccounts(newArrayList());
@@ -1330,7 +1334,7 @@ public class UserServiceImpl implements UserService {
 
     User user = getUserByEmail(userInvite.getEmail());
     if (user == null) {
-      user = getUserByUserId(userInvite.getExternalUserId());
+      user = getUserByUserId(account.getUuid(), userInvite.getExternalUserId());
     }
 
     boolean createNewUser = user == null;

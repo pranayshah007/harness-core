@@ -20,6 +20,7 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.beans.environment.K8BuildJobEnvInfo;
 import io.harness.beans.sweepingoutputs.K8StageInfraDetails;
@@ -78,6 +79,7 @@ import io.harness.eraro.ErrorCode;
 import io.harness.exception.ConnectorNotFoundException;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.ngexception.CIStageExecutionException;
+import io.harness.ff.CIFeatureFlagService;
 import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.dto.ErrorDTO;
@@ -102,6 +104,7 @@ import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -121,9 +124,10 @@ public class ConnectorUtils {
   private final SecretManagerClientService secretManagerClientService;
   private final SecretUtils secretUtils;
   private final CIExecutionServiceConfig cIExecutionServiceConfig;
-
+  @Inject private CIFeatureFlagService featureFlagService;
   private final Duration RETRY_SLEEP_DURATION = Duration.ofSeconds(2);
   private final int MAX_ATTEMPTS = 6;
+  private final String AXA_ACCOUNT_ID = "UVxMDMhNQxOCvroqqImWdQ";
 
   @Inject
   public ConnectorUtils(ConnectorResourceClient connectorResourceClient, SecretUtils secretUtils,
@@ -173,6 +177,13 @@ public class ConnectorUtils {
 
   public List<TaskSelector> fetchDelegateSelector(
       Ambiance ambiance, ExecutionSweepingOutputService executionSweepingOutputResolver) {
+    String accountID = AmbianceUtils.getAccountId(ambiance);
+    if (featureFlagService.isEnabled(FeatureName.DISABLE_CI_STAGE_DEL_SELECTOR, accountID)
+        || accountID.equals(AXA_ACCOUNT_ID)) {
+      log.info("DISABLE_CI_STAGE_DEL_SELECTOR Feature flag is enabled for account {}", accountID);
+      return Collections.emptyList();
+    }
+
     OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputResolver.resolveOptional(
         ambiance, RefObjectUtils.getSweepingOutputRefObject(STAGE_INFRA_DETAILS));
     List<TaskSelector> taskSelectors = new ArrayList<>();

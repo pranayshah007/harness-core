@@ -13,9 +13,6 @@ import static io.harness.rule.OwnerRule.SATYAM;
 
 import static org.joor.Reflect.on;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.verify;
 
 import io.harness.annotations.dev.HarnessModule;
@@ -64,7 +61,6 @@ public class AwsCFTaskTest extends WingsBaseTest {
   public void testRun() {
     AwsCFRequest request = AwsCFGetTemplateParamsRequest.builder().awsConfig(AwsConfig.builder().build()).build();
     task.run(new Object[] {request});
-    verify(mockAwsCFHelperServiceDelegate)
-        .getParamsData(any(), anyString(), anyString(), anyString(), anyObject(), anyObject(), anyList());
+    verify(mockAwsCFHelperServiceDelegate).getParamsData(any(), any(), any(), any(), any(), any(), any());
   }
 }

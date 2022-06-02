@@ -32,15 +32,13 @@ import java.io.IOException;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
-@RunWith(PowerMockRunner.class)
 @OwnedBy(HarnessTeam.PIPELINE)
 @PrepareForTest({SafeHttpCall.class})
 public class AccountFunctorTest extends CategoryTest {
@@ -58,7 +56,7 @@ public class AccountFunctorTest extends CategoryTest {
   @Owner(developers = BRIJESH)
   @Category(UnitTests.class)
   public void testBind() throws IOException {
-    PowerMockito.mockStatic(SafeHttpCall.class);
+    MockedStatic<SafeHttpCall> aStatic = Mockito.mockStatic(SafeHttpCall.class);
 
     String resourceObject = "resource";
     RestResponse<String> restRequest = new RestResponse<>();
@@ -69,7 +67,7 @@ public class AccountFunctorTest extends CategoryTest {
     when(accountClient.getAccountDTO(anyString())).thenReturn(null);
     // Should throw exception due to NPE
     assertThatThrownBy(() -> accountFunctor.bind()).isInstanceOf(EngineFunctorException.class);
-    when(SafeHttpCall.execute(any())).thenReturn(restRequest);
+    aStatic.when(() -> SafeHttpCall.execute(any())).thenReturn(restRequest);
     assertEquals(accountFunctor.bind(), resourceObject);
   }
 }

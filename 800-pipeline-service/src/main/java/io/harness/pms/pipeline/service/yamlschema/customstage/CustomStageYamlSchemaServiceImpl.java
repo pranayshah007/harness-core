@@ -68,16 +68,18 @@ public class CustomStageYamlSchemaServiceImpl implements CustomStageYamlSchemaSe
     yamlSchemaProvider.mergeAllV2StepsDefinitions(projectIdentifier, orgIdentifier, scope, (ObjectNode) definitions,
         YamlSchemaUtils.getNodeEntityTypesByYamlGroup(yamlSchemaRootClasses, StepCategory.STEP.name()));
 
+    yamlSchemaGenerator.modifyRefsNamespace(customStageSchema, CUSTOM_NAMESPACE);
+
     Set<String> enabledFeatureFlags =
         pmsYamlSchemaHelper.getEnabledFeatureFlags(accountIdentifier, yamlSchemaWithDetailsList);
     Map<String, Boolean> featureRestrictionsMap =
         featureRestrictionsGetter.getFeatureRestrictionsAvailability(yamlSchemaWithDetailsList, accountIdentifier);
-    YamlSchemaUtils.addOneOfInExecutionWrapperConfig(customStageSchema.get(DEFINITIONS_NODE),
-        YamlSchemaUtils.getNodeClassesByYamlGroup(
-            yamlSchemaRootClasses, StepCategory.STEP.name(), enabledFeatureFlags, featureRestrictionsMap),
-        "");
 
-    yamlSchemaGenerator.modifyRefsNamespace(customStageSchema, CUSTOM_NAMESPACE);
+    if (yamlSchemaWithDetailsList != null) {
+      YamlSchemaUtils.addOneOfInExecutionWrapperConfig(customStageSchema.get(DEFINITIONS_NODE),
+          yamlSchemaWithDetailsList, ModuleType.PMS, enabledFeatureFlags, featureRestrictionsMap);
+    }
+
     ObjectMapper mapper = SchemaGeneratorUtils.getObjectMapperForSchemaGeneration();
     JsonNode node = mapper.createObjectNode().set(CUSTOM_NAMESPACE, definitions);
 

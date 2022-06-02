@@ -11,9 +11,6 @@ import static io.harness.lock.DistributedLockImplementation.NOOP;
 
 import static org.mockito.Mockito.mock;
 
-import io.harness.cf.AbstractCfModule;
-import io.harness.cf.CfClientConfig;
-import io.harness.cf.CfMigrationConfig;
 import io.harness.encryptors.CustomEncryptor;
 import io.harness.encryptors.Encryptors;
 import io.harness.encryptors.KmsEncryptor;
@@ -28,8 +25,6 @@ import io.harness.encryptors.clients.HashicorpVaultEncryptor;
 import io.harness.encryptors.clients.LocalEncryptor;
 import io.harness.factory.ClosingFactory;
 import io.harness.factory.ClosingFactoryModule;
-import io.harness.ff.FeatureFlagConfig;
-import io.harness.ff.FeatureFlagModule;
 import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
 import io.harness.lock.DistributedLockImplementation;
@@ -124,23 +119,6 @@ public class SMCoreRule implements MethodRule, InjectorRuleMixin, MongoRuleMixin
       }
     });
 
-    modules.add(new AbstractCfModule() {
-      @Override
-      public CfClientConfig cfClientConfig() {
-        return CfClientConfig.builder().build();
-      }
-
-      @Override
-      public CfMigrationConfig cfMigrationConfig() {
-        return CfMigrationConfig.builder().build();
-      }
-
-      @Override
-      public FeatureFlagConfig featureFlagConfig() {
-        return FeatureFlagConfig.builder().build();
-      }
-    });
-
     modules.add(new ProviderModule() {
       @Provides
       @Named("lock")
@@ -158,7 +136,6 @@ public class SMCoreRule implements MethodRule, InjectorRuleMixin, MongoRuleMixin
 
     modules.add(mongoTypeModule(annotations));
     modules.add(new SpringPersistenceTestModule());
-    modules.add(FeatureFlagModule.getInstance());
 
     modules.add(new AbstractModule() {
       @Override

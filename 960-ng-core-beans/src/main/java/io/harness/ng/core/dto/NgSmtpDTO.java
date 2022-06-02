@@ -9,6 +9,7 @@ package io.harness.ng.core.dto;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
+import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.validator.NGEntityName;
 import io.harness.data.validator.Trimmed;
@@ -26,8 +27,13 @@ import org.hibernate.validator.constraints.NotEmpty;
 @Builder
 @Schema(name = "NgSmtp", description = "This is the view of the NgSmtp entity defined in Harness")
 public class NgSmtpDTO {
-  private String uuid;
-  @NotEmpty String accountId;
-  @NotNull @NotBlank @Trimmed(message = "The name must not have trailing spaces.") @NGEntityName private String name;
+  @Schema(description = "Identifier of the SMTP config.") private String uuid;
+  @Schema(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotEmpty String accountId;
+  @Schema(description = "Name of the SMTP config.")
+  @NotNull
+  @NotBlank
+  @Trimmed(message = "The name must not have trailing spaces.")
+  @NGEntityName
+  private String name;
   @Valid @NotNull private SmtpConfigDTO value;
 }

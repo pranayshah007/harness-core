@@ -12,8 +12,8 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.execution.StagesExecutionMetadata;
-import io.harness.gitsync.interceptor.GitSyncConstants;
 import io.harness.gitsync.sdk.EntityGitDetails;
+import io.harness.gitsync.sdk.EntityGitDetailsMapper;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.dto.GraphLayoutNodeDTO;
@@ -77,6 +77,10 @@ public class PipelineExecutionSummaryDtoMapper {
         .stagesExecuted(stageIdentifiers)
         .stagesExecutedNames(stagesExecutedNames)
         .allowStageExecutions(pipelineExecutionSummaryEntity.isStagesExecutionAllowed())
+        .storeType(pipelineExecutionSummaryEntity.getStoreType())
+        .connectorRef(EmptyPredicate.isEmpty(pipelineExecutionSummaryEntity.getConnectorRef())
+                ? null
+                : pipelineExecutionSummaryEntity.getConnectorRef())
         .build();
   }
 
@@ -136,16 +140,19 @@ public class PipelineExecutionSummaryDtoMapper {
     }
     String rootFolder = entityGitDetails.getRootFolder();
     String filePath = entityGitDetails.getFilePath();
-    if (rootFolder == null && filePath == null) {
-      return entityGitDetails;
-    } else if (rootFolder == null || filePath == null || rootFolder.equals(GitSyncConstants.DEFAULT)
-        || filePath.equals(GitSyncConstants.DEFAULT)) {
-      return EntityGitDetails.builder()
-          .branch(entityGitDetails.getBranch())
-          .repoIdentifier(entityGitDetails.getRepoIdentifier())
-          .objectId(entityGitDetails.getObjectId())
-          .build();
-    }
-    return entityGitDetails;
+    String repoIdentifier = entityGitDetails.getRepoIdentifier();
+    String repoName = entityGitDetails.getRepoName();
+    String branch = entityGitDetails.getBranch();
+    String objectId = entityGitDetails.getObjectId();
+    String commitId = entityGitDetails.getCommitId();
+    return EntityGitDetails.builder()
+        .rootFolder(EntityGitDetailsMapper.nullIfDefault(rootFolder))
+        .filePath(EntityGitDetailsMapper.nullIfDefault(filePath))
+        .repoIdentifier(EntityGitDetailsMapper.nullIfDefault(repoIdentifier))
+        .repoName(EntityGitDetailsMapper.nullIfDefault(repoName))
+        .branch(EntityGitDetailsMapper.nullIfDefault(branch))
+        .objectId(EntityGitDetailsMapper.nullIfDefault(objectId))
+        .commitId(EntityGitDetailsMapper.nullIfDefault(commitId))
+        .build();
   }
 }

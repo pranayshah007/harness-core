@@ -12,15 +12,14 @@ import static io.harness.CvNextGenTestBase.getResourceFilePath;
 import static io.harness.cache.CacheBackend.CAFFEINE;
 import static io.harness.cache.CacheBackend.NOOP;
 
+import static org.mockito.Mockito.mock;
+
 import io.harness.AccessControlClientConfiguration;
 import io.harness.AccessControlClientModule;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.cache.CacheConfig;
 import io.harness.cache.CacheConfig.CacheConfigBuilder;
 import io.harness.cache.CacheModule;
-import io.harness.cf.AbstractCfModule;
-import io.harness.cf.CfClientConfig;
-import io.harness.cf.CfMigrationConfig;
 import io.harness.cvng.CVNGTestConstants;
 import io.harness.cvng.CVNextGenCommonsServiceModule;
 import io.harness.cvng.CVServiceModule;
@@ -39,11 +38,11 @@ import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.impl.AlwaysFalseFeatureFlagServiceImpl;
 import io.harness.factory.ClosingFactory;
 import io.harness.factory.ClosingFactoryModule;
-import io.harness.ff.FeatureFlagConfig;
 import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
 import io.harness.lock.PersistentLockModule;
 import io.harness.metrics.modules.MetricsModule;
+import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -56,8 +55,13 @@ import io.harness.notification.constant.NotificationClientSecrets;
 import io.harness.notification.module.NotificationClientModule;
 import io.harness.notification.module.NotificationClientPersistenceModule;
 import io.harness.notification.notificationclient.NotificationClient;
+import io.harness.outbox.api.OutboxDao;
+import io.harness.outbox.api.OutboxService;
+import io.harness.outbox.api.impl.OutboxDaoImpl;
+import io.harness.outbox.api.impl.OutboxServiceImpl;
 import io.harness.persistence.HPersistence;
 import io.harness.remote.client.ServiceHttpClientConfig;
+import io.harness.repositories.outbox.OutboxEventRepository;
 import io.harness.serializer.CvNextGenRegistrars;
 import io.harness.serializer.KryoModule;
 import io.harness.serializer.KryoRegistrar;
@@ -78,6 +82,7 @@ import com.google.inject.util.Modules;
 import io.dropwizard.configuration.YamlConfigurationFactory;
 import io.dropwizard.jackson.Jackson;
 import io.dropwizard.jersey.validation.Validators;
+import io.serializer.HObjectMapper;
 import java.io.Closeable;
 import java.io.File;
 import java.lang.annotation.Annotation;
@@ -148,6 +153,17 @@ public class CvNextGenRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
       @Override
       protected void configure() {
         bind(HPersistence.class).to(MongoPersistence.class);
+        bind(OutboxDao.class).to(OutboxDaoImpl.class);
+        bind(OutboxService.class).to(OutboxServiceImpl.class);
+        bind(OutboxEventRepository.class).toInstance(mock(OutboxEventRepository.class));
+      }
+    });
+
+    modules.add(new ProviderModule() {
+      @Provides
+      @Singleton
+      MongoConfig mongoConfig() {
+        return MongoConfig.builder().build();
       }
     });
     modules.add(new CVNextGenCommonsServiceModule());
@@ -215,23 +231,6 @@ public class CvNextGenRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
             .build();
     modules.add(Modules.override(new NotificationClientModule(notificationClientConfiguration))
                     .with(binder -> binder.bind(NotificationClient.class).to(FakeNotificationClient.class)));
-
-    modules.add(new AbstractCfModule() {
-      @Override
-      public CfClientConfig cfClientConfig() {
-        return CfClientConfig.builder().build();
-      }
-
-      @Override
-      public CfMigrationConfig cfMigrationConfig() {
-        return CfMigrationConfig.builder().build();
-      }
-
-      @Override
-      public FeatureFlagConfig featureFlagConfig() {
-        return FeatureFlagConfig.builder().build();
-      }
-    });
     return modules;
   }
 
@@ -298,5 +297,11 @@ public class CvNextGenRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
       data = (Map<String, Object>) data.get(paths[i]);
     }
     return (String) data.get(paths[paths.length - 1]);
+  }
+
+  @Provides
+  @Singleton
+  OutboxService getOutboxService(OutboxEventRepository outboxEventRepository) {
+    return new OutboxServiceImpl(new OutboxDaoImpl(outboxEventRepository), HObjectMapper.NG_DEFAULT_OBJECT_MAPPER);
   }
 }

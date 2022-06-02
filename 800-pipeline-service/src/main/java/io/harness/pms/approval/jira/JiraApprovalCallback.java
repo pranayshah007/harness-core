@@ -69,10 +69,12 @@ public class JiraApprovalCallback extends AbstractApprovalCallback implements Pu
 
   private void pushInternal(Map<String, ResponseData> response) {
     JiraApprovalInstance instance = (JiraApprovalInstance) approvalInstanceService.get(approvalInstanceId);
+    log.info("Jira Approval Instance callback for instance id - {}", instance.getId());
     Ambiance ambiance = instance.getAmbiance();
     NGLogCallback logCallback = new NGLogCallback(logStreamingStepClientFactory, ambiance, null, false);
 
     if (instance.hasExpired()) {
+      log.warn("Jira Approval Instance expired for instance id - {}", instance.getId());
       updateApprovalInstanceAndLog(logCallback, "Approval instance has expired", LogColor.Red,
           CommandExecutionStatus.FAILURE, ApprovalStatus.EXPIRED, instance.getId());
     }
@@ -82,6 +84,7 @@ public class JiraApprovalCallback extends AbstractApprovalCallback implements Pu
       ResponseData responseData = response.values().iterator().next();
       responseData = (ResponseData) kryoSerializer.asInflatedObject(((BinaryResponseData) responseData).getData());
       if (responseData instanceof ErrorNotifyResponseData) {
+        log.warn("Jira Approval Instance failed to fetch jira issue for instance id - {}", instance.getId());
         handleErrorNotifyResponse(logCallback, (ErrorNotifyResponseData) responseData, "Failed to fetch jira issue:");
         return;
       }

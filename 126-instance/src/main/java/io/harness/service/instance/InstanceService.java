@@ -51,8 +51,8 @@ public interface InstanceService {
   List<InstanceDTO> getActiveInstancesByServiceId(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceId, long timestampInMs);
 
-  List<InstanceDTO> getActiveInstancesByInfrastructureMappingId(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, String infrastructureMappingId, long timestampInMs);
+  List<InstanceDTO> getActiveInstancesByInfrastructureMappingId(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String infrastructureMappingId);
 
   List<InstanceDTO> getActiveInstancesByInstanceInfo(
       String accountIdentifier, String instanceInfoNamespace, String instanceInfoPodName);

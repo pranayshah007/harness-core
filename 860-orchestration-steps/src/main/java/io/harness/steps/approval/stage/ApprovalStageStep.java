@@ -39,7 +39,6 @@ public class ApprovalStageStep implements ChildExecutable<StageElementParameters
   @Override
   public ChildExecutableResponse obtainChild(
       Ambiance ambiance, StageElementParameters stepParameters, StepInputPackage inputPackage) {
-    log.info("Executing approval stage with params [{}]", stepParameters);
     ApprovalStageSpecParameters specParameters = (ApprovalStageSpecParameters) stepParameters.getSpecConfig();
     String executionNodeId = specParameters.getChildNodeID();
     return ChildExecutableResponse.newBuilder().setChildNodeId(executionNodeId).build();
@@ -48,7 +47,6 @@ public class ApprovalStageStep implements ChildExecutable<StageElementParameters
   @Override
   public StepResponse handleChildResponse(
       Ambiance ambiance, StageElementParameters stepParameters, Map<String, ResponseData> responseDataMap) {
-    log.info("Executed approval stage [{}]", stepParameters);
     return createStepResponseFromChildResponse(responseDataMap);
   }
 }

@@ -68,6 +68,7 @@ public class PersistenceRegularIteratorTest extends PersistenceTestBase {
     MongoPersistenceIterator<TestRegularIterableEntity, MorphiaFilterExpander<TestRegularIterableEntity>> iterator =
         MongoPersistenceIterator.<TestRegularIterableEntity, MorphiaFilterExpander<TestRegularIterableEntity>>builder()
             .mode(mode)
+            .iteratorName(this.getClass().getName())
             .clazz(TestRegularIterableEntity.class)
             .fieldName(RegularIterableEntityKeys.nextIteration)
             .targetInterval(ofSeconds(10))

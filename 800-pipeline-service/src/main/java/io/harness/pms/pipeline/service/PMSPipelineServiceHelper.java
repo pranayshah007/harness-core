@@ -19,6 +19,7 @@ import io.harness.beans.FeatureName;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.HarnessStringUtils;
 import io.harness.engine.GovernanceService;
+import io.harness.engine.governance.PolicyEvaluationFailureException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorDTO;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorWrapperDTO;
@@ -35,6 +36,7 @@ import io.harness.pms.PmsFeatureFlagService;
 import io.harness.pms.contracts.governance.ExpansionRequestMetadata;
 import io.harness.pms.contracts.governance.ExpansionResponseBatch;
 import io.harness.pms.contracts.governance.GovernanceMetadata;
+import io.harness.pms.contracts.governance.PolicySetMetadata;
 import io.harness.pms.filter.creation.FilterCreatorMergeService;
 import io.harness.pms.filter.creation.FilterCreatorMergeServiceResponse;
 import io.harness.pms.filter.utils.ModuleInfoFilterUtils;
@@ -51,6 +53,7 @@ import io.harness.pms.pipeline.PipelineEntityUtils;
 import io.harness.pms.pipeline.PipelineFilterPropertiesDto;
 import io.harness.serializer.JsonUtils;
 import io.harness.telemetry.TelemetryReporter;
+import io.harness.yaml.validator.InvalidYamlException;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
@@ -59,8 +62,10 @@ import com.google.protobuf.ByteString;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -155,8 +160,27 @@ public class PMSPipelineServiceHelper {
     }
   }
 
-  public GovernanceMetadata validatePipelineYamlAndSetTemplateRefIfAny(
-      PipelineEntity pipelineEntity, boolean checkAgainstOPAPolicies) {
+  public void validatePipelineFromRemote(PipelineEntity pipelineEntity) {
+    GovernanceMetadata governanceMetadata = validatePipelineYaml(pipelineEntity);
+    if (governanceMetadata.getDeny()) {
+      List<String> denyingPolicySetIds = governanceMetadata.getDetailsList()
+                                             .stream()
+                                             .filter(PolicySetMetadata::getDeny)
+                                             .map(PolicySetMetadata::getIdentifier)
+                                             .collect(Collectors.toList());
+      throw new PolicyEvaluationFailureException(
+          "Pipeline does not follow the Policies in these Policy Sets: " + denyingPolicySetIds.toString(),
+          governanceMetadata, pipelineEntity.getYaml());
+    }
+  }
+
+  public GovernanceMetadata validatePipelineYaml(PipelineEntity pipelineEntity) {
+    boolean governanceEnabled =
+        pmsFeatureFlagService.isEnabled(pipelineEntity.getAccountId(), FeatureName.OPA_PIPELINE_GOVERNANCE);
+    return validatePipelineYaml(pipelineEntity, governanceEnabled);
+  }
+
+  public GovernanceMetadata validatePipelineYaml(PipelineEntity pipelineEntity, boolean checkAgainstOPAPolicies) {
     try {
       GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
       if (gitEntityInfo != null && gitEntityInfo.isNewBranch()) {
@@ -168,10 +192,10 @@ public class PMSPipelineServiceHelper {
                                    .build())
                 .build();
         try (PmsGitSyncBranchContextGuard ignored = new PmsGitSyncBranchContextGuard(gitSyncBranchContext, true)) {
-          return validatePipelineYamlAndSetTemplateRefIfAnyInternal(pipelineEntity, checkAgainstOPAPolicies);
+          return validatePipelineYamlInternal(pipelineEntity, checkAgainstOPAPolicies);
         }
       } else {
-        return validatePipelineYamlAndSetTemplateRefIfAnyInternal(pipelineEntity, checkAgainstOPAPolicies);
+        return validatePipelineYamlInternal(pipelineEntity, checkAgainstOPAPolicies);
       }
     } catch (io.harness.yaml.validator.InvalidYamlException ex) {
       ex.setYaml(pipelineEntity.getData());
@@ -187,23 +211,21 @@ public class PMSPipelineServiceHelper {
     }
   }
 
-  private GovernanceMetadata validatePipelineYamlAndSetTemplateRefIfAnyInternal(
+  private GovernanceMetadata validatePipelineYamlInternal(
       PipelineEntity pipelineEntity, boolean checkAgainstOPAPolicies) {
     String accountId = pipelineEntity.getAccountId();
     String orgIdentifier = pipelineEntity.getOrgIdentifier();
     String projectIdentifier = pipelineEntity.getProjectIdentifier();
     // Apply all the templateRefs(if any) then check for schema validation.
     TemplateMergeResponseDTO templateMergeResponseDTO =
-        pipelineTemplateHelper.resolveTemplateRefsInPipeline(pipelineEntity);
+        pipelineTemplateHelper.resolveTemplateRefsInPipeline(pipelineEntity, checkAgainstOPAPolicies);
     String resolveTemplateRefsInPipeline = templateMergeResponseDTO.getMergedPipelineYaml();
     pmsYamlSchemaService.validateYamlSchema(accountId, orgIdentifier, projectIdentifier, resolveTemplateRefsInPipeline);
     // validate unique fqn in resolveTemplateRefsInPipeline
     pmsYamlSchemaService.validateUniqueFqn(resolveTemplateRefsInPipeline);
-    pipelineEntity.setTemplateReference(
-        EmptyPredicate.isNotEmpty(templateMergeResponseDTO.getTemplateReferenceSummaries()));
     if (checkAgainstOPAPolicies) {
-      String expandedPipelineJSON =
-          fetchExpandedPipelineJSONFromYaml(accountId, orgIdentifier, projectIdentifier, resolveTemplateRefsInPipeline);
+      String expandedPipelineJSON = fetchExpandedPipelineJSONFromYaml(
+          accountId, orgIdentifier, projectIdentifier, templateMergeResponseDTO.getMergedPipelineYamlWithTemplateRef());
       return governanceService.evaluateGovernancePolicies(expandedPipelineJSON, accountId, orgIdentifier,
           projectIdentifier, OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_SAVE, "");
     }
@@ -301,5 +323,16 @@ public class PMSPipelineServiceHelper {
         PipelineEntityUtils.getModuleNameFromPipelineEntity(entity, "cd"));
     telemetryReporter.sendTrackEvent(PIPELINE_SAVE, null, entity.getAccountId(), properties,
         Collections.singletonMap(AMPLITUDE, true), io.harness.telemetry.Category.GLOBAL);
+  }
+
+  public static InvalidYamlException buildInvalidYamlException(String errorMessage, String pipelineYaml) {
+    YamlSchemaErrorWrapperDTO errorWrapperDTO =
+        YamlSchemaErrorWrapperDTO.builder()
+            .schemaErrors(
+                Collections.singletonList(YamlSchemaErrorDTO.builder().message(errorMessage).fqn("$.pipeline").build()))
+            .build();
+    InvalidYamlException invalidYamlException = new InvalidYamlException(errorMessage, errorWrapperDTO);
+    invalidYamlException.setYaml(pipelineYaml);
+    return invalidYamlException;
   }
 }

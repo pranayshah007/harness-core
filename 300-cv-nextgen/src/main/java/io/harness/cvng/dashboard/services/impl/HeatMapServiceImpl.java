@@ -9,6 +9,7 @@ package io.harness.cvng.dashboard.services.impl;
 
 import static io.harness.cvng.core.utils.DateTimeUtils.roundDownTo5MinBoundary;
 import static io.harness.cvng.core.utils.DateTimeUtils.roundDownToMinBoundary;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
@@ -311,6 +312,9 @@ public class HeatMapServiceImpl implements HeatMapService {
     Preconditions.checkArgument(monitoredServiceIdentifier != null, "Monitored Service Identifier cannot be null");
     List<HeatMap> latestHeatMaps =
         getLatestHeatMaps(projectParams, riskTimeBufferMins, Arrays.asList(monitoredServiceIdentifier));
+    if (isEmpty(latestHeatMaps)) {
+      return false;
+    }
 
     for (HeatMap latestHeatMap : latestHeatMaps) {
       for (HeatMapRisk heatMapRisk : latestHeatMap.getHeatMapRisks()) {

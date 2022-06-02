@@ -8,6 +8,7 @@
 package software.wings.service.impl.ldap;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
 
@@ -24,7 +25,6 @@ import software.wings.helpers.ext.ldap.LdapSearch;
 import software.wings.helpers.ext.ldap.LdapUserConfig;
 
 import com.google.common.collect.Lists;
-import de.danielbechler.util.Collections;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -123,7 +123,7 @@ public class LdapHelper {
       searchStatus = connectionTestResponse.getStatus();
       searchStatusMsg = connectionTestResponse.getMessage();
     } else { // now test for user config
-      if (!Collections.isEmpty(configs)) {
+      if (!isEmpty(configs)) {
         LdapUserConfig config = configs.get(0);
         SearchResult searchResult = null;
         try {
@@ -262,7 +262,7 @@ public class LdapHelper {
     List<? extends LdapUserConfig> ldapUserConfigs = ldapSettings.getUserSettingsList();
     List<LdapGetUsersResponse> ldapGetUsersResponse = new ArrayList<>();
     List<LdapGetUsersRequest> ldapGetUsersRequests;
-    if (!Collections.isEmpty(ldapUserConfigs)) {
+    if (!isEmpty(ldapUserConfigs)) {
       ldapGetUsersRequests =
           groupDnList.stream()
               .flatMap(groupDn -> ldapUserConfigs.stream().map(userConfig -> {

@@ -8,6 +8,8 @@
 package io.harness.cvng.notification.beans;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -21,7 +23,7 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class HealthScoreConditionSpec extends NotificationRuleConditionSpec {
-  @NonNull Double threshold;
+  @NonNull @Min(0) @Max(100) Double threshold;
   @NonNull String period;
 
   @Override

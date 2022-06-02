@@ -70,6 +70,7 @@ public class PersistenceIrregularIteratorTest extends PersistenceTestBase {
         MongoPersistenceIterator
             .<TestIrregularIterableEntity, MorphiaFilterExpander<TestIrregularIterableEntity>>builder()
             .mode(mode)
+            .iteratorName(this.getClass().getName())
             .clazz(TestIrregularIterableEntity.class)
             .fieldName(TestIrregularIterableEntityKeys.nextIterations)
             .targetInterval(ofSeconds(10))

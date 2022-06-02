@@ -11,13 +11,15 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Data;
 
 @OwnedBy(PL)
 @Data
 @Builder
+@Schema(name = "YamlDiffRecord", description = "This has the YAML Difference of the record.")
 public class YamlDiffRecordDTO {
-  String oldYaml;
-  String newYaml;
+  @Schema(description = "Previous YAML version") String oldYaml;
+  @Schema(description = "Current YAML version") String newYaml;
 }
