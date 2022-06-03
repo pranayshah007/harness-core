@@ -13,6 +13,8 @@ import io.harness.OrchestrationPublisherName;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
+import io.harness.concurrency.ConcurrentChildInstance;
+import io.harness.concurrency.ExecutionStartCallback;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.pms.resume.EngineResumeCallback;
 import io.harness.execution.InitiateNodeHelper;
@@ -22,9 +24,11 @@ import io.harness.pms.PmsFeatureFlagService;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse.Child;
 import io.harness.pms.contracts.execution.ExecutableResponse;
+import io.harness.pms.contracts.execution.events.InitiateMode;
 import io.harness.pms.contracts.execution.events.SdkResponseEventProto;
 import io.harness.pms.contracts.execution.events.SpawnChildrenRequest;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.repositories.ConcurrentChildrenInstanceRepository;
 import io.harness.waiter.WaitNotifyEngine;
 
 import com.google.inject.Inject;
@@ -43,6 +47,7 @@ public class SpawnChildrenRequestProcessor implements SdkResponseProcessor {
   @Inject private WaitNotifyEngine waitNotifyEngine;
   @Inject private InitiateNodeHelper initiateNodeHelper;
   @Inject private PmsFeatureFlagService pmsFeatureFlagService;
+  @Inject private ConcurrentChildrenInstanceRepository concurrentChildrenInstanceRepository;
   @Inject @Named(OrchestrationPublisherName.PUBLISHER_NAME) private String publisherName;
 
   @Override
@@ -51,16 +56,38 @@ public class SpawnChildrenRequestProcessor implements SdkResponseProcessor {
     Ambiance ambiance = event.getAmbiance();
     String nodeExecutionId = Objects.requireNonNull(AmbianceUtils.obtainCurrentRuntimeId(ambiance));
     try (AutoLogContext ignore = AmbianceUtils.autoLogContext(ambiance)) {
+      // Save concurrentChildInstance
       List<String> callbackIds = new ArrayList<>();
+      int currentChild = 0;
       for (Child child : request.getChildren().getChildrenList()) {
         String uuid = generateUuid();
         callbackIds.add(uuid);
         if (pmsFeatureFlagService.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.PIPELINE_MATRIX)) {
-          initiateNodeHelper.publishEvent(ambiance, child.getChildNodeId(), uuid, child.getStrategyMetadata(), true);
+          if (request.getChildren().getMaxConcurrency() == 0
+              || currentChild < request.getChildren().getMaxConcurrency()) {
+            initiateNodeHelper.publishEvent(
+                ambiance, child.getChildNodeId(), uuid, child.getStrategyMetadata(), InitiateMode.CREATE_AND_START);
+            ExecutionStartCallback executionStartCallback =
+                ExecutionStartCallback.builder()
+                    .parentNodeExecutionId(nodeExecutionId)
+                    .ambiance(ambiance)
+                    .maxConcurrency(request.getChildren().getMaxConcurrency())
+                    .build();
+            waitNotifyEngine.waitForAllOn(publisherName, executionStartCallback, uuid);
+          } else {
+            initiateNodeHelper.publishEvent(
+                ambiance, child.getChildNodeId(), uuid, child.getStrategyMetadata(), InitiateMode.CREATE);
+          }
+          currentChild++;
         } else {
           initiateNodeHelper.publishEvent(ambiance, child.getChildNodeId(), uuid);
         }
       }
+      concurrentChildrenInstanceRepository.save(ConcurrentChildInstance.builder()
+                                                    .childrenNodeExecutionIds(callbackIds)
+                                                    .parentNodeExecutionId(nodeExecutionId)
+                                                    .cursor((int) request.getChildren().getMaxConcurrency())
+                                                    .build());
 
       // Attach a Callback to the parent for the child
       EngineResumeCallback callback = EngineResumeCallback.builder().ambiance(ambiance).build();

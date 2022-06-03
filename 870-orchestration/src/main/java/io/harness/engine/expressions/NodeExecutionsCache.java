@@ -103,9 +103,9 @@ public class NodeExecutionsCache {
   // Should not change the fields to be included as its only used by NodeExecutionMap, if you change it may not use
   // index of NodeExecution collection
   public List<Status> findAllTerminalChildrenStatusOnly(String parentId) {
-    List<NodeExecution> nodeExecutions =
-        nodeExecutionService.findAllChildrenWithStatusIn(ambiance.getPlanExecutionId(), parentId, null, false, true,
-            Sets.newHashSet(NodeExecutionKeys.parentId, NodeExecutionKeys.status), Collections.emptySet());
+    List<NodeExecution> nodeExecutions = nodeExecutionService.findAllChildrenWithStatusIn(ambiance.getPlanExecutionId(),
+        parentId, null, false, true, Sets.newHashSet(NodeExecutionKeys.parentId, NodeExecutionKeys.status),
+        Sets.newHashSet(NodeExecutionKeys.stepType));
     return nodeExecutions.stream()
         .map(NodeExecution::getStatus)
         .filter(status -> StatusUtils.finalStatuses().contains(status))

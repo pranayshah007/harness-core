@@ -40,17 +40,20 @@ public class StrategyStep implements ChildrenExecutable<StrategyStepParameters> 
       return ChildrenExecutableResponse.newBuilder()
           .addAllChildren(
               matrixConfigService.fetchChildren(stepParameters.getStrategyConfig(), stepParameters.getChildNodeId()))
+          .setMaxConcurrency(stepParameters.getStrategyConfig().getBatchSize())
           .build();
     }
     if (stepParameters.getStrategyConfig().getForConfig() != null) {
       return ChildrenExecutableResponse.newBuilder()
           .addAllChildren(forLoopStrategyConfigService.fetchChildren(
               stepParameters.getStrategyConfig(), stepParameters.getChildNodeId()))
+          .setMaxConcurrency(stepParameters.getStrategyConfig().getBatchSize())
           .build();
     }
     return ChildrenExecutableResponse.newBuilder()
         .addChildren(
             ChildrenExecutableResponse.Child.newBuilder().setChildNodeId(stepParameters.getChildNodeId()).build())
+        .setMaxConcurrency(stepParameters.getStrategyConfig().getBatchSize())
         .build();
   }
 

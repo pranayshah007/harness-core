@@ -117,6 +117,7 @@ public class NodeExecutionMap extends LateBindingMap {
     if (nodeExecution == null) {
       return Optional.empty();
     }
+    // todo: change here
     List<Status> childStatuses = nodeExecutionsCache.findAllTerminalChildrenStatusOnly(nodeExecution.getUuid());
     return Optional.of(StatusUtils.calculateStatus(childStatuses, ambiance.getPlanExecutionId()).name());
   }

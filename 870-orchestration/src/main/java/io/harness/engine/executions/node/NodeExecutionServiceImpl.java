@@ -590,7 +590,12 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
       return;
     }
     finalList.addAll(children);
-    children.forEach(child -> extractChildList(parentChildrenMap, child.getUuid(), finalList));
+    children.forEach(child -> {
+      if (child.getStepType().getStepCategory() != StepCategory.FORK
+          && child.getStepType().getStepCategory() != StepCategory.STRATEGY) {
+        extractChildList(parentChildrenMap, child.getUuid(), finalList);
+      }
+    });
   }
 
   @VisibleForTesting

@@ -45,6 +45,7 @@ public class NGForkStep extends ChildrenExecutableWithRollbackAndRbac<ForkStepPa
     for (String nodeId : stepParameters.getParallelNodeIds()) {
       responseBuilder.addChildren(ChildrenExecutableResponse.Child.newBuilder().setChildNodeId(nodeId).build());
     }
+    responseBuilder.setMaxConcurrency(1);
     return responseBuilder.build();
   }
 
