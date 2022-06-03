@@ -18,4 +18,5 @@ public interface InfrastructureKind {
   String PDC = "Pdc";
   String KUBERNETES_AZURE = "KubernetesAzure";
   String SSH_WINRM_AZURE = "SshWinRmAzure";
+  String AZURE_WEB_APP = "AzureWebApp";
 }

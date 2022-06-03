@@ -61,7 +61,8 @@ public class DelegateHealthCheckTasklet implements Tasklet {
       String clusterId;
       if (perpetualTask.getTaskDescription() == null || !perpetualTask.getTaskDescription().equals("NG")) {
         clusterId = perpetualTask.getClientContext().getClientParams().get("clusterId");
-      } else {
+      }
+      else {
         String clientId = perpetualTask.getClientContext().getClientId();
         clusterId = clientId.substring(clientId.lastIndexOf('/') + 1);
       }
