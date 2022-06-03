@@ -9,6 +9,7 @@ package io.harness.plancreator.strategy;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.yaml.ParameterField;
@@ -38,6 +39,7 @@ public class MatrixConfig {
 
   @ApiModelProperty(hidden = true) @Builder.Default Map<String, AxisConfig> axes = new LinkedHashMap<>();
   List<ExcludeConfig> exclude;
+  @JsonProperty("maxConcurrency") int maxConcurrency;
 
   @JsonAnySetter
   void setAxis(String key, Object value) {

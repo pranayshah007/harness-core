@@ -29,5 +29,4 @@ public class StrategyConfig {
   @JsonProperty("matrix") MatrixConfig matrixConfig;
   @JsonProperty("for") HarnessForConfig forConfig;
   @JsonProperty("parallelism") int parallelism;
-  @JsonProperty("maxConcurrency") int maxConcurrency;
 }
