@@ -52,7 +52,7 @@ public class AnomalyDao {
             .orderBy(orderFields)
             .offset(offset)
             .limit(limit);
-    log.info("Anomaly Query: {}", finalStep.getQuery().toString());
+    log.info("Anomaly Query: {}", finalStep.getQuery());
     return finalStep.fetchInto(Anomalies.class);
   }
 
@@ -66,7 +66,7 @@ public class AnomalyDao {
                                                      .orderBy(orderFields)
                                                      .offset(offset)
                                                      .limit(limit);
-    log.info("Anomaly Query: {}", finalStep.getQuery().toString());
+    log.info("Anomaly Query: {}", finalStep.getQuery());
     return finalStep.fetchInto(Anomalies.class);
   }
 
@@ -79,7 +79,7 @@ public class AnomalyDao {
                 sum(ANOMALIES.EXPECTEDCOST).as("expectedCost"))
             .from(ANOMALIES)
             .where(ANOMALIES.ACCOUNTID.eq(accountId).and(firstNonNull(condition, DSL.noCondition())));
-    log.info("Anomaly Query: {}", finalStep.getQuery().toString());
+    log.info("Anomaly Query: {}", finalStep.getQuery());
     return finalStep.fetchInto(AnomalySummary.class);
   }
 

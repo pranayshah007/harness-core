@@ -97,7 +97,6 @@ import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.data.OptionalOutcome;
 import io.harness.pms.sdk.core.execution.SdkGraphVisualizationDataService;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
-import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
@@ -147,7 +146,6 @@ public class K8sStepHelper extends CDStepHelper {
   public static final Pattern releaseNamePattern = Pattern.compile(RELEASE_NAME_VALIDATION_REGEX);
   @Inject private EngineExpressionService engineExpressionService;
   @Inject private KryoSerializer kryoSerializer;
-  @Inject private OutcomeService outcomeService;
   @Inject private EncryptionHelper encryptionHelper;
   @Inject private StepHelper stepHelper;
   @Inject private SdkGraphVisualizationDataService sdkGraphVisualizationDataService;
