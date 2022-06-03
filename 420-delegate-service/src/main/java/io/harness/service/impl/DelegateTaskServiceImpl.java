@@ -15,10 +15,10 @@ import static java.lang.System.currentTimeMillis;
 
 import io.harness.beans.DelegateTask;
 import io.harness.beans.DelegateTask.DelegateTaskKeys;
-import io.harness.beans.TaskResponseType;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.DelegateSyncTaskResponse;
 import io.harness.delegate.beans.DelegateTaskResponse;
+import io.harness.delegate.beans.TaskResponseType;
 import io.harness.delegate.task.TaskLogContext;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
@@ -194,7 +194,7 @@ public class DelegateTaskServiceImpl implements DelegateTaskService {
   }
 
   private byte[] getResponseData(DelegateTaskResponse response, DelegateTask delegateTask) {
-    if (delegateTask.getTaskResponseType() == TaskResponseType.JSON) {
+    if (delegateTask.getData().getTaskResponseType() == TaskResponseType.JSON) {
       try {
         // later if we want to skip deserialization we can do that too by having special impl of delegatetaskresponse
         // and have instanceof check here

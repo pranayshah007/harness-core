@@ -56,7 +56,7 @@ message TaskDetails {
     // determining encrypted fields and expressions.
     bytes kryo_parameters = 3;
     // Using json serialization - the task object in java should be serializable and have all java annotations
-    string json_parameters = 8;
+    bytes json_parameters = 8;
   }
 
   // Execution time out determines for how long the task should be kept waited on to accomplish its work.
@@ -87,6 +87,6 @@ message TaskSelector {
 message TaskResponseData {
   oneof response_data {
     bytes kryo_results_data = 1;
-    string json_results_data = 2;
+    bytes json_results_data = 2;
   }
 }

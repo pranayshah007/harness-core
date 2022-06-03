@@ -15,7 +15,6 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.DelegateTask;
 import io.harness.beans.DelegateTask.DelegateTaskBuilder;
 import io.harness.beans.DelegateTask.DelegateTaskKeys;
-import io.harness.beans.TaskResponseType;
 import io.harness.callback.DelegateCallbackToken;
 import io.harness.delegate.CancelTaskRequest;
 import io.harness.delegate.CancelTaskResponse;
@@ -53,6 +52,7 @@ import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.NoDelegatesException;
 import io.harness.delegate.beans.TaskData;
+import io.harness.delegate.beans.TaskResponseType;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.exception.ExceptionUtils;
@@ -187,8 +187,8 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
       taskResponseType = TaskResponseType.JSON;
       software.wings.beans.TaskType type = software.wings.beans.TaskType.valueOf(String.valueOf(taskType));
       try {
-        TaskParameters taskParameters =
-            objectMapper.readValue(taskDetails.getJsonParameters(), type.getTaskRequestParameters());
+        TaskParameters taskParameters = objectMapper.readValue(
+            objectMapper.writeValueAsString(taskDetails.getJsonParameters()), type.getTaskRequestParameters());
         parameters = new Object[] {taskParameters};
       } catch (JsonProcessingException e) {
         throw new InvalidRequestException("Not able to serialize params", e);
