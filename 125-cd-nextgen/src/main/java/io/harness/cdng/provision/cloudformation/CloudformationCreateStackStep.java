@@ -213,8 +213,7 @@ public class CloudformationCreateStackStep
             .parameters(new Object[] {parameters})
             .build();
     final TaskRequest taskRequest = StepUtils.prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
-        Arrays.asList(K8sCommandUnitConstants.FetchFiles, CloudformationCommandUnit.CreateStack.name()),
-        TaskType.CLOUDFORMATION_TASK_NG.getDisplayName(),
+        Arrays.asList(CloudformationCommandUnit.CreateStack.name()), TaskType.CLOUDFORMATION_TASK_NG.getDisplayName(),
         TaskSelectorYaml.toTaskSelector(
             ((CloudformationCreateStackStepParameters) stepParameters.getSpec()).getDelegateSelectors()),
         stepHelper.getEnvironmentType(ambiance));
