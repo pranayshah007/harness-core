@@ -1,7 +1,83 @@
 FROM us.gcr.io/platform-205701/ubi:base-latest
-RUN curl -OL https://github.com/adoptium/temurin11-binaries/releases/download/jdk-11.0.15%2B10/OpenJDK11U-jdk_x64_linux_hotspot_11.0.15_10.tar.gz
-RUN mkdir -p /opt/harness/OpenJDK11 && tar -xzf OpenJDK11U-jdk_x64_linux_hotspot_11.0.15_10.tar.gz -C /opt/harness/OpenJDK11 && ls -al /opt/harness/OpenJDK11/jdk-11.0.15+10 \
- && /opt/harness/OpenJDK11/jdk-11.0.15+10/bin/java -version
 
-ENV JAVA_HOME=/opt/harness/OpenJDK11/jdk-11.0.15+10
-ENV PATH=$JAVA_HOME/bin:$PATH
+USER root
+
+ENV PYTHON_VERSION=3.8 \
+    PATH=$HOME/.local/bin/:$PATH \
+    PYTHONUNBUFFERED=1 \
+    PYTHONIOENCODING=UTF-8 \
+    LC_ALL=en_US.UTF-8 \
+    LANG=en_US.UTF-8 \
+    CNB_STACK_ID=com.redhat.stacks.ubi8-python-38 \
+    CNB_USER_ID=1001 \
+    CNB_GROUP_ID=0 \
+    PIP_NO_CACHE_DIR=off
+
+RUN INSTALL_PKGS="bsdtar \
+  findutils \
+  groff-base \
+  glibc-locale-source \
+  glibc-langpack-en \
+  gettext \
+  rsync \
+  scl-utils \
+  tar \
+  unzip \
+  xz \
+  yum" && \
+  mkdir -p ${HOME}/.pki/nssdb && \
+  chown -R 1001:0 ${HOME}/.pki && \
+  yum install -y --setopt=tsflags=nodocs $INSTALL_PKGS && \
+  rpm -V $INSTALL_PKGS && \
+  yum -y clean all --enablerepo='*'
+
+RUN INSTALL_PKGS="autoconf \
+  automake \
+  bzip2 \
+  gcc-c++ \
+  gd-devel \
+  gdb \
+  git \
+  libcurl-devel \
+  libpq-devel \
+  libxml2-devel \
+  libxslt-devel \
+  lsof \
+  make \
+  mariadb-connector-c-devel \
+  openssl-devel \
+  patch \
+  procps-ng \
+  npm \
+  redhat-rpm-config \
+  sqlite-devel \
+  unzip \
+  wget \
+  which \
+  zlib-devel" && \
+  yum install -y --setopt=tsflags=nodocs $INSTALL_PKGS && \
+  rpm -V $INSTALL_PKGS && \
+  yum -y clean all --enablerepo='*'
+
+
+RUN INSTALL_PKGS="python38 python38-devel python38-setuptools python38-pip nss_wrapper \
+        httpd httpd-devel mod_ssl mod_auth_gssapi mod_ldap \
+        mod_session atlas-devel gcc-gfortran libffi-devel libtool-ltdl enchant" && \
+    yum -y module enable python38:3.8 httpd:2.4 && \
+    yum -y --setopt=tsflags=nodocs install $INSTALL_PKGS && \
+    rpm -V $INSTALL_PKGS && \
+    # Remove redhat-logos-httpd (httpd dependency) to keep image size smaller.
+    rpm -e --nodeps redhat-logos-httpd && \
+    yum -y clean all --enablerepo='*'
+
+RUN alternatives --set python /usr/bin/python3 && ln -s /usr/bin/pip3 /usr/bin/pip
+
+RUN rm -rf ~/.cache/pip/selfcheck/*
+RUN rm -rf ~/.cache/pip/http/*
+RUN pip list --outdated
+RUN pip install -U pip-upgrade-outdated
+RUN pip_upgrade_outdated -3 -v -x distlib -x rsa -x docutils
+RUN pip list --outdated
+RUN pip uninstall -y pip-upgrade-outdated
+RUN rm -rf ~/.cache/pip/selfcheck/*
+RUN rm -rf ~/.cache/pip/http/*
