@@ -8,9 +8,7 @@
 package io.harness.cvng.core.services.impl.monitoredService;
 
 import static io.harness.cvng.core.beans.params.ServiceEnvironmentParams.builderWithProjectParams;
-import static io.harness.cvng.notification.utils.NotificationRuleCommonUtils.COOL_OFF_DURATION;
-import static io.harness.cvng.notification.utils.NotificationRuleCommonUtils.getNotificationTemplateData;
-import static io.harness.cvng.notification.utils.NotificationRuleCommonUtils.getNotificationTemplateId;
+import static io.harness.cvng.notification.utils.NotificationRuleCommonUtils.*;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -1538,7 +1536,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
   }
 
   @Override
-  public int countUniqueEnabledServices(String accountId) {
+  public long countUniqueEnabledServices(String accountId) {
     List<MonitoredService> enabledMonitoredServices = hPersistence.createQuery(MonitoredService.class)
                                                           .filter(MonitoredServiceKeys.accountId, accountId)
                                                           .filter(MonitoredServiceKeys.enabled, true)
