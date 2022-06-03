@@ -37,7 +37,7 @@ public class InfrastructurePlanCreatorHelper {
 
       if (refToInputMap.containsKey(entity.getIdentifier())) {
         Map<String, Object> infraInputYaml = new HashMap<>();
-        infraInputYaml.put(YamlTypes.PIPELINE_INFRASTRUCTURE, refToInputMap.get(entity.getIdentifier()));
+        infraInputYaml.put(YamlTypes.INFRASTRUCTURE_DEF, refToInputMap.get(entity.getIdentifier()));
         mergedInfraYaml = MergeHelper.mergeInputSetFormatYamlToOriginYaml(
             entity.getYaml(), YamlPipelineUtils.writeYamlString(infraInputYaml));
       }
