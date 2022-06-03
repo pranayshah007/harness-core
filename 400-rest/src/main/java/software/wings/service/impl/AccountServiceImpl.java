@@ -2004,7 +2004,6 @@ public class AccountServiceImpl implements AccountService {
     }
 
     AuthenticationMechanism authenticationMechanism = account.getAuthenticationMechanism();
-    log.info("AUTH logging by Boo {}", authenticationMechanism.toString());
     AuthenticationInfoBuilder builder =
         AuthenticationInfo.builder().authenticationMechanism(authenticationMechanism).accountId(accountId);
     builder.oauthEnabled(account.isOauthEnabled());
