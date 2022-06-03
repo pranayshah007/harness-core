@@ -168,7 +168,7 @@ public class VariableCreationBlobResponseUtils {
     if (EmptyPredicate.isEmpty(currResponse.getYamlUpdates().getFqnToYamlMap())) {
       return builder.build();
     }
-    Map<String, String> yamlUpdateFqnMap = new HashMap<>(builder.getYamlUpdates().getFqnToYamlMap());
+    Map<String, String> yamlUpdateFqnMap = new LinkedHashMap<>(builder.getYamlUpdates().getFqnToYamlMap());
     yamlUpdateFqnMap.putAll(currResponse.getYamlUpdates().getFqnToYamlMap());
     builder.setYamlUpdates(YamlUpdates.newBuilder().putAllFqnToYaml(yamlUpdateFqnMap).build());
     return builder.build();

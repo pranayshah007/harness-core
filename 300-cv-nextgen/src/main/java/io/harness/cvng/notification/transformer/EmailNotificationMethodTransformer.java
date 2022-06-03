@@ -14,7 +14,7 @@ public class EmailNotificationMethodTransformer
     extends NotificationMethodTransformer<CVNGEmailChannel, CVNGEmailChannelSpec> {
   @Override
   public CVNGEmailChannel getEntityNotificationMethod(CVNGEmailChannelSpec notificationChannelSpec) {
-    return new CVNGEmailChannel(notificationChannelSpec.getUserGroups(),notificationChannelSpec.getRecipients());
+    return new CVNGEmailChannel(notificationChannelSpec.getUserGroups(), notificationChannelSpec.getRecipients());
   }
 
   @Override

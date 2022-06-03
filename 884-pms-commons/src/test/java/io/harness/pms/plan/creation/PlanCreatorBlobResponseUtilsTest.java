@@ -8,6 +8,7 @@
 package io.harness.pms.plan.creation;
 
 import static io.harness.rule.OwnerRule.GARVIT;
+import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -16,14 +17,11 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
-import io.harness.pms.contracts.plan.Dependencies;
-import io.harness.pms.contracts.plan.GraphLayoutInfo;
-import io.harness.pms.contracts.plan.GraphLayoutNode;
-import io.harness.pms.contracts.plan.PlanCreationBlobResponse;
-import io.harness.pms.contracts.plan.PlanCreationContextValue;
-import io.harness.pms.contracts.plan.PlanNodeProto;
+import io.harness.pms.contracts.plan.*;
 import io.harness.rule.Owner;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -68,5 +66,39 @@ public class PlanCreatorBlobResponseUtilsTest extends CategoryTest {
 
     assertThat(blobResponse.getGraphLayoutInfo().getStartingNodeId()).isEqualTo("id3");
     assertThat(blobResponse.getGraphLayoutInfo().getLayoutNodesMap().keySet()).containsExactlyInAnyOrder("id1", "id2");
+  }
+
+  @Test
+  @Owner(developers = PRASHANTSHARMA)
+  @Category(UnitTests.class)
+  public void testUpdates() {
+    PlanCreationBlobResponse.Builder variable = PlanCreationBlobResponse.newBuilder();
+    Map<String, String> testMap1 = new LinkedHashMap<>();
+    testMap1.put("pipeline/stages", "yaml1");
+    testMap1.put("pipeline/stages/[0]/stage/spec/execution/steps", "yaml2");
+    YamlUpdates yamlUpdates1 = YamlUpdates.newBuilder().putAllFqnToYaml(testMap1).build();
+    PlanCreationBlobResponse currentResponse =
+        PlanCreationBlobResponse.newBuilder().setYamlUpdates(yamlUpdates1).build();
+    PlanCreationBlobResponse creationBlobResponse1 =
+        PlanCreationBlobResponseUtils.addYamlUpdates(variable, currentResponse);
+
+    assertThat(creationBlobResponse1.getYamlUpdates().getFqnToYamlMap()).containsExactlyEntriesOf(testMap1);
+
+    Map<String, String> testMap2 = new LinkedHashMap<>();
+    testMap2.put(
+        "pipeline/stages/[0]/stage/spec/infrastructure/infrastructureDefinition/provisioner/steps/step2", "yaml3");
+    testMap2.put("pipeline/stages/[0]", "yaml4");
+
+    YamlUpdates yamlUpdates2 = YamlUpdates.newBuilder().putAllFqnToYaml(testMap2).build();
+    PlanCreationBlobResponse currentResponse2 =
+        PlanCreationBlobResponse.newBuilder().setYamlUpdates(yamlUpdates2).build();
+    PlanCreationBlobResponse creationBlobResponse2 =
+        PlanCreationBlobResponseUtils.addYamlUpdates(variable, currentResponse2);
+
+    Map<String, String> resultedMap = new LinkedHashMap<>();
+    resultedMap.putAll(testMap1);
+    resultedMap.putAll(testMap2);
+
+    assertThat(creationBlobResponse2.getYamlUpdates().getFqnToYamlMap()).containsExactlyEntriesOf(resultedMap);
   }
 }
