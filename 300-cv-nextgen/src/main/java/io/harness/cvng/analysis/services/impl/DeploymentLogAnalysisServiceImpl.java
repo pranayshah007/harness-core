@@ -60,6 +60,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
@@ -450,21 +451,36 @@ public class DeploymentLogAnalysisServiceImpl implements DeploymentLogAnalysisSe
     PageResponse<LogAnalysisRadarChartListDTO> logAnalysisRadarChartListDTOPageResponse =
         PageUtils.offsetAndLimit(logAnalysisResults, pageParams.getPage(), pageParams.getSize());
 
-    Map<ClusterType, Long> eventCountByEventTypeMap =
+    Map<ClusterType, Long> eventCountByEventTypeMap = new HashMap<>();
+
+    Long baselineCount =
         logAnalysisResults.stream()
-            .map(logAnalysisClusterDTO -> logAnalysisClusterDTO.getClusterType())
-            .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+            .filter(logAnalysisRadarChartListDTO -> !Objects.isNull(logAnalysisRadarChartListDTO.getBaseline()))
+            .count();
+
+    eventCountByEventTypeMap.put(ClusterType.BASELINE, baselineCount);
+
+    eventCountByEventTypeMap.putAll(logAnalysisResults.stream()
+                                        .map(logAnalysisClusterDTO -> logAnalysisClusterDTO.getClusterType())
+                                        .collect(Collectors.groupingBy(Function.identity(), Collectors.counting())));
+    List<EventCount> eventCounts =
+        ClusterType.getNonBaselineValues()
+            .stream()
+            .map(clusterType
+                -> EventCount.builder()
+                       .clusterType(clusterType)
+                       .count(eventCountByEventTypeMap.getOrDefault(clusterType, 0L).intValue())
+                       .build())
+            .collect(Collectors.toList());
+
+    eventCounts.add(EventCount.builder()
+                        .clusterType(ClusterType.BASELINE)
+                        .count(eventCountByEventTypeMap.getOrDefault(ClusterType.BASELINE, 0L).intValue())
+                        .build());
 
     return LogAnalysisRadarChartListWithCountDTO.builder()
         .totalClusters(totalClusters)
-        .eventCounts(ClusterType.getNonBaselineValues()
-                         .stream()
-                         .map(clusterType
-                             -> EventCount.builder()
-                                    .clusterType(clusterType)
-                                    .count(eventCountByEventTypeMap.getOrDefault(clusterType, 0L).intValue())
-                                    .build())
-                         .collect(Collectors.toList()))
+        .eventCounts(eventCounts)
         .logAnalysisRadarCharts(logAnalysisRadarChartListDTOPageResponse)
         .build();
   }
@@ -505,10 +521,10 @@ public class DeploymentLogAnalysisServiceImpl implements DeploymentLogAnalysisSe
       allLogAnalysisRadarChartListDTOs.addAll(
           getRadarChartLogAnalysisResult(deploymentLogAnalysis, deploymentLogAnalysisFilter));
     }
+    Collections.sort(allLogAnalysisRadarChartListDTOs);
     if (allLogAnalysisRadarChartListDTOs.size() > 0) {
       setAngleAndRadiusForRadarChart(allLogAnalysisRadarChartListDTOs);
     }
-    Collections.sort(allLogAnalysisRadarChartListDTOs);
     return allLogAnalysisRadarChartListDTOs;
   }
 
