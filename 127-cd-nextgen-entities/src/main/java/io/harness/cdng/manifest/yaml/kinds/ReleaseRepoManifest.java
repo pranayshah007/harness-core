@@ -7,17 +7,15 @@
 
 package io.harness.cdng.manifest.yaml.kinds;
 
+import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper.StoreConfigWrapperParameters;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.manifest.ManifestType;
 import io.harness.cdng.manifest.yaml.ManifestAttributes;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
-import io.harness.cdng.visitor.helpers.manifest.K8sManifestVisitorHelper;
 import io.harness.cdng.visitor.helpers.manifest.ReleaseRepoManifestVisitorHelper;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.pms.yaml.ParameterField;
@@ -27,6 +25,9 @@ import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.beans.VisitableChildren;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -39,8 +40,6 @@ import lombok.experimental.FieldNameConstants;
 import lombok.experimental.Wither;
 import org.springframework.data.annotation.TypeAlias;
 
-import static io.harness.annotations.dev.HarnessTeam.CDP;
-
 @Data
 @Builder
 @EqualsAndHashCode(callSuper = false)
@@ -52,60 +51,59 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 @OwnedBy(CDP)
 @RecasterAlias("io.harness.cdng.manifest.yaml.kinds.ReleaseRepoManifest")
 public class ReleaseRepoManifest implements ManifestAttributes, Visitable {
-    @JsonProperty(YamlNode.UUID_FIELD_NAME)
-    @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
-    @ApiModelProperty(hidden = true)
-    private String uuid;
+  @JsonProperty(YamlNode.UUID_FIELD_NAME)
+  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
+  @ApiModelProperty(hidden = true)
+  private String uuid;
 
-    @EntityIdentifier
+  @EntityIdentifier String identifier;
+  @Wither
+  @JsonProperty("store")
+  @ApiModelProperty(dataType = "io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper")
+  @SkipAutoEvaluation
+  ParameterField<StoreConfigWrapper> store;
+
+  // For Visitor Framework Impl
+  String metadata;
+
+  @Override
+  public ManifestAttributes applyOverrides(ManifestAttributes overrideConfig) {
+    ReleaseRepoManifest releaseRepoManifest = (ReleaseRepoManifest) overrideConfig;
+    ReleaseRepoManifest resultantManifest = this;
+    if (releaseRepoManifest.getStore() != null && releaseRepoManifest.getStore().getValue() != null) {
+      resultantManifest = resultantManifest.withStore(
+          ParameterField.createValueField(store.getValue().applyOverrides(releaseRepoManifest.getStore().getValue())));
+    }
+
+    return resultantManifest;
+  }
+
+  @Override
+  public String getKind() {
+    return ManifestType.ReleaseRepo;
+  }
+
+  @Override
+  public StoreConfig getStoreConfig() {
+    return store.getValue().getSpec();
+  }
+
+  @Override
+  public VisitableChildren getChildrenToWalk() {
+    VisitableChildren children = VisitableChildren.builder().build();
+    children.add(YAMLFieldNameConstants.STORE, store.getValue());
+    return children;
+  }
+
+  @Override
+  public ManifestAttributeStepParameters getManifestAttributeStepParameters() {
+    return new ReleaseRepoManifestStepParameters(
+        identifier, StoreConfigWrapperParameters.fromStoreConfigWrapper(store.getValue()));
+  }
+
+  @Value
+  public static class ReleaseRepoManifestStepParameters implements ManifestAttributeStepParameters {
     String identifier;
-    @Wither
-    @JsonProperty("store")
-    @ApiModelProperty(dataType = "io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper")
-    @SkipAutoEvaluation
-    ParameterField<StoreConfigWrapper> store;
-
-    // For Visitor Framework Impl
-    String metadata;
-
-    @Override
-    public ManifestAttributes applyOverrides(ManifestAttributes overrideConfig) {
-        ReleaseRepoManifest releaseRepoManifest = (ReleaseRepoManifest) overrideConfig;
-        ReleaseRepoManifest resultantManifest = this;
-        if (releaseRepoManifest.getStore() != null && releaseRepoManifest.getStore().getValue() != null) {
-            resultantManifest = resultantManifest.withStore(
-                    ParameterField.createValueField(store.getValue().applyOverrides(releaseRepoManifest.getStore().getValue())));
-        }
-
-        return resultantManifest;
-    }
-
-    @Override
-    public String getKind() {
-        return ManifestType.ReleaseRepo;
-    }
-
-    @Override
-    public StoreConfig getStoreConfig() {
-        return store.getValue().getSpec();
-    }
-
-    @Override
-    public VisitableChildren getChildrenToWalk() {
-        VisitableChildren children = VisitableChildren.builder().build();
-        children.add(YAMLFieldNameConstants.STORE, store.getValue());
-        return children;
-    }
-
-    @Override
-    public ManifestAttributeStepParameters getManifestAttributeStepParameters() {
-        return new ReleaseRepoManifestStepParameters(identifier,
-                StoreConfigWrapperParameters.fromStoreConfigWrapper(store.getValue()));
-    }
-
-    @Value
-    public static class ReleaseRepoManifestStepParameters implements ManifestAttributes.ManifestAttributeStepParameters {
-        String identifier;
-        StoreConfigWrapper.StoreConfigWrapperParameters store;
-    }
+    StoreConfigWrapperParameters store;
+  }
 }
