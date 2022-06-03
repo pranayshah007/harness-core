@@ -15,6 +15,7 @@ import static io.harness.expression.Expression.DISALLOW_SECRETS;
 
 import io.harness.delegate.beans.connector.awsconnector.AwsCapabilityHelper;
 import io.harness.delegate.beans.connector.gcp.GcpCapabilityHelper;
+import io.harness.delegate.beans.connector.helm.OciHelmConnectorDTO;
 import io.harness.delegate.beans.connector.k8Connector.K8sTaskCapabilityHelper;
 import io.harness.delegate.beans.connector.scm.GitCapabilityHelper;
 import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
@@ -122,8 +123,11 @@ public class HelmCommandRequestNG implements TaskParameters, ExecutionCapability
           case OCI_HELM:
             OciHelmStoreDelegateConfig ociHelmStoreConfig =
                 (OciHelmStoreDelegateConfig) helManifestConfig.getStoreDelegateConfig();
-            capabilities.add(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
-                ociHelmStoreConfig.getOciHelmConnector().getHelmRepoUrl(), maskingEvaluator));
+            OciHelmConnectorDTO ociHelmConnector = ociHelmStoreConfig.getOciHelmConnector();
+            capabilities.add(HelmInstallationCapability.builder()
+                                 .version(HelmVersion.V380)
+                                 .criteria("OCI_HELM_REPO: " + ociHelmConnector.getHelmRepoUrl())
+                                 .build());
             capabilities.addAll(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
                 ociHelmStoreConfig.getEncryptedDataDetails(), maskingEvaluator));
             populateDelegateSelectorCapability(

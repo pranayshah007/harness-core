@@ -13,6 +13,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.awsconnector.AwsCapabilityHelper;
 import io.harness.delegate.beans.connector.gcp.GcpCapabilityHelper;
+import io.harness.delegate.beans.connector.helm.OciHelmConnectorDTO;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
 import io.harness.delegate.beans.executioncapability.HelmInstallationCapability;
@@ -77,8 +78,11 @@ public class HelmValuesFetchRequest implements TaskParameters, ExecutionCapabili
       case OCI_HELM:
         OciHelmStoreDelegateConfig ociHelmStoreConfig = (OciHelmStoreDelegateConfig) storeDelegateConfig;
         if (ociHelmStoreConfig.getOciHelmConnector().getHelmRepoUrl() != null) {
-          capabilities.add(HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability(
-              ociHelmStoreConfig.getOciHelmConnector().getHelmRepoUrl(), maskingEvaluator));
+          OciHelmConnectorDTO ociHelmConnector = ociHelmStoreConfig.getOciHelmConnector();
+          capabilities.add(HelmInstallationCapability.builder()
+                               .version(HelmVersion.V380)
+                               .criteria("OCI_HELM_REPO: " + ociHelmConnector.getHelmRepoUrl())
+                               .build());
         }
         capabilities.addAll(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
             ociHelmStoreConfig.getEncryptedDataDetails(), maskingEvaluator));
