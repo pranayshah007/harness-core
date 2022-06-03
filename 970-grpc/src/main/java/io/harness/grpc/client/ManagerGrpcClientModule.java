@@ -25,6 +25,7 @@ import io.grpc.netty.shaded.io.netty.handler.ssl.SslContext;
 import io.grpc.netty.shaded.io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import javax.net.ssl.SSLException;
 import lombok.Builder;
+import lombok.ToString;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 
@@ -111,7 +112,7 @@ public class ManagerGrpcClientModule extends ProviderModule {
     String target;
     String authority;
     String accountId;
-    String accountSecret;
+    @ToString.Exclude String accountSecret;
     String scheme;
   }
 }

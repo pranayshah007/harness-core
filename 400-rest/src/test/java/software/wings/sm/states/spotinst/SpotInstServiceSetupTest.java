@@ -16,7 +16,6 @@ import static software.wings.utils.WingsTestConstants.ACTIVITY_ID;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
@@ -86,12 +85,11 @@ public class SpotInstServiceSetupTest extends WingsBaseTest {
                                         .build())
             .build();
     doReturn(data).when(mockSpotinstStateHelper).prepareStateExecutionData(any(), any());
-    doNothing().when(stateExecutionService).appendDelegateTaskDetails(anyString(), any());
+    doNothing().when(stateExecutionService).appendDelegateTaskDetails(any(), any());
     DelegateTask task = DelegateTask.builder().description("desc").build();
     doReturn(task)
         .when(mockSpotinstStateHelper)
-        .getDelegateTask(anyString(), anyString(), any(), anyString(), anyString(), anyString(), any(), any(),
-            anyString(), eq(true));
+        .getDelegateTask(any(), any(), any(), any(), any(), any(), any(), any(), any(), eq(true));
     state.execute(mockContext);
     verify(mockDelegateService).queueTask(any());
   }
@@ -135,7 +133,7 @@ public class SpotInstServiceSetupTest extends WingsBaseTest {
     doReturn(data).when(mockContext).getStateExecutionData();
     doReturn("test").when(mockSpotinstStateHelper).getSweepingOutputName(any(), any());
     doReturn(SweepingOutputInstance.builder()).when(mockContext).prepareSweepingOutputBuilder(any());
-    doReturn(groupPrefix).when(mockContext).renderExpression(anyString());
+    doReturn(groupPrefix).when(mockContext).renderExpression(any());
     ExecutionResponse executionResponse = state.handleAsyncResponse(mockContext, responseMap);
 
     verify(mockSweepingOutputService).save(argThat(new ArgumentMatcher<SweepingOutputInstance>() {
