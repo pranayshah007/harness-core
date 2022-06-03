@@ -78,7 +78,7 @@ public class PrometheusDataCollectionDSLTest extends HoverflyCVNextGenTestBase {
     DataCollectionDSLService dataCollectionDSLService = new DataCollectionServiceImpl();
     dataCollectionDSLService.registerDatacollectionExecutorService(executorService);
     String code = readDSL("metric-collection.datacollection");
-    Instant instant = Instant.parse("2022-02-14T10:21:00.000Z");
+    Instant instant = Instant.parse("2022-06-01T10:21:00.000Z");
     List<MetricPack> metricPacks = metricPackService.getMetricPacks(builderFactory.getContext().getAccountId(),
         builderFactory.getContext().getOrgIdentifier(), builderFactory.getContext().getProjectIdentifier(),
         DataSourceType.APP_DYNAMICS);
