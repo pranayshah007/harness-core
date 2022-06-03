@@ -38,6 +38,7 @@ import io.harness.cdng.manifest.yaml.kinds.KustomizeManifest;
 import io.harness.cdng.manifest.yaml.kinds.KustomizePatchesManifest;
 import io.harness.cdng.manifest.yaml.kinds.OpenshiftManifest;
 import io.harness.cdng.manifest.yaml.kinds.OpenshiftParamManifest;
+import io.harness.cdng.manifest.yaml.kinds.ReleaseRepoManifest;
 import io.harness.cdng.manifest.yaml.kinds.ServerlessAwsLambdaManifest;
 import io.harness.cdng.manifest.yaml.kinds.ValuesManifest;
 
@@ -87,7 +88,7 @@ public class ManifestOutcomeMapper {
   }
 
   private static ManifestOutcome getReleaseRepoOutcome(ManifestAttributes manifestAttributes) {
-    ValuesManifest attributes = (ValuesManifest) manifestAttributes;
+    ReleaseRepoManifest attributes = (ReleaseRepoManifest) manifestAttributes;
     return ReleaseRepoManifestOutcome.builder()
             .identifier(attributes.getIdentifier())
             .store(attributes.getStoreConfig())
