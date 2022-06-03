@@ -569,7 +569,7 @@ public class HelmTaskHelperBase {
       String repoName = String.format(REGISTRY_URL_PREFIX,
           Paths.get(ociHelmConnector.getHelmRepoUrl(), storeDelegateConfig.getBasePath()).normalize());
       fetchChartFromRepo(repoName, storeDelegateConfig.getRepoDisplayName(), manifest.getChartName(),
-          manifest.getChartVersion(), destinationDirectory, HelmVersion.V3, manifest.getHelmCommandFlag(),
+          manifest.getChartVersion(), destinationDirectory, HelmVersion.V380, manifest.getHelmCommandFlag(),
           timeoutInMillis, manifest.isCheckIncorrectChartVersion(), cacheDir);
     } finally {
       if (manifest.isUseRepoFlags() && manifest.isDeleteRepoCacheDir()) {
