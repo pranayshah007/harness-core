@@ -333,7 +333,6 @@ shared_dependencies = [
     "@maven//:io_github_resilience4j_resilience4j_retrofit",
     "@maven//:io_github_resilience4j_resilience4j_retry",
     "@maven//:io_gsonfire_gson_fire",
-#    "@maven//:io_harness_ng_manager_server_spec",
     "@maven//:io_jsonwebtoken_jjwt",
     "@maven//:io_kubernetes_client_java",
     "@maven//:io_kubernetes_client_java_api",
