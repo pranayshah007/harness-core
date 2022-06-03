@@ -13,9 +13,12 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.index.FdUniqueIndex;
 import io.harness.ng.DbAliases;
 
+import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
+import lombok.experimental.FieldNameConstants;
 import org.mongodb.morphia.annotations.Entity;
+import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -24,12 +27,16 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Builder
 @Entity(value = "executionInputInstance", noClassnameStored = true)
 @Document("executionInputInstance")
+@FieldNameConstants(innerTypeName = "ExecutionInputInstanceKeys")
 @TypeAlias("executionInputInstance")
 @StoreIn(DbAliases.PMS)
 @OwnedBy(HarnessTeam.PIPELINE)
 public class ExecutionInputInstance {
   @Id @org.mongodb.morphia.annotations.Id String inputInstanceId;
   @FdUniqueIndex String nodeExecutionId;
+  @CreatedDate Long createdAt;
+  @CreatedDate Long validUntil;
   String template;
   String userInput;
+  Map<String, Object> mergedInputTemplate;
 }

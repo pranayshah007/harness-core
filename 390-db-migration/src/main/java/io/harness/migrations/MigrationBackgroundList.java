@@ -27,7 +27,6 @@ import io.harness.migrations.all.AddAccountIdToResourceContraintInstanceCollecti
 import io.harness.migrations.all.AddAccountIdToServiceCommands;
 import io.harness.migrations.all.AddAccountIdToServiceInstance;
 import io.harness.migrations.all.AddAccountIdToServiceTemplates;
-import io.harness.migrations.all.AddAccountIdToServiceVariables;
 import io.harness.migrations.all.AddAccountIdToStateExecutionInstance;
 import io.harness.migrations.all.AddAccountIdToStateMachine;
 import io.harness.migrations.all.AddAccountIdToTerraformConfig;
@@ -306,7 +305,7 @@ public class MigrationBackgroundList {
         .add(Pair.of(144, BaseMigration.class))
         .add(Pair.of(145, RemoveDeletedAppIdsFromUserGroups.class))
         .add(Pair.of(146, AddAccountIdToServiceCommands.class))
-        .add(Pair.of(147, AddAccountIdToServiceVariables.class))
+        .add(Pair.of(147, BaseMigration.class))
         .add(Pair.of(148, AddCeFullTrialLicenseToCurrentAccounts.class))
         .add(Pair.of(149, AddAccountIdToServiceInstance.class))
         .add(Pair.of(150, BaseMigration.class))

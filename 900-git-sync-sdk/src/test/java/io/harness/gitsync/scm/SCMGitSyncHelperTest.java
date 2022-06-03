@@ -74,18 +74,12 @@ import org.jooq.tools.reflect.Reflect;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 import org.slf4j.MDC;
 
 @OwnedBy(HarnessTeam.PL)
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(
-    {HarnessToGitPushInfoServiceGrpc.HarnessToGitPushInfoServiceBlockingStub.class, EntityDetailProtoDTO.class})
 public class SCMGitSyncHelperTest extends GitSdkTestBase {
   private final String accountId = "accountId";
   private final String orgId = "orgId";

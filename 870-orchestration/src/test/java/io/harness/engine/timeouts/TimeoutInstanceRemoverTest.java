@@ -15,8 +15,8 @@ import static org.assertj.core.groups.Tuple.tuple;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyList;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
@@ -158,7 +158,7 @@ public class TimeoutInstanceRemoverTest extends OrchestrationTestBase {
                                       .build();
     NodeUpdateInfo nodeUpdateInfo = NodeUpdateInfo.builder().nodeExecution(nodeExecution).build();
 
-    doThrow(Exception.class).when(timeoutEngine).deleteTimeouts(anyList());
+    doAnswer(invocation -> { throw new Exception(); }).when(timeoutEngine).deleteTimeouts(anyList());
     when(nodeExecutionService.removeTimeoutInstances(anyString())).thenReturn(true);
 
     Logger logger = (Logger) LoggerFactory.getLogger(TimeoutInstanceRemover.class);

@@ -173,6 +173,7 @@ import com.amazonaws.services.ec2.model.IamInstanceProfile;
 import com.amazonaws.services.ec2.model.Instance;
 import com.amazonaws.services.ec2.model.InstanceBlockDeviceMapping;
 import com.amazonaws.services.ec2.model.InstanceIpv6Address;
+import com.amazonaws.services.ec2.model.InstanceMaintenanceOptions;
 import com.amazonaws.services.ec2.model.InstanceMetadataOptionsResponse;
 import com.amazonaws.services.ec2.model.InstanceNetworkInterface;
 import com.amazonaws.services.ec2.model.InstanceNetworkInterfaceAssociation;
@@ -231,6 +232,7 @@ public class ApiServiceBeansKryoRegister implements KryoRegistrar {
     kryo.register(CpuOptions.class, 1022);
     kryo.register(CapacityReservationSpecificationResponse.class, 1023);
     kryo.register(CapacityReservationTargetResponse.class, 1024);
+    kryo.register(InstanceMaintenanceOptions.class, 1027);
     kryo.register(KubernetesClientException.class, 2000);
     kryo.register(JSONException.class, 2001);
     kryo.register(SumoServerException.class, 2003);

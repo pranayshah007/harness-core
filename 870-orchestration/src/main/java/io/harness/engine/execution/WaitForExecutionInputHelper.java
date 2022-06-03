@@ -14,7 +14,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.execution.ExecutionInputInstance;
-import io.harness.execution.NodeExecution;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.waiter.WaitNotifyEngine;
@@ -27,24 +26,28 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(PIPELINE)
 @Slf4j
 public class WaitForExecutionInputHelper {
+  private static final Long MILLIS_IN_SIX_MONTHS = 86400 * 30 * 6L;
   @Inject private NodeExecutionService nodeExecutionService;
   @Inject private WaitNotifyEngine waitNotifyEngine;
   @Inject private ExecutionInputService executionInputService;
   @Inject @Named(OrchestrationPublisherName.PUBLISHER_NAME) private String publisherName;
-  public void waitForExecutionInput(Ambiance ambiance, NodeExecution nodeExecution, String executionInputTemplate) {
+  public void waitForExecutionInput(Ambiance ambiance, String nodeExecutionId, String executionInputTemplate) {
+    Long currentTime = System.currentTimeMillis();
     String inputInstanceId = UUIDGenerator.generateUuid();
     WaitForExecutionInputCallback waitForExecutionInputCallback = WaitForExecutionInputCallback.builder()
-                                                                      .nodeExecutionId(nodeExecution.getUuid())
+                                                                      .nodeExecutionId(nodeExecutionId)
                                                                       .ambiance(ambiance)
                                                                       .inputInstanceId(inputInstanceId)
                                                                       .build();
     waitNotifyEngine.waitForAllOn(publisherName, waitForExecutionInputCallback, inputInstanceId);
     executionInputService.save(ExecutionInputInstance.builder()
                                    .inputInstanceId(inputInstanceId)
-                                   .nodeExecutionId(nodeExecution.getUuid())
+                                   .nodeExecutionId(nodeExecutionId)
                                    .template(executionInputTemplate)
+                                   .createdAt(currentTime)
+                                   .validUntil(currentTime + MILLIS_IN_SIX_MONTHS)
                                    .build());
-    nodeExecutionService.updateStatusWithOps(
-        nodeExecution.getUuid(), Status.INPUT_WAITING, null, EnumSet.noneOf(Status.class));
+    // Updating the current node status. InputWaitingStatusUpdateHandler will update status of parent recursively.
+    nodeExecutionService.updateStatusWithOps(nodeExecutionId, Status.INPUT_WAITING, null, EnumSet.noneOf(Status.class));
   }
 }

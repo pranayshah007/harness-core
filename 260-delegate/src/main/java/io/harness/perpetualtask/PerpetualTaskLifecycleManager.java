@@ -56,7 +56,7 @@ public class PerpetualTaskLifecycleManager {
     try {
       HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofMillis(timeoutMillis), this::call);
     } catch (UncheckedTimeoutException tex) {
-      log.debug("Timed out starting task", tex);
+      log.error("Timed out starting task", tex);
     } catch (Exception ex) {
       log.error("Exception is ", ex);
     }

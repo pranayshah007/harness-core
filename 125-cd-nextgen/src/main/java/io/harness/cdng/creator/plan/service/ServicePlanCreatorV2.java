@@ -24,6 +24,7 @@ import io.harness.pms.contracts.advisers.AdviserType;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.Dependencies;
+import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.contracts.steps.SkipType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
@@ -33,6 +34,7 @@ import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.creators.ChildrenPlanCreator;
+import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlField;
 import io.harness.serializer.KryoSerializer;
@@ -40,6 +42,7 @@ import io.harness.serializer.KryoSerializer;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -69,11 +72,9 @@ public class ServicePlanCreatorV2 extends ChildrenPlanCreator<NGServiceV2InfoCon
     String serviceDefinitionNodeUuid = serviceDefField.getNode().getUuid();
     addServiceNode(config, planCreationResponseMap, serviceDefinitionNodeUuid);
 
-    // TODO(archit): Add env node uuid dependencies for serviceDefinitionNode.
     planCreationResponseMap.put(serviceDefinitionNodeUuid,
-        PlanCreationResponse
-            .builder()
-            //.dependencies()
+        PlanCreationResponse.builder()
+            .dependencies(getDependenciesForServiceDefinitionNode(serviceDefField, ctx))
             .build());
 
     return planCreationResponseMap;
@@ -91,7 +92,8 @@ public class ServicePlanCreatorV2 extends ChildrenPlanCreator<NGServiceV2InfoCon
             .serviceRef(ParameterField.createValueField(config.getIdentifier()))
             .build();
 
-    String infraSectionNodeUUid = "";
+    String infraSectionNodeUUid = (String) kryoSerializer.asInflatedObject(
+        ctx.getDependency().getMetadataMap().get(YamlTypes.NEXT_UUID).toByteArray());
 
     // Creating service section node
     return PlanNode.builder()
@@ -113,7 +115,7 @@ public class ServicePlanCreatorV2 extends ChildrenPlanCreator<NGServiceV2InfoCon
         .build();
   }
 
-  private String addServiceNode(NGServiceV2InfoConfig config,
+  private void addServiceNode(NGServiceV2InfoConfig config,
       LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, String serviceDefinitionNodeId) {
     ServiceStepParametersV2 stepParameters = ServiceStepParametersV2.fromServiceV2InfoConfig(config);
     String uuid = "service-" + config.getUuid();
@@ -139,7 +141,6 @@ public class ServicePlanCreatorV2 extends ChildrenPlanCreator<NGServiceV2InfoCon
             .skipGraphType(SkipType.SKIP_TREE)
             .build();
     planCreationResponseMap.put(node.getUuid(), PlanCreationResponse.builder().node(node.getUuid(), node).build());
-    return node.getUuid();
   }
 
   @Override
@@ -152,8 +153,19 @@ public class ServicePlanCreatorV2 extends ChildrenPlanCreator<NGServiceV2InfoCon
     return Collections.singletonMap(YamlTypes.SERVICE_ENTITY, Collections.singleton(PlanCreatorUtils.ANY_TYPE));
   }
 
-  // TODO(archit): add serviceDefinition dependency including env node uuid
-  public Dependencies getDependenciesForServiceDefinitionNode() {
-    return null;
+  private Dependencies getDependenciesForServiceDefinitionNode(
+      YamlField serviceDefinitionField, PlanCreationContext ctx) {
+    Map<String, YamlField> serviceDefYamlFieldMap = new HashMap<>();
+    String serviceDefUuid = serviceDefinitionField.getNode().getUuid();
+    serviceDefYamlFieldMap.put(serviceDefUuid, serviceDefinitionField);
+
+    Map<String, ByteString> serviceDefDependencyMap = new HashMap<>();
+    serviceDefDependencyMap.put(
+        YamlTypes.ENVIRONMENT_NODE_ID, ctx.getDependency().getMetadataMap().get(YamlTypes.ENVIRONMENT_NODE_ID));
+    Dependency serviceDefDependency = Dependency.newBuilder().putAllMetadata(serviceDefDependencyMap).build();
+    return DependenciesUtils.toDependenciesProto(serviceDefYamlFieldMap)
+        .toBuilder()
+        .putDependencyMetadata(serviceDefUuid, serviceDefDependency)
+        .build();
   }
 }

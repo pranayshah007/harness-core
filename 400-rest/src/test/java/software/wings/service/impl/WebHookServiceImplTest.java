@@ -181,10 +181,8 @@ public class WebHookServiceImplTest extends WingsBaseTest {
   public void setUp() {
     final Application application = anApplication().uuid(APP_ID).appId(APP_ID).accountId(ACCOUNT_ID).build();
     doReturn(application).when(appService).get(APP_ID);
-    when(appService.getAccountIdByAppId(anyString())).thenReturn(ACCOUNT_ID);
-    doReturn(execution)
-        .when(triggerService)
-        .triggerExecutionByWebHook(anyString(), anyString(), anyMap(), anyMap(), any(), anyMap());
+    when(appService.getAccountIdByAppId(any())).thenReturn(ACCOUNT_ID);
+    doReturn(execution).when(triggerService).triggerExecutionByWebHook(any(), any(), any(), any(), any(), any());
 
     doReturn(trigger).when(triggerService).getTriggerByWebhookToken(anyString());
     when(configuration.getPortal().getUrl()).thenReturn(PORTAL_URL);

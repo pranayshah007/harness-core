@@ -17,7 +17,6 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
@@ -53,7 +52,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.powermock.api.mockito.PowerMockito;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
@@ -87,8 +87,8 @@ public class JiraApprovalHelperServiceImplTest extends CategoryTest {
   @Owner(developers = BRIJESH)
   @Category(UnitTests.class)
   public void testHandlePollingEvent() {
-    PowerMockito.mockStatic(NGRestUtils.class);
-    PowerMockito.mockStatic(StepUtils.class);
+    MockedStatic<NGRestUtils> aStatic = Mockito.mockStatic(NGRestUtils.class);
+    Mockito.mockStatic(StepUtils.class);
     Ambiance ambiance = Ambiance.newBuilder()
                             .putSetupAbstractions("accountId", accountId)
                             .putSetupAbstractions("orgIdentifier", orgIdentifier)
@@ -98,7 +98,7 @@ public class JiraApprovalHelperServiceImplTest extends CategoryTest {
     doReturn(iLogStreamingStepClient).when(logStreamingStepClientFactory).getLogStreamingStepClient(ambiance);
 
     JiraApprovalInstance instance = getJiraApprovalInstance(ambiance);
-    when(NGRestUtils.getResponse(any())).thenReturn(Collections.EMPTY_LIST);
+    aStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(Collections.EMPTY_LIST);
     doReturn(JiraConnectorDTO.builder().build())
         .when(jiraApprovalHelperService)
         .getJiraConnector(eq(accountId), eq(orgIdentifier), eq(projectIdentifier), any());
@@ -112,7 +112,7 @@ public class JiraApprovalHelperServiceImplTest extends CategoryTest {
   @Owner(developers = BRIJESH)
   @Category(UnitTests.class)
   public void testGetConnector() {
-    PowerMockito.mockStatic(NGRestUtils.class);
+    MockedStatic<NGRestUtils> aStatic = Mockito.mockStatic(NGRestUtils.class);
 
     Optional<ConnectorDTO> connectorDTO = Optional.of(
         ConnectorDTO.builder()
@@ -122,13 +122,13 @@ public class JiraApprovalHelperServiceImplTest extends CategoryTest {
         ConnectorDTO.builder()
             .connectorInfo(ConnectorInfoDTO.builder().connectorConfig(AwsConnectorDTO.builder().build()).build())
             .build());
-    when(NGRestUtils.getResponse(any())).thenReturn(connectorDTO);
+    aStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(connectorDTO);
     jiraApprovalHelperService.getJiraConnector(accountId, orgIdentifier, projectIdentifier, "connectorRef");
-    when(NGRestUtils.getResponse(any())).thenReturn(connectorDTO1);
+    aStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(connectorDTO1);
     assertThatThrownBy(
         () -> jiraApprovalHelperService.getJiraConnector(accountId, orgIdentifier, projectIdentifier, "connectorRef"))
         .isInstanceOf(HarnessJiraException.class);
-    when(NGRestUtils.getResponse(null)).thenReturn(Optional.empty());
+    aStatic.when(() -> NGRestUtils.getResponse(null)).thenReturn(Optional.empty());
     assertThatThrownBy(
         () -> jiraApprovalHelperService.getJiraConnector(accountId, orgIdentifier, projectIdentifier, "connectorRef"))
         .isInstanceOf(HarnessJiraException.class);

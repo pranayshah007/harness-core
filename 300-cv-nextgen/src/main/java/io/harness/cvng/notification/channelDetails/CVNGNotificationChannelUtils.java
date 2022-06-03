@@ -21,9 +21,7 @@ public class CVNGNotificationChannelUtils {
         IdentifierRefHelper.getIdentifierRef(identifier, accountId, orgIdentifier, projectIdentifier);
 
     if (identifierRef.getScope() == Scope.ACCOUNT) {
-      return io.harness.notification.NotificationRequest.UserGroup.newBuilder()
-          .setIdentifier(identifierRef.getIdentifier())
-          .build();
+      return io.harness.notification.NotificationRequest.UserGroup.newBuilder().setIdentifier(identifierRef.getIdentifier()).build();
     }
     if (identifierRef.getScope() == Scope.ORG) {
       return io.harness.notification.NotificationRequest.UserGroup.newBuilder()

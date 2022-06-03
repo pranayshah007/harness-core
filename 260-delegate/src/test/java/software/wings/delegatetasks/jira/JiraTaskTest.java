@@ -18,16 +18,14 @@ import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyMap;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.powermock.api.mockito.PowerMockito.doThrow;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.spy;
 import static org.powermock.api.mockito.PowerMockito.when;
 
@@ -91,6 +89,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
@@ -154,7 +153,7 @@ public class JiraTaskTest extends CategoryTest {
     JiraTaskParameters taskParameters = getTaskParams(JiraAction.SEARCH_USER);
     List<JiraUserData> mockUserList = new ArrayList<>(Arrays.asList(new JiraUserData("UserId", "User Name", true)));
     doReturn(jiraNGClient).when(spyJiraTask).getNGJiraClient(taskParameters);
-    doReturn(mockUserList).when(jiraNGClient).getUsers(anyString(), anyString(), anyString());
+    doReturn(mockUserList).when(jiraNGClient).getUsers(any(), any(), any());
 
     JiraExecutionData jiraExecutionData =
         JiraExecutionData.builder().executionStatus(ExecutionStatus.SUCCESS).userSearchList(mockUserList).build();
@@ -177,10 +176,8 @@ public class JiraTaskTest extends CategoryTest {
     List<JiraUserData> userDataList = Arrays.asList(new JiraUserData("accountId", "Lucas", true));
 
     doReturn(jiraNGClient).when(spyJiraTask).getNGJiraClient(taskParameters);
-    doReturn(userDataList).when(jiraNGClient).getUsers(anyString(), anyString(), anyString());
-    doThrow(new JiraClientException("error"))
-        .when(jiraNGClient)
-        .updateIssue(anyString(), anyString(), anyString(), anyMap());
+    doReturn(userDataList).when(jiraNGClient).getUsers(any(), any(), any());
+    doThrow(new JiraClientException("error")).when(jiraNGClient).updateIssue(any(), any(), any(), anyMap());
 
     DelegateResponseData delegateResponseData = spyJiraTask.run(new Object[] {taskParameters});
     assertThat(delegateResponseData).hasFieldOrPropertyWithValue("executionStatus", ExecutionStatus.FAILED);
@@ -200,7 +197,7 @@ public class JiraTaskTest extends CategoryTest {
         Arrays.asList(new JiraUserData("accountId", "Lucas", true), new JiraUserData("accountI2d", "Lucas", true));
 
     doReturn(jiraNGClient).when(spyJiraTask).getNGJiraClient(taskParameters);
-    doReturn(userDataList).when(jiraNGClient).getUsers(anyString(), anyString(), anyString());
+    doReturn(userDataList).when(jiraNGClient).getUsers(any(), any(), any());
 
     spyJiraTask.run(new Object[] {taskParameters});
   }
@@ -214,9 +211,9 @@ public class JiraTaskTest extends CategoryTest {
     List<JiraUserData> userDataList = Arrays.asList(new JiraUserData("accountId", "Lucas", true));
 
     doReturn(jiraNGClient).when(spyJiraTask).getNGJiraClient(taskParameters);
-    doReturn(issueNG).when(jiraNGClient).createIssue(anyString(), anyString(), anyMap());
-    doReturn(userDataList).when(jiraNGClient).getUsers(anyString(), anyString(), anyString());
-    doThrow(new JiraClientException("error")).when(jiraNGClient).createIssue(anyString(), anyString(), anyMap());
+    doReturn(issueNG).when(jiraNGClient).createIssue(any(), any(), anyMap());
+    doReturn(userDataList).when(jiraNGClient).getUsers(any(), any(), any());
+    doThrow(new JiraClientException("error")).when(jiraNGClient).createIssue(any(), any(), anyMap());
 
     DelegateResponseData delegateResponseData = spyJiraTask.run(new Object[] {taskParameters});
     assertThat(delegateResponseData).hasFieldOrPropertyWithValue("executionStatus", ExecutionStatus.FAILED);
@@ -232,9 +229,9 @@ public class JiraTaskTest extends CategoryTest {
     List<JiraUserData> userDataList = Arrays.asList(new JiraUserData("accountId", "Lucas", true));
 
     doReturn(jiraNGClient).when(spyJiraTask).getNGJiraClient(taskParameters);
-    doReturn(issueNG).when(jiraNGClient).createIssue(anyString(), anyString(), anyMap());
-    doReturn(userDataList).when(jiraNGClient).getUsers(anyString(), anyString(), anyString());
-    doReturn(mock(JiraIssueNG.class)).when(jiraNGClient).createIssue(anyString(), anyString(), anyMap());
+    doReturn(issueNG).when(jiraNGClient).createIssue(any(), any(), anyMap());
+    doReturn(userDataList).when(jiraNGClient).getUsers(any(), any(), any());
+    doReturn(mock(JiraIssueNG.class)).when(jiraNGClient).createIssue(any(), any(), anyMap());
     JiraExecutionData jiraExecutionData =
         JiraExecutionData.builder()
             .jiraAction(JiraAction.CREATE_TICKET_NG)
@@ -263,8 +260,8 @@ public class JiraTaskTest extends CategoryTest {
     when(jiraNGClient.getIssue(JIRA_ISSUE_ID)).thenReturn(issueNG);
     when(issueNG.getKey()).thenReturn(JIRA_ISSUE_ID);
     when(issueNG.getFields()).thenReturn(singletonMap("Project Key", PROJECT_KEY));
-    doReturn(mock(JiraIssueNG.class)).when(jiraNGClient).updateIssue(anyString(), anyString(), anyString(), any());
-    doReturn(userDataList).when(jiraNGClient).getUsers(anyString(), anyString(), anyString());
+    doReturn(mock(JiraIssueNG.class)).when(jiraNGClient).updateIssue(any(), any(), any(), any());
+    doReturn(userDataList).when(jiraNGClient).getUsers(any(), any(), any());
     JiraExecutionData jiraExecutionData =
         JiraExecutionData.builder()
             .executionStatus(ExecutionStatus.SUCCESS)
@@ -679,12 +676,13 @@ public class JiraTaskTest extends CategoryTest {
     doReturn(jiraClient).when(spyJiraTask).getJiraClient(taskParameters);
     JSONArray jsonArray = new JSONArray();
     when(jiraClient.getRestClient()).thenReturn(restClient);
-    when(restClient.get(any(URI.class))).thenReturn(json);
-    mockStatic(JSONArray.class);
-    when(JSONArray.fromObject(json)).thenReturn(jsonArray);
-    JiraExecutionData jiraExecutionData =
-        JiraExecutionData.builder().projects(jsonArray).executionStatus(ExecutionStatus.SUCCESS).build();
-    runTaskAndAssertResponse(taskParameters, jiraExecutionData);
+    when(restClient.get(nullable(URI.class))).thenReturn(json);
+    try (MockedStatic<JSONArray> jsonArrayMockedStatic = Mockito.mockStatic(JSONArray.class)) {
+      when(JSONArray.fromObject(json)).thenReturn(jsonArray);
+      JiraExecutionData jiraExecutionData =
+          JiraExecutionData.builder().projects(jsonArray).executionStatus(ExecutionStatus.SUCCESS).build();
+      runTaskAndAssertResponse(taskParameters, jiraExecutionData);
+    }
   }
 
   @Test
@@ -830,12 +828,12 @@ public class JiraTaskTest extends CategoryTest {
     when(json.getJSONObject("schema")).thenReturn(json);
     when(json.containsKey("allowedValues")).thenReturn(false);
     when(json.get("key")).thenReturn("");
-    mockStatic(JSONObject.class);
-    when(JSONObject.fromObject(anyObject())).thenReturn(json);
-    DelegateResponseData responseData = spyJiraTask.run(new Object[] {taskParameters});
-
-    assertThat(((JiraExecutionData) responseData).getCreateMetadata()).isNotNull();
-    assertThat(((JiraExecutionData) responseData).getExecutionStatus()).isEqualTo(ExecutionStatus.SUCCESS);
+    try (MockedStatic<JSONObject> jsonArrayMockedStatic = Mockito.mockStatic(JSONObject.class)) {
+      when(JSONObject.fromObject(any())).thenReturn(json);
+      DelegateResponseData responseData = spyJiraTask.run(new Object[] {taskParameters});
+      assertThat(((JiraExecutionData) responseData).getCreateMetadata()).isNotNull();
+      assertThat(((JiraExecutionData) responseData).getExecutionStatus()).isEqualTo(ExecutionStatus.SUCCESS);
+    }
   }
 
   @Test

@@ -696,6 +696,18 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "ExcludeConfig": {
+      "type": "object",
+      "properties": {
+        "exclude": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "ExecutionElementConfig": {
       "type": "object",
       "required": [
@@ -884,6 +896,16 @@
           }
         }
       ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "HarnessForConfig": {
+      "type": "object",
+      "properties": {
+        "iteration": {
+          "type": "integer",
+          "format": "int32"
+        }
+      },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "HttpHeaderConfig": {
@@ -1280,6 +1302,18 @@
           }
         }
       ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "MatrixConfig": {
+      "type": "object",
+      "properties": {
+        "exclude": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ExcludeConfig"
+          }
+        }
+      },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "NGProperties": {
@@ -2687,6 +2721,9 @@
               "type": "string",
               "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"
             },
+            "strategy": {
+              "$ref": "#/definitions/StrategyConfig"
+            },
             "template": {
               "$ref": "#/definitions/TemplateLinkConfig"
             }
@@ -2734,6 +2771,9 @@
               "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"
             },
             "spec": { },
+            "strategy": {
+              "$ref": "#/definitions/StrategyConfig"
+            },
             "tags": {
               "type": "object",
               "additionalProperties": {
@@ -3209,6 +3249,27 @@
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "StrategyConfig": {
+      "type": "object",
+      "properties": {
+        "batchSize": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "for": {
+          "$ref": "#/definitions/HarnessForConfig"
+        },
+        "matrix": {
+          "$ref": "#/definitions/MatrixConfig"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "oneOf": [ ]
+        }
+      ]
     },
     "StringNGVariable": {
       "allOf": [

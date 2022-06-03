@@ -106,7 +106,7 @@ public class CloudFoundryOperationsProviderTest extends CategoryTest {
     CfRequestConfig cfRequestConfig = getCfRequestConfig();
     doThrow(new PivotalClientApiException("Unable to get client provider"))
         .when(cloudFoundryClientProvider)
-        .getCloudFoundryClient(eq(cfRequestConfig), any(ConnectionContext.class));
+        .getCloudFoundryClient(any(), any());
 
     try {
       cloudFoundryOperationsProvider.getCloudFoundryOperationsWrapper(cfRequestConfig);

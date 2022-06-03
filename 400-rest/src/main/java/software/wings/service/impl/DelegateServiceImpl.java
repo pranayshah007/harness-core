@@ -9,6 +9,8 @@ package software.wings.service.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.DEL;
 import static io.harness.beans.FeatureName.DELEGATE_ENABLE_DYNAMIC_HANDLING_OF_REQUEST;
+import static io.harness.beans.FeatureName.JDK11_DELEGATE;
+import static io.harness.beans.FeatureName.JDK11_WATCHER;
 import static io.harness.beans.FeatureName.REDUCE_DELEGATE_MEMORY_SIZE;
 import static io.harness.beans.FeatureName.USE_IMMUTABLE_DELEGATE;
 import static io.harness.configuration.DeployVariant.DEPLOY_VERSION;
@@ -273,7 +275,9 @@ import java.util.zip.GZIPOutputStream;
 import javax.validation.ConstraintViolation;
 import javax.validation.executable.ValidateOnExecution;
 import javax.ws.rs.core.MediaType;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Request.Builder;
 import okhttp3.Response;
@@ -292,6 +296,11 @@ import org.mongodb.morphia.query.UpdateOperations;
 
 @Singleton
 @ValidateOnExecution
+// For testing since this class should probably be 20 classes, and it's hard to test it
+@lombok.Builder
+// For guice injection (since we wrongly use field injection, but this is not fixable for class at this size
+@NoArgsConstructor
+@AllArgsConstructor
 @Slf4j
 @TargetModule(HarnessModule._420_DELEGATE_SERVICE)
 @BreakDependencyOn("software.wings.beans.Event")
@@ -1170,6 +1179,18 @@ public class DelegateServiceImpl implements DelegateService {
             .delegateTokenName(delegateTokenName.orElse(null))
             .build(),
         true);
+    ImmutableMap<String, String> watcherScriptParams = getJarAndScriptRunTimeParamMap(
+        TemplateParameters.builder()
+            .accountId(accountId)
+            .version(version)
+            .managerHost(managerHost)
+            .verificationHost(verificationHost)
+            .logStreamingServiceBaseUrl(mainConfiguration.getLogStreamingServiceConfig().getBaseUrl())
+            .delegateXmx(getDelegateXmx(delegateType))
+            .delegateTokenName(delegateTokenName.orElse(null))
+            .watcher(true)
+            .build(),
+        true);
 
     DelegateScripts delegateScripts = DelegateScripts.builder().version(version).doUpgrade(false).build();
     if (isNotEmpty(scriptParams)) {
@@ -1183,7 +1204,7 @@ public class DelegateServiceImpl implements DelegateService {
       }
       delegateScripts.setDoUpgrade(doUpgrade);
       delegateScripts.setVersion(upgradeToVersion);
-      delegateScripts.setStartScript(processTemplate(scriptParams, "start.sh.ftl"));
+      delegateScripts.setStartScript(processTemplate(watcherScriptParams, "start.sh.ftl"));
       delegateScripts.setDelegateScript(processTemplate(scriptParams, "delegate.sh.ftl"));
       delegateScripts.setStopScript(processTemplate(scriptParams, "stop.sh.ftl"));
       delegateScripts.setSetupProxyScript(processTemplate(scriptParams, "setup-proxy.sh.ftl"));
@@ -1206,6 +1227,18 @@ public class DelegateServiceImpl implements DelegateService {
             .delegateName(StringUtils.defaultString(delegateName))
             .build(),
         false);
+    ImmutableMap<String, String> watcherScriptParams = getJarAndScriptRunTimeParamMap(
+        TemplateParameters.builder()
+            .accountId(accountId)
+            .version(version)
+            .managerHost(managerHost)
+            .verificationHost(verificationHost)
+            .logStreamingServiceBaseUrl(mainConfiguration.getLogStreamingServiceConfig().getBaseUrl())
+            .delegateTokenName(delegateTokenName.orElse(null))
+            .delegateName(StringUtils.defaultString(delegateName))
+            .watcher(true)
+            .build(),
+        false);
 
     DelegateScripts delegateScripts = DelegateScripts.builder().version(version).doUpgrade(false).build();
     if (isNotEmpty(scriptParams)) {
@@ -1219,7 +1252,7 @@ public class DelegateServiceImpl implements DelegateService {
       }
       delegateScripts.setDoUpgrade(doUpgrade);
       delegateScripts.setVersion(upgradeToVersion);
-      delegateScripts.setStartScript(processTemplate(scriptParams, "start.sh.ftl"));
+      delegateScripts.setStartScript(processTemplate(watcherScriptParams, "start.sh.ftl"));
       delegateScripts.setDelegateScript(processTemplate(scriptParams, "delegate.sh.ftl"));
       delegateScripts.setStopScript(processTemplate(scriptParams, "stop.sh.ftl"));
       delegateScripts.setSetupProxyScript(processTemplate(scriptParams, "setup-proxy.sh.ftl"));
@@ -1314,7 +1347,7 @@ public class DelegateServiceImpl implements DelegateService {
                   delegateVersionService.getUpgraderImageTag(
                       templateParameters.getAccountId(), templateParameters.getDelegateType()))
               .put("accountId", templateParameters.getAccountId())
-              .put("delegateToken", accountSecret != null ? accountSecret : EMPTY)
+              .put("delegateToken", accountSecret)
               .put("base64Secret", base64Secret)
               .put("hexkey", hexkey)
               .put(UPGRADE_VERSION, latestVersion)
@@ -1384,7 +1417,7 @@ public class DelegateServiceImpl implements DelegateService {
         }
       }
 
-      JreConfig jreConfig = getJreConfig(templateParameters.getAccountId());
+      JreConfig jreConfig = getJreConfig(templateParameters.getAccountId(), templateParameters.isWatcher());
 
       Preconditions.checkNotNull(jreConfig, "jreConfig cannot be null");
 
@@ -1392,7 +1425,14 @@ public class DelegateServiceImpl implements DelegateService {
       params.put(JRE_DIRECTORY, jreConfig.getJreDirectory());
       params.put(JRE_MAC_DIRECTORY, jreConfig.getJreMacDirectory());
       params.put(JRE_TAR_PATH, jreConfig.getJreTarPath());
-      params.put(ALPN_JAR_PATH, jreConfig.getAlpnJarPath());
+      params.put("isJdk11Delegate",
+          String.valueOf(featureFlagService.isEnabledReloadCache(JDK11_DELEGATE, templateParameters.getAccountId())));
+      params.put("isJdk11Watcher",
+          String.valueOf(featureFlagService.isEnabledReloadCache(JDK11_WATCHER, templateParameters.getAccountId())));
+
+      if (jreConfig.getAlpnJarPath() != null) {
+        params.put(ALPN_JAR_PATH, jreConfig.getAlpnJarPath());
+      }
       params.put("enableCE", String.valueOf(templateParameters.isCeEnabled()));
 
       if (isNotBlank(templateParameters.getDelegateTags())) {
@@ -1523,20 +1563,22 @@ public class DelegateServiceImpl implements DelegateService {
    *
    * @return
    */
-  private JreConfig getJreConfig(String accountId) {
-    String jreVersion = mainConfiguration.getCurrentJre();
+  private JreConfig getJreConfig(final String accountId, final boolean isWatcher) {
+    final boolean enabled = (featureFlagService.isEnabledReloadCache(JDK11_DELEGATE, accountId) && !isWatcher)
+        || (featureFlagService.isEnabledReloadCache(JDK11_WATCHER, accountId) && isWatcher);
+    final String jreVersion = enabled ? mainConfiguration.getMigrateToJre() : mainConfiguration.getCurrentJre();
     JreConfig jreConfig = mainConfiguration.getJreConfigs().get(jreVersion);
-    CdnConfig cdnConfig = mainConfiguration.getCdnConfig();
+    final CdnConfig cdnConfig = mainConfiguration.getCdnConfig();
 
     if (mainConfiguration.useCdnForDelegateStorage() && cdnConfig != null) {
-      String tarPath = cdnConfig.getCdnJreTarPaths().get(jreVersion);
-      String alpnJarPath = cdnConfig.getAlpnJarPath();
+      final String tarPath = cdnConfig.getCdnJreTarPaths().get(jreVersion);
+      final String alpnJarPath = cdnConfig.getAlpnJarPath();
       jreConfig = JreConfig.builder()
                       .version(jreConfig.getVersion())
                       .jreDirectory(jreConfig.getJreDirectory())
                       .jreMacDirectory(jreConfig.getJreMacDirectory())
                       .jreTarPath(tarPath)
-                      .alpnJarPath(alpnJarPath)
+                      .alpnJarPath(enabled ? null : alpnJarPath)
                       .build();
     }
     return jreConfig;
@@ -1548,20 +1590,8 @@ public class DelegateServiceImpl implements DelegateService {
    * @param accountId
    * @return
    */
-  private String getTargetJreVersion(String accountId) {
-    return getJreConfig(accountId).getVersion();
-  }
-
-  private Integer getMinorVersion(String delegateVersion) {
-    Integer delegateVersionNumber = null;
-    if (isNotBlank(delegateVersion)) {
-      try {
-        delegateVersionNumber = Integer.parseInt(delegateVersion.substring(delegateVersion.lastIndexOf('.') + 1));
-      } catch (NumberFormatException e) {
-        // Leave it null
-      }
-    }
-    return delegateVersionNumber;
+  private String getTargetJreVersion(final String accountId) {
+    return getJreConfig(accountId, false).getVersion();
   }
 
   private String getDelegateBuildVersion(String delegateVersion) {
@@ -1608,12 +1638,23 @@ public class DelegateServiceImpl implements DelegateService {
               .build(),
           false);
 
-      if (isEmpty(scriptParams)) {
-        throw new InvalidArgumentsException(Pair.of("scriptParams", "Failed to get jar and script runtime params."));
-      }
+      ImmutableMap<String, String> watcherScriptParams = getJarAndScriptRunTimeParamMap(
+          TemplateParameters.builder()
+              .accountId(accountId)
+              .version(version)
+              .managerHost(managerHost)
+              .verificationHost(verificationUrl)
+              .delegateName(delegateName)
+              .delegateProfile(delegateProfile)
+              .delegateType(SHELL_SCRIPT)
+              .watcher(true)
+              .logStreamingServiceBaseUrl(mainConfiguration.getLogStreamingServiceConfig().getBaseUrl())
+              .delegateTokenName(tokenName)
+              .build(),
+          false);
 
       File start = File.createTempFile("start", ".sh");
-      saveProcessedTemplate(scriptParams, start, "start.sh.ftl");
+      saveProcessedTemplate(watcherScriptParams, start, "start.sh.ftl");
       start = new File(start.getAbsolutePath());
       TarArchiveEntry startTarArchiveEntry = new TarArchiveEntry(start, DELEGATE_DIR + "/start.sh");
       startTarArchiveEntry.setMode(0755);
@@ -3510,12 +3551,12 @@ public class DelegateServiceImpl implements DelegateService {
    * All delegates matching {AccId, HostName Prefix, Type = ECS}
    */
   private List<Delegate> getAllDelegatesMatchingGroupName(final Delegate delegate) {
-    return persistence.createQuery(Delegate.class, excludeAuthority)
-        .filter(DelegateKeys.accountId, delegate.getAccountId())
-        .filter(DelegateKeys.ng, false)
-        .filter(DelegateKeys.delegateType, delegate.getDelegateType())
-        .filter(DelegateKeys.delegateGroupName, delegate.getDelegateGroupName())
-        .asList();
+    final Query<Delegate> filter = persistence.createQuery(Delegate.class, excludeAuthority)
+                                       .filter(DelegateKeys.accountId, delegate.getAccountId())
+                                       .filter(DelegateKeys.ng, false);
+    final Query<Delegate> filter1 = filter.filter(DelegateKeys.delegateType, delegate.getDelegateType())
+                                        .filter(DelegateKeys.delegateGroupName, delegate.getDelegateGroupName());
+    return filter1.asList();
   }
 
   private boolean isValidSeqNum(String sequenceNum) {

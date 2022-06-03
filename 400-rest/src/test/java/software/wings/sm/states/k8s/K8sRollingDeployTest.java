@@ -33,6 +33,7 @@ import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyListOf;
@@ -320,7 +321,7 @@ public class K8sRollingDeployTest extends CategoryTest {
             .k8sTaskResponse(K8sRollingDeployResponse.builder().helmChartInfo(helmChartInfo).build())
             .build();
 
-    doReturn(Application.Builder.anApplication().uuid("uuid").build()).when(appService).get(anyString());
+    doReturn(Application.Builder.anApplication().uuid("uuid").build()).when(appService).get(nullable(String.class));
     doReturn(InstanceElementListParam.builder().build())
         .when(k8sRollingDeploy)
         .fetchInstanceElementListParam(anyListOf(K8sPod.class));

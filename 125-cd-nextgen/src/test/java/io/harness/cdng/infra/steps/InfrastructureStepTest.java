@@ -13,6 +13,7 @@ import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.ACHYUTH;
 import static io.harness.rule.OwnerRule.FILIP;
 import static io.harness.rule.OwnerRule.MLUKIC;
+import static io.harness.rule.OwnerRule.NAVNEET;
 import static io.harness.rule.OwnerRule.SAHIL;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
 
@@ -22,7 +23,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
@@ -57,6 +61,9 @@ import io.harness.delegate.beans.connector.gcpconnector.GcpManualDetailsDTO;
 import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.sdk.EntityValidityDetails;
+import io.harness.logging.CommandExecutionStatus;
+import io.harness.logging.LogLevel;
+import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.ng.core.environment.services.EnvironmentService;
@@ -98,6 +105,8 @@ public class InfrastructureStepTest extends CategoryTest {
   @Mock K8sStepHelper k8sStepHelper;
   @Mock K8sInfraDelegateConfig k8sInfraDelegateConfig;
   @Mock InfrastructureStepHelper infrastructureStepHelper;
+  @Mock NGLogCallback ngLogCallback;
+  @Mock NGLogCallback ngLogCallbackOpen;
 
   private final String ACCOUNT_ID = "accountId";
 
@@ -112,7 +121,7 @@ public class InfrastructureStepTest extends CategoryTest {
   }
 
   @Test
-  @Owner(developers = ACHYUTH)
+  @Owner(developers = {ACHYUTH, NAVNEET})
   @Category(UnitTests.class)
   public void testExecSyncAfterRbac() {
     Ambiance ambiance = Ambiance.newBuilder().putSetupAbstractions(SetupAbstractionKeys.accountId, ACCOUNT_ID).build();
@@ -129,7 +138,7 @@ public class InfrastructureStepTest extends CategoryTest {
                              .entityValidityDetails(EntityValidityDetails.builder().valid(true).build())
                              .build()))
         .when(connectorService)
-        .get(anyString(), anyString(), anyString(), eq("gcp-sa"));
+        .get(any(), any(), any(), eq("gcp-sa"));
 
     Infrastructure infrastructureSpec = K8sGcpInfrastructure.builder()
                                             .connectorRef(ParameterField.createValueField("account.gcp-sa"))
@@ -138,7 +147,8 @@ public class InfrastructureStepTest extends CategoryTest {
                                             .cluster(ParameterField.createValueField("cluster"))
                                             .build();
 
-    when(infrastructureStepHelper.getInfrastructureLogCallback(ambiance, true)).thenReturn(null);
+    when(infrastructureStepHelper.getInfrastructureLogCallback(ambiance, true)).thenReturn(ngLogCallbackOpen);
+    when(infrastructureStepHelper.getInfrastructureLogCallback(ambiance)).thenReturn(ngLogCallback);
 
     when(executionSweepingOutputService.resolve(
              any(), eq(RefObjectUtils.getSweepingOutputRefObject(OutputExpressionConstants.ENVIRONMENT))))
@@ -148,6 +158,19 @@ public class InfrastructureStepTest extends CategoryTest {
     when(k8sStepHelper.getK8sInfraDelegateConfig(any(), eq(ambiance))).thenReturn(k8sInfraDelegateConfig);
 
     infrastructureStep.executeSyncAfterRbac(ambiance, infrastructureSpec, StepInputPackage.builder().build(), null);
+
+    // Verifies `getInfrastructureLogCallback` is called with `shouldOpenStream` as `true` only once
+    // Verifies `ngLogCallbackOpen` is used at least 4 times for the static logs
+    // Verifies `ngLogCallbackOpen` is passed a success `CommandExecutionStatus` at the end of logs
+    verify(infrastructureStepHelper, times(1)).getInfrastructureLogCallback(ambiance, true);
+    verify(ngLogCallbackOpen, atLeast(4)).saveExecutionLog(anyString());
+    verify(ngLogCallbackOpen, times(1))
+        .saveExecutionLog(anyString(), eq(LogLevel.INFO), eq(CommandExecutionStatus.SUCCESS));
+
+    // Verifies `getInfrastructureLogCallback` is called without `shouldOpenStream` for 3 times -> internal method calls
+    // Verifies `ngLogCallback` is used at least 2 times for the static logs
+    verify(infrastructureStepHelper, atLeast(3)).getInfrastructureLogCallback(ambiance);
+    verify(ngLogCallback, atLeast(2)).saveExecutionLog(anyString());
   }
 
   @Test
@@ -489,20 +512,20 @@ public class InfrastructureStepTest extends CategoryTest {
             .credential(
                 GcpConnectorCredentialDTO.builder().gcpCredentialType(GcpCredentialType.INHERIT_FROM_DELEGATE).build())
             .build();
-    doReturn(Optional.empty()).when(connectorService).get(anyString(), anyString(), anyString(), eq("missing"));
+    doReturn(Optional.empty()).when(connectorService).get(any(), any(), any(), eq("missing"));
     doReturn(Optional.of(ConnectorResponseDTO.builder()
                              .entityValidityDetails(EntityValidityDetails.builder().valid(true).build())
                              .connector(ConnectorInfoDTO.builder().connectorConfig(gcpConnectorServiceAccount).build())
                              .build()))
         .when(connectorService)
-        .get(anyString(), anyString(), anyString(), eq("gcp-sa"));
+        .get(any(), any(), any(), eq("gcp-sa"));
     doReturn(
         Optional.of(ConnectorResponseDTO.builder()
                         .entityValidityDetails(EntityValidityDetails.builder().valid(true).build())
                         .connector(ConnectorInfoDTO.builder().connectorConfig(gcpConnectorInheritFromDelegate).build())
                         .build()))
         .when(connectorService)
-        .get(anyString(), anyString(), anyString(), eq("gcp-delegate"));
+        .get(any(), any(), any(), eq("gcp-delegate"));
 
     assertConnectorValidationMessage(
         K8sGcpInfrastructure.builder().connectorRef(ParameterField.createValueField("account.missing")).build(),

@@ -36,6 +36,7 @@ import static software.wings.utils.WingsTestConstants.SETTING_ID;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyMap;
@@ -241,7 +242,7 @@ public class ArtifactCollectionStateTest extends CategoryTest {
     ExecutionResponse executionResponse = artifactCollectionState.execute(executionContext);
     assertThat(executionResponse).isNotNull().hasFieldOrPropertyWithValue("async", true);
     verify(artifactStreamService).get(ARTIFACT_STREAM_ID);
-    verify(delayEventHelper).delay(anyInt(), any());
+    verify(delayEventHelper).delay(anyLong(), any());
   }
 
   @Test
@@ -251,7 +252,7 @@ public class ArtifactCollectionStateTest extends CategoryTest {
     artifactCollectionState.handleAsyncResponse(executionContext,
         ImmutableMap.of(
             ACTIVITY_ID, ArtifactCollectionExecutionData.builder().artifactStreamId(ARTIFACT_STREAM_ID).build()));
-    verify(workflowExecutionService).refreshBuildExecutionSummary(anyString(), any());
+    verify(workflowExecutionService).refreshBuildExecutionSummary(any(), any());
   }
 
   @Test
@@ -264,7 +265,7 @@ public class ArtifactCollectionStateTest extends CategoryTest {
     artifactCollectionState.handleAsyncResponse(executionContext,
         ImmutableMap.of(
             ACTIVITY_ID, ArtifactCollectionExecutionData.builder().artifactStreamId(ARTIFACT_STREAM_ID).build()));
-    verify(workflowExecutionService).refreshBuildExecutionSummary(anyString(), any());
+    verify(workflowExecutionService).refreshBuildExecutionSummary(any(), any());
   }
 
   @Test
@@ -278,7 +279,7 @@ public class ArtifactCollectionStateTest extends CategoryTest {
     artifactCollectionState.handleAsyncResponse(executionContext,
         ImmutableMap.of(
             ACTIVITY_ID, ArtifactCollectionExecutionData.builder().artifactStreamId(ARTIFACT_STREAM_ID).build()));
-    verify(workflowExecutionService).refreshBuildExecutionSummary(anyString(), any());
+    verify(workflowExecutionService).refreshBuildExecutionSummary(any(), any());
   }
 
   @Test
@@ -327,7 +328,7 @@ public class ArtifactCollectionStateTest extends CategoryTest {
         .thenReturn(anArtifact().withAppId(APP_ID).withStatus(Status.APPROVED).build());
     artifactCollectionState.execute(executionContext);
     verify(artifactStreamService).get(ARTIFACT_STREAM_ID);
-    verify(workflowExecutionService).refreshBuildExecutionSummary(anyString(), any());
+    verify(workflowExecutionService).refreshBuildExecutionSummary(any(), any());
   }
 
   @Test
@@ -344,8 +345,7 @@ public class ArtifactCollectionStateTest extends CategoryTest {
     when(artifactService.getArtifactByBuildNumberAndSourceName(
              nexusArtifactStream, "1.1", false, "${repo}/${groupId}/${path}"))
         .thenReturn(null);
-    when(buildSourceService.getBuild(anyString(), anyString(), anyString(), any()))
-        .thenReturn(aBuildDetails().withNumber("1.1").build());
+    when(buildSourceService.getBuild(any(), any(), any(), any())).thenReturn(aBuildDetails().withNumber("1.1").build());
     Map<String, String> map = new HashMap<>();
     map.put("buildNo", "1.1");
     Artifact artifact =
@@ -354,7 +354,7 @@ public class ArtifactCollectionStateTest extends CategoryTest {
     when(artifactService.create(artifact, nexusArtifactStream, false)).thenReturn(artifact);
     artifactCollectionState.execute(executionContext);
     verify(artifactStreamService).get(ARTIFACT_STREAM_ID);
-    verify(workflowExecutionService).refreshBuildExecutionSummary(anyString(), any());
+    verify(workflowExecutionService).refreshBuildExecutionSummary(any(), any());
     assertThat(runtimeValues.get("buildNo")).isEqualTo("1.1");
   }
 
@@ -400,7 +400,7 @@ public class ArtifactCollectionStateTest extends CategoryTest {
     when(artifactService.getArtifactByBuildNumberAndSourceName(
              nexusArtifactStream, "1.1", false, "${repo}/${groupId}/${path}"))
         .thenReturn(null);
-    when(buildSourceService.getBuild(anyString(), anyString(), anyString(), any())).thenReturn(null);
+    when(buildSourceService.getBuild(any(), any(), any(), any())).thenReturn(null);
     ExecutionResponse executionResponse = artifactCollectionState.execute(executionContext);
     assertThat(executionResponse).isNotNull();
     assertThat(executionResponse.getExecutionStatus()).isEqualTo(ExecutionStatus.FAILED);
@@ -621,7 +621,7 @@ public class ArtifactCollectionStateTest extends CategoryTest {
     ExecutionResponse executionResponse = artifactCollectionState.handleAsyncResponse(
         executionContext, Collections.singletonMap("response", buildSourceExecutionResponse));
     verify(artifactService).create(artifact, jenkinsArtifactStream, false);
-    verify(workflowExecutionService).refreshBuildExecutionSummary(anyString(), any());
+    verify(workflowExecutionService).refreshBuildExecutionSummary(any(), any());
     assertThat(executionResponse.getExecutionStatus()).isEqualTo(SUCCESS);
     assertThat(executionResponse.getStateExecutionData()).isNotNull();
   }
@@ -677,7 +677,7 @@ public class ArtifactCollectionStateTest extends CategoryTest {
     ExecutionResponse executionResponse = artifactCollectionState.handleAsyncResponse(
         executionContext, Collections.singletonMap("response", buildSourceExecutionResponse));
     verify(artifactService).create(artifact, nexusArtifactStream, false);
-    verify(workflowExecutionService).refreshBuildExecutionSummary(anyString(), any());
+    verify(workflowExecutionService).refreshBuildExecutionSummary(any(), any());
     verify(artifactStreamHelper).resolveArtifactStreamRuntimeValues(any(), anyMap());
     assertThat(executionResponse.getExecutionStatus()).isEqualTo(SUCCESS);
     assertThat(executionResponse.getStateExecutionData()).isNotNull();
@@ -705,8 +705,8 @@ public class ArtifactCollectionStateTest extends CategoryTest {
     ExecutionResponse executionResponse = artifactCollectionState.handleAsyncResponse(
         executionContext, Collections.singletonMap("response", buildSourceExecutionResponse));
     verify(artifactService).create(artifact, jenkinsArtifactStream, false);
-    verify(workflowExecutionService).refreshBuildExecutionSummary(anyString(), any());
-    verify(artifactService).updateMetadataAndRevision(anyString(), anyString(), anyMap(), anyString());
+    verify(workflowExecutionService).refreshBuildExecutionSummary(any(), any());
+    verify(artifactService).updateMetadataAndRevision(any(), any(), any(), any());
     assertThat(executionResponse.getExecutionStatus()).isEqualTo(SUCCESS);
     assertThat(executionResponse.getStateExecutionData()).isNotNull();
   }

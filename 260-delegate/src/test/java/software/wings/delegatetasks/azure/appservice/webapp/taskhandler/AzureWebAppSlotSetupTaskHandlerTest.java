@@ -13,9 +13,9 @@ import static io.harness.rule.OwnerRule.IVAN;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.doThrow;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
@@ -137,7 +137,9 @@ public class AzureWebAppSlotSetupTaskHandlerTest extends WingsBaseTest {
     doReturn(AzureAppServicePreDeploymentData.builder())
         .when(azureAppServiceService)
         .getDefaultPreDeploymentDataBuilder(any(), any());
-    doThrow(Exception.class).when(azureAppServiceDeploymentService).deployDockerImage(any(), any());
+    doAnswer(invocation -> { throw new Exception(); })
+        .when(azureAppServiceDeploymentService)
+        .deployDockerImage(any(), any());
 
     AzureTaskExecutionResponse azureTaskExecutionResponse = azureWebAppSlotSetupTaskHandler.executeTask(
         setupParameters, azureConfig, mockLogStreamingTaskClient, artifactStreamAttributes);
@@ -157,7 +159,9 @@ public class AzureWebAppSlotSetupTaskHandlerTest extends WingsBaseTest {
     AzureConfig azureConfig = buildAzureConfig();
     AzureAppServiceTaskParameters setupParameters = buildAzureAppServiceTaskParameters(false);
     ArtifactStreamAttributes artifactStreamAttributes = buildArtifactStreamAttributes(true);
-    doThrow(Exception.class).when(azureAppServiceService).getDefaultPreDeploymentDataBuilder(any(), any());
+    doAnswer(invocation -> { throw new Exception(); })
+        .when(azureAppServiceService)
+        .getDefaultPreDeploymentDataBuilder(any(), any());
 
     AzureTaskExecutionResponse azureTaskExecutionResponse = azureWebAppSlotSetupTaskHandler.executeTask(
         setupParameters, azureConfig, mockLogStreamingTaskClient, artifactStreamAttributes);

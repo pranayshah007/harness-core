@@ -21,6 +21,7 @@ import static software.wings.beans.Workflow.WorkflowBuilder.aWorkflow;
 import static java.lang.String.format;
 import static javax.ws.rs.client.Entity.entity;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
@@ -137,9 +138,7 @@ public class WorkflowResourceTest extends WingsBaseTest {
   public void shouldListWorkflow() {
     PageRequest<Workflow> pageRequest = aPageRequest().build();
     PageResponse<Workflow> pageResponse = aPageResponse().withResponse(Lists.newArrayList(WORKFLOW)).build();
-    when(WORKFLOW_SERVICE.listWorkflows(
-             any(PageRequest.class), any(Integer.class), any(Boolean.class), any(String.class)))
-        .thenReturn(pageResponse);
+    when(WORKFLOW_SERVICE.listWorkflows(any(PageRequest.class), any(), anyBoolean(), any())).thenReturn(pageResponse);
 
     RestResponse<PageResponse<Workflow>> restResponse =
         RESOURCES.client()

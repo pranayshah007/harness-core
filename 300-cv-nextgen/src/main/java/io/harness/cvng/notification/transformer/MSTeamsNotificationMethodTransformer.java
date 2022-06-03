@@ -14,10 +14,7 @@ public class MSTeamsNotificationMethodTransformer
     extends NotificationMethodTransformer<CVNGMSTeamsChannel, CVNGMSTeamsChannelSpec> {
   @Override
   public CVNGMSTeamsChannel getEntityNotificationMethod(CVNGMSTeamsChannelSpec notificationChannelSpec) {
-    return CVNGMSTeamsChannel.builder()
-        .msTeamKeys(notificationChannelSpec.getMsTeamKeys())
-        .userGroups(notificationChannelSpec.getUserGroups())
-        .build();
+    return new CVNGMSTeamsChannel(notificationChannelSpec.getMsTeamKeys(),notificationChannelSpec.getUserGroups());
   }
 
   @Override

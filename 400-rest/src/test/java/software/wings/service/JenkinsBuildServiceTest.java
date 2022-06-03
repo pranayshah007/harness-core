@@ -157,7 +157,7 @@ public class JenkinsBuildServiceTest extends WingsBaseTest {
   @Owner(developers = RAMA)
   @Category(UnitTests.class)
   public void shouldFetchJobNames() throws IOException {
-    when(jenkins.getJobs(anyString())).thenReturn(ImmutableList.of(new JobDetails("jobName", false)));
+    when(jenkins.getJobs(any())).thenReturn(ImmutableList.of(new JobDetails("jobName", false)));
     List<JobDetails> jobs = jenkinsBuildService.getJobs(jenkinsConfig, null, Optional.empty());
     List<String> jobNames = jenkinsBuildService.extractJobNameFromJobDetails(jobs);
     assertThat(jobNames).containsExactly("jobName");
