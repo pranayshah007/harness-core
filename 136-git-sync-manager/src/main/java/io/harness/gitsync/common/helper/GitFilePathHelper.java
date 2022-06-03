@@ -15,18 +15,15 @@ import io.harness.beans.Scope;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
-import io.harness.exception.UnsupportedOperationException;
-import io.harness.gitsync.common.dtos.RepoProviders;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 
 @Singleton
-@Slf4j
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
+@Slf4j
 @OwnedBy(PL)
 public class GitFilePathHelper {
   GitSyncConnectorHelper gitSyncConnectorHelper;

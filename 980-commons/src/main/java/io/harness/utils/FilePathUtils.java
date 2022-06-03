@@ -7,7 +7,6 @@
 
 package io.harness.utils;
 
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -22,7 +21,7 @@ import org.apache.commons.lang3.StringUtils;
 @UtilityClass
 @OwnedBy(HarnessTeam.DX)
 public class FilePathUtils {
-  private static final String FILE_PATH_SEPARATOR = "/";
+  public static final String FILE_PATH_SEPARATOR = "/";
 
   public static boolean isFilePartOfFolder(String folderPath, String filePath) {
     if (filePath == null || folderPath == null) {
@@ -67,8 +66,8 @@ public class FilePathUtils {
   }
 
   public static String removeStartingAndEndingSlash(String path) {
-    if (isEmpty(path)) {
-      throw new InvalidRequestException("Path cannot be empty.");
+    if (path == null) {
+      throw new InvalidRequestException("Path cannot be null.");
     }
     path = StringUtils.stripStart(path, FILE_PATH_SEPARATOR);
     return StringUtils.stripEnd(path, FILE_PATH_SEPARATOR);

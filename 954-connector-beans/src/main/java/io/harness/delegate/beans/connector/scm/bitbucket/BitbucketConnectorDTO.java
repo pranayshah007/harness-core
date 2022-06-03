@@ -7,6 +7,7 @@
 
 package io.harness.delegate.beans.connector.scm.bitbucket;
 
+import static io.harness.utils.FilePathUtils.FILE_PATH_SEPARATOR;
 import static io.harness.utils.FilePathUtils.removeStartingAndEndingSlash;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -22,6 +23,7 @@ import io.harness.delegate.beans.connector.scm.utils.ScmConnectorHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.git.GitClientHelper;
 import io.harness.gitsync.beans.GitRepositoryDTO;
+import io.harness.gitsync.common.utils.GitSyncFilePathUtils;
 import io.harness.utils.FilePathUtils;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -45,13 +47,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.validator.constraints.NotBlank;
 
-@Slf4j
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @ApiModel("BitbucketConnector")
+@Slf4j
 @OwnedBy(HarnessTeam.DX)
 @Schema(name = "BitbucketConnector", description = "This contains details of Bitbucket connectors")
 public class BitbucketConnectorDTO extends ConnectorConfigDTO implements ScmConnector, DelegateSelectable {
@@ -145,20 +147,22 @@ public class BitbucketConnectorDTO extends ConnectorConfigDTO implements ScmConn
   }
 
   private GitRepositoryDTO getGitRepositoryDetailsForBitbucketServer() {
+    final String HOST_URL_AND_ORG_SEPARATOR = "scm";
     String repoName = GitClientHelper.getGitRepo(url);
     String orgName = GitClientHelper.getGitOwner(url, true);
     String[] parts = new String[0];
-    if (orgName.equals("scm")) {
-      parts = repoName.split("/");
-    } else if (repoName.startsWith("scm/")) {
-      parts = StringUtils.removeStart(repoName, "scm/").split("/");
+    if (orgName.equals(HOST_URL_AND_ORG_SEPARATOR)) {
+      parts = repoName.split(FILE_PATH_SEPARATOR);
+    } else if (repoName.startsWith(HOST_URL_AND_ORG_SEPARATOR + FILE_PATH_SEPARATOR)) {
+      parts = StringUtils.removeStart(repoName, HOST_URL_AND_ORG_SEPARATOR + FILE_PATH_SEPARATOR)
+                  .split(FILE_PATH_SEPARATOR);
     }
     if (GitConnectionType.REPO.equals(connectionType) && parts.length == 2) {
       return GitRepositoryDTO.builder().org(parts[0]).name(parts[1]).build();
     } else if (GitConnectionType.ACCOUNT.equals(connectionType) && parts.length == 1) {
       return GitRepositoryDTO.builder().org(parts[0]).build();
     } else {
-      throw new InvalidRequestException("Bitbucket server repoUrl is not valid.");
+      throw new InvalidRequestException("Provided bitbucket server repository url is invalid.");
     }
   }
 
@@ -169,6 +173,7 @@ public class BitbucketConnectorDTO extends ConnectorConfigDTO implements ScmConn
       hostUrl = url1.getProtocol() + "://" + url1.getHost();
     } catch (Exception ex) {
       log.error("Exception occurred while parsing bitbucket server url.", ex);
+      throw new InvalidRequestException("Exception occurred while parsing bitbucket server url.");
     }
     return String.format("%s/projects/%s/repos/%s/browse/%s?at=refs/heads/%s", hostUrl,
         getGitRepositoryDetails().getOrg(), getGitRepositoryDetails().getName(), filePath, branchName);
