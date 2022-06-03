@@ -13,12 +13,11 @@ import io.harness.annotation.HarnessRepo;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.execution.ExecutionInputInstance;
 
-import java.util.Optional;
-import org.springframework.data.repository.CrudRepository;
+import java.util.Collection;
+import java.util.List;
 
 @OwnedBy(PIPELINE)
 @HarnessRepo
-public interface ExecutionInputRepository
-    extends CrudRepository<ExecutionInputInstance, String>, ExecutionInputRepositoryCustom {
-  Optional<ExecutionInputInstance> findByNodeExecutionId(String nodeExecutionId);
+public interface ExecutionInputRepositoryCustom {
+  List<ExecutionInputInstance> findByNodeExecutionIds(Collection<String> nodeExecutionIds);
 }
