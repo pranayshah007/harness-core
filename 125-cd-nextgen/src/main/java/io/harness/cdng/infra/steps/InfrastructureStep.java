@@ -24,6 +24,7 @@ import io.harness.cdng.infra.beans.InfraMapping;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
+import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
 import io.harness.cdng.infra.yaml.K8sAzureInfrastructure;
@@ -238,6 +239,13 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
           ConnectorType.AZURE.name()));
     }
 
+    if (InfrastructureKind.AZURE_WEB_APP.equals(infrastructure.getKind())
+        && !(connectorInfo.getConnectorConfig() instanceof AzureConnectorDTO)) {
+      throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
+          connectorInfo.getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
+          ConnectorType.AZURE.name()));
+    }
+
     saveExecutionLog(logCallback, color("Connector validated", Green));
   }
 
@@ -349,6 +357,13 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
         PdcInfrastructure pdcInfrastructure = (PdcInfrastructure) infrastructure;
         validateExpression(pdcInfrastructure.getCredentialsRef());
         requireOne(pdcInfrastructure.getHosts(), pdcInfrastructure.getConnectorRef());
+        break;
+
+      case InfrastructureKind.AZURE_WEB_APP:
+        AzureWebAppInfrastructure azureWebAppInfrastructure = (AzureWebAppInfrastructure) infrastructure;
+        validateExpression(azureWebAppInfrastructure.getConnectorRef(), azureWebAppInfrastructure.getAppService(),
+            azureWebAppInfrastructure.getDeploymentSlot(), azureWebAppInfrastructure.getTargetSlot(),
+            azureWebAppInfrastructure.getSubscriptionId(), azureWebAppInfrastructure.getResourceGroup());
         break;
       default:
         throw new InvalidArgumentsException(format("Unknown Infrastructure Kind : [%s]", infrastructure.getKind()));

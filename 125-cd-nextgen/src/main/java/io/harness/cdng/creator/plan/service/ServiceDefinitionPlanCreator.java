@@ -161,7 +161,7 @@ public class ServiceDefinitionPlanCreator extends ChildrenPlanCreator<YamlField>
     addServiceSpecNodeV2(config, planCreationResponseMap, serviceSpecChildrenIds);
   }
 
-  private String addServiceSpecNode(ServiceConfig serviceConfig,
+  private void addServiceSpecNode(ServiceConfig serviceConfig,
       Map<String, PlanCreationResponse> planCreationResponseMap, List<String> serviceSpecChildrenIds) {
     ServiceSpec serviceSpec = serviceConfig.getServiceDefinition().getServiceSpec();
     ServiceSpecStepParameters stepParameters =
@@ -188,10 +188,9 @@ public class ServiceDefinitionPlanCreator extends ChildrenPlanCreator<YamlField>
             .skipExpressionChain(false)
             .build();
     planCreationResponseMap.put(node.getUuid(), PlanCreationResponse.builder().node(node.getUuid(), node).build());
-    return node.getUuid();
   }
 
-  private String addServiceSpecNodeV2(NGServiceV2InfoConfig serviceV2InfoConfig,
+  private void addServiceSpecNodeV2(NGServiceV2InfoConfig serviceV2InfoConfig,
       Map<String, PlanCreationResponse> planCreationResponseMap, List<String> serviceSpecChildrenIds) {
     ServiceSpec serviceSpec = serviceV2InfoConfig.getServiceDefinition().getServiceSpec();
     ServiceSpecStepParameters stepParameters =
@@ -215,7 +214,6 @@ public class ServiceDefinitionPlanCreator extends ChildrenPlanCreator<YamlField>
             .skipExpressionChain(false)
             .build();
     planCreationResponseMap.put(node.getUuid(), PlanCreationResponse.builder().node(node.getUuid(), node).build());
-    return node.getUuid();
   }
 
   String addDependenciesForConfigFiles(YamlNode serviceConfigNode,
