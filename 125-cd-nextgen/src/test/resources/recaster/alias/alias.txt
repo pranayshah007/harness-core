@@ -375,3 +375,6 @@ io.harness.cdng.manifest.yaml.harness.HarnessStore
 io.harness.cdng.gitops.steps.ClusterStepParameters
 io.harness.steps.customstage.CustomStageSpecParams
 io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity
+io.harness.cdng.infra.beans.AzureWebAppInfraMapping
+io.harness.cdng.infra.yaml.AzureWebAppInfrastructure
+io.harness.cdng.infra.beans.AzureWebAppInfrastructureOutcome
