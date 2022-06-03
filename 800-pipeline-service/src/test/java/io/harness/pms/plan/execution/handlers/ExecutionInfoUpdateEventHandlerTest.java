@@ -28,6 +28,7 @@ import io.harness.pms.execution.ExecutionStatus;
 import io.harness.pms.pipeline.ExecutionSummaryInfo;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
+import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.rule.Owner;
 
 import java.text.SimpleDateFormat;
@@ -56,7 +57,12 @@ public class ExecutionInfoUpdateEventHandlerTest extends PipelineServiceTestBase
   @Owner(developers = ALEXEI)
   @Category(UnitTests.class)
   public void shouldTestOnPlanStatusUpdate() {
-    Ambiance ambiance = Ambiance.newBuilder().setPlanExecutionId(generateUuid()).build();
+    Ambiance ambiance = Ambiance.newBuilder()
+                            .setPlanExecutionId(generateUuid())
+                            .putSetupAbstractions(SetupAbstractionKeys.accountId, "accId")
+                            .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, "orgId")
+                            .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "projId")
+                            .build();
     PipelineEntity pipelineEntity = PipelineEntity.builder()
                                         .uuid(generateUuid())
                                         .executionSummaryInfo(ExecutionSummaryInfo.builder()

@@ -41,6 +41,10 @@ import io.harness.serializer.morphia.converters.SdkModuleInfoMorphiaConverter;
 import io.harness.serializer.morphia.converters.StepTypeMorphiaConverter;
 import io.harness.serializer.morphia.converters.TriggerPayloadMorphiaConverter;
 import io.harness.serializer.morphia.converters.TriggeredByMorphiaConverter;
+import io.harness.serializer.spring.converters.MatrixMetadataReadConverter;
+import io.harness.serializer.spring.converters.MatrixMetadataWriteConverter;
+import io.harness.serializer.spring.converters.StrategyMetadataReadConverter;
+import io.harness.serializer.spring.converters.StrategyMetadataWriteConverter;
 import io.harness.serializer.spring.converters.advisers.obtainment.AdviserObtainmentReadConverter;
 import io.harness.serializer.spring.converters.advisers.obtainment.AdviserObtainmentWriteConverter;
 import io.harness.serializer.spring.converters.advisers.response.AdviserResponseReadConverter;
@@ -229,7 +233,8 @@ public class OrchestrationRegistrars {
       PolicyMetadataReadConverter.class, PolicyMetadataWriteConverter.class, PolicySetMetadataReadConverter.class,
       PolicySetMetadataWriteConverter.class, GovernanceMetadataReadConverter.class,
       GovernanceMetadataWriteConverter.class, JsonExpansionInfoReadConverter.class,
-      JsonExpansionInfoWriteConverter.class);
+      JsonExpansionInfoWriteConverter.class, StrategyMetadataReadConverter.class, MatrixMetadataReadConverter.class,
+      StrategyMetadataWriteConverter.class, MatrixMetadataWriteConverter.class);
 
   public static final List<Class<? extends Converter<?, ?>>> springConverters =
       ImmutableList.<Class<? extends Converter<?, ?>>>builder()

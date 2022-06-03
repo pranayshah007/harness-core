@@ -190,7 +190,6 @@ import software.wings.beans.Schema;
 import software.wings.beans.Service;
 import software.wings.beans.ServiceInstance;
 import software.wings.beans.ServiceTemplate;
-import software.wings.beans.ServiceVariable;
 import software.wings.beans.SystemCatalog;
 import software.wings.beans.TerraformInfrastructureProvisioner;
 import software.wings.beans.TerragruntInfrastructureProvisioner;
@@ -792,7 +791,6 @@ public class ManagerMorphiaRegistrar implements MorphiaRegistrar {
     set.add(ServiceCommand.class);
     set.add(ServiceInstance.class);
     set.add(ServiceTemplate.class);
-    set.add(ServiceVariable.class);
     set.add(ConfigFile.class);
     set.add(SftpArtifactStream.class);
     set.add(ShellScriptInfrastructureProvisioner.class);

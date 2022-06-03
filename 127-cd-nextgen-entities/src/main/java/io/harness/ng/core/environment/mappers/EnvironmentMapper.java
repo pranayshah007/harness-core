@@ -141,6 +141,15 @@ public class EnvironmentMapper {
         .build();
   }
 
+  // To be used for EnvironmentV2
+  public static NGEnvironmentConfig toNGEnvironmentConfig(String yaml) {
+    try {
+      return YamlUtils.read(yaml, NGEnvironmentConfig.class);
+    } catch (IOException e) {
+      throw new InvalidRequestException("Cannot create environment config due to " + e.getMessage());
+    }
+  }
+
   public static NGEnvironmentConfig toNGEnvironmentConfig(EnvironmentRequestDTO dto) {
     if (isNotEmpty(dto.getYaml())) {
       try {

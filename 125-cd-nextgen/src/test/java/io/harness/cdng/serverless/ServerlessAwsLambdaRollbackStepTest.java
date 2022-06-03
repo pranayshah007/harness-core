@@ -73,6 +73,7 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
+
 @OwnedBy(HarnessTeam.CDP)
 public class ServerlessAwsLambdaRollbackStepTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
@@ -94,9 +95,13 @@ public class ServerlessAwsLambdaRollbackStepTest {
   private final ManifestsOutcome manifestsOutcome = new ManifestsOutcome();
 
   private final String previousVersionTimeStamp = "1234";
+  private final boolean isFirstDeployment = false;
   private final StepInputPackage stepInputPackage = StepInputPackage.builder().build();
   private final ServerlessAwsLambdaRollbackDataOutcome serverlessAwsLambdaRollbackDataOutcome =
-      ServerlessAwsLambdaRollbackDataOutcome.builder().previousVersionTimeStamp(previousVersionTimeStamp).build();
+      ServerlessAwsLambdaRollbackDataOutcome.builder()
+          .previousVersionTimeStamp(previousVersionTimeStamp)
+          .isFirstDeployment(isFirstDeployment)
+          .build();
   private final String manifestFileOverrideContent = "asfdasfd";
   private final Pair<String, String> manifestFilePathContent = Pair.of("a", "b");
   private final ServerlessGitFetchOutcome serverlessGitFetchOutcome =
@@ -203,6 +208,7 @@ public class ServerlessAwsLambdaRollbackStepTest {
     ServerlessAwsLambdaRollbackConfig serverlessAwsLambdaRollbackConfig =
         ServerlessAwsLambdaRollbackConfig.builder()
             .previousVersionTimeStamp(serverlessAwsLambdaRollbackDataOutcome.getPreviousVersionTimeStamp())
+            .isFirstDeployment(serverlessAwsLambdaRollbackDataOutcome.isFirstDeployment())
             .build();
     final String accountId = AmbianceUtils.getAccountId(ambiance);
     ServerlessRollbackRequest serverlessRollbackRequest =

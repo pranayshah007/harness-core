@@ -24,6 +24,7 @@ import io.harness.gitsync.FileInfo;
 import io.harness.gitsync.GetFileRequest;
 import io.harness.gitsync.GetFileResponse;
 import io.harness.gitsync.HarnessToGitPushInfoServiceGrpc.HarnessToGitPushInfoServiceImplBase;
+import io.harness.gitsync.IsGitSimplificationEnabled;
 import io.harness.gitsync.IsGitSyncEnabled;
 import io.harness.gitsync.PushFileResponse;
 import io.harness.gitsync.PushInfo;
@@ -60,6 +61,8 @@ public class HarnessToGitPushInfoGrpcService extends HarnessToGitPushInfoService
   @Inject KryoSerializer kryoSerializer;
   @Inject EntityDetailProtoToRestMapper entityDetailProtoToRestMapper;
   @Inject ExceptionManager exceptionManager;
+  private String errorFormat =
+      "Unexpected error occurred while performing %s git operation. Please contact Harness Support.";
 
   @Override
   public void pushFromHarness(PushInfo request, StreamObserver<PushResponse> responseObserver) {
@@ -112,8 +115,8 @@ public class HarnessToGitPushInfoGrpcService extends HarnessToGitPushInfoService
         getFileResponse = harnessToGitHelperService.getFileByBranch(request);
         log.info("Git Sync Service getFile ops response : {}", getFileResponse);
       } catch (Exception ex) {
-        log.error("Faced exception during getFile GIT call", ex);
-        final String errorMessage = ExceptionUtils.getMessage(ex);
+        final String errorMessage = String.format(errorFormat, GitOperation.GET_FILE.name());
+        log.error(errorMessage, ex);
         getFileResponse = GetFileResponse.newBuilder()
                               .setStatusCode(HTTP_500)
                               .setError(ErrorDetails.newBuilder().setErrorMessage(errorMessage).build())
@@ -138,8 +141,8 @@ public class HarnessToGitPushInfoGrpcService extends HarnessToGitPushInfoService
         createFileResponse = harnessToGitHelperService.createFile(request);
         log.info("Git Sync Service createFile ops response : {}", createFileResponse);
       } catch (Exception ex) {
-        log.error("Faced exception during createFile GIT call", ex);
-        final String errorMessage = ExceptionUtils.getMessage(ex);
+        final String errorMessage = String.format(errorFormat, GitOperation.CREATE_FILE.name());
+        log.error(errorMessage, ex);
         createFileResponse = CreateFileResponse.newBuilder()
                                  .setStatusCode(HTTP_500)
                                  .setError(ErrorDetails.newBuilder().setErrorMessage(errorMessage).build())
@@ -164,8 +167,8 @@ public class HarnessToGitPushInfoGrpcService extends HarnessToGitPushInfoService
         updateFileResponse = harnessToGitHelperService.updateFile(request);
         log.info("Git Sync Service updateFile ops response : {}", updateFileResponse);
       } catch (Exception ex) {
-        log.error("Faced exception during updateFile GIT call", ex);
-        final String errorMessage = ExceptionUtils.getMessage(ex);
+        final String errorMessage = String.format(errorFormat, GitOperation.UPDATE_FILE.name());
+        log.error(errorMessage, ex);
         updateFileResponse = UpdateFileResponse.newBuilder()
                                  .setStatusCode(HTTP_500)
                                  .setError(ErrorDetails.newBuilder().setErrorMessage(errorMessage).build())
@@ -215,6 +218,14 @@ public class HarnessToGitPushInfoGrpcService extends HarnessToGitPushInfoService
     responseObserver.onNext(IsGitSyncEnabled.newBuilder().setEnabled(gitSyncEnabled).build());
     responseObserver.onCompleted();
     log.debug("Grpc request completed for isGitSyncEnabledForScope");
+  }
+
+  @Override
+  public void isGitSimplificationEnabledForScope(
+      EntityScopeInfo request, StreamObserver<IsGitSimplificationEnabled> responseObserver) {
+    final Boolean isGitSimplificationEnabled = harnessToGitHelperService.isGitSimplificationEnabled(request);
+    responseObserver.onNext(IsGitSimplificationEnabled.newBuilder().setEnabled(isGitSimplificationEnabled).build());
+    responseObserver.onCompleted();
   }
 
   @Override

@@ -12,7 +12,12 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.InvalidRequestException;
+import io.harness.pms.contracts.governance.GovernanceMetadata;
+import io.harness.pms.contracts.governance.PolicySetMetadata;
 
+import java.util.List;
+import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 
 @OwnedBy(PIPELINE)
@@ -39,5 +44,18 @@ public class PipelineCRUDErrorResponse {
   public String errorMessageForInvalidField(String field, String identifierInYAML, String expectedIdentifier) {
     return format(
         "%s in YAML [%s] does not match the expected %s [%s].", field, identifierInYAML, field, expectedIdentifier);
+  }
+
+  public void checkForGovernanceErrorAndThrow(GovernanceMetadata governanceMetadata) {
+    if (governanceMetadata.getDeny()) {
+      List<String> denyingPolicySetIds = governanceMetadata.getDetailsList()
+                                             .stream()
+                                             .filter(PolicySetMetadata::getDeny)
+                                             .map(PolicySetMetadata::getIdentifier)
+                                             .collect(Collectors.toList());
+      // todo: see if this can be changed to PolicyEvaluationFailureException, probably yes
+      throw new InvalidRequestException(
+          "Pipeline does not follow the Policies in these Policy Sets: " + denyingPolicySetIds);
+    }
   }
 }

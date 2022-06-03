@@ -7,6 +7,7 @@
 
 package io.harness.cvng.core.services.impl;
 
+import static io.harness.cvng.CVNGTestConstants.TIME_FOR_TESTS;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.KANHAIYA;
 import static io.harness.rule.OwnerRule.KAPIL;
@@ -73,8 +74,8 @@ public class CVNGLogServiceImplTest extends CvNextGenTestBase {
     traceableId = generateUuid();
     requestTime = Instant.now();
     responseTime = Instant.now();
-    startTime = Instant.now().minusSeconds(5);
-    endTime = Instant.now();
+    startTime = TIME_FOR_TESTS.minusSeconds(5);
+    endTime = TIME_FOR_TESTS;
     createdAt = Instant.now().toEpochMilli();
   }
 

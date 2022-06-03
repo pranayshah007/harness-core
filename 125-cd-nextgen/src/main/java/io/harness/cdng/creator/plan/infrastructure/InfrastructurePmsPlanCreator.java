@@ -78,28 +78,14 @@ public class InfrastructurePmsPlanCreator {
         .build();
   }
 
-  public LinkedHashMap<String, PlanCreationResponse> createPlanForInfraSection(
-      YamlNode infraSectionNode, String infraStepNodeUuid, InfraSection infraSection, KryoSerializer kryoSerializer) {
-    // Plan Node for v1
-    if (infraSection instanceof PipelineInfrastructure) {
-      PipelineInfrastructure pipelineInfrastructure = (PipelineInfrastructure) infraSection;
-      return createPlanForInfraSectionV1(infraSectionNode, infraStepNodeUuid, pipelineInfrastructure, kryoSerializer);
-    }
-
-    // Plan Node for v2
-    InfrastructureDefinitionConfig infrastructureDefinitionConfig = (InfrastructureDefinitionConfig) infraSection;
-    return createPlanForInfraSectionV2(
-        infraSectionNode, infraStepNodeUuid, infrastructureDefinitionConfig, kryoSerializer);
-  }
-
-  private static LinkedHashMap<String, PlanCreationResponse> createPlanForInfraSectionV2(YamlNode infraSectionNode,
+  public static LinkedHashMap<String, PlanCreationResponse> createPlanForInfraSectionV2(YamlNode infraSectionNode,
       String infraStepNodeUuid, InfrastructureDefinitionConfig infrastructureDefinitionConfig,
-      KryoSerializer kryoSerializer) {
+      KryoSerializer kryoSerializer, String infraSectionUuid) {
     InfraSectionStepParameters infraSectionStepParameters =
         getInfraSectionStepParamsFromConfig(infrastructureDefinitionConfig, infraStepNodeUuid);
     LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap = new LinkedHashMap<>();
 
-    PlanNodeBuilder planNodeBuilder = planBuilderForInfraSection(infraSectionNode);
+    PlanNodeBuilder planNodeBuilder = planBuilderForInfraSection(infraSectionNode, infraSectionUuid);
     planNodeBuilder = planNodeBuilder.stepParameters(infraSectionStepParameters);
 
     List<AdviserObtainment> adviserObtainments =
@@ -125,13 +111,14 @@ public class InfrastructurePmsPlanCreator {
     return planCreationResponseMap;
   }
 
-  private static LinkedHashMap<String, PlanCreationResponse> createPlanForInfraSectionV1(YamlNode infraSectionNode,
-      String infraStepNodeUuid, PipelineInfrastructure pipelineInfrastructure, KryoSerializer kryoSerializer) {
+  public LinkedHashMap<String, PlanCreationResponse> createPlanForInfraSectionV1(YamlNode infraSectionNode,
+      String infraStepNodeUuid, PipelineInfrastructure pipelineInfrastructure, KryoSerializer kryoSerializer,
+      String infraSectionUuid) {
     InfraSectionStepParameters infraSectionStepParameters =
         getInfraSectionStepParams(pipelineInfrastructure, infraStepNodeUuid);
     LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap = new LinkedHashMap<>();
 
-    PlanNodeBuilder planNodeBuilder = planBuilderForInfraSection(infraSectionNode);
+    PlanNodeBuilder planNodeBuilder = planBuilderForInfraSection(infraSectionNode, infraSectionUuid);
     planNodeBuilder = planNodeBuilder.stepParameters(infraSectionStepParameters);
 
     if (!isProvisionerConfigured(pipelineInfrastructure)) {
@@ -160,8 +147,8 @@ public class InfrastructurePmsPlanCreator {
   }
 
   public YamlField addResourceConstraintDependency(
-      YamlNode rbacSiblingNode, LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap) {
-    YamlField rcYamlField = constructResourceConstraintYamlField(rbacSiblingNode);
+      YamlNode rcStepSibilingNode, LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap) {
+    YamlField rcYamlField = constructResourceConstraintYamlField(rcStepSibilingNode);
 
     try {
       YamlUpdates yamlUpdates =
@@ -181,9 +168,9 @@ public class InfrastructurePmsPlanCreator {
     return rcYamlField;
   }
 
-  public PlanNodeBuilder planBuilderForInfraSection(YamlNode infraSectionNode) {
+  public PlanNodeBuilder planBuilderForInfraSection(YamlNode infraSectionNode, String infraSectionUuid) {
     return PlanNode.builder()
-        .uuid(infraSectionNode.getUuid())
+        .uuid(infraSectionUuid)
         .name(PlanCreatorConstants.INFRA_SECTION_NODE_NAME)
         .identifier(PlanCreatorConstants.INFRA_SECTION_NODE_IDENTIFIER)
         .group(OutcomeExpressionConstants.INFRASTRUCTURE_GROUP)

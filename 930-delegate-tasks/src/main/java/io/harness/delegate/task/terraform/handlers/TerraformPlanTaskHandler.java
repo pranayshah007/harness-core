@@ -122,7 +122,8 @@ public class TerraformPlanTaskHandler extends TerraformAbstractTaskHandler {
 
     File tfOutputsFile = Paths.get(scriptDirectory, format(TERRAFORM_VARIABLES_FILE_NAME, "output")).toFile();
 
-    try (PlanJsonLogOutputStream planJsonLogOutputStream = new PlanJsonLogOutputStream()) {
+    try (PlanJsonLogOutputStream planJsonLogOutputStream =
+             new PlanJsonLogOutputStream(taskParameters.isSaveTerraformStateJson())) {
       TerraformExecuteStepRequest terraformExecuteStepRequest =
           TerraformExecuteStepRequest.builder()
               .tfBackendConfigsFile(taskParameters.getBackendConfig() != null
@@ -142,11 +143,14 @@ public class TerraformPlanTaskHandler extends TerraformAbstractTaskHandler {
               .planJsonLogOutputStream(planJsonLogOutputStream)
               .timeoutInMillis(taskParameters.getTimeoutInMillis())
               .isTfPlanDestroy(taskParameters.getTerraformCommand() == TerraformCommand.DESTROY)
+              .useOptimizedTfPlan(true)
               .build();
 
       CliResponse response = terraformBaseHelper.executeTerraformPlanStep(terraformExecuteStepRequest);
 
-      logCallback.saveExecutionLog("Script execution finished with status: " + response.getCommandExecutionStatus(),
+      Integer detailedExitCode = response.getExitCode();
+      logCallback.saveExecutionLog(format("Script execution finished with status: %s, exit-code %d",
+                                       response.getCommandExecutionStatus(), detailedExitCode),
           INFO, CommandExecutionStatus.RUNNING);
 
       if (isNotEmpty(taskParameters.getVarFileInfos())) {
@@ -168,6 +172,18 @@ public class TerraformPlanTaskHandler extends TerraformAbstractTaskHandler {
           terraformBaseHelper.encryptPlan(Files.readAllBytes(Paths.get(scriptDirectory, planName)),
               taskParameters.getPlanName(), taskParameters.getEncryptionConfig());
 
+      String tfPlanJsonFileId = null;
+      if (taskParameters.isSaveTerraformStateJson()) {
+        // We're going to read content from json plan file and ideally no one should write anything into output
+        // stream at this stage. Just in case let's flush everything from buffer and close output stream
+        // We have enough guards at different layers to prevent repeat close as result of autocloseable
+        planJsonLogOutputStream.flush();
+        planJsonLogOutputStream.close();
+        String tfPlanJsonFilePath = planJsonLogOutputStream.getTfPlanJsonLocalPath();
+        tfPlanJsonFileId = terraformBaseHelper.uploadTfPlanJson(taskParameters.getAccountId(), delegateId, taskId,
+            taskParameters.getEntityId(), planName, tfPlanJsonFilePath);
+      }
+
       logCallback.saveExecutionLog("\nDone executing scripts.\n", INFO, CommandExecutionStatus.RUNNING);
 
       return TerraformTaskNGResponse.builder()
@@ -175,6 +191,8 @@ public class TerraformPlanTaskHandler extends TerraformAbstractTaskHandler {
           .encryptedTfPlan(encryptedTfPlan)
           .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
           .stateFileId(uploadedTfStateFile)
+          .detailedExitCode(detailedExitCode)
+          .tfPlanJsonFileId(tfPlanJsonFileId)
           .build();
     }
   }

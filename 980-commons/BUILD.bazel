@@ -6,7 +6,6 @@ java_library(
     name = "module",
     srcs = glob(["src/main/java/**/*.java"]),
     resource_jars = [
-        "//990-commons-test:abstract-module",
         "//980-commons/src/main/proto:980_commons_java_proto",
     ],
     resources = [
@@ -90,7 +89,7 @@ java_library(
         "@maven//:org_jooq_joor",
         "@maven//:org_mockito_mockito_core",
         "@maven//:org_mongodb_morphia_morphia",
-        "@maven//:org_powermock_powermock_api_mockito",
+        "@maven//:org_powermock_powermock_api_mockito2",
         "@maven//:org_powermock_powermock_core",
         "@maven//:org_powermock_powermock_module_junit4",
         "@maven//:org_slf4j_slf4j_api",

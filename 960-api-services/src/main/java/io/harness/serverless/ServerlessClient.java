@@ -45,6 +45,10 @@ public class ServerlessClient {
     return new RollbackCommand(this);
   }
 
+  public RemoveCommand remove() {
+    return new RemoveCommand(this);
+  }
+
   public String command() {
     StringBuilder command = new StringBuilder(256);
     if (StringUtils.isNotBlank(serverlessPath)) {

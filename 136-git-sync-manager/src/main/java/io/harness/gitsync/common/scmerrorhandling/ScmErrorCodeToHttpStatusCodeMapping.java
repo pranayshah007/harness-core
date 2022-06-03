@@ -21,14 +21,12 @@ public class ScmErrorCodeToHttpStatusCodeMapping {
 
   public int getHttpStatusCode(ErrorCode errorCode) {
     switch (errorCode) {
-      case SCM_UNAUTHORIZED:
+      case SCM_BAD_REQUEST:
+        return 400;
+      case SCM_UNAUTHORIZED_ERROR_V2:
         return 401;
-      case SCM_CONFLICT_ERROR:
+      case SCM_CONFLICT_ERROR_V2:
         return 409;
-      case SCM_NOT_FOUND_ERROR:
-        return 404;
-      case SCM_UNPROCESSABLE_ENTITY:
-        return 422;
       default:
         return HTTP_500;
     }

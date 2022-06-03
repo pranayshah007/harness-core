@@ -136,7 +136,7 @@ public class TemplateInputsValidator {
       if (arrayElement.isArray()) {
         // Value -> Array
         validateNestedTemplateInputsInArray(
-            accountId, orgId, projectId, yamlNode, templateCacheMap, depth, validateTemplateInputsResponse);
+            accountId, orgId, projectId, arrayElement, templateCacheMap, depth, validateTemplateInputsResponse);
       } else if (arrayElement.isObject()) {
         // Value -> Object
         validateNestedTemplateInputsInObject(

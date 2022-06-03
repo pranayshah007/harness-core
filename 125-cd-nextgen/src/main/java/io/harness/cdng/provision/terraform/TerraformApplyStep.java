@@ -115,6 +115,10 @@ public class TerraformApplyStep extends TaskExecutableWithRollbackAndRbac<Terraf
     log.info("Starting execution Obtain Task after Rbac for the Apply Step");
     helper.validateApplyStepParamsInline(stepParameters);
     TerraformStepConfigurationType configurationType = stepParameters.getConfiguration().getType();
+    if (cdFeatureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.EXPORT_TF_PLAN_JSON_NG)) {
+      helper.cleanupTfPlanJsonForProvisioner(
+          ambiance, stepParameters.getPlanStepsFqn(), stepParameters.getProvisionerIdentifier().getValue());
+    }
     switch (configurationType) {
       case INLINE:
         return obtainInlineTask(ambiance, stepParameters, stepElementParameters);

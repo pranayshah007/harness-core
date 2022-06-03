@@ -66,7 +66,7 @@ def load_into_main_table(jsonData):
     last_updated_at = datetime.datetime.utcnow()
     query = """MERGE `%s` T
                 USING `%s` S
-                ON T.id = S.id and T.projectNumberPartition = S.projectNumberPartition 
+                ON T.id = S.id and T.creationTime = S.creationTime 
                 WHEN MATCHED THEN
                   UPDATE SET sizeGb = s.sizeGb, status = s.status, options = s.options,
                   type = s.type, provisionedIops = s.provisionedIops, 
@@ -75,15 +75,15 @@ def load_into_main_table(jsonData):
                   lastUpdatedAt = '%s'
                 WHEN NOT MATCHED THEN
                   INSERT (id, name, creationTime, zone, 
-                    region, projectId, projectNumber, sizeGb, status, sourceSnapshot, sourceSnapshotId,
+                    region, projectId, sizeGb, status, sourceSnapshot, sourceSnapshotId,
                     sourceStorageObject, options, sourceImage, sourceImageId, selfLink, type, labels, users,
                     physicalBlockSizeBytes, sourceDisk, sourceDiskId, provisionedIops, satisfiesPzs, snapshots,
-                    lastAttachTimestamp, lastDetachTimestamp, lastUpdatedAt, projectNumberPartition) 
+                    lastAttachTimestamp, lastDetachTimestamp, lastUpdatedAt) 
                   VALUES(id, name, creationTime, zone, 
-                    region, projectId, projectNumber, sizeGb, status, sourceSnapshot, sourceSnapshotId,
+                    region, projectId, sizeGb, status, sourceSnapshot, sourceSnapshotId,
                     sourceStorageObject, options, sourceImage, sourceImageId, selfLink, type, labels, users,
                     physicalBlockSizeBytes, sourceDisk, sourceDiskId, provisionedIops, satisfiesPzs, snapshots,
-                    lastAttachTimestamp, lastDetachTimestamp, lastUpdatedAt, projectNumberPartition)
+                    lastAttachTimestamp, lastDetachTimestamp, lastUpdatedAt)
                 """ % (jsonData["targetTableId"], jsonData["sourceTableId"], last_updated_at)
     try:
         query_job = client.query(query)

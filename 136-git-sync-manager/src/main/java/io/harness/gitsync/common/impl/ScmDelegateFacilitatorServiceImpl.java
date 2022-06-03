@@ -112,7 +112,7 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
   private SecretManagerClientService secretManagerClientService;
   private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
   private GitSyncConnectorHelper gitSyncConnectorHelper;
-  private String errorFormat =
+  private final String errorFormat =
       "Unexpected error occurred while doing scm operation for %s for accountId [%s], orgId [%s], projectId [%s]";
 
   @Inject
@@ -847,18 +847,20 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
 
   private DelegateResponseData executeDelegateSyncTask(DelegateTaskRequest delegateTaskRequest) {
     final DelegateResponseData delegateResponseData;
+    String delegateDownErrorMessage = "Delegates are not available for performing operation.";
     try {
       delegateResponseData = delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
     } catch (DelegateServiceDriverException ex) {
+      log.error("Error occurred while executing delegate task.", ex);
       throw new HintException(String.format(HintException.DELEGATE_NOT_AVAILABLE_FOR_GIT_SYNC,
                                   DocumentLinksConstants.DELEGATE_INSTALLATION_LINK),
-          new DelegateNotAvailableException(ex.getCause().getMessage(), ex, WingsException.USER));
+          new DelegateNotAvailableException(delegateDownErrorMessage, WingsException.USER));
     }
 
     if (delegateResponseData instanceof ErrorNotifyResponseData) {
       throw new HintException(String.format(HintException.DELEGATE_NOT_AVAILABLE_FOR_GIT_SYNC,
                                   DocumentLinksConstants.DELEGATE_INSTALLATION_LINK),
-          new DelegateNotAvailableException("Delegates are not available", WingsException.USER));
+          new DelegateNotAvailableException(delegateDownErrorMessage, WingsException.USER));
     }
     return delegateResponseData;
   }

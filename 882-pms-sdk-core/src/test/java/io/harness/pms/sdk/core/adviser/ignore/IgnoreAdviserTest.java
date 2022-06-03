@@ -10,7 +10,7 @@ package io.harness.pms.sdk.core.adviser.ignore;
 import static io.harness.rule.OwnerRule.SAHIL;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.when;
 
 import io.harness.category.element.UnitTests;
@@ -54,7 +54,7 @@ public class IgnoreAdviserTest extends PmsSdkCoreTestBase {
             .toStatus(Status.FAILED)
             .failureInfo(FailureInfo.newBuilder().addFailureTypes(FailureType.APPLICATION_FAILURE).build())
             .build();
-    when(kryoSerializer.asObject(any(byte[].class))).thenReturn(IgnoreAdviserParameters.builder().build());
+    when(kryoSerializer.asObject(nullable(byte[].class))).thenReturn(IgnoreAdviserParameters.builder().build());
     assertThat(ignoreAdviser.canAdvise(advisingEvent)).isFalse();
   }
 }

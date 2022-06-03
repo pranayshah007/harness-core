@@ -119,8 +119,7 @@ public final class TimeSeriesShortTermHistory implements PersistentEntity, UuidA
         identifier = identifier.replaceAll("\\)", "");
         return identifier;
       }
-      // TODO: migration logic. We need to remove to lower case.
-      return metricIdentifier.toLowerCase();
+      return metricIdentifier;
     }
   }
 

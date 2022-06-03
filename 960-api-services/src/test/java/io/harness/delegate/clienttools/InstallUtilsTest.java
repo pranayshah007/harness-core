@@ -29,6 +29,7 @@ import static org.powermock.api.mockito.PowerMockito.doNothing;
 import static org.powermock.api.mockito.PowerMockito.doReturn;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
 
+import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.FunctionalTests;
 import io.harness.category.element.UnitTests;
@@ -46,12 +47,12 @@ import org.powermock.modules.junit4.PowerMockRunner;
 @OwnedBy(DEL)
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({InstallUtils.class})
-public class InstallUtilsTest {
+public class InstallUtilsTest extends CategoryTest {
   private static final String PWD = Paths.get(".").toAbsolutePath().normalize().toString();
 
   private static final String DEFAULT_KUSTOMIZE_3_PATH = PWD + "/client-tools/kustomize/v3.5.4/kustomize";
   private static final String DEFAULT_KUSTOMIZE_4_PATH = PWD + "/client-tools/kustomize/v4.0.0/kustomize";
-  private static final String DEFAULT_SCM_PATH = PWD + "/client-tools/scm/9ac991d2/scm";
+  private static final String DEFAULT_SCM_PATH = PWD + "/client-tools/scm/0487ccaf/scm";
   private static final String DEFAULT_OC_PATH = PWD + "/client-tools/oc/v4.2.16/oc";
   private static final String DEFAULT_TFCONFIG_INSPECT_1_0_PATH =
       PWD + "/client-tools/tf-config-inspect/v1.0/terraform-config-inspect";

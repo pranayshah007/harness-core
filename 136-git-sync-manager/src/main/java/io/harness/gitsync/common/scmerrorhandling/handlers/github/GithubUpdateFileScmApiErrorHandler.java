@@ -11,14 +11,16 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.NestedExceptionUtils;
+import io.harness.exception.ScmBadRequestException;
 import io.harness.exception.ScmConflictException;
-import io.harness.exception.ScmResourceNotFoundException;
 import io.harness.exception.ScmUnauthorizedException;
 import io.harness.exception.ScmUnexpectedException;
-import io.harness.exception.ScmUnprocessableEntityException;
 import io.harness.exception.WingsException;
 import io.harness.gitsync.common.scmerrorhandling.handlers.ScmApiErrorHandler;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @OwnedBy(PL)
 public class GithubUpdateFileScmApiErrorHandler implements ScmApiErrorHandler {
   public static final String UPDATE_FILE_FAILED = "The requested file couldn't be updated. ";
@@ -48,14 +50,15 @@ public class GithubUpdateFileScmApiErrorHandler implements ScmApiErrorHandler {
             new ScmUnauthorizedException(errorMessage));
       case 404:
         throw NestedExceptionUtils.hintWithExplanationException(UPDATE_FILE_NOT_FOUND_ERROR_HINT,
-            UPDATE_FILE_NOT_FOUND_ERROR_EXPLANATION, new ScmResourceNotFoundException(errorMessage));
+            UPDATE_FILE_NOT_FOUND_ERROR_EXPLANATION, new ScmBadRequestException(errorMessage));
       case 409:
         throw NestedExceptionUtils.hintWithExplanationException(UPDATE_FILE_CONFLICT_ERROR_HINT,
             UPDATE_FILE_CONFLICT_ERROR_EXPLANATION, new ScmConflictException(errorMessage));
       case 422:
         throw NestedExceptionUtils.hintWithExplanationException(UPDATE_FILE_UNPROCESSABLE_ENTITY_ERROR_HINT,
-            UPDATE_FILE_UNPROCESSABLE_ENTITY_ERROR_EXPLANATION, new ScmUnprocessableEntityException(errorMessage));
+            UPDATE_FILE_UNPROCESSABLE_ENTITY_ERROR_EXPLANATION, new ScmBadRequestException(errorMessage));
       default:
+        log.error(String.format("Error while updating github file: [%s: %s]", statusCode, errorMessage));
         throw new ScmUnexpectedException(errorMessage);
     }
   }

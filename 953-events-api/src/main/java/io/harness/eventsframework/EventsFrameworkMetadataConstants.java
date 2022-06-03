@@ -31,6 +31,7 @@ public final class EventsFrameworkMetadataConstants {
   public static final String CONNECTOR_ENTITY = "connector";
   public static final String SERVICEACCOUNT_ENTITY = "serviceaccount";
   public static final String SECRET_ENTITY = "secret";
+  public static final String VARIABLE_ENTITY = "variable";
   public static final String USER_ENTITY = "user";
   public static final String PIPELINE_ENTITY = "pipeline";
   public static final String DELEGATE_ENTITY = "delegate";
@@ -38,6 +39,7 @@ public final class EventsFrameworkMetadataConstants {
   public static final String FILE_ENTITY = "file";
   public static final String USER_SCOPE_RECONCILIATION = "userScopeReconciliation";
   public static final String CHAOS_HUB = "chaoshub";
+  public static final String CHAOS_AGENT = "chaosagent";
 
   public static final String SERVICE_ENTITY = "service";
   public static final String ENVIRONMENT_ENTITY = "environment";

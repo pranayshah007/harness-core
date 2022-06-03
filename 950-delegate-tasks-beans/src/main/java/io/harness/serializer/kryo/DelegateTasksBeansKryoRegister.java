@@ -75,11 +75,14 @@ import io.harness.delegate.beans.azure.appservicesettings.AzureAppServiceSetting
 import io.harness.delegate.beans.azure.registry.AzureRegistryType;
 import io.harness.delegate.beans.azure.response.AzureAcrTokenTaskResponse;
 import io.harness.delegate.beans.azure.response.AzureClustersResponse;
+import io.harness.delegate.beans.azure.response.AzureDeploymentSlotResponse;
+import io.harness.delegate.beans.azure.response.AzureDeploymentSlotsResponse;
 import io.harness.delegate.beans.azure.response.AzureRegistriesResponse;
 import io.harness.delegate.beans.azure.response.AzureRepositoriesResponse;
 import io.harness.delegate.beans.azure.response.AzureResourceGroupsResponse;
 import io.harness.delegate.beans.azure.response.AzureSubscriptionsResponse;
 import io.harness.delegate.beans.azure.response.AzureValidateTaskResponse;
+import io.harness.delegate.beans.azure.response.AzureWebAppNamesResponse;
 import io.harness.delegate.beans.ccm.K8sClusterInfo;
 import io.harness.delegate.beans.ci.CIClusterType;
 import io.harness.delegate.beans.ci.CIInitializeTaskParams;
@@ -170,6 +173,10 @@ import io.harness.delegate.beans.connector.gcpkmsconnector.GcpKmsValidationParam
 import io.harness.delegate.beans.connector.helm.HttpHelmConnectivityTaskParams;
 import io.harness.delegate.beans.connector.helm.HttpHelmConnectivityTaskResponse;
 import io.harness.delegate.beans.connector.helm.HttpHelmValidationParams;
+import io.harness.delegate.beans.connector.jenkins.JenkinsCapabilityHelper;
+import io.harness.delegate.beans.connector.jenkins.JenkinsTestConnectionTaskParams;
+import io.harness.delegate.beans.connector.jenkins.JenkinsTestConnectionTaskResponse;
+import io.harness.delegate.beans.connector.jenkins.JenkinsValidationParams;
 import io.harness.delegate.beans.connector.jira.JiraConnectionTaskParams;
 import io.harness.delegate.beans.connector.jira.JiraValidationParams;
 import io.harness.delegate.beans.connector.jira.connection.JiraTestConnectionTaskNGResponse;
@@ -279,6 +286,8 @@ import io.harness.delegate.task.artifacts.ecr.EcrArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.ecr.EcrArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.gcr.GcrArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.gcr.GcrArtifactDelegateResponse;
+import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateRequest;
+import io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.nexus.NexusArtifactDelegateRequest;
 import io.harness.delegate.task.artifacts.nexus.NexusArtifactDelegateResponse;
 import io.harness.delegate.task.artifacts.request.ArtifactTaskParameters;
@@ -388,6 +397,9 @@ import io.harness.delegate.task.gcp.response.GcpValidationTaskResponse;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.delegate.task.git.GitFetchRequest;
 import io.harness.delegate.task.git.GitFetchResponse;
+import io.harness.delegate.task.git.GitOpsTaskType;
+import io.harness.delegate.task.git.NGGitOpsResponse;
+import io.harness.delegate.task.git.NGGitOpsTaskParams;
 import io.harness.delegate.task.git.TaskStatus;
 import io.harness.delegate.task.helm.HelmChartInfo;
 import io.harness.delegate.task.helm.HelmCmdExecResponseNG;
@@ -881,6 +893,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(ArtifactTaskResponse.class, 19301);
     kryo.register(DockerArtifactDelegateRequest.class, 19302);
     kryo.register(DockerArtifactDelegateResponse.class, 19303);
+    kryo.register(JenkinsArtifactDelegateResponse.class, 29300);
     kryo.register(ArtifactTaskType.class, 19304);
     kryo.register(ArtifactDelegateResponse.class, 19305);
     kryo.register(ArtifactTaskExecutionResponse.class, 19306);
@@ -902,6 +915,9 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AzureVMSSSwitchRoutesResponse.class, 19322);
     kryo.register(AzureVMSSSwitchRouteTaskParameters.class, 19323);
     kryo.register(GitFetchRequest.class, 19324);
+    kryo.register(NGGitOpsTaskParams.class, 9107);
+    kryo.register(NGGitOpsResponse.class, 9108);
+    kryo.register(GitOpsTaskType.class, 9109);
     kryo.register(GitFetchFilesConfig.class, 19325);
     kryo.register(GitFetchResponse.class, 19326);
     kryo.register(TaskStatus.class, 19327);
@@ -1363,6 +1379,9 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AwsCFTaskResponse.class, 543518);
     kryo.register(HelmFetchFileConfig.class, 543519);
     kryo.register(HelmFetchFileResult.class, 543520);
+    kryo.register(AzureWebAppNamesResponse.class, 543521);
+    kryo.register(AzureDeploymentSlotsResponse.class, 543522);
+    kryo.register(AzureDeploymentSlotResponse.class, 543523);
     kryo.register(HostValidationResponse.class, 5167);
     kryo.register(HostReachabilityInfo.class, 5172);
     kryo.register(HttpHelmRepoConfig.class, 7159);
@@ -1454,5 +1473,10 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(NotificationProcessingResponse.class, 55217);
     kryo.register(SmtpConfigResponse.class, 55219);
     kryo.register(io.harness.notification.SmtpConfig.class, 55299);
+    kryo.register(JenkinsTestConnectionTaskParams.class, 29117);
+    kryo.register(JenkinsTestConnectionTaskResponse.class, 29118);
+    kryo.register(JenkinsCapabilityHelper.class, 29302);
+    kryo.register(JenkinsValidationParams.class, 29303);
+    kryo.register(JenkinsArtifactDelegateRequest.class, 29304);
   }
 }

@@ -35,15 +35,13 @@ import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
-@RunWith(PowerMockRunner.class)
 @OwnedBy(HarnessTeam.PIPELINE)
 @PrepareForTest({SafeHttpCall.class})
 public class OrgFunctorTest extends CategoryTest {
@@ -57,14 +55,14 @@ public class OrgFunctorTest extends CategoryTest {
 
   @Before
   public void setUp() {
-    MockitoAnnotations.initMocks(this);
+    MockitoAnnotations.openMocks(this);
   }
 
   @Test
   @Owner(developers = BRIJESH)
   @Category(UnitTests.class)
   public void testBind() throws IOException {
-    PowerMockito.mockStatic(SafeHttpCall.class);
+    MockedStatic<SafeHttpCall> aStatic = Mockito.mockStatic(SafeHttpCall.class);
 
     Optional<OrganizationResponse> resData =
         Optional.of(OrganizationResponse.builder().organization(OrganizationDTO.builder().build()).build());
@@ -78,7 +76,8 @@ public class OrgFunctorTest extends CategoryTest {
     when(organizationClient.getOrganization(anyString(), anyString())).thenReturn(null);
     // Should throw exception due to NPE
     assertThatThrownBy(() -> orgFunctor.bind()).isInstanceOf(EngineFunctorException.class);
-    when(SafeHttpCall.execute(any())).thenReturn(responseDTO);
+
+    aStatic.when(() -> SafeHttpCall.execute(any())).thenReturn(responseDTO);
     assertEquals(orgFunctor.bind(), resData.get().getOrganization());
   }
 }

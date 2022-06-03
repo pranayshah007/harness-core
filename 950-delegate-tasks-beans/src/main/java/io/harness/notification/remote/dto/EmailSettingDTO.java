@@ -9,6 +9,7 @@ package io.harness.notification.remote.dto;
 
 import io.harness.notification.NotificationChannelType;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
@@ -18,9 +19,10 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
+@Schema(name = "EmailSettings", description = "Details of the Email settings configured in Harness.")
 public class EmailSettingDTO extends NotificationSettingDTO {
-  @NotNull private String subject;
-  @NotNull private String body;
+  @Schema(description = "Subject of the Email.") @NotNull private String subject;
+  @Schema(description = "Body of the Email.") @NotNull private String body;
 
   @Builder
   public EmailSettingDTO(String accountId, String recipient, String subject, String body) {

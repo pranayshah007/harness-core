@@ -17,6 +17,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.configfile.ConfigFileAttributes;
 import io.harness.cdng.configfile.mapper.ConfigFileOutcomeMapper;
+import io.harness.cdng.manifest.yaml.harness.HarnessFileType;
+import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.cdng.manifest.yaml.harness.HarnessStoreConfig;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.connector.ConnectorResponseDTO;
@@ -27,7 +29,11 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedTypeException;
 import io.harness.executions.steps.ExecutionNodeType;
+import io.harness.filestore.dto.node.FileStoreNodeDTO;
+import io.harness.filestore.service.FileStoreService;
 import io.harness.ng.core.NGAccess;
+import io.harness.ng.core.api.NGEncryptedDataService;
+import io.harness.ng.core.entities.NGEncryptedData;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -57,6 +63,8 @@ public class IndividualConfigFileStep implements SyncExecutable<ConfigFileStepPa
       StepType.newBuilder().setType(ExecutionNodeType.CONFIG_FILE.getName()).setStepCategory(StepCategory.STEP).build();
 
   @Named(DEFAULT_CONNECTOR_SERVICE) @Inject private ConnectorService connectorService;
+  @Inject private FileStoreService fileStoreService;
+  @Inject private NGEncryptedDataService ngEncryptedDataService;
 
   @Override
   public Class<ConfigFileStepParameters> getStepParametersClass() {
@@ -132,8 +140,28 @@ public class IndividualConfigFileStep implements SyncExecutable<ConfigFileStepPa
 
     String fileIdentifierRef = harnessStoreConfig.getFileReference().getValue();
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
-    IdentifierRefHelper.getIdentifierRef(fileIdentifierRef, ngAccess.getAccountIdentifier(),
+    IdentifierRef fileRef = IdentifierRefHelper.getIdentifierRef(fileIdentifierRef, ngAccess.getAccountIdentifier(),
         ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
+
+    HarnessStore harnessStore = (HarnessStore) harnessStoreConfig;
+    if (HarnessFileType.FILE_STORE == harnessStore.getFileType()) {
+      Optional<FileStoreNodeDTO> configFile = fileStoreService.get(fileRef.getAccountIdentifier(),
+          fileRef.getOrgIdentifier(), fileRef.getProjectIdentifier(), fileRef.getIdentifier(), false);
+
+      if (!configFile.isPresent()) {
+        throw new InvalidRequestException(
+            format("Config file not found in file store with identifier : [%s]", fileIdentifierRef));
+      }
+    }
+
+    if (HarnessFileType.ENCRYPTED == harnessStore.getFileType()) {
+      NGEncryptedData ngEncryptedData = ngEncryptedDataService.get(fileRef.getAccountIdentifier(),
+          fileRef.getOrgIdentifier(), fileRef.getProjectIdentifier(), fileRef.getIdentifier());
+      if (ngEncryptedData == null) {
+        throw new InvalidRequestException(
+            format("Config file not found in encrypted store with identifier : [%s]", fileIdentifierRef));
+      }
+    }
   }
 
   private void validateConnectorByRef(String configFileIdentifier, StoreConfig storeConfig, Ambiance ambiance) {

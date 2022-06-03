@@ -20,6 +20,7 @@ java_library(
         "//950-log-client:module",
         "//959-debezium-beans:module",
         "//955-delegate-beans:module",
+        "//959-common-entities:module",
         "//960-persistence:module",
         "//970-grpc:module",
         "//970-ng-commons:module",
@@ -48,7 +49,8 @@ java_library(
         "@maven//:junit_junit",
         "@maven//:org_assertj_assertj_core",
         "@maven//:org_mockito_mockito_core",
-        "@maven//:org_powermock_powermock_api_mockito",
+        "@maven//:org_mockito_mockito_inline",
+        "@maven//:org_powermock_powermock_api_mockito2",
     ],
 )
 

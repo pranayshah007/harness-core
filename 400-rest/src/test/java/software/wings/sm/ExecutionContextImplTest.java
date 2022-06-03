@@ -47,7 +47,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -1026,7 +1025,7 @@ public class ExecutionContextImplTest extends WingsBaseTest {
 
     doReturn(InstanceApiResponse.builder().instances(expected).build())
         .when(context)
-        .renderExpressionFromInstanceInfoVariables(anyString(), eq(true), any(InstanceInfoVariables.class));
+        .renderExpressionFromInstanceInfoVariables(any(), eq(true), any(InstanceInfoVariables.class));
     doReturn(sweepingOutputs)
         .when(sweepingOutputService)
         .findManyWithNamePrefix(any(SweepingOutputInquiry.class), eq(Scope.PHASE));
@@ -1050,7 +1049,7 @@ public class ExecutionContextImplTest extends WingsBaseTest {
 
     doReturn(InstanceApiResponse.builder().instances(expected).build())
         .when(context)
-        .renderExpressionFromInstanceInfoVariables(anyString(), eq(true), any(InstanceInfoVariables.class));
+        .renderExpressionFromInstanceInfoVariables(any(), eq(true), any(InstanceInfoVariables.class));
     doReturn(sweepingOutputs)
         .when(sweepingOutputService)
         .findManyWithNamePrefix(any(SweepingOutputInquiry.class), eq(Scope.WORKFLOW));
@@ -1086,10 +1085,10 @@ public class ExecutionContextImplTest extends WingsBaseTest {
                  .computeProviderName("gcp-name")
                  .build())
         .when(infrastructureMappingService)
-        .get(anyString(), anyString());
+        .get(any(), any());
     doReturn(InfrastructureDefinition.builder().infrastructure(GoogleKubernetesEngine.builder().build()).build())
         .when(infrastructureDefinitionService)
-        .get(anyString(), anyString());
+        .get(any(), any());
     doReturn(SettingAttribute.Builder.aSettingAttribute().withName("gcp-name").build())
         .when(settingsService)
         .get(eq("gcp-id"));
@@ -1158,7 +1157,7 @@ public class ExecutionContextImplTest extends WingsBaseTest {
     doReturn(WingsTestConstants.INFRA_MAPPING_ID).when(context).fetchInfraMappingId();
     doReturn(CustomDeploymentTypeDTO.builder().infraVariables(templateVariables).build())
         .when(customDeploymentTypeService)
-        .get(anyString(), anyString(), anyString());
+        .get(any(), any(), any());
     InfraMappingElementBuilder builder = InfraMappingElement.builder();
 
     InfrastructureMapping infra = CustomInfrastructureMapping.builder().infraVariables(infraVariables).build();
@@ -1186,7 +1185,7 @@ public class ExecutionContextImplTest extends WingsBaseTest {
     doReturn(WingsTestConstants.INFRA_MAPPING_ID).when(context).fetchInfraMappingId();
     doReturn(CustomDeploymentTypeDTO.builder().infraVariables(templateVariables).build())
         .when(customDeploymentTypeService)
-        .get(anyString(), anyString(), anyString());
+        .get(any(), any(), any());
     InfraMappingElementBuilder builder = InfraMappingElement.builder();
 
     InfrastructureMapping infra = CustomInfrastructureMapping.builder().infraVariables(emptyList()).build();
@@ -1208,7 +1207,7 @@ public class ExecutionContextImplTest extends WingsBaseTest {
     doReturn(WingsTestConstants.INFRA_MAPPING_ID).when(context).fetchInfraMappingId();
     doReturn(CustomDeploymentTypeDTO.builder().infraVariables(emptyList()).build())
         .when(customDeploymentTypeService)
-        .get(anyString(), anyString(), anyString());
+        .get(any(), any(), any());
     InfraMappingElementBuilder builder = InfraMappingElement.builder();
 
     InfrastructureMapping infra = CustomInfrastructureMapping.builder().infraVariables(emptyList()).build();
@@ -1226,9 +1225,7 @@ public class ExecutionContextImplTest extends WingsBaseTest {
     on(context).set("settingsService", settingsService);
     on(context).set("customDeploymentTypeService", customDeploymentTypeService);
     doReturn(WingsTestConstants.INFRA_MAPPING_ID).when(context).fetchInfraMappingId();
-    doReturn(CustomDeploymentTypeDTO.builder().build())
-        .when(customDeploymentTypeService)
-        .get(anyString(), anyString(), anyString());
+    doReturn(CustomDeploymentTypeDTO.builder().build()).when(customDeploymentTypeService).get(any(), any(), any());
     InfraMappingElementBuilder builder = InfraMappingElement.builder();
 
     InfrastructureMapping infra = CustomInfrastructureMapping.builder().infraVariables(null).build();

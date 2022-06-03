@@ -27,6 +27,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.git.model.ChangeType;
+import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntityType;
@@ -72,7 +73,6 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
 
   String INPUT_SET_IDENTIFIER = "identifier";
   String NAME = "identifier";
-  String YAML_GIT_CONFIG_REF = "git_config_ref";
   String YAML;
 
   InputSetEntity inputSetEntity;
@@ -115,7 +115,7 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
                          .orgIdentifier(ORG_IDENTIFIER)
                          .projectIdentifier(PROJ_IDENTIFIER)
                          .pipelineIdentifier(PIPELINE_IDENTIFIER)
-                         .yamlGitConfigRef(YAML_GIT_CONFIG_REF)
+                         .storeType(StoreType.INLINE)
                          .build();
 
     OVERLAY_YAML = "overlayInputSet:\n"
@@ -137,6 +137,7 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
                                 .projectIdentifier(PROJ_IDENTIFIER)
                                 .pipelineIdentifier(PIPELINE_IDENTIFIER)
                                 .inputSetReferences(inputSetReferences)
+                                .storeType(StoreType.INLINE)
                                 .build();
 
     String pipelineYamlFileName = "failure-strategy.yaml";
@@ -151,6 +152,7 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
                          .name(PIPELINE_IDENTIFIER)
                          .yaml(pipelineYaml)
                          .build();
+    doReturn(false).when(gitSyncSdkService).isGitSyncEnabled(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER);
   }
 
   @Test

@@ -16,7 +16,7 @@ import io.harness.logging.AutoLogContext;
 @OwnedBy(HarnessTeam.CDC)
 @TargetModule(HarnessModule._870_CG_ORCHESTRATION)
 public class StateExecutionInstanceLogContext extends AutoLogContext {
-  public static final String ID = "StateExecutionInstanceId";
+  public static final String ID = "stateExecutionInstanceId";
 
   public StateExecutionInstanceLogContext(String stateExecutionInstanceId, OverrideBehavior behavior) {
     super(ID, stateExecutionInstanceId, behavior);

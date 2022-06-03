@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Map;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -36,9 +37,10 @@ import org.hibernate.validator.constraints.NotBlank;
 @JsonInclude(NON_NULL)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
+@Schema(name = "AuditEvent", description = "This has the AuditEvent details defined in Harness.")
 public class AuditEventDTO {
-  String auditId;
-  @NotNull @NotBlank String insertId;
+  @Schema(description = "Identifier of the Audit.") String auditId;
+  @Schema(description = "Insert Identifier of the Audit.") @NotNull @NotBlank String insertId;
   @Valid @NotNull ResourceScopeDTO resourceScope;
 
   @Valid HttpRequestInfo httpRequestInfo;
@@ -48,19 +50,19 @@ public class AuditEventDTO {
 
   @NotNull @Valid AuthenticationInfoDTO authenticationInfo;
 
-  @NotNull ModuleType module;
+  @Schema(description = "Type of module associated with the Audit.") @NotNull ModuleType module;
   @Valid Environment environment;
 
   @NotNull @Valid ResourceDTO resource;
 
   @ApiModelProperty(hidden = true) @Valid YamlDiffRecordDTO yamlDiffRecord;
 
-  @NotNull Action action;
+  @Schema(description = "Action type associated with the Audit.") @NotNull Action action;
 
   @JsonTypeInfo(
       use = JsonTypeInfo.Id.NAME, property = "type", include = JsonTypeInfo.As.EXISTING_PROPERTY, visible = true)
   @Valid
   AuditEventData auditEventData;
 
-  @ApiModelProperty(hidden = true) Map<String, String> internalInfo;
+  @Schema(description = "Internal information.") @ApiModelProperty(hidden = true) Map<String, String> internalInfo;
 }

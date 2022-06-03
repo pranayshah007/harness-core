@@ -41,6 +41,11 @@ public class YamlConfig {
     fqnToValueMap = FQNMapGenerator.generateFQNMap(yamlMap);
   }
 
+  public YamlConfig(JsonNode jsonNode) {
+    yamlMap = jsonNode;
+    fqnToValueMap = FQNMapGenerator.generateFQNMap(yamlMap);
+  }
+
   public YamlConfig(Map<FQN, Object> fqnToValueMap, JsonNode originalYaml) {
     this.fqnToValueMap = fqnToValueMap;
     yamlMap = YamlMapGenerator.generateYamlMap(fqnToValueMap, originalYaml, false);

@@ -94,6 +94,12 @@ import io.harness.delegate.beans.connector.helm.HttpHelmAuthType;
 import io.harness.delegate.beans.connector.helm.HttpHelmAuthenticationDTO;
 import io.harness.delegate.beans.connector.helm.HttpHelmConnectorDTO;
 import io.harness.delegate.beans.connector.helm.HttpHelmUsernamePasswordDTO;
+import io.harness.delegate.beans.connector.jenkins.JenkinsAuthCredentialsDTO;
+import io.harness.delegate.beans.connector.jenkins.JenkinsAuthType;
+import io.harness.delegate.beans.connector.jenkins.JenkinsAuthenticationDTO;
+import io.harness.delegate.beans.connector.jenkins.JenkinsBearerTokenDTO;
+import io.harness.delegate.beans.connector.jenkins.JenkinsConnectorDTO;
+import io.harness.delegate.beans.connector.jenkins.JenkinsUserNamePasswordDTO;
 import io.harness.delegate.beans.connector.jira.JiraConnectorDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesAuthCredentialDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesAuthDTO;
@@ -380,5 +386,11 @@ public class ConnectorBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(AzureSystemAssignedMSIAuthDTO.class, 19809);
     kryo.register(AzureMSIAuthUADTO.class, 19810);
     kryo.register(AzureMSIAuthSADTO.class, 19811);
+    kryo.register(JenkinsAuthCredentialsDTO.class, 29112);
+    kryo.register(JenkinsAuthenticationDTO.class, 29113);
+    kryo.register(JenkinsAuthType.class, 29114);
+    kryo.register(JenkinsConnectorDTO.class, 29115);
+    kryo.register(JenkinsUserNamePasswordDTO.class, 29116);
+    kryo.register(JenkinsBearerTokenDTO.class, 29130);
   }
 }

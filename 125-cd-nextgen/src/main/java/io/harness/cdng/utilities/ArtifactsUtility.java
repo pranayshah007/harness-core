@@ -38,7 +38,7 @@ public class ArtifactsUtility {
   }
 
   public YamlField fetchArtifactYamlFieldAndSetYamlUpdates(
-      YamlNode serviceConfigNode, Boolean isUseFromStage, YamlUpdates.Builder yamlUpdates) {
+      YamlNode serviceConfigNode, boolean isUseFromStage, YamlUpdates.Builder yamlUpdates) {
     if (!isUseFromStage) {
       return serviceConfigNode.getField(YamlTypes.SERVICE_DEFINITION)
           .getNode()

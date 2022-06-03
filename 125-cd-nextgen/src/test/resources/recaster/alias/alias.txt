@@ -1,3 +1,7 @@
+io.harness.cdng.gitops.CreatePROutcome
+io.harness.cdng.gitops.CreatePRStepNode
+io.harness.cdng.gitOps.CreatePRPassThroughData
+io.harness.cdng.gitops.CreatePRStepInfo
 io.harness.cdng.k8s.K8sCanaryStepParameters
 io.harness.cdng.provision.terraform.TerraformStepConfigurationParameters
 io.harness.cdng.infra.yaml.K8sGcpInfrastructure
@@ -61,6 +65,7 @@ io.harness.cdng.provision.terraform.TerraformPlanStepInfo
 io.harness.cdng.manifest.yaml.HelmChartManifestOutcome
 io.harness.cdng.service.beans.ServiceUseFromStage$Overrides
 io.harness.cdng.provision.terraform.TerraformApplyOutcome
+io.harness.cdng.provision.terraform.outcome.TerraformPlanOutcome
 io.harness.steps.approval.step.harness.HarnessApprovalStepInfo
 io.harness.steps.http.HttpOutcome
 io.harness.cdng.infra.yaml.K8SDirectInfrastructure
@@ -367,3 +372,9 @@ io.harness.cdng.configfile.steps.ConfigFileStepParameters
 io.harness.cdng.configfile.ConfigFileAttributes
 io.harness.cdng.configfile.steps.ConfigFilesOutcome
 io.harness.cdng.manifest.yaml.harness.HarnessStore
+io.harness.cdng.gitops.steps.ClusterStepParameters
+io.harness.steps.customstage.CustomStageSpecParams
+io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity
+io.harness.cdng.infra.beans.AzureWebAppInfraMapping
+io.harness.cdng.infra.yaml.AzureWebAppInfrastructure
+io.harness.cdng.infra.beans.AzureWebAppInfrastructureOutcome

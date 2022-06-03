@@ -38,6 +38,7 @@ public class PlanNode {
   // Input/Outputs
   StepParameters stepParameters;
   String stepInputs;
+  @NonFinal @lombok.Setter String executionInputTemplate;
   @Singular List<RefObject> refObjects;
 
   // Hooks

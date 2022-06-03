@@ -217,8 +217,12 @@ public class ConfigFile extends BaseFile implements EncryptableSetting {
   }
 
   public ConfigFileDto toDto() {
-    Map<String, Integer> envVersionMap = getEnvIdVersionMap().entrySet().stream().collect(
-        Collectors.toMap(e -> e.getKey(), e -> e.getValue().getVersion()));
+    Map<String, Integer> envVersionMap =
+        getEnvIdVersionMap()
+            .entrySet()
+            .stream()
+            .filter(e -> e.getValue() != null)
+            .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue().getVersion()));
     return new ConfigFileDto(
         getUuid(), getRelativeFilePath(), envVersionMap, getSize(), isEncrypted(), getDefaultVersion());
   }
