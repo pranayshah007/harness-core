@@ -25,7 +25,6 @@ import io.harness.beans.ExecutionNode;
 import io.harness.engine.executions.node.NodeExecutionService;
 import io.harness.engine.governance.PolicyEvaluationFailureException;
 import io.harness.exception.EntityNotFoundException;
-import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorWrapperDTO;
 import io.harness.git.model.ChangeType;
 import io.harness.gitaware.helper.GitAwareContextHelper;
@@ -43,7 +42,6 @@ import io.harness.notification.bean.NotificationRules;
 import io.harness.plancreator.steps.http.PmsAbstractStepNode;
 import io.harness.pms.annotations.PipelineServiceAuth;
 import io.harness.pms.contracts.governance.GovernanceMetadata;
-import io.harness.pms.contracts.governance.PolicySetMetadata;
 import io.harness.pms.governance.PipelineSaveResponse;
 import io.harness.pms.helpers.PipelineCloneHelper;
 import io.harness.pms.helpers.PmsFeatureFlagHelper;
@@ -53,6 +51,7 @@ import io.harness.pms.pipeline.mappers.PMSPipelineDtoMapper;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipeline.service.PMSPipelineServiceHelper;
 import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
+import io.harness.pms.pipeline.service.PipelineCRUDErrorResponse;
 import io.harness.pms.pipeline.service.PipelineCRUDResult;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.pms.variables.VariableCreatorMergeService;
@@ -80,7 +79,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
-import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.Consumes;
@@ -174,16 +172,7 @@ public class PipelineResource implements YamlSchemaResource {
         pipelineEntity.getIdentifier(), projectId, orgId, accountId));
 
     PipelineCRUDResult pipelineCRUDResult = pmsPipelineService.create(pipelineEntity);
-    GovernanceMetadata governanceMetadata = pipelineCRUDResult.getGovernanceMetadata();
-    if (governanceMetadata.getDeny()) {
-      List<String> denyingPolicySetIds = governanceMetadata.getDetailsList()
-                                             .stream()
-                                             .filter(PolicySetMetadata::getDeny)
-                                             .map(PolicySetMetadata::getIdentifier)
-                                             .collect(Collectors.toList());
-      throw new InvalidRequestException(
-          "Pipeline does not follow the Policies in these Policy Sets: " + denyingPolicySetIds.toString());
-    }
+    PipelineCRUDErrorResponse.checkForGovernanceErrorAndThrow(pipelineCRUDResult.getGovernanceMetadata());
     PipelineEntity createdEntity = pipelineCRUDResult.getPipelineEntity();
     return ResponseDTO.newResponse(createdEntity.getVersion().toString(), createdEntity.getIdentifier());
   }
@@ -417,22 +406,11 @@ public class PipelineResource implements YamlSchemaResource {
       @RequestBody(required = true, description = "Pipeline YAML to be updated") @NotNull String yaml) {
     log.info(String.format("Updating pipeline with identifier %s in project %s, org %s, account %s", pipelineId,
         projectId, orgId, accountId));
-    PipelineEntity pipelineEntity = PMSPipelineDtoMapper.toPipelineEntity(accountId, orgId, projectId, yaml);
-    if (!pipelineEntity.getIdentifier().equals(pipelineId)) {
-      throw new InvalidRequestException("Pipeline identifier in URL does not match pipeline identifier in yaml");
-    }
-    GovernanceMetadata governanceMetadata = pipelineServiceHelper.validatePipelineYaml(pipelineEntity);
-    if (governanceMetadata.getDeny()) {
-      List<String> denyingPolicySetIds = governanceMetadata.getDetailsList()
-                                             .stream()
-                                             .filter(PolicySetMetadata::getDeny)
-                                             .map(PolicySetMetadata::getIdentifier)
-                                             .collect(Collectors.toList());
-      throw new InvalidRequestException(
-          "Pipeline does not follow the Policies in these Policy Sets: " + denyingPolicySetIds.toString());
-    }
-    PipelineEntity withVersion = pipelineEntity.withVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
-    PipelineEntity updatedEntity = pmsPipelineService.updatePipelineYaml(withVersion, ChangeType.MODIFY);
+    PipelineEntity withVersion =
+        PMSPipelineDtoMapper.toPipelineEntityWithVersion(accountId, orgId, projectId, pipelineId, yaml, ifMatch);
+    PipelineCRUDResult pipelineCRUDResult = pmsPipelineService.updatePipelineYaml(withVersion, ChangeType.MODIFY);
+    PipelineCRUDErrorResponse.checkForGovernanceErrorAndThrow(pipelineCRUDResult.getGovernanceMetadata());
+    PipelineEntity updatedEntity = pipelineCRUDResult.getPipelineEntity();
     return ResponseDTO.newResponse(updatedEntity.getVersion().toString(), updatedEntity.getIdentifier());
   }
 
@@ -465,18 +443,14 @@ public class PipelineResource implements YamlSchemaResource {
       @RequestBody(required = true, description = "Pipeline YAML to be updated") @NotNull String yaml) {
     log.info(String.format("Updating pipeline with identifier %s in project %s, org %s, account %s", pipelineId,
         projectId, orgId, accountId));
-    PipelineEntity pipelineEntity = PMSPipelineDtoMapper.toPipelineEntity(accountId, orgId, projectId, yaml);
-    if (!pipelineEntity.getIdentifier().equals(pipelineId)) {
-      throw new InvalidRequestException("Pipeline identifier in URL does not match pipeline identifier in yaml");
-    }
-
-    GovernanceMetadata governanceMetadata = pipelineServiceHelper.validatePipelineYaml(pipelineEntity);
+    PipelineEntity withVersion =
+        PMSPipelineDtoMapper.toPipelineEntityWithVersion(accountId, orgId, projectId, pipelineId, yaml, ifMatch);
+    PipelineCRUDResult pipelineCRUDResult = pmsPipelineService.updatePipelineYaml(withVersion, ChangeType.MODIFY);
+    GovernanceMetadata governanceMetadata = pipelineCRUDResult.getGovernanceMetadata();
     if (governanceMetadata.getDeny()) {
       return ResponseDTO.newResponse(PipelineSaveResponse.builder().governanceMetadata(governanceMetadata).build());
     }
-
-    PipelineEntity withVersion = pipelineEntity.withVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
-    PipelineEntity updatedEntity = pmsPipelineService.updatePipelineYaml(withVersion, ChangeType.MODIFY);
+    PipelineEntity updatedEntity = pipelineCRUDResult.getPipelineEntity();
     return ResponseDTO.newResponse(updatedEntity.getVersion().toString(),
         PipelineSaveResponse.builder()
             .identifier(updatedEntity.getIdentifier())
