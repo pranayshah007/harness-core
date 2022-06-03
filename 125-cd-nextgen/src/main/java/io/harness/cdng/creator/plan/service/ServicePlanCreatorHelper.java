@@ -13,14 +13,13 @@ import io.harness.cdng.pipeline.PipelineInfrastructure;
 import io.harness.cdng.service.beans.ServiceConfig;
 import io.harness.cdng.service.beans.ServiceYamlV2;
 import io.harness.cdng.visitor.YamlTypes;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.service.entity.ServiceEntity;
-import io.harness.ng.core.service.mappers.NGServiceEntityMapper;
 import io.harness.ng.core.service.services.ServiceEntityService;
-import io.harness.ng.core.service.yaml.NGServiceConfig;
-import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.pms.contracts.plan.Dependencies;
 import io.harness.pms.contracts.plan.Dependency;
+import io.harness.pms.merger.helpers.MergeHelper;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.YamlField;
@@ -35,11 +34,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import lombok.experimental.UtilityClass;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Contains method useful for service plan creator
  */
 @UtilityClass
+@Slf4j
 public class ServicePlanCreatorHelper {
   public YamlField getResolvedServiceField(YamlField parentSpecField, DeploymentStageNode stageNode,
       ServicePlanCreator servicePlanCreator, ServiceEntityService serviceEntityService, PlanCreationContext ctx) {
@@ -116,31 +117,44 @@ public class ServicePlanCreatorHelper {
     String accountIdentifier = ctx.getMetadata().getAccountIdentifier();
     String orgIdentifier = ctx.getMetadata().getOrgIdentifier();
     String projectIdentifier = ctx.getMetadata().getProjectIdentifier();
-    Optional<ServiceEntity> serviceEntity = serviceEntityService.get(
-        accountIdentifier, orgIdentifier, projectIdentifier, serviceYamlV2.getServiceRef().getValue(), false);
+    String serviceRef = serviceYamlV2.getServiceRef().getValue();
+    Optional<ServiceEntity> serviceEntity =
+        serviceEntityService.get(accountIdentifier, orgIdentifier, projectIdentifier, serviceRef, false);
 
-    if (!serviceEntity.isPresent()) {
+    if (serviceEntity.isEmpty()) {
       throw new InvalidRequestException(
           String.format("No service found with %s identifier in %s project in %s org and %s account",
               serviceYamlV2.getServiceRef(), projectIdentifier, orgIdentifier, accountIdentifier));
     }
 
-    NGServiceConfig ngServiceConfig = NGServiceEntityMapper.toNGServiceConfig(serviceEntity.get());
-    NGServiceV2InfoConfig config = ngServiceConfig.getNgServiceV2InfoConfig();
-    if (config.getServiceDefinition() == null) {
-      throw new InvalidRequestException(
-          "Invalid Service being referred as serviceDefinition section is not there in DeploymentStage - "
-          + stageNode.getIdentifier() + " for service - " + config.getIdentifier());
+    String serviceYaml = serviceEntity.get().getYaml();
+    if (EmptyPredicate.isEmpty(serviceYaml)) {
+      log.error("Service entity is not valid as it doesn't contain yaml.");
+      throw new InvalidRequestException("Service Entity is not valid for serviceRef - " + serviceRef);
     }
 
     try {
-      String yamlString = YamlPipelineUtils.getYamlString(config);
-      YamlField yamlField = YamlUtils.injectUuidInYamlField(yamlString);
+      if (EmptyPredicate.isNotEmpty(serviceYamlV2.getServiceInputs())) {
+        serviceYaml = mergeServiceInputsIntoService(serviceYaml, serviceYamlV2.getServiceInputs());
+      }
+      YamlField yamlField = YamlUtils.injectUuidInYamlField(serviceYaml);
+      if (yamlField.getNode().getField(YamlTypes.SERVICE_DEFINITION) == null) {
+        throw new InvalidRequestException(
+            "Invalid Service being referred as serviceDefinition section is not there in DeploymentStage - "
+            + stageNode.getIdentifier() + " for service - " + serviceRef);
+      }
       return new YamlField(YamlTypes.SERVICE_ENTITY,
           new YamlNode(YamlTypes.SERVICE_ENTITY, yamlField.getNode().getCurrJsonNode(), parentSpecField.getNode()));
     } catch (IOException e) {
       throw new InvalidRequestException("Invalid service yaml in stage - " + stageNode.getIdentifier(), e);
     }
+  }
+
+  private String mergeServiceInputsIntoService(String originalServiceYaml, Map<String, Object> serviceInputs) {
+    Map<String, Object> serviceInputsYaml = new HashMap<>();
+    serviceInputsYaml.put(YamlTypes.SERVICE_ENTITY, serviceInputs);
+    return MergeHelper.mergeInputSetFormatYamlToOriginYaml(
+        originalServiceYaml, YamlPipelineUtils.writeYamlString(serviceInputsYaml));
   }
 
   public String fetchServiceSpecUuid(YamlField serviceField) {
