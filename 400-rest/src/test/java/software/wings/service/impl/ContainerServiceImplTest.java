@@ -193,7 +193,7 @@ public class ContainerServiceImplTest extends WingsBaseTest {
     when(controller_1.getMetadata()).thenReturn(metaData_1);
     when(metaData_1.getName()).thenReturn("deployment-name");
     List<? extends HasMetadata> controllers = asList(controller_1);
-    doReturn(controllers).when(kubernetesContainerService.getControllers(any(KubernetesConfig.class), anyMap()));
+    doReturn(controllers).when(kubernetesContainerService).getControllers(any(KubernetesConfig.class), anyMap());
 
     ContainerServiceParams containerServiceParams =
         ContainerServiceParams.builder()

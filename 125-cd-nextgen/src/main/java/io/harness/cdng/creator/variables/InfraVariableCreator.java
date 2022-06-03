@@ -123,6 +123,10 @@ public class InfraVariableCreator {
           addVariablesForServerlessAwsInfra(infraDefNode, yamlPropertiesMap);
           break;
 
+        case InfrastructureKind.AZURE_WEB_APP:
+          addVariablesForAzureWebAppInfra(infraDefNode, yamlPropertiesMap);
+          break;
+
         default:
           throw new InvalidRequestException("Invalid infra definition type");
       }
@@ -166,6 +170,20 @@ public class InfraVariableCreator {
     addVariableForYamlType(YamlTypes.CLUSTER, infraSpecNode, yamlPropertiesMap);
     addVariableForYamlType(YamlTypes.NAMESPACE, infraSpecNode, yamlPropertiesMap);
     addVariableForYamlType(YamlTypes.RELEASE_NAME, infraSpecNode, yamlPropertiesMap);
+  }
+
+  private void addVariablesForAzureWebAppInfra(YamlField infraDefNode, Map<String, YamlProperties> yamlPropertiesMap) {
+    YamlField infraSpecNode = infraDefNode.getNode().getField(YamlTypes.SPEC);
+    if (infraSpecNode == null) {
+      return;
+    }
+
+    addVariableForYamlType(YamlTypes.CONNECTOR_REF, infraSpecNode, yamlPropertiesMap);
+    addVariableForYamlType(YamlTypes.SUBSCRIPTION, infraSpecNode, yamlPropertiesMap);
+    addVariableForYamlType(YamlTypes.RESOURCE_GROUP, infraSpecNode, yamlPropertiesMap);
+    addVariableForYamlType(YamlTypes.APP_SERVICE, infraSpecNode, yamlPropertiesMap);
+    addVariableForYamlType(YamlTypes.DEPLOYMENT_SLOT, infraSpecNode, yamlPropertiesMap);
+    addVariableForYamlType(YamlTypes.TARGET_SLOT, infraSpecNode, yamlPropertiesMap);
   }
 
   private static void addVariablesForPhysicalDataCenterInfra(

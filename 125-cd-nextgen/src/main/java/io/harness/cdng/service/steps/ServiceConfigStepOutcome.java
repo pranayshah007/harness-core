@@ -12,6 +12,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.common.VariablesSweepingOutput;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
+import io.harness.cdng.configfile.steps.ConfigFilesOutcome;
 import io.harness.cdng.manifest.steps.ManifestsOutcome;
 import io.harness.pms.sdk.core.data.Outcome;
 
@@ -31,4 +32,5 @@ public class ServiceConfigStepOutcome implements Outcome {
   VariablesSweepingOutput variablesResult;
   ArtifactsOutcome artifactResults;
   ManifestsOutcome manifestResults;
+  ConfigFilesOutcome configFileResults;
 }

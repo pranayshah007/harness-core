@@ -12,9 +12,13 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.execution.ExecutionInputInstance;
 
+import java.util.List;
+import java.util.Set;
+
 @OwnedBy(PIPELINE)
 public interface ExecutionInputService {
-  void continueExecution(String nodeExecutionId);
+  boolean continueExecution(String nodeExecutionId, String executionInputYaml);
   ExecutionInputInstance getExecutionInputInstance(String nodeExecutionId);
   ExecutionInputInstance save(ExecutionInputInstance executionInputInstance);
+  List<ExecutionInputInstance> getExecutionInputInstances(Set<String> nodeExecutionIds);
 }

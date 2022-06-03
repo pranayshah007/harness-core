@@ -49,7 +49,7 @@ public class ServiceSpecStepTest extends CategoryTest {
             .stageOverrideVariables(
                 ParameterField.createValueField(Collections.singletonList(prepareVariable("v1", "12"))))
             .build();
-    Map<String, Object> finalVariables = serviceSpecStep.getFinalVariablesMap(ambiance, stepParameters, null);
+    Map<String, Object> finalVariables = serviceSpecStep.getFinalVariablesMap(ambiance, stepParameters, null, null);
     assertThat(finalVariables).isNotNull();
     assertThat(((ParameterField<?>) finalVariables.get("v1")).getValue()).isEqualTo("10");
     assertThat(((ParameterField<?>) finalVariables.get("v2")).getValue()).isEqualTo("20");

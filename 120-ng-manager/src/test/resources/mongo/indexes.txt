@@ -731,6 +731,7 @@ serviceInstance {"name": "createdAt_1", "background": true} {"createdAt": 1}
 serviceInstance {"name": "hostId_1", "background": true} {"hostId": 1}
 serviceInstance {"name": "infraMappingId_1", "background": true} {"infraMappingId": 1}
 serviceInstance {"name": "publicDns_1", "background": true} {"publicDns": 1}
+serviceOverridesNG {"name": "unique_accountId_organizationIdentifier_projectIdentifier_environmentRef_serviceRef", "unique": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "environmentRef": 1, "serviceRef": 1}
 serviceSecrets {"name": "serviceType_1", "unique": true} {"serviceType": 1}
 serviceTemplates {"name": "accountId_1", "background": true} {"accountId": 1}
 serviceTemplates {"name": "appId_1", "background": true} {"appId": 1}

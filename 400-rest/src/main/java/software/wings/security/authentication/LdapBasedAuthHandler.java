@@ -22,6 +22,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EncryptedData;
 import io.harness.beans.SecretText;
+import io.harness.delegate.NoEligibleDelegatesInAccountException;
+import io.harness.delegate.beans.NoAvailableDelegatesException;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.logging.AutoLogContext;
 import io.harness.ng.core.account.AuthenticationMechanism;
@@ -111,6 +114,9 @@ public class LdapBasedAuthHandler implements AuthHandler {
         return new AuthenticationResponse(user);
       }
       throw new WingsException(INVALID_CREDENTIAL, USER);
+    } catch (NoAvailableDelegatesException | NoEligibleDelegatesInAccountException e) {
+      throw new InvalidRequestException(
+          "Unable to connect to LDAP server, please try after some time. If the problem persist, please contact your admin");
     }
   }
 

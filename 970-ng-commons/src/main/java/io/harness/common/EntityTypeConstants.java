@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 
 @OwnedBy(PL)
 public interface EntityTypeConstants {
+  String GITOPS_CREATE_PR = "CreatePR";
   String PROJECTS = "Projects";
   String PIPELINES = "Pipelines";
   String PIPELINE_STEPS = "PipelineSteps";

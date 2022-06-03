@@ -12,7 +12,6 @@ import static io.harness.rule.OwnerRule.UTSAV;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
@@ -24,20 +23,27 @@ import io.harness.maintenance.MaintenanceController;
 import io.harness.rule.Owner;
 
 import com.codahale.metrics.health.HealthCheck;
+import com.google.inject.Inject;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
 @OwnedBy(CE)
+@RunWith(PowerMockRunner.class)
+@PrepareForTest(MaintenanceController.class)
 public class HealthResourceTest extends CategoryTest {
   @Mock private HealthService healthService;
-  @InjectMocks private HealthResource healthResource;
+  @Inject @InjectMocks private HealthResource healthResource;
 
   @Before
   public void setup() {
-    mockStatic(MaintenanceController.class);
+    PowerMockito.mockStatic(MaintenanceController.class);
   }
 
   @Test

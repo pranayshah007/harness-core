@@ -23,7 +23,7 @@ import static software.wings.utils.WingsTestConstants.WORKFLOW_EXECUTION_ID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 
@@ -384,7 +384,7 @@ public class InfrastructureMappingServiceImplTest extends WingsBaseTest {
   @Owner(developers = ANIL)
   @Category(UnitTests.class)
   public void testValidateAzureWebAppInfraMapping() {
-    doReturn(aSettingAttribute().build()).when(settingsService).get(anyString());
+    doReturn(aSettingAttribute().build()).when(settingsService).get(any());
     final AzureWebAppInfrastructureMapping infrastructureMapping =
         AzureWebAppInfrastructureMapping.builder().subscriptionId("SubsId").resourceGroup("ResName").build();
 
@@ -405,7 +405,7 @@ public class InfrastructureMappingServiceImplTest extends WingsBaseTest {
   @Owner(developers = SATYAM)
   @Category(UnitTests.class)
   public void testValidateAzureVMSSInfraMapping() {
-    doReturn(aSettingAttribute().build()).when(settingsService).get(anyString());
+    doReturn(aSettingAttribute().build()).when(settingsService).get(any());
 
     final AzureVMSSInfrastructureMapping infrastructureMapping = AzureVMSSInfrastructureMapping.builder()
                                                                      .baseVMSSName("BaseVMSS")
@@ -456,7 +456,7 @@ public class InfrastructureMappingServiceImplTest extends WingsBaseTest {
   @Owner(developers = ADWAIT)
   @Category(UnitTests.class)
   public void testValidateEcsInfraMapping() {
-    doReturn(aSettingAttribute().build()).when(settingsService).get(anyString());
+    doReturn(aSettingAttribute().build()).when(settingsService).get(any());
 
     final EcsInfrastructureMapping ecsInfrastructureMapping =
         EcsInfrastructureMapping.builder().clusterName("c1").region(Regions.US_EAST_1.getName()).build();

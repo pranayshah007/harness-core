@@ -10,6 +10,7 @@ package io.harness.ngtriggers.eventmapper.filters.impl;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.ADWAIT;
 import static io.harness.rule.OwnerRule.ALEKSANDAR;
+import static io.harness.rule.OwnerRule.DEV_MITTAL;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -58,7 +59,9 @@ public class GitWebhookTriggerRepoFilterTest extends CategoryTest {
   @Mock private GitProviderDataObtainmentManager dataObtainmentManager;
   @Inject @InjectMocks private GitWebhookTriggerRepoFilter filter;
   private static List<TriggerDetails> triggerDetailsList;
+  private static List<TriggerDetails> triggerDetailsList1;
   private static List<ConnectorResponseDTO> connectors;
+  private static List<ConnectorResponseDTO> connectors1;
   private static Repository repository1 = Repository.builder()
                                               .httpURL("https://github.com/owner1/repo1.git")
                                               .sshURL("git@github.com:owner1/repo1.git")
@@ -156,7 +159,30 @@ public class GitWebhookTriggerRepoFilterTest extends CategoryTest {
             .connector(ConnectorInfoDTO.builder()
                            .connectorConfig(GithubConnectorDTO.builder()
                                                 .connectionType(GitConnectionType.ACCOUNT)
-                                                .url("https://github.com/owner1")
+                                                .url("http://github.com/owner1")
+                                                .build())
+                           .orgIdentifier("org")
+                           .projectIdentifier("proj")
+                           .identifier("con1")
+                           .build())
+            .build();
+    ConnectorResponseDTO connectorResponseDTO4 =
+        ConnectorResponseDTO.builder()
+            .connector(ConnectorInfoDTO.builder()
+                           .connectorConfig(GithubConnectorDTO.builder()
+                                                .connectionType(GitConnectionType.ACCOUNT)
+                                                .url("https://www.github.com/owner1")
+                                                .build())
+                           .orgIdentifier("org")
+                           .identifier("con1")
+                           .build())
+            .build();
+    ConnectorResponseDTO connectorResponseDTO5 =
+        ConnectorResponseDTO.builder()
+            .connector(ConnectorInfoDTO.builder()
+                           .connectorConfig(GithubConnectorDTO.builder()
+                                                .connectionType(GitConnectionType.ACCOUNT)
+                                                .url("http://www.github.com/owner1")
                                                 .build())
                            .orgIdentifier("org")
                            .projectIdentifier("proj")
@@ -165,7 +191,9 @@ public class GitWebhookTriggerRepoFilterTest extends CategoryTest {
             .build();
 
     triggerDetailsList = asList(details1, details2, details3);
+    triggerDetailsList1 = asList(details2, details3);
     connectors = asList(connectorResponseDTO1, connectorResponseDTO2, connectorResponseDTO3);
+    connectors1 = asList(connectorResponseDTO4, connectorResponseDTO5);
   }
 
   @Before
@@ -229,6 +257,47 @@ public class GitWebhookTriggerRepoFilterTest extends CategoryTest {
     triggerDetails = webhookEventMappingResponse.getTriggers();
     assertThat(triggerDetails.size()).isEqualTo(1);
     assertThat(triggerDetails.get(0)).isEqualTo(triggerDetailsList.get(2));
+  }
+
+  @Test
+  @Owner(developers = DEV_MITTAL)
+  @Category(UnitTests.class)
+  public void applyRepoUrlFilterTest1() {
+    doReturn(connectors1).when(ngTriggerService).fetchConnectorsByFQN(eq("acc"), anyList());
+
+    FilterRequestData filterRequestData =
+        FilterRequestData.builder()
+            .accountId("p")
+            .webhookPayloadData(
+                WebhookPayloadData.builder()
+                    .originalEvent(TriggerWebhookEvent.builder().accountId("acc").sourceRepoType("GITHUB").build())
+                    .webhookEvent(PRWebhookEvent.builder().repository(repository2).build())
+                    .repository(repository2)
+                    .build())
+            .details(triggerDetailsList1)
+            .build();
+    WebhookEventMappingResponse webhookEventMappingResponse = filter.applyFilter(filterRequestData);
+    assertThat(webhookEventMappingResponse.isFailedToFindTrigger()).isFalse();
+    List<TriggerDetails> triggerDetails = webhookEventMappingResponse.getTriggers();
+    assertThat(triggerDetails.size()).isEqualTo(1);
+    assertThat(triggerDetails.get(0)).isEqualTo(triggerDetailsList1.get(0));
+
+    filterRequestData =
+        FilterRequestData.builder()
+            .accountId("p")
+            .webhookPayloadData(
+                WebhookPayloadData.builder()
+                    .originalEvent(TriggerWebhookEvent.builder().accountId("acc").sourceRepoType("GITHUB").build())
+                    .webhookEvent(PRWebhookEvent.builder().repository(repository3).build())
+                    .repository(repository3)
+                    .build())
+            .details(triggerDetailsList1)
+            .build();
+    webhookEventMappingResponse = filter.applyFilter(filterRequestData);
+    assertThat(webhookEventMappingResponse.isFailedToFindTrigger()).isFalse();
+    triggerDetails = webhookEventMappingResponse.getTriggers();
+    assertThat(triggerDetails.size()).isEqualTo(1);
+    assertThat(triggerDetails.get(0)).isEqualTo(triggerDetailsList1.get(1));
   }
 
   @Test
