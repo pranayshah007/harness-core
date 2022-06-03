@@ -14,6 +14,7 @@ import static software.wings.utils.WingsTestConstants.APP_ID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Fail.fail;
+import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.when;
@@ -244,8 +245,7 @@ public class HelmChartConfigHelperServiceTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldHandleChartNamesProperly() {
     when(executionContext.renderExpression(anyString())).thenAnswer(i -> i.getArgument(0, String.class));
-    when(mockFeatureFlagService.isEnabled(Matchers.eq(FeatureName.HELM_CHART_NAME_SPLIT), anyString()))
-        .thenReturn(true);
+    when(mockFeatureFlagService.isEnabled(Matchers.eq(FeatureName.HELM_CHART_NAME_SPLIT), any())).thenReturn(true);
 
     handleChartNameForHelmRepo();
     handleChartNameForNoneRepoAndUrl();

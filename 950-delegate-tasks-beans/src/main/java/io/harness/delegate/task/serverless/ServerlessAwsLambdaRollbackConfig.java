@@ -19,4 +19,5 @@ import lombok.Value;
 @Builder
 public class ServerlessAwsLambdaRollbackConfig implements ServerlessRollbackConfig {
   String previousVersionTimeStamp;
+  boolean isFirstDeployment;
 }

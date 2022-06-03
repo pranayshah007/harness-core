@@ -143,7 +143,6 @@ import software.wings.beans.RancherKubernetesInfrastructureMapping;
 import software.wings.beans.Role;
 import software.wings.beans.RoleType;
 import software.wings.beans.ServiceInstance;
-import software.wings.beans.ServiceVariable;
 import software.wings.beans.Setup;
 import software.wings.beans.Setup.SetupStatus;
 import software.wings.beans.TechStack;
@@ -351,8 +350,6 @@ public class ManagerKryoRegistrar implements KryoRegistrar {
     kryo.register(AppPermission.class, 5351);
     kryo.register(UserGroup.class, 5349);
     kryo.register(ServiceInstance.class, 5028);
-    kryo.register(ServiceVariable.OverrideType.class, 5361);
-    kryo.register(ServiceVariable.class, 5359);
     kryo.register(SSOType.class, 5503);
     kryo.register(User.class, 5355);
     kryo.register(UserInvite.class, 5182);

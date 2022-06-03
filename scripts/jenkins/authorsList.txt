@@ -282,3 +282,4 @@ Amit Kumar Das amit.das@harness.io
 Sarthak Jain sarthak.jain@harness.io
 Abhishek Abhishek abhishek.abhishek@harness.io
 Ershad Mohammad ershad.ali@harness.io
+Jimit Gandhi jimit.gandhi@harness.io

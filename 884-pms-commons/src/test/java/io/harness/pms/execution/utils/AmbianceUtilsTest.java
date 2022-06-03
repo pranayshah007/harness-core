@@ -317,6 +317,6 @@ public class AmbianceUtilsTest extends CategoryTest {
   public void testGetPostFixForStrategyStage() {
     Ambiance ambiance = buildAmbianceUsingStrategyMetadata();
     String strategyPostfix = AmbianceUtils.getStrategyPostfix(ambiance);
-    assertThat(strategyPostfix).isEqualTo("1");
+    assertThat(strategyPostfix).isEqualTo("_1");
   }
 }

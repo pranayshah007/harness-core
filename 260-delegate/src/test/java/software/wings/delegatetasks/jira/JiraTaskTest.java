@@ -21,7 +21,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyMap;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -154,7 +153,7 @@ public class JiraTaskTest extends CategoryTest {
     JiraTaskParameters taskParameters = getTaskParams(JiraAction.SEARCH_USER);
     List<JiraUserData> mockUserList = new ArrayList<>(Arrays.asList(new JiraUserData("UserId", "User Name", true)));
     doReturn(jiraNGClient).when(spyJiraTask).getNGJiraClient(taskParameters);
-    doReturn(mockUserList).when(jiraNGClient).getUsers(anyString(), anyString(), anyString());
+    doReturn(mockUserList).when(jiraNGClient).getUsers(any(), any(), any());
 
     JiraExecutionData jiraExecutionData =
         JiraExecutionData.builder().executionStatus(ExecutionStatus.SUCCESS).userSearchList(mockUserList).build();
@@ -177,10 +176,8 @@ public class JiraTaskTest extends CategoryTest {
     List<JiraUserData> userDataList = Arrays.asList(new JiraUserData("accountId", "Lucas", true));
 
     doReturn(jiraNGClient).when(spyJiraTask).getNGJiraClient(taskParameters);
-    doReturn(userDataList).when(jiraNGClient).getUsers(anyString(), anyString(), anyString());
-    doThrow(new JiraClientException("error"))
-        .when(jiraNGClient)
-        .updateIssue(anyString(), anyString(), anyString(), anyMap());
+    doReturn(userDataList).when(jiraNGClient).getUsers(any(), any(), any());
+    doThrow(new JiraClientException("error")).when(jiraNGClient).updateIssue(any(), any(), any(), anyMap());
 
     DelegateResponseData delegateResponseData = spyJiraTask.run(new Object[] {taskParameters});
     assertThat(delegateResponseData).hasFieldOrPropertyWithValue("executionStatus", ExecutionStatus.FAILED);
@@ -200,7 +197,7 @@ public class JiraTaskTest extends CategoryTest {
         Arrays.asList(new JiraUserData("accountId", "Lucas", true), new JiraUserData("accountI2d", "Lucas", true));
 
     doReturn(jiraNGClient).when(spyJiraTask).getNGJiraClient(taskParameters);
-    doReturn(userDataList).when(jiraNGClient).getUsers(anyString(), anyString(), anyString());
+    doReturn(userDataList).when(jiraNGClient).getUsers(any(), any(), any());
 
     spyJiraTask.run(new Object[] {taskParameters});
   }
@@ -214,9 +211,9 @@ public class JiraTaskTest extends CategoryTest {
     List<JiraUserData> userDataList = Arrays.asList(new JiraUserData("accountId", "Lucas", true));
 
     doReturn(jiraNGClient).when(spyJiraTask).getNGJiraClient(taskParameters);
-    doReturn(issueNG).when(jiraNGClient).createIssue(anyString(), anyString(), anyMap());
-    doReturn(userDataList).when(jiraNGClient).getUsers(anyString(), anyString(), anyString());
-    doThrow(new JiraClientException("error")).when(jiraNGClient).createIssue(anyString(), anyString(), anyMap());
+    doReturn(issueNG).when(jiraNGClient).createIssue(any(), any(), anyMap());
+    doReturn(userDataList).when(jiraNGClient).getUsers(any(), any(), any());
+    doThrow(new JiraClientException("error")).when(jiraNGClient).createIssue(any(), any(), anyMap());
 
     DelegateResponseData delegateResponseData = spyJiraTask.run(new Object[] {taskParameters});
     assertThat(delegateResponseData).hasFieldOrPropertyWithValue("executionStatus", ExecutionStatus.FAILED);
@@ -232,9 +229,9 @@ public class JiraTaskTest extends CategoryTest {
     List<JiraUserData> userDataList = Arrays.asList(new JiraUserData("accountId", "Lucas", true));
 
     doReturn(jiraNGClient).when(spyJiraTask).getNGJiraClient(taskParameters);
-    doReturn(issueNG).when(jiraNGClient).createIssue(anyString(), anyString(), anyMap());
-    doReturn(userDataList).when(jiraNGClient).getUsers(anyString(), anyString(), anyString());
-    doReturn(mock(JiraIssueNG.class)).when(jiraNGClient).createIssue(anyString(), anyString(), anyMap());
+    doReturn(issueNG).when(jiraNGClient).createIssue(any(), any(), anyMap());
+    doReturn(userDataList).when(jiraNGClient).getUsers(any(), any(), any());
+    doReturn(mock(JiraIssueNG.class)).when(jiraNGClient).createIssue(any(), any(), anyMap());
     JiraExecutionData jiraExecutionData =
         JiraExecutionData.builder()
             .jiraAction(JiraAction.CREATE_TICKET_NG)
@@ -263,8 +260,8 @@ public class JiraTaskTest extends CategoryTest {
     when(jiraNGClient.getIssue(JIRA_ISSUE_ID)).thenReturn(issueNG);
     when(issueNG.getKey()).thenReturn(JIRA_ISSUE_ID);
     when(issueNG.getFields()).thenReturn(singletonMap("Project Key", PROJECT_KEY));
-    doReturn(mock(JiraIssueNG.class)).when(jiraNGClient).updateIssue(anyString(), anyString(), anyString(), any());
-    doReturn(userDataList).when(jiraNGClient).getUsers(anyString(), anyString(), anyString());
+    doReturn(mock(JiraIssueNG.class)).when(jiraNGClient).updateIssue(any(), any(), any(), any());
+    doReturn(userDataList).when(jiraNGClient).getUsers(any(), any(), any());
     JiraExecutionData jiraExecutionData =
         JiraExecutionData.builder()
             .executionStatus(ExecutionStatus.SUCCESS)
