@@ -7,14 +7,24 @@
 
 package io.harness.cvng.usage.impl;
 
+import static java.lang.String.format;
+
 import io.harness.ModuleType;
 import io.harness.licensing.usage.interfaces.LicenseUsageInterface;
 import io.harness.licensing.usage.params.UsageRequestParams;
+
+import com.google.common.base.Preconditions;
+import org.apache.commons.lang3.StringUtils;
 
 public class CVLicenseUsageImpl implements LicenseUsageInterface<CVLicenseUsageDTO, UsageRequestParams> {
   @Override
   public CVLicenseUsageDTO getLicenseUsage(
       String accountIdentifier, ModuleType module, long timestamp, UsageRequestParams usageRequest) {
+    Preconditions.checkArgument(timestamp > 0, format("Invalid timestamp %d while fetching LicenseUsages.", timestamp));
+    Preconditions.checkArgument(ModuleType.CV == module, format("Invalid Module type %s provided", module.toString()));
+    Preconditions.checkArgument(
+        StringUtils.isNotBlank(accountIdentifier), "Account Identifier cannot be null or blank");
+
     return null;
   }
 }
