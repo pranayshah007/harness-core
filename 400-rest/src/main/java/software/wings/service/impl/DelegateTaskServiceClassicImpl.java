@@ -514,8 +514,9 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   }
 
   private String getDelegateIdForFirstBroadcast(DelegateTask delegateTask, List<String> eligibleListOfDelegates) {
+    List<String> whitelistedDelegateGroupIds = new ArrayList<>(Collections.emptyList());
     for (String delegateId : eligibleListOfDelegates) {
-      if (assignDelegateService.isWhitelisted(delegateTask, delegateId)) {
+      if (assignDelegateService.isDelegateGroupWhitelisted(delegateTask, delegateId, whitelistedDelegateGroupIds)) {
         return delegateId;
       }
     }
