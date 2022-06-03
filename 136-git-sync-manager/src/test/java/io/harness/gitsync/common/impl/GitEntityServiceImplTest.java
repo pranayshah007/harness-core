@@ -22,7 +22,6 @@ import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.git.YamlGitConfigDTO;
 import io.harness.gitsync.GitSyncTestBase;
 import io.harness.gitsync.common.dtos.GitSyncEntityDTO;
-import io.harness.gitsync.common.service.GitEntityService;
 import io.harness.gitsync.common.utils.GitSyncFilePathUtils;
 import io.harness.ng.core.EntityDetail;
 import io.harness.rule.Owner;
@@ -36,7 +35,7 @@ import org.mockito.MockitoAnnotations;
 
 @OwnedBy(HarnessTeam.PL)
 public class GitEntityServiceImplTest extends GitSyncTestBase {
-  @Inject GitEntityService gitEntityService;
+  @Inject GitEntityServiceImpl gitEntityService;
   EntityDetail entityDetail;
   EntityReference entityReference;
   YamlGitConfigDTO yamlGitConfigDTO;

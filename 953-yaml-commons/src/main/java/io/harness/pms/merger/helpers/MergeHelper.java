@@ -42,6 +42,22 @@ public class MergeHelper {
 
   public String mergeRuntimeInputValuesIntoOriginalYaml(
       String originalYaml, String inputSetPipelineCompYaml, boolean appendInputSetValidator) {
+    YamlConfig mergedYamlConfig = mergeRuntimeInputValuesIntoOriginalYamlInternal(
+        originalYaml, inputSetPipelineCompYaml, appendInputSetValidator);
+
+    return mergedYamlConfig.getYaml();
+  }
+
+  public JsonNode mergeRuntimeInputIntoOriginalYamlJsonNode(
+      String originalYaml, String inputSetPipelineCompYaml, boolean appendInputSetValidator) {
+    YamlConfig mergedYamlConfig = mergeRuntimeInputValuesIntoOriginalYamlInternal(
+        originalYaml, inputSetPipelineCompYaml, appendInputSetValidator);
+
+    return mergedYamlConfig.getYamlMap();
+  }
+
+  private YamlConfig mergeRuntimeInputValuesIntoOriginalYamlInternal(
+      String originalYaml, String inputSetPipelineCompYaml, boolean appendInputSetValidator) {
     YamlConfig inputSetConfig = new YamlConfig(inputSetPipelineCompYaml);
     Map<FQN, Object> inputSetFQNMap = inputSetConfig.getFqnToValueMap();
 
@@ -68,8 +84,7 @@ public class MergeHelper {
         }
       }
     });
-
-    return (new YamlConfig(mergedYamlFQNMap, originalYamlConfig.getYamlMap())).getYaml();
+    return new YamlConfig(mergedYamlFQNMap, originalYamlConfig.getYamlMap());
   }
 
   private void throwUpdatedKeyException(FQN key, Object templateValue, Object value) {

@@ -74,7 +74,7 @@ public class CreatePRStep extends TaskChainExecutableWithRollbackAndRbac {
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
 
   private final Set<ConnectorType> validConnectorTypes =
-      ImmutableSet.of(ConnectorType.GITHUB, ConnectorType.GITLAB, ConnectorType.BITBUCKET);
+      ImmutableSet.of(ConnectorType.GITHUB, ConnectorType.GITLAB, ConnectorType.BITBUCKET, ConnectorType.AZURE_REPO);
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {}
