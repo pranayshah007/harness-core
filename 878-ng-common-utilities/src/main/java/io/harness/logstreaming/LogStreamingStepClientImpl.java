@@ -9,7 +9,6 @@ package io.harness.logstreaming;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.exception.InvalidRequestException;
 import io.harness.network.SafeHttpCall;
 
 import java.util.Collections;
@@ -36,7 +35,7 @@ public class LogStreamingStepClientImpl implements ILogStreamingStepClient {
       String logKey = generateLogKey(baseLogKey, logKeySuffix);
       SafeHttpCall.executeWithExceptions(logStreamingClient.openLogStream(token, accountId, logKey));
     } catch (Exception ex) {
-      throw new InvalidRequestException(ex.getMessage() + "\nPlease ensure log service is running.", ex);
+      log.error("Unable to open log stream for account {} and logKeySuffix {} ", accountId, logKeySuffix, ex);
     }
   }
 

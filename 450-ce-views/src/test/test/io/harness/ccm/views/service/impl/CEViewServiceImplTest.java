@@ -71,7 +71,7 @@ public class CEViewServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testSave() {
     doReturn(true).when(ceViewDao).save(any());
-    CEView ceView = ceViewService.save(ceView());
+    CEView ceView = ceViewService.save(ceView(), false);
     assertThat(ceView.getAccountId()).isEqualTo(ACCOUNT_ID);
     assertThat(ceView.getName()).isEqualTo(VIEW_NAME);
   }
@@ -112,24 +112,24 @@ public class CEViewServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldThrowExceptionWhileSavingCustomField() {
     doReturn(ceView()).when(ceViewDao).findByName(ACCOUNT_ID, VIEW_NAME);
-    assertThatExceptionOfType(InvalidRequestException.class).isThrownBy(() -> ceViewService.save(ceView()));
+    assertThatExceptionOfType(InvalidRequestException.class).isThrownBy(() -> ceViewService.save(ceView(), false));
   }
 
   @Test
   @Owner(developers = ROHIT)
   @Category(UnitTests.class)
   public void shouldThrowExceptionViewsExceedLimit() {
-    doReturn(new ArrayList<CEView>(Collections.nCopies(1000, null))).when(ceViewDao).findByAccountId(ACCOUNT_ID);
-    assertThatExceptionOfType(InvalidRequestException.class).isThrownBy(() -> ceViewService.save(ceView()));
+    doReturn(new ArrayList<CEView>(Collections.nCopies(1000, null))).when(ceViewDao).findByAccountId(ACCOUNT_ID, null);
+    assertThatExceptionOfType(InvalidRequestException.class).isThrownBy(() -> ceViewService.save(ceView(), false));
   }
 
   @Test
   @Owner(developers = ROHIT)
   @Category(UnitTests.class)
   public void getAllViewsTest() {
-    doReturn(getAllViewsForAccount()).when(ceViewDao).findByAccountId(ACCOUNT_ID);
+    doReturn(getAllViewsForAccount()).when(ceViewDao).findByAccountId(ACCOUNT_ID, null);
     doReturn(Collections.emptyList()).when(ceReportScheduleDao).getReportSettingByView(any(), any());
-    List<QLCEView> allViews = ceViewService.getAllViews(ACCOUNT_ID, false);
+    List<QLCEView> allViews = ceViewService.getAllViews(ACCOUNT_ID, false, null);
     assertThat(allViews.size()).isEqualTo(2);
   }
 

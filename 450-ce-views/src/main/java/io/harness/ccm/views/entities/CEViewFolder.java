@@ -36,38 +36,27 @@ import org.mongodb.morphia.annotations.Id;
 @Data
 @Builder
 @StoreIn(DbAliases.CENG)
-@FieldNameConstants(innerTypeName = "CEViewKeys")
+@FieldNameConstants(innerTypeName = "CEViewFolderKeys")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@Entity(value = "ceView", noClassnameStored = true)
+@Entity(value = "ceViewFolder", noClassnameStored = true)
 @Schema(description = "This object will contain the complete definition of a Cloud Cost Perspective")
-public final class CEView implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware, AccountAccess,
-                                     CreatedByAware, UpdatedByAware {
+public final class CEViewFolder implements PersistentEntity, UuidAware, CreatedAtAware, UpdatedAtAware, AccountAccess,
+                                           CreatedByAware, UpdatedByAware {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
-        .add(CompoundMongoIndex.builder()
-                 .name("accountId_folderId")
-                 .field(CEViewKeys.accountId)
-                 .field(CEViewKeys.folderId)
-                 .build())
+        .add(CompoundMongoIndex.builder().name("accountId").field(CEViewFolderKeys.accountId).build())
         .build();
   }
   @Id String uuid;
-  @Size(min = 1, max = 80, message = "for view must be between 1 and 80 characters long") @NotBlank String name;
   String accountId;
-  String folderId;
-  @NotBlank String viewVersion;
-
-  ViewTimeRange viewTimeRange;
-  List<ViewRule> viewRules;
-  List<ViewFieldIdentifier> dataSources;
-  ViewVisualization viewVisualization;
-  ViewPreferences viewPreferences;
-
+  @Size(min = 1, max = 80, message = "for perspective folder must be between 1 and 80 characters long")
+  @NotBlank
+  String name;
+  boolean pinned;
+  List<String> tags;
+  String description;
   ViewType viewType = ViewType.CUSTOMER;
 
-  ViewState viewState = ViewState.DRAFT;
-
-  double totalCost;
   long createdAt;
   long lastUpdatedAt;
   private EmbeddedUser createdBy;

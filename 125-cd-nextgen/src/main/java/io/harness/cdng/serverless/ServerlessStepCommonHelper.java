@@ -71,7 +71,6 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.data.OptionalOutcome;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
-import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
@@ -95,7 +94,6 @@ import org.hibernate.validator.constraints.NotEmpty;
 @OwnedBy(HarnessTeam.CDP)
 @Singleton
 public class ServerlessStepCommonHelper extends ServerlessStepUtils {
-  @Inject private OutcomeService outcomeService;
   @Inject private EngineExpressionService engineExpressionService;
   @Inject private ServerlessEntityHelper serverlessEntityHelper;
   @Inject private KryoSerializer kryoSerializer;

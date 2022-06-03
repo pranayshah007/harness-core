@@ -20,6 +20,7 @@ import io.harness.pms.yaml.YamlUtils;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
@@ -89,7 +90,7 @@ public class FilterCreationBlobResponseUtils {
     if (EmptyPredicate.isEmpty(currResponse.getYamlUpdates().getFqnToYamlMap())) {
       return builder.build();
     }
-    Map<String, String> yamlUpdateFqnMap = new HashMap<>(builder.getYamlUpdates().getFqnToYamlMap());
+    Map<String, String> yamlUpdateFqnMap = new LinkedHashMap<>(builder.getYamlUpdates().getFqnToYamlMap());
     yamlUpdateFqnMap.putAll(currResponse.getYamlUpdates().getFqnToYamlMap());
     builder.setYamlUpdates(YamlUpdates.newBuilder().putAllFqnToYaml(yamlUpdateFqnMap).build());
     return builder.build();
