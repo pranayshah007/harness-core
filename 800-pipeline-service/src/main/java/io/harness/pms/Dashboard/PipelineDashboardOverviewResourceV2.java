@@ -29,6 +29,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -77,6 +78,7 @@ public class PipelineDashboardOverviewResourceV2 {
             description = "Fetches Pipeline Health data for a given Interval and will be presented in day wise format")
       })
   @NGAccessControlCheck(resourceType = "PROJECT", permission = "core_project_view")
+  @Hidden
   public ResponseDTO<DashboardPipelineHealthInfo>
   fetchPipelinedHealth(
       @Parameter(description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE, required = true) @NotNull @QueryParam(

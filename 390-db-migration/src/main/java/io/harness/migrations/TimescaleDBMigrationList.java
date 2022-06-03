@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.migrations.timescaledb.AddAccountIdStatusIndexToDeployment;
 import io.harness.migrations.timescaledb.AddAlertTypeColumnToBudgetAlerts;
+import io.harness.migrations.timescaledb.AddAzureColumnAnomaly;
 import io.harness.migrations.timescaledb.AddCDNGEntitiesColumns;
 import io.harness.migrations.timescaledb.AddCostEvents;
 import io.harness.migrations.timescaledb.AddDeploymentTagsToDeployment;
@@ -152,6 +153,7 @@ public class TimescaleDBMigrationList {
         .add(Pair.of(64, CreateEnvironmentTable.class))
         .add(Pair.of(65, CreateUserTable.class))
         .add(Pair.of(66, CreateCloudProviderTable.class))
+        .add(Pair.of(67, AddAzureColumnAnomaly.class))
         .build();
   }
 }

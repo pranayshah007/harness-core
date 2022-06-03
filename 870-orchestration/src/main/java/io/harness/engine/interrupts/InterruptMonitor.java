@@ -132,6 +132,8 @@ public class InterruptMonitor implements Handler<Interrupt> {
       if (isEmpty(leaves)) {
         log.error("No Leaves found something really wrong happened here. Lets check this execution {}",
             interrupt.getPlanExecutionId());
+        forceTerminate(
+            interrupt, nodeExecutions, nodeExecutions.stream().map(NodeExecution::getUuid).collect(Collectors.toSet()));
         interruptService.markProcessedForceful(interrupt.getUuid(), PROCESSED_UNSUCCESSFULLY, true);
         return;
       }

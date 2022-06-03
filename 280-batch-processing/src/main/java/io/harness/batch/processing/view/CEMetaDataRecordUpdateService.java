@@ -20,6 +20,7 @@ import io.harness.ccm.commons.entities.batch.CEMetadataRecord;
 import io.harness.ccm.commons.entities.batch.CEMetadataRecord.CEMetadataRecordBuilder;
 import io.harness.ccm.views.dto.DefaultViewIdDto;
 import io.harness.ccm.views.entities.ViewFieldIdentifier;
+import io.harness.ccm.views.service.CEViewFolderService;
 import io.harness.ccm.views.service.CEViewService;
 import io.harness.connector.ConnectorResourceClient;
 import io.harness.connector.ConnectorResponseDTO;
@@ -51,6 +52,7 @@ public class CEMetaDataRecordUpdateService {
   @Autowired private ConnectorResourceClient connectorResourceClient;
   @Autowired private BigQueryHelperService bigQueryHelperService;
   @Autowired private FeatureFlagService featureFlagService;
+  @Autowired private CEViewFolderService ceViewFolderService;
   @Autowired private CEViewService ceViewService;
   @Autowired private CEMetadataRecordDao metadataRecordDao;
   @Autowired TelemetryReporter telemetryReporter;
@@ -114,6 +116,7 @@ public class CEMetaDataRecordUpdateService {
 
       cloudToHarnessMappingService.upsertCEMetaDataRecord(ceMetadataRecord);
 
+      ceViewFolderService.createDefaultFolders(accountId);
       createDefaultPerspective(
           accountId, isAwsConnectorPresent, isAzureConnectorPresent, isGCPConnectorPresent, ceMetadataRecord);
 
