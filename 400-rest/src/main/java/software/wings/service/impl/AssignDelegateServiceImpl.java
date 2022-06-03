@@ -607,6 +607,43 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
     return false;
   }
 
+  @Override
+  public boolean isDelegateGroupWhitelisted(
+      DelegateTask task, String delegateId, List<String> whiteListedDelegateGroup) {
+    Delegate delegate = delegateCache.get(task.getAccountId(), delegateId, false);
+    boolean markDelegateGroupWhitelisted =
+        delegate != null && isNotEmpty(delegate.getDelegateGroupId()) && task.isNGTask(task.getSetupAbstractions());
+    if (markDelegateGroupWhitelisted && whiteListedDelegateGroup.contains(delegate.getDelegateGroupId())) {
+      return true;
+    }
+    try {
+      boolean matching = true;
+      for (String criteria : fetchCriteria(task)) {
+        if (isNotBlank(criteria)) {
+          Optional<DelegateConnectionResult> result =
+              delegateConnectionResultCache.get(ImmutablePair.of(delegateId, criteria));
+          if (!result.isPresent() || result.get().getLastUpdatedAt() < currentTimeMillis() - WHITELIST_TTL
+              || !result.get().isValidated()) {
+            matching = false;
+            String delegateName =
+                isNotEmpty(delegate.getDelegateName()) ? delegate.getDelegateName() : delegate.getUuid();
+            String noMatchError = String.format("No matching criteria %s found in delegate %s", criteria, delegateName);
+            delegateTaskServiceClassic.addToTaskActivityLog(task, noMatchError);
+            break;
+          } else {
+            if (delegate != null && isNotEmpty(delegate.getDelegateGroupId()) && markDelegateGroupWhitelisted) {
+              whiteListedDelegateGroup.add(delegate.getDelegateGroupId());
+            }
+          }
+        }
+      }
+      return matching;
+    } catch (Exception e) {
+      log.error("Error checking whether delegate is whitelisted for task {}", task.getUuid(), e);
+    }
+    return false;
+  }
+
   public static boolean shouldValidateCriteria(Optional<DelegateConnectionResult> result, long now) {
     if (!result.isPresent()) {
       return true;
