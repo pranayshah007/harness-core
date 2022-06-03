@@ -25,4 +25,5 @@ import lombok.experimental.FieldDefaults;
 @RecasterAlias("io.harness.plancreator.strategy.HarnessForConfig")
 public class HarnessForConfig {
   @JsonProperty("iteration") int iteration;
+  @JsonProperty("maxConcurrency") int maxConcurrency;
 }
