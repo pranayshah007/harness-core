@@ -449,6 +449,7 @@ public class VerificationApplication extends Application<VerificationConfigurati
     MaintenanceController.forceMaintenance(false);
     registerUpdateProgressScheduler(injector);
     runMigrations(injector);
+
     log.info("Starting app done");
   }
 

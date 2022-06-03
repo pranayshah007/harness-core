@@ -12,6 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.metrics.MetricConstants.ENV_LABEL;
 import static io.harness.metrics.MetricConstants.METRIC_LABEL_PREFIX;
 
+import com.google.inject.Singleton;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.metrics.beans.MetricConfiguration;
@@ -23,10 +24,8 @@ import io.harness.serializer.YamlUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
-import com.google.inject.Singleton;
 import io.opencensus.common.Duration;
 import io.opencensus.common.Scope;
-import io.opencensus.exporter.stats.prometheus.PrometheusStatsCollector;
 import io.opencensus.exporter.stats.stackdriver.StackdriverStatsConfiguration;
 import io.opencensus.exporter.stats.stackdriver.StackdriverStatsExporter;
 import io.opencensus.stats.Measure;
@@ -42,7 +41,6 @@ import io.opencensus.tags.TagKey;
 import io.opencensus.tags.TagValue;
 import io.opencensus.tags.Tagger;
 import io.opencensus.tags.Tags;
-import io.prometheus.client.exporter.HTTPServer;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -70,38 +68,15 @@ public class MetricServiceImpl implements MetricService {
   private final Map<String, MetricGroup> metricGroupMap = new HashMap<>();
   private static final String GOOGLE_APPLICATION_CREDENTIALS = "GOOGLE_APPLICATION_CREDENTIALS";
   private static final String ENV_METRICS_COLLECTION_DISABLED = "METRICS_COLLECTION_DISABLED";
-  private static final String ENABLE_PROMETHEUS_COLLECTOR = "ENABLE_PROMETHEUS_COLLECTOR";
-  private static final String PROMETHEUS_COLLECTOR_PORT = "PROMETHEUS_COLLECTOR_PORT";
 
   public MetricServiceImpl(int exportIntervalMins) {
     this.exportIntervalMins = exportIntervalMins;
     isMetricsCollectionIsEnabled = isMetricPublicationEnabled();
-    createHttpServerForPrometheus();
     initializeFromYAML();
   }
 
   private final Tagger tagger = Tags.getTagger();
   private final StatsRecorder statsRecorder = Stats.getStatsRecorder();
-
-  private void createHttpServerForPrometheus() {
-    if (isPrometheusConnectorEnabled()) {
-      int prometheusPort = 8889;
-      if (isNotEmpty(System.getenv(PROMETHEUS_COLLECTOR_PORT))) {
-        prometheusPort = Integer.parseInt(System.getenv(PROMETHEUS_COLLECTOR_PORT));
-      }
-      log.info("Prometheus endpoint port: {}", prometheusPort);
-      try {
-        HTTPServer server = new HTTPServer(prometheusPort, true);
-      } catch (IOException e) {
-        throw new IllegalStateException(e);
-      }
-    }
-  }
-
-  private boolean isPrometheusConnectorEnabled() {
-    return isNotEmpty(System.getenv(ENABLE_PROMETHEUS_COLLECTOR))
-        && Boolean.parseBoolean(System.getenv(ENABLE_PROMETHEUS_COLLECTOR));
-  }
 
   private boolean isMetricPublicationEnabled() {
     String disabled = System.getenv(ENV_METRICS_COLLECTION_DISABLED);
@@ -112,11 +87,9 @@ public class MetricServiceImpl implements MetricService {
       return false; // Not enabled.
     }
 
-    String googleApplicationCred = System.getenv(GOOGLE_APPLICATION_CREDENTIALS);
-    boolean prometheusCollectorEnabled = isPrometheusConnectorEnabled();
-    log.info("GOOGLE_APPLICATION_CREDENTIALS: {} ENABLE_PROMETHEUS_COLLECTOR: {}", googleApplicationCred,
-        prometheusCollectorEnabled);
-    return isNotEmpty(googleApplicationCred) || prometheusCollectorEnabled;
+    String creds = System.getenv(GOOGLE_APPLICATION_CREDENTIALS);
+    log.info("GOOGLE_APPLICATION_CREDENTIALS: {}", creds);
+    return isNotEmpty(creds);
   }
 
   private void recordTaggedStat(Map<TagKey, String> tags, Measure md, Double d) {
@@ -192,21 +165,10 @@ public class MetricServiceImpl implements MetricService {
               .setConstantLabels(Collections.emptyMap())
               .build();
       StackdriverStatsExporter.createAndRegister(configuration);
-
       log.info("StackdriverStatsExporter created");
     } catch (Exception ex) {
       log.error("Exception while trying to register stackdriver metrics exporter", ex);
     }
-
-    if (isPrometheusConnectorEnabled()) {
-      try {
-        PrometheusStatsCollector.createAndRegister();
-        log.info("Created prometheus exporter");
-      } catch (Exception ex) {
-        log.error("Exception while trying to register prometheus metrics exporter", ex);
-      }
-    }
-
     log.info("Finished loading metrics definitions from YAML. time taken is {} ms, {} metrics loaded",
         Instant.now().toEpochMilli() - startTime, metricConfigurations.size());
     for (MetricConfiguration metricConfiguration : metricConfigurations) {
