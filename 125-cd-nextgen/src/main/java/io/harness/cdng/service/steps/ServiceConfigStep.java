@@ -76,8 +76,10 @@ public class ServiceConfigStep implements ChildExecutable<ServiceConfigStepParam
     StepResponse stepResponse = StepUtils.createStepResponseFromChildResponse(responseDataMap);
     NGLogCallback logCallback = serviceStepsHelper.getServiceLogCallback(ambiance);
     if (StatusUtils.brokeStatuses().contains(stepResponse.getStatus())) {
-      logCallback.saveExecutionLog(LogHelper.color("Failed to complete service step", LogColor.Red), LogLevel.INFO,
-          CommandExecutionStatus.FAILURE);
+      logCallback.saveExecutionLog(
+          LogHelper.color(
+              String.format("Failed to complete service step - %s", stepResponse.getFailureInfo()), LogColor.Red),
+          LogLevel.INFO, CommandExecutionStatus.FAILURE);
     } else {
       logCallback.saveExecutionLog("Completed service step", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
     }
