@@ -7,10 +7,12 @@
 
 package io.harness.ff;
 
+import io.harness.account.AccountClient;
 import io.harness.account.AccountClientModule;
 import io.harness.lock.PersistentLockModule;
 
 import com.google.inject.AbstractModule;
+import com.google.inject.multibindings.OptionalBinder;
 
 public class FeatureFlagModule extends AbstractModule {
   private static volatile FeatureFlagModule instance;
@@ -36,9 +38,7 @@ public class FeatureFlagModule extends AbstractModule {
   @Override
   protected void configure() {
     install(PersistentLockModule.getInstance());
-    if (accountClientModule != null) {
-      install(accountClientModule);
-    }
+    OptionalBinder.newOptionalBinder(binder(), AccountClient.class);
     bind(FeatureFlagService.class).to(FeatureFlagServiceImpl.class);
   }
 }
