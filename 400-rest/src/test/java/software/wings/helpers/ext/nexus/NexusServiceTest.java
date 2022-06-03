@@ -13,6 +13,7 @@ import static io.harness.eraro.ErrorCode.INVALID_ARTIFACT_SERVER;
 import static io.harness.rule.OwnerRule.AADITI;
 import static io.harness.rule.OwnerRule.DEEPAK_PUTHRAYA;
 import static io.harness.rule.OwnerRule.GEORGE;
+import static io.harness.rule.OwnerRule.INDER;
 import static io.harness.rule.OwnerRule.ROHITKARELIA;
 import static io.harness.rule.OwnerRule.SRINIVAS;
 import static io.harness.rule.OwnerRule.VED;
@@ -2032,5 +2033,21 @@ public class NexusServiceTest extends WingsBaseTest {
 
     assertThatThrownBy(() -> nexusService.getGroupIdPaths(nexusThreeConfig, "repo4", null))
         .isInstanceOf(WingsException.class);
+  }
+
+  @Test
+  @Owner(developers = INDER)
+  @Category(UnitTests.class)
+  public void shouldThrowUnsupportedExceptionOnGetVersionForNexus3() {
+    assertThatThrownBy(()
+                           -> nexusService.getVersion(
+                               RepositoryFormat.npm.name(), nexusThreeConfig, "npm-internal", "npm-app1", "1.0.0"))
+        .isInstanceOf(java.lang.UnsupportedOperationException.class)
+        .hasMessage("Nexus 3.x does not support getVersion for parameterized artifact stream");
+
+    assertThatThrownBy(
+        () -> nexusService.getVersion(nexusThreeConfig, "npm-internal", "npm-app1", null, null, null, "1.0.0"))
+        .isInstanceOf(java.lang.UnsupportedOperationException.class)
+        .hasMessage("Nexus 3.x does not support getVersion for parameterized artifact stream");
   }
 }

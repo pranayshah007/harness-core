@@ -16,6 +16,7 @@ import io.harness.pms.governance.PipelineSaveResponse;
 import io.harness.pms.pipeline.ClonePipelineDTO;
 import io.harness.pms.pipeline.ExecutionSummaryInfo;
 import io.harness.pms.pipeline.PipelineEntity;
+import io.harness.pms.pipeline.PipelineImportRequestDTO;
 import io.harness.pms.pipeline.StepCategory;
 import io.harness.pms.pipeline.StepPalleteFilterWrapper;
 
@@ -27,11 +28,14 @@ import org.springframework.data.mongodb.core.query.Update;
 
 @OwnedBy(PIPELINE)
 public interface PMSPipelineService {
-  PipelineEntity create(PipelineEntity pipelineEntity);
+  PipelineCRUDResult create(PipelineEntity pipelineEntity);
 
   PipelineSaveResponse clone(ClonePipelineDTO clonePipelineDTO, String accountId);
 
   Optional<PipelineEntity> get(
+      String accountId, String orgIdentifier, String projectIdentifier, String identifier, boolean deleted);
+
+  Optional<PipelineEntity> getWithoutPerformingValidations(
       String accountId, String orgIdentifier, String projectIdentifier, String identifier, boolean deleted);
 
   PipelineEntity updatePipelineYaml(PipelineEntity pipelineEntity, ChangeType changeType);
@@ -52,6 +56,9 @@ public interface PMSPipelineService {
 
   Page<PipelineEntity> list(Criteria criteria, Pageable pageable, String accountId, String orgIdentifier,
       String projectIdentifier, Boolean getDistinctFromBranches);
+
+  String importPipelineFromRemote(String accountId, String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, PipelineImportRequestDTO pipelineImportRequest);
 
   Long countAllPipelines(Criteria criteria);
 

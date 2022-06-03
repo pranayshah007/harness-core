@@ -84,7 +84,7 @@ public class RollbackCustomAdviser implements Adviser {
 
   public OnFailRollbackOutput getOnFailRollbackOutput(Ambiance ambiance, List<String> failedNodeIds) {
     List<OptionalSweepingOutput> onFailRollbackOptionalOutput =
-        executionSweepingOutputService.listOutputsWithGivenNameAndSetupIds(
+        executionSweepingOutputService.listOutputsWithGivenNameAndRuntimeIds(
             ambiance, YAMLFieldNameConstants.USE_ROLLBACK_STRATEGY, failedNodeIds);
     Optional<OptionalSweepingOutput> optionalOnFailOutput =
         onFailRollbackOptionalOutput.stream().filter(OptionalSweepingOutput::isFound).findFirst();

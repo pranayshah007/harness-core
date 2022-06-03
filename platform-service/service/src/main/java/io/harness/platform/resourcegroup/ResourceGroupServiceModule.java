@@ -28,6 +28,7 @@ import io.harness.eventsframework.impl.noop.NoOpProducer;
 import io.harness.eventsframework.impl.redis.RedisConsumer;
 import io.harness.eventsframework.impl.redis.RedisProducer;
 import io.harness.eventsframework.impl.redis.RedisUtils;
+import io.harness.eventsframework.impl.redis.monitoring.publisher.RedisEventMetricPublisher;
 import io.harness.govern.ProviderModule;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.lock.PersistentLockModule;
@@ -206,13 +207,14 @@ public class ResourceGroupServiceModule extends AbstractModule {
 
   @Provides
   @Named(EventsFrameworkConstants.ENTITY_CRUD)
-  Consumer getConsumer(@Nullable @Named("eventsFrameworkRedissonClient") RedissonClient redissonClient) {
+  Consumer getConsumer(@Nullable @Named("eventsFrameworkRedissonClient") RedissonClient redissonClient,
+      RedisEventMetricPublisher redisEventMetricPublisher) {
     RedisConfig redisConfig = appConfig.getResoureGroupServiceConfig().getRedisConfig();
     if (redisConfig.getRedisUrl().equals("dummyRedisUrl")) {
       return NoOpConsumer.of(EventsFrameworkConstants.DUMMY_TOPIC_NAME, EventsFrameworkConstants.DUMMY_GROUP_NAME);
     }
     return RedisConsumer.of(EventsFrameworkConstants.ENTITY_CRUD, RESOURCE_GROUP_CONSUMER_GROUP, redissonClient,
         EventsFrameworkConstants.ENTITY_CRUD_MAX_PROCESSING_TIME, EventsFrameworkConstants.ENTITY_CRUD_READ_BATCH_SIZE,
-        redisConfig.getEnvNamespace());
+        redisConfig.getEnvNamespace(), redisEventMetricPublisher);
   }
 }

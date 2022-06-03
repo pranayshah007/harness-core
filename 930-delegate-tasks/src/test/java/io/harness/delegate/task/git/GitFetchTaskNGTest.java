@@ -18,6 +18,8 @@ import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -40,7 +42,6 @@ import io.harness.logging.LogCallback;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.shell.SshSessionConfig;
 
 import java.io.IOException;
@@ -61,7 +62,6 @@ import org.mockito.MockitoAnnotations;
 public class GitFetchTaskNGTest {
   private static final String TEST_INPUT_ID = generateUuid();
   @Mock private NGGitService ngGitService;
-  @Mock private SecretDecryptionService secretDecryptionService;
   @Mock private GitFetchFilesTaskHelper gitFetchFilesTaskHelper;
   @Mock private GitDecryptionHelper gitDecryptionHelper;
   @Mock private ILogStreamingTaskClient logStreamingTaskClient;
@@ -139,6 +139,7 @@ public class GitFetchTaskNGTest {
         .fetchFilesByPath(
             any(GitStoreDelegateConfig.class), anyString(), any(SshSessionConfig.class), any(GitConfigDTO.class));
     doReturn(new ArrayList<>()).when(fetchFilesResult).getFiles();
+    when(gitDecryptionHelper.getSSHSessionConfig(any(), any())).thenReturn(mock(SshSessionConfig.class));
 
     GitFetchResponse response = gitFetchTaskNG.run(taskParameters);
     assertThat(response.getTaskStatus()).isEqualTo(TaskStatus.SUCCESS);
@@ -152,6 +153,7 @@ public class GitFetchTaskNGTest {
         .when(ngGitService)
         .fetchFilesByPath(
             any(GitStoreDelegateConfig.class), anyString(), any(SshSessionConfig.class), any(GitConfigDTO.class));
+    when(gitDecryptionHelper.getSSHSessionConfig(any(), any())).thenReturn(mock(SshSessionConfig.class));
 
     GitFetchResponse response = gitFetchTaskNG.run(taskParameters);
     assertThat(response.getTaskStatus()).isEqualTo(TaskStatus.SUCCESS);
@@ -165,6 +167,7 @@ public class GitFetchTaskNGTest {
         .when(ngGitService)
         .fetchFilesByPath(
             any(GitStoreDelegateConfig.class), anyString(), any(SshSessionConfig.class), any(GitConfigDTO.class));
+    when(gitDecryptionHelper.getSSHSessionConfig(any(), any())).thenReturn(mock(SshSessionConfig.class));
 
     assertThatThrownBy(() -> gitFetchTaskNG.run(taskParameters))
         .isInstanceOf(TaskNGDataException.class)

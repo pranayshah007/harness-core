@@ -36,7 +36,7 @@ public class BitbucketServerListBranchesScmApiErrorHandler implements ScmApiErro
         throw NestedExceptionUtils.hintWithExplanationException(ScmErrorHints.REPO_NOT_FOUND,
             LIST_BRANCH_FAILED_MESSAGE + ScmErrorExplanations.REPO_NOT_FOUND, new ScmBadRequestException(errorMessage));
       default:
-        log.error(String.format("Error while listing bitbucket branches: [%s: %s]", statusCode, errorMessage));
+        log.error(String.format("Error while listing bitbucket(server) branches: [%s: %s]", statusCode, errorMessage));
         throw new ScmUnexpectedException(errorMessage);
     }
   }

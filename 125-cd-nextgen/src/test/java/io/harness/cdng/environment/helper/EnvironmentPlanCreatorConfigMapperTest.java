@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.cdng.environment.helper;
 
 import static io.harness.cdng.environment.helper.EnvironmentPlanCreatorConfigMapper.toEnvPlanCreatorConfigWithGitops;
@@ -18,6 +25,7 @@ import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
+import io.harness.yaml.core.variables.NGServiceOverrides;
 
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -42,7 +50,10 @@ public class EnvironmentPlanCreatorConfigMapperTest extends CategoryTest {
                                            .orgIdentifier("orgId")
                                            .projectIdentifier("projId")
                                            .build();
-    EnvironmentPlanCreatorConfig config = toEnvironmentPlanCreatorConfig(entity, asList(infraEntity));
+
+    NGServiceOverrides serviceOverrides = NGServiceOverrides.builder().serviceRef("ref").build();
+
+    EnvironmentPlanCreatorConfig config = toEnvironmentPlanCreatorConfig(entity, asList(infraEntity), serviceOverrides);
 
     assertThat(config.getEnvironmentRef().getValue()).isEqualTo("envId");
     assertThat(config.getIdentifier()).isEqualTo("envId");
@@ -54,6 +65,7 @@ public class EnvironmentPlanCreatorConfigMapperTest extends CategoryTest {
     assertThat(config.getTags().get("k")).isEqualTo("v");
     assertThat(config.getType()).isEqualTo(EnvironmentType.Production);
     assertThat(config.getInfrastructureDefinitions()).hasSize(1);
+    assertThat(config.getServiceOverrides().getServiceRef()).isEqualTo("ref");
   }
 
   @Test
@@ -76,7 +88,7 @@ public class EnvironmentPlanCreatorConfigMapperTest extends CategoryTest {
             .gitOpsClusters(
                 asList(ClusterYaml.builder().ref(ParameterField.<String>builder().value("c1").build()).build()))
             .build();
-    EnvironmentPlanCreatorConfig config = toEnvPlanCreatorConfigWithGitops(entity, envV2);
+    EnvironmentPlanCreatorConfig config = toEnvPlanCreatorConfigWithGitops(entity, envV2, null);
 
     assertThat(config.getEnvironmentRef().getValue()).isEqualTo("envId");
     assertThat(config.getIdentifier()).isEqualTo("envId");
@@ -109,7 +121,10 @@ public class EnvironmentPlanCreatorConfigMapperTest extends CategoryTest {
                                   .environmentRef(ParameterField.<String>builder().value("envId").build())
                                   .deployToAll(true)
                                   .build();
-    EnvironmentPlanCreatorConfig config = toEnvPlanCreatorConfigWithGitops(entity, envV2);
+
+    NGServiceOverrides serviceOverride = NGServiceOverrides.builder().serviceRef("ref").build();
+
+    EnvironmentPlanCreatorConfig config = toEnvPlanCreatorConfigWithGitops(entity, envV2, serviceOverride);
 
     assertThat(config.getEnvironmentRef().getValue()).isEqualTo("envId");
     assertThat(config.getIdentifier()).isEqualTo("envId");
@@ -123,5 +138,6 @@ public class EnvironmentPlanCreatorConfigMapperTest extends CategoryTest {
     assertThat(config.getInfrastructureDefinitions()).isNull();
     assertThat(config.getGitOpsClusterRefs()).hasSize(0);
     assertThat(config.isDeployToAll()).isTrue();
+    assertThat(config.getServiceOverrides().getServiceRef()).isEqualTo("ref");
   }
 }

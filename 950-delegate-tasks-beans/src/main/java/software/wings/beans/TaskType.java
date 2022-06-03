@@ -17,6 +17,7 @@ import io.harness.delegate.beans.TaskGroup;
 @OwnedBy(CDC)
 @TargetModule(HarnessModule._955_DELEGATE_BEANS)
 public enum TaskType {
+  GITOPS_TASK_NG(TaskGroup.GIT),
   BATCH_CAPABILITY_CHECK(TaskGroup.BATCH_CAPABILITY_CHECK),
   CAPABILITY_VALIDATION(TaskGroup.CAPABILITY_VALIDATION),
   COMMAND(TaskGroup.COMMAND),

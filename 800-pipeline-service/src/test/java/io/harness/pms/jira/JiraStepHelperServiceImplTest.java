@@ -13,7 +13,6 @@ import static io.harness.rule.OwnerRule.BRIJESH;
 import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
@@ -44,13 +43,12 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.junit.MockitoJUnitRunner;
 
 @OwnedBy(PIPELINE)
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({NGRestUtils.class, NGTimeConversionHelper.class, StepUtils.class})
+@RunWith(MockitoJUnitRunner.class)
 public class JiraStepHelperServiceImplTest extends CategoryTest {
   @Mock private ConnectorResourceClient connectorResourceClient;
   @Mock private SecretManagerClientService secretManagerClientService;
@@ -61,20 +59,21 @@ public class JiraStepHelperServiceImplTest extends CategoryTest {
   @Owner(developers = BRIJESH)
   @Category(UnitTests.class)
   public void testPrepareTestRequest() {
-    PowerMockito.mockStatic(NGRestUtils.class);
-    PowerMockito.mockStatic(NGTimeConversionHelper.class);
-    PowerMockito.mockStatic(StepUtils.class);
+    MockedStatic<NGRestUtils> aStatic = Mockito.mockStatic(NGRestUtils.class);
+    MockedStatic<NGTimeConversionHelper> aStatic2 = Mockito.mockStatic(NGTimeConversionHelper.class);
+    aStatic2.when(() -> NGTimeConversionHelper.convertTimeStringToMilliseconds(any())).thenReturn(0L);
+    Mockito.mockStatic(StepUtils.class);
     Ambiance ambiance = Ambiance.newBuilder()
                             .putSetupAbstractions("accountId", "accountId")
                             .putSetupAbstractions("orgIdentifier", "orgIdentifier")
                             .putSetupAbstractions("projectIdentifier", "projectIdentifier")
                             .build();
-    when(NGRestUtils.getResponse(any())).thenReturn(Optional.empty());
+    aStatic.when(() -> NGRestUtils.getResponse(any())).thenReturn(Optional.empty());
     assertThatCode(()
                        -> jiraStepHelperService.prepareTaskRequest(
                            JiraTaskNGParameters.builder(), ambiance, "connectorref", "time", "task"))
         .isInstanceOf(InvalidRequestException.class);
-    when(NGRestUtils.getResponse(any()))
+    aStatic.when(() -> NGRestUtils.getResponse(any()))
         .thenReturn(Optional.of(
             ConnectorDTO.builder()
                 .connectorInfo(ConnectorInfoDTO.builder().connectorConfig(DockerConnectorDTO.builder().build()).build())
@@ -83,7 +82,7 @@ public class JiraStepHelperServiceImplTest extends CategoryTest {
                        -> jiraStepHelperService.prepareTaskRequest(
                            JiraTaskNGParameters.builder(), ambiance, "connectorref", "time", "task"))
         .isInstanceOf(InvalidRequestException.class);
-    when(NGRestUtils.getResponse(any()))
+    aStatic.when(() -> NGRestUtils.getResponse(any()))
         .thenReturn(Optional.of(
             ConnectorDTO.builder()
                 .connectorInfo(ConnectorInfoDTO.builder().connectorConfig(JiraConnectorDTO.builder().build()).build())

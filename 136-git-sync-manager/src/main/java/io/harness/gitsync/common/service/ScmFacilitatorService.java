@@ -19,6 +19,7 @@ import io.harness.gitsync.common.dtos.ScmGetFileByBranchRequestDTO;
 import io.harness.gitsync.common.dtos.ScmGetFileByCommitIdRequestDTO;
 import io.harness.gitsync.common.dtos.ScmGetFileResponseDTO;
 import io.harness.gitsync.common.dtos.ScmUpdateFileRequestDTO;
+import io.harness.gitsync.common.dtos.UserRepoResponse;
 import io.harness.ng.beans.PageRequest;
 
 import java.util.List;
@@ -38,6 +39,9 @@ public interface ScmFacilitatorService {
   ScmCreatePRResponseDTO createPR(ScmCreatePRRequestDTO scmCreatePRRequestDTO);
 
   ScmGetFileResponseDTO getFileByBranch(ScmGetFileByBranchRequestDTO scmGetFileByBranchRequestDTO);
+
+  List<UserRepoResponse> listAllReposByRefConnector(
+      String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorRef);
 
   ScmGetFileResponseDTO getFileByCommitId(ScmGetFileByCommitIdRequestDTO scmGetFileByCommitIdRequestDTO);
 

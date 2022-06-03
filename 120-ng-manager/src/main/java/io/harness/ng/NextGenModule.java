@@ -86,8 +86,8 @@ import io.harness.exception.exceptionmanager.ExceptionModule;
 import io.harness.exception.exceptionmanager.exceptionhandler.CCMConnectorExceptionHandler;
 import io.harness.exception.exceptionmanager.exceptionhandler.ExceptionHandler;
 import io.harness.file.NGFileServiceModule;
-import io.harness.filter.FilterType;
-import io.harness.filter.mapper.FilterPropertiesMapper;
+import io.harness.filestore.NgFileStoreModule;
+import io.harness.filestore.outbox.FileEventHandler;
 import io.harness.gitops.GitopsResourceClientModule;
 import io.harness.gitsync.GitSyncConfigClientModule;
 import io.harness.gitsync.GitSyncModule;
@@ -133,7 +133,6 @@ import io.harness.ng.core.api.impl.NGSecretServiceV2Impl;
 import io.harness.ng.core.api.impl.TokenServiceImpl;
 import io.harness.ng.core.api.impl.UserGroupServiceImpl;
 import io.harness.ng.core.delegate.client.DelegateNgManagerCgManagerClientModule;
-import io.harness.ng.core.dto.filestore.mapper.FilesFilterPropertiesMapper;
 import io.harness.ng.core.encryptors.NGManagerKmsEncryptor;
 import io.harness.ng.core.encryptors.NGManagerVaultEncryptor;
 import io.harness.ng.core.entityactivity.event.EntityActivityCrudEventMessageListener;
@@ -160,7 +159,6 @@ import io.harness.ng.core.impl.ProjectServiceImpl;
 import io.harness.ng.core.outbox.ApiKeyEventHandler;
 import io.harness.ng.core.outbox.DelegateProfileEventHandler;
 import io.harness.ng.core.outbox.EnvironmentEventHandler;
-import io.harness.ng.core.outbox.FileEventHandler;
 import io.harness.ng.core.outbox.NextGenOutboxEventHandler;
 import io.harness.ng.core.outbox.OrganizationEventHandler;
 import io.harness.ng.core.outbox.ProjectEventHandler;
@@ -616,8 +614,9 @@ public class NextGenModule extends AbstractModule {
         appConfig.getOutboxPollConfig(), NG_MANAGER.getServiceId(), appConfig.isExportMetricsToStackDriver()));
     install(new ResourceGroupClientModule(appConfig.getResourceGroupClientConfig().getServiceConfig(),
         appConfig.getResourceGroupClientConfig().getSecret(), NG_MANAGER.getServiceId()));
-    install(new NGFileServiceModule(appConfig.getFileServiceConfiguration().getFileStorageMode(),
+    install(NGFileServiceModule.getInstance(appConfig.getFileServiceConfiguration().getFileStorageMode(),
         appConfig.getFileServiceConfiguration().getClusterName()));
+    install(NgFileStoreModule.getInstance());
     install(new GitopsResourceClientModule(appConfig.getGitopsResourceClientConfig(), NG_MANAGER.getServiceId()));
     if (TRUE.equals(appConfig.getAccessControlAdminClientConfiguration().getMockAccessControlService())) {
       AccessControlAdminClientConfiguration accessControlAdminClientConfiguration =
@@ -710,10 +709,6 @@ public class NextGenModule extends AbstractModule {
 
     bind(VariableService.class).to(VariableServiceImpl.class);
     bindExceptionHandlers();
-
-    MapBinder<String, FilterPropertiesMapper> filterPropertiesMapper =
-        MapBinder.newMapBinder(binder(), String.class, FilterPropertiesMapper.class);
-    filterPropertiesMapper.addBinding(FilterType.FILESTORE.toString()).to(FilesFilterPropertiesMapper.class);
   }
 
   private void bindExceptionHandlers() {

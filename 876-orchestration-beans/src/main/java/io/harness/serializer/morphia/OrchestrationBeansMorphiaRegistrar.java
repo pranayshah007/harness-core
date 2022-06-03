@@ -14,6 +14,7 @@ import io.harness.beans.stepDetail.NodeExecutionsInfo;
 import io.harness.beans.stepDetail.StepDetailInstance;
 import io.harness.data.ExecutionSweepingOutputInstance;
 import io.harness.data.OutcomeInstance;
+import io.harness.execution.ExecutionInputInstance;
 import io.harness.execution.NodeExecution;
 import io.harness.execution.PlanExecution;
 import io.harness.execution.PlanExecutionMetadata;
@@ -33,6 +34,7 @@ import java.util.Set;
 public class OrchestrationBeansMorphiaRegistrar implements MorphiaRegistrar {
   @Override
   public void registerClasses(Set<Class> set) {
+    set.add(ExecutionInputInstance.class);
     set.add(NodeExecution.class);
     set.add(PlanExecution.class);
     set.add(Interrupt.class);

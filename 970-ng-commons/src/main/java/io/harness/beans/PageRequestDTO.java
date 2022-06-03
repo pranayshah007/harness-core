@@ -21,4 +21,5 @@ import lombok.Data;
 public class PageRequestDTO {
   int pageIndex;
   int pageSize;
+  boolean fetchAll;
 }

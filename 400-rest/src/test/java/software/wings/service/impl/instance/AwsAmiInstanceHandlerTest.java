@@ -161,7 +161,7 @@ public class AwsAmiInstanceHandlerTest extends WingsBaseTest {
                  .withServiceId(SERVICE_ID)
                  .build())
         .when(infraMappingService)
-        .get(anyString(), anyString());
+        .get(any(), any());
 
     doReturn(asList(encryptedDataDetail)).when(secretManager).getEncryptionDetails(any(), any(), any());
 
@@ -173,7 +173,7 @@ public class AwsAmiInstanceHandlerTest extends WingsBaseTest {
                                 .build())
                  .build())
         .when(settingsService)
-        .get(anyString());
+        .get(any());
 
     // capture arg
     doReturn(true).when(instanceService).delete(anySet());
@@ -182,15 +182,13 @@ public class AwsAmiInstanceHandlerTest extends WingsBaseTest {
 
     doReturn(Application.Builder.anApplication().name("app").uuid("app_1").accountId(ACCOUNT_ID).build())
         .when(appService)
-        .get(anyString());
+        .get(any());
 
     doReturn(Environment.Builder.anEnvironment().environmentType(EnvironmentType.PROD).name(ENV_NAME).build())
         .when(environmentService)
-        .get(anyString(), anyString(), anyBoolean());
+        .get(any(), any(), anyBoolean());
 
-    doReturn(Service.builder().name(SERVICE_NAME).build())
-        .when(serviceResourceService)
-        .getWithDetails(anyString(), anyString());
+    doReturn(Service.builder().name(SERVICE_NAME).build()).when(serviceResourceService).getWithDetails(any(), any());
   }
 
   // 3 existing instances, 1 EC2, 2 AMI,
@@ -332,11 +330,9 @@ public class AwsAmiInstanceHandlerTest extends WingsBaseTest {
 
     getInstances();
 
-    doReturn(getInstances()).when(instanceService).getInstancesForAppAndInframapping(anyString(), anyString());
+    doReturn(getInstances()).when(instanceService).getInstancesForAppAndInframapping(any(), any());
     doReturn(new DescribeInstancesResult()).when(awsHelperService).describeEc2Instances(any(), any(), any(), any());
-    doReturn(emptyList())
-        .when(mockAwsEc2HelperServiceManager)
-        .listEc2Instances(any(), any(), any(), any(), anyString());
+    doReturn(emptyList()).when(mockAwsEc2HelperServiceManager).listEc2Instances(any(), any(), any(), any(), any());
 
     com.amazonaws.services.ec2.model.Instance ec2Instance1 = new com.amazonaws.services.ec2.model.Instance();
     ec2Instance1.setPrivateDnsName(PRIVATE_DNS_1);
@@ -349,7 +345,7 @@ public class AwsAmiInstanceHandlerTest extends WingsBaseTest {
 
     doReturn(asList(ec2Instance1, ec2Instance2))
         .when(mockAwsAsgHelperServiceManager)
-        .listAutoScalingGroupInstances(any(), anyList(), anyString(), anyString(), anyString());
+        .listAutoScalingGroupInstances(any(), any(), any(), any(), any());
     OnDemandRollbackInfo onDemandRollbackInfo = OnDemandRollbackInfo.builder().onDemandRollback(false).build();
     awsAmiInstanceHandler.handleNewDeployment(
         Arrays.asList(

@@ -26,13 +26,9 @@ import io.harness.rule.Owner;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
-@RunWith(PowerMockRunner.class)
 @PrepareForTest(EngineExpressionProtoServiceBlockingStub.class)
 public class EngineGrpcExpressionServiceTest extends PmsSdkCoreTestBase {
   EngineExpressionProtoServiceBlockingStub engineExpressionProtoServiceBlockingStub;
@@ -40,7 +36,7 @@ public class EngineGrpcExpressionServiceTest extends PmsSdkCoreTestBase {
 
   @Before
   public void beforeTest() {
-    engineExpressionProtoServiceBlockingStub = PowerMockito.mock(EngineExpressionProtoServiceBlockingStub.class);
+    engineExpressionProtoServiceBlockingStub = Mockito.mock(EngineExpressionProtoServiceBlockingStub.class);
     engineGrpcExpressionService = new EngineGrpcExpressionService(engineExpressionProtoServiceBlockingStub);
   }
 

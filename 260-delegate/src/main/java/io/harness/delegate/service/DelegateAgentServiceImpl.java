@@ -1069,9 +1069,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         continue;
       }
       builder.delegateId(responseDelegateId);
-      DelegateAgentCommonVariables.setDelegateTokenName(delegateResponse.getDelegateTokenName());
-      log.info("Delegate registered with id {} and delegate token name {}", responseDelegateId,
-          delegateResponse.getDelegateTokenName());
+      log.info("Delegate registered with id {}", responseDelegateId);
       return responseDelegateId;
     }
 
@@ -1526,7 +1524,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         switchStorageMsgSent = true;
       }
       if (sendJreInformationToWatcher) {
-        log.debug("Sending Delegate JRE: {} MigrateTo JRE: {} to watcher", System.getProperty(JAVA_VERSION),
+        log.info("Sending Delegate JRE: {} MigrateTo JRE: {} to watcher", System.getProperty(JAVA_VERSION),
             migrateToJreVersion);
         statusData.put(DELEGATE_JRE_VERSION, System.getProperty(JAVA_VERSION));
         statusData.put(MIGRATE_TO_JRE_VERSION, migrateToJreVersion);

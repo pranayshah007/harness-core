@@ -52,33 +52,41 @@ public abstract class AbstractApprovalCallback {
   protected void checkApprovalAndRejectionCriteria(TicketNG ticket, ApprovalInstance instance,
       NGLogCallback logCallback, CriteriaSpecWrapperDTO approvalCriteria, CriteriaSpecWrapperDTO rejectionCriteria) {
     if (isNull(approvalCriteria) || isNull(approvalCriteria.getCriteriaSpecDTO())) {
+      log.warn("Approval criteria can't be empty for instance id - {}", instance.getId());
       throw new InvalidRequestException("Approval criteria can't be empty");
     }
 
+    log.info("Evaluating approval criteria for instance id - {}", instance.getId());
     logCallback.saveExecutionLog("Evaluating approval criteria...");
     CriteriaSpecDTO approvalCriteriaSpec = approvalCriteria.getCriteriaSpecDTO();
     boolean approvalEvaluationResult = evaluateCriteria(ticket, approvalCriteriaSpec);
     if (approvalEvaluationResult) {
+      log.info("Approval criteria has been met for instance id - {}", instance.getId());
       updateApprovalInstanceAndLog(logCallback, "Approval criteria has been met", LogColor.Cyan,
           CommandExecutionStatus.SUCCESS, ApprovalStatus.APPROVED, instance.getId());
       return;
     }
+    log.info("Approval criteria has not been met for instance id - {}", instance.getId());
     logCallback.saveExecutionLog("Approval criteria has not been met");
 
     if (isNull(rejectionCriteria) || isNull(rejectionCriteria.getCriteriaSpecDTO())
         || rejectionCriteria.getCriteriaSpecDTO().isEmpty()) {
+      log.info("Approval criteria has not been met for instance id - {}", instance.getId());
       logCallback.saveExecutionLog("Rejection criteria is not present");
       return;
     }
 
+    log.info("Evaluating rejection criteria for instance id - {}", instance.getId());
     logCallback.saveExecutionLog("Evaluating rejection criteria...");
     CriteriaSpecDTO rejectionCriteriaSpec = rejectionCriteria.getCriteriaSpecDTO();
     boolean rejectionEvaluationResult = evaluateCriteria(ticket, rejectionCriteriaSpec);
     if (rejectionEvaluationResult) {
+      log.info("Rejection criteria has been met for instance id - {}", instance.getId());
       updateApprovalInstanceAndLog(logCallback, "Rejection criteria has been met", LogColor.Red,
           CommandExecutionStatus.FAILURE, ApprovalStatus.REJECTED, instance.getId());
       return;
     }
+    log.info("Rejection criteria has also not been met for instance id - {}", instance.getId());
     logCallback.saveExecutionLog("Rejection criteria has also not been met");
   }
 

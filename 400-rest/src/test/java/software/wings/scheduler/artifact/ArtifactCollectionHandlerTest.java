@@ -54,7 +54,8 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.powermock.api.mockito.PowerMockito;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
@@ -79,29 +80,28 @@ public class ArtifactCollectionHandlerTest extends WingsBaseTest {
   @Owner(developers = ANSHUL)
   @Category(UnitTests.class)
   public void testHandleWithValidAccountId() {
-    PowerMockito.mockStatic(ExceptionLogger.class);
+    try (MockedStatic<ExceptionLogger> mockedStatic = Mockito.mockStatic(ExceptionLogger.class)) {
+      ArtifactStream ARTIFACT_STREAM = DockerArtifactStream.builder()
+                                           .uuid(ARTIFACT_STREAM_ID)
+                                           .sourceName(ARTIFACT_STREAM_NAME)
+                                           .appId(APP_ID)
+                                           .settingId(SETTING_ID)
+                                           .serviceId(SERVICE_ID)
+                                           .imageName("image_name")
+                                           .accountId(ACCOUNT_ID)
+                                           .build();
 
-    ArtifactStream ARTIFACT_STREAM = DockerArtifactStream.builder()
-                                         .uuid(ARTIFACT_STREAM_ID)
-                                         .sourceName(ARTIFACT_STREAM_NAME)
-                                         .appId(APP_ID)
-                                         .settingId(SETTING_ID)
-                                         .serviceId(SERVICE_ID)
-                                         .imageName("image_name")
-                                         .accountId(ACCOUNT_ID)
-                                         .build();
+      when(permitService.acquirePermit(any())).thenThrow(new WingsException("Exception"));
+      artifactCollectionHandler.handle(ARTIFACT_STREAM);
 
-    when(permitService.acquirePermit(any())).thenThrow(new WingsException("Exception"));
-    artifactCollectionHandler.handle(ARTIFACT_STREAM);
+      ArgumentCaptor<WingsException> argumentCaptor = ArgumentCaptor.forClass(WingsException.class);
+      mockedStatic.verify(() -> ExceptionLogger.logProcessedMessages(argumentCaptor.capture(), any(), any()));
+      WingsException wingsException = argumentCaptor.getValue();
 
-    ArgumentCaptor<WingsException> argumentCaptor = ArgumentCaptor.forClass(WingsException.class);
-    PowerMockito.verifyStatic();
-    ExceptionLogger.logProcessedMessages(argumentCaptor.capture(), any(), any());
-    WingsException wingsException = argumentCaptor.getValue();
-
-    assertThat(wingsException).isNotNull();
-    assertThat(wingsException.calcRecursiveContextObjects().values().size()).isEqualTo(4);
-    assertThat(wingsException.calcRecursiveContextObjects().values()).contains(ACCOUNT_ID, ARTIFACT_STREAM_ID);
+      assertThat(wingsException).isNotNull();
+      assertThat(wingsException.calcRecursiveContextObjects().values().size()).isEqualTo(4);
+      assertThat(wingsException.calcRecursiveContextObjects().values()).contains(ACCOUNT_ID, ARTIFACT_STREAM_ID);
+    }
   }
 
   @Test

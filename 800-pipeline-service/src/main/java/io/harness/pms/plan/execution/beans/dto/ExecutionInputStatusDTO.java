@@ -23,5 +23,6 @@ import lombok.Value;
     description = "Contains the Input Instance ID and the status If the Execution Input is valid")
 public class ExecutionInputStatusDTO {
   @Schema(description = PlanExecutionResourceConstants.NODE_EXECUTION_ID_PARAM_MESSAGE) String nodeExecutionId;
+  @Schema(description = PlanExecutionResourceConstants.INPUT_INSTANCE_ID_PARAM_MESSAGE) String inputInstanceId;
   @Schema(description = "Status if Execution Input is valid or not") ExecutionInputStatus status;
 }

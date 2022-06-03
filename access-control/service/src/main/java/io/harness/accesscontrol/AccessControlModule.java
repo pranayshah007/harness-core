@@ -93,6 +93,7 @@ import io.harness.eventsframework.api.Consumer;
 import io.harness.eventsframework.impl.noop.NoOpConsumer;
 import io.harness.eventsframework.impl.redis.RedisConsumer;
 import io.harness.eventsframework.impl.redis.RedisUtils;
+import io.harness.eventsframework.impl.redis.monitoring.publisher.RedisEventMetricPublisher;
 import io.harness.ff.FeatureFlagClientModule;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.lock.PersistentLockModule;
@@ -186,27 +187,29 @@ public class AccessControlModule extends AbstractModule {
   @Provides
   @Named(ENTITY_CRUD)
   @Singleton
-  public Consumer getEntityCrudConsumer(
-      @Nullable @Named("eventsFrameworkRedissonClient") RedissonClient redissonClient) {
+  public Consumer getEntityCrudConsumer(@Nullable @Named("eventsFrameworkRedissonClient") RedissonClient redissonClient,
+      RedisEventMetricPublisher redisEventMetricPublisher) {
     RedisConfig redisConfig = config.getEventsConfig().getRedisConfig();
     if (!config.getEventsConfig().isEnabled()) {
       return NoOpConsumer.of(DUMMY_TOPIC_NAME, DUMMY_GROUP_NAME);
     }
     return RedisConsumer.of(ENTITY_CRUD, ACCESS_CONTROL_SERVICE.getServiceId(), redissonClient,
-        ENTITY_CRUD_MAX_PROCESSING_TIME, ENTITY_CRUD_READ_BATCH_SIZE, redisConfig.getEnvNamespace());
+        ENTITY_CRUD_MAX_PROCESSING_TIME, ENTITY_CRUD_READ_BATCH_SIZE, redisConfig.getEnvNamespace(),
+        redisEventMetricPublisher);
   }
 
   @Provides
   @Named(USERMEMBERSHIP)
   @Singleton
   public Consumer getUserMembershipConsumer(
-      @Nullable @Named("eventsFrameworkRedissonClient") RedissonClient redissonClient) {
+      @Nullable @Named("eventsFrameworkRedissonClient") RedissonClient redissonClient,
+      RedisEventMetricPublisher redisEventMetricPublisher) {
     RedisConfig redisConfig = config.getEventsConfig().getRedisConfig();
     if (!config.getEventsConfig().isEnabled()) {
       return NoOpConsumer.of(DUMMY_TOPIC_NAME, DUMMY_GROUP_NAME);
     }
     return RedisConsumer.of(USERMEMBERSHIP, ACCESS_CONTROL_SERVICE.getServiceId(), redissonClient,
-        Duration.ofMinutes(10), 3, redisConfig.getEnvNamespace());
+        Duration.ofMinutes(10), 3, redisConfig.getEnvNamespace(), redisEventMetricPublisher);
   }
 
   @Provides

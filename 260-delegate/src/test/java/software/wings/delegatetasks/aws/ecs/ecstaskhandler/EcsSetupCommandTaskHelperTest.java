@@ -1121,7 +1121,7 @@ public class EcsSetupCommandTaskHelperTest extends WingsBaseTest {
         .getServiceRegistryFromJson(anyString(), any());
     doReturn(of(new Service().withServiceRegistries(new ServiceRegistry().withRegistryArn("arn1"))))
         .when(ecsSetupCommandTaskHelper)
-        .getLastRunningService(any(), anyList(), any(), anyString());
+        .getLastRunningService(any(), any(), any(), anyString());
     ContainerSetupCommandUnitExecutionDataBuilder builder = ContainerSetupCommandUnitExecutionData.builder();
     List<ServiceRegistry> serviceRegistries = newArrayList();
     ecsSetupCommandTaskHelper.setServiceRegistryForDNSSwap(

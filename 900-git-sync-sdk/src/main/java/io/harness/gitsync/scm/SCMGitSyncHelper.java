@@ -134,7 +134,7 @@ public class SCMGitSyncHelper {
   public ScmCreateFileGitResponse createFile(
       Scope scope, ScmCreateFileGitRequest gitRequest, Map<String, String> contextMap) {
     contextMap = GitSyncLogContextHelper.setContextMap(scope, gitRequest.getRepoName(), gitRequest.getBranchName(),
-        gitRequest.getFilePath(), GitOperation.GET_FILE, contextMap);
+        gitRequest.getFilePath(), GitOperation.CREATE_FILE, contextMap);
     try (GlobalContextManager.GlobalContextGuard guard = GlobalContextManager.ensureGlobalContextGuard();
          MdcContextSetter ignore1 = new MdcContextSetter(contextMap)) {
       final CreateFileRequest createFileRequest =

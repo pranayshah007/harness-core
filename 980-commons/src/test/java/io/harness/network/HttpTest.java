@@ -21,14 +21,7 @@ import java.io.IOException;
 import okhttp3.OkHttpClient;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(Http.class)
-@PowerMockIgnore({"javax.net.ssl.*", "javax.security.*"})
 public class HttpTest extends CategoryTest {
   @Test
   @Owner(developers = GEORGE)

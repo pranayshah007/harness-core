@@ -75,6 +75,28 @@ public class SweepingOutputServiceImpl extends SweepingOutputServiceImplBase {
   }
 
   @Override
+  public void listOutputsUsingExecutionIds(
+      SweepingOutputListRequest request, StreamObserver<SweepingOutputListResponse> responseObserver) {
+    List<RawOptionalSweepingOutput> resolve = pmsSweepingOutputService.findOutputsUsingExecutionIds(
+        request.getAmbiance(), request.getName(), request.getNodeIdsList());
+
+    List<OptionalSweepingOutputResolveBlobResponse> optionalSweepingOutputResolveBlobResponses = new ArrayList<>();
+    for (RawOptionalSweepingOutput rawOptionalSweepingOutput : resolve) {
+      Builder builder =
+          OptionalSweepingOutputResolveBlobResponse.newBuilder().setFound(rawOptionalSweepingOutput.isFound());
+      if (rawOptionalSweepingOutput.isFound()) {
+        builder.setStepTransput(rawOptionalSweepingOutput.getOutput());
+      }
+      optionalSweepingOutputResolveBlobResponses.add(builder.build());
+    }
+
+    responseObserver.onNext(SweepingOutputListResponse.newBuilder()
+                                .addAllSweepingOutputResolveBlobResponses(optionalSweepingOutputResolveBlobResponses)
+                                .build());
+    responseObserver.onCompleted();
+  }
+
+  @Override
   public void resolve(
       SweepingOutputResolveBlobRequest request, StreamObserver<SweepingOutputResolveBlobResponse> responseObserver) {
     String resolve = pmsSweepingOutputService.resolve(request.getAmbiance(), request.getRefObject());

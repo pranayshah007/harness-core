@@ -18,10 +18,14 @@ import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyObject;
+import static org.mockito.Matchers.anyMap;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.powermock.api.mockito.PowerMockito.doThrow;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.spy;
 import static org.powermock.api.mockito.PowerMockito.when;
 
@@ -34,9 +38,12 @@ import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.TaskData;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.JiraClientException;
 import io.harness.jira.JiraAction;
 import io.harness.jira.JiraCustomFieldValue;
 import io.harness.jira.JiraField;
+import io.harness.jira.JiraIssueNG;
+import io.harness.jira.JiraUserData;
 import io.harness.rule.Owner;
 
 import software.wings.api.jira.JiraExecutionData;
@@ -48,6 +55,8 @@ import com.google.inject.Inject;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -80,6 +89,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
@@ -111,7 +121,9 @@ public class JiraTaskTest extends CategoryTest {
 
   @Mock private EncryptionService encryptionService;
   @Mock private Issue issue;
+  @Mock private JiraIssueNG issueNG;
   @Mock private JiraClient jiraClient;
+  @Mock private io.harness.jira.JiraClient jiraNGClient;
   @Mock private Project project;
   @Mock private FluentUpdate update;
   @Mock private FluentCreate create;
@@ -134,6 +146,137 @@ public class JiraTaskTest extends CategoryTest {
     MockitoAnnotations.initMocks(this);
   }
 
+  @Test
+  @Owner(developers = LUCAS_SALES)
+  @Category(UnitTests.class)
+  public void shouldFetchUserListInfo() {
+    JiraTaskParameters taskParameters = getTaskParams(JiraAction.SEARCH_USER);
+    List<JiraUserData> mockUserList = new ArrayList<>(Arrays.asList(new JiraUserData("UserId", "User Name", true)));
+    doReturn(jiraNGClient).when(spyJiraTask).getNGJiraClient(taskParameters);
+    doReturn(mockUserList).when(jiraNGClient).getUsers(any(), any(), any());
+
+    JiraExecutionData jiraExecutionData =
+        JiraExecutionData.builder().executionStatus(ExecutionStatus.SUCCESS).userSearchList(mockUserList).build();
+
+    DelegateResponseData delegateResponseData = spyJiraTask.run(new Object[] {taskParameters});
+    assertThat(delegateResponseData).isEqualToComparingFieldByField(jiraExecutionData);
+    verify(jiraNGClient).getUsers(eq(taskParameters.getUserQuery()), eq(taskParameters.getAccountId()), eq(null));
+  }
+
+  @Test
+  @Owner(developers = LUCAS_SALES)
+  @Category(UnitTests.class)
+  public void shouldReturnFailedExecutionDataForUpdateTicketNG_failing() {
+    JiraTaskParameters taskParameters = getTaskParams(JiraAction.UPDATE_TICKET_NG);
+    taskParameters.setCustomFields(
+        singletonMap("customfield_10633", new JiraCustomFieldValue("user", taskParameters.getUserQuery())));
+    when(jiraNGClient.getIssue(JIRA_ISSUE_ID)).thenReturn(issueNG);
+    when(issueNG.getKey()).thenReturn(JIRA_ISSUE_ID);
+    when(issueNG.getFields()).thenReturn(singletonMap("Project Key", PROJECT_KEY));
+    List<JiraUserData> userDataList = Arrays.asList(new JiraUserData("accountId", "Lucas", true));
+
+    doReturn(jiraNGClient).when(spyJiraTask).getNGJiraClient(taskParameters);
+    doReturn(userDataList).when(jiraNGClient).getUsers(any(), any(), any());
+    doThrow(new JiraClientException("error")).when(jiraNGClient).updateIssue(any(), any(), any(), anyMap());
+
+    DelegateResponseData delegateResponseData = spyJiraTask.run(new Object[] {taskParameters});
+    assertThat(delegateResponseData).hasFieldOrPropertyWithValue("executionStatus", ExecutionStatus.FAILED);
+  }
+
+  @Test(expected = InvalidRequestException.class)
+  @Owner(developers = LUCAS_SALES)
+  @Category(UnitTests.class)
+  public void shouldThrowErrorWhenJiraFetchesMoreThan_1_user() {
+    JiraTaskParameters taskParameters = getTaskParams(JiraAction.UPDATE_TICKET_NG);
+    taskParameters.setCustomFields(
+        singletonMap("customfield_10633", new JiraCustomFieldValue("user", taskParameters.getUserQuery())));
+    when(jiraNGClient.getIssue(JIRA_ISSUE_ID)).thenReturn(issueNG);
+    when(issueNG.getKey()).thenReturn(JIRA_ISSUE_ID);
+    when(issueNG.getFields()).thenReturn(singletonMap("Project Key", PROJECT_KEY));
+    List<JiraUserData> userDataList =
+        Arrays.asList(new JiraUserData("accountId", "Lucas", true), new JiraUserData("accountI2d", "Lucas", true));
+
+    doReturn(jiraNGClient).when(spyJiraTask).getNGJiraClient(taskParameters);
+    doReturn(userDataList).when(jiraNGClient).getUsers(any(), any(), any());
+
+    spyJiraTask.run(new Object[] {taskParameters});
+  }
+  @Test
+  @Owner(developers = LUCAS_SALES)
+  @Category(UnitTests.class)
+  public void shouldReturnFailedExecutionDataForCreateTicketNG_failing() {
+    JiraTaskParameters taskParameters = getTaskParams(JiraAction.CREATE_TICKET_NG);
+    taskParameters.setCustomFields(
+        singletonMap("customfield_10633", new JiraCustomFieldValue("user", taskParameters.getUserQuery())));
+    List<JiraUserData> userDataList = Arrays.asList(new JiraUserData("accountId", "Lucas", true));
+
+    doReturn(jiraNGClient).when(spyJiraTask).getNGJiraClient(taskParameters);
+    doReturn(issueNG).when(jiraNGClient).createIssue(any(), any(), anyMap());
+    doReturn(userDataList).when(jiraNGClient).getUsers(any(), any(), any());
+    doThrow(new JiraClientException("error")).when(jiraNGClient).createIssue(any(), any(), anyMap());
+
+    DelegateResponseData delegateResponseData = spyJiraTask.run(new Object[] {taskParameters});
+    assertThat(delegateResponseData).hasFieldOrPropertyWithValue("executionStatus", ExecutionStatus.FAILED);
+  }
+
+  @Test
+  @Owner(developers = LUCAS_SALES)
+  @Category(UnitTests.class)
+  public void shouldReturnSuccessfulExecutionDataForCreateTicketNG() {
+    JiraTaskParameters taskParameters = getTaskParams(JiraAction.CREATE_TICKET_NG);
+    taskParameters.setCustomFields(
+        singletonMap("customfield_10633", new JiraCustomFieldValue("user", taskParameters.getUserQuery())));
+    List<JiraUserData> userDataList = Arrays.asList(new JiraUserData("accountId", "Lucas", true));
+
+    doReturn(jiraNGClient).when(spyJiraTask).getNGJiraClient(taskParameters);
+    doReturn(issueNG).when(jiraNGClient).createIssue(any(), any(), anyMap());
+    doReturn(userDataList).when(jiraNGClient).getUsers(any(), any(), any());
+    doReturn(mock(JiraIssueNG.class)).when(jiraNGClient).createIssue(any(), any(), anyMap());
+    JiraExecutionData jiraExecutionData =
+        JiraExecutionData.builder()
+            .jiraAction(JiraAction.CREATE_TICKET_NG)
+            .executionStatus(ExecutionStatus.SUCCESS)
+            .errorMessage("Created Jira ticket null")
+            .issueUrl("https://some.attlasian.net/browse/null")
+            .issueId(null)
+            .issueKey(null)
+            .jiraIssueData(JiraExecutionData.JiraIssueData.builder().description("").build())
+            .build();
+    DelegateResponseData delegateResponseData = spyJiraTask.run(new Object[] {taskParameters});
+    verify(jiraNGClient).getUsers(taskParameters.getUserQuery(), null, null);
+    verify(jiraNGClient).createIssue(eq(taskParameters.getProject()), eq(taskParameters.getIssueType()), anyMap());
+    assertThat(delegateResponseData).isEqualToComparingFieldByField(jiraExecutionData);
+  }
+  @Test
+  @Owner(developers = LUCAS_SALES)
+  @Category(UnitTests.class)
+  public void shouldReturnSuccessfulExecutionDataForUpdateTicketNG() {
+    JiraTaskParameters taskParameters = getTaskParams(JiraAction.UPDATE_TICKET_NG);
+    taskParameters.setCustomFields(
+        singletonMap("customfield_10633", new JiraCustomFieldValue("user", taskParameters.getUserQuery())));
+    List<JiraUserData> userDataList = Arrays.asList(new JiraUserData("accountId", "Lucas", true));
+
+    doReturn(jiraNGClient).when(spyJiraTask).getNGJiraClient(taskParameters);
+    when(jiraNGClient.getIssue(JIRA_ISSUE_ID)).thenReturn(issueNG);
+    when(issueNG.getKey()).thenReturn(JIRA_ISSUE_ID);
+    when(issueNG.getFields()).thenReturn(singletonMap("Project Key", PROJECT_KEY));
+    doReturn(mock(JiraIssueNG.class)).when(jiraNGClient).updateIssue(any(), any(), any(), any());
+    doReturn(userDataList).when(jiraNGClient).getUsers(any(), any(), any());
+    JiraExecutionData jiraExecutionData =
+        JiraExecutionData.builder()
+            .executionStatus(ExecutionStatus.SUCCESS)
+            .errorMessage("Updated Jira ticket JIRA_ISSUE_ID")
+            .issueUrl("https://some.attlasian.net/browse/JIRA_ISSUE_ID")
+            .issueId(JIRA_ISSUE_ID)
+            .issueKey(JIRA_ISSUE_ID)
+            .jiraIssueData(
+                JiraExecutionData.JiraIssueData.builder().description(taskParameters.getDescription()).build())
+            .build();
+    DelegateResponseData delegateResponseData = spyJiraTask.run(new Object[] {taskParameters});
+    Mockito.verify(jiraNGClient).updateIssue(eq(JIRA_ISSUE_ID), eq(taskParameters.getStatus()), eq(null), anyMap());
+    verify(jiraNGClient).getUsers(taskParameters.getUserQuery(), null, null);
+    assertThat(delegateResponseData).isEqualToComparingFieldByField(jiraExecutionData);
+  }
   @Test
   @Owner(developers = AGORODETKI)
   @Category(UnitTests.class)
@@ -334,7 +477,7 @@ public class JiraTaskTest extends CategoryTest {
                                             .jiraAction(JiraAction.UPDATE_TICKET)
                                             .project(PROJECT_KEY)
                                             .build();
-    Mockito.doReturn(jiraClient).when(spyJiraTask).getJiraClient(taskParameters);
+    doReturn(jiraClient).when(spyJiraTask).getJiraClient(taskParameters);
     when(jiraClient.getIssue(JIRA_ISSUE_ID)).thenReturn(issue);
     when(issue.getProject()).thenReturn(project);
     when(project.getKey()).thenReturn("");
@@ -354,7 +497,7 @@ public class JiraTaskTest extends CategoryTest {
   public void shouldReturnSuccessfulExecutionDataForUpdateTicket() throws JiraException {
     JiraTaskParameters taskParameters = getTaskParams(JiraAction.UPDATE_TICKET);
 
-    Mockito.doReturn(jiraClient).when(spyJiraTask).getJiraClient(taskParameters);
+    doReturn(jiraClient).when(spyJiraTask).getJiraClient(taskParameters);
     when(jiraClient.getIssue(JIRA_ISSUE_ID)).thenReturn(issue);
     when(issue.getKey()).thenReturn(JIRA_ISSUE_ID);
     when(issue.getProject()).thenReturn(project);
@@ -383,7 +526,7 @@ public class JiraTaskTest extends CategoryTest {
   public void shouldFailExecutionWhenJiraExceptionOccurredWhileTryingToUpdateTicket() throws JiraException {
     JiraTaskParameters taskParameters = getTaskParams(JiraAction.UPDATE_TICKET);
 
-    Mockito.doReturn(jiraClient).when(spyJiraTask).getJiraClient(taskParameters);
+    doReturn(jiraClient).when(spyJiraTask).getJiraClient(taskParameters);
     when(jiraClient.getIssue(JIRA_ISSUE_ID)).thenThrow(new JiraException(""));
 
     JiraExecutionData jiraExecutionData = JiraExecutionData.builder()
@@ -401,7 +544,7 @@ public class JiraTaskTest extends CategoryTest {
   public void shouldFailExecutionWhenWingsExceptionOccurredWhileTryingToUpdateTicket() throws JiraException {
     JiraTaskParameters taskParameters = getTaskParams(JiraAction.UPDATE_TICKET);
 
-    Mockito.doReturn(jiraClient).when(spyJiraTask).getJiraClient(taskParameters);
+    doReturn(jiraClient).when(spyJiraTask).getJiraClient(taskParameters);
     when(jiraClient.getIssue(JIRA_ISSUE_ID)).thenThrow(new InvalidRequestException(""));
 
     JiraExecutionData jiraExecutionData =
@@ -415,7 +558,7 @@ public class JiraTaskTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldReturnSuccessfulExecutionDataAfterForCreateTicket() throws JiraException {
     JiraTaskParameters taskParameters = getTaskParams(JiraAction.CREATE_TICKET);
-    Mockito.doReturn(jiraClient).when(spyJiraTask).getJiraClient(taskParameters);
+    doReturn(jiraClient).when(spyJiraTask).getJiraClient(taskParameters);
     when(jiraClient.createIssue(PROJECT_KEY, STORY)).thenReturn(create);
     when(create.field(any(), any())).thenReturn(create);
     when(create.execute()).thenReturn(issue);
@@ -471,7 +614,7 @@ public class JiraTaskTest extends CategoryTest {
     JiraTaskParameters taskParameters = getTaskParams(JiraAction.FETCH_ISSUE);
     when(encryptionService.decrypt(taskParameters.getJiraConfig(), taskParameters.getEncryptionDetails(), false))
         .thenReturn(null);
-    Mockito.doReturn(jiraClient).when(spyJiraTask).getJiraClient(taskParameters);
+    doReturn(jiraClient).when(spyJiraTask).getJiraClient(taskParameters);
     when(jiraClient.getIssue(JIRA_ISSUE_ID)).thenThrow(exception);
 
     JiraExecutionData jiraExecutionData =
@@ -505,7 +648,7 @@ public class JiraTaskTest extends CategoryTest {
     JiraTaskParameters taskParameters = getTaskParams(JiraAction.FETCH_ISSUE);
     when(encryptionService.decrypt(taskParameters.getJiraConfig(), taskParameters.getEncryptionDetails(), false))
         .thenReturn(null);
-    Mockito.doReturn(jiraClient).when(spyJiraTask).getJiraClient(taskParameters);
+    doReturn(jiraClient).when(spyJiraTask).getJiraClient(taskParameters);
     when(jiraClient.getIssue(JIRA_ISSUE_ID)).thenReturn(issue);
     when(issue.getField(STATUS)).thenReturn(singletonMap("name", "To Do"));
     when(issue.getKey()).thenReturn(JIRA_ISSUE_ID);
@@ -530,15 +673,16 @@ public class JiraTaskTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldFetchProjectsAndReturnSuccessfulExecution() throws JiraException, IOException, RestException {
     JiraTaskParameters taskParameters = getTaskParams(JiraAction.GET_PROJECTS);
-    Mockito.doReturn(jiraClient).when(spyJiraTask).getJiraClient(taskParameters);
+    doReturn(jiraClient).when(spyJiraTask).getJiraClient(taskParameters);
     JSONArray jsonArray = new JSONArray();
     when(jiraClient.getRestClient()).thenReturn(restClient);
-    when(restClient.get(any(URI.class))).thenReturn(json);
-    mockStatic(JSONArray.class);
-    when(JSONArray.fromObject(json)).thenReturn(jsonArray);
-    JiraExecutionData jiraExecutionData =
-        JiraExecutionData.builder().projects(jsonArray).executionStatus(ExecutionStatus.SUCCESS).build();
-    runTaskAndAssertResponse(taskParameters, jiraExecutionData);
+    when(restClient.get(nullable(URI.class))).thenReturn(json);
+    try (MockedStatic<JSONArray> jsonArrayMockedStatic = Mockito.mockStatic(JSONArray.class)) {
+      when(JSONArray.fromObject(json)).thenReturn(jsonArray);
+      JiraExecutionData jiraExecutionData =
+          JiraExecutionData.builder().projects(jsonArray).executionStatus(ExecutionStatus.SUCCESS).build();
+      runTaskAndAssertResponse(taskParameters, jiraExecutionData);
+    }
   }
 
   @Test
@@ -547,7 +691,7 @@ public class JiraTaskTest extends CategoryTest {
   public void shouldFailExecutionOnJiraExceptionForGetFieldsAndOptions()
       throws JiraException, URISyntaxException, IOException, RestException {
     JiraTaskParameters taskParameters = getTaskParams(JiraAction.GET_FIELDS_OPTIONS);
-    Mockito.doReturn(jiraClient).when(spyJiraTask).getJiraClient(taskParameters);
+    doReturn(jiraClient).when(spyJiraTask).getJiraClient(taskParameters);
     when(jiraClient.searchIssues("project = PROJECT_KEY", 1)).thenThrow(new JiraException(""));
     JiraExecutionData jiraExecutionData =
         JiraExecutionData.builder()
@@ -564,10 +708,10 @@ public class JiraTaskTest extends CategoryTest {
   public void shouldFailExecutionOnRestExceptionForGetFieldsAndOptions()
       throws JiraException, URISyntaxException, IOException, RestException, IllegalAccessException {
     JiraTaskParameters taskParameters = getTaskParams(JiraAction.GET_FIELDS_OPTIONS);
-    SearchResult issues = Mockito.mock(SearchResult.class);
+    SearchResult issues = mock(SearchResult.class);
     FieldUtils.writeField(issues, "issues", singletonList(issue), true);
     URI uri = new URI(Resource.getBaseUri() + "issue/" + JIRA_ISSUE_ID + "/editmeta");
-    Mockito.doReturn(jiraClient).when(spyJiraTask).getJiraClient(taskParameters);
+    doReturn(jiraClient).when(spyJiraTask).getJiraClient(taskParameters);
     when(jiraClient.searchIssues("project = PROJECT_KEY", 1)).thenReturn(issues);
     when(issue.getKey()).thenReturn(JIRA_ISSUE_ID);
     when(jiraClient.getRestClient()).thenReturn(restClient);
@@ -589,10 +733,10 @@ public class JiraTaskTest extends CategoryTest {
   public void shouldReturnSuccessfulResponseForGetFieldsAndOptions()
       throws URISyntaxException, JiraException, IOException, RestException, IllegalAccessException {
     JiraTaskParameters taskParameters = getTaskParams(JiraAction.GET_FIELDS_OPTIONS);
-    SearchResult issues = Mockito.mock(SearchResult.class);
+    SearchResult issues = mock(SearchResult.class);
     FieldUtils.writeField(issues, "issues", singletonList(issue), true);
     URI uri = new URI(Resource.getBaseUri() + "issue/" + JIRA_ISSUE_ID + "/editmeta");
-    Mockito.doReturn(jiraClient).when(spyJiraTask).getJiraClient(taskParameters);
+    doReturn(jiraClient).when(spyJiraTask).getJiraClient(taskParameters);
     when(jiraClient.searchIssues("project = PROJECT_KEY", 1)).thenReturn(issues);
     when(issue.getKey()).thenReturn(JIRA_ISSUE_ID);
     when(jiraClient.getRestClient()).thenReturn(restClient);
@@ -624,7 +768,7 @@ public class JiraTaskTest extends CategoryTest {
       throws URISyntaxException, JiraException, IOException, RestException {
     JiraTaskParameters taskParameters = getTaskParams(JiraAction.GET_STATUSES);
     URI uri = new URI(Resource.getBaseUri() + "project/PROJECT_KEY/statuses");
-    Mockito.doReturn(jiraClient).when(spyJiraTask).getJiraClient(taskParameters);
+    doReturn(jiraClient).when(spyJiraTask).getJiraClient(taskParameters);
     when(jiraClient.getRestClient()).thenReturn(restClient);
     when(restClient.buildURI(Resource.getBaseUri() + "project/PROJECT_KEY/statuses")).thenReturn(uri);
     when(restClient.get(uri)).thenReturn(jsonArray);
@@ -661,7 +805,7 @@ public class JiraTaskTest extends CategoryTest {
     queryParams.put("expand", "projects.issuetypes.fields");
     queryParams.put("projectKeys", PROJECT_KEY);
     queryParams.put("issuetypeNames", STORY);
-    Mockito.doReturn(jiraClient).when(spyJiraTask).getJiraClient(taskParameters);
+    doReturn(jiraClient).when(spyJiraTask).getJiraClient(taskParameters);
     when(jiraClient.getRestClient()).thenReturn(restClient);
     when(restClient.buildURI(Resource.getBaseUri() + "issue/createmeta", queryParams)).thenReturn(uri);
     when(restClient.get(uri)).thenReturn(json);
@@ -684,12 +828,12 @@ public class JiraTaskTest extends CategoryTest {
     when(json.getJSONObject("schema")).thenReturn(json);
     when(json.containsKey("allowedValues")).thenReturn(false);
     when(json.get("key")).thenReturn("");
-    mockStatic(JSONObject.class);
-    when(JSONObject.fromObject(anyObject())).thenReturn(json);
-    DelegateResponseData responseData = spyJiraTask.run(new Object[] {taskParameters});
-
-    assertThat(((JiraExecutionData) responseData).getCreateMetadata()).isNotNull();
-    assertThat(((JiraExecutionData) responseData).getExecutionStatus()).isEqualTo(ExecutionStatus.SUCCESS);
+    try (MockedStatic<JSONObject> jsonArrayMockedStatic = Mockito.mockStatic(JSONObject.class)) {
+      when(JSONObject.fromObject(any())).thenReturn(json);
+      DelegateResponseData responseData = spyJiraTask.run(new Object[] {taskParameters});
+      assertThat(((JiraExecutionData) responseData).getCreateMetadata()).isNotNull();
+      assertThat(((JiraExecutionData) responseData).getExecutionStatus()).isEqualTo(ExecutionStatus.SUCCESS);
+    }
   }
 
   @Test
@@ -697,7 +841,7 @@ public class JiraTaskTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldReturnSuccessfulExecutionForCheckJiraApproval() throws JiraException {
     JiraTaskParameters taskParameters = getTaskParams(JiraAction.CHECK_APPROVAL);
-    Mockito.doReturn(jiraClient).when(spyJiraTask).getJiraClient(taskParameters);
+    doReturn(jiraClient).when(spyJiraTask).getJiraClient(taskParameters);
     when(jiraClient.getIssue(JIRA_ISSUE_ID)).thenReturn(issue);
     when(issue.getField(STATUS)).thenReturn(singletonMap("name", "To Do"));
 
@@ -711,7 +855,7 @@ public class JiraTaskTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldRejectExecutionForCheckJiraApproval() throws JiraException {
     JiraTaskParameters taskParameters = getTaskParams(JiraAction.CHECK_APPROVAL);
-    Mockito.doReturn(jiraClient).when(spyJiraTask).getJiraClient(taskParameters);
+    doReturn(jiraClient).when(spyJiraTask).getJiraClient(taskParameters);
     when(jiraClient.getIssue(JIRA_ISSUE_ID)).thenReturn(issue);
     when(issue.getField(STATUS)).thenReturn(singletonMap("name", "Done"));
 
@@ -725,7 +869,7 @@ public class JiraTaskTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldPauseExecutionWhileWaitingJiraStatusToMatchApprovalOrRejectionValue() throws JiraException {
     JiraTaskParameters taskParameters = getTaskParams(JiraAction.CHECK_APPROVAL);
-    Mockito.doReturn(jiraClient).when(spyJiraTask).getJiraClient(taskParameters);
+    doReturn(jiraClient).when(spyJiraTask).getJiraClient(taskParameters);
     when(jiraClient.getIssue(JIRA_ISSUE_ID)).thenReturn(issue);
     when(issue.getField(STATUS)).thenReturn(singletonMap("name", "In Progress"));
 
@@ -801,6 +945,7 @@ public class JiraTaskTest extends CategoryTest {
         .jiraConfig(
             JiraConfig.builder().baseUrl("https://some.attlasian.net").password("password".toCharArray()).build())
         .summary(SUMMARY)
+        .userQuery("user@harness.io")
         .labels(Collections.singletonList(LABEL))
         .build();
   }

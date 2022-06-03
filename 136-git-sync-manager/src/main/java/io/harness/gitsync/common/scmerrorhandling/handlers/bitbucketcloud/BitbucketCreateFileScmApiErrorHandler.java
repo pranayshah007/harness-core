@@ -20,6 +20,9 @@ import io.harness.exception.ScmUnexpectedException;
 import io.harness.exception.WingsException;
 import io.harness.gitsync.common.scmerrorhandling.handlers.ScmApiErrorHandler;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @OwnedBy(PL)
 public class BitbucketCreateFileScmApiErrorHandler implements ScmApiErrorHandler {
   public static final String CREATE_FILE_REQUEST_FAILURE = "The requested file couldn't be created in Bitbucket. ";
@@ -36,6 +39,7 @@ public class BitbucketCreateFileScmApiErrorHandler implements ScmApiErrorHandler
             CREATE_FILE_REQUEST_FAILURE + ScmErrorExplanations.REPO_NOT_FOUND,
             new ScmBadRequestException(errorMessage));
       default:
+        log.error(String.format("Error while creating bitbucket file: [%s: %s]", statusCode, errorMessage));
         throw new ScmUnexpectedException(errorMessage);
     }
   }

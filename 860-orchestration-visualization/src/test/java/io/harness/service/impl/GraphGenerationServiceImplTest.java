@@ -147,8 +147,9 @@ public class GraphGenerationServiceImplTest extends OrchestrationVisualizationTe
         constructOrchestrationGraphForPartialTest(Lists.newArrayList(dummyStart, dummyFinish));
     graphGenerationService.cacheOrchestrationGraph(orchestrationGraph);
 
-    OrchestrationGraphDTO graphResponse = graphGenerationService.generatePartialOrchestrationGraphFromSetupNodeId(
-        dummyFinish.getPlanNodeId(), orchestrationGraph.getPlanExecutionId());
+    OrchestrationGraphDTO graphResponse =
+        graphGenerationService.generatePartialOrchestrationGraphFromSetupNodeIdAndExecutionId(
+            dummyFinish.getPlanNodeId(), orchestrationGraph.getPlanExecutionId(), null);
     assertThat(graphResponse).isNotNull();
     assertThat(graphResponse.getRootNodeIds().get(0)).isEqualTo(dummyFinish.getUuid());
     assertThat(graphResponse.getAdjacencyList()).isNotNull();

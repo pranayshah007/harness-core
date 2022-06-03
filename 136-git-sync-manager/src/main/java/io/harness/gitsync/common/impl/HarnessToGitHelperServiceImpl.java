@@ -258,7 +258,7 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
   @Override
   public Boolean isGitSimplificationEnabled(EntityScopeInfo entityScopeInfo) {
     try {
-      if (isEnabled(entityScopeInfo.getAccountId(), FeatureName.GIT_SIMPLIFICATION)) {
+      if (isEnabled(entityScopeInfo.getAccountId(), FeatureName.NG_GIT_EXPERIENCE)) {
         return true;
       }
       return gitSyncSettingsService.getGitSimplificationStatus(entityScopeInfo.getAccountId(),
@@ -588,7 +588,7 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
 
   private ErrorDetails prepareDefaultErrorDetails(WingsException ex) {
     return ErrorDetails.newBuilder()
-        .setErrorMessage(ExceptionUtils.getMessage(ex))
+        .setErrorMessage(ScmExceptionUtils.getMessage(ex))
         .setExplanationMessage(ScmExceptionUtils.getExplanationMessage(ex))
         .setHintMessage(ScmExceptionUtils.getHintMessage(ex))
         .build();

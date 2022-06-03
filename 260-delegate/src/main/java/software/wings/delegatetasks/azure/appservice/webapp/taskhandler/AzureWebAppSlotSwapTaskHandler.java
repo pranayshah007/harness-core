@@ -20,13 +20,13 @@ import io.harness.azure.model.AzureConfig;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.azure.appservice.AzureAppServiceTaskParameters;
 import io.harness.delegate.task.azure.appservice.AzureAppServiceTaskResponse;
+import io.harness.delegate.task.azure.appservice.deployment.context.AzureAppServiceDeploymentContext;
+import io.harness.delegate.task.azure.appservice.webapp.AppServiceDeploymentProgress;
 import io.harness.delegate.task.azure.appservice.webapp.request.AzureWebAppSwapSlotsParameters;
 import io.harness.delegate.task.azure.appservice.webapp.response.AzureWebAppSwapSlotsResponse;
 import io.harness.exception.InvalidArgumentsException;
 
-import software.wings.delegatetasks.azure.appservice.deployment.context.AzureAppServiceDeploymentContext;
 import software.wings.delegatetasks.azure.appservice.webapp.AbstractAzureWebAppTaskHandler;
-import software.wings.delegatetasks.azure.appservice.webapp.AppServiceDeploymentProgress;
 
 @TargetModule(HarnessModule._930_DELEGATE_TASKS)
 public class AzureWebAppSlotSwapTaskHandler extends AbstractAzureWebAppTaskHandler {

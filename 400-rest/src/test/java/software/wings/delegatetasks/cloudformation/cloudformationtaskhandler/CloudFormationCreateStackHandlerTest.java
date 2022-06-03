@@ -17,8 +17,8 @@ import static software.wings.utils.WingsTestConstants.APP_ID;
 
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
@@ -82,7 +82,7 @@ public class CloudFormationCreateStackHandlerTest extends WingsBaseTest {
 
     doReturn(DeployStackResult.builder().status(Status.SUCCESS).noUpdatesToPerform(false).build())
         .when(mockAwsHelperService)
-        .deployStack(anyString(), any(), any(), any(), any());
+        .deployStack(nullable(String.class), any(), any(), any(), any());
     doReturn(new HashSet<>()).when(mockCloudformationBaseHelper).getCapabilities(any(), any(), any(), any(), any());
 
     CloudFormationCommandExecutionResponse response = cloudFormationCreateStackHandler.execute(request, null);
@@ -98,7 +98,7 @@ public class CloudFormationCreateStackHandlerTest extends WingsBaseTest {
     assertThat(existingStackInfo.isStackExisted()).isTrue();
     assertThat("Body").isEqualTo(existingStackInfo.getOldStackBody());
 
-    verify(mockAwsHelperService).deployStack(anyString(), any(), any(), any(), any());
+    verify(mockAwsHelperService).deployStack(nullable(String.class), any(), any(), any(), any());
   }
 
   @Test
@@ -109,7 +109,7 @@ public class CloudFormationCreateStackHandlerTest extends WingsBaseTest {
 
     doReturn(DeployStackResult.builder().status(Status.FAILURE).noUpdatesToPerform(false).build())
         .when(mockAwsHelperService)
-        .deployStack(anyString(), any(), any(), any(), any());
+        .deployStack(nullable(String.class), any(), any(), any(), any());
     CloudFormationCommandExecutionResponse response = cloudFormationCreateStackHandler.execute(request, null);
     assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.FAILURE);
   }
@@ -137,15 +137,15 @@ public class CloudFormationCreateStackHandlerTest extends WingsBaseTest {
         singletonList(new Stack().withStackStatus("CREATE_COMPLETE").withStackName("HarnessStack-" + stackNameSuffix));
     List<Stack> updateProgressList = singletonList(new Stack().withStackStatus("UPDATE_IN_PROGRESS"));
     List<Stack> updateCompleteList = singletonList(new Stack().withStackStatus("UPDATE_COMPLETE"));
-    doReturn(exitingList).when(mockAwsHelperService).getAllStacks(anyString(), any(), any());
+    doReturn(exitingList).when(mockAwsHelperService).getAllStacks(nullable(String.class), any(), any());
 
     doReturn(Optional.of(updateProgressList.get(0)))
         .doReturn(Optional.of(updateCompleteList.get(0)))
         .when(mockAwsHelperService)
-        .getStack(anyString(), any(), any());
+        .getStack(nullable(String.class), any(), any());
     UpdateStackResult updateStackResult = new UpdateStackResult();
     updateStackResult.setStackId("StackId1");
-    doReturn(updateStackResult).when(mockAwsHelperService).updateStack(anyString(), any(), any());
+    doReturn(updateStackResult).when(mockAwsHelperService).updateStack(nullable(String.class), any(), any());
     doReturn(ExistingStackInfo.builder().stackExisted(true).oldStackBody("Body").build())
         .when(mockCloudformationBaseHelper)
         .getExistingStackInfo(any(), any(), any());

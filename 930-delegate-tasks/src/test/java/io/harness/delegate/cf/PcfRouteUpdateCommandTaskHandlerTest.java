@@ -87,7 +87,7 @@ public class PcfRouteUpdateCommandTaskHandlerTest extends CategoryTest {
 
   @Before
   public void setUp() {
-    doReturn(executionLogCallback).when(logStreamingTaskClient).obtainLogCallback(anyString());
+    doReturn(executionLogCallback).when(logStreamingTaskClient).obtainLogCallback(any());
   }
 
   @Test

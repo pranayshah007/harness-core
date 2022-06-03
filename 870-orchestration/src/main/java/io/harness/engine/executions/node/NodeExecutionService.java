@@ -90,6 +90,7 @@ public interface NodeExecutionService {
 
   boolean updateRelationShipsForRetryNode(String nodeExecutionId, String newNodeExecutionId);
 
+  // Todo: Change this to use category instead of identifier. Only used for fetching pipeline node.
   Optional<NodeExecution> getByNodeIdentifier(@NonNull String nodeIdentifier, @NonNull String planExecutionId);
 
   List<NodeExecution> findByParentIdAndStatusIn(String parentId, EnumSet<Status> flowingStatuses);
