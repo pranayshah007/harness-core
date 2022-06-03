@@ -39,7 +39,6 @@ public class GitFilePathHelperTest extends GitSyncTestBase {
   @InjectMocks GitFilePathHelper gitFilePathHelper;
   @Mock GitSyncConnectorHelper gitSyncConnectorHelper;
 
-  private ConnectorInfoDTO connectorInfo;
   String accountIdentifier = "accountIdentifier";
   String projectIdentifier = "projectIdentifier";
   String orgIdentifier = "orgIdentifier";

@@ -130,14 +130,14 @@ public class BitbucketConnectorDTO extends ConnectorConfigDTO implements ScmConn
   }
 
   @Override
-  public String getFileUrl(String branchName, String filePath) {
+  public String getFileUrl(String branchName, String filePath, String repoName) {
     ScmConnectorHelper.validateGetFileUrlParams(connectionType, branchName, filePath);
-    String repoUrl = removeStartingAndEndingSlash(url);
+    String repoUrl = removeStartingAndEndingSlash(getGitConnectionUrl(repoName));
     filePath = removeStartingAndEndingSlash(filePath);
-    if (GitClientHelper.isBitBucketSAAS(url)) {
+    if (GitClientHelper.isBitBucketSAAS(repoUrl)) {
       return String.format("%s/src/%s/%s", repoUrl, branchName, filePath);
     }
-    return getFileUrlForBitbucketServer(branchName, filePath);
+    return getFileUrlForBitbucketServer(repoUrl, branchName, filePath);
   }
 
   @Override
@@ -165,10 +165,10 @@ public class BitbucketConnectorDTO extends ConnectorConfigDTO implements ScmConn
     }
   }
 
-  private String getFileUrlForBitbucketServer(String branchName, String filePath) {
+  private String getFileUrlForBitbucketServer(String repoUrl, String branchName, String filePath) {
     String hostUrl = "";
     try {
-      URL url1 = new URL(url);
+      URL url1 = new URL(repoUrl);
       hostUrl = url1.getProtocol() + "://" + url1.getHost();
     } catch (Exception ex) {
       log.error("Exception occurred while parsing bitbucket server url.", ex);

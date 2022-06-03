@@ -49,7 +49,7 @@ public class GitFilePathHelper {
   public String getFileUrl(Scope scope, String connectorRef, String repoName, String branchName, String filePath) {
     ScmConnector scmConnector = gitSyncConnectorHelper.getScmConnectorForGivenRepo(
         scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), connectorRef, repoName);
-    return scmConnector.getFileUrl(branchName, filePath);
+    return scmConnector.getFileUrl(branchName, filePath, repoName);
   }
 
   private static void validateFilePathFormat(String filePath) {

@@ -97,7 +97,7 @@ public class GitConfigDTO extends ConnectorConfigDTO implements ScmConnector, De
   }
 
   @Override
-  public String getFileUrl(String branchName, String filePath) {
+  public String getFileUrl(String branchName, String filePath, String repoName) {
     return "";
   }
 
