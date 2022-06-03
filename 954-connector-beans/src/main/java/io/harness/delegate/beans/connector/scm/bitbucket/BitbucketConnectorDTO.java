@@ -23,7 +23,6 @@ import io.harness.delegate.beans.connector.scm.utils.ScmConnectorHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.git.GitClientHelper;
 import io.harness.gitsync.beans.GitRepositoryDTO;
-import io.harness.gitsync.common.utils.GitSyncFilePathUtils;
 import io.harness.utils.FilePathUtils;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
