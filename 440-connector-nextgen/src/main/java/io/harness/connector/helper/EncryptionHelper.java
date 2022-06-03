@@ -27,10 +27,10 @@ public class EncryptionHelper {
       return null;
     }
     NGAccess basicNGAccessObject = BaseNGAccess.builder()
-                                           .accountIdentifier(accountIdentifier)
-                                           .orgIdentifier(orgIdentifier)
-                                           .projectIdentifier(projectIdentifier)
-                                           .build();
+                                       .accountIdentifier(accountIdentifier)
+                                       .orgIdentifier(orgIdentifier)
+                                       .projectIdentifier(projectIdentifier)
+                                       .build();
     return encryptedDataService.getEncryptionDetails(basicNGAccessObject, decryptableEntity);
   }
 }

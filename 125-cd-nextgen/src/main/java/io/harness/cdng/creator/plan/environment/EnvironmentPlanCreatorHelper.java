@@ -54,7 +54,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -112,7 +111,7 @@ public class EnvironmentPlanCreatorHelper {
     }
 
     if (!gitOpsEnabled) {
-      List<InfrastructureConfig> infrastructureConfigs = getInfraStructureEntityList(
+      List<InfrastructureConfig> infrastructureConfigs = getInfraStructureConfigList(
           accountIdentifier, orgIdentifier, projectIdentifier, environmentV2, infrastructure);
 
       return EnvironmentPlanCreatorConfigMapper.toEnvironmentPlanCreatorConfig(
@@ -130,17 +129,13 @@ public class EnvironmentPlanCreatorHelper {
         originalEnvYaml, YamlPipelineUtils.writeYamlString(environmentInputYaml));
   }
 
-  private List<InfrastructureConfig> getInfraStructureEntityList(String accountIdentifier, String orgIdentifier,
+  private List<InfrastructureConfig> getInfraStructureConfigList(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, EnvironmentYamlV2 environmentV2, InfrastructureEntityService infrastructure) {
-    List<InfrastructureEntity> infrastructureEntityList = new ArrayList<>();
+    List<InfrastructureEntity> infrastructureEntityList;
     Map<String, Map<String, Object>> refToInputMap = new HashMap<>();
     String envIdentifier = environmentV2.getEnvironmentRef().getValue();
     if (!environmentV2.getDeployToAll()) {
-      List<String> infraIdentifierList =
-          environmentV2.getInfrastructureDefinitions()
-              .stream()
-              .map(infraStructureDefinitionYaml -> infraStructureDefinitionYaml.getRef().getValue())
-              .collect(Collectors.toList());
+      List<String> infraIdentifierList = new ArrayList<>();
 
       for (InfraStructureDefinitionYaml infraYaml : environmentV2.getInfrastructureDefinitions()) {
         String ref = infraYaml.getRef().getValue();
