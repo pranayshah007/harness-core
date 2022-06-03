@@ -8,9 +8,9 @@ rules_pmd_dependencies()
 
 http_archive(
     name = "com_github_bazelbuild_buildtools",
-    sha256 = "932160d5694e688cb7a05ac38efba4b9a90470c75f39716d85fb1d2f95eec96d",
-    strip_prefix = "buildtools-4.0.1",
-    url = "http://jfrogdev.dev.harness.io:80/artifactory/bazel-buildtools-github/archive/refs/tags/4.0.1.zip",
+    sha256 = "d368c47bbfc055010f118efb2962987475418737e901f7782d2a966d1dc80296",
+    strip_prefix = "buildtools-4.2.5",
+    url = "https://github.com/bazelbuild/buildtools/archive/4.2.5.tar.gz",
 )
 
 http_archive(
@@ -31,11 +31,16 @@ protobuf_deps()
 # Download the Go rules
 http_archive(
     name = "io_bazel_rules_go",
-    sha256 = "2b1641428dff9018f9e85c0384f03ec6c10660d935b750e3fa1492a281a53b0f",
-    urls = [
-        "http://jfrogdev.dev.harness.io:80/artifactory/rules-go-github/download/v0.29.0/rules_go-v0.29.0.zip",
+    #sha256 = "2b1641428dff9018f9e85c0384f03ec6c10660d935b750e3fa1492a281a53b0f",
+    #urls = [
+    #    "http://jfrogdev.dev.harness.io:80/artifactory/rules-go-github/download/v0.29.0/rules_go-v0.29.0.zip",
         # "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.29.0/rules_go-v0.29.0.zip",
         # "https://github.com/bazelbuild/rules_go/releases/download/v0.29.0/rules_go-v0.29.0.zip",
+    #],
+    sha256 = "f2dcd210c7095febe54b804bb1cd3a58fe8435a909db2ec04e31542631cf715c",
+    urls = [
+        "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.31.0/rules_go-v0.31.0.zip",
+        "https://github.com/bazelbuild/rules_go/releases/download/v0.31.0/rules_go-v0.31.0.zip",
     ],
 )
 
@@ -132,7 +137,7 @@ go_repository(
 
 go_rules_dependencies()
 
-go_register_toolchains(version = "1.17.8")
+go_register_toolchains(version = "1.18.2")
 
 gazelle_dependencies()
 
@@ -5316,11 +5321,11 @@ java_runtime(
 
 #================= JAVA ================#
 
-http_archive(
+local_repository(
     name = "contrib_rules_jvm",
     # sha256 = "5d9d466a5756bc4540a03e41afddf8769ea02927ec5efb820cfc551da08ce515",
-    strip_prefix = "rules_jvm-main",
-    url = "https://github.com/bazel-contrib/rules_jvm/archive/refs/heads/main.zip",
+    # strip_prefix = "rules_jvm-1.0.3",
+    path = "/Users/gauravnanda/source-code/rules_jvm",
 )
 
 load("@contrib_rules_jvm//:repositories.bzl", "contrib_rules_jvm_deps", "contrib_rules_jvm_gazelle_deps")
