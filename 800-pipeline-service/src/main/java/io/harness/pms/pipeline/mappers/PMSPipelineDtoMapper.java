@@ -9,6 +9,9 @@ package io.harness.pms.pipeline.mappers;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import static java.lang.Long.parseLong;
+import static org.apache.commons.lang3.StringUtils.isNumeric;
+
 import io.harness.EntityType;
 import io.harness.accesscontrol.acl.api.PermissionCheckDTO;
 import io.harness.accesscontrol.acl.api.ResourceScope;
@@ -84,6 +87,17 @@ public class PMSPipelineDtoMapper {
     } catch (IOException e) {
       throw new InvalidRequestException("Cannot create pipeline entity due to " + e.getMessage());
     }
+  }
+
+  public PipelineEntity toPipelineEntityWithVersion(
+      String accountId, String orgId, String projectId, String pipelineId, String yaml, String ifMatch) {
+    PipelineEntity pipelineEntity = toPipelineEntity(accountId, orgId, projectId, yaml);
+    PipelineEntity withVersion = pipelineEntity.withVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
+    if (!withVersion.getIdentifier().equals(pipelineId)) {
+      throw new InvalidRequestException(String.format(
+          "Expected Pipeline identifier in YAML to be [%s], but was [%s]", pipelineId, pipelineEntity.getIdentifier()));
+    }
+    return withVersion;
   }
 
   public PMSPipelineSummaryResponseDTO preparePipelineSummary(PipelineEntity pipelineEntity) {
