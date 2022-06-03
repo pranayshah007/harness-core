@@ -691,7 +691,7 @@ java_library(
         "@maven//:org_ow2_asm_asm_tree",
         "@maven//:org_passay_passay",
         "@maven//:org_postgresql_postgresql",
-        "@maven//:org_powermock_powermock_api_mockito",
+        "@maven//:org_powermock_powermock_api_mockito2",
         "@maven//:org_projectlombok_lombok",
         "@maven//:org_quartz_scheduler_quartz",
         "@maven//:org_reactivestreams_reactive_streams",

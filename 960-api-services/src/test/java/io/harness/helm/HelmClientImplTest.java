@@ -18,6 +18,7 @@ import static io.harness.rule.OwnerRule.YOGESH;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
@@ -396,7 +397,7 @@ public class HelmClientImplTest extends CategoryTest {
       throws Exception {
     consumer.accept(request);
     verify(helmClient, Mockito.atLeastOnce())
-        .executeHelmCLICommand(stringCaptor.capture(), anyLong(), any(OutputStream.class));
+        .executeHelmCLICommand(stringCaptor.capture(), anyLong(), nullable(OutputStream.class));
     buildHelmInstallCommandData();
     buildHelmRollbackCommandData();
     return stringCaptor.getValue();

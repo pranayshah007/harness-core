@@ -68,6 +68,8 @@ public class CustomStageYamlSchemaServiceImpl implements CustomStageYamlSchemaSe
     yamlSchemaProvider.mergeAllV2StepsDefinitions(projectIdentifier, orgIdentifier, scope, (ObjectNode) definitions,
         YamlSchemaUtils.getNodeEntityTypesByYamlGroup(yamlSchemaRootClasses, StepCategory.STEP.name()));
 
+    yamlSchemaGenerator.modifyRefsNamespace(customStageSchema, CUSTOM_NAMESPACE);
+
     Set<String> enabledFeatureFlags =
         pmsYamlSchemaHelper.getEnabledFeatureFlags(accountIdentifier, yamlSchemaWithDetailsList);
     Map<String, Boolean> featureRestrictionsMap =
@@ -78,7 +80,6 @@ public class CustomStageYamlSchemaServiceImpl implements CustomStageYamlSchemaSe
           yamlSchemaWithDetailsList, ModuleType.PMS, enabledFeatureFlags, featureRestrictionsMap);
     }
 
-    yamlSchemaGenerator.modifyRefsNamespace(customStageSchema, CUSTOM_NAMESPACE);
     ObjectMapper mapper = SchemaGeneratorUtils.getObjectMapperForSchemaGeneration();
     JsonNode node = mapper.createObjectNode().set(CUSTOM_NAMESPACE, definitions);
 

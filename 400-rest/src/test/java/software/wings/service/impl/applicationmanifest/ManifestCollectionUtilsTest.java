@@ -98,7 +98,7 @@ public class ManifestCollectionUtilsTest extends WingsBaseTest {
         .get(any());
     doReturn(Arrays.asList(EncryptedDataDetail.builder().fieldName(ENCRYPT).build()))
         .when(secretManager)
-        .getEncryptionDetails(any(EncryptableSetting.class), anyString(), anyString());
+        .getEncryptionDetails(any(EncryptableSetting.class), any(), any());
     doReturn(true).when(featureFlagService).isEnabled(eq(FeatureName.USE_LATEST_CHARTMUSEUM_VERSION), any());
 
     ManifestCollectionParams collectionParams = manifestCollectionUtils.prepareCollectTaskParams(MANIFEST_ID, APP_ID);
@@ -160,7 +160,7 @@ public class ManifestCollectionUtilsTest extends WingsBaseTest {
         .get(any());
     doReturn(Arrays.asList(EncryptedDataDetail.builder().fieldName(ENCRYPT).build()))
         .when(secretManager)
-        .getEncryptionDetails(any(EncryptableSetting.class), anyString(), anyString());
+        .getEncryptionDetails(any(EncryptableSetting.class), any(), any());
 
     DelegateTask delegateTask = manifestCollectionUtils.buildValidationTask(MANIFEST_ID, APP_ID);
     assertThat(delegateTask.getAccountId()).isEqualTo(ACCOUNT_ID);

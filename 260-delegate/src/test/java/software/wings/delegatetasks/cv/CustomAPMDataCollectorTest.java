@@ -77,8 +77,8 @@ public class CustomAPMDataCollectorTest extends WingsBaseTest {
     ThirdPartyApiCallLog thirdPartyApiCallLog = mock(ThirdPartyApiCallLog.class);
     when(dataCollectionExecutionContext.createApiCallLog()).thenReturn(thirdPartyApiCallLog);
     when(dataCollectionExecutionContext.executeRequest(any(), any(), any())).then(invocation -> {
-      String title = invocation.getArgumentAt(0, String.class);
-      Call<?> call = invocation.getArgumentAt(1, Call.class);
+      String title = invocation.getArgument(0, String.class);
+      Call<?> call = invocation.getArgument(1, Call.class);
       String output = Resources.toString(
           CustomAPMDataCollectorTest.class.getResource("/apm/datadog_sample_response_load.json"), Charsets.UTF_8);
       Response<Object> response = Response.success(output);

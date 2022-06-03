@@ -51,6 +51,7 @@ public class ClusterEntityMapper {
         .projectIdentifier(cluster.getProjectIdentifier())
         .clusterRef(cluster.getClusterRef())
         .envRef(cluster.getEnvRef())
+        .linkedAt(cluster.getCreatedAt())
         .build();
   }
 }

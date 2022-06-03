@@ -63,7 +63,7 @@ public class ServiceNowApprovalStepTest extends CategoryTest {
     Ambiance ambiance = buildAmbiance();
     StepElementParameters parameters = getStepElementParameters();
     doAnswer(invocationOnMock -> {
-      ServiceNowApprovalInstance instance = invocationOnMock.getArgumentAt(0, ServiceNowApprovalInstance.class);
+      ServiceNowApprovalInstance instance = invocationOnMock.getArgument(0, ServiceNowApprovalInstance.class);
       instance.setId(INSTANCE_ID);
       return instance;
     })

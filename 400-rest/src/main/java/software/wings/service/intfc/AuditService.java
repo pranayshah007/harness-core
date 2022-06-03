@@ -21,7 +21,7 @@ import software.wings.service.intfc.entitycrud.EntityCrudOperationObserver;
 
 import java.io.InputStream;
 import java.util.List;
-import javax.activity.InvalidActivityException;
+import org.omg.CORBA.INVALID_ACTIVITY;
 
 /**
  * HttpAuditService.
@@ -101,5 +101,5 @@ public interface AuditService extends EntityCrudOperationObserver {
 
   PageResponse<AuditHeader> listUsingFilter(String accountId, String filter, String limit, String offset);
 
-  String getAuditHeaderIdFromGlobalContext() throws InvalidActivityException;
+  String getAuditHeaderIdFromGlobalContext() throws INVALID_ACTIVITY;
 }

@@ -42,7 +42,6 @@ import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -127,7 +126,7 @@ public class SpotinstStateHelperTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testAddLoadBalancerConfigAfterExpressionEvaluation() throws Exception {
     ExecutionContext context = mock(ExecutionContext.class);
-    when(context.renderExpression(anyString())).thenAnswer(new Answer<String>() {
+    when(context.renderExpression(any())).thenAnswer(new Answer<String>() {
       @Override
       public String answer(InvocationOnMock invocation) throws Throwable {
         Object[] args = invocation.getArguments();
@@ -176,7 +175,7 @@ public class SpotinstStateHelperTest extends WingsBaseTest {
         PhaseElement.builder()
             .serviceElement(ServiceElement.builder().uuid(SERVICE_ID).name(SERVICE_NAME).build())
             .build();
-    doReturn(phaseElement).when(mockContext).getContextElement(any(), anyString());
+    doReturn(phaseElement).when(mockContext).getContextElement(any(), any());
     WorkflowStandardParams mockWorkflowStandardParams = mock(WorkflowStandardParams.class);
     doReturn(mockWorkflowStandardParams).when(mockContext).getContextElement(any());
     Environment environment = anEnvironment().uuid(ENV_ID).name(ENV_NAME).build();
@@ -184,13 +183,13 @@ public class SpotinstStateHelperTest extends WingsBaseTest {
     doReturn(environment).when(mockContext).fetchRequiredEnvironment();
     Application application = anApplication().appId(APP_ID).name("app-name").build();
     doReturn(application).when(mockContext).fetchRequiredApp();
-    doReturn(application).when(mockAppService).get(anyString());
+    doReturn(application).when(mockAppService).get(any());
     EmbeddedUser currentUser = EmbeddedUser.builder().name("user").email("user@harness.io").build();
     doReturn(currentUser).when(mockWorkflowStandardParams).getCurrentUser();
     String image = "ami-id";
     Artifact artifact =
         anArtifact().withRevision(image).withDisplayName("ami-display-name").withUuid(ARTIFACT_ID).build();
-    doReturn(artifact).when(mockContext).getDefaultArtifactForService(anyString());
+    doReturn(artifact).when(mockContext).getDefaultArtifactForService(any());
     Activity activity = Activity.builder().uuid(ACTIVITY_ID).build();
     doReturn(activity).when(mockActivityService).save(any());
     AwsAmiInfrastructureMapping infrastructureMapping = anAwsAmiInfrastructureMapping()
@@ -198,14 +197,14 @@ public class SpotinstStateHelperTest extends WingsBaseTest {
                                                             .withComputeProviderSettingId(SETTING_ID)
                                                             .withRegion("us-east-1")
                                                             .build();
-    doReturn(infrastructureMapping).when(mockInfrastructureMappingService).get(anyString(), anyString());
+    doReturn(infrastructureMapping).when(mockInfrastructureMappingService).get(any(), any());
     SettingAttribute awsProvider = aSettingAttribute().withValue(AwsConfig.builder().build()).build();
     SettingAttribute spotinst = aSettingAttribute().withValue(SpotInstConfig.builder().build()).build();
-    doReturn(awsProvider).doReturn(spotinst).when(mockSettingsService).get(anyString());
-    doReturn(emptyList()).when(mockSecretManager).getEncryptionDetails(any(), anyString(), anyString());
+    doReturn(awsProvider).doReturn(spotinst).when(mockSettingsService).get(any());
+    doReturn(emptyList()).when(mockSecretManager).getEncryptionDetails(any(), any(), any());
     String userData = "userData";
     UserDataSpecification userDataSpecification = UserDataSpecification.builder().data(userData).build();
-    doReturn(userDataSpecification).when(mockServiceResourceService).getUserDataSpecification(anyString(), anyString());
+    doReturn(userDataSpecification).when(mockServiceResourceService).getUserDataSpecification(any(), any());
     String elastigroupNamePrefix = "cdteam";
     String elastigroupJson = "{\n"
         + "  \"group\":{\n"
@@ -226,7 +225,7 @@ public class SpotinstStateHelperTest extends WingsBaseTest {
         .doReturn(targetInstances)
         .doReturn(userData)
         .when(mockContext)
-        .renderExpression(anyString());
+        .renderExpression(any());
     SpotInstSetupStateExecutionData executionData =
         spotInstStateHelper.prepareStateExecutionData(mockContext, mockState);
     assertThat(executionData).isNotNull();
@@ -259,8 +258,8 @@ public class SpotinstStateHelperTest extends WingsBaseTest {
     doReturn(WORKFLOW_EXECUTION_ID).when(mockContext).getWorkflowExecutionId();
     SettingAttribute awsProvider = aSettingAttribute().withValue(AwsConfig.builder().build()).build();
     SettingAttribute spotinstProvider = aSettingAttribute().withValue(SpotInstConfig.builder().build()).build();
-    doReturn(spotinstProvider).doReturn(awsProvider).when(mockSettingsService).get(anyString());
-    doReturn(emptyList()).when(mockSecretManager).getEncryptionDetails(any(), anyString(), anyString());
+    doReturn(spotinstProvider).doReturn(awsProvider).when(mockSettingsService).get(any());
+    doReturn(emptyList()).when(mockSecretManager).getEncryptionDetails(any(), any(), any());
     SpotInstCommandRequestBuilder builder =
         spotInstStateHelper.generateSpotInstCommandRequest(infrastructureMapping, mockContext);
     assertThat(builder).isNotNull();
@@ -368,12 +367,12 @@ public class SpotinstStateHelperTest extends WingsBaseTest {
         .fetchRequiredEnv(mockParams);
     doReturn(anAwsAmiInfrastructureMapping().withUuid(INFRA_MAPPING_ID).build())
         .when(mockInfraService)
-        .get(anyString(), anyString());
+        .get(any(), any());
     doReturn(aSettingAttribute().withValue(AwsConfig.builder().build()).build())
         .doReturn(aSettingAttribute().withValue(SpotInstConfig.builder().build()).build())
         .when(mockSettings)
-        .get(anyString());
-    doReturn(emptyList()).when(mockSecret).getEncryptionDetails(any(), anyString(), anyString());
+        .get(any());
+    doReturn(emptyList()).when(mockSecret).getEncryptionDetails(any(), any(), any());
     SpotinstTrafficShiftDataBag dataBag = helper.getDataBag(mockContext);
     assertThat(dataBag).isNotNull();
     assertThat(dataBag.getApp()).isNotNull();
@@ -392,7 +391,7 @@ public class SpotinstStateHelperTest extends WingsBaseTest {
     doReturn(SweepingOutputInstance.builder())
         .when(context)
         .prepareSweepingOutputBuilder(SweepingOutputInstance.Scope.WORKFLOW);
-    doReturn("some-string").when(context).appendStateExecutionId(anyString());
+    doReturn("some-string").when(context).appendStateExecutionId(any());
 
     spotInstStateHelper.saveInstanceInfoToSweepingOutput(context, Arrays.asList(anInstanceElement().build()));
 
@@ -412,7 +411,7 @@ public class SpotinstStateHelperTest extends WingsBaseTest {
     doReturn(SweepingOutputInstance.builder())
         .when(context)
         .prepareSweepingOutputBuilder(SweepingOutputInstance.Scope.WORKFLOW);
-    doReturn("some-string").when(context).appendStateExecutionId(anyString());
+    doReturn("some-string").when(context).appendStateExecutionId(any());
     ArgumentCaptor<SweepingOutputInstance> captor = ArgumentCaptor.forClass(SweepingOutputInstance.class);
 
     spotInstStateHelper.saveInstanceInfoToSweepingOutput(context, 35);

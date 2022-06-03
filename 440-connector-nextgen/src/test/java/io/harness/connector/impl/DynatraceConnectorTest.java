@@ -62,6 +62,8 @@ public class DynatraceConnectorTest extends CategoryTest {
   String url = "https://dynatraceURL.com/";
   String apiToken = "1234_api_token";
   String identifier = "dynatraceIdentifier";
+  String projectIdentifier = "projectIdentifier";
+  String orgIdentifier = "orgIdentifier";
   String name = "DynatraceConnector";
   ConnectorDTO connectorDTO;
   ConnectorResponseDTO connectorResponseDTO;
@@ -113,7 +115,8 @@ public class DynatraceConnectorTest extends CategoryTest {
     when(connectorRepository.findByFullyQualifiedIdentifierAndDeletedNot(
              anyString(), anyString(), anyString(), anyString(), anyBoolean()))
         .thenReturn(Optional.of(dynatraceConnector));
-    ConnectorResponseDTO connectorDTO = connectorService.get(accountIdentifier, null, null, identifier).get();
+    ConnectorResponseDTO connectorDTO =
+        connectorService.get(accountIdentifier, orgIdentifier, projectIdentifier, identifier).get();
     ensureDynatraceConnectorFieldsAreCorrect(connectorDTO);
   }
 

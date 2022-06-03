@@ -31,6 +31,7 @@ import java.util.List;
 import javax.validation.constraints.NotNull;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -93,6 +94,7 @@ public class RESTWrapperRecommendationOverviewTest extends CategoryTest {
   @Test
   @Owner(developers = OwnerRule.UTSAV)
   @Category(UnitTests.class)
+  @Ignore("TODO: please provide clear motivation why this test is ignored")
   public void testCount() throws Exception {
     when(overviewQueryV2.count(any(RecommendationOverviewStats.class), envCaptor.capture())).thenReturn(10);
 

@@ -147,11 +147,12 @@ public class ExecutionInputResource {
           description = PlanExecutionResourceConstants.NODE_EXECUTION_ID_PARAM_MESSAGE) String nodeExecutionId,
       @RequestBody(required = true,
           description = "Execution Input for the provided nodeExecutionId") @NotNull String executionInputYaml) {
-    executionInputService.continueExecution(nodeExecutionId);
-    return ResponseDTO.newResponse(ExecutionInputStatusDTO.builder()
-                                       .nodeExecutionId(nodeExecutionId)
-                                       .status(ExecutionInputStatus.Success)
-                                       .build());
+    boolean isInputProcessed = executionInputService.continueExecution(nodeExecutionId, executionInputYaml);
+    return ResponseDTO.newResponse(
+        ExecutionInputStatusDTO.builder()
+            .nodeExecutionId(nodeExecutionId)
+            .status(isInputProcessed ? ExecutionInputStatus.Success : ExecutionInputStatus.Failed)
+            .build());
   }
 
   @POST

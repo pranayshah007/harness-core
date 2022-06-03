@@ -451,14 +451,13 @@ public class DownloadArtifactCommandUnitTest extends WingsBaseTest {
 
   private void executeDownloadCommandUnit(ShellCommandExecutionContext context) {
     downloadArtifactCommandUnit.setCommandPath(WingsTestConstants.DESTINATION_DIR_PATH);
-    when(encryptionService.decrypt(any(EncryptableSetting.class), anyListOf(EncryptedDataDetail.class), eq(false)))
+    when(encryptionService.decrypt(any(), any(), eq(false)))
         .thenReturn((EncryptableSetting) hostConnectionAttributes.getValue());
-    when(awsHelperService.getBucketRegion(any(AwsConfig.class), anyListOf(EncryptedDataDetail.class), anyString()))
-        .thenReturn("us-west-1");
+    when(awsHelperService.getBucketRegion(any(AwsConfig.class), any(), any())).thenReturn("us-west-1");
     when(azureArtifactsService.listFiles(
              any(AzureArtifactsConfig.class), anyListOf(EncryptedDataDetail.class), any(), anyMap(), eq(true)))
         .thenReturn(Collections.singletonList(new AzureArtifactsPackageFileInfo(ARTIFACT_FILE_NAME, -1)));
-    when(executor.executeCommandString(anyString(), anyBoolean())).thenReturn(CommandExecutionStatus.SUCCESS);
+    when(executor.executeCommandString(any(), anyBoolean())).thenReturn(CommandExecutionStatus.SUCCESS);
     CommandExecutionStatus status = downloadArtifactCommandUnit.executeInternal(context);
     assertThat(status).isEqualTo(CommandExecutionStatus.SUCCESS);
   }
@@ -627,10 +626,9 @@ public class DownloadArtifactCommandUnitTest extends WingsBaseTest {
     context.setExecutor(executor);
     downloadArtifactCommandUnit.setScriptType(ScriptType.POWERSHELL);
     downloadArtifactCommandUnit.setCommandPath(WingsTestConstants.DESTINATION_DIR_PATH);
-    when(encryptionService.decrypt(any(EncryptableSetting.class), anyListOf(EncryptedDataDetail.class), eq(false)))
+    when(encryptionService.decrypt(any(), any(), eq(false)))
         .thenReturn((EncryptableSetting) hostConnectionAttributes.getValue());
-    when(awsHelperService.getBucketRegion(any(AwsConfig.class), anyListOf(EncryptedDataDetail.class), anyString()))
-        .thenReturn("us-west-1");
+    when(awsHelperService.getBucketRegion(any(AwsConfig.class), any(), any())).thenReturn("us-west-1");
     downloadArtifactCommandUnit.executeInternal(context);
     ArgumentCaptor<String> argument = ArgumentCaptor.forClass(String.class);
     verify(executor).executeCommandString(argument.capture(), anyBoolean());

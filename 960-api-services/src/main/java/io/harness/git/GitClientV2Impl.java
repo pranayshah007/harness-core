@@ -137,11 +137,9 @@ import org.eclipse.jgit.treewalk.CanonicalTreeParser;
 @Slf4j
 @OwnedBy(CDP)
 public class GitClientV2Impl implements GitClientV2 {
-  private static final int GIT_COMMAND_TIMEOUT = 60;
-  private static final int GIT_COMMAND_RETRY = 2;
+  private static final int GIT_COMMAND_RETRY = 3;
   private static final String UPLOAD_PACK_ERROR = "upload-pack not found";
   private static final String TIMEOUT_ERROR = "Connection time out";
-
   @Inject private GitClientHelper gitClientHelper;
   /**
    * factory for creating HTTP connections. By default, JGit uses JDKHttpConnectionFactory which doesn't work well with
@@ -342,7 +340,7 @@ public class GitClientV2Impl implements GitClientV2 {
       lsRemoteCommand = (LsRemoteCommand) getAuthConfiguredCommand(lsRemoteCommand, request);
       RetryPolicy<Object> retryPolicy = getRetryPolicyForCommand(format("[Retrying failed git validation, attempt: {}"),
           format("Git validation failed after retrying {} times"));
-      lsRemoteCommand.setTimeout(GIT_COMMAND_TIMEOUT).setRemote(repoUrl).setHeads(true).setTags(true);
+      lsRemoteCommand.setRemote(repoUrl).setHeads(true).setTags(true);
       final LsRemoteCommand finalLsRemoteCommand = lsRemoteCommand;
       Failsafe.with(retryPolicy).get(() -> finalLsRemoteCommand.call());
       log.info(

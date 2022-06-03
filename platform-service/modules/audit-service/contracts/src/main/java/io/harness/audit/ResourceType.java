@@ -38,6 +38,7 @@ public enum ResourceType {
   GOVERNANCE_POLICY_SET(ResourceTypeConstants.GOVERNANCE_POLICY_SET),
   VARIABLE(ResourceTypeConstants.VARIABLE),
   CHAOS_HUB(ResourceTypeConstants.CHAOS_HUB),
+  MONITORED_SERVICE(ResourceTypeConstants.MONITORED_SERVICE),
   CHAOS_AGENT(ResourceTypeConstants.CHAOS_AGENT);
 
   ResourceType(String resourceType) {

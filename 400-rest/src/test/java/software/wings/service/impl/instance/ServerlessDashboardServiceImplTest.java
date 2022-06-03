@@ -15,11 +15,11 @@ import static software.wings.service.impl.instance.ServerlessDashboardServiceImp
 
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyListOf;
 import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
@@ -120,10 +120,12 @@ public class ServerlessDashboardServiceImplTest extends CategoryTest {
     final Mocks mocks = setup_AggregationPipeline();
     final InstanceCount instanceCount = new InstanceCount();
     instanceCount.setCount(1);
-    doReturn(singletonList(instanceCount).iterator()).when(mocks.aggregationPipelineMock).aggregate(any(Class.class));
+    doReturn(singletonList(instanceCount).iterator())
+        .when(mocks.aggregationPipelineMock)
+        .aggregate(nullable(Class.class));
     doReturn(Collections.emptyList())
         .when(serverlessDashboardService)
-        .getEntitySummaryStats(anyString(), anyString(), anyString(), any(Query.class), anyObject());
+        .getEntitySummaryStats(any(), any(), any(), nullable(Query.class), any());
   }
 
   @Test
@@ -269,6 +271,7 @@ public class ServerlessDashboardServiceImplTest extends CategoryTest {
     id.setEnvId("envid");
     id.setLastArtifactId("lastartifactid");
     serviceAggregationInfo.set_id(id);
+    serviceAggregationInfo.setEnvInfo(new EnvInfo());
     List<ServiceAggregationInfo> serviceAggregationInfos = singletonList(serviceAggregationInfo);
 
     doReturn(InstanceStatsByEnvironment.builder().build())

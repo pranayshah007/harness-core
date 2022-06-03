@@ -13,10 +13,12 @@ import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 
 import static java.time.LocalDate.now;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.exception.InvalidRequestException;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.scm.beans.ScmGitMetaData;
@@ -118,6 +120,30 @@ public class PMSPipelineDtoMapperTest extends CategoryTest {
 
     assertThat(deploymentList).isEqualTo(pmsPipelineSummaryResponseDTO.getExecutionSummaryInfo().getDeployments());
     assertThat(numberOfErrorsList).isEqualTo(pmsPipelineSummaryResponseDTO.getExecutionSummaryInfo().getNumOfErrors());
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testToEntityWithVersion() {
+    String acc = "acc";
+    String org = "org1";
+    String proj = "proj1";
+    String pipelineId = "p1";
+    String yaml = "pipeline:\n"
+        + "  identifier: p1\n"
+        + "  name: p1\n"
+        + "  description: desc\n"
+        + "  orgIdentifier: org1\n"
+        + "  projectIdentifier: proj1\n";
+    PipelineEntity noVersion = PMSPipelineDtoMapper.toPipelineEntityWithVersion(acc, org, proj, pipelineId, yaml, null);
+    assertThat(noVersion.getVersion()).isNull();
+    PipelineEntity oneTwentyThree =
+        PMSPipelineDtoMapper.toPipelineEntityWithVersion(acc, org, proj, pipelineId, yaml, "123");
+    assertThat(oneTwentyThree.getVersion()).isEqualTo(123L);
+
+    assertThatThrownBy(() -> PMSPipelineDtoMapper.toPipelineEntityWithVersion(acc, org, proj, "pipelineId", yaml, null))
+        .isInstanceOf(InvalidRequestException.class);
   }
 
   @Test

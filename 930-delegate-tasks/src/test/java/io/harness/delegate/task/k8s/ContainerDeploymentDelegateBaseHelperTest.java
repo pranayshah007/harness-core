@@ -104,7 +104,7 @@ public class ContainerDeploymentDelegateBaseHelperTest extends CategoryTest {
     List<Pod> existingPods = asList(new Pod());
     List<? extends HasMetadata> controllers = getMockedControllers();
 
-    when(kubernetesContainerService.getControllers(any(KubernetesConfig.class), anyMap())).thenReturn(controllers);
+    doReturn(controllers).when(kubernetesContainerService).getControllers(any(KubernetesConfig.class), anyMap());
 
     containerDeploymentDelegateBaseHelper.getContainerInfosWhenReadyByLabels(
         kubernetesConfig, logCallback, ImmutableMap.of("name", "value"), existingPods);
@@ -125,7 +125,7 @@ public class ContainerDeploymentDelegateBaseHelperTest extends CategoryTest {
     List<Pod> existingPods = asList(new Pod());
     List<? extends HasMetadata> controllers = emptyList();
 
-    when(kubernetesContainerService.getControllers(any(KubernetesConfig.class), anyMap())).thenReturn(controllers);
+    doReturn(controllers).when(kubernetesContainerService).getControllers(any(KubernetesConfig.class), anyMap());
 
     List<ContainerInfo> result = containerDeploymentDelegateBaseHelper.getContainerInfosWhenReadyByLabels(
         kubernetesConfig, logCallback, ImmutableMap.of("name", "value"), existingPods);
@@ -249,7 +249,7 @@ public class ContainerDeploymentDelegateBaseHelperTest extends CategoryTest {
     Map<String, String> labels = new HashMap<>();
 
     List<? extends HasMetadata> controllers = getMockedControllers();
-    when(kubernetesContainerService.getControllers(any(KubernetesConfig.class), anyMap())).thenReturn(controllers);
+    doReturn(controllers).when(kubernetesContainerService).getControllers(any(KubernetesConfig.class), anyMap());
     assertThat(containerDeploymentDelegateBaseHelper.getControllerCountByLabels(kubernetesConfig, labels)).isEqualTo(2);
   }
 

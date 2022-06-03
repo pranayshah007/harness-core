@@ -13,7 +13,6 @@ import static io.harness.rule.OwnerRule.ARCHIT;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyLong;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -37,13 +36,10 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.interrupts.AdviserIssuer;
-import io.harness.pms.contracts.interrupts.InterruptConfig;
 import io.harness.pms.contracts.interrupts.InterruptType;
-import io.harness.pms.contracts.interrupts.IssuedBy;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.rule.Owner;
-import io.harness.serializer.ProtoUtils;
 
 import com.google.inject.Inject;
 import java.util.Collections;
@@ -51,6 +47,7 @@ import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 
@@ -116,22 +113,19 @@ public class EndPlanAdviserResponseHandlerTest extends OrchestrationTestBase {
   @Category(UnitTests.class)
   public void shouldTestHandlerAdviseWithAbort() {
     advise = EndPlanAdvise.newBuilder().setIsAbort(true).build();
+
+    ArgumentCaptor<InterruptPackage> interruptPackageArgumentCaptor = ArgumentCaptor.forClass(InterruptPackage.class);
+    when(interruptManager.register(interruptPackageArgumentCaptor.capture())).thenReturn(null);
+
     endPlanAdviserResponseHandler.handleAdvise(
         nodeExecution, AdviserResponse.newBuilder().setEndPlanAdvise(advise).setType(AdviseType.END_PLAN).build());
-    verify(interruptManager, times(1))
-        .register(
-            InterruptPackage.builder()
-                .planExecutionId(PLAN_EXECUTION_ID)
-                .interruptType(InterruptType.ABORT_ALL)
-                .nodeExecutionId(nodeExecution.getUuid())
-                .interruptConfig(
-                    InterruptConfig.newBuilder()
-                        .setIssuedBy(IssuedBy.newBuilder()
-                                         .setAdviserIssuer(
-                                             AdviserIssuer.newBuilder().setAdviserType(AdviseType.END_PLAN).build())
-                                         .setIssueTime(ProtoUtils.unixMillisToTimestamp(anyLong()))
-                                         .build())
-                        .build())
-                .build());
+
+    InterruptPackage interruptPackage = interruptPackageArgumentCaptor.getValue();
+    assertThat(interruptPackage.getPlanExecutionId()).isEqualTo(PLAN_EXECUTION_ID);
+    assertThat(interruptPackage.getInterruptType()).isEqualTo(InterruptType.ABORT);
+    assertThat(interruptPackage.getNodeExecutionId()).isEqualTo(nodeExecution.getUuid());
+    assertThat(interruptPackage.getInterruptConfig().getIssuedBy().getAdviserIssuer())
+        .isEqualTo(AdviserIssuer.newBuilder().setAdviserType(AdviseType.END_PLAN).build());
+    verify(interruptManager, times(1)).register(any());
   }
 }

@@ -10,6 +10,7 @@ package io.harness.cvng;
 import static io.harness.cvng.beans.change.ChangeSourceType.HARNESS_CD;
 import static io.harness.cvng.cdng.services.impl.CVNGNotifyEventListener.CVNG_ORCHESTRATION;
 import static io.harness.eventsframework.EventsFrameworkConstants.SRM_STATEMACHINE_EVENT;
+import static io.harness.outbox.OutboxSDKConstants.DEFAULT_OUTBOX_POLL_CONFIGURATION;
 
 import io.harness.AuthorizationServiceHeader;
 import io.harness.annotations.dev.HarnessTeam;
@@ -18,6 +19,8 @@ import io.harness.annotations.retry.MethodExecutionHelper;
 import io.harness.annotations.retry.RetryOnException;
 import io.harness.annotations.retry.RetryOnExceptionInterceptor;
 import io.harness.app.PrimaryVersionManagerModule;
+import io.harness.audit.ResourceTypeConstants;
+import io.harness.audit.client.remote.AuditClientModule;
 import io.harness.concurrent.HTimeLimiter;
 import io.harness.cvng.activity.entities.Activity.ActivityUpdatableEntity;
 import io.harness.cvng.activity.entities.DeploymentActivity.DeploymentActivityUpdatableEntity;
@@ -262,6 +265,8 @@ import io.harness.cvng.notification.transformer.NotificationRuleConditionTransfo
 import io.harness.cvng.notification.transformer.PagerDutyNotificationMethodTransformer;
 import io.harness.cvng.notification.transformer.SLONotificationRuleConditionTransformer;
 import io.harness.cvng.notification.transformer.SlackNotificationMethodTransformer;
+import io.harness.cvng.outbox.CVServiceOutboxEventHandler;
+import io.harness.cvng.outbox.MonitoredServiceOutboxEventHandler;
 import io.harness.cvng.servicelevelobjective.beans.SLIMetricType;
 import io.harness.cvng.servicelevelobjective.beans.SLOTargetType;
 import io.harness.cvng.servicelevelobjective.entities.RatioServiceLevelIndicator.RatioServiceLevelIndicatorUpdatableEntity;
@@ -318,10 +323,17 @@ import io.harness.eventsframework.EventsFrameworkMetadataConstants;
 import io.harness.govern.ProviderMethodInterceptor;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.mongo.MongoPersistence;
+import io.harness.outbox.TransactionOutboxModule;
+import io.harness.outbox.api.OutboxDao;
+import io.harness.outbox.api.OutboxEventHandler;
+import io.harness.outbox.api.OutboxService;
+import io.harness.outbox.api.impl.OutboxDaoImpl;
+import io.harness.outbox.api.impl.OutboxServiceImpl;
 import io.harness.packages.HarnessPackages;
 import io.harness.persistence.HPersistence;
 import io.harness.pms.sdk.core.waiter.AsyncWaitEngine;
 import io.harness.redis.RedisConfig;
+import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.serializer.CvNextGenRegistrars;
 import io.harness.template.TemplateResourceClientModule;
 import io.harness.threading.ThreadPool;
@@ -831,6 +843,19 @@ public class CVServiceModule extends AbstractModule {
     channelTypeNotificationMethodTransformerMapBinder.addBinding(CVNGNotificationChannelType.MSTEAMS)
         .to(MSTeamsNotificationMethodTransformer.class)
         .in(Scopes.SINGLETON);
+    ServiceHttpClientConfig serviceHttpClientConfig = this.verificationConfiguration.getAuditClientConfig();
+    String secret = this.verificationConfiguration.getTemplateServiceSecret();
+    String serviceId = AuthorizationServiceHeader.CV_NEXT_GEN.getServiceId();
+    bind(OutboxDao.class).to(OutboxDaoImpl.class);
+    bind(OutboxService.class).to(OutboxServiceImpl.class);
+    install(new AuditClientModule(
+        serviceHttpClientConfig, secret, serviceId, this.verificationConfiguration.isEnableAudit()));
+    install(new TransactionOutboxModule(DEFAULT_OUTBOX_POLL_CONFIGURATION, serviceId, false));
+    MapBinder<String, OutboxEventHandler> outboxEventHandlerMap =
+        MapBinder.newMapBinder(binder(), String.class, OutboxEventHandler.class);
+    outboxEventHandlerMap.addBinding(ResourceTypeConstants.MONITORED_SERVICE)
+        .to(MonitoredServiceOutboxEventHandler.class);
+    bind(OutboxEventHandler.class).to(CVServiceOutboxEventHandler.class);
     bindRetryOnExceptionInterceptor();
   }
 

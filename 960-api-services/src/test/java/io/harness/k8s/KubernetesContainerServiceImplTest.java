@@ -31,6 +31,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Fail.fail;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyListOf;
 import static org.mockito.Matchers.anyMapOf;
@@ -103,7 +105,6 @@ import io.fabric8.openshift.api.model.DeploymentConfigList;
 import io.fabric8.openshift.api.model.DeploymentConfigSpec;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.fabric8.openshift.client.dsl.DeployableScalableResource;
-import io.kubernetes.client.openapi.ApiCallback;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.ApiResponse;
@@ -351,11 +352,10 @@ public class KubernetesContainerServiceImplTest extends CategoryTest {
     when(v2Beta1NamespacedHpa.withName(anyString())).thenReturn(v2Beta1HorizontalPodAutoscalerResource);
 
     when(kubernetesHelperService.getApiClient(KUBERNETES_CONFIG)).thenReturn(k8sApiClient);
-    when(k8sApiClient.buildCall(anyString(), anyString(), anyListOf(Pair.class), anyListOf(Pair.class), any(),
-             anyMapOf(String.class, String.class), anyMapOf(String.class, String.class),
-             anyMapOf(String.class, Object.class), any(String[].class), any(ApiCallback.class)))
+    when(k8sApiClient.buildCall(anyString(), anyString(), anyList(), anyList(), any(), anyMap(), anyMap(), anyMap(),
+             any(String[].class), any()))
         .thenReturn(k8sApiCall);
-    when(k8sApiClient.escapeString(anyString())).thenAnswer(invocation -> invocation.getArgumentAt(0, String.class));
+    when(k8sApiClient.escapeString(anyString())).thenAnswer(invocation -> invocation.getArgument(0, String.class));
     when(k8sApiClient.parameterToPair(anyString(), any())).thenCallRealMethod();
     when(k8sApiClient.parameterToString(any())).thenCallRealMethod();
 
@@ -991,7 +991,7 @@ public class KubernetesContainerServiceImplTest extends CategoryTest {
     verify(k8sApiClient, times(1))
         .buildCall(anyString(), eq("GET"), queryParamsCaptor.capture(), anyListOf(Pair.class), any(),
             anyMapOf(String.class, String.class), anyMapOf(String.class, String.class),
-            anyMapOf(String.class, Object.class), any(String[].class), any(ApiCallback.class));
+            anyMapOf(String.class, Object.class), any(String[].class), any());
     assertThat(result).hasSize(1);
     assertThat(result.get(0).getMetadata().getName()).isEqualTo("pod-1");
     Optional<Pair> labelSelector =

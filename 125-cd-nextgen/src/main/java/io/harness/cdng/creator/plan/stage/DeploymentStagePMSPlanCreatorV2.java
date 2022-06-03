@@ -244,7 +244,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     }
   }
 
-  // This function adds the service dependency and returns the resolved service field;
+  // This function adds the service dependency and returns the resolved service field
   private YamlField addServiceDependency(LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap,
       YamlField specField, DeploymentStageNode stageNode, PlanCreationContext ctx, String environmentUuid,
       String infraSectionUuid) throws IOException {
@@ -289,7 +289,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
   }
 
   public void addCDExecutionDependencies(
-      LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, YamlField executionField) {
+      Map<String, PlanCreationResponse> planCreationResponseMap, YamlField executionField) {
     Map<String, YamlField> executionYamlFieldMap = new HashMap<>();
     executionYamlFieldMap.put(executionField.getNode().getUuid(), executionField);
 

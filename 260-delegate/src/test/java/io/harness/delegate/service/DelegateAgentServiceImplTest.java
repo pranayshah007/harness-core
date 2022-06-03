@@ -15,11 +15,10 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.powermock.api.mockito.PowerMockito.doReturn;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
 
 import io.harness.CategoryTest;
 import io.harness.beans.EncryptedData;
@@ -44,18 +43,13 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 import retrofit2.Call;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({InstallUtils.class})
 public class DelegateAgentServiceImplTest extends CategoryTest {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
@@ -147,7 +141,7 @@ public class DelegateAgentServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void whenClientToolsEnabledAndInstalledThenTrue() throws Exception {
     mockStatic(InstallUtils.class, CALLS_REAL_METHODS);
-    doReturn(true).when(InstallUtils.class, "areClientToolsInstalled");
+    when(InstallUtils.areClientToolsInstalled()).thenAnswer(invocationOnMock -> true);
 
     final DelegateConfiguration delegateConfig = mock(DelegateConfiguration.class);
     final DelegateAgentServiceImpl underTest = mock(DelegateAgentServiceImpl.class);
@@ -166,7 +160,7 @@ public class DelegateAgentServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void whenClientToolsEnabledAndNotInstalledThenFalse() throws Exception {
     mockStatic(InstallUtils.class, CALLS_REAL_METHODS);
-    doReturn(false).when(InstallUtils.class, "areClientToolsInstalled");
+    when(InstallUtils.areClientToolsInstalled()).thenAnswer(invocationOnMock -> false);
 
     final DelegateConfiguration delegateConfig = mock(DelegateConfiguration.class);
     final DelegateAgentServiceImpl underTest = mock(DelegateAgentServiceImpl.class);

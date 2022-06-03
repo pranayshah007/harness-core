@@ -8,8 +8,8 @@ echo "REPORT_UNUSED = False" > project/flags/report_unused.bzl
 
 bazel build \
   --strict_java_deps=error \
-  --host_java_toolchain=@bazel_tools//tools/jdk:toolchain_hostjdk8 \
-  --java_toolchain=@bazel_tools//tools/jdk:toolchain_hostjdk8 \
+  --host_java_toolchain=@bazel_tools//tools/jdk:toolchain_java11 \
+  --java_toolchain=@bazel_tools//tools/jdk:toolchain_java11 \
   $(bazel query 'attr(tags, "harness", //...:*)')
 
 if [ $? -ne 0 ]; then
@@ -23,8 +23,8 @@ TARGETS=$(bazel query 'attr(tags, "unused_dependency", //...:*)')
 
 bazel build -k \
   --strict_java_deps=error \
-  --host_java_toolchain=@bazel_tools//tools/jdk:toolchain_hostjdk8 \
-  --java_toolchain=@bazel_tools//tools/jdk:toolchain_hostjdk8 \
+  --host_java_toolchain=@bazel_tools//tools/jdk:toolchain_java11 \
+  --java_toolchain=@bazel_tools//tools/jdk:toolchain_java11 \
   ${TARGETS} \
   2>&1 | grep "^buildozer 'remove deps\|^# "
 

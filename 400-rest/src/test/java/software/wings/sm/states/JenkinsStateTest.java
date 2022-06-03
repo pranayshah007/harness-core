@@ -116,7 +116,7 @@ public class JenkinsStateTest extends CategoryTest {
     when(activityService.save(any(Activity.class))).thenReturn(ACTIVITY_WITH_ID);
     when(executionContext.getGlobalSettingValue(ACCOUNT_ID, SETTING_ID)).thenReturn(jenkinsConfig);
     when(executionContext.renderExpression(anyString()))
-        .thenAnswer(invocation -> invocation.getArgumentAt(0, String.class));
+        .thenAnswer(invocation -> invocation.getArgument(0, String.class));
     WorkflowStandardParams workflowStandardParams = WorkflowStandardParams.Builder.aWorkflowStandardParams().build();
     workflowStandardParams.setCurrentUser(EmbeddedUser.builder().name("test").email("test@harness.io").build());
     when(executionContext.getContextElement(ContextElementType.STANDARD)).thenReturn(workflowStandardParams);

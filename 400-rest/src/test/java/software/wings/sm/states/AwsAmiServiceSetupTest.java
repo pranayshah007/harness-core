@@ -45,7 +45,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -139,30 +138,30 @@ public class AwsAmiServiceSetupTest extends WingsBaseTest {
     state.setAutoScalingSteadyStateTimeout(10);
     state.setBlueGreen(false);
     ExecutionContextImpl mockContext = mock(ExecutionContextImpl.class);
-    doReturn(asgName).when(mockContext).renderExpression(anyString());
+    doReturn(asgName).when(mockContext).renderExpression(any());
     PhaseElement phaseElement =
         PhaseElement.builder().serviceElement(ServiceElement.builder().uuid(SERVICE_ID).build()).build();
-    doReturn(phaseElement).when(mockContext).getContextElement(any(), anyString());
+    doReturn(phaseElement).when(mockContext).getContextElement(any(), any());
     doReturn(0)
         .doReturn(2)
         .doReturn(1)
         .doReturn(2)
         .doReturn(1)
         .when(mockSpotinstStateHelper)
-        .renderCount(anyString(), any(), anyInt());
+        .renderCount(any(), any(), anyInt());
     WorkflowStandardParams mockParams = mock(WorkflowStandardParams.class);
     doReturn(EmbeddedUser.builder().email("user@harness.io").name("user").build()).when(mockParams).getCurrentUser();
     doReturn(mockParams).when(mockContext).getContextElement(any());
     doReturn(false).when(mockFeatureFlagService).isEnabled(any(), any());
     String revision = "ami-1234";
     Artifact artifact = anArtifact().withRevision(revision).build();
-    doReturn(artifact).when(mockContext).getDefaultArtifactForService(anyString());
+    doReturn(artifact).when(mockContext).getDefaultArtifactForService(any());
     Application application = anApplication().uuid(APP_ID).name(APP_NAME).accountId(ACCOUNT_ID).build();
     doReturn(application).when(workflowStandardParamsExtensionService).getApp(mockParams);
     Environment environment = anEnvironment().uuid(ENV_ID).name(ENV_NAME).build();
     doReturn(environment).when(workflowStandardParamsExtensionService).getEnv(mockParams);
     Service service = Service.builder().uuid(SERVICE_ID).name(SERVICE_NAME).build();
-    doReturn(service).when(mockServiceResourceService).getWithDetails(anyString(), anyString());
+    doReturn(service).when(mockServiceResourceService).getWithDetails(any(), any());
     String classicLb = "classicLb";
     String targetGroup = "targetGp";
     String baseAsg = "baseAsg";
@@ -173,27 +172,23 @@ public class AwsAmiServiceSetupTest extends WingsBaseTest {
                                                             .withTargetGroupArns(singletonList(targetGroup))
                                                             .withAutoScalingGroupName(baseAsg)
                                                             .build();
-    doReturn(infrastructureMapping).when(mockInfrastructureMappingService).get(anyString(), anyString());
+    doReturn(infrastructureMapping).when(mockInfrastructureMappingService).get(any(), any());
     SettingAttribute cloudProvider = aSettingAttribute().withValue(AwsConfig.builder().build()).build();
-    doReturn(cloudProvider).when(mockSettingsService).get(anyString());
-    doReturn(emptyList()).when(mockSecretManager).getEncryptionDetails(any(), anyString(), anyString());
+    doReturn(cloudProvider).when(mockSettingsService).get(any());
+    doReturn(emptyList()).when(mockSecretManager).getEncryptionDetails(any(), any(), any());
     Command command = aCommand().withName("Ami-Command").withCommandType(ENABLE).build();
     ServiceCommand serviceCommand = aServiceCommand().withCommand(command).build();
-    doReturn(serviceCommand)
-        .when(mockServiceResourceService)
-        .getCommandByName(anyString(), anyString(), anyString(), anyString());
+    doReturn(serviceCommand).when(mockServiceResourceService).getCommandByName(any(), any(), any(), any());
     AmiCommandUnit commandUnit = new AmiCommandUnit();
     commandUnit.setName("Ami-Command-Unit");
     List<CommandUnit> commandUnits = singletonList(commandUnit);
-    doReturn(commandUnits)
-        .when(mockServiceResourceService)
-        .getFlattenCommandUnitList(anyString(), anyString(), anyString(), anyString());
+    doReturn(commandUnits).when(mockServiceResourceService).getFlattenCommandUnitList(any(), any(), any(), any());
     Activity activity = Activity.builder().uuid(ACTIVITY_ID).appId(APP_ID).build();
     doReturn(activity).when(mockActivityService).save(any());
-    doReturn(true).when(mockLogService).batchedSaveCommandUnitLogs(anyString(), anyString(), any());
+    doReturn(true).when(mockLogService).batchedSaveCommandUnitLogs(any(), any(), any());
     String userData = "userData";
     UserDataSpecification userDataSpecification = UserDataSpecification.builder().data(userData).build();
-    doReturn(userDataSpecification).when(mockServiceResourceService).getUserDataSpecification(anyString(), anyString());
+    doReturn(userDataSpecification).when(mockServiceResourceService).getUserDataSpecification(any(), any());
     ExecutionResponse response = state.execute(mockContext);
     ArgumentCaptor<DelegateTask> captor = ArgumentCaptor.forClass(DelegateTask.class);
     verify(mockDelegateService).queueTask(captor.capture());
@@ -262,7 +257,7 @@ public class AwsAmiServiceSetupTest extends WingsBaseTest {
     assertThat(response.getStateExecutionData().getErrorMsg()).isEqualTo("Invalid request: Failed");
 
     // Artifact is NULL. Should Receive InvalidRequestException
-    doReturn(null).when(mockContext).getDefaultArtifactForService(anyString());
+    doReturn(null).when(mockContext).getDefaultArtifactForService(any());
     assertThatThrownBy(() -> state.execute(mockContext)).isInstanceOf(InvalidRequestException.class);
   }
 
@@ -309,9 +304,7 @@ public class AwsAmiServiceSetupTest extends WingsBaseTest {
 
     assertThatThrownBy(() -> state.handleAsyncResponse(mockContext, null)).isInstanceOf(InvalidRequestException.class);
 
-    doThrow(new AccessDeniedException("failed", USER))
-        .when(mockActivityService)
-        .updateStatus(anyString(), anyString(), any());
+    doThrow(new AccessDeniedException("failed", USER)).when(mockActivityService).updateStatus(any(), any(), any());
     assertThatThrownBy(() -> state.handleAsyncResponse(mockContext, emptyMap())).isInstanceOf(WingsException.class);
   }
 
