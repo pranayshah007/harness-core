@@ -255,6 +255,7 @@ public class IdentityNodeExecutionStrategyTest extends OrchestrationTestBase {
     assertThat(stepResponse.getAdviserResponse()).isEqualTo(adviserResponse);
     assertThat(stepResponse.getStatus()).isEqualTo(Status.INTERVENTION_WAITING);
     assertThat(stepResponse.getIdentifier()).isEqualTo(planNode.getIdentifier());
+    assertThat(stepResponse.getNodeExecutionId()).isEqualTo(nodeExecution.getUuid());
   }
 
   @Test

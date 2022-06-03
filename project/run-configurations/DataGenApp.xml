@@ -7,9 +7,6 @@
                     kind="java_binary"
                     keep-in-sync="true">
         <blaze-target>//160-model-gen-tool:module</blaze-target>
-        <blaze-user-flag>
-            --jvmopt="-Xbootclasspath/p:${PROJECT_DIR}/../alpn-boot-8.1.13.v20181017.jar"
-        </blaze-user-flag>
         <blaze-user-exe-flag>$PROJECT_DIR$/../160-model-gen-tool/config-datagen.yml</blaze-user-exe-flag>
     </blaze-settings>
     <method v="2">

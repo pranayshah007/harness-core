@@ -95,6 +95,7 @@ public class ChildChainStrategy implements ExecuteStrategy {
         responseDataMapper.toResponseDataProto(Collections.singletonMap("ignore-" + currentLevel.getRuntimeId(),
             StepResponseNotifyData.builder()
                 .nodeUuid(currentLevel.getSetupId())
+                .nodeExecutionId(currentLevel.getRuntimeId())
                 .identifier(currentLevel.getIdentifier())
                 .status(SUSPENDED)
                 .description("Ignoring Execution as next child found to be null")

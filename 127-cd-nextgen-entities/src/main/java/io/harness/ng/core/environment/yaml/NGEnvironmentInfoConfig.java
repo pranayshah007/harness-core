@@ -14,7 +14,6 @@ import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.EntityName;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.validator.NGRegexValidatorConstants;
-import io.harness.yaml.core.variables.NGServiceOverrides;
 import io.harness.yaml.core.variables.NGVariable;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -55,5 +54,4 @@ public class NGEnvironmentInfoConfig {
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) String description;
   @ApiModelProperty(required = true) EnvironmentType type;
   List<NGVariable> variables;
-  List<NGServiceOverrides> serviceOverrides;
 }

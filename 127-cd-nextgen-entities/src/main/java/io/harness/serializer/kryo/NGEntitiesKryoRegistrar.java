@@ -92,6 +92,7 @@ import io.harness.cdng.variables.beans.NGVariableOverrideSetWrapper;
 import io.harness.cdng.variables.beans.NGVariableOverrideSets;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.service.entity.ServiceEntity;
+import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.serializer.KryoRegistrar;
 
 import com.esotericsoftware.kryo.Kryo;
@@ -186,9 +187,10 @@ public class NGEntitiesKryoRegistrar implements KryoRegistrar {
     kryo.register(ConfigFileType.class, 12589);
     kryo.register(HarnessStore.class, 12590);
     kryo.register(HarnessFileType.class, 12591);
-    kryo.register(OciHelmChartConfig.class, 12592);
+    kryo.register(NGServiceV2InfoConfig.class, 12592);
     kryo.register(OciHelmChartStoreConfigWrapper.class, 12593);
     kryo.register(OciHelmChartStoreGenericConfig.class, 12594);
     kryo.register(OciHelmChartStoreConfigType.class, 12595);
+    kryo.register(OciHelmChartConfig.class, 12596);
   }
 }

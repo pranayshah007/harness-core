@@ -10,8 +10,12 @@ package io.harness.cdng.provision.terraform;
 import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
+import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
+import io.harness.cdng.provision.terraform.functor.TerraformPlanJsonFunctor;
 import io.harness.cdng.provision.terraform.outcome.TerraformPlanOutcome;
+import io.harness.cdng.provision.terraform.outcome.TerraformPlanOutcome.TerraformPlanOutcomeBuilder;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.task.terraform.TFTaskType;
@@ -39,6 +43,7 @@ import io.harness.pms.rbac.PipelineRbacHelper;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.provision.TerraformConstants;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
@@ -68,6 +73,7 @@ public class TerraformPlanStep extends TaskExecutableWithRollbackAndRbac<Terrafo
   @Inject private TerraformStepHelper helper;
   @Inject private PipelineRbacHelper pipelineRbacHelper;
   @Inject private StepHelper stepHelper;
+  @Inject private CDFeatureFlagHelper featureFlagHelper;
 
   @Override
   public Class<StepElementParameters> getStepParametersClass() {
@@ -119,6 +125,7 @@ public class TerraformPlanStep extends TaskExecutableWithRollbackAndRbac<Terrafo
     builder.accountId(accountId);
     String entityId = helper.generateFullIdentifier(
         ParameterFieldHelper.getParameterFieldValue(planStepParameters.getProvisionerIdentifier()), ambiance);
+    ParameterField<Boolean> exportTfPlanJsonField = planStepParameters.getConfiguration().getExportTerraformPlanJson();
     builder.taskType(TFTaskType.PLAN)
         .terraformCommandUnit(TerraformCommandUnit.Plan)
         .entityId(entityId)
@@ -133,7 +140,9 @@ public class TerraformPlanStep extends TaskExecutableWithRollbackAndRbac<Terrafo
         .varFileInfos(helper.toTerraformVarFileInfo(configuration.getVarFiles(), ambiance))
         .backendConfig(helper.getBackendConfig(configuration.getBackendConfig()))
         .targets(ParameterFieldHelper.getParameterFieldValue(configuration.getTargets()))
-        .saveTerraformStateJson(false)
+        .saveTerraformStateJson(
+            featureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.EXPORT_TF_PLAN_JSON_NG)
+            && !ParameterField.isNull(exportTfPlanJsonField) && exportTfPlanJsonField.getValue())
         .environmentVariables(helper.getEnvironmentVariablesMap(configuration.getEnvironmentVariables()) == null
                 ? new HashMap<>()
                 : helper.getEnvironmentVariablesMap(configuration.getEnvironmentVariables()))
@@ -144,6 +153,7 @@ public class TerraformPlanStep extends TaskExecutableWithRollbackAndRbac<Terrafo
         .planName(helper.getTerraformPlanName(planStepParameters.getConfiguration().getCommand(), ambiance))
         .timeoutInMillis(
             StepUtils.getTimeoutMillis(stepElementParameters.getTimeout(), TerraformConstants.DEFAULT_TIMEOUT));
+
     TaskData taskData =
         TaskData.builder()
             .async(true)
@@ -190,16 +200,35 @@ public class TerraformPlanStep extends TaskExecutableWithRollbackAndRbac<Terrafo
     }
 
     if (CommandExecutionStatus.SUCCESS == terraformTaskNGResponse.getCommandExecutionStatus()) {
+      TerraformPlanOutcomeBuilder tfPlanOutcomeBuilder = TerraformPlanOutcome.builder();
+      String provisionerIdentifier =
+          ParameterFieldHelper.getParameterFieldValue(planStepParameters.getProvisionerIdentifier());
       helper.saveTerraformInheritOutput(planStepParameters, terraformTaskNGResponse, ambiance);
       helper.updateParentEntityIdAndVersion(
           helper.generateFullIdentifier(
               ParameterFieldHelper.getParameterFieldValue(planStepParameters.getProvisionerIdentifier()), ambiance),
           terraformTaskNGResponse.getStateFileId());
+      tfPlanOutcomeBuilder.detailedExitCode(terraformTaskNGResponse.getDetailedExitCode());
+
+      ParameterField<Boolean> exportTfPlanJsonField =
+          planStepParameters.getConfiguration().getExportTerraformPlanJson();
+      boolean exportTfPlanJson =
+          featureFlagHelper.isEnabled(AmbianceUtils.getAccountId(ambiance), FeatureName.EXPORT_TF_PLAN_JSON_NG)
+          && !ParameterField.isNull(exportTfPlanJsonField)
+          && ParameterFieldHelper.getBooleanParameterFieldValue(exportTfPlanJsonField);
+      if (exportTfPlanJson) {
+        String planJsonOutputName =
+            helper.saveTerraformPlanJsonOutput(ambiance, terraformTaskNGResponse, provisionerIdentifier);
+
+        if (planJsonOutputName != null) {
+          tfPlanOutcomeBuilder.jsonFilePath(
+              TerraformPlanJsonFunctor.getExpression(planStepParameters.getStepFqn(), planJsonOutputName));
+        }
+      }
+
       stepResponseBuilder.stepOutcome(StepResponse.StepOutcome.builder()
                                           .name(TerraformPlanOutcome.OUTCOME_NAME)
-                                          .outcome(TerraformPlanOutcome.builder()
-                                                       .detailedExitCode(terraformTaskNGResponse.getDetailedExitCode())
-                                                       .build())
+                                          .outcome(tfPlanOutcomeBuilder.build())
                                           .build());
     }
     return stepResponseBuilder.build();

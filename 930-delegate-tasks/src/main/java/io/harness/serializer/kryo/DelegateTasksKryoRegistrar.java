@@ -110,6 +110,7 @@ import software.wings.beans.SSHExecutionCredential;
 import software.wings.beans.SSHVaultConfig;
 import software.wings.beans.ScalyrConfig;
 import software.wings.beans.ServiceNowConfig;
+import software.wings.beans.ServiceVariable;
 import software.wings.beans.SftpConfig;
 import software.wings.beans.SlackMessage;
 import software.wings.beans.SlackMessageJSON;
@@ -594,6 +595,8 @@ public class DelegateTasksKryoRegistrar implements KryoRegistrar {
     kryo.register(TerraformProvisionParameters.class, 5342);
     kryo.register(TerraformExecutionData.class, 5343);
     kryo.register(ScriptStateExecutionSummary.class, 5346);
+    kryo.register(ServiceVariable.class, 5359);
+    kryo.register(ServiceVariable.OverrideType.class, 5361);
     kryo.register(BambooTask.BambooExecutionResponse.class, 5374);
     kryo.register(HttpStateExecutionResponse.class, 5375);
     kryo.register(ElkLogFetchRequest.class, 5376);

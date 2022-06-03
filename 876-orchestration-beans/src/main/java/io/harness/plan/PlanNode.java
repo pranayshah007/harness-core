@@ -44,7 +44,7 @@ public class PlanNode implements Node {
 
   // Input/Outputs
   PmsStepParameters stepParameters;
-
+  String executionInputTemplate;
   // TODO change this to PmsStepInputs
   OrchestrationMap stepInputs;
   @Singular List<RefObject> refObjects;
@@ -91,6 +91,7 @@ public class PlanNode implements Node {
         .skipUnresolvedExpressionsCheck(planNodeProto.getSkipUnresolvedExpressionsCheck())
         .serviceName(planNodeProto.getServiceName())
         .stepInputs(OrchestrationMap.parse(planNodeProto.getStepInputs()))
+        .executionInputTemplate(planNodeProto.getExecutionInputTemplate())
         .build();
   }
 

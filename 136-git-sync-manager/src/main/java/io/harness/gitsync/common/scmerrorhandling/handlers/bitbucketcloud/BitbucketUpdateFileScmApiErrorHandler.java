@@ -21,6 +21,9 @@ import io.harness.exception.ScmUnexpectedException;
 import io.harness.exception.WingsException;
 import io.harness.gitsync.common.scmerrorhandling.handlers.ScmApiErrorHandler;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @OwnedBy(PL)
 public class BitbucketUpdateFileScmApiErrorHandler implements ScmApiErrorHandler {
   public static final String UPDATE_FILE_REQUEST_FAILURE = "The requested file couldn't be updated in Bitbucket. ";
@@ -44,6 +47,7 @@ public class BitbucketUpdateFileScmApiErrorHandler implements ScmApiErrorHandler
         throw NestedExceptionUtils.hintWithExplanationException(UPDATE_FILE_CONFLICT_ERROR_HINT,
             UPDATE_FILE_CONFLICT_ERROR_EXPLANATION, new ScmConflictException(errorMessage));
       default:
+        log.error(String.format("Error while updating bitbucket file: [%s: %s]", statusCode, errorMessage));
         throw new ScmUnexpectedException(errorMessage);
     }
   }

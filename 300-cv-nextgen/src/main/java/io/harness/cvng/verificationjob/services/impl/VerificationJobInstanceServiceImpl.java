@@ -79,11 +79,13 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.mongodb.morphia.FindAndModifyOptions;
 import org.mongodb.morphia.UpdateOptions;
@@ -180,7 +182,6 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
 
   private void createAndQueueHealthVerification(VerificationJobInstance verificationJobInstance) {
     // We dont do any data collection for health verification. So just queue the analysis.
-    // TODO: Get cvConfigs from verificationJob rather than DB
     List<CVConfig> cvConfigs = getCVConfigsForVerificationJob(verificationJobInstance.getResolvedJob());
     cvConfigs.forEach(cvConfig -> {
       String verificationTaskId = verificationTaskService.createDeploymentVerificationTask(cvConfig.getAccountId(),
@@ -196,21 +197,27 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
     markRunning(verificationJobInstance.getUuid(), cvConfigs);
   }
 
+  // TODO: Cleanup this method. Remove else condition in the next release.
   public List<CVConfig> getCVConfigsForVerificationJob(VerificationJob verificationJob) {
     Preconditions.checkNotNull(verificationJob);
-    List<String> monitoringSourceFilter = verificationJob.getMonitoringSources();
-    if (verificationJob.isDefaultJob() || verificationJob.isAllMonitoringSourcesEnabled()) {
-      monitoringSourceFilter = null;
-    }
+    if (Objects.isNull(verificationJob.getMonitoredServiceIdentifier())
+        || CollectionUtils.isNotEmpty(verificationJob.getCvConfigs())) {
+      return verificationJob.getCvConfigs();
+    } else {
+      List<String> monitoringSourceFilter = verificationJob.getMonitoringSources();
+      if (verificationJob.isDefaultJob() || verificationJob.isAllMonitoringSourcesEnabled()) {
+        monitoringSourceFilter = null;
+      }
 
-    return cvConfigService.listByMonitoringSources(
-        MonitoredServiceParams.builder()
-            .accountIdentifier(verificationJob.getAccountId())
-            .orgIdentifier(verificationJob.getOrgIdentifier())
-            .projectIdentifier(verificationJob.getProjectIdentifier())
-            .monitoredServiceIdentifier(verificationJob.getMonitoredServiceIdentifier())
-            .build(),
-        monitoringSourceFilter);
+      return cvConfigService.listByMonitoringSources(
+          MonitoredServiceParams.builder()
+              .accountIdentifier(verificationJob.getAccountId())
+              .orgIdentifier(verificationJob.getOrgIdentifier())
+              .projectIdentifier(verificationJob.getProjectIdentifier())
+              .monitoredServiceIdentifier(verificationJob.getMonitoredServiceIdentifier())
+              .build(),
+          monitoringSourceFilter);
+    }
   }
   @Override
   public void markTimedOutIfNoProgress(VerificationJobInstance verificationJobInstance) {
@@ -241,12 +248,9 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
 
   @Override
   public void createDataCollectionTasks(VerificationJobInstance verificationJobInstance) {
-    VerificationJob verificationJob = verificationJobInstance.getResolvedJob();
-    Preconditions.checkNotNull(verificationJob);
-    // TODO: Get cvConfigs from verificationJob rather than DB
-    List<CVConfig> cvConfigs = getCVConfigsForVerificationJob(verificationJob);
+    List<CVConfig> cvConfigs = getCVConfigsForVerificationJob(verificationJobInstance.getResolvedJob());
     Preconditions.checkState(isNotEmpty(cvConfigs), "No config is matching the criteria");
-    createDataCollectionTasks(verificationJobInstance, verificationJob, cvConfigs);
+    createDataCollectionTasks(verificationJobInstance, verificationJobInstance.getResolvedJob(), cvConfigs);
     markRunning(verificationJobInstance.getUuid(), cvConfigs);
   }
 
@@ -317,10 +321,7 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
         verificationJobInstance -> { verificationJobInstance.setExecutionStatus(ExecutionStatus.SUCCESS); });
     List<String> verificationJobInstanceIds = create(verificationJobInstances);
     verificationJobInstances.forEach(verificationJobInstance -> {
-      VerificationJob verificationJob = verificationJobInstance.getResolvedJob();
-      Preconditions.checkNotNull(verificationJob);
-      // TODO: Get cvConfigs from verificationJob rather than DB
-      List<CVConfig> cvConfigs = getCVConfigsForVerificationJob(verificationJob);
+      List<CVConfig> cvConfigs = getCVConfigsForVerificationJob(verificationJobInstance.getResolvedJob());
       Preconditions.checkState(isNotEmpty(cvConfigs), "No config is matching the criteria");
       cvConfigs.forEach(cvConfig -> {
         String verificationTaskId = verificationTaskService.createDeploymentVerificationTask(cvConfig.getAccountId(),

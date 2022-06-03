@@ -33,4 +33,5 @@ public class ClusterResponse {
   @Schema(description = "organization identifier of the cluster") String orgIdentifier;
   @Schema(description = "project identifier of the cluster") String projectIdentifier;
   @Schema(description = "environment identifier of the cluster") @NotEmpty String envRef;
+  @Schema(description = "time at which the cluster was linked") Long linkedAt;
 }

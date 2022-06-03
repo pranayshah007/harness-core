@@ -29,10 +29,10 @@ import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyMap;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -122,7 +122,8 @@ public class K8sApplyStateTest extends CategoryTest {
     k8sApplyState.setFilePaths(FILE_PATHS);
 
     when(variableProcessor.getVariables(any(), any())).thenReturn(emptyMap());
-    when(evaluator.substitute(anyString(), anyMap(), any(VariableResolverTracker.class), anyString()))
+    when(evaluator.substitute(
+             nullable(String.class), anyMap(), any(VariableResolverTracker.class), nullable(String.class)))
         .thenAnswer(i -> i.getArguments()[0]);
   }
 
@@ -172,7 +173,7 @@ public class K8sApplyStateTest extends CategoryTest {
     on(context).set("variableProcessor", variableProcessor);
     on(context).set("evaluator", evaluator);
     k8sApplyState.setInheritManifests(true);
-    doReturn(kubernetesResources).when(k8sStateHelper).getResourcesFromSweepingOutput(any(), anyString());
+    doReturn(kubernetesResources).when(k8sStateHelper).getResourcesFromSweepingOutput(any(), nullable(String.class));
     doReturn(true).when(k8sStateHelper).isExportManifestsEnabled(any());
     when(applicationManifestUtils.getApplicationManifests(context, AppManifestKind.VALUES)).thenReturn(new HashMap<>());
     when(k8sStateHelper.fetchContainerInfrastructureMapping(context))
@@ -190,7 +191,7 @@ public class K8sApplyStateTest extends CategoryTest {
     ArgumentCaptor<K8sTaskParameters> k8sApplyTaskParamsArgumentCaptor =
         ArgumentCaptor.forClass(K8sTaskParameters.class);
     verify(k8sApplyState, times(1)).queueK8sDelegateTask(any(), k8sApplyTaskParamsArgumentCaptor.capture(), any());
-    verify(k8sStateHelper, times(1)).getResourcesFromSweepingOutput(any(), anyString());
+    verify(k8sStateHelper, times(1)).getResourcesFromSweepingOutput(any(), nullable(String.class));
     K8sApplyTaskParameters taskParams = (K8sApplyTaskParameters) k8sApplyTaskParamsArgumentCaptor.getValue();
 
     assertThat(taskParams.getReleaseName()).isEqualTo(RELEASE_NAME);
@@ -312,14 +313,15 @@ public class K8sApplyStateTest extends CategoryTest {
     K8sTaskExecutionResponse k8sTaskExecutionResponse = K8sTaskExecutionResponse.builder().build();
     Map<String, ResponseData> response = new HashMap<>();
     response.put("k8sTaskExecutionResponse", k8sTaskExecutionResponse);
-    when(appService.get(anyString())).thenReturn(new Application());
+    when(appService.get(nullable(String.class))).thenReturn(new Application());
     Map<String, StateExecutionData> stateExecutionMap = new HashMap<>();
     stateExecutionMap.put(STATE_NAME, new K8sStateExecutionData());
     stateExecutionInstance.setStateExecutionMap(stateExecutionMap);
     k8sApplyState.handleAsyncResponseForK8sTask(context, response);
 
-    verify(appService, times(1)).get(anyString());
-    verify(activityService, times(1)).updateStatus(anyString(), anyString(), any(ExecutionStatus.class));
+    verify(appService, times(1)).get(nullable(String.class));
+    verify(activityService, times(1))
+        .updateStatus(nullable(String.class), nullable(String.class), any(ExecutionStatus.class));
   }
 
   @Test
@@ -334,15 +336,16 @@ public class K8sApplyStateTest extends CategoryTest {
     Map<String, ResponseData> response = new HashMap<>();
     response.put("k8sTaskExecutionResponse", k8sTaskExecutionResponse);
     doReturn(true).when(k8sStateHelper).isExportManifestsEnabled(any());
-    when(appService.get(anyString())).thenReturn(new Application());
+    when(appService.get(nullable(String.class))).thenReturn(new Application());
     Map<String, StateExecutionData> stateExecutionMap = new HashMap<>();
     stateExecutionMap.put(STATE_NAME, new K8sStateExecutionData());
     stateExecutionInstance.setStateExecutionMap(stateExecutionMap);
 
     k8sApplyState.handleAsyncResponseForK8sTask(context, response);
 
-    verify(appService, times(1)).get(anyString());
-    verify(activityService, times(1)).updateStatus(anyString(), anyString(), any(ExecutionStatus.class));
+    verify(appService, times(1)).get(nullable(String.class));
+    verify(activityService, times(1))
+        .updateStatus(nullable(String.class), nullable(String.class), any(ExecutionStatus.class));
     verify(k8sStateHelper, times(1)).saveResourcesToSweepingOutput(context, resources, K8S_APPLY.name());
   }
 

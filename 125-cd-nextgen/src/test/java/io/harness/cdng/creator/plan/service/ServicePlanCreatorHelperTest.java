@@ -36,7 +36,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 public class ServicePlanCreatorHelperTest extends CategoryTest {
-  @Mock KryoSerializer kryoSerializer1;
+  @Mock KryoSerializer kryoSerializer;
 
   @Before
   public void setUp() {
@@ -51,7 +51,7 @@ public class ServicePlanCreatorHelperTest extends CategoryTest {
 
     String serviceNodeId = serviceField.getNode().getUuid();
     byte[] dummyValue = new byte[10];
-    doReturn(dummyValue).when(kryoSerializer1).asDeflatedBytes(any());
+    doReturn(dummyValue).when(kryoSerializer).asDeflatedBytes(any());
     Dependencies dependencies = ServicePlanCreatorHelper.getDependenciesForService(serviceField,
         DeploymentStageNode.builder()
             .deploymentStageConfig(DeploymentStageConfig.builder()
@@ -59,7 +59,7 @@ public class ServicePlanCreatorHelperTest extends CategoryTest {
                                        .infrastructure(PipelineInfrastructure.builder().build())
                                        .build())
             .build(),
-        "environmentUuid", "infraSectionUuid", kryoSerializer1);
+        "environmentUuid", "infraSectionUuid", kryoSerializer);
     assertThat(dependencies).isNotEqualTo(null);
     assertThat(dependencies.getDependenciesMap().containsKey(serviceNodeId)).isEqualTo(true);
     assertThat(dependencies.getDependencyMetadataMap()

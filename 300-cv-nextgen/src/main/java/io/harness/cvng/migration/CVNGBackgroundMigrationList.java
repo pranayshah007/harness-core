@@ -39,6 +39,7 @@ import io.harness.cvng.migration.list.NewRelicCustomPackForExistingProjects;
 import io.harness.cvng.migration.list.NoOppMigration;
 import io.harness.cvng.migration.list.RecoverMonitoringSourceWorkerId;
 import io.harness.cvng.migration.list.RecreateMetricPackAndThresholdMigration;
+import io.harness.cvng.migration.list.SetNotRequiredActivityAnalysisStatusToIgnored;
 import io.harness.cvng.migration.list.UpdateActivityStatusMigration;
 import io.harness.cvng.migration.list.UpdateApdexMetricCriteria;
 import io.harness.cvng.migration.list.UpdateCvConfigPerpetualTasksMigration;
@@ -107,6 +108,7 @@ public class CVNGBackgroundMigrationList {
         .add(Pair.of(45, AddMetricIdentifierInCVConfigsAndMetricPacks.class))
         .add(Pair.of(46, AddMetricIdentifierToTimeSeriesThreshold.class))
         .add(Pair.of(47, AppDCVConfigCompleteMetricPathMigration.class))
+        .add(Pair.of(48, SetNotRequiredActivityAnalysisStatusToIgnored.class))
         .build();
   }
 }

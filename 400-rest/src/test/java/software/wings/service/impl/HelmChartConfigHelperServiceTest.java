@@ -14,6 +14,7 @@ import static software.wings.utils.WingsTestConstants.APP_ID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Fail.fail;
+import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.when;
@@ -67,7 +68,7 @@ public class HelmChartConfigHelperServiceTest extends WingsBaseTest {
   @Before
   public void setUp() {
     when(executionContext.renderExpression(anyString()))
-        .thenAnswer(invocationOnMock -> invocationOnMock.getArgumentAt(0, String.class));
+        .thenAnswer(invocationOnMock -> invocationOnMock.getArgument(0, String.class));
     when(executionContext.getWorkflowExecutionId()).thenReturn(WingsTestConstants.WORKFLOW_EXECUTION_ID);
     when(executionContext.getContextElement(ContextElementType.PARAM, PhaseElement.PHASE_PARAM))
         .thenReturn(PhaseElement.builder()
@@ -243,9 +244,8 @@ public class HelmChartConfigHelperServiceTest extends WingsBaseTest {
   @Owner(developers = OwnerRule.YOGESH)
   @Category(UnitTests.class)
   public void shouldHandleChartNamesProperly() {
-    when(executionContext.renderExpression(anyString())).thenAnswer(i -> i.getArgumentAt(0, String.class));
-    when(mockFeatureFlagService.isEnabled(Matchers.eq(FeatureName.HELM_CHART_NAME_SPLIT), anyString()))
-        .thenReturn(true);
+    when(executionContext.renderExpression(anyString())).thenAnswer(i -> i.getArgument(0, String.class));
+    when(mockFeatureFlagService.isEnabled(Matchers.eq(FeatureName.HELM_CHART_NAME_SPLIT), any())).thenReturn(true);
 
     handleChartNameForHelmRepo();
     handleChartNameForNoneRepoAndUrl();

@@ -34,11 +34,9 @@ import io.harness.delegate.beans.git.GitCommandExecutionResponse.GitCommandStatu
 import io.harness.delegate.beans.git.GitCommandParams;
 import io.harness.delegate.beans.git.GitCommandType;
 import io.harness.delegate.task.TaskParameters;
-import io.harness.git.model.CommitAndPushRequest;
 import io.harness.git.model.CommitAndPushResult;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.shell.SshSessionConfig;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.junit.Before;
@@ -91,8 +89,7 @@ public class NGGitCommandTaskTest extends CategoryTest {
         GitCommandExecutionResponse.builder().gitCommandStatus(GitCommandStatus.SUCCESS).build();
     doReturn(gitCommandExecutionResponse)
         .when(gitCommandTaskHandler)
-        .handleValidateTask(
-            any(GitConfigDTO.class), any(ScmConnector.class), any(String.class), any(SshSessionConfig.class));
+        .handleValidateTask(any(GitConfigDTO.class), any(), anyString(), any());
     TaskParameters params = GitCommandParams.builder()
                                 .gitConfig(GitConfigDTO.builder().build())
                                 .gitCommandType(GitCommandType.VALIDATE)
@@ -107,10 +104,7 @@ public class NGGitCommandTaskTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGitCommitAndPush() {
     CommitAndPushResult gitCommitAndPushResult = CommitAndPushResult.builder().build();
-    doReturn(gitCommitAndPushResult)
-        .when(gitService)
-        .commitAndPush(
-            any(GitConfigDTO.class), any(CommitAndPushRequest.class), anyString(), any(SshSessionConfig.class));
+    doReturn(gitCommitAndPushResult).when(gitService).commitAndPush(any(GitConfigDTO.class), any(), anyString(), any());
     TaskParameters params = GitCommandParams.builder()
                                 .gitConfig(GitConfigDTO.builder().build())
                                 .gitCommandType(GitCommandType.COMMIT_AND_PUSH)

@@ -1028,11 +1028,11 @@ public class DeploymentTimeSeriesAnalysisServiceImplTest extends CvNextGenTestBa
   }
 
   private DeploymentTimeSeriesAnalysis createDeploymentTimeSeriesAnalysis(String verificationTaskId) {
-    DeploymentTimeSeriesAnalysisDTO.HostInfo hostInfo1 = createHostInfo("node1", 1, 1.1, false, true);
+    DeploymentTimeSeriesAnalysisDTO.HostInfo hostInfo1 = createHostInfo("node1", -1, 0.0, false, true);
     DeploymentTimeSeriesAnalysisDTO.HostInfo hostInfo2 = createHostInfo("node2", 2, 2.2, false, true);
     DeploymentTimeSeriesAnalysisDTO.HostInfo hostInfo3 = createHostInfo("node3", 2, 2.2, false, true);
     DeploymentTimeSeriesAnalysisDTO.HostData hostData1 =
-        createHostData("node1", 0, 0.0, Arrays.asList(1D), Arrays.asList(1D));
+        createHostData("node1", -1, 0.0, Arrays.asList(1D), Arrays.asList(1D));
     DeploymentTimeSeriesAnalysisDTO.HostData hostData2 =
         createHostData("node2", 2, 2.0, Arrays.asList(1D), Arrays.asList(1D));
 

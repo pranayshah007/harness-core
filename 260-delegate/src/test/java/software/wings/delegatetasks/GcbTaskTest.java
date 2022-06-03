@@ -227,7 +227,7 @@ public class GcbTaskTest extends CategoryTest {
     verify(gcbService, times(3)).getBuild(gcpConfig, encryptedDataDetails, BUILD_ID);
     verify(gcbService, times(3))
         .fetchBuildLogs(gcpConfig, encryptedDataDetails, success.getLogsBucket(), success.getId());
-    verify(task, times(3)).saveConsoleLogs(any(), anyString(), anyString(), any(), anyString(), anyString());
+    verify(task, times(3)).saveConsoleLogs(any(), anyString(), any(), any(), any(), anyString());
     assertThat(response).isNotNull();
     assertThat(response.getBuild()).isEqualTo(success);
   }

@@ -38,4 +38,5 @@ enum Status {
   RESOURCE_WAITING = 19;
 
   APPROVAL_REJECTED = 20;
+  INPUT_WAITING = 21;
 }

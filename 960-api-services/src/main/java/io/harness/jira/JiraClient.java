@@ -70,6 +70,10 @@ public class JiraClient {
     this.restClient = createRestClient();
   }
 
+  public List<JiraUserData> getUsers(String userQuery, String accountId, String startAt) {
+    return executeCall(restClient.getUsers(userQuery, accountId, "10", startAt), "fetching users");
+  }
+
   /**
    * Get all projects for the jira instance.
    *

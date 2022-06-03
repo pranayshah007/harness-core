@@ -27,6 +27,9 @@ public class NotificationRuleCommonUtils {
       if (duration.charAt(duration.length() - 1) != 'm') {
         throw new IllegalArgumentException("duration should end with m, ex: 5m, 10m etc.");
       }
+      if (duration.charAt(0) == '-') {
+        throw new IllegalArgumentException("duration cannot be a negative value");
+      }
       duration = duration.substring(0, duration.length() - 1);
       try {
         long lookBackDurationInLong = Long.parseLong(duration);

@@ -149,15 +149,17 @@ public class GitSyncSettingsResource {
   @Hidden
   @Path("/git-simplification")
   @ApiOperation(value = "Enable Git Simplification for a project", nickname = "enableGitSimplification")
-  public ResponseDTO<Boolean> enableGitSimplification(
+  public ResponseDTO<String> enableGitSimplification(
       @Parameter(required = true) @NotEmpty @QueryParam(ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
       @Parameter(required = true) @NotEmpty @QueryParam(ORG_KEY) @OrgIdentifier String orgIdentifier,
       @Parameter(required = true) @NotEmpty @QueryParam(PROJECT_KEY) @ProjectIdentifier String projectIdentifier) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
         Resource.of(ResourceTypes.PROJECT, projectIdentifier), EDIT_PROJECT_PERMISSION);
 
-    return ResponseDTO.newResponse(
-        gitSyncSettingsService.enableGitSimplification(accountIdentifier, orgIdentifier, projectIdentifier));
+    gitSyncSettingsService.enableGitSimplification(accountIdentifier, orgIdentifier, projectIdentifier);
+    return ResponseDTO.newResponse(String.format(
+        "New Git Simplification Experience is enabled for project [%s], please ensure that the project [%s] exists in org [%s] and account [%s]. ",
+        projectIdentifier, projectIdentifier, orgIdentifier, accountIdentifier));
   }
 
   @GET

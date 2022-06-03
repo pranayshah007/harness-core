@@ -18,6 +18,9 @@ import io.harness.exception.ScmUnexpectedException;
 import io.harness.exception.WingsException;
 import io.harness.gitsync.common.scmerrorhandling.handlers.ScmApiErrorHandler;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @OwnedBy(PL)
 public class GithubCreateFileScmApiErrorHandler implements ScmApiErrorHandler {
   public static final String CREATE_FILE_WITH_INVALID_CREDS =
@@ -55,6 +58,7 @@ public class GithubCreateFileScmApiErrorHandler implements ScmApiErrorHandler {
         throw NestedExceptionUtils.hintWithExplanationException(CREATE_FILE_UNPROCESSABLE_ENTITY_ERROR_HINT,
             CREATE_FILE_UNPROCESSABLE_ENTITY_ERROR_EXPLANATION, new ScmBadRequestException(errorMessage));
       default:
+        log.error(String.format("Error while creating github file: [%s: %s]", statusCode, errorMessage));
         throw new ScmUnexpectedException(errorMessage);
     }
   }

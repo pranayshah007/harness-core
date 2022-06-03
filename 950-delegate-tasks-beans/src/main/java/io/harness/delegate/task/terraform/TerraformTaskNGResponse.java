@@ -36,4 +36,5 @@ public class TerraformTaskNGResponse implements DelegateTaskNotifyResponseData {
   String stateFileId;
   Integer detailedExitCode;
   @NonFinal @Setter DelegateMetaInfo delegateMetaInfo;
+  String tfPlanJsonFileId;
 }

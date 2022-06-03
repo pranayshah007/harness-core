@@ -109,6 +109,8 @@ import io.harness.secrets.SecretNGManagerClientModule;
 import io.harness.serializer.CENextGenModuleRegistrars;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.service.DelegateServiceDriverModule;
+import io.harness.telemetry.AbstractTelemetryModule;
+import io.harness.telemetry.TelemetryConfiguration;
 import io.harness.threading.ExecutorModule;
 import io.harness.time.TimeModule;
 import io.harness.timescaledb.JooqModule;
@@ -253,6 +255,12 @@ public class CENextGenModule extends AbstractModule {
     install(FeatureFlagModule.getInstance());
     install(new EventsFrameworkModule(configuration.getEventsFrameworkConfiguration()));
     install(JooqModule.getInstance());
+    install(new AbstractTelemetryModule() {
+      @Override
+      public TelemetryConfiguration telemetryConfiguration() {
+        return configuration.getSegmentConfiguration();
+      }
+    });
     bind(HPersistence.class).to(MongoPersistence.class);
     bind(CENextGenConfiguration.class).toInstance(configuration);
     bind(SQLConverter.class).to(SQLConverterImpl.class);

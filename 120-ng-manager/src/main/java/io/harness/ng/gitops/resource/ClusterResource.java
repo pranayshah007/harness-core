@@ -299,7 +299,9 @@ public class ClusterResource {
       @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
-          NGCommonEntityConstants.PROJECT_KEY) @ResourceIdentifier String projectIdentifier) {
+          NGCommonEntityConstants.PROJECT_KEY) @ResourceIdentifier String projectIdentifier,
+      @Parameter(description = "The word to be searched and included in the list response") @QueryParam(
+          NGResourceFilterConstants.SEARCH_TERM_KEY) String searchTerm) {
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(orgIdentifier, projectIdentifier, accountId);
 
     final ClusterQuery query = ClusterQuery.builder()
@@ -308,6 +310,7 @@ public class ClusterResource {
                                    .projectIdentifier(projectIdentifier)
                                    .pageSize(size)
                                    .pageIndex(page)
+                                   .searchTerm(searchTerm)
                                    .build();
 
     final Response<PageResponse<io.harness.gitops.models.Cluster>> clusterResponse;

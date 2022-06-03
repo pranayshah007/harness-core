@@ -45,6 +45,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.exception.YamlException;
 import io.harness.exception.runtime.JGitRuntimeException;
+import io.harness.exception.runtime.SCMRuntimeException;
 import io.harness.filesystem.FileIo;
 import io.harness.git.model.AuthInfo;
 import io.harness.git.model.ChangeType;
@@ -91,6 +92,7 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
+import net.jodah.failsafe.FailsafeException;
 import net.jodah.failsafe.RetryPolicy;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -135,8 +137,9 @@ import org.eclipse.jgit.treewalk.CanonicalTreeParser;
 @Slf4j
 @OwnedBy(CDP)
 public class GitClientV2Impl implements GitClientV2 {
-  private static final int GIT_COMMAND_TIMEOUT = 60;
-  private static final int GIT_COMMAND_RETRY = 2;
+  private static final int GIT_COMMAND_RETRY = 3;
+  private static final String UPLOAD_PACK_ERROR = "upload-pack not found";
+  private static final String TIMEOUT_ERROR = "Connection time out";
   @Inject private GitClientHelper gitClientHelper;
   /**
    * factory for creating HTTP connections. By default, JGit uses JDKHttpConnectionFactory which doesn't work well with
@@ -337,7 +340,7 @@ public class GitClientV2Impl implements GitClientV2 {
       lsRemoteCommand = (LsRemoteCommand) getAuthConfiguredCommand(lsRemoteCommand, request);
       RetryPolicy<Object> retryPolicy = getRetryPolicyForCommand(format("[Retrying failed git validation, attempt: {}"),
           format("Git validation failed after retrying {} times"));
-      lsRemoteCommand.setTimeout(GIT_COMMAND_TIMEOUT).setRemote(repoUrl).setHeads(true).setTags(true);
+      lsRemoteCommand.setRemote(repoUrl).setHeads(true).setTags(true);
       final LsRemoteCommand finalLsRemoteCommand = lsRemoteCommand;
       Failsafe.with(retryPolicy).get(() -> finalLsRemoteCommand.call());
       log.info(
@@ -346,9 +349,20 @@ public class GitClientV2Impl implements GitClientV2 {
       log.info(gitClientHelper.getGitLogMessagePrefix(request.getRepoType()) + "Git validation failed [{}]", e);
       if (e instanceof GitAPIException) {
         throw new JGitRuntimeException(e.getMessage(), e);
-      } else {
-        throw new GeneralException(e.getMessage(), e);
+      } else if (e instanceof FailsafeException) {
+        if (e.getMessage().contains(UPLOAD_PACK_ERROR)) {
+          throw SCMRuntimeException.builder()
+              .message("Couldn't connect to given repo")
+              .errorCode(ErrorCode.GIT_CONNECTION_ERROR)
+              .build();
+        } else if (e.getMessage().contains(TIMEOUT_ERROR)) {
+          throw SCMRuntimeException.builder()
+              .message("Git connection timed out")
+              .errorCode(ErrorCode.CONNECTION_TIMEOUT)
+              .build();
+        }
       }
+      throw new GeneralException(e.getMessage(), e);
     }
   }
 

@@ -17,11 +17,12 @@ import lombok.experimental.FieldNameConstants;
 @EqualsAndHashCode(callSuper = true)
 @FieldNameConstants(innerTypeName = "AggregateServiceUsageInfoKeys")
 public class AggregateServiceUsageInfo extends ServiceInfraInfo {
-  private long activeInstanceCount;
+  private long serviceInstanceCount;
 
-  public AggregateServiceUsageInfo(String orgIdentifier, String projectId, String serviceId, long activeInstanceCount) {
+  public AggregateServiceUsageInfo(
+      String orgIdentifier, String projectId, String serviceId, long serviceInstanceCount) {
     super(null, null, serviceId, null, null, null, null, null, null, null, null, null, null, orgIdentifier, projectId,
         null);
-    this.activeInstanceCount = activeInstanceCount;
+    this.serviceInstanceCount = serviceInstanceCount;
   }
 }

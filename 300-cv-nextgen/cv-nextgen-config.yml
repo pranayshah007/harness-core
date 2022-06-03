@@ -4,7 +4,7 @@ server:
       port: 6060
       keyStorePath: keystore.jks
       keyStorePassword: password
-      trustStorePath: ${JAVA_HOME}/jre/lib/security/cacerts
+      trustStorePath: ${JAVA_HOME}/lib/security/cacerts
       certAlias: localhost
       validateCerts: false
     - type: http
@@ -15,7 +15,7 @@ server:
       port: 6061
       keyStorePath: keystore.jks
       keyStorePassword: password
-      trustStorePath: ${JAVA_HOME}/jre/lib/security/cacerts
+      trustStorePath: ${JAVA_HOME}/lib/security/cacerts
       certAlias: localhost
       validateCerts: false
   requestLog:
@@ -59,6 +59,13 @@ templateServiceClientConfig:
   baseUrl: http://localhost:15001/api/
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
+
+auditClientConfig:
+  baseUrl: http://localhost:9005/api/
+  connectTimeOutSeconds: 15
+  readTimeOutSeconds: 15
+
+enableAudit: false
 
 templateServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
 

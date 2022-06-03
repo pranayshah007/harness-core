@@ -167,7 +167,7 @@ public class GitSyncErrorServiceImplTest extends WingsBaseTest {
     error = errorsList.get(0);
     assertThat(error.getFailedCount()).isEqualTo(2);
 
-    verify(gitConfigHelperService, times(2)).createRepositoryInfo(any(), anyString());
+    verify(gitConfigHelperService, times(2)).createRepositoryInfo(any(), any());
   }
 
   @Test

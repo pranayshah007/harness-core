@@ -80,6 +80,25 @@ if [[ "" != "$PORTAL_URL" ]]; then
   yq write -i $CONFIG_FILE portalUrl "$PORTAL_URL"
 fi
 
+if [[ "" != "$AUDIT_CLIENT_BASEURL" ]]; then
+  yq write -i $CONFIG_FILE auditClientConfig.baseUrl "$AUDIT_CLIENT_BASEURL"
+fi
+
+if [[ "" != "$AUDIT_CLIENT_CONNECT_TIMEOUT" ]]; then
+  yq write -i $CONFIG_FILE auditClientConfig.connectTimeOutSeconds "$AUDIT_CLIENT_CONNECT_TIMEOUT"
+fi
+
+if [[ "" != "$AUDIT_CLIENT_READ_TIMEOUT" ]]; then
+  yq write -i $CONFIG_FILE auditClientConfig.readTimeOutSeconds "$AUDIT_CLIENT_READ_TIMEOUT"
+fi
+
+if [[ "" != "$ENABLE_AUDIT" ]]; then
+  yq write -i $CONFIG_FILE enableAudit "$ENABLE_AUDIT"
+fi
+
+
+
+
 replace_key_value eventsFramework.redis.sentinel $EVENTS_FRAMEWORK_USE_SENTINEL
 replace_key_value eventsFramework.redis.envNamespace $EVENTS_FRAMEWORK_ENV_NAMESPACE
 replace_key_value eventsFramework.redis.redisUrl $EVENTS_FRAMEWORK_REDIS_URL

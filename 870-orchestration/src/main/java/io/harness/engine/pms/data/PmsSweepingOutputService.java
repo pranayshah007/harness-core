@@ -21,6 +21,8 @@ public interface PmsSweepingOutputService extends Resolver {
 
   List<RawOptionalSweepingOutput> findOutputsUsingNodeId(Ambiance ambiance, String name, List<String> nodeIds);
 
+  List<RawOptionalSweepingOutput> findOutputsUsingExecutionIds(Ambiance ambiance, String name, List<String> nodeIds);
+
   List<ExecutionSweepingOutputInstance> fetchOutcomeInstanceByRuntimeId(String runtimeId);
 
   List<String> cloneForRetryExecution(Ambiance ambiance, String originalNodeExecutionUuid);

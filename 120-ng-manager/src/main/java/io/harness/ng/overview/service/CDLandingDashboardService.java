@@ -12,13 +12,13 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.dashboards.DeploymentStatsSummary;
 import io.harness.dashboards.EnvCount;
-import io.harness.dashboards.GroupBy;
 import io.harness.dashboards.PipelinesExecutionDashboardInfo;
 import io.harness.dashboards.ProjectsDashboardInfo;
 import io.harness.dashboards.ServicesCount;
 import io.harness.dashboards.ServicesDashboardInfo;
 import io.harness.dashboards.SortBy;
 import io.harness.ng.core.OrgProjectIdentifier;
+import io.harness.pms.dashboards.GroupBy;
 
 import java.util.List;
 import javax.validation.constraints.NotNull;

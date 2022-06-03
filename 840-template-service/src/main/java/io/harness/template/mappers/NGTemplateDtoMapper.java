@@ -176,6 +176,9 @@ public class NGTemplateDtoMapper {
 
   private void validateTemplateYaml(NGTemplateConfig templateConfig, String orgIdentifier, String projectIdentifier,
       String templateIdentifier, String versionLabel) {
+    if (templateConfig.getTemplateInfoConfig().getVersionLabel() == null) {
+      throw new InvalidRequestException("Template VersionLabel is Not Present");
+    }
     if (!templateConfig.getTemplateInfoConfig().getIdentifier().equals(templateIdentifier)) {
       throw new InvalidRequestException("Template Identifier for template is not matching as in template yaml.");
     }
