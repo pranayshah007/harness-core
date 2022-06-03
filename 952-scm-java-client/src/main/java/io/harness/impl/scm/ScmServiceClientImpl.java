@@ -742,7 +742,7 @@ public class ScmServiceClientImpl implements ScmServiceClient {
         GetUserReposRequest.newBuilder()
             .setPagination(PageRequest.newBuilder().setPage(pageRequest.getPageIndex() + 1).build())
             .setProvider(gitProvider)
-            .setFetchAllRepos(false)
+            .setFetchAllRepos(pageRequest.isFetchAll())
             .build());
   }
 

@@ -195,17 +195,17 @@ public class PipelineYamlHandler2Test extends YamlHandlerTestBase {
 
     Application application =
         Application.Builder.anApplication().name(APP_NAME).uuid(APP_ID).accountId(ACCOUNT_ID).build();
-    when(appService.getAppByName(anyString(), anyString())).thenReturn(application);
+    when(appService.getAppByName(any(), any())).thenReturn(application);
 
     when(appService.get(APP_ID)).thenReturn(application);
 
     Environment environment = anEnvironment().uuid(ENV_ID).name(ENV_NAME).appId(APP_ID).build();
     when(environmentService.get(APP_ID, ENV_ID, false)).thenReturn(environment);
 
-    when(environmentService.getEnvironmentByName(anyString(), anyString(), anyBoolean())).thenReturn(environment);
-    when(serviceResourceService.getServiceByName(anyString(), anyString(), anyBoolean())).thenReturn(service);
+    when(environmentService.getEnvironmentByName(any(), any(), anyBoolean())).thenReturn(environment);
+    when(serviceResourceService.getServiceByName(any(), any(), anyBoolean())).thenReturn(service);
 
-    when(yamlGitService.get(anyString(), anyString(), any())).thenReturn(null);
+    when(yamlGitService.get(any(), any(), any())).thenReturn(null);
 
     Workflow workflow1 = aWorkflow()
                              .envId(ENV_ID)
@@ -224,11 +224,10 @@ public class PipelineYamlHandler2Test extends YamlHandlerTestBase {
                              .build();
     workflowService.createWorkflow(workflow1);
 
-    when(workflowYAMLHelper.getWorkflowVariableValueBean(
-             anyString(), anyString(), anyString(), anyString(), anyString(), anyBoolean(), any()))
-        .thenAnswer(invocationOnMock -> invocationOnMock.getArgumentAt(4, String.class));
-    when(workflowYAMLHelper.getWorkflowVariableValueYaml(anyString(), anyString(), any(), anyBoolean()))
-        .thenAnswer(invocationOnMock -> invocationOnMock.getArgumentAt(1, String.class));
+    when(workflowYAMLHelper.getWorkflowVariableValueBean(any(), any(), any(), any(), any(), anyBoolean(), any()))
+        .thenAnswer(invocationOnMock -> invocationOnMock.getArgument(4, String.class));
+    when(workflowYAMLHelper.getWorkflowVariableValueYaml(any(), any(), any(), anyBoolean()))
+        .thenAnswer(invocationOnMock -> invocationOnMock.getArgument(1, String.class));
   }
 
   @Test
@@ -432,8 +431,7 @@ public class PipelineYamlHandler2Test extends YamlHandlerTestBase {
                             .orchestrationWorkflow(aCanaryOrchestrationWorkflow().withUserVariables(variables).build())
                             .build();
 
-    when(workflowYAMLHelper.getWorkflowVariableValueBean(
-             anyString(), anyString(), anyString(), anyString(), anyString(), anyBoolean(), any()))
+    when(workflowYAMLHelper.getWorkflowVariableValueBean(any(), any(), any(), any(), any(), anyBoolean(), any()))
         .thenThrow(new InvalidRequestException("Environment qa does not exist"));
 
     when(workflowService.readWorkflowByName(any(), any())).thenReturn(workflow);
@@ -460,7 +458,7 @@ public class PipelineYamlHandler2Test extends YamlHandlerTestBase {
     when(workflowService.readWorkflow(any(), any())).thenReturn(workflow);
 
     when(pipelineService.update(any(), eq(false), eq(true))).thenAnswer(invocationOnMock -> {
-      Pipeline pipeline = invocationOnMock.getArgumentAt(0, Pipeline.class);
+      Pipeline pipeline = invocationOnMock.getArgument(0, Pipeline.class);
       pipeline.getPipelineStages().get(0).setName("Original name");
       pipeline.getPipelineStages().get(0).getPipelineStageElements().get(0).setWorkflowVariables(
           Collections.emptyMap());
@@ -495,7 +493,7 @@ public class PipelineYamlHandler2Test extends YamlHandlerTestBase {
     changeContext.setYaml(yamlObject);
 
     when(pipelineService.save(any())).thenAnswer(invocationOnMock -> {
-      Pipeline pipeline = invocationOnMock.getArgumentAt(0, Pipeline.class);
+      Pipeline pipeline = invocationOnMock.getArgument(0, Pipeline.class);
       pipeline.getPipelineStages()
           .stream()
           .flatMap(ps -> ps.getPipelineStageElements().stream())
@@ -531,7 +529,7 @@ public class PipelineYamlHandler2Test extends YamlHandlerTestBase {
     changeContext.setYaml(yamlObject);
 
     when(pipelineService.save(any())).thenAnswer(invocationOnMock -> {
-      Pipeline pipeline = invocationOnMock.getArgumentAt(0, Pipeline.class);
+      Pipeline pipeline = invocationOnMock.getArgument(0, Pipeline.class);
       pipeline.getPipelineStages()
           .stream()
           .flatMap(ps -> ps.getPipelineStageElements().stream())

@@ -10,7 +10,7 @@ package io.harness.batch.processing.tasklet;
 import static io.harness.rule.OwnerRule.HANTANG;
 import static io.harness.rule.OwnerRule.ROHIT;
 
-import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -77,7 +77,7 @@ public class GcpBillingDataPipelineTaskletTest extends BaseTaskletTest {
     when(billingDataPipelineService.createDataSet(eq(account))).thenReturn(dataSetId);
 
     GcpOrganization gcpOrganization = GcpOrganization.builder().build();
-    when(gcpOrganizationDao.get(anyString())).thenReturn(gcpOrganization);
+    when(gcpOrganizationDao.get(any())).thenReturn(gcpOrganization);
   }
 
   @Test

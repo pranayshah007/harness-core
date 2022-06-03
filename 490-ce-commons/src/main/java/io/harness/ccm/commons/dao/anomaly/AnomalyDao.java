@@ -21,10 +21,10 @@ import io.harness.timescaledb.tables.records.AnomaliesRecord;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.sun.istack.internal.Nullable;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
+import javax.annotation.Nullable;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.jooq.Condition;
@@ -52,7 +52,7 @@ public class AnomalyDao {
             .orderBy(orderFields)
             .offset(offset)
             .limit(limit);
-    log.info("Anomaly Query: {}", finalStep.getQuery().toString());
+    log.info("Anomaly Query: {}", finalStep.getQuery());
     return finalStep.fetchInto(Anomalies.class);
   }
 
@@ -66,7 +66,7 @@ public class AnomalyDao {
                                                      .orderBy(orderFields)
                                                      .offset(offset)
                                                      .limit(limit);
-    log.info("Anomaly Query: {}", finalStep.getQuery().toString());
+    log.info("Anomaly Query: {}", finalStep.getQuery());
     return finalStep.fetchInto(Anomalies.class);
   }
 
@@ -79,7 +79,7 @@ public class AnomalyDao {
                 sum(ANOMALIES.EXPECTEDCOST).as("expectedCost"))
             .from(ANOMALIES)
             .where(ANOMALIES.ACCOUNTID.eq(accountId).and(firstNonNull(condition, DSL.noCondition())));
-    log.info("Anomaly Query: {}", finalStep.getQuery().toString());
+    log.info("Anomaly Query: {}", finalStep.getQuery());
     return finalStep.fetchInto(AnomalySummary.class);
   }
 

@@ -18,24 +18,18 @@ import io.harness.cvng.beans.activity.ActivityVerificationStatus;
 import io.harness.cvng.beans.job.Sensitivity;
 import io.harness.cvng.cdng.beans.CVNGStepParameter;
 import io.harness.cvng.cdng.beans.CVNGStepType;
-import io.harness.cvng.cdng.beans.ConfiguredMonitoredServiceSpec;
 import io.harness.cvng.cdng.beans.MonitoredServiceNode;
 import io.harness.cvng.cdng.beans.MonitoredServiceSpec.MonitoredServiceSpecType;
-import io.harness.cvng.cdng.beans.TemplateMonitoredServiceSpec;
+import io.harness.cvng.cdng.beans.ResolvedCVConfigInfo;
 import io.harness.cvng.cdng.entities.CVNGStepTask;
 import io.harness.cvng.cdng.entities.CVNGStepTask.CVNGStepTaskBuilder;
 import io.harness.cvng.cdng.services.api.CVNGStepTaskService;
-import io.harness.cvng.core.beans.monitoredService.HealthSource;
-import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
-import io.harness.cvng.core.beans.params.MonitoredServiceParams;
-import io.harness.cvng.core.beans.params.ProjectParams;
+import io.harness.cvng.cdng.services.api.VerifyStepMonitoredServiceResolutionService;
 import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
 import io.harness.cvng.core.beans.sidekick.DemoActivitySideKickData;
 import io.harness.cvng.core.entities.CVConfig;
-import io.harness.cvng.core.entities.MonitoredService;
 import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.api.SideKickService;
-import io.harness.cvng.core.services.api.monitoredService.HealthSourceService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.verificationjob.entities.VerificationJob;
 import io.harness.cvng.verificationjob.entities.VerificationJob.RuntimeParameter;
@@ -72,7 +66,6 @@ import com.google.inject.Inject;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -80,7 +73,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 import lombok.Builder;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
@@ -102,6 +94,8 @@ public class CVNGStep extends AsyncExecutableWithRollback {
   @Inject private FeatureFlagService featureFlagService;
   @Inject private VerificationJobInstanceService verificationJobInstanceService;
   @Inject private SideKickService sideKickService;
+  @Inject
+  private Map<MonitoredServiceSpecType, VerifyStepMonitoredServiceResolutionService> verifyStepCvConfigServiceMap;
 
   @Override
   public AsyncExecutableResponse executeAsync(Ambiance ambiance, StepElementParameters stepElementParameters,
@@ -122,71 +116,23 @@ public class CVNGStep extends AsyncExecutableWithRollback {
                                                             .serviceIdentifier(serviceIdentifier)
                                                             .environmentIdentifier(envIdentifier)
                                                             .build();
-    MonitoredServiceNode monitoredServiceNode = stepParameters.getMonitoredService();
-    MonitoredServiceSpecType monitoredServiceType = MonitoredServiceSpecType.DEFAULT;
-    // TODO: Modify this code to fetch CvConfig directly from db or create from MonitoredServiceDTO and save in
-    // VerificationJob.
-    List<String> healthSourceIdentifiers = new ArrayList<>();
-    String monitoredServiceIdentifier = null;
-    if (Objects.nonNull(monitoredServiceNode)) {
-      try {
-        monitoredServiceType = MonitoredServiceSpecType.valueOf(monitoredServiceNode.getType());
-      } catch (IllegalArgumentException ex) {
-        throw new IllegalArgumentException("Invalid monitored service type" + monitoredServiceNode.getType() + ".", ex);
-      }
-    }
-    switch (monitoredServiceType) {
-      case TEMPLATE: {
-        TemplateMonitoredServiceSpec templateMonitoredServiceSpec =
-            (TemplateMonitoredServiceSpec) monitoredServiceNode.getSpec();
-        MonitoredServiceDTO monitoredServiceDTO =
-            monitoredServiceService.getExpandedMonitoredServiceFromYaml(ProjectParams.builder()
-                                                                            .accountIdentifier(accountId)
-                                                                            .orgIdentifier(orgIdentifier)
-                                                                            .projectIdentifier(projectIdentifier)
-                                                                            .build(),
-                getTemplateYaml(templateMonitoredServiceSpec));
-        if (Objects.nonNull(monitoredServiceDTO) && Objects.nonNull(monitoredServiceDTO.getSources())
-            && CollectionUtils.isNotEmpty(monitoredServiceDTO.getSources().getHealthSources())) {
-          // TODO: Add code to create perpetual tasks.
-          healthSourceIdentifiers.addAll(monitoredServiceDTO.getSources()
-                                             .getHealthSources()
-                                             .stream()
-                                             .map(HealthSource::getIdentifier)
-                                             .collect(Collectors.toList()));
-        }
-        break;
-      }
-      case CONFIGURED: {
-        ConfiguredMonitoredServiceSpec configuredMonitoredServiceSpec =
-            (ConfiguredMonitoredServiceSpec) monitoredServiceNode.getSpec();
-        String monitoredServiceRef = configuredMonitoredServiceSpec.getMonitoredServiceRef().getValue();
-        MonitoredService monitoredService = monitoredServiceService.getMonitoredService(
-            MonitoredServiceParams.builder().monitoredServiceIdentifier(monitoredServiceRef).build());
-        if (Objects.nonNull(monitoredService)
-            && CollectionUtils.isNotEmpty(monitoredService.getHealthSourceIdentifiers())) {
-          healthSourceIdentifiers.addAll(monitoredService.getHealthSourceIdentifiers());
-          monitoredServiceIdentifier = monitoredService.getIdentifier();
-        }
-        break;
-      }
-      case DEFAULT:
-      default: {
-        MonitoredService monitoredService =
-            monitoredServiceService.getApplicationMonitoredService(serviceEnvironmentParams).orElse(null);
-        if (Objects.nonNull(monitoredService)
-            && CollectionUtils.isNotEmpty(monitoredService.getHealthSourceIdentifiers())) {
-          healthSourceIdentifiers.addAll(monitoredService.getHealthSourceIdentifiers());
-          monitoredServiceIdentifier = monitoredService.getIdentifier();
-        }
-      }
-    }
 
+    MonitoredServiceNode monitoredServiceNode = stepParameters.getMonitoredService();
+    MonitoredServiceSpecType monitoredServiceType = Objects.nonNull(monitoredServiceNode)
+        ? MonitoredServiceSpecType.valueOf(monitoredServiceNode.getType())
+        : MonitoredServiceSpecType.DEFAULT;
+
+    ResolvedCVConfigInfo resolvedCVConfigInfo =
+        verifyStepCvConfigServiceMap.get(monitoredServiceType)
+            .getResolvedCVConfigInfo(serviceEnvironmentParams, monitoredServiceNode);
+    String monitoredServiceIdentifier = resolvedCVConfigInfo.getMonitoredServiceIdentifier();
+    List<CVConfig> cvConfigs = resolvedCVConfigInfo.getCvConfigs();
     Instant deploymentStartTime = Instant.ofEpochMilli(
         AmbianceUtils.getStageLevelFromAmbiance(ambiance)
             .orElseThrow(() -> new IllegalStateException("verify step needs to be part of a stage."))
             .getStartTs());
-    if (healthSourceIdentifiers.isEmpty()) {
+
+    if (CollectionUtils.isEmpty(cvConfigs)) {
       CVNGStepTaskBuilder cvngStepTaskBuilder = CVNGStepTask.builder();
       cvngStepTaskBuilder.skip(true);
       cvngStepTaskBuilder.callbackId(UUID.randomUUID().toString());
@@ -203,7 +149,7 @@ public class CVNGStep extends AsyncExecutableWithRollback {
     } else {
       String verificationJobInstanceId;
       DeploymentActivity activity = getDeploymentActivity(stepParameters, serviceEnvironmentParams, ambiance,
-          deploymentStartTime, healthSourceIdentifiers, monitoredServiceIdentifier);
+          deploymentStartTime, monitoredServiceIdentifier, cvConfigs);
       boolean isDemoEnabled = isDemoEnabled(accountId, ambiance);
       boolean shouldFailVerification = false;
       if (isDemoEnabled) {
@@ -214,14 +160,14 @@ public class CVNGStep extends AsyncExecutableWithRollback {
                 shouldFailVerification(ambiance, stepParameters.getSensitivity())
                     ? ActivityVerificationStatus.VERIFICATION_FAILED
                     : ActivityVerificationStatus.VERIFICATION_PASSED,
-                healthSourceIdentifiers, monitoredServiceIdentifier);
+                monitoredServiceIdentifier, cvConfigs);
         activity.setDemoActivity(true);
         verificationJobInstanceId =
             verificationJobInstanceService.createDemoInstances(Arrays.asList(verificationJobInstance)).get(0);
       } else {
-        VerificationJobInstanceBuilder verificationJobInstanceBuilder = getVerificationJobInstanceBuilder(
-            AmbianceUtils.obtainCurrentLevel(ambiance).getIdentifier(), stepParameters, serviceEnvironmentParams,
-            deploymentStartTime, healthSourceIdentifiers, monitoredServiceIdentifier);
+        VerificationJobInstanceBuilder verificationJobInstanceBuilder =
+            getVerificationJobInstanceBuilder(AmbianceUtils.obtainCurrentLevel(ambiance).getIdentifier(),
+                stepParameters, serviceEnvironmentParams, deploymentStartTime, monitoredServiceIdentifier, cvConfigs);
         activity.fillInVerificationJobInstanceDetails(verificationJobInstanceBuilder);
         verificationJobInstanceId = verificationJobInstanceService.create(verificationJobInstanceBuilder.build());
       }
@@ -264,7 +210,7 @@ public class CVNGStep extends AsyncExecutableWithRollback {
 
   private VerificationJobInstanceBuilder getVerificationJobInstanceBuilder(String stepName,
       CVNGStepParameter stepParameters, ServiceEnvironmentParams serviceEnvironmentParams, Instant deploymentStartTime,
-      List<String> healthSourceIdentifiers, String monitoredServiceIdentifier) {
+      String monitoredServiceIdentifier, List<CVConfig> cvConfigs) {
     Instant verificationStartTime = clock.instant();
     VerificationJob verificationJob =
         stepParameters.getVerificationJobBuilder()
@@ -275,11 +221,7 @@ public class CVNGStep extends AsyncExecutableWithRollback {
             .orgIdentifier(serviceEnvironmentParams.getOrgIdentifier())
             .accountId(serviceEnvironmentParams.getAccountIdentifier())
             .monitoredServiceIdentifier(monitoredServiceIdentifier)
-            .monitoringSources(healthSourceIdentifiers.stream()
-                                   .map(healthSourceIdentifier
-                                       -> HealthSourceService.getNameSpacedIdentifier(
-                                           monitoredServiceIdentifier, healthSourceIdentifier))
-                                   .collect(Collectors.toList()))
+            .cvConfigs(cvConfigs)
             .build();
     VerificationJobInstanceBuilder verificationJobInstanceBuilder =
         fillOutCommonJobInstanceProperties(serviceEnvironmentParams.getAccountIdentifier(), deploymentStartTime,
@@ -291,11 +233,10 @@ public class CVNGStep extends AsyncExecutableWithRollback {
 
   private VerificationJobInstance getVerificationJobInstanceForDemo(String stepName, CVNGStepParameter stepParameters,
       ServiceEnvironmentParams serviceEnvironmentParams, Instant deploymentStartTime,
-      ActivityVerificationStatus activityVerificationStatus, List<String> healthSourceIdentifiers,
-      String monitoredServiceIdentifier) {
-    VerificationJobInstanceBuilder verificationJobInstanceBuilder =
-        getVerificationJobInstanceBuilder(stepName, stepParameters, serviceEnvironmentParams, deploymentStartTime,
-            healthSourceIdentifiers, monitoredServiceIdentifier);
+      ActivityVerificationStatus activityVerificationStatus, String monitoredServiceIdentifier,
+      List<CVConfig> cvConfigs) {
+    VerificationJobInstanceBuilder verificationJobInstanceBuilder = getVerificationJobInstanceBuilder(
+        stepName, stepParameters, serviceEnvironmentParams, deploymentStartTime, monitoredServiceIdentifier, cvConfigs);
     verificationJobInstanceBuilder.verificationStatus(activityVerificationStatus);
     verificationJobInstanceBuilder.startTime(clock.instant().minus(Duration.ofMinutes(15)));
     verificationJobInstanceBuilder.deploymentStartTime(clock.instant().minus(Duration.ofMinutes(16)));
@@ -303,7 +244,8 @@ public class CVNGStep extends AsyncExecutableWithRollback {
   }
 
   private void validateJob(VerificationJob verificationJob) {
-    List<CVConfig> cvConfigs = verificationJobInstanceService.getCVConfigsForVerificationJob(verificationJob);
+    Preconditions.checkNotNull(verificationJob);
+    List<CVConfig> cvConfigs = verificationJob.getCvConfigs();
     Preconditions.checkState(EmptyPredicate.isNotEmpty(cvConfigs),
         "No monitoring sources with identifiers %s defined for environment %s and service %s",
         verificationJob.getMonitoringSources(), verificationJob.getEnvIdentifier(),
@@ -313,7 +255,7 @@ public class CVNGStep extends AsyncExecutableWithRollback {
   @NotNull
   private DeploymentActivity getDeploymentActivity(CVNGStepParameter stepParameters,
       ServiceEnvironmentParams serviceEnvironmentParams, Ambiance ambiance, Instant activityStartTime,
-      List<String> healthSourceIdentifiers, String monitoredServiceIdentifier) {
+      String monitoredServiceIdentifier, List<CVConfig> cvConfigs) {
     Instant startTime = clock.instant();
     VerificationJob verificationJob =
         stepParameters.getVerificationJobBuilder()
@@ -323,11 +265,7 @@ public class CVNGStep extends AsyncExecutableWithRollback {
             .orgIdentifier(serviceEnvironmentParams.getOrgIdentifier())
             .accountId(serviceEnvironmentParams.getAccountIdentifier())
             .monitoredServiceIdentifier(monitoredServiceIdentifier)
-            .monitoringSources(healthSourceIdentifiers.stream()
-                                   .map(healthSourceIdentifier
-                                       -> HealthSourceService.getNameSpacedIdentifier(
-                                           monitoredServiceIdentifier, healthSourceIdentifier))
-                                   .collect(Collectors.toList()))
+            .cvConfigs(cvConfigs)
             .build();
     DeploymentActivity deploymentActivity =
         DeploymentActivity.builder()
@@ -346,6 +284,7 @@ public class CVNGStep extends AsyncExecutableWithRollback {
     deploymentActivity.setMonitoredServiceIdentifier(monitoredServiceIdentifier);
     deploymentActivity.setActivityName(getActivityName(stepParameters));
     deploymentActivity.setType(ActivityType.DEPLOYMENT);
+    deploymentActivity.setAnalysisStatus(ActivityVerificationStatus.NOT_STARTED);
     return deploymentActivity;
   }
 
@@ -483,12 +422,5 @@ public class CVNGStep extends AsyncExecutableWithRollback {
         .deploymentStartTime(deploymentStartTime)
         .startTime(verficationStartTime)
         .resolvedJob(verificationJob);
-  }
-
-  private String getTemplateYaml(TemplateMonitoredServiceSpec templateMonitoredServiceSpec) {
-    // TODO: Add logic to generate template yaml.
-    //    String monitoredServiceTemplateRef = templateMonitoredServiceSpec.getMonitoredServiceTemplateRef().getValue();
-    //    String versionLabel = templateMonitoredServiceSpec.getVersionLabel();
-    return null;
   }
 }

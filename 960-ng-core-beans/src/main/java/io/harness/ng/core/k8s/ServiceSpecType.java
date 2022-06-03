@@ -8,6 +8,7 @@
 package io.harness.ng.core.k8s;
 
 public interface ServiceSpecType {
+  String GITOPS = "GitOps";
   String KUBERNETES = "Kubernetes";
   String SSH = "Ssh";
   String ECS = "Ecs";

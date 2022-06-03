@@ -51,6 +51,8 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Singleton;
 import com.microsoft.azure.PagedList;
 import com.microsoft.azure.management.Azure;
+import com.microsoft.azure.management.appservice.DeploymentSlot;
+import com.microsoft.azure.management.appservice.WebApp;
 import com.microsoft.azure.management.compute.GalleryImage;
 import com.microsoft.azure.management.compute.SshConfiguration;
 import com.microsoft.azure.management.compute.SshPublicKey;
@@ -230,6 +232,38 @@ public class AzureComputeClientImpl extends AzureClient implements AzureComputeC
     log.debug("Start listing subscriptions for tenantId {}", azureConfig.getTenantId());
     PagedList<Subscription> subscriptions = azure.subscriptions().list();
     return subscriptions.stream().collect(Collectors.toList());
+  }
+
+  @Override
+  public List<String> listWebAppNamesBySubscriptionIdAndResourceGroup(
+      AzureConfig azureConfig, String subscriptionId, String resourceGroup) {
+    Azure azure = getAzureClient(azureConfig, subscriptionId);
+    Objects.notNull(azure, AZURE_MANAGEMENT_CLIENT_NULL_VALIDATION_MSG);
+    log.debug("Start listing Web App Names for tenantId {}", azureConfig.getTenantId());
+    PagedList<WebApp> webAppNames = azure.webApps().listByResourceGroup(resourceGroup);
+    return webAppNames.stream().map(HasName::name).collect(Collectors.toList());
+  }
+
+  @Override
+  public List<DeploymentSlot> listWebAppDeploymentSlots(
+      AzureConfig azureConfig, String subscriptionId, String resourceGroup, String webAppName) {
+    Azure azure = getAzureClient(azureConfig, subscriptionId);
+    Objects.notNull(azure, AZURE_MANAGEMENT_CLIENT_NULL_VALIDATION_MSG);
+    log.debug("Start listing Web App deployment slots for tenantId {}", azureConfig.getTenantId());
+    WebApp webApp = getWebApp(azure, resourceGroup, webAppName);
+
+    PagedList<DeploymentSlot> deploymentSlots = webApp.deploymentSlots().list();
+    return deploymentSlots.stream().collect(Collectors.toList());
+  }
+
+  @NotNull
+  private WebApp getWebApp(Azure azure, String resourceGroupName, String webAppName) {
+    WebApp webApp = azure.webApps().getByResourceGroup(resourceGroupName, webAppName);
+    if (webApp == null) {
+      throw new IllegalArgumentException(
+          format("Not found Web App with name: %s, resource group name: %s", webAppName, resourceGroupName));
+    }
+    return webApp;
   }
 
   @Override

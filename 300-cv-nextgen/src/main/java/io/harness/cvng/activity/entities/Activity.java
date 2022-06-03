@@ -178,7 +178,7 @@ public abstract class Activity
 
   private ActivityVerificationSummary verificationSummary;
 
-  @Builder.Default private ActivityVerificationStatus analysisStatus = ActivityVerificationStatus.NOT_STARTED;
+  @Builder.Default @FdIndex private ActivityVerificationStatus analysisStatus = ActivityVerificationStatus.IGNORED;
 
   @FdIndex private Long verificationIteration;
 

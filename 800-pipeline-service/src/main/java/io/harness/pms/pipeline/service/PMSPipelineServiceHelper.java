@@ -161,8 +161,7 @@ public class PMSPipelineServiceHelper {
   }
 
   public void validatePipelineFromRemote(PipelineEntity pipelineEntity) {
-    GovernanceMetadata governanceMetadata = validatePipelineYamlAndSetTemplateRefIfAny(pipelineEntity,
-        pmsFeatureFlagService.isEnabled(pipelineEntity.getAccountId(), FeatureName.OPA_PIPELINE_GOVERNANCE));
+    GovernanceMetadata governanceMetadata = validatePipelineYaml(pipelineEntity);
     if (governanceMetadata.getDeny()) {
       List<String> denyingPolicySetIds = governanceMetadata.getDetailsList()
                                              .stream()
@@ -175,9 +174,13 @@ public class PMSPipelineServiceHelper {
     }
   }
 
-  // todo: change method name
-  public GovernanceMetadata validatePipelineYamlAndSetTemplateRefIfAny(
-      PipelineEntity pipelineEntity, boolean checkAgainstOPAPolicies) {
+  public GovernanceMetadata validatePipelineYaml(PipelineEntity pipelineEntity) {
+    boolean governanceEnabled =
+        pmsFeatureFlagService.isEnabled(pipelineEntity.getAccountId(), FeatureName.OPA_PIPELINE_GOVERNANCE);
+    return validatePipelineYaml(pipelineEntity, governanceEnabled);
+  }
+
+  public GovernanceMetadata validatePipelineYaml(PipelineEntity pipelineEntity, boolean checkAgainstOPAPolicies) {
     try {
       GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
       if (gitEntityInfo != null && gitEntityInfo.isNewBranch()) {
@@ -215,14 +218,14 @@ public class PMSPipelineServiceHelper {
     String projectIdentifier = pipelineEntity.getProjectIdentifier();
     // Apply all the templateRefs(if any) then check for schema validation.
     TemplateMergeResponseDTO templateMergeResponseDTO =
-        pipelineTemplateHelper.resolveTemplateRefsInPipeline(pipelineEntity);
+        pipelineTemplateHelper.resolveTemplateRefsInPipeline(pipelineEntity, checkAgainstOPAPolicies);
     String resolveTemplateRefsInPipeline = templateMergeResponseDTO.getMergedPipelineYaml();
     pmsYamlSchemaService.validateYamlSchema(accountId, orgIdentifier, projectIdentifier, resolveTemplateRefsInPipeline);
     // validate unique fqn in resolveTemplateRefsInPipeline
     pmsYamlSchemaService.validateUniqueFqn(resolveTemplateRefsInPipeline);
     if (checkAgainstOPAPolicies) {
-      String expandedPipelineJSON =
-          fetchExpandedPipelineJSONFromYaml(accountId, orgIdentifier, projectIdentifier, resolveTemplateRefsInPipeline);
+      String expandedPipelineJSON = fetchExpandedPipelineJSONFromYaml(
+          accountId, orgIdentifier, projectIdentifier, templateMergeResponseDTO.getMergedPipelineYamlWithTemplateRef());
       return governanceService.evaluateGovernancePolicies(expandedPipelineJSON, accountId, orgIdentifier,
           projectIdentifier, OpaConstants.OPA_EVALUATION_ACTION_PIPELINE_SAVE, "");
     }

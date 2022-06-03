@@ -25,11 +25,11 @@ import io.harness.ccm.commons.entities.CCMTimeFilter;
 import io.harness.exception.InvalidRequestException;
 import io.harness.timescaledb.tables.records.AnomaliesRecord;
 
-import com.sun.istack.internal.NotNull;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.jooq.Condition;
 import org.jooq.OrderField;
@@ -41,7 +41,8 @@ public class AnomalyQueryBuilder {
   private static final List<TableField<AnomaliesRecord, String>> ANOMALY_TABLE_ENTITIES =
       Arrays.asList(ANOMALIES.WORKLOADNAME, ANOMALIES.NAMESPACE, ANOMALIES.CLUSTERNAME, ANOMALIES.AWSACCOUNT,
           ANOMALIES.AWSSERVICE, ANOMALIES.AWSINSTANCETYPE, ANOMALIES.AWSUSAGETYPE, ANOMALIES.GCPPRODUCT,
-          ANOMALIES.GCPPROJECT, ANOMALIES.GCPSKUDESCRIPTION, ANOMALIES.GCPSKUID);
+          ANOMALIES.GCPPROJECT, ANOMALIES.GCPSKUDESCRIPTION, ANOMALIES.GCPSKUID, ANOMALIES.AZURESUBSCRIPTIONGUID,
+          ANOMALIES.AZURERESOURCEGROUP, ANOMALIES.AZUREMETERCATEGORY);
 
   // Fields which don't directly correspond to a column in anomalies table
   private static final List<CCMField> NON_TABLE_FIELDS = Arrays.asList(ANOMALOUS_SPEND, COST_IMPACT, ALL);
@@ -192,6 +193,12 @@ public class AnomalyQueryBuilder {
         return ANOMALIES.GCPSKUID;
       case GCP_SKU_DESCRIPTION:
         return ANOMALIES.GCPSKUDESCRIPTION;
+      case AZURE_SUBSCRIPTION_GUID:
+        return ANOMALIES.AZURESUBSCRIPTIONGUID;
+      case AZURE_RESOURCE_GROUP_NAME:
+        return ANOMALIES.AZURERESOURCEGROUP;
+      case AZURE_METER_CATEGORY:
+        return ANOMALIES.AZUREMETERCATEGORY;
       default:
         throw new InvalidRequestException(String.format("%s not supported", field.toString()));
     }
@@ -230,6 +237,12 @@ public class AnomalyQueryBuilder {
         return ANOMALIES.GCPSKUID;
       case GCP_SKU_DESCRIPTION:
         return ANOMALIES.GCPSKUDESCRIPTION;
+      case AZURE_SUBSCRIPTION_GUID:
+        return ANOMALIES.AZURESUBSCRIPTIONGUID;
+      case AZURE_RESOURCE_GROUP_NAME:
+        return ANOMALIES.AZURERESOURCEGROUP;
+      case AZURE_METER_CATEGORY:
+        return ANOMALIES.AZUREMETERCATEGORY;
       default:
         throw new InvalidRequestException(String.format("%s not supported", field.toString()));
     }

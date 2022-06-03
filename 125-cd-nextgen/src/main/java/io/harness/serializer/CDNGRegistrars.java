@@ -12,6 +12,7 @@ import io.harness.ModuleType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.creator.plan.stage.DeploymentStageNode;
+import io.harness.cdng.gitops.CreatePRStepNode;
 import io.harness.cdng.helm.HelmDeployStepNode;
 import io.harness.cdng.helm.HelmRollbackStepNode;
 import io.harness.cdng.k8s.K8sApplyStepNode;
@@ -45,6 +46,7 @@ import io.harness.yaml.schema.beans.YamlSchemaRootClass;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import io.serializer.kryo.PollingKryoRegistrar;
+import java.util.Arrays;
 import java.util.Collections;
 import lombok.experimental.UtilityClass;
 
@@ -107,6 +109,18 @@ public class CDNGRegistrars {
                    .availableAtOrgLevel(false)
                    .availableAtAccountLevel(false)
                    .clazz(CDStepInfo.class)
+                   .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.GITOPS_CREATE_PR)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .availableAtAccountLevel(false)
+                   .clazz(CreatePRStepNode.class)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .namespace(SchemaNamespaceConstants.CD)
+                                           .modulesSupported(Collections.singletonList(ModuleType.CD))
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
+                                           .build())
                    .build())
           .add(YamlSchemaRootClass.builder()
                    .entityType(EntityType.K8S_CANARY_DEPLOY_STEP)
@@ -224,7 +238,7 @@ public class CDNGRegistrars {
                    .clazz(TerraformApplyStepNode.class)
                    .yamlSchemaMetadata(YamlSchemaMetadata.builder()
                                            .namespace(SchemaNamespaceConstants.CD)
-                                           .modulesSupported(Collections.singletonList(ModuleType.CD))
+                                           .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS))
                                            .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
                                            .build())
                    .build())
@@ -236,7 +250,7 @@ public class CDNGRegistrars {
                    .clazz(TerraformPlanStepNode.class)
                    .yamlSchemaMetadata(YamlSchemaMetadata.builder()
                                            .namespace(SchemaNamespaceConstants.CD)
-                                           .modulesSupported(Collections.singletonList(ModuleType.CD))
+                                           .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS))
                                            .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
                                            .build())
                    .build())
@@ -248,7 +262,7 @@ public class CDNGRegistrars {
                    .clazz(TerraformDestroyStepNode.class)
                    .yamlSchemaMetadata(YamlSchemaMetadata.builder()
                                            .namespace(SchemaNamespaceConstants.CD)
-                                           .modulesSupported(Collections.singletonList(ModuleType.CD))
+                                           .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS))
                                            .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
                                            .build())
                    .build())
@@ -260,7 +274,7 @@ public class CDNGRegistrars {
                    .clazz(TerraformRollbackStepNode.class)
                    .yamlSchemaMetadata(YamlSchemaMetadata.builder()
                                            .namespace(SchemaNamespaceConstants.CD)
-                                           .modulesSupported(Collections.singletonList(ModuleType.CD))
+                                           .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS))
                                            .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
                                            .build())
                    .build())
@@ -296,7 +310,7 @@ public class CDNGRegistrars {
                    .clazz(CloudformationCreateStackStepNode.class)
                    .yamlSchemaMetadata(YamlSchemaMetadata.builder()
                                            .namespace(SchemaNamespaceConstants.CD)
-                                           .modulesSupported(Collections.singletonList(ModuleType.CD))
+                                           .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS))
                                            .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
                                            .build())
                    .build())
@@ -308,7 +322,7 @@ public class CDNGRegistrars {
                    .clazz(CloudformationDeleteStackStepNode.class)
                    .yamlSchemaMetadata(YamlSchemaMetadata.builder()
                                            .namespace(SchemaNamespaceConstants.CD)
-                                           .modulesSupported(Collections.singletonList(ModuleType.CD))
+                                           .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS))
                                            .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
                                            .build())
                    .build())
@@ -344,7 +358,7 @@ public class CDNGRegistrars {
                    .clazz(CloudformationRollbackStepNode.class)
                    .yamlSchemaMetadata(YamlSchemaMetadata.builder()
                                            .namespace(SchemaNamespaceConstants.CD)
-                                           .modulesSupported(Collections.singletonList(ModuleType.CD))
+                                           .modulesSupported(Arrays.asList(ModuleType.CD, ModuleType.PMS))
                                            .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
                                            .build())
                    .build())

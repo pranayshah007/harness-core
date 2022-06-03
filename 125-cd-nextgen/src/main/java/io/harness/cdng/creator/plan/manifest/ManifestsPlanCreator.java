@@ -18,11 +18,13 @@ import io.harness.cdng.manifest.yaml.ManifestAttributes;
 import io.harness.cdng.manifest.yaml.ManifestConfig;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.cdng.service.beans.ServiceConfig;
+import io.harness.cdng.service.beans.StageOverridesConfig;
 import io.harness.cdng.utilities.ManifestsUtility;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.Dependency;
@@ -64,19 +66,32 @@ public class ManifestsPlanCreator extends ChildrenPlanCreator<ManifestsListConfi
       PlanCreationContext ctx, ManifestsListConfigWrapper config) {
     LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap = new LinkedHashMap<>();
 
+    ManifestList manifestList = new ManifestList(new HashMap<>());
     // This is the actual service config passed from service plan creator
-    ServiceConfig serviceConfig = (ServiceConfig) kryoSerializer.asInflatedObject(
-        ctx.getDependency().getMetadataMap().get(YamlTypes.SERVICE_CONFIG).toByteArray());
+    // service v1
+    if (ctx.getDependency().getMetadataMap().containsKey(YamlTypes.SERVICE_CONFIG)) {
+      ServiceConfig serviceConfig = (ServiceConfig) kryoSerializer.asInflatedObject(
+          ctx.getDependency().getMetadataMap().get(YamlTypes.SERVICE_CONFIG).toByteArray());
 
-    List<ManifestConfigWrapper> manifestListConfig =
-        serviceConfig.getServiceDefinition().getServiceSpec().getManifests();
-    ManifestListBuilder manifestListBuilder = new ManifestListBuilder(manifestListConfig);
-    manifestListBuilder.addStageOverrides(serviceConfig);
-    ManifestList manifestList = manifestListBuilder.build();
+      List<ManifestConfigWrapper> manifestListConfig =
+          serviceConfig.getServiceDefinition().getServiceSpec().getManifests();
+      ManifestListBuilder manifestListBuilder = new ManifestListBuilder(manifestListConfig);
+      manifestListBuilder.addStageOverrides(serviceConfig.getStageOverrides());
+      manifestList = manifestListBuilder.build();
+
+    } else if (ctx.getDependency().getMetadataMap().containsKey(YamlTypes.SERVICE_ENTITY)) {
+      NGServiceV2InfoConfig serviceV2InfoConfig = (NGServiceV2InfoConfig) kryoSerializer.asInflatedObject(
+          ctx.getDependency().getMetadataMap().get(YamlTypes.SERVICE_ENTITY).toByteArray());
+
+      List<ManifestConfigWrapper> manifestListConfig =
+          serviceV2InfoConfig.getServiceDefinition().getServiceSpec().getManifests();
+      ManifestListBuilder manifestListBuilder = new ManifestListBuilder(manifestListConfig);
+      manifestList = manifestListBuilder.build();
+    }
+
     if (EmptyPredicate.isEmpty(manifestList.getManifests())) {
       return planCreationResponseMap;
     }
-
     YamlField manifestsYamlField = ctx.getCurrentField();
 
     List<YamlNode> yamlNodes = Optional.of(manifestsYamlField.getNode().asArray()).orElse(Collections.emptyList());
@@ -199,11 +214,11 @@ public class ManifestsPlanCreator extends ChildrenPlanCreator<ManifestsListConfi
               : manifests.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().build())));
     }
 
-    void addStageOverrides(ServiceConfig serviceConfig) {
-      if (serviceConfig.getStageOverrides() == null || serviceConfig.getStageOverrides().getManifests() == null) {
+    void addStageOverrides(StageOverridesConfig stageOverrides) {
+      if (stageOverrides == null || stageOverrides.getManifests() == null) {
         return;
       }
-      List<ManifestConfigWrapper> manifestConfigList = serviceConfig.getStageOverrides().getManifests();
+      List<ManifestConfigWrapper> manifestConfigList = stageOverrides.getManifests();
       addOverrides(manifestConfigList, ManifestStepParametersBuilder::stageOverride);
     }
 

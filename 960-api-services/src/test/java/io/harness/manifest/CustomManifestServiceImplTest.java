@@ -66,7 +66,7 @@ public class CustomManifestServiceImplTest extends CategoryTest {
   public void setup() throws IOException {
     MockitoAnnotations.initMocks(this);
     doAnswer(invocation -> {
-      ShellExecutorConfig config = invocation.getArgumentAt(0, ShellExecutorConfig.class);
+      ShellExecutorConfig config = invocation.getArgument(0, ShellExecutorConfig.class);
       shellWorkingDirectory = config.getWorkingDirectory();
       return scriptProcessExecutor;
     })

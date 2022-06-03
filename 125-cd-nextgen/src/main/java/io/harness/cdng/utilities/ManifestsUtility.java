@@ -44,8 +44,8 @@ public class ManifestsUtility {
   }
 
   public YamlField fetchManifestsYamlFieldAndSetYamlUpdates(
-      YamlNode serviceConfigNode, Boolean isUseFromStage, YamlUpdates.Builder yamlUpdates) {
-    if (isUseFromStage == false) {
+      YamlNode serviceConfigNode, boolean isUseFromStage, YamlUpdates.Builder yamlUpdates) {
+    if (!isUseFromStage) {
       return serviceConfigNode.getField(YamlTypes.SERVICE_DEFINITION)
           .getNode()
           .getField(YamlTypes.SPEC)

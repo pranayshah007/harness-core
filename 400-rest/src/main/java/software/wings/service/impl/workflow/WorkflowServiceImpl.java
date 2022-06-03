@@ -2609,7 +2609,8 @@ public class WorkflowServiceImpl implements WorkflowService {
         deploymentMetadataBuilder.artifactVariables(artifactVariables);
         updateArtifactVariables(appId, workflow, artifactVariables, withDefaultArtifact, workflowExecution);
         resolveArtifactStreamMetadata(appId, artifactVariables, workflowExecution);
-        if (featureFlagService.isEnabled(FeatureName.DISABLE_ARTIFACT_COLLECTION, accountId) && withDefaultArtifact) {
+        if (featureFlagService.isEnabled(FeatureName.ARTIFACT_COLLECTION_CONFIGURABLE, accountId)
+            && withDefaultArtifact) {
           addArtifactInputToArtifactVariables(artifactVariables, workflowExecution);
         }
       }

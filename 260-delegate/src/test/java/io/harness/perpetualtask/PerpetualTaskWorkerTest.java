@@ -39,8 +39,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadPoolExecutor;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Before;
 import org.junit.Rule;
@@ -74,7 +74,7 @@ public class PerpetualTaskWorkerTest extends DelegateTestBase {
   @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
   @Mock private PerpetualTaskServiceGrpcClient perpetualTaskServiceGrpcClient;
   @Mock private Map<String, PerpetualTaskExecutor> factoryMap;
-  @Mock @Named("perpetualTaskExecutor") ExecutorService perpetualTaskExecutor;
+  @Mock @Named("taskExecutor") ThreadPoolExecutor perpetualTaskExecutor;
   @Spy
   @Named("perpetualTaskTimeoutExecutor")
   ScheduledExecutorService perpetualTaskTimeoutExecutor =

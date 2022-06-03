@@ -32,6 +32,7 @@ import io.harness.persistence.UuidAware;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -88,7 +89,6 @@ public abstract class NotificationRule
   CVNGNotificationChannel notificationMethod;
 
   @Data
-  @SuperBuilder
   public abstract static class CVNGNotificationChannel {
     public abstract CVNGNotificationChannelType getType();
     public abstract NotificationChannel toNotificationChannel(String accountId, String orgIdentifier,
@@ -96,11 +96,15 @@ public abstract class NotificationRule
   }
 
   @Data
-  @SuperBuilder
   public static class CVNGEmailChannel extends CVNGNotificationChannel {
     public final CVNGNotificationChannelType type = CVNGNotificationChannelType.EMAIL;
     List<String> userGroups;
     List<String> recipients;
+
+    public CVNGEmailChannel(List<String> userGroups, List<String> recipients) {
+      this.userGroups = userGroups;
+      this.recipients = recipients;
+    }
 
     @Override
     public NotificationChannel toNotificationChannel(String accountId, String orgIdentifier, String projectIdentifier,
@@ -109,7 +113,8 @@ public abstract class NotificationRule
           .accountId(accountId)
           .recipients(recipients)
           .userGroups(
-              userGroups.stream()
+              getUserGroupList(userGroups)
+                  .stream()
                   .map(e -> CVNGNotificationChannelUtils.getUserGroups(e, accountId, orgIdentifier, projectIdentifier))
                   .collect(Collectors.toList()))
           .team(Team.CV)
@@ -120,11 +125,15 @@ public abstract class NotificationRule
   }
 
   @Data
-  @SuperBuilder
   public static class CVNGSlackChannel extends CVNGNotificationChannel {
     public final CVNGNotificationChannelType type = CVNGNotificationChannelType.SLACK;
     List<String> userGroups;
     String webhookUrl;
+
+    public CVNGSlackChannel(List<String> userGroups, String webhookUrl) {
+      this.userGroups = userGroups;
+      this.webhookUrl = webhookUrl;
+    }
 
     @Override
     public NotificationChannel toNotificationChannel(String accountId, String orgIdentifier, String projectIdentifier,
@@ -135,7 +144,8 @@ public abstract class NotificationRule
           .templateData(templateData)
           .templateId(templateId)
           .userGroups(
-              userGroups.stream()
+              getUserGroupList(userGroups)
+                  .stream()
                   .map(e -> CVNGNotificationChannelUtils.getUserGroups(e, accountId, orgIdentifier, projectIdentifier))
                   .collect(Collectors.toList()))
           .webhookUrls(Lists.newArrayList(webhookUrl))
@@ -144,10 +154,15 @@ public abstract class NotificationRule
   }
 
   @Data
-  @SuperBuilder
   public static class CVNGPagerDutyChannel extends CVNGNotificationChannel {
     public final CVNGNotificationChannelType type = CVNGNotificationChannelType.PAGERDUTY;
     List<String> userGroups;
+
+    public CVNGPagerDutyChannel(List<String> userGroups, String integrationKey) {
+      this.userGroups = userGroups;
+      this.integrationKey = integrationKey;
+    }
+
     String integrationKey;
 
     @Override
@@ -156,7 +171,8 @@ public abstract class NotificationRule
       return PagerDutyChannel.builder()
           .accountId(accountId)
           .userGroups(
-              userGroups.stream()
+              getUserGroupList(userGroups)
+                  .stream()
                   .map(e -> CVNGNotificationChannelUtils.getUserGroups(e, accountId, orgIdentifier, projectIdentifier))
                   .collect(Collectors.toList()))
           .team(Team.CV)
@@ -168,11 +184,15 @@ public abstract class NotificationRule
   }
 
   @Data
-  @SuperBuilder
   public static class CVNGMSTeamsChannel extends CVNGNotificationChannel {
     public final CVNGNotificationChannelType type = CVNGNotificationChannelType.MSTEAMS;
     List<String> msTeamKeys;
     List<String> userGroups;
+
+    public CVNGMSTeamsChannel(List<String> msTeamKeys, List<String> userGroups) {
+      this.msTeamKeys = msTeamKeys;
+      this.userGroups = userGroups;
+    }
 
     @Override
     public NotificationChannel toNotificationChannel(String accountId, String orgIdentifier, String projectIdentifier,
@@ -184,7 +204,8 @@ public abstract class NotificationRule
           .templateData(templateData)
           .templateId(templateId)
           .userGroups(
-              userGroups.stream()
+              getUserGroupList(userGroups)
+                  .stream()
                   .map(e -> CVNGNotificationChannelUtils.getUserGroups(e, accountId, orgIdentifier, projectIdentifier))
                   .collect(Collectors.toList()))
           .build();
@@ -200,5 +221,12 @@ public abstract class NotificationRule
           .set(NotificationRuleKeys.notificationMethod, notificationRule.getNotificationMethod())
           .inc(NotificationRuleKeys.version);
     }
+  }
+
+  public static List<String> getUserGroupList(List<String> userGroups) {
+    if (userGroups == null) {
+      return Collections.emptyList();
+    }
+    return userGroups;
   }
 }

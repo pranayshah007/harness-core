@@ -15,13 +15,13 @@ import static io.harness.rule.OwnerRule.SATYAM;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 
 import io.harness.CategoryTest;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.dto.OrchestrationAdjacencyListDTO;
 import io.harness.dto.OrchestrationGraphDTO;
@@ -40,11 +40,13 @@ import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.pms.contracts.governance.GovernanceMetadata;
 import io.harness.pms.governance.PipelineSaveResponse;
 import io.harness.pms.helpers.PipelineCloneHelper;
+import io.harness.pms.helpers.PmsFeatureFlagHelper;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
 import io.harness.pms.pipeline.mappers.NodeExecutionToExecutioNodeMapper;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipeline.service.PMSPipelineServiceHelper;
 import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
+import io.harness.pms.pipeline.service.PipelineCRUDResult;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.variables.VariableCreatorMergeService;
 import io.harness.rule.Owner;
@@ -80,6 +82,7 @@ public class PipelineResourceTest extends CategoryTest {
   @Mock VariableCreatorMergeService variableCreatorMergeService;
   @Mock AccessControlClient accessControlClient;
   @Mock PipelineCloneHelper pipelineCloneHelper;
+  @Mock PmsFeatureFlagHelper featureFlagHelper;
 
   private final String ACCOUNT_ID = "account_id";
   private final String ORG_IDENTIFIER = "orgId";
@@ -97,7 +100,7 @@ public class PipelineResourceTest extends CategoryTest {
   public void setUp() throws IOException {
     MockitoAnnotations.initMocks(this);
     pipelineResource = new PipelineResource(pmsPipelineService, pmsPipelineServiceHelper, nodeExecutionService,
-        nodeExecutionToExecutioNodeMapper, pipelineTemplateHelper, null, variableCreatorMergeService,
+        nodeExecutionToExecutioNodeMapper, pipelineTemplateHelper, featureFlagHelper, variableCreatorMergeService,
         pipelineCloneHelper);
     ClassLoader classLoader = this.getClass().getClassLoader();
     String filename = "failure-strategy.yaml";
@@ -159,7 +162,13 @@ public class PipelineResourceTest extends CategoryTest {
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testCreatePipeline() {
-    doReturn(entityWithVersion).when(pmsPipelineService).create(entity);
+    doReturn(false).when(featureFlagHelper).isEnabled(ACCOUNT_ID, FeatureName.OPA_PIPELINE_GOVERNANCE);
+    doReturn(PipelineCRUDResult.builder()
+                 .pipelineEntity(entityWithVersion)
+                 .governanceMetadata(GovernanceMetadata.newBuilder().setDeny(false).build())
+                 .build())
+        .when(pmsPipelineService)
+        .create(entity);
     TemplateMergeResponseDTO templateMergeResponseDTO =
         TemplateMergeResponseDTO.builder().mergedPipelineYaml(yaml).build();
     doReturn(templateMergeResponseDTO).when(pipelineTemplateHelper).resolveTemplateRefsInPipeline(entity);
@@ -173,27 +182,17 @@ public class PipelineResourceTest extends CategoryTest {
   @Owner(developers = SATYAM)
   @Category(UnitTests.class)
   public void testCreatePipelineV2() {
-    doReturn(entityWithVersion).when(pmsPipelineService).create(entity);
-    doReturn(GovernanceMetadata.newBuilder().setDeny(true).build())
-        .when(pmsPipelineServiceHelper)
-        .validatePipelineYamlAndSetTemplateRefIfAny(entity, true);
+    doReturn(true).when(featureFlagHelper).isEnabled(ACCOUNT_ID, FeatureName.OPA_PIPELINE_GOVERNANCE);
+    doReturn(PipelineCRUDResult.builder()
+                 .pipelineEntity(entityWithVersion)
+                 .governanceMetadata(GovernanceMetadata.newBuilder().setDeny(true).build())
+                 .build())
+        .when(pmsPipelineService)
+        .create(entity);
     ResponseDTO<PipelineSaveResponse> responseDTO =
         pipelineResource.createPipelineV2(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, null, null, null, null, yaml);
     assertThat(responseDTO.getData().getGovernanceMetadata()).isNotNull();
     assertThat(responseDTO.getData().getGovernanceMetadata().getDeny()).isTrue();
-  }
-
-  @Test
-  @Owner(developers = SAMARTH)
-  @Category(UnitTests.class)
-  public void testCreatePipelineWithSchemaErrors() {
-    doThrow(JsonSchemaValidationException.class)
-        .when(pmsPipelineServiceHelper)
-        .validatePipelineYamlAndSetTemplateRefIfAny(entity, false);
-    assertThatThrownBy(()
-                           -> pipelineResource.createPipeline(
-                               ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, null, null, null, null, yaml))
-        .isInstanceOf(JsonSchemaValidationException.class);
   }
 
   @Test
@@ -286,14 +285,17 @@ public class PipelineResourceTest extends CategoryTest {
                            -> pipelineResource.updatePipeline(null, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
                                incorrectPipelineIdentifier, null, null, null, yaml))
         .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("Pipeline identifier in URL does not match pipeline identifier in yaml");
+        .hasMessage("Expected Pipeline identifier in YAML to be [notTheIdentifierWeNeed], but was [basichttpFail]");
   }
 
   @Test
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testUpdatePipeline() {
-    doReturn(entityWithVersion).when(pmsPipelineService).updatePipelineYaml(entity, ChangeType.MODIFY);
+    GovernanceMetadata governanceMetadata = GovernanceMetadata.newBuilder().setDeny(false).build();
+    PipelineCRUDResult pipelineCRUDResult =
+        PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).pipelineEntity(entityWithVersion).build();
+    doReturn(pipelineCRUDResult).when(pmsPipelineService).updatePipelineYaml(entity, ChangeType.MODIFY);
     TemplateMergeResponseDTO templateMergeResponseDTO =
         TemplateMergeResponseDTO.builder().mergedPipelineYaml(yaml).build();
     doReturn(templateMergeResponseDTO)
@@ -308,10 +310,10 @@ public class PipelineResourceTest extends CategoryTest {
   @Owner(developers = SATYAM)
   @Category(UnitTests.class)
   public void testUpdatePipelineV2() {
-    doReturn(entityWithVersion).when(pmsPipelineService).updatePipelineYaml(entity, ChangeType.MODIFY);
-    doReturn(GovernanceMetadata.newBuilder().setDeny(true).build())
-        .when(pmsPipelineServiceHelper)
-        .validatePipelineYamlAndSetTemplateRefIfAny(entity, true);
+    GovernanceMetadata governanceMetadata = GovernanceMetadata.newBuilder().setDeny(true).build();
+    PipelineCRUDResult pipelineCRUDResult =
+        PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).pipelineEntity(entityWithVersion).build();
+    doReturn(pipelineCRUDResult).when(pmsPipelineService).updatePipelineYaml(entity, ChangeType.MODIFY);
     ResponseDTO<PipelineSaveResponse> responseDTO = pipelineResource.updatePipelineV2(
         null, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, null, yaml);
     assertThat(responseDTO.getData().getGovernanceMetadata().getDeny()).isTrue();
@@ -322,9 +324,7 @@ public class PipelineResourceTest extends CategoryTest {
   @Category(UnitTests.class)
   @Ignore("Ignored till Schema validation is behind FF")
   public void testUpdatePipelineWithSchemaErrors() {
-    doThrow(JsonSchemaValidationException.class)
-        .when(pmsPipelineServiceHelper)
-        .validatePipelineYamlAndSetTemplateRefIfAny(entity, false);
+    doThrow(JsonSchemaValidationException.class).when(pmsPipelineService).updatePipelineYaml(entity, ChangeType.MODIFY);
     assertThatThrownBy(()
                            -> pipelineResource.updatePipeline(null, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
                                PIPELINE_IDENTIFIER, null, null, null, yaml))
@@ -386,7 +386,7 @@ public class PipelineResourceTest extends CategoryTest {
   public void testGetListOfPipelines() {
     Pageable pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, PipelineEntityKeys.createdAt));
     Page<PipelineEntity> pipelineEntities = new PageImpl<>(Collections.singletonList(entityWithVersion), pageable, 1);
-    doReturn(pipelineEntities).when(pmsPipelineService).list(any(), any(), any(), any(), any(), anyBoolean());
+    doReturn(pipelineEntities).when(pmsPipelineService).list(any(), any(), any(), any(), any(), any());
     List<PMSPipelineSummaryResponseDTO> content = pipelineResource
                                                       .getListOfPipelines(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
                                                           0, 25, null, null, null, null, null, null, null)

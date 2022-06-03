@@ -12,13 +12,11 @@ import static io.harness.delegate.beans.executioncapability.CapabilityType.KUSTO
 import io.harness.data.structure.HarnessStringUtils;
 
 import java.time.Duration;
-import lombok.Builder;
 import lombok.Data;
 
 @Data
-@Builder
 public class KustomizeCapability implements ExecutionCapability {
-  private String pluginRootDir;
+  private final String pluginRootDir;
 
   @Override
   public EvaluationMode evaluationMode() {

@@ -58,7 +58,7 @@ public class InfrastructureDefinitionConfig {
 
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) String description;
   Map<String, String> tags;
-  private ParameterField<Boolean> allowSimultaneousDeployments;
+  @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH) ParameterField<Boolean> allowSimultaneousDeployments;
   @NotNull @JsonProperty("type") InfrastructureType type;
 
   @JsonProperty("spec")

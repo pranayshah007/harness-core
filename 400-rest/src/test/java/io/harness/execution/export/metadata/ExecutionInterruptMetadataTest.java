@@ -63,7 +63,7 @@ public class ExecutionInterruptMetadataTest extends CategoryTest {
   public void testFromStateExecutionInterrupts() {
     assertThat(ExecutionInterruptMetadata.fromStateExecutionInterrupts(null)).isNull();
 
-    Instant now = Instant.now();
+    Instant now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
     List<ExecutionInterruptMetadata> executionInterruptMetadataList =
         ExecutionInterruptMetadata.fromStateExecutionInterrupts(asList(null, prepareStateExecutionInterrupt(now)));
     assertThat(executionInterruptMetadataList).isNotNull();
@@ -82,7 +82,7 @@ public class ExecutionInterruptMetadataTest extends CategoryTest {
                    StateExecutionInterrupt.builder().interrupt(anExecutionInterrupt().build()).build()))
         .isNull();
 
-    Instant now = Instant.now();
+    Instant now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
     ExecutionInterruptMetadata executionInterruptMetadata =
         ExecutionInterruptMetadata.fromStateExecutionInterrupt(prepareStateExecutionInterrupt(now));
     validateExecutionInterruptMetadata(executionInterruptMetadata, now);

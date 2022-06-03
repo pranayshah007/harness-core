@@ -53,6 +53,7 @@ public class ConnectorFilterPropertiesDTO extends FilterPropertiesDTO {
   @Schema(description = "CCM Connector filter.", hidden = true) @Hidden CcmConnectorFilter ccmConnectorFilter;
 
   @Override
+  @Schema(type = "string", allowableValues = {"Connector"})
   public FilterType getFilterType() {
     return FilterType.CONNECTOR;
   }

@@ -5,7 +5,7 @@ server:
       port: 7070
       keyStorePath: keystore.jks
       keyStorePassword: password
-      trustStorePath: ${JAVA_HOME}/jre/lib/security/cacerts
+      trustStorePath: ${JAVA_HOME}/lib/security/cacerts
       certAlias: localhost
       validateCerts: false
       maxRequestHeaderSize: 100KiB
@@ -17,7 +17,7 @@ server:
       port: 7071
       keyStorePath: keystore.jks
       keyStorePassword: password
-      trustStorePath: ${JAVA_HOME}/jre/lib/security/cacerts
+      trustStorePath: ${JAVA_HOME}/lib/security/cacerts
       certAlias: localhost
       validateCerts: false
   requestLog:

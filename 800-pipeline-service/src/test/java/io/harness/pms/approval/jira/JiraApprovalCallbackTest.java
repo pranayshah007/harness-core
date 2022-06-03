@@ -50,7 +50,8 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.powermock.api.mockito.PowerMockito;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
@@ -83,8 +84,8 @@ public class JiraApprovalCallbackTest extends CategoryTest {
   @Owner(developers = BRIJESH)
   @Category(UnitTests.class)
   public void testPush() {
-    PowerMockito.mockStatic(CriteriaEvaluator.class);
-    when(CriteriaEvaluator.evaluateCriteria(any(), any())).thenReturn(true);
+    MockedStatic<CriteriaEvaluator> aStatic = Mockito.mockStatic(CriteriaEvaluator.class);
+    aStatic.when(() -> CriteriaEvaluator.evaluateCriteria(any(), any())).thenReturn(true);
     on(jiraApprovalCallback).set("approvalInstanceId", approvalInstanceId);
     Ambiance ambiance = Ambiance.newBuilder()
                             .putSetupAbstractions("accountId", accountId)

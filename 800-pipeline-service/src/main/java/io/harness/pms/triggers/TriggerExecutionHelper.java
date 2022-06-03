@@ -30,6 +30,7 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import io.harness.AuthorizationServiceHeader;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.exception.InvalidRequestException;
@@ -39,6 +40,7 @@ import io.harness.execution.PlanExecutionMetadata;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
+import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.ngtriggers.beans.config.NGTriggerConfigV2;
 import io.harness.ngtriggers.beans.dto.TriggerDetails;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
@@ -64,6 +66,7 @@ import io.harness.pms.contracts.triggers.TriggerPayload;
 import io.harness.pms.contracts.triggers.Type;
 import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
 import io.harness.pms.gitsync.PmsGitSyncHelper;
+import io.harness.pms.helpers.PmsFeatureFlagHelper;
 import io.harness.pms.inputset.MergeInputSetRequestDTOPMS;
 import io.harness.pms.inputset.MergeInputSetResponseDTOPMS;
 import io.harness.pms.merger.helpers.InputSetMergeHelper;
@@ -113,6 +116,7 @@ public class TriggerExecutionHelper {
   private final PipelineEnforcementService pipelineEnforcementService;
   private final WebhookEventPayloadParser webhookEventPayloadParser;
   private final PipelineServiceClient pipelineServiceClient;
+  private final PmsFeatureFlagHelper featureFlagService;
 
   public PlanExecution resolveRuntimeInputAndSubmitExecutionReques(
       TriggerDetails triggerDetails, TriggerPayload triggerPayload) {
@@ -258,12 +262,16 @@ public class TriggerExecutionHelper {
               InputSetMergeHelper.mergeInputSetIntoPipeline(pipelineYamlBeforeMerge, sanitizedRuntimeInputYaml, true);
         }
       }
-      if (pipelineEntity.getTemplateReference() != null && pipelineEntity.getTemplateReference()) {
-        pipelineYaml =
-            pipelineTemplateHelper
-                .resolveTemplateRefsInPipeline(pipelineEntity.getAccountId(), pipelineEntity.getOrgIdentifier(),
-                    pipelineEntity.getProjectIdentifier(), pipelineYaml, false)
-                .getMergedPipelineYaml();
+      String pipelineYamlWithTemplateRef = pipelineYaml;
+      if (Boolean.TRUE.equals(pipelineEntity.getTemplateReference())) {
+        TemplateMergeResponseDTO templateMergeResponseDTO =
+            pipelineTemplateHelper.resolveTemplateRefsInPipeline(pipelineEntity.getAccountId(),
+                pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineYaml, false,
+                featureFlagService.isEnabled(pipelineEntity.getAccountId(), FeatureName.OPA_PIPELINE_GOVERNANCE));
+        pipelineYaml = templateMergeResponseDTO.getMergedPipelineYaml();
+        pipelineYamlWithTemplateRef = templateMergeResponseDTO.getMergedPipelineYamlWithTemplateRef() == null
+            ? pipelineYaml
+            : templateMergeResponseDTO.getMergedPipelineYamlWithTemplateRef();
       }
 
       BasicPipeline basicPipeline = YamlUtils.read(pipelineYaml, BasicPipeline.class);
@@ -271,7 +279,7 @@ public class TriggerExecutionHelper {
       pipelineEnforcementService.validateExecutionEnforcementsBasedOnStage(pipelineEntity);
 
       String expandedJson = pmsPipelineServiceHelper.fetchExpandedPipelineJSONFromYaml(pipelineEntity.getAccountId(),
-          pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineYaml);
+          pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineYamlWithTemplateRef);
 
       planExecutionMetadataBuilder.yaml(pipelineYaml);
       planExecutionMetadataBuilder.processedYaml(YamlUtils.injectUuid(pipelineYaml));

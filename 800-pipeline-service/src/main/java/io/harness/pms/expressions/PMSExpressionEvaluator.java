@@ -12,8 +12,10 @@ import io.harness.account.AccountClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.CollectionUtils;
+import io.harness.engine.execution.ExecutionInputService;
 import io.harness.engine.executions.plan.PlanExecutionMetadataService;
 import io.harness.engine.expressions.AmbianceExpressionEvaluator;
+import io.harness.engine.expressions.functors.MatrixFunctor;
 import io.harness.engine.expressions.functors.NodeExecutionEntityType;
 import io.harness.expression.VariableResolverTracker;
 import io.harness.ngtriggers.expressions.functors.EventPayloadFunctor;
@@ -22,6 +24,7 @@ import io.harness.organization.remote.OrganizationClient;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.expression.RemoteFunctorServiceGrpc.RemoteFunctorServiceBlockingStub;
 import io.harness.pms.expressions.functors.AccountFunctor;
+import io.harness.pms.expressions.functors.ExecutionInputExpressionFunctor;
 import io.harness.pms.expressions.functors.OrgFunctor;
 import io.harness.pms.expressions.functors.PipelineExecutionFunctor;
 import io.harness.pms.expressions.functors.ProjectFunctor;
@@ -50,6 +53,7 @@ public class PMSExpressionEvaluator extends AmbianceExpressionEvaluator {
   @Inject private PMSExecutionService pmsExecutionService;
   @Inject PmsSdkInstanceService pmsSdkInstanceService;
   @Inject PipelineExpressionHelper pipelineExpressionHelper;
+  @Inject ExecutionInputService executionInputService;
 
   public PMSExpressionEvaluator(VariableResolverTracker variableResolverTracker, Ambiance ambiance,
       Set<NodeExecutionEntityType> entityTypes, boolean refObjectSpecific) {
@@ -65,6 +69,9 @@ public class PMSExpressionEvaluator extends AmbianceExpressionEvaluator {
     addToContext("project", new ProjectFunctor(projectClient, ambiance));
 
     addToContext("pipeline", new PipelineExecutionFunctor(pmsExecutionService, pipelineExpressionHelper, ambiance));
+    addToContext("executionInput", new ExecutionInputExpressionFunctor(executionInputService, ambiance));
+
+    addToContext("matrix", new MatrixFunctor(ambiance));
 
     // Trigger functors
     addToContext(SetupAbstractionKeys.eventPayload, new EventPayloadFunctor(ambiance, planExecutionMetadataService));

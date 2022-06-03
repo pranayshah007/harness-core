@@ -1,7 +1,7 @@
 # Add properties that are shared between developers and ci build system
 
 # Bazel SonarQube Integration
-coverage --java_toolchain=@bazel_tools//tools/jdk:toolchain_hostjdk8
+coverage --java_toolchain=@bazel_tools//tools/jdk:toolchain_java11
 coverage --collect_code_coverage
 coverage --combined_report=lcov
 coverage --coverage_report_generator=//tools/bazel/sonarqube:sonarqube_coverage_generator

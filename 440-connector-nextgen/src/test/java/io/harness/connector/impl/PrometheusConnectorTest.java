@@ -117,8 +117,7 @@ public class PrometheusConnectorTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetAppDynamicsConnector() {
     createConnector();
-    when(connectorRepository.findByFullyQualifiedIdentifierAndDeletedNot(
-             anyString(), anyString(), anyString(), anyString(), anyBoolean()))
+    when(connectorRepository.findByFullyQualifiedIdentifierAndDeletedNot(any(), any(), any(), any(), anyBoolean()))
         .thenReturn(Optional.of(prometheusConnector));
     ConnectorResponseDTO connectorDTO = connectorService.get(accountIdentifier, null, null, identifier).get();
     ensurePrometheusConnectorFieldsAreCorrect(connectorDTO);

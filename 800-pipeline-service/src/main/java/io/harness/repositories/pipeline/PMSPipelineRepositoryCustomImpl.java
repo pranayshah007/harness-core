@@ -186,32 +186,16 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
   @Override
   public Optional<PipelineEntity> findForOldGitSync(
       String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier, boolean notDeleted) {
-    Criteria criteria = Criteria.where(PipelineEntityKeys.deleted)
-                            .is(!notDeleted)
-                            .and(PipelineEntityKeys.identifier)
-                            .is(pipelineIdentifier)
-                            .and(PipelineEntityKeys.projectIdentifier)
-                            .is(projectIdentifier)
-                            .and(PipelineEntityKeys.orgIdentifier)
-                            .is(orgIdentifier)
-                            .and(PipelineEntityKeys.accountId)
-                            .is(accountId);
+    Criteria criteria = PMSPipelineFilterHelper.getCriteriaForFind(
+        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, notDeleted);
     return gitAwarePersistence.findOne(criteria, projectIdentifier, orgIdentifier, accountId, PipelineEntity.class);
   }
 
   @Override
   public Optional<PipelineEntity> find(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, boolean notDeleted, boolean getMetadataOnly) {
-    Criteria criteria = Criteria.where(PipelineEntityKeys.deleted)
-                            .is(!notDeleted)
-                            .and(PipelineEntityKeys.identifier)
-                            .is(pipelineIdentifier)
-                            .and(PipelineEntityKeys.projectIdentifier)
-                            .is(projectIdentifier)
-                            .and(PipelineEntityKeys.orgIdentifier)
-                            .is(orgIdentifier)
-                            .and(PipelineEntityKeys.accountId)
-                            .is(accountId);
+    Criteria criteria = PMSPipelineFilterHelper.getCriteriaForFind(
+        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, notDeleted);
     Query query = new Query(criteria);
     PipelineEntity savedEntity = mongoTemplate.findOne(query, PipelineEntity.class);
     if (savedEntity == null) {
@@ -258,42 +242,23 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
 
   @Override
   public PipelineEntity updatePipelineYaml(PipelineEntity pipelineToUpdate) {
-    Criteria criteria = Criteria.where(PipelineEntityKeys.deleted)
-                            .is(false)
-                            .and(PipelineEntityKeys.identifier)
-                            .is(pipelineToUpdate.getIdentifier())
-                            .and(PipelineEntityKeys.projectIdentifier)
-                            .is(pipelineToUpdate.getProjectIdentifier())
-                            .and(PipelineEntityKeys.orgIdentifier)
-                            .is(pipelineToUpdate.getOrgIdentifier())
-                            .and(PipelineEntityKeys.accountId)
-                            .is(pipelineToUpdate.getAccountId());
+    Criteria criteria =
+        PMSPipelineFilterHelper.getCriteriaForFind(pipelineToUpdate.getAccountId(), pipelineToUpdate.getOrgIdentifier(),
+            pipelineToUpdate.getProjectIdentifier(), pipelineToUpdate.getIdentifier(), true);
     Query query = new Query(criteria);
     long timeOfUpdate = System.currentTimeMillis();
     Update updateOperations = PMSPipelineFilterHelper.getUpdateOperations(pipelineToUpdate, timeOfUpdate);
-    PipelineEntity oldEntityFromDB = mongoTemplate.findAndModify(
-        query, updateOperations, new FindAndModifyOptions().returnNew(false), PipelineEntity.class);
-    if (oldEntityFromDB == null) {
-      return null;
-    }
-    PipelineEntity updatedPipelineEntity =
-        PMSPipelineFilterHelper.updateFieldsInDBEntry(oldEntityFromDB, pipelineToUpdate, timeOfUpdate);
-    if (updatedPipelineEntity.getStoreType() == null) {
-      // onboarding old entities as INLINE
-      Update updateOperationsForOnboardingToInline = PMSPipelineFilterHelper.getUpdateOperationsForOnboardingToInline();
-      updatedPipelineEntity = mongoTemplate.findAndModify(query, updateOperationsForOnboardingToInline,
-          new FindAndModifyOptions().returnNew(true), PipelineEntity.class);
-    }
+
+    PipelineEntity updatedPipelineEntity = transactionHelper.performTransaction(
+        () -> updatePipelineEntityInDB(query, updateOperations, pipelineToUpdate, timeOfUpdate));
+
+    updatedPipelineEntity = onboardToInlineIfNullStoreType(updatedPipelineEntity, query);
     if (updatedPipelineEntity == null) {
       return null;
     }
-    if (updatedPipelineEntity.getStoreType() == StoreType.INLINE) {
-      outboxService.save(
-          new PipelineUpdateEvent(pipelineToUpdate.getAccountIdentifier(), pipelineToUpdate.getOrgIdentifier(),
-              pipelineToUpdate.getProjectIdentifier(), updatedPipelineEntity, oldEntityFromDB));
-      return updatedPipelineEntity;
-    }
-    if (gitSyncSdkService.isGitSimplificationEnabled(pipelineToUpdate.getAccountIdentifier(),
+
+    if (updatedPipelineEntity.getStoreType() == StoreType.REMOTE
+        && gitSyncSdkService.isGitSimplificationEnabled(pipelineToUpdate.getAccountIdentifier(),
             pipelineToUpdate.getOrgIdentifier(), pipelineToUpdate.getProjectIdentifier())) {
       Scope scope = Scope.builder()
                         .accountIdentifier(updatedPipelineEntity.getAccountIdentifier())
@@ -302,10 +267,31 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
                         .build();
       gitAwareEntityHelper.updateEntityOnGit(updatedPipelineEntity, pipelineToUpdate.getYaml(), scope);
     }
+    return updatedPipelineEntity;
+  }
 
+  PipelineEntity updatePipelineEntityInDB(
+      Query query, Update updateOperations, PipelineEntity pipelineToUpdate, long timeOfUpdate) {
+    PipelineEntity oldEntityFromDB = mongoTemplate.findAndModify(
+        query, updateOperations, new FindAndModifyOptions().returnNew(false), PipelineEntity.class);
+    if (oldEntityFromDB == null) {
+      return null;
+    }
+    PipelineEntity pipelineEntityAfterUpdate =
+        PMSPipelineFilterHelper.updateFieldsInDBEntry(oldEntityFromDB, pipelineToUpdate, timeOfUpdate);
     outboxService.save(
         new PipelineUpdateEvent(pipelineToUpdate.getAccountIdentifier(), pipelineToUpdate.getOrgIdentifier(),
-            pipelineToUpdate.getProjectIdentifier(), updatedPipelineEntity, oldEntityFromDB, true));
+            pipelineToUpdate.getProjectIdentifier(), pipelineEntityAfterUpdate, oldEntityFromDB));
+    return pipelineEntityAfterUpdate;
+  }
+
+  PipelineEntity onboardToInlineIfNullStoreType(PipelineEntity updatedPipelineEntity, Query query) {
+    if (updatedPipelineEntity.getStoreType() == null) {
+      // onboarding old entities as INLINE
+      Update updateOperationsForOnboardingToInline = PMSPipelineFilterHelper.getUpdateOperationsForOnboardingToInline();
+      updatedPipelineEntity = mongoTemplate.findAndModify(query, updateOperationsForOnboardingToInline,
+          new FindAndModifyOptions().returnNew(true), PipelineEntity.class);
+    }
     return updatedPipelineEntity;
   }
 
@@ -346,16 +332,8 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
   @Override
   public PipelineEntity delete(
       String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier) {
-    Criteria criteria = Criteria.where(PipelineEntityKeys.deleted)
-                            .is(false)
-                            .and(PipelineEntityKeys.identifier)
-                            .is(pipelineIdentifier)
-                            .and(PipelineEntityKeys.projectIdentifier)
-                            .is(projectIdentifier)
-                            .and(PipelineEntityKeys.orgIdentifier)
-                            .is(orgIdentifier)
-                            .and(PipelineEntityKeys.accountId)
-                            .is(accountId);
+    Criteria criteria = PMSPipelineFilterHelper.getCriteriaForFind(
+        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, true);
     Query query = new Query(criteria);
     Update updateOperationsForDelete = PMSPipelineFilterHelper.getUpdateOperationsForDelete();
     PipelineEntity deletedPipelineEntity = mongoTemplate.findAndModify(

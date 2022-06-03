@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.pms.pipeline.service;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
@@ -19,6 +26,7 @@ import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.persistance.GitSyncSdkService;
+import io.harness.pms.contracts.governance.GovernanceMetadata;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.repositories.pipeline.PMSPipelineRepository;
 import io.harness.rule.Owner;
@@ -49,8 +57,11 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
   public void setUp() {
     MockitoAnnotations.initMocks(this);
     pipelineService = new PMSPipelineServiceImpl(
-        pipelineRepository, null, pipelineServiceHelper, null, gitSyncSdkService, null, null, null);
+        pipelineRepository, null, pipelineServiceHelper, null, gitSyncSdkService, null, null);
     doReturn(false).when(gitSyncSdkService).isGitSyncEnabled(accountIdentifier, orgIdentifier, projectIdentifier);
+    doReturn(GovernanceMetadata.newBuilder().setDeny(false).build())
+        .when(pipelineServiceHelper)
+        .validatePipelineYaml(any());
   }
 
   @Test
@@ -69,10 +80,49 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
     doReturn(pipelineToSaveWithUpdatedInfo).when(pipelineServiceHelper).updatePipelineInfo(pipelineToSave);
     doReturn(pipelineEntitySaved).when(pipelineRepository).save(pipelineToSaveWithUpdatedInfo);
 
-    PipelineEntity pipelineEntity = pipelineService.create(pipelineToSave);
+    PipelineEntity pipelineEntity = pipelineService.create(pipelineToSave).getPipelineEntity();
     assertThat(pipelineEntity).isEqualTo(pipelineEntitySaved);
     verify(pipelineServiceHelper, times(1))
         .sendPipelineSaveTelemetryEvent(pipelineEntitySaved, "creating new pipeline");
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testCreatePipelineWithGovernanceDeny() throws IOException {
+    PipelineEntity pipelineToSave = PipelineEntity.builder()
+                                        .accountId(accountIdentifier)
+                                        .orgIdentifier(orgIdentifier)
+                                        .projectIdentifier(projectIdentifier)
+                                        .identifier(pipelineId)
+                                        .yaml(pipelineYaml)
+                                        .build();
+    doReturn(GovernanceMetadata.newBuilder().setDeny(true).build())
+        .when(pipelineServiceHelper)
+        .validatePipelineYaml(pipelineToSave);
+    PipelineCRUDResult pipelineCRUDResult = pipelineService.create(pipelineToSave);
+    assertThat(pipelineCRUDResult.getPipelineEntity()).isNull();
+    assertThat(pipelineCRUDResult.getGovernanceMetadata().getDeny()).isTrue();
+    verify(pipelineServiceHelper, times(0)).updatePipelineInfo(any());
+    verify(pipelineRepository, times(0)).saveForOldGitSync(any());
+    verify(pipelineRepository, times(0)).save(any());
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testCreatePipelineWithSchemaErrors() {
+    PipelineEntity pipelineToSave = PipelineEntity.builder()
+                                        .accountId(accountIdentifier)
+                                        .orgIdentifier(orgIdentifier)
+                                        .projectIdentifier(projectIdentifier)
+                                        .identifier(pipelineId)
+                                        .yaml(pipelineYaml)
+                                        .build();
+    doThrow(new InvalidYamlException("msg", null)).when(pipelineServiceHelper).validatePipelineYaml(pipelineToSave);
+    assertThatThrownBy(() -> pipelineService.create(pipelineToSave))
+        .isInstanceOf(InvalidYamlException.class)
+        .hasMessage("msg");
   }
 
   @Test
@@ -185,15 +235,57 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
                                           .yaml(pipelineYaml)
                                           .build();
     PipelineEntity pipelineToSaveWithUpdatedInfo = pipelineToUpdate.withStageCount(0);
+    doReturn(GovernanceMetadata.newBuilder().setDeny(false).build())
+        .when(pipelineServiceHelper)
+        .validatePipelineYaml(pipelineToUpdate);
     doReturn(pipelineToSaveWithUpdatedInfo).when(pipelineServiceHelper).updatePipelineInfo(pipelineToUpdate);
 
     PipelineEntity pipelineEntityUpdated = pipelineToSaveWithUpdatedInfo.withVersion(0L);
     doReturn(pipelineEntityUpdated).when(pipelineRepository).updatePipelineYaml(pipelineToSaveWithUpdatedInfo);
 
-    PipelineEntity pipelineEntity = pipelineService.updatePipelineYaml(pipelineToUpdate, null);
+    PipelineEntity pipelineEntity = pipelineService.updatePipelineYaml(pipelineToUpdate, null).getPipelineEntity();
     assertThat(pipelineEntity).isEqualTo(pipelineEntityUpdated);
     verify(pipelineServiceHelper, times(1))
         .sendPipelineSaveTelemetryEvent(pipelineEntityUpdated, "updating existing pipeline");
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testUpdatePipelineWithGovernanceDeny() throws IOException {
+    PipelineEntity pipelineToUpdate = PipelineEntity.builder()
+                                          .accountId(accountIdentifier)
+                                          .orgIdentifier(orgIdentifier)
+                                          .projectIdentifier(projectIdentifier)
+                                          .identifier(pipelineId)
+                                          .yaml(pipelineYaml)
+                                          .build();
+    doReturn(GovernanceMetadata.newBuilder().setDeny(true).build())
+        .when(pipelineServiceHelper)
+        .validatePipelineYaml(pipelineToUpdate);
+    PipelineCRUDResult pipelineCRUDResult = pipelineService.updatePipelineYaml(pipelineToUpdate, null);
+    assertThat(pipelineCRUDResult.getPipelineEntity()).isNull();
+    assertThat(pipelineCRUDResult.getGovernanceMetadata().getDeny()).isTrue();
+    verify(pipelineServiceHelper, times(0)).updatePipelineInfo(any());
+    verify(pipelineRepository, times(0)).updatePipelineYaml(any());
+    verify(pipelineRepository, times(0)).updatePipelineYamlForOldGitSync(any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testUpdatePipelineWithSchemaErrors() {
+    PipelineEntity pipelineToUpdate = PipelineEntity.builder()
+                                          .accountId(accountIdentifier)
+                                          .orgIdentifier(orgIdentifier)
+                                          .projectIdentifier(projectIdentifier)
+                                          .identifier(pipelineId)
+                                          .yaml(pipelineYaml)
+                                          .build();
+    doThrow(new InvalidYamlException("msg", null)).when(pipelineServiceHelper).validatePipelineYaml(pipelineToUpdate);
+    assertThatThrownBy(() -> pipelineService.updatePipelineYaml(pipelineToUpdate, null))
+        .isInstanceOf(InvalidYamlException.class)
+        .hasMessage("msg");
   }
 
   @Test
