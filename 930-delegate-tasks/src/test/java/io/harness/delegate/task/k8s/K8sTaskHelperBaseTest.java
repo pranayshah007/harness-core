@@ -67,15 +67,16 @@ import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyMapOf;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.spy;
@@ -308,7 +309,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
   @Before
   public void setup() throws Exception {
     HTimeLimiterMocker.mockCallInterruptible(mockTimeLimiter)
-        .thenAnswer(invocation -> invocation.getArgumentAt(0, Callable.class).call());
+        .thenAnswer(invocation -> invocation.getArgument(0, Callable.class).call());
   }
 
   @Test
@@ -552,7 +553,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     ProcessResult processResult = new ProcessResult(0, new ProcessOutput(output.getBytes()));
     doReturn(processResult)
         .when(spyK8sTaskHelperBase)
-        .executeCommandUsingUtils(anyString(), any(), any(), anyString(), any());
+        .executeCommandUsingUtils(nullable(K8sDelegateTaskParams.class), any(), any(), anyString(), any());
 
     String latestRevision =
         spyK8sTaskHelperBase.getLatestRevision(client, resource.getResourceId(), k8sDelegateTaskParams);
@@ -561,7 +562,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     processResult = new ProcessResult(1, new ProcessOutput("".getBytes()));
     doReturn(processResult)
         .when(spyK8sTaskHelperBase)
-        .executeCommandUsingUtils(anyString(), any(), any(), anyString(), any());
+        .executeCommandUsingUtils(nullable(K8sDelegateTaskParams.class), any(), any(), anyString(), any());
 
     latestRevision = spyK8sTaskHelperBase.getLatestRevision(client, resource.getResourceId(), k8sDelegateTaskParams);
     assertThat(latestRevision).isEqualTo("");
@@ -1338,7 +1339,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testReadManifestAndOverrideLocalSecrets() throws Exception {
     when(delegateLocalConfigService.replacePlaceholdersWithLocalConfig(anyString()))
-        .thenAnswer(invocationOnMock -> invocationOnMock.getArgumentAt(0, String.class));
+        .thenAnswer(invocationOnMock -> invocationOnMock.getArgument(0, String.class));
     final String workingDirectory = ".";
 
     ProcessResult processResult = new ProcessResult(0, new ProcessOutput("".getBytes()));
@@ -1571,8 +1572,8 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testShouldGetReleaseHistoryConfigMapIfNotFoundInSecretK8sClient() throws IOException {
     KubernetesConfig kubernetesConfig = KubernetesConfig.builder().build();
-    Mockito.when(mockKubernetesContainerService.fetchReleaseHistoryFromSecrets(any(), any())).thenReturn(null);
-    Mockito.when(mockKubernetesContainerService.fetchReleaseHistoryFromConfigMap(any(), any())).thenReturn("configmap");
+    when(mockKubernetesContainerService.fetchReleaseHistoryFromSecrets(any(), any())).thenReturn(null);
+    when(mockKubernetesContainerService.fetchReleaseHistoryFromConfigMap(any(), any())).thenReturn("configmap");
     String releaseHistory = spyK8sTaskHelperBase.getReleaseHistoryData(kubernetesConfig, "release");
     ArgumentCaptor<String> releaseArgumentCaptor = ArgumentCaptor.forClass(String.class);
     verify(mockKubernetesContainerService, times(1)).fetchReleaseHistoryFromSecrets(any(), anyString());
@@ -1588,9 +1589,9 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testShouldGetReleaseHistoryConfigMapIfInvalidRequestExceptionThrown() throws IOException {
     KubernetesConfig kubernetesConfig = KubernetesConfig.builder().build();
-    Mockito.when(mockKubernetesContainerService.fetchReleaseHistoryFromSecrets(any(), any()))
+    when(mockKubernetesContainerService.fetchReleaseHistoryFromSecrets(any(), any()))
         .thenThrow(new InvalidRequestException(""));
-    Mockito.when(mockKubernetesContainerService.fetchReleaseHistoryFromConfigMap(any(), any())).thenReturn("configmap");
+    when(mockKubernetesContainerService.fetchReleaseHistoryFromConfigMap(any(), any())).thenReturn("configmap");
     String releaseHistory = spyK8sTaskHelperBase.getReleaseHistoryData(kubernetesConfig, "release");
     ArgumentCaptor<String> releaseArgumentCaptor = ArgumentCaptor.forClass(String.class);
     verify(mockKubernetesContainerService, times(1)).fetchReleaseHistoryFromSecrets(any(), anyString());
@@ -2010,7 +2011,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     doReturn(process).when(startedProcess).getProcess();
     doReturn(process).when(process).destroyForcibly();
 
-    doThrow(new TimeoutException())
+    doAnswer(invocation -> { throw new TimeoutException(); })
         .when(spyK8sTaskHelperBase)
         .doStatusCheckForCustomResources(any(Kubectl.class), any(KubernetesResourceId.class), eq("false"),
             any(K8sDelegateTaskParams.class), any(LogCallback.class), eq(isErrorFrameworkEnabled));
@@ -2791,7 +2792,7 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     K8sManifestDelegateConfig manifestDelegateConfig =
         K8sManifestDelegateConfig.builder().storeDelegateConfig(storeDelegateConfig).build();
 
-    doThrow(new RuntimeException("unable to decrypt"))
+    doAnswer(invocation -> { throw new RuntimeException("unable to decrypt"); })
         .when(gitDecryptionHelper)
         .decryptGitConfig(gitConfigDTO, encryptionDataDetails);
 
@@ -3125,7 +3126,9 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
 
     InvalidRequestException exception = new InvalidRequestException("Unable to retrieve k8s version. Code: 401");
 
-    doThrow(exception).when(mockKubernetesContainerService).validateCredentials(kubernetesConfig);
+    doAnswer(invocation -> { throw exception; })
+        .when(mockKubernetesContainerService)
+        .validateCredentials(kubernetesConfig);
     assertThatThrownBy(() -> k8sTaskHelperBase.validate(clusterConfigDTO, emptyList())).isSameAs(exception);
   }
 
@@ -3216,9 +3219,13 @@ public class K8sTaskHelperBaseTest extends CategoryTest {
     doReturn(KUBERNETES_CONFIG)
         .when(mockK8sYamlToDelegateDTOMapper)
         .createKubernetesConfigFromClusterConfig(any(KubernetesClusterConfigDTO.class));
-    doReturn(ErrorDetail.builder().message(DEFAULT).build()).when(ngErrorHelper).createErrorDetail(anyString());
-    doReturn(DEFAULT).when(ngErrorHelper).getErrorSummary(anyString());
-    doThrow(ApiException.class).when(mockKubernetesContainerService).validateMetricsServer(any(KubernetesConfig.class));
+    doReturn(ErrorDetail.builder().message(DEFAULT).build())
+        .when(ngErrorHelper)
+        .createErrorDetail(nullable(String.class));
+    doReturn(DEFAULT).when(ngErrorHelper).getErrorSummary(nullable(String.class));
+    doAnswer(invocation -> { throw new ApiException(); })
+        .when(mockKubernetesContainerService)
+        .validateMetricsServer(any(KubernetesConfig.class));
 
     ConnectorValidationResult result =
         k8sTaskHelperBase.validateCEKubernetesCluster(connector, DEFAULT, emptyList(), emptyList());

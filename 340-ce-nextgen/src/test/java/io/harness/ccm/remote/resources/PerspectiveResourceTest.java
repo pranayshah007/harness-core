@@ -11,6 +11,7 @@ import static io.harness.ccm.commons.utils.BigQueryHelper.UNIFIED_TABLE;
 import static io.harness.rule.OwnerRule.SHUBHANSHU;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -32,12 +33,17 @@ import io.harness.ccm.views.service.CEViewService;
 import io.harness.ccm.views.service.ViewCustomFieldService;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.rule.Owner;
+import io.harness.telemetry.TelemetryReporter;
 
 import java.io.IOException;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
 
+@RunWith(MockitoJUnitRunner.class)
 public class PerspectiveResourceTest extends CategoryTest {
   private CEViewService ceViewService = mock(CEViewService.class);
   private ViewCustomFieldService viewCustomFieldService = mock(ViewCustomFieldService.class);
@@ -61,6 +67,8 @@ public class PerspectiveResourceTest extends CategoryTest {
 
   private CEView perspective;
 
+  @Mock private TelemetryReporter telemetryReporter;
+
   @Before
   public void setUp() throws IllegalAccessException, IOException {
     perspective = CEView.builder()
@@ -72,14 +80,15 @@ public class PerspectiveResourceTest extends CategoryTest {
                       .viewVersion(perspectiveVersion)
                       .build();
     when(ceViewService.get(PERSPECTIVE_ID)).thenReturn(perspective);
-    when(ceViewService.save(perspective)).thenReturn(perspective);
+    when(ceViewService.save(perspective, anyBoolean())).thenReturn(perspective);
     when(ceViewService.update(perspective)).thenReturn(perspective);
     when(bigQueryHelper.getCloudProviderTableName(ACCOUNT_ID, UNIFIED_TABLE)).thenReturn(UNIFIED_TABLE_NAME);
     when(budgetService.deleteBudgetsForPerspective(ACCOUNT_ID, PERSPECTIVE_ID)).thenReturn(true);
     when(notificationService.delete(PERSPECTIVE_ID, ACCOUNT_ID)).thenReturn(true);
 
     perspectiveResource = new PerspectiveResource(ceViewService, ceReportScheduleService, viewCustomFieldService,
-        bigQueryService, bigQueryHelper, budgetCostService, budgetService, notificationService, awsAccountFieldHelper);
+        bigQueryService, bigQueryHelper, budgetCostService, budgetService, notificationService, awsAccountFieldHelper,
+        telemetryReporter);
   }
 
   @Test
@@ -87,7 +96,7 @@ public class PerspectiveResourceTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCreatePerspective() {
     perspectiveResource.create(ACCOUNT_ID, false, perspective);
-    verify(ceViewService).save(perspective);
+    verify(ceViewService).save(perspective, false);
     verify(ceViewService).updateTotalCost(perspective, bigQueryService.get(), UNIFIED_TABLE_NAME);
   }
 

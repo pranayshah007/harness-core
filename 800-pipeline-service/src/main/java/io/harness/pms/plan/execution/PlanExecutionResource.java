@@ -203,6 +203,7 @@ public class PlanExecutionResource {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(
             responseCode = "default", description = "Execute given Stages of a Pipeline with Runtime Input Yaml")
       })
+  @Hidden
   public ResponseDTO<PlanExecutionResponseDto>
   runStagesWithRuntimeInputYaml(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @Parameter(
                                     description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE) String accountId,
@@ -231,6 +232,7 @@ public class PlanExecutionResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Re-run a given Stages Execution of a Pipeline")
       })
+  @Hidden
   public ResponseDTO<PlanExecutionResponseDto>
   rerunStagesWithRuntimeInputYaml(
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @Parameter(
@@ -264,6 +266,7 @@ public class PlanExecutionResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Returns pipeline execution details")
       })
+  @Hidden
   public ResponseDTO<PlanExecutionResponseDto>
   rerunPipelineWithInputSetPipelineYaml(
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @Parameter(
@@ -341,6 +344,7 @@ public class PlanExecutionResource {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
             description = "Returns all retry stages from where we can retry the failed pipeline")
       })
+  @Hidden
   public ResponseDTO<io.harness.engine.executions.retry.RetryInfo>
   getRetryStages(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @Parameter(
                      description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE) @AccountIdentifier String accountId,
@@ -405,6 +409,7 @@ public class PlanExecutionResource {
   @ApiOperation(
       value = "Execute a pipeline with input set references list", nickname = "rePostPipelineExecuteWithInputSetList")
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_EXECUTE)
+  @Hidden
   public ResponseDTO<PlanExecutionResponseDto>
   rerunPipelineWithInputSetIdentifierList(
       @NotNull @Parameter(description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE, required = true) @QueryParam(
@@ -475,6 +480,7 @@ public class PlanExecutionResource {
             description = "Takes a possible Interrupt value and applies it onto the given stage in the execution")
       })
   @Path("/interrupt/{planExecutionId}/{nodeExecutionId}")
+  @Hidden
   public ResponseDTO<InterruptDTO>
   handleStageInterrupt(@NotNull @Parameter(description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE,
                            required = true) @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
@@ -507,6 +513,7 @@ public class PlanExecutionResource {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
             description = "Takes a possible Interrupt value and applies it onto the given stage in the execution")
       })
+  @Hidden
   public ResponseDTO<InterruptDTO>
   handleManualInterventionInterrupt(
       @NotNull @Parameter(description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE, required = true) @QueryParam(
@@ -538,6 +545,7 @@ public class PlanExecutionResource {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
             description = "Start Preflight Checks for a Pipeline, given a Runtime Input YAML. Returns Preflight Id")
       })
+  @Hidden
   public ResponseDTO<String>
   startPreFlightCheck(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @Parameter(
                           description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE) String accountId,
@@ -569,6 +577,7 @@ public class PlanExecutionResource {
             description =
                 "Get Preflight Checks Response for a Preflight Id. May require Multiple Queries if Preflight is In Progress")
       })
+  @Hidden
   public ResponseDTO<PreFlightDTO>
   getPreflightCheckResponse(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @Parameter(
                                 description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE) String accountId,
@@ -592,6 +601,7 @@ public class PlanExecutionResource {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
             description = "Returns list of Stage identifiers with their names and stage dependencies")
       })
+  @Hidden
   public ResponseDTO<List<StageExecutionResponse>>
   getStagesExecutionList(@NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @Parameter(
                              description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE) String accountId,
@@ -642,6 +652,7 @@ public class PlanExecutionResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Returns execution details")
       })
+  @Hidden
   public ResponseDTO<PlanExecutionResponseDto>
   retryPipelineWithInputSetPipelineYaml(
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @Parameter(
@@ -688,6 +699,7 @@ public class PlanExecutionResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Returns retry history execution details")
       })
+  @Hidden
   public ResponseDTO<RetryHistoryResponseDto>
   getRetryHistory(
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @Parameter(
@@ -719,6 +731,7 @@ public class PlanExecutionResource {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(
             responseCode = "default", description = "Returns execution id of the latest execution from all retries")
       })
+  @Hidden
   public ResponseDTO<RetryLatestExecutionResponseDto>
   getRetryLatestExecutionId(
       @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @Parameter(

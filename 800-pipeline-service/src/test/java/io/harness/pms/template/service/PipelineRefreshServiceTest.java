@@ -31,6 +31,7 @@ import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipeline.service.PMSPipelineServiceHelper;
 import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
+import io.harness.pms.pipeline.service.PipelineCRUDResult;
 import io.harness.rule.Owner;
 import io.harness.template.beans.refresh.ErrorNodeSummary;
 import io.harness.template.beans.refresh.NodeInfo;
@@ -113,14 +114,15 @@ public class PipelineRefreshServiceTest extends PipelineServiceTestBase {
     when(pmsPipelineTemplateHelper.getRefreshedYaml(
              ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineEntityWithTemplates.getYaml()))
         .thenReturn(RefreshResponseDTO.builder().refreshedYaml(refreshedYaml).build());
-    when(pipelineServiceHelper.validatePipelineYaml(any()))
-        .thenReturn(GovernanceMetadata.newBuilder().setDeny(false).build());
+    when(pmsPipelineService.updatePipelineYaml(any(), any()))
+        .thenReturn(PipelineCRUDResult.builder()
+                        .governanceMetadata(GovernanceMetadata.newBuilder().setDeny(false).build())
+                        .build());
 
     pipelineRefreshService.refreshTemplateInputsInPipeline(
         ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_IDENTIFIER_WITH_TEMPLATES);
     verify(pmsPipelineService).get(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_IDENTIFIER_WITH_TEMPLATES, false);
     verify(pmsPipelineTemplateHelper).getRefreshedYaml(anyString(), anyString(), anyString(), anyString());
-    verify(pipelineServiceHelper).validatePipelineYaml(any());
 
     ArgumentCaptor<PipelineEntity> argumentCaptor = ArgumentCaptor.forClass(PipelineEntity.class);
     verify(pmsPipelineService).updatePipelineYaml(argumentCaptor.capture(), eq(ChangeType.MODIFY));
@@ -137,11 +139,15 @@ public class PipelineRefreshServiceTest extends PipelineServiceTestBase {
     when(pmsPipelineTemplateHelper.getRefreshedYaml(
              ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineEntityWithTemplates.getYaml()))
         .thenReturn(RefreshResponseDTO.builder().refreshedYaml(pipelineEntityWithTemplates.getYaml()).build());
-    when(pipelineServiceHelper.validatePipelineYaml(pipelineEntityWithTemplates))
-        .thenReturn(GovernanceMetadata.newBuilder()
+    when(pmsPipelineService.updatePipelineYaml(pipelineEntityWithTemplates, ChangeType.MODIFY))
+        .thenReturn(
+            PipelineCRUDResult.builder()
+                .governanceMetadata(
+                    GovernanceMetadata.newBuilder()
                         .setDeny(true)
                         .addDetails(PolicySetMetadata.newBuilder().setDeny(true).setIdentifier("policy1").build())
-                        .build());
+                        .build())
+                .build());
 
     assertThatThrownBy(()
                            -> pipelineRefreshService.refreshTemplateInputsInPipeline(
@@ -244,14 +250,15 @@ public class PipelineRefreshServiceTest extends PipelineServiceTestBase {
     when(pmsPipelineTemplateHelper.refreshAllTemplatesForYaml(
              ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineEntityWithTemplates.getYaml()))
         .thenReturn(YamlFullRefreshResponseDTO.builder().shouldRefreshYaml(true).refreshedYaml(refreshedYaml).build());
-    when(pipelineServiceHelper.validatePipelineYaml(any()))
-        .thenReturn(GovernanceMetadata.newBuilder().setDeny(false).build());
+    when(pmsPipelineService.updatePipelineYaml(any(), any()))
+        .thenReturn(PipelineCRUDResult.builder()
+                        .governanceMetadata(GovernanceMetadata.newBuilder().setDeny(false).build())
+                        .build());
 
     pipelineRefreshService.recursivelyRefreshAllTemplateInputsInPipeline(
         ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_IDENTIFIER_WITH_TEMPLATES);
     verify(pmsPipelineService).get(ACCOUNT_ID, ORG_ID, PROJECT_ID, PIPELINE_IDENTIFIER_WITH_TEMPLATES, false);
     verify(pmsPipelineTemplateHelper).refreshAllTemplatesForYaml(anyString(), anyString(), anyString(), anyString());
-    verify(pipelineServiceHelper).validatePipelineYaml(any());
 
     ArgumentCaptor<PipelineEntity> argumentCaptor = ArgumentCaptor.forClass(PipelineEntity.class);
     verify(pmsPipelineService).updatePipelineYaml(argumentCaptor.capture(), eq(ChangeType.MODIFY));

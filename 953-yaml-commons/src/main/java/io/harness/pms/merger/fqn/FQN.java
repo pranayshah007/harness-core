@@ -90,6 +90,28 @@ public class FQN {
     return temp.substring(0, temp.length() - 1);
   }
 
+  // This method return the ExpressionFQN without ignoring the ignorableStringForQualifiedName. We need full path in a
+  // step/stage/pipeline yaml as expression because we convert the user input yaml to map and use it for expression
+  // evaluation.
+  public String getExpressionFqnWithoutIgnoring() {
+    StringBuilder res = new StringBuilder();
+    for (int i = 0; i < fqnList.size(); i++) {
+      FQNNode currNode = fqnList.get(i);
+      if (currNode.getNodeType() == FQNNode.NodeType.KEY) {
+        res.append(currNode.getKey()).append('.');
+      } else if (currNode.getNodeType() == FQNNode.NodeType.KEY_WITH_UUID) {
+        res.append(currNode.getUuidValue()).append('.');
+      } else if (currNode.getNodeType() == FQNNode.NodeType.UUID) {
+        res.append(currNode.getUuidValue()).append('.');
+        if (i < fqnList.size() - 1 && shouldSkipNextNode(currNode, fqnList.get(i + 1))) {
+          i++;
+        }
+      }
+    }
+    String temp = res.toString();
+    return temp.substring(0, temp.length() - 1);
+  }
+
   /**
    * It skips the next node if the currentNode is derived from name. Performs similar function as YamlUtils#265
    * For example: In variables, it attaches the value node to the fqn `pipeline.variables.variable_name`

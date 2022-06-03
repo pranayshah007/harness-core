@@ -13,7 +13,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doReturn;
 
 import io.harness.DelegateTestBase;
@@ -74,7 +73,7 @@ public class PcfInstanceSyncDelegateExecutorTest extends DelegateTestBase {
     on(pcfInstanceSyncDelegateExecutor).set("kryoSerializer", kryoSerializer);
     doReturn(call)
         .when(delegateAgentManagerClient)
-        .publishInstanceSyncResult(anyString(), anyString(), perpetualTaskResponseCaptor.capture());
+        .publishInstanceSyncResult(any(), any(), perpetualTaskResponseCaptor.capture());
     doReturn(retrofit2.Response.success(SUCCESS)).when(call).execute();
   }
 

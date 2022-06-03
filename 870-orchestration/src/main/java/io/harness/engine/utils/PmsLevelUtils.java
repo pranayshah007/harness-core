@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.plan.Node;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.StrategyMetadata;
+import io.harness.pms.execution.utils.AmbianceUtils;
 
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PmsLevelUtils {
@@ -43,6 +44,7 @@ public class PmsLevelUtils {
     }
     if (strategyMetadata != null) {
       levelBuilder.setStrategyMetadata(strategyMetadata);
+      levelBuilder.setIdentifier(node.getIdentifier() + AmbianceUtils.getStrategyPostfix(levelBuilder.build()));
     }
     return levelBuilder.build();
   }

@@ -19,7 +19,8 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.StatusUtils;
-import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
+import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
+import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.ChildrenExecutable;
 import io.harness.pms.sdk.core.steps.executables.SyncExecutable;
@@ -28,7 +29,9 @@ import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
+import io.harness.steps.OutputExpressionConstants;
 import io.harness.steps.StepUtils;
+import io.harness.steps.environment.EnvironmentOutcome;
 import io.harness.tasks.ResponseData;
 import io.harness.yaml.core.variables.NGVariable;
 import io.harness.yaml.utils.NGVariablesUtils;
@@ -101,22 +104,33 @@ public class ServiceSpecStep
       outputObj = new VariablesSweepingOutput();
     }
     executionSweepingOutputResolver.consume(ambiance, YAMLFieldNameConstants.SERVICE_VARIABLES,
-        (VariablesSweepingOutput) outputObj, StepOutcomeGroup.STAGE.name());
+        (VariablesSweepingOutput) outputObj, StepCategory.STAGE.name());
 
     saveExecutionLog(logCallback, "Processed service variables");
   }
 
   private VariablesSweepingOutput getVariablesSweepingOutput(
       Ambiance ambiance, ServiceSpecStepParameters stepParameters, NGLogCallback logCallback) {
-    Map<String, Object> variables = getFinalVariablesMap(ambiance, stepParameters, logCallback);
+    // env v2 incorporating env variables into service variables
+    OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputResolver.resolveOptional(
+        ambiance, RefObjectUtils.getSweepingOutputRefObject(OutputExpressionConstants.ENVIRONMENT));
+
+    Map<String, Object> envVariables = new HashMap<>();
+    if (optionalSweepingOutput.isFound()) {
+      EnvironmentOutcome envOutcome = (EnvironmentOutcome) optionalSweepingOutput.getOutput();
+      if (EmptyPredicate.isNotEmpty(envOutcome.getVariables())) {
+        envVariables.putAll(envOutcome.getVariables());
+      }
+    }
+    Map<String, Object> variables = getFinalVariablesMap(ambiance, stepParameters, envVariables, logCallback);
     VariablesSweepingOutput variablesOutcome = new VariablesSweepingOutput();
     variablesOutcome.putAll(variables);
     return variablesOutcome;
   }
 
   @VisibleForTesting
-  Map<String, Object> getFinalVariablesMap(
-      Ambiance ambiance, ServiceSpecStepParameters stepParameters, NGLogCallback logCallback) {
+  Map<String, Object> getFinalVariablesMap(Ambiance ambiance, ServiceSpecStepParameters stepParameters,
+      Map<String, Object> envVariables, NGLogCallback logCallback) {
     ParameterField<List<NGVariable>> variableList = stepParameters.getOriginalVariables();
     Map<String, Object> variables = new HashMap<>();
     Map<String, Object> outputVariables = new VariablesSweepingOutput();
@@ -126,6 +140,7 @@ public class ServiceSpecStep
       outputVariables.putAll(originalVariables);
     }
     outputVariables = addStageOverrides(ambiance, outputVariables, stepParameters, logCallback);
+    addEnvVariables(outputVariables, envVariables, logCallback);
     variables.put("output", outputVariables);
     return variables;
   }
@@ -140,6 +155,16 @@ public class ServiceSpecStep
     saveExecutionLog(logCallback, "Applying service variable stage overrides");
     return NGVariablesUtils.applyVariableOverrides(
         variables, stepParameters.getStageOverrideVariables().getValue(), ambiance.getExpressionFunctorToken());
+  }
+
+  private void addEnvVariables(
+      Map<String, Object> variables, Map<String, Object> envVariables, NGLogCallback logCallback) {
+    if (EmptyPredicate.isEmpty(envVariables)) {
+      return;
+    }
+
+    saveExecutionLog(logCallback, "Applying environment variables and service overrides");
+    variables.putAll(envVariables);
   }
 
   private void saveExecutionLog(NGLogCallback logCallback, String line) {

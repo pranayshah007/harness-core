@@ -59,7 +59,7 @@ public class WaitForExecutionInputHelperTest extends OrchestrationTestBase {
         ArgumentCaptor.forClass(WaitForExecutionInputCallback.class);
     ArgumentCaptor<ExecutionInputInstance> inputInstanceArgumentCaptor =
         ArgumentCaptor.forClass(ExecutionInputInstance.class);
-    waitForExecutionInputHelper.waitForExecutionInput(null, nodeExecution, template);
+    waitForExecutionInputHelper.waitForExecutionInput(null, nodeExecution.getUuid(), template);
     verify(waitNotifyEngine, times(1)).waitForAllOn(any(), callbackArgumentCaptor.capture(), any());
     WaitForExecutionInputCallback waitForExecutionInputCallback = callbackArgumentCaptor.getValue();
 

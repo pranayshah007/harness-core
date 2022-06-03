@@ -14,6 +14,7 @@ import static io.harness.resourcegroup.beans.ValidatorType.BY_RESOURCE_TYPE_INCL
 
 import io.harness.beans.Scope;
 import io.harness.beans.ScopeLevel;
+import io.harness.data.structure.CollectionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.resourcegroup.beans.ScopeFilterType;
 import io.harness.resourcegroup.framework.v1.service.Resource;
@@ -27,7 +28,6 @@ import io.harness.resourcegroup.v2.remote.dto.ResourceGroupRequest;
 import io.harness.utils.ScopeUtils;
 
 import com.google.inject.Inject;
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -116,8 +116,7 @@ public class ResourceGroupValidatorImpl implements ResourceGroupValidator {
     }
 
     boolean updated = false;
-
-    List<ResourceSelector> newResourceSelectors = new ArrayList<>(resourceGroup.getResourceFilter().getResources());
+    List<ResourceSelector> newResourceSelectors = CollectionUtils.emptyIfNull(resourceGroup.getResourceFilter().getResources());
     for (Iterator<ResourceSelector> iterator = newResourceSelectors.iterator(); iterator.hasNext();) {
       ResourceSelector resourceSelector = iterator.next();
       if (isEmpty(resourceSelector.getIdentifiers())) {

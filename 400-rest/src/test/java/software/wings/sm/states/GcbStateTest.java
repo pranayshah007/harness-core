@@ -225,8 +225,8 @@ public class GcbStateTest extends CategoryTest {
     SettingAttribute settingAttribute = new SettingAttribute();
     settingAttribute.setValue(new GcpConfig());
     when(delegateService.executeTask(any())).thenReturn(response);
-    when(settingService.get(anyString())).thenReturn(settingAttribute);
-    when(secretManager.getEncryptionDetails(any(GcpConfig.class), anyString(), anyString())).thenReturn(emptyList());
+    when(settingService.get(any())).thenReturn(settingAttribute);
+    when(secretManager.getEncryptionDetails(any(GcpConfig.class), any(), any())).thenReturn(emptyList());
     when(context.getStateExecutionData()).thenReturn(gcbExecutionData);
     when(gcbExecutionData.getExecutionDetails())
         .thenReturn(singletonMap("buildNo", ExecutionDataValue.builder().value("123").build()));

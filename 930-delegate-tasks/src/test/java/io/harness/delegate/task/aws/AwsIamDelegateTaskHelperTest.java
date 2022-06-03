@@ -12,8 +12,8 @@ import static io.harness.rule.OwnerRule.VLICA;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -98,7 +98,7 @@ public class AwsIamDelegateTaskHelperTest extends CategoryTest {
     doReturn(AwsInternalConfig.builder().build())
         .when(awsNgConfigMapper)
         .createAwsInternalConfig(awsTaskParams.getAwsConnector());
-    doThrow(Exception.class).when(awsApiHelperService).listIAMRoles(any());
+    doAnswer(invocation -> { throw new Exception(); }).when(awsApiHelperService).listIAMRoles(any());
     assertThatThrownBy(() -> awsIamDelegateTaskHelper.getIAMRoleList(awsTaskParams)).isInstanceOf(Exception.class);
     verify(awsApiHelperService, times(1)).listIAMRoles(any());
   }

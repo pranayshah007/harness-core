@@ -19,6 +19,7 @@ import lombok.Getter;
  */
 @OwnedBy(HarnessTeam.PL)
 public enum FeatureName {
+  NG_GITOPS,
   APPD_CV_TASK,
   ARGO_PHASE1,
   ARGO_PHASE2_MANAGED,
@@ -361,7 +362,10 @@ public enum FeatureName {
   ENABLE_DEFAULT_TIMEFRAME_IN_DEPLOYMENTS,
   CUSTOM_SECRET_MANAGER_NG,
   EXPORT_TF_PLAN_JSON_NG,
-  NG_FILE_STORE;
+  JDK11_DELEGATE,
+  JDK11_WATCHER,
+  NG_FILE_STORE,
+  ACCOUNT_BASIC_ROLE;
 
   FeatureName() {
     scope = Scope.PER_ACCOUNT;

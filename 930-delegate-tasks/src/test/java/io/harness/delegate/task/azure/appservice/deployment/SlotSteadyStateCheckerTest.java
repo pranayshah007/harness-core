@@ -23,9 +23,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
@@ -124,14 +124,14 @@ public class SlotSteadyStateCheckerTest extends CategoryTest {
     verify(deploymentSlot, Mockito.atLeast(1)).state();
 
     // Failure
-    doThrow(UncheckedTimeoutException.class).when(deploymentSlot).state();
+    doAnswer(invocation -> { throw new UncheckedTimeoutException(); }).when(deploymentSlot).state();
     assertThatThrownBy(()
                            -> slotSteadyStateChecker.waitUntilCompleteWithTimeout(
                                10, 10, mockLogCallback, START_DEPLOYMENT_SLOT, statusVerifier))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessageContaining("Timed out waiting for executing operation");
 
-    doThrow(Exception.class).when(deploymentSlot).state();
+    doAnswer(invocation -> { throw new Exception(); }).when(deploymentSlot).state();
     assertThatThrownBy(()
                            -> slotSteadyStateChecker.waitUntilCompleteWithTimeout(
                                10, 10, mockLogCallback, START_DEPLOYMENT_SLOT, statusVerifier))

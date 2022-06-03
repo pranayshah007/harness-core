@@ -42,6 +42,7 @@ import io.harness.pms.pipeline.ExecutionSummaryInfo;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.plan.creation.NodeTypeLookupService;
+import io.harness.pms.plan.execution.SetupAbstractionKeys;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.repositories.executions.PmsExecutionSummaryRespository;
 import io.harness.rule.Owner;
@@ -81,7 +82,13 @@ public class ExecutionSummaryCreateEventHandlerTest extends PipelineServiceTestB
   public void shouldTestOnStart() {
     String planId = generateUuid();
     String planExecutionId = generateUuid();
-    Ambiance ambiance = Ambiance.newBuilder().setPlanExecutionId(planExecutionId).setPlanId(planId).build();
+    Ambiance ambiance = Ambiance.newBuilder()
+                            .setPlanExecutionId(planExecutionId)
+                            .setPlanId(planId)
+                            .putSetupAbstractions(SetupAbstractionKeys.accountId, "accId")
+                            .putSetupAbstractions(SetupAbstractionKeys.orgIdentifier, "orgId")
+                            .putSetupAbstractions(SetupAbstractionKeys.projectIdentifier, "projId")
+                            .build();
     PlanExecutionMetadata planExecutionMetadata =
         PlanExecutionMetadata.builder()
             .planExecutionId(ambiance.getPlanExecutionId())

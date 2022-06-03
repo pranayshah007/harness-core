@@ -13,12 +13,15 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.tasks.ProgressData;
 import io.harness.waiter.persistence.PersistenceWrapper;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Singleton;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 @Singleton
@@ -30,18 +33,30 @@ public class ProgressUpdateService implements Runnable {
   @Inject private KryoSerializer kryoSerializer;
   @Inject private WaitInstanceService waitInstanceService;
 
+  private final LoadingCache<String, String> busyCorrelationIds = CacheBuilder.newBuilder()
+                                                                      .maximumSize(1000)
+                                                                      .expireAfterWrite(1, TimeUnit.MINUTES)
+                                                                      .build(new CacheLoader<String, String>() {
+                                                                        @Override
+                                                                        public String load(@NonNull String key)
+                                                                            throws Exception {
+                                                                          return key;
+                                                                        }
+                                                                      });
+
   @Override
   public void run() {
-    Set<String> busyCorrelationIds = new HashSet<>();
     while (true) {
       try {
         final long now = System.currentTimeMillis();
-        ProgressUpdate progressUpdate = waitInstanceService.fetchForProcessingProgressUpdate(busyCorrelationIds, now);
+        ProgressUpdate progressUpdate =
+            waitInstanceService.fetchForProcessingProgressUpdate(busyCorrelationIds.asMap().keySet(), now);
         if (progressUpdate == null) {
           break;
         }
 
         if (progressUpdate.getExpireProcessing() > now) {
+          busyCorrelationIds.put(progressUpdate.getCorrelationId(), progressUpdate.getCorrelationId());
           continue;
         }
         log.info("Starting to process progress response");

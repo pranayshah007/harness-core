@@ -29,6 +29,7 @@ import lombok.experimental.FieldDefaults;
 public class QLCEView {
   String id;
   String name;
+  String folderId;
   @Hidden double totalCost;
   @Hidden String createdBy;
   @Hidden Long createdAt;

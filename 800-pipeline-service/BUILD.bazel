@@ -160,7 +160,8 @@ java_library(
         "@maven//:org_glassfish_jersey_media_jersey_media_multipart",
         "@maven//:org_jooq_joor",
         "@maven//:org_mockito_mockito_core",
-        "@maven//:org_powermock_powermock_api_mockito",
+        "@maven//:org_mockito_mockito_inline",
+        "@maven//:org_powermock_powermock_api_mockito2",
     ],
 )
 
