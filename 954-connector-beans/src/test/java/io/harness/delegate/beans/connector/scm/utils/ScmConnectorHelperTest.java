@@ -6,7 +6,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
-import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
 import io.harness.rule.Owner;
@@ -27,20 +26,9 @@ public class ScmConnectorHelperTest extends CategoryTest {
   @Test
   @Owner(developers = BHAVYA)
   @Category(UnitTests.class)
-  public void testGetFileUrlForGithub_ifConnectorIsRepoType() {
-    try {
-      ScmConnectorHelper.validateGetFileUrlParams(GitConnectionType.ACCOUNT, branch, filePath);
-    } catch (WingsException ex) {
-      assertThat(ex).isInstanceOf(InvalidRequestException.class);
-    }
-  }
-
-  @Test
-  @Owner(developers = BHAVYA)
-  @Category(UnitTests.class)
   public void testGetFileUrlForGithub_ifBranchNameIsNull() {
     try {
-      ScmConnectorHelper.validateGetFileUrlParams(GitConnectionType.REPO, null, filePath);
+      ScmConnectorHelper.validateGetFileUrlParams(null, filePath);
     } catch (WingsException ex) {
       assertThat(ex).isInstanceOf(InvalidRequestException.class);
     }
@@ -51,7 +39,7 @@ public class ScmConnectorHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetFileUrlForGithub_ifFilePathIsEmpty() {
     try {
-      ScmConnectorHelper.validateGetFileUrlParams(GitConnectionType.REPO, branch, "");
+      ScmConnectorHelper.validateGetFileUrlParams(branch, "");
     } catch (WingsException ex) {
       assertThat(ex).isInstanceOf(InvalidRequestException.class);
     }

@@ -131,7 +131,7 @@ public class BitbucketConnectorDTO extends ConnectorConfigDTO implements ScmConn
 
   @Override
   public String getFileUrl(String branchName, String filePath, String repoName) {
-    ScmConnectorHelper.validateGetFileUrlParams(connectionType, branchName, filePath);
+    ScmConnectorHelper.validateGetFileUrlParams(branchName, filePath);
     String repoUrl = removeStartingAndEndingSlash(getGitConnectionUrl(repoName));
     filePath = removeStartingAndEndingSlash(filePath);
     if (GitClientHelper.isBitBucketSAAS(repoUrl)) {

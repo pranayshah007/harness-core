@@ -128,7 +128,7 @@ public class GithubConnectorDTO
 
   @Override
   public String getFileUrl(String branchName, String filePath, String repoName) {
-    ScmConnectorHelper.validateGetFileUrlParams(connectionType, branchName, filePath);
+    ScmConnectorHelper.validateGetFileUrlParams(branchName, filePath);
     String repoUrl = removeStartingAndEndingSlash(getGitConnectionUrl(repoName));
     filePath = removeStartingAndEndingSlash(filePath);
     return String.format("%s/blob/%s/%s", repoUrl, branchName, filePath);

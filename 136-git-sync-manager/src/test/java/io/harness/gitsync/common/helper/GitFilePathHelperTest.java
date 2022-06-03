@@ -17,7 +17,6 @@ import static org.mockito.Mockito.doReturn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.category.element.UnitTests;
-import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
@@ -113,21 +112,6 @@ public class GitFilePathHelperTest extends GitSyncTestBase {
   @Test
   @Owner(developers = BHAVYA)
   @Category(UnitTests.class)
-  public void testGetFileUrlForGithub_ifConnectorIsRepoType() {
-    GithubConnectorDTO githubConnector = GithubConnectorDTO.builder().connectionType(GitConnectionType.ACCOUNT).build();
-    doReturn(githubConnector)
-        .when(gitSyncConnectorHelper)
-        .getScmConnectorForGivenRepo(anyString(), anyString(), anyString(), anyString(), anyString());
-    try {
-      gitFilePathHelper.getFileUrl(scope, connectorRef, repoName, branch, filePath);
-    } catch (WingsException ex) {
-      assertThat(ex).isInstanceOf(InvalidRequestException.class);
-    }
-  }
-
-  @Test
-  @Owner(developers = BHAVYA)
-  @Category(UnitTests.class)
   public void testGetFileUrlForGithub_ifBranchNameIsNull() {
     GithubConnectorDTO githubConnector = GithubConnectorDTO.builder().connectionType(GitConnectionType.REPO).build();
     doReturn(githubConnector)
@@ -158,7 +142,7 @@ public class GitFilePathHelperTest extends GitSyncTestBase {
   @Test
   @Owner(developers = BHAVYA)
   @Category(UnitTests.class)
-  public void testGetFileUrlForGithub() {
+  public void testGetFileUrlForGithub_ifConnectorIsRepoType() {
     String repoUrl = "https://github.com/harness/gitSync/";
     GithubConnectorDTO githubConnector =
         GithubConnectorDTO.builder().connectionType(GitConnectionType.REPO).url(repoUrl).build();
@@ -167,6 +151,20 @@ public class GitFilePathHelperTest extends GitSyncTestBase {
         .getScmConnectorForGivenRepo(anyString(), anyString(), anyString(), anyString(), anyString());
     String fileUrl = gitFilePathHelper.getFileUrl(scope, connectorRef, repoName, branch, filePath);
     assertThat(fileUrl).isEqualTo(repoUrl + "blob/" + branch + "/" + filePath);
+  }
+
+  @Test
+  @Owner(developers = BHAVYA)
+  @Category(UnitTests.class)
+  public void testGetFileUrlForGithub_ifConnectorIsAccountType() {
+    String repoUrl = "https://github.com/harness/";
+    GithubConnectorDTO githubConnector =
+        GithubConnectorDTO.builder().connectionType(GitConnectionType.ACCOUNT).url(repoUrl).build();
+    doReturn(githubConnector)
+        .when(gitSyncConnectorHelper)
+        .getScmConnectorForGivenRepo(anyString(), anyString(), anyString(), anyString(), anyString());
+    String fileUrl = gitFilePathHelper.getFileUrl(scope, connectorRef, repoName, branch, filePath);
+    assertThat(fileUrl).isEqualTo(repoUrl + "repoName/blob/" + branch + "/" + filePath);
   }
 
   @Test
