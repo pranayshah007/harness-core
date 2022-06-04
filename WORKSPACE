@@ -7,6 +7,26 @@ load("//tools/bazel/pmd:dependencies.bzl", "rules_pmd_dependencies")
 rules_pmd_dependencies()
 
 http_archive(
+    name = "contrib_rules_jvm",
+    strip_prefix = "rules_jvm-main",
+    url = "https://github.com/gn-harness/rules_jvm/archive/refs/heads/main.zip",
+)
+
+load("@contrib_rules_jvm//:repositories.bzl", "contrib_rules_jvm_deps", "contrib_rules_jvm_gazelle_deps")
+
+contrib_rules_jvm_deps()
+
+contrib_rules_jvm_gazelle_deps()
+
+load("@contrib_rules_jvm//:setup.bzl", "contrib_rules_jvm_setup")
+
+contrib_rules_jvm_setup()
+
+load("@contrib_rules_jvm//:gazelle_setup.bzl", "contib_rules_jvm_gazelle_setup")
+
+contib_rules_jvm_gazelle_setup()
+
+http_archive(
     name = "com_github_bazelbuild_buildtools",
     sha256 = "932160d5694e688cb7a05ac38efba4b9a90470c75f39716d85fb1d2f95eec96d",
     strip_prefix = "buildtools-4.0.1",
