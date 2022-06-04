@@ -39,14 +39,12 @@ load("@com_github_bazelbuild_buildtools//buildifier:def.bzl", "buildifier")
 # load("@bazel_gazelle//:def.bzl", "gazelle")
 load("@bazel_gazelle//:def.bzl", "DEFAULT_LANGUAGES", "gazelle", "gazelle_binary")
 
-#gazelle(name = "gazelle")
 # gazelle:prefix github.com/harness/harness-core
 gazelle(
     name = "gazelle",
     gazelle = ":gazelle_bin",
 )
 
-# gazelle:prefix github.com/harness/harness-core
 gazelle_binary(
     name = "gazelle_bin",
     languages = DEFAULT_LANGUAGES + [
