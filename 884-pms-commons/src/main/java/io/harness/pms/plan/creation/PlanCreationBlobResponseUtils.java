@@ -22,6 +22,7 @@ import io.harness.pms.contracts.plan.YamlUpdates;
 import io.harness.pms.merger.helpers.MergeHelper;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
@@ -48,7 +49,7 @@ public class PlanCreationBlobResponseUtils {
     if (EmptyPredicate.isEmpty(currResponse.getYamlUpdates().getFqnToYamlMap())) {
       return builder.build();
     }
-    Map<String, String> yamlUpdateFqnMap = new HashMap<>(builder.getYamlUpdates().getFqnToYamlMap());
+    Map<String, String> yamlUpdateFqnMap = new LinkedHashMap<>(builder.getYamlUpdates().getFqnToYamlMap());
     yamlUpdateFqnMap.putAll(currResponse.getYamlUpdates().getFqnToYamlMap());
     builder.setYamlUpdates(YamlUpdates.newBuilder().putAllFqnToYaml(yamlUpdateFqnMap).build());
     return builder.build();

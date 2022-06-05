@@ -607,6 +607,44 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
     return false;
   }
 
+  @Override
+  public boolean isDelegateGroupWhitelisted(DelegateTask task, String delegateId) {
+    if (!task.isNGTask(task.getSetupAbstractions())) {
+      return false;
+    }
+
+    Delegate delegate = delegateCache.get(task.getAccountId(), delegateId, false);
+    List<Delegate> delegatesFromSameGroup =
+        delegateCache.getDelegates(task.getAccountId(), delegate.getDelegateGroupId());
+    boolean matching = true;
+    for (String criteria : fetchCriteria(task)) {
+      if (!isDelegateGroupValidated(delegatesFromSameGroup, criteria, task.getUuid())) {
+        matching = false;
+        String delegateName = isNotEmpty(delegate.getDelegateName()) ? delegate.getDelegateName() : delegate.getUuid();
+        String noMatchError = String.format("No matching criteria %s found in delegate %s", criteria, delegateName);
+        delegateTaskServiceClassic.addToTaskActivityLog(task, noMatchError);
+        break;
+      }
+    }
+    return matching;
+  }
+
+  private boolean isDelegateGroupValidated(List<Delegate> delegates, String criteria, String taskId) {
+    for (Delegate delegate : delegates) {
+      try {
+        Optional<DelegateConnectionResult> result =
+            delegateConnectionResultCache.get(ImmutablePair.of(delegate.getUuid(), criteria));
+        if (result.isPresent() && result.get().getLastUpdatedAt() > currentTimeMillis() - WHITELIST_TTL
+            && result.get().isValidated()) {
+          return true;
+        }
+      } catch (ExecutionException e) {
+        log.error("Error checking whether delegate is whitelisted for task {}", taskId, e);
+      }
+    }
+    return false;
+  }
+
   public static boolean shouldValidateCriteria(Optional<DelegateConnectionResult> result, long now) {
     if (!result.isPresent()) {
       return true;
