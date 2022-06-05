@@ -21,6 +21,6 @@ public interface CILogServiceClient {
 
   @DELETE(CICommonEndpointConstants.LOG_SERVICE_STREAM_ENDPOINT)
   Call<Void> closeLogStream(@Query("accountID") String accountId, @Query("key") String logKey,
-                                      @Query("snapshot") boolean snapshot, @Query("prefix") boolean prefix,
-                                      @Header("X-Harness-Token") String authToken);
+      @Query("snapshot") boolean snapshot, @Query("prefix") boolean prefix,
+      @Header("X-Harness-Token") String authToken);
 }

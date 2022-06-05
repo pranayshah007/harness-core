@@ -66,8 +66,10 @@ public class CILogServiceUtils {
 
   @NotNull
   public void closeLogStream(String accountID, String key, boolean snapshot, boolean prefix) {
-    log.info("Calling log service to close stream for the key: {} with snapshot mode: {} and prefix: {}", key, snapshot, prefix);
-    Call<Void> closeStreamCall = ciLogServiceClient.closeLogStream(accountID, key, snapshot, prefix, getLogServiceToken(accountID));
+    log.info("Calling log service to close stream for the key: {} with snapshot mode: {} and prefix: {}", key, snapshot,
+        prefix);
+    Call<Void> closeStreamCall =
+        ciLogServiceClient.closeLogStream(accountID, key, snapshot, prefix, getLogServiceToken(accountID));
 
     Response<Void> response = null;
     try {
@@ -86,9 +88,9 @@ public class CILogServiceUtils {
         log.warn("Could not read error body {}", response.errorBody());
       }
 
-      log.warn(String.format(
-              "Response for log service close call: status code = %s, message = %s, response = %s", response.code(),
-              response.message() == null ? "null" : response.message(), response.errorBody() == null ? "null" : errorBody));
+      log.warn(String.format("Response for log service close call: status code = %s, message = %s, response = %s",
+          response.code(), response.message() == null ? "null" : response.message(),
+          response.errorBody() == null ? "null" : errorBody));
     }
   }
 }
