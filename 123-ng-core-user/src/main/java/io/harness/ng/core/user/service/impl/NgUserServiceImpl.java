@@ -40,6 +40,7 @@ import io.harness.accesscontrol.roleassignments.api.RoleAssignmentFilterDTO;
 import io.harness.accesscontrol.roleassignments.api.RoleAssignmentResponseDTO;
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.beans.Scope;
 import io.harness.beans.Scope.ScopeKeys;
 import io.harness.beans.ScopeLevel;
@@ -100,7 +101,7 @@ import io.harness.utils.PageUtils;
 import io.harness.utils.RetryUtils;
 import io.harness.utils.ScopeUtils;
 import io.harness.utils.TimeLogger;
-
+import io.harness.utils.NGFeatureFlagHelperService;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
@@ -138,6 +139,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 public class NgUserServiceImpl implements NgUserService {
   private static final String ACCOUNT_ADMIN = "_account_admin";
   private static final String ACCOUNT_VIEWER = "_account_viewer";
+  private static final String ACCOUNT_BASIC = "_account_basic";
   private static final String ORGANIZATION_VIEWER = "_organization_viewer";
   private static final String ORG_ADMIN = "_organization_admin";
   private static final String PROJECT_ADMIN = "_project_admin";
@@ -161,6 +163,7 @@ public class NgUserServiceImpl implements NgUserService {
   private final AccountOrgProjectHelper accountOrgProjectHelper;
   private final LicenseService licenseService;
   private final LastAdminCheckService lastAccountAdminCheckService;
+  private final NGFeatureFlagHelperService ngFeatureFlagHelperService;
   private static final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_TRANSACTION_RETRY_POLICY;
 
   private static final RetryPolicy<Object> harnessSupportUsersFetchRetryPolicy =
@@ -175,7 +178,7 @@ public class NgUserServiceImpl implements NgUserService {
       @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate transactionTemplate, OutboxService outboxService,
       UserGroupService userGroupService, UserMetadataRepository userMetadataRepository, InviteService inviteService,
       NotificationClient notificationClient, AccountOrgProjectHelper accountOrgProjectHelper,
-      LicenseService licenseService, LastAdminCheckService lastAccountAdminCheckService) {
+      LicenseService licenseService, LastAdminCheckService lastAccountAdminCheckService, NGFeatureFlagHelperService ngFeatureFlagHelperService) {
     this.userClient = userClient;
     this.accountClient = accountClient;
     this.userMembershipRepository = userMembershipRepository;
@@ -189,6 +192,7 @@ public class NgUserServiceImpl implements NgUserService {
     this.accountOrgProjectHelper = accountOrgProjectHelper;
     this.licenseService = licenseService;
     this.lastAccountAdminCheckService = lastAccountAdminCheckService;
+    this.ngFeatureFlagHelperService = ngFeatureFlagHelperService;
   }
 
   @Override
@@ -540,10 +544,26 @@ public class NgUserServiceImpl implements NgUserService {
   public void addUserToScope(String userId, Scope scope, List<RoleBinding> roleBindings, List<String> userGroups,
       UserMembershipUpdateSource source) {
     ensureUserMetadata(userId);
-    addUserToScopeInternal(userId, source, scope, getDefaultRoleIdentifier(scope));
-    addUserToParentScope(userId, scope, source);
+    if (ngFeatureFlagHelperService.isEnabled(scope.getAccountIdentifier(), FeatureName.ACCOUNT_BASIC_ROLE)) {
+      addUserToScopeInternal(userId, source, scope, getDefaultManagedRoleIdentifier(scope));
+      addUserToParentScope(userId, scope, source, true);
+    }
+    else
+    {
+      addUserToScopeInternal(userId, source, scope, getDefaultRoleIdentifier(scope));
+      addUserToParentScope(userId, scope, source, false);
+    }
     createRoleAssignments(userId, scope, createRoleAssignmentDTOs(roleBindings, userId, scope));
     userGroupService.addUserToUserGroups(scope, userId, getValidUserGroups(scope, userGroups));
+  }
+
+  private String getDefaultManagedRoleIdentifier(Scope scope) {
+    if (!isBlank(scope.getProjectIdentifier())) {
+      return PROJECT_VIEWER;
+    } else if (!isBlank(scope.getOrgIdentifier())) {
+      return ORGANIZATION_VIEWER;
+    }
+    return ACCOUNT_BASIC;
   }
 
   private List<String> getValidUserGroups(Scope scope, List<String> userGroupIdentifiers) {
@@ -636,7 +656,7 @@ public class NgUserServiceImpl implements NgUserService {
     }
   }
 
-  private void addUserToParentScope(String userId, Scope scope, UserMembershipUpdateSource source) {
+  private void addUserToParentScope(String userId, Scope scope, UserMembershipUpdateSource source, boolean accountBasicRoleFeatureFlag) {
     //  Adding user to the parent scopes as well
     if (!isBlank(scope.getProjectIdentifier())) {
       Scope orgScope = Scope.builder()
@@ -648,7 +668,13 @@ public class NgUserServiceImpl implements NgUserService {
 
     if (!isBlank(scope.getOrgIdentifier())) {
       Scope accountScope = Scope.builder().accountIdentifier(scope.getAccountIdentifier()).build();
-      addUserToScopeInternal(userId, source, accountScope, ACCOUNT_VIEWER);
+      if (accountBasicRoleFeatureFlag) {
+        addUserToScopeInternal(userId, source, accountScope, ACCOUNT_BASIC);
+      }
+      else
+      {
+        addUserToScopeInternal(userId, source, accountScope, ACCOUNT_VIEWER);
+      }
     }
   }
 

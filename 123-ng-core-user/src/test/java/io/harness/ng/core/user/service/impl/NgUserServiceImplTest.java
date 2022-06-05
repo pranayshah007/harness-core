@@ -65,6 +65,7 @@ import io.harness.repositories.user.spring.UserMetadataRepository;
 import io.harness.rule.Owner;
 import io.harness.user.remote.UserClient;
 import io.harness.utils.PageTestUtils;
+import io.harness.utils.NGFeatureFlagHelperService;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -102,6 +103,7 @@ public class NgUserServiceImplTest extends CategoryTest {
   @Mock private AccountOrgProjectHelper accountOrgProjectHelper;
   @Mock private LicenseService licenseService;
   @Mock private LastAdminCheckService lastAdminCheckService;
+  @Mock private NGFeatureFlagHelperService ngFeatureFlagHelperService;
   @Spy @Inject @InjectMocks private NgUserServiceImpl ngUserService;
   private String accountIdentifier;
   private String orgIdentifier;
@@ -348,6 +350,8 @@ public class NgUserServiceImplTest extends CategoryTest {
     }
     when(userMetadataRepository.findDistinctByUserId(userId))
         .thenReturn(Optional.of(UserMetadata.builder().userId(userId).build()));
+    when(ngFeatureFlagHelperService.isEnabled(scope.getAccountIdentifier(), io.harness.beans.FeatureName.ACCOUNT_BASIC_ROLE))
+            .thenReturn(false);
     doNothing()
         .when(ngUserService)
         .addUserToScopeInternal(userId, UserMembershipUpdateSource.USER, scope, getDefaultRoleIdentifier(scope));
