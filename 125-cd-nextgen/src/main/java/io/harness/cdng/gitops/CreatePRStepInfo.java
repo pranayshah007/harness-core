@@ -2,6 +2,7 @@ package io.harness.cdng.gitops;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
+import io.harness.advisers.rollback.OnFailRollbackParameters;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
@@ -13,8 +14,11 @@ import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.steps.shellscript.ShellType;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
+import io.harness.when.beans.StepWhenCondition;
+import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
@@ -41,10 +45,12 @@ public class CreatePRStepInfo extends CreatePRBaseStepInfo implements CDStepInfo
 
   @Builder(builderMethodName = "infoBuilder")
   public CreatePRStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors,
-      ParameterField<Map<String, String>> stringMap, ParameterField<StoreConfigWrapper> store,
-      ParameterField<String> commitMessage, ParameterField<String> targetBranch, ParameterField<Boolean> isNewBranch,
-      ParameterField<String> prTitle) {
-    super(delegateSelectors, stringMap, store, commitMessage, targetBranch, isNewBranch, prTitle);
+      ParameterField<Map<String, String>> stringMap, CreatePRStepUpdateConfigScriptWrapper updateConfigScriptWrapper,
+      ParameterField<StoreConfigWrapper> store, ParameterField<String> commitMessage,
+      ParameterField<String> targetBranch, ParameterField<Boolean> isNewBranch, ParameterField<String> prTitle,
+      ShellType shellType, ParameterField<Boolean> overrideConfig) {
+    super(shellType, overrideConfig, stringMap, updateConfigScriptWrapper, delegateSelectors, store, commitMessage,
+        targetBranch, isNewBranch, prTitle);
   }
 
   @Override
@@ -65,13 +71,15 @@ public class CreatePRStepInfo extends CreatePRBaseStepInfo implements CDStepInfo
   @Override
   public SpecParameters getSpecParameters() {
     return CreatePRStepParams.infoBuilder()
-        .delegateSelectors(delegateSelectors)
-        .stringMap(stringMap)
-        .store(store)
-        .commitMessage(commitMessage)
-        .isNewBranch(isNewBranch)
-        .prTitle(prTitle)
-        .targetBranch(targetBranch)
+        .shellType(getShell())
+        .overrideConfig(getOverrideConfig())
+        .updateConfigScriptWrapper(getUpdateConfigScriptWrapper())
+        .stringMap(getStringMap())
+        .store(getStore())
+        .commitMessage(getCommitMessage())
+        .isNewBranch(getIsNewBranch())
+        .prTitle(getPrTitle())
+        .targetBranch(getTargetBranch())
         .build();
   }
 }
