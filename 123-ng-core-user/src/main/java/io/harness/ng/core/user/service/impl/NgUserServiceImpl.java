@@ -547,9 +547,7 @@ public class NgUserServiceImpl implements NgUserService {
     if (ngFeatureFlagHelperService.isEnabled(scope.getAccountIdentifier(), FeatureName.ACCOUNT_BASIC_ROLE)) {
       addUserToScopeInternal(userId, source, scope, getDefaultManagedRoleIdentifier(scope));
       addUserToParentScope(userId, scope, source, true);
-    }
-    else
-    {
+    } else {
       addUserToScopeInternal(userId, source, scope, getDefaultRoleIdentifier(scope));
       addUserToParentScope(userId, scope, source, false);
     }
@@ -670,9 +668,7 @@ public class NgUserServiceImpl implements NgUserService {
       Scope accountScope = Scope.builder().accountIdentifier(scope.getAccountIdentifier()).build();
       if (accountBasicRoleFeatureFlag) {
         addUserToScopeInternal(userId, source, accountScope, ACCOUNT_BASIC);
-      }
-      else
-      {
+      } else {
         addUserToScopeInternal(userId, source, accountScope, ACCOUNT_VIEWER);
       }
     }
