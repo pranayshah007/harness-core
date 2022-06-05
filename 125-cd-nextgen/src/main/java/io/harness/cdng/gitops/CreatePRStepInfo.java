@@ -70,7 +70,7 @@ public class CreatePRStepInfo extends CreatePRBaseStepInfo implements CDStepInfo
     return CreatePRStepParams.infoBuilder()
         .shellType(getShell())
         .overrideConfig(getOverrideConfig())
-        .updateConfigScriptWrapper(getUpdateConfigScriptWrapper())
+        .updateConfigScriptWrapper(this.getSource())
         .stringMap(getStringMap())
         .store(getStore())
         .commitMessage(getCommitMessage())
