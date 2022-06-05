@@ -2,7 +2,6 @@ package io.harness.cdng.gitops;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
-import io.harness.advisers.rollback.OnFailRollbackParameters;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
@@ -17,8 +16,6 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.shellscript.ShellType;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
-import io.harness.when.beans.StepWhenCondition;
-import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
