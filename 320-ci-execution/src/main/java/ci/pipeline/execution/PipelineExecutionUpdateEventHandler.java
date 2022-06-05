@@ -97,14 +97,14 @@ public class PipelineExecutionUpdateEventHandler implements OrchestrationEventHa
           String taskId = delegateGrpcClientWrapper.submitAsyncTask(delegateTaskRequest, Duration.ZERO);
           log.info("Submitted cleanup request with taskId {} for planExecutionId {}, stage {}", taskId,
               ambiance.getPlanExecutionId(), level.getIdentifier());
+          // If there are any leftover logs still in the stream (this might be possible in specific cases
+          // like in k8s node pressure evictions) - then this is where we move all of them to blob storage.
+          ciLogServiceUtils.closeLogStream(AmbianceUtils.getAccountId(ambiance), getLogKey(ambiance), true, true);
         }
       });
     } catch (Exception ex) {
       log.error("Failed to send cleanup call for node {}", level.getRuntimeId(), ex);
     }
-    // If there are any leftover logs still in the stream (this might be possible in specific cases
-    // like in k8s node pressure evictions) - then this is where we move all of them to blob storage.
-    ciLogServiceUtils.closeLogStream(AmbianceUtils.getAccountId(ambiance), getLogKey(ambiance), true, true);
   }
 
   private String getLogKey(Ambiance ambiance) {
