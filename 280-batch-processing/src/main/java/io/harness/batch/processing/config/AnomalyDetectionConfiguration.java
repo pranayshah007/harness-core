@@ -15,6 +15,9 @@ import io.harness.batch.processing.anomalydetection.processor.AnomalyDetectionPr
 import io.harness.batch.processing.anomalydetection.reader.cloud.AnomalyDetectionAwsAccountReader;
 import io.harness.batch.processing.anomalydetection.reader.cloud.AnomalyDetectionAwsServiceReader;
 import io.harness.batch.processing.anomalydetection.reader.cloud.AnomalyDetectionAwsUsageTypeReader;
+import io.harness.batch.processing.anomalydetection.reader.cloud.AnomalyDetectionAzureMeterCategoryReader;
+import io.harness.batch.processing.anomalydetection.reader.cloud.AnomalyDetectionAzureResourceGroupReader;
+import io.harness.batch.processing.anomalydetection.reader.cloud.AnomalyDetectionAzureSubscriptionReader;
 import io.harness.batch.processing.anomalydetection.reader.cloud.AnomalyDetectionGcpProductReader;
 import io.harness.batch.processing.anomalydetection.reader.cloud.AnomalyDetectionGcpProjectReader;
 import io.harness.batch.processing.anomalydetection.reader.cloud.AnomalyDetectionGcpSkuReader;
@@ -62,8 +65,10 @@ public class AnomalyDetectionConfiguration {
   @Qualifier(value = "anomalyDetectionOutOfClusterDailyJob")
   public Job anomalyDetectionOutOfClusterDailyJob(JobBuilderFactory jobBuilderFactory,
       Step statisticalModelGcpProjectStep, Step statisticalModelGcpSkuStep, Step statisticalModelGcpProductStep,
-      Step statisticalModelAwsAccountStep, Step statisticalModelAwsServiceStep, Step removeDuplicatesStep,
-      Step statisticalModelAwsUsageTypeStep, Step slackNotificationStep) {
+      Step statisticalModelAwsAccountStep, Step statisticalModelAwsServiceStep,
+      Step statisticalModelAzureSubscriptionStep, Step statisticalModelAzureResourceGroupStep,
+      Step statisticalModelAzureMeterCategoryStep, Step removeDuplicatesStep, Step statisticalModelAwsUsageTypeStep,
+      Step slackNotificationStep) {
     return jobBuilderFactory.get(BatchJobType.ANOMALY_DETECTION_CLOUD.name())
         .incrementer(new RunIdIncrementer())
         .listener(batchJobExecutionListener)
@@ -73,6 +78,9 @@ public class AnomalyDetectionConfiguration {
         .next(statisticalModelAwsAccountStep)
         .next(statisticalModelAwsServiceStep)
         .next(statisticalModelAwsUsageTypeStep)
+        .next(statisticalModelAzureSubscriptionStep)
+        .next(statisticalModelAzureResourceGroupStep)
+        .next(statisticalModelAzureMeterCategoryStep)
         .next(removeDuplicatesStep)
         .next(slackNotificationStep)
         .build();
@@ -133,6 +141,36 @@ public class AnomalyDetectionConfiguration {
     return stepBuilderFactory.get("statisticalModelAwsAccountDailyAnomalyDetectionStep")
         .<AnomalyDetectionTimeSeries, Anomaly>chunk(AnomalyDetectionConstants.BATCH_SIZE)
         .reader(awsAccountItemReader())
+        .processor(modelProcessor())
+        .writer(timescaleWriter())
+        .build();
+  }
+
+  @Bean
+  protected Step statisticalModelAzureSubscriptionStep(StepBuilderFactory stepBuilderFactory) {
+    return stepBuilderFactory.get("statisticalModelAzureSubscriptionDailyAnomalyDetectionStep")
+        .<AnomalyDetectionTimeSeries, Anomaly>chunk(AnomalyDetectionConstants.BATCH_SIZE)
+        .reader(azureSubscriptionItemReader())
+        .processor(modelProcessor())
+        .writer(timescaleWriter())
+        .build();
+  }
+
+  @Bean
+  protected Step statisticalModelAzureResourceGroupStep(StepBuilderFactory stepBuilderFactory) {
+    return stepBuilderFactory.get("statisticalModelAzureResourceGroupDailyAnomalyDetectionStep")
+        .<AnomalyDetectionTimeSeries, Anomaly>chunk(AnomalyDetectionConstants.BATCH_SIZE)
+        .reader(azureResourceGroupItemReader())
+        .processor(modelProcessor())
+        .writer(timescaleWriter())
+        .build();
+  }
+
+  @Bean
+  protected Step statisticalModelAzureMeterCategoryStep(StepBuilderFactory stepBuilderFactory) {
+    return stepBuilderFactory.get("statisticalModelAzureMeterCategoryDailyAnomalyDetectionStep")
+        .<AnomalyDetectionTimeSeries, Anomaly>chunk(AnomalyDetectionConstants.BATCH_SIZE)
+        .reader(azureMeterCategoryItemReader())
         .processor(modelProcessor())
         .writer(timescaleWriter())
         .build();
@@ -207,6 +245,21 @@ public class AnomalyDetectionConfiguration {
   @Bean
   public ItemReader<AnomalyDetectionTimeSeries> awsAccountItemReader() {
     return new AnomalyDetectionAwsAccountReader();
+  }
+
+  @Bean
+  public ItemReader<AnomalyDetectionTimeSeries> azureSubscriptionItemReader() {
+    return new AnomalyDetectionAzureSubscriptionReader();
+  }
+
+  @Bean
+  public ItemReader<AnomalyDetectionTimeSeries> azureResourceGroupItemReader() {
+    return new AnomalyDetectionAzureResourceGroupReader();
+  }
+
+  @Bean
+  public ItemReader<AnomalyDetectionTimeSeries> azureMeterCategoryItemReader() {
+    return new AnomalyDetectionAzureMeterCategoryReader();
   }
 
   @Bean
