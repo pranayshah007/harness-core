@@ -8,18 +8,11 @@
 package software.wings.helpers.ext.jenkins;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.rule.OwnerRule.AADITI;
-import static io.harness.rule.OwnerRule.BRETT;
-import static io.harness.rule.OwnerRule.DEEPAK_PUTHRAYA;
-import static io.harness.rule.OwnerRule.GARVIT;
-import static io.harness.rule.OwnerRule.MILOS;
-import static io.harness.rule.OwnerRule.RAMA;
-import static io.harness.rule.OwnerRule.RUSHABH;
-import static io.harness.rule.OwnerRule.SRINIVAS;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static io.harness.rule.OwnerRule.*;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -37,11 +30,16 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.artifact.ArtifactFileMetadata;
 import io.harness.exception.ArtifactServerException;
+import io.harness.exception.TimeoutException;
 import io.harness.logging.LoggingInitializer;
 import io.harness.rule.Owner;
 import io.harness.scm.ScmSecret;
 import io.harness.scm.SecretName;
 
+import org.mockito.internal.stubbing.answers.AnswersWithDelay;
+import org.mockito.internal.stubbing.answers.Returns;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import software.wings.WingsBaseTest;
 import software.wings.beans.JenkinsConfig;
 import software.wings.beans.command.JenkinsTaskParams;
@@ -476,13 +474,13 @@ public class JenkinsTest extends WingsBaseTest {
     // Tests for GetJob
     Reflect.on(jenkins).set("jenkinsServer", jenkinsServer);
     when(jenkinsServer.createJob(any(), eq("randomJob1"), any(JenkinsConfig.class))).thenThrow(new RuntimeException());
-    assertThatThrownBy(() -> jenkins.getJob("randomJob1", JenkinsConfig.builder().build()))
+    assertThatThrownBy(() -> jenkins.getJob("randomJob1", JenkinsConfig.builder().build(), 120))
         .isInstanceOf(ArtifactServerException.class);
 
     Reflect.on(jenkins).set("jenkinsServer", jenkinsServer);
     when(jenkinsServer.createJob(any(), eq("randomJob2"), any(JenkinsConfig.class)))
         .thenThrow(new HttpResponseException(400, "Bad Request"));
-    assertThatThrownBy(() -> jenkins.getJob("randomJob2", JenkinsConfig.builder().build()))
+    assertThatThrownBy(() -> jenkins.getJob("randomJob2", JenkinsConfig.builder().build(), 120))
         .isInstanceOf(ArtifactServerException.class);
   }
 
@@ -509,7 +507,7 @@ public class JenkinsTest extends WingsBaseTest {
         .thenThrow(new HttpResponseException(500, "Something went wrong"))
         .thenThrow(new HttpResponseException(400, "Server Error"))
         .thenReturn(job);
-    Job actualJob = jenkins.getJob("randomJob", JenkinsConfig.builder().build());
+    Job actualJob = jenkins.getJob("randomJob", JenkinsConfig.builder().build(), 120);
     assertThat(actualJob).isEqualTo(job);
     verify(jenkinsServer, times(3)).createJob(any(), eq("randomJob"), any(JenkinsConfig.class));
   }
