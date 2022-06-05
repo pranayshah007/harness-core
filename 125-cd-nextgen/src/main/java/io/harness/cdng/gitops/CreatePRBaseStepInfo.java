@@ -45,7 +45,7 @@ public class CreatePRBaseStepInfo {
   // TODO: Remove this field
   ParameterField<Map<String, String>> stringMap;
 
-  @NotNull CreatePRStepUpdateConfigScriptWrapper updateConfigScriptWrapper;
+  @NotNull CreatePRStepUpdateConfigScriptWrapper source;
 
   @YamlSchemaTypes({runtime})
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
