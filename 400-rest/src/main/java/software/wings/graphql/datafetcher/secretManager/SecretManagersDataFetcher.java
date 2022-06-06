@@ -59,9 +59,9 @@ public class SecretManagersDataFetcher
     query.order(Sort.descending(SecretManagerConfigKeys.createdAt));
     QLSecretManagerConnectionBuilder connectionBuilder = QLSecretManagerConnection.builder();
     connectionBuilder.pageInfo(dataFetcherUtils.populate(pageQueryParameters, query, secretManager -> {
-      QLSecretManagerBuilder builder = QLSecretManager.builder();
-      secretManagerController.populateSecretManager(secretManager, builder);
-      connectionBuilder.node(builder.build());
+//      QLSecretManagerBuilder builder = QLSecretManager.builder();
+//      secretManagerController.populateSecretManager(secretManager, builder);
+//      connectionBuilder.node(builder.build());
     }));
     return connectionBuilder.build();
   }

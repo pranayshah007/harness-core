@@ -103,6 +103,8 @@ import software.wings.graphql.schema.type.instance.QLEcsContainerInstance;
 import software.wings.graphql.schema.type.instance.QLK8SPodInstance;
 import software.wings.graphql.schema.type.instance.QLPcfInstance;
 import software.wings.graphql.schema.type.instance.QLPhysicalHostInstance;
+import software.wings.graphql.schema.type.secretManagers.QLCustomSecretManager;
+import software.wings.graphql.schema.type.secretManagers.QLSecretManager;
 import software.wings.graphql.schema.type.secrets.QLEncryptedFile;
 import software.wings.graphql.schema.type.secrets.QLEncryptedText;
 import software.wings.graphql.schema.type.secrets.QLKerberosAuthentication;
@@ -167,6 +169,7 @@ public class TypeResolverManager {
     public static final String PipelineStageExecution = "PipelineStageExecution";
     public static final String MANIFEST_SELECTION = "ManifestSelection";
     public static final String APPROVAL_DETAILS = "ApprovalDetails";
+    public static final String SECRET_MANAGER = "SecretManager";
   }
 
   @UtilityClass
@@ -508,6 +511,11 @@ public class TypeResolverManager {
                                       .put(QLSNOWApprovalDetails.class, TypeResolverManagerTypes.SNOW_APPROVAL_DETAILS)
                                       .put(QLShellScriptDetails.class, TypeResolverManagerTypes.SHELL_SCRIPT_DETAILS)
                                       .build()))
+        .put(TypeResolverManagerUnifaces.SECRET_MANAGER,
+                getResultTypeResolver(ImmutableMap.<Class, String>builder()
+                        .put(QLSecretManager.class, "default")
+                        .put(QLCustomSecretManager.class, "customsecretmanager")
+                        .build()))
         .build();
   }
 

@@ -13,6 +13,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 
+import lombok.experimental.SuperBuilder;
 import software.wings.graphql.schema.mutation.secretManager.QLEncryptedDataParams;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -22,11 +23,10 @@ import lombok.Value;
 import software.wings.graphql.schema.type.secrets.QLUsageScope;
 
 @OwnedBy(PL)
-@Value
-@Builder
+@SuperBuilder
 @JsonIgnoreProperties(ignoreUnknown = true)
 @TargetModule(HarnessModule._380_CG_GRAPHQL)
-public class QLCustomSecretManager implements QLSecretManager {
+public class QLCustomSecretManager extends QLSecretManager {
     private String id;
     String name;
     String templateId;
