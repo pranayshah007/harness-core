@@ -35,6 +35,7 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -423,8 +424,9 @@ public class AwsHelperServiceTest extends WingsBaseTest {
     AwsHelperService service = spy(new AwsHelperService());
     Reflect.on(service).set("tracker", tracker);
     Reflect.on(service).set("awsApiHelperService", awsApiHelperService);
-    service.validateAwsAccountCredential(ACCESS_KEY, SECRET_KEY);
-    verify(tracker).trackEC2Call("Describe Regions");
+    assertThatThrownBy(() -> service.validateAwsAccountCredential(ACCESS_KEY, SECRET_KEY))
+        .isInstanceOf(InvalidRequestException.class);
+    verify(tracker, never()).trackEC2Call("Describe Regions");
   }
 
   @Test

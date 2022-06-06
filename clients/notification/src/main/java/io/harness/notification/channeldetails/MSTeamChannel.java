@@ -31,12 +31,19 @@ import lombok.NoArgsConstructor;
 @EqualsAndHashCode(callSuper = true)
 public class MSTeamChannel extends NotificationChannel {
   List<String> msTeamKeys;
+  String orgIdentifier;
+  String projectIdentifier;
+  long expressionFunctorToken;
 
   @Builder
   public MSTeamChannel(String accountId, List<NotificationRequest.UserGroup> userGroups, String templateId,
-      Map<String, String> templateData, Team team, List<String> msTeamKeys) {
+      Map<String, String> templateData, Team team, List<String> msTeamKeys, String orgIdentifier,
+      String projectIdentifier, long expressionFunctorToken) {
     super(accountId, userGroups, templateId, templateData, team);
     this.msTeamKeys = msTeamKeys;
+    this.orgIdentifier = orgIdentifier;
+    this.projectIdentifier = projectIdentifier;
+    this.expressionFunctorToken = expressionFunctorToken;
   }
 
   @Override
@@ -50,7 +57,10 @@ public class MSTeamChannel extends NotificationChannel {
                        .addAllMsTeamKeys(msTeamKeys)
                        .setTemplateId(templateId)
                        .putAllTemplateData(templateData)
-                       .addAllUserGroup(CollectionUtils.emptyIfNull(userGroups)))
+                       .addAllUserGroup(CollectionUtils.emptyIfNull(userGroups))
+                       .setOrgIdentifier(orgIdentifier)
+                       .setProjectIdentifier(projectIdentifier)
+                       .setExpressionFunctorToken(expressionFunctorToken))
         .build();
   }
 }

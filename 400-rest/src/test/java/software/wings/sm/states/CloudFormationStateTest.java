@@ -56,9 +56,9 @@ import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
@@ -295,7 +295,7 @@ public class CloudFormationStateTest extends WingsBaseTest {
 
   @Before
   public void setup() throws IllegalAccessException {
-    when(infrastructureProvisionerService.get(anyString(), anyString()))
+    when(infrastructureProvisionerService.get(nullable(String.class), nullable(String.class)))
         .thenReturn(
             CloudFormationInfrastructureProvisioner.builder()
                 .uuid(INFRA_PROV_ID)
@@ -370,7 +370,8 @@ public class CloudFormationStateTest extends WingsBaseTest {
     FieldUtils.writeField(
         cloudFormationDeleteStackState, "templateExpressionProcessor", templateExpressionProcessor, true);
 
-    when(workflowExecutionService.getExecutionDetails(anyString(), anyString(), anyBoolean(), anyBoolean()))
+    when(workflowExecutionService.getExecutionDetails(
+             nullable(String.class), nullable(String.class), anyBoolean(), anyBoolean()))
         .thenReturn(WorkflowExecution.builder().build());
     context = new ExecutionContextImpl(stateExecutionInstance);
     on(context).set("variableProcessor", variableProcessor);
@@ -385,7 +386,8 @@ public class CloudFormationStateTest extends WingsBaseTest {
     on(context).set("contextElementParamMapperFactory", contextElementParamMapperFactory);
 
     when(variableProcessor.getVariables(any(), any())).thenReturn(emptyMap());
-    //    when(evaluator.substitute(anyString(), anyMap(), anyString())).thenAnswer(i -> i.getArguments()[0]);
+    //    when(evaluator.substitute(nullable(String.class), anyMap(), nullable(String.class))).thenAnswer(i ->
+    //    i.getArguments()[0]);
     PortalConfig portalConfig = new PortalConfig();
     portalConfig.setUrl(BASE_URL);
     when(configuration.getPortal()).thenReturn(portalConfig);
@@ -393,7 +395,7 @@ public class CloudFormationStateTest extends WingsBaseTest {
     when(featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, ACCOUNT_ID)).thenReturn(false);
     when(featureFlagService.isEnabled(FeatureName.SKIP_BASED_ON_STACK_STATUSES, ACCOUNT_ID)).thenReturn(true);
     when(subdomainUrlHelper.getPortalBaseUrl(any())).thenReturn("baseUrl");
-    doNothing().when(stateExecutionService).appendDelegateTaskDetails(anyString(), any());
+    doNothing().when(stateExecutionService).appendDelegateTaskDetails(nullable(String.class), any());
   }
 
   @Test

@@ -1446,9 +1446,14 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     healthMonitorExecutor.scheduleAtFixedRate(() -> {
       try {
         sendHeartbeat(builder, socket);
+        if (heartbeatSuccessCalls.incrementAndGet() > 100) {
+          log.info("Sent {} heartbeat calls to manager", heartbeatSuccessCalls.getAndSet(0));
+        }
       } catch (Exception ex) {
         log.error("Exception while sending heartbeat", ex);
       }
+      // Log delegate performance after every 60 sec i.e. heartbeat interval.
+      logCurrentTasks();
     }, 0, delegateConfiguration.getHeartbeatIntervalMs(), TimeUnit.MILLISECONDS);
   }
 
@@ -1667,7 +1672,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     }
 
     if (socket.status() == STATUS.OPEN || socket.status() == STATUS.REOPENED) {
-      log.info("Sending heartbeat...");
+      log.debug("Sending heartbeat...");
 
       // This will Add ECS delegate specific fields if DELEGATE_TYPE = "ECS"
       updateBuilderIfEcsDelegate(builder);

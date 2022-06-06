@@ -16,5 +16,6 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(HarnessTeam.CI)
 public class CICommonEndpointConstants {
   public static final String LOG_SERVICE_TOKEN_ENDPOINT = "token";
+  public static final String LOG_SERVICE_STREAM_ENDPOINT = "stream";
   public static final String TI_SERVICE_TOKEN_ENDPOINT = "token";
 }

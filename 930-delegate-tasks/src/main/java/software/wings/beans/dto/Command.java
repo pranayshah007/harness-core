@@ -14,6 +14,7 @@ import static io.harness.expression.Expression.ALLOW_SECRETS;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.expression.Expression;
 import io.harness.expression.ExpressionEvaluator;
+import io.harness.expression.ExpressionReflectionUtils;
 import io.harness.logging.CommandExecutionStatus;
 
 import software.wings.beans.Variable;
@@ -42,7 +43,7 @@ import lombok.Getter;
 @Builder
 @AllArgsConstructor
 @OwnedBy(CDC)
-public class Command implements CommandUnit {
+public class Command implements CommandUnit, ExpressionReflectionUtils.NestedAnnotationResolver {
   private String name;
   private CommandUnitType commandUnitType;
   private CommandExecutionStatus commandExecutionStatus = CommandExecutionStatus.QUEUED;

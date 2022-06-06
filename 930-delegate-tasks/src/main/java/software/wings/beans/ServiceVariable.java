@@ -16,6 +16,7 @@ import io.harness.annotation.HarnessEntity;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.beans.EmbeddedUser;
 import io.harness.data.validator.EntityName;
 import io.harness.encryption.Encrypted;
 import io.harness.encryption.EncryptionReflectUtils;
@@ -23,11 +24,19 @@ import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
+import io.harness.persistence.CreatedAtAware;
+import io.harness.persistence.CreatedByAware;
+import io.harness.persistence.PersistentEntity;
+import io.harness.persistence.UpdatedAtAware;
+import io.harness.persistence.UpdatedByAware;
+import io.harness.persistence.UuidAware;
 import io.harness.security.encryption.EncryptionType;
 import io.harness.validation.Create;
+import io.harness.validation.Update;
 
 import software.wings.annotation.EncryptableSetting;
 import software.wings.beans.artifact.ArtifactStreamSummary;
+import software.wings.beans.entityinterface.ApplicationAccess;
 import software.wings.settings.SettingVariableTypes;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -42,11 +51,13 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.ToString;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.UtilityClass;
 import org.hibernate.validator.constraints.NotEmpty;
 import org.mongodb.morphia.annotations.Entity;
+import org.mongodb.morphia.annotations.Id;
 import org.mongodb.morphia.annotations.Transient;
 
 /**
@@ -63,7 +74,8 @@ import org.mongodb.morphia.annotations.Transient;
 @FieldNameConstants(innerTypeName = "ServiceVariableKeys")
 @Entity(value = "serviceVariables", noClassnameStored = true)
 @HarnessEntity(exportable = true)
-public class ServiceVariable extends Base implements EncryptableSetting {
+public class ServiceVariable implements EncryptableSetting, PersistentEntity, UuidAware, CreatedAtAware, CreatedByAware,
+                                        UpdatedAtAware, UpdatedByAware, ApplicationAccess {
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
         .add(CompoundMongoIndex.builder()
@@ -103,6 +115,15 @@ public class ServiceVariable extends Base implements EncryptableSetting {
   public static final String ENCRYPTED_VALUE_KEY = "encryptedValue";
 
   private String templateId = DEFAULT_TEMPLATE_ID;
+
+  @Id @NotNull(groups = {Update.class}) @SchemaIgnore private String uuid;
+  @FdIndex @NotNull @SchemaIgnore protected String appId;
+  @SchemaIgnore private EmbeddedUser createdBy;
+  @SchemaIgnore @FdIndex private long createdAt;
+
+  @SchemaIgnore private EmbeddedUser lastUpdatedBy;
+  @SchemaIgnore @NotNull private long lastUpdatedAt;
+  @Setter @JsonIgnore @SchemaIgnore private transient boolean syncFromGit;
 
   @NotEmpty(groups = {Create.class}) private String envId;
 

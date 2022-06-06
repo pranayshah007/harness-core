@@ -141,7 +141,7 @@ public class JiraApprovalHelperServiceImpl implements JiraApprovalHelperService 
 
       log.info("Queuing delegate task");
       String taskId = queueTask(ambiance, instanceId, jiraTaskNGParameters);
-      log.info(String.format("Jira task id : %s", taskId));
+      log.info("Jira Approval Instance queued task with taskId - {}", taskId);
       logCallback.saveExecutionLog(String.format("Jira task: %s", taskId));
     } catch (Exception ex) {
       logCallback.saveExecutionLog(

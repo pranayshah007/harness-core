@@ -34,6 +34,7 @@ public class CENGCoreMigrationDetails implements MigrationDetails {
     return new ImmutableList.Builder<Pair<Integer, Class<? extends NGMigration>>>()
         .add(Pair.of(1, NoopCENGCoreMigration.class))
         .add(Pair.of(2, CEViewPreferencesMigration.class))
+        .add(Pair.of(3, CEViewsFolderMigration.class))
         .build();
   }
 }

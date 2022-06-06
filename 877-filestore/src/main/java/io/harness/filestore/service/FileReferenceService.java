@@ -8,11 +8,13 @@
 package io.harness.filestore.service;
 
 import io.harness.EntityType;
+import io.harness.beans.Scope;
 import io.harness.beans.SearchPageParams;
 import io.harness.exception.ReferencedEntityException;
 import io.harness.filestore.entities.NGFile;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 
+import java.util.List;
 import org.springframework.data.domain.Page;
 
 public interface FileReferenceService {
@@ -41,4 +43,15 @@ public interface FileReferenceService {
    * @throws ReferencedEntityException in case file is referenced by other entities
    */
   void validateReferenceByAndThrow(NGFile fileOrFolder);
+
+  /**
+   * The list of file identifiers referenced by entity of provided type, name and in provided scope. Used for filtering.
+   *
+   * @param scope Scope of files to be listed
+   * @param entityType EntityType of entity that references file
+   * @param referredByEntityName Name of entity that references file
+   * @return the list of identifiers of files which are referenced by specified entity
+   */
+  List<String> getAllFileIdentifiersReferencedByInScope(
+      Scope scope, EntityType entityType, String referredByEntityName);
 }

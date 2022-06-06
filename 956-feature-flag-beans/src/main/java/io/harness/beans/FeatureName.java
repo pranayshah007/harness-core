@@ -364,7 +364,8 @@ public enum FeatureName {
   EXPORT_TF_PLAN_JSON_NG,
   JDK11_DELEGATE,
   JDK11_WATCHER,
-  NG_FILE_STORE;
+  NG_FILE_STORE,
+  ACCOUNT_BASIC_ROLE;
 
   FeatureName() {
     scope = Scope.PER_ACCOUNT;

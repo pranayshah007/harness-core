@@ -265,7 +265,7 @@ public class PerspectiveResource {
     }
     telemetryReporter.sendTrackEvent(
         PERSPECTIVE_CREATED, null, accountId, properties, Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
-    return ResponseDTO.newResponse(updateTotalCost(ceViewService.save(ceView)));
+    return ResponseDTO.newResponse(updateTotalCost(ceViewService.save(ceView, clone)));
   }
 
   private CEView updateTotalCost(CEView ceView) {
@@ -318,7 +318,7 @@ public class PerspectiveResource {
   public ResponseDTO<List<QLCEView>>
   getAll(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
       NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId) {
-    return ResponseDTO.newResponse(ceViewService.getAllViews(accountId, true));
+    return ResponseDTO.newResponse(ceViewService.getAllViews(accountId, true, null));
   }
 
   @PUT

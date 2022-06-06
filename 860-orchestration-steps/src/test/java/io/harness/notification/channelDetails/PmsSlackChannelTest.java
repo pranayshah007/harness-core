@@ -18,6 +18,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.notification.channeldetails.NotificationChannel;
 import io.harness.notification.channeldetails.SlackChannel;
+import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 
@@ -50,8 +51,8 @@ public class PmsSlackChannelTest extends CategoryTest {
     String projectId = "projectId";
     String templateId = "temolateId";
     Map<String, String> templateData = new HashMap<>();
-    NotificationChannel notificationChannel =
-        pmsSlackChannel.toNotificationChannel(accountId, orgId, projectId, templateId, templateData);
+    NotificationChannel notificationChannel = pmsSlackChannel.toNotificationChannel(accountId, orgId, projectId,
+        templateId, templateData, Ambiance.newBuilder().setExpressionFunctorToken(123L).build());
     assertEquals(notificationChannel.getAccountId(), accountId);
     assertEquals(((SlackChannel) notificationChannel).getWebhookUrls().get(0), webhookUrl.getValue());
     assertEquals(notificationChannel.getUserGroups().get(0).getOrgIdentifier(), orgId);

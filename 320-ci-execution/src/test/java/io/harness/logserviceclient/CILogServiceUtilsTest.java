@@ -69,4 +69,31 @@ public class CILogServiceUtilsTest extends CIExecutionTestBase {
     verify(logServiceTokenCall, times(1)).execute();
     verify(logServiceClient, times(1)).generateToken(eq(accountID), eq(globalToken));
   }
+
+  @Test
+  @Owner(developers = VISTAAR)
+  @Category(UnitTests.class)
+  public void testCloseLogStream() throws Exception {
+    String baseUrl = "http://localhost:8079";
+    String accountID = "account";
+    String globalToken = "token";
+    String logServiceToken = "X4fTPGJsYWhq_HI-Fb0I-n_GwvifuQFYCbPdjmqIGLiCTvTqBBi4Yg==";
+    Call<String> logServiceTokenCall = mock(Call.class);
+    when(logServiceTokenCall.execute()).thenReturn(Response.success(logServiceToken));
+    when(logServiceClient.generateToken(eq(accountID), eq(globalToken))).thenReturn(logServiceTokenCall);
+
+    Call<Void> logServiceCloseCall = mock(Call.class);
+    when(logServiceCloseCall.execute()).thenReturn(Response.success(null));
+    when(logServiceClient.closeLogStream(eq(accountID), eq("key"), eq(true), eq(true), eq(logServiceToken)))
+        .thenReturn(logServiceCloseCall);
+
+    LogServiceConfig logServiceConfig = LogServiceConfig.builder().globalToken(globalToken).baseUrl(baseUrl).build();
+    CILogServiceUtils ciLogServiceUtils = new CILogServiceUtils(logServiceClient, logServiceConfig);
+
+    ciLogServiceUtils.closeLogStream(accountID, "key", true, true);
+    verify(logServiceTokenCall, times(1)).execute();
+    verify(logServiceClient, times(1)).generateToken(eq(accountID), eq(globalToken));
+    verify(logServiceClient, times(1))
+        .closeLogStream(eq(accountID), eq("key"), eq(true), eq(true), eq(logServiceToken));
+  }
 }
