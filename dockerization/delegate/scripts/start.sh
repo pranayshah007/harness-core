@@ -4,6 +4,73 @@
 # that can be found in the licenses directory at the root of this repository, also available at
 # https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 
+# Based on https://willhaley.com/blog/generate-jwt-with-bash/
+# JWT Encoder Bash Script
+function jar_auth_token() {
+  if [ ! -e $ACCOUNT_SECRET ]; then
+    secret=$ACCOUNT_SECRET
+  else
+    secret=$DELEGATE_TOKEN
+  fi
+  accountId=$ACCOUNT_ID
+  issuer='Harness Delegates'
+
+  if [ -z "$secret" ]
+  then
+    echo "Missing DELEGATE_TOKEN in env"
+    exit 1
+  fi
+  if [ -z "$accountId" ]
+  then
+    echo "Missing ACCOUNT_ID in env"
+    exit 1
+  fi
+  if [ -z "$issuer" ]
+  then
+    echo "Missing ISSUER in env"
+    exit 1
+  fi
+  # Static header fields.
+  header='{
+        "typ": "JWT",
+        "alg":"HS256"
+  }'
+
+  payload_template='{"sub":"%s",
+                    "issuer":"%s",
+                    "iat":%s,
+                    "exp":%s}'
+
+  # `iat` is set to now, and `exp` is now + 600 seconds.
+  iat=$(date +%s)
+  exp=$(($iat + 600))
+
+  payload=$(printf "$payload_template" "$accountId" "$issuer" "$iat" "$exp")
+
+  base64_encode() {
+    declare input=${1:-$(</dev/stdin)}
+    # Use `tr` to URL encode the output from base64.
+    printf '%s' "${input}" | base64 | tr -d '=' | tr '/+' '_-' | tr -d '\n'
+  }
+
+  json() {
+    declare input=${1:-$(</dev/stdin)}
+    printf '%s' "${input}" | tr -d [:space:]
+  }
+
+  hmacsha256_sign() {
+    declare input=${1:-$(</dev/stdin)}
+    printf '%s' "${input}" | openssl dgst -binary -sha256 -hmac "${secret}"
+  }
+
+  header_base64=$(echo "${header}" | json | base64_encode)
+  payload_base64=$(echo "${payload}" | json | base64_encode)
+  header_payload=$(echo "${header_base64}.${payload_base64}")
+  signature=$(echo "${header_payload}" | hmacsha256_sign | base64_encode)
+  JWT_TOKEN="${header_payload}.${signature}"
+  echo $JWT_TOKEN
+}
+
 function jar_app_version() {
   JAR=$1
   if unzip -l $JAR | grep -q io/harness/versionInfo.yaml
@@ -156,11 +223,13 @@ if [[ $DESIRED_VERSION != "" ]]; then
 fi
 
 echo "Checking Watcher latest version..."
-REMOTE_WATCHER_LATEST=$(curl $MANAGER_PROXY_CURL -ks $WATCHER_STORAGE_URL/$WATCHER_CHECK_LOCATION)
+JWT_TOKEN=$(jar_auth_token)
+REMOTE_WATCHER_METADATA=$(curl $MANAGER_PROXY_CURL -ks $WATCHER_STORAGE_URL/${watcherCheckLocation} --header "Authorization: Delegate $JWT_TOKEN")
+REMOTE_WATCHER_LATEST=$(echo $REMOTE_WATCHER_METADATA | tr -d '{}' | awk -v RS=',"' -F: '/^resource/ {print $2}' | tr -d '"' | awk -F. '{print $NF}')
 if [[ $DEPLOY_MODE != "KUBERNETES" ]]; then
-  REMOTE_WATCHER_URL=$WATCHER_STORAGE_URL/$(echo $REMOTE_WATCHER_LATEST | cut -d " " -f2)
+  REMOTE_WATCHER_URL=$WATCHER_STORAGE_URL/openjdk-8u242/$REMOTE_WATCHER_LATEST/watcher.jar
 else
-  REMOTE_WATCHER_URL=$REMOTE_WATCHER_URL_CDN/$(echo $REMOTE_WATCHER_LATEST | cut -d " " -f2)
+  REMOTE_WATCHER_URL=$REMOTE_WATCHER_URL_CDN/openjdk-8u242/$REMOTE_WATCHER_LATEST/watcher.jar
 fi
 REMOTE_WATCHER_VERSION=$(echo $REMOTE_WATCHER_LATEST | cut -d " " -f1)
 

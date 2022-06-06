@@ -129,14 +129,19 @@ fi
 
 export DEPLOY_MODE=${deployMode}
 
-echo "Checking Watcher latest version..."
+echo "Checking Watcher latest version from manager..."
 WATCHER_STORAGE_URL=${watcherStorageUrl}
-REMOTE_WATCHER_LATEST=$(curl $MANAGER_PROXY_CURL -ks $WATCHER_STORAGE_URL/${watcherCheckLocation})
+
+export DELEGATE_TOKEN=${delegateToken}
+export ACCOUNT_ID=${accountId}
+JWT_TOKEN=$(jar_auth_token)
+REMOTE_WATCHER_METADATA=$(curl $MANAGER_PROXY_CURL -ks $WATCHER_STORAGE_URL/${watcherCheckLocation} --header "Authorization: Delegate $JWT_TOKEN")
+REMOTE_WATCHER_LATEST=$(echo $REMOTE_WATCHER_METADATA | tr -d '{}' | awk -v RS=',"' -F: '/^resource/ {print $2}' | tr -d '"' | awk -F. '{print $NF}')
 if [[ $DEPLOY_MODE != "KUBERNETES" ]]; then
-REMOTE_WATCHER_URL=$WATCHER_STORAGE_URL/$(echo $REMOTE_WATCHER_LATEST | cut -d " " -f2)
+REMOTE_WATCHER_URL=$WATCHER_STORAGE_URL/openjdk-8u242/$REMOTE_WATCHER_LATEST/watcher.jar
 <#if useCdn == "true">
 else
-REMOTE_WATCHER_URL=${remoteWatcherUrlCdn}/$(echo $REMOTE_WATCHER_LATEST | cut -d " " -f2)
+REMOTE_WATCHER_URL=${remoteWatcherUrlCdn}/openjdk-8u242/$REMOTE_WATCHER_LATEST/watcher.jar
 </#if>
 fi
 REMOTE_WATCHER_VERSION=$(echo $REMOTE_WATCHER_LATEST | cut -d " " -f1)
@@ -197,6 +202,7 @@ if ! `grep upgradeCheckLocation config-watcher.yml > /dev/null`; then
 elif [[ "$(grep upgradeCheckLocation config-watcher.yml | cut -d ' ' -f 2)" != "${watcherStorageUrl}/${watcherCheckLocation}" ]]; then
   sed -i.bak "s|^upgradeCheckLocation:.*$|upgradeCheckLocation: ${watcherStorageUrl}/${watcherCheckLocation}|" config-watcher.yml
 fi
+
 if ! `grep upgradeCheckIntervalSeconds config-watcher.yml > /dev/null`; then
   echo "upgradeCheckIntervalSeconds: 1200" >> config-watcher.yml
 fi
