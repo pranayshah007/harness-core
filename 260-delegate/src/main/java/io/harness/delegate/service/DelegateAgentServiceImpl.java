@@ -2277,12 +2277,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       try {
         int retries = 5;
         for (int attempt = 0; attempt < retries; attempt++) {
-          if (taskResponseType.equals(TaskResponseType.JSON)) {
-            response =
-                delegateAgentManagerClient.sendTaskStatusJson(delegateId, taskId, accountId, taskResponse).execute();
-          } else {
-            response = delegateAgentManagerClient.sendTaskStatus(delegateId, taskId, accountId, taskResponse).execute();
-          }
+          response = delegateAgentManagerClient.sendTaskStatus(delegateId, taskId, accountId, taskResponse).execute();
           if (response != null && response.code() >= 200 && response.code() <= 299) {
             log.info("Task {} response sent to manager", taskId);
             break;
@@ -2654,16 +2649,11 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
             .response(ErrorNotifyResponseData.builder().errorMessage(ExceptionUtils.getMessage(exception)).build())
             .build();
     log.info("Sending error response for task{}", taskId);
-    boolean isJsonResponse = delegateTaskPackage.getData().getTaskResponseType().equals(TaskResponseType.JSON);
     try {
       Response<ResponseBody> resp;
       int retries = 5;
       for (int attempt = 0; attempt < retries; attempt++) {
-        if (isJsonResponse) {
-          resp = delegateAgentManagerClient.sendTaskStatusJson(delegateId, taskId, accountId, taskResponse).execute();
-        } else {
-          resp = delegateAgentManagerClient.sendTaskStatus(delegateId, taskId, accountId, taskResponse).execute();
-        }
+        resp = delegateAgentManagerClient.sendTaskStatus(delegateId, taskId, accountId, taskResponse).execute();
         if (resp != null && resp.code() >= 200 && resp.code() <= 299) {
           log.info("Task {} response sent to manager", taskId);
           return;

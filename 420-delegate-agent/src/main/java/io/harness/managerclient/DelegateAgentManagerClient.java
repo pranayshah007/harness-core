@@ -67,10 +67,6 @@ public interface DelegateAgentManagerClient {
   Call<ResponseBody> sendTaskStatus(@Path("delegateId") String delegateId, @Path("taskId") String taskId,
       @Query("accountId") String accountId, @Body DelegateTaskResponse delegateTaskResponse);
 
-  @POST("agent/tasks/{taskId}/delegates/{delegateId}/v2")
-  Call<ResponseBody> sendTaskStatusJson(@Path("delegateId") String delegateId, @Path("taskId") String taskId,
-      @Query("accountId") String accountId, @Body DelegateTaskResponse delegateTaskResponse);
-
   @GET("agent/delegates/{delegateId}/profile")
   Call<RestResponse<DelegateProfileParams>> checkForProfile(@Path("delegateId") String delegateId,
       @Query("accountId") String accountId, @Query("profileId") String profileId,
