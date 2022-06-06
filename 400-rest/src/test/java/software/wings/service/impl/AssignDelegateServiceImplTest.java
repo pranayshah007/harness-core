@@ -2311,7 +2311,7 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
     assertThat(assignDelegateService.isWhitelisted(delegateTask, delegate2.getUuid())).isFalse();
     // verify delegate group whitelisting for delegate2 return false, as both criteras not marching with either of one
     // delegate
-    assertThat(assignDelegateService.isDelegateGroupWhitelisted(delegateTask, delegate2.getUuid())).isTrue();
+    assertThat(assignDelegateService.isDelegateGroupWhitelisted(delegateTask, delegate2.getUuid())).isFalse();
   }
 
   private DelegateTask constructDelegateTask(boolean async, Set<String> validatingTaskIds, DelegateTask.Status status) {

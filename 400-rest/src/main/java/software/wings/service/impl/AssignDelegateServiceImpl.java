@@ -622,30 +622,9 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
     if (isEmpty(delegatesFromSameGroup)) {
       return false;
     }
-    boolean matching = true;
-    for (String criteria : fetchCriteria(task)) {
-      if (!isDelegateGroupValidated(delegatesFromSameGroup, criteria, task.getUuid())) {
-        matching = false;
-        String delegateName = isNotEmpty(delegate.getDelegateName()) ? delegate.getDelegateName() : delegate.getUuid();
-        String noMatchError = String.format("No matching criteria %s found in delegate %s", criteria, delegateName);
-        delegateTaskServiceClassic.addToTaskActivityLog(task, noMatchError);
-        break;
-      }
-    }
-    return matching;
-  }
-
-  private boolean isDelegateGroupValidated(List<Delegate> delegates, String criteria, String taskId) {
-    for (Delegate delegate : delegates) {
-      try {
-        Optional<DelegateConnectionResult> result =
-            delegateConnectionResultCache.get(ImmutablePair.of(delegate.getUuid(), criteria));
-        if (result.isPresent() && result.get().getLastUpdatedAt() > currentTimeMillis() - WHITELIST_TTL
-            && result.get().isValidated()) {
-          return true;
-        }
-      } catch (ExecutionException e) {
-        log.error("Error checking whether delegate is whitelisted for task {}", taskId, e);
+    for (Delegate del : delegatesFromSameGroup) {
+      if (isWhitelisted(task, del.getUuid())) {
+        return true;
       }
     }
     return false;
