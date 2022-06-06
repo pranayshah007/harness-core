@@ -48,9 +48,7 @@ public class HashicorpVaultDataFetcher implements SecretManagerMutationDataFetch
 
     SecretManagerConfig secretManagerConfig = vaultService.getVaultConfig(accountId, uuid);
 
-    final QLSecretManagerBuilder builder = QLSecretManager.builder();
-    secretManagerController.populateSecretManager(secretManagerConfig, builder);
-    return builder.build();
+    return secretManagerController.convertToQLSecretManager(secretManagerConfig);
   }
 
   @Override
@@ -79,9 +77,7 @@ public class HashicorpVaultDataFetcher implements SecretManagerMutationDataFetch
 
     SecretManagerConfig secretManagerConfig = vaultService.getVaultConfig(accountId, secretManagerId);
 
-    final QLSecretManagerBuilder builder = QLSecretManager.builder();
-    secretManagerController.populateSecretManager(secretManagerConfig, builder);
-    return builder.build();
+    return secretManagerController.convertToQLSecretManager(secretManagerConfig);
   }
 
   @Override

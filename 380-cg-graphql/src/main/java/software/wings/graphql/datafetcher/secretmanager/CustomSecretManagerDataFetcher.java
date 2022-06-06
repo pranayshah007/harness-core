@@ -51,10 +51,7 @@ public class CustomSecretManagerDataFetcher implements SecretManagerMutationData
     String uuid = customSecretsManagerService.saveSecretsManager(accountId, customSecretsManagerConfig);
 
     SecretManagerConfig secretManagerConfig = customSecretsManagerService.getSecretsManager(accountId, uuid);
-
-    final QLCustomSecretManager.QLCustomSecretManagerBuilder builder = QLCustomSecretManager.builder();
-    secretManagerController.populateCustomSecretManagerDetails(secretManagerConfig, builder);
-    return builder.build();
+    return secretManagerController.convertToQLSecretManager(secretManagerConfig);
   }
 
   @Override
@@ -83,9 +80,7 @@ public class CustomSecretManagerDataFetcher implements SecretManagerMutationData
 
     SecretManagerConfig secretManagerConfig = customSecretsManagerService.getSecretsManager(accountId, secretManagerId);
 
-    final QLCustomSecretManager.QLCustomSecretManagerBuilder builder = QLCustomSecretManager.builder();
-    secretManagerController.populateCustomSecretManagerDetails(secretManagerConfig, builder);
-    return builder.build();
+    return secretManagerController.convertToQLSecretManager(secretManagerConfig);
   }
 
   @Override

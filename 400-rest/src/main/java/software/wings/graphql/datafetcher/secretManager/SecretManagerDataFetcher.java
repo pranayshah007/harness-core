@@ -54,15 +54,7 @@ public class SecretManagerDataFetcher
       throw new InvalidRequestException(SECURITY_MANAGER_DOES_NOT_EXIST_MSG, WingsException.USER);
     }
 
-    if (secretManager.getType() == SecretManagerType.CUSTOM) {
-      QLCustomSecretManager.QLCustomSecretManagerBuilder builder = QLCustomSecretManager.builder();
-      secretManagerController.populateCustomSecretManagerDetails(secretManager, builder);
-      return builder.build();
-    } else {
-      QLSecretManagerBuilder builder = QLSecretManager.builder();
-      secretManagerController.populateSecretManager(secretManager, builder);
-      return builder.build();
-    }
+    return secretManagerController.convertToQLSecretManager(secretManager);
   }
 
   private SecretManagerConfig getByName(String name, String accountId) {

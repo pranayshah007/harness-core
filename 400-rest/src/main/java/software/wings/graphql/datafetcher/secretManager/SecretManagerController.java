@@ -13,10 +13,12 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.security.encryption.EncryptedDataParams;
+import io.harness.security.encryption.SecretManagerType;
 
 import software.wings.graphql.datafetcher.secrets.UsageScopeController;
 import software.wings.graphql.schema.mutation.secretManager.QLEncryptedDataParams;
 import software.wings.graphql.schema.type.secretManagers.QLCustomSecretManager;
+import software.wings.graphql.schema.type.secretManagers.QLSecretManager;
 import software.wings.graphql.schema.type.secretManagers.QLSecretManager.QLSecretManagerBuilder;
 import software.wings.security.encryption.secretsmanagerconfigs.CustomSecretsManagerConfig;
 
@@ -59,5 +61,17 @@ public class SecretManagerController {
       }
     }
     return encryptedDataParams;
+  }
+
+  public QLSecretManager convertToQLSecretManager(SecretManagerConfig secretManager) {
+    if (secretManager.getType() == SecretManagerType.CUSTOM) {
+      QLCustomSecretManager.QLCustomSecretManagerBuilder builder = QLCustomSecretManager.builder();
+      populateCustomSecretManagerDetails(secretManager, builder);
+      return builder.build();
+    } else {
+      QLSecretManagerBuilder builder = QLSecretManager.builder();
+      populateSecretManager(secretManager, builder);
+      return builder.build();
+    }
   }
 }

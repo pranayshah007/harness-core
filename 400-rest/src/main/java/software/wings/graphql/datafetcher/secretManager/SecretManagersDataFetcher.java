@@ -16,8 +16,8 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.beans.SecretManagerConfig.SecretManagerConfigKeys;
-
 import io.harness.security.encryption.SecretManagerType;
+
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.SettingAttribute.SettingAttributeKeys;
 import software.wings.graphql.datafetcher.AbstractConnectionV2DataFetcher;
@@ -61,15 +61,8 @@ public class SecretManagersDataFetcher
     query.order(Sort.descending(SecretManagerConfigKeys.createdAt));
     QLSecretManagerConnectionBuilder connectionBuilder = QLSecretManagerConnection.builder();
     connectionBuilder.pageInfo(dataFetcherUtils.populate(pageQueryParameters, query, secretManager -> {
-      if (secretManager.getType() == SecretManagerType.CUSTOM) {
-        QLCustomSecretManager.QLCustomSecretManagerBuilder builder = QLCustomSecretManager.builder();
-        secretManagerController.populateCustomSecretManagerDetails(secretManager, builder);
-        connectionBuilder.node(builder.build());
-      } else {
-        QLSecretManagerBuilder builder = QLSecretManager.builder();
-        secretManagerController.populateSecretManager(secretManager, builder);
-        connectionBuilder.node(builder.build());
-      }
+      QLSecretManager qlSecretManager = secretManagerController.convertToQLSecretManager(secretManager);
+      connectionBuilder.node(qlSecretManager);
     }));
     return connectionBuilder.build();
   }
