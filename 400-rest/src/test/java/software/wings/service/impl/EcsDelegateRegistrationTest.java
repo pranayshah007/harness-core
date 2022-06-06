@@ -33,6 +33,7 @@ import static org.mockito.Mockito.when;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.configuration.DeployMode;
 import io.harness.delegate.beans.Delegate;
 import io.harness.exception.GeneralException;
 import io.harness.ff.FeatureFlagService;
@@ -95,6 +96,7 @@ public class EcsDelegateRegistrationTest {
   @Owner(developers = ADWAIT)
   @Category(UnitTests.class)
   public void testHandleEcsDelegateRequest_EcsDelegateRegistration() {
+    doReturn(DeployMode.KUBERNETES).when(mainConfiguration).getDeployMode();
     final Delegate registeredDelegate = Delegate.builder().accountId(ACCOUNT_ID).hostName(HOST_NAME + "_5").build();
     final Delegate requestDelegate =
         Delegate.builder().accountId(ACCOUNT_ID).hostName(HOST_NAME + "_5").keepAlivePacket(false).build();
