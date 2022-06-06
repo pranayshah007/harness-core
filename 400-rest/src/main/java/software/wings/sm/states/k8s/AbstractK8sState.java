@@ -120,6 +120,7 @@ import software.wings.helpers.ext.helm.response.HelmValuesFetchTaskResponse;
 import software.wings.helpers.ext.k8s.request.K8sClusterConfig;
 import software.wings.helpers.ext.k8s.request.K8sDelegateManifestConfig;
 import software.wings.helpers.ext.k8s.request.K8sDelegateManifestConfig.K8sDelegateManifestConfigBuilder;
+import software.wings.helpers.ext.k8s.request.K8sRollingDeployTaskParameters;
 import software.wings.helpers.ext.k8s.request.K8sTaskParameters;
 import software.wings.helpers.ext.k8s.request.K8sValuesLocation;
 import software.wings.helpers.ext.kustomize.KustomizeConfig;
@@ -531,6 +532,12 @@ public abstract class AbstractK8sState extends State implements K8sStateExecutor
       delegateTask.setWorkflowExecutionId(context.getWorkflowExecutionId());
       ExpressionReflectionUtils.applyExpression(delegateTask.getData().getParameters()[0],
           (secretMode, value) -> context.renderExpression(value, stateExecutionContext));
+      if (delegateTask.getData().getParameters()[0] instanceof K8sRollingDeployTaskParameters) {
+        K8sRollingDeployTaskParameters deployParams = (K8sRollingDeployTaskParameters) delegateTask.getData().getParameters()[0];
+        if (deployParams.getValuesYamlList().get(0).contains("artifact.metadata.image")) {
+          throw new InvalidRequestException("Invalid artifact image, please check again");
+        }
+      }
     }
   }
 
