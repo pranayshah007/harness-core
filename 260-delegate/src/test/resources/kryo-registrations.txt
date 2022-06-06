@@ -133,6 +133,7 @@
 1024:com.amazonaws.services.ec2.model.CapacityReservationTargetResponse
 1025:io.harness.spotinst.model.ElastiGroup
 1026:io.harness.spotinst.model.ElastiGroupCapacity
+1027:com.amazonaws.services.ec2.model.InstanceMaintenanceOptions
 1201:io.harness.beans.FileData
 1202:io.harness.context.GlobalContext
 1203:io.harness.context.GlobalContextData
@@ -481,7 +482,9 @@
 5353:software.wings.security.PermissionAttribute.PermissionType
 5354:software.wings.security.PermissionAttribute.Action
 5357:software.wings.security.AppFilter
+5359:software.wings.beans.ServiceVariable
 5360:software.wings.beans.EntityType
+5361:software.wings.beans.ServiceVariable.OverrideType
 5362:software.wings.beans.ServiceVariableType
 5363:software.wings.beans.container.KubernetesServiceSpecification
 5364:software.wings.beans.container.KubernetesBlueGreenConfig

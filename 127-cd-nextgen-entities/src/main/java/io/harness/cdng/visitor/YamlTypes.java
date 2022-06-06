@@ -98,4 +98,8 @@ public interface YamlTypes {
   String SERVICE_SPEC_UUID = "service_spec_uuid";
   String INFRA_SECTION_UUID = "infra_section_uuid";
   String NEXT_UUID = "nextUuid";
+
+  String APP_SERVICE = "appService";
+  String DEPLOYMENT_SLOT = "deploymentSlot";
+  String TARGET_SLOT = "targetSlot";
 }

@@ -183,6 +183,7 @@ import com.amazonaws.services.ec2.model.InstanceState;
 import com.amazonaws.services.ec2.model.LicenseConfiguration;
 import com.amazonaws.services.ec2.model.Monitoring;
 import com.amazonaws.services.ec2.model.Placement;
+import com.amazonaws.services.ec2.model.PrivateDnsNameOptionsResponse;
 import com.amazonaws.services.ec2.model.ProductCode;
 import com.amazonaws.services.ec2.model.StateReason;
 import com.amazonaws.services.ec2.model.Tag;
@@ -233,6 +234,7 @@ public class ApiServiceBeansKryoRegister implements KryoRegistrar {
     kryo.register(CapacityReservationSpecificationResponse.class, 1023);
     kryo.register(CapacityReservationTargetResponse.class, 1024);
     kryo.register(InstanceMaintenanceOptions.class, 1027);
+    kryo.register(PrivateDnsNameOptionsResponse.class, 1028);
     kryo.register(KubernetesClientException.class, 2000);
     kryo.register(JSONException.class, 2001);
     kryo.register(SumoServerException.class, 2003);

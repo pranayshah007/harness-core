@@ -14,7 +14,6 @@ import io.harness.cdng.environment.yaml.EnvironmentPlanCreatorConfig;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.gitops.yaml.ClusterYaml;
 import io.harness.cdng.infra.mapper.InfrastructureEntityConfigMapper;
-import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.mappers.EnvironmentMapper;
 import io.harness.ng.core.environment.yaml.NGEnvironmentInfoConfig;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
@@ -30,9 +29,9 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(CDC)
 public class EnvironmentPlanCreatorConfigMapper {
   public static EnvironmentPlanCreatorConfig toEnvironmentPlanCreatorConfig(
-      Environment environment, List<InfrastructureEntity> infrastructureEntity, NGServiceOverrides serviceOverride) {
+      String mergedEnvYaml, List<InfrastructureEntity> infrastructureEntity, NGServiceOverrides serviceOverride) {
     NGEnvironmentInfoConfig ngEnvironmentInfoConfig =
-        EnvironmentMapper.toNGEnvironmentConfig(environment).getNgEnvironmentInfoConfig();
+        EnvironmentMapper.toNGEnvironmentConfig(mergedEnvYaml).getNgEnvironmentInfoConfig();
     return EnvironmentPlanCreatorConfig.builder()
         .environmentRef(ParameterField.createValueField(ngEnvironmentInfoConfig.getIdentifier()))
         .identifier(ngEnvironmentInfoConfig.getIdentifier())
@@ -50,9 +49,9 @@ public class EnvironmentPlanCreatorConfigMapper {
   }
 
   public EnvironmentPlanCreatorConfig toEnvPlanCreatorConfigWithGitops(
-      Environment envEntity, EnvironmentYamlV2 envYaml, NGServiceOverrides serviceOverride) {
+      String mergedEnvYaml, EnvironmentYamlV2 envYaml, NGServiceOverrides serviceOverride) {
     NGEnvironmentInfoConfig ngEnvironmentInfoConfig =
-        EnvironmentMapper.toNGEnvironmentConfig(envEntity).getNgEnvironmentInfoConfig();
+        EnvironmentMapper.toNGEnvironmentConfig(mergedEnvYaml).getNgEnvironmentInfoConfig();
     return EnvironmentPlanCreatorConfig.builder()
         .environmentRef(envYaml.getEnvironmentRef())
         .identifier(ngEnvironmentInfoConfig.getIdentifier())

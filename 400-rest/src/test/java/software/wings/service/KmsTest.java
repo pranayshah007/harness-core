@@ -1470,6 +1470,8 @@ public class KmsTest extends WingsBaseTest {
     ServiceVariable updatedAttribute = wingsPersistence.get(ServiceVariable.class, savedAttributeId);
     assertThat(updatedAttribute.getEnvId()).isEqualTo(updatedEnvId);
     savedAttribute.setEnvId(updatedEnvId);
+    updatedAttribute.setLastUpdatedAt(0);
+    savedAttribute.setLastUpdatedAt(0);
     assertThat(updatedAttribute).isEqualTo(savedAttribute);
     assertThat(wingsPersistence.createQuery(ServiceVariable.class).count()).isEqualTo(1);
     assertThat(wingsPersistence.createQuery(EncryptedData.class).count()).isEqualTo(numOfEncryptedValsForKms + 1);

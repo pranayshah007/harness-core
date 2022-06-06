@@ -23,7 +23,7 @@ import io.harness.gitsync.common.beans.YamlChangeSetEventType;
 import io.harness.gitsync.core.dtos.YamlChangeSetDTO;
 import io.harness.gitsync.core.dtos.YamlChangeSetSaveDTO;
 import io.harness.gitsync.core.dtos.YamlChangeSetSaveDTO.YamlChangeSetSaveDTOBuilder;
-import io.harness.gitsync.core.service.YamlChangeSetService;
+import io.harness.gitsync.core.impl.YamlChangeSetServiceImpl;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
@@ -31,13 +31,14 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 
 @OwnedBy(DX)
 public class GitChangeSetRunnableTest extends GitSyncTestBase {
-  @Inject @Spy GitChangeSetRunnable gitChangeSetRunnable;
-  @Inject YamlChangeSetService yamlChangeSetService;
+  @Inject @Spy @InjectMocks GitChangeSetRunnable gitChangeSetRunnable;
+  @Inject @Spy YamlChangeSetServiceImpl yamlChangeSetService;
 
   final String accountId = "accountId";
   final String branch = "branch";

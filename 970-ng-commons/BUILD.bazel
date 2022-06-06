@@ -24,6 +24,7 @@ java_library(
         "@maven//:io_github_resilience4j_resilience4j_retrofit",
         "@maven//:io_opencensus_opencensus_exporter_stats_prometheus",
         "@maven//:io_opencensus_opencensus_exporter_stats_stackdriver",
+        "@maven//:io_opencensus_opencensus_impl",
         "@maven//:io_prometheus_simpleclient_httpserver",
         "@maven//:org_apache_logging_log4j_log4j_api",
     ],
