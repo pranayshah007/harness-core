@@ -15,11 +15,15 @@ import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
+import io.harness.cvng.core.beans.monitoredService.MonitoredServiceResponse;
+import io.harness.cvng.core.beans.params.MonitoredServiceParams;
+import io.harness.cvng.core.entities.MonitoredService;
 import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.notification.beans.NotificationRuleDTO;
 import io.harness.cvng.notification.beans.NotificationRuleRefDTO;
 import io.harness.cvng.notification.beans.NotificationRuleType;
+import io.harness.cvng.notification.entities.NotificationRule;
 import io.harness.cvng.notification.services.api.NotificationRuleService;
 import io.harness.rule.Owner;
 import io.harness.rule.ResourceTestRule;
@@ -28,6 +32,7 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Map;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
@@ -176,7 +181,8 @@ public class NotificationRuleResourceTest extends CvNextGenTestBase {
                           .notificationRuleRef(notificationRuleDTO.getIdentifier())
                           .enabled(true)
                           .build()));
-    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    MonitoredServiceResponse monitoredServiceResponse =
+        monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
 
     Response response = RESOURCES.client()
                             .target("http://localhost:9998/notification-rule/"
@@ -186,10 +192,18 @@ public class NotificationRuleResourceTest extends CvNextGenTestBase {
                             .queryParam("projectIdentifier", builderFactory.getContext().getProjectIdentifier())
                             .request(MediaType.APPLICATION_JSON_TYPE)
                             .delete();
-    assertThat(response.readEntity(String.class))
-        .contains(
-            "\"message\":\"java.lang.IllegalArgumentException: Deleting notification rule is used in Monitored Services, "
-            + "Please delete the notification rule inside Monitored Services before deleting notification rule. Monitored Services : MSName");
+
+    assertThat(response.getStatus()).isEqualTo(200);
+
+    NotificationRule notificationRule =
+        notificationRuleService.getEntity(builderFactory.getContext().getProjectParams(), "rule");
+    MonitoredService monitoredService = monitoredServiceService.getMonitoredService(
+        MonitoredServiceParams.builderWithProjectParams(builderFactory.getContext().getProjectParams())
+            .monitoredServiceIdentifier(monitoredServiceResponse.getMonitoredServiceDTO().getIdentifier())
+            .build());
+
+    assertThat(notificationRule).isNull();
+    assertThat(monitoredService.getNotificationRuleRefs()).isEqualTo(Collections.emptyList());
   }
 
   private String getYAML(String filePath) throws IOException {

@@ -10,7 +10,6 @@ package io.harness.cvng.servicelevelobjective.services.impl;
 import static io.harness.cvng.notification.utils.NotificationRuleCommonUtils.COOL_OFF_DURATION;
 import static io.harness.cvng.notification.utils.NotificationRuleCommonUtils.getNotificationTemplateData;
 import static io.harness.cvng.notification.utils.NotificationRuleCommonUtils.getNotificationTemplateId;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.cvng.beans.cvnglog.CVNGLogDTO;
