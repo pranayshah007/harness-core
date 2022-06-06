@@ -7,15 +7,23 @@
 
 package software.wings.graphql.datafetcher.secretManager;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.SecretManagerConfig;
+import io.harness.security.encryption.EncryptedDataParams;
 
 import software.wings.graphql.datafetcher.secrets.UsageScopeController;
+import software.wings.graphql.schema.mutation.secretManager.QLEncryptedDataParams;
+import software.wings.graphql.schema.type.secretManagers.QLCustomSecretManager;
 import software.wings.graphql.schema.type.secretManagers.QLSecretManager.QLSecretManagerBuilder;
+import software.wings.security.encryption.secretsmanagerconfigs.CustomSecretsManagerConfig;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.HashSet;
+import java.util.Set;
 
 @Singleton
 @TargetModule(HarnessModule._380_CG_GRAPHQL)
@@ -26,5 +34,30 @@ public class SecretManagerController {
     return builder.id(secretManager.getUuid())
         .name(secretManager.getName())
         .usageScope(usageScopeController.populateUsageScope(secretManager.getUsageRestrictions()));
+  }
+
+  public void populateCustomSecretManagerDetails(
+      SecretManagerConfig secretManager, QLCustomSecretManager.QLCustomSecretManagerBuilder builder) {
+    populateSecretManager(secretManager, builder);
+    CustomSecretsManagerConfig customSecretsManagerConfig = (CustomSecretsManagerConfig) secretManager;
+    builder.templateId(customSecretsManagerConfig.getTemplateId())
+        .delegateSelectors(customSecretsManagerConfig.getDelegateSelectors())
+        .testVariables(obtainQLTestVariables(customSecretsManagerConfig.getTestVariables()))
+        .executeOnDelegate(customSecretsManagerConfig.isExecuteOnDelegate())
+        .isConnectorTemplatized(customSecretsManagerConfig.isConnectorTemplatized())
+        .host(customSecretsManagerConfig.getHost())
+        .commandPath(customSecretsManagerConfig.getCommandPath())
+        .connectorId(customSecretsManagerConfig.getConnectorId());
+  }
+
+  private Set<QLEncryptedDataParams> obtainQLTestVariables(Set<EncryptedDataParams> testVariables) {
+    Set<QLEncryptedDataParams> encryptedDataParams = new HashSet<>();
+    if (isNotEmpty(testVariables)) {
+      for (EncryptedDataParams testVariable : testVariables) {
+        encryptedDataParams.add(
+            QLEncryptedDataParams.builder().name(testVariable.getName()).value(testVariable.getValue()).build());
+      }
+    }
+    return encryptedDataParams;
   }
 }

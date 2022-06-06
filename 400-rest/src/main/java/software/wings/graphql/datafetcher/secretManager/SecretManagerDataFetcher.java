@@ -55,12 +55,13 @@ public class SecretManagerDataFetcher
     }
 
     if (secretManager.getType() == SecretManagerType.CUSTOM) {
-      return QLCustomSecretManager.builder().build();
+      QLCustomSecretManager.QLCustomSecretManagerBuilder builder = QLCustomSecretManager.builder();
+      secretManagerController.populateCustomSecretManagerDetails(secretManager, builder);
+      return builder.build();
     } else {
-      //      QLSecretManager.builder().
-      //      secretManagerController.populateSecretManager(secretManager, builder);
-      //      return builder.build();
-      return QLSecretManager.builder().build();
+      QLSecretManagerBuilder builder = QLSecretManager.builder();
+      secretManagerController.populateSecretManager(secretManager, builder);
+      return builder.build();
     }
   }
 

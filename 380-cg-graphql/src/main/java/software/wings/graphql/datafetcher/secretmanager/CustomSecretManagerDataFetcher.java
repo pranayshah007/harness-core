@@ -23,8 +23,8 @@ import software.wings.graphql.schema.mutation.secretManager.QLCustomSecretManage
 import software.wings.graphql.schema.mutation.secretManager.QLEncryptedDataParams;
 import software.wings.graphql.schema.mutation.secretManager.QLUpdateCustomSecretManagerInput;
 import software.wings.graphql.schema.mutation.secretManager.QLUpdateSecretManagerInput;
+import software.wings.graphql.schema.type.secretManagers.QLCustomSecretManager;
 import software.wings.graphql.schema.type.secretManagers.QLSecretManager;
-import software.wings.graphql.schema.type.secretManagers.QLSecretManager.QLSecretManagerBuilder;
 import software.wings.graphql.schema.type.secretManagers.QLSecretManagerType;
 import software.wings.security.encryption.secretsmanagerconfigs.CustomSecretsManagerConfig;
 import software.wings.service.intfc.security.CustomSecretsManagerService;
@@ -52,8 +52,9 @@ public class CustomSecretManagerDataFetcher implements SecretManagerMutationData
 
     SecretManagerConfig secretManagerConfig = customSecretsManagerService.getSecretsManager(accountId, uuid);
 
-    secretManagerController.populateSecretManager(secretManagerConfig, null);
-    return null;
+    final QLCustomSecretManager.QLCustomSecretManagerBuilder builder = QLCustomSecretManager.builder();
+    secretManagerController.populateCustomSecretManagerDetails(secretManagerConfig, builder);
+    return builder.build();
   }
 
   @Override
@@ -82,10 +83,9 @@ public class CustomSecretManagerDataFetcher implements SecretManagerMutationData
 
     SecretManagerConfig secretManagerConfig = customSecretsManagerService.getSecretsManager(accountId, secretManagerId);
 
-//    final QLSecretManagerBuilder builder = QLSecretManager.builder();
-//    secretManagerController.populateSecretManager(secretManagerConfig, builder);
-//    return builder.build();
-    return null;
+    final QLCustomSecretManager.QLCustomSecretManagerBuilder builder = QLCustomSecretManager.builder();
+    secretManagerController.populateCustomSecretManagerDetails(secretManagerConfig, builder);
+    return builder.build();
   }
 
   @Override

@@ -27,8 +27,6 @@ import software.wings.graphql.schema.type.secrets.QLUsageScope;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @TargetModule(HarnessModule._380_CG_GRAPHQL)
 public class QLCustomSecretManager extends QLSecretManager {
-    private String id;
-    String name;
     String templateId;
     Set<String> delegateSelectors;
     Set<QLEncryptedDataParams> testVariables;
@@ -37,5 +35,4 @@ public class QLCustomSecretManager extends QLSecretManager {
     String host;
     String commandPath;
     String connectorId;
-    QLUsageScope usageScope;
 }
