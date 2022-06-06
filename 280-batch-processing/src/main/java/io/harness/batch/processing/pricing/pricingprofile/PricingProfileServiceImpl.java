@@ -49,6 +49,7 @@ public class PricingProfileServiceImpl implements PricingProfileService {
                           .memoryGbPricePerHr(memoryPricePerHr)
                           .build();
     }
+    log.info("Return pricing pfofile fineal {}", returnProfile);
     return returnProfile;
   }
   @Override

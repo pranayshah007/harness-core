@@ -117,12 +117,14 @@ public class ComputeInstancePricingStrategy implements InstancePricingStrategy {
       memoryMb = Double.valueOf(instanceData.getMetaData().get(InstanceMetaDataConstants.PARENT_RESOURCE_MEMORY));
     }
     double pricePerHr = ((cpuPricePerHr * cpuUnits) / 1024) + ((memoryPricePerHr * memoryMb) / 1024);
-    return PricingData.builder()
-        .pricePerHour(pricePerHr)
-        .cpuUnit(cpuUnits)
-        .memoryMb(memoryMb)
-        .pricingSource(PricingSource.HARDCODED)
-        .build();
+    PricingData build = PricingData.builder()
+                            .pricePerHour(pricePerHr)
+                            .cpuUnit(cpuUnits)
+                            .memoryMb(memoryMb)
+                            .pricingSource(PricingSource.HARDCODED)
+                            .build();
+    log.info("Return pricing pfofile dataa {}", build);
+    return build;
   }
 
   private double getPricePerHour(String zone, InstanceCategory instanceCategory, ProductDetails vmComputePricingInfo) {
