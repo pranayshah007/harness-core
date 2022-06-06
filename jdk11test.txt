@@ -7,7 +7,7 @@ JUnit4 Test Runner
 06:25:10.304 [testParameterFieldSerializationWithNullAndEmptyValues] INFO  io.harness.CategoryTest - The heap size at the end of the test is 256.0 MiB 
 .06:25:10.364 [testParameterFieldSerialization] INFO  io.harness.CategoryTest - Running test testParameterFieldSerialization 
 06:25:11.094 [testParameterFieldSerialization] INFO  io.harness.CategoryTest - The heap size at the end of the test is 256.0 MiB 
-
+sadfsaf
 Time: 2.368
 
 OK (2 tests)
