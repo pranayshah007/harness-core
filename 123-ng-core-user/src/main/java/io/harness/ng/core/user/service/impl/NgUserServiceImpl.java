@@ -97,11 +97,12 @@ import io.harness.security.SourcePrincipalContextBuilder;
 import io.harness.security.dto.Principal;
 import io.harness.user.remote.UserClient;
 import io.harness.user.remote.UserFilterNG;
+import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.PageUtils;
 import io.harness.utils.RetryUtils;
 import io.harness.utils.ScopeUtils;
 import io.harness.utils.TimeLogger;
-import io.harness.utils.NGFeatureFlagHelperService;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
@@ -178,7 +179,8 @@ public class NgUserServiceImpl implements NgUserService {
       @Named(OUTBOX_TRANSACTION_TEMPLATE) TransactionTemplate transactionTemplate, OutboxService outboxService,
       UserGroupService userGroupService, UserMetadataRepository userMetadataRepository, InviteService inviteService,
       NotificationClient notificationClient, AccountOrgProjectHelper accountOrgProjectHelper,
-      LicenseService licenseService, LastAdminCheckService lastAccountAdminCheckService, NGFeatureFlagHelperService ngFeatureFlagHelperService) {
+      LicenseService licenseService, LastAdminCheckService lastAccountAdminCheckService,
+      NGFeatureFlagHelperService ngFeatureFlagHelperService) {
     this.userClient = userClient;
     this.accountClient = accountClient;
     this.userMembershipRepository = userMembershipRepository;
@@ -544,7 +546,8 @@ public class NgUserServiceImpl implements NgUserService {
   public void addUserToScope(String userId, Scope scope, List<RoleBinding> roleBindings, List<String> userGroups,
       UserMembershipUpdateSource source) {
     ensureUserMetadata(userId);
-    boolean isAccountBasicFeatureFlagEnabled = ngFeatureFlagHelperService.isEnabled(scope.getAccountIdentifier(), FeatureName.ACCOUNT_BASIC_ROLE);
+    boolean isAccountBasicFeatureFlagEnabled =
+        ngFeatureFlagHelperService.isEnabled(scope.getAccountIdentifier(), FeatureName.ACCOUNT_BASIC_ROLE);
     addUserToScopeInternal(userId, source, scope, getDefaultRoleIdentifier(scope, isAccountBasicFeatureFlagEnabled));
     addUserToParentScope(userId, scope, source, isAccountBasicFeatureFlagEnabled);
     createRoleAssignments(userId, scope, createRoleAssignmentDTOs(roleBindings, userId, scope));
@@ -613,7 +616,7 @@ public class NgUserServiceImpl implements NgUserService {
       return ORGANIZATION_VIEWER;
     }
     if (isAccountBasicFeatureFlagEnabled) {
-        return ACCOUNT_BASIC;
+      return ACCOUNT_BASIC;
     }
     return ACCOUNT_VIEWER;
   }
@@ -644,7 +647,8 @@ public class NgUserServiceImpl implements NgUserService {
     }
   }
 
-  private void addUserToParentScope(String userId, Scope scope, UserMembershipUpdateSource source, boolean accountBasicRoleFeatureFlag) {
+  private void addUserToParentScope(
+      String userId, Scope scope, UserMembershipUpdateSource source, boolean accountBasicRoleFeatureFlag) {
     //  Adding user to the parent scopes as well
     if (!isBlank(scope.getProjectIdentifier())) {
       Scope orgScope = Scope.builder()
