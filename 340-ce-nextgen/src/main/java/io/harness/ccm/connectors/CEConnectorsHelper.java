@@ -80,8 +80,8 @@ public class CEConnectorsHelper {
     // Print all pages of the results.
     for (FieldValueList row : result.iterateAll()) {
       long count = row.get("count").getLongValue();
+      log.info("count: {}", count);
       if (count > 0) {
-        log.info("count: {}", count);
         return true;
       }
     }

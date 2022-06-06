@@ -27,6 +27,9 @@ import com.azure.storage.blob.BlobServiceClientBuilder;
 import com.azure.storage.blob.models.BlobItem;
 import com.azure.storage.blob.models.BlobStorageException;
 import com.azure.storage.blob.models.ListBlobsOptions;
+import com.azure.storage.blob.sas.BlobContainerSasPermission;
+import com.azure.storage.blob.sas.BlobServiceSasSignatureValues;
+import com.azure.storage.common.sas.SasProtocol;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
@@ -34,6 +37,7 @@ import com.google.inject.Singleton;
 import com.microsoft.aad.msal4j.MsalServiceException;
 import java.net.UnknownHostException;
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -224,6 +228,7 @@ public class CEAzureConnectorValidator extends io.harness.ccm.connectors.Abstrac
   public Collection<ErrorDetail> validateIfFileIsPresent(
       com.azure.core.http.rest.PagedIterable<BlobItem> blobItems, String prefix) {
     List<ErrorDetail> errorDetails = new ArrayList<>();
+    log.info("Validated getting list of blobitems");
     if (!configuration.getCeAzureSetupConfig().isEnableFileCheckAtSource()) {
       log.info("File present check is disabled in config.");
       return errorDetails;
@@ -266,7 +271,20 @@ public class CEAzureConnectorValidator extends io.harness.ccm.connectors.Abstrac
             .build();
     BlobServiceClient blobServiceClient =
         new BlobServiceClientBuilder().endpoint(endpoint).credential(clientSecretCredential).buildClient();
-    return blobServiceClient.getBlobContainerClient(containerName);
+    BlobContainerClient blobContainerClient = blobServiceClient.getBlobContainerClient(containerName);
+    log.info("Validated getting blobContainerClient");
+    // Test getting the user delegation SAS key for the blobServiceClient that's valid for 5 minutes.
+    // Batch uses below logic only
+    BlobContainerSasPermission blobContainerSasPermission =
+        new BlobContainerSasPermission().setReadPermission(true).setListPermission(true);
+    BlobServiceSasSignatureValues builder =
+        new BlobServiceSasSignatureValues(OffsetDateTime.now().plusMinutes(5), blobContainerSasPermission)
+            .setProtocol(SasProtocol.HTTPS_ONLY);
+    OffsetDateTime keyStart = OffsetDateTime.now();
+    OffsetDateTime keyExpiry = keyStart.plusMinutes(5);
+    blobContainerClient.generateUserDelegationSas(builder, blobServiceClient.getUserDelegationKey(keyStart, keyExpiry));
+    log.info("Validated getting short lived sas key");
+    return blobContainerClient;
   }
 
   public com.azure.core.http.rest.PagedIterable<BlobItem> getBlobItems(

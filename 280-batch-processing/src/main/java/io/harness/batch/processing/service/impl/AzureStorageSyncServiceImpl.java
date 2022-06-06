@@ -65,6 +65,7 @@ public class AzureStorageSyncServiceImpl implements AzureStorageSyncService {
       sourceSasToken = genSasToken(azureStorageSyncRecord.getStorageAccountName(),
           azureStorageSyncRecord.getContainerName(), azureStorageSyncRecord.getTenantId(),
           azureStorageSyncConfig.getAzureAppClientId(), azureStorageSyncConfig.getAzureAppClientSecret(), false);
+      log.info("Generated source sas token");
     } catch (Exception exception) {
       log.error("Error in generating sourceSasToken sas token", exception);
       // Proceed to next sync
@@ -87,6 +88,7 @@ public class AzureStorageSyncServiceImpl implements AzureStorageSyncService {
     }
     try {
       // Run the azcopy tool to do the sync
+      log.info("Prepping the azcopy sync");
       String sourceStorageAccountUrl =
           String.format(AZURE_STORAGE_URL_FORMAT, azureStorageSyncRecord.getStorageAccountName(), AZURE_STORAGE_SUFFIX);
       String destStorageAccountUrl = String.format(
