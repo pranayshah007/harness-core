@@ -160,7 +160,7 @@ public class DelegateCacheImpl implements DelegateCache {
     try {
       return delegatesFromGroupCache.get(ImmutablePair.of(accountId, delegateGroupId));
     } catch (ExecutionException | CacheLoader.InvalidCacheLoadException e) {
-      log.error("");
+      log.warn("Unable to getDelegates from cache based on group id");
       return null;
     }
   }
