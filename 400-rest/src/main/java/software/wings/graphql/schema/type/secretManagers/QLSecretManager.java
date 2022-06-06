@@ -19,13 +19,11 @@ import lombok.Builder;
 import lombok.Value;
 import lombok.experimental.FieldNameConstants;
 
-@Value
-@Builder
 @FieldNameConstants(innerTypeName = "QLSecretManagerKeys")
 @Scope(PermissionAttribute.ResourceType.SETTING)
 @TargetModule(HarnessModule._380_CG_GRAPHQL)
-public class QLSecretManager implements QLObject {
-  String id;
-  String name;
-  QLUsageScope usageScope;
+public interface QLSecretManager extends QLObject {
+  String getId();
+  String getName();
+  QLUsageScope getUsageScope();
 }
