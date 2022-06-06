@@ -17,6 +17,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.beans.SecretManagerConfig.SecretManagerConfigKeys;
 
+import io.harness.security.encryption.SecretManagerType;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.SettingAttribute.SettingAttributeKeys;
 import software.wings.graphql.datafetcher.AbstractConnectionV2DataFetcher;
@@ -24,6 +25,7 @@ import software.wings.graphql.datafetcher.DataFetcherUtils;
 import software.wings.graphql.schema.query.QLPageQueryParameters;
 import software.wings.graphql.schema.type.aggregation.QLIdFilter;
 import software.wings.graphql.schema.type.aggregation.QLNoOpSortCriteria;
+import software.wings.graphql.schema.type.secretManagers.QLCustomSecretManager;
 import software.wings.graphql.schema.type.secretManagers.QLSecretManager;
 import software.wings.graphql.schema.type.secretManagers.QLSecretManager.QLSecretManagerBuilder;
 import software.wings.graphql.schema.type.secretManagers.QLSecretManagerConnection;
@@ -59,9 +61,15 @@ public class SecretManagersDataFetcher
     query.order(Sort.descending(SecretManagerConfigKeys.createdAt));
     QLSecretManagerConnectionBuilder connectionBuilder = QLSecretManagerConnection.builder();
     connectionBuilder.pageInfo(dataFetcherUtils.populate(pageQueryParameters, query, secretManager -> {
-//      QLSecretManagerBuilder builder = QLSecretManager.builder();
-//      secretManagerController.populateSecretManager(secretManager, builder);
-//      connectionBuilder.node(builder.build());
+      if (secretManager.getType() == SecretManagerType.CUSTOM) {
+        QLCustomSecretManager.QLCustomSecretManagerBuilder builder = QLCustomSecretManager.builder();
+        secretManagerController.populateCustomSecretManagerDetails(secretManager, builder);
+        connectionBuilder.node(builder.build());
+      } else {
+        QLSecretManagerBuilder builder = QLSecretManager.builder();
+        secretManagerController.populateSecretManager(secretManager, builder);
+        connectionBuilder.node(builder.build());
+      }
     }));
     return connectionBuilder.build();
   }
