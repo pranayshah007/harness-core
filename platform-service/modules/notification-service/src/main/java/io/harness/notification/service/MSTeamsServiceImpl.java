@@ -32,7 +32,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
 import io.harness.delegate.beans.MicrosoftTeamsTaskParams;
 import io.harness.delegate.beans.NotificationProcessingResponse;
-import io.harness.delegate.beans.NotificationTaskResponse;
 import io.harness.notification.NotificationChannelType;
 import io.harness.notification.NotificationRequest;
 import io.harness.notification.Team;
@@ -87,6 +86,9 @@ public class MSTeamsServiceImpl implements ChannelService {
   private static final String UNDERSCORE = "_";
   private static final String URL = "_URL";
   private static final Pattern placeHolderPattern = Pattern.compile("\\$\\{.+?}");
+  private static final String ACCOUNT_IDENTIFIER = "accountIdentifier";
+  private static final String ORG_IDENTIFIER = "orgIdentifier";
+  private static final String PROJECT_IDENTIFIER = "projectIdentifier";
 
   private final NotificationSettingsService notificationSettingsService;
   private final NotificationTemplateService notificationTemplateService;
@@ -115,8 +117,15 @@ public class MSTeamsServiceImpl implements ChannelService {
       return NotificationProcessingResponse.trivialResponseWithNoRetries;
     }
 
+    int expressionFunctorToken = Math.toIntExact(msTeamDetails.getExpressionFunctorToken());
+
+    Map<String, String> abstractionMap = new HashMap<>();
+    abstractionMap.put(ACCOUNT_IDENTIFIER, notificationRequest.getAccountId());
+    abstractionMap.put(ORG_IDENTIFIER, msTeamDetails.getOrgIdentifier());
+    abstractionMap.put(PROJECT_IDENTIFIER, msTeamDetails.getProjectIdentifier());
+
     return send(microsoftTeamsWebhookUrls, templateId, templateData, notificationId, notificationRequest.getTeam(),
-        notificationRequest.getAccountId());
+        notificationRequest.getAccountId(), expressionFunctorToken, abstractionMap);
   }
 
   @Override
@@ -129,7 +138,8 @@ public class MSTeamsServiceImpl implements ChannelService {
           DEFAULT_ERROR_CODE, USER);
     }
     NotificationProcessingResponse response = send(Collections.singletonList(webhookUrl), TEST_MSTEAMS_TEMPLATE,
-        Collections.emptyMap(), msTeamSettingDTO.getNotificationId(), null, notificationSettingDTO.getAccountId());
+        Collections.emptyMap(), msTeamSettingDTO.getNotificationId(), null, notificationSettingDTO.getAccountId(), 0,
+        Collections.emptyMap());
     if (NotificationProcessingResponse.isNotificationRequestFailed(response)) {
       throw new NotificationException("Invalid webhook Url encountered while processing Test Connection request "
               + notificationSettingDTO.getNotificationId(),
@@ -139,7 +149,8 @@ public class MSTeamsServiceImpl implements ChannelService {
   }
 
   private NotificationProcessingResponse send(List<String> microsoftTeamsWebhookUrls, String templateId,
-      Map<String, String> templateData, String notificationId, Team team, String accountId) {
+      Map<String, String> templateData, String notificationId, Team team, String accountId, int expressionFunctorToken,
+      Map<String, String> abstractionMap) {
     Optional<String> templateOpt = notificationTemplateService.getTemplateAsString(templateId, team);
     if (!templateOpt.isPresent()) {
       log.info("Can't find template with templateId {} for notification request {}", templateId, notificationId);
@@ -166,11 +177,13 @@ public class MSTeamsServiceImpl implements ChannelService {
                                   .message(message)
                                   .microsoftTeamsWebhookUrls(microsoftTeamsWebhookUrls)
                                   .build())
+              .taskSetupAbstractions(abstractionMap)
+              .expressionFunctorToken(expressionFunctorToken)
               .executionTimeout(Duration.ofMinutes(1L))
               .build();
-      NotificationTaskResponse notificationTaskResponse =
-          (NotificationTaskResponse) delegateGrpcClientWrapper.executeSyncTask(delegateTaskRequest);
-      processingResponse = notificationTaskResponse.getProcessingResponse();
+      String taskId = delegateGrpcClientWrapper.submitAsyncTask(delegateTaskRequest, Duration.ZERO);
+      log.info("Async delegate task created with taskID {}", taskId);
+      processingResponse = NotificationProcessingResponse.allSent(microsoftTeamsWebhookUrls.size());
     } else {
       processingResponse = microsoftTeamsSender.send(microsoftTeamsWebhookUrls, message, notificationId);
     }
