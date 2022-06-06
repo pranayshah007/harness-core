@@ -386,7 +386,9 @@ public class GitToHarnessProcessorServiceImpl implements GitToHarnessProcessorSe
           GitToHarnessFilesGroupedByMsvc.builder().microservice(entry.getKey()).changeSetList(entry.getValue()).build();
       sortedFilesByMsvc.add(gitToHarnessFilesGroupedByMsvc);
     }
+    log.info("The sorting order of microservice is {}", microservicesProcessingOrder);
     sortedFilesByMsvc.sort(Comparator.comparingInt(x -> microservicesProcessingOrder.indexOf(x)));
+    log.info("The sorting order of files is {}", sortedFilesByMsvc);
 
     return sortedFilesByMsvc;
   }

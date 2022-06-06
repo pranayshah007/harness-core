@@ -14,9 +14,9 @@ import io.harness.cdng.environment.yaml.EnvironmentPlanCreatorConfig;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.gitops.yaml.ClusterYaml;
 import io.harness.cdng.infra.mapper.InfrastructureEntityConfigMapper;
+import io.harness.cdng.infra.yaml.InfrastructureConfig;
 import io.harness.ng.core.environment.mappers.EnvironmentMapper;
 import io.harness.ng.core.environment.yaml.NGEnvironmentInfoConfig;
-import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.core.variables.NGServiceOverrides;
 
@@ -29,7 +29,7 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(CDC)
 public class EnvironmentPlanCreatorConfigMapper {
   public static EnvironmentPlanCreatorConfig toEnvironmentPlanCreatorConfig(
-      String mergedEnvYaml, List<InfrastructureEntity> infrastructureEntity, NGServiceOverrides serviceOverride) {
+      String mergedEnvYaml, List<InfrastructureConfig> configs, NGServiceOverrides serviceOverride) {
     NGEnvironmentInfoConfig ngEnvironmentInfoConfig =
         EnvironmentMapper.toNGEnvironmentConfig(mergedEnvYaml).getNgEnvironmentInfoConfig();
     return EnvironmentPlanCreatorConfig.builder()
@@ -43,8 +43,7 @@ public class EnvironmentPlanCreatorConfigMapper {
         .type(ngEnvironmentInfoConfig.getType())
         .variables(ngEnvironmentInfoConfig.getVariables())
         .serviceOverrides(serviceOverride)
-        .infrastructureDefinitions(
-            InfrastructureEntityConfigMapper.toInfrastructurePlanCreatorConfig(infrastructureEntity))
+        .infrastructureDefinitions(InfrastructureEntityConfigMapper.toInfrastructurePlanCreatorConfig(configs))
         .build();
   }
 

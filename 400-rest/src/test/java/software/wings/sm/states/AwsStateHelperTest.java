@@ -17,8 +17,8 @@ import static software.wings.utils.WingsTestConstants.SERVICE_ID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -100,7 +100,7 @@ public class AwsStateHelperTest extends WingsBaseTest {
     ExecutionContextImpl mockContext = mock(ExecutionContextImpl.class);
     UserDataSpecification userDataSpec = UserDataSpecification.builder().build();
     doReturn(userDataSpec).when(serviceResourceService).getUserDataSpecification(APP_ID, SERVICE_ID);
-    when(mockContext.renderExpression(anyString())).thenAnswer((Answer<String>) invocation -> {
+    when(mockContext.renderExpression(nullable(String.class))).thenAnswer((Answer<String>) invocation -> {
       Object[] args = invocation.getArguments();
       return (String) args[0];
     });
@@ -131,7 +131,7 @@ public class AwsStateHelperTest extends WingsBaseTest {
     Mockito.reset(sweepingOutputService);
 
     doReturn(null).when(sweepingOutputService).findSweepingOutput(any());
-    doReturn(true).when(workflowExecutionService).isMultiService(anyString(), anyString());
+    doReturn(true).when(workflowExecutionService).isMultiService(nullable(String.class), nullable(String.class));
 
     ArgumentCaptor<SweepingOutputInstance> sweepingOutputInstanceCaptor =
         ArgumentCaptor.forClass(SweepingOutputInstance.class);
@@ -139,7 +139,7 @@ public class AwsStateHelperTest extends WingsBaseTest {
     awsStateHelper.populateAmiVariables(mockContext, awsAmiInfoVariables);
 
     verify(sweepingOutputService).findSweepingOutput(any());
-    verify(workflowExecutionService).isMultiService(anyString(), anyString());
+    verify(workflowExecutionService).isMultiService(nullable(String.class), nullable(String.class));
     SweepingOutputInstance instance = sweepingOutputInstanceCaptor.getValue();
     assertThat(instance.getValue()).isEqualTo(awsAmiInfoVariables);
   }

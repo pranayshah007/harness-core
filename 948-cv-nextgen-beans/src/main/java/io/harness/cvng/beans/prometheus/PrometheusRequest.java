@@ -9,8 +9,8 @@ package io.harness.cvng.beans.prometheus;
 
 import io.harness.cvng.beans.DataCollectionRequest;
 import io.harness.delegate.beans.connector.prometheusconnector.PrometheusConnectorDTO;
+import io.harness.delegate.beans.cvng.prometheus.PrometheusUtils;
 
-import java.util.Collections;
 import java.util.Map;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
@@ -25,6 +25,6 @@ public abstract class PrometheusRequest extends DataCollectionRequest<Prometheus
 
   @Override
   public Map<String, String> collectionHeaders() {
-    return Collections.emptyMap();
+    return PrometheusUtils.getHeaders(getConnectorConfigDTO());
   }
 }
