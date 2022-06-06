@@ -61,6 +61,7 @@ import software.wings.helpers.ext.gcb.models.GcbBuildDetails;
 import software.wings.helpers.ext.gcb.models.GcbBuildStatus;
 import software.wings.helpers.ext.gcb.models.OperationMeta;
 import software.wings.helpers.ext.gcb.models.RepoSource;
+import software.wings.service.intfc.security.EncryptionService;
 import software.wings.service.intfc.yaml.GitClient;
 import software.wings.sm.states.gcbconfigs.GcbOptions;
 import software.wings.sm.states.gcbconfigs.GcbRemoteBuildSpec;
@@ -86,6 +87,7 @@ public class GcbTaskTest extends CategoryTest {
   @Mock private GcbService gcbService;
   @Mock private DelegateLogService logService;
   @Mock private GitClient gitClient;
+  @Mock private EncryptionService encryptionService;
 
   private final GcpConfig gcpConfig = GcpConfig.builder().build();
 

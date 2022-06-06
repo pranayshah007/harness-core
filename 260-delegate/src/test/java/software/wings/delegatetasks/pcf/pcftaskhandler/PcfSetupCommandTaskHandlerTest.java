@@ -10,6 +10,7 @@ package software.wings.delegatetasks.pcf.pcftaskhandler;
 import static io.harness.rule.OwnerRule.ADWAIT;
 import static io.harness.rule.OwnerRule.ANIL;
 import static io.harness.rule.OwnerRule.IVAN;
+import static io.harness.rule.OwnerRule.RISHABH;
 
 import static software.wings.delegatetasks.pcf.PcfTestConstants.ACCOUNT_ID;
 import static software.wings.delegatetasks.pcf.PcfTestConstants.MANIFEST_YAML;
@@ -31,6 +32,7 @@ import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
@@ -361,6 +363,58 @@ public class PcfSetupCommandTaskHandlerTest extends WingsBaseTest {
         cfCommandSetupRequest, pcfAppAutoscalarRequestData, executionLogCallback);
 
     verify(pcfCommandTaskBaseHelper, times(1)).disableAutoscalar(argumentCaptor.capture(), any());
+    pcfAppAutoscalarRequestData = argumentCaptor.getValue();
+    assertThat(pcfAppAutoscalarRequestData.getApplicationGuid()).isEqualTo("10");
+    assertThat(pcfAppAutoscalarRequestData.getApplicationName()).isEqualTo("a_s_e__1");
+    assertThat(pcfAppAutoscalarRequestData.isExpectedEnabled()).isTrue();
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void testDownsizeApplicationToZeroFailAutoscaler() throws Exception {
+    reset(pcfDeploymentManager);
+    ApplicationSummary applicationSummary = ApplicationSummary.builder()
+                                                .name("a_s_e__1")
+                                                .diskQuota(1)
+                                                .requestedState(RUNNING)
+                                                .id("10")
+                                                .instances(0)
+                                                .memoryLimit(1)
+                                                .runningInstances(0)
+                                                .build();
+
+    ApplicationDetail applicationDetail = ApplicationDetail.builder()
+                                              .id("10")
+                                              .diskQuota(1)
+                                              .instances(0)
+                                              .memoryLimit(1)
+                                              .name("a_s_e__1")
+                                              .requestedState(STOPPED)
+                                              .stack("")
+                                              .runningInstances(0)
+                                              .build();
+    doReturn(applicationDetail).when(pcfDeploymentManager).getApplicationByName(any());
+    doReturn(applicationDetail).when(pcfDeploymentManager).resizeApplication(any());
+
+    CfCommandSetupRequest cfCommandSetupRequest = CfCommandSetupRequest.builder().useAppAutoscalar(true).build();
+
+    CfAppAutoscalarRequestData pcfAppAutoscalarRequestData =
+        CfAppAutoscalarRequestData.builder().configPathVar("path").build();
+
+    doThrow(new PivotalClientApiException("#Throwing exception to test if flow stops or not"))
+        .when(pcfCommandTaskBaseHelper)
+        .disableAutoscalar(any(), any());
+
+    ArgumentCaptor<CfAppAutoscalarRequestData> argumentCaptor =
+        ArgumentCaptor.forClass(CfAppAutoscalarRequestData.class);
+    pcfSetupCommandTaskHandler.downsizeApplicationToZero(applicationSummary, CfRequestConfig.builder().build(),
+        cfCommandSetupRequest, pcfAppAutoscalarRequestData, executionLogCallback);
+
+    verify(pcfCommandTaskBaseHelper, times(1)).disableAutoscalar(argumentCaptor.capture(), any());
+    verify(pcfCommandTaskBaseHelper, times(1)).disableAutoscalarSafe(argumentCaptor.capture(), any());
+    verify(pcfDeploymentManager, times(0)).changeAutoscalarState(any(), any(), anyBoolean());
+
     pcfAppAutoscalarRequestData = argumentCaptor.getValue();
     assertThat(pcfAppAutoscalarRequestData.getApplicationGuid()).isEqualTo("10");
     assertThat(pcfAppAutoscalarRequestData.getApplicationName()).isEqualTo("a_s_e__1");

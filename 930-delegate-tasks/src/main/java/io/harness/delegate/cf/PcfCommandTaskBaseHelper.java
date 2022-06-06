@@ -273,7 +273,7 @@ public class PcfCommandTaskBaseHelper {
       appAutoscalarRequestData.setApplicationName(applicationDetail.getName());
       appAutoscalarRequestData.setApplicationGuid(applicationDetail.getId());
       appAutoscalarRequestData.setExpectedEnabled(true);
-      boolean autoscalarStateChanged = disableAutoscalar(appAutoscalarRequestData, executionLogCallback);
+      boolean autoscalarStateChanged = disableAutoscalarSafe(appAutoscalarRequestData, executionLogCallback);
       cfServiceData.setDisableAutoscalarPerformed(autoscalarStateChanged);
     }
 
@@ -330,7 +330,7 @@ public class PcfCommandTaskBaseHelper {
         appAutoscalarRequestData.setApplicationName(applicationDetail.getName());
         appAutoscalarRequestData.setApplicationGuid(applicationDetail.getId());
         appAutoscalarRequestData.setExpectedEnabled(true);
-        disableAutoscalar(appAutoscalarRequestData, executionLogCallback);
+        disableAutoscalarSafe(appAutoscalarRequestData, executionLogCallback);
       }
 
       downSize(cfServiceData, executionLogCallback, cfRequestConfig, pcfDeploymentManager);
@@ -420,6 +420,25 @@ public class PcfCommandTaskBaseHelper {
   public boolean disableAutoscalar(CfAppAutoscalarRequestData pcfAppAutoscalarRequestData,
       LogCallback executionLogCallback) throws PivotalClientApiException {
     return pcfDeploymentManager.changeAutoscalarState(pcfAppAutoscalarRequestData, executionLogCallback, false);
+  }
+
+  public boolean disableAutoscalarSafe(
+      CfAppAutoscalarRequestData pcfAppAutoscalarRequestData, LogCallback executionLogCallback) {
+    boolean autoscalarStateChanged = false;
+    try {
+      autoscalarStateChanged = disableAutoscalar(pcfAppAutoscalarRequestData, executionLogCallback);
+    } catch (PivotalClientApiException e) {
+      executionLogCallback.saveExecutionLog(
+          new StringBuilder()
+              .append("# Error while disabling autoscaling for: ")
+              .append(encodeColor(pcfAppAutoscalarRequestData.getApplicationName()))
+              .append(", ")
+              .append(e)
+              .append(", Continuing with the deployment, please disable autoscaler from the pcf portal\n")
+              .toString(),
+          ERROR);
+    }
+    return autoscalarStateChanged;
   }
 
   private List<InstanceDetail> filterNewUpsizedAppInstances(

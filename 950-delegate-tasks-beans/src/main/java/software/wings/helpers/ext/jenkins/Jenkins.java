@@ -46,9 +46,10 @@ public interface Jenkins {
    * Gets the job.
    *
    * @param jobname the jobname
+   * @param timeout
    * @return the job
    */
-  Job getJob(String jobname, JenkinsConfig jenkinsConfig);
+  Job getJob(String jobname, JenkinsConfig jenkinsConfig, long timeout);
 
   /**
    * Gets the child jobs for the given parent folder job. For the root level jobs, pass null.

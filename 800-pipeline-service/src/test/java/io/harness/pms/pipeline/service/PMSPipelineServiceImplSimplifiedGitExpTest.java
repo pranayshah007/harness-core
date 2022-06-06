@@ -292,13 +292,10 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testDeletePipeline() {
-    PipelineEntity deleted = PipelineEntity.builder().deleted(true).build();
-    doReturn(deleted).when(pipelineRepository).delete(accountIdentifier, orgIdentifier, projectIdentifier, pipelineId);
     boolean delete = pipelineService.delete(accountIdentifier, orgIdentifier, projectIdentifier, pipelineId, null);
     assertThat(delete).isTrue();
 
-    PipelineEntity notDeleted = PipelineEntity.builder().deleted(false).build();
-    doReturn(notDeleted)
+    doThrow(new InvalidRequestException("anything actually"))
         .when(pipelineRepository)
         .delete(accountIdentifier, orgIdentifier, projectIdentifier, pipelineId);
 

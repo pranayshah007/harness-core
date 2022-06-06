@@ -484,7 +484,6 @@ public class CfDeploymentManagerImpl implements CfDeploymentManager {
     appAutoscalarRequestData.setExpectedEnabled(!enable);
     boolean autoscalarAttachedWithExpectedStatus =
         cfCliClient.checkIfAppHasAutoscalerWithExpectedState(appAutoscalarRequestData, executionLogCallback);
-
     if (autoscalarAttachedWithExpectedStatus) {
       executionLogCallback.saveExecutionLog(color(new StringBuilder(128)
                                                       .append("# Performing Operation: ")

@@ -553,7 +553,10 @@ public class CloudFormationCreateStackState extends CloudFormationState {
 
     if (ExecutionStatus.FAILED == executionStatus) {
       activityService.updateStatus(activityId, appId, executionStatus);
-      return ExecutionResponse.builder().executionStatus(ExecutionStatus.FAILED).build();
+      return ExecutionResponse.builder()
+          .executionStatus(ExecutionStatus.FAILED)
+          .errorMessage(executionResponse.getErrorMessage())
+          .build();
     }
 
     GitFetchFilesFromMultipleRepoResult gitCommandResult =
@@ -606,7 +609,10 @@ public class CloudFormationCreateStackState extends CloudFormationState {
 
     if (ExecutionStatus.FAILED == executionStatus) {
       activityService.updateStatus(activityId, appId, executionStatus);
-      return ExecutionResponse.builder().executionStatus(ExecutionStatus.FAILED).build();
+      return ExecutionResponse.builder()
+          .executionStatus(ExecutionStatus.FAILED)
+          .errorMessage(executionResponse.getErrorMessage())
+          .build();
     } else {
       setParametersFilePaths(
           getParametersFilePaths().stream().map(context::renderExpression).collect(Collectors.toList()));
