@@ -18,18 +18,18 @@ import net.jodah.failsafe.RetryPolicy;
 @Slf4j
 @OwnedBy(HarnessTeam.PL)
 public class NGFeatureFlagHelperService {
-  private final static String errorMessage = "Unexpected error, could not fetch the feature flag";
+  private static final  String ERROR_MESSAGE = "Unexpected error, could not fetch the feature flag";
 
   @Inject AccountClient accountClient;
   private static final RetryPolicy<Object> fetchRetryPolicy = RetryUtils.getRetryPolicy(
-      errorMessage, errorMessage, Lists.newArrayList(InvalidRequestException.class), Duration.ofSeconds(5), 3, log);
+          ERROR_MESSAGE, ERROR_MESSAGE, Lists.newArrayList(InvalidRequestException.class), Duration.ofSeconds(5), 3, log);
 
   public boolean isEnabled(String accountId, FeatureName featureName) {
     try {
       return Failsafe.with(fetchRetryPolicy)
           .get(() -> RestClientUtils.getResponse(accountClient.isFeatureFlagEnabled(featureName.name(), accountId)));
     } catch (InvalidRequestException e) {
-      throw new UnexpectedException(errorMessage);
+      throw new UnexpectedException(ERROR_MESSAGE);
     }
   }
 }
