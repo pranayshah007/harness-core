@@ -7,19 +7,9 @@
 
 package io.harness.gitsync.common.impl.gittoharness;
 
-import static io.harness.annotations.dev.HarnessTeam.DX;
-import static io.harness.data.structure.CollectionUtils.emptyIfNull;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.gitsync.common.beans.GitToHarnessProcessingStepStatus.DONE;
-import static io.harness.gitsync.common.beans.GitToHarnessProcessingStepStatus.ERROR;
-import static io.harness.gitsync.common.beans.GitToHarnessProcessingStepStatus.IN_PROGRESS;
-import static io.harness.gitsync.common.beans.GitToHarnessProcessingStepType.PROCESS_FILES_IN_MSVS;
-import static io.harness.gitsync.common.helper.RepoProviderHelper.getRepoProviderType;
-
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toMap;
-
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
+import com.google.protobuf.StringValue;
 import io.harness.EntityType;
 import io.harness.Microservice;
 import io.harness.annotations.dev.OwnedBy;
@@ -27,27 +17,9 @@ import io.harness.beans.Scope;
 import io.harness.delegate.beans.git.YamlGitConfigDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.git.model.ChangeType;
-import io.harness.gitsync.ChangeSet;
-import io.harness.gitsync.ChangeSets;
-import io.harness.gitsync.EntityInfo;
-import io.harness.gitsync.EntityInfos;
-import io.harness.gitsync.GitToHarnessInfo;
-import io.harness.gitsync.GitToHarnessProcessRequest;
-import io.harness.gitsync.GitToHarnessServiceGrpc;
-import io.harness.gitsync.MarkEntityInvalidRequest;
-import io.harness.gitsync.MarkEntityInvalidResponse;
-import io.harness.gitsync.ProcessingResponse;
-import io.harness.gitsync.common.beans.FileProcessingResponseDTO;
+import io.harness.gitsync.*;
 import io.harness.gitsync.common.beans.FileProcessingStatus;
-import io.harness.gitsync.common.beans.GitSyncDirection;
-import io.harness.gitsync.common.beans.GitToHarnessFileProcessingRequest;
-import io.harness.gitsync.common.beans.GitToHarnessFilesGroupedByMsvc;
-import io.harness.gitsync.common.beans.GitToHarnessProcessingInfo;
-import io.harness.gitsync.common.beans.GitToHarnessProcessingResponse;
-import io.harness.gitsync.common.beans.GitToHarnessProcessingResponseDTO;
-import io.harness.gitsync.common.beans.GitToHarnessProcessingStepStatus;
-import io.harness.gitsync.common.beans.GitToHarnessProgressStatus;
-import io.harness.gitsync.common.beans.MsvcProcessingFailureStage;
+import io.harness.gitsync.common.beans.*;
 import io.harness.gitsync.common.dtos.ChangeSetWithYamlStatusDTO;
 import io.harness.gitsync.common.dtos.GitSyncEntityDTO;
 import io.harness.gitsync.common.dtos.RepoProviders;
@@ -71,25 +43,22 @@ import io.harness.gitsync.helpers.ProcessingResponseMapper;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.entitydetail.EntityDetailRestToProtoMapper;
 import io.harness.ng.core.event.EventProtoToEntityHelper;
-
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
-import com.google.protobuf.StringValue;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.EnumMap;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import javax.validation.constraints.NotNull;
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import static io.harness.annotations.dev.HarnessTeam.DX;
+import static io.harness.data.structure.CollectionUtils.emptyIfNull;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.gitsync.common.beans.GitToHarnessProcessingStepStatus.*;
+import static io.harness.gitsync.common.beans.GitToHarnessProcessingStepType.PROCESS_FILES_IN_MSVS;
+import static io.harness.gitsync.common.helper.RepoProviderHelper.getRepoProviderType;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 
 @Singleton
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
