@@ -544,24 +544,11 @@ public class NgUserServiceImpl implements NgUserService {
   public void addUserToScope(String userId, Scope scope, List<RoleBinding> roleBindings, List<String> userGroups,
       UserMembershipUpdateSource source) {
     ensureUserMetadata(userId);
-    if (ngFeatureFlagHelperService.isEnabled(scope.getAccountIdentifier(), FeatureName.ACCOUNT_BASIC_ROLE)) {
-      addUserToScopeInternal(userId, source, scope, getDefaultManagedRoleIdentifier(scope));
-      addUserToParentScope(userId, scope, source, true);
-    } else {
-      addUserToScopeInternal(userId, source, scope, getDefaultRoleIdentifier(scope));
-      addUserToParentScope(userId, scope, source, false);
-    }
+    boolean isAccountBasicFeatureFlagEnabled = ngFeatureFlagHelperService.isEnabled(scope.getAccountIdentifier(), FeatureName.ACCOUNT_BASIC_ROLE);
+    addUserToScopeInternal(userId, source, scope, getDefaultRoleIdentifier(scope, isAccountBasicFeatureFlagEnabled));
+    addUserToParentScope(userId, scope, source, isAccountBasicFeatureFlagEnabled);
     createRoleAssignments(userId, scope, createRoleAssignmentDTOs(roleBindings, userId, scope));
     userGroupService.addUserToUserGroups(scope, userId, getValidUserGroups(scope, userGroups));
-  }
-
-  private String getDefaultManagedRoleIdentifier(Scope scope) {
-    if (!isBlank(scope.getProjectIdentifier())) {
-      return PROJECT_VIEWER;
-    } else if (!isBlank(scope.getOrgIdentifier())) {
-      return ORGANIZATION_VIEWER;
-    }
-    return ACCOUNT_BASIC;
   }
 
   private List<String> getValidUserGroups(Scope scope, List<String> userGroupIdentifiers) {
@@ -619,11 +606,14 @@ public class NgUserServiceImpl implements NgUserService {
             resourceGroupIdentifier -> resourceGroupIdentifier.equals(roleAssignmentDTO.getResourceGroupIdentifier()));
   }
 
-  private String getDefaultRoleIdentifier(Scope scope) {
+  private String getDefaultRoleIdentifier(Scope scope, boolean isAccountBasicFeatureFlagEnabled) {
     if (!isBlank(scope.getProjectIdentifier())) {
       return PROJECT_VIEWER;
     } else if (!isBlank(scope.getOrgIdentifier())) {
       return ORGANIZATION_VIEWER;
+    }
+    if (isAccountBasicFeatureFlagEnabled) {
+        return ACCOUNT_BASIC;
     }
     return ACCOUNT_VIEWER;
   }
