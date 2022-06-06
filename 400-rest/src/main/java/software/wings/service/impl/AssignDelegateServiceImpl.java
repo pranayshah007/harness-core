@@ -614,8 +614,14 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
     }
 
     Delegate delegate = delegateCache.get(task.getAccountId(), delegateId, false);
+    if (delegate == null) {
+      return false;
+    }
     List<Delegate> delegatesFromSameGroup =
         delegateCache.getDelegates(task.getAccountId(), delegate.getDelegateGroupId());
+    if (isEmpty(delegatesFromSameGroup)) {
+      return false;
+    }
     boolean matching = true;
     for (String criteria : fetchCriteria(task)) {
       if (!isDelegateGroupValidated(delegatesFromSameGroup, criteria, task.getUuid())) {
