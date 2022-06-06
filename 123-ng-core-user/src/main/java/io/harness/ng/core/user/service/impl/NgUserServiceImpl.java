@@ -648,7 +648,7 @@ public class NgUserServiceImpl implements NgUserService {
   }
 
   private void addUserToParentScope(
-      String userId, Scope scope, UserMembershipUpdateSource source, boolean accountBasicRoleFeatureFlag) {
+      String userId, Scope scope, UserMembershipUpdateSource source, boolean isAccountBasicFeatureFlagEnabled) {
     //  Adding user to the parent scopes as well
     if (!isBlank(scope.getProjectIdentifier())) {
       Scope orgScope = Scope.builder()
@@ -660,7 +660,7 @@ public class NgUserServiceImpl implements NgUserService {
 
     if (!isBlank(scope.getOrgIdentifier())) {
       Scope accountScope = Scope.builder().accountIdentifier(scope.getAccountIdentifier()).build();
-      if (accountBasicRoleFeatureFlag) {
+      if (isAccountBasicFeatureFlagEnabled) {
         addUserToScopeInternal(userId, source, accountScope, ACCOUNT_BASIC);
       } else {
         addUserToScopeInternal(userId, source, accountScope, ACCOUNT_VIEWER);
