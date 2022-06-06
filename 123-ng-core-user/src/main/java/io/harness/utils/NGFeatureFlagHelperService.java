@@ -18,11 +18,12 @@ import java.time.Duration;
 @Slf4j
 @OwnedBy(HarnessTeam.PL)
 public class NGFeatureFlagHelperService {
+    private final static String errorMessage = "Unexpected error, could not fetch the feature flag";
+
     @Inject
     AccountClient accountClient;
     private static final RetryPolicy<Object> fetchRetryPolicy =
-            RetryUtils.getRetryPolicy("Unexpected error, could not fetch the feature flag",
-                    "Unexpected error, could not fetch the could not fetch the feature flag",
+            RetryUtils.getRetryPolicy(errorMessage, errorMessage,
                     Lists.newArrayList(InvalidRequestException.class), Duration.ofSeconds(5), 3, log);
 
     public boolean isEnabled(String accountId, FeatureName featureName) {
@@ -31,7 +32,7 @@ public class NGFeatureFlagHelperService {
                     .get(() -> RestClientUtils.getResponse(accountClient.isFeatureFlagEnabled(featureName.name(), accountId)));
         }
         catch (InvalidRequestException e) {
-            throw new UnexpectedException("Unexpected error, could not fetch the feature flag");
+            throw new UnexpectedException(errorMessage);
         }
     }
 }
