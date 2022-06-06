@@ -7,14 +7,6 @@
 
 package io.harness.ccm.remote.resources;
 
-import static io.harness.ccm.commons.utils.BigQueryHelper.UNIFIED_TABLE;
-import static io.harness.rule.OwnerRule.SHUBHANSHU;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.ccm.bigQuery.BigQueryService;
@@ -33,14 +25,23 @@ import io.harness.ccm.views.service.ViewCustomFieldService;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.rule.Owner;
 import io.harness.telemetry.TelemetryReporter;
-
-import java.io.IOException;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
+
+import java.io.IOException;
+
+import static io.harness.ccm.commons.utils.BigQueryHelper.UNIFIED_TABLE;
+import static io.harness.rule.OwnerRule.SHUBHANSHU;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class PerspectiveResourceTest extends CategoryTest {
@@ -79,8 +80,7 @@ public class PerspectiveResourceTest extends CategoryTest {
                       .viewVersion(perspectiveVersion)
                       .build();
     when(ceViewService.get(PERSPECTIVE_ID)).thenReturn(perspective);
-    when(ceViewService.save(perspective, true)).thenReturn(perspective);
-    when(ceViewService.save(perspective, false)).thenReturn(perspective);
+    when(ceViewService.save(eq(perspective), anyBoolean())).thenReturn(perspective);
     when(ceViewService.update(perspective)).thenReturn(perspective);
     when(bigQueryHelper.getCloudProviderTableName(ACCOUNT_ID, UNIFIED_TABLE)).thenReturn(UNIFIED_TABLE_NAME);
     when(budgetService.deleteBudgetsForPerspective(ACCOUNT_ID, PERSPECTIVE_ID)).thenReturn(true);

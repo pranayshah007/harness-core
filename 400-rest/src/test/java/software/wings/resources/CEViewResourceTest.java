@@ -14,6 +14,8 @@ import static software.wings.graphql.datafetcher.billing.CloudBillingHelper.unif
 import static java.lang.String.format;
 import static javax.ws.rs.client.Entity.entity;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -84,8 +86,7 @@ public class CEViewResourceTest extends CategoryTest {
                  .viewVersion(viewVersion)
                  .build();
     when(ceViewService.get(VIEW_ID)).thenReturn(ceView);
-    when(ceViewService.save(ceView, true)).thenReturn(ceView);
-    when(ceViewService.save(ceView, false)).thenReturn(ceView);
+    when(ceViewService.save(eq(ceView), anyBoolean())).thenReturn(ceView);
     when(ceViewService.update(ceView)).thenReturn(ceView);
     when(cloudBillingHelper.getCloudProviderTableName(ACCOUNT_ID, unified)).thenReturn(UNIFIED_TABLE);
   }
