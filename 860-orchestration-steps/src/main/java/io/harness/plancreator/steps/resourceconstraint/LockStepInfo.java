@@ -39,7 +39,7 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class LockStepInfo implements PMSStepInfo {
   @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> key;
-  @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> scope;
+  @NotNull @ApiModelProperty(dataType = "io.harness.steps.resourcerestraint.beans.HoldingScope") HoldingScope scope;
 
   @JsonIgnore
   @Override
@@ -65,8 +65,8 @@ public class LockStepInfo implements PMSStepInfo {
   @Override
   public SpecParameters getSpecParameters() {
     return ResourceRestraintSpecParameters.builder()
-        .resourceUnit(key.getValue())
-        .holdingScope(HoldingScope.valueOf(getScope().getValue())) // JUST TO UNBLOCK UI TASKS
+        .resourceUnit(key)
+        .holdingScope(scope)
         .name(PmsConstants.QUEUING_RC_NAME)
         .permits(PmsConstants.QUEUING_RC_PERMITS)
         .acquireMode(AcquireMode.ENSURE)

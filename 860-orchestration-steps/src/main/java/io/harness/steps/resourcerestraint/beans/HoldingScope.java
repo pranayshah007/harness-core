@@ -12,18 +12,49 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonValue;
+import io.swagger.annotations.ApiModel;
+
 @OwnedBy(CDC)
 @RecasterAlias("io.harness.steps.resourcerestraint.beans.HoldingScope")
+@ApiModel
 public enum HoldingScope {
   // This is only for backward compatibility
   // TODO : Remove this after a release
-  @Deprecated PLAN,
+  @Deprecated @JsonProperty("PLAN") PLAN("PLAN"),
 
   // This corresponds to pipeline
-  PIPELINE,
+  @JsonProperty("PIPELINE") PIPELINE("PIPELINE"),
 
   // This corresponds to stage
-  STAGE,
+  @JsonProperty("STAGE") STAGE("STAGE"),
 
-  STEP_GROUP
+  @JsonProperty("STEP_GROUP") STEP_GROUP("STEP_GROUP");
+
+  private final String yamlName;
+
+  @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
+  public static HoldingScope getHoldingScope(@JsonProperty("scope") String yamlName) {
+    for (HoldingScope scope : HoldingScope.values()) {
+      if (scope.yamlName.equalsIgnoreCase(yamlName)) {
+        return scope;
+      }
+    }
+    throw new IllegalArgumentException("Invalid value: " + yamlName);
+  }
+
+  HoldingScope(String yamlName) {
+    this.yamlName = yamlName;
+  }
+
+  @JsonValue
+  public String getYamlName() {
+    return yamlName;
+  }
+  @Override
+  public String toString() {
+    return yamlName;
+  }
 }

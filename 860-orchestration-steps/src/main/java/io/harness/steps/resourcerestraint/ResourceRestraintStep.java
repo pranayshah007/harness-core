@@ -99,7 +99,7 @@ public class ResourceRestraintStep
                 .outcome(ResourceRestraintOutcome.builder()
                              .name(resourceRestraint.getName())
                              .capacity(resourceRestraint.getCapacity())
-                             .resourceUnit(specParameters.getResourceUnit())
+                             .resourceUnit(specParameters.getResourceUnit().getValue())
                              .usage(specParameters.getPermits())
                              .alreadyAcquiredPermits(getAlreadyAcquiredPermits(specParameters.getHoldingScope(),
                                  ResourceRestraintUtils.getReleaseEntityId(ambiance, specParameters.getHoldingScope())))
@@ -118,7 +118,7 @@ public class ResourceRestraintStep
         Preconditions.checkNotNull(executableResponse.getCallbackIdsList().get(0),
             "CallbackId should not be null in handleAbort() for nodeExecution with id %s",
             AmbianceUtils.obtainCurrentRuntimeId(ambiance)),
-        specParameters.getResourceUnit());
+        specParameters.getResourceUnit().getValue());
   }
 
   private int getAlreadyAcquiredPermits(HoldingScope holdingScope, String releaseEntityId) {
