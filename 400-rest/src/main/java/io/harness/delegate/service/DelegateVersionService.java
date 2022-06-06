@@ -16,6 +16,7 @@ import static io.harness.delegate.beans.VersionOverrideType.DELEGATE_JAR;
 import static io.harness.delegate.beans.VersionOverrideType.UPGRADER_IMAGE_TAG;
 import static io.harness.delegate.beans.VersionOverrideType.WATCHER_JAR;
 
+import static java.util.Collections.singletonList;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.delegate.beans.VersionOverride;
@@ -80,7 +81,7 @@ public class DelegateVersionService {
   public List<String> getDelegateJarVersions(final String accountId) {
     final VersionOverride versionOverride = getVersionOverride(accountId, DELEGATE_JAR);
     if (versionOverride != null && isNotBlank(versionOverride.getVersion())) {
-      return Collections.singletonList(versionOverride.getVersion());
+      return singletonList(versionOverride.getVersion());
     }
 
     final List<String> ringVersion = delegateRingService.getDelegateVersions(accountId);
@@ -106,18 +107,12 @@ public class DelegateVersionService {
     return Collections.emptyList();
   }
 
-  public List<String> getWatcherJarVersions(final String accountId) {
+  public String getWatcherJarVersions(final String accountId) {
     final VersionOverride versionOverride = getVersionOverride(accountId, WATCHER_JAR);
     if (versionOverride != null && isNotBlank(versionOverride.getVersion())) {
-      return Collections.singletonList(versionOverride.getVersion());
+      return versionOverride.getVersion();
     }
-
-    final List<String> ringVersion = delegateRingService.getWatcherVersions(accountId);
-    if (!CollectionUtils.isEmpty(ringVersion)) {
-      return ringVersion;
-    }
-
-    return Collections.emptyList();
+    return delegateRingService.getWatcherVersions(accountId);
   }
 
   private VersionOverride getVersionOverride(final String accountId, final VersionOverrideType overrideType) {

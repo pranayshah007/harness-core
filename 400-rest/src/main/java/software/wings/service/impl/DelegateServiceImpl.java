@@ -42,6 +42,7 @@ import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_DISCON
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_REGISTRATION_FAILED;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_RESTARTED;
 import static io.harness.mongo.MongoUtils.setUnset;
+import static io.harness.network.Http.getResponseStringFromUrl;
 import static io.harness.obfuscate.Obfuscator.obfuscate;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
@@ -1277,6 +1278,16 @@ public class DelegateServiceImpl implements DelegateService {
     return substringBefore(delegateMatadata, " ").trim();
   }
 
+  public String getLatestWatcherVersion(String accountId) {
+    final String watcherMetadataUrl = infraDownloadService.getCdnWatcherMetaDataFileUrl();
+    try {
+      String watcherMetadata = Http.getResponseStringFromUrl(watcherMetadataUrl, 10, 10);
+      return watcherMetadata;
+    } catch (Exception ex) {
+      throw new IllegalStateException("Unable to fetch watcher version");
+    }
+  }
+
   private String fetchDelegateMetadataFromStorage() {
     String delegateMetadataUrl = subdomainUrlHelper.getDelegateMetadataUrl(null, null, null);
     try {
@@ -1337,6 +1348,7 @@ public class DelegateServiceImpl implements DelegateService {
       }
       final String watcherStorageUrl = watcherMetadataUrl.substring(0, watcherMetadataUrl.lastIndexOf('/'));
       final String watcherCheckLocation = watcherMetadataUrl.substring(watcherMetadataUrl.lastIndexOf('/') + 1);
+
       final String hexkey = format("%040x",
           new BigInteger(1, templateParameters.getAccountId().substring(0, 6).getBytes(StandardCharsets.UTF_8)))
                                 .replaceFirst("^0+(?!$)", "");
@@ -1371,6 +1383,11 @@ public class DelegateServiceImpl implements DelegateService {
               .put("dynamicHandlingOfRequestEnabled",
                   String.valueOf(featureFlagService.isEnabled(
                       DELEGATE_ENABLE_DYNAMIC_HANDLING_OF_REQUEST, templateParameters.getAccountId())));
+
+      if (useCDN) {
+        final String watcherVersion = getLatestWatcherVersion(templateParameters.getAccountId());
+        params.put("watcherJarVersion", watcherVersion);
+      }
 
       if (mainConfiguration.getDeployMode() == DeployMode.KUBERNETES_ONPREM) {
         params.put("managerTarget", mainConfiguration.getGrpcOnpremDelegateClientConfig().getTarget());
@@ -1412,6 +1429,8 @@ public class DelegateServiceImpl implements DelegateService {
         params.put("cdnUrl", EMPTY);
         params.put("remoteWatcherUrlCdn", EMPTY);
       }
+
+      params.put("isOnPrem", String.valueOf(DeployMode.isOnPrem(mainConfiguration.getDeployMode().name())));
 
       if (isNotBlank(templateParameters.getDelegateXmx())) {
         params.put("delegateXmx", templateParameters.getDelegateXmx());
