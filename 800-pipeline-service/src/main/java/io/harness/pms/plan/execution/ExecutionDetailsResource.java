@@ -89,7 +89,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
           @ApiResponse(code = 403, response = TemplateInputsErrorResponseDTO.class,
               message = "TemplateRefs Resolved failed in pipeline yaml.")
     })
-@Tag(name = "Execution Details", description = "This contains APIs for fetching Pipeline Execution details.")
+@Tag(name = "Pipeline Execution Details", description = "This contains APIs for fetching Pipeline Execution details.")
 @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Bad Request",
     content =
     {
@@ -236,6 +236,7 @@ public class ExecutionDetailsResource {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(
             responseCode = "default", description = "Return the Pipeline Execution details for given PlanExecution Id")
       })
+  @Deprecated
   public ResponseDTO<PipelineExecutionDetailDTO>
   getExecutionDetail(@NotNull @Parameter(description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE, required = true)
                      @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,

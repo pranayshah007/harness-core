@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -275,14 +276,13 @@ public class NgGlobalKmsServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = NISHANT)
   @Category(UnitTests.class)
-  @PrepareForTest(GlobalContextManager.class)
   public void testGetUserPrincipalOrThrow() throws Exception {
     GlobalContext globalContext = new GlobalContext();
     globalContext.upsertGlobalContextRecord(PrincipalContextData.builder().principal(userPrincipal).build());
-    PowerMockito.mockStatic(GlobalContextManager.class);
+    mockStatic(GlobalContextManager.class);
     when(GlobalContextManager.obtainGlobalContext()).thenReturn(globalContext);
     Object userPrincipalResponse = Whitebox.invokeMethod(globalKmsService, GET_USER_PRINCIPAL_OR_THROW);
-    PowerMockito.verifyStatic(GlobalContextManager.class, times(1));
+    verify(GlobalContextManager.class, times(1));
     assertNotNull(userPrincipalResponse);
     assertThat(userPrincipalResponse).isInstanceOf(UserPrincipal.class);
   }
@@ -290,45 +290,42 @@ public class NgGlobalKmsServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = NISHANT)
   @Category(UnitTests.class)
-  @PrepareForTest(GlobalContextManager.class)
   public void testGetUserPrincipalOrThrow_exception_global_context_null() throws Exception {
-    PowerMockito.mockStatic(GlobalContextManager.class);
+    mockStatic(GlobalContextManager.class);
     when(GlobalContextManager.obtainGlobalContext()).thenReturn(null);
     exceptionRule.expect(InvalidRequestException.class);
     exceptionRule.expectMessage("Not authorized to update in current context");
     Whitebox.invokeMethod(globalKmsService, GET_USER_PRINCIPAL_OR_THROW);
-    PowerMockito.verifyStatic(GlobalContextManager.class, times(1));
+    verify(GlobalContextManager.class, times(1));
   }
 
   @Test
   @Owner(developers = NISHANT)
   @Category(UnitTests.class)
-  @PrepareForTest(GlobalContextManager.class)
   public void testGetUserPrincipalOrThrow_exception_not_principal_context() throws Exception {
     GlobalContext globalContext = new GlobalContext();
     globalContext.upsertGlobalContextRecord(
         RequestContextData.builder().requestContext(RequestContext.builder().build()).build());
-    PowerMockito.mockStatic(GlobalContextManager.class);
+    mockStatic(GlobalContextManager.class);
     when(GlobalContextManager.obtainGlobalContext()).thenReturn(globalContext);
     exceptionRule.expect(InvalidRequestException.class);
     exceptionRule.expectMessage("Not authorized to update in current context");
     Whitebox.invokeMethod(globalKmsService, GET_USER_PRINCIPAL_OR_THROW);
-    PowerMockito.verifyStatic(GlobalContextManager.class, times(1));
+    verify(GlobalContextManager.class, times(1));
   }
 
   @Test
   @Owner(developers = NISHANT)
   @Category(UnitTests.class)
-  @PrepareForTest(GlobalContextManager.class)
   public void testGetUserPrincipalOrThrow_not_user_principal() throws Exception {
     GlobalContext globalContext = new GlobalContext();
     globalContext.upsertGlobalContextRecord(PrincipalContextData.builder().principal(new ServicePrincipal()).build());
-    PowerMockito.mockStatic(GlobalContextManager.class);
+    mockStatic(GlobalContextManager.class);
     when(GlobalContextManager.obtainGlobalContext()).thenReturn(globalContext);
     exceptionRule.expect(InvalidRequestException.class);
     exceptionRule.expectMessage("Not authorized to update in current context");
     Whitebox.invokeMethod(globalKmsService, GET_USER_PRINCIPAL_OR_THROW);
-    PowerMockito.verifyStatic(GlobalContextManager.class, times(1));
+    verify(GlobalContextManager.class, times(1));
   }
 
   @Test

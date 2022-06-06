@@ -116,7 +116,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
       , @ApiResponse(code = 500, response = ErrorDTO.class, message = "Internal server error")
     })
 
-@Tag(name = "InputSets", description = "Contain APIs corresponding to the Input Sets, including Overlay Input Sets.")
+@Tag(name = "Pipeline InputSets", description = "Contain APIs corresponding to the Input Sets, including Overlay Input Sets.")
 @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Bad Request",
     content =
     {

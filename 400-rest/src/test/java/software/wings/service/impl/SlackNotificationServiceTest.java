@@ -95,7 +95,7 @@ public class SlackNotificationServiceTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldSendJSONMessageFromManager() {
     when(accountService.isCertValidationRequired(any())).thenReturn(false);
-    when(featureFlagService.isEnabled(any(), anyString())).thenReturn(true);
+    when(featureFlagService.isEnabled(any(), anyString())).thenReturn(false);
     when(featureFlagService.isGlobalEnabled(any())).thenReturn(false);
     doNothing().when(slackMessageSender).sendJSON(any(SlackMessageJSON.class));
 

@@ -78,6 +78,7 @@ import io.harness.outbox.api.OutboxService;
 import io.harness.outbox.api.impl.OutboxDaoImpl;
 import io.harness.outbox.api.impl.OutboxServiceImpl;
 import io.harness.persistence.HPersistence;
+import io.harness.queue.QueueController;
 import io.harness.repositories.outbox.OutboxEventRepository;
 import io.harness.rule.InjectorRuleMixin;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
@@ -191,6 +192,17 @@ public class GitSyncTestRule implements InjectorRuleMixin, MethodRule, MongoRule
         bind(GitFullSyncConfigService.class).toInstance(mock(GitFullSyncConfigServiceImpl.class));
         bind(FullSyncJobService.class).toInstance(mock(FullSyncJobServiceImpl.class));
         bind(ScmClient.class).toInstance(mock(SCMServiceGitClientImpl.class));
+        bind(QueueController.class).toInstance(new QueueController() {
+          @Override
+          public boolean isPrimary() {
+            return true;
+          }
+
+          @Override
+          public boolean isNotPrimary() {
+            return false;
+          }
+        });
         bind(Producer.class)
             .annotatedWith(Names.named(EventsFrameworkConstants.SETUP_USAGE))
             .toInstance(mock(NoOpProducer.class));
