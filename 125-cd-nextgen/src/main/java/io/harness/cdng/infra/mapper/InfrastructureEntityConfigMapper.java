@@ -63,12 +63,12 @@ public class InfrastructureEntityConfigMapper {
   }
 
   public List<InfrastructurePlanCreatorConfig> toInfrastructurePlanCreatorConfig(
-      List<InfrastructureEntity> infrastructureEntity) {
-    return infrastructureEntity.stream()
-        .map(entity
+      List<InfrastructureConfig> infrastructureConfigs) {
+    return infrastructureConfigs.stream()
+        .map(config
             -> InfrastructurePlanCreatorConfig.builder()
-                   .ref(entity.getIdentifier())
-                   .infrastructureDefinitionConfig(toInfrastructureConfig(entity).getInfrastructureDefinitionConfig())
+                   .ref(config.getInfrastructureDefinitionConfig().getIdentifier())
+                   .infrastructureDefinitionConfig(config.getInfrastructureDefinitionConfig())
                    .build())
         .collect(Collectors.toList());
   }

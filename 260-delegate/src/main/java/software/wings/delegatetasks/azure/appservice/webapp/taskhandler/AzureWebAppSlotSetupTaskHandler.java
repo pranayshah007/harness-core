@@ -158,7 +158,7 @@ public class AzureWebAppSlotSetupTaskHandler extends AbstractAzureWebAppTaskHand
         slotSetupParameters.getImageName(), slotSetupParameters.getImageTag());
 
     return AzureAppServiceDockerDeploymentContext.builder()
-        .logStreamingTaskClient(logStreamingTaskClient)
+        .logCallbackProvider(logCallbackProviderFactory.createCg(logStreamingTaskClient))
         .appSettingsToAdd(appSettingsToAdd)
         .connSettingsToAdd(connSettingsToAdd)
         .dockerSettings(dockerSettings)
@@ -206,7 +206,7 @@ public class AzureWebAppSlotSetupTaskHandler extends AbstractAzureWebAppTaskHand
         getConnSettingsToAdd(slotSetupParameters.getConnectionStrings());
 
     return AzureAppServicePackageDeploymentContext.builder()
-        .logStreamingTaskClient(logStreamingTaskClient)
+        .logCallbackProvider(logCallbackProviderFactory.createCg(logStreamingTaskClient))
         .appSettingsToAdd(appSettingsToAdd)
         .connSettingsToAdd(connSettingsToAdd)
         .slotName(slotSetupParameters.getSlotName())

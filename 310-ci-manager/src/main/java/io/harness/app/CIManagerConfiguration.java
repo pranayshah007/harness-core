@@ -7,6 +7,8 @@
 
 package io.harness.app;
 
+import static io.harness.swagger.SwaggerBundleConfigurationFactory.buildSwaggerBundleConfiguration;
+
 import static com.google.common.collect.ImmutableMap.of;
 import static java.util.stream.Collectors.toSet;
 
@@ -21,6 +23,7 @@ import io.harness.grpc.client.GrpcClientConfig;
 import io.harness.grpc.server.GrpcServerConfig;
 import io.harness.mongo.MongoConfig;
 import io.harness.opaclient.OpaServiceConfiguration;
+import io.harness.reflection.HarnessReflections;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.secret.ConfigSecret;
 import io.harness.sto.beans.entities.STOServiceConfig;
@@ -34,6 +37,7 @@ import io.dropwizard.Configuration;
 import io.dropwizard.bundles.assets.AssetsBundleConfiguration;
 import io.dropwizard.bundles.assets.AssetsConfiguration;
 import io.federecio.dropwizard.swagger.SwaggerBundleConfiguration;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.integration.SwaggerConfiguration;
 import io.swagger.v3.oas.integration.api.OpenAPIConfiguration;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -46,6 +50,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.ws.rs.Path;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -53,7 +58,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.reflections.Reflections;
+import org.apache.commons.lang3.StringUtils;
 
 @Data
 @Builder
@@ -63,6 +68,10 @@ import org.reflections.Reflections;
 @Slf4j
 public class CIManagerConfiguration extends Configuration implements AssetsBundleConfiguration {
   public static final String BASE_PACKAGE = "io.harness.app.resources";
+  public static final String NG_PIPELINE_PACKAGE = "io.harness.ngpipeline";
+  public static final String ENFORCEMENT_CLIENT_PACKAGE = "io.harness.enforcement.client.resources";
+  public static final Collection<Class<?>> HARNESS_RESOURCE_CLASSES = getResourceClasses();
+
   @JsonProperty
   private AssetsConfiguration assetsConfiguration =
       AssetsConfiguration.builder()
@@ -109,10 +118,20 @@ public class CIManagerConfiguration extends Configuration implements AssetsBundl
   @JsonProperty("hostname") String hostname;
   @JsonProperty("basePathPrefix") String basePathPrefix;
 
-  public SwaggerBundleConfiguration getSwaggerBundleConfiguration() {
-    SwaggerBundleConfiguration defaultSwaggerBundleConfiguration = new SwaggerBundleConfiguration();
+  public static Collection<Class<?>> getResourceClasses() {
+    return HarnessReflections.get()
+        .getTypesAnnotatedWith(Path.class)
+        .stream()
+        .filter(klazz
+            -> StringUtils.startsWithAny(
+                klazz.getPackage().getName(), BASE_PACKAGE, NG_PIPELINE_PACKAGE, ENFORCEMENT_CLIENT_PACKAGE))
+        .collect(Collectors.toSet());
+  }
 
-    String resourcePackage = String.join(",", getUniquePackages(getResourceClasses()));
+  public SwaggerBundleConfiguration getSwaggerBundleConfiguration() {
+    SwaggerBundleConfiguration defaultSwaggerBundleConfiguration =
+        buildSwaggerBundleConfiguration(HARNESS_RESOURCE_CLASSES);
+    String resourcePackage = String.join(",", getUniquePackages(HARNESS_RESOURCE_CLASSES));
     defaultSwaggerBundleConfiguration.setResourcePackage(resourcePackage);
     defaultSwaggerBundleConfiguration.setSchemes(new String[] {"https", "http"});
     defaultSwaggerBundleConfiguration.setHost(
@@ -128,14 +147,10 @@ public class CIManagerConfiguration extends Configuration implements AssetsBundl
     return assetsConfiguration;
   }
 
-  public static Collection<Class<?>> getResourceClasses() {
-    Reflections reflections = new Reflections(BASE_PACKAGE);
-    return reflections.getTypesAnnotatedWith(Path.class);
+  public static Collection<Class<?>> getOAS3ResourceClassesOnly() {
+    return HARNESS_RESOURCE_CLASSES.stream().filter(x -> x.isAnnotationPresent(Tag.class)).collect(Collectors.toList());
   }
 
-  public static Set<String> getUniquePackagesContainingResources() {
-    return getResourceClasses().stream().map(aClass -> aClass.getPackage().getName()).collect(toSet());
-  }
   private static Set<String> getUniquePackages(Collection<Class<?>> classes) {
     return classes.stream().map(aClass -> aClass.getPackage().getName()).collect(toSet());
   }
@@ -161,7 +176,7 @@ public class CIManagerConfiguration extends Configuration implements AssetsBundl
     } catch (MalformedURLException e) {
       log.error("failed to set baseurl for server, {}/{}", hostname, basePathPrefix);
     }
-    Set<String> packages = getUniquePackagesContainingResources();
+    Set<String> packages = getUniquePackages(getOAS3ResourceClassesOnly());
     return new SwaggerConfiguration().openAPI(oas).prettyPrint(true).resourcePackages(packages).scannerClass(
         "io.swagger.v3.jaxrs2.integration.JaxrsAnnotationScanner");
   }

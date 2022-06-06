@@ -13,6 +13,7 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.notification.channeldetails.NotificationChannel;
+import io.harness.pms.contracts.ambiance.Ambiance;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -29,5 +30,5 @@ import java.util.Map;
 // Move this class to a common module like 878. Also, rename it accordingly.
 public abstract class PmsNotificationChannel {
   public abstract NotificationChannel toNotificationChannel(String accountId, String orgIdentifier,
-      String projectIdentifier, String templateId, Map<String, String> templateData);
+      String projectIdentifier, String templateId, Map<String, String> templateData, Ambiance ambiance);
 }

@@ -48,13 +48,13 @@ import io.harness.pms.pipeline.CommonStepInfo;
 import io.harness.pms.pipeline.ExecutionSummaryInfo;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
-import io.harness.pms.pipeline.PipelineFilterPropertiesDto;
 import io.harness.pms.pipeline.PipelineImportRequestDTO;
 import io.harness.pms.pipeline.StepCategory;
 import io.harness.pms.pipeline.StepPalleteFilterWrapper;
 import io.harness.pms.pipeline.StepPalleteInfo;
 import io.harness.pms.pipeline.StepPalleteModuleInfo;
 import io.harness.pms.pipeline.mappers.PMSPipelineDtoMapper;
+import io.harness.pms.pipeline.mappers.PMSPipelineFilterHelper;
 import io.harness.pms.sdk.PmsSdkInstanceService;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
@@ -383,11 +383,13 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     if (gitSyncSdkService.isGitSyncEnabled(accountId, orgIdentifier, projectIdentifier)) {
       return deleteForOldGitSync(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
     }
-    PipelineEntity deletedEntity =
-        pmsPipelineRepository.delete(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
-    if (deletedEntity.getDeleted()) {
+    try {
+      pmsPipelineRepository.delete(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier);
       return true;
-    } else {
+    } catch (Exception e) {
+      log.error(format("Pipeline [%s] under Project[%s], Organization [%s] could not be deleted: %s",
+                    pipelineIdentifier, projectIdentifier, orgIdentifier, ExceptionUtils.getMessage(e)),
+          e);
       throw new InvalidRequestException(
           format("Pipeline [%s] under Project[%s], Organization [%s] could not be deleted.", pipelineIdentifier,
               projectIdentifier, orgIdentifier));
@@ -406,18 +408,14 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
     PipelineEntity existingEntity = optionalPipelineEntity.get();
     PipelineEntity withDeleted = existingEntity.withDeleted(true);
     try {
-      PipelineEntity deletedEntity = pmsPipelineRepository.deleteForOldGitSync(withDeleted);
-      if (deletedEntity.getDeleted()) {
-        return true;
-      } else {
-        throw new InvalidRequestException(
-            format("Pipeline [%s] under Project[%s], Organization [%s] could not be deleted.", pipelineIdentifier,
-                projectIdentifier, orgIdentifier));
-      }
+      pmsPipelineRepository.deleteForOldGitSync(withDeleted);
+      return true;
     } catch (Exception e) {
       log.error(String.format("Error while deleting pipeline [%s]", pipelineIdentifier), e);
+
       throw new InvalidRequestException(
-          String.format("Error while deleting pipeline [%s]: %s", pipelineIdentifier, ExceptionUtils.getMessage(e)));
+          format("Pipeline [%s] under Project[%s], Organization [%s] could not be deleted.", pipelineIdentifier,
+              projectIdentifier, orgIdentifier));
     }
   }
 
@@ -547,21 +545,19 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   // Todo: Remove only if there are no references to the pipeline
   @Override
   public boolean deleteAllPipelinesInAProject(String accountId, String orgId, String projectId) {
-    Criteria criteria = pmsPipelineServiceHelper.formCriteria(
-        accountId, orgId, projectId, null, PipelineFilterPropertiesDto.builder().build(), false, null, null);
-    Pageable pageRequest = PageRequest.of(0, 1000, Sort.by(Sort.Direction.DESC, PipelineEntityKeys.lastUpdatedAt));
-
-    Page<PipelineEntity> pipelineEntities =
-        pmsPipelineRepository.findAll(criteria, pageRequest, accountId, orgId, projectId, false);
     boolean isOldGitSyncEnabled = gitSyncSdkService.isGitSyncEnabled(accountId, orgId, projectId);
-    for (PipelineEntity pipelineEntity : pipelineEntities) {
-      if (isOldGitSyncEnabled) {
+    if (isOldGitSyncEnabled) {
+      Criteria criteria = PMSPipelineFilterHelper.getCriteriaForAllPipelinesInProject(accountId, orgId, projectId);
+      Pageable pageRequest = PageRequest.of(0, 1000, Sort.by(Sort.Direction.DESC, PipelineEntityKeys.lastUpdatedAt));
+
+      Page<PipelineEntity> pipelineEntities =
+          pmsPipelineRepository.findAll(criteria, pageRequest, accountId, orgId, projectId, false);
+      for (PipelineEntity pipelineEntity : pipelineEntities) {
         pmsPipelineRepository.deleteForOldGitSync(pipelineEntity.withDeleted(true));
-      } else {
-        pmsPipelineRepository.delete(accountId, orgId, projectId, pipelineEntity.getIdentifier());
       }
+      return true;
     }
-    return true;
+    return pmsPipelineRepository.deleteAllPipelinesInAProject(accountId, orgId, projectId);
   }
 
   @Override

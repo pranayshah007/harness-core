@@ -15,7 +15,10 @@ import io.harness.cdng.creator.plan.PlanCreatorConstants;
 import io.harness.cdng.environment.helper.EnvironmentPlanCreatorConfigMapper;
 import io.harness.cdng.environment.yaml.EnvironmentPlanCreatorConfig;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
+import io.harness.cdng.infra.InfrastructurePlanCreatorHelper;
 import io.harness.cdng.infra.steps.EnvironmentStep;
+import io.harness.cdng.infra.yaml.InfraStructureDefinitionYaml;
+import io.harness.cdng.infra.yaml.InfrastructureConfig;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.environment.beans.Environment;
@@ -51,7 +54,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -109,10 +111,11 @@ public class EnvironmentPlanCreatorHelper {
     }
 
     if (!gitOpsEnabled) {
-      List<InfrastructureEntity> infrastructureEntityList = getInfraStructureEntityList(
+      List<InfrastructureConfig> infrastructureConfigs = getInfraStructureConfigList(
           accountIdentifier, orgIdentifier, projectIdentifier, environmentV2, infrastructure);
+
       return EnvironmentPlanCreatorConfigMapper.toEnvironmentPlanCreatorConfig(
-          mergedEnvYaml, infrastructureEntityList, serviceOverride);
+          mergedEnvYaml, infrastructureConfigs, serviceOverride);
     } else {
       return EnvironmentPlanCreatorConfigMapper.toEnvPlanCreatorConfigWithGitops(
           mergedEnvYaml, environmentV2, serviceOverride);
@@ -126,18 +129,24 @@ public class EnvironmentPlanCreatorHelper {
         originalEnvYaml, YamlPipelineUtils.writeYamlString(environmentInputYaml));
   }
 
-  private List<InfrastructureEntity> getInfraStructureEntityList(String accountIdentifier, String orgIdentifier,
+  private List<InfrastructureConfig> getInfraStructureConfigList(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, EnvironmentYamlV2 environmentV2, InfrastructureEntityService infrastructure) {
-    List<InfrastructureEntity> infrastructureEntityList = new ArrayList<>();
+    List<InfrastructureEntity> infrastructureEntityList;
+    Map<String, Map<String, Object>> refToInputMap = new HashMap<>();
     String envIdentifier = environmentV2.getEnvironmentRef().getValue();
     if (!environmentV2.getDeployToAll()) {
-      List<String> infraIdentifierList =
-          environmentV2.getInfrastructureDefinitions()
-              .stream()
-              .map(infraStructureDefinitionYaml -> infraStructureDefinitionYaml.getRef().getValue())
-              .collect(Collectors.toList());
+      List<String> infraIdentifierList = new ArrayList<>();
+
+      for (InfraStructureDefinitionYaml infraYaml : environmentV2.getInfrastructureDefinitions()) {
+        String ref = infraYaml.getRef().getValue();
+        infraIdentifierList.add(ref);
+        if (isNotEmpty(infraYaml.getInputs())) {
+          refToInputMap.put(ref, infraYaml.getInputs());
+        }
+      }
       infrastructureEntityList = infrastructure.getAllInfrastructureFromIdentifierList(
           accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier, infraIdentifierList);
+
     } else {
       if (isNotEmpty(environmentV2.getInfrastructureDefinitions())) {
         throw new InvalidRequestException(String.format("DeployToAll is enabled along with specific Infrastructures %s",
@@ -146,7 +155,8 @@ public class EnvironmentPlanCreatorHelper {
       infrastructureEntityList = infrastructure.getAllInfrastructureFromEnvIdentifier(
           accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier);
     }
-    return infrastructureEntityList;
+
+    return InfrastructurePlanCreatorHelper.getResolvedInfrastructureConfig(infrastructureEntityList, refToInputMap);
   }
 
   public YamlField fetchEnvironmentPlanCreatorConfigYaml(

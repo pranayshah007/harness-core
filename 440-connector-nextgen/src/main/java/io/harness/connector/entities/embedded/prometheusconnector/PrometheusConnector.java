@@ -10,7 +10,10 @@ package io.harness.connector.entities.embedded.prometheusconnector;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.entities.Connector;
+import io.harness.connector.entities.embedded.customhealthconnector.CustomHealthConnectorKeyAndValue;
 
+import java.util.Collections;
+import java.util.List;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
@@ -29,4 +32,14 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(HarnessTeam.CV)
 public class PrometheusConnector extends Connector {
   private String url;
+  List<CustomHealthConnectorKeyAndValue> headers;
+  String username;
+  String passwordRef;
+
+  public List<CustomHealthConnectorKeyAndValue> getHeaders() {
+    if (headers == null) {
+      return Collections.emptyList();
+    }
+    return headers;
+  }
 }

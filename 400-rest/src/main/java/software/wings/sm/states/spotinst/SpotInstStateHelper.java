@@ -40,6 +40,7 @@ import io.harness.delegate.task.aws.LoadBalancerDetailsForBGDeployment;
 import io.harness.delegate.task.spotinst.request.SpotInstSetupTaskParameters;
 import io.harness.delegate.task.spotinst.request.SpotInstTaskParameters;
 import io.harness.deployment.InstanceDetails;
+import io.harness.exception.SpotInstException;
 import io.harness.exception.WingsException;
 import io.harness.logging.Misc;
 import io.harness.security.encryption.EncryptedDataDetail;
@@ -152,7 +153,11 @@ public class SpotInstStateHelper {
         (EncryptableSetting) settingAttribute.getValue(), context.getAppId(), context.getWorkflowExecutionId());
 
     settingAttribute = settingsService.get(awsAmiInfrastructureMapping.getSpotinstCloudProvider());
+    if (settingAttribute == null) {
+      throw new SpotInstException("Spotinst Cloud Provider is not present");
+    }
     SpotInstConfig spotInstConfig = (SpotInstConfig) settingAttribute.getValue();
+
     List<EncryptedDataDetail> spotinstEncryptedDataDetails = secretManager.getEncryptionDetails(
         (EncryptableSetting) settingAttribute.getValue(), context.getAppId(), context.getWorkflowExecutionId());
 

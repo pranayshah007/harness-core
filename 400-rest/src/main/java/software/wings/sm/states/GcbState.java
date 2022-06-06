@@ -39,6 +39,7 @@ import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.ErrorNotifyResponseData;
 import io.harness.delegate.beans.TaskData;
 import io.harness.exception.UnsupportedOperationException;
+import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.serializer.KryoSerializer;
 import io.harness.tasks.ResponseData;
 
@@ -81,11 +82,13 @@ import software.wings.stencils.DefaultValue;
 import com.github.reinert.jjschema.Attributes;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.Getter;
 import lombok.Setter;
@@ -204,14 +207,18 @@ public class GcbState extends State implements SweepingOutputStateMixin {
       gitConfig.setRepoName(repoName);
       gitConfig.setRepoUrl(fetchCompleteGitRepoUrl(gitConfig, repoName));
     }
-
+    List<EncryptedDataDetail> gcpEncryptionDetails =
+        secretManager.getEncryptionDetails(gcpConfig, context.getAppId(), context.getWorkflowExecutionId());
+    List<EncryptedDataDetail> gitConfigEncryptionDetails = secretManager.getEncryptionDetails(gitConfig);
+    List<EncryptedDataDetail> allEncryptionDetails = Stream.of(gcpEncryptionDetails, gitConfigEncryptionDetails)
+                                                         .flatMap(Collection::stream)
+                                                         .collect(Collectors.toList());
     GcbTaskParams gcbTaskParams = GcbTaskParams.builder()
                                       .gcpConfig(gcpConfig)
                                       .type(START)
                                       .gcbOptions(gcbOptions)
                                       .substitutions(substitutions)
-                                      .encryptedDataDetails(secretManager.getEncryptionDetails(
-                                          gcpConfig, context.getAppId(), context.getWorkflowExecutionId()))
+                                      .encryptedDataDetails(allEncryptionDetails)
                                       .activityId(activityId)
                                       .unitName(GCB_LOGS)
                                       .gitConfig(gitConfig)
