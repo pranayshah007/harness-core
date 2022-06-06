@@ -119,8 +119,7 @@ public class NotificationRuleServiceImpl implements NotificationRuleService {
           identifier, projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
           projectParams.getProjectIdentifier()));
     }
-    serviceLevelObjectiveService.beforeNotificationRuleDelete(projectParams, identifier);
-    monitoredServiceService.beforeNotificationRuleDelete(projectParams, identifier);
+    serviceLevelObjectiveService.deleteNotificationRuleRef(projectParams, identifier);
     return hPersistence.delete(notificationRules.get(0));
   }
 

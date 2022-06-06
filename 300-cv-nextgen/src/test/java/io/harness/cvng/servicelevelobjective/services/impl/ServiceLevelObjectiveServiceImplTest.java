@@ -1077,24 +1077,6 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = KAPIL)
   @Category(UnitTests.class)
-  public void testBeforeNotificationRuleDelete() {
-    ServiceLevelObjectiveDTO sloDTO = createSLOBuilder();
-    sloDTO.setNotificationRuleRefs(
-        Arrays.asList(NotificationRuleRefDTO.builder().notificationRuleRef("rule1").enabled(true).build(),
-            NotificationRuleRefDTO.builder().notificationRuleRef("rule2").enabled(true).build(),
-            NotificationRuleRefDTO.builder().notificationRuleRef("rule3").enabled(true).build()));
-    createMonitoredService();
-    serviceLevelObjectiveService.create(projectParams, sloDTO);
-    assertThatThrownBy(()
-                           -> serviceLevelObjectiveService.beforeNotificationRuleDelete(
-                               builderFactory.getContext().getProjectParams(), "rule1"))
-        .hasMessage(
-            "Deleting notification rule is used in SLOs, Please delete the notification rule inside SLOs before deleting notification rule. SLOs : sloName");
-  }
-
-  @Test
-  @Owner(developers = KAPIL)
-  @Category(UnitTests.class)
   public void testCreate_withIncorrectNotificationRule() {
     NotificationRuleDTO notificationRuleDTO =
         builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.MONITORED_SERVICE).build();
@@ -1109,6 +1091,25 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
     createMonitoredService();
     assertThatThrownBy(() -> serviceLevelObjectiveService.create(projectParams, sloDTO))
         .hasMessage("NotificationRule with identifier rule is of type MONITORED_SERVICE and cannot be added into SLO");
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testDeleteNotificationRuleRef() {
+    ServiceLevelObjectiveDTO sloDTO = createSLOBuilder();
+    sloDTO.setNotificationRuleRefs(
+        Arrays.asList(NotificationRuleRefDTO.builder().notificationRuleRef("rule1").enabled(true).build(),
+            NotificationRuleRefDTO.builder().notificationRuleRef("rule2").enabled(true).build(),
+            NotificationRuleRefDTO.builder().notificationRuleRef("rule3").enabled(true).build()));
+    createMonitoredService();
+    serviceLevelObjectiveService.create(projectParams, sloDTO);
+    serviceLevelObjectiveService.deleteNotificationRuleRef(builderFactory.getContext().getProjectParams(), "rule1");
+    ServiceLevelObjective serviceLevelObjective = getServiceLevelObjective(sloDTO.getIdentifier());
+
+    assertThat(serviceLevelObjective.getNotificationRuleRefs().size()).isEqualTo(2);
+    serviceLevelObjective.getNotificationRuleRefs().forEach(
+        notificationRuleRef -> assertThat(notificationRuleRef.getNotificationRuleRef() != "rule1"));
   }
 
   private void createSLIRecords(String sliId) {

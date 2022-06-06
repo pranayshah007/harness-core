@@ -459,14 +459,20 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
   }
 
   @Override
-  public void beforeNotificationRuleDelete(ProjectParams projectParams, String notificationRuleRef) {
+  public void deleteNotificationRuleRef(ProjectParams projectParams, String notificationRuleRef) {
     List<ServiceLevelObjective> serviceLevelObjectives =
         get(projectParams, Filter.builder().notificationRuleRef(notificationRuleRef).build());
-    Preconditions.checkArgument(isEmpty(serviceLevelObjectives),
-        "Deleting notification rule is used in SLOs, "
-            + "Please delete the notification rule inside SLOs before deleting notification rule. SLOs : "
-            + String.join(
-                ", ", serviceLevelObjectives.stream().map(slo -> slo.getName()).collect(Collectors.toList())));
+    for (ServiceLevelObjective serviceLevelObjective : serviceLevelObjectives) {
+      List<NotificationRuleRef> notificationRuleRefs =
+          serviceLevelObjective.getNotificationRuleRefs()
+              .stream()
+              .filter(ref -> !ref.getNotificationRuleRef().equals(notificationRuleRef))
+              .collect(Collectors.toList());
+      UpdateOperations<ServiceLevelObjective> updateOperations =
+          hPersistence.createUpdateOperations(ServiceLevelObjective.class);
+      updateOperations.set(ServiceLevelObjectiveKeys.notificationRuleRefs, notificationRuleRefs);
+      hPersistence.update(serviceLevelObjective, updateOperations);
+    }
   }
 
   private void updateNotificationRuleRefInSLO(
