@@ -285,18 +285,17 @@ public class PipelineResourceTest extends CategoryTest {
                            -> pipelineResource.updatePipeline(null, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
                                incorrectPipelineIdentifier, null, null, null, yaml))
         .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("Pipeline identifier in URL does not match pipeline identifier in yaml");
+        .hasMessage("Expected Pipeline identifier in YAML to be [notTheIdentifierWeNeed], but was [basichttpFail]");
   }
 
   @Test
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testUpdatePipeline() {
-    doReturn(false).when(featureFlagHelper).isEnabled(ACCOUNT_ID, FeatureName.OPA_PIPELINE_GOVERNANCE);
-    doReturn(GovernanceMetadata.newBuilder().setDeny(false).build())
-        .when(pmsPipelineServiceHelper)
-        .validatePipelineYaml(entity);
-    doReturn(entityWithVersion).when(pmsPipelineService).updatePipelineYaml(entity, ChangeType.MODIFY);
+    GovernanceMetadata governanceMetadata = GovernanceMetadata.newBuilder().setDeny(false).build();
+    PipelineCRUDResult pipelineCRUDResult =
+        PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).pipelineEntity(entityWithVersion).build();
+    doReturn(pipelineCRUDResult).when(pmsPipelineService).updatePipelineYaml(entity, ChangeType.MODIFY);
     TemplateMergeResponseDTO templateMergeResponseDTO =
         TemplateMergeResponseDTO.builder().mergedPipelineYaml(yaml).build();
     doReturn(templateMergeResponseDTO)
@@ -311,11 +310,10 @@ public class PipelineResourceTest extends CategoryTest {
   @Owner(developers = SATYAM)
   @Category(UnitTests.class)
   public void testUpdatePipelineV2() {
-    doReturn(true).when(featureFlagHelper).isEnabled(ACCOUNT_ID, FeatureName.OPA_PIPELINE_GOVERNANCE);
-    doReturn(entityWithVersion).when(pmsPipelineService).updatePipelineYaml(entity, ChangeType.MODIFY);
-    doReturn(GovernanceMetadata.newBuilder().setDeny(true).build())
-        .when(pmsPipelineServiceHelper)
-        .validatePipelineYaml(entity);
+    GovernanceMetadata governanceMetadata = GovernanceMetadata.newBuilder().setDeny(true).build();
+    PipelineCRUDResult pipelineCRUDResult =
+        PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).pipelineEntity(entityWithVersion).build();
+    doReturn(pipelineCRUDResult).when(pmsPipelineService).updatePipelineYaml(entity, ChangeType.MODIFY);
     ResponseDTO<PipelineSaveResponse> responseDTO = pipelineResource.updatePipelineV2(
         null, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, null, null, null, yaml);
     assertThat(responseDTO.getData().getGovernanceMetadata().getDeny()).isTrue();
@@ -326,7 +324,7 @@ public class PipelineResourceTest extends CategoryTest {
   @Category(UnitTests.class)
   @Ignore("Ignored till Schema validation is behind FF")
   public void testUpdatePipelineWithSchemaErrors() {
-    doThrow(JsonSchemaValidationException.class).when(pmsPipelineServiceHelper).validatePipelineYaml(entity);
+    doThrow(JsonSchemaValidationException.class).when(pmsPipelineService).updatePipelineYaml(entity, ChangeType.MODIFY);
     assertThatThrownBy(()
                            -> pipelineResource.updatePipeline(null, ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER,
                                PIPELINE_IDENTIFIER, null, null, null, yaml))

@@ -30,6 +30,7 @@ import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.contracts.plan.YamlUpdates;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
+import io.harness.pms.merger.helpers.MergeHelper;
 import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
 import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
@@ -47,7 +48,6 @@ import com.google.protobuf.ByteString;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -94,6 +94,7 @@ public class EnvironmentPlanCreatorHelper {
     // Fetch service overrides
     NGServiceOverrides serviceOverride =
         null; // TODO: (prashantSharma) need to make a db call using serviceRef and environmentRef
+
     String envIdentifier = environmentV2.getEnvironmentRef().getValue();
     if (!environment.isPresent()) {
       throw new InvalidRequestException(
@@ -101,15 +102,28 @@ public class EnvironmentPlanCreatorHelper {
               projectIdentifier, orgIdentifier, accountIdentifier));
     }
 
+    String mergedEnvYaml = environment.get().getYaml();
+
+    if (isNotEmpty(environmentV2.getEnvironmentInputs())) {
+      mergedEnvYaml = mergeEnvironmentInputs(environment.get().getYaml(), environmentV2.getEnvironmentInputs());
+    }
+
     if (!gitOpsEnabled) {
       List<InfrastructureEntity> infrastructureEntityList = getInfraStructureEntityList(
           accountIdentifier, orgIdentifier, projectIdentifier, environmentV2, infrastructure);
       return EnvironmentPlanCreatorConfigMapper.toEnvironmentPlanCreatorConfig(
-          environment.get(), infrastructureEntityList, serviceOverride);
+          mergedEnvYaml, infrastructureEntityList, serviceOverride);
     } else {
       return EnvironmentPlanCreatorConfigMapper.toEnvPlanCreatorConfigWithGitops(
-          environment.get(), environmentV2, serviceOverride);
+          mergedEnvYaml, environmentV2, serviceOverride);
     }
+  }
+
+  public String mergeEnvironmentInputs(String originalEnvYaml, Map<String, Object> environmentInputs) {
+    Map<String, Object> environmentInputYaml = new HashMap<>();
+    environmentInputYaml.put(YamlTypes.ENVIRONMENT_YAML, environmentInputs);
+    return MergeHelper.mergeInputSetFormatYamlToOriginYaml(
+        originalEnvYaml, YamlPipelineUtils.writeYamlString(environmentInputYaml));
   }
 
   private List<InfrastructureEntity> getInfraStructureEntityList(String accountIdentifier, String orgIdentifier,
@@ -162,7 +176,7 @@ public class EnvironmentPlanCreatorHelper {
     return metadataDependency;
   }
 
-  public void addEnvironmentV2Dependency(LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap,
+  public void addEnvironmentV2Dependency(Map<String, PlanCreationResponse> planCreationResponseMap,
       EnvironmentPlanCreatorConfig environmentPlanCreatorConfig, YamlField originalEnvironmentField,
       boolean gitOpsEnabled, String environmentUuid, String infraSectionUuid, String serviceSpecNodeUuid,
       KryoSerializer kryoSerializer) throws IOException {

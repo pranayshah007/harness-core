@@ -56,7 +56,6 @@ import io.harness.rule.Owner;
 import io.harness.service.ScmClient;
 import io.harness.tasks.DecryptGitApiAccessHelper;
 
-import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -68,6 +67,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
 
 @OwnedBy(HarnessTeam.DX)
 public class ScmManagerFacilitatorServiceImplTest extends GitSyncTestBase {
@@ -77,7 +77,7 @@ public class ScmManagerFacilitatorServiceImplTest extends GitSyncTestBase {
   @Mock AbstractScmClientFacilitatorServiceImpl abstractScmClientFacilitatorService;
   @Mock YamlGitConfigService yamlGitConfigService;
   @Mock GitSyncConnectorHelper gitSyncConnectorHelper;
-  @InjectMocks @Inject ScmManagerFacilitatorServiceImpl scmManagerFacilitatorService;
+  @Spy @InjectMocks ScmManagerFacilitatorServiceImpl scmManagerFacilitatorService;
   String accountIdentifier = "accountIdentifier";
   String projectIdentifier = "projectIdentifier";
   String orgIdentifier = "orgIdentifier";

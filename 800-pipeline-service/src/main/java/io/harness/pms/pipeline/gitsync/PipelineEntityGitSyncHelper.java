@@ -32,7 +32,6 @@ import io.harness.ng.core.EntityDetail;
 import io.harness.plancreator.pipeline.PipelineConfig;
 import io.harness.plancreator.pipeline.PipelineInfoConfig;
 import io.harness.pms.contracts.governance.GovernanceMetadata;
-import io.harness.pms.contracts.governance.PolicySetMetadata;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
 import io.harness.pms.pipeline.mappers.PMSPipelineDtoMapper;
@@ -48,7 +47,6 @@ import com.google.inject.Singleton;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -92,16 +90,7 @@ public class PipelineEntityGitSyncHelper extends AbstractGitSdkEntityHandler<Pip
   public PipelineConfig save(String accountIdentifier, String yaml) {
     PipelineEntity entity = PMSPipelineDtoMapper.toPipelineEntity(accountIdentifier, yaml);
     PipelineCRUDResult pipelineCRUDResult = pmsPipelineService.create(entity);
-    GovernanceMetadata governanceMetadata = pipelineCRUDResult.getGovernanceMetadata();
-    if (governanceMetadata.getDeny()) {
-      List<String> denyingPolicySetIds = governanceMetadata.getDetailsList()
-                                             .stream()
-                                             .filter(PolicySetMetadata::getDeny)
-                                             .map(PolicySetMetadata::getIdentifier)
-                                             .collect(Collectors.toList());
-      throw new InvalidRequestException(
-          "Pipeline does not follow the Policies in these Policy Sets: " + denyingPolicySetIds.toString());
-    }
+    PipelineCRUDErrorResponse.checkForGovernanceErrorAndThrow(pipelineCRUDResult.getGovernanceMetadata());
     PipelineEntity pipelineEntity = pipelineCRUDResult.getPipelineEntity();
     return PipelineYamlDtoMapper.toDto(pipelineEntity);
   }
@@ -109,22 +98,15 @@ public class PipelineEntityGitSyncHelper extends AbstractGitSdkEntityHandler<Pip
   @Override
   public PipelineConfig update(String accountIdentifier, String yaml, ChangeType changeType) {
     PipelineEntity entity = PMSPipelineDtoMapper.toPipelineEntity(accountIdentifier, yaml);
-    validate(entity);
-    PipelineEntity pipelineEntity = pmsPipelineService.updatePipelineYaml(entity, changeType);
+    PipelineCRUDResult pipelineCRUDResult = pmsPipelineService.updatePipelineYaml(entity, changeType);
+    PipelineCRUDErrorResponse.checkForGovernanceErrorAndThrow(pipelineCRUDResult.getGovernanceMetadata());
+    PipelineEntity pipelineEntity = pipelineCRUDResult.getPipelineEntity();
     return PipelineYamlDtoMapper.toDto(pipelineEntity);
   }
 
   private void validate(PipelineEntity entity) {
     GovernanceMetadata governanceMetadata = pipelineServiceHelper.validatePipelineYaml(entity);
-    if (governanceMetadata.getDeny()) {
-      List<String> denyingPolicySetIds = governanceMetadata.getDetailsList()
-                                             .stream()
-                                             .filter(PolicySetMetadata::getDeny)
-                                             .map(PolicySetMetadata::getIdentifier)
-                                             .collect(Collectors.toList());
-      throw new InvalidRequestException(
-          "Pipeline does not follow the Policies in these Policy Sets: " + denyingPolicySetIds.toString());
-    }
+    PipelineCRUDErrorResponse.checkForGovernanceErrorAndThrow(governanceMetadata);
   }
 
   @Override

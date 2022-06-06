@@ -55,7 +55,7 @@ public class TemplateYamlConversionHelperTest extends TemplateServiceTestBase {
     templateYamlConversionHandlerRegistry.register(STEP, new TemplateYamlConversionHandler());
     String filename = "template-step.yaml";
     String yaml = readFile(filename);
-    String newYaml = templateYamlConversionHelper.convertTemplateYamlToPMSUnderstandableYaml(
+    String newYaml = templateYamlConversionHelper.convertTemplateYamlToEntityYaml(
         TemplateEntity.builder().templateEntityType(TemplateEntityType.STEP_TEMPLATE).yaml(yaml).build());
     assertThat(newYaml).isNotNull();
     assertThat(newYaml).isEqualTo(readFile("pms-template-step.yaml"));
@@ -68,7 +68,7 @@ public class TemplateYamlConversionHelperTest extends TemplateServiceTestBase {
     templateYamlConversionHandlerRegistry.register(STAGE, new TemplateYamlConversionHandler());
     String filename = "stage-template.yaml";
     String yaml = readFile(filename);
-    String newYaml = templateYamlConversionHelper.convertTemplateYamlToPMSUnderstandableYaml(
+    String newYaml = templateYamlConversionHelper.convertTemplateYamlToEntityYaml(
         TemplateEntity.builder().templateEntityType(TemplateEntityType.STAGE_TEMPLATE).yaml(yaml).build());
     assertThat(newYaml).isNotNull();
     assertThat(newYaml).isEqualTo(readFile("pms-stage-template.yaml"));
@@ -81,7 +81,7 @@ public class TemplateYamlConversionHelperTest extends TemplateServiceTestBase {
     templateYamlConversionHandlerRegistry.register(STAGE, new DummyParallelYamlConversionHandler());
     String filename = "stage-template.yaml";
     String yaml = readFile(filename);
-    String newYaml = templateYamlConversionHelper.convertTemplateYamlToPMSUnderstandableYaml(
+    String newYaml = templateYamlConversionHelper.convertTemplateYamlToEntityYaml(
         TemplateEntity.builder().templateEntityType(TemplateEntityType.STAGE_TEMPLATE).yaml(yaml).build());
     assertThat(newYaml).isNotNull();
     assertThat(newYaml).isEqualTo(readFile("pms-dummy-parallel-stage-template.yaml"));
@@ -94,7 +94,7 @@ public class TemplateYamlConversionHelperTest extends TemplateServiceTestBase {
     templateYamlConversionHandlerRegistry.register(STAGE, new DummyReplaceYamlConversionHandler());
     String filename = "stage-template.yaml";
     String yaml = readFile(filename);
-    String newYaml = templateYamlConversionHelper.convertTemplateYamlToPMSUnderstandableYaml(
+    String newYaml = templateYamlConversionHelper.convertTemplateYamlToEntityYaml(
         TemplateEntity.builder().templateEntityType(TemplateEntityType.STAGE_TEMPLATE).yaml(yaml).build());
     assertThat(newYaml).isNotNull();
     assertThat(newYaml).isEqualTo(readFile("pms-dummy-replace-stage-template.yaml"));

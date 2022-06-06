@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.common.VariablesSweepingOutput;
 import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
+import io.harness.cdng.configfile.steps.ConfigFilesOutcome;
 import io.harness.cdng.manifest.steps.ManifestsOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.data.structure.CollectionUtils;
@@ -91,6 +92,7 @@ public class ServiceConfigStep implements ChildExecutable<ServiceConfigStepParam
         .variablesResult(getVariablesSweepingOutput(ambiance))
         .artifactResults(getArtifactsOutcome(ambiance))
         .manifestResults(getManifestsOutcome(ambiance))
+        .configFileResults(getConfigFilesOutcome(ambiance))
         .build();
   }
 
@@ -128,5 +130,14 @@ public class ServiceConfigStep implements ChildExecutable<ServiceConfigStepParam
       return null;
     }
     return (ManifestsOutcome) optionalOutcome.getOutcome();
+  }
+
+  private ConfigFilesOutcome getConfigFilesOutcome(Ambiance ambiance) {
+    OptionalOutcome optionalOutcome = outcomeService.resolveOptional(
+        ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.CONFIG_FILES));
+    if (!optionalOutcome.isFound()) {
+      return null;
+    }
+    return (ConfigFilesOutcome) optionalOutcome.getOutcome();
   }
 }

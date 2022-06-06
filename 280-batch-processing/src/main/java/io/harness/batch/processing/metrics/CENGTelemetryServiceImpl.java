@@ -81,7 +81,7 @@ public class CENGTelemetryServiceImpl implements CENGTelemetryService {
 
   public HashMap<String, Object> getPerspectivesMetrics(String accountId) {
     HashMap<String, Object> properties = new HashMap<>();
-    List<CEView> viewList = ceViewDao.findByAccountId(accountId);
+    List<CEView> viewList = ceViewDao.findByAccountId(accountId, null);
     viewList = viewList.stream()
                    .filter(view -> ImmutableSet.of(ViewType.SAMPLE, ViewType.CUSTOMER).contains(view.getViewType()))
                    .filter(view -> ImmutableSet.of(ViewState.COMPLETED).contains(view.getViewState()))

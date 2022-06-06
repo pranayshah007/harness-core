@@ -13,4 +13,5 @@ public interface AnomalyFieldConstants {
   String WORKLOAD = "workload";
   String AWS = "AWS";
   String GCP = "GCP";
+  String AZURE = "AZURE";
 }
