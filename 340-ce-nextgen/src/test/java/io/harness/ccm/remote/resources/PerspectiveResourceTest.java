@@ -11,7 +11,6 @@ import static io.harness.ccm.commons.utils.BigQueryHelper.UNIFIED_TABLE;
 import static io.harness.rule.OwnerRule.SHUBHANSHU;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -80,7 +79,8 @@ public class PerspectiveResourceTest extends CategoryTest {
                       .viewVersion(perspectiveVersion)
                       .build();
     when(ceViewService.get(PERSPECTIVE_ID)).thenReturn(perspective);
-    when(ceViewService.save(perspective, anyBoolean())).thenReturn(perspective);
+    when(ceViewService.save(perspective, true)).thenReturn(perspective);
+    when(ceViewService.save(perspective, false)).thenReturn(perspective);
     when(ceViewService.update(perspective)).thenReturn(perspective);
     when(bigQueryHelper.getCloudProviderTableName(ACCOUNT_ID, UNIFIED_TABLE)).thenReturn(UNIFIED_TABLE_NAME);
     when(budgetService.deleteBudgetsForPerspective(ACCOUNT_ID, PERSPECTIVE_ID)).thenReturn(true);
