@@ -506,6 +506,51 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "AzureWebAppInfrastructure": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/Infrastructure"
+        },
+        {
+          "type": "object",
+          "required": [
+            "appService",
+            "connectorRef",
+            "deploymentSlot",
+            "resourceGroup",
+            "subscriptionId",
+            "targetSlot"
+          ],
+          "properties": {
+            "appService": {
+              "type": "string",
+              "minLength": 1
+            },
+            "connectorRef": {
+              "type": "string",
+              "minLength": 1
+            },
+            "deploymentSlot": {
+              "type": "string",
+              "minLength": 1
+            },
+            "resourceGroup": {
+              "type": "string",
+              "minLength": 1
+            },
+            "subscriptionId": {
+              "type": "string",
+              "minLength": 1
+            },
+            "targetSlot": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "BarrierStepInfo": {
       "allOf": [
         {
@@ -2627,12 +2672,29 @@
             "KubernetesAzure",
             "Pdc",
             "SshWinRmAzure",
-            "ServerlessAwsLambda"
+            "ServerlessAwsLambda",
+            "AzureWebApp"
           ]
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#",
       "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "AzureWebApp"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/AzureWebAppInfrastructure"
+              }
+            }
+          }
+        },
         {
           "if": {
             "properties": {

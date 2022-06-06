@@ -192,6 +192,51 @@ public class Anomalies extends TableImpl<AnomaliesRecord> {
   public final TableField<AnomaliesRecord, String> FEEDBACK =
       createField(DSL.name("feedback"), SQLDataType.CLOB, this, "");
 
+  /**
+   * The column <code>public.anomalies.slackdailynotification</code>.
+   */
+  public final TableField<AnomaliesRecord, Boolean> SLACKDAILYNOTIFICATION =
+      createField(DSL.name("slackdailynotification"),
+          SQLDataType.BOOLEAN.defaultValue(DSL.field("false", SQLDataType.BOOLEAN)), this, "");
+
+  /**
+   * The column <code>public.anomalies.slackinstantnotification</code>.
+   */
+  public final TableField<AnomaliesRecord, Boolean> SLACKINSTANTNOTIFICATION =
+      createField(DSL.name("slackinstantnotification"),
+          SQLDataType.BOOLEAN.defaultValue(DSL.field("false", SQLDataType.BOOLEAN)), this, "");
+
+  /**
+   * The column <code>public.anomalies.slackweeklynotification</code>.
+   */
+  public final TableField<AnomaliesRecord, Boolean> SLACKWEEKLYNOTIFICATION =
+      createField(DSL.name("slackweeklynotification"),
+          SQLDataType.BOOLEAN.defaultValue(DSL.field("false", SQLDataType.BOOLEAN)), this, "");
+
+  /**
+   * The column <code>public.anomalies.newentity</code>.
+   */
+  public final TableField<AnomaliesRecord, Boolean> NEWENTITY = createField(
+      DSL.name("newentity"), SQLDataType.BOOLEAN.defaultValue(DSL.field("false", SQLDataType.BOOLEAN)), this, "");
+
+  /**
+   * The column <code>public.anomalies.azuresubscriptionguid</code>.
+   */
+  public final TableField<AnomaliesRecord, String> AZURESUBSCRIPTIONGUID =
+      createField(DSL.name("azuresubscriptionguid"), SQLDataType.CLOB, this, "");
+
+  /**
+   * The column <code>public.anomalies.azureresourcegroup</code>.
+   */
+  public final TableField<AnomaliesRecord, String> AZURERESOURCEGROUP =
+      createField(DSL.name("azureresourcegroup"), SQLDataType.CLOB, this, "");
+
+  /**
+   * The column <code>public.anomalies.azuremetercategory</code>.
+   */
+  public final TableField<AnomaliesRecord, String> AZUREMETERCATEGORY =
+      createField(DSL.name("azuremetercategory"), SQLDataType.CLOB, this, "");
+
   private Anomalies(Name alias, Table<AnomaliesRecord> aliased) {
     this(alias, aliased, null);
   }

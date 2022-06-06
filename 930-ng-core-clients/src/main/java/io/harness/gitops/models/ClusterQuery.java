@@ -27,5 +27,6 @@ public class ClusterQuery {
   String projectIdentifier;
   int pageSize;
   int pageIndex;
+  String searchTerm;
   Map<String, Object> filter;
 }

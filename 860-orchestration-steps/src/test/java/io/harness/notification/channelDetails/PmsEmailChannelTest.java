@@ -18,6 +18,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.notification.channeldetails.EmailChannel;
 import io.harness.notification.channeldetails.NotificationChannel;
+import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.rule.Owner;
 
 import java.util.ArrayList;
@@ -50,8 +51,8 @@ public class PmsEmailChannelTest extends CategoryTest {
     String projectId = "projectId";
     String templateId = "temolateId";
     Map<String, String> templateData = new HashMap<>();
-    NotificationChannel notificationChannel =
-        pmsEmailChannel.toNotificationChannel(accountId, orgId, projectId, templateId, templateData);
+    NotificationChannel notificationChannel = pmsEmailChannel.toNotificationChannel(accountId, orgId, projectId,
+        templateId, templateData, Ambiance.newBuilder().setExpressionFunctorToken(123L).build());
     assertEquals(notificationChannel.getAccountId(), accountId);
     assertEquals(((EmailChannel) notificationChannel).getRecipients(), recipients);
     assertEquals(notificationChannel.getUserGroups().get(0).getOrgIdentifier(), orgId);

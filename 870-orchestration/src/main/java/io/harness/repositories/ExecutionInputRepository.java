@@ -18,6 +18,7 @@ import org.springframework.data.repository.CrudRepository;
 
 @OwnedBy(PIPELINE)
 @HarnessRepo
-public interface ExecutionInputRepository extends CrudRepository<ExecutionInputInstance, String> {
+public interface ExecutionInputRepository
+    extends CrudRepository<ExecutionInputInstance, String>, ExecutionInputRepositoryCustom {
   Optional<ExecutionInputInstance> findByNodeExecutionId(String nodeExecutionId);
 }

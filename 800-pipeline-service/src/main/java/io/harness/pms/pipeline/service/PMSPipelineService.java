@@ -38,7 +38,7 @@ public interface PMSPipelineService {
   Optional<PipelineEntity> getWithoutPerformingValidations(
       String accountId, String orgIdentifier, String projectIdentifier, String identifier, boolean deleted);
 
-  PipelineEntity updatePipelineYaml(PipelineEntity pipelineEntity, ChangeType changeType);
+  PipelineCRUDResult updatePipelineYaml(PipelineEntity pipelineEntity, ChangeType changeType);
 
   PipelineEntity syncPipelineEntityWithGit(EntityDetailProtoDTO entityDetail);
 

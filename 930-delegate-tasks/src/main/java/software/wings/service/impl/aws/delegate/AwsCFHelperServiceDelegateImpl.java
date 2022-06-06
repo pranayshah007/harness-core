@@ -15,6 +15,7 @@ import static java.util.stream.Collectors.toList;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.beans.AwsInternalConfig;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.security.encryption.EncryptedDataDetail;
@@ -33,6 +34,8 @@ import com.amazonaws.AmazonServiceException;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClient;
 import com.amazonaws.services.cloudformation.AmazonCloudFormationClientBuilder;
+import com.amazonaws.services.cloudformation.model.AmazonCloudFormationException;
+import com.amazonaws.services.cloudformation.model.DescribeStacksRequest;
 import com.amazonaws.services.cloudformation.model.GetTemplateRequest;
 import com.amazonaws.services.cloudformation.model.GetTemplateResult;
 import com.amazonaws.services.cloudformation.model.GetTemplateSummaryRequest;
@@ -99,6 +102,32 @@ public class AwsCFHelperServiceDelegateImpl
       throw new InvalidRequestException(ExceptionUtils.getMessage(e), e);
     }
     return emptyList();
+  }
+
+  @Override
+  public boolean stackExists(AwsInternalConfig awsConfig, String region, String stackId) {
+    try (CloseableAmazonWebServiceClient<AmazonCloudFormationClient> closeableAmazonCloudFormationClient =
+             new CloseableAmazonWebServiceClient(getAmazonCloudFormationClient(Regions.fromName(region), awsConfig))) {
+      DescribeStacksRequest describeStacksRequest = new DescribeStacksRequest().withStackName(stackId);
+      tracker.trackCFCall("Describe Stacks");
+      closeableAmazonCloudFormationClient.getClient().describeStacks(describeStacksRequest);
+      return true;
+    } catch (AmazonCloudFormationException amazonCloudFormationException) {
+      if (EmptyPredicate.isNotEmpty(amazonCloudFormationException.getErrorCode())
+          && amazonCloudFormationException.getErrorCode().equals("ValidationError")) {
+        return false;
+      } else {
+        handleAmazonClientException(amazonCloudFormationException);
+      }
+    } catch (AmazonEC2Exception amazonEC2Exception) {
+      handleAmazonServiceException(amazonEC2Exception);
+    } catch (AmazonClientException amazonClientException) {
+      handleAmazonClientException(amazonClientException);
+    } catch (Exception e) {
+      log.error("Exception getStackBody", e);
+      throw new InvalidRequestException(ExceptionUtils.getMessage(e), e);
+    }
+    return true;
   }
 
   @Override

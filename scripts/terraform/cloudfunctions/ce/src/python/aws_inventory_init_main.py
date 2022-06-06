@@ -122,8 +122,8 @@ def manage_inventory_load_scheduler_job(event, inventory_type):
         print("Creating %s" % name)
         upsert_job(job)
     elif event["action"] == "delete":
-        print("Deleting %s" % name)
-        delete_job(name)
+        print("Skipping deleting %s as other connectors might still be using it" % name)
+        #delete_job(name)
 
 
 def manage_inventory_metric_scheduler_job(event, inventory_type):
