@@ -533,9 +533,14 @@ public abstract class AbstractK8sState extends State implements K8sStateExecutor
       ExpressionReflectionUtils.applyExpression(delegateTask.getData().getParameters()[0],
           (secretMode, value) -> context.renderExpression(value, stateExecutionContext));
       if (delegateTask.getData().getParameters()[0] instanceof K8sRollingDeployTaskParameters) {
-        K8sRollingDeployTaskParameters deployParams = (K8sRollingDeployTaskParameters) delegateTask.getData().getParameters()[0];
-        if (deployParams.getValuesYamlList().get(0).contains("artifact.metadata.image")) {
-          throw new InvalidRequestException("Invalid artifact image, please check again");
+        K8sRollingDeployTaskParameters deployParams =
+            (K8sRollingDeployTaskParameters) delegateTask.getData().getParameters()[0];
+        if (deployParams.getValuesYamlList() != null) {
+          for (String yaml : deployParams.getValuesYamlList()) {
+            if (yaml.contains("artifact.metadata.image")) {
+              throw new InvalidRequestException("Invalid artifact tag, please check again.");
+            }
+          }
         }
       }
     }
