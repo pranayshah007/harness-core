@@ -69,7 +69,7 @@ public class AzureWebAppSlotShiftTrafficTaskHandler extends AbstractAzureWebAppT
     double trafficWeightInPercentage = slotShiftTrafficParameters.getTrafficWeightInPercentage();
     slotShiftTrafficParameters.getPreDeploymentData().setDeploymentProgressMarker(
         AppServiceDeploymentProgress.UPDATE_TRAFFIC_PERCENT.name());
-    azureAppServiceDeploymentService.rerouteProductionSlotTraffic(
-        webClientContext, shiftTrafficSlotName, trafficWeightInPercentage, logStreamingTaskClient);
+    azureAppServiceDeploymentService.rerouteProductionSlotTraffic(webClientContext, shiftTrafficSlotName,
+        trafficWeightInPercentage, logCallbackProviderFactory.createCg(logStreamingTaskClient));
   }
 }

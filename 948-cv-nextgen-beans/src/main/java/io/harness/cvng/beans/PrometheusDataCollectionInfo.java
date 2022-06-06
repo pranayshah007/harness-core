@@ -8,7 +8,6 @@
 package io.harness.cvng.beans;
 
 import io.harness.delegate.beans.connector.prometheusconnector.PrometheusConnectorDTO;
-import io.harness.delegate.beans.cvng.prometheus.PrometheusUtils;
 
 import com.google.common.base.Preconditions;
 import java.util.ArrayList;
@@ -79,7 +78,7 @@ public class PrometheusDataCollectionInfo extends TimeSeriesDataCollectionInfo<P
 
   @Override
   public Map<String, String> collectionHeaders(PrometheusConnectorDTO connectorConfigDTO) {
-    return PrometheusUtils.getHeaders(connectorConfigDTO);
+    return Collections.emptyMap();
   }
 
   @Override

@@ -32,7 +32,6 @@ import io.harness.datacollection.entity.RuntimeParameters;
 import io.harness.datacollection.entity.TimeSeriesRecord;
 import io.harness.datacollection.impl.DataCollectionServiceImpl;
 import io.harness.delegate.beans.connector.prometheusconnector.PrometheusConnectorDTO;
-import io.harness.encryption.SecretRefData;
 import io.harness.rule.Owner;
 
 import com.google.common.collect.Sets;
@@ -104,26 +103,20 @@ public class PrometheusDataCollectionDSLTest extends HoverflyCVNextGenTestBase {
     PrometheusDataCollectionInfo prometheusDataCollectionInfo =
         dataCollectionInfoMapper.toDataCollectionInfo(prometheusCVConfig, TaskType.DEPLOYMENT);
     prometheusDataCollectionInfo.setCollectHostData(true);
-    PrometheusConnectorDTO prometheusConnectorDTO =
-        PrometheusConnectorDTO.builder()
-            .url("http://35.214.81.102:9090/")
-            .username("test")
-            .passwordRef(SecretRefData.builder().decryptedValue("password".toCharArray()).build())
-            .build();
-    Map<String, Object> params = prometheusDataCollectionInfo.getDslEnvVariables(prometheusConnectorDTO);
 
-    RuntimeParameters runtimeParameters =
-        RuntimeParameters.builder()
-            .startTime(instant.minus(Duration.ofMinutes(5)))
-            .endTime(instant)
-            .commonHeaders(prometheusDataCollectionInfo.collectionHeaders(prometheusConnectorDTO))
-            .otherEnvVariables(params)
-            .baseUrl("http://35.214.81.102:9090/")
-            .build();
+    Map<String, Object> params = prometheusDataCollectionInfo.getDslEnvVariables(
+        PrometheusConnectorDTO.builder().url("http://35.214.81.102:9090/").build());
+
+    Map<String, String> headers = new HashMap<>();
+    RuntimeParameters runtimeParameters = RuntimeParameters.builder()
+                                              .startTime(instant.minus(Duration.ofMinutes(5)))
+                                              .endTime(instant)
+                                              .commonHeaders(headers)
+                                              .otherEnvVariables(params)
+                                              .baseUrl("http://35.214.81.102:9090/")
+                                              .build();
     List<TimeSeriesRecord> timeSeriesRecords = (List<TimeSeriesRecord>) dataCollectionDSLService.execute(
         code, runtimeParameters, callDetails -> { System.out.println(callDetails); });
-    assertThat(prometheusDataCollectionInfo.collectionHeaders(prometheusConnectorDTO))
-        .isEqualTo(Collections.singletonMap("Authorization", "Basic dGVzdDpwYXNzd29yZA=="));
     assertThat(Sets.newHashSet(timeSeriesRecords))
         .isEqualTo(new Gson().fromJson(
             readJson("expected-prometheus-dsl-output.json"), new TypeToken<Set<TimeSeriesRecord>>() {}.getType()));

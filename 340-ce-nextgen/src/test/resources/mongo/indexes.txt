@@ -14,6 +14,8 @@ ceCluster {"name": "no_dup", "unique": true} {"accountId": 1, "infraAccountId": 
 ceExceptionRecord {"name": "accountId_clusterId_createdAt", "background": true} {"accountId": 1, "clusterId": 1, "createdAt": 1}
 ceMetadataRecord {"name": "accountId", "unique": true} {"accountId": 1}
 ceReportSchedule {"name": "account_enabled_type", "background": true} {"accountId": 1, "enabled": 1, "name": 1, "viewsId": 1}
+ceView {"name": "accountId_folderId", "background": true} {"accountId": 1, "folderId": 1}
+ceViewFolder {"name": "accountId", "background": true} {"accountId": 1}
 clusterRecords {"name": "accountId_k8sBaseConnectorRefIdentifier", "unique": true} {"accountId": 1, "k8sBaseConnectorRefIdentifier": 1}
 delegateTokens {"name": "byAccountAndName", "unique": true} {"accountId": 1, "name": 1}
 delegateTokens {"name": "byAccountAndNgAndOwnerAndStatus", "background": true} {"accountId": 1, "isNg": 1, "owner": 1, "status": 1}

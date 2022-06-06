@@ -91,6 +91,7 @@ Kapil Choudhary kapil.choudhary@harness.io
 Kapil Kumawat kapil.kumawat@harness.io
 Karan Siwach karan.siwach@harness.io
 Lazar Matovic lazar.matovic@harness.io
+Lovish Bansal lovish.bansal@harness.io
 Lucas Mari lucas.mari@harness.io
 Lucas Sales lucas.sales@harness.io
 Mankrit Singh mankrit.singh@harness.io
@@ -153,6 +154,7 @@ Richa Jajoo richa.jajoo@harness.io
 Rick Marry richard.marry@harness.io
 Rihaz Zahir rihaz.zahir@harness.io
 Rishi Singh rishi@harness.io
+Rishabh Gupta rishabh.gupta@harness.io
 Riyas P riyas.yash@harness.io
 Roger Simms roger.simms@harness.io
 Rohit Karelia rohit.karelia@harness.io
