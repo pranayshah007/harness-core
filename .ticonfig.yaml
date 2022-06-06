@@ -1,9 +1,11 @@
 config:
   ignore:
+    - "README.md"
     - ".ticonfig.yaml"
     - "jira-projects.txt"
     - "jdk11test.txt"
     - "**/*.go"
+    - "**/*.md"
     - "**/Dockerfile*"
     - "scripts/jenkins/**/*"
     - "scripts/terraform/**/*"

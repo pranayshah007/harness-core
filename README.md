@@ -9,7 +9,6 @@ harness-core Project Dev environment setup instructions
 ```
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
-test
 
 ~~2. DEPRECATED STEPS DO NOT USE Download and Install Java 8
 
