@@ -84,7 +84,6 @@ public class CEViewResourceTest extends CategoryTest {
                  .viewVersion(viewVersion)
                  .build();
     when(ceViewService.get(VIEW_ID)).thenReturn(ceView);
-    when(ceViewService.save(ceView, true)).thenReturn(ceView);
     when(ceViewService.save(ceView, false)).thenReturn(ceView);
     when(ceViewService.update(ceView)).thenReturn(ceView);
     when(cloudBillingHelper.getCloudProviderTableName(ACCOUNT_ID, unified)).thenReturn(UNIFIED_TABLE);

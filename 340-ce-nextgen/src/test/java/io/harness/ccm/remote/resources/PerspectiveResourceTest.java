@@ -79,13 +79,12 @@ public class PerspectiveResourceTest extends CategoryTest {
                       .viewVersion(perspectiveVersion)
                       .build();
     when(ceViewService.get(PERSPECTIVE_ID)).thenReturn(perspective);
-    when(ceViewService.save(perspective, true)).thenReturn(perspective);
     when(ceViewService.save(perspective, false)).thenReturn(perspective);
     when(ceViewService.update(perspective)).thenReturn(perspective);
     when(bigQueryHelper.getCloudProviderTableName(ACCOUNT_ID, UNIFIED_TABLE)).thenReturn(UNIFIED_TABLE_NAME);
     when(budgetService.deleteBudgetsForPerspective(ACCOUNT_ID, PERSPECTIVE_ID)).thenReturn(true);
     when(notificationService.delete(PERSPECTIVE_ID, ACCOUNT_ID)).thenReturn(true);
-    System.out.println("test");
+
     perspectiveResource = new PerspectiveResource(ceViewService, ceReportScheduleService, viewCustomFieldService,
         bigQueryService, bigQueryHelper, budgetCostService, budgetService, notificationService, awsAccountFieldHelper,
         telemetryReporter);
