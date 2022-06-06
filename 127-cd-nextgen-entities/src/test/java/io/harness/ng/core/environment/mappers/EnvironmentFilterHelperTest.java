@@ -21,6 +21,7 @@ import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.beans.Environment.EnvironmentKeys;
 import io.harness.ng.core.environment.beans.EnvironmentFilterPropertiesDTO;
 import io.harness.ng.core.environment.beans.EnvironmentType;
+import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity.NGServiceOverridesEntityKeys;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
@@ -44,6 +45,8 @@ public class EnvironmentFilterHelperTest extends CategoryTest {
   String accountIdentifier = "accountIdentifier";
   String orgIdentifier = "orgIdentifier";
   String projectIdentifier = "projectIdentifier";
+  String environmentIdentifier = "environmentIdentifier";
+  String serviceIdentifier = "serviceIdentifier";
   EnvironmentType environmentType = EnvironmentType.PreProduction;
 
   @Test
@@ -171,5 +174,19 @@ public class EnvironmentFilterHelperTest extends CategoryTest {
     assertThat(((Pattern) ((Document) p.get(1)).get("identifier")).pattern()).isEqualTo("gcp");
     assertThat(((Pattern) ((Document) p.get(2)).get("description")).pattern()).isEqualTo("gcp");
     assertThat(((NGTag) ((Document) p.get(3)).get("tags")).getKey()).isEqualTo("gcp");
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.HINGER)
+  @Category(UnitTests.class)
+  public void testListServiceOverridesCriteria() {
+    Criteria criteria = EnvironmentFilterHelper.createCriteriaForGetServiceOverrides(
+        accountIdentifier, orgIdentifier, projectIdentifier, environmentIdentifier, serviceIdentifier);
+    Document criteriaObj = criteria.getCriteriaObject();
+    assertThat(criteriaObj.get(NGServiceOverridesEntityKeys.accountId)).isEqualTo(accountIdentifier);
+    assertThat(criteriaObj.get(NGServiceOverridesEntityKeys.projectIdentifier)).isEqualTo(projectIdentifier);
+    assertThat(criteriaObj.get(NGServiceOverridesEntityKeys.orgIdentifier)).isEqualTo(orgIdentifier);
+    assertThat(criteriaObj.get(NGServiceOverridesEntityKeys.environmentRef)).isEqualTo(environmentIdentifier);
+    assertThat(criteriaObj.get(NGServiceOverridesEntityKeys.serviceRef)).isEqualTo(serviceIdentifier);
   }
 }

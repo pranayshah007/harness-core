@@ -357,7 +357,7 @@ public class ArtifactoryServiceImpl implements ArtifactoryService {
     String helmChartNameQuery = String.join(",", helmChartNameQueries);
 
     String requestBody = "items.find({\"$or\": [ " + helmChartNameQuery
-        + " ]}).include(\"name\", \"repo\", \"@chart.version\", \"path\")";
+        + " ]}).include(\"name\", \"repo\", \"@chart.version\", \"@chart.appVersion\", \"path\")";
     ArtifactoryResponse artifactoryResponse = getArtifactoryResponse(artifactory, aclQuery, requestBody);
     Map<String, List> response = artifactoryResponse.parseBody(Map.class);
     if (response != null) {
@@ -410,6 +410,7 @@ public class ArtifactoryServiceImpl implements ArtifactoryService {
   private List<HelmChart> getHelmChartDetailsFromResponse(Map<String, List> response, List<String> helmChartNames) {
     List<Map<String, Object>> results = response.get(RESULTS);
     Map<String, String> helmChartNameToVersionMap = new HashMap<>();
+    Map<String, String> helmChartNameToAppVersionMap = new HashMap<>();
     if (results != null) {
       for (Map<String, Object> item : results) {
         String name = (String) item.get("name");
@@ -423,14 +424,21 @@ public class ArtifactoryServiceImpl implements ArtifactoryService {
           continue;
         }
         String version = versionProperty.get("value");
+        Map<String, String> appVersionProperty = properties.stream()
+                                                     .filter(property -> property.get("key").equals("chart.appVersion"))
+                                                     .findAny()
+                                                     .orElse(Collections.emptyMap());
         helmChartNameToVersionMap.put(name, version);
+        helmChartNameToAppVersionMap.put(name, appVersionProperty.get("value"));
       }
     }
+
     List<HelmChart> helmChartDetails = new ArrayList<>();
     helmChartNames.forEach(helmChartName -> {
       if (helmChartNameToVersionMap.containsKey(helmChartName)) {
         helmChartDetails.add(HelmChart.builder()
                                  .version(helmChartNameToVersionMap.get(helmChartName))
+                                 .appVersion(helmChartNameToAppVersionMap.get(helmChartName))
                                  .displayName(helmChartName)
                                  .build());
       }

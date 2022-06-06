@@ -31,12 +31,19 @@ import lombok.NoArgsConstructor;
 @EqualsAndHashCode(callSuper = true)
 public class PagerDutyChannel extends NotificationChannel {
   List<String> integrationKeys;
+  String orgIdentifier;
+  String projectIdentifier;
+  long expressionFunctorToken;
 
   @Builder
   public PagerDutyChannel(String accountId, List<NotificationRequest.UserGroup> userGroups, String templateId,
-      Map<String, String> templateData, Team team, List<String> integrationKeys) {
+      Map<String, String> templateData, Team team, List<String> integrationKeys, String orgIdentifier,
+      String projectIdentifier, long expressionFunctorToken) {
     super(accountId, userGroups, templateId, templateData, team);
     this.integrationKeys = integrationKeys;
+    this.orgIdentifier = orgIdentifier;
+    this.projectIdentifier = projectIdentifier;
+    this.expressionFunctorToken = expressionFunctorToken;
   }
 
   @Override
@@ -50,7 +57,10 @@ public class PagerDutyChannel extends NotificationChannel {
                           .addAllPagerDutyIntegrationKeys(integrationKeys)
                           .setTemplateId(templateId)
                           .putAllTemplateData(templateData)
-                          .addAllUserGroup(CollectionUtils.emptyIfNull(userGroups)))
+                          .addAllUserGroup(CollectionUtils.emptyIfNull(userGroups))
+                          .setOrgIdentifier(orgIdentifier)
+                          .setProjectIdentifier(projectIdentifier)
+                          .setExpressionFunctorToken(expressionFunctorToken))
         .build();
   }
 }
