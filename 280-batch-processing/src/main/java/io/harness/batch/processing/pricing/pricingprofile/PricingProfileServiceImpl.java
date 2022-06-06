@@ -11,6 +11,7 @@ import io.harness.ccm.cluster.entities.PricingProfile;
 import io.harness.ccm.commons.beans.billing.InstanceCategory;
 
 import com.google.inject.Inject;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -30,6 +31,11 @@ public class PricingProfileServiceImpl implements PricingProfileService {
   public PricingProfile fetchPricingProfile(String accountId, InstanceCategory instanceCategory) {
     PricingProfile returnProfile = pricingProfileDao.fetchPricingProfile(accountId);
     log.info("Return pricing pfofile {}", returnProfile);
+    List<PricingProfile> pricingProfiles = pricingProfileDao.getPricingProfiles();
+    log.info("Return pricing pfofile {}", pricingProfiles.size());
+    for (PricingProfile pricingProfile : pricingProfiles) {
+      log.info("Return pricing pfofile {}", pricingProfile);
+    }
     if (returnProfile == null) {
       double cpuPricePerHr = 0.0016;
       double memoryPricePerHr = 0.008;

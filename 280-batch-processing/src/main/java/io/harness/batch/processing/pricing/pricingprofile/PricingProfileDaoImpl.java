@@ -8,10 +8,10 @@
 package io.harness.batch.processing.pricing.pricingprofile;
 
 import io.harness.ccm.cluster.entities.PricingProfile;
-import io.harness.ccm.cluster.entities.PricingProfile.PricingProfileKeys;
 import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
+import java.util.List;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -25,7 +25,12 @@ public class PricingProfileDaoImpl implements PricingProfileDao {
 
   @Override
   public PricingProfile fetchPricingProfile(String accountId) {
-    return hPersistence.createQuery(PricingProfile.class).filter(PricingProfileKeys.accountId, accountId).get();
+    return hPersistence.createQuery(PricingProfile.class).filter("accountId", accountId).get();
+  }
+
+  @Override
+  public List<PricingProfile> getPricingProfiles() {
+    return hPersistence.createQuery(PricingProfile.class).asList();
   }
 
   @Override

@@ -9,8 +9,12 @@ package io.harness.batch.processing.pricing.pricingprofile;
 
 import io.harness.ccm.cluster.entities.PricingProfile;
 
+import java.util.List;
+
 public interface PricingProfileDao {
   boolean create(PricingProfile pricingProfile);
 
   PricingProfile fetchPricingProfile(String accountId);
+
+  List<PricingProfile> getPricingProfiles();
 }
