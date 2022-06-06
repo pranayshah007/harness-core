@@ -262,46 +262,50 @@ public class TriggerExecutionHelper {
               InputSetMergeHelper.mergeInputSetIntoPipeline(pipelineYamlBeforeMerge, sanitizedRuntimeInputYaml, true);
         }
       }
-      String pipelineYamlWithTemplateRef = pipelineYaml;
-      if (Boolean.TRUE.equals(pipelineEntity.getTemplateReference())) {
-        TemplateMergeResponseDTO templateMergeResponseDTO =
-            pipelineTemplateHelper.resolveTemplateRefsInPipeline(pipelineEntity.getAccountId(),
-                pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineYaml, false,
-                featureFlagService.isEnabled(pipelineEntity.getAccountId(), FeatureName.OPA_PIPELINE_GOVERNANCE));
-        pipelineYaml = templateMergeResponseDTO.getMergedPipelineYaml();
-        pipelineYamlWithTemplateRef = templateMergeResponseDTO.getMergedPipelineYamlWithTemplateRef() == null
-            ? pipelineYaml
-            : templateMergeResponseDTO.getMergedPipelineYamlWithTemplateRef();
+
+      try (PmsGitSyncBranchContextGuard ignore =
+               pmsGitSyncHelper.createGitSyncBranchContextGuardFromBytes(gitSyncBranchContextByteString, false)) {
+        String pipelineYamlWithTemplateRef = pipelineYaml;
+        if (Boolean.TRUE.equals(pipelineEntity.getTemplateReference())) {
+          TemplateMergeResponseDTO templateMergeResponseDTO =
+              pipelineTemplateHelper.resolveTemplateRefsInPipeline(pipelineEntity.getAccountId(),
+                  pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineYaml, false,
+                  featureFlagService.isEnabled(pipelineEntity.getAccountId(), FeatureName.OPA_PIPELINE_GOVERNANCE));
+          pipelineYaml = templateMergeResponseDTO.getMergedPipelineYaml();
+          pipelineYamlWithTemplateRef = templateMergeResponseDTO.getMergedPipelineYamlWithTemplateRef() == null
+              ? pipelineYaml
+              : templateMergeResponseDTO.getMergedPipelineYamlWithTemplateRef();
+        }
+
+        BasicPipeline basicPipeline = YamlUtils.read(pipelineYaml, BasicPipeline.class);
+
+        pipelineEnforcementService.validateExecutionEnforcementsBasedOnStage(pipelineEntity);
+
+        String expandedJson = pmsPipelineServiceHelper.fetchExpandedPipelineJSONFromYaml(pipelineEntity.getAccountId(),
+            pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineYamlWithTemplateRef);
+
+        planExecutionMetadataBuilder.yaml(pipelineYaml);
+        planExecutionMetadataBuilder.processedYaml(YamlUtils.injectUuid(pipelineYaml));
+        planExecutionMetadataBuilder.triggerPayload(triggerPayload);
+        planExecutionMetadataBuilder.expandedPipelineJson(expandedJson);
+
+        executionMetaDataBuilder.setIsNotificationConfigured(
+            EmptyPredicate.isNotEmpty(basicPipeline.getNotificationRules()));
+        // Set Principle user as pipeline service.
+        SecurityContextBuilder.setContext(new ServicePrincipal(PIPELINE_SERVICE.getServiceId()));
+        pmsYamlSchemaService.validateYamlSchema(ngTriggerEntity.getAccountId(), ngTriggerEntity.getOrgIdentifier(),
+            ngTriggerEntity.getProjectIdentifier(), pipelineYaml);
+
+        executionMetaDataBuilder.setPrincipalInfo(
+            ExecutionPrincipalInfo.newBuilder().setShouldValidateRbac(false).build());
+
+        PlanExecution planExecution = executionHelper.startExecution(ngTriggerEntity.getAccountId(),
+            ngTriggerEntity.getOrgIdentifier(), ngTriggerEntity.getProjectIdentifier(),
+            executionMetaDataBuilder.build(), planExecutionMetadataBuilder.build(), false, null, null);
+        // check if abort prev execution needed.
+        requestPipelineExecutionAbortForSameExecTagIfNeeded(triggerDetails, planExecution, executionTagForGitEvent);
+        return planExecution;
       }
-
-      BasicPipeline basicPipeline = YamlUtils.read(pipelineYaml, BasicPipeline.class);
-
-      pipelineEnforcementService.validateExecutionEnforcementsBasedOnStage(pipelineEntity);
-
-      String expandedJson = pmsPipelineServiceHelper.fetchExpandedPipelineJSONFromYaml(pipelineEntity.getAccountId(),
-          pipelineEntity.getOrgIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineYamlWithTemplateRef);
-
-      planExecutionMetadataBuilder.yaml(pipelineYaml);
-      planExecutionMetadataBuilder.processedYaml(YamlUtils.injectUuid(pipelineYaml));
-      planExecutionMetadataBuilder.triggerPayload(triggerPayload);
-      planExecutionMetadataBuilder.expandedPipelineJson(expandedJson);
-
-      executionMetaDataBuilder.setIsNotificationConfigured(
-          EmptyPredicate.isNotEmpty(basicPipeline.getNotificationRules()));
-      // Set Principle user as pipeline service.
-      SecurityContextBuilder.setContext(new ServicePrincipal(PIPELINE_SERVICE.getServiceId()));
-      pmsYamlSchemaService.validateYamlSchema(ngTriggerEntity.getAccountId(), ngTriggerEntity.getOrgIdentifier(),
-          ngTriggerEntity.getProjectIdentifier(), pipelineYaml);
-
-      executionMetaDataBuilder.setPrincipalInfo(
-          ExecutionPrincipalInfo.newBuilder().setShouldValidateRbac(false).build());
-
-      PlanExecution planExecution = executionHelper.startExecution(ngTriggerEntity.getAccountId(),
-          ngTriggerEntity.getOrgIdentifier(), ngTriggerEntity.getProjectIdentifier(), executionMetaDataBuilder.build(),
-          planExecutionMetadataBuilder.build(), false, null, null);
-      // check if abort prev execution needed.
-      requestPipelineExecutionAbortForSameExecTagIfNeeded(triggerDetails, planExecution, executionTagForGitEvent);
-      return planExecution;
     } catch (Exception e) {
       throw new TriggerException(
           "Failed while requesting Pipeline Execution through Trigger: " + e.getMessage(), e, USER);
