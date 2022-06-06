@@ -1518,16 +1518,19 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
   }
 
   @Override
-  public void beforeNotificationRuleDelete(ProjectParams projectParams, String notificationRuleRef) {
+  public void deleteNotificationRuleRef(ProjectParams projectParams, String notificationRuleRef) {
     List<MonitoredService> monitoredServices =
         get(projectParams, Filter.builder().notificationRuleRef(notificationRuleRef).build());
-    Preconditions.checkArgument(isEmpty(monitoredServices),
-        "Deleting notification rule is used in Monitored Services, "
-            + "Please delete the notification rule inside Monitored Services before deleting notification rule. Monitored Services : "
-            + String.join(", ",
-                monitoredServices.stream()
-                    .map(monitoredService -> monitoredService.getName())
-                    .collect(Collectors.toList())));
+    for (MonitoredService monitoredService : monitoredServices) {
+      List<NotificationRuleRef> notificationRuleRefs =
+          monitoredService.getNotificationRuleRefs()
+              .stream()
+              .filter(ref -> !ref.getNotificationRuleRef().equals(notificationRuleRef))
+              .collect(Collectors.toList());
+      UpdateOperations<MonitoredService> updateOperations = hPersistence.createUpdateOperations(MonitoredService.class);
+      updateOperations.set(MonitoredServiceKeys.notificationRuleRefs, notificationRuleRefs);
+      hPersistence.update(monitoredService, updateOperations);
+    }
   }
 
   private List<MonitoredService> get(ProjectParams projectParams, Filter filter) {
@@ -1552,7 +1555,6 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
     }
     return monitoredServiceList;
   }
-
 
   /*public PageResponse<NotificationRuleResponse> getNotificationRules(
       ProjectParams projectParams, String monitoredServiceIdentifier, PageParams pageParams) {

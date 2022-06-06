@@ -1109,7 +1109,7 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
 
     assertThat(serviceLevelObjective.getNotificationRuleRefs().size()).isEqualTo(2);
     serviceLevelObjective.getNotificationRuleRefs().forEach(
-        notificationRuleRef -> assertThat(notificationRuleRef.getNotificationRuleRef() != "rule1"));
+        notificationRuleRef -> assertThat(notificationRuleRef.getNotificationRuleRef().equals("rule1")).isFalse());
   }
 
   private void createSLIRecords(String sliId) {

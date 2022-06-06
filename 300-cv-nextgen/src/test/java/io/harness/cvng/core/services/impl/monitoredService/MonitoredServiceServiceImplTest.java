@@ -2361,24 +2361,6 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = KAPIL)
   @Category(UnitTests.class)
-  public void testBeforeNotificationRuleDelete() {
-    MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTOWithCustomDependencies(
-        "service_1_local", environmentParams.getServiceIdentifier(), Sets.newHashSet());
-    monitoredServiceDTO.setNotificationRuleRefs(
-        Arrays.asList(NotificationRuleRefDTO.builder().notificationRuleRef("rule1").enabled(true).build(),
-            NotificationRuleRefDTO.builder().notificationRuleRef("rule2").enabled(true).build(),
-            NotificationRuleRefDTO.builder().notificationRuleRef("rule3").enabled(true).build()));
-    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
-    assertThatThrownBy(()
-                           -> monitoredServiceService.beforeNotificationRuleDelete(
-                               builderFactory.getContext().getProjectParams(), "rule1"))
-        .hasMessage("Deleting notification rule is used in Monitored Services, "
-            + "Please delete the notification rule inside Monitored Services before deleting notification rule. Monitored Services : service_1_local");
-  }
-
-  @Test
-  @Owner(developers = KAPIL)
-  @Category(UnitTests.class)
   public void testCreate_withIncorrectNotificationRule() {
     NotificationRuleDTO notificationRuleDTO =
         builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.SLO).build();
@@ -2395,6 +2377,25 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     assertThatThrownBy(
         () -> monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO))
         .hasMessage("NotificationRule with identifier rule is of type SLO and cannot be added into MONITORED_SERVICE");
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testDeleteNotificationRuleRef() {
+    MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTOWithCustomDependencies(
+        "service_1_local", environmentParams.getServiceIdentifier(), Sets.newHashSet());
+    monitoredServiceDTO.setNotificationRuleRefs(
+        Arrays.asList(NotificationRuleRefDTO.builder().notificationRuleRef("rule1").enabled(true).build(),
+            NotificationRuleRefDTO.builder().notificationRuleRef("rule2").enabled(true).build(),
+            NotificationRuleRefDTO.builder().notificationRuleRef("rule3").enabled(true).build()));
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    monitoredServiceService.deleteNotificationRuleRef(builderFactory.getContext().getProjectParams(), "rule1");
+    MonitoredService monitoredService = getMonitoredService(monitoredServiceDTO.getIdentifier());
+
+    assertThat(monitoredService.getNotificationRuleRefs().size()).isEqualTo(2);
+    monitoredService.getNotificationRuleRefs().forEach(
+        notificationRuleRef -> assertThat(notificationRuleRef.getNotificationRuleRef().equals("rule1")).isFalse());
   }
 
   private void createActivity(MonitoredServiceDTO monitoredServiceDTO) {
