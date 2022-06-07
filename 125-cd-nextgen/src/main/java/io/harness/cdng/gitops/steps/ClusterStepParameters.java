@@ -79,6 +79,8 @@ public class ClusterStepParameters implements StepParameters {
 
   @Data
   @Builder
+  @TypeAlias("envClusterRefs")
+  @RecasterAlias("io.harness.cdng.gitops.steps.ClusterStepParameters.EnvClusterRefs")
   public static class EnvClusterRefs {
     private String envRef;
     private Collection<String> clusterRefs;

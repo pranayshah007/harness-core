@@ -75,6 +75,8 @@ public class BuildSourceParameters implements TaskParameters, ExecutionCapabilit
         && isNotEmpty(buildCollectParameters.getDelegateSelectors())) {
       if (executionCapabilities == null) {
         executionCapabilities = new ArrayList<>();
+      } else {
+        executionCapabilities = new ArrayList<>(executionCapabilities);
       }
       executionCapabilities.add(
           SelectorCapability.builder().selectors(buildCollectParameters.getDelegateSelectors()).build());

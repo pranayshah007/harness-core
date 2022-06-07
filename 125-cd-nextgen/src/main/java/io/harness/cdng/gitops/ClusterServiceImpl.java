@@ -31,6 +31,7 @@ import io.harness.utils.PageUtils;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.mongodb.client.result.DeleteResult;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -41,6 +42,7 @@ import org.json.JSONObject;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -114,7 +116,7 @@ public class ClusterServiceImpl implements ClusterService {
   }
 
   public Page<Cluster> list(int page, int size, String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, String envRef, String searchTerm, List<String> clusterRefs, List<String> sort) {
+      String projectIdentifier, String envRef, String searchTerm, Collection<String> clusterRefs, List<String> sort) {
     Criteria criteria =
         createCriteriaForGetList(accountIdentifier, orgIdentifier, projectIdentifier, envRef, searchTerm);
     Pageable pageRequest;
@@ -128,6 +130,15 @@ public class ClusterServiceImpl implements ClusterService {
       pageRequest = PageUtils.getPageRequest(page, size, sort);
     }
 
+    return clusterRepository.find(criteria, pageRequest);
+  }
+
+  @Override
+  public Page<Cluster> listAcrossEnv(int page, int size, String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, Collection<String> envRefs) {
+    Criteria criteria =
+        getClusterEqualityCriteriaAcrossEnvs(accountIdentifier, orgIdentifier, projectIdentifier, envRefs);
+    PageRequest pageRequest = PageRequest.of(page, size);
     return clusterRepository.find(criteria, pageRequest);
   }
 
@@ -148,6 +159,18 @@ public class ClusterServiceImpl implements ClusterService {
         .is(identifier)
         .and(ClusterKeys.envRef)
         .is(envIdentifier);
+  }
+
+  private Criteria getClusterEqualityCriteriaAcrossEnvs(
+      String accountId, String orgId, String projectId, Collection<String> envRefs) {
+    return where(ClusterKeys.accountId)
+        .is(accountId)
+        .and(ClusterKeys.orgIdentifier)
+        .is(orgId)
+        .and(ClusterKeys.projectIdentifier)
+        .is(projectId)
+        .and(ClusterKeys.envRef)
+        .in(envRefs);
   }
 
   private Criteria getClusterEqualityCriteria(String accountId, String orgId, String projectId, String identifier) {

@@ -18,6 +18,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.cdng.environment.yaml.EnvironmentPlanCreatorConfig;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.gitops.yaml.ClusterYaml;
+import io.harness.cdng.infra.mapper.InfrastructureEntityConfigMapper;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.pms.yaml.ParameterField;
@@ -51,8 +52,8 @@ public class EnvironmentPlanCreatorConfigMapperTest extends CategoryTest {
 
     NGServiceOverrides serviceOverrides = NGServiceOverrides.builder().serviceRef("ref").build();
 
-    EnvironmentPlanCreatorConfig config =
-        toEnvironmentPlanCreatorConfig(envYaml, asList(infraEntity), serviceOverrides);
+    EnvironmentPlanCreatorConfig config = toEnvironmentPlanCreatorConfig(
+        envYaml, asList(InfrastructureEntityConfigMapper.toInfrastructureConfig(infraEntity)), serviceOverrides);
 
     assertThat(config.getEnvironmentRef().getValue()).isEqualTo("envId");
     assertThat(config.getIdentifier()).isEqualTo("envId");
