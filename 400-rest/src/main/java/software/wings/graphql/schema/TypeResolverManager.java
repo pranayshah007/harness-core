@@ -513,8 +513,8 @@ public class TypeResolverManager {
                                       .build()))
         .put(TypeResolverManagerUnifaces.SECRET_MANAGER,
                 getResultTypeResolver(ImmutableMap.<Class, String>builder()
-                        .put(QLSecretManager.class, "default")
-                        .put(QLCustomSecretManager.class, "customsecretmanager")
+                        .put(QLSecretManager.class, "SecretManager")
+                        .put(QLCustomSecretManager.class, "CustomSecretManager")
                         .build()))
         .build();
   }
