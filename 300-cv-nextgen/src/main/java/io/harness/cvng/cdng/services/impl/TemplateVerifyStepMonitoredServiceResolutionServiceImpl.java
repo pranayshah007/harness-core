@@ -18,15 +18,18 @@ import io.harness.cvng.core.beans.monitoredService.HealthSource;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
+import io.harness.cvng.core.beans.sidekick.VerificationJobInstanceCleanupSideKickData;
 import io.harness.cvng.core.entities.CVConfig;
-import io.harness.cvng.core.services.api.CVConfigService;
 import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.services.api.MonitoringSourcePerpetualTaskService;
+import io.harness.cvng.core.services.api.SideKickService;
 import io.harness.cvng.core.services.api.monitoredService.HealthSourceService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 
 import com.google.inject.Inject;
+import java.time.Clock;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -36,24 +39,49 @@ import org.apache.commons.collections.CollectionUtils;
 
 public class TemplateVerifyStepMonitoredServiceResolutionServiceImpl
     implements VerifyStepMonitoredServiceResolutionService {
-  private static final String NULL_MONITORED_SVC_IDENTIFIER = "";
-  @Inject private CVConfigService cvConfigService;
+  private static final String NULL_MONITORED_SERVICE_IDENTIFIER = "";
+  @Inject private Clock clock;
   @Inject private FeatureFlagService featureFlagService;
   @Inject private MetricPackService metricPackService;
   @Inject private MonitoringSourcePerpetualTaskService monitoringSourcePerpetualTaskService;
   @Inject private MonitoredServiceService monitoredServiceService;
+  @Inject private SideKickService sideKickService;
 
   @Override
   public ResolvedCVConfigInfo getResolvedCVConfigInfo(
       ServiceEnvironmentParams serviceEnvironmentParams, MonitoredServiceNode monitoredServiceNode) {
     ResolvedCVConfigInfoBuilder resolvedCVConfigInfoBuilder = ResolvedCVConfigInfo.builder();
-    resolvedCVConfigInfoBuilder.cvConfigs(
-        getCVConfigsAndCreatePerpetualTasks(serviceEnvironmentParams, monitoredServiceNode));
+    populateSourceDataFromTemplate(serviceEnvironmentParams, monitoredServiceNode, resolvedCVConfigInfoBuilder);
     return resolvedCVConfigInfoBuilder.build();
   }
 
-  private List<CVConfig> getCVConfigsAndCreatePerpetualTasks(
-      ServiceEnvironmentParams serviceEnvironmentParams, MonitoredServiceNode monitoredServiceNode) {
+  @Override
+  public void managePerpetualTasks(ServiceEnvironmentParams serviceEnvironmentParams,
+      ResolvedCVConfigInfo resolvedCVConfigInfo, String verificationJobInstanceId) {
+    List<ResolvedCVConfigInfo.HealthSourceInfo> healthSources = resolvedCVConfigInfo.getHealthSources();
+    if (CollectionUtils.isNotEmpty(healthSources)) {
+      List<String> sourceIdentifiersToCleanUp = new ArrayList<>();
+      healthSources.forEach(healthSource -> {
+        String sourceIdentifier =
+            HealthSourceService.getNameSpacedIdentifier(verificationJobInstanceId, healthSource.getIdentifier());
+        monitoringSourcePerpetualTaskService.createTask(serviceEnvironmentParams.getAccountIdentifier(),
+            serviceEnvironmentParams.getOrgIdentifier(), serviceEnvironmentParams.getProjectIdentifier(),
+            healthSource.getConnectorRef(), sourceIdentifier, healthSource.isDemoEnabledForAnyCVConfig());
+        sourceIdentifiersToCleanUp.add(sourceIdentifier);
+      });
+      sideKickService.schedule(VerificationJobInstanceCleanupSideKickData.builder()
+                                   .verificationJobInstanceIdentifier(verificationJobInstanceId)
+                                   .sourceIdentifiers(sourceIdentifiersToCleanUp)
+                                   .accountIdentifier(serviceEnvironmentParams.getAccountIdentifier())
+                                   .orgIdentifier(serviceEnvironmentParams.getOrgIdentifier())
+                                   .projectIdentifier(serviceEnvironmentParams.getProjectIdentifier())
+                                   .build(),
+          clock.instant().plus(Duration.ofMinutes(30)));
+    }
+  }
+
+  private void populateSourceDataFromTemplate(ServiceEnvironmentParams serviceEnvironmentParams,
+      MonitoredServiceNode monitoredServiceNode, ResolvedCVConfigInfoBuilder resolvedCVConfigInfoBuilder) {
     TemplateMonitoredServiceSpec templateMonitoredServiceSpec =
         (TemplateMonitoredServiceSpec) monitoredServiceNode.getSpec();
     MonitoredServiceDTO monitoredServiceDTO = monitoredServiceService.getExpandedMonitoredServiceFromYaml(
@@ -65,10 +93,10 @@ public class TemplateVerifyStepMonitoredServiceResolutionServiceImpl
         getTemplateYaml(templateMonitoredServiceSpec));
     if (Objects.nonNull(monitoredServiceDTO) && Objects.nonNull(monitoredServiceDTO.getSources())
         && CollectionUtils.isNotEmpty(monitoredServiceDTO.getSources().getHealthSources())) {
-      return getCvConfigsFromHealthSources(
-          serviceEnvironmentParams, monitoredServiceDTO.getSources().getHealthSources(), false);
+      populateCvConfigAndHealSourceData(
+          serviceEnvironmentParams, monitoredServiceDTO.getSources().getHealthSources(), resolvedCVConfigInfoBuilder);
     } else {
-      return Collections.emptyList();
+      resolvedCVConfigInfoBuilder.cvConfigs(Collections.emptyList()).healthSources(Collections.emptyList());
     }
   }
   private String getTemplateYaml(TemplateMonitoredServiceSpec templateMonitoredServiceSpec) {
@@ -78,21 +106,22 @@ public class TemplateVerifyStepMonitoredServiceResolutionServiceImpl
     return null;
   }
 
-  private List<CVConfig> getCvConfigsFromHealthSources(
-      ServiceEnvironmentParams serviceEnvironmentParams, Set<HealthSource> healthSources, boolean enabled) {
+  private void populateCvConfigAndHealSourceData(ServiceEnvironmentParams serviceEnvironmentParams,
+      Set<HealthSource> healthSources, ResolvedCVConfigInfoBuilder resolvedCVConfigInfoBuilder) {
     List<CVConfig> allCvConfigs = new ArrayList<>();
+    List<ResolvedCVConfigInfo.HealthSourceInfo> healthSourceInfoList = new ArrayList<>();
     healthSources.forEach(healthSource -> {
       HealthSource.CVConfigUpdateResult cvConfigUpdateResult = healthSource.getSpec().getCVConfigUpdateResult(
           serviceEnvironmentParams.getAccountIdentifier(), serviceEnvironmentParams.getOrgIdentifier(),
           serviceEnvironmentParams.getProjectIdentifier(), serviceEnvironmentParams.getEnvironmentIdentifier(),
-          serviceEnvironmentParams.getServiceIdentifier(), NULL_MONITORED_SVC_IDENTIFIER,
-          HealthSourceService.getNameSpacedIdentifier(NULL_MONITORED_SVC_IDENTIFIER, healthSource.getIdentifier()),
+          serviceEnvironmentParams.getServiceIdentifier(), NULL_MONITORED_SERVICE_IDENTIFIER,
+          HealthSourceService.getNameSpacedIdentifier(NULL_MONITORED_SERVICE_IDENTIFIER, healthSource.getIdentifier()),
           healthSource.getName(), Collections.emptyList(), metricPackService);
 
       boolean isDemoEnabledForAnyCVConfig = false;
 
       for (CVConfig cvConfig : cvConfigUpdateResult.getAdded()) {
-        cvConfig.setEnabled(enabled);
+        cvConfig.setEnabled(true);
         if (cvConfig.isEligibleForDemo()
             && featureFlagService.isFeatureFlagEnabled(
                 serviceEnvironmentParams.getAccountIdentifier(), CVNG_MONITORED_SERVICE_DEMO)) {
@@ -105,18 +134,12 @@ public class TemplateVerifyStepMonitoredServiceResolutionServiceImpl
         allCvConfigs.addAll(cvConfigUpdateResult.getAdded());
       }
 
-      createPerpetualTasks(serviceEnvironmentParams, healthSource, isDemoEnabledForAnyCVConfig);
+      healthSourceInfoList.add(ResolvedCVConfigInfo.HealthSourceInfo.builder()
+                                   .connectorRef(healthSource.getSpec().getConnectorRef())
+                                   .demoEnabledForAnyCVConfig(isDemoEnabledForAnyCVConfig)
+                                   .identifier(healthSource.getIdentifier())
+                                   .build());
     });
-    return allCvConfigs;
-  }
-
-  // TODO: Add code to delete done tasks.
-  private void createPerpetualTasks(ServiceEnvironmentParams serviceEnvironmentParams, HealthSource healthSource,
-      boolean isDemoEnabledForAnyCVConfig) {
-    monitoringSourcePerpetualTaskService.createTask(serviceEnvironmentParams.getAccountIdentifier(),
-        serviceEnvironmentParams.getOrgIdentifier(), serviceEnvironmentParams.getProjectIdentifier(),
-        healthSource.getSpec().getConnectorRef(),
-        HealthSourceService.getNameSpacedIdentifier(NULL_MONITORED_SVC_IDENTIFIER, healthSource.getIdentifier()),
-        isDemoEnabledForAnyCVConfig);
+    resolvedCVConfigInfoBuilder.cvConfigs(allCvConfigs).healthSources(healthSourceInfoList);
   }
 }

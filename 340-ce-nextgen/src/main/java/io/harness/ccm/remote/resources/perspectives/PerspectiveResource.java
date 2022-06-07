@@ -99,6 +99,7 @@ public class PerspectiveResource {
   private final TelemetryReporter telemetryReporter;
 
   private static final String PERSPECTIVE_CREATED = "Perspective Created";
+  private static final String PERSPECTIVE_ID = "Perspective ID";
   private static final String MODULE = "module";
   private static final String MODULE_NAME = "CCM";
   private static final String DATA_SOURCES = "data_sources";
@@ -263,9 +264,11 @@ public class PerspectiveResource {
       ceView.setUuid(null);
       ceView.setViewType(ViewType.CUSTOMER);
     }
+    CEView ceViewCheck = updateTotalCost(ceViewService.save(ceView, clone));
+    properties.put(PERSPECTIVE_ID, clone ? ceViewCheck.getUuid() : ceView.getUuid());
     telemetryReporter.sendTrackEvent(
         PERSPECTIVE_CREATED, null, accountId, properties, Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
-    return ResponseDTO.newResponse(updateTotalCost(ceViewService.save(ceView, clone)));
+    return ResponseDTO.newResponse(ceViewCheck);
   }
 
   private CEView updateTotalCost(CEView ceView) {
@@ -407,8 +410,10 @@ public class PerspectiveResource {
             .map(Object::toString)
             .collect(Collectors.joining(",")));
     properties.put(IS_CLONE, "YES");
+    CEView ceViewCheck = updateTotalCost(ceViewService.clone(accountId, perspectiveId, cloneName));
+    properties.put(PERSPECTIVE_ID, ceViewCheck.getUuid());
     telemetryReporter.sendTrackEvent(
         PERSPECTIVE_CREATED, null, accountId, properties, Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
-    return ResponseDTO.newResponse(updateTotalCost(ceViewService.clone(accountId, perspectiveId, cloneName)));
+    return ResponseDTO.newResponse(ceViewCheck);
   }
 }

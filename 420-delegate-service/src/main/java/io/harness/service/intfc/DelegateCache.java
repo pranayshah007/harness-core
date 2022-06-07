@@ -13,6 +13,8 @@ import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateGroup;
 import io.harness.delegate.beans.DelegateProfile;
 
+import java.util.List;
+
 @OwnedBy(HarnessTeam.DEL)
 public interface DelegateCache {
   Delegate get(String accountId, String delegateId, boolean forceRefresh);
@@ -22,4 +24,6 @@ public interface DelegateCache {
   DelegateProfile getDelegateProfile(String accountId, String delegateProfileId);
 
   void invalidateDelegateProfileCache(String accountId, String delegateProfileId);
+
+  List<Delegate> getDelegatesForGroup(String accountId, String delegateGroupId);
 }

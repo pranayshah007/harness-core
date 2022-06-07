@@ -40,9 +40,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(MockitoJUnitRunner.Silent.class)
 public class PerspectiveResourceTest extends CategoryTest {
   private CEViewService ceViewService = mock(CEViewService.class);
   private ViewCustomFieldService viewCustomFieldService = mock(ViewCustomFieldService.class);

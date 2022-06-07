@@ -33,6 +33,7 @@ import static io.harness.rule.OwnerRule.BOJAN;
 import static io.harness.rule.OwnerRule.BRETT;
 import static io.harness.rule.OwnerRule.DESCRIPTION;
 import static io.harness.rule.OwnerRule.GEORGE;
+import static io.harness.rule.OwnerRule.JENNY;
 import static io.harness.rule.OwnerRule.LUCAS;
 import static io.harness.rule.OwnerRule.MARKO;
 import static io.harness.rule.OwnerRule.MEHUL;
@@ -4092,6 +4093,36 @@ public class DelegateServiceTest extends WingsBaseTest {
     verify(auditServiceHelper, times(1))
         .reportForAuditingUsingAccountId(ACCOUNT_ID, delegate1, delegateFromDB1, Type.DELEGATE_REJECTION);
     verify(broadcaster).broadcast(SELF_DESTRUCT + DELEGATE_ID_1);
+  }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void testGetDelegatesFromDelegateCache() {
+    String accountId = generateUuid();
+    DelegateGroup delegateGroup = DelegateGroup.builder()
+                                      .name("grp1")
+                                      .accountId(accountId)
+                                      .ng(true)
+                                      .delegateType(KUBERNETES)
+                                      .description("description")
+                                      .build();
+    persistence.save(delegateGroup);
+
+    // 2 delegates with same delegate group
+    Delegate delegate1 = createDelegateBuilder().build();
+    delegate1.setDelegateGroupId(delegateGroup.getUuid());
+    delegate1.setAccountId(accountId);
+    delegate1.setNg(true);
+    persistence.save(delegate1);
+
+    Delegate delegate2 = createDelegateBuilder().build();
+    delegate2.setDelegateGroupId(delegateGroup.getUuid());
+    delegate2.setAccountId(accountId);
+    delegate2.setNg(true);
+    persistence.save(delegate2);
+
+    assertThat(delegateCache.getDelegatesForGroup(accountId, delegateGroup.getUuid()).size()).isEqualTo(2);
   }
 
   private CapabilityRequirement buildCapabilityRequirement() {

@@ -691,7 +691,7 @@ public class PcfSetupCommandTaskHandler extends PcfCommandTaskHandler {
   void deleteOlderApplications(List<ApplicationSummary> previousReleases, CfRequestConfig cfRequestConfig,
       CfCommandSetupRequest cfCommandSetupRequest, CfAppAutoscalarRequestData appAutoscalarRequestData,
       ApplicationSummary activeApplication, CfAppSetupTimeDetails inactiveAppVersionDetails,
-      LogCallback executionLogCallback) throws PivotalClientApiException {
+      LogCallback executionLogCallback) {
     if (EmptyPredicate.isEmpty(previousReleases)) {
       return;
     }
@@ -760,7 +760,7 @@ public class PcfSetupCommandTaskHandler extends PcfCommandTaskHandler {
   @VisibleForTesting
   void downsizeApplicationToZero(ApplicationSummary applicationSummary, CfRequestConfig cfRequestConfig,
       CfCommandSetupRequest cfCommandSetupRequest, CfAppAutoscalarRequestData appAutoscalarRequestData,
-      LogCallback executionLogCallback) throws PivotalClientApiException {
+      LogCallback executionLogCallback) {
     executionLogCallback.saveExecutionLog(new StringBuilder()
                                               .append("# Application Being Downsized To 0: ")
                                               .append(encodeColor(applicationSummary.getName()))
@@ -771,7 +771,7 @@ public class PcfSetupCommandTaskHandler extends PcfCommandTaskHandler {
       appAutoscalarRequestData.setApplicationName(applicationSummary.getName());
       appAutoscalarRequestData.setApplicationGuid(applicationSummary.getId());
       appAutoscalarRequestData.setExpectedEnabled(true);
-      pcfCommandTaskBaseHelper.disableAutoscalar(appAutoscalarRequestData, executionLogCallback);
+      pcfCommandTaskBaseHelper.disableAutoscalarSafe(appAutoscalarRequestData, executionLogCallback);
     }
 
     cfRequestConfig.setApplicationName(applicationSummary.getName());

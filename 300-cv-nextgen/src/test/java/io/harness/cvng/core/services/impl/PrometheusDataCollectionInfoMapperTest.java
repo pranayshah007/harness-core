@@ -8,6 +8,7 @@
 package io.harness.cvng.core.services.impl;
 
 import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
+import static io.harness.rule.OwnerRule.KAMAL;
 import static io.harness.rule.OwnerRule.PRAVEEN;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -24,12 +25,17 @@ import io.harness.cvng.core.entities.PrometheusCVConfig;
 import io.harness.cvng.core.entities.VerificationTask.TaskType;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ThresholdServiceLevelIndicator;
+import io.harness.delegate.beans.connector.customhealthconnector.CustomHealthKeyAndValue;
+import io.harness.delegate.beans.connector.prometheusconnector.PrometheusConnectorDTO;
+import io.harness.delegate.beans.cvng.prometheus.PrometheusUtils;
+import io.harness.encryption.SecretRefData;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import org.apache.groovy.util.Maps;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -123,5 +129,20 @@ public class PrometheusDataCollectionInfoMapperTest extends CvNextGenTestBase {
     PrometheusDataCollectionInfo dataCollectionInfo =
         mapper.toDataCollectionInfo(Collections.singletonList(cvConfig), serviceLevelIndicator);
     assertThat(dataCollectionInfo.getMetricCollectionInfoList().size()).isEqualTo(0);
+  }
+
+  @Test
+  @Owner(developers = KAMAL)
+  @Category(UnitTests.class)
+  public void testGetHeaders() {
+    PrometheusConnectorDTO prometheusConnectorDTO =
+        PrometheusConnectorDTO.builder()
+            .url("http://35.214.81.102:9090/")
+            .username("test")
+            .passwordRef(SecretRefData.builder().decryptedValue("password".toCharArray()).build())
+            .headers(Collections.singletonList(CustomHealthKeyAndValue.builder().key("key").value("value").build()))
+            .build();
+    assertThat(PrometheusUtils.getHeaders(prometheusConnectorDTO))
+        .isEqualTo(Maps.of("Authorization", "Basic dGVzdDpwYXNzd29yZA==", "key", "value"));
   }
 }

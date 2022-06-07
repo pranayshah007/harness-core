@@ -58,4 +58,10 @@ public class PipelineCRUDErrorResponse {
           "Pipeline does not follow the Policies in these Policy Sets: " + denyingPolicySetIds);
     }
   }
+
+  public String errorMessageForPipelinesNotDeleted(
+      String accountID, String orgId, String projectId, String exceptionMessage) {
+    return format("Error while deleting Pipelines in Project [%s], in Org [%s] for Account [%s] : %s", projectId, orgId,
+        accountID, exceptionMessage);
+  }
 }
