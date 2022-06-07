@@ -554,16 +554,13 @@ public class GovernanceConfigServiceImpl implements GovernanceConfigService {
           "Please select a valid time zone. Eg. Asia/Calcutta for freeze window: " + name);
     }
     if (timeRange.getFrom() > timeRange.getTo()) {
-      throw new InvalidRequestException("Window Start time is less than Window end Time for freeze window: " + name);
+      throw new InvalidRequestException("Window Start time is less than Window end Time");
     }
     if (timeRange.getTo() - timeRange.getFrom() < MIN_FREEZE_WINDOW_TIME) {
-      throw new InvalidRequestException("Freeze window time should be at least 30 minutes for window : " + name);
+      throw new InvalidRequestException("Freeze window time should be at least 30 minutes");
     }
     if (timeRange.getTo() - timeRange.getFrom() > MAX_FREEZE_WINDOW_TIME) {
-      throw new InvalidRequestException("Freeze window time should be less than 365 days for window : " + name);
-    }
-    if (timeRange.getTo() < System.currentTimeMillis()) {
-      throw new InvalidRequestException("Freeze window '" + name + "' expired");
+      throw new InvalidRequestException("Freeze window time should be less than 365 days");
     }
   }
 
