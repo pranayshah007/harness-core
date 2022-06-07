@@ -150,7 +150,7 @@ public class PerpetualTaskServiceImpl implements PerpetualTaskService, DelegateO
         }
       }
       long now = clock.millis();
-      long initialDelay = schedule.hasInitialDelay() ? (now + schedule.getInitialDelay().getSeconds()) : now;
+      long initialDelay = schedule.hasInitialDelay() ? (now + Durations.toMillis(schedule.getInitialDelay())) : now;
       PerpetualTaskRecord record = PerpetualTaskRecord.builder()
                                        .accountId(accountId)
                                        .perpetualTaskType(perpetualTaskType)
