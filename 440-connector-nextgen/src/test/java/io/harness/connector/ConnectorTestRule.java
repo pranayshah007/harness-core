@@ -39,7 +39,6 @@ import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.mongo.MongoPersistence;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.ng.core.activityhistory.service.NGActivityService;
-import io.harness.ng.core.api.NGEncryptedDataService;
 import io.harness.ng.core.api.NGSecretManagerService;
 import io.harness.ng.core.api.SecretCrudService;
 import io.harness.ng.core.services.OrganizationService;
@@ -139,7 +138,6 @@ public class ConnectorTestRule implements InjectorRuleMixin, MethodRule, MongoRu
         bind(NGHostValidationService.class).toInstance(mock(NGHostValidationService.class));
         bind(FeatureFlagService.class).toInstance(mock(FeatureFlagService.class));
         bind(AccountClient.class).toInstance(mock(AccountClient.class));
-        bind(NGEncryptedDataService.class).toInstance(mock(NGEncryptedDataService.class));
       }
     });
     modules.add(mongoTypeModule(annotations));

@@ -116,7 +116,8 @@ public class ResourceGroupValidatorImpl implements ResourceGroupValidator {
     }
 
     boolean updated = false;
-    List<ResourceSelector> newResourceSelectors = CollectionUtils.emptyIfNull(resourceGroup.getResourceFilter().getResources());
+    List<ResourceSelector> newResourceSelectors =
+        CollectionUtils.emptyIfNull(resourceGroup.getResourceFilter().getResources());
     for (Iterator<ResourceSelector> iterator = newResourceSelectors.iterator(); iterator.hasNext();) {
       ResourceSelector resourceSelector = iterator.next();
       if (isEmpty(resourceSelector.getIdentifiers())) {

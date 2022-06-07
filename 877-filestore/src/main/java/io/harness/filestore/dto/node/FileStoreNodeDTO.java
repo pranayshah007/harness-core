@@ -32,17 +32,19 @@ public abstract class FileStoreNodeDTO {
   @NotNull @Schema(description = "Identifier of the File Store Node") protected String identifier;
   @Schema(description = "Parent identifier of the File Store Node") protected String parentIdentifier;
   @NotNull @Schema(description = "Name of the File Store Node") protected String name;
+  @Schema(description = "Path of the file or folder") protected String path;
   @NotNull @Schema(description = "Type of the File Store Node") protected NGFileType type;
   @Schema(description = "Last modified time for the File Store Node") protected Long lastModifiedAt;
   @Schema(description = "This is the user who last modified the File Store Node")
   protected EmbeddedUserDetailsDTO lastModifiedBy;
 
-  protected FileStoreNodeDTO(NGFileType type, String identifier, String parentIdentifier, String name,
+  protected FileStoreNodeDTO(NGFileType type, String identifier, String parentIdentifier, String name, String path,
       Long lastModifiedAt, EmbeddedUserDetailsDTO lastModifiedBy) {
     this.type = type;
     this.identifier = identifier;
     this.parentIdentifier = parentIdentifier;
     this.name = name;
+    this.path = path;
     this.lastModifiedAt = lastModifiedAt;
     this.lastModifiedBy = lastModifiedBy;
   }

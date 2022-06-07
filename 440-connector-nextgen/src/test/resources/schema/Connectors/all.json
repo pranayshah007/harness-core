@@ -2599,7 +2599,7 @@
       ],
       "properties": {
         "encryptedValueRef": {
-          "$ref": "#/definitions/SecretRefData"
+          "type": "string"
         },
         "key": {
           "type": "string"
@@ -4735,39 +4735,24 @@
                 "type": "string"
               }
             },
+            "headers": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/CustomHealthKeyAndValue"
+              }
+            },
+            "passwordRef": {
+              "type": "string"
+            },
             "url": {
+              "type": "string"
+            },
+            "username": {
               "type": "string"
             }
           }
         }
       ],
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "SecretRefData": {
-      "type": "object",
-      "properties": {
-        "decryptedValue": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "identifier": {
-          "type": "string"
-        },
-        "null": {
-          "type": "boolean"
-        },
-        "scope": {
-          "type": "string",
-          "enum": [
-            "account",
-            "org",
-            "project",
-            "unknown"
-          ]
-        }
-      },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "ServiceNowConnector": {

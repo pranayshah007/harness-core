@@ -138,8 +138,11 @@ import org.eclipse.jgit.treewalk.CanonicalTreeParser;
 @OwnedBy(CDP)
 public class GitClientV2Impl implements GitClientV2 {
   private static final int GIT_COMMAND_RETRY = 3;
-  private static final String UPLOAD_PACK_ERROR = "upload-pack not found";
+  private static final String UPLOAD_PACK_ERROR = "git-upload-pack";
+  private static final String INVALID_ADVERTISEMENT_ERROR = "invalid advertisement of";
+  private static final String REDIRECTION_BLOCKED_ERROR = "Redirection blocked";
   private static final String TIMEOUT_ERROR = "Connection time out";
+
   @Inject private GitClientHelper gitClientHelper;
   /**
    * factory for creating HTTP connections. By default, JGit uses JDKHttpConnectionFactory which doesn't work well with
@@ -350,12 +353,13 @@ public class GitClientV2Impl implements GitClientV2 {
       if (e instanceof GitAPIException) {
         throw new JGitRuntimeException(e.getMessage(), e);
       } else if (e instanceof FailsafeException) {
-        if (e.getMessage().contains(UPLOAD_PACK_ERROR)) {
+        String message = e.getMessage();
+        if (containsUrlError(message)) {
           throw SCMRuntimeException.builder()
               .message("Couldn't connect to given repo")
               .errorCode(ErrorCode.GIT_CONNECTION_ERROR)
               .build();
-        } else if (e.getMessage().contains(TIMEOUT_ERROR)) {
+        } else if (message.contains(TIMEOUT_ERROR)) {
           throw SCMRuntimeException.builder()
               .message("Git connection timed out")
               .errorCode(ErrorCode.CONNECTION_TIMEOUT)
@@ -364,6 +368,14 @@ public class GitClientV2Impl implements GitClientV2 {
       }
       throw new GeneralException(e.getMessage(), e);
     }
+  }
+
+  private boolean containsUrlError(String message) {
+    if (message.contains(UPLOAD_PACK_ERROR) || message.contains(INVALID_ADVERTISEMENT_ERROR)
+        || message.contains(REDIRECTION_BLOCKED_ERROR)) {
+      return true;
+    }
+    return false;
   }
 
   private RetryPolicy<Object> getRetryPolicyForCommand(String failedAttemptMessage, String failureMessage) {
