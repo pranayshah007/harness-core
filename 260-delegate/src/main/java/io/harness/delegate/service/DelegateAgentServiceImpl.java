@@ -1657,8 +1657,13 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     }
     if (delegateId.equals(receivedId)) {
       long now = clock.millis();
-      log.info("Delegate {} received heartbeat response {} after sending. {} since last response.", receivedId,
-          getDurationString(lastHeartbeatSentAt.get(), now), getDurationString(lastHeartbeatReceivedAt.get(), now));
+      if ((now - lastHeartbeatSentAt.get()) > TimeUnit.MINUTES.toMillis(3)) {
+        log.warn("Delegate {} received heartbeat response {} after sending. {} since last response.", receivedId,
+            getDurationString(lastHeartbeatSentAt.get(), now), getDurationString(lastHeartbeatReceivedAt.get(), now));
+      } else {
+        log.info("Delegate {} received heartbeat response {} after sending. {} since last response.", receivedId,
+            getDurationString(lastHeartbeatSentAt.get(), now), getDurationString(lastHeartbeatReceivedAt.get(), now));
+      }
       handleEcsDelegateSpecificMessage(message);
       lastHeartbeatReceivedAt.set(now);
     } else {
