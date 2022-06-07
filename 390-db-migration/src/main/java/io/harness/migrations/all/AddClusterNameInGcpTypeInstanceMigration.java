@@ -24,7 +24,7 @@ import software.wings.service.intfc.AccountService;
 import com.google.inject.Inject;
 import com.mongodb.BasicDBObject;
 import com.mongodb.BulkWriteOperation;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -37,18 +37,26 @@ public class AddClusterNameInGcpTypeInstanceMigration implements Migration {
   @Inject private AccountService accountService;
 
   private static final String DEBUG_LINE = "ADD_CLUSTER_NAME_IN_GCP_TYPE_INSTANCES : ";
+  // time of 15.04.2021 00:00:00 GMT
   private static final long START_TIMESTAMP = 1620691200000L;
 
   @Override
   public void migrate() {
     log.info("Running AddClusterNameInGcpTypeInstanceMigration");
-    List<String> firstReleaseConsideredAccount = Collections.singletonList("8e_GD3EARMmLSjFpszuwzw");
     /*
-    Considering below account for the first release
-    8e_GD3EARMmLSjFpszuwzw : LightSpeed
+      Considered below account for the first release
+      8e_GD3EARMmLSjFpszuwzw : LightSpeed
      */
 
-    for (String accountId : firstReleaseConsideredAccount) {
+    /*
+    RemainingAccounts list is result of query:
+    db.getCollection('instance').distinct("accountId", {"isDeleted" : false, "infraMappingType" :
+    "GCP_KUBERNETES","instanceInfo" : {$ne : null}, "instanceInfo.clusterName" : null})
+     */
+    List<String> remainingAccounts = Arrays.asList(
+        "2F79ulgQRwKeGVmmXizAzQ", "lyTmbK06RNWJmoOBuidG8w", "m-_GjbQBTtiemObLMZgykQ", "qmBAOdC3TpeQ62h7ONmP7g");
+
+    for (String accountId : remainingAccounts) {
       log.info(StringUtils.join(DEBUG_LINE, "Starting adding clusterName to Instances for accountId:", accountId));
 
       try (HIterator<InfrastructureMapping> infraMappingHIterator =
