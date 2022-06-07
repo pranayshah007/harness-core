@@ -12,7 +12,6 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.exception.ExceptionUtils;
-import io.harness.exception.InvalidRequestException;
 import io.harness.git.model.ChangeType;
 import io.harness.gitaware.dto.GitContextRequestParams;
 import io.harness.gitaware.helper.GitAwareContextHelper;
@@ -317,13 +316,8 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
     String accountId = pipelineToDelete.getAccountId();
     String orgIdentifier = pipelineToDelete.getOrgIdentifier();
     String projectIdentifier = pipelineToDelete.getProjectIdentifier();
-    Optional<PipelineEntity> pipelineEntityOptional =
-        findForOldGitSync(accountId, orgIdentifier, projectIdentifier, pipelineToDelete.getIdentifier(), true);
-    if (pipelineEntityOptional.isPresent()) {
-      gitAwarePersistence.delete(pipelineToDelete, ChangeType.DELETE, PipelineEntity.class);
-      outboxService.save(new PipelineDeleteEvent(accountId, orgIdentifier, projectIdentifier, pipelineToDelete, true));
-    }
-    throw new InvalidRequestException("No such pipeline exists");
+    gitAwarePersistence.delete(pipelineToDelete, ChangeType.DELETE, PipelineEntity.class);
+    outboxService.save(new PipelineDeleteEvent(accountId, orgIdentifier, projectIdentifier, pipelineToDelete, true));
   }
 
   @Override

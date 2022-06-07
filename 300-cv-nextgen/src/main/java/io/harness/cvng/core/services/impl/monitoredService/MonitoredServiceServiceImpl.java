@@ -1553,7 +1553,6 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
     return monitoredServiceList;
   }
 
-
   /*public PageResponse<NotificationRuleResponse> getNotificationRules(
       ProjectParams projectParams, String monitoredServiceIdentifier, PageParams pageParams) {
     MonitoredService monitoredService =

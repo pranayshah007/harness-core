@@ -108,9 +108,10 @@ public class BudgetResource {
     properties.put(BUDGET_PERIOD, budget.getPeriod());
     properties.put(BUDGET_TYPE, budget.getType());
     properties.put(ALERTS_COUNT, budget.getAlertThresholds().length);
+    String createCall = budgetService.create(budget);
     telemetryReporter.sendTrackEvent(
         BUDGET_CREATED, null, accountId, properties, Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
-    return ResponseDTO.newResponse(budgetService.create(budget));
+    return ResponseDTO.newResponse(createCall);
   }
 
   @POST
