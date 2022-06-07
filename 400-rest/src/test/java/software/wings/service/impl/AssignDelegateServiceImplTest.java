@@ -2062,7 +2062,7 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testAssignSelectorsWithEmptySelectorOrigin() throws ExecutionException {
     Delegate delegate = createNGDelegate();
-    delegate.setTags(Arrays.asList("sel1"));
+    delegate.setTags(Arrays.asList("sel1", "sel2"));
     persistence.save(delegate);
 
     when(featureFlagService.isEnabled(any(), anyString())).thenReturn(true);
