@@ -2168,7 +2168,7 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
         .thenReturn(of(connectionResult));
     when(delegateCache.get(accountId, delegate2.getUuid(), false)).thenReturn(delegate2);
     when(delegateCache.get(accountId, delegate1.getUuid(), false)).thenReturn(delegate1);
-    when(delegateCache.getDelegates(accountId, delegate1.getDelegateGroupId()))
+    when(delegateCache.getDelegatesForGroup(accountId, delegate1.getDelegateGroupId()))
         .thenReturn(Lists.newArrayList(delegate1, delegate2));
     // verify delegate2 is not whitelisted by itself
     assertThat(assignDelegateService.isWhitelisted(delegateTask, delegate2.getUuid())).isFalse();
@@ -2190,7 +2190,7 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
 
     when(delegateCache.get(accountId, delegate2.getUuid(), false)).thenReturn(delegate2);
     when(delegateCache.get(accountId, delegate1.getUuid(), false)).thenReturn(delegate1);
-    when(delegateCache.getDelegates(accountId, delegate1.getDelegateGroupId()))
+    when(delegateCache.getDelegatesForGroup(accountId, delegate1.getDelegateGroupId()))
         .thenReturn(Lists.newArrayList(delegate1, delegate2));
 
     // verify delegate group is not whitelisted, as both delegate1 or delegate2 are not whitelisted
@@ -2221,7 +2221,7 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
         .thenReturn(of(connectionResult));
     when(delegateCache.get(accountId, delegate2.getUuid(), false)).thenReturn(delegate2);
     when(delegateCache.get(accountId, delegate1.getUuid(), false)).thenReturn(delegate1);
-    when(delegateCache.getDelegates(accountId, delegate1.getDelegateGroupId()))
+    when(delegateCache.getDelegatesForGroup(accountId, delegate1.getDelegateGroupId()))
         .thenReturn(Lists.newArrayList(delegate1, delegate2));
     // verify delegate group whitelisting return false as delegate1 connectionResult expired, last updated more than 6
     // hours
@@ -2262,7 +2262,7 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
 
     when(delegateCache.get(accountId, delegate2.getUuid(), false)).thenReturn(delegate2);
     when(delegateCache.get(accountId, delegate1.getUuid(), false)).thenReturn(delegate1);
-    when(delegateCache.getDelegates(accountId, delegate1.getDelegateGroupId()))
+    when(delegateCache.getDelegatesForGroup(accountId, delegate1.getDelegateGroupId()))
         .thenReturn(Lists.newArrayList(delegate1, delegate2));
     // verify delegate2 is not whitelisted by itself
     assertThat(assignDelegateService.isWhitelisted(delegateTask, delegate2.getUuid())).isFalse();
@@ -2305,7 +2305,7 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
 
     when(delegateCache.get(accountId, delegate2.getUuid(), false)).thenReturn(delegate2);
     when(delegateCache.get(accountId, delegate1.getUuid(), false)).thenReturn(delegate1);
-    when(delegateCache.getDelegates(accountId, delegate1.getDelegateGroupId()))
+    when(delegateCache.getDelegatesForGroup(accountId, delegate1.getDelegateGroupId()))
         .thenReturn(Lists.newArrayList(delegate1, delegate2));
     // verify delegate2 is not whitelisted by itself
     assertThat(assignDelegateService.isWhitelisted(delegateTask, delegate2.getUuid())).isFalse();

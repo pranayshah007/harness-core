@@ -25,6 +25,5 @@ public interface DelegateCache {
 
   void invalidateDelegateProfileCache(String accountId, String delegateProfileId);
 
-  List<Delegate> getDelegates(String accountId, String delegateGroupId);
-
+  List<Delegate> getDelegatesForGroup(String accountId, String delegateGroupId);
 }

@@ -86,7 +86,7 @@ public class DelegateCacheImpl implements DelegateCache {
 
   private LoadingCache<ImmutablePair<String, String>, List<Delegate>> delegatesFromGroupCache =
       CacheBuilder.newBuilder()
-          .maximumSize(1000)
+          .maximumSize(10000)
           .expireAfterWrite(5, TimeUnit.MINUTES)
           .build(new CacheLoader<ImmutablePair<String, String>, List<Delegate>>() {
             @Override
@@ -153,7 +153,7 @@ public class DelegateCacheImpl implements DelegateCache {
   }
 
   @Override
-  public List<Delegate> getDelegates(String accountId, String delegateGroupId) {
+  public List<Delegate> getDelegatesForGroup(String accountId, String delegateGroupId) {
     if (isBlank(accountId) || isBlank(delegateGroupId)) {
       return null;
     }

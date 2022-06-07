@@ -4122,7 +4122,7 @@ public class DelegateServiceTest extends WingsBaseTest {
     delegate2.setNg(true);
     persistence.save(delegate2);
 
-    assertThat(delegateCache.getDelegates(accountId, delegateGroup.getUuid()).size()).isEqualTo(2);
+    assertThat(delegateCache.getDelegatesForGroup(accountId, delegateGroup.getUuid()).size()).isEqualTo(2);
   }
 
   private CapabilityRequirement buildCapabilityRequirement() {

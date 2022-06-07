@@ -618,7 +618,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
       return false;
     }
     List<Delegate> delegatesFromSameGroup =
-        delegateCache.getDelegates(task.getAccountId(), delegate.getDelegateGroupId());
+        delegateCache.getDelegatesForGroup(task.getAccountId(), delegate.getDelegateGroupId());
     if (isEmpty(delegatesFromSameGroup)) {
       return false;
     }
