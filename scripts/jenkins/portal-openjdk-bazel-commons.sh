@@ -44,7 +44,7 @@ function copy_cg_manager_jars(){
 
 	copy_common_files
 
-#	java -jar rest-capsule.jar scan-classpath-metadata
+	java -jar rest-capsule.jar scan-classpath-metadata
 
 	cd ../..
 }
@@ -83,7 +83,7 @@ function copy_ng_manager_jars(){
 
 	copy_common_files
 
-#	java -jar ng-manager-capsule.jar scan-classpath-metadata
+	java -jar ng-manager-capsule.jar scan-classpath-metadata
 
 	cd ../..
 }

@@ -9,11 +9,11 @@ package io.harness.filter;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonValue;
 import io.harness.annotations.dev.OwnedBy;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonValue;
 
 @OwnedBy(DX)
 public enum FilterType {

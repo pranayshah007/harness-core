@@ -57,7 +57,7 @@ public class IndividualManifestPlanCreatorTest extends CDNGTestBase {
   public void testGetSupportedTypes() {
     Map<String, Set<String>> supportedTypes = individualManifestPlanCreator.getSupportedTypes();
     assertThat(supportedTypes.containsKey(YamlTypes.MANIFEST_CONFIG)).isEqualTo(true);
-    assertThat(supportedTypes.get(YamlTypes.MANIFEST_CONFIG).size()).isEqualTo(9);
+    assertThat(supportedTypes.get(YamlTypes.MANIFEST_CONFIG).size()).isEqualTo(10);
     Set<String> manifestsSupportedTypes = supportedTypes.get(YamlTypes.MANIFEST_CONFIG);
 
     Set<String> expectedSupportedTypes = new HashSet<>(Arrays.asList(ManifestType.K8Manifest, ManifestType.VALUES,

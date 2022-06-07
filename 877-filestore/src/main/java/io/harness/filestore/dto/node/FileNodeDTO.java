@@ -38,10 +38,10 @@ public final class FileNodeDTO extends FileStoreNodeDTO {
   @Schema(description = "Content of the file") private String content;
 
   @Builder
-  public FileNodeDTO(String identifier, String parentIdentifier, String name, Long lastModifiedAt,
+  public FileNodeDTO(String identifier, String parentIdentifier, String name, String path, Long lastModifiedAt,
       EmbeddedUserDetailsDTO lastModifiedBy, FileUsage fileUsage, String description, List<NGTag> tags, String mimeType,
       String content) {
-    super(NGFileType.FILE, identifier, parentIdentifier, name, lastModifiedAt, lastModifiedBy);
+    super(NGFileType.FILE, identifier, parentIdentifier, name, path, lastModifiedAt, lastModifiedBy);
     this.fileUsage = fileUsage;
     this.description = description;
     this.tags = tags;

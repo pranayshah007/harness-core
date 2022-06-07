@@ -49,7 +49,6 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.ExecutionStatus;
-import io.harness.beans.FeatureName;
 import io.harness.beans.SweepingOutputInstance;
 import io.harness.beans.SweepingOutputInstance.Scope;
 import io.harness.beans.TriggeredBy;
@@ -343,9 +342,6 @@ public class ApprovalState extends State implements SweepingOutputStateMixin {
 
   @VisibleForTesting
   void resolveUserGroupFromExpression(ExecutionContext context) {
-    if (featureFlagService.isNotEnabled(FeatureName.USER_GROUP_AS_EXPRESSION, context.getAccountId())) {
-      return;
-    }
     if (isEmpty(getUserGroupExpression())) {
       throw new InvalidRequestException("User group expression is set but value is not provided", USER);
     }

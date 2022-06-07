@@ -11,8 +11,6 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.ng.core.mapper.TagMapper.convertToMap;
 
-import static java.lang.Boolean.TRUE;
-
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.service.beans.ServiceDefinition;
 import io.harness.exception.InvalidRequestException;
@@ -37,12 +35,12 @@ public class NGServiceEntityMapper {
 
   public NGServiceConfig toNGServiceConfig(ServiceEntity serviceEntity) {
     ServiceDefinition sDef = null;
-    boolean gitOpsEnabled = false;
+    Boolean gitOpsEnabled = null;
     if (isNotEmpty(serviceEntity.getYaml())) {
       try {
         final NGServiceConfig config = YamlPipelineUtils.read(serviceEntity.getYaml(), NGServiceConfig.class);
         sDef = config.getNgServiceV2InfoConfig().getServiceDefinition();
-        gitOpsEnabled = config.getNgServiceV2InfoConfig().getGitOpsEnabled() == TRUE;
+        gitOpsEnabled = config.getNgServiceV2InfoConfig().getGitOpsEnabled();
       } catch (IOException e) {
         throw new InvalidRequestException("Cannot create service ng service config due to " + e.getMessage());
       }

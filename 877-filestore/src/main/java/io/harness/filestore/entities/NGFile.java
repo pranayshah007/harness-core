@@ -83,6 +83,7 @@ public class NGFile implements PersistentEntity, UuidAware, NGAccountAccess, NGO
   @NotEmpty String parentIdentifier;
   @NotEmpty String fileUuid;
   @NotEmpty String name;
+  @NotEmpty String path;
   ChecksumType checksumType;
   String checksum;
   String mimeType;

@@ -3783,12 +3783,25 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
 
     UpdateOperations<WorkflowExecution> executionUpdates =
         wingsPersistence.createUpdateOperations(WorkflowExecution.class);
-    executionUpdates.set(WorkflowExecutionKeys.envIds, pipelineExecution.getEnvIds());
-    executionUpdates.set(WorkflowExecutionKeys.serviceIds, pipelineExecution.getServiceIds());
-    executionUpdates.set(WorkflowExecutionKeys.infraDefinitionIds, pipelineExecution.getInfraDefinitionIds());
-    wingsPersistence.findAndModify(
-        wingsPersistence.createQuery(WorkflowExecution.class).filter("_id", pipelineExecutionId), executionUpdates,
-        HPersistence.returnNewOptions);
+    boolean shouldUpdatePipelineExecution = false;
+    if (pipelineExecution.getEnvIds() != null) {
+      executionUpdates.set(WorkflowExecutionKeys.envIds, pipelineExecution.getEnvIds());
+      shouldUpdatePipelineExecution = true;
+    }
+    if (pipelineExecution.getServiceIds() != null) {
+      executionUpdates.set(WorkflowExecutionKeys.serviceIds, pipelineExecution.getServiceIds());
+      shouldUpdatePipelineExecution = true;
+    }
+    if (pipelineExecution.getInfraDefinitionIds() != null) {
+      executionUpdates.set(WorkflowExecutionKeys.infraDefinitionIds, pipelineExecution.getInfraDefinitionIds());
+      shouldUpdatePipelineExecution = true;
+    }
+
+    if (shouldUpdatePipelineExecution) {
+      wingsPersistence.findAndModify(
+          wingsPersistence.createQuery(WorkflowExecution.class).filter("_id", pipelineExecutionId), executionUpdates,
+          HPersistence.returnNewOptions);
+    }
 
     // Replace with WF variables and not pipeline Vars.
     ResponseData responseData = new ContinuePipelineResponseData(wfVariables, null);
@@ -4267,16 +4280,17 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
 
     RepeatStateExecutionData repeatStateExecutionData = (RepeatStateExecutionData) stateExecutionData;
 
-    Map<String, StateExecutionElement> elementMap = repeatStateExecutionData.getRepeatElements()
-                                                        .stream()
-                                                        .map(element
-                                                            -> StateExecutionElement.builder()
-                                                                   .executionContextElementId(element.getUuid())
-                                                                   .name(element.getName())
-                                                                   .progress(0)
-                                                                   .status(STARTING)
-                                                                   .build())
-                                                        .collect(toMap(StateExecutionElement::getName, identity()));
+    Map<String, StateExecutionElement> elementMap =
+        repeatStateExecutionData.getRepeatElements()
+            .stream()
+            .map(element
+                -> StateExecutionElement.builder()
+                       .executionContextElementId(element.getUuid())
+                       .name(element.getName())
+                       .progress(0)
+                       .status(STARTING)
+                       .build())
+            .collect(toMap(StateExecutionElement::getName, identity(), (o1, o2) -> o1));
 
     StateMachine stateMachine = stateExecutionService.obtainStateMachine(stateExecutionInstance);
 

@@ -9,15 +9,19 @@ package io.harness.connector.eventHandlers;
 
 import static io.harness.ConnectorConstants.CONNECTOR_DECORATOR_SERVICE;
 import static io.harness.annotations.dev.HarnessTeam.DX;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
+import io.harness.eventsframework.schemas.entity.EntityScopeInfo;
+import io.harness.gitsync.persistance.EntityKeySource;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import com.google.protobuf.StringValue;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -29,10 +33,13 @@ import org.springframework.data.domain.Page;
 @Slf4j
 public class ConnectorEntityCRUDEventHandler {
   ConnectorService connectorService;
+  EntityKeySource entityKeySource;
 
   @Inject
-  public ConnectorEntityCRUDEventHandler(@Named(CONNECTOR_DECORATOR_SERVICE) ConnectorService connectorService) {
+  public ConnectorEntityCRUDEventHandler(
+      @Named(CONNECTOR_DECORATOR_SERVICE) ConnectorService connectorService, EntityKeySource entityKeySource) {
     this.connectorService = connectorService;
+    this.entityKeySource = entityKeySource;
   }
 
   public boolean deleteAssociatedConnectors(String accountIdentifier, String orgIdentifier, String projectIdentifier) {
@@ -43,7 +50,20 @@ public class ConnectorEntityCRUDEventHandler {
                                             .map(ConnectorInfoDTO::getIdentifier)
                                             .collect(Collectors.toList());
     if (!connectorIdentifiers.isEmpty()) {
-      connectorService.deleteBatch(accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifiers);
+      final EntityScopeInfo.Builder entityScopeInfoBuilder =
+          EntityScopeInfo.newBuilder().setAccountId(accountIdentifier);
+      if (!isEmpty(projectIdentifier)) {
+        entityScopeInfoBuilder.setProjectId(StringValue.of(projectIdentifier));
+      }
+      if (!isEmpty(orgIdentifier)) {
+        entityScopeInfoBuilder.setOrgId(StringValue.of(orgIdentifier));
+      }
+      entityKeySource.updateKey(entityScopeInfoBuilder.build());
+      try {
+        connectorService.deleteBatch(accountIdentifier, orgIdentifier, projectIdentifier, connectorIdentifiers);
+      } catch (Exception ex) {
+        log.error("Exception occurred in delete batch call", ex);
+      }
     }
     return true;
   }
@@ -54,7 +74,7 @@ public class ConnectorEntityCRUDEventHandler {
     List<ConnectorResponseDTO> connectorList = new ArrayList<>();
     do {
       pagedConnectorList = connectorService.list(pagedConnectorList == null ? 0 : pagedConnectorList.getNumber() + 1,
-          10, accountIdentifier, null, orgIdentifier, projectIdentifier, null, null, false, true);
+          10, accountIdentifier, null, orgIdentifier, projectIdentifier, null, null, false, false);
       connectorList.addAll(pagedConnectorList.stream().collect(Collectors.toList()));
     } while (pagedConnectorList.hasNext());
     return connectorList;

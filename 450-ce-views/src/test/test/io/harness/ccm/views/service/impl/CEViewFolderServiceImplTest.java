@@ -127,7 +127,7 @@ public class CEViewFolderServiceImplTest extends CategoryTest {
     doReturn(Collections.emptyList()).when(ceViewDao).findByAccountIdAndFolderId(any(), any(), any());
     doReturn(ceViewFolder()).when(ceViewFolderDao).getDefaultFolder(any());
     doReturn(Collections.emptyList()).when(ceViewDao).moveMultiplePerspectiveFolder(any(), any(), any());
-    doReturn(true).when(ceViewDao).delete(any(), any());
+    doReturn(true).when(ceViewFolderDao).delete(any(), any());
     boolean folderDeleted = ceViewFolderService.delete(ACCOUNT_ID, UUID);
     assertThat(folderDeleted).isEqualTo(true);
   }

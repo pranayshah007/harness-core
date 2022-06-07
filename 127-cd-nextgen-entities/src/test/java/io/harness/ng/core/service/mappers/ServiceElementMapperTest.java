@@ -13,6 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.service.dto.ServiceRequestDTO;
 import io.harness.ng.core.service.dto.ServiceResponseDTO;
@@ -94,10 +95,10 @@ public class ServiceElementMapperTest extends CategoryTest {
                                                     + " identifier: IDENTIFIER\n"
                                                     + " orgIdentifier: ORG_ID\n"
                                                     + " projectIdentifier: PROJECT_ID\n"
+                                                    + " gitOpsEnabled: false\n"
                                                     + " tags:\n"
                                                     + "   k1: v1\n"
                                                     + "   k2: v2\n"
-                                                    + " gitOpsEnabled: true\n"
                                                     + " serviceDefinition:\n"
                                                     + "    type: \"Kubernetes\"\n"
                                                     + "    spec:\n"
@@ -118,16 +119,17 @@ public class ServiceElementMapperTest extends CategoryTest {
                                                 .name("Service")
                                                 .deleted(false)
                                                 .tags(tags_1)
-                                                .gitOpsEnabled(true)
+                                                .type(ServiceDefinitionType.KUBERNETES)
+                                                .gitOpsEnabled(false)
                                                 .yaml("service:\n"
                                                     + " name: Service\n"
                                                     + " identifier: IDENTIFIER\n"
                                                     + " orgIdentifier: ORG_ID\n"
                                                     + " projectIdentifier: PROJECT_ID\n"
+                                                    + " gitOpsEnabled: false\n"
                                                     + " tags:\n"
                                                     + "   k1: v1\n"
                                                     + "   k2: v2\n"
-                                                    + " gitOpsEnabled: true\n"
                                                     + " serviceDefinition:\n"
                                                     + "    type: \"Kubernetes\"\n"
                                                     + "    spec:\n"
@@ -141,8 +143,67 @@ public class ServiceElementMapperTest extends CategoryTest {
                                                     + "                type: \"DockerRegistry\"\n")
                                                 .build();
 
-    return new Object[][] {
-        {serviceRequestDTO_1, responseServiceEntity_1}, {serviceRequestDTO_2, responseServiceEntity_2}};
+    ServiceRequestDTO serviceRequestDTO_3 = ServiceRequestDTO.builder()
+                                                .identifier("IDENTIFIER")
+                                                .orgIdentifier("ORG_ID")
+                                                .projectIdentifier("PROJECT_ID")
+                                                .name("Service")
+                                                .tags(ImmutableMap.of("k1", "v1", "k2", "v2"))
+                                                .yaml("service:\n"
+                                                    + " name: Service\n"
+                                                    + " identifier: IDENTIFIER\n"
+                                                    + " orgIdentifier: ORG_ID\n"
+                                                    + " projectIdentifier: PROJECT_ID\n"
+                                                    + " gitOpsEnabled: true\n"
+                                                    + " tags:\n"
+                                                    + "   k1: v1\n"
+                                                    + "   k2: v2\n"
+                                                    + " serviceDefinition:\n"
+                                                    + "    type: \"Kubernetes\"\n"
+                                                    + "    spec:\n"
+                                                    + "        variables: []\n"
+                                                    + "        artifacts:\n"
+                                                    + "            primary:\n"
+                                                    + "                spec:\n"
+                                                    + "                    connectorRef: \"account.harnessImage\"\n"
+                                                    + "                    imagePath: \"nginx\"\n"
+                                                    + "                    tag: \"latest\"\n"
+                                                    + "                type: \"DockerRegistry\"\n")
+                                                .build();
+    ServiceEntity responseServiceEntity_3 = ServiceEntity.builder()
+                                                .accountId("ACCOUNT_ID")
+                                                .identifier("IDENTIFIER")
+                                                .orgIdentifier("ORG_ID")
+                                                .projectIdentifier("PROJECT_ID")
+                                                .name("Service")
+                                                .deleted(false)
+                                                .tags(tags_1)
+                                                .type(ServiceDefinitionType.KUBERNETES)
+                                                .gitOpsEnabled(true)
+                                                .yaml("service:\n"
+                                                    + " name: Service\n"
+                                                    + " identifier: IDENTIFIER\n"
+                                                    + " orgIdentifier: ORG_ID\n"
+                                                    + " projectIdentifier: PROJECT_ID\n"
+                                                    + " gitOpsEnabled: true\n"
+                                                    + " tags:\n"
+                                                    + "   k1: v1\n"
+                                                    + "   k2: v2\n"
+                                                    + " serviceDefinition:\n"
+                                                    + "    type: \"Kubernetes\"\n"
+                                                    + "    spec:\n"
+                                                    + "        variables: []\n"
+                                                    + "        artifacts:\n"
+                                                    + "            primary:\n"
+                                                    + "                spec:\n"
+                                                    + "                    connectorRef: \"account.harnessImage\"\n"
+                                                    + "                    imagePath: \"nginx\"\n"
+                                                    + "                    tag: \"latest\"\n"
+                                                    + "                type: \"DockerRegistry\"\n")
+                                                .build();
+
+    return new Object[][] {{serviceRequestDTO_1, responseServiceEntity_1},
+        {serviceRequestDTO_2, responseServiceEntity_2}, {serviceRequestDTO_3, responseServiceEntity_3}};
   }
 
   // Method to provide parameters to test

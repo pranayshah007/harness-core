@@ -333,7 +333,8 @@ public class CEViewServiceImpl implements CEViewService {
   }
 
   @Override
-  public List<QLCEView> getAllViews(String accountId, String folderId, boolean includeDefault, QLCEViewSortCriteria sortCriteria) {
+  public List<QLCEView> getAllViews(
+      String accountId, String folderId, boolean includeDefault, QLCEViewSortCriteria sortCriteria) {
     List<CEView> viewList = ceViewDao.findByAccountIdAndFolderId(accountId, folderId, sortCriteria);
     if (!includeDefault) {
       viewList = viewList.stream()

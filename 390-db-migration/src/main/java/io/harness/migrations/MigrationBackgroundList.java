@@ -133,6 +133,7 @@ import io.harness.migrations.all.TemplateLibraryYamlMigration;
 import io.harness.migrations.all.TerraformIsTemplatizedMigration;
 import io.harness.migrations.all.TimeSeriesThresholdsMigration;
 import io.harness.migrations.all.UpdateAccountEncryptionClassNames;
+import io.harness.migrations.all.UpdateCorruptedEmptyClusterNameInstanceStatsMigration;
 import io.harness.migrations.all.UpdateCorruptedInstanceStatsMigration;
 import io.harness.migrations.all.UpdateInstanceInfoWithLastArtifactIdMigration;
 import io.harness.migrations.all.UpdateNameInAwsInfrastructureMappingMigration;
@@ -381,8 +382,10 @@ public class MigrationBackgroundList {
         .add(Pair.of(220, AddNotificationGroupReferenceToUserGroups.class))
         .add(Pair.of(221, BaseMigration.class))
         .add(Pair.of(222, UpdateNameInAwsInfrastructureMappingMigration.class))
-        .add(Pair.of(223, AddClusterNameInGcpTypeInstanceMigration.class))
+        .add(Pair.of(223, BaseMigration.class))
         .add(Pair.of(224, UpdateCorruptedInstanceStatsMigration.class))
+        .add(Pair.of(225, UpdateCorruptedEmptyClusterNameInstanceStatsMigration.class))
+        .add(Pair.of(226, AddClusterNameInGcpTypeInstanceMigration.class))
         .build();
   }
 }

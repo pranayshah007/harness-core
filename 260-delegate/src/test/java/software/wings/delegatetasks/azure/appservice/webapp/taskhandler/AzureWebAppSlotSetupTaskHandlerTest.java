@@ -38,6 +38,8 @@ import io.harness.delegate.task.azure.appservice.webapp.request.AzureWebAppSlotS
 import io.harness.delegate.task.azure.appservice.webapp.response.AzureAppDeploymentData;
 import io.harness.delegate.task.azure.appservice.webapp.response.AzureWebAppSlotSetupResponse;
 import io.harness.delegate.task.azure.common.AzureAppServiceService;
+import io.harness.delegate.task.azure.common.AzureLogCallbackProvider;
+import io.harness.delegate.task.azure.common.AzureLogCallbackProviderFactory;
 import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
 import io.harness.logging.CommandExecutionStatus;
@@ -66,6 +68,8 @@ import org.mockito.Spy;
 public class AzureWebAppSlotSetupTaskHandlerTest extends WingsBaseTest {
   @Mock private ILogStreamingTaskClient mockLogStreamingTaskClient;
   @Mock private LogCallback mockLogCallback;
+  @Mock private AzureLogCallbackProvider mockLogCallbackProvider;
+  @Mock private AzureLogCallbackProviderFactory mockLogCallbackProviderFactory;
   @Mock private AzureAppServiceDeploymentService azureAppServiceDeploymentService;
   @Mock private AzureAppServiceService azureAppServiceService;
   @Mock private AzureContainerRegistryService azureContainerRegistryService;
@@ -75,6 +79,7 @@ public class AzureWebAppSlotSetupTaskHandlerTest extends WingsBaseTest {
 
   @Before
   public void setup() {
+    doReturn(mockLogCallbackProvider).when(mockLogCallbackProviderFactory).createCg(mockLogStreamingTaskClient);
     doReturn(mockLogCallback).when(mockLogStreamingTaskClient).obtainLogCallback(anyString());
     doNothing().when(mockLogCallback).saveExecutionLog(anyString(), any(), any());
     doNothing().when(mockLogCallback).saveExecutionLog(anyString(), any());

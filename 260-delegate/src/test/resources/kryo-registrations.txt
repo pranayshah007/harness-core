@@ -134,6 +134,7 @@
 1025:io.harness.spotinst.model.ElastiGroup
 1026:io.harness.spotinst.model.ElastiGroupCapacity
 1027:com.amazonaws.services.ec2.model.InstanceMaintenanceOptions
+1028:com.amazonaws.services.ec2.model.PrivateDnsNameOptionsResponse
 1201:io.harness.beans.FileData
 1202:io.harness.context.GlobalContext
 1203:io.harness.context.GlobalContextData

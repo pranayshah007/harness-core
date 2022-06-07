@@ -24,6 +24,8 @@ public interface AssignDelegateService {
 
   boolean isWhitelisted(DelegateTask task, String delegateId);
 
+  boolean isDelegateGroupWhitelisted(DelegateTask task, String delegateGroupId);
+
   boolean shouldValidate(DelegateTask task, String delegateId);
   List<String> connectedWhitelistedDelegates(DelegateTask task);
 

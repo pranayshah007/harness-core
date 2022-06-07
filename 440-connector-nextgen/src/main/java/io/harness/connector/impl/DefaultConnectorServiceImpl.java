@@ -224,6 +224,9 @@ public class DefaultConnectorServiceImpl implements ConnectorService {
     if (Boolean.TRUE.equals(getDistinctFromBranches)
         && gitSyncSdkService.isGitSyncEnabled(accountIdentifier, orgIdentifier, projectIdentifier)) {
       connectors = connectorRepository.findAll(criteria, pageable, true);
+    } else if (Boolean.FALSE.equals(getDistinctFromBranches)
+        && gitSyncSdkService.isGitSyncEnabled(accountIdentifier, orgIdentifier, projectIdentifier)) {
+      connectors = connectorRepository.findAll(criteria, pageable, false);
     } else {
       connectors = connectorRepository.findAll(criteria, pageable, projectIdentifier, orgIdentifier, accountIdentifier);
     }

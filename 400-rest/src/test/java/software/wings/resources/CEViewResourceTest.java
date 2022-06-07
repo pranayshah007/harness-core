@@ -9,7 +9,6 @@ package software.wings.resources;
 
 import static io.harness.rule.OwnerRule.NIKUNJ;
 
-import static org.mockito.Matchers.anyBoolean;
 import static software.wings.graphql.datafetcher.billing.CloudBillingHelper.unified;
 
 import static java.lang.String.format;
@@ -85,7 +84,7 @@ public class CEViewResourceTest extends CategoryTest {
                  .viewVersion(viewVersion)
                  .build();
     when(ceViewService.get(VIEW_ID)).thenReturn(ceView);
-    when(ceViewService.save(ceView, anyBoolean())).thenReturn(ceView);
+    when(ceViewService.save(ceView, false)).thenReturn(ceView);
     when(ceViewService.update(ceView)).thenReturn(ceView);
     when(cloudBillingHelper.getCloudProviderTableName(ACCOUNT_ID, unified)).thenReturn(UNIFIED_TABLE);
   }

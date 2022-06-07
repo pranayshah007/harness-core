@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: resourceTypeConfiguration
-version: 10
+version: 11
 resourceTypes:
   - identifier: ACCOUNT
     permissionKey: account
@@ -78,3 +78,5 @@ resourceTypes:
     permissionKey: chaoshub
   - identifier: CHAOS_AGENT
     permissionKey: chaosagent
+  - identifier: CHAOS_WORKFLOW
+    permissionKey: chaosworkflow

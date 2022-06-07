@@ -201,7 +201,7 @@ deployMode: KUBERNETES
 deployVariant: SAAS
 envPath: ""
 
-scmVersion: 0487ccaf
+scmVersion: 298576b8
 
 portal:
   url: https://localhost:8000

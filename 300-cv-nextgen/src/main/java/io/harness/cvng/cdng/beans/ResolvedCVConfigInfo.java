@@ -19,4 +19,13 @@ import lombok.Value;
 public class ResolvedCVConfigInfo {
   @Nullable String monitoredServiceIdentifier;
   @Nullable List<CVConfig> cvConfigs;
+  List<HealthSourceInfo> healthSources;
+
+  @Value
+  @Builder
+  public static class HealthSourceInfo {
+    String connectorRef;
+    String identifier;
+    boolean demoEnabledForAnyCVConfig;
+  }
 }
