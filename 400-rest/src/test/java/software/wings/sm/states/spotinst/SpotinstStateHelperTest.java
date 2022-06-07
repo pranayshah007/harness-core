@@ -7,48 +7,7 @@
 
 package software.wings.sm.states.spotinst;
 
-import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.beans.EnvironmentType.PROD;
-import static io.harness.beans.OrchestrationWorkflowType.BASIC;
-import static io.harness.beans.OrchestrationWorkflowType.BLUE_GREEN;
-import static io.harness.beans.OrchestrationWorkflowType.CANARY;
-import static io.harness.beans.OrchestrationWorkflowType.MULTI_SERVICE;
-import static io.harness.beans.OrchestrationWorkflowType.ROLLING;
-import static io.harness.rule.OwnerRule.ADWAIT;
-import static io.harness.rule.OwnerRule.SATYAM;
-
-import static software.wings.api.InstanceElement.Builder.anInstanceElement;
-import static software.wings.beans.Application.Builder.anApplication;
-import static software.wings.beans.AwsAmiInfrastructureMapping.Builder.anAwsAmiInfrastructureMapping;
-import static software.wings.beans.Environment.Builder.anEnvironment;
-import static software.wings.beans.SettingAttribute.Builder.aSettingAttribute;
-import static software.wings.beans.TaskType.SPOTINST_COMMAND_TASK;
-import static software.wings.beans.artifact.Artifact.Builder.anArtifact;
-import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
-import static software.wings.utils.WingsTestConstants.ACTIVITY_ID;
-import static software.wings.utils.WingsTestConstants.APP_ID;
-import static software.wings.utils.WingsTestConstants.ARTIFACT_ID;
-import static software.wings.utils.WingsTestConstants.ENV_ID;
-import static software.wings.utils.WingsTestConstants.ENV_NAME;
-import static software.wings.utils.WingsTestConstants.INFRA_MAPPING_ID;
-import static software.wings.utils.WingsTestConstants.SERVICE_ID;
-import static software.wings.utils.WingsTestConstants.SERVICE_NAME;
-import static software.wings.utils.WingsTestConstants.SETTING_ID;
-import static software.wings.utils.WingsTestConstants.SPOTINST_SETTING_ID;
-import static software.wings.utils.WingsTestConstants.WORKFLOW_EXECUTION_ID;
-
-import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.joor.Reflect.on;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.powermock.api.mockito.PowerMockito.when;
-
+import com.google.inject.Inject;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTask;
 import io.harness.beans.EmbeddedUser;
@@ -58,11 +17,21 @@ import io.harness.context.ContextElementType;
 import io.harness.delegate.task.aws.LoadBalancerDetailsForBGDeployment;
 import io.harness.delegate.task.spotinst.request.SpotInstSetupTaskParameters;
 import io.harness.delegate.task.spotinst.request.SpotInstTaskParameters;
+import io.harness.exception.SpotInstException;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 import io.harness.spotinst.model.ElastiGroup;
 import io.harness.spotinst.model.ElastiGroupCapacity;
-
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.Spy;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import software.wings.WingsBaseTest;
 import software.wings.api.PhaseElement;
 import software.wings.api.ServiceElement;
@@ -92,19 +61,49 @@ import software.wings.sm.ExecutionContextImpl;
 import software.wings.sm.WorkflowStandardParams;
 import software.wings.sm.WorkflowStandardParamsExtensionService;
 
-import com.google.inject.Inject;
 import java.util.Arrays;
 import java.util.List;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.Spy;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
+
+import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.beans.EnvironmentType.PROD;
+import static io.harness.beans.OrchestrationWorkflowType.BASIC;
+import static io.harness.beans.OrchestrationWorkflowType.BLUE_GREEN;
+import static io.harness.beans.OrchestrationWorkflowType.CANARY;
+import static io.harness.beans.OrchestrationWorkflowType.MULTI_SERVICE;
+import static io.harness.beans.OrchestrationWorkflowType.ROLLING;
+import static io.harness.rule.OwnerRule.ADWAIT;
+import static io.harness.rule.OwnerRule.SATYAM;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.joor.Reflect.on;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.powermock.api.mockito.PowerMockito.when;
+import static software.wings.api.InstanceElement.Builder.anInstanceElement;
+import static software.wings.beans.Application.Builder.anApplication;
+import static software.wings.beans.AwsAmiInfrastructureMapping.Builder.anAwsAmiInfrastructureMapping;
+import static software.wings.beans.Environment.Builder.anEnvironment;
+import static software.wings.beans.SettingAttribute.Builder.aSettingAttribute;
+import static software.wings.beans.TaskType.SPOTINST_COMMAND_TASK;
+import static software.wings.beans.artifact.Artifact.Builder.anArtifact;
+import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
+import static software.wings.utils.WingsTestConstants.ACTIVITY_ID;
+import static software.wings.utils.WingsTestConstants.APP_ID;
+import static software.wings.utils.WingsTestConstants.ARTIFACT_ID;
+import static software.wings.utils.WingsTestConstants.ENV_ID;
+import static software.wings.utils.WingsTestConstants.ENV_NAME;
+import static software.wings.utils.WingsTestConstants.INFRA_MAPPING_ID;
+import static software.wings.utils.WingsTestConstants.SERVICE_ID;
+import static software.wings.utils.WingsTestConstants.SERVICE_NAME;
+import static software.wings.utils.WingsTestConstants.SETTING_ID;
+import static software.wings.utils.WingsTestConstants.SPOTINST_SETTING_ID;
+import static software.wings.utils.WingsTestConstants.WORKFLOW_EXECUTION_ID;
 
 @OwnedBy(CDP)
 public class SpotinstStateHelperTest extends WingsBaseTest {
@@ -160,8 +159,52 @@ public class SpotinstStateHelperTest extends WingsBaseTest {
   @Owner(developers = SATYAM)
   @Category(UnitTests.class)
   public void testPrepareStateExecutionData() {
+    String minInstances = "3";
+    String maxInstances = "20";
+    String targetInstances = "5";
+    String elastigroupNamePrefix = "cdteam";
+    String image = "ami-id";
+
     ExecutionContextImpl mockContext = mock(ExecutionContextImpl.class);
     SpotInstServiceSetup mockState = mock(SpotInstServiceSetup.class);
+    init(mockContext, mockState);
+    SettingAttribute awsProvider = aSettingAttribute().withValue(AwsConfig.builder().build()).build();
+    SettingAttribute spotinst = aSettingAttribute().withValue(SpotInstConfig.builder().build()).build();
+    doReturn(awsProvider).doReturn(spotinst).when(mockSettingsService).get(any());
+
+    SpotInstSetupStateExecutionData executionData =
+        spotInstStateHelper.prepareStateExecutionData(mockContext, mockState);
+    assertThat(executionData).isNotNull();
+    ElastiGroupCapacity capacity = executionData.getElastiGroupOriginalConfig().getCapacity();
+    assertThat(capacity.getMaximum()).isEqualTo(Integer.valueOf(maxInstances));
+    assertThat(capacity.getMinimum()).isEqualTo(Integer.valueOf(minInstances));
+    assertThat(capacity.getTarget()).isEqualTo(Integer.valueOf(targetInstances));
+
+    SpotInstCommandRequest spotinstCommandRequest = executionData.getSpotinstCommandRequest();
+    assertThat(spotinstCommandRequest).isNotNull();
+    SpotInstTaskParameters spotInstTaskParameters = spotinstCommandRequest.getSpotInstTaskParameters();
+    assertThat(spotInstTaskParameters instanceof SpotInstSetupTaskParameters).isTrue();
+    SpotInstSetupTaskParameters setupParams = (SpotInstSetupTaskParameters) spotInstTaskParameters;
+    assertThat(setupParams.getElastiGroupNamePrefix()).isEqualTo(elastigroupNamePrefix);
+    assertThat(setupParams.getImage()).isEqualTo(image);
+    assertThat(setupParams.getUserData()).isEqualTo("dXNlckRhdGE=");
+  }
+
+  @Test
+  @Owner(developers = SATYAM)
+  @Category(UnitTests.class)
+  public void testPrepareStateExecutionDataNull() {
+    ExecutionContextImpl mockContext = mock(ExecutionContextImpl.class);
+    SpotInstServiceSetup mockState = mock(SpotInstServiceSetup.class);
+    init(mockContext, mockState);
+    SettingAttribute awsProvider = aSettingAttribute().withValue(AwsConfig.builder().build()).build();
+    doReturn(awsProvider).doReturn(null).when(mockSettingsService).get(any());
+
+    assertThatThrownBy(() -> spotInstStateHelper.prepareStateExecutionData(mockContext, mockState))
+        .isInstanceOf(SpotInstException.class);
+  }
+
+  private void init(ExecutionContextImpl mockContext, SpotInstServiceSetup mockState) {
     String minInstances = "3";
     String maxInstances = "20";
     String targetInstances = "5";
@@ -198,10 +241,8 @@ public class SpotinstStateHelperTest extends WingsBaseTest {
                                                             .withRegion("us-east-1")
                                                             .build();
     doReturn(infrastructureMapping).when(mockInfrastructureMappingService).get(any(), any());
-    SettingAttribute awsProvider = aSettingAttribute().withValue(AwsConfig.builder().build()).build();
-    SettingAttribute spotinst = aSettingAttribute().withValue(SpotInstConfig.builder().build()).build();
-    doReturn(awsProvider).doReturn(spotinst).when(mockSettingsService).get(any());
     doReturn(emptyList()).when(mockSecretManager).getEncryptionDetails(any(), any(), any());
+
     String userData = "userData";
     UserDataSpecification userDataSpecification = UserDataSpecification.builder().data(userData).build();
     doReturn(userDataSpecification).when(mockServiceResourceService).getUserDataSpecification(any(), any());
@@ -226,22 +267,6 @@ public class SpotinstStateHelperTest extends WingsBaseTest {
         .doReturn(userData)
         .when(mockContext)
         .renderExpression(any());
-    SpotInstSetupStateExecutionData executionData =
-        spotInstStateHelper.prepareStateExecutionData(mockContext, mockState);
-    assertThat(executionData).isNotNull();
-    ElastiGroupCapacity capacity = executionData.getElastiGroupOriginalConfig().getCapacity();
-    assertThat(capacity.getMaximum()).isEqualTo(Integer.valueOf(maxInstances));
-    assertThat(capacity.getMinimum()).isEqualTo(Integer.valueOf(minInstances));
-    assertThat(capacity.getTarget()).isEqualTo(Integer.valueOf(targetInstances));
-
-    SpotInstCommandRequest spotinstCommandRequest = executionData.getSpotinstCommandRequest();
-    assertThat(spotinstCommandRequest).isNotNull();
-    SpotInstTaskParameters spotInstTaskParameters = spotinstCommandRequest.getSpotInstTaskParameters();
-    assertThat(spotInstTaskParameters instanceof SpotInstSetupTaskParameters).isTrue();
-    SpotInstSetupTaskParameters setupParams = (SpotInstSetupTaskParameters) spotInstTaskParameters;
-    assertThat(setupParams.getElastiGroupNamePrefix()).isEqualTo(elastigroupNamePrefix);
-    assertThat(setupParams.getImage()).isEqualTo(image);
-    assertThat(setupParams.getUserData()).isEqualTo("dXNlckRhdGE=");
   }
 
   @Test

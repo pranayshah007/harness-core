@@ -25,7 +25,7 @@ import java.util.Map;
 @OwnedBy(HarnessTeam.PIPELINE)
 public abstract class ChildrenFilterJsonCreator<T> implements FilterJsonCreator<T> {
   public abstract Map<String, YamlField> getDependencies(FilterCreationContext filterCreationContext);
-  public abstract PipelineFilter getFilterForGivenField();
+  public abstract PipelineFilter getFilterForGivenField(FilterCreationContext filterCreationContext);
 
   public FilterCreationResponse handleNode(FilterCreationContext filterCreationContext, T field) {
     FilterCreationResponse response = FilterCreationResponse.builder().build();
@@ -33,7 +33,7 @@ public abstract class ChildrenFilterJsonCreator<T> implements FilterJsonCreator<
     Dependencies dependencies = DependenciesUtils.toDependenciesProto(yamlFieldsDependencies);
     response.addDependencies(dependencies);
 
-    response.setPipelineFilter(getFilterForGivenField());
+    response.setPipelineFilter(getFilterForGivenField(filterCreationContext));
     response.addStageNames(getStageNames(filterCreationContext, yamlFieldsDependencies.values()));
     response.setReferredEntities(getReferredEntities(filterCreationContext, field));
     // Note: Currently we treat that all the dependency fields are children but that might not be true.

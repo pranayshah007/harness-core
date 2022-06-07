@@ -15,9 +15,9 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.azure.context.AzureWebClientContext;
 import io.harness.azure.model.AzureAppServiceApplicationSetting;
 import io.harness.azure.model.AzureAppServiceConnectionString;
-import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.azure.appservice.AzureAppServicePreDeploymentData;
 import io.harness.delegate.task.azure.appservice.deployment.AzureAppServiceDeploymentService;
+import io.harness.delegate.task.azure.common.AzureLogCallbackProvider;
 import io.harness.delegate.task.azure.common.validator.ArtifactTypeSubset;
 
 import software.wings.utils.ArtifactType;
@@ -40,12 +40,12 @@ public class AzureAppServicePackageDeploymentContext extends AzureAppServiceDepl
 
   @Builder
   public AzureAppServicePackageDeploymentContext(AzureWebClientContext azureWebClientContext,
-      ILogStreamingTaskClient logStreamingTaskClient, Map<String, AzureAppServiceApplicationSetting> appSettingsToAdd,
+      AzureLogCallbackProvider logCallbackProvider, Map<String, AzureAppServiceApplicationSetting> appSettingsToAdd,
       Map<String, AzureAppServiceApplicationSetting> appSettingsToRemove,
       Map<String, AzureAppServiceConnectionString> connSettingsToAdd,
       Map<String, AzureAppServiceConnectionString> connSettingsToRemove, String startupCommand, String slotName,
       String targetSlotName, File artifactFile, ArtifactType artifactType, int steadyStateTimeoutInMin) {
-    super(azureWebClientContext, logStreamingTaskClient, appSettingsToAdd, appSettingsToRemove, connSettingsToAdd,
+    super(azureWebClientContext, logCallbackProvider, appSettingsToAdd, appSettingsToRemove, connSettingsToAdd,
         connSettingsToRemove, slotName, targetSlotName, startupCommand, steadyStateTimeoutInMin);
     this.artifactFile = artifactFile;
     this.artifactType = artifactType;
