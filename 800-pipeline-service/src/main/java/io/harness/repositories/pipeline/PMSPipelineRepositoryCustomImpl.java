@@ -322,8 +322,9 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
     if (pipelineEntityOptional.isPresent()) {
       gitAwarePersistence.delete(pipelineToDelete, ChangeType.DELETE, PipelineEntity.class);
       outboxService.save(new PipelineDeleteEvent(accountId, orgIdentifier, projectIdentifier, pipelineToDelete, true));
+    } else {
+      throw new InvalidRequestException("No such pipeline exists");
     }
-    throw new InvalidRequestException("No such pipeline exists");
   }
 
   @Override
