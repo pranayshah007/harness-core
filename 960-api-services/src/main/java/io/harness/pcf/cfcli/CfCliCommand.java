@@ -32,7 +32,7 @@ public abstract class CfCliCommand {
 
   public String getCommand() {
     String command = CfCliCommandBuilder.buildCommand(this);
-    log.info("Command generated: {}", command);
+    log.debug("Command generated: {}", command);
     return command;
   }
 }
