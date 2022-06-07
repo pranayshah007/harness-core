@@ -48,8 +48,8 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonTypeName("Deployment")
-@OneOfSet(fields = {"serviceConfig, infrastructure", "service, deploymentType, environment",
-              "service, deploymentType, environmentGroup"},
+@OneOfSet(fields = {"serviceConfig, infrastructure", "service, deploymentType, gitOpsEnabled, environment",
+              "service, deploymentType, gitOpsEnabled, environmentGroup"},
     requiredFieldNames = {"service", "serviceConfig", "deploymentType", "infrastructure", "environment",
         "environmentGroup"})
 @TypeAlias("deploymentStageConfig")
@@ -65,6 +65,7 @@ public class DeploymentStageConfig implements StageInfoConfig, Visitable {
   // For new service yaml
   ServiceYamlV2 service;
   ServiceDefinitionType deploymentType;
+  Boolean gitOpsEnabled;
 
   public Boolean getGitOpsEnabled() {
     return gitOpsEnabled == Boolean.TRUE;
