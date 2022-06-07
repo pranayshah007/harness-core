@@ -145,7 +145,7 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
               .selectionLogsTrackingEnabled(request.getSelectionTrackingLogEnabled())
               .eligibleToExecuteDelegateIds(new LinkedList<>(request.getEligibleToExecuteDelegateIdsList()))
               .forceExecute(request.getForceExecute())
-              .data(getTaskData(taskDetails));
+              .data(createTaskData(taskDetails));
 
       if (request.hasQueueTimeout()) {
         taskBuilder.expiry(System.currentTimeMillis() + Durations.toMillis(request.getQueueTimeout()));
@@ -179,7 +179,7 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
     }
   }
 
-  private TaskData getTaskData(TaskDetails taskDetails) {
+  private TaskData createTaskData(TaskDetails taskDetails) {
     Object[] parameters;
     TaskType taskType = taskDetails.getType();
     TaskResponseType taskResponseType;
@@ -191,11 +191,13 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
             objectMapper.writeValueAsString(taskDetails.getJsonParameters()), type.getTaskRequestParameters());
         parameters = new Object[] {taskParameters};
       } catch (JsonProcessingException e) {
-        throw new InvalidRequestException("Not able to serialize params", e);
+        throw new InvalidRequestException("Unable to serialize params", e);
       }
-    } else {
+    } else if (taskDetails.getParametersCase().equals(TaskDetails.ParametersCase.KRYO_PARAMETERS)) {
       taskResponseType = TaskResponseType.KRYO;
       parameters = new Object[] {kryoSerializer.asInflatedObject(taskDetails.getKryoParameters().toByteArray())};
+    } else {
+      throw new InvalidRequestException("Invalid task response type.");
     }
 
     return TaskData.builder()
