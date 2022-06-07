@@ -36,6 +36,7 @@ import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageResponse;
@@ -234,10 +235,7 @@ public class ServiceResourceV2 {
   @NGAccessControlCheck(resourceType = NGResourceType.SERVICE, permission = "core_service_delete")
   @Operation(operationId = "deleteServiceV2", summary = "Delete a Service by identifier",
       responses =
-      {
-        @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(responseCode = "default", description = "Returns true if the Service is deleted")
-      })
+      { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns true if the Service is deleted") })
   public ResponseDTO<Boolean>
   delete(@HeaderParam(IF_MATCH) String ifMatch,
       @Parameter(description = SERVICE_PARAM_MESSAGE) @PathParam(
@@ -255,11 +253,7 @@ public class ServiceResourceV2 {
   @PUT
   @ApiOperation(value = "Update a service by identifier", nickname = "updateServiceV2")
   @Operation(operationId = "updateServiceV2", summary = "Update a Service by identifier",
-      responses =
-      {
-        @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(responseCode = "default", description = "Returns the updated Service")
-      })
+      responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns the updated Service") })
   public ResponseDTO<ServiceResponse>
   update(@HeaderParam(IF_MATCH) String ifMatch,
       @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
@@ -280,11 +274,7 @@ public class ServiceResourceV2 {
   @Path("upsert")
   @ApiOperation(value = "Upsert a service by identifier", nickname = "upsertServiceV2")
   @Operation(operationId = "upsertServiceV2", summary = "Upsert a Service by identifier",
-      responses =
-      {
-        @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(responseCode = "default", description = "Returns the updated Service")
-      })
+      responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns the updated Service") })
   public ResponseDTO<ServiceResponse>
   upsert(@HeaderParam(IF_MATCH) String ifMatch,
       @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
@@ -308,8 +298,7 @@ public class ServiceResourceV2 {
   @Operation(operationId = "getServiceList", summary = "Gets Service list",
       responses =
       {
-        @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(responseCode = "default", description = "Returns the list of Services for a Project")
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns the list of Services for a Project")
       })
   public ResponseDTO<PageResponse<ServiceResponse>>
   listServices(@Parameter(description = NGCommonEntityConstants.PAGE_PARAM_MESSAGE) @QueryParam(
@@ -328,12 +317,13 @@ public class ServiceResourceV2 {
       @Parameter(
           description =
               "Specifies the sorting criteria of the list. Like sorting based on the last updated entity, alphabetical sorting in an ascending or descending order")
-      @QueryParam("sort") List<String> sort) {
+      @QueryParam("sort") List<String> sort,
+      @QueryParam("type") ServiceDefinitionType type) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
         Resource.of(NGResourceType.SERVICE, null), SERVICE_VIEW_PERMISSION, "Unauthorized to list services");
 
-    Criteria criteria =
-        ServiceFilterHelper.createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier, false, searchTerm);
+    Criteria criteria = ServiceFilterHelper.createCriteriaForGetList(
+        accountId, orgIdentifier, projectIdentifier, false, searchTerm, type);
     Pageable pageRequest;
     if (isNotEmpty(serviceIdentifiers)) {
       criteria.and(ServiceEntityKeys.identifier).in(serviceIdentifiers);
@@ -359,8 +349,8 @@ public class ServiceResourceV2 {
   @Operation(operationId = "getServiceAccessList", summary = "Gets Service Access list",
       responses =
       {
-        @io.swagger.v3.oas.annotations.responses.ApiResponse(
-            responseCode = "default", description = "Returns the list of Services for a Project that are accessible")
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(description = "Returns the list of Services for a Project that are accessible")
       })
   public ResponseDTO<List<ServiceResponse>>
   listAccessServices(@Parameter(description = NGCommonEntityConstants.PAGE_PARAM_MESSAGE) @QueryParam(
@@ -383,8 +373,8 @@ public class ServiceResourceV2 {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgIdentifier, projectIdentifier),
         Resource.of(PROJECT, projectIdentifier), VIEW_PROJECT_PERMISSION, "Unauthorized to list services");
 
-    Criteria criteria =
-        ServiceFilterHelper.createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier, false, searchTerm);
+    Criteria criteria = ServiceFilterHelper.createCriteriaForGetList(
+        accountId, orgIdentifier, projectIdentifier, false, searchTerm, null);
     if (isNotEmpty(serviceIdentifiers)) {
       criteria.and(ServiceEntityKeys.identifier).in(serviceIdentifiers);
     }

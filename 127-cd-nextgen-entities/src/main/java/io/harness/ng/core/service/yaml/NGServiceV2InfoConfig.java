@@ -48,7 +48,7 @@ public class NGServiceV2InfoConfig {
   @NotNull @EntityIdentifier @Pattern(regexp = NGRegexValidatorConstants.IDENTIFIER_PATTERN) String identifier;
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) String description;
   Map<String, String> tags;
-  @Builder.Default Boolean gitOpsEnabled = false;
+  Boolean gitOpsEnabled;
 
   ServiceDefinition serviceDefinition;
 }

@@ -8,7 +8,6 @@
 package io.harness.cdng.creator.plan.stage;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.creator.plan.environment.EnvironmentPlanCreatorHelper;
@@ -21,14 +20,12 @@ import io.harness.cdng.pipeline.PipelineInfrastructure;
 import io.harness.cdng.pipeline.beans.DeploymentStageStepParameters;
 import io.harness.cdng.pipeline.steps.CdStepParametersUtils;
 import io.harness.cdng.pipeline.steps.DeploymentStageStep;
-import io.harness.cdng.service.beans.ServiceYamlV2;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
-import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.plancreator.stages.AbstractStagePlanCreator;
 import io.harness.plancreator.steps.GenericStepPMSPlanCreator;
@@ -64,7 +61,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import lombok.SneakyThrows;
 
@@ -231,7 +227,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
       planCreationResponseMap.putAll(InfrastructurePmsPlanCreator.createPlanForInfraSectionV1(
           infraNode, infraDefPlanNode.getUuid(), pipelineInfrastructure, kryoSerializer, infraNode.getUuid()));
     } else {
-      final boolean gitOpsEnabled = isGitopsEnabled(ctx, stageNode.getDeploymentStageConfig().getService());
+      final boolean gitOpsEnabled = isGitopsEnabled(stageNode.getDeploymentStageConfig());
 
       // serviceRef will be used to fetch serviceOverride of this service in the environment
       String serviceRef = stageNode.getDeploymentStageConfig().getService().getServiceRef().getValue();
@@ -314,16 +310,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     }
   }
 
-  private boolean isGitopsEnabled(PlanCreationContext ctx, ServiceYamlV2 yaml) {
-    Optional<ServiceEntity> serviceEntity = fetchServiceEntity(ctx, yaml);
-    return serviceEntity.map(ServiceEntity::getGitOpsEnabled).orElse(false);
-  }
-
-  private Optional<ServiceEntity> fetchServiceEntity(PlanCreationContext ctx, ServiceYamlV2 yaml) {
-    if (yaml == null || isEmpty((String) yaml.getServiceRef().fetchFinalValue())) {
-      return Optional.empty();
-    }
-    return serviceEntityService.get(ctx.getMetadata().getAccountIdentifier(), ctx.getMetadata().getOrgIdentifier(),
-        ctx.getMetadata().getProjectIdentifier(), (String) yaml.getServiceRef().fetchFinalValue(), false);
+  private boolean isGitopsEnabled(DeploymentStageConfig deploymentStageConfig) {
+    return deploymentStageConfig.getGitOpsEnabled() == Boolean.TRUE;
   }
 }

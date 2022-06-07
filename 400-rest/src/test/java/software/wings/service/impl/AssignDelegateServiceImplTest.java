@@ -9,9 +9,12 @@ package software.wings.service.impl;
 
 import static io.harness.beans.EnvironmentType.NON_PROD;
 import static io.harness.beans.EnvironmentType.PROD;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.delegate.beans.DelegateInstanceStatus.ENABLED;
+import static io.harness.delegate.beans.DelegateType.KUBERNETES;
 import static io.harness.delegate.beans.TaskData.DEFAULT_ASYNC_CALL_TIMEOUT;
+import static io.harness.delegate.beans.TaskData.DEFAULT_SYNC_CALL_TIMEOUT;
 import static io.harness.delegate.task.TaskFailureReason.EXPIRED;
 import static io.harness.delegate.task.mixin.HttpConnectionExecutionCapabilityGenerator.buildHttpConnectionExecutionCapability;
 import static io.harness.rule.OwnerRule.ANSHUL;
@@ -37,9 +40,11 @@ import static software.wings.service.impl.AssignDelegateServiceImpl.SCOPE_WILDCA
 import static software.wings.service.impl.AssignDelegateServiceImpl.WHITELIST_TTL;
 import static software.wings.service.impl.AssignDelegateServiceImplTest.CriteriaType.MATCHING_CRITERIA;
 import static software.wings.service.impl.AssignDelegateServiceImplTest.CriteriaType.NOT_MATCHING_CRITERIA;
+import static software.wings.service.impl.instance.InstanceSyncTestConstants.APP_ID;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 import static software.wings.utils.WingsTestConstants.DELEGATE_ID;
 
+import static java.lang.System.currentTimeMillis;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
@@ -65,6 +70,7 @@ import io.harness.common.NGTaskType;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.Delegate.DelegateBuilder;
 import io.harness.delegate.beans.DelegateEntityOwner;
+import io.harness.delegate.beans.DelegateGroup;
 import io.harness.delegate.beans.DelegateInstanceStatus;
 import io.harness.delegate.beans.DelegateProfile;
 import io.harness.delegate.beans.DelegateProfileScopingRule;
@@ -82,6 +88,7 @@ import io.harness.service.intfc.DelegateCache;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.AwsAmiInfrastructureMapping;
+import software.wings.beans.AwsConfig;
 import software.wings.beans.Environment;
 import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.InfrastructureMappingType;
@@ -89,6 +96,8 @@ import software.wings.beans.TaskType;
 import software.wings.delegatetasks.validation.DelegateConnectionResult;
 import software.wings.delegatetasks.validation.DelegateConnectionResult.DelegateConnectionResultBuilder;
 import software.wings.delegatetasks.validation.DelegateConnectionResult.DelegateConnectionResultKeys;
+import software.wings.service.impl.aws.model.AwsIamListInstanceRolesRequest;
+import software.wings.service.impl.aws.model.AwsIamRequest;
 import software.wings.service.intfc.DelegateSelectionLogsService;
 import software.wings.service.intfc.DelegateService;
 import software.wings.service.intfc.EnvironmentService;
@@ -2062,7 +2071,7 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testAssignSelectorsWithEmptySelectorOrigin() throws ExecutionException {
     Delegate delegate = createNGDelegate();
-    delegate.setTags(Arrays.asList("sel1"));
+    delegate.setTags(Arrays.asList("sel1", "sel2"));
     persistence.save(delegate);
 
     when(featureFlagService.isEnabled(any(), anyString())).thenReturn(true);
@@ -2133,6 +2142,176 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
     when(delegateService.retrieveDelegateSelectors(delegate, true)).thenReturn(Sets.newHashSet(delegate.getTags()));
 
     assertThat(assignDelegateService.canAssignSelectors(delegate, executionCapabilityList)).isTrue();
+  }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void testDelegateGroupWhitelisting() throws ExecutionException {
+    String accountId = generateUuid();
+    // create 2 delegate replicas with same group
+    List<Delegate> delegates = createDelegateReplicas(accountId);
+    Delegate delegate1 = delegates.get(0);
+    Delegate delegate2 = delegates.get(1);
+
+    DelegateTask delegateTask = getDelegateTaskWithCapabilities(accountId);
+
+    // set delegate connection result for delegate1
+    DelegateConnectionResult connectionResult = DelegateConnectionResult.builder()
+                                                    .accountId(accountId)
+                                                    .delegateId(delegate1.getUuid())
+                                                    .lastUpdatedAt(currentTimeMillis() - TimeUnit.HOURS.toMillis(1))
+                                                    .criteria("https//aws.amazon.com")
+                                                    .validated(true)
+                                                    .build();
+    when(delegateConnectionResultCache.get(ImmutablePair.of(delegate1.getUuid(), connectionResult.getCriteria())))
+        .thenReturn(of(connectionResult));
+    when(delegateCache.get(accountId, delegate2.getUuid(), false)).thenReturn(delegate2);
+    when(delegateCache.get(accountId, delegate1.getUuid(), false)).thenReturn(delegate1);
+    when(delegateCache.getDelegatesForGroup(accountId, delegate1.getDelegateGroupId()))
+        .thenReturn(Lists.newArrayList(delegate1, delegate2));
+    // verify delegate2 is not whitelisted by itself
+    assertThat(assignDelegateService.isWhitelisted(delegateTask, delegate2.getUuid())).isFalse();
+    // verify delegate group whitelisting for delegate2 return true as delegate1 and delegate2 belongs to same group.
+    assertThat(assignDelegateService.isDelegateGroupWhitelisted(delegateTask, delegate2.getUuid())).isTrue();
+  }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void testDelegateGroupWhitelisting_noDelegatesInGroupWhitelisted() throws ExecutionException {
+    String accountId = generateUuid();
+    // create 2 delegate replicas with same group
+    List<Delegate> delegates = createDelegateReplicas(accountId);
+    Delegate delegate1 = delegates.get(0);
+    Delegate delegate2 = delegates.get(1);
+
+    DelegateTask delegateTask = getDelegateTaskWithCapabilities(accountId);
+
+    when(delegateCache.get(accountId, delegate2.getUuid(), false)).thenReturn(delegate2);
+    when(delegateCache.get(accountId, delegate1.getUuid(), false)).thenReturn(delegate1);
+    when(delegateCache.getDelegatesForGroup(accountId, delegate1.getDelegateGroupId()))
+        .thenReturn(Lists.newArrayList(delegate1, delegate2));
+
+    // verify delegate group is not whitelisted, as both delegate1 or delegate2 are not whitelisted
+    assertThat(assignDelegateService.isDelegateGroupWhitelisted(delegateTask, delegate2.getUuid())).isFalse();
+  }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void testDelegateGroupWhitelisting_withExpiredConnectionResult() throws ExecutionException {
+    String accountId = generateUuid();
+    // create 2 delegate replicas with same group
+    List<Delegate> delegates = createDelegateReplicas(accountId);
+    Delegate delegate1 = delegates.get(0);
+    Delegate delegate2 = delegates.get(1);
+
+    DelegateTask delegateTask = getDelegateTaskWithCapabilities(accountId);
+
+    // set delegate connection result for delegate1, more than 6 hours
+    DelegateConnectionResult connectionResult = DelegateConnectionResult.builder()
+                                                    .accountId(accountId)
+                                                    .delegateId(delegate1.getUuid())
+                                                    .lastUpdatedAt(currentTimeMillis() - TimeUnit.HOURS.toMillis(7))
+                                                    .criteria("https//aws.amazon.com")
+                                                    .validated(true)
+                                                    .build();
+    when(delegateConnectionResultCache.get(ImmutablePair.of(delegate1.getUuid(), connectionResult.getCriteria())))
+        .thenReturn(of(connectionResult));
+    when(delegateCache.get(accountId, delegate2.getUuid(), false)).thenReturn(delegate2);
+    when(delegateCache.get(accountId, delegate1.getUuid(), false)).thenReturn(delegate1);
+    when(delegateCache.getDelegatesForGroup(accountId, delegate1.getDelegateGroupId()))
+        .thenReturn(Lists.newArrayList(delegate1, delegate2));
+    // verify delegate group whitelisting return false as delegate1 connectionResult expired, last updated more than 6
+    // hours
+    assertThat(assignDelegateService.isDelegateGroupWhitelisted(delegateTask, delegate2.getUuid())).isFalse();
+  }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void testDelegateGroupWhitelisting_withMoreThanOneCapabilities() throws ExecutionException {
+    String accountId = generateUuid();
+    // create 2 delegate replicas with same group
+    List<Delegate> delegates = createDelegateReplicas(accountId);
+    Delegate delegate1 = delegates.get(0);
+    Delegate delegate2 = delegates.get(1);
+
+    DelegateTask delegateTask = getDelegateTaskWithMoreThanOneCapabilities(accountId);
+
+    // set delegate connection result for delegate1 for both criteria
+    DelegateConnectionResult connectionResult = DelegateConnectionResult.builder()
+                                                    .accountId(accountId)
+                                                    .delegateId(delegate1.getUuid())
+                                                    .lastUpdatedAt(currentTimeMillis() - TimeUnit.HOURS.toMillis(1))
+                                                    .criteria("https//aws.amazon.com")
+                                                    .validated(true)
+                                                    .build();
+    when(delegateConnectionResultCache.get(ImmutablePair.of(delegate1.getUuid(), connectionResult.getCriteria())))
+        .thenReturn(of(connectionResult));
+    DelegateConnectionResult connectionResult2 = DelegateConnectionResult.builder()
+                                                     .accountId(accountId)
+                                                     .delegateId(delegate1.getUuid())
+                                                     .lastUpdatedAt(currentTimeMillis() - TimeUnit.HOURS.toMillis(1))
+                                                     .criteria("https//google.com")
+                                                     .validated(true)
+                                                     .build();
+    when(delegateConnectionResultCache.get(ImmutablePair.of(delegate1.getUuid(), connectionResult2.getCriteria())))
+        .thenReturn(of(connectionResult2));
+
+    when(delegateCache.get(accountId, delegate2.getUuid(), false)).thenReturn(delegate2);
+    when(delegateCache.get(accountId, delegate1.getUuid(), false)).thenReturn(delegate1);
+    when(delegateCache.getDelegatesForGroup(accountId, delegate1.getDelegateGroupId()))
+        .thenReturn(Lists.newArrayList(delegate1, delegate2));
+    // verify delegate2 is not whitelisted by itself
+    assertThat(assignDelegateService.isWhitelisted(delegateTask, delegate2.getUuid())).isFalse();
+    // verify delegate group whitelisting for delegate2 return true as delegate1 and delegate2 belongs to same group.
+    assertThat(assignDelegateService.isDelegateGroupWhitelisted(delegateTask, delegate2.getUuid())).isTrue();
+  }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void testDelegateGroupWhitelisting_withMoreThanOneCapabilitiesWithDifferentDelegate()
+      throws ExecutionException {
+    String accountId = generateUuid();
+    // create 2 delegate replicas with same group
+    List<Delegate> delegates = createDelegateReplicas(accountId);
+    Delegate delegate1 = delegates.get(0);
+    Delegate delegate2 = delegates.get(1);
+
+    DelegateTask delegateTask = getDelegateTaskWithMoreThanOneCapabilities(accountId);
+
+    // set delegateConnectionResultCriteria 1 to delegate1 and  delegateConnectionResultCriteria 2 to delegate2
+    DelegateConnectionResult connectionResult = DelegateConnectionResult.builder()
+                                                    .accountId(accountId)
+                                                    .delegateId(delegate1.getUuid())
+                                                    .lastUpdatedAt(currentTimeMillis() - TimeUnit.HOURS.toMillis(1))
+                                                    .criteria("https//aws.amazon.com")
+                                                    .validated(true)
+                                                    .build();
+    when(delegateConnectionResultCache.get(ImmutablePair.of(delegate1.getUuid(), connectionResult.getCriteria())))
+        .thenReturn(of(connectionResult));
+    DelegateConnectionResult connectionResult2 = DelegateConnectionResult.builder()
+                                                     .accountId(accountId)
+                                                     .delegateId(delegate2.getUuid())
+                                                     .lastUpdatedAt(currentTimeMillis() - TimeUnit.HOURS.toMillis(1))
+                                                     .criteria("https//google.com")
+                                                     .validated(true)
+                                                     .build();
+    when(delegateConnectionResultCache.get(ImmutablePair.of(delegate2.getUuid(), connectionResult2.getCriteria())))
+        .thenReturn(of(connectionResult2));
+
+    when(delegateCache.get(accountId, delegate2.getUuid(), false)).thenReturn(delegate2);
+    when(delegateCache.get(accountId, delegate1.getUuid(), false)).thenReturn(delegate1);
+    when(delegateCache.getDelegatesForGroup(accountId, delegate1.getDelegateGroupId()))
+        .thenReturn(Lists.newArrayList(delegate1, delegate2));
+    // verify delegate2 is not whitelisted by itself
+    assertThat(assignDelegateService.isWhitelisted(delegateTask, delegate2.getUuid())).isFalse();
+    // verify delegate group whitelisting for delegate2 return false, as both criteras not marching with either of one
+    // delegate
+    assertThat(assignDelegateService.isDelegateGroupWhitelisted(delegateTask, delegate2.getUuid())).isFalse();
   }
 
   private DelegateTask constructDelegateTask(boolean async, Set<String> validatingTaskIds, DelegateTask.Status status) {
@@ -2224,5 +2403,76 @@ public class AssignDelegateServiceImplTest extends WingsBaseTest {
     delegate.setNg(true);
     persistence.save(delegate);
     return delegate;
+  }
+
+  private List<Delegate> createDelegateReplicas(String accountId) {
+    DelegateGroup delegateGroup = DelegateGroup.builder()
+                                      .name("grp1")
+                                      .accountId(accountId)
+                                      .ng(true)
+                                      .delegateType(KUBERNETES)
+                                      .description("description")
+                                      .build();
+    persistence.save(delegateGroup);
+
+    // 2 delegates with same delegate group
+    Delegate delegate1 = createNGDelegate();
+    delegate1.setDelegateGroupId(delegateGroup.getUuid());
+    delegate1.setAccountId(accountId);
+    persistence.save(delegate1);
+
+    Delegate delegate2 = createNGDelegate();
+    delegate2.setDelegateGroupId(delegateGroup.getUuid());
+    delegate2.setAccountId(accountId);
+    persistence.save(delegate2);
+    return Lists.newArrayList(delegate1, delegate2);
+  }
+
+  private DelegateTask getDelegateTaskWithCapabilities(String accountId) {
+    AwsIamRequest request = AwsIamListInstanceRolesRequest.builder().awsConfig(AwsConfig.builder().build()).build();
+    DelegateTask delegateTask =
+        DelegateTask.builder()
+            .accountId(accountId)
+            .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, APP_ID)
+            .setupAbstraction(NG_DELEGATE_ENABLED_CONSTANT, "true")
+            .setupAbstraction(NG_DELEGATE_OWNER_CONSTANT, "orgId/projectId")
+            .tags(isNotEmpty(request.getAwsConfig().getTag()) ? singletonList(request.getAwsConfig().getTag()) : null)
+            .data(TaskData.builder()
+                      .async(false)
+                      .taskType(TaskType.AWS_IAM_TASK.name())
+                      .parameters(new Object[] {request})
+                      .timeout(DEFAULT_SYNC_CALL_TIMEOUT)
+                      .build())
+            .build();
+
+    HttpConnectionExecutionCapability matchingExecutionCapability =
+        buildHttpConnectionExecutionCapability("https//aws.amazon.com", null);
+    delegateTask.setExecutionCapabilities(Arrays.asList(matchingExecutionCapability));
+    return delegateTask;
+  }
+
+  private DelegateTask getDelegateTaskWithMoreThanOneCapabilities(String accountId) {
+    AwsIamRequest request = AwsIamListInstanceRolesRequest.builder().awsConfig(AwsConfig.builder().build()).build();
+    DelegateTask delegateTask =
+        DelegateTask.builder()
+            .accountId(accountId)
+            .setupAbstraction(Cd1SetupFields.APP_ID_FIELD, APP_ID)
+            .setupAbstraction(NG_DELEGATE_ENABLED_CONSTANT, "true")
+            .setupAbstraction(NG_DELEGATE_OWNER_CONSTANT, "orgId/projectId")
+            .tags(isNotEmpty(request.getAwsConfig().getTag()) ? singletonList(request.getAwsConfig().getTag()) : null)
+            .data(TaskData.builder()
+                      .async(false)
+                      .taskType(TaskType.AWS_IAM_TASK.name())
+                      .parameters(new Object[] {request})
+                      .timeout(DEFAULT_SYNC_CALL_TIMEOUT)
+                      .build())
+            .build();
+
+    HttpConnectionExecutionCapability matchingExecutionCapability =
+        buildHttpConnectionExecutionCapability("https//aws.amazon.com", null);
+    HttpConnectionExecutionCapability matchingExecutionCapability2 =
+        buildHttpConnectionExecutionCapability("https//google.com", null);
+    delegateTask.setExecutionCapabilities(Arrays.asList(matchingExecutionCapability, matchingExecutionCapability2));
+    return delegateTask;
   }
 }
