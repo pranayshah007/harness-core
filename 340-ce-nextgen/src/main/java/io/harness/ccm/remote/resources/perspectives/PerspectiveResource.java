@@ -403,12 +403,12 @@ public class PerspectiveResource {
           "cloneName") String cloneName) {
     HashMap<String, Object> properties = new HashMap<>();
     properties.put(MODULE, MODULE_NAME);
-    properties.put(DATA_SOURCES,
-        ceViewService.get(perspectiveId)
-            .getDataSources()
-            .stream()
-            .map(Object::toString)
-            .collect(Collectors.joining(",")));
+    List<ViewFieldIdentifier> dataSourcesList = ceViewService.get(perspectiveId).getDataSources();
+    String dataSources = "";
+    if (dataSourcesList != null) {
+      dataSources = dataSourcesList.stream().map(Object::toString).collect(Collectors.joining(","));
+    }
+    properties.put(DATA_SOURCES, dataSources);
     properties.put(IS_CLONE, "YES");
     CEView ceViewCheck = updateTotalCost(ceViewService.clone(accountId, perspectiveId, cloneName));
     properties.put(PERSPECTIVE_ID, ceViewCheck.getUuid());
