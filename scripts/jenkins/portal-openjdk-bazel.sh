@@ -196,6 +196,8 @@ if [ ! -z ${PURPOSE} ]
 then
     echo ${PURPOSE} > purpose.txt
 fi
+java -jar ci-manager-capsule.jar scan-classpath-metadata
+
 cd ../..
 
 mkdir -p dist/sto-manager

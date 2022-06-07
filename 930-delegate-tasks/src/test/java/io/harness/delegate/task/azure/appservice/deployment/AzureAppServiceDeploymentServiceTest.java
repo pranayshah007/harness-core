@@ -37,11 +37,11 @@ import io.harness.azure.model.AzureAppServiceApplicationSetting;
 import io.harness.azure.model.AzureAppServiceConnectionString;
 import io.harness.azure.model.AzureConfig;
 import io.harness.category.element.UnitTests;
-import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.azure.appservice.AzureAppServicePreDeploymentData;
 import io.harness.delegate.task.azure.appservice.deployment.context.AzureAppServiceDockerDeploymentContext;
 import io.harness.delegate.task.azure.appservice.deployment.verifier.SlotStatusVerifier;
 import io.harness.delegate.task.azure.appservice.deployment.verifier.SwapSlotStatusVerifier;
+import io.harness.delegate.task.azure.common.AzureLogCallbackProvider;
 import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
 
@@ -70,7 +70,7 @@ public class AzureAppServiceDeploymentServiceTest extends CategoryTest {
   private static final String IMAGE_AND_TAG = "image/tag";
 
   @Mock private AzureWebClient mockAzureWebClient;
-  @Mock private ILogStreamingTaskClient mockLogStreamingTaskClient;
+  @Mock private AzureLogCallbackProvider mockLogCallbackProvider;
   @Mock private LogCallback mockLogCallback;
   @Mock private SlotSteadyStateChecker slotSteadyStateChecker;
 
@@ -79,7 +79,7 @@ public class AzureAppServiceDeploymentServiceTest extends CategoryTest {
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
-    doReturn(mockLogCallback).when(mockLogStreamingTaskClient).obtainLogCallback(anyString());
+    doReturn(mockLogCallback).when(mockLogCallbackProvider).obtainLogCallback(anyString());
     doNothing().when(mockLogCallback).saveExecutionLog(anyString(), any(), any());
     doNothing().when(mockLogCallback).saveExecutionLog(anyString(), any());
     doNothing().when(mockLogCallback).saveExecutionLog(anyString());
@@ -107,7 +107,7 @@ public class AzureAppServiceDeploymentServiceTest extends CategoryTest {
             .imagePathAndTag(IMAGE_AND_TAG)
             .slotName(SLOT_NAME)
             .steadyStateTimeoutInMin(1)
-            .logStreamingTaskClient(mockLogStreamingTaskClient)
+            .logCallbackProvider(mockLogCallbackProvider)
             .dockerSettings(dockerSettings)
             .azureWebClientContext(azureWebClientContext)
             .appSettingsToAdd(appSettingsToAdd)
@@ -170,7 +170,7 @@ public class AzureAppServiceDeploymentServiceTest extends CategoryTest {
             .imagePathAndTag(IMAGE_AND_TAG)
             .slotName(SLOT_NAME)
             .steadyStateTimeoutInMin(1)
-            .logStreamingTaskClient(mockLogStreamingTaskClient)
+            .logCallbackProvider(mockLogCallbackProvider)
             .dockerSettings(dockerSettings)
             .azureWebClientContext(azureWebClientContext)
             .appSettingsToAdd(appSettingsToAdd)
@@ -226,7 +226,7 @@ public class AzureAppServiceDeploymentServiceTest extends CategoryTest {
             .imagePathAndTag(IMAGE_AND_TAG)
             .slotName(SLOT_NAME)
             .steadyStateTimeoutInMin(1)
-            .logStreamingTaskClient(mockLogStreamingTaskClient)
+            .logCallbackProvider(mockLogCallbackProvider)
             .dockerSettings(new HashMap<>())
             .azureWebClientContext(azureWebClientContext)
             .build();
@@ -260,7 +260,7 @@ public class AzureAppServiceDeploymentServiceTest extends CategoryTest {
   public void testRerouteProductionSlotTraffic() {
     AzureWebClientContext azureWebClientContext = getAzureWebClientContext();
     azureAppServiceDeploymentService.rerouteProductionSlotTraffic(
-        azureWebClientContext, SLOT_NAME, 50, mockLogStreamingTaskClient);
+        azureWebClientContext, SLOT_NAME, 50, mockLogCallbackProvider);
     verify(mockAzureWebClient, times(1)).rerouteProductionSlotTraffic(azureWebClientContext, SLOT_NAME, 50);
   }
 
@@ -274,13 +274,13 @@ public class AzureAppServiceDeploymentServiceTest extends CategoryTest {
             .imagePathAndTag(IMAGE_AND_TAG)
             .slotName(SLOT_NAME)
             .steadyStateTimeoutInMin(1)
-            .logStreamingTaskClient(mockLogStreamingTaskClient)
+            .logCallbackProvider(mockLogCallbackProvider)
             .dockerSettings(new HashMap<>())
             .azureWebClientContext(azureWebClientContext)
             .build();
 
     azureAppServiceDeploymentService.swapSlotsUsingCallback(
-        azureAppServiceDockerDeploymentContext, TARGET_SLOT_NAME, mockLogStreamingTaskClient);
+        azureAppServiceDockerDeploymentContext, TARGET_SLOT_NAME, mockLogCallbackProvider);
 
     ArgumentCaptor<SlotStatusVerifier> statusVerifierArgument = ArgumentCaptor.forClass(SlotStatusVerifier.class);
 

@@ -8,6 +8,8 @@
 package ci.pipeline.execution;
 
 import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.CODEBASE;
+import static io.harness.common.CIExecutionConstants.PATH_SEPARATOR;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.connector.ConnectorType.BITBUCKET;
 import static io.harness.delegate.beans.connector.ConnectorType.GITHUB;
@@ -18,6 +20,7 @@ import static io.harness.pms.execution.utils.StatusUtils.isFinalStatus;
 import static io.harness.steps.StepUtils.buildAbstractions;
 
 import io.harness.PipelineUtils;
+import io.harness.account.AccountClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
@@ -46,6 +49,7 @@ import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
+import io.harness.remote.client.RestClientUtils;
 import io.harness.service.DelegateGrpcClientWrapper;
 import io.harness.states.codebase.CodeBaseTaskStep;
 import io.harness.states.codebase.CodeBaseTaskStepParameters;
@@ -54,6 +58,7 @@ import io.harness.stateutils.buildstate.ConnectorUtils;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import java.net.URL;
 import java.time.Duration;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
@@ -83,6 +88,7 @@ public class GitBuildStatusUtility {
   @Inject private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
   @Inject @Named("ngBaseUrl") private String ngBaseUrl;
   @Inject private PipelineUtils pipelineUtils;
+  @Inject private AccountClient accountClient;
   @Inject ExecutionSweepingOutputService executionSweepingOutputResolver;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
 
@@ -359,6 +365,27 @@ public class GitBuildStatusUtility {
   }
 
   private String getBuildDetailsUrl(NGAccess ngAccess, String pipelineId, String executionId) {
-    return pipelineUtils.getBuildDetailsUrl(ngAccess, pipelineId, executionId, ngBaseUrl);
+    String baseUrl = getNgBaseUrl(getVanityUrl(ngAccess.getAccountIdentifier()), ngBaseUrl);
+    return pipelineUtils.getBuildDetailsUrl(ngAccess, pipelineId, executionId, baseUrl);
+  }
+
+  private String getVanityUrl(String accountID) {
+    return RestClientUtils.getResponse(accountClient.getVanityUrl(accountID));
+  }
+
+  private String getNgBaseUrl(String vanityUrl, String defaultBaseUrl) {
+    if (isEmpty(vanityUrl)) {
+      return defaultBaseUrl;
+    }
+
+    String newBaseUrl = StringUtils.stripEnd(vanityUrl, PATH_SEPARATOR);
+    try {
+      URL url = new URL(defaultBaseUrl);
+      String hostUrl = String.format("%s://%s", url.getProtocol(), url.getHost());
+      return StringUtils.join(newBaseUrl, defaultBaseUrl.substring(hostUrl.length()));
+    } catch (Exception e) {
+      log.warn("There was error while generating vanity URL", e);
+      return defaultBaseUrl;
+    }
   }
 }

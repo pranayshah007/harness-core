@@ -9,14 +9,19 @@ package io.harness.cf.pipeline;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.plancreator.PipelineServiceFilter;
 import io.harness.plancreator.stages.stage.StageElementConfig;
 import io.harness.pms.filter.creation.FilterCreationResponse;
-import io.harness.pms.filter.creation.FilterCreationResponse.FilterCreationResponseBuilder;
 import io.harness.pms.sdk.core.filter.creation.beans.FilterCreationContext;
 import io.harness.pms.sdk.core.pipeline.filters.FilterJsonCreator;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
+import io.harness.pms.yaml.YamlField;
+import io.harness.pms.yaml.YamlNode;
+import io.harness.steps.StepSpecTypeConstants;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 @OwnedBy(HarnessTeam.CF)
@@ -35,7 +40,24 @@ public class FeatureFlagStageFilterJsonCreator implements FilterJsonCreator<Stag
 
   @Override
   public FilterCreationResponse handleNode(FilterCreationContext filterCreationContext, StageElementConfig yamlField) {
-    FilterCreationResponseBuilder creationResponse = FilterCreationResponse.builder();
-    return creationResponse.build();
+    YamlField stageField = filterCreationContext.getCurrentField();
+    int count = 0;
+    YamlField stepsField = stageField.getNode()
+                               .getField(YAMLFieldNameConstants.SPEC)
+                               .getNode()
+                               .getField(YAMLFieldNameConstants.EXECUTION)
+                               .getNode()
+                               .getField(YAMLFieldNameConstants.STEPS);
+    for (YamlNode node : stepsField.getNode().asArray()) {
+      YamlField stepField = node.getField("step");
+      if (stepField != null) {
+        if (Objects.equals(stepField.getNode().getType(), StepSpecTypeConstants.FLAG_CONFIGURATION)) {
+          count++;
+        }
+      }
+    }
+    return FilterCreationResponse.builder()
+        .pipelineFilter(PipelineServiceFilter.builder().featureFlagStepCount(count).build())
+        .build();
   }
 }

@@ -14,6 +14,7 @@ import static io.harness.cdng.manifest.ManifestType.Kustomize;
 import static io.harness.cdng.manifest.ManifestType.KustomizePatches;
 import static io.harness.cdng.manifest.ManifestType.OpenshiftParam;
 import static io.harness.cdng.manifest.ManifestType.OpenshiftTemplate;
+import static io.harness.cdng.manifest.ManifestType.ReleaseRepo;
 import static io.harness.cdng.manifest.ManifestType.ServerlessAwsLambda;
 import static io.harness.cdng.manifest.ManifestType.VALUES;
 
@@ -28,6 +29,7 @@ import io.harness.cdng.manifest.yaml.ManifestAttributes;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.manifest.yaml.OpenshiftManifestOutcome;
 import io.harness.cdng.manifest.yaml.OpenshiftParamManifestOutcome;
+import io.harness.cdng.manifest.yaml.ReleaseRepoManifestOutcome;
 import io.harness.cdng.manifest.yaml.ServerlessAwsLambdaManifestOutcome;
 import io.harness.cdng.manifest.yaml.ValuesManifestOutcome;
 import io.harness.cdng.manifest.yaml.kinds.HelmChartManifest;
@@ -36,6 +38,7 @@ import io.harness.cdng.manifest.yaml.kinds.KustomizeManifest;
 import io.harness.cdng.manifest.yaml.kinds.KustomizePatchesManifest;
 import io.harness.cdng.manifest.yaml.kinds.OpenshiftManifest;
 import io.harness.cdng.manifest.yaml.kinds.OpenshiftParamManifest;
+import io.harness.cdng.manifest.yaml.kinds.ReleaseRepoManifest;
 import io.harness.cdng.manifest.yaml.kinds.ServerlessAwsLambdaManifest;
 import io.harness.cdng.manifest.yaml.kinds.ValuesManifest;
 
@@ -76,10 +79,20 @@ public class ManifestOutcomeMapper {
         return getOpenshiftParamOutcome(manifestAttributes, order);
       case ServerlessAwsLambda:
         return getServerlessAwsOutcome(manifestAttributes, order);
+      case ReleaseRepo:
+        return getReleaseRepoOutcome(manifestAttributes);
       default:
         throw new UnsupportedOperationException(
             format("Unknown Artifact Config type: [%s]", manifestAttributes.getKind()));
     }
+  }
+
+  private static ManifestOutcome getReleaseRepoOutcome(ManifestAttributes manifestAttributes) {
+    ReleaseRepoManifest attributes = (ReleaseRepoManifest) manifestAttributes;
+    return ReleaseRepoManifestOutcome.builder()
+        .identifier(attributes.getIdentifier())
+        .store(attributes.getStoreConfig())
+        .build();
   }
 
   private K8sManifestOutcome getK8sOutcome(ManifestAttributes manifestAttributes) {

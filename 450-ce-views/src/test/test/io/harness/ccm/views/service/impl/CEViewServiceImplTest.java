@@ -19,7 +19,9 @@ import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.ccm.views.dao.CEReportScheduleDao;
 import io.harness.ccm.views.dao.CEViewDao;
+import io.harness.ccm.views.dao.CEViewFolderDao;
 import io.harness.ccm.views.entities.CEView;
+import io.harness.ccm.views.entities.CEViewFolder;
 import io.harness.ccm.views.entities.ViewChartType;
 import io.harness.ccm.views.entities.ViewField;
 import io.harness.ccm.views.entities.ViewFieldIdentifier;
@@ -54,12 +56,14 @@ import org.mockito.MockitoAnnotations;
 public class CEViewServiceImplTest extends CategoryTest {
   @InjectMocks @Inject private CEViewServiceImpl ceViewService;
   @Mock private CEViewDao ceViewDao;
+  @Mock private CEViewFolderDao ceViewFolderDao;
   @Mock private CEReportScheduleDao ceReportScheduleDao;
 
   private static final String ACCOUNT_ID = "account_id";
   private static final String VIEW_NAME = "view_name";
   private static final String UUID = "uuid";
   private static final String UUID_1 = "uuid1";
+  private static final String FOLDER_NAME = "folder_name";
 
   @Before
   public void setUp() throws Exception {
@@ -71,6 +75,7 @@ public class CEViewServiceImplTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testSave() {
     doReturn(true).when(ceViewDao).save(any());
+    doReturn(ceViewFolder()).when(ceViewFolderDao).getDefaultFolder(any());
     CEView ceView = ceViewService.save(ceView(), false);
     assertThat(ceView.getAccountId()).isEqualTo(ACCOUNT_ID);
     assertThat(ceView.getName()).isEqualTo(VIEW_NAME);
@@ -236,5 +241,9 @@ public class CEViewServiceImplTest extends CategoryTest {
                                              .build()))
                                      .build()))
         .build();
+  }
+
+  private CEViewFolder ceViewFolder() {
+    return CEViewFolder.builder().uuid(UUID).name(FOLDER_NAME).accountId(ACCOUNT_ID).pinned(false).build();
   }
 }

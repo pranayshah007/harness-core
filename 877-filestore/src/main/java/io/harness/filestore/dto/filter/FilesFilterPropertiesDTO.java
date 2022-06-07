@@ -13,7 +13,6 @@ import static io.harness.filter.FilterConstants.FILE_STORE_FILTER;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.filter.FilterType;
 import io.harness.filter.dto.FilterPropertiesDTO;
-import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.dto.EmbeddedUserDetailsDTO;
 import io.harness.ng.core.filestore.FileUsage;
 
@@ -42,7 +41,7 @@ import lombok.experimental.FieldDefaults;
 public class FilesFilterPropertiesDTO extends FilterPropertiesDTO {
   @Schema(description = "This specifies the file usage") FileUsage fileUsage;
   @Schema(description = "File created by user") EmbeddedUserDetailsDTO createdBy;
-  @Schema(description = "File referenced by other entity") EntityDetail referencedBy;
+  @Schema(description = "File referenced by other entity") ReferencedByDTO referencedBy;
 
   @Override
   public FilterType getFilterType() {

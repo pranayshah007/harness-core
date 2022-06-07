@@ -41,7 +41,7 @@ public class CVNGStepFilterJsonCreator extends GenericStepPMSFilterJsonCreator {
   @Inject private MonitoredServiceService monitoredServiceService;
   @Override
   public Set<String> getSupportedStepTypes() {
-    return CVNGPlanCreator.CVNG_SUPPORTED_TYPES;
+    return CVNGPlanCreatorV2.CVNG_SUPPORTED_TYPES;
   }
 
   @Override

@@ -26,6 +26,7 @@ import com.google.common.cache.LoadingCache;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -83,6 +84,21 @@ public class DelegateCacheImpl implements DelegateCache {
             }
           });
 
+  private LoadingCache<ImmutablePair<String, String>, List<Delegate>> delegatesFromGroupCache =
+      CacheBuilder.newBuilder()
+          .maximumSize(10000)
+          .expireAfterWrite(5, TimeUnit.MINUTES)
+          .build(new CacheLoader<ImmutablePair<String, String>, List<Delegate>>() {
+            @Override
+            public List<Delegate> load(ImmutablePair<String, String> delegateGroupKey) {
+              return persistence.createQuery(Delegate.class)
+                  .filter(DelegateKeys.accountId, delegateGroupKey.getLeft())
+                  .filter(DelegateKeys.ng, true)
+                  .filter(DelegateKeys.delegateGroupId, delegateGroupKey.getRight())
+                  .asList();
+            }
+          });
+
   @Override
   public Delegate get(String accountId, String delegateId, boolean forceRefresh) {
     try {
@@ -134,5 +150,18 @@ public class DelegateCacheImpl implements DelegateCache {
   @Override
   public void invalidateDelegateProfileCache(String accountId, String delegateProfileId) {
     delegateProfilesCache.invalidate(ImmutablePair.of(accountId, delegateProfileId));
+  }
+
+  @Override
+  public List<Delegate> getDelegatesForGroup(String accountId, String delegateGroupId) {
+    if (isBlank(accountId) || isBlank(delegateGroupId)) {
+      return null;
+    }
+    try {
+      return delegatesFromGroupCache.get(ImmutablePair.of(accountId, delegateGroupId));
+    } catch (ExecutionException | CacheLoader.InvalidCacheLoadException e) {
+      log.warn("Unable to getDelegates from cache based on group id");
+      return null;
+    }
   }
 }

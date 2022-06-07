@@ -72,7 +72,7 @@ public class AzureWebAppSlotSwapTaskHandler extends AbstractAzureWebAppTaskHandl
     slotSwapParameters.getPreDeploymentData().setDeploymentProgressMarker(
         AppServiceDeploymentProgress.SWAP_SLOT.name());
     azureAppServiceDeploymentService.swapSlotsUsingCallback(
-        azureAppServiceDeploymentContext, targetSlotName, logStreamingTaskClient);
+        azureAppServiceDeploymentContext, targetSlotName, logCallbackProviderFactory.createCg(logStreamingTaskClient));
     slotSwapParameters.getPreDeploymentData().setDeploymentProgressMarker(
         AppServiceDeploymentProgress.DEPLOYMENT_COMPLETE.name());
   }
@@ -82,7 +82,8 @@ public class AzureWebAppSlotSwapTaskHandler extends AbstractAzureWebAppTaskHandl
       Integer steadyTimeoutIntervalInMin, ILogStreamingTaskClient logStreamingTaskClient) {
     AzureAppServiceDeploymentContext azureAppServiceDeploymentContext = new AzureAppServiceDeploymentContext();
     azureAppServiceDeploymentContext.setAzureWebClientContext(azureWebClientContext);
-    azureAppServiceDeploymentContext.setLogStreamingTaskClient(logStreamingTaskClient);
+    azureAppServiceDeploymentContext.setLogCallbackProvider(
+        logCallbackProviderFactory.createCg(logStreamingTaskClient));
     azureAppServiceDeploymentContext.setSlotName(slotSwapParameters.getSourceSlotName());
     azureAppServiceDeploymentContext.setSteadyStateTimeoutInMin(steadyTimeoutIntervalInMin);
     return azureAppServiceDeploymentContext;

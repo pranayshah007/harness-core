@@ -171,6 +171,8 @@ public class CVNGStep extends AsyncExecutableWithRollback {
         activity.fillInVerificationJobInstanceDetails(verificationJobInstanceBuilder);
         verificationJobInstanceId = verificationJobInstanceService.create(verificationJobInstanceBuilder.build());
       }
+      verifyStepCvConfigServiceMap.get(monitoredServiceType)
+          .managePerpetualTasks(serviceEnvironmentParams, resolvedCVConfigInfo, verificationJobInstanceId);
       activity.setVerificationJobInstanceIds(Arrays.asList(verificationJobInstanceId));
       String activityId = activityService.upsert(activity);
       CVNGStepTask cvngStepTask = CVNGStepTask.builder()
