@@ -14,6 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.validation.OneOfField;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
@@ -26,7 +27,7 @@ import lombok.experimental.FieldDefaults;
 @OneOfField(fields = {"matrix", "for", "parallelism"})
 @RecasterAlias("io.harness.plancreator.strategy.StrategyConfig")
 public class StrategyConfig {
-  @JsonProperty("matrix") MatrixConfig matrixConfig;
+  @JsonProperty("matrix") MatrixConfigInterface matrixConfig;
   @JsonProperty("for") HarnessForConfig forConfig;
   @JsonProperty("parallelism") int parallelism;
 }

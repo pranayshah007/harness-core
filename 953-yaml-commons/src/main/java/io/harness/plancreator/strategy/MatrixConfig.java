@@ -9,13 +9,13 @@ package io.harness.plancreator.strategy;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 
 import com.fasterxml.jackson.annotation.JsonAnySetter;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -33,7 +33,7 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @RecasterAlias("io.harness.plancreator.strategy.MatrixConfig")
-public class MatrixConfig {
+public class MatrixConfig implements MatrixConfigInterface {
   private static String EXCLUDE_KEYWORD = "exclude";
   private static String BATCH_SIZE = "batchSize";
 

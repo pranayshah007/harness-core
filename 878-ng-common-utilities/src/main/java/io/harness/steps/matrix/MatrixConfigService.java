@@ -26,7 +26,7 @@ import java.util.Map;
 @Singleton
 public class MatrixConfigService implements StrategyConfigService {
   public List<ChildrenExecutableResponse.Child> fetchChildren(StrategyConfig strategyConfig, String childNodeId) {
-    MatrixConfig matrixConfig = strategyConfig.getMatrixConfig();
+    MatrixConfig matrixConfig = (MatrixConfig) strategyConfig.getMatrixConfig();
     List<Map<String, String>> combinations = new ArrayList<>();
     List<List<Integer>> matrixMetadata = new ArrayList<>();
     List<String> keys = new LinkedList<>(matrixConfig.getAxes().keySet());

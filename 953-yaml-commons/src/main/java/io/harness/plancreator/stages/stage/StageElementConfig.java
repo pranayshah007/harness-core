@@ -70,6 +70,8 @@ public class StageElementConfig {
   @Pattern(regexp = NGRegexValidatorConstants.IDENTIFIER_PATTERN)
   @VariableExpression
   String identifier;
+
+  StrategyConfig strategy;
   @NotNull @EntityName @Pattern(regexp = NGRegexValidatorConstants.NAME_PATTERN) @VariableExpression String name;
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> description;
 
@@ -84,8 +86,6 @@ public class StageElementConfig {
   @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
   @YamlSchemaTypes(value = {runtime})
   ParameterField<List<TaskSelectorYaml>> delegateSelectors;
-
-  @JsonProperty("strategy") StrategyConfig strategy;
 
   @VariableExpression List<NGVariable> variables;
   @VariableExpression Map<String, String> tags;
