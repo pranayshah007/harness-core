@@ -26,6 +26,11 @@ import java.util.List;
  */
 @OwnedBy(CDP)
 public enum NGStepType {
+  // gitops steps
+  @JsonProperty(StepSpecTypeConstants.GITOPS_CREATE_PR)
+  GITOPS_CREATE_PR("Create PR", Arrays.asList(ServiceDefinitionType.KUBERNETES), "Kubernetes",
+      StepSpecTypeConstants.GITOPS_CREATE_PR),
+
   // k8s steps
   @JsonProperty("APPLY")
   APPLY("Apply", Arrays.asList(ServiceDefinitionType.KUBERNETES), "Kubernetes", StepSpecTypeConstants.PLACEHOLDER),

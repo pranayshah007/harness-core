@@ -20,10 +20,12 @@ import io.harness.ccm.budget.utils.BudgetUtils;
 import io.harness.ccm.commons.utils.BigQueryHelper;
 import io.harness.ccm.views.dao.CEReportScheduleDao;
 import io.harness.ccm.views.dao.CEViewDao;
+import io.harness.ccm.views.dao.CEViewFolderDao;
 import io.harness.ccm.views.dto.DefaultViewIdDto;
 import io.harness.ccm.views.dto.ViewTimeRangeDto;
 import io.harness.ccm.views.entities.CEReportSchedule;
 import io.harness.ccm.views.entities.CEView;
+import io.harness.ccm.views.entities.CEViewFolder;
 import io.harness.ccm.views.entities.ViewChartType;
 import io.harness.ccm.views.entities.ViewCondition;
 import io.harness.ccm.views.entities.ViewField;
@@ -43,6 +45,7 @@ import io.harness.ccm.views.graphql.QLCEViewAggregation;
 import io.harness.ccm.views.graphql.QLCEViewField;
 import io.harness.ccm.views.graphql.QLCEViewFilterWrapper;
 import io.harness.ccm.views.graphql.QLCEViewMetadataFilter;
+import io.harness.ccm.views.graphql.QLCEViewSortCriteria;
 import io.harness.ccm.views.graphql.QLCEViewTimeFilterOperator;
 import io.harness.ccm.views.graphql.QLCEViewTrendInfo;
 import io.harness.ccm.views.graphql.ViewCostData;
@@ -70,12 +73,14 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.jooq.tools.StringUtils;
 
 @Slf4j
 @Singleton
 @OwnedBy(CE)
 public class CEViewServiceImpl implements CEViewService {
   @Inject private CEViewDao ceViewDao;
+  @Inject private CEViewFolderDao ceViewFolderDao;
   @Inject private CEReportScheduleDao ceReportScheduleDao;
   @Inject private ViewsBillingService viewsBillingService;
   @Inject private ViewCustomFieldService viewCustomFieldService;
@@ -85,7 +90,8 @@ public class CEViewServiceImpl implements CEViewService {
   @Inject private BigQueryHelper bigQueryHelper;
   @Inject private BigQueryService bigQueryService;
 
-  private static final String VIEW_NAME_DUPLICATE_EXCEPTION = "View with given name already exists";
+  private static final String VIEW_NAME_DUPLICATE_EXCEPTION = "Perspective with given name already exists";
+  private static final String CLONE_NAME_DUPLICATE_EXCEPTION = "A clone for this perspective already exists";
   private static final String VIEW_LIMIT_REACHED_EXCEPTION =
       "Maximum allowed custom views limit(1000) has been reached";
   private static final String DEFAULT_AZURE_VIEW_NAME = "Azure";
@@ -106,12 +112,22 @@ public class CEViewServiceImpl implements CEViewService {
 
   private static final int VIEW_COUNT = 1000;
   @Override
-  public CEView save(CEView ceView) {
-    validateView(ceView);
+  public CEView save(CEView ceView, boolean clone) {
+    validateView(ceView, clone);
     if (ceView.getViewState() != null && ceView.getViewState() == ViewState.COMPLETED) {
       ceView.setViewState(ViewState.COMPLETED);
     } else {
       ceView.setViewState(ViewState.DRAFT);
+    }
+    if (StringUtils.isEmpty(ceView.getFolderId())) {
+      String defaultFolderId;
+      CEViewFolder defaultFolder = ceViewFolderDao.getDefaultFolder(ceView.getAccountId());
+      if (defaultFolder == null) {
+        defaultFolderId = ceViewFolderDao.createDefaultOrSampleFolder(ceView.getAccountId(), ViewType.DEFAULT);
+      } else {
+        defaultFolderId = defaultFolder.getUuid();
+      }
+      ceView.setFolderId(defaultFolderId);
     }
     ceView.setUuid(null);
     ceViewDao.save(ceView);
@@ -127,7 +143,7 @@ public class CEViewServiceImpl implements CEViewService {
     view.setCreatedAt(0);
     view.setUuid(null);
     view.setViewType(ViewType.CUSTOMER);
-    return save(view);
+    return save(view, true);
   }
 
   @Override
@@ -187,12 +203,15 @@ public class CEViewServiceImpl implements CEViewService {
     return getCostForPerspective(accountId, filters);
   }
 
-  public boolean validateView(CEView ceView) {
+  public boolean validateView(CEView ceView, boolean clone) {
     CEView savedCEView = ceViewDao.findByName(ceView.getAccountId(), ceView.getName());
     if (null != savedCEView) {
+      if (clone) {
+        throw new InvalidRequestException(CLONE_NAME_DUPLICATE_EXCEPTION);
+      }
       throw new InvalidRequestException(VIEW_NAME_DUPLICATE_EXCEPTION);
     }
-    List<CEView> views = ceViewDao.findByAccountId(ceView.getAccountId());
+    List<CEView> views = ceViewDao.findByAccountId(ceView.getAccountId(), null);
     if (views.size() >= VIEW_COUNT) {
       throw new InvalidRequestException(VIEW_LIMIT_REACHED_EXCEPTION);
     }
@@ -303,13 +322,29 @@ public class CEViewServiceImpl implements CEViewService {
   }
 
   @Override
-  public List<QLCEView> getAllViews(String accountId, boolean includeDefault) {
-    List<CEView> viewList = ceViewDao.findByAccountId(accountId);
+  public List<QLCEView> getAllViews(String accountId, boolean includeDefault, QLCEViewSortCriteria sortCriteria) {
+    List<CEView> viewList = ceViewDao.findByAccountId(accountId, sortCriteria);
     if (!includeDefault) {
       viewList = viewList.stream()
                      .filter(view -> ImmutableSet.of(ViewType.SAMPLE, ViewType.CUSTOMER).contains(view.getViewType()))
                      .collect(Collectors.toList());
     }
+    return getQLCEViewsFromCEViews(viewList);
+  }
+
+  @Override
+  public List<QLCEView> getAllViews(
+      String accountId, String folderId, boolean includeDefault, QLCEViewSortCriteria sortCriteria) {
+    List<CEView> viewList = ceViewDao.findByAccountIdAndFolderId(accountId, folderId, sortCriteria);
+    if (!includeDefault) {
+      viewList = viewList.stream()
+                     .filter(view -> ImmutableSet.of(ViewType.SAMPLE, ViewType.CUSTOMER).contains(view.getViewType()))
+                     .collect(Collectors.toList());
+    }
+    return getQLCEViewsFromCEViews(viewList);
+  }
+
+  private List<QLCEView> getQLCEViewsFromCEViews(List<CEView> viewList) {
     List<QLCEView> graphQLViewObjList = new ArrayList<>();
     for (CEView view : viewList) {
       List<CEReportSchedule> reportSchedules =
@@ -323,6 +358,7 @@ public class CEViewServiceImpl implements CEViewService {
       graphQLViewObjList.add(QLCEView.builder()
                                  .id(view.getUuid())
                                  .name(view.getName())
+                                 .folderId(view.getFolderId())
                                  .totalCost(view.getTotalCost())
                                  .createdBy(null != view.getCreatedBy() ? view.getCreatedBy().getEmail() : "")
                                  .createdAt(view.getCreatedAt())
@@ -379,6 +415,7 @@ public class CEViewServiceImpl implements CEViewService {
         .viewVersion("v1")
         .viewType(ViewType.DEFAULT)
         .viewState(ViewState.COMPLETED)
+        .folderId(ceViewFolderDao.getSampleFolder(accountId).getUuid())
         .build();
   }
 

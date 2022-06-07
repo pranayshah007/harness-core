@@ -1,35 +1,44 @@
-[{
-  "hostname" : "payment-service-goto-deployment-canary-7fbb79749b-2rhm6",
-  "metricIdentifier" : "createpayment",
-  "metricName" : "createpayment",
-  "metricValue" : 13.0,
-  "timestamp" : 1644833760000
-},
- {
-   "hostname" : "payment-service-goto-deployment-canary-7fbb79749b-2rhm6",
-   "metricIdentifier" : "createpayment",
-   "metricName" : "createpayment",
-   "metricValue" : 9.0,
-   "timestamp" : 1644833820000
- },
- {
-   "hostname" : "payment-service-goto-deployment-canary-7fbb79749b-2rhm6",
-   "metricIdentifier" : "createpayment",
-   "metricName" : "createpayment",
-   "metricValue" : 9.0,
-   "timestamp" : 1644833880000
- },
- {
-   "hostname" : "payment-service-goto-deployment-canary-7fbb79749b-2rhm6",
-   "metricIdentifier" : "createpayment",
-   "metricName" : "createpayment",
-   "metricValue" : 8.0,
-   "timestamp" : 1644833940000
- },
- {
-   "hostname" : "payment-service-goto-deployment-canary-7fbb79749b-nddkl",
-   "metricIdentifier" : "createpayment",
-   "metricName" : "createpayment",
-   "metricValue" : 79.0,
-   "timestamp" : 1644834060000
- }]
+[
+  {
+    "hostname": "payment-service-goto-deployment-77b76f5ff7-db8p7",
+    "metricIdentifier": "createpayment",
+    "metricName": "createpayment",
+    "metricValue": 5.0,
+    "timestamp": 1654078560000
+  },
+  {
+    "hostname": "payment-service-goto-deployment-77b76f5ff7-db8p7",
+    "metricIdentifier": "createpayment",
+    "metricName": "createpayment",
+    "metricValue": 6.0,
+    "timestamp": 1654078620000
+  },
+  {
+    "hostname": "payment-service-goto-deployment-77b76f5ff7-db8p7",
+    "metricIdentifier": "createpayment",
+    "metricName": "createpayment",
+    "metricValue": 7.0,
+    "timestamp": 1654078680000
+  },
+  {
+    "hostname": "payment-service-goto-deployment-77b76f5ff7-db8p7",
+    "metricIdentifier": "createpayment",
+    "metricName": "createpayment",
+    "metricValue": 5.0,
+    "timestamp": 1654078740000
+  },
+  {
+    "hostname": "payment-service-goto-deployment-77b76f5ff7-db8p7",
+    "metricIdentifier": "createpayment",
+    "metricName": "createpayment",
+    "metricValue": 12.0,
+    "timestamp": 1654078800000
+  },
+  {
+    "hostname": "payment-service-goto-deployment-77b76f5ff7-db8p7",
+    "metricIdentifier": "createpayment",
+    "metricName": "createpayment",
+    "metricValue": 12.0,
+    "timestamp": 1654078860000
+  }
+]

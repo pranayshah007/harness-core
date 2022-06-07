@@ -18,6 +18,7 @@ import static java.lang.String.format;
 import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
+import io.harness.beans.Scope;
 import io.harness.beans.SearchPageParams;
 import io.harness.exception.ReferencedEntityException;
 import io.harness.exception.UnexpectedException;
@@ -117,17 +118,36 @@ public class FileReferenceServiceImpl implements FileReferenceService {
         parent.getIdentifier());
   }
 
-  public Page<EntitySetupUsageDTO> getAllReferencedByInScope(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, SearchPageParams pageParams, EntityType entityType) {
+  public List<EntitySetupUsageDTO> getAllReferencedByInScope(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, SearchPageParams pageParams, EntityType entityType, String referredByEntityName) {
     String referredEntityFQScope = IdentifierRef.builder()
                                        .accountIdentifier(accountIdentifier)
                                        .orgIdentifier(orgIdentifier)
                                        .projectIdentifier(projectIdentifier)
                                        .build()
                                        .getFullyQualifiedScopeIdentifier();
-    return entitySetupUsageService.listAllEntityUsagePerEntityScope(pageParams.getPage(), pageParams.getSize(),
-        accountIdentifier, referredEntityFQScope, EntityType.FILES, entityType,
-        Sort.by(Sort.Direction.ASC, EntitySetupUsageKeys.referredByEntityName));
+    return entitySetupUsageService.listAllEntityUsagePerReferredEntityScope(
+        Scope.of(accountIdentifier, orgIdentifier, projectIdentifier), referredEntityFQScope, EntityType.FILES,
+        entityType, referredByEntityName, Sort.by(Sort.Direction.ASC, EntitySetupUsageKeys.referredByEntityName));
+  }
+
+  public List<String> getAllFileIdentifiersReferencedByInScope(
+      Scope scope, EntityType entityType, String referredByEntityName) {
+    String referredEntityFQScope = IdentifierRef.builder()
+                                       .accountIdentifier(scope.getAccountIdentifier())
+                                       .orgIdentifier(scope.getOrgIdentifier())
+                                       .projectIdentifier(scope.getProjectIdentifier())
+                                       .build()
+                                       .getFullyQualifiedScopeIdentifier();
+    List<EntitySetupUsageDTO> referredFiles =
+        entitySetupUsageService.listAllEntityUsagePerReferredEntityScope(scope, referredEntityFQScope, EntityType.FILES,
+            entityType, referredByEntityName, Sort.by(Sort.Direction.ASC, EntitySetupUsageKeys.referredByEntityName));
+
+    return referredFiles.stream()
+        .filter(i -> i.getReferredEntity() != null && i.getReferredEntity().getEntityRef() != null)
+        .map(i -> i.getReferredEntity().getEntityRef().getIdentifier())
+        .distinct()
+        .collect(Collectors.toList());
   }
 
   public List<String> listAllReferredFileUsageIdentifiers(String accountIdentifier, String referredByEntityFQN) {

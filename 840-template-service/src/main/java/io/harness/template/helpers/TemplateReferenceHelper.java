@@ -74,19 +74,23 @@ public class TemplateReferenceHelper {
         accountClient.isFeatureFlagEnabled(FeatureName.NG_TEMPLATE_REFERENCES_SUPPORT.name(), accountId));
   }
 
+  private boolean skipTemplateReference(TemplateEntity templateEntity) {
+    return !isFeatureFlagEnabled(templateEntity.getAccountId())
+        || TemplateEntityType.MONITORED_SERVICE_TEMPLATE.equals(templateEntity.getTemplateEntityType());
+  }
+
   public void deleteTemplateReferences(TemplateEntity templateEntity) {
-    if (!isFeatureFlagEnabled(templateEntity.getAccountId())) {
+    if (skipTemplateReference(templateEntity)) {
       return;
     }
     templateSetupUsageHelper.deleteExistingSetupUsages(templateEntity);
   }
 
   public void populateTemplateReferences(TemplateEntity templateEntity) {
-    if (!isFeatureFlagEnabled(templateEntity.getAccountId())) {
+    if (skipTemplateReference(templateEntity)) {
       return;
     }
-    String pmsUnderstandableYaml =
-        templateYamlConversionHelper.convertTemplateYamlToPMSUnderstandableYaml(templateEntity);
+    String pmsUnderstandableYaml = templateYamlConversionHelper.convertTemplateYamlToEntityYaml(templateEntity);
     EntityReferenceRequest.Builder entityReferenceRequestBuilder =
         EntityReferenceRequest.newBuilder()
             .setYaml(pmsUnderstandableYaml)
@@ -160,7 +164,7 @@ public class TemplateReferenceHelper {
         List<FQNNode> fqnList = new ArrayList<>(key.getFqnList());
         FQNNode lastNode = fqnList.get(fqnList.size() - 1);
         FQNNode secondLastNode = fqnList.get(fqnList.size() - 2);
-        if (lastNode.getKey().equals(TEMPLATE_REF) && secondLastNode.getKey().equals(TEMPLATE)) {
+        if (TEMPLATE_REF.equals(lastNode.getKey()) && TEMPLATE.equals(secondLastNode.getKey())) {
           String identifier = ((JsonNode) fqnToValueMap.get(key)).asText();
           IdentifierRef templateIdentifierRef =
               IdentifierRefHelper.getIdentifierRef(identifier, accountId, orgId, projectId);

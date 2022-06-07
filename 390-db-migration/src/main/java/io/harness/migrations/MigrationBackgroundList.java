@@ -27,7 +27,6 @@ import io.harness.migrations.all.AddAccountIdToResourceContraintInstanceCollecti
 import io.harness.migrations.all.AddAccountIdToServiceCommands;
 import io.harness.migrations.all.AddAccountIdToServiceInstance;
 import io.harness.migrations.all.AddAccountIdToServiceTemplates;
-import io.harness.migrations.all.AddAccountIdToServiceVariables;
 import io.harness.migrations.all.AddAccountIdToStateExecutionInstance;
 import io.harness.migrations.all.AddAccountIdToStateMachine;
 import io.harness.migrations.all.AddAccountIdToTerraformConfig;
@@ -134,6 +133,7 @@ import io.harness.migrations.all.TemplateLibraryYamlMigration;
 import io.harness.migrations.all.TerraformIsTemplatizedMigration;
 import io.harness.migrations.all.TimeSeriesThresholdsMigration;
 import io.harness.migrations.all.UpdateAccountEncryptionClassNames;
+import io.harness.migrations.all.UpdateCorruptedEmptyClusterNameInstanceStatsMigration;
 import io.harness.migrations.all.UpdateCorruptedInstanceStatsMigration;
 import io.harness.migrations.all.UpdateInstanceInfoWithLastArtifactIdMigration;
 import io.harness.migrations.all.UpdateNameInAwsInfrastructureMappingMigration;
@@ -306,7 +306,7 @@ public class MigrationBackgroundList {
         .add(Pair.of(144, BaseMigration.class))
         .add(Pair.of(145, RemoveDeletedAppIdsFromUserGroups.class))
         .add(Pair.of(146, AddAccountIdToServiceCommands.class))
-        .add(Pair.of(147, AddAccountIdToServiceVariables.class))
+        .add(Pair.of(147, BaseMigration.class))
         .add(Pair.of(148, AddCeFullTrialLicenseToCurrentAccounts.class))
         .add(Pair.of(149, AddAccountIdToServiceInstance.class))
         .add(Pair.of(150, BaseMigration.class))
@@ -382,8 +382,10 @@ public class MigrationBackgroundList {
         .add(Pair.of(220, AddNotificationGroupReferenceToUserGroups.class))
         .add(Pair.of(221, BaseMigration.class))
         .add(Pair.of(222, UpdateNameInAwsInfrastructureMappingMigration.class))
-        .add(Pair.of(223, AddClusterNameInGcpTypeInstanceMigration.class))
+        .add(Pair.of(223, BaseMigration.class))
         .add(Pair.of(224, UpdateCorruptedInstanceStatsMigration.class))
+        .add(Pair.of(225, UpdateCorruptedEmptyClusterNameInstanceStatsMigration.class))
+        .add(Pair.of(226, AddClusterNameInGcpTypeInstanceMigration.class))
         .build();
   }
 }

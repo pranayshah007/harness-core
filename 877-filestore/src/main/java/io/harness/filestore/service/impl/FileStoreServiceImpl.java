@@ -49,6 +49,7 @@ import io.harness.filestore.dto.node.FolderNodeDTO;
 import io.harness.filestore.entities.NGFile;
 import io.harness.filestore.service.FileFailsafeService;
 import io.harness.filestore.service.FileStoreService;
+import io.harness.filestore.service.FileStructureService;
 import io.harness.filter.dto.FilterDTO;
 import io.harness.filter.service.FilterService;
 import io.harness.ng.core.dto.EmbeddedUserDetailsDTO;
@@ -68,8 +69,10 @@ import com.google.inject.Singleton;
 import io.serializer.HObjectMapper;
 import java.io.File;
 import java.io.InputStream;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
@@ -96,6 +99,7 @@ public class FileStoreServiceImpl implements FileStoreService {
   private final FileReferenceServiceImpl fileReferenceService;
   private final FilterService filterService;
   private final FileFailsafeService fileFailsafeService;
+  private final FileStructureService fileStructureService;
 
   @Override
   public FileDTO create(@NotNull FileDTO fileDto, InputStream content) {
@@ -136,6 +140,39 @@ public class FileStoreServiceImpl implements FileStoreService {
     }
 
     return fileFailsafeService.updateAndPublish(oldNGFileClone, updatedNGFile);
+  }
+
+  @Override
+  public Optional<FileStoreNodeDTO> get(@NotNull final String accountIdentifier, final String orgIdentifier,
+      final String projectIdentifier, @NotNull final String identifier, boolean includeContent) {
+    if (isEmpty(accountIdentifier)) {
+      throw new InvalidArgumentsException("Account identifier cannot be null or empty");
+    }
+    if (isEmpty(identifier)) {
+      throw new InvalidArgumentsException("File or folder identifier cannot be null or empty");
+    }
+
+    Optional<NGFile> ngFileOpt =
+        fileStoreRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(
+            accountIdentifier, orgIdentifier, projectIdentifier, identifier);
+
+    if (!ngFileOpt.isPresent()) {
+      return Optional.empty();
+    }
+
+    NGFile ngFile = ngFileOpt.get();
+    if (ngFile.isFile()) {
+      String fileContent = null;
+      if (includeContent) {
+        fileContent = fileStructureService.getFileContent(ngFile.getFileUuid());
+      }
+      return Optional.of(FileStoreNodeDTOMapper.getFileNodeDTO(ngFile, fileContent));
+    }
+
+    FolderNodeDTO folderNodeDTO = FileStoreNodeDTOMapper.getFolderNodeDTO(ngFile);
+    fileStructureService.createFolderTreeStructure(
+        folderNodeDTO, Scope.of(accountIdentifier, orgIdentifier, projectIdentifier), includeContent);
+    return Optional.of(folderNodeDTO);
   }
 
   @Override
@@ -214,16 +251,6 @@ public class FileStoreServiceImpl implements FileStoreService {
   }
 
   @Override
-  public Page<EntitySetupUsageDTO> listReferencedByInScope(SearchPageParams pageParams,
-      @NotNull String accountIdentifier, String orgIdentifier, String projectIdentifier, EntityType entityType) {
-    if (isEmpty(accountIdentifier)) {
-      throw new InvalidArgumentsException("Account identifier cannot be null or empty");
-    }
-    return fileReferenceService.getAllReferencedByInScope(
-        accountIdentifier, orgIdentifier, projectIdentifier, pageParams, entityType);
-  }
-
-  @Override
   public Page<FileDTO> listFilesWithFilter(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String filterIdentifier, String searchTerm, FilesFilterPropertiesDTO filterProperties, Pageable pageable) {
     if (isNotEmpty(filterIdentifier) && filterProperties != null) {
@@ -236,10 +263,12 @@ public class FileStoreServiceImpl implements FileStoreService {
       filterProperties = (FilesFilterPropertiesDTO) filterDTO.getFilterProperties();
     }
 
-    List<String> fileIdentifiers = null;
-    if (filterProperties != null && filterProperties.getReferencedBy() != null) {
-      fileIdentifiers = fileReferenceService.listAllReferredFileUsageIdentifiers(
-          accountIdentifier, getReferredByEntityFQN(filterProperties));
+    List<String> fileIdentifiers = Collections.emptyList();
+    if (filterProperties != null && filterProperties.getReferencedBy() != null
+        && filterProperties.getReferencedBy().getType() != null) {
+      fileIdentifiers = fileReferenceService.getAllFileIdentifiersReferencedByInScope(
+          Scope.of(accountIdentifier, orgIdentifier, projectIdentifier), filterProperties.getReferencedBy().getType(),
+          filterProperties.getReferencedBy().getName());
     }
 
     Scope scope = Scope.of(accountIdentifier, orgIdentifier, projectIdentifier);
@@ -347,7 +376,7 @@ public class FileStoreServiceImpl implements FileStoreService {
         .filter(Objects::nonNull)
         .map(ngFile
             -> ngFile.isFolder() ? FileStoreNodeDTOMapper.getFolderNodeDTO(ngFile)
-                                 : FileStoreNodeDTOMapper.getFileNodeDTO(ngFile))
+                                 : FileStoreNodeDTOMapper.getFileNodeDTO(ngFile, null))
         .collect(Collectors.toList());
   }
 
@@ -390,12 +419,5 @@ public class FileStoreServiceImpl implements FileStoreService {
     }
 
     return fileFailsafeService.deleteAndPublish(file);
-  }
-
-  private String getReferredByEntityFQN(FilesFilterPropertiesDTO filterProperties) {
-    if (filterProperties.getReferencedBy() == null || filterProperties.getReferencedBy().getEntityRef() == null) {
-      return null;
-    }
-    return filterProperties.getReferencedBy().getEntityRef().getFullyQualifiedName();
   }
 }

@@ -26,6 +26,7 @@ import io.harness.ccm.commons.beans.recommendation.RecommendationOverviewStats;
 import io.harness.ccm.graphql.core.recommendation.RecommendationService;
 import io.harness.ccm.graphql.dto.recommendation.FilterStatsDTO;
 import io.harness.ccm.graphql.dto.recommendation.K8sRecommendationFilterDTO;
+import io.harness.ccm.graphql.dto.recommendation.RecommendationDetailsDTO;
 import io.harness.ccm.graphql.dto.recommendation.RecommendationItemDTO;
 import io.harness.ccm.graphql.dto.recommendation.RecommendationsDTO;
 import io.harness.ccm.graphql.utils.GraphQLUtils;
@@ -51,6 +52,7 @@ import io.leangen.graphql.annotations.GraphQLContext;
 import io.leangen.graphql.annotations.GraphQLEnvironment;
 import io.leangen.graphql.annotations.GraphQLQuery;
 import io.leangen.graphql.execution.ResolutionEnvironment;
+import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.List;
@@ -71,6 +73,7 @@ public class RecommendationsOverviewQueryV2 {
   @Inject private GraphQLUtils graphQLUtils;
   @Inject private CEViewService viewService;
   @Inject private RecommendationService recommendationService;
+  @Inject private RecommendationsDetailsQuery detailsQuery;
 
   private static final Gson GSON = new Gson();
   private static final String RESOURCE_TYPE_WORKLOAD = "WORKLOAD";
@@ -83,8 +86,23 @@ public class RecommendationsOverviewQueryV2 {
 
     Condition condition = applyAllFilters(filter);
 
-    final List<RecommendationItemDTO> items =
+    List<RecommendationItemDTO> items =
         recommendationService.listAll(accountId, condition, filter.getOffset(), filter.getLimit());
+    items = items.stream()
+                .map(item
+                    -> item.getRecommendationDetails() != null
+                        ? item
+                        : RecommendationItemDTO.builder()
+                              .id(item.getId())
+                              .resourceName(item.getResourceName())
+                              .clusterName(item.getClusterName())
+                              .namespace(item.getNamespace())
+                              .resourceType(item.getResourceType())
+                              .recommendationDetails(getRecommendationDetails(item, env))
+                              .monthlyCost(item.getMonthlyCost())
+                              .monthlySaving(item.getMonthlySaving())
+                              .build())
+                .collect(Collectors.toList());
     return RecommendationsDTO.builder().items(items).offset(filter.getOffset()).limit(filter.getLimit()).build();
   }
 
@@ -288,5 +306,15 @@ public class RecommendationsOverviewQueryV2 {
     return CE_RECOMMENDATIONS.RESOURCETYPE.notEqual(RESOURCE_TYPE_WORKLOAD)
         .or(CE_RECOMMENDATIONS.RESOURCETYPE.eq(RESOURCE_TYPE_WORKLOAD)
                 .and(CE_RECOMMENDATIONS.NAMESPACE.notIn("harness-delegate", "harness-delegate-ng")));
+  }
+
+  private RecommendationDetailsDTO getRecommendationDetails(
+      RecommendationItemDTO item, final ResolutionEnvironment env) {
+    try {
+      return detailsQuery.recommendationDetails(item, OffsetDateTime.now().minusDays(7), OffsetDateTime.now(), env);
+    } catch (Exception e) {
+      log.error("Exception while fetching data: {}", e);
+    }
+    return null;
   }
 }

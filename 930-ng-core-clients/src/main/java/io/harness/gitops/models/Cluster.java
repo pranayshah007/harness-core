@@ -16,4 +16,5 @@ import lombok.Data;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Cluster {
   String identifier;
+  String name;
 }

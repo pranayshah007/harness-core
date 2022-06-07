@@ -476,13 +476,13 @@ public class JenkinsTest extends WingsBaseTest {
     // Tests for GetJob
     Reflect.on(jenkins).set("jenkinsServer", jenkinsServer);
     when(jenkinsServer.createJob(any(), eq("randomJob1"), any(JenkinsConfig.class))).thenThrow(new RuntimeException());
-    assertThatThrownBy(() -> jenkins.getJob("randomJob1", JenkinsConfig.builder().build()))
+    assertThatThrownBy(() -> jenkins.getJob("randomJob1", JenkinsConfig.builder().build(), 120))
         .isInstanceOf(ArtifactServerException.class);
 
     Reflect.on(jenkins).set("jenkinsServer", jenkinsServer);
     when(jenkinsServer.createJob(any(), eq("randomJob2"), any(JenkinsConfig.class)))
         .thenThrow(new HttpResponseException(400, "Bad Request"));
-    assertThatThrownBy(() -> jenkins.getJob("randomJob2", JenkinsConfig.builder().build()))
+    assertThatThrownBy(() -> jenkins.getJob("randomJob2", JenkinsConfig.builder().build(), 120))
         .isInstanceOf(ArtifactServerException.class);
   }
 
@@ -509,7 +509,7 @@ public class JenkinsTest extends WingsBaseTest {
         .thenThrow(new HttpResponseException(500, "Something went wrong"))
         .thenThrow(new HttpResponseException(400, "Server Error"))
         .thenReturn(job);
-    Job actualJob = jenkins.getJob("randomJob", JenkinsConfig.builder().build());
+    Job actualJob = jenkins.getJob("randomJob", JenkinsConfig.builder().build(), 120);
     assertThat(actualJob).isEqualTo(job);
     verify(jenkinsServer, times(3)).createJob(any(), eq("randomJob"), any(JenkinsConfig.class));
   }

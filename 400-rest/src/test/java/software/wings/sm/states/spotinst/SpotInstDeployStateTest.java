@@ -29,7 +29,6 @@ import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -119,10 +118,10 @@ public class SpotInstDeployStateTest extends WingsBaseTest {
     doReturn(mockParams).when(mockContext).getContextElement(any());
     doReturn(env).when(workflowStandardParamsExtensionService).getEnv(mockParams);
     Application application = anApplication().appId(APP_ID).accountId(ACCOUNT_ID).uuid(APP_ID).build();
-    doReturn(application).when(mockAppService).get(anyString());
+    doReturn(application).when(mockAppService).get(any());
     AwsAmiInfrastructureMapping infrastructureMapping =
         anAwsAmiInfrastructureMapping().withAmiDeploymentType(SPOTINST).withRegion("us-east-1").build();
-    doReturn(infrastructureMapping).when(mockInfrastructureMappingService).get(anyString(), anyString());
+    doReturn(infrastructureMapping).when(mockInfrastructureMappingService).get(any(), any());
     SpotInstSetupContextElement element =
         SpotInstSetupContextElement.builder()
             .isBlueGreen(false)
@@ -148,17 +147,14 @@ public class SpotInstDeployStateTest extends WingsBaseTest {
                     .spotInstTaskParameters(SpotInstSetupTaskParameters.builder().timeoutIntervalInMin(10).build())
                     .build())
             .build();
-    doReturn(element).when(mockSpotinstStateHelper).getSetupElementFromSweepingOutput(any(), anyString());
+    doReturn(element).when(mockSpotinstStateHelper).getSetupElementFromSweepingOutput(any(), any());
     DelegateTask task = DelegateTask.builder().description("desc").build();
     doReturn(task)
         .when(mockSpotinstStateHelper)
-        .getDelegateTask(anyString(), anyString(), any(), anyString(), anyString(), anyString(), any(), any(),
-            anyString(), eq(true));
+        .getDelegateTask(any(), any(), any(), any(), any(), any(), any(), any(), any(), eq(true));
     Activity activity = Activity.builder().uuid(ACTIVITY_ID).build();
-    doReturn(activity)
-        .when(mockSpotinstStateHelper)
-        .createActivity(any(), any(), anyString(), anyString(), any(), anyList());
-    doNothing().when(stateExecutionService).appendDelegateTaskDetails(anyString(), any());
+    doReturn(activity).when(mockSpotinstStateHelper).createActivity(any(), any(), any(), any(), any(), anyList());
+    doNothing().when(stateExecutionService).appendDelegateTaskDetails(any(), any());
     SpotInstCommandRequestBuilder builder = SpotInstCommandRequest.builder();
     doReturn(builder).when(mockSpotinstStateHelper).generateSpotInstCommandRequest(any(), any());
     ExecutionResponse response = state.execute(mockContext);
@@ -195,7 +191,7 @@ public class SpotInstDeployStateTest extends WingsBaseTest {
     doReturn(data).when(mockContext).getStateExecutionData();
     AwsAmiInfrastructureMapping infrastructureMapping =
         anAwsAmiInfrastructureMapping().withAmiDeploymentType(SPOTINST).withRegion("us-east-1").build();
-    doReturn(infrastructureMapping).when(mockInfrastructureMappingService).get(anyString(), anyString());
+    doReturn(infrastructureMapping).when(mockInfrastructureMappingService).get(any(), any());
     String newId = "new-uuid";
     String oldId = "old-uuid";
     doReturn(singletonList(anInstanceElement().uuid(newId).build()))
@@ -205,7 +201,7 @@ public class SpotInstDeployStateTest extends WingsBaseTest {
     doReturn(SweepingOutputInstance.builder())
         .when(mockContext)
         .prepareSweepingOutputBuilder(SweepingOutputInstance.Scope.WORKFLOW);
-    doReturn(WingsTestConstants.STATE_EXECUTION_ID).when(mockContext).appendStateExecutionId(anyString());
+    doReturn(WingsTestConstants.STATE_EXECUTION_ID).when(mockContext).appendStateExecutionId(any());
     ExecutionResponse response = state.handleAsyncResponse(mockContext, ImmutableMap.of(ACTIVITY_ID, delegateResponse));
     assertThat(response).isNotNull();
     assertThat(response.getExecutionStatus()).isEqualTo(SUCCESS);

@@ -312,13 +312,14 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
   }
 
   @Override
-  public OrchestrationGraphDTO getOrchestrationGraph(String stageNodeId, String planExecutionId) {
+  public OrchestrationGraphDTO getOrchestrationGraph(
+      String stageNodeId, String planExecutionId, String stageNodeExecutionId) {
     if (EmptyPredicate.isEmpty(stageNodeId)) {
       return graphGenerationService.generateOrchestrationGraphV2(planExecutionId);
     }
-    return graphGenerationService.generatePartialOrchestrationGraphFromSetupNodeId(stageNodeId, planExecutionId);
+    return graphGenerationService.generatePartialOrchestrationGraphFromSetupNodeIdAndExecutionId(
+        stageNodeId, planExecutionId, stageNodeExecutionId);
   }
-
   @Override
   public InterruptDTO registerInterrupt(
       PlanExecutionInterruptType executionInterruptType, String planExecutionId, String nodeExecutionId) {

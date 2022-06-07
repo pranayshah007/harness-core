@@ -20,6 +20,7 @@ import static io.harness.gitsync.common.helper.RepoProviderHelper.getRepoProvide
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
+import com.google.common.annotations.VisibleForTesting;
 import io.harness.EntityType;
 import io.harness.Microservice;
 import io.harness.annotations.dev.OwnedBy;
@@ -363,7 +364,8 @@ public class GitToHarnessProcessorServiceImpl implements GitToHarnessProcessorSe
     return DONE;
   }
 
-  private List<GitToHarnessFilesGroupedByMsvc> groupFilesByMicroservices(
+  @VisibleForTesting
+  List<GitToHarnessFilesGroupedByMsvc> groupFilesByMicroservices(
       Map<EntityType, List<ChangeSet>> mapOfEntityTypeAndContent) {
     List<GitToHarnessFilesGroupedByMsvc> sortedFilesByMsvc = new ArrayList<>();
     Map<Microservice, List<ChangeSet>> groupedFilesByMicroservices = new HashMap<>();
@@ -386,7 +388,9 @@ public class GitToHarnessProcessorServiceImpl implements GitToHarnessProcessorSe
           GitToHarnessFilesGroupedByMsvc.builder().microservice(entry.getKey()).changeSetList(entry.getValue()).build();
       sortedFilesByMsvc.add(gitToHarnessFilesGroupedByMsvc);
     }
-    sortedFilesByMsvc.sort(Comparator.comparingInt(x -> microservicesProcessingOrder.indexOf(x)));
+    log.info("The sorting order of microservice is {}", microservicesProcessingOrder);
+    sortedFilesByMsvc.sort(Comparator.comparingInt(x -> microservicesProcessingOrder.indexOf(x.getMicroservice())));
+    log.info("The sorting order of files is {}", sortedFilesByMsvc);
 
     return sortedFilesByMsvc;
   }

@@ -35,6 +35,9 @@ message NotificationRequest {
     repeated string userGroupIds = 8 [deprecated = true];
     repeated UserGroup userGroup = 9;
     map<string, string> templateData = 4;
+    string orgIdentifier = 10;
+    string projectIdentifier = 11;
+    int64 expressionFunctorToken = 12;
     string templateId = 3;
   }
 
@@ -51,6 +54,9 @@ message NotificationRequest {
     repeated string userGroupIds = 8 [deprecated = true];
     repeated UserGroup userGroup = 9;
     map<string, string> templateData = 4;
+    string orgIdentifier = 10;
+    string projectIdentifier = 11;
+    int64 expressionFunctorToken = 12;
     string templateId = 3;
   }
 
@@ -59,6 +65,9 @@ message NotificationRequest {
     repeated string userGroupIds = 8 [deprecated = true];
     repeated UserGroup userGroup = 9;
     map<string, string> templateData = 4;
+    string orgIdentifier = 10;
+    string projectIdentifier = 11;
+    int64 expressionFunctorToken = 12;
     string templateId = 3;
   }
 

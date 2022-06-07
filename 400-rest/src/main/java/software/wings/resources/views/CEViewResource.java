@@ -70,7 +70,7 @@ public class CEViewResource {
       ceView.setCreatedBy(null);
       ceView.setCreatedAt(0);
     }
-    return new RestResponse<>(updateTotalCost(ceViewService.save(ceView)));
+    return new RestResponse<>(updateTotalCost(ceViewService.save(ceView, clone)));
   }
 
   private CEView updateTotalCost(CEView ceView) {

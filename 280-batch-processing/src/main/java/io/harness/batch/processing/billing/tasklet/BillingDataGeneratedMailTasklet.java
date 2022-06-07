@@ -20,6 +20,7 @@ import io.harness.ccm.commons.entities.batch.DataGeneratedNotification;
 import io.harness.ccm.commons.utils.TimeUtils;
 import io.harness.ccm.views.dto.DefaultViewIdDto;
 import io.harness.ccm.views.entities.ViewFieldIdentifier;
+import io.harness.ccm.views.service.CEViewFolderService;
 import io.harness.ccm.views.service.CEViewService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.telemetry.Category;
@@ -73,6 +74,7 @@ public class BillingDataGeneratedMailTasklet implements Tasklet {
   @Autowired private TimeUtils utils;
   @Autowired private CEMailNotificationService emailNotificationService;
   @Autowired private CEMetadataRecordDao metadataRecordDao;
+  @Autowired private CEViewFolderService ceViewFolderService;
   @Autowired private CEViewService ceViewService;
   @Autowired TelemetryReporter telemetryReporter;
 
@@ -93,6 +95,7 @@ public class BillingDataGeneratedMailTasklet implements Tasklet {
       final JobConstants jobConstants = CCMJobConstants.fromContext(chunkContext);
       String accountId = jobConstants.getAccountId();
 
+      ceViewFolderService.createDefaultFolders(accountId);
       createDefaultPerspective(accountId);
       CEMetadataRecord ceMetadataRecord = metadataRecordDao.getByAccountId(accountId);
       boolean isApplicationDataPresent = false;

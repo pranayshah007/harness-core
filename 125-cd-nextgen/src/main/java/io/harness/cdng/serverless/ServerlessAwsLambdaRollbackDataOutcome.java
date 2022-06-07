@@ -26,4 +26,5 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.cdng.serverless.ServerlessAwsLambdaRollbackDataOutcome")
 public class ServerlessAwsLambdaRollbackDataOutcome implements Outcome, ExecutionSweepingOutput {
   String previousVersionTimeStamp;
+  boolean isFirstDeployment;
 }

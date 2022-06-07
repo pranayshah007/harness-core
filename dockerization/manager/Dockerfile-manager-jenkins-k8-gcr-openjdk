@@ -2,7 +2,7 @@
 FROM us.gcr.io/platform-205701/alpine:safe-alpine3.15.4-bt1276-apm
 
 # Add the capsule JAR and config.yml
-COPY rest-capsule.jar newrelic.yml keystore.jks config.yml hazelcast.xml redisson-jcache.yaml protocol.info /opt/harness/
+COPY rest-capsule.jar newrelic.yml keystore.jks classpath_metadata.json config.yml hazelcast.xml redisson-jcache.yaml protocol.info /opt/harness/
 
 COPY scripts /opt/harness
 

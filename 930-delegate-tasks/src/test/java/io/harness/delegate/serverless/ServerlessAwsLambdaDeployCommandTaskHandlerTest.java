@@ -111,7 +111,7 @@ public class ServerlessAwsLambdaDeployCommandTaskHandlerTest extends CategoryTes
   @Test
   @Owner(developers = PIYUSH_BHUWALKA)
   @Category(UnitTests.class)
-  public void executeTaskInternalTest() throws Exception {
+  public void executeTaskInternalTestWhenNotFirstDeployment() throws Exception {
     doReturn(initLogCallback)
         .when(serverlessTaskHelperBase)
         .getLogCallback(
@@ -145,7 +145,9 @@ public class ServerlessAwsLambdaDeployCommandTaskHandlerTest extends CategoryTes
         .when(serverlessAwsCommandTaskHelper)
         .parseServerlessManifest(
             initLogCallback, ((ServerlessDeployRequest) serverlessCommandRequest).getManifestContent());
-
+    doReturn(true)
+        .when(serverlessAwsCommandTaskHelper)
+        .cloudFormationStackExists(prepareRollbackLogCallback, serverlessCommandRequest, manifestContent);
     ServerlessClient serverlessClient = ServerlessClient.client(serverlessDelegateTaskParams.getServerlessClientPath());
 
     doReturn(intiServerlessCliResponse)
@@ -186,8 +188,100 @@ public class ServerlessAwsLambdaDeployCommandTaskHandlerTest extends CategoryTes
             .region(region)
             .stage(stage)
             .previousVersionTimeStamp(previousVersionTimeStamp)
+            .isFirstDeployment(false)
             .functions(serverlessAwsLambdaFunctionsList)
             .build();
+
+    ServerlessDeployResponse serverlessDeployResponse =
+        (ServerlessDeployResponse) serverlessAwsLambdaDeployCommandTaskHandler.executeTaskInternal(
+            serverlessCommandRequest, serverlessDelegateTaskParams, iLogStreamingTaskClient, commandUnitsProgress);
+
+    assertThat(serverlessDeployResponse.getServerlessDeployResult()).isEqualTo(serverlessAwsLambdaDeployResult);
+    assertThat(serverlessDeployResponse.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+  }
+
+  @Test
+  @Owner(developers = PIYUSH_BHUWALKA)
+  @Category(UnitTests.class)
+  public void executeTaskInternalTestWhenFirstDeployment() throws Exception {
+    doReturn(initLogCallback)
+        .when(serverlessTaskHelperBase)
+        .getLogCallback(
+            iLogStreamingTaskClient, ServerlessCommandUnitConstants.init.toString(), true, commandUnitsProgress);
+    doReturn(setupDirectoryLogCallback)
+        .when(serverlessTaskHelperBase)
+        .getLogCallback(iLogStreamingTaskClient, ServerlessCommandUnitConstants.setupDirectory.toString(), true,
+            commandUnitsProgress);
+    doReturn(artifactLogCallback)
+        .when(serverlessTaskHelperBase)
+        .getLogCallback(
+            iLogStreamingTaskClient, ServerlessCommandUnitConstants.artifact.toString(), true, commandUnitsProgress);
+    doReturn(configureCredsLogCallback)
+        .when(serverlessTaskHelperBase)
+        .getLogCallback(iLogStreamingTaskClient, ServerlessCommandUnitConstants.configureCred.toString(), true,
+            commandUnitsProgress);
+    doReturn(pluginLogCallback)
+        .when(serverlessTaskHelperBase)
+        .getLogCallback(
+            iLogStreamingTaskClient, ServerlessCommandUnitConstants.plugin.toString(), true, commandUnitsProgress);
+    doReturn(prepareRollbackLogCallback)
+        .when(serverlessTaskHelperBase)
+        .getLogCallback(iLogStreamingTaskClient, ServerlessCommandUnitConstants.rollbackData.toString(), true,
+            commandUnitsProgress);
+    doReturn(deployLogCallback)
+        .when(serverlessTaskHelperBase)
+        .getLogCallback(
+            iLogStreamingTaskClient, ServerlessCommandUnitConstants.deploy.toString(), true, commandUnitsProgress);
+    doReturn(serverlessAwsLambdaConfig).when(serverlessInfraConfigHelper).createServerlessConfig(serverlessInfraConfig);
+    doReturn(serverlessAwsLambdaManifestSchema)
+        .when(serverlessAwsCommandTaskHelper)
+        .parseServerlessManifest(
+            initLogCallback, ((ServerlessDeployRequest) serverlessCommandRequest).getManifestContent());
+    doReturn(false)
+        .when(serverlessAwsCommandTaskHelper)
+        .cloudFormationStackExists(prepareRollbackLogCallback, serverlessCommandRequest, manifestContent);
+    ServerlessClient serverlessClient = ServerlessClient.client(serverlessDelegateTaskParams.getServerlessClientPath());
+
+    doReturn(intiServerlessCliResponse)
+        .when(serverlessAwsCommandTaskHelper)
+        .configCredential(serverlessClient, serverlessAwsLambdaConfig, serverlessDelegateTaskParams, initLogCallback,
+            true, (long) (serverlessCommandRequest.getTimeoutIntervalInMin() * 60000));
+    doReturn(intiServerlessCliResponse)
+        .when(serverlessAwsCommandTaskHelper)
+        .configCredential(serverlessClient, serverlessAwsLambdaConfig, serverlessDelegateTaskParams,
+            configureCredsLogCallback, true, timeout * 60000);
+    doReturn(intiServerlessCliResponse)
+        .when(serverlessAwsCommandTaskHelper)
+        .deployList(serverlessClient, serverlessDelegateTaskParams, prepareRollbackLogCallback,
+            (ServerlessAwsLambdaInfraConfig) serverlessInfraConfig, timeout * 60000,
+            (ServerlessAwsLambdaManifestConfig) serverlessManifestConfig);
+    doReturn(Optional.of(previousVersionTimeStamp))
+        .when(serverlessAwsCommandTaskHelper)
+        .getPreviousVersionTimeStamp(any(), any(), any());
+
+    doReturn(deployServerlessCliResponse)
+        .when(serverlessAwsCommandTaskHelper)
+        .deploy(serverlessClient, serverlessDelegateTaskParams, deployLogCallback,
+            (ServerlessAwsLambdaDeployConfig) serverlessDeployConfig,
+            (ServerlessAwsLambdaInfraConfig) serverlessInfraConfig, timeout * 60000,
+            (ServerlessAwsLambdaManifestConfig) serverlessManifestConfig);
+
+    doReturn(serverlessAwsLambdaManifestSchema)
+        .when(serverlessAwsCommandTaskHelper)
+        .parseServerlessManifest(
+            setupDirectoryLogCallback, ((ServerlessDeployRequest) serverlessCommandRequest).getManifestContent());
+    doReturn(serverlessAwsLambdaFunctionsList)
+        .when(serverlessAwsCommandTaskHelper)
+        .fetchFunctionOutputFromCloudFormationTemplate(any());
+
+    ServerlessAwsLambdaDeployResult serverlessAwsLambdaDeployResult = ServerlessAwsLambdaDeployResult.builder()
+                                                                          .service(service)
+                                                                          .region(region)
+                                                                          .stage(stage)
+                                                                          .previousVersionTimeStamp(null)
+                                                                          .isFirstDeployment(true)
+                                                                          .functions(serverlessAwsLambdaFunctionsList)
+                                                                          .build();
 
     ServerlessDeployResponse serverlessDeployResponse =
         (ServerlessDeployResponse) serverlessAwsLambdaDeployCommandTaskHandler.executeTaskInternal(

@@ -49,6 +49,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -88,7 +89,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
           @ApiResponse(code = 403, response = TemplateInputsErrorResponseDTO.class,
               message = "TemplateRefs Resolved failed in pipeline yaml.")
     })
-@Tag(name = "Execution Details", description = "This contains APIs for fetching Pipeline Execution details.")
+@Tag(name = "Pipeline Execution Details", description = "This contains APIs for fetching Pipeline Execution details.")
 @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Bad Request",
     content =
     {
@@ -191,6 +192,8 @@ public class ExecutionDetailsResource {
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
       @Parameter(description = PipelineResourceConstants.STAGE_NODE_ID_PARAM_MESSAGE) @QueryParam(
           "stageNodeId") String stageNodeId,
+      @Parameter(description = PipelineResourceConstants.STAGE_NODE_EXECUTION_PARAM_MESSAGE) @QueryParam(
+          "stageNodeExecutionId") String stageNodeExecutionId,
       @Parameter(description = PipelineResourceConstants.GENERATE_FULL_GRAPH_PARAM_MESSAGE) @QueryParam(
           "renderFullBottomGraph") Boolean renderFullBottomGraph,
       @Parameter(description = "Plan Execution Id for which we want to get the Execution details",
@@ -219,7 +222,7 @@ public class ExecutionDetailsResource {
         PipelineExecutionDetailDTO.builder()
             .pipelineExecutionSummary(PipelineExecutionSummaryDtoMapper.toDto(executionSummaryEntity, entityGitDetails))
             .executionGraph(ExecutionGraphMapper.toExecutionGraph(
-                pmsExecutionService.getOrchestrationGraph(stageNodeId, planExecutionId)))
+                pmsExecutionService.getOrchestrationGraph(stageNodeId, planExecutionId, stageNodeExecutionId)))
             .build());
   }
 
@@ -233,6 +236,7 @@ public class ExecutionDetailsResource {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(
             responseCode = "default", description = "Return the Pipeline Execution details for given PlanExecution Id")
       })
+  @Deprecated
   public ResponseDTO<PipelineExecutionDetailDTO>
   getExecutionDetail(@NotNull @Parameter(description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE, required = true)
                      @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
@@ -242,6 +246,8 @@ public class ExecutionDetailsResource {
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
       @Parameter(description = PipelineResourceConstants.STAGE_NODE_ID_PARAM_MESSAGE) @QueryParam(
           "stageNodeId") String stageNodeId,
+      @Parameter(description = PipelineResourceConstants.STAGE_NODE_EXECUTION_PARAM_MESSAGE) @QueryParam(
+          "stageNodeExecutionId") String stageNodeExecutionId,
       @Parameter(description = "Plan Execution Id for which we want to get the Execution details",
           required = true) @PathParam(NGCommonEntityConstants.PLAN_KEY) String planExecutionId) {
     PipelineExecutionSummaryEntity executionSummaryEntity =
@@ -262,7 +268,7 @@ public class ExecutionDetailsResource {
         PipelineExecutionDetailDTO.builder()
             .pipelineExecutionSummary(PipelineExecutionSummaryDtoMapper.toDto(executionSummaryEntity, entityGitDetails))
             .executionGraph(ExecutionGraphMapper.toExecutionGraph(
-                pmsExecutionService.getOrchestrationGraph(stageNodeId, planExecutionId)))
+                pmsExecutionService.getOrchestrationGraph(stageNodeId, planExecutionId, stageNodeExecutionId)))
             .build());
   }
 
@@ -278,6 +284,7 @@ public class ExecutionDetailsResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Return the Input Set YAML used for given Plan Execution")
       })
+  @Hidden
   public String
   getInputsetYaml(@NotNull @Parameter(description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE, required = true)
                   @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
@@ -303,6 +310,7 @@ public class ExecutionDetailsResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Return the Input Set YAML used for given Plan Execution")
       })
+  @Hidden
   public ResponseDTO<InputSetYamlWithTemplateDTO>
   getInputsetYamlV2(@NotNull @Parameter(description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE, required = true)
                     @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,

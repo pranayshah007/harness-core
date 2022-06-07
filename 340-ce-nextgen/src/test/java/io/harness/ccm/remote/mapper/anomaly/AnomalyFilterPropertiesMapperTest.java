@@ -13,6 +13,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
+import io.harness.ccm.commons.entities.CCMAggregation;
+import io.harness.ccm.commons.entities.CCMField;
+import io.harness.ccm.commons.entities.CCMGroupBy;
+import io.harness.ccm.commons.entities.CCMOperator;
+import io.harness.ccm.commons.entities.CCMSort;
+import io.harness.ccm.commons.entities.CCMSortOrder;
+import io.harness.ccm.commons.entities.CCMTimeFilter;
 import io.harness.ccm.remote.beans.anomaly.AnomalyFilterProperties;
 import io.harness.ccm.remote.beans.anomaly.AnomalyFilterPropertiesDTO;
 import io.harness.filter.FilterType;
@@ -20,7 +27,9 @@ import io.harness.filter.dto.FilterPropertiesDTO;
 import io.harness.filter.entity.FilterProperties;
 import io.harness.rule.Owner;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
@@ -38,11 +47,20 @@ public class AnomalyFilterPropertiesMapperTest extends CategoryTest {
   List<String> awsAccounts = Arrays.asList("awsAccount1");
   List<String> awsServices = Arrays.asList("awsService1");
   List<String> awsUsageTypes = Arrays.asList("awsUsageType1");
-  List<String> azureSubscriptions = Arrays.asList("azureSubscription1");
-  List<String> azureServiceNames = Arrays.asList("azureServiceName1");
-  List<String> azureResources = Arrays.asList("azureResource1");
+  List<String> azureSubscriptionGuids = Arrays.asList("azureSubscriptionGuid1");
+  List<String> azureResourceGroups = Arrays.asList("azureResourceGroup1");
+  List<String> azureMeterCategories = Arrays.asList("azureMeterCategory1");
+  List<CCMSort> orderBy =
+      Arrays.asList(CCMSort.builder().field(CCMField.ANOMALOUS_SPEND).order(CCMSortOrder.ASCENDING).build());
+  List<CCMGroupBy> groupBy = new ArrayList<>();
+  List<CCMAggregation> aggregations = new ArrayList<>();
+  List<String> searchText = Arrays.asList("abc");
   Double minActualAmount = 123.45;
   Double minAnomalousSpend = 1234.5;
+  List<CCMTimeFilter> timeFilters = Arrays.asList(
+      CCMTimeFilter.builder().operator(CCMOperator.BEFORE).timestamp(Calendar.getInstance().getTimeInMillis()).build());
+  Integer offset = 0;
+  Integer limit = 1000;
   @InjectMocks AnomalyFilterPropertiesMapper anomalyFilterPropertiesMapper;
 
   @Before
@@ -64,11 +82,18 @@ public class AnomalyFilterPropertiesMapperTest extends CategoryTest {
                                             .awsAccounts(awsAccounts)
                                             .awsServices(awsServices)
                                             .awsUsageTypes(awsUsageTypes)
-                                            .azureSubscriptions(azureSubscriptions)
-                                            .azureServiceNames(azureServiceNames)
-                                            .azureResources(azureResources)
+                                            .azureSubscriptionGuids(azureSubscriptionGuids)
+                                            .azureResourceGroups(azureResourceGroups)
+                                            .azureMeterCategories(azureMeterCategories)
                                             .minActualAmount(minActualAmount)
                                             .minAnomalousSpend(minAnomalousSpend)
+                                            .timeFilters(timeFilters)
+                                            .orderBy(orderBy)
+                                            .groupBy(groupBy)
+                                            .aggregations(aggregations)
+                                            .searchText(searchText)
+                                            .offset(offset)
+                                            .limit(limit)
                                             .build();
     AnomalyFilterPropertiesDTO filterPropertiesDTO =
         (AnomalyFilterPropertiesDTO) anomalyFilterPropertiesMapper.writeDTO(filterProperties);
@@ -82,11 +107,18 @@ public class AnomalyFilterPropertiesMapperTest extends CategoryTest {
     assertThat(filterPropertiesDTO.getAwsAccounts()).isEqualTo(awsAccounts);
     assertThat(filterPropertiesDTO.getAwsServices()).isEqualTo(awsServices);
     assertThat(filterPropertiesDTO.getAwsUsageTypes()).isEqualTo(awsUsageTypes);
-    assertThat(filterPropertiesDTO.getAzureSubscriptions()).isEqualTo(azureSubscriptions);
-    assertThat(filterPropertiesDTO.getAzureServiceNames()).isEqualTo(azureServiceNames);
-    assertThat(filterPropertiesDTO.getAzureResources()).isEqualTo(azureResources);
+    assertThat(filterPropertiesDTO.getAzureSubscriptionGuids()).isEqualTo(azureSubscriptionGuids);
+    assertThat(filterPropertiesDTO.getAzureResourceGroups()).isEqualTo(azureResourceGroups);
+    assertThat(filterPropertiesDTO.getAzureMeterCategories()).isEqualTo(azureMeterCategories);
     assertThat(filterPropertiesDTO.getMinActualAmount()).isEqualTo(minActualAmount);
     assertThat(filterPropertiesDTO.getMinAnomalousSpend()).isEqualTo(minAnomalousSpend);
+    assertThat(filterPropertiesDTO.getTimeFilters()).isEqualTo(timeFilters);
+    assertThat(filterPropertiesDTO.getOrderBy()).isEqualTo(orderBy);
+    assertThat(filterPropertiesDTO.getGroupBy()).isEqualTo(groupBy);
+    assertThat(filterPropertiesDTO.getAggregations()).isEqualTo(aggregations);
+    assertThat(filterPropertiesDTO.getSearchText()).isEqualTo(searchText);
+    assertThat(filterPropertiesDTO.getOffset()).isEqualTo(offset);
+    assertThat(filterPropertiesDTO.getLimit()).isEqualTo(limit);
   }
 
   @Test
@@ -103,11 +135,18 @@ public class AnomalyFilterPropertiesMapperTest extends CategoryTest {
                                                   .awsAccounts(awsAccounts)
                                                   .awsServices(awsServices)
                                                   .awsUsageTypes(awsUsageTypes)
-                                                  .azureSubscriptions(azureSubscriptions)
-                                                  .azureServiceNames(azureServiceNames)
-                                                  .azureResources(azureResources)
+                                                  .azureSubscriptionGuids(azureSubscriptionGuids)
+                                                  .azureResourceGroups(azureResourceGroups)
+                                                  .azureMeterCategories(azureMeterCategories)
                                                   .minActualAmount(minActualAmount)
                                                   .minAnomalousSpend(minAnomalousSpend)
+                                                  .timeFilters(timeFilters)
+                                                  .orderBy(orderBy)
+                                                  .groupBy(groupBy)
+                                                  .aggregations(aggregations)
+                                                  .searchText(searchText)
+                                                  .offset(offset)
+                                                  .limit(limit)
                                                   .build();
     AnomalyFilterProperties filterProperties =
         (AnomalyFilterProperties) anomalyFilterPropertiesMapper.toEntity(filterPropertiesDTO);
@@ -120,10 +159,17 @@ public class AnomalyFilterPropertiesMapperTest extends CategoryTest {
     assertThat(filterProperties.getAwsAccounts()).isEqualTo(awsAccounts);
     assertThat(filterProperties.getAwsServices()).isEqualTo(awsServices);
     assertThat(filterProperties.getAwsUsageTypes()).isEqualTo(awsUsageTypes);
-    assertThat(filterProperties.getAzureSubscriptions()).isEqualTo(azureSubscriptions);
-    assertThat(filterProperties.getAzureServiceNames()).isEqualTo(azureServiceNames);
-    assertThat(filterProperties.getAzureResources()).isEqualTo(azureResources);
+    assertThat(filterProperties.getAzureSubscriptionGuids()).isEqualTo(azureSubscriptionGuids);
+    assertThat(filterProperties.getAzureResourceGroups()).isEqualTo(azureResourceGroups);
+    assertThat(filterProperties.getAzureMeterCategories()).isEqualTo(azureMeterCategories);
     assertThat(filterProperties.getMinActualAmount()).isEqualTo(minActualAmount);
     assertThat(filterProperties.getMinAnomalousSpend()).isEqualTo(minAnomalousSpend);
+    assertThat(filterProperties.getTimeFilters()).isEqualTo(timeFilters);
+    assertThat(filterProperties.getOrderBy()).isEqualTo(orderBy);
+    assertThat(filterProperties.getGroupBy()).isEqualTo(groupBy);
+    assertThat(filterProperties.getAggregations()).isEqualTo(aggregations);
+    assertThat(filterProperties.getSearchText()).isEqualTo(searchText);
+    assertThat(filterProperties.getOffset()).isEqualTo(offset);
+    assertThat(filterProperties.getLimit()).isEqualTo(limit);
   }
 }

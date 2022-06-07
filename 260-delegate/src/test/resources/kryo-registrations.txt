@@ -133,6 +133,8 @@
 1024:com.amazonaws.services.ec2.model.CapacityReservationTargetResponse
 1025:io.harness.spotinst.model.ElastiGroup
 1026:io.harness.spotinst.model.ElastiGroupCapacity
+1027:com.amazonaws.services.ec2.model.InstanceMaintenanceOptions
+1028:com.amazonaws.services.ec2.model.PrivateDnsNameOptionsResponse
 1201:io.harness.beans.FileData
 1202:io.harness.context.GlobalContext
 1203:io.harness.context.GlobalContextData
@@ -481,7 +483,9 @@
 5353:software.wings.security.PermissionAttribute.PermissionType
 5354:software.wings.security.PermissionAttribute.Action
 5357:software.wings.security.AppFilter
+5359:software.wings.beans.ServiceVariable
 5360:software.wings.beans.EntityType
+5361:software.wings.beans.ServiceVariable.OverrideType
 5362:software.wings.beans.ServiceVariableType
 5363:software.wings.beans.container.KubernetesServiceSpecification
 5364:software.wings.beans.container.KubernetesBlueGreenConfig
@@ -1103,6 +1107,9 @@
 9104:io.harness.cvng.beans.DynatraceDataCollectionInfo.MetricCollectionInfo
 9105:io.harness.cvng.beans.customhealthlog.CustomHealthLogInfo
 9106:io.harness.cvng.beans.CustomHealthLogDataCollectionInfo
+9107:io.harness.delegate.task.git.NGGitOpsTaskParams
+9108:io.harness.delegate.task.git.NGGitOpsResponse
+9109:io.harness.delegate.task.git.GitOpsTaskType
 9501:io.harness.timeout.trackers.absolute.AbsoluteTimeoutParameters
 9701:io.harness.logging.UnitProgress
 9702:io.harness.logging.UnitStatus

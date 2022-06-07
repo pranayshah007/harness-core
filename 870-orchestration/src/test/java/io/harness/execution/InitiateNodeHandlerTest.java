@@ -24,6 +24,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.engine.OrchestrationEngine;
 import io.harness.pms.PmsFeatureFlagService;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.execution.StrategyMetadata;
 import io.harness.pms.contracts.execution.events.InitiateNodeEvent;
 import io.harness.rule.Owner;
 
@@ -112,8 +113,9 @@ public class InitiateNodeHandlerTest extends OrchestrationTestBase {
   @Owner(developers = SAHIL)
   @Category(UnitTests.class)
   public void handleEventWithContextWithMatrixFeatureEnabled() {
-    when(pmsFeatureFlagService.isEnabled(anyString(), any(FeatureName.class))).thenReturn(true);
-    Ambiance ambiance = Ambiance.newBuilder().setPlanExecutionId(generateUuid()).build();
+    when(pmsFeatureFlagService.isEnabled(eq("accountId"), any(FeatureName.class))).thenReturn(true);
+    Ambiance ambiance =
+        Ambiance.newBuilder().setPlanExecutionId(generateUuid()).putSetupAbstractions("accountId", "accountId").build();
     InitiateNodeEvent event = InitiateNodeEvent.newBuilder()
                                   .setAmbiance(ambiance)
                                   .setNodeId(generateUuid())
@@ -121,6 +123,6 @@ public class InitiateNodeHandlerTest extends OrchestrationTestBase {
                                   .build();
     initiateNodeHandler.handleEventWithContext(event);
     verify(engine).initiateNode(
-        eq(ambiance), eq(event.getNodeId()), eq(event.getRuntimeId()), eq(null), any(), eq(true));
+        eq(ambiance), eq(event.getNodeId()), eq(event.getRuntimeId()), eq(null), any(StrategyMetadata.class), eq(true));
   }
 }

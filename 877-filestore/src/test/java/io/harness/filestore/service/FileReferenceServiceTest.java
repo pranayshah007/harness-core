@@ -8,6 +8,9 @@
 package io.harness.filestore.service;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.filestore.FileStoreTestConstants.ACCOUNT_IDENTIFIER;
+import static io.harness.filestore.FileStoreTestConstants.ORG_IDENTIFIER;
+import static io.harness.filestore.FileStoreTestConstants.PROJECT_IDENTIFIER;
 import static io.harness.rule.OwnerRule.BOJAN;
 import static io.harness.rule.OwnerRule.VLAD;
 
@@ -20,6 +23,7 @@ import io.harness.CategoryTest;
 import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
+import io.harness.beans.Scope;
 import io.harness.beans.SearchPageParams;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.ReferencedEntityException;
@@ -33,6 +37,7 @@ import io.harness.repositories.spring.FileStoreRepository;
 import io.harness.rule.Owner;
 
 import java.util.Arrays;
+import java.util.List;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -45,10 +50,6 @@ import org.springframework.data.domain.Sort;
 @OwnedBy(CDP)
 @RunWith(MockitoJUnitRunner.class)
 public class FileReferenceServiceTest extends CategoryTest {
-  private static final String ACCOUNT_IDENTIFIER = "accountIdentifier";
-  private static final String ORG_IDENTIFIER = "orgIdentifier";
-  private static final String PROJECT_IDENTIFIER = "projectIdentifier";
-
   @Mock private EntitySetupUsageService entitySetupUsageService;
   @Mock private FileStoreRepository fileStoreRepository;
 
@@ -139,13 +140,17 @@ public class FileReferenceServiceTest extends CategoryTest {
                                        .build()
                                        .getFullyQualifiedScopeIdentifier();
     SearchPageParams searchPageParams = SearchPageParams.builder().page(1).size(10).build();
-    Page<EntitySetupUsageDTO> references = mock(Page.class);
-    when(entitySetupUsageService.listAllEntityUsagePerEntityScope(searchPageParams.getPage(),
-             searchPageParams.getSize(), ACCOUNT_IDENTIFIER, referredEntityFQScope, EntityType.FILES,
-             EntityType.PIPELINES, Sort.by(Sort.Direction.ASC, EntitySetupUsageKeys.referredByEntityName)))
+    EntitySetupUsageDTO entitySetupUsageDTO = EntitySetupUsageDTO.builder().build();
+    List<EntitySetupUsageDTO> references = Arrays.asList(entitySetupUsageDTO);
+    String entityName = "EntityName";
+
+    when(entitySetupUsageService.listAllEntityUsagePerReferredEntityScope(
+             Scope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER), referredEntityFQScope, EntityType.FILES,
+             EntityType.PIPELINES, entityName, Sort.by(Sort.Direction.ASC, EntitySetupUsageKeys.referredByEntityName)))
         .thenReturn(references);
-    Page<EntitySetupUsageDTO> result = fileReferenceService.getAllReferencedByInScope(
-        ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, searchPageParams, EntityType.PIPELINES);
-    assertThat(result).isEqualTo(references);
+
+    List<EntitySetupUsageDTO> result = fileReferenceService.getAllReferencedByInScope(
+        ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, searchPageParams, EntityType.PIPELINES, entityName);
+    assertThat(result).containsExactly(entitySetupUsageDTO);
   }
 }

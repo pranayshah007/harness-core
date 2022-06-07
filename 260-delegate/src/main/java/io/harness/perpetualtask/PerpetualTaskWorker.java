@@ -42,9 +42,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -92,8 +92,7 @@ public class PerpetualTaskWorker {
 
   @Inject
   public PerpetualTaskWorker(PerpetualTaskServiceGrpcClient perpetualTaskServiceGrpcClient,
-      Map<String, PerpetualTaskExecutor> factoryMap,
-      @Named("perpetualTaskExecutor") ExecutorService perpetualTaskExecutor,
+      Map<String, PerpetualTaskExecutor> factoryMap, @Named("taskExecutor") ThreadPoolExecutor perpetualTaskExecutor,
       @Named("perpetualTaskTimeoutExecutor") ScheduledExecutorService perpetualTaskTimeoutExecutor) {
     this.perpetualTaskServiceGrpcClient = perpetualTaskServiceGrpcClient;
     this.factoryMap = factoryMap;

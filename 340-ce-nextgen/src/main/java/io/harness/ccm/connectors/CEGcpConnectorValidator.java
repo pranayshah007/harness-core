@@ -305,13 +305,7 @@ public class CEGcpConnectorValidator extends io.harness.ccm.connectors.AbstractC
       } else {
         // 2. Check presence of table "gcp_billing_export_v1_*"
         log.info("dataset '{}' is present in gcp project '{}'", datasetId, projectId);
-        if (!isEmpty(gcpTableName)) {
-          TableId tableIdBq = TableId.of(projectId, datasetId, gcpTableName);
-          tableGranularData = bigQuery.getTable(tableIdBq);
-          if (tableGranularData != null) {
-            isTablePresent = true;
-          }
-        } else {
+        if (isEmpty(gcpTableName)) {
           Page<Table> tableList = dataset.list(BigQuery.TableListOption.pageSize(1000));
           for (Table table : tableList.getValues()) {
             if (table.getTableId().getTable().contains(GCP_BILLING_EXPORT_V_1)) {
@@ -321,6 +315,12 @@ public class CEGcpConnectorValidator extends io.harness.ccm.connectors.AbstractC
             }
           }
         }
+        TableId tableIdBq = TableId.of(projectId, datasetId, gcpTableName);
+        tableGranularData = bigQuery.getTable(tableIdBq);
+        if (tableGranularData != null) {
+          isTablePresent = true;
+        }
+
         if (!isTablePresent) {
           errorList.add(ErrorDetail.builder()
                             .reason("Pricing table at source not found")
