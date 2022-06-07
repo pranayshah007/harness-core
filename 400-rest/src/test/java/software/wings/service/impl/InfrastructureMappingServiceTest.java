@@ -685,8 +685,7 @@ public class InfrastructureMappingServiceTest extends WingsBaseTest {
     when(settingsService.get(COMPUTE_PROVIDER_ID))
         .thenReturn(
             aSettingAttribute().withUuid(COMPUTE_PROVIDER_ID).withValue(aPhysicalDataCenterConfig().build()).build());
-    when(serviceInstanceService.updateInstanceMappings(
-             any(), any(), any()))
+    when(serviceInstanceService.updateInstanceMappings(any(), any(), any()))
         .thenReturn(
             aPageResponse().withResponse(asList(aServiceInstance().withUuid(SERVICE_INSTANCE_ID).build())).build());
 
@@ -695,8 +694,7 @@ public class InfrastructureMappingServiceTest extends WingsBaseTest {
 
     assertThat(serviceInstances).hasSize(1);
     assertThat(serviceInstances).containsExactly(aServiceInstance().withUuid(SERVICE_INSTANCE_ID).build());
-    verify(serviceInstanceService)
-        .updateInstanceMappings(any(), any(), any());
+    verify(serviceInstanceService).updateInstanceMappings(any(), any(), any());
   }
 
   @Test
@@ -720,8 +718,7 @@ public class InfrastructureMappingServiceTest extends WingsBaseTest {
     when(settingsService.get(COMPUTE_PROVIDER_ID))
         .thenReturn(
             aSettingAttribute().withUuid(COMPUTE_PROVIDER_ID).withValue(aPhysicalDataCenterConfig().build()).build());
-    when(serviceInstanceService.updateInstanceMappings(
-             any(), any(), any()))
+    when(serviceInstanceService.updateInstanceMappings(any(), any(), any()))
         .thenReturn(
             aPageResponse().withResponse(asList(aServiceInstance().withUuid(SERVICE_INSTANCE_ID).build())).build());
 
@@ -734,8 +731,7 @@ public class InfrastructureMappingServiceTest extends WingsBaseTest {
     ArgumentCaptor<List> argumentCaptor = ArgumentCaptor.forClass(List.class);
 
     assertThat(serviceInstances).containsExactly(aServiceInstance().withUuid(SERVICE_INSTANCE_ID).build());
-    verify(serviceInstanceService)
-        .updateInstanceMappings(any(), any(), argumentCaptor.capture());
+    verify(serviceInstanceService).updateInstanceMappings(any(), any(), argumentCaptor.capture());
     assertThat(argumentCaptor.getValue().size()).isEqualTo(3);
   }
 
@@ -762,8 +758,7 @@ public class InfrastructureMappingServiceTest extends WingsBaseTest {
     when(settingsService.get(COMPUTE_PROVIDER_ID))
         .thenReturn(
             aSettingAttribute().withUuid(COMPUTE_PROVIDER_ID).withValue(aPhysicalDataCenterConfig().build()).build());
-    when(serviceInstanceService.updateInstanceMappings(
-             any(), any(), any()))
+    when(serviceInstanceService.updateInstanceMappings(any(), any(), any()))
         .thenReturn(
             aPageResponse().withResponse(asList(aServiceInstance().withUuid(SERVICE_INSTANCE_ID).build())).build());
 
@@ -776,8 +771,7 @@ public class InfrastructureMappingServiceTest extends WingsBaseTest {
     ArgumentCaptor<List> argumentCaptor = ArgumentCaptor.forClass(List.class);
 
     assertThat(serviceInstances).containsExactly(aServiceInstance().withUuid(SERVICE_INSTANCE_ID).build());
-    verify(serviceInstanceService)
-        .updateInstanceMappings(any(), any(), argumentCaptor.capture());
+    verify(serviceInstanceService).updateInstanceMappings(any(), any(), argumentCaptor.capture());
     assertThat(argumentCaptor.getValue().size()).isEqualTo(3);
   }
 

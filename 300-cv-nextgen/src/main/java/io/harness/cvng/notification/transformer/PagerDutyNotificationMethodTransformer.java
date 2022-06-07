@@ -15,7 +15,8 @@ public class PagerDutyNotificationMethodTransformer
     extends NotificationMethodTransformer<CVNGPagerDutyChannel, CVNGPagerDutyChannelSpec> {
   @Override
   public CVNGPagerDutyChannel getEntityNotificationMethod(CVNGPagerDutyChannelSpec notificationChannelSpec) {
-    return new NotificationRule.CVNGPagerDutyChannel(notificationChannelSpec.getUserGroups(),notificationChannelSpec.getIntegrationKey());
+    return new NotificationRule.CVNGPagerDutyChannel(
+        notificationChannelSpec.getUserGroups(), notificationChannelSpec.getIntegrationKey());
   }
 
   @Override

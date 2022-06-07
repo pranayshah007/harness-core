@@ -46,7 +46,7 @@ public class StagesFilterJsonCreator {
     return (int) stagesYamlField.stream().filter(yamlField -> !yamlField.getName().equals(PARALLEL)).count();
   }
 
-  private List<YamlField> getStageYamlFields(YamlField stagesYamlField) {
+  public List<YamlField> getStageYamlFields(YamlField stagesYamlField) {
     List<YamlNode> yamlNodes = Optional.of(stagesYamlField.getNode().asArray()).orElse(Collections.emptyList());
     List<YamlField> stageFields = new LinkedList<>();
 

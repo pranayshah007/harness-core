@@ -60,7 +60,7 @@ public class PmsGrpcClientUtils {
               : ex.getStatus().getDescription());
     }
     log.error("Unknown Exception Occurred.", ex);
-    return new GeneralException("Unknown Exception Occurred. Please contact with Harness.");
+    return new GeneralException("Unknown Exception Occurred. Please contact with Harness.", ex);
   }
 
   private RetryPolicy<Object> createRetryPolicy() {

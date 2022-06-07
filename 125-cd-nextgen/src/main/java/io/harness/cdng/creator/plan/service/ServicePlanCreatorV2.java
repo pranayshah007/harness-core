@@ -100,7 +100,8 @@ public class ServicePlanCreatorV2 extends ChildrenPlanCreator<NGServiceV2InfoCon
         .uuid(serviceUuid)
         .stepType(ServiceSectionStep.STEP_TYPE)
         .name(PlanCreatorConstants.SERVICE_NODE_NAME)
-        .identifier(YamlTypes.SERVICE_SECTION)
+        // Keeping this identifier same as v1 so that expressions work
+        .identifier(YamlTypes.SERVICE_CONFIG)
         .stepParameters(stepParameters)
         .facilitatorObtainment(
             FacilitatorObtainment.newBuilder()

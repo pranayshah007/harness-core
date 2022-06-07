@@ -15,6 +15,7 @@ import static org.springframework.data.mongodb.core.query.Criteria.where;
 
 import io.harness.NGResourceFilterConstants;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.entity.ServiceEntity.ServiceEntityKeys;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
@@ -26,8 +27,8 @@ import org.springframework.data.mongodb.core.query.Update;
 @OwnedBy(PIPELINE)
 @UtilityClass
 public class ServiceFilterHelper {
-  public Criteria createCriteriaForGetList(
-      String accountId, String orgIdentifier, String projectIdentifier, boolean deleted, String searchTerm) {
+  public Criteria createCriteriaForGetList(String accountId, String orgIdentifier, String projectIdentifier,
+      boolean deleted, String searchTerm, ServiceDefinitionType type) {
     Criteria criteria =
         CoreCriteriaUtils.createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier, deleted);
     if (isNotEmpty(searchTerm)) {
@@ -37,6 +38,11 @@ public class ServiceFilterHelper {
               .regex(searchTerm, NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS));
       criteria.andOperator(searchCriteria);
     }
+
+    if (type != null) {
+      criteria.andOperator(where(ServiceEntityKeys.type).is(type));
+    }
+
     return criteria;
   }
 
@@ -54,6 +60,7 @@ public class ServiceFilterHelper {
     update.set(ServiceEntityKeys.lastModifiedAt, System.currentTimeMillis());
     update.set(ServiceEntityKeys.yaml, serviceEntity.getYaml());
     update.set(ServiceEntityKeys.gitOpsEnabled, serviceEntity.getGitOpsEnabled());
+    update.set(ServiceEntityKeys.type, serviceEntity.getType());
     return update;
   }
 

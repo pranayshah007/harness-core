@@ -197,10 +197,10 @@ public class JenkinsImpl implements Jenkins {
    * @see software.wings.helpers.ext.jenkins.Jenkins#getJob(java.lang.String)
    */
   @Override
-  public Job getJob(String jobname, JenkinsConfig jenkinsConfig) {
+  public Job getJob(String jobname, JenkinsConfig jenkinsConfig, long timeout) {
     log.info("Retrieving job {}", jobname);
     try {
-      return HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofSeconds(120), () -> {
+      return HTimeLimiter.callInterruptible21(timeLimiter, ofMillis(timeout), () -> {
         while (true) {
           if (jobname == null) {
             sleep(ofSeconds(1L));
@@ -453,7 +453,7 @@ public class JenkinsImpl implements Jenkins {
     Map<String, String> parameters = jenkinsTaskParams.getParameters();
     JenkinsConfig jenkinsConfig = jenkinsTaskParams.getJenkinsConfig();
 
-    Job job = getJob(jobname, jenkinsConfig);
+    Job job = getJob(jobname, jenkinsConfig, jenkinsTaskParams.getTimeout());
     if (job == null) {
       throw new ArtifactServerException("No job [" + jobname + "] found", USER);
     }

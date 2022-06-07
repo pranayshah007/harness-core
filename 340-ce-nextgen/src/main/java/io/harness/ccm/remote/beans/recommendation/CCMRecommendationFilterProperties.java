@@ -9,11 +9,13 @@ package io.harness.ccm.remote.beans.recommendation;
 
 import static io.harness.filter.FilterConstants.CCM_RECOMMENDATION_FILTER;
 
+import io.harness.ccm.views.graphql.QLCEViewFilterWrapper;
 import io.harness.filter.entity.FilterProperties;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModel;
+import java.util.List;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -33,6 +35,7 @@ import lombok.experimental.FieldDefaults;
 @JsonTypeName(CCM_RECOMMENDATION_FILTER)
 public class CCMRecommendationFilterProperties extends FilterProperties {
   K8sRecommendationFilterPropertiesDTO k8sRecommendationFilterPropertiesDTO;
+  List<QLCEViewFilterWrapper> perspectiveFilters;
 
   Double minSaving;
   Double minCost;

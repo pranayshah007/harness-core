@@ -15,6 +15,7 @@ import io.harness.ccm.commons.entities.anomaly.AnomalySummary;
 import io.harness.ccm.commons.entities.anomaly.AnomalyWidget;
 import io.harness.ccm.commons.entities.anomaly.AnomalyWidgetData;
 import io.harness.ccm.commons.entities.anomaly.PerspectiveAnomalyData;
+import io.harness.ccm.graphql.dto.recommendation.FilterStatsDTO;
 import io.harness.ccm.views.dto.PerspectiveQueryDTO;
 
 import java.util.List;
@@ -24,6 +25,7 @@ public interface AnomalyService {
   List<AnomalyData> listAnomalies(@NonNull String accountIdentifier, AnomalyQueryDTO anomalyQuery);
   List<AnomalyData> listAnomalies(
       @NonNull String accountIdentifier, AnomalyQueryDTO anomalyQuery, @NonNull List<CCMFilter> ruleFilters);
+  List<FilterStatsDTO> getAnomalyFilterStats(@NonNull String accountIdentifier, List<String> anomalyColumnsList);
   List<PerspectiveAnomalyData> listPerspectiveAnomalies(
       @NonNull String accountIdentifier, String perspectiveId, PerspectiveQueryDTO perspectiveQuery);
   Boolean updateAnomalyFeedback(@NonNull String accountIdentifier, String anomalyId, AnomalyFeedbackDTO feedback);

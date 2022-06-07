@@ -19,7 +19,11 @@ import org.springframework.data.mongodb.core.query.Criteria;
 public class ModuleInfoFilterUtils {
   public void processNode(JsonNode jsonNode, String parentPath, Criteria criteria) {
     if (jsonNode.isValueNode()) {
-      criteria.and(parentPath).is(jsonNode.asText());
+      if (jsonNode.isInt()) {
+        criteria.and(parentPath).is(jsonNode.asInt());
+      } else {
+        criteria.and(parentPath).is(jsonNode.asText());
+      }
     } else if (jsonNode.isArray()) {
       List<String> valueList = new ArrayList<>();
       for (JsonNode arrayItem : jsonNode) {

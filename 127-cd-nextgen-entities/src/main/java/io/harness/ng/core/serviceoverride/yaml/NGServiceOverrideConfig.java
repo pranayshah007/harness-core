@@ -22,5 +22,5 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @TypeAlias("nGServiceOverrideConfig")
 public class NGServiceOverrideConfig implements YamlDTO {
-  @JsonProperty("serviceOverride") NGServiceOverrideInfoConfig serviceOverrideInfoConfig;
+  @JsonProperty("serviceOverrides") NGServiceOverrideInfoConfig serviceOverrideInfoConfig;
 }
