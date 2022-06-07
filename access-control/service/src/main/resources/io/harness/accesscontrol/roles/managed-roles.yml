@@ -595,3 +595,12 @@ roles:
         - account
         - organization
         - project
+    - identifier: _account_basic
+      name: Account Basic
+      description: Account Basic
+      permissions:
+        - core_license_view
+        - core_account_view
+      managed: true
+      allowedScopeLevels:
+        - account

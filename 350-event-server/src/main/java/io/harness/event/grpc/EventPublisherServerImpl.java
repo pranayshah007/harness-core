@@ -24,9 +24,11 @@ import io.harness.event.MessageProcessorType;
 import io.harness.event.PublishMessage;
 import io.harness.event.PublishRequest;
 import io.harness.event.PublishResponse;
+import io.harness.event.app.EventServiceConfig;
 import io.harness.event.metrics.ClusterResourcesMetricsGroup;
 import io.harness.event.metrics.EventServiceMetricNames;
 import io.harness.event.metrics.MessagesMetricsGroupContext;
+import io.harness.event.service.intfc.EventDataBulkWriteService;
 import io.harness.event.service.intfc.LastReceivedPublishedMessageRepository;
 import io.harness.grpc.utils.AnyUtils;
 import io.harness.grpc.utils.HTimestamps;
@@ -50,15 +52,20 @@ import org.apache.commons.lang3.StringUtils;
 @Slf4j
 @Singleton
 public class EventPublisherServerImpl extends EventPublisherGrpc.EventPublisherImplBase {
+  private final EventDataBulkWriteService eventDataBulkWriteService;
+  private final EventServiceConfig eventServiceConfig;
   private final HPersistence hPersistence;
   private final LastReceivedPublishedMessageRepository lastReceivedPublishedMessageRepository;
   private final MessageProcessorRegistry messageProcessorRegistry;
   private final MetricService metricService;
 
   @Inject
-  public EventPublisherServerImpl(HPersistence hPersistence,
+  public EventPublisherServerImpl(EventDataBulkWriteService eventDataBulkWriteService,
+      EventServiceConfig eventServiceConfig, HPersistence hPersistence,
       LastReceivedPublishedMessageRepository lastReceivedPublishedMessageRepository,
       MessageProcessorRegistry messageProcessorRegistry, MetricService metricService) {
+    this.eventDataBulkWriteService = eventDataBulkWriteService;
+    this.eventServiceConfig = eventServiceConfig;
     this.hPersistence = hPersistence;
     this.lastReceivedPublishedMessageRepository = lastReceivedPublishedMessageRepository;
     this.messageProcessorRegistry = messageProcessorRegistry;
@@ -73,11 +80,12 @@ public class EventPublisherServerImpl extends EventPublisherGrpc.EventPublisherI
          AutoLogContext ignore1 = new DelegateLogContext(delegateId, OVERRIDE_ERROR)) {
       log.info("Received publish request with {} messages", request.getMessagesCount());
 
-      List<io.harness.ccm.commons.entities.events.PublishedMessage> withoutCategory = new ArrayList<>();
-      List<io.harness.ccm.commons.entities.events.PublishedMessage> withCategory = new ArrayList<>();
+      final boolean enableBatchWrite = eventServiceConfig.getEventDataBatchQueryConfig().isEnableBatchWrite();
+      List<PublishedMessage> withoutCategory = new ArrayList<>();
+      List<PublishedMessage> withCategory = new ArrayList<>();
       request.getMessagesList()
           .stream()
-          .map(publishMessage -> toPublishedMessage(accountId, publishMessage))
+          .map(publishMessage -> toPublishedMessage(accountId, enableBatchWrite, publishMessage))
           .filter(Objects::nonNull)
           .forEach(publishedMessage -> {
             if (isEmpty(publishedMessage.getCategory())) {
@@ -89,7 +97,11 @@ public class EventPublisherServerImpl extends EventPublisherGrpc.EventPublisherI
 
       if (isNotEmpty(withoutCategory)) {
         try {
-          hPersistence.saveIgnoringDuplicateKeys(withoutCategory);
+          if (enableBatchWrite) {
+            eventDataBulkWriteService.bulkInsertPublishedMessages(withoutCategory);
+          } else {
+            hPersistence.saveIgnoringDuplicateKeys(withoutCategory);
+          }
         } catch (Exception e) {
           log.warn("Encountered error while persisting messages", e);
           responseObserver.onError(Status.INTERNAL.withCause(e).asException());
@@ -146,11 +158,15 @@ public class EventPublisherServerImpl extends EventPublisherGrpc.EventPublisherI
     }
   }
 
-  public io.harness.ccm.commons.entities.events.PublishedMessage toPublishedMessage(
-      String accountId, PublishMessage publishMessage) {
+  public PublishedMessage toPublishedMessage(
+      String accountId, boolean enableBatchWrite, PublishMessage publishMessage) {
     try {
+      String uuid = StringUtils.defaultIfEmpty(publishMessage.getMessageId(), generateUuid());
+      if (enableBatchWrite) {
+        uuid = generateUuid();
+      }
       return PublishedMessage.builder()
-          .uuid(StringUtils.defaultIfEmpty(publishMessage.getMessageId(), generateUuid()))
+          .uuid(uuid)
           .accountId(accountId)
           .data(publishMessage.getPayload().toByteArray())
           .type(AnyUtils.toFqcn(publishMessage.getPayload()))

@@ -74,15 +74,20 @@ public class TemplateReferenceHelper {
         accountClient.isFeatureFlagEnabled(FeatureName.NG_TEMPLATE_REFERENCES_SUPPORT.name(), accountId));
   }
 
+  private boolean skipTemplateReference(TemplateEntity templateEntity) {
+    return !isFeatureFlagEnabled(templateEntity.getAccountId())
+        || TemplateEntityType.MONITORED_SERVICE_TEMPLATE.equals(templateEntity.getTemplateEntityType());
+  }
+
   public void deleteTemplateReferences(TemplateEntity templateEntity) {
-    if (!isFeatureFlagEnabled(templateEntity.getAccountId())) {
+    if (skipTemplateReference(templateEntity)) {
       return;
     }
     templateSetupUsageHelper.deleteExistingSetupUsages(templateEntity);
   }
 
   public void populateTemplateReferences(TemplateEntity templateEntity) {
-    if (!isFeatureFlagEnabled(templateEntity.getAccountId())) {
+    if (skipTemplateReference(templateEntity)) {
       return;
     }
     String pmsUnderstandableYaml = templateYamlConversionHelper.convertTemplateYamlToEntityYaml(templateEntity);

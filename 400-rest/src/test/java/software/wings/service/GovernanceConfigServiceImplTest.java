@@ -65,11 +65,9 @@ import software.wings.service.intfc.compliance.GovernanceConfigService;
 import software.wings.utils.JsonUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -105,58 +103,24 @@ public class GovernanceConfigServiceImplTest extends WingsBaseTest {
   @Owner(developers = PRABU)
   @Category(UnitTests.class)
   public void shouldSaveAndGetDeploymentFreeze() {
-    long updatedFromTime = System.currentTimeMillis();
-    long updatedToTime = System.currentTimeMillis() + 10000000;
-
-    JsonNode actual = JsonUtils.readResourceFile("governance/governance_config.json", JsonNode.class);
-
-    for (JsonNode x : actual.get("timeRangeBasedFreezeConfigs")) {
-      JsonNode j = x.get("timeRange");
-      ObjectNode o = (ObjectNode) j;
-      o.put("from", updatedFromTime);
-      o.put("to", updatedToTime);
-    }
-
-    String governanceConfigJson = String.valueOf(actual);
-    GovernanceConfig governanceConfig = JsonUtils.convertStringToObj(governanceConfigJson, GovernanceConfig.class);
-
-    JsonNode expected = JsonUtils.readResourceFile("governance/governance_config_expected.json", JsonNode.class);
-
-    for (JsonNode x : expected.get("timeRangeBasedFreezeConfigs")) {
-      JsonNode j = x.get("timeRange");
-      ObjectNode o = (ObjectNode) j;
-      o.put("from", updatedFromTime);
-      o.put("to", updatedToTime);
-    }
-
-    String governanceConfigExpectedJson = String.valueOf(expected);
-    GovernanceConfig expectedGovernanceConfig =
-        JsonUtils.convertStringToObj(governanceConfigExpectedJson, GovernanceConfig.class);
+    GovernanceConfig governanceConfig =
+        JsonUtils.readResourceFile("governance/governance_config.json", GovernanceConfig.class);
 
     GovernanceConfig savedGovernanceConfig =
         governanceConfigService.upsert(governanceConfig.getAccountId(), governanceConfig);
-
-    expectedGovernanceConfig.setNextCloseIterations(Arrays.asList(updatedToTime));
     savedGovernanceConfig.setUuid("GOVERNANCE_CONFIG_ID");
-    assertThat(savedGovernanceConfig.equals(expectedGovernanceConfig)).isEqualTo(true);
+    governanceConfig.getTimeRangeBasedFreezeConfigs().get(0).setApplicable(true);
+    JsonNode actual = JsonUtils.toJsonNode(savedGovernanceConfig);
+    JsonNode expected = JsonUtils.readResourceFile("governance/governance_config_expected.json", JsonNode.class);
+    assertThat(actual.equals(expected)).isEqualTo(true);
   }
 
   @Test
   @Owner(developers = PRABU)
   @Category(UnitTests.class)
   public void shouldDeleteDeploymentFreeze() {
-    JsonNode actual = JsonUtils.readResourceFile("governance/governance_config.json", JsonNode.class);
-    long updatedFromTime = System.currentTimeMillis();
-    long updatedToTime = System.currentTimeMillis() + 10000000;
-    for (JsonNode x : actual.get("timeRangeBasedFreezeConfigs")) {
-      JsonNode j = x.get("timeRange");
-      ObjectNode o = (ObjectNode) j;
-      o.put("from", updatedFromTime);
-      o.put("to", updatedToTime);
-    }
-
-    String governanceConfigJson = String.valueOf(actual);
-    GovernanceConfig governanceConfig = JsonUtils.convertStringToObj(governanceConfigJson, GovernanceConfig.class);
+    GovernanceConfig governanceConfig =
+        JsonUtils.readResourceFile("governance/governance_config.json", GovernanceConfig.class);
     GovernanceConfig savedGovernanceConfig =
         governanceConfigService.upsert(governanceConfig.getAccountId(), governanceConfig);
     savedGovernanceConfig.getTimeRangeBasedFreezeConfigs().remove(0);
@@ -414,9 +378,7 @@ public class GovernanceConfigServiceImplTest extends WingsBaseTest {
   @Owner(developers = PRABU)
   @Category(UnitTests.class)
   public void shouldReturnEmptyMapForOutofTimeRange() {
-    long updatedFromTime = System.currentTimeMillis();
-    long updatedToTime = System.currentTimeMillis() + 10000000;
-    TimeRange range = new TimeRange(updatedFromTime, updatedToTime, "Asia/Calcutta", false, null, null, null, false);
+    TimeRange range = new TimeRange(100, 18_00_100, "Asia/Calcutta", false, null, null, null, false);
 
     ApplicationFilter appSelection3 =
         CustomAppFilter.builder()
@@ -745,8 +707,7 @@ public class GovernanceConfigServiceImplTest extends WingsBaseTest {
   @Owner(developers = PRABU)
   @Category(UnitTests.class)
   public void shouldReturnEmptyEnvForOutofTimeRange() {
-    TimeRange range = new TimeRange(System.currentTimeMillis(), System.currentTimeMillis() + 18_000_000,
-        "Asia/Calcutta", false, null, null, null, false);
+    TimeRange range = new TimeRange(100, 18_00_100, "Asia/Calcutta", false, null, null, null, false);
 
     ApplicationFilter appSelection3 =
         CustomAppFilter.builder()
@@ -781,18 +742,8 @@ public class GovernanceConfigServiceImplTest extends WingsBaseTest {
     TimeRange range = new TimeRange(System.currentTimeMillis() + 18_00_000, System.currentTimeMillis() + 54_00_000,
         "Asia/Calcutta", false, null, null, null, false);
 
-    JsonNode actual = JsonUtils.readResourceFile("governance/governance_config.json", JsonNode.class);
-    long updatedFromTime = System.currentTimeMillis();
-    long updatedToTime = System.currentTimeMillis() + 10000000;
-    for (JsonNode x : actual.get("timeRangeBasedFreezeConfigs")) {
-      JsonNode j = x.get("timeRange");
-      ObjectNode o = (ObjectNode) j;
-      o.put("from", updatedFromTime);
-      o.put("to", updatedToTime);
-    }
-
-    String governanceConfigJson = String.valueOf(actual);
-    GovernanceConfig governanceConfig = JsonUtils.convertStringToObj(governanceConfigJson, GovernanceConfig.class);
+    GovernanceConfig governanceConfig =
+        JsonUtils.readResourceFile("governance/governance_config.json", GovernanceConfig.class);
 
     TimeRangeBasedFreezeConfig timeRangeBasedFreezeConfig =
         new TimeRangeBasedFreezeConfig(true, Collections.emptyList(), Collections.singletonList(EnvironmentType.PROD),
@@ -1012,8 +963,8 @@ public class GovernanceConfigServiceImplTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldSendNotificationWhenWindowMadeInactive() {
     long currentTimeMillis = System.currentTimeMillis();
-    TimeRange range = new TimeRange(
-        currentTimeMillis, currentTimeMillis + DAY_IN_MILLIS, "Asia/Calcutta", false, null, null, null, false);
+    TimeRange range = new TimeRange(currentTimeMillis - 2 * DAY_IN_MILLIS, currentTimeMillis - DAY_IN_MILLIS,
+        "Asia/Calcutta", false, null, null, null, false);
 
     ApplicationFilter appSelection1 = AllAppFilter.builder()
                                           .blackoutWindowFilterType(BlackoutWindowFilterType.ALL)
@@ -1051,12 +1002,7 @@ public class GovernanceConfigServiceImplTest extends WingsBaseTest {
                            .accountId(ACCOUNT_ID)
                            .timeRangeBasedFreezeConfigs(asList(timeRangeBasedFreezeConfig, timeRangeBasedFreezeConfig2))
                            .build();
-
-    GovernanceConfig finalGovernanceConfig = governanceConfig;
-    assertThatThrownBy(
-        () -> governanceConfigService.upsert(finalGovernanceConfig.getAccountId(), finalGovernanceConfig))
-        .isInstanceOf(InvalidRequestException.class)
-        .hasMessage("Cannot update active freeze window");
+    governanceConfigService.upsert(governanceConfig.getAccountId(), governanceConfig);
     //    verify(deploymentFreezeUtils).handleActivationEvent(timeRangeBasedFreezeConfig, ACCOUNT_ID);
     //    verify(deploymentFreezeUtils, never()).handleActivationEvent(timeRangeBasedFreezeConfig2, ACCOUNT_ID);
     //    verify(deploymentFreezeUtils).handleDeActivationEvent(timeRangeBasedFreezeConfig, ACCOUNT_ID);

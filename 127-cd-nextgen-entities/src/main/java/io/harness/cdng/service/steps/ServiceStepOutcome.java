@@ -35,8 +35,7 @@ public class ServiceStepOutcome implements Outcome, ExecutionSweepingOutput {
   String description;
   String type;
   Map<String, String> tags;
-
-  // TODO(archit): add gitOpsEnabled for expression to work
+  boolean gitOpsEnabled;
 
   public String getServiceDefinitionType() {
     return type;
@@ -58,14 +57,15 @@ public class ServiceStepOutcome implements Outcome, ExecutionSweepingOutput {
         .build();
   }
 
-  public static ServiceStepOutcome fromServiceStepV2(
-      String identifier, String name, String type, String description, Map<String, String> tags) {
+  public static ServiceStepOutcome fromServiceStepV2(String identifier, String name, String type, String description,
+      Map<String, String> tags, Boolean gitOpsEnabled) {
     return ServiceStepOutcome.builder()
         .identifier(identifier)
         .name(name)
         .description(description)
         .tags(tags)
         .type(type)
+        .gitOpsEnabled(gitOpsEnabled)
         .build();
   }
 }
