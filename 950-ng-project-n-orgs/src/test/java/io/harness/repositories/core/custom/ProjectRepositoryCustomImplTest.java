@@ -8,6 +8,7 @@
 package io.harness.repositories.core.custom;
 
 import static io.harness.rule.OwnerRule.KARAN;
+import static io.harness.rule.OwnerRule.VIKAS_M;
 
 import static java.util.Collections.singletonList;
 import static junit.framework.TestCase.assertEquals;
@@ -27,6 +28,7 @@ import io.harness.ng.core.entities.Project;
 import io.harness.ng.core.entities.Project.ProjectKeys;
 import io.harness.rule.Owner;
 
+import com.mongodb.client.result.DeleteResult;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -69,6 +71,33 @@ public class ProjectRepositoryCustomImplTest extends CategoryTest {
     assertEquals(pageable, projects.getPageable());
     assertEquals(1, projects.getContent().size());
     assertEquals(project, projects.getContent().get(0));
+  }
+
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void testHardDelete() {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    String identifier = randomAlphabetic(10);
+    Long version = 0L;
+
+    ArgumentCaptor<Query> queryArgumentCaptor = ArgumentCaptor.forClass(Query.class);
+
+    when(mongoTemplate.remove(any(), eq(Project.class))).thenReturn(DeleteResult.acknowledged(1));
+    boolean deleted = projectRepository.hardDelete(accountIdentifier, orgIdentifier, identifier, version);
+    verify(mongoTemplate, times(1)).remove(queryArgumentCaptor.capture(), eq(Project.class));
+    Query query = queryArgumentCaptor.getValue();
+    assertTrue(deleted);
+    assertEquals(4, query.getQueryObject().size());
+    assertTrue(query.getQueryObject().containsKey(ProjectKeys.accountIdentifier));
+    assertEquals(accountIdentifier, query.getQueryObject().get(ProjectKeys.accountIdentifier));
+    assertTrue(query.getQueryObject().containsKey(ProjectKeys.orgIdentifier));
+    assertEquals(orgIdentifier, query.getQueryObject().get(ProjectKeys.orgIdentifier));
+    assertTrue(query.getQueryObject().containsKey(ProjectKeys.identifier));
+    assertEquals(identifier, query.getQueryObject().get(ProjectKeys.identifier));
+    assertTrue(query.getQueryObject().containsKey(ProjectKeys.version));
+    assertEquals(version, query.getQueryObject().get(ProjectKeys.version));
   }
 
   @Test
