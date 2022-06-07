@@ -162,6 +162,7 @@ import io.harness.version.VersionInfoManager;
 
 import software.wings.beans.DelegateTaskFactory;
 import software.wings.beans.TaskType;
+import software.wings.beans.TaskTypeV2;
 import software.wings.beans.command.CommandExecutionContext;
 import software.wings.beans.delegation.CommandParameters;
 import software.wings.beans.delegation.ShellScriptParameters;
@@ -537,6 +538,11 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       boolean isSample = "true".equals(System.getenv().get("SAMPLE_DELEGATE"));
 
       final List<String> supportedTasks = Arrays.stream(TaskType.values()).map(Enum::name).collect(toList());
+
+      // Remove tasks which are in TaskTypeV2 and only specified with onlyV2 as true
+      final List<String> unsupportedTasks =
+          Arrays.stream(TaskTypeV2.values()).filter(element -> element.isOnlyV2()).map(Enum::name).collect(toList());
+      supportedTasks.removeAll(unsupportedTasks);
 
       if (isNotBlank(DELEGATE_TYPE)) {
         log.info("Registering delegate with delegate Type: {}, DelegateGroupName: {} that supports tasks: {}",

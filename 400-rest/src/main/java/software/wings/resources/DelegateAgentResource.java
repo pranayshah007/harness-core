@@ -28,13 +28,16 @@ import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateConfiguration;
 import io.harness.delegate.beans.DelegateConfiguration.Action;
 import io.harness.delegate.beans.DelegateConnectionHeartbeat;
+import io.harness.delegate.beans.DelegateInfoV2;
 import io.harness.delegate.beans.DelegateParams;
 import io.harness.delegate.beans.DelegateProfileParams;
 import io.harness.delegate.beans.DelegateRegisterResponse;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateScripts;
 import io.harness.delegate.beans.DelegateTaskEvent;
+import io.harness.delegate.beans.DelegateTaskLoggingV2;
 import io.harness.delegate.beans.DelegateTaskPackage;
+import io.harness.delegate.beans.DelegateTaskPackageV2;
 import io.harness.delegate.beans.DelegateUnregisterRequest;
 import io.harness.delegate.beans.connector.ConnectorHeartbeatDelegateResponse;
 import io.harness.delegate.task.DelegateLogContext;
@@ -64,6 +67,7 @@ import io.harness.security.annotations.DelegateAuth;
 import io.harness.serializer.KryoSerializer;
 
 import software.wings.beans.Account;
+import software.wings.beans.TaskTypeV2;
 import software.wings.core.managerConfiguration.ConfigurationController;
 import software.wings.delegatetasks.buildsource.BuildSourceExecutionResponse;
 import software.wings.delegatetasks.manifest.ManifestCollectionExecutionResponse;
@@ -310,6 +314,57 @@ public class DelegateAgentResource {
         return null;
       }
       return delegateTaskServiceClassic.acquireDelegateTask(accountId, delegateId, taskId, delegateInstanceId);
+    }
+  }
+
+  @DelegateAuth
+  @PUT
+  @Path("{delegateId}/tasks/{taskId}/acquire/v2")
+  @Timed
+  @ExceptionMetered
+  public DelegateTaskPackageV2 acquireDelegateTaskV2(@PathParam("delegateId") String delegateId,
+      @PathParam("taskId") String taskId, @QueryParam("accountId") @NotEmpty String accountId,
+      @QueryParam("delegateInstanceId") String delegateInstanceId) {
+    try (AutoLogContext ignore1 = new TaskLogContext(taskId, OVERRIDE_ERROR);
+         AutoLogContext ignore2 = new AccountLogContext(accountId, OVERRIDE_ERROR);
+         AutoLogContext ignore3 = new DelegateLogContext(accountId, delegateId, delegateInstanceId, OVERRIDE_ERROR)) {
+      if (delegateRequestRateLimiter.isOverRateLimit(accountId, delegateId)) {
+        return null;
+      }
+      DelegateTaskPackage delegateTaskPackage =
+          delegateTaskServiceClassic.acquireDelegateTask(accountId, delegateId, taskId, delegateInstanceId);
+      // Convert DelegateTaskPackage to DelegateTaskPackageV2
+      DelegateInfoV2 delegateInfo = DelegateInfoV2.builder()
+                                        .id(delegateTaskPackage.getDelegateId())
+                                        .instanceId(delegateTaskPackage.getDelegateInstanceId())
+                                        .callbackToken(delegateTaskPackage.getDelegateCallbackToken())
+                                        .build();
+      DelegateTaskLoggingV2 delegateTaskLoggingV2 =
+          DelegateTaskLoggingV2.builder()
+              .loggingToken(delegateTaskPackage.getLogStreamingToken())
+              .logStreamingAbstractions(delegateTaskPackage.getLogStreamingAbstractions())
+              .build();
+      // V1 Task to V2 task
+      TaskTypeV2 taskTypeV2 = null;
+      try {
+        taskTypeV2 = TaskTypeV2.valueOf(delegateTaskPackage.getData().getTaskType());
+      } catch (IllegalArgumentException e) {
+        log.error("task type {} has not been ported over to V2", delegateTaskPackage.getData().getTaskType());
+      }
+
+      return DelegateTaskPackageV2.builder()
+          .id(taskId)
+          .delegate(delegateInfo)
+          .async(delegateTaskPackage.getData().isAsync())
+          .executionCapabilities(delegateTaskPackage.getExecutionCapabilities())
+          .data(delegateTaskPackage.getData().getParameters()[0])
+          .timeout(delegateTaskPackage.getData().getTimeout())
+          .encryptionConfigs(delegateTaskPackage.getEncryptionConfigs())
+          .secretDetails(delegateTaskPackage.getSecretDetails())
+          .delegateTaskLogging(delegateTaskLoggingV2)
+          .secrets(delegateTaskPackage.getSecrets())
+          .taskType(taskTypeV2)
+          .build();
     }
   }
 

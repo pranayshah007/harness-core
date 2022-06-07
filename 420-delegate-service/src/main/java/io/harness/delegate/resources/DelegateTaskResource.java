@@ -11,7 +11,9 @@ import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
 
 import static software.wings.security.PermissionAttribute.ResourceType.DELEGATE;
 
+import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskResponse;
+import io.harness.delegate.beans.DelegateTaskResponseV2;
 import io.harness.delegate.task.DelegateLogContext;
 import io.harness.delegate.task.TaskLogContext;
 import io.harness.logging.AccountLogContext;
@@ -19,6 +21,7 @@ import io.harness.logging.AutoLogContext;
 import io.harness.security.annotations.DelegateAuth;
 import io.harness.service.intfc.DelegateTaskService;
 
+import io.harness.tasks.ResponseData;
 import software.wings.security.annotations.Scope;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
@@ -55,6 +58,36 @@ public class DelegateTaskResource {
   @ExceptionMetered
   public void updateTaskResponse(@PathParam("delegateId") String delegateId, @PathParam("taskId") String taskId,
       @QueryParam("accountId") @NotEmpty String accountId, DelegateTaskResponse delegateTaskResponse) {
+    try (AutoLogContext ignore1 = new TaskLogContext(taskId, OVERRIDE_ERROR);
+         AutoLogContext ignore2 = new AccountLogContext(accountId, OVERRIDE_ERROR);
+         AutoLogContext ignore3 = new DelegateLogContext(delegateId, OVERRIDE_ERROR)) {
+      try {
+        delegateTaskService.processDelegateResponse(accountId, delegateId, taskId, delegateTaskResponse);
+      } catch (Exception exception) {
+        log.error("Error during update task response. delegateId: {}, taskId: {}, delegateTaskResponse: {}.",
+            delegateId, taskId, delegateTaskResponse, exception);
+      }
+    }
+  }
+
+  @DelegateAuth
+  @POST
+  @Path("{taskId}/delegates/{delegateId}/v2")
+  @Timed
+  @ExceptionMetered
+  public void updateTaskResponseV2(@PathParam("delegateId") String delegateId, @PathParam("taskId") String taskId,
+      @QueryParam("accountId") @NotEmpty String accountId, DelegateTaskResponseV2 delegateTaskResponseV2) {
+    // Convert DelegateTaskResponseV2 to DelegateTaskResponse
+    ResponseData responseData = delegateTaskResponseV2.getResponseData();
+    Class<? extends ResponseData> responseClass = delegateTaskResponseV2.getTaskType().getResponseClass();
+    DelegateResponseData delegateResponseData = (DelegateResponseData) responseClass.cast(responseData);
+
+    DelegateTaskResponse delegateTaskResponse = DelegateTaskResponse.builder()
+                                                    .responseCode(delegateTaskResponseV2.getResponseCode())
+                                                    .response(delegateResponseData)
+                                                    .accountId(accountId)
+                                                    .build();
+
     try (AutoLogContext ignore1 = new TaskLogContext(taskId, OVERRIDE_ERROR);
          AutoLogContext ignore2 = new AccountLogContext(accountId, OVERRIDE_ERROR);
          AutoLogContext ignore3 = new DelegateLogContext(delegateId, OVERRIDE_ERROR)) {
