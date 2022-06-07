@@ -67,6 +67,7 @@ public class ServerlessAwsLambdaPrepareRollbackCommandTaskHandler extends Server
   private ServerlessAwsLambdaInfraConfig serverlessAwsLambdaInfraConfig;
   private long timeoutInMillis;
   private String previousDeployTimeStamp;
+  private boolean firstDeployment;
 
   @Override
   protected ServerlessCommandResponse executeTaskInternal(ServerlessCommandRequest serverlessCommandRequest,
@@ -76,28 +77,26 @@ public class ServerlessAwsLambdaPrepareRollbackCommandTaskHandler extends Server
       throw new InvalidArgumentsException(
           Pair.of("serverlessCommandRequest", "Must be instance of ServerlessPrepareRollbackDataRequest"));
     }
-    ServerlessDeployRequest serverlessDeployRequest = (ServerlessDeployRequest) serverlessCommandRequest;
-    if (!(serverlessDeployRequest.getServerlessInfraConfig() instanceof ServerlessAwsLambdaInfraConfig)) {
+    ServerlessPrepareRollbackDataRequest serverlessPrepareRollbackDataRequest =
+        (ServerlessPrepareRollbackDataRequest) serverlessCommandRequest;
+    if (!(serverlessPrepareRollbackDataRequest.getServerlessInfraConfig() instanceof ServerlessAwsLambdaInfraConfig)) {
       throw new InvalidArgumentsException(
           Pair.of("ServerlessInfraConfig", "Must be instance of ServerlessAwsLambdaInfraConfig"));
     }
-    if (!(serverlessDeployRequest.getServerlessManifestConfig() instanceof ServerlessAwsLambdaManifestConfig)) {
+    if (!(serverlessPrepareRollbackDataRequest.getServerlessManifestConfig()
+                instanceof ServerlessAwsLambdaManifestConfig)) {
       throw new InvalidArgumentsException(
           Pair.of("ServerlessManifestConfig", "Must be instance of ServerlessAwsLambdaManifestConfig"));
     }
 
-    if (!(serverlessDeployRequest.getServerlessDeployConfig() instanceof ServerlessAwsLambdaDeployConfig)) {
-      throw new InvalidArgumentsException(
-          Pair.of("ServerlessDeployConfig", "Must be instance of ServerlessAwsLambdaDeployConfig"));
-    }
-
-    timeoutInMillis = serverlessDeployRequest.getTimeoutIntervalInMin() * 60000;
+    timeoutInMillis = serverlessPrepareRollbackDataRequest.getTimeoutIntervalInMin() * 60000;
+    firstDeployment = false;
     serverlessAwsLambdaInfraConfig =
-        (ServerlessAwsLambdaInfraConfig) serverlessDeployRequest.getServerlessInfraConfig();
+        (ServerlessAwsLambdaInfraConfig) serverlessPrepareRollbackDataRequest.getServerlessInfraConfig();
     LogCallback executionLogCallback = serverlessTaskHelperBase.getLogCallback(
         iLogStreamingTaskClient, ServerlessCommandUnitConstants.rollbackData.toString(), true, commandUnitsProgress);
     try {
-      setupDirectory(serverlessDeployRequest, executionLogCallback, serverlessDelegateTaskParams);
+      setupDirectory(serverlessPrepareRollbackDataRequest, executionLogCallback, serverlessDelegateTaskParams);
     } catch (Exception ex) {
       executionLogCallback.saveExecutionLog(color(format("%n setup directory failed."), LogColor.Red, LogWeight.Bold),
           LogLevel.ERROR, CommandExecutionStatus.FAILURE);
@@ -105,7 +104,7 @@ public class ServerlessAwsLambdaPrepareRollbackCommandTaskHandler extends Server
     }
 
     try {
-      configureCredential(serverlessDeployRequest, executionLogCallback, serverlessDelegateTaskParams);
+      configureCredential(serverlessPrepareRollbackDataRequest, executionLogCallback, serverlessDelegateTaskParams);
     } catch (Exception ex) {
       executionLogCallback.saveExecutionLog(
           color(format("%n configure credential failed."), LogColor.Red, LogWeight.Bold), LogLevel.ERROR,
@@ -123,7 +122,8 @@ public class ServerlessAwsLambdaPrepareRollbackCommandTaskHandler extends Server
     }
 
     try {
-      return prepareRollbackData(serverlessDeployRequest, executionLogCallback, serverlessDelegateTaskParams);
+      return prepareRollbackData(
+          serverlessPrepareRollbackDataRequest, executionLogCallback, serverlessDelegateTaskParams);
     } catch (Exception ex) {
       executionLogCallback.saveExecutionLog(
           color(format("%n prepare rollback data failed."), LogColor.Red, LogWeight.Bold), LogLevel.ERROR,
@@ -132,23 +132,23 @@ public class ServerlessAwsLambdaPrepareRollbackCommandTaskHandler extends Server
     }
   }
 
-  private void setupDirectory(ServerlessDeployRequest serverlessDeployRequest, LogCallback executionLogCallback,
-      ServerlessDelegateTaskParams serverlessDelegateTaskParams) throws Exception {
+  private void setupDirectory(ServerlessPrepareRollbackDataRequest serverlessPrepareRollbackDataRequest,
+      LogCallback executionLogCallback, ServerlessDelegateTaskParams serverlessDelegateTaskParams) throws Exception {
     executionLogCallback.saveExecutionLog(format("setting up serverless directory..%n%n"));
     serverlessManifestConfig =
-        (ServerlessAwsLambdaManifestConfig) serverlessDeployRequest.getServerlessManifestConfig();
+        (ServerlessAwsLambdaManifestConfig) serverlessPrepareRollbackDataRequest.getServerlessManifestConfig();
     serverlessTaskHelperBase.fetchManifestFilesAndWriteToDirectory(serverlessManifestConfig,
-        serverlessDeployRequest.getAccountId(), executionLogCallback, serverlessDelegateTaskParams);
+        serverlessPrepareRollbackDataRequest.getAccountId(), executionLogCallback, serverlessDelegateTaskParams);
     serverlessManifestSchema = serverlessAwsCommandTaskHelper.parseServerlessManifest(
-        executionLogCallback, serverlessDeployRequest.getManifestContent());
+        executionLogCallback, serverlessPrepareRollbackDataRequest.getManifestContent());
     serverlessTaskHelperBase.replaceManifestWithRenderedContent(serverlessDelegateTaskParams, serverlessManifestConfig,
-        serverlessDeployRequest.getManifestContent(), serverlessManifestSchema);
+        serverlessPrepareRollbackDataRequest.getManifestContent(), serverlessManifestSchema);
   }
 
-  private void configureCredential(ServerlessDeployRequest serverlessDeployRequest, LogCallback executionLogCallback,
-      ServerlessDelegateTaskParams serverlessDelegateTaskParams) throws Exception {
+  private void configureCredential(ServerlessPrepareRollbackDataRequest serverlessPrepareRollbackDataRequest,
+      LogCallback executionLogCallback, ServerlessDelegateTaskParams serverlessDelegateTaskParams) throws Exception {
     serverlessAwsLambdaConfig = (ServerlessAwsLambdaConfig) serverlessInfraConfigHelper.createServerlessConfig(
-        serverlessDeployRequest.getServerlessInfraConfig());
+        serverlessPrepareRollbackDataRequest.getServerlessInfraConfig());
     serverlessClient = ServerlessClient.client(serverlessDelegateTaskParams.getServerlessClientPath());
 
     ServerlessCliResponse response = serverlessAwsCommandTaskHelper.configCredential(serverlessClient,
@@ -165,14 +165,25 @@ public class ServerlessAwsLambdaPrepareRollbackCommandTaskHandler extends Server
     }
   }
 
-  private ServerlessPrepareRollbackDataResponse prepareRollbackData(ServerlessDeployRequest serverlessDeployRequest,
-      LogCallback executionLogCallback, ServerlessDelegateTaskParams serverlessDelegateTaskParams) throws Exception {
+  private ServerlessPrepareRollbackDataResponse prepareRollbackData(
+      ServerlessPrepareRollbackDataRequest serverlessPrepareRollbackDataRequest, LogCallback executionLogCallback,
+      ServerlessDelegateTaskParams serverlessDelegateTaskParams) throws Exception {
     executionLogCallback.saveExecutionLog(format("Preparing Rollback Data..%n%n"));
+    ServerlessPrepareRollbackDataResponseBuilder serverlessPrepareRollbackDataResponseBuilder =
+        ServerlessPrepareRollbackDataResponse.builder();
+    ServerlessAwsLambdaPrepareRollbackDataResultBuilder serverlessAwsLambdaPrepareRollbackDataResultBuilder =
+        ServerlessAwsLambdaPrepareRollbackDataResult.builder();
+    if (!serverlessAwsCommandTaskHelper.cloudFormationStackExists(executionLogCallback,
+            serverlessPrepareRollbackDataRequest, serverlessPrepareRollbackDataRequest.getManifestContent())) {
+      firstDeployment = true;
+      executionLogCallback.saveExecutionLog(
+          format("Skipping as there are no previous Deployments..%n"), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+
+      //      return;
+    }
     ServerlessCliResponse response =
         serverlessAwsCommandTaskHelper.deployList(serverlessClient, serverlessDelegateTaskParams, executionLogCallback,
             serverlessAwsLambdaInfraConfig, timeoutInMillis, serverlessManifestConfig);
-    ServerlessPrepareRollbackDataResponseBuilder serverlessPrepareRollbackDataResponseBuilder =
-        ServerlessPrepareRollbackDataResponse.builder();
     if (response.getCommandExecutionStatus() == CommandExecutionStatus.SUCCESS) {
       executionLogCallback.saveExecutionLog(
           color(format("%nDeploy List command executed successfully..%n"), LogColor.White, LogWeight.Bold), INFO);
@@ -180,8 +191,6 @@ public class ServerlessAwsLambdaPrepareRollbackCommandTaskHandler extends Server
       Optional<String> previousVersionTimeStamp = serverlessAwsCommandTaskHelper.getPreviousVersionTimeStamp(
           timeStamps, executionLogCallback, serverlessDeployRequest);
       previousDeployTimeStamp = previousVersionTimeStamp.orElse(null);
-      ServerlessAwsLambdaPrepareRollbackDataResultBuilder serverlessAwsLambdaPrepareRollbackDataResultBuilder =
-          ServerlessAwsLambdaPrepareRollbackDataResult.builder();
       if (previousVersionTimeStamp.isPresent()) {
         serverlessAwsLambdaPrepareRollbackDataResultBuilder.previousVersionTimeStamp(previousDeployTimeStamp);
         executionLogCallback.saveExecutionLog(

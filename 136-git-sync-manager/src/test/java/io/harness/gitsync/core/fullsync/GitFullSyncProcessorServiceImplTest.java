@@ -22,6 +22,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.harness.CategoryTest;
 import io.harness.Microservice;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
@@ -29,7 +30,6 @@ import io.harness.beans.InputSetReference;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.git.YamlGitConfigDTO;
 import io.harness.gitsync.FullSyncServiceGrpc;
-import io.harness.gitsync.GitSyncTestBase;
 import io.harness.gitsync.common.service.GitBranchSyncService;
 import io.harness.gitsync.common.service.ScmOrchestratorService;
 import io.harness.gitsync.common.service.YamlGitConfigService;
@@ -54,7 +54,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 @OwnedBy(PL)
-public class GitFullSyncProcessorServiceImplTest extends GitSyncTestBase {
+public class GitFullSyncProcessorServiceImplTest extends CategoryTest {
   private static final String YAML_GIT_CONFIG = "yamlGitConfig";
   private static final String BRANCH = "branch";
   private static final String PR_TITLE = "pr title";
@@ -69,7 +69,7 @@ public class GitFullSyncProcessorServiceImplTest extends GitSyncTestBase {
   @Inject GitFullSyncProcessorServiceImpl gitFullSyncProcessorService;
   @Inject Map<Microservice, FullSyncServiceGrpc.FullSyncServiceBlockingStub> fullSyncServiceBlockingStubMap;
   @Inject EntityDetailRestToProtoMapper entityDetailRestToProtoMapper;
-  @Inject List<Microservice> microservicesProcessingOrder;
+  @Mock List<Microservice> microservicesProcessingOrder;
   @Mock GitFullSyncEntityService gitFullSyncEntityService;
   @Mock YamlGitConfigService yamlGitConfigService;
   @Mock GitBranchSyncService gitBranchSyncService;

@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateMetaInfo;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.serverless.ServerlessAwsLambdaPrepareRollbackDataResult;
+import io.harness.delegate.beans.serverless.ServerlessPrepareRollbackDataResult;
 import io.harness.logging.CommandExecutionStatus;
 
 import lombok.Builder;
@@ -26,7 +27,7 @@ public class ServerlessPrepareRollbackDataResponse implements ServerlessCommandR
   @NonFinal UnitProgressData unitProgressData;
   CommandExecutionStatus commandExecutionStatus;
   String errorMessage;
-  ServerlessAwsLambdaPrepareRollbackDataResult serverlessAwsLambdaPrepareRollbackDataResult;
+  ServerlessPrepareRollbackDataResult serverlessPrepareRollbackDataResult;
 
   @Override
   public void setDelegateMetaInfo(DelegateMetaInfo metaInfo) {

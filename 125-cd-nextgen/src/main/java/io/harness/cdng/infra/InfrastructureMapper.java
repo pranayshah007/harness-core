@@ -13,6 +13,7 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.infra.beans.AzureWebAppInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
@@ -20,6 +21,7 @@ import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
 import io.harness.cdng.infra.beans.PdcInfrastructureOutcome;
 import io.harness.cdng.infra.beans.ServerlessAwsLambdaInfrastructureOutcome;
 import io.harness.cdng.infra.beans.SshWinRmAzureInfrastructureOutcome;
+import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
 import io.harness.cdng.infra.yaml.K8sAzureInfrastructure;
@@ -128,6 +130,21 @@ public class InfrastructureMapper {
                 service, environmentOutcome, sshWinRmAzureInfrastructure.getInfrastructureKeyValues()))
             .build();
 
+      case InfrastructureKind.AZURE_WEB_APP:
+        AzureWebAppInfrastructure azureWebAppInfrastructure = (AzureWebAppInfrastructure) infrastructure;
+        validateAzureWebAppInfrastructure(azureWebAppInfrastructure);
+        return AzureWebAppInfrastructureOutcome.builder()
+            .connectorRef(azureWebAppInfrastructure.getConnectorRef().getValue())
+            .appService(azureWebAppInfrastructure.getAppService().getValue())
+            .deploymentSlot(azureWebAppInfrastructure.getDeploymentSlot().getValue())
+            .targetSlot(azureWebAppInfrastructure.getTargetSlot().getValue())
+            .environment(environmentOutcome)
+            .infrastructureKey(InfrastructureKey.generate(
+                service, environmentOutcome, azureWebAppInfrastructure.getInfrastructureKeyValues()))
+            .subscription(azureWebAppInfrastructure.getSubscriptionId().getValue())
+            .resourceGroup(azureWebAppInfrastructure.getResourceGroup().getValue())
+            .build();
+
       default:
         throw new InvalidArgumentsException(format("Unknown Infrastructure Kind : [%s]", infrastructure.getKind()));
     }
@@ -173,6 +190,38 @@ public class InfrastructureMapper {
     if (ParameterField.isNull(infrastructure.getCluster())
         || isEmpty(ParameterFieldHelper.getParameterFieldValue(infrastructure.getCluster()))) {
       throw new InvalidArgumentsException(Pair.of("cluster", "cannot be empty"));
+    }
+
+    if (ParameterField.isNull(infrastructure.getSubscriptionId())
+        || isEmpty(ParameterFieldHelper.getParameterFieldValue(infrastructure.getSubscriptionId()))) {
+      throw new InvalidArgumentsException(Pair.of("subscription", "cannot be empty"));
+    }
+
+    if (ParameterField.isNull(infrastructure.getResourceGroup())
+        || isEmpty(ParameterFieldHelper.getParameterFieldValue(infrastructure.getResourceGroup()))) {
+      throw new InvalidArgumentsException(Pair.of("resourceGroup", "cannot be empty"));
+    }
+  }
+
+  private void validateAzureWebAppInfrastructure(AzureWebAppInfrastructure infrastructure) {
+    if (ParameterField.isNull(infrastructure.getConnectorRef())
+        || isEmpty(ParameterFieldHelper.getParameterFieldValue(infrastructure.getConnectorRef()))) {
+      throw new InvalidArgumentsException(Pair.of("connectorRef", "cannot be empty"));
+    }
+
+    if (ParameterField.isNull(infrastructure.getTargetSlot())
+        || isEmpty(ParameterFieldHelper.getParameterFieldValue(infrastructure.getTargetSlot()))) {
+      throw new InvalidArgumentsException(Pair.of("targetSlot", "cannot be empty"));
+    }
+
+    if (ParameterField.isNull(infrastructure.getDeploymentSlot())
+        || isEmpty(ParameterFieldHelper.getParameterFieldValue(infrastructure.getDeploymentSlot()))) {
+      throw new InvalidArgumentsException(Pair.of("deploymentSlot", "cannot be empty"));
+    }
+
+    if (ParameterField.isNull(infrastructure.getAppService())
+        || isEmpty(ParameterFieldHelper.getParameterFieldValue(infrastructure.getAppService()))) {
+      throw new InvalidArgumentsException(Pair.of("appService", "cannot be empty"));
     }
 
     if (ParameterField.isNull(infrastructure.getSubscriptionId())

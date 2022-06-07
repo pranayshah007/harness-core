@@ -18,5 +18,6 @@ import lombok.Data;
 @OwnedBy(HarnessTeam.CDP)
 public class ServerlessAwsLambdaPrepareRollbackDataResult implements ServerlessPrepareRollbackDataResult {
   private String previousVersionTimeStamp;
+  private boolean isFirstDeployment;
   private String errorMessage;
 }

@@ -51,6 +51,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
+import org.jooq.tools.StringUtils;
 
 @Slf4j
 @Singleton
@@ -216,9 +217,16 @@ public class PerspectivesQuery {
   }
 
   @GraphQLQuery(name = "perspectives", description = "Fetch perspectives for account")
-  public PerspectiveData perspectives(@GraphQLEnvironment final ResolutionEnvironment env) {
+  public PerspectiveData perspectives(@GraphQLArgument(name = "folderId") String folderId,
+      @GraphQLArgument(name = "sortCriteria") QLCEViewSortCriteria sortCriteria,
+      @GraphQLEnvironment final ResolutionEnvironment env) {
     final String accountId = graphQLUtils.getAccountIdentifier(env);
-    return PerspectiveData.builder().customerViews(viewService.getAllViews(accountId, true)).build();
+    if (StringUtils.isEmpty(folderId)) {
+      return PerspectiveData.builder().customerViews(viewService.getAllViews(accountId, true, sortCriteria)).build();
+    }
+    return PerspectiveData.builder()
+        .customerViews(viewService.getAllViews(accountId, folderId, true, sortCriteria))
+        .build();
   }
 
   @GraphQLQuery(name = "perspectiveTotalCount", description = "Get total count of rows for query")

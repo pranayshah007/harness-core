@@ -609,6 +609,7 @@ public class PipelineResource implements YamlSchemaResource {
             description = "Gets Pipeline JSON with extra info for some fields as required for Pipeline Governance")
       })
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
+  @Hidden
   public ResponseDTO<ExpandedPipelineJsonDTO>
   getExpandedPipelineJson(@NotNull @Parameter(description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE)
                           @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
@@ -625,6 +626,7 @@ public class PipelineResource implements YamlSchemaResource {
 
   @POST
   @Path("/v2/steps")
+  @Hidden
   @ApiOperation(value = "Get Steps for given modules Version 2", nickname = "getStepsV2")
   @Operation(operationId = "getStepsV2", summary = "Gets all the Steps for given Category (V2 Version)",
       responses =
@@ -658,6 +660,7 @@ public class PipelineResource implements YamlSchemaResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Returns Execution Node if it exists, else returns Null.")
       })
+  @Hidden
   public ResponseDTO<ExecutionNode>
   getExecutionNode(@NotNull @Parameter(description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE, required = true)
                    @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
@@ -734,6 +737,7 @@ public class PipelineResource implements YamlSchemaResource {
   @POST
   @Path("/validate-yaml-with-schema")
   @ApiOperation(value = "Validate a Pipeline YAML", nickname = "validatePipelineByYAML")
+  @Hidden
   @Operation(operationId = "postPipeline", summary = "Validate a Pipeline YAML with Schema",
       responses =
       {
@@ -759,6 +763,7 @@ public class PipelineResource implements YamlSchemaResource {
   @POST
   @Path("/validate-pipeline-with-schema")
   @ApiOperation(value = "Validate a Pipeline", nickname = "validatePipeline")
+  @Hidden
   @Operation(operationId = "postPipeline", summary = "Validate a Pipeline with Schema",
       responses =
       {
