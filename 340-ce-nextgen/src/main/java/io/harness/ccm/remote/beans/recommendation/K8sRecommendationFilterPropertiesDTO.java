@@ -32,9 +32,20 @@ import lombok.experimental.FieldNameConstants;
 @Schema(name = "K8sRecommendationFilterProperties",
     description = "Properties of the K8sRecommendation Filter defined in Harness")
 public class K8sRecommendationFilterPropertiesDTO {
+  @Schema(name = "ids", description = "List of ids which will be applied as filter for Recommendations")
   List<String> ids;
+
+  @Schema(name = "names", description = "List of names which will be applied as filter for Recommendations")
   List<String> names;
+
+  @Schema(name = "namespaces", description = "List of namespaces which will be applied as filter for Recommendations")
   List<String> namespaces;
+
+  @Schema(
+      name = "clusterNames", description = "List of clusterNames which will be applied as filter for Recommendations")
   List<String> clusterNames;
+
+  @Schema(
+      name = "resourceTypes", description = "List of resourceTypes which will be applied as filter for Recommendations")
   List<ResourceType> resourceTypes;
 }
