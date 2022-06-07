@@ -27,6 +27,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.service.services.ServiceEntityService;
+import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.plancreator.stages.AbstractStagePlanCreator;
 import io.harness.plancreator.steps.GenericStepPMSPlanCreator;
 import io.harness.plancreator.steps.common.SpecParameters;
@@ -104,6 +105,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
   @Inject private EnvironmentService environmentService;
   @Inject private ServiceEntityService serviceEntityService;
   @Inject private InfrastructureEntityService infrastructure;
+  @Inject private ServiceOverrideService serviceOverrideService;
   @Override
   public Set<String> getSupportedStageTypes() {
     return Collections.singleton("Deployment");
@@ -231,8 +233,9 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
 
       // serviceRef will be used to fetch serviceOverride of this service in the environment
       String serviceRef = stageNode.getDeploymentStageConfig().getService().getServiceRef().getValue();
-      EnvironmentPlanCreatorConfig environmentPlanCreatorConfig = EnvironmentPlanCreatorHelper.getResolvedEnvRefs(
-          ctx.getMetadata(), environmentV2, gitOpsEnabled, serviceRef, environmentService, infrastructure);
+      EnvironmentPlanCreatorConfig environmentPlanCreatorConfig =
+          EnvironmentPlanCreatorHelper.getResolvedEnvRefs(ctx.getMetadata(), environmentV2, gitOpsEnabled, serviceRef,
+              serviceOverrideService, environmentService, infrastructure);
 
       EnvironmentPlanCreatorHelper.addEnvironmentV2Dependency(planCreationResponseMap, environmentPlanCreatorConfig,
           specField.getNode().getField(YamlTypes.ENVIRONMENT_YAML), gitOpsEnabled, environmentUuid, infraSectionUuid,
