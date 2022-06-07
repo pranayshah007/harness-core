@@ -25,6 +25,8 @@ message PerpetualTaskSchedule {
   google.protobuf.Duration interval = 1;
   // Timeout for one iteration of the task
   google.protobuf.Duration timeout = 2;
+  //assign after interval
+  google.protobuf.Duration initial_delay = 3;
 }
 
 message PerpetualTaskExecutionBundle {

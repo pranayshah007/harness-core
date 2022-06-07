@@ -47,6 +47,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Message;
 import com.google.protobuf.util.Durations;
 import io.grpc.Context;
+import java.time.Clock;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -74,6 +75,7 @@ public class PerpetualTaskServiceImpl implements PerpetualTaskService, DelegateO
   @Inject private DelegateServiceClassicGrpcClient delegateServiceClassicGrpcClient;
   @Inject private RemoteObserverInformer remoteObserverInformer;
   @Inject private DelegateMetricsService delegateMetricsService;
+  @Inject private Clock clock;
 
   @Inject
   public PerpetualTaskServiceImpl(PerpetualTaskRecordDao perpetualTaskRecordDao,
@@ -147,18 +149,19 @@ public class PerpetualTaskServiceImpl implements PerpetualTaskService, DelegateO
           return perpetualTaskRecord.getUuid();
         }
       }
-
+      long now = clock.millis();
+      long initialDelay = schedule.hasInitialDelay() ? (now + schedule.getInitialDelay().getSeconds()) : now;
       PerpetualTaskRecord record = PerpetualTaskRecord.builder()
                                        .accountId(accountId)
                                        .perpetualTaskType(perpetualTaskType)
                                        .clientContext(clientContext)
                                        .timeoutMillis(Durations.toMillis(schedule.getTimeout()))
                                        .intervalSeconds(getTaskTimeInterval(schedule, accountId, perpetualTaskType))
+                                       .assignAfterMs(initialDelay)
                                        .delegateId("")
                                        .state(PerpetualTaskState.TASK_UNASSIGNED)
                                        .taskDescription(taskDescription)
                                        .build();
-
       perpetualTaskCrudSubject.fireInform(PerpetualTaskCrudObserver::onPerpetualTaskCreated);
       remoteObserverInformer.sendEvent(
           ReflectionUtils.getMethod(PerpetualTaskCrudObserver.class, "onPerpetualTaskCreated"),
