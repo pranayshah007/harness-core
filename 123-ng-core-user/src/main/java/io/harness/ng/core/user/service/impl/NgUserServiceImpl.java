@@ -548,7 +548,8 @@ public class NgUserServiceImpl implements NgUserService {
         ngFeatureFlagHelperService.isEnabled(scope.getAccountIdentifier(), FeatureName.ACCOUNT_BASIC_ROLE);
     addUserToScopeInternal(userId, source, scope, getDefaultRoleIdentifier(scope, isAccountBasicFeatureFlagEnabled));
     addUserToParentScope(userId, scope, source, isAccountBasicFeatureFlagEnabled);
-    createRoleAssignments(userId, scope, createRoleAssignmentDTOs(roleBindings, userId, scope), isAccountBasicFeatureFlagEnabled);
+    createRoleAssignments(
+        userId, scope, createRoleAssignmentDTOs(roleBindings, userId, scope), isAccountBasicFeatureFlagEnabled);
     userGroupService.addUserToUserGroups(scope, userId, getValidUserGroups(scope, userGroups));
   }
 
@@ -567,15 +568,20 @@ public class NgUserServiceImpl implements NgUserService {
   }
 
   @VisibleForTesting
-  protected void createRoleAssignments(String userId, Scope scope, List<RoleAssignmentDTO> roleAssignmentDTOs, boolean isAccountBasicFeatureFlagEnabled) {
+  protected void createRoleAssignments(String userId, Scope scope, List<RoleAssignmentDTO> roleAssignmentDTOs,
+      boolean isAccountBasicFeatureFlagEnabled) {
     if (isEmpty(roleAssignmentDTOs)) {
       return;
     }
     List<RoleAssignmentDTO> managedRoleAssignments =
-        roleAssignmentDTOs.stream().filter(role -> isRoleAssignmentManaged(role, isAccountBasicFeatureFlagEnabled)).collect(toList());
+        roleAssignmentDTOs.stream()
+            .filter(role -> isRoleAssignmentManaged(role, isAccountBasicFeatureFlagEnabled))
+            .collect(toList());
     List<RoleAssignmentDTO> userRoleAssignments =
         roleAssignmentDTOs.stream()
-            .filter(((Predicate<RoleAssignmentDTO>) role -> isRoleAssignmentManaged(role, isAccountBasicFeatureFlagEnabled)).negate())
+            .filter(
+                ((Predicate<RoleAssignmentDTO>) role -> isRoleAssignmentManaged(role, isAccountBasicFeatureFlagEnabled))
+                    .negate())
             .collect(toList());
 
     try {
@@ -600,16 +606,19 @@ public class NgUserServiceImpl implements NgUserService {
     }
   }
 
-  private List<String> GetManagedRoleIdentifiers(RoleAssignmentDTO roleAssignmentDTO, boolean isAccountBasicFeatureFlagEnabled) {
-    if(roleAssignmentDTO.getPrincipal().getType().equals(USER) && isAccountBasicFeatureFlagEnabled) {
+  private List<String> GetManagedRoleIdentifiers(
+      RoleAssignmentDTO roleAssignmentDTO, boolean isAccountBasicFeatureFlagEnabled) {
+    if (roleAssignmentDTO.getPrincipal().getType().equals(USER) && isAccountBasicFeatureFlagEnabled) {
       return ImmutableList.of(ACCOUNT_BASIC, ORGANIZATION_VIEWER, PROJECT_VIEWER);
     }
     return ImmutableList.of(ACCOUNT_VIEWER, ORGANIZATION_VIEWER, PROJECT_VIEWER);
   }
 
-  private boolean isRoleAssignmentManaged(RoleAssignmentDTO roleAssignmentDTO, boolean isAccountBasicFeatureFlagEnabled) {
-    return GetManagedRoleIdentifiers(roleAssignmentDTO, isAccountBasicFeatureFlagEnabled).stream().anyMatch(
-               roleIdentifier -> roleIdentifier.equals(roleAssignmentDTO.getRoleIdentifier()))
+  private boolean isRoleAssignmentManaged(
+      RoleAssignmentDTO roleAssignmentDTO, boolean isAccountBasicFeatureFlagEnabled) {
+    return GetManagedRoleIdentifiers(roleAssignmentDTO, isAccountBasicFeatureFlagEnabled)
+               .stream()
+               .anyMatch(roleIdentifier -> roleIdentifier.equals(roleAssignmentDTO.getRoleIdentifier()))
         && MANAGED_RESOURCE_GROUP_IDENTIFIERS.stream().anyMatch(
             resourceGroupIdentifier -> resourceGroupIdentifier.equals(roleAssignmentDTO.getResourceGroupIdentifier()));
   }
