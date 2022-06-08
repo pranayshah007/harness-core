@@ -9,13 +9,13 @@ package io.harness.ng.core.remote;
 
 import static io.harness.beans.SortOrder.Builder.aSortOrder;
 import static io.harness.beans.SortOrder.OrderType.DESC;
-import static io.harness.ng.core.entities.Project.ProjectKeys.lastModifiedAt;
 
 import io.harness.beans.SortOrder;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.dto.ProjectDTO;
 import io.harness.ng.core.entities.Project;
+import io.harness.ng.core.entities.Project.ProjectKeys;
 import io.harness.spec.server.ng.model.ModuleType;
 import io.harness.spec.server.ng.model.ProjectResponse;
 import io.harness.utils.PageUtils;
@@ -69,7 +69,7 @@ public class ProjectApiMapper {
   }
 
   public static Pageable getPageRequest(Integer page, Integer limit) {
-    SortOrder order = aSortOrder().withField(lastModifiedAt, DESC).build();
+    SortOrder order = aSortOrder().withField(ProjectKeys.lastModifiedAt, DESC).build();
     return PageUtils.getPageRequest(new PageRequest(page, limit, ImmutableList.of(order)));
   }
 }
