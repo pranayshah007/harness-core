@@ -100,7 +100,8 @@ public class ProjectApiImpl implements ProjectsApi {
     }
     boolean deleted = projectService.delete(account, org, id, null);
     if (!deleted) {
-      // TODO: Throw exception and possibly return un processable entity
+      throw new NotFoundException(
+          String.format("Project with orgIdentifier [%s] and identifier [%s] not found", org, id));
     }
     return getProjectResponse(projectOptional.get());
   }

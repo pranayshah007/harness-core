@@ -104,7 +104,7 @@ public class OrganizationApiImpl implements OrganizationsApi {
     boolean deleted = organizationService.delete(account, id, null);
 
     if (!deleted) {
-      // TODO: Throw exception and possibly return un processable entity
+      throw new NotFoundException(String.format("Organization with identifier [%s] not found", id));
     }
     return getOrganizationResponse(organizationOptional.get());
   }
