@@ -13,11 +13,12 @@ import io.harness.accesscontrol.acl.api.Principal;
 import io.harness.annotations.dev.OwnedBy;
 
 import java.util.List;
+import java.util.Map;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
 @OwnedBy(PL)
 public interface ACLService {
-  List<PermissionCheckResult> checkAccess(
-      @NotNull @Valid Principal principal, @NotNull List<PermissionCheck> permissions);
+  List<PermissionCheckResult> checkAccess(@NotNull @Valid Principal principal,
+      @NotNull List<PermissionCheck> permissions, List<Map<String, String>> attributes);
 }

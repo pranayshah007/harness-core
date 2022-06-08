@@ -24,6 +24,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.validation.executable.ValidateOnExecution;
@@ -57,8 +58,9 @@ public class ACLServiceImpl implements ACLService {
   }
 
   @Override
-  public List<PermissionCheckResult> checkAccess(Principal principal, List<PermissionCheck> permissionChecks) {
-    List<Boolean> allowedAccessList = aclDAO.checkForAccess(principal, permissionChecks);
+  public List<PermissionCheckResult> checkAccess(
+      Principal principal, List<PermissionCheck> permissionChecks, List<Map<String, String>> attributes) {
+    List<Boolean> allowedAccessList = aclDAO.checkForAccess(principal, permissionChecks, attributes);
     List<PermissionCheckResult> permissionCheckResults = new ArrayList<>();
     ensureDisabledPermissions();
 

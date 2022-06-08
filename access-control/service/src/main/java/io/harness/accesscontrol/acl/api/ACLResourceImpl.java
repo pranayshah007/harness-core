@@ -34,8 +34,10 @@ import io.harness.security.annotations.NextGenManagerAuth;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.validation.executable.ValidateOnExecution;
@@ -126,8 +128,12 @@ public class ACLResourceImpl implements ACLResource {
     }
     List<PermissionCheck> permissionChecks =
         permissionChecksDTOs.stream().map(PermissionCheckDTOMapper::fromDTO).collect(Collectors.toList());
+    List<Map<String, String>> attributesList = new ArrayList<>();
+    Map<String, String> attributes = new HashMap<>();
+    attributes.put("type", "PRODUCTION");
+    attributesList.add(attributes);
     List<PermissionCheckResult> permissionCheckResults =
-        aclService.checkAccess(principalToCheckPermissionsFor, permissionChecks);
+        aclService.checkAccess(principalToCheckPermissionsFor, permissionChecks, attributesList);
 
     AccessCheckResponseDTO accessCheckResponseDTO =
         AccessCheckResponseDTO.builder()

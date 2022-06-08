@@ -16,6 +16,7 @@ import static io.harness.rule.OwnerRule.KARAN;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -71,8 +72,8 @@ public class ACLServiceImplTest extends AccessControlCoreTestBase {
     for (int i = 0; i < 10; i++) {
       aclResults.add(false);
     }
-    when(aclDAO.checkForAccess(principal, permissionChecks)).thenReturn(aclResults);
-    List<PermissionCheckResult> response = aclService.checkAccess(principal, permissionChecks);
+    when(aclDAO.checkForAccess(principal, permissionChecks, any())).thenReturn(aclResults);
+    List<PermissionCheckResult> response = aclService.checkAccess(principal, permissionChecks, new ArrayList<>());
 
     assertEquals(10, response.size());
     response.forEach(check -> assertTrue(check.isPermitted()));
