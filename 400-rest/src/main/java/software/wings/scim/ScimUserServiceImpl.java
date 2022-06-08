@@ -243,13 +243,7 @@ public class ScimUserServiceImpl implements ScimUserService {
     if (user == null) {
       throw new WingsException(ErrorCode.USER_DOES_NOT_EXIST);
     }
-    if ("displayName".equals(patchOperation.getPath())) {
-      UpdateOperations<User> updateOperation = wingsPersistence.createUpdateOperations(User.class);
-      updateOperation.set(UserKeys.name, patchOperation.getValue(String.class));
-      userService.updateUser(user.getUuid(), updateOperation);
-    }
-    if (patchOperation.getValue(ScimMultiValuedObject.class) != null
-        && patchOperation.getValue(ScimMultiValuedObject.class).getDisplayName() != null) {
+    if ("displayName".equals(patchOperation.getPath()) && patchOperation.getValue(String.class) != null) {
       UpdateOperations<User> updateOperation = wingsPersistence.createUpdateOperations(User.class);
       updateOperation.set(UserKeys.name, patchOperation.getValue(String.class));
       userService.updateUser(user.getUuid(), updateOperation);
@@ -258,12 +252,9 @@ public class ScimUserServiceImpl implements ScimUserService {
       changeScimUserDisabled(accountId, user.getUuid(), !(patchOperation.getValue(Boolean.class)));
     }
 
-    if (patchOperation.getValue(ScimUserValuedObject.class) != null) {
-      changeScimUserDisabled(
-          accountId, user.getUuid(), !(patchOperation.getValue(ScimUserValuedObject.class)).isActive());
-    } else {
+    if (!("displayName".equals(patchOperation.getPath()) || "active".equals(patchOperation.getPath()))) {
       // Not supporting any other updates as of now.
-      log.error("SCIM: Unexpected patch operation received: accountId: {}, userId: {}, patchOperation: {}", accountId,
+      log.warn("SCIM: Unexpected patch operation received: accountId: {}, userId: {}, patchOperation: {}", accountId,
           userId, patchOperation);
     }
   }

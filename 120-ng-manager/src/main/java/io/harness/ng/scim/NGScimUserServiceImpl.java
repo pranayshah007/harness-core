@@ -227,7 +227,7 @@ public class NGScimUserServiceImpl implements ScimUserService {
 
     if (!("displayName".equals(patchOperation.getPath()) || "active".equals(patchOperation.getPath()))) {
       // Not supporting any other updates as of now.
-      log.error("NGSCIM: Unexpected patch operation received: accountId: {}, userId: {}, patchOperation: {}", accountId,
+      log.warn("NGSCIM: Unexpected patch operation received: accountId: {}, userId: {}, patchOperation: {}", accountId,
           userId, patchOperation);
     }
   }
