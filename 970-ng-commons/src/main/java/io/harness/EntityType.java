@@ -241,7 +241,10 @@ public enum EntityType {
       IdentifierRef.class, EntityYamlRootNames.CLOUDFORMATION_ROLLBACK_STACK_STEP),
   @JsonProperty(EntityTypeConstants.INFRASTRUCTURE)
   INFRASTRUCTURE(
-      ModuleType.CORE, EntityTypeConstants.INFRASTRUCTURE, IdentifierRef.class, EntityYamlRootNames.INFRASTRUCTURE);
+      ModuleType.CORE, EntityTypeConstants.INFRASTRUCTURE, IdentifierRef.class, EntityYamlRootNames.INFRASTRUCTURE),
+  @JsonProperty(EntityTypeConstants.SERVICE_OVERRIDES)
+  SERVICE_OVERRIDES(ModuleType.CORE, EntityTypeConstants.SERVICE_OVERRIDES, IdentifierRef.class,
+      EntityYamlRootNames.SERVICE_OVERRIDES);
 
   private final ModuleType moduleType;
   String yamlName;
