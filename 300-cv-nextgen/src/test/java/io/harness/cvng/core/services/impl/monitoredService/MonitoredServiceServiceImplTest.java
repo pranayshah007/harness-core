@@ -10,25 +10,14 @@ package io.harness.cvng.core.services.impl.monitoredService;
 import static io.harness.cvng.core.utils.DateTimeUtils.roundDownTo5MinBoundary;
 import static io.harness.cvng.dashboard.entities.HeatMap.HeatMapResolution.FIVE_MIN;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
-import static io.harness.rule.OwnerRule.ABHIJITH;
-import static io.harness.rule.OwnerRule.ANJAN;
-import static io.harness.rule.OwnerRule.ARPITJ;
-import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
-import static io.harness.rule.OwnerRule.KAMAL;
-import static io.harness.rule.OwnerRule.KANHAIYA;
-import static io.harness.rule.OwnerRule.KAPIL;
-import static io.harness.rule.OwnerRule.PRAVEEN;
-import static io.harness.rule.OwnerRule.SOWMYA;
+import static io.harness.rule.OwnerRule.*;
 
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
@@ -121,6 +110,7 @@ import io.harness.cvng.servicelevelobjective.beans.ErrorBudgetRisk;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveService;
+import io.harness.enforcement.client.services.EnforcementClientService;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.lock.PersistentLocker;
@@ -178,6 +168,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
   @Mock ChangeSourceService changeSourceServiceMock;
   @Mock FakeNotificationClient notificationClient;
   @Mock private PersistentLocker mockedPersistentLocker;
+  @Mock private EnforcementClientService enforcementClientService;
 
   private BuilderFactory builderFactory;
   String healthSourceName;
@@ -244,6 +235,45 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     FieldUtils.writeField(heatMapService, "clock", clock, true);
     FieldUtils.writeField(monitoredServiceService, "heatMapService", heatMapService, true);
     FieldUtils.writeField(monitoredServiceService, "notificationClient", notificationClient, true);
+  }
+
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testCountUniqueEnabledServices_allUnique() {
+    MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTOBuilder("ms1", "service1", "evn1").build();
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    monitoredServiceDTO = createMonitoredServiceDTOBuilder("ms2", "service2", "evn1").build();
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    monitoredServiceDTO = createMonitoredServiceDTOBuilder("ms3", "service3", "evn1").build();
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+
+    monitoredServiceService.setHealthMonitoringFlag(builderFactory.getProjectParams(), "ms1", true);
+    monitoredServiceService.setHealthMonitoringFlag(builderFactory.getProjectParams(), "ms2", true);
+
+    long count = monitoredServiceService.countUniqueEnabledServices(builderFactory.getContext().getAccountId());
+    assertThat(count).isEqualTo(2);
+  }
+
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testCountUniqueEnabledServices_someCommon() {
+    MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTOBuilder("ms1", "service1", "env1").build();
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    monitoredServiceDTO = createMonitoredServiceDTOBuilder("ms2", "service2", "env1").build();
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    monitoredServiceDTO = createMonitoredServiceDTOBuilder("ms3", "service3", "env1").build();
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    monitoredServiceDTO = createMonitoredServiceDTOBuilder("ms4", "service1", "env2").build();
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+
+    monitoredServiceService.setHealthMonitoringFlag(builderFactory.getProjectParams(), "ms1", true);
+    monitoredServiceService.setHealthMonitoringFlag(builderFactory.getProjectParams(), "ms2", true);
+    monitoredServiceService.setHealthMonitoringFlag(builderFactory.getProjectParams(), "ms4", true);
+
+    long count = monitoredServiceService.countUniqueEnabledServices(builderFactory.getContext().getAccountId());
+    assertThat(count).isEqualTo(2);
   }
 
   @Test
@@ -503,7 +533,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void testUpdate_ChangeSourceCreation() {
     MonitoredServiceDTO monitoredServiceDTO =
-        createMonitoredServiceDTOBuilder()
+        createMonitoredServiceDTOBuilder(monitoredServiceIdentifier, serviceIdentifier, environmentIdentifier)
             .sources(Sources.builder()
                          .changeSources(
                              new HashSet<>(Arrays.asList(builderFactory.getHarnessCDChangeSourceDTOBuilder().build())))
@@ -514,7 +544,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
             .getMonitoredServiceDTO();
 
     MonitoredServiceDTO toUpdateMonitoredServiceDTO =
-        createMonitoredServiceDTOBuilder()
+        createMonitoredServiceDTOBuilder(monitoredServiceIdentifier, serviceIdentifier, environmentIdentifier)
             .sources(Sources.builder()
                          .changeSources(
                              new HashSet<>(Arrays.asList(builderFactory.getHarnessCDChangeSourceDTOBuilder().build(),
@@ -1878,7 +1908,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
 
   MonitoredServiceDTO createMonitoredServiceDTOWithCustomDependencies(
       String identifier, String serviceIdentifier, Set<String> dependentServiceIdentifiers) {
-    return createMonitoredServiceDTOBuilder()
+    return createMonitoredServiceDTOBuilder(monitoredServiceIdentifier, serviceIdentifier, environmentIdentifier)
         .identifier(identifier)
         .name(identifier)
         .serviceRef(serviceIdentifier)
@@ -1895,7 +1925,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
   }
 
   MonitoredServiceDTO createMonitoredServiceDTO() {
-    return createMonitoredServiceDTOBuilder()
+    return createMonitoredServiceDTOBuilder(monitoredServiceIdentifier, serviceIdentifier, environmentIdentifier)
         .sources(MonitoredServiceDTO.Sources.builder()
                      .healthSources(Arrays.asList(builderFactory.createHealthSource(CVMonitoringCategory.ERRORS))
                                         .stream()
@@ -1908,7 +1938,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
   }
 
   MonitoredServiceDTO createMonitoredServiceDTOWithPagerDutyChangeSource() {
-    return createMonitoredServiceDTOBuilder()
+    return createMonitoredServiceDTOBuilder(monitoredServiceIdentifier, serviceIdentifier, environmentIdentifier)
         .sources(MonitoredServiceDTO.Sources.builder()
                      .healthSources(Arrays.asList(builderFactory.createHealthSource(CVMonitoringCategory.ERRORS))
                                         .stream()
@@ -1921,7 +1951,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
   }
 
   MonitoredServiceDTO createMonitoredServiceDTOWithDependencies() {
-    return createMonitoredServiceDTOBuilder()
+    return createMonitoredServiceDTOBuilder(monitoredServiceIdentifier, serviceIdentifier, environmentIdentifier)
         .sources(MonitoredServiceDTO.Sources.builder()
                      .healthSources(Arrays.asList(builderFactory.createHealthSource(CVMonitoringCategory.ERRORS))
                                         .stream()
@@ -1933,7 +1963,8 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
         .build();
   }
 
-  private MonitoredServiceDTOBuilder createMonitoredServiceDTOBuilder() {
+  private MonitoredServiceDTOBuilder createMonitoredServiceDTOBuilder(
+      String monitoredServiceIdentifier, String serviceIdentifier, String environmentIdentifier) {
     return builderFactory.monitoredServiceDTOBuilder()
         .identifier(monitoredServiceIdentifier)
         .serviceRef(serviceIdentifier)

@@ -7,8 +7,9 @@
 
 package io.harness.cvng.usage.impl;
 
+import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.doReturn;
 
 import io.harness.CvNextGenTestBase;
 import io.harness.ModuleType;
@@ -21,21 +22,33 @@ import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 
 import com.google.inject.Inject;
+import lombok.AccessLevel;
+import lombok.experimental.FieldDefaults;
+import org.apache.commons.lang3.reflect.FieldUtils;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.Mock;
 
 @OwnedBy(HarnessTeam.CV)
-class CVLicenseUsageImplTest extends CvNextGenTestBase {
+@FieldDefaults(level = AccessLevel.PRIVATE)
+public class CVLicenseUsageImplTest extends CvNextGenTestBase {
   @Mock private MonitoredServiceService monitoredServiceService;
   @Inject private LicenseUsageInterface licenseUsageInterface;
+
+  @Before
+  public void setup() throws IllegalAccessException {
+    FieldUtils.writeField(licenseUsageInterface, "monitoredServiceService", monitoredServiceService, true);
+  }
 
   @Test
   @Owner(developers = OwnerRule.ARPITJ)
   @Category(UnitTests.class)
   public void testGetLicenseUsage() {
-    when(monitoredServiceService.countUniqueEnabledServices(any())).thenReturn(5);
+    doReturn((long) 5).when(monitoredServiceService).countUniqueEnabledServices(any());
     CVLicenseUsageDTO cvLicenseUsageDTO =
-        (CVLicenseUsageDTO) licenseUsageInterface.getLicenseUsage("testaccid", ModuleType.CV, 1, null);
+        (CVLicenseUsageDTO) licenseUsageInterface.getLicenseUsage("testAccountId", ModuleType.CV, 1, null);
+    assertThat(cvLicenseUsageDTO.getActiveServices().getCount()).isEqualTo(5);
+    assertThat(cvLicenseUsageDTO.getActiveServices().getDisplayName()).isEqualTo("Total active SRM services");
   }
 }
