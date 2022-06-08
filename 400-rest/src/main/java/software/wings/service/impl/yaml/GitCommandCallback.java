@@ -24,13 +24,15 @@ import static software.wings.service.impl.yaml.sync.GitSyncErrorUtils.getYamlCon
 import static org.apache.commons.collections4.ListUtils.emptyIfNull;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+import io.harness.delegate.beans.NoAvailableDelegatesException;
+import io.harness.delegate.beans.NoInstalledDelegatesException;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.UnexpectedException;
 import io.harness.git.model.ChangeType;
 import io.harness.logging.AccountLogContext;
 import io.harness.logging.AutoLogContext;
 import io.harness.tasks.ResponseData;
-import io.harness.waiter.OldNotifyCallback;
+import io.harness.waiter.NotifyCallbackWithErrorHandling;
 
 import software.wings.beans.GitCommit;
 import software.wings.beans.alert.AlertType;
@@ -68,12 +70,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.mongodb.morphia.annotations.Transient;
-
 @Slf4j
-public class GitCommandCallback implements OldNotifyCallback {
+public class GitCommandCallback implements NotifyCallbackWithErrorHandling {
   private String accountId;
   private String changeSetId;
   private GitCommandType gitCommandType;
@@ -101,13 +103,11 @@ public class GitCommandCallback implements OldNotifyCallback {
   @Transient @Inject private GitSyncErrorService gitSyncErrorService;
   @Transient @Inject GitChangeSetHandler gitChangeSetHandler;
 
-  @Override
-  public void notify(Map<String, ResponseData> response) {
+  public void notify(ResponseData notifyResponseData) {
     try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
          AutoLogContext ignore2 = new GitCommandCallbackLogContext(getContext(), OVERRIDE_ERROR)) {
-      log.info("Git command response [{}]", response);
+      log.info("Git command response [{}]", notifyResponseData);
 
-      ResponseData notifyResponseData = response.values().iterator().next();
       if (notifyResponseData instanceof GitCommandExecutionResponse) {
         GitCommandExecutionResponse gitCommandExecutionResponse = (GitCommandExecutionResponse) notifyResponseData;
         GitCommandResult gitCommandResult = gitCommandExecutionResponse.getGitCommandResult();
@@ -118,6 +118,7 @@ public class GitCommandCallback implements OldNotifyCallback {
             handleCommitAndPushFailureWhenUnseenHead(accountId, changeSetId);
             return;
           }
+
           if (changeSetId != null) {
             log.warn("Git Command failed [{}]", gitCommandExecutionResponse.getErrorMessage());
             yamlChangeSetService.updateStatus(accountId, changeSetId, Status.FAILED);
@@ -174,7 +175,6 @@ public class GitCommandCallback implements OldNotifyCallback {
             } else {
               log.info("No file changes found in git diff. Skip adding active errors for processing");
             }
-
             gitChangeSetProcesser.processGitChangeSet(accountId, gitDiffResult);
             yamlChangeSetService.updateStatus(accountId, changeSetId, Status.COMPLETED);
           } catch (Exception e) {
@@ -182,7 +182,6 @@ public class GitCommandCallback implements OldNotifyCallback {
             yamlChangeSetService.updateStatus(accountId, changeSetId, Status.FAILED);
             handleDiffCommandFailure(null, accountId);
           }
-
         } else {
           log.warn("Unexpected commandType result: [{}]", gitCommandExecutionResponse.getErrorMessage());
           yamlChangeSetService.updateStatus(accountId, changeSetId, Status.FAILED);
@@ -321,14 +320,6 @@ public class GitCommandCallback implements OldNotifyCallback {
     return gitCommitSaved;
   }
 
-  @Override
-  public void notifyError(Map<String, ResponseData> response) {
-    log.warn("Git request failed for command:[{}], changeSetId:[{}], account:[{}], response:[{}]", gitCommandType,
-        changeSetId, accountId, response);
-    updateChangeSetFailureStatusSafely();
-    updateGitCommitFailureSafely();
-  }
-
   protected void updateChangeSetFailureStatusSafely() {
     if (isNotEmpty(changeSetId) && (COMMIT_AND_PUSH == gitCommandType || DIFF == gitCommandType)) {
       yamlChangeSetService.updateStatus(accountId, changeSetId, Status.FAILED);
@@ -419,5 +410,29 @@ public class GitCommandCallback implements OldNotifyCallback {
       }
     });
     return allFilesProcessed;
+  }
+
+  @Override
+  public void notify(Map<String, Supplier<ResponseData>> response) {
+    try (AutoLogContext ignore1 = new AccountLogContext(accountId, OVERRIDE_ERROR);
+         AutoLogContext ignore2 = new GitCommandCallbackLogContext(getContext(), OVERRIDE_ERROR)) {
+      Supplier<ResponseData> responseDataSupplier = response.values().iterator().next();
+      try {
+        ResponseData responseData = responseDataSupplier.get();
+        notify(responseData);
+      } catch (NoAvailableDelegatesException | NoInstalledDelegatesException e) {
+        log.error("Git request failed for command:[{}], changeSetId:[{}], account:[{}], response:[{}]", gitCommandType,
+            changeSetId, accountId, response);
+        log.error("Delegate not available or installed, retrying.", e);
+        yamlChangeSetService.updateStatusAndIncrementRetryCountForYamlChangeSets(accountId, Status.QUEUED,
+            Collections.singletonList(Status.RUNNING), Collections.singletonList(changeSetId));
+      } catch (Exception e) {
+        log.error("Git request failed for command:[{}], changeSetId:[{}], account:[{}], response:[{}]", gitCommandType,
+            changeSetId, accountId, response);
+        log.error("Failure in git command execution", e);
+        updateChangeSetFailureStatusSafely();
+        updateGitCommitFailureSafely();
+      }
+    }
   }
 }

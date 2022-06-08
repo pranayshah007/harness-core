@@ -217,15 +217,16 @@ public class PerspectivesQuery {
   }
 
   @GraphQLQuery(name = "perspectives", description = "Fetch perspectives for account")
-  public PerspectiveData perspectives(
-      @GraphQLArgument(name = "folderId") String folderId,
+  public PerspectiveData perspectives(@GraphQLArgument(name = "folderId") String folderId,
       @GraphQLArgument(name = "sortCriteria") QLCEViewSortCriteria sortCriteria,
       @GraphQLEnvironment final ResolutionEnvironment env) {
     final String accountId = graphQLUtils.getAccountIdentifier(env);
     if (StringUtils.isEmpty(folderId)) {
       return PerspectiveData.builder().customerViews(viewService.getAllViews(accountId, true, sortCriteria)).build();
     }
-    return PerspectiveData.builder().customerViews(viewService.getAllViews(accountId, folderId, true, sortCriteria)).build();
+    return PerspectiveData.builder()
+        .customerViews(viewService.getAllViews(accountId, folderId, true, sortCriteria))
+        .build();
   }
 
   @GraphQLQuery(name = "perspectiveTotalCount", description = "Get total count of rows for query")

@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.gitops.entity.Cluster;
 
 import com.mongodb.client.result.DeleteResult;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import javax.validation.constraints.NotNull;
@@ -50,7 +51,7 @@ public interface ClusterService {
    * @param entities
    * @return
    */
-  Page<Cluster> bulkCreate(@NotEmpty String accountId, @NotNull List<Cluster> entities);
+  @NotNull Page<Cluster> bulkCreate(@NotEmpty String accountId, @NotNull List<Cluster> entities);
 
   /**
    * @param accountId
@@ -70,6 +71,7 @@ public interface ClusterService {
    * @param clusterRef
    * @return
    */
+  @NotNull
   DeleteResult deleteFromAllEnv(@NotEmpty String accountId, @NotEmpty String orgIdentifier,
       @NotEmpty String projectIdentifier, @NotEmpty String clusterRef);
 
@@ -84,7 +86,22 @@ public interface ClusterService {
    * @param clusterRefs
    * @return
    */
+  @NotNull
   Page<Cluster> list(int page, int size, @NotEmpty String accountIdentifier, @NotEmpty String orgIdentifier,
-      @NotEmpty String projectIdentifier, @NotEmpty String envRef, String searchTerm, List<String> clusterRefs,
+      @NotEmpty String projectIdentifier, @NotEmpty String envRef, String searchTerm, Collection<String> clusterRefs,
       List<String> sort);
+
+  /**
+   *
+   * @param page
+   * @param size
+   * @param accountIdentifier
+   * @param orgIdentifier
+   * @param projectIdentifier
+   * @param envRefs
+   * @return
+   */
+  @NotNull
+  Page<Cluster> listAcrossEnv(int page, int size, @NotEmpty String accountIdentifier, @NotEmpty String orgIdentifier,
+      @NotEmpty String projectIdentifier, Collection<String> envRefs);
 }

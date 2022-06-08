@@ -7,6 +7,7 @@
 
 package io.harness.ccm.views.entities;
 
+import io.harness.NGCommonEntityConstants;
 import io.harness.annotation.StoreIn;
 import io.harness.beans.EmbeddedUser;
 import io.harness.mongo.index.CompoundMongoIndex;
@@ -47,18 +48,19 @@ public final class CEViewFolder implements PersistentEntity, UuidAware, CreatedA
         .add(CompoundMongoIndex.builder().name("accountId").field(CEViewFolderKeys.accountId).build())
         .build();
   }
-  @Id String uuid;
-  String accountId;
+  @Id @Schema(description = "unique id") String uuid;
+  @Schema(description = "account id") String accountId;
   @Size(min = 1, max = 80, message = "for perspective folder must be between 1 and 80 characters long")
   @NotBlank
+  @Schema(description = NGCommonEntityConstants.NAME_KEY)
   String name;
-  boolean pinned;
-  List<String> tags;
-  String description;
-  ViewType viewType = ViewType.CUSTOMER;
+  @Schema(description = "pinned") boolean pinned;
+  @Schema(description = NGCommonEntityConstants.TAGS) List<String> tags;
+  @Schema(description = NGCommonEntityConstants.DESCRIPTION) String description;
+  @Schema(description = "view type") ViewType viewType = ViewType.CUSTOMER;
 
-  long createdAt;
-  long lastUpdatedAt;
-  private EmbeddedUser createdBy;
-  private EmbeddedUser lastUpdatedBy;
+  @Schema(description = NGCommonEntityConstants.CREATED_AT_MESSAGE) long createdAt;
+  @Schema(description = NGCommonEntityConstants.UPDATED_AT_MESSAGE) long lastUpdatedAt;
+  @Schema(description = "created by") private EmbeddedUser createdBy;
+  @Schema(description = "updated by") private EmbeddedUser lastUpdatedBy;
 }

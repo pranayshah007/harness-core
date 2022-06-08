@@ -16,6 +16,7 @@ import static org.mockito.Mockito.mock;
 import io.harness.CIExecutionServiceModule;
 import io.harness.CIExecutionTestModule;
 import io.harness.ModuleType;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cache.CacheConfig;
@@ -172,6 +173,16 @@ public class CIExecutionRule implements MethodRule, InjectorRuleMixin, MongoRule
                                                  .stepConfig(ciStepConfig)
                                                  .build(),
         false));
+
+    modules.add(new ProviderModule() {
+      @Provides
+      @Named("PRIVILEGED")
+      @Singleton
+      AccessControlClient accessControlClient() {
+        return mock(AccessControlClient.class);
+      }
+    });
+
     modules.add(TimeModule.getInstance());
     modules.add(new ProviderModule() {
       @Provides

@@ -24,6 +24,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
@@ -33,6 +34,7 @@ import static org.mockito.Mockito.when;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.configuration.DeployMode;
 import io.harness.delegate.beans.Delegate;
 import io.harness.exception.GeneralException;
 import io.harness.ff.FeatureFlagService;
@@ -95,6 +97,7 @@ public class EcsDelegateRegistrationTest {
   @Owner(developers = ADWAIT)
   @Category(UnitTests.class)
   public void testHandleEcsDelegateRequest_EcsDelegateRegistration() {
+    doReturn(DeployMode.KUBERNETES).when(mainConfiguration).getDeployMode();
     final Delegate registeredDelegate = Delegate.builder().accountId(ACCOUNT_ID).hostName(HOST_NAME + "_5").build();
     final Delegate requestDelegate =
         Delegate.builder().accountId(ACCOUNT_ID).hostName(HOST_NAME + "_5").keepAlivePacket(false).build();
@@ -103,7 +106,7 @@ public class EcsDelegateRegistrationTest {
     doReturn(aDelegateSequenceBuilder().withHostName("delegate").withSequenceNum(1).withDelegateToken("token").build())
         .when(underTest)
         .getDelegateSequenceConfig(ACCOUNT_ID, HOST_NAME, 5);
-    doReturn(false).when(featureFlagService).isEnabled(any(), any());
+    lenient().doReturn(false).when(featureFlagService).isEnabled(any(), any());
     JreConfig oracleJreConfig = JreConfig.builder().version("1.8.0_191").build();
     HashMap<String, JreConfig> jreConfigMap = new HashMap<>();
     jreConfigMap.put("oracle8u191", oracleJreConfig);
@@ -184,11 +187,11 @@ public class EcsDelegateRegistrationTest {
 
     final Query<Delegate> delegateQuery = mock(Query.class, RETURNS_SELF);
 
-    when(persistence.createQuery(Delegate.class, excludeAuthority)).thenReturn(delegateQuery);
+    lenient().when(persistence.createQuery(Delegate.class, excludeAuthority)).thenReturn(delegateQuery);
     when(persistence.createQuery(Delegate.class)).thenReturn(delegateQuery);
 
     doReturn(delegate).when(delegateQuery).get();
-    when(delegateQuery.asList()).thenReturn(Collections.emptyList());
+    lenient().when(delegateQuery.asList()).thenReturn(Collections.emptyList());
     doAnswer(returnsSecondArg()).when(underTest).upsertDelegateOperation(any(), any());
 
     final Delegate actual = underTest.handleEcsDelegateRegistration(delegate);
@@ -324,8 +327,8 @@ public class EcsDelegateRegistrationTest {
                                         .withHostName("hostName")
                                         .build();
 
-    doReturn(config).when(underTest).getDelegateSequenceConfig(any(), any(), any());
-    doReturn(false).when(underTest).checkForValidTokenIfPresent(any());
+    lenient().doReturn(config).when(underTest).getDelegateSequenceConfig(any(), any(), any());
+    lenient().doReturn(false).when(underTest).checkForValidTokenIfPresent(any());
     Delegate delegate = Delegate.builder().delegateType("ECS").delegateRandomToken("token").sequenceNum("1").build();
 
     doReturn(null).when(underTest).handleECSRegistrationUsingSeqNumAndToken(any());
@@ -531,7 +534,7 @@ public class EcsDelegateRegistrationTest {
 
   private void mockWingsPersistanceForUpdateCall() {
     when(persistence.createQuery(DelegateSequenceConfig.class)).thenReturn(query);
-    when(persistence.createQuery(DelegateSequenceConfig.class, excludeAuthority)).thenReturn(query);
+    lenient().when(persistence.createQuery(DelegateSequenceConfig.class, excludeAuthority)).thenReturn(query);
 
     when(persistence.createUpdateOperations(DelegateSequenceConfig.class)).thenReturn(updateOperations);
     when(persistence.update(query, updateOperations)).thenReturn(null);

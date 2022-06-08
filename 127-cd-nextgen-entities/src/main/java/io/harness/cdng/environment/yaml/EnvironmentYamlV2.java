@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
-import javax.ws.rs.DefaultValue;
 import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
@@ -55,6 +54,9 @@ public class EnvironmentYamlV2 implements Visitable {
   // environmentInputs
   Map<String, Object> environmentInputs;
   Map<String, Object> serviceOverrideInputs;
-  @DefaultValue("false") Boolean deployToAll;
+  @NotNull boolean deployToAll;
   List<ClusterYaml> gitOpsClusters;
+
+  // For Visitor Framework Impl
+  @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 }

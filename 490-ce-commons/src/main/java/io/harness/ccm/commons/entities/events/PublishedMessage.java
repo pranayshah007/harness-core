@@ -21,7 +21,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.protobuf.Any;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Message;
-import java.time.OffsetDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -56,10 +55,7 @@ public final class PublishedMessage implements PersistentEntity, CreatedAtAware,
   @Id private String uuid;
   private long createdAt;
 
-  @EqualsAndHashCode.Exclude
-  @Builder.Default
-  @FdTtlIndex
-  private Date validUntil = Date.from(OffsetDateTime.now().plusDays(14).toInstant());
+  @EqualsAndHashCode.Exclude @Builder.Default @FdTtlIndex private Date validUntil;
 
   private final long occurredAt;
   private final String accountId;
@@ -72,7 +68,7 @@ public final class PublishedMessage implements PersistentEntity, CreatedAtAware,
 
   @Builder(toBuilder = true)
   private PublishedMessage(String uuid, String accountId, String type, byte[] data, Message message, String category,
-      Map<String, String> attributes, long occurredAt) {
+      Map<String, String> attributes, long occurredAt, Date validUntil) {
     this.uuid = uuid;
     this.accountId = accountId;
     this.type = type;
@@ -81,6 +77,7 @@ public final class PublishedMessage implements PersistentEntity, CreatedAtAware,
     this.category = category;
     this.attributes = attributes;
     this.occurredAt = occurredAt;
+    this.validUntil = validUntil;
   }
 
   public Message getMessage() {

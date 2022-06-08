@@ -9,6 +9,10 @@ package io.harness.ccm.remote.beans.anomaly;
 
 import static io.harness.filter.FilterConstants.ANOMALY_FILTER;
 
+import io.harness.ccm.commons.entities.CCMAggregation;
+import io.harness.ccm.commons.entities.CCMGroupBy;
+import io.harness.ccm.commons.entities.CCMSort;
+import io.harness.ccm.commons.entities.CCMTimeFilter;
 import io.harness.filter.entity.FilterProperties;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -45,10 +49,19 @@ public class AnomalyFilterProperties extends FilterProperties {
   List<String> awsServices;
   List<String> awsUsageTypes;
 
-  List<String> azureSubscriptions;
-  List<String> azureServiceNames;
-  List<String> azureResources;
+  List<String> azureSubscriptionGuids;
+  List<String> azureResourceGroups;
+  List<String> azureMeterCategories;
 
   Double minActualAmount;
   Double minAnomalousSpend;
+
+  List<CCMTimeFilter> timeFilters;
+  List<CCMSort> orderBy;
+  List<CCMGroupBy> groupBy;
+  List<CCMAggregation> aggregations;
+  List<String> searchText;
+
+  Integer offset;
+  Integer limit;
 }

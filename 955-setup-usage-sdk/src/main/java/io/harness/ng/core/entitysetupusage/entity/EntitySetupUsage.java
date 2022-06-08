@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.DX;
 import io.harness.annotation.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
+import io.harness.beans.IdentifierRef.IdentifierRefKeys;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
 import io.harness.mongo.index.MongoIndex;
@@ -146,5 +147,7 @@ public class EntitySetupUsage implements PersistentEntity, NGAccountAccess {
     public static final String referredEntityName = EntitySetupUsageKeys.referredEntity + "." + EntityDetailKeys.name;
     public static final String referredByEntityName =
         EntitySetupUsageKeys.referredByEntity + "." + EntityDetailKeys.name;
+    public static final String referredEntityRefScope =
+        EntitySetupUsageKeys.referredEntity + "." + EntityDetailKeys.entityRef + "." + IdentifierRefKeys.scope;
   }
 }

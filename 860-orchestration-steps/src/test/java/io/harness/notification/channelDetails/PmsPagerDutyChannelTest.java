@@ -18,6 +18,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.notification.channeldetails.NotificationChannel;
 import io.harness.notification.channeldetails.PagerDutyChannel;
+import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.rule.Owner;
 
 import java.util.ArrayList;
@@ -49,8 +50,8 @@ public class PmsPagerDutyChannelTest extends CategoryTest {
     String projectId = "projectId";
     String templateId = "temolateId";
     Map<String, String> templateData = new HashMap<>();
-    NotificationChannel notificationChannel =
-        pmsPagerDutyChannel.toNotificationChannel(accountId, orgId, projectId, templateId, templateData);
+    NotificationChannel notificationChannel = pmsPagerDutyChannel.toNotificationChannel(accountId, orgId, projectId,
+        templateId, templateData, Ambiance.newBuilder().setExpressionFunctorToken(123L).build());
     assertEquals(notificationChannel.getAccountId(), accountId);
     assertEquals(((PagerDutyChannel) notificationChannel).getIntegrationKeys().get(0), integrationKey);
     assertEquals(notificationChannel.getUserGroups().get(0).getOrgIdentifier(), orgId);

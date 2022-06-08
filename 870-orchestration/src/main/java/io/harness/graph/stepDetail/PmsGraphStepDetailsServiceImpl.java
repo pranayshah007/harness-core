@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.stepDetail.NodeExecutionDetailsInfo;
 import io.harness.beans.stepDetail.NodeExecutionsInfo;
 import io.harness.beans.stepDetail.NodeExecutionsInfo.NodeExecutionsInfoKeys;
+import io.harness.concurrency.ConcurrentChildInstance;
 import io.harness.engine.observers.StepDetailsUpdateInfo;
 import io.harness.engine.observers.StepDetailsUpdateObserver;
 import io.harness.graph.stepDetail.service.PmsGraphStepDetailsService;
@@ -110,5 +111,25 @@ public class PmsGraphStepDetailsServiceImpl implements PmsGraphStepDetailsServic
       stepDetailsUpdateObserverSubject.fireInform(StepDetailsUpdateObserver::onStepInputsAdd,
           StepDetailsUpdateInfo.builder().nodeExecutionId(newNodeExecutionId).planExecutionId(planExecutionId).build());
     }
+  }
+
+  @Override
+  public void addConcurrentChildInformation(ConcurrentChildInstance concurrentChildInstance, String nodeExecutionId) {
+    Update update = new Update().set(NodeExecutionsInfoKeys.concurrentChildInstance, concurrentChildInstance);
+    Criteria criteria = Criteria.where(NodeExecutionsInfoKeys.nodeExecutionId).is(nodeExecutionId);
+    mongoTemplate.findAndModify(new Query(criteria), update, NodeExecutionsInfo.class);
+  }
+
+  @Override
+  public ConcurrentChildInstance incrementCursor(String nodeExecutionId) {
+    Update update = new Update();
+    update.inc(NodeExecutionsInfoKeys.concurrentChildInstance + ".cursor");
+    Criteria criteria = Criteria.where(NodeExecutionsInfoKeys.nodeExecutionId).is(nodeExecutionId);
+    NodeExecutionsInfo nodeExecutionsInfo =
+        mongoTemplate.findAndModify(new Query(criteria), update, NodeExecutionsInfo.class);
+    if (nodeExecutionsInfo == null) {
+      return null;
+    }
+    return nodeExecutionsInfo.getConcurrentChildInstance();
   }
 }

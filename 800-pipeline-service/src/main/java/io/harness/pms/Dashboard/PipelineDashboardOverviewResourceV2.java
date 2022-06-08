@@ -115,6 +115,7 @@ public class PipelineDashboardOverviewResourceV2 {
                 "Fetches Pipeline Executions details for a given Interval and will be presented in day wise format")
       })
   @NGAccessControlCheck(resourceType = "PROJECT", permission = "core_project_view")
+  @Hidden
   public ResponseDTO<DashboardPipelineExecutionInfo>
   getPipelineDashboardExecution(
       @Parameter(description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE, required = true) @NotNull @QueryParam(

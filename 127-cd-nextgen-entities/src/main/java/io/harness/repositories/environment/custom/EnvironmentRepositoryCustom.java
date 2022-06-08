@@ -20,6 +20,7 @@ public interface EnvironmentRepositoryCustom {
   Environment upsert(Criteria criteria, Environment environment);
   Environment update(Criteria criteria, Environment environment);
   UpdateResult delete(Criteria criteria);
+  UpdateResult deleteMany(Criteria criteria);
 
   List<Environment> findAllRunTimeAccess(Criteria criteria);
 
