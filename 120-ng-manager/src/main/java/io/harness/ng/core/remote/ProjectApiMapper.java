@@ -68,7 +68,7 @@ public class ProjectApiMapper {
     return tags.stream().collect(Collectors.toMap(NGTag::getKey, NGTag::getValue));
   }
 
-  public static Pageable getPageRequest(Integer page, Integer limit) {
+  public static Pageable getPageRequest(int page, int limit) {
     SortOrder order = aSortOrder().withField(ProjectKeys.lastModifiedAt, DESC).build();
     return PageUtils.getPageRequest(new PageRequest(page, limit, ImmutableList.of(order)));
   }
