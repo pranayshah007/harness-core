@@ -24,9 +24,7 @@ import io.harness.ng.core.user.service.NgUserService;
 import io.harness.scim.PatchOperation;
 import io.harness.scim.PatchRequest;
 import io.harness.scim.ScimListResponse;
-import io.harness.scim.ScimMultiValuedObject;
 import io.harness.scim.ScimUser;
-import io.harness.scim.ScimUserValuedObject;
 import io.harness.scim.service.ScimUserService;
 import io.harness.serializer.JsonUtils;
 

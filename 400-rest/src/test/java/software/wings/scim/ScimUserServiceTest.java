@@ -9,7 +9,6 @@ package software.wings.scim;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
-import static io.harness.rule.OwnerRule.PRATEEK;
 import static io.harness.rule.OwnerRule.UJJAWAL;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -23,7 +22,6 @@ import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 import io.harness.scim.OktaReplaceOperation;
 import io.harness.scim.PatchRequest;
-import io.harness.scim.ReplaceOperation;
 import io.harness.scim.ScimListResponse;
 import io.harness.scim.ScimUser;
 import io.harness.scim.service.ScimUserService;
@@ -43,7 +41,6 @@ import com.google.inject.Inject;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import javax.ws.rs.core.Response;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
@@ -98,20 +95,6 @@ public class ScimUserServiceTest extends WingsBaseTest {
     when(wingsPersistence.createUpdateOperations(User.class)).thenReturn(updateOperations);
     when(userService.get(ACCOUNT_ID, USER_ID)).thenReturn(user);
     when(wingsPersistence.save(userGroup)).thenReturn("true");
-    scimUserService.updateUser(ACCOUNT_ID, USER_ID, patchRequest);
-    verify(userService, times(1)).updateUser(USER_ID, updateOperations);
-  }
-
-  @Test
-  @Owner(developers = PRATEEK)
-  @Category(UnitTests.class)
-  public void testUpdateUserDisplayNameShouldPass() {
-    PatchRequest patchRequest = getUserReplaceOperation();
-    User user = new User();
-    user.setUuid(USER_ID);
-
-    when(wingsPersistence.createUpdateOperations(User.class)).thenReturn(updateOperations);
-    when(userService.get(ACCOUNT_ID, USER_ID)).thenReturn(user);
     scimUserService.updateUser(ACCOUNT_ID, USER_ID, patchRequest);
     verify(userService, times(1)).updateUser(USER_ID, updateOperations);
   }
