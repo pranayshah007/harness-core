@@ -7,6 +7,10 @@
 
 package io.harness.ng.core.remote;
 
+import static io.harness.beans.SortOrder.Builder.aSortOrder;
+import static io.harness.beans.SortOrder.OrderType.DESC;
+import static io.harness.ng.core.entities.Project.ProjectKeys.lastModifiedAt;
+
 import io.harness.beans.SortOrder;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.core.common.beans.NGTag;
@@ -65,8 +69,7 @@ public class ProjectApiMapper {
   }
 
   public static Pageable getPageRequest(Integer page, Integer limit) {
-    SortOrder order =
-        SortOrder.Builder.aSortOrder().withField(Project.ProjectKeys.lastModifiedAt, SortOrder.OrderType.DESC).build();
+    SortOrder order = aSortOrder().withField(lastModifiedAt, DESC).build();
     return PageUtils.getPageRequest(new PageRequest(page, limit, ImmutableList.of(order)));
   }
 }
