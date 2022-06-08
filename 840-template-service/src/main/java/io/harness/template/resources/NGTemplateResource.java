@@ -7,6 +7,8 @@
 
 package io.harness.template.resources;
 
+import static io.harness.NGCommonEntityConstants.*;
+import static io.harness.NGCommonEntityConstants.ACCOUNT_KEY;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
@@ -14,6 +16,8 @@ import static java.lang.Long.parseLong;
 import static javax.ws.rs.core.HttpHeaders.IF_MATCH;
 import static org.apache.commons.lang3.StringUtils.isNumeric;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import io.harness.EntityType;
 import io.harness.NGCommonEntityConstants;
 import io.harness.NGResourceFilterConstants;
 import io.harness.accesscontrol.AccountIdentifier;
@@ -36,11 +40,7 @@ import io.harness.gitsync.interceptor.GitEntityUpdateInfoDTO;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
-import io.harness.ng.core.template.TemplateApplyRequestDTO;
-import io.harness.ng.core.template.TemplateListType;
-import io.harness.ng.core.template.TemplateMergeResponseDTO;
-import io.harness.ng.core.template.TemplateReferenceSummary;
-import io.harness.ng.core.template.TemplateSummaryResponseDTO;
+import io.harness.ng.core.template.*;
 import io.harness.pms.contracts.service.VariableMergeResponseProto;
 import io.harness.pms.contracts.service.VariablesServiceGrpc.VariablesServiceBlockingStub;
 import io.harness.pms.contracts.service.VariablesServiceRequest;
@@ -83,18 +83,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
-import javax.ws.rs.BeanParam;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.HeaderParam;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
+import javax.ws.rs.*;
+
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -233,6 +223,26 @@ public class NGTemplateResource {
             .templateResponseDTO(NGTemplateDtoMapper.writeTemplateResponseDto(createdTemplate))
             .build();
     return ResponseDTO.newResponse(createdTemplate.getVersion().toString(), templateWrapperResponseDTO);
+  }
+
+  @GET
+  @Path("/templateSchema")
+  @ApiOperation(value = "Get Template Schema", nickname = "getTemplateSchema")
+  @Operation(operationId = "getTemplateSchema", summary = "Get Template Schema",
+          responses =
+                  {
+                          @io.swagger.v3.oas.annotations.responses.
+                                  ApiResponse(responseCode = "default", description = "Returns the Template schema")
+                  })
+  public ResponseDTO<JsonNode>
+  getTemplateSchema(@QueryParam("templateEntityType") @NotNull TemplateEntityType templateEntityType,
+                        @QueryParam(PROJECT_KEY) String projectIdentifier, @QueryParam(ORG_KEY) String orgIdentifier,
+                        @QueryParam("scope") Scope scope, @QueryParam(IDENTIFIER_KEY) String identifier,
+                        @NotNull @QueryParam(ACCOUNT_KEY) String accountIdentifier, @QueryParam(ENTITY_TYPE) @NotNull EntityType entityType,
+                        @NotNull @QueryParam("yamlGroup")String yamlGroup) {
+    JsonNode schema = null;
+    schema = templateService.getTemplateSchema(accountIdentifier, projectIdentifier, orgIdentifier, yamlGroup, scope, entityType);
+    return ResponseDTO.newResponse(schema);
   }
 
   @PUT

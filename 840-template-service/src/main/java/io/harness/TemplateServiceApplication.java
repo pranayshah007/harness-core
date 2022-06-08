@@ -83,6 +83,8 @@ import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import io.federecio.dropwizard.swagger.SwaggerBundle;
 import io.federecio.dropwizard.swagger.SwaggerBundleConfiguration;
+import io.harness.yaml.YamlSdkConfiguration;
+import io.harness.yaml.YamlSdkInitHelper;
 import io.serializer.HObjectMapper;
 import io.swagger.v3.jaxrs2.integration.resources.OpenApiResource;
 import java.util.ArrayList;
@@ -216,6 +218,7 @@ public class TemplateServiceApplication extends Application<TemplateServiceConfi
       registerGitSyncSdk(templateServiceConfiguration, injector, environment);
     }
     registerMigrations(injector);
+    registerYamlSdk(injector);
 
     injector.getInstance(PrimaryVersionChangeScheduler.class).registerExecutors();
     MaintenanceController.forceMaintenance(false);
@@ -346,5 +349,14 @@ public class TemplateServiceApplication extends Application<TemplateServiceConfi
     } catch (Exception ex) {
       throw new GeneralException("Failed to start template service because git sync registration failed", ex);
     }
+  }
+
+  private void registerYamlSdk(Injector injector) {
+    YamlSdkConfiguration yamlSdkConfiguration = YamlSdkConfiguration.builder()
+            .requireSchemaInit(true)
+            .requireSnippetInit(true)
+            .requireValidatorInit(true)
+            .build();
+    YamlSdkInitHelper.initialize(injector, yamlSdkConfiguration);
   }
 }

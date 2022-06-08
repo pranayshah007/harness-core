@@ -7,7 +7,7 @@
 
 package io.harness;
 
-import static io.harness.AuthorizationServiceHeader.TEMPLATE_SERVICE;
+import static io.harness.AuthorizationServiceHeader.*;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.lock.DistributedLockImplementation.MONGO;
 import static io.harness.ng.core.template.TemplateEntityConstants.MONITORED_SERVICE;
@@ -16,6 +16,8 @@ import static io.harness.ng.core.template.TemplateEntityConstants.STAGE;
 import static io.harness.ng.core.template.TemplateEntityConstants.STEP;
 import static io.harness.outbox.OutboxSDKConstants.DEFAULT_OUTBOX_POLL_CONFIGURATION;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.dropwizard.jackson.Jackson;
 import io.harness.account.AccountClientModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.app.PrimaryVersionManagerModule;
@@ -47,8 +49,10 @@ import io.harness.outbox.api.OutboxEventHandler;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
+import io.harness.pipeline.yamlschema.YamlSchemaClientModule;
 import io.harness.project.ProjectClientModule;
 import io.harness.redis.RedisConfig;
+import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.TemplateServiceModuleRegistrars;
 import io.harness.service.DelegateServiceDriverModule;
@@ -83,6 +87,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Supplier;
+
+import io.harness.yaml.YamlSdkModule;
+import io.harness.yaml.schema.beans.YamlSchemaRootClass;
 import lombok.extern.slf4j.Slf4j;
 import org.mongodb.morphia.converters.TypeConverter;
 import org.springframework.core.convert.converter.Converter;
@@ -133,7 +140,9 @@ public class TemplateServiceModule extends AbstractModule {
         this.templateServiceConfiguration.getNgManagerServiceSecret(), TEMPLATE_SERVICE.getServiceId()));
     install(new EntitySetupUsageClientModule(this.templateServiceConfiguration.getNgManagerServiceHttpClientConfig(),
         this.templateServiceConfiguration.getNgManagerServiceSecret(), TEMPLATE_SERVICE.getServiceId()));
-
+    install(new YamlSchemaClientModule(
+            ServiceHttpClientConfig.builder().baseUrl(templateServiceConfiguration.getPipelineServiceClientConfig().getBaseUrl()).build(),
+        templateServiceConfiguration.getPipelineServiceSecret(), TEMPLATE_SERVICE.toString()));
     install(new DelegateServiceDriverGrpcClientModule(templateServiceConfiguration.getManagerServiceSecret(),
         templateServiceConfiguration.getManagerTarget(), templateServiceConfiguration.getManagerAuthority(), true));
     install(new AuditClientModule(this.templateServiceConfiguration.getAuditClientConfig(),
@@ -147,6 +156,7 @@ public class TemplateServiceModule extends AbstractModule {
     install(new TemplateEventsFrameworkModule(this.templateServiceConfiguration.getEventsFrameworkConfiguration()));
     install(new AccountClientModule(templateServiceConfiguration.getManagerClientConfig(),
         templateServiceConfiguration.getManagerServiceSecret(), TEMPLATE_SERVICE.toString()));
+    install(YamlSdkModule.getInstance());
 
     bind(ScheduledExecutorService.class)
         .annotatedWith(Names.named("taskPollExecutor"))
@@ -190,6 +200,12 @@ public class TemplateServiceModule extends AbstractModule {
     return ImmutableSet.<Class<? extends TypeConverter>>builder()
         .addAll(TemplateServiceModuleRegistrars.morphiaConverters)
         .build();
+  }
+
+  @Provides
+  @Singleton
+  List<YamlSchemaRootClass> yamlSchemaRootClasses() {
+    return ImmutableList.<YamlSchemaRootClass>builder().addAll(TemplateServiceModuleRegistrars.yamlSchemaRegistrars).build();
   }
 
   @Provides
@@ -252,6 +268,14 @@ public class TemplateServiceModule extends AbstractModule {
     return templateYamlConversionHandlerRegistry;
   }
 
+  @Provides
+  @Named("yaml-schema-mapper")
+  @Singleton
+  public ObjectMapper getYamlSchemaObjectMapper() {
+    ObjectMapper objectMapper = Jackson.newObjectMapper();
+    TemplateServiceApplication.configureObjectMapper(objectMapper);
+    return objectMapper;
+  }
   private DelegateCallbackToken getDelegateCallbackToken(DelegateServiceGrpcClient delegateServiceClient) {
     log.info("Generating Delegate callback token");
     final DelegateCallbackToken delegateCallbackToken = delegateServiceClient.registerCallback(

@@ -21,15 +21,9 @@ import com.fasterxml.jackson.databind.node.BooleanNode;
 import com.fasterxml.jackson.databind.node.NumericNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+
+import java.util.*;
+
 import lombok.experimental.UtilityClass;
 
 @OwnedBy(CDC)
@@ -113,6 +107,40 @@ public class JsonNodeUtils {
     return jsonNode;
   }
 
+  public static JsonNode deletePropertiesInJsonNode(ObjectNode jsonNode, Collection<String> properties) {
+    if (isEmpty(properties) || jsonNode == null) {
+      return jsonNode;
+    }
+    for (String property : properties) {
+      if (jsonNode.has(property)) {
+        jsonNode.remove(property);
+      }
+    }
+    return jsonNode;
+  }
+
+  public static ArrayNode deletePropertiesInArrayNode(ArrayNode arrayNode, Collection<String> keys) {
+    if (isEmpty(keys) || arrayNode == null) {
+      return arrayNode;
+    }
+    int size = arrayNode.size();
+    int j = 0;
+    for(int i = 0; i < size; i++){
+      JsonNode node = arrayNode.get(j);
+      if (node != null) {
+        if (node.isTextual()) {
+          if (keys.contains(node.asText())) {
+            arrayNode.remove(i);
+          }else{
+            j++;
+          }
+        }
+      }
+    }
+
+    return arrayNode;
+  }
+
   public static JsonNode updatePropertiesInJsonNode(ObjectNode jsonNode, Map<String, String> properties) {
     if (isEmpty(properties) || jsonNode == null) {
       return jsonNode;
@@ -180,6 +208,9 @@ public class JsonNodeUtils {
       } else if (keyNode.isObject()) {
         // We can't add multiple values in an object node. Hence updating whole keynode.
         addValuesToObjectNode((ObjectNode) objectNode, key, valuesList);
+      } else if(keyNode.isTextual() && objectNode.isObject() && valuesList.size() == 1){
+        ObjectNode node = (ObjectNode) objectNode;
+        node.put(key, valuesList.get(0));
       }
     } else {
       addValuesToObjectNode((ObjectNode) objectNode, key, valuesList);

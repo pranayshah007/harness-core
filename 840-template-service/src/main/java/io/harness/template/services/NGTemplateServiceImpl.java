@@ -16,6 +16,8 @@ import static io.harness.remote.client.NGRestUtils.getResponse;
 import static java.lang.String.format;
 
 import io.harness.account.AccountClient;
+import com.fasterxml.jackson.databind.JsonNode;
+import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.data.structure.EmptyPredicate;
@@ -29,6 +31,7 @@ import io.harness.exception.ExceptionUtils;
 import io.harness.exception.ExplanationException;
 import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.JsonSchemaException;
 import io.harness.exception.ScmException;
 import io.harness.git.model.ChangeType;
 import io.harness.gitsync.common.utils.GitEntityFilePath;
@@ -39,8 +42,10 @@ import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.scm.EntityObjectIdUtils;
 import io.harness.grpc.utils.StringValueUtils;
 import io.harness.organization.remote.OrganizationClient;
+import io.harness.pipeline.yamlschema.YamlSchemaServiceClient;
 import io.harness.project.remote.ProjectClient;
 import io.harness.remote.client.RestClientUtils;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.repositories.NGTemplateRepository;
 import io.harness.springdata.TransactionHelper;
 import io.harness.template.TemplateFilterPropertiesDTO;
@@ -50,6 +55,7 @@ import io.harness.template.entity.TemplateEntity.TemplateEntityKeys;
 import io.harness.template.events.TemplateUpdateEventType;
 import io.harness.template.gitsync.TemplateGitSyncBranchContextGuard;
 import io.harness.template.helpers.TemplateReferenceHelper;
+import io.harness.template.helpers.YamlSchemaMergeHelper;
 import io.harness.template.mappers.NGTemplateDtoMapper;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -61,6 +67,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+
+import io.harness.yaml.schema.YamlSchemaGenerator;
+import io.harness.yaml.schema.YamlSchemaProvider;
+import io.harness.yaml.validator.YamlSchemaValidator;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Page;
@@ -78,11 +88,15 @@ public class NGTemplateServiceImpl implements NGTemplateService {
   @Inject private NGTemplateServiceHelper templateServiceHelper;
   @Inject private GitSyncSdkService gitSyncSdkService;
   @Inject private TransactionHelper transactionHelper;
+  @Inject private YamlSchemaProvider yamlSchemaProvider;
+  @Inject private YamlSchemaGenerator yamlSchemaGenerator;
+  @Inject private YamlSchemaValidator yamlSchemaValidator;
   @Inject EnforcementClientService enforcementClientService;
   @Inject @Named("PRIVILEGED") private ProjectClient projectClient;
   @Inject @Named("PRIVILEGED") private OrganizationClient organizationClient;
   @Inject private TemplateReferenceHelper templateReferenceHelper;
   @Inject private AccountClient accountClient;
+  @Inject private YamlSchemaServiceClient yamlSchemaServiceClient;
 
   private static final String DUP_KEY_EXP_FORMAT_STRING =
       "Template [%s] of versionLabel [%s] under Project[%s], Organization [%s] already exists";
@@ -571,6 +585,28 @@ public class NGTemplateServiceImpl implements NGTemplateService {
                         .set(TemplateEntityKeys.rootFolder, gitEntityFilePath.getRootFolder());
     return templateRepository.update(templateEntity.getAccountId(), templateEntity.getOrgIdentifier(),
         templateEntity.getProjectIdentifier(), criteria, update);
+  }
+
+  @Override
+  public JsonNode getTemplateSchema(String accountIdentifier, String projectIdentifier, String orgIdentifier, String yamlGroup, Scope scope, EntityType entityType) {
+    try {
+      return getTemplateYamlSchemaInternal(accountIdentifier, projectIdentifier, orgIdentifier, yamlGroup, scope, entityType);
+    } catch (Exception e) {
+      log.error("[Template] Failed to get pipeline yaml schema", e);
+      throw new JsonSchemaException(e.getMessage());
+    }
+  }
+
+  private JsonNode getTemplateYamlSchemaInternal(String accountIdentifier, String projectIdentifier, String orgIdentifier, String yamlGroup, Scope scope, EntityType entityType) {
+    JsonNode templateSchema =
+            yamlSchemaProvider.getYamlSchema(EntityType.TEMPLATE, orgIdentifier, projectIdentifier, scope);
+
+    //TODO: add a handler here to fetch for schemas that we can't get from pipeline as discussed. and refactor
+    JsonNode specSchema = NGRestUtils
+            .getResponse(yamlSchemaServiceClient.getYamlSchema(accountIdentifier, orgIdentifier, projectIdentifier, yamlGroup, entityType, scope)).getSchema();
+
+    YamlSchemaMergeHelper.mergeYamlSchema(templateSchema, specSchema, entityType);
+    return templateSchema;
   }
 
   private void assureThatTheProjectAndOrgExists(String accountId, String orgId, String projectId) {

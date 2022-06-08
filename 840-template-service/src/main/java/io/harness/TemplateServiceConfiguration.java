@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toSet;
 
+import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cache.CacheConfig;
 import io.harness.enforcement.client.EnforcementClientConfiguration;
@@ -87,6 +88,8 @@ public class TemplateServiceConfiguration extends Configuration {
   @JsonProperty("basePathPrefix") String basePathPrefix = "";
   @JsonProperty("enforcementClientConfiguration") EnforcementClientConfiguration enforcementClientConfiguration;
   @JsonProperty("pmsGrpcClientConfig") GrpcClientConfig pmsGrpcClientConfig;
+  @JsonProperty("pipelineServiceClientConfig") private ServiceHttpClientConfig pipelineServiceClientConfig;
+  @JsonProperty("pipelineServiceSecret") private String pipelineServiceSecret;
 
   private boolean shouldDeployWithGitSync;
   private GitSdkConfiguration gitSdkConfiguration;
@@ -179,7 +182,7 @@ public class TemplateServiceConfiguration extends Configuration {
       baseurl = new URL("https", hostname, basePathPrefix);
       Server server = new Server();
       server.setUrl(baseurl.toString());
-      oas.servers(Collections.singletonList(server));
+      oas.servers(singletonList(server));
     } catch (MalformedURLException e) {
       log.error("failed to set baseurl for server, {}/{}", hostname, basePathPrefix);
     }
