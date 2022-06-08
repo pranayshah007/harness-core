@@ -24,11 +24,11 @@ import io.harness.ng.core.user.service.NgUserService;
 import io.harness.scim.PatchOperation;
 import io.harness.scim.PatchRequest;
 import io.harness.scim.ScimListResponse;
+import io.harness.scim.ScimMultiValuedObject;
 import io.harness.scim.ScimUser;
 import io.harness.scim.service.ScimUserService;
 import io.harness.serializer.JsonUtils;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.inject.Inject;
 import java.util.Collections;
 import java.util.HashMap;
@@ -152,11 +152,7 @@ public class NGScimUserServiceImpl implements ScimUserService {
           "NGSCIM: User not found for updating in NG, updating nothing. userId: {}, accountId: {}", userId, accountId);
     } else {
       patchRequest.getOperations().forEach(patchOperation -> {
-        try {
-          applyUserUpdateOperation(accountId, userId, userMetadataDTOOptional.get(), patchOperation);
-        } catch (Exception ex) {
-          log.error("NGSCIM: Failed to update user: {}, patchOperation: {}", userId, patchOperation, ex);
-        }
+        applyUserUpdateOperation(accountId, userId, userMetadataDTOOptional.get(), patchOperation);
       });
     }
     return getUser(userId, accountId);
@@ -211,22 +207,29 @@ public class NGScimUserServiceImpl implements ScimUserService {
     return true;
   }
 
-  private void applyUserUpdateOperation(String accountId, String userId, UserMetadataDTO userMetadataDTO,
-      PatchOperation patchOperation) throws JsonProcessingException {
-    if ("displayName".equals(patchOperation.getPath()) && patchOperation.getValue(String.class) != null) {
-      userMetadataDTO.setName(patchOperation.getValue(String.class));
-      userMetadataDTO.setExternallyManaged(true);
-      ngUserService.updateUserMetadata(userMetadataDTO);
-    }
-
-    if ("active".equals(patchOperation.getPath()) && patchOperation.getValue(Boolean.class) != null) {
-      changeScimUserDisabled(accountId, userId, !patchOperation.getValue(Boolean.class));
-    }
-
-    if (!("displayName".equals(patchOperation.getPath()) || "active".equals(patchOperation.getPath()))) {
-      // Not supporting any other updates as of now.
-      log.warn("NGSCIM: Unexpected patch operation received: accountId: {}, userId: {}, patchOperation: {}", accountId,
-          userId, patchOperation);
+  private void applyUserUpdateOperation(
+      String accountId, String userId, UserMetadataDTO userMetadataDTO, PatchOperation patchOperation) {
+    try {
+      if ("displayName".equals(patchOperation.getPath()) && patchOperation.getValue(String.class) != null) {
+        userMetadataDTO.setName(patchOperation.getValue(String.class));
+        userMetadataDTO.setExternallyManaged(true);
+        ngUserService.updateUserMetadata(userMetadataDTO);
+      } else if ("active".equals(patchOperation.getPath()) && patchOperation.getValue(Boolean.class) != null) {
+        changeScimUserDisabled(accountId, userId, !patchOperation.getValue(Boolean.class));
+      } else if (patchOperation.getValue(ScimMultiValuedObject.class) != null
+          && patchOperation.getValue(ScimMultiValuedObject.class).getDisplayName() != null) {
+        // @Todo: Check with Ujjawal why CG has patchOperation.getValue(String.class)
+        userMetadataDTO.setName(patchOperation.getValue(ScimMultiValuedObject.class).getDisplayName());
+        userMetadataDTO.setExternallyManaged(true);
+        ngUserService.updateUserMetadata(userMetadataDTO);
+      } else {
+        // Not supporting any other updates as of now.
+        log.warn("NGSCIM: Unexpected patch operation received: accountId: {}, userId: {}, patchOperation: {}",
+            accountId, userId, patchOperation);
+      }
+    } catch (Exception exc) {
+      log.error("NGSCIM: Unexpected patch input, failed to update user: {}, accountId: {}, patchOperation: {}", userId,
+          accountId, patchOperation, exc);
     }
   }
 

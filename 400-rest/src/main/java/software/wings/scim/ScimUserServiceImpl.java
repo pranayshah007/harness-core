@@ -16,6 +16,7 @@ import io.harness.exception.WingsException;
 import io.harness.scim.PatchOperation;
 import io.harness.scim.PatchRequest;
 import io.harness.scim.ScimListResponse;
+import io.harness.scim.ScimMultiValuedObject;
 import io.harness.scim.ScimUser;
 import io.harness.scim.service.ScimUserService;
 import io.harness.serializer.JsonUtils;
@@ -29,7 +30,6 @@ import software.wings.beans.security.UserGroup.UserGroupKeys;
 import software.wings.dl.WingsPersistence;
 import software.wings.service.intfc.UserService;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import java.net.URLDecoder;
@@ -225,35 +225,36 @@ public class ScimUserServiceImpl implements ScimUserService {
 
   @Override
   public ScimUser updateUser(String accountId, String userId, PatchRequest patchRequest) {
-    patchRequest.getOperations().forEach(patchOperation -> {
-      try {
-        applyUserUpdateOperation(accountId, userId, patchOperation);
-      } catch (Exception ex) {
-        log.error("SCIM: Failed to update user: {}, patchOperation: {}", userId, patchOperation, ex);
-      }
-    });
+    patchRequest.getOperations().forEach(
+        patchOperation -> { applyUserUpdateOperation(accountId, userId, patchOperation); });
     return getUser(userId, accountId);
   }
 
-  private void applyUserUpdateOperation(String accountId, String userId, PatchOperation patchOperation)
-      throws JsonProcessingException {
+  private void applyUserUpdateOperation(String accountId, String userId, PatchOperation patchOperation) {
     User user = userService.get(accountId, userId);
     if (user == null) {
       throw new WingsException(ErrorCode.USER_DOES_NOT_EXIST);
     }
-    if ("displayName".equals(patchOperation.getPath()) && patchOperation.getValue(String.class) != null) {
-      UpdateOperations<User> updateOperation = wingsPersistence.createUpdateOperations(User.class);
-      updateOperation.set(UserKeys.name, patchOperation.getValue(String.class));
-      userService.updateUser(user.getUuid(), updateOperation);
-    }
-    if ("active".equals(patchOperation.getPath()) && patchOperation.getValue(Boolean.class) != null) {
-      changeScimUserDisabled(accountId, user.getUuid(), !(patchOperation.getValue(Boolean.class)));
-    }
-
-    if (!("displayName".equals(patchOperation.getPath()) || "active".equals(patchOperation.getPath()))) {
-      // Not supporting any other updates as of now.
-      log.warn("SCIM: Unexpected patch operation received: accountId: {}, userId: {}, patchOperation: {}", accountId,
-          userId, patchOperation);
+    try {
+      if ("displayName".equals(patchOperation.getPath()) && patchOperation.getValue(String.class) != null) {
+        UpdateOperations<User> updateOperation = wingsPersistence.createUpdateOperations(User.class);
+        updateOperation.set(UserKeys.name, patchOperation.getValue(String.class));
+        userService.updateUser(user.getUuid(), updateOperation);
+      } else if ("active".equals(patchOperation.getPath()) && patchOperation.getValue(Boolean.class) != null) {
+        changeScimUserDisabled(accountId, user.getUuid(), !(patchOperation.getValue(Boolean.class)));
+      } else if (patchOperation.getValue(ScimMultiValuedObject.class) != null
+          && patchOperation.getValue(ScimMultiValuedObject.class).getDisplayName() != null) {
+        UpdateOperations<User> updateOperation = wingsPersistence.createUpdateOperations(User.class);
+        updateOperation.set(UserKeys.name, patchOperation.getValue(String.class));
+        userService.updateUser(user.getUuid(), updateOperation);
+      } else {
+        // Not supporting any other updates as of now.
+        log.warn("SCIM: Unexpected patch operation received: accountId: {}, userId: {}, patchOperation: {}", accountId,
+            userId, patchOperation);
+      }
+    } catch (Exception exc) {
+      log.error("SCIM: Unexpected patch input, failed to update user: {}, accountId: {}, patchOperation: {}", userId,
+          accountId, patchOperation, exc);
     }
   }
 
