@@ -24,7 +24,9 @@ import io.harness.ng.core.user.service.NgUserService;
 import io.harness.scim.PatchOperation;
 import io.harness.scim.PatchRequest;
 import io.harness.scim.ScimListResponse;
+import io.harness.scim.ScimMultiValuedObject;
 import io.harness.scim.ScimUser;
+import io.harness.scim.ScimUserValuedObject;
 import io.harness.scim.service.ScimUserService;
 import io.harness.serializer.JsonUtils;
 
@@ -144,6 +146,7 @@ public class NGScimUserServiceImpl implements ScimUserService {
 
   @Override
   public ScimUser updateUser(String accountId, String userId, PatchRequest patchRequest) {
+    log.info("NGSCIM: Updating user : Patch - userId: {}, accountId: {}", userId, accountId);
     // Call CG to update the user as it is
     ngUserService.updateScimUser(accountId, userId, patchRequest);
     Optional<UserMetadataDTO> userMetadataDTOOptional = ngUserService.getUserMetadata(userId);
@@ -213,8 +216,17 @@ public class NGScimUserServiceImpl implements ScimUserService {
 
   private void applyUserUpdateOperation(String accountId, String userId, UserMetadataDTO userMetadataDTO,
       PatchOperation patchOperation) throws JsonProcessingException {
-    if ("displayName".equals(patchOperation.getPath()) && patchOperation.getValue(String.class) != null) {
+    // Not sure why this needs to be done for displayName as well as ScimMultiValuedObject
+    // Relying on CG implementation as it has been around for a while
+    if ("displayName".equals(patchOperation.getPath())) {
       userMetadataDTO.setName(patchOperation.getValue(String.class));
+      userMetadataDTO.setExternallyManaged(true);
+      ngUserService.updateUserMetadata(userMetadataDTO);
+    }
+    if (patchOperation.getValue(ScimMultiValuedObject.class) != null
+        && patchOperation.getValue(ScimMultiValuedObject.class).getDisplayName() != null) {
+      // @Todo: Check with Ujjawal why CG has patchOperation.getValue(String.class)
+      userMetadataDTO.setName(patchOperation.getValue(ScimMultiValuedObject.class).getDisplayName());
       userMetadataDTO.setExternallyManaged(true);
       ngUserService.updateUserMetadata(userMetadataDTO);
     }
@@ -223,9 +235,11 @@ public class NGScimUserServiceImpl implements ScimUserService {
       changeScimUserDisabled(accountId, userId, !patchOperation.getValue(Boolean.class));
     }
 
-    if (!("displayName".equals(patchOperation.getPath()) || "active".equals(patchOperation.getPath()))) {
+    if (patchOperation.getValue(ScimUserValuedObject.class) != null) {
+      changeScimUserDisabled(accountId, userId, !(patchOperation.getValue(ScimUserValuedObject.class)).isActive());
+    } else {
       // Not supporting any other updates as of now.
-      log.warn("NGSCIM: Unexpected patch operation received: accountId: {}, userId: {}, patchOperation: {}", accountId,
+      log.error("NGSCIM: Unexpected patch operation received: accountId: {}, userId: {}, patchOperation: {}", accountId,
           userId, patchOperation);
     }
   }

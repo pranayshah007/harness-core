@@ -16,7 +16,9 @@ import io.harness.exception.WingsException;
 import io.harness.scim.PatchOperation;
 import io.harness.scim.PatchRequest;
 import io.harness.scim.ScimListResponse;
+import io.harness.scim.ScimMultiValuedObject;
 import io.harness.scim.ScimUser;
+import io.harness.scim.ScimUserValuedObject;
 import io.harness.scim.service.ScimUserService;
 import io.harness.serializer.JsonUtils;
 
@@ -225,6 +227,7 @@ public class ScimUserServiceImpl implements ScimUserService {
 
   @Override
   public ScimUser updateUser(String accountId, String userId, PatchRequest patchRequest) {
+    log.info("SCIM: Updating user : Patch - userId: {}, accountId: {}", userId, accountId);
     patchRequest.getOperations().forEach(patchOperation -> {
       try {
         applyUserUpdateOperation(accountId, userId, patchOperation);
@@ -241,7 +244,13 @@ public class ScimUserServiceImpl implements ScimUserService {
     if (user == null) {
       throw new WingsException(ErrorCode.USER_DOES_NOT_EXIST);
     }
-    if ("displayName".equals(patchOperation.getPath()) && patchOperation.getValue(String.class) != null) {
+    if ("displayName".equals(patchOperation.getPath())) {
+      UpdateOperations<User> updateOperation = wingsPersistence.createUpdateOperations(User.class);
+      updateOperation.set(UserKeys.name, patchOperation.getValue(String.class));
+      userService.updateUser(user.getUuid(), updateOperation);
+    }
+    if (patchOperation.getValue(ScimMultiValuedObject.class) != null
+        && patchOperation.getValue(ScimMultiValuedObject.class).getDisplayName() != null) {
       UpdateOperations<User> updateOperation = wingsPersistence.createUpdateOperations(User.class);
       updateOperation.set(UserKeys.name, patchOperation.getValue(String.class));
       userService.updateUser(user.getUuid(), updateOperation);
@@ -250,9 +259,12 @@ public class ScimUserServiceImpl implements ScimUserService {
       changeScimUserDisabled(accountId, user.getUuid(), !(patchOperation.getValue(Boolean.class)));
     }
 
-    if (!("displayName".equals(patchOperation.getPath()) || "active".equals(patchOperation.getPath()))) {
+    if (patchOperation.getValue(ScimUserValuedObject.class) != null) {
+      changeScimUserDisabled(
+          accountId, user.getUuid(), !(patchOperation.getValue(ScimUserValuedObject.class)).isActive());
+    } else {
       // Not supporting any other updates as of now.
-      log.warn("SCIM: Unexpected patch operation received: accountId: {}, userId: {}, patchOperation: {}", accountId,
+      log.error("SCIM: Unexpected patch operation received: accountId: {}, userId: {}, patchOperation: {}", accountId,
           userId, patchOperation);
     }
   }
