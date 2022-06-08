@@ -183,7 +183,10 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
     Object[] parameters;
     TaskType taskType = taskDetails.getType();
     TaskResponseType taskResponseType;
-    if (taskDetails.getParametersCase().equals(TaskDetails.ParametersCase.JSON_PARAMETERS)) {
+    if (taskDetails.getParametersCase().equals(TaskDetails.ParametersCase.KRYO_PARAMETERS)) {
+      taskResponseType = TaskResponseType.KRYO;
+      parameters = new Object[] {kryoSerializer.asInflatedObject(taskDetails.getKryoParameters().toByteArray())};
+    } else if (taskDetails.getParametersCase().equals(TaskDetails.ParametersCase.JSON_PARAMETERS)) {
       taskResponseType = TaskResponseType.JSON;
       software.wings.beans.TaskType type = software.wings.beans.TaskType.valueOf(String.valueOf(taskType));
       try {
@@ -193,9 +196,6 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
       } catch (JsonProcessingException e) {
         throw new InvalidRequestException("Unable to serialize params", e);
       }
-    } else if (taskDetails.getParametersCase().equals(TaskDetails.ParametersCase.KRYO_PARAMETERS)) {
-      taskResponseType = TaskResponseType.KRYO;
-      parameters = new Object[] {kryoSerializer.asInflatedObject(taskDetails.getKryoParameters().toByteArray())};
     } else {
       throw new InvalidRequestException("Invalid task response type.");
     }
