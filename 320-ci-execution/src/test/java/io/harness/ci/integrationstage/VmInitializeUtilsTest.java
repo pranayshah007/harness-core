@@ -15,7 +15,6 @@ import io.harness.ff.CIFeatureFlagService;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 
-import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
