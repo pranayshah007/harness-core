@@ -41,9 +41,7 @@ import io.harness.plancreator.pipeline.PipelineConfig;
 import io.harness.pms.contracts.governance.GovernanceMetadata;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
-import io.harness.pms.pipeline.mappers.PMSPipelineDtoMapper;
 import io.harness.pms.pipeline.service.PMSPipelineService;
-import io.harness.pms.pipeline.service.PMSPipelineServiceHelper;
 import io.harness.pms.pipeline.service.PipelineCRUDResult;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
@@ -61,7 +59,6 @@ import org.mockito.MockitoAnnotations;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class PipelineEntityGitSyncHelperTest extends CategoryTest {
   @Mock private PMSPipelineService pipelineService;
-  @Mock private PMSPipelineServiceHelper pipelineServiceHelper;
   @InjectMocks PipelineEntityGitSyncHelper pipelineEntityGitSyncHelper;
   static String accountId = "accountId";
   static String orgId = "orgId";
@@ -155,12 +152,12 @@ public class PipelineEntityGitSyncHelperTest extends CategoryTest {
   @Owner(developers = BRIJESH)
   @Category(UnitTests.class)
   public void testUpdate() throws IOException {
-    doReturn(GovernanceMetadata.newBuilder().setDeny(false).build())
-        .when(pipelineServiceHelper)
-        .validatePipelineYaml(PMSPipelineDtoMapper.toPipelineEntity(accountId, pipelineYaml));
     PipelineEntity pipelineEntity =
         PipelineEntity.builder().orgIdentifier(orgId).projectIdentifier(projectId).yaml(pipelineYaml).build();
-    doReturn(pipelineEntity).when(pipelineService).updatePipelineYaml(any(), any());
+    GovernanceMetadata governanceMetadata = GovernanceMetadata.newBuilder().setDeny(false).build();
+    PipelineCRUDResult pipelineCRUDResult =
+        PipelineCRUDResult.builder().governanceMetadata(governanceMetadata).pipelineEntity(pipelineEntity).build();
+    doReturn(pipelineCRUDResult).when(pipelineService).updatePipelineYaml(any(), any());
     PipelineConfig pipelineConfig = pipelineEntityGitSyncHelper.update(accountId, pipelineYaml, ChangeType.NONE);
     verify(pipelineService, times(1)).updatePipelineYaml(any(), any());
     assertEquals(pipelineConfig, YamlUtils.read(pipelineYaml, PipelineConfig.class));

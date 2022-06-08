@@ -7,6 +7,7 @@
 
 package io.harness.cvng.cdng.services.impl;
 
+import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.persistence.HQuery.excludeAuthority;
 import static io.harness.rule.OwnerRule.DHRUVX;
 
@@ -20,12 +21,15 @@ import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.cdng.beans.MonitoredServiceNode;
 import io.harness.cvng.cdng.beans.MonitoredServiceSpec.MonitoredServiceSpecType;
+import io.harness.cvng.cdng.beans.ResolvedCVConfigInfo;
 import io.harness.cvng.cdng.beans.TemplateMonitoredServiceSpec;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
 import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
+import io.harness.cvng.core.beans.sidekick.VerificationJobInstanceCleanupSideKickData;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.MonitoringSourcePerpetualTask;
 import io.harness.cvng.core.entities.MonitoringSourcePerpetualTask.MonitoringSourcePerpetualTaskKeys;
+import io.harness.cvng.core.entities.SideKick;
 import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.persistence.HPersistence;
@@ -128,11 +132,12 @@ public class TemplateVerifyStepMonitoredServiceResolutionServiceImplTest extends
   @Test
   @Owner(developers = DHRUVX)
   @Category(UnitTests.class)
-  public void testGetCVConfigs_verifyPerpetualTasksGotCreated() {
+  public void testManagePerpetualTasks_verifyPerpetualTasksGotCreated() {
     when(mockMonitoredServiceService.getExpandedMonitoredServiceFromYaml(any(), any())).thenReturn(monitoredServiceDTO);
-    List<CVConfig> actualCvConfigs =
-        templateService.getResolvedCVConfigInfo(serviceEnvironmentParams, monitoredServiceNode).getCvConfigs();
-    assertThat(actualCvConfigs).hasSize(1);
+    ResolvedCVConfigInfo resolvedCVConfigInfo =
+        templateService.getResolvedCVConfigInfo(serviceEnvironmentParams, monitoredServiceNode);
+    String verificationJobInstanceId = generateUuid();
+    templateService.managePerpetualTasks(serviceEnvironmentParams, resolvedCVConfigInfo, verificationJobInstanceId);
     Query<MonitoringSourcePerpetualTask> query =
         hPersistence.createQuery(MonitoringSourcePerpetualTask.class, excludeAuthority)
             .filter(MonitoringSourcePerpetualTaskKeys.accountId, accountId)
@@ -140,6 +145,47 @@ public class TemplateVerifyStepMonitoredServiceResolutionServiceImplTest extends
             .filter(MonitoringSourcePerpetualTaskKeys.orgIdentifier, orgIdentifier);
     List<MonitoringSourcePerpetualTask> savedPerpetualTasks = query.asList();
     assertThat(savedPerpetualTasks).hasSize(2);
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testManagePerpetualTasks_verifySideKickGotCreated() {
+    when(mockMonitoredServiceService.getExpandedMonitoredServiceFromYaml(any(), any())).thenReturn(monitoredServiceDTO);
+    ResolvedCVConfigInfo resolvedCVConfigInfo =
+        templateService.getResolvedCVConfigInfo(serviceEnvironmentParams, monitoredServiceNode);
+    String verificationJobInstanceId = generateUuid();
+    templateService.managePerpetualTasks(serviceEnvironmentParams, resolvedCVConfigInfo, verificationJobInstanceId);
+    Query<SideKick> query = hPersistence.createQuery(SideKick.class, excludeAuthority);
+    List<SideKick> savedSideKicks = query.asList();
+    assertThat(savedSideKicks).hasSize(1);
+    assertThat(savedSideKicks.get(0).getSideKickData().getType())
+        .isEqualTo(SideKick.Type.VERIFICATION_JOB_INSTANCE_CLEANUP);
+    VerificationJobInstanceCleanupSideKickData sideKickData =
+        (VerificationJobInstanceCleanupSideKickData) savedSideKicks.get(0).getSideKickData();
+    assertThat(sideKickData.getSourceIdentifiers().size()).isEqualTo(resolvedCVConfigInfo.getHealthSources().size());
+    assertThat(sideKickData.getVerificationJobInstanceIdentifier()).isEqualTo(verificationJobInstanceId);
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testManagePerpetualTasks_noHealthSources() {
+    monitoredServiceDTO.setSources(null);
+    when(mockMonitoredServiceService.getExpandedMonitoredServiceFromYaml(any(), any())).thenReturn(monitoredServiceDTO);
+    ResolvedCVConfigInfo resolvedCVConfigInfo =
+        templateService.getResolvedCVConfigInfo(serviceEnvironmentParams, monitoredServiceNode);
+    String verificationJobInstanceId = generateUuid();
+    templateService.managePerpetualTasks(serviceEnvironmentParams, resolvedCVConfigInfo, verificationJobInstanceId);
+    List<MonitoringSourcePerpetualTask> monitoringSourcePerpetualTasks =
+        hPersistence.createQuery(MonitoringSourcePerpetualTask.class, excludeAuthority)
+            .filter(MonitoringSourcePerpetualTaskKeys.accountId, accountId)
+            .filter(MonitoringSourcePerpetualTaskKeys.projectIdentifier, projectIdentifier)
+            .filter(MonitoringSourcePerpetualTaskKeys.orgIdentifier, orgIdentifier)
+            .asList();
+    List<SideKick> sideKicks = hPersistence.createQuery(SideKick.class, excludeAuthority).asList();
+    assertThat(monitoringSourcePerpetualTasks).hasSize(0);
+    assertThat(sideKicks).hasSize(0);
   }
 
   private MonitoredServiceNode getDefaultMonitoredServiceNode() {

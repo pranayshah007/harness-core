@@ -399,7 +399,7 @@ The admin username and password are in BaseIntegrationTest.java.
 # Go Development
 ## Prerequisites
 ### Install Go
-1. Install Go 1.14 [here](https://golang.org/dl/)
+1. Install Go 1.17.8 [here](https://golang.org/dl/)
 2. Add this to .bash_profile: `export PATH=$PATH:~/go/bin`
 3. Install dependent tools by running:
 ```lang=bash

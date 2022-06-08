@@ -3,8 +3,8 @@
   "clusterId" : "55aacf66-508b-3ab1-ba32-ffb40c6401a6",
   "message" : "clusterTwo",
   "risk" : "UNHEALTHY",
-  "radius" : 2.749641708001546,
-  "angle" : 180.0,
+  "radius" : 2.664038103272266,
+  "angle" : 0.0,
   "clusterType" : "UNKNOWN_EVENT",
   "hasControlData" : false
 }, {
@@ -12,8 +12,8 @@
   "clusterId" : "e9f697d6-65de-32fb-b2e9-60969b4bb0cf",
   "message" : "clusterThree",
   "risk" : "UNHEALTHY",
-  "radius" : 2.3594828023066827,
-  "angle" : 270.0,
+  "radius" : 2.4569517859052064,
+  "angle" : 90.0,
   "clusterType" : "UNKNOWN_EVENT",
   "hasControlData" : false
 }, {
@@ -22,13 +22,13 @@
   "message" : "clusterOne",
   "risk" : "UNHEALTHY",
   "radius" : 1.3905064793914041,
-  "angle" : 90.0,
+  "angle" : 180.0,
   "baseline" : {
     "label" : 1,
     "message" : "clusterOne",
     "risk" : "NO_ANALYSIS",
     "radius" : 0.9466705801001936,
-    "angle" : 90.0,
+    "angle" : 180.0,
     "clusterType" : "BASELINE",
     "hasControlData" : false
   },
@@ -39,14 +39,14 @@
   "clusterId" : "f82d83e1-3a8e-3d86-bf43-7ecbf72149c0",
   "message" : "clusterZero",
   "risk" : "HEALTHY",
-  "radius" : 1.664038103272266,
-  "angle" : 0.0,
+  "radius" : 1.7496417080015458,
+  "angle" : 270.0,
   "baseline" : {
     "label" : 0,
     "message" : "clusterZero",
     "risk" : "NO_ANALYSIS",
-    "radius" : 0.7284758929526032,
-    "angle" : 0.0,
+    "radius" : 0.6797414011533414,
+    "angle" : 270.0,
     "clusterType" : "BASELINE",
     "hasControlData" : false
   },

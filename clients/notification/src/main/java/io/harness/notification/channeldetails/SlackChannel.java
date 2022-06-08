@@ -31,12 +31,19 @@ import lombok.NoArgsConstructor;
 @EqualsAndHashCode(callSuper = true)
 public class SlackChannel extends NotificationChannel {
   List<String> webhookUrls;
+  String orgIdentifier;
+  String projectIdentifier;
+  long expressionFunctorToken;
 
   @Builder
   public SlackChannel(String accountId, List<NotificationRequest.UserGroup> userGroups, String templateId,
-      Map<String, String> templateData, Team team, List<String> webhookUrls) {
+      Map<String, String> templateData, Team team, List<String> webhookUrls, String orgIdentifier,
+      String projectIdentifier, long expressionFunctorToken) {
     super(accountId, userGroups, templateId, templateData, team);
     this.webhookUrls = webhookUrls;
+    this.orgIdentifier = orgIdentifier;
+    this.projectIdentifier = projectIdentifier;
+    this.expressionFunctorToken = expressionFunctorToken;
   }
 
   @Override
@@ -50,7 +57,10 @@ public class SlackChannel extends NotificationChannel {
                       .addAllSlackWebHookUrls(webhookUrls)
                       .setTemplateId(templateId)
                       .putAllTemplateData(templateData)
-                      .addAllUserGroup(CollectionUtils.emptyIfNull(userGroups)))
+                      .addAllUserGroup(CollectionUtils.emptyIfNull(userGroups))
+                      .setOrgIdentifier(orgIdentifier)
+                      .setProjectIdentifier(projectIdentifier)
+                      .setExpressionFunctorToken(expressionFunctorToken))
         .build();
   }
 }

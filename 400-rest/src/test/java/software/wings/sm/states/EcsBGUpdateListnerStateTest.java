@@ -32,12 +32,12 @@ import static software.wings.utils.WingsTestConstants.SERVICE_NAME;
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyList;
 import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -117,13 +117,13 @@ public class EcsBGUpdateListnerStateTest extends WingsBaseTest {
                                     .deploymentType("ECS")
                                     .serviceElement(ServiceElement.builder().uuid(SERVICE_ID).build())
                                     .build();
-    doReturn(phaseElement).when(mockContext).getContextElement(any(), anyString());
+    doReturn(phaseElement).when(mockContext).getContextElement(any(), nullable(String.class));
     WorkflowStandardParams mockParams = mock(WorkflowStandardParams.class);
     doReturn(mockParams).when(mockContext).getContextElement(any());
     Environment environment = anEnvironment().uuid(ENV_ID).name(ENV_NAME).build();
     doReturn(environment).when(workflowStandardParamsExtensionService).getEnv(mockParams);
     Application application = anApplication().uuid(APP_ID).name(APP_NAME).accountId(ACCOUNT_ID).build();
-    doReturn(application).when(mockAppService).get(anyString());
+    doReturn(application).when(mockAppService).get(nullable(String.class));
     EcsInfrastructureMapping mapping = anEcsInfrastructureMapping()
                                            .withUuid(INFRA_MAPPING_ID)
                                            .withClusterName(CLUSTER_NAME)
@@ -132,7 +132,7 @@ public class EcsBGUpdateListnerStateTest extends WingsBaseTest {
                                            .withAssignPublicIp(true)
                                            .withLaunchType("Ec2")
                                            .build();
-    doReturn(mapping).when(mockInfrastructureMappingService).get(anyString(), anyString());
+    doReturn(mapping).when(mockInfrastructureMappingService).get(nullable(String.class), nullable(String.class));
     doReturn(INFRA_MAPPING_ID).when(mockContext).fetchInfraMappingId();
     doReturn(ContainerServiceElement.builder()
                  .infraMappingId(INFRA_MAPPING_ID)
@@ -152,16 +152,20 @@ public class EcsBGUpdateListnerStateTest extends WingsBaseTest {
         .when(mockEcsStateHelper)
         .getSetupElementFromSweepingOutput(any(), anyBoolean());
     Activity activity = Activity.builder().uuid(ACTIVITY_ID).build();
-    doReturn(activity).when(mockEcsStateHelper).createActivity(any(), anyString(), anyString(), any(), any());
+    doReturn(activity)
+        .when(mockEcsStateHelper)
+        .createActivity(any(), nullable(String.class), nullable(String.class), any(), any());
     SettingAttribute cloudProvider = aSettingAttribute().withValue(AwsConfig.builder().build()).build();
-    doReturn(cloudProvider).when(mockSettingsService).get(anyString());
-    doReturn(emptyList()).when(mockSecretManager).getEncryptionDetails(any(), anyString(), anyString());
+    doReturn(cloudProvider).when(mockSettingsService).get(nullable(String.class));
+    doReturn(emptyList())
+        .when(mockSecretManager)
+        .getEncryptionDetails(any(), nullable(String.class), nullable(String.class));
     ExecutionResponse response = state.execute(mockContext);
     ArgumentCaptor<EcsListenerUpdateRequestConfigData> captor =
         ArgumentCaptor.forClass(EcsListenerUpdateRequestConfigData.class);
     verify(mockEcsStateHelper)
-        .queueDelegateTaskForEcsListenerUpdate(any(), any(), any(), any(), anyString(), any(), anyString(),
-            captor.capture(), anyList(), anyInt(), eq(true), anyString());
+        .queueDelegateTaskForEcsListenerUpdate(any(), any(), any(), any(), nullable(String.class), any(),
+            nullable(String.class), captor.capture(), anyList(), anyInt(), eq(true), nullable(String.class));
     EcsListenerUpdateRequestConfigData config = captor.getValue();
     assertThat(config).isNotNull();
     assertThat(config.getProdListenerArn()).isEqualTo("ProdLArn");

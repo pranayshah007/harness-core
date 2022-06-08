@@ -61,6 +61,7 @@ public interface YamlTypes {
   String SERVICE_REF = "serviceRef";
   String SERVICE_DEFINITION = "serviceDefinition";
   String SERVICE_SPEC = "spec";
+  String SERVICE_OVERRIDE = "serviceOverrides";
   String STAGE_OVERRIDES_CONFIG = "stageOverrides";
   String PATH_CONNECTOR = VisitorParentPathUtils.PATH_CONNECTOR;
   String CONNECTOR_REF = "connectorRef";
@@ -98,4 +99,8 @@ public interface YamlTypes {
   String SERVICE_SPEC_UUID = "service_spec_uuid";
   String INFRA_SECTION_UUID = "infra_section_uuid";
   String NEXT_UUID = "nextUuid";
+
+  String APP_SERVICE = "appService";
+  String DEPLOYMENT_SLOT = "deploymentSlot";
+  String TARGET_SLOT = "targetSlot";
 }

@@ -429,7 +429,6 @@ public class WatcherServiceImplTest {
     when(watcherConfiguration.isDoUpgrade()).thenReturn(true);
     when(watcherConfiguration.getDelegateCheckLocation()).thenReturn(DELEGATE_CHECK_LOCATION);
     doReturn(INVALID_UPGRADE_VERSION).when(watcherService).getResponseStringFromUrl();
-    when(watcherService.getVersion()).thenReturn(CURRENT_VERSION);
 
     watcherService.checkForWatcherUpgrade();
 

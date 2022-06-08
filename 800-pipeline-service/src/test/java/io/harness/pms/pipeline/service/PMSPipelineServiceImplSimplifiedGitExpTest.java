@@ -235,12 +235,15 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
                                           .yaml(pipelineYaml)
                                           .build();
     PipelineEntity pipelineToSaveWithUpdatedInfo = pipelineToUpdate.withStageCount(0);
+    doReturn(GovernanceMetadata.newBuilder().setDeny(false).build())
+        .when(pipelineServiceHelper)
+        .validatePipelineYaml(pipelineToUpdate);
     doReturn(pipelineToSaveWithUpdatedInfo).when(pipelineServiceHelper).updatePipelineInfo(pipelineToUpdate);
 
     PipelineEntity pipelineEntityUpdated = pipelineToSaveWithUpdatedInfo.withVersion(0L);
     doReturn(pipelineEntityUpdated).when(pipelineRepository).updatePipelineYaml(pipelineToSaveWithUpdatedInfo);
 
-    PipelineEntity pipelineEntity = pipelineService.updatePipelineYaml(pipelineToUpdate, null);
+    PipelineEntity pipelineEntity = pipelineService.updatePipelineYaml(pipelineToUpdate, null).getPipelineEntity();
     assertThat(pipelineEntity).isEqualTo(pipelineEntityUpdated);
     verify(pipelineServiceHelper, times(1))
         .sendPipelineSaveTelemetryEvent(pipelineEntityUpdated, "updating existing pipeline");
@@ -249,14 +252,50 @@ public class PMSPipelineServiceImplSimplifiedGitExpTest extends CategoryTest {
   @Test
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
+  public void testUpdatePipelineWithGovernanceDeny() throws IOException {
+    PipelineEntity pipelineToUpdate = PipelineEntity.builder()
+                                          .accountId(accountIdentifier)
+                                          .orgIdentifier(orgIdentifier)
+                                          .projectIdentifier(projectIdentifier)
+                                          .identifier(pipelineId)
+                                          .yaml(pipelineYaml)
+                                          .build();
+    doReturn(GovernanceMetadata.newBuilder().setDeny(true).build())
+        .when(pipelineServiceHelper)
+        .validatePipelineYaml(pipelineToUpdate);
+    PipelineCRUDResult pipelineCRUDResult = pipelineService.updatePipelineYaml(pipelineToUpdate, null);
+    assertThat(pipelineCRUDResult.getPipelineEntity()).isNull();
+    assertThat(pipelineCRUDResult.getGovernanceMetadata().getDeny()).isTrue();
+    verify(pipelineServiceHelper, times(0)).updatePipelineInfo(any());
+    verify(pipelineRepository, times(0)).updatePipelineYaml(any());
+    verify(pipelineRepository, times(0)).updatePipelineYamlForOldGitSync(any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testUpdatePipelineWithSchemaErrors() {
+    PipelineEntity pipelineToUpdate = PipelineEntity.builder()
+                                          .accountId(accountIdentifier)
+                                          .orgIdentifier(orgIdentifier)
+                                          .projectIdentifier(projectIdentifier)
+                                          .identifier(pipelineId)
+                                          .yaml(pipelineYaml)
+                                          .build();
+    doThrow(new InvalidYamlException("msg", null)).when(pipelineServiceHelper).validatePipelineYaml(pipelineToUpdate);
+    assertThatThrownBy(() -> pipelineService.updatePipelineYaml(pipelineToUpdate, null))
+        .isInstanceOf(InvalidYamlException.class)
+        .hasMessage("msg");
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
   public void testDeletePipeline() {
-    PipelineEntity deleted = PipelineEntity.builder().deleted(true).build();
-    doReturn(deleted).when(pipelineRepository).delete(accountIdentifier, orgIdentifier, projectIdentifier, pipelineId);
     boolean delete = pipelineService.delete(accountIdentifier, orgIdentifier, projectIdentifier, pipelineId, null);
     assertThat(delete).isTrue();
 
-    PipelineEntity notDeleted = PipelineEntity.builder().deleted(false).build();
-    doReturn(notDeleted)
+    doThrow(new InvalidRequestException("anything actually"))
         .when(pipelineRepository)
         .delete(accountIdentifier, orgIdentifier, projectIdentifier, pipelineId);
 

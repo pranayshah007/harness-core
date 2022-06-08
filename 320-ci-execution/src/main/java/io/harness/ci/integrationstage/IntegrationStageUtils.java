@@ -10,6 +10,7 @@ package io.harness.ci.integrationstage;
 import static io.harness.beans.execution.WebhookEvent.Type.BRANCH;
 import static io.harness.beans.execution.WebhookEvent.Type.PR;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveOSType;
+import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParameter;
 import static io.harness.common.CIExecutionConstants.GIT_URL_SUFFIX;
 import static io.harness.common.CIExecutionConstants.IMAGE_PATH_SPLIT_REGEX;
 import static io.harness.common.CIExecutionConstants.PATH_SEPARATOR;
@@ -28,13 +29,20 @@ import static org.springframework.util.StringUtils.trimTrailingCharacter;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.dependencies.CIServiceInfo;
+import io.harness.beans.dependencies.DependencyElement;
 import io.harness.beans.execution.BranchWebhookEvent;
 import io.harness.beans.execution.ExecutionSource;
 import io.harness.beans.execution.ManualExecutionSource;
 import io.harness.beans.execution.PRWebhookEvent;
 import io.harness.beans.execution.WebhookExecutionSource;
+import io.harness.beans.plugin.compatible.PluginCompatibleStep;
 import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.stages.IntegrationStageConfig;
+import io.harness.beans.steps.CIStepInfo;
+import io.harness.beans.steps.stepinfo.PluginStepInfo;
+import io.harness.beans.steps.stepinfo.RunStepInfo;
+import io.harness.beans.steps.stepinfo.RunTestsStepInfo;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
@@ -78,8 +86,11 @@ import io.harness.yaml.extended.ci.codebase.impl.TagBuildSpec;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import lombok.experimental.UtilityClass;
+import org.apache.commons.lang3.StringUtils;
 
 @UtilityClass
 @OwnedBy(HarnessTeam.CI)
@@ -441,5 +452,96 @@ public class IntegrationStageUtils {
 
     K8sDirectInfraYaml k8sDirectInfraYaml = (K8sDirectInfraYaml) infrastructure;
     return resolveOSType(k8sDirectInfraYaml.getSpec().getOs());
+  }
+
+  public List<String> getStageConnectorRefs(IntegrationStageConfig integrationStageConfig) {
+    ArrayList<String> connectorIdentifiers = new ArrayList<>();
+    for (ExecutionWrapperConfig executionWrapper : integrationStageConfig.getExecution().getSteps()) {
+      if (executionWrapper.getStep() != null && !executionWrapper.getStep().isNull()) {
+        StepElementConfig stepElementConfig = IntegrationStageUtils.getStepElementConfig(executionWrapper);
+        String identifier = getConnectorIdentifier(stepElementConfig);
+        if (identifier != null) {
+          connectorIdentifiers.add(identifier);
+        }
+      } else if (executionWrapper.getParallel() != null && !executionWrapper.getParallel().isNull()) {
+        ParallelStepElementConfig parallelStepElementConfig =
+            IntegrationStageUtils.getParallelStepElementConfig(executionWrapper);
+        if (isNotEmpty(parallelStepElementConfig.getSections())) {
+          for (ExecutionWrapperConfig executionWrapperInParallel : parallelStepElementConfig.getSections()) {
+            if (executionWrapperInParallel.getStep() == null || executionWrapperInParallel.getStep().isNull()) {
+              continue;
+            }
+            StepElementConfig stepElementConfig =
+                IntegrationStageUtils.getStepElementConfig(executionWrapperInParallel);
+            String identifier = getConnectorIdentifier(stepElementConfig);
+            if (identifier != null) {
+              connectorIdentifiers.add(identifier);
+            }
+          }
+        }
+      }
+    }
+
+    if (integrationStageConfig.getServiceDependencies() == null
+        || isEmpty(integrationStageConfig.getServiceDependencies().getValue())) {
+      return connectorIdentifiers;
+    }
+
+    for (DependencyElement dependencyElement : integrationStageConfig.getServiceDependencies().getValue()) {
+      if (dependencyElement == null) {
+        continue;
+      }
+
+      if (dependencyElement.getDependencySpecType() instanceof CIServiceInfo) {
+        CIServiceInfo serviceInfo = (CIServiceInfo) dependencyElement.getDependencySpecType();
+        String connectorRef = resolveConnectorIdentifier(serviceInfo.getConnectorRef(), serviceInfo.getIdentifier());
+        if (connectorRef != null) {
+          connectorIdentifiers.add(connectorRef);
+        }
+      }
+    }
+    return connectorIdentifiers;
+  }
+
+  private String getConnectorIdentifier(StepElementConfig stepElementConfig) {
+    if (stepElementConfig.getStepSpecType() instanceof CIStepInfo) {
+      CIStepInfo ciStepInfo = (CIStepInfo) stepElementConfig.getStepSpecType();
+      switch (ciStepInfo.getNonYamlInfo().getStepInfoType()) {
+        case RUN:
+          return resolveConnectorIdentifier(((RunStepInfo) ciStepInfo).getConnectorRef(), ciStepInfo.getIdentifier());
+        case PLUGIN:
+          return resolveConnectorIdentifier(
+              ((PluginStepInfo) ciStepInfo).getConnectorRef(), ciStepInfo.getIdentifier());
+        case RUN_TESTS:
+          return resolveConnectorIdentifier(
+              ((RunTestsStepInfo) ciStepInfo).getConnectorRef(), ciStepInfo.getIdentifier());
+        case DOCKER:
+        case ECR:
+        case GCR:
+        case SAVE_CACHE_S3:
+        case RESTORE_CACHE_S3:
+        case RESTORE_CACHE_GCS:
+        case SAVE_CACHE_GCS:
+        case SECURITY:
+        case UPLOAD_ARTIFACTORY:
+        case UPLOAD_S3:
+        case UPLOAD_GCS:
+          return resolveConnectorIdentifier(
+              ((PluginCompatibleStep) ciStepInfo).getConnectorRef(), ciStepInfo.getIdentifier());
+        default:
+          return null;
+      }
+    }
+    return null;
+  }
+
+  private String resolveConnectorIdentifier(ParameterField<String> connectorRef, String stepIdentifier) {
+    if (connectorRef != null) {
+      String connectorIdentifier = resolveStringParameter("connectorRef", "Run", stepIdentifier, connectorRef, false);
+      if (!StringUtils.isEmpty(connectorIdentifier)) {
+        return connectorIdentifier;
+      }
+    }
+    return null;
   }
 }

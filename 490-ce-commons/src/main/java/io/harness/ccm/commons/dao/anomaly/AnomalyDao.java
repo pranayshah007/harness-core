@@ -16,6 +16,7 @@ import static org.jooq.impl.DSL.sum;
 import io.harness.annotations.retry.RetryOnException;
 import io.harness.ccm.commons.entities.anomaly.AnomalyFeedbackDTO;
 import io.harness.ccm.commons.entities.anomaly.AnomalySummary;
+import io.harness.queryconverter.SQLConverter;
 import io.harness.timescaledb.tables.pojos.Anomalies;
 import io.harness.timescaledb.tables.records.AnomaliesRecord;
 
@@ -29,6 +30,7 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
+import org.jooq.Field;
 import org.jooq.OrderField;
 import org.jooq.Record3;
 import org.jooq.SelectConditionStep;
@@ -52,8 +54,17 @@ public class AnomalyDao {
             .orderBy(orderFields)
             .offset(offset)
             .limit(limit);
-    log.info("Anomaly Query: {}", finalStep.getQuery().toString());
+    log.info("Anomaly Query: {}", finalStep.getQuery());
     return finalStep.fetchInto(Anomalies.class);
+  }
+
+  @RetryOnException(retryCount = RETRY_COUNT, sleepDurationInMilliseconds = SLEEP_DURATION)
+  public List<String> getDistinctStringValues(String accountId, String column) {
+    Field<?> tableField = SQLConverter.getField(column, ANOMALIES);
+    return dslContext.selectDistinct(tableField)
+        .from(ANOMALIES)
+        .where(ANOMALIES.ACCOUNTID.eq(accountId))
+        .fetchInto(String.class);
   }
 
   @RetryOnException(retryCount = RETRY_COUNT, sleepDurationInMilliseconds = SLEEP_DURATION)
@@ -66,7 +77,7 @@ public class AnomalyDao {
                                                      .orderBy(orderFields)
                                                      .offset(offset)
                                                      .limit(limit);
-    log.info("Anomaly Query: {}", finalStep.getQuery().toString());
+    log.info("Anomaly Query: {}", finalStep.getQuery());
     return finalStep.fetchInto(Anomalies.class);
   }
 
@@ -79,7 +90,7 @@ public class AnomalyDao {
                 sum(ANOMALIES.EXPECTEDCOST).as("expectedCost"))
             .from(ANOMALIES)
             .where(ANOMALIES.ACCOUNTID.eq(accountId).and(firstNonNull(condition, DSL.noCondition())));
-    log.info("Anomaly Query: {}", finalStep.getQuery().toString());
+    log.info("Anomaly Query: {}", finalStep.getQuery());
     return finalStep.fetchInto(AnomalySummary.class);
   }
 

@@ -675,7 +675,9 @@ public class AWSCloudformationClientTest extends CategoryTest {
     DeleteChangeSetRequest deleteChangeSetRequest = new DeleteChangeSetRequest().withChangeSetName(stackName);
     DescribeStackResourcesRequest describeStackResourcesRequest =
         new DescribeStackResourcesRequest().withStackName(stackName);
-    doThrow(Exception.class).when(service).getAmazonCloudFormationClient(any(), any());
+    when(service.getAmazonCloudFormationClient(any(), any())).thenAnswer(invocationOnMock -> {
+      throw new Exception("");
+    });
     assertThatThrownBy(()
                            -> service.createChangeSet(region, createChangeRequest,
                                AwsInternalConfig.builder().accessKey(accessKey).secretKey(secretKey).build()))

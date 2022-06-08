@@ -60,7 +60,7 @@ public class ServiceOverrideServiceImplTest extends NGCoreTestBase {
             .environmentRef(ENV_REF)
             .serviceRef(SERVICE_REF)
             .yaml(
-                "serviceOverride:\n  orgIdentifier: orgIdentifier\\\n  projectIdentifier: projectIdentifier\n  environmentRef: envIdentifier\n  serviceRef: serviceIdentifier\n  variableOverrides: \n    - name: op1\n      value: var1\n      type: String\n    - name: op1\n      value: var1\n      type: String")
+                "serviceOverrides:\n  orgIdentifier: orgIdentifier\\\n  projectIdentifier: projectIdentifier\n  environmentRef: envIdentifier\n  serviceRef: serviceIdentifier\n  variableOverrides: \n    - name: op1\n      value: var1\n      type: String\n    - name: op1\n      value: var1\n      type: String")
             .build();
     assertThatThrownBy(() -> serviceOverrideService.validateOverrideValues(serviceOverridesEntity))
         .isInstanceOf(InvalidRequestException.class)
@@ -81,7 +81,7 @@ public class ServiceOverrideServiceImplTest extends NGCoreTestBase {
             .environmentRef(ENV_REF)
             .serviceRef(SERVICE_REF)
             .yaml(
-                "serviceOverride:\n  orgIdentifier: orgIdentifier\\\n  projectIdentifier: projectIdentifier\n  environmentRef: envIdentifier\n  serviceRef: serviceIdentifier\n  variableOverrides: \n    - name: memory\n      value: var1\n      type: String\n    - name: cpu\n      value: var1\n      type: String")
+                "serviceOverrides:\n  orgIdentifier: orgIdentifier\\\n  projectIdentifier: projectIdentifier\n  environmentRef: envIdentifier\n  serviceRef: serviceIdentifier\n  variableOverrides: \n    - name: memory\n      value: var1\n      type: String\n    - name: cpu\n      value: var1\n      type: String")
             .build();
     NGServiceOverridesEntity upsertedServiceOverridesEntity = serviceOverrideService.upsert(serviceOverridesEntity);
     assertThat(upsertedServiceOverridesEntity).isNotNull();

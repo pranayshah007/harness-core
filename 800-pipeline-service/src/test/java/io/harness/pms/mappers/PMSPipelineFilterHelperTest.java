@@ -29,6 +29,7 @@ import java.util.List;
 import org.bson.Document;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Update;
 
 @OwnedBy(PIPELINE)
@@ -117,12 +118,15 @@ public class PMSPipelineFilterHelperTest extends CategoryTest {
   @Test
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
-  public void testGetUpdateOperationsForDelete() {
-    Update updateOperationsForOnboardingToInline = PMSPipelineFilterHelper.getUpdateOperationsForDelete();
-    Document updateObject = updateOperationsForOnboardingToInline.getUpdateObject();
-    assertThat(updateObject.size()).isEqualTo(1);
-    Document setObject = (Document) updateObject.get("$set");
-    assertThat(setObject.size()).isEqualTo(1);
-    assertThat(setObject.containsKey("deleted")).isTrue();
+  public void testGetCriteriaForAllPipelinesInProject() {
+    String acc = "acc";
+    String org = "org";
+    String proj = "proj";
+    Criteria criteria = PMSPipelineFilterHelper.getCriteriaForAllPipelinesInProject(acc, org, proj);
+    Document criteriaObject = criteria.getCriteriaObject();
+    assertThat(criteriaObject.size()).isEqualTo(3);
+    assertThat(criteriaObject.containsKey(PipelineEntityKeys.accountId)).isTrue();
+    assertThat(criteriaObject.containsKey(PipelineEntityKeys.orgIdentifier)).isTrue();
+    assertThat(criteriaObject.containsKey(PipelineEntityKeys.projectIdentifier)).isTrue();
   }
 }

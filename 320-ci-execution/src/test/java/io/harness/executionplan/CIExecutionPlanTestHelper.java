@@ -1276,6 +1276,7 @@ public class CIExecutionPlanTestHelper {
         .variables(getStageNGVariables())
         .build();
   }
+
   public IntegrationStageConfig getIntegrationStageConfig() {
     return IntegrationStageConfigImpl.builder()
         .execution(getExecutionElementConfig())

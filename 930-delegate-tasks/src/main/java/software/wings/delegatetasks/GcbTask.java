@@ -190,6 +190,7 @@ public class GcbTask extends AbstractDelegateRunnableTask {
   }
 
   String fetchSpecFromGit(final @NotNull GcbTaskParams params) {
+    encryptionService.decrypt(params.getGitConfig(), params.getEncryptedDataDetails(), false);
     final GcbRemoteBuildSpec repositorySpec =
         requireNonNull(requireNonNull(params.getGcbOptions(), "gcbOptions should not be null").getRepositorySpec(),
             "repositorySpec should not be null");

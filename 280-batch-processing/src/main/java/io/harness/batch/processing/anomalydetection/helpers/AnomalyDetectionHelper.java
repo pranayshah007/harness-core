@@ -74,6 +74,20 @@ public class AnomalyDetectionHelper {
               timeSeries.getAccountId(), time.toString(), timeSeries.getAwsAccount(), timeSeries.getAwsService(),
               timeSeries.getAwsUsageType());
           break;
+        case AZURE_SUBSCRIPTION:
+          log.warn("Invalid Data for TimeSeries :: Azure subs : {} , time : {}  ", timeSeries.getAzureSubscription(),
+              time.toString());
+          break;
+        case AZURE_RESOURCE_GROUP:
+          log.warn("Invalid Data for TimeSeries :: Azure subs : {} , time : {} , resource gp : {} ",
+              timeSeries.getAzureSubscription(), time.toString(), timeSeries.getAzureResourceGroup());
+          break;
+        case AZURE_METER_CATEGORY:
+          log.warn(
+              "Invalid Data for TimeSeries :: Azure subs : {} , time : {} , resource gp : {} , meter category : {} ",
+              timeSeries.getAzureSubscription(), time.toString(), timeSeries.getAzureResourceGroup(),
+              timeSeries.getAzureMeterCategory());
+          break;
         case GCP_REGION:
         case AWS_INSTANCE_TYPE:
         default:
@@ -129,6 +143,20 @@ public class AnomalyDetectionHelper {
               timeSeries.getAccountId(), time.toString(), timeSeries.getAwsAccount(), timeSeries.getAwsService(),
               timeSeries.getAwsUsageType());
           break;
+        case AZURE_SUBSCRIPTION:
+          log.debug("Valid Data for TimeSeries :: Azure subs : {} , time : {}  ", timeSeries.getAzureSubscription(),
+              time.toString());
+          break;
+        case AZURE_RESOURCE_GROUP:
+          log.debug("Valid Data for TimeSeries :: Azure subs : {} , time : {} , resource gp : {} ",
+              timeSeries.getAzureSubscription(), time.toString(), timeSeries.getAzureResourceGroup());
+          break;
+        case AZURE_METER_CATEGORY:
+          log.debug(
+              "Valid Data for TimeSeries :: Azure subs : {} , time : {} , resource gp : {} , meter category : {} ",
+              timeSeries.getAzureSubscription(), time.toString(), timeSeries.getAzureResourceGroup(),
+              timeSeries.getAzureMeterCategory());
+          break;
         case GCP_REGION:
         case AWS_INSTANCE_TYPE:
         default:
@@ -151,11 +179,13 @@ public class AnomalyDetectionHelper {
       return AnomalyDetectionHelper.generateHash(
           String.join(",", anomaly.getAnomalyTime().toString(), anomaly.getClusterId(), anomaly.getNamespace(),
               anomaly.getWorkloadName(), anomaly.getGcpProject(), anomaly.getGcpProduct(), anomaly.getGcpSKUId(),
-              anomaly.getAwsAccount(), anomaly.getAwsService(), anomaly.getAwsUsageType()));
+              anomaly.getAwsAccount(), anomaly.getAwsService(), anomaly.getAwsUsageType(),
+              anomaly.getAzureSubscription(), anomaly.getAzureResourceGroup(), anomaly.getAzureMeterCategory()));
     } else {
       return AnomalyDetectionHelper.generateHash(String.join(",", anomaly.getClusterId(), anomaly.getNamespace(),
           anomaly.getWorkloadName(), anomaly.getGcpProject(), anomaly.getGcpProduct(), anomaly.getGcpSKUId(),
-          anomaly.getAwsAccount(), anomaly.getAwsService(), anomaly.getAwsUsageType()));
+          anomaly.getAwsAccount(), anomaly.getAwsService(), anomaly.getAwsUsageType(), anomaly.getAzureSubscription(),
+          anomaly.getAzureResourceGroup(), anomaly.getAzureMeterCategory()));
     }
   }
 }

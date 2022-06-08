@@ -27,7 +27,6 @@ import io.harness.azure.model.AzureAppServiceApplicationSetting;
 import io.harness.azure.model.AzureAppServiceConnectionString;
 import io.harness.azure.model.AzureConfig;
 import io.harness.category.element.UnitTests;
-import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.azure.appservice.AzureAppServicePreDeploymentData;
 import io.harness.delegate.task.azure.appservice.webapp.response.AzureAppDeploymentData;
 import io.harness.exception.InvalidRequestException;
@@ -122,13 +121,13 @@ public class AzureAppServiceServiceTest extends CategoryTest {
 
     doReturn(2.0).when(mockAzureWebClient).getDeploymentSlotTrafficWeight(azureWebClientContext, SLOT_NAME);
 
-    ILogStreamingTaskClient logStreamingTaskClient = mock(ILogStreamingTaskClient.class);
+    AzureLogCallbackProvider logCallbackProvider = mock(AzureLogCallbackProvider.class);
     LogCallback logCallback = mock(LogCallback.class);
-    doReturn(logCallback).when(logStreamingTaskClient).obtainLogCallback(SAVE_EXISTING_CONFIGURATIONS);
+    doReturn(logCallback).when(logCallbackProvider).obtainLogCallback(SAVE_EXISTING_CONFIGURATIONS);
 
     AzureAppServicePreDeploymentData azureAppServicePreDeploymentData =
         azureAppServiceService.getAzureAppServicePreDeploymentDataAndLog(azureWebClientContext, SLOT_NAME,
-            TARGET_SLOT_NAME, userAddedAppSettings, userAddedConnSettings, true, logStreamingTaskClient);
+            TARGET_SLOT_NAME, userAddedAppSettings, userAddedConnSettings, true, logCallbackProvider);
 
     Assertions.assertThat(azureAppServicePreDeploymentData.getAppSettingsToRemove().get("appSetting2")).isNotNull();
     Assertions.assertThat(azureAppServicePreDeploymentData.getAppSettingsToAdd().get("appSetting1")).isNotNull();
@@ -146,14 +145,14 @@ public class AzureAppServiceServiceTest extends CategoryTest {
     assertThatThrownBy(
         ()
             -> azureAppServiceService.getAzureAppServicePreDeploymentDataAndLog(azureWebClientContext, "",
-                TARGET_SLOT_NAME, userAddedAppSettings, userAddedConnSettings, true, logStreamingTaskClient))
+                TARGET_SLOT_NAME, userAddedAppSettings, userAddedConnSettings, true, logCallbackProvider))
         .isInstanceOf(Exception.class);
 
     doReturn("STOPPED").when(mockAzureWebClient).getSlotState(any(), eq(TARGET_SLOT_NAME));
     assertThatThrownBy(
         ()
             -> azureAppServiceService.getAzureAppServicePreDeploymentDataAndLog(azureWebClientContext, SLOT_NAME,
-                TARGET_SLOT_NAME, userAddedAppSettings, userAddedConnSettings, true, logStreamingTaskClient))
+                TARGET_SLOT_NAME, userAddedAppSettings, userAddedConnSettings, true, logCallbackProvider))
         .isInstanceOf(Exception.class);
   }
 

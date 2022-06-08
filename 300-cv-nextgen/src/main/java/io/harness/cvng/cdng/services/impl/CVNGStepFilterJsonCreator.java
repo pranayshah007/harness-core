@@ -41,7 +41,7 @@ public class CVNGStepFilterJsonCreator extends GenericStepPMSFilterJsonCreator {
   @Inject private MonitoredServiceService monitoredServiceService;
   @Override
   public Set<String> getSupportedStepTypes() {
-    return CVNGPlanCreator.CVNG_SUPPORTED_TYPES;
+    return CVNGPlanCreatorV2.CVNG_SUPPORTED_TYPES;
   }
 
   @Override
@@ -56,6 +56,9 @@ public class CVNGStepFilterJsonCreator extends GenericStepPMSFilterJsonCreator {
     // This is handling the case when the monitoring service is defined. Runtime case needs to be handled separately
     // https://harness.atlassian.net/browse/CDNG-10512
     YamlNode stageLevelYamlNode = getStageSpecYamlNode(filterCreationContext.getCurrentField().getNode());
+    if (stageLevelYamlNode == null) {
+      return FilterCreationResponse.builder().build();
+    }
     String serviceIdentifier = parseServiceIdentifier(stageLevelYamlNode);
     String envIdentifier = CVNGStepUtils.getEnvRefNode(stageLevelYamlNode).asText();
 
@@ -109,7 +112,9 @@ public class CVNGStepFilterJsonCreator extends GenericStepPMSFilterJsonCreator {
   }
 
   private YamlNode getStageSpecYamlNode(YamlNode yamlNode) {
-    Preconditions.checkNotNull(yamlNode, "Invalid yaml. Can't find stage spec.");
+    if (yamlNode == null) {
+      return null;
+    }
     if (yamlNode.getField(CVNGStepUtils.STAGE_KEY) != null) {
       return yamlNode.getField(CVNGStepUtils.STAGE_KEY).getNode();
     } else {

@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.gitsync.beans.YamlDTO;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import javax.validation.Valid;
 import lombok.Builder;
 import lombok.Data;
 import org.springframework.data.annotation.TypeAlias;
@@ -22,5 +23,5 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @TypeAlias("ngEnvironmentConfig")
 public class NGEnvironmentConfig implements YamlDTO {
-  @JsonProperty("environment") NGEnvironmentInfoConfig ngEnvironmentInfoConfig;
+  @JsonProperty("environment") @Valid NGEnvironmentInfoConfig ngEnvironmentInfoConfig;
 }

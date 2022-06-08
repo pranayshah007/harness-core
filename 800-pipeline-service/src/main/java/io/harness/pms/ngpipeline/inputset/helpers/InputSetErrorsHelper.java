@@ -141,7 +141,7 @@ public class InputSetErrorsHelper {
         subMap.keySet().forEach(inputSetFQNs::remove);
       }
     });
-    inputSetFQNs.forEach(fqn -> errorMap.put(fqn, "Field either not present in pipeline or not a runtime input"));
+    inputSetFQNs.forEach(fqn -> errorMap.put(fqn, "Field not a runtime input"));
     return errorMap;
   }
 }

@@ -19,6 +19,7 @@ import io.harness.ng.core.service.dto.ServiceResponseDTO;
 import io.harness.ng.core.service.entity.ServiceBasicInfo;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.yaml.NGServiceConfig;
+import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 
 import lombok.experimental.UtilityClass;
 
@@ -37,11 +38,15 @@ public class ServiceElementMapper {
                                       .yaml(serviceRequestDTO.getYaml())
                                       .build();
     // This also validates the service yaml
-    NGServiceConfig ngServiceConfig = NGServiceEntityMapper.toNGServiceConfig(serviceEntity);
+    final NGServiceConfig ngServiceConfig = NGServiceEntityMapper.toNGServiceConfig(serviceEntity);
+    final NGServiceV2InfoConfig ngServiceV2InfoConfig = ngServiceConfig.getNgServiceV2InfoConfig();
     if (isEmpty(serviceEntity.getYaml())) {
       serviceEntity.setYaml(NGServiceEntityMapper.toYaml(ngServiceConfig));
     }
-    serviceEntity.setGitOpsEnabled(ngServiceConfig.getNgServiceV2InfoConfig().getGitOpsEnabled());
+    serviceEntity.setGitOpsEnabled(ngServiceV2InfoConfig.getGitOpsEnabled());
+    if (ngServiceV2InfoConfig.getServiceDefinition() != null) {
+      serviceEntity.setType(ngServiceV2InfoConfig.getServiceDefinition().getType());
+    }
     return serviceEntity;
   }
 

@@ -11,21 +11,45 @@ import static io.harness.annotations.dev.HarnessTeam.DX;
 
 import io.harness.annotations.dev.OwnedBy;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonValue;
 
 @OwnedBy(DX)
 public enum FilterType {
-  @JsonProperty("Connector") CONNECTOR,
-  @JsonProperty("DelegateProfile") DELEGATEPROFILE,
-  @JsonProperty("Delegate") DELEGATE,
-  @JsonProperty("PipelineSetup") PIPELINESETUP,
-  @JsonProperty("PipelineExecution") PIPELINEEXECUTION,
-  @JsonProperty("Deployment") DEPLOYMENT,
-  @JsonProperty("Audit") AUDIT,
-  @JsonProperty("Template") TEMPLATE,
-  @JsonProperty("EnvironmentGroup") ENVIRONMENTGROUP,
-  @JsonProperty("FileStore") FILESTORE,
-  @JsonProperty("CCMRecommendation") CCMRECOMMENDATION,
-  @JsonProperty("Anomaly") ANOMALY,
-  @JsonProperty("Environment") ENVIRONMENT
+  @JsonProperty("Connector") CONNECTOR("Connector"),
+  @JsonProperty("DelegateProfile") DELEGATEPROFILE("DelegateProfile"),
+  @JsonProperty("Delegate") DELEGATE("Delegate"),
+  @JsonProperty("PipelineSetup") PIPELINESETUP("PipelineSetup"),
+  @JsonProperty("PipelineExecution") PIPELINEEXECUTION("PipelineExecution"),
+  @JsonProperty("Deployment") DEPLOYMENT("Deployment"),
+  @JsonProperty("Audit") AUDIT("Audit"),
+  @JsonProperty("Template") TEMPLATE("Template"),
+  @JsonProperty("EnvironmentGroup") ENVIRONMENTGROUP("EnvironmentGroup"),
+  @JsonProperty("FileStore") FILESTORE("FileStore"),
+  @JsonProperty("CCMRecommendation") CCMRECOMMENDATION("CCMRecommendation"),
+  @JsonProperty("Anomaly") ANOMALY("Anomaly"),
+  @JsonProperty("Environment") ENVIRONMENT("Environment");
+
+  private String value;
+
+  FilterType(String value) {
+    this.value = value;
+  }
+
+  @Override
+  @JsonValue
+  public String toString() {
+    return String.valueOf(value);
+  }
+
+  @JsonCreator
+  public static FilterType fromValue(String text) {
+    for (FilterType b : FilterType.values()) {
+      if (String.valueOf(b.value).equals(text)) {
+        return b;
+      }
+    }
+    return null;
+  }
 }

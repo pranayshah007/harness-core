@@ -41,7 +41,8 @@ public class AnomalyQueryBuilder {
   private static final List<TableField<AnomaliesRecord, String>> ANOMALY_TABLE_ENTITIES =
       Arrays.asList(ANOMALIES.WORKLOADNAME, ANOMALIES.NAMESPACE, ANOMALIES.CLUSTERNAME, ANOMALIES.AWSACCOUNT,
           ANOMALIES.AWSSERVICE, ANOMALIES.AWSINSTANCETYPE, ANOMALIES.AWSUSAGETYPE, ANOMALIES.GCPPRODUCT,
-          ANOMALIES.GCPPROJECT, ANOMALIES.GCPSKUDESCRIPTION, ANOMALIES.GCPSKUID);
+          ANOMALIES.GCPPROJECT, ANOMALIES.GCPSKUDESCRIPTION, ANOMALIES.GCPSKUID, ANOMALIES.AZURESUBSCRIPTIONGUID,
+          ANOMALIES.AZURERESOURCEGROUP, ANOMALIES.AZUREMETERCATEGORY);
 
   // Fields which don't directly correspond to a column in anomalies table
   private static final List<CCMField> NON_TABLE_FIELDS = Arrays.asList(ANOMALOUS_SPEND, COST_IMPACT, ALL);
@@ -126,6 +127,10 @@ public class AnomalyQueryBuilder {
           condition = condition.and(
               constructCondition(ANOMALIES.ACTUALCOST, filter.getValue().doubleValue(), filter.getOperator()));
           break;
+        case ANOMALOUS_SPEND:
+          condition = condition.and(constructConditionOnDifferenceOfFields(
+              ANOMALIES.ACTUALCOST, ANOMALIES.EXPECTEDCOST, filter.getValue().doubleValue(), filter.getOperator()));
+          break;
         default:
           throw new InvalidRequestException(
               String.format("%s numeric filter not supported", filter.getField().toString()));
@@ -192,6 +197,12 @@ public class AnomalyQueryBuilder {
         return ANOMALIES.GCPSKUID;
       case GCP_SKU_DESCRIPTION:
         return ANOMALIES.GCPSKUDESCRIPTION;
+      case AZURE_SUBSCRIPTION_GUID:
+        return ANOMALIES.AZURESUBSCRIPTIONGUID;
+      case AZURE_RESOURCE_GROUP_NAME:
+        return ANOMALIES.AZURERESOURCEGROUP;
+      case AZURE_METER_CATEGORY:
+        return ANOMALIES.AZUREMETERCATEGORY;
       default:
         throw new InvalidRequestException(String.format("%s not supported", field.toString()));
     }
@@ -230,6 +241,12 @@ public class AnomalyQueryBuilder {
         return ANOMALIES.GCPSKUID;
       case GCP_SKU_DESCRIPTION:
         return ANOMALIES.GCPSKUDESCRIPTION;
+      case AZURE_SUBSCRIPTION_GUID:
+        return ANOMALIES.AZURESUBSCRIPTIONGUID;
+      case AZURE_RESOURCE_GROUP_NAME:
+        return ANOMALIES.AZURERESOURCEGROUP;
+      case AZURE_METER_CATEGORY:
+        return ANOMALIES.AZUREMETERCATEGORY;
       default:
         throw new InvalidRequestException(String.format("%s not supported", field.toString()));
     }
@@ -280,6 +297,24 @@ public class AnomalyQueryBuilder {
         return value != null ? field.lessOrEqual(value) : DSL.noCondition();
       default:
         throw new InvalidRequestException(String.format("%s not supported for numeric fields", operator.toString()));
+    }
+  }
+
+  @NotNull
+  private static Condition constructConditionOnDifferenceOfFields(TableField<AnomaliesRecord, Double> field1,
+      TableField<AnomaliesRecord, Double> field2, Double value, CCMOperator operator) {
+    switch (operator) {
+      case GREATER_THAN:
+        return value != null ? field1.subtract(field2).greaterThan(value) : DSL.noCondition();
+      case GREATER_THAN_EQUALS_TO:
+        return value != null ? field1.subtract(field2).greaterOrEqual(value) : DSL.noCondition();
+      case LESS_THAN:
+        return value != null ? field1.subtract(field2).lessThan(value) : DSL.noCondition();
+      case LESS_THAN_EQUALS_TO:
+        return value != null ? field1.subtract(field2).lessOrEqual(value) : DSL.noCondition();
+      default:
+        throw new InvalidRequestException(
+            String.format("%s not supported for difference between two numeric fields", operator.toString()));
     }
   }
 

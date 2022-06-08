@@ -25,6 +25,7 @@ import io.harness.engine.OrchestrationEngine;
 import io.harness.pms.PmsFeatureFlagService;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.StrategyMetadata;
+import io.harness.pms.contracts.execution.events.InitiateMode;
 import io.harness.pms.contracts.execution.events.InitiateNodeEvent;
 import io.harness.rule.Owner;
 
@@ -120,9 +121,10 @@ public class InitiateNodeHandlerTest extends OrchestrationTestBase {
                                   .setAmbiance(ambiance)
                                   .setNodeId(generateUuid())
                                   .setRuntimeId(generateUuid())
+                                  .setInitiateMode(InitiateMode.CREATE_AND_START)
                                   .build();
     initiateNodeHandler.handleEventWithContext(event);
-    verify(engine).initiateNode(
-        eq(ambiance), eq(event.getNodeId()), eq(event.getRuntimeId()), eq(null), any(StrategyMetadata.class), eq(true));
+    verify(engine).initiateNode(eq(ambiance), eq(event.getNodeId()), eq(event.getRuntimeId()), eq(null),
+        any(StrategyMetadata.class), eq(InitiateMode.CREATE_AND_START));
   }
 }
