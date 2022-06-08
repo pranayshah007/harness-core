@@ -16,12 +16,14 @@ import java.util.Map;
 import lombok.Builder;
 import lombok.Singular;
 import lombok.Value;
+import software.wings.beans.SerializationFormat;
 
 @Value
 @Builder
 public class DelegateTaskRequest {
   boolean parked;
   String taskType;
+
   TaskParameters taskParameters;
   String accountId;
   @Singular Map<String, String> taskSetupAbstractions;
@@ -32,4 +34,6 @@ public class DelegateTaskRequest {
   boolean forceExecute;
   int expressionFunctorToken;
   List<String> eligibleToExecuteDelegateIds;
+  @Builder.Default
+  SerializationFormat serializationFormat = SerializationFormat.KRYO;
 }

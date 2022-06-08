@@ -67,7 +67,7 @@ import io.harness.security.annotations.DelegateAuth;
 import io.harness.serializer.KryoSerializer;
 
 import software.wings.beans.Account;
-import software.wings.beans.TaskTypeV2;
+import software.wings.beans.TaskType;
 import software.wings.core.managerConfiguration.ConfigurationController;
 import software.wings.delegatetasks.buildsource.BuildSourceExecutionResponse;
 import software.wings.delegatetasks.manifest.ManifestCollectionExecutionResponse;
@@ -345,12 +345,7 @@ public class DelegateAgentResource {
               .logStreamingAbstractions(delegateTaskPackage.getLogStreamingAbstractions())
               .build();
       // V1 Task to V2 task
-      TaskTypeV2 taskTypeV2 = null;
-      try {
-        taskTypeV2 = TaskTypeV2.valueOf(delegateTaskPackage.getData().getTaskType());
-      } catch (IllegalArgumentException e) {
-        log.error("task type {} has not been ported over to V2", delegateTaskPackage.getData().getTaskType());
-      }
+      TaskType taskType = TaskType.valueOf(delegateTaskPackage.getData().getTaskType());
 
       return DelegateTaskPackageV2.builder()
           .id(taskId)
@@ -363,7 +358,7 @@ public class DelegateAgentResource {
           .secretDetails(delegateTaskPackage.getSecretDetails())
           .delegateTaskLogging(delegateTaskLoggingV2)
           .secrets(delegateTaskPackage.getSecrets())
-          .taskType(taskTypeV2)
+          .taskType(taskType)
           .build();
     }
   }

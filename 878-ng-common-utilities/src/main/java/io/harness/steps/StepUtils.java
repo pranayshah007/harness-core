@@ -19,6 +19,8 @@ import static software.wings.beans.LogHelper.COMMAND_UNIT_PLACEHOLDER;
 
 import static java.util.stream.Collectors.toList;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EnvironmentType;
 import io.harness.common.NGTimeConversionHelper;
@@ -85,6 +87,7 @@ import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.ListUtils;
+import software.wings.beans.SerializationFormat;
 
 @OwnedBy(PIPELINE)
 @Slf4j
@@ -226,17 +229,28 @@ public class StepUtils {
         withLogs ? generateLogAbstractions(ambiance) : new LinkedHashMap<>();
     units = withLogs ? units : new ArrayList<>();
 
-    TaskDetails taskDetails =
+
+
+    TaskDetails.Builder taskDetailsBuilder =
         TaskDetails.newBuilder()
-            .setKryoParameters(ByteString.copyFrom(kryoSerializer.asDeflatedBytes(taskParameters) == null
-                    ? new byte[] {}
-                    : kryoSerializer.asDeflatedBytes(taskParameters)))
             .setExecutionTimeout(Duration.newBuilder().setSeconds(taskData.getTimeout() / 1000).build())
             .setExpressionFunctorToken(ambiance.getExpressionFunctorToken())
             .setMode(taskData.isAsync() ? TaskMode.ASYNC : TaskMode.SYNC)
             .setParked(taskData.isParked())
-            .setType(TaskType.newBuilder().setType(taskData.getTaskType()).build())
-            .build();
+            .setType(TaskType.newBuilder().setType(taskData.getTaskType()).build());
+
+    ObjectMapper objectMapper = new ObjectMapper();
+    if(taskData.getSerializationFormat().equals(SerializationFormat.JSON)) {
+      try {
+        taskDetailsBuilder.setJsonParameters(ByteString.copyFrom(objectMapper.writeValueAsBytes(taskParameters)));
+      } catch (JsonProcessingException e) {
+        throw new InvalidRequestException("Could not serialize the task request", e);
+      }
+    } else {
+      taskDetailsBuilder.setKryoParameters(ByteString.copyFrom(kryoSerializer.asDeflatedBytes(taskParameters) == null
+              ? new byte[] {}
+              : kryoSerializer.asDeflatedBytes(taskParameters)));
+    }
 
     Map<String, String> setupAbstractionsMap = buildAbstractions(ambiance, taskScope);
     if (environmentType != null && environmentType != EnvironmentType.ALL) {
@@ -246,7 +260,7 @@ public class StepUtils {
     SubmitTaskRequest.Builder requestBuilder =
         SubmitTaskRequest.newBuilder()
             .setAccountId(AccountId.newBuilder().setId(accountId).build())
-            .setDetails(taskDetails)
+            .setDetails(taskDetailsBuilder.build())
             .addAllSelectors(CollectionUtils.emptyIfNull(selectors))
             .setLogAbstractions(TaskLogAbstractions.newBuilder().putAllValues(logAbstractionMap).build())
             .setSetupAbstractions(TaskSetupAbstractions.newBuilder().putAllValues(setupAbstractionsMap).build())

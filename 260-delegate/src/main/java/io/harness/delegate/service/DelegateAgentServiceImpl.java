@@ -541,8 +541,10 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
 
       // Remove tasks which are in TaskTypeV2 and only specified with onlyV2 as true
       final List<String> unsupportedTasks =
-          Arrays.stream(TaskTypeV2.values()).filter(element -> element.isOnlyV2()).map(Enum::name).collect(toList());
+          Arrays.stream(TaskType.values()).filter(element -> element.isUnsupported()).map(Enum::name).collect(toList());
       supportedTasks.removeAll(unsupportedTasks);
+
+      log.info("supported tasks: ", supportedTasks);
 
       if (isNotBlank(DELEGATE_TYPE)) {
         log.info("Registering delegate with delegate Type: {}, DelegateGroupName: {} that supports tasks: {}",

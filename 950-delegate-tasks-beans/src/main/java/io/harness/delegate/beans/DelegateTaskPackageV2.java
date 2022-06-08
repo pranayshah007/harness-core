@@ -12,7 +12,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.security.encryption.EncryptionConfig;
 
-import software.wings.beans.TaskTypeV2;
+import software.wings.beans.TaskType;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.HashMap;
@@ -33,7 +33,7 @@ import lombok.experimental.FieldNameConstants;
 @TargetModule(HarnessModule._955_DELEGATE_BEANS)
 public class DelegateTaskPackageV2 {
   private String id;
-  @JsonProperty("type") private TaskTypeV2 taskType;
+  @JsonProperty("type") private TaskType taskType;
   private Object data;
   private boolean async;
   private long timeout;

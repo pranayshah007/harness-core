@@ -641,8 +641,8 @@ mockServerConfig:
 delegateGrpcServicePort: 8080
 
 logStreamingServiceConfig:
-  baseUrl: http://localhost:8079
-  serviceToken: token
+  baseUrl: https://uat.harness.io/log-service/
+  serviceToken: c76e567a-b341-404d-a8dd-d9738714eb82
 
 accessControlClient:
   enableAccessControl: false

@@ -16,7 +16,7 @@ public interface DelegateMetricsService {
 
   void recordDelegateTaskMetrics(String accountId, String metricName);
 
-  void recordDelegateTaskResponseMetrics(DelegateTask delegateTask, DelegateTaskResponse response, String metricName);
+  void recordDelegateTaskResponseMetrics(DelegateTask delegateTask, String metricName);
 
   void recordDelegateMetrics(Delegate delegate, String metricName);
 

@@ -79,7 +79,7 @@ public class DelegateTaskResource {
       @QueryParam("accountId") @NotEmpty String accountId, DelegateTaskResponseV2 delegateTaskResponseV2) {
     // Convert DelegateTaskResponseV2 to DelegateTaskResponse
     ResponseData responseData = delegateTaskResponseV2.getResponseData();
-    Class<? extends ResponseData> responseClass = delegateTaskResponseV2.getTaskType().getResponseClass();
+    Class<? extends ResponseData> responseClass = delegateTaskResponseV2.getTaskType().getResponse();
     DelegateResponseData delegateResponseData = (DelegateResponseData) responseClass.cast(responseData);
 
     DelegateTaskResponse delegateTaskResponse = DelegateTaskResponse.builder()

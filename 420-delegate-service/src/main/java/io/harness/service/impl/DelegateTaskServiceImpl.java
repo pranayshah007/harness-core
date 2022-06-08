@@ -38,6 +38,7 @@ import io.harness.version.VersionInfoManager;
 import io.harness.waiter.WaitNotifyEngine;
 
 import software.wings.beans.DelegateTaskUsageInsightsEventType;
+import software.wings.beans.SerializationFormat;
 import software.wings.beans.TaskType;
 import software.wings.service.impl.DelegateTaskStatusObserver;
 
@@ -154,7 +155,7 @@ public class DelegateTaskServiceImpl implements DelegateTaskService {
       persistence.deleteOnServer(taskQuery);
     }
 
-    delegateMetricsService.recordDelegateTaskResponseMetrics(delegateTask, response, DELEGATE_TASK_RESPONSE);
+    delegateMetricsService.recordDelegateTaskResponseMetrics(delegateTask, DELEGATE_TASK_RESPONSE);
   }
 
   @VisibleForTesting

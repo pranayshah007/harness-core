@@ -19,6 +19,8 @@ import lombok.Value;
 import lombok.experimental.FieldNameConstants;
 import org.mongodb.morphia.annotations.Entity;
 import org.mongodb.morphia.annotations.Id;
+import software.wings.beans.SerializationFormat;
+import software.wings.beans.TaskType;
 
 @Value
 @Builder
@@ -28,6 +30,8 @@ import org.mongodb.morphia.annotations.Id;
 public class DelegateSyncTaskResponse implements PersistentEntity {
   @Id @org.springframework.data.annotation.Id private String uuid;
   private byte[] responseData;
+  private TaskType taskType;
+  private SerializationFormat serializationFormat;
 
   @FdTtlIndex @Builder.Default private Date validUntil = Date.from(OffsetDateTime.now().plusHours(2).toInstant());
 }

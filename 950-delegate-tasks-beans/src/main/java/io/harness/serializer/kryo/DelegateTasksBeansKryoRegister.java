@@ -1485,24 +1485,5 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(JenkinsCapabilityHelper.class, 29302);
     kryo.register(JenkinsValidationParams.class, 29303);
     kryo.register(JenkinsArtifactDelegateRequest.class, 29304);
-
-    kryo.register(CIDockerInitializeTaskRequest.class, 570001);
-    kryo.register(CIDockerExecuteStepRequest.class, 570002);
-    kryo.register(CIDockerCleanupStepRequest.class, 570003);
-    kryo.register(DockerTaskExecutionResponse.class, 570004);
-    kryo.register(CIDockerInitializeTaskRequest.Config.class, 570005);
-    kryo.register(CIDockerInitializeTaskRequest.LogConfig.class, 570006);
-    kryo.register(CIDockerInitializeTaskRequest.TIConfig.class, 570007);
-    kryo.register(CIDockerInitializeTaskRequest.Network.class, 570008);
-    kryo.register(CIDockerInitializeTaskRequest.Volume.class, 570009);
-    kryo.register(CIDockerInitializeTaskRequest.HostVolume.class, 570010);
-    kryo.register(CIDockerExecuteStepRequest.Config.class, 570011);
-    kryo.register(CIDockerExecuteStepRequest.ImageAuth.class, 570012);
-    kryo.register(CIDockerExecuteStepRequest.TestReport.class, 570013);
-    kryo.register(CIDockerExecuteStepRequest.JunitReport.class, 570014);
-    kryo.register(CIDockerExecuteStepRequest.VolumeMount.class, 570015);
-    kryo.register(CIDockerExecuteStepRequest.RunConfig.class, 570016);
-    kryo.register(CIDockerExecuteStepRequest.RunTestConfig.class, 570017);
-    kryo.register(CIDockerInitializeTaskRequest.EmptyDir.class, 570018);
   }
 }

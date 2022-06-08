@@ -10,14 +10,6 @@ package io.harness.stateutils.buildstate;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveMapParameter;
 import static io.harness.beans.sweepingoutputs.StageInfraDetails.STAGE_INFRA_DETAILS;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.delegate.task.citasks.vm.helper.CIVMConstants.DRONE_COMMIT_BRANCH;
-import static io.harness.delegate.task.citasks.vm.helper.CIVMConstants.DRONE_COMMIT_LINK;
-import static io.harness.delegate.task.citasks.vm.helper.CIVMConstants.DRONE_COMMIT_SHA;
-import static io.harness.delegate.task.citasks.vm.helper.CIVMConstants.DRONE_REMOTE_URL;
-import static io.harness.delegate.task.citasks.vm.helper.CIVMConstants.DRONE_SOURCE_BRANCH;
-import static io.harness.delegate.task.citasks.vm.helper.CIVMConstants.DRONE_TARGET_BRANCH;
-import static io.harness.delegate.task.citasks.vm.helper.CIVMConstants.NETWORK_ID;
 
 import static java.lang.String.format;
 
@@ -26,20 +18,16 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.beans.dependencies.CIServiceInfo;
 import io.harness.beans.dependencies.DependencyElement;
-import io.harness.beans.environment.VmBuildJobInfo;
+import io.harness.beans.environment.DockerBuildJobInfo;
 import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.sweepingoutputs.ContextElement;
+import io.harness.beans.sweepingoutputs.DockerStageInfraDetails;
 import io.harness.beans.sweepingoutputs.StageDetails;
-import io.harness.beans.sweepingoutputs.VmStageInfraDetails;
+import io.harness.beans.yaml.extended.infrastrucutre.DockerInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
-import io.harness.beans.yaml.extended.infrastrucutre.VmInfraSpec;
-import io.harness.beans.yaml.extended.infrastrucutre.VmInfraYaml;
-import io.harness.beans.yaml.extended.infrastrucutre.VmPoolYaml;
 import io.harness.delegate.beans.ci.docker.CIDockerInitializeTaskParams;
-import io.harness.delegate.beans.ci.docker.CIDockerInitializeTaskRequest;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
-import io.harness.delegate.beans.ci.vm.CIVmInitializeTaskParams;
 import io.harness.delegate.beans.ci.vm.steps.VmServiceDependency;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.ff.CIFeatureFlagService;
@@ -55,7 +43,6 @@ import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.steps.StepUtils;
-import io.harness.stoserviceclient.STOServiceUtils;
 import io.harness.tiserviceclient.TIServiceUtils;
 import io.harness.util.CIVmSecretEvaluator;
 import io.harness.yaml.utils.NGVariablesUtils;
@@ -77,12 +64,11 @@ import org.apache.commons.lang3.StringUtils;
 @Singleton
 @Slf4j
 @OwnedBy(HarnessTeam.CI)
-public class VmInitializeTaskUtils {
+public class DockerInitializeTaskUtils {
   @Inject private ExecutionSweepingOutputService executionSweepingOutputResolver;
   @Inject CILogServiceUtils logServiceUtils;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject TIServiceUtils tiServiceUtils;
-  @Inject STOServiceUtils stoServiceUtils;
   @Inject CodebaseUtils codebaseUtils;
   @Inject ConnectorUtils connectorUtils;
   @Inject CIVmSecretEvaluator ciVmSecretEvaluator;
@@ -91,28 +77,20 @@ public class VmInitializeTaskUtils {
   private final Duration RETRY_SLEEP_DURATION = Duration.ofSeconds(2);
   private final int MAX_ATTEMPTS = 3;
 
-  public CIVmInitializeTaskParams getInitializeTaskParams(
+  public CIDockerInitializeTaskParams getInitializeTaskParams(
       InitializeStepInfo initializeStepInfo, Ambiance ambiance, String logPrefix) {
     Infrastructure infrastructure = initializeStepInfo.getInfrastructure();
 
-    if (infrastructure == null || ((VmInfraYaml) infrastructure).getSpec() == null) {
+    if (infrastructure == null || ((DockerInfraYaml) infrastructure).getType() == null) {
       throw new CIStageExecutionException("Input infrastructure can not be empty");
     }
 
-    VmInfraYaml vmInfraYaml = (VmInfraYaml) infrastructure;
-    if (vmInfraYaml.getSpec().getType() != VmInfraSpec.Type.POOL) {
-      throw new CIStageExecutionException(
-          format("Invalid VM infrastructure spec type: %s", vmInfraYaml.getSpec().getType()));
-    }
-    VmBuildJobInfo vmBuildJobInfo = (VmBuildJobInfo) initializeStepInfo.getBuildJobEnvInfo();
-    VmPoolYaml vmPoolYaml = (VmPoolYaml) vmInfraYaml.getSpec();
-    String poolId = getPoolName(vmPoolYaml);
+    DockerInfraYaml dockerInfraYaml = (DockerInfraYaml) infrastructure;
+    DockerBuildJobInfo dockerBuildJobInfo = (DockerBuildJobInfo) initializeStepInfo.getBuildJobEnvInfo();
     consumeSweepingOutput(ambiance,
-        VmStageInfraDetails.builder()
-            .poolId(poolId)
-            .workDir(vmBuildJobInfo.getWorkDir())
-            .volToMountPathMap(vmBuildJobInfo.getVolToMountPath())
-            .harnessImageConnectorRef(vmPoolYaml.getSpec().getHarnessImageConnectorRef().getValue())
+        DockerStageInfraDetails.builder()
+            .workDir(dockerBuildJobInfo.getWorkDir())
+            .volToMountPathMap(dockerBuildJobInfo.getVolToMountPath())
             .build(),
         STAGE_INFRA_DETAILS);
 
@@ -128,7 +106,8 @@ public class VmInitializeTaskUtils {
 
     ConnectorDetails gitConnector = codebaseUtils.getGitConnector(
         ngAccess, initializeStepInfo.getCiCodebase(), initializeStepInfo.isSkipGitClone());
-    Map<String, String> codebaseEnvVars = codebaseUtils.getCodebaseVars(ambiance, vmBuildJobInfo.getCiExecutionArgs());
+    Map<String, String> codebaseEnvVars =
+        codebaseUtils.getCodebaseVars(ambiance, dockerBuildJobInfo.getCiExecutionArgs());
     Map<String, String> gitEnvVars = codebaseUtils.getGitEnvVariables(gitConnector, initializeStepInfo.getCiCodebase());
 
     Map<String, String> envVars = new HashMap<>();
@@ -136,14 +115,13 @@ public class VmInitializeTaskUtils {
     envVars.putAll(gitEnvVars);
 
     Map<String, String> stageVars = getEnvironmentVariables(
-        NGVariablesUtils.getMapOfVariables(vmBuildJobInfo.getStageVars(), ambiance.getExpressionFunctorToken()));
+        NGVariablesUtils.getMapOfVariables(dockerBuildJobInfo.getStageVars(), ambiance.getExpressionFunctorToken()));
     CIVmSecretEvaluator ciVmSecretEvaluator = CIVmSecretEvaluator.builder().build();
     Set<String> secrets = ciVmSecretEvaluator.resolve(stageVars, ngAccess, ambiance.getExpressionFunctorToken());
     envVars.putAll(stageVars);
 
-    return CIVmInitializeTaskParams.builder()
-        .poolID(poolId)
-        .workingDir(vmBuildJobInfo.getWorkDir())
+    return CIDockerInitializeTaskParams.builder()
+        .workingDir(dockerBuildJobInfo.getWorkDir())
         .environment(envVars)
         .gitConnector(gitConnector)
         .stageRuntimeId(stageDetails.getStageRuntimeID())
@@ -159,25 +137,10 @@ public class VmInitializeTaskUtils {
         .logSvcIndirectUpload(featureFlagService.isEnabled(FeatureName.CI_INDIRECT_LOG_UPLOAD, accountID))
         .tiUrl(tiServiceUtils.getTiServiceConfig().getBaseUrl())
         .tiSvcToken(getTISvcToken(accountID))
-        .stoUrl(stoServiceUtils.getStoServiceConfig().getBaseUrl())
-        .stoSvcToken(getSTOSvcToken(accountID))
         .secrets(new ArrayList<>(secrets))
-        .volToMountPath(vmBuildJobInfo.getVolToMountPath())
-        .serviceDependencies(getServiceDependencies(ambiance, vmBuildJobInfo.getServiceDependencies()))
+        .volToMountPath(dockerBuildJobInfo.getVolToMountPath())
+        .serviceDependencies(getServiceDependencies(ambiance, dockerBuildJobInfo.getServiceDependencies()))
         .build();
-  }
-
-  private String getPoolName(VmPoolYaml vmPoolYaml) {
-    String poolName = vmPoolYaml.getSpec().getPoolName().getValue();
-    if (isNotEmpty(poolName)) {
-      return poolName;
-    }
-
-    String poolId = vmPoolYaml.getSpec().getIdentifier();
-    if (isEmpty(poolId)) {
-      throw new CIStageExecutionException("VM pool name should be set");
-    }
-    return poolId;
   }
 
   private List<VmServiceDependency> getServiceDependencies(
@@ -268,18 +231,6 @@ public class VmInitializeTaskUtils {
       return tiServiceUtils.getTIServiceToken(accountID);
     } catch (Exception e) {
       log.error("Could not call token endpoint for TI service", e);
-    }
-
-    return "";
-  }
-
-  private String getSTOSvcToken(String accountID) {
-    // Make a call to the STO service and get back the token. We do not need STO service token for all steps,
-    // so we can continue even if the service is down.
-    try {
-      return stoServiceUtils.getSTOServiceToken(accountID);
-    } catch (Exception e) {
-      log.error("Could not call token endpoint for STO service", e);
     }
 
     return "";
