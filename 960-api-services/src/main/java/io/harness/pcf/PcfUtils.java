@@ -51,8 +51,8 @@ public class PcfUtils {
     log.debug("{}: CLI, {}", CF_CALL, command);
   }
 
-  public static void logSdkCommand(String API, Object request) {
-    log.debug("{}: SDK, {}, request: {}", CF_CALL, API, request);
+  public static void logSdkCommand(String API, Object request, long timeInMillis) {
+    log.debug("{}: SDK, {}, request: {}, timeInMillis: {}", CF_CALL, API, request, timeInMillis);
   }
 
   public static boolean checkIfAppAutoscalarInstalled(final String cfCliPath, CfCliVersion cfCliVersion)
