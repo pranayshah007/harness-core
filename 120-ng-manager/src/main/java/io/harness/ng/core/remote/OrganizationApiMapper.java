@@ -7,6 +7,13 @@
 
 package io.harness.ng.core.remote;
 
+import static io.harness.beans.SortOrder.Builder.aSortOrder;
+import static io.harness.beans.SortOrder.OrderType.ASC;
+import static io.harness.beans.SortOrder.OrderType.DESC;
+import static io.harness.ng.core.entities.Organization.OrganizationKeys.harnessManaged;
+import static io.harness.ng.core.entities.Organization.OrganizationKeys.name;
+import static io.harness.utils.PageUtils.COMMA_SEPARATOR;
+
 import io.harness.beans.SortOrder;
 import io.harness.ng.core.common.beans.NGTag;
 import io.harness.ng.core.dto.OrganizationDTO;
@@ -60,18 +67,14 @@ public class OrganizationApiMapper {
 
   public static Pageable getPageRequest(Integer page, Integer limit) {
     List<SortOrder> sortOrders = new ArrayList<>();
-    SortOrder harnessManagedOrder =
-        SortOrder.Builder.aSortOrder()
-            .withField(Organization.OrganizationKeys.harnessManaged, SortOrder.OrderType.DESC)
-            .build();
-    SortOrder nameOrder =
-        SortOrder.Builder.aSortOrder().withField(Organization.OrganizationKeys.name, SortOrder.OrderType.ASC).build();
+    SortOrder harnessManagedOrder = aSortOrder().withField(harnessManaged, DESC).build();
+    SortOrder nameOrder = aSortOrder().withField(name, ASC).build();
     sortOrders.add(harnessManagedOrder);
     sortOrders.add(nameOrder);
 
     List<String> orders = new ArrayList<>();
     for (SortOrder sortOrder : sortOrders) {
-      orders.add(sortOrder.getFieldName() + PageUtils.COMMA_SEPARATOR + sortOrder.getOrderType());
+      orders.add(sortOrder.getFieldName() + COMMA_SEPARATOR + sortOrder.getOrderType());
     }
     return PageUtils.getPageRequest(page, limit, orders);
   }
