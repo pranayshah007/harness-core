@@ -65,6 +65,7 @@ public class AzureStorageSyncServiceImpl implements AzureStorageSyncService {
       sourceSasToken = genSasToken(azureStorageSyncRecord.getStorageAccountName(),
           azureStorageSyncRecord.getContainerName(), azureStorageSyncRecord.getTenantId(),
           azureStorageSyncConfig.getAzureAppClientId(), azureStorageSyncConfig.getAzureAppClientSecret(), false);
+      log.info("Fetched sas token for source storage account");
     } catch (Exception exception) {
       log.error("Error in generating sourceSasToken sas token", exception);
       // Proceed to next sync
@@ -87,6 +88,7 @@ public class AzureStorageSyncServiceImpl implements AzureStorageSyncService {
     }
     try {
       // Run the azcopy tool to do the sync
+      log.info("Prepping the azcopy command");
       String sourceStorageAccountUrl =
           String.format(AZURE_STORAGE_URL_FORMAT, azureStorageSyncRecord.getStorageAccountName(), AZURE_STORAGE_SUFFIX);
       String destStorageAccountUrl = String.format(
@@ -136,21 +138,24 @@ public class AzureStorageSyncServiceImpl implements AzureStorageSyncService {
     // Create a BlobServiceClient object which will be used to create a container client
     String endpoint = String.format(AZURE_STORAGE_URL_FORMAT, storageAccountName, AZURE_STORAGE_SUFFIX);
     log.info(endpoint);
+
     ClientSecretCredential clientSecretCredential = new ClientSecretCredentialBuilder()
                                                         .clientId(azureAppClientId)
                                                         .clientSecret(azureAppClientSecret)
                                                         .tenantId(tenantId)
                                                         .build();
-
+    log.info("got clientSecretCredential");
     BlobServiceClient blobServiceClient =
         new BlobServiceClientBuilder().endpoint(endpoint).credential(clientSecretCredential).buildClient();
+    log.info("got blobServiceClient");
     BlobContainerClient blobContainerClient = blobServiceClient.getBlobContainerClient(containerName);
+    log.info("got blobContainerClient");
     // Get a user delegation key for the Blob service that's valid for one hour.
     // You can use the key to generate any number of shared access signatures over the lifetime of the key.
     OffsetDateTime keyStart = OffsetDateTime.now();
     OffsetDateTime keyExpiry = OffsetDateTime.now().plusHours(1);
     UserDelegationKey userDelegationKey = blobServiceClient.getUserDelegationKey(keyStart, keyExpiry);
-
+    log.info("got userDelegationKey");
     return blobContainerClient.generateUserDelegationSas(builder, userDelegationKey);
   }
 
