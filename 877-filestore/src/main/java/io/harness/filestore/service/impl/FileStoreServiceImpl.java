@@ -105,13 +105,7 @@ public class FileStoreServiceImpl implements FileStoreService {
   public FileDTO create(@NotNull FileDTO fileDto, InputStream content) {
     log.info("Creating {}: {}", fileDto.getType().name().toLowerCase(), fileDto);
 
-    if (isFileExistsByIdentifier(fileDto)) {
-      throw new DuplicateFieldException(getDuplicateEntityIdentifierMessage(fileDto));
-    }
-
-    if (isFileExistByName(fileDto)) {
-      throw new DuplicateFieldException(getDuplicateEntityNameMessage(fileDto));
-    }
+    validateCreationFileDto(fileDto);
 
     NGFile ngFile = FileDTOMapper.getNGFileFromDTO(fileDto);
 
@@ -125,13 +119,11 @@ public class FileStoreServiceImpl implements FileStoreService {
 
   @Override
   public FileDTO update(@NotNull FileDTO fileDto, InputStream content, @NotNull String identifier) {
-    if (isEmpty(identifier)) {
-      throw new InvalidArgumentsException("File identifier cannot be empty");
-    }
-
     NGFile oldNGFile = fetchFileOrThrow(
         fileDto.getAccountIdentifier(), fileDto.getOrgIdentifier(), fileDto.getProjectIdentifier(), identifier);
     NGFile oldNGFileClone = (NGFile) HObjectMapper.clone(oldNGFile);
+
+    validateUpdateFileDto(fileDto, identifier);
 
     NGFile updatedNGFile = FileDTOMapper.updateNGFile(fileDto, oldNGFile);
     if (shouldStoreFileContent(content, updatedNGFile)) {
@@ -419,5 +411,49 @@ public class FileStoreServiceImpl implements FileStoreService {
     }
 
     return fileFailsafeService.deleteAndPublish(file);
+  }
+
+  private void validateCreationFileDto(FileDTO fileDto) {
+    if (FileStoreConstants.ROOT_FOLDER_IDENTIFIER.equals(fileDto.getIdentifier()) || isFileExistsByIdentifier(fileDto)) {
+      throw new DuplicateFieldException(getDuplicateEntityIdentifierMessage(fileDto));
+    }
+
+    if (isFileExistByName(fileDto)) {
+      throw new DuplicateFieldException(getDuplicateEntityNameMessage(fileDto));
+    }
+
+    if(isEmpty(fileDto.getParentIdentifier())) {
+      throw new InvalidArgumentsException("Parent folder identifier is mandatory.");
+    }
+
+    if (!parentFolderExists(fileDto)) {
+      throw new InvalidArgumentsException(format("Parent folder with identifier [%s] does not exist",
+              fileDto.getParentIdentifier()));
+    }
+  }
+
+  private void validateUpdateFileDto(FileDTO fileDto, String identifier) {
+    if (isEmpty(identifier)) {
+      throw new InvalidArgumentsException("File or folder identifier cannot be empty");
+    }
+    if (!parentFolderExists(fileDto)) {
+      throw new InvalidArgumentsException(format("Parent folder with identifier [%s] does not exist",
+              fileDto.getParentIdentifier()));
+    }
+    if(identifier.equals(fileDto.getParentIdentifier())) {
+      throw new InvalidArgumentsException(format("File or folder identifier [%s] cannot be its parent folder identifier [%s]",
+              identifier, fileDto.getParentIdentifier()));
+    }
+  }
+
+  private boolean parentFolderExists(FileDTO fileDto) {
+    if(FileStoreConstants.ROOT_FOLDER_IDENTIFIER.equals(fileDto.getParentIdentifier())){
+      return true;
+    }
+    return fileStoreRepository
+            .findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(fileDto.getAccountIdentifier(),
+                    fileDto.getOrgIdentifier(), fileDto.getProjectIdentifier(), fileDto.getParentIdentifier())
+            .filter(NGFile::isFolder)
+            .isPresent();
   }
 }

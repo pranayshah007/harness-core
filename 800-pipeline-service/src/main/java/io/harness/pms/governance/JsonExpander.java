@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.ModuleType;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.ExceptionUtils;
 import io.harness.exception.UnexpectedException;
 import io.harness.pms.contracts.governance.ExpansionRequestBatch;
 import io.harness.pms.contracts.governance.ExpansionRequestMetadata;
@@ -36,8 +37,10 @@ import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(PIPELINE)
+@Slf4j
 public class JsonExpander {
   @Inject Map<ModuleType, JsonExpansionServiceBlockingStub> jsonExpansionServiceBlockingStubMap;
   @Inject @Named("jsonExpansionRequestBatchSize") Integer jsonExpansionRequestBatchSize;
@@ -70,6 +73,7 @@ public class JsonExpander {
     try {
       return new HashSet<>(completableFutures.allOf().get(5, TimeUnit.MINUTES));
     } catch (Exception ex) {
+      log.error("Error fetching JSON expansion responses from services: " + ExceptionUtils.getMessage(ex), ex);
       throw new UnexpectedException("Error fetching JSON expansion responses from services", ex);
     }
   }

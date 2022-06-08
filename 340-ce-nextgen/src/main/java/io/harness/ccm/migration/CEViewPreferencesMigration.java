@@ -54,7 +54,7 @@ public class CEViewPreferencesMigration implements NGMigration {
   }
 
   private void modifyCEView(final CEView ceView) {
-    ceView.setViewPreferences(CEViewPreferenceUtils.getCEViewPreferences(ceView));
+    ceView.setViewPreferences(CEViewPreferenceUtils.getCEViewPreferencesForMigration(ceView));
     if (Objects.isNull(ceView.getViewRules())) {
       ceView.setViewRules(Collections.emptyList());
     }

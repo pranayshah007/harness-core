@@ -129,8 +129,8 @@ public class CEViewDao {
 
   public List<CEView> findByAccountIdAndFolderId(String accountId, String folderId, QLCEViewSortCriteria sortCriteria) {
     Query<CEView> query = hPersistence.createQuery(CEView.class)
-        .filter(CEViewKeys.accountId, accountId)
-        .filter(CEViewKeys.folderId, folderId);
+                              .filter(CEViewKeys.accountId, accountId)
+                              .filter(CEViewKeys.folderId, folderId);
     query = decorateQueryWithSortCriteria(query, sortCriteria);
     return query.asList();
   }

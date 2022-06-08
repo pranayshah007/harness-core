@@ -249,12 +249,12 @@ public class BuildSourceParametersTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldFetchRequiredExecutionCapabilitiesOthersWithDelegateSelectors() {
     BuildSourceParameters buildSourceParameters =
-            sourceParametersBuilder.settingValue(aStringValue().withValue("value").build())
-                    .artifactStreamType(ArtifactStreamType.SMB.name())
-                    .artifactStreamAttributes(ArtifactStreamAttributes.builder().build())
-                    .buildCollectParameters(
-                            BuildCollectParameters.builder().delegateSelectors(Collections.singleton("DELEGATE_SELECTOR")).build())
-                    .build();
+        sourceParametersBuilder.settingValue(aStringValue().withValue("value").build())
+            .artifactStreamType(ArtifactStreamType.SMB.name())
+            .artifactStreamAttributes(ArtifactStreamAttributes.builder().build())
+            .buildCollectParameters(
+                BuildCollectParameters.builder().delegateSelectors(Collections.singleton("DELEGATE_SELECTOR")).build())
+            .build();
     buildSourceParameters.setBuildSourceRequestType(BuildSourceParameters.BuildSourceRequestType.GET_BUILD);
     List<ExecutionCapability> capabilityList = buildSourceParameters.fetchRequiredExecutionCapabilities(null);
     assertThat(capabilityList).hasSize(1);

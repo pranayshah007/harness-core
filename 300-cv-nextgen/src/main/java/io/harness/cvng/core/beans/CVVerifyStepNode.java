@@ -12,8 +12,8 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cvng.cdng.beans.CVNGAbstractStepNode;
 import io.harness.cvng.cdng.beans.CVNGStepInfo;
-import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.yaml.core.StepSpecType;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -30,7 +30,7 @@ import lombok.NoArgsConstructor;
 @EqualsAndHashCode(callSuper = true)
 @JsonTypeName(StepSpecTypeConstants.VERIFY)
 @OwnedBy(HarnessTeam.CV)
-public class CVVerifyStepNode extends AbstractStepNode {
+public class CVVerifyStepNode extends CVNGAbstractStepNode {
   @JsonProperty("type") @NotNull StepType type = StepType.Verify;
   @NotNull
   @JsonProperty("spec")

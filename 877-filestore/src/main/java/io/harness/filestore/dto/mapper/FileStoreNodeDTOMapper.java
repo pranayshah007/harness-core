@@ -27,6 +27,7 @@ public class FileStoreNodeDTOMapper {
                                                 .identifier(ngFile.getIdentifier())
                                                 .parentIdentifier(ngFile.getParentIdentifier())
                                                 .name(ngFile.getName())
+                                                .path(ngFile.getPath())
                                                 .fileUsage(ngFile.getFileUsage())
                                                 .description(ngFile.getDescription())
                                                 .tags(ngFile.getTags())
@@ -46,6 +47,7 @@ public class FileStoreNodeDTOMapper {
         .identifier(ngFile.getIdentifier())
         .parentIdentifier(ngFile.getParentIdentifier())
         .name(ngFile.getName())
+        .path(ngFile.getPath())
         .lastModifiedAt(ngFile.getLastModifiedAt())
         .lastModifiedBy(fromEmbeddedUser(ngFile.getLastUpdatedBy()))
         .build();
