@@ -30,7 +30,7 @@ public class ProjectMigrationDetails implements MigrationDetails {
   @Override
   public List<Pair<Integer, Class<? extends NGMigration>>> getMigrations() {
     return new ImmutableList.Builder<Pair<Integer, Class<? extends NGMigration>>>()
-        .add(Pair.of(1, ProjectModulesMigration.class))
+        .add(Pair.of(2, ProjectModulesMigration.class))
         .build();
   }
 }

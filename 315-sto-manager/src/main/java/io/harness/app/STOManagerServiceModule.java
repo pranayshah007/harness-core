@@ -22,9 +22,6 @@ import io.harness.callback.DelegateCallbackToken;
 import io.harness.callback.MongoDatabase;
 import io.harness.concurrent.HTimeLimiter;
 import io.harness.connector.ConnectorResourceClientModule;
-import io.harness.core.ci.services.BuildNumberService;
-import io.harness.core.ci.services.BuildNumberServiceImpl;
-import io.harness.enforcement.client.EnforcementClientModule;
 import io.harness.entitysetupusageclient.EntitySetupUsageClientModule;
 import io.harness.ff.CIFeatureFlagService;
 import io.harness.ff.impl.CIFeatureFlagServiceImpl;
@@ -48,9 +45,6 @@ import io.harness.stoserviceclient.STOServiceClientModule;
 import io.harness.telemetry.AbstractTelemetryModule;
 import io.harness.telemetry.TelemetryConfiguration;
 import io.harness.threading.ThreadPool;
-import io.harness.timescaledb.TimeScaleDBConfig;
-import io.harness.timescaledb.TimeScaleDBService;
-import io.harness.timescaledb.TimeScaleDBServiceImpl;
 import io.harness.tiserviceclient.TIServiceClientModule;
 import io.harness.token.TokenClientModule;
 import io.harness.user.UserClientModule;
@@ -166,34 +160,15 @@ public class STOManagerServiceModule extends AbstractModule {
     install(PrimaryVersionManagerModule.getInstance());
     bind(STOManagerConfiguration.class).toInstance(stoManagerConfiguration);
     bind(HPersistence.class).to(MongoPersistence.class).in(Singleton.class);
-    bind(BuildNumberService.class).to(BuildNumberServiceImpl.class);
     bind(STOYamlSchemaService.class).to(STOYamlSchemaServiceImpl.class).in(Singleton.class);
     bind(CIFeatureFlagService.class).to(CIFeatureFlagServiceImpl.class).in(Singleton.class);
-    try {
-      bind(TimeScaleDBService.class)
-          .toConstructor(TimeScaleDBServiceImpl.class.getConstructor(TimeScaleDBConfig.class));
-    } catch (NoSuchMethodException e) {
-      log.error("TimeScaleDbServiceImpl Initialization Failed in due to missing constructor", e);
-    }
-    if (stoManagerConfiguration.getEnableDashboardTimescale() != null
-        && stoManagerConfiguration.getEnableDashboardTimescale()) {
-      bind(TimeScaleDBConfig.class)
-          .annotatedWith(Names.named("TimeScaleDBConfig"))
-          .toInstance(stoManagerConfiguration.getTimeScaleDBConfig() != null
-                  ? stoManagerConfiguration.getTimeScaleDBConfig()
-                  : TimeScaleDBConfig.builder().build());
-    } else {
-      bind(TimeScaleDBConfig.class)
-          .annotatedWith(Names.named("TimeScaleDBConfig"))
-          .toInstance(TimeScaleDBConfig.builder().build());
-    }
 
     // Keeping it to 1 thread to start with. Assuming executor service is used only to
     // serve health checks. If it's being used for other tasks also, max pool size should be increased.
     bind(ExecutorService.class)
         .toInstance(ThreadPool.create(1, 2, 5, TimeUnit.SECONDS,
             new ThreadFactoryBuilder()
-                .setNameFormat("default-ci-executor-%d")
+                .setNameFormat("default-sto-executor-%d")
                 .setPriority(Thread.MIN_PRIORITY)
                 .build()));
 
@@ -252,9 +227,6 @@ public class STOManagerServiceModule extends AbstractModule {
     install(new STOServiceClientModule(stoManagerConfiguration.getStoServiceConfig()));
     install(new AccountClientModule(stoManagerConfiguration.getManagerClientConfig(),
         stoManagerConfiguration.getNgManagerServiceSecret(), STO_MANAGER.toString()));
-    install(EnforcementClientModule.getInstance(stoManagerConfiguration.getManagerClientConfig(),
-        stoManagerConfiguration.getNgManagerServiceSecret(), STO_MANAGER.getServiceId(),
-        stoManagerConfiguration.getEnforcementClientConfiguration()));
     install(new AbstractTelemetryModule() {
       @Override
       public TelemetryConfiguration telemetryConfiguration() {
