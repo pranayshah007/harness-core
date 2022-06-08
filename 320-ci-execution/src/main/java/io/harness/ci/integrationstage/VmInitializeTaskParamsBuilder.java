@@ -254,7 +254,7 @@ public class VmInitializeTaskParamsBuilder {
         .build();
   }
 
-  public Map<String, String> getEnvironmentVariables(Map<String, Object> inputVariables) {
+  private Map<String, String> getEnvironmentVariables(Map<String, Object> inputVariables) {
     if (isEmpty(inputVariables)) {
       return new HashMap<>();
     }
