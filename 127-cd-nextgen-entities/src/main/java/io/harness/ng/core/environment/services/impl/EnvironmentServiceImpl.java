@@ -250,6 +250,20 @@ public class EnvironmentServiceImpl implements EnvironmentService {
   }
 
   @Override
+  public boolean forceDeleteAllInProject(String accountId, String orgIdentifier, String projectIdentifier) {
+    Criteria criteria = getEnvironmentEqualityCriteriaWithinProject(accountId, orgIdentifier, projectIdentifier, false);
+    return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+      UpdateResult updateResult = environmentRepository.deleteMany(criteria);
+      if (!updateResult.wasAcknowledged()) {
+        throw new InvalidRequestException(
+            String.format("Environments under Project[%s], Organization [%s] couldn't be deleted.", projectIdentifier,
+                orgIdentifier));
+      }
+      return true;
+    }));
+  }
+
+  @Override
   public List<Environment> listAccess(Criteria criteria) {
     return environmentRepository.findAllRunTimeAccess(criteria);
   }
@@ -342,6 +356,18 @@ public class EnvironmentServiceImpl implements EnvironmentService {
     }
 
     return criteria;
+  }
+
+  private Criteria getEnvironmentEqualityCriteriaWithinProject(
+      String accountId, String orgId, String projectId, boolean deleted) {
+    return Criteria.where(EnvironmentKeys.accountId)
+        .is(accountId)
+        .and(EnvironmentKeys.orgIdentifier)
+        .is(orgId)
+        .and(EnvironmentKeys.projectIdentifier)
+        .is(projectId)
+        .and(EnvironmentKeys.deleted)
+        .is(deleted);
   }
 
   private void publishEvent(

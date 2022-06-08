@@ -9,6 +9,7 @@ package io.harness.ccm.remote.resources.perspectives;
 
 import static io.harness.NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE;
 import static io.harness.annotations.dev.HarnessTeam.CE;
+import static io.harness.telemetry.Destination.AMPLITUDE;
 
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
@@ -28,6 +29,8 @@ import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.security.annotations.NextGenManagerAuth;
+import io.harness.telemetry.Category;
+import io.harness.telemetry.TelemetryReporter;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
@@ -40,6 +43,8 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -74,11 +79,19 @@ import org.springframework.stereotype.Service;
 public class PerspectiveFolderResource {
   private final CEViewFolderService ceViewFolderService;
   private final CEViewService ceViewService;
+  private final TelemetryReporter telemetryReporter;
+
+  private static final String FOLDER_CREATED = "Perspective Folder Created";
+  private static final String FOLDER_ID = "folder_id";
+  private static final String MODULE = "module";
+  private static final String MODULE_NAME = "CCM";
 
   @Inject
-  public PerspectiveFolderResource(CEViewFolderService ceViewFolderService, CEViewService ceViewService) {
+  public PerspectiveFolderResource(
+      CEViewFolderService ceViewFolderService, CEViewService ceViewService, TelemetryReporter telemetryReporter) {
     this.ceViewFolderService = ceViewFolderService;
     this.ceViewService = ceViewService;
+    this.telemetryReporter = telemetryReporter;
   }
 
   @POST
@@ -107,11 +120,16 @@ public class PerspectiveFolderResource {
     ceViewFolder.setPinned(false);
     ceViewFolder.setViewType(ViewType.CUSTOMER);
     ceViewFolder = ceViewFolderService.save(ceViewFolder);
+    HashMap<String, Object> properties = new HashMap<>();
+    properties.put(MODULE, MODULE_NAME);
+    properties.put(FOLDER_ID, ceViewFolder.getUuid());
     if (createPerspectiveFolderDTO.getPerspectiveIds() != null
         && CollectionUtils.isNotEmpty(createPerspectiveFolderDTO.getPerspectiveIds())) {
       ceViewFolderService.moveMultipleCEViews(
           accountId, createPerspectiveFolderDTO.getPerspectiveIds(), ceViewFolder.getUuid());
     }
+    telemetryReporter.sendTrackEvent(
+        FOLDER_CREATED, null, accountId, properties, Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
     return ResponseDTO.newResponse(ceViewFolder);
   }
 

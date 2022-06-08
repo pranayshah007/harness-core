@@ -34,7 +34,6 @@ public class DelegateGroupDetails {
   private String delegateConfigurationId;
   private Map<String, SelectorType> groupImplicitSelectors;
   private Set<String> groupCustomSelectors;
-  private DelegateInsightsDetails delegateInsightsDetails;
   private long lastHeartBeat;
   private String connectivityStatus;
   private boolean activelyConnected;

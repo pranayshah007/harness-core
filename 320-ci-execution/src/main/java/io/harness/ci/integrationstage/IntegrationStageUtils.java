@@ -10,11 +10,14 @@ package io.harness.ci.integrationstage;
 import static io.harness.beans.execution.WebhookEvent.Type.BRANCH;
 import static io.harness.beans.execution.WebhookEvent.Type.PR;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveOSType;
+import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParameter;
+import static io.harness.common.CIExecutionConstants.AZURE_REPO_BASE_URL;
 import static io.harness.common.CIExecutionConstants.GIT_URL_SUFFIX;
 import static io.harness.common.CIExecutionConstants.IMAGE_PATH_SPLIT_REGEX;
 import static io.harness.common.CIExecutionConstants.PATH_SEPARATOR;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.delegate.beans.connector.ConnectorType.AZURE_REPO;
 import static io.harness.delegate.beans.connector.ConnectorType.BITBUCKET;
 import static io.harness.delegate.beans.connector.ConnectorType.CODECOMMIT;
 import static io.harness.delegate.beans.connector.ConnectorType.DOCKER;
@@ -28,13 +31,20 @@ import static org.springframework.util.StringUtils.trimTrailingCharacter;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.dependencies.CIServiceInfo;
+import io.harness.beans.dependencies.DependencyElement;
 import io.harness.beans.execution.BranchWebhookEvent;
 import io.harness.beans.execution.ExecutionSource;
 import io.harness.beans.execution.ManualExecutionSource;
 import io.harness.beans.execution.PRWebhookEvent;
 import io.harness.beans.execution.WebhookExecutionSource;
+import io.harness.beans.plugin.compatible.PluginCompatibleStep;
 import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.stages.IntegrationStageConfig;
+import io.harness.beans.steps.CIStepInfo;
+import io.harness.beans.steps.stepinfo.PluginStepInfo;
+import io.harness.beans.steps.stepinfo.RunStepInfo;
+import io.harness.beans.steps.stepinfo.RunTestsStepInfo;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
@@ -44,6 +54,7 @@ import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitConnectorDTO;
 import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitUrlType;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
@@ -66,6 +77,7 @@ import io.harness.pms.contracts.triggers.TriggerPayload;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.stateutils.buildstate.CodebaseUtils;
 import io.harness.stateutils.buildstate.ConnectorUtils;
 import io.harness.util.WebhookTriggerProcessorUtils;
 import io.harness.yaml.extended.ci.codebase.Build;
@@ -78,8 +90,11 @@ import io.harness.yaml.extended.ci.codebase.impl.TagBuildSpec;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import lombok.experimental.UtilityClass;
+import org.apache.commons.lang3.StringUtils;
 
 @UtilityClass
 @OwnedBy(HarnessTeam.CI)
@@ -255,7 +270,7 @@ public class IntegrationStageUtils {
   public String getGitURL(CodeBase ciCodebase, GitConnectionType connectionType, String url) {
     String gitUrl = retrieveGenericGitConnectorURL(ciCodebase, connectionType, url);
 
-    if (!gitUrl.endsWith(GIT_URL_SUFFIX) && !gitUrl.contains("dev.azure.com")) {
+    if (!gitUrl.endsWith(GIT_URL_SUFFIX) && !gitUrl.contains(AZURE_REPO_BASE_URL)) {
       gitUrl += GIT_URL_SUFFIX;
     }
     return gitUrl;
@@ -274,11 +289,14 @@ public class IntegrationStageUtils {
         throw new IllegalArgumentException("Repo name is not set in CI codebase spec");
       }
 
+      String projectName = ciCodebase.getProjectName().getValue();
       String repoName = ciCodebase.getRepoName().getValue();
-      if (url.endsWith(PATH_SEPARATOR)) {
-        gitUrl = url + repoName;
+
+      if (isNotEmpty(projectName) && url.contains(AZURE_REPO_BASE_URL)) {
+        gitUrl = CodebaseUtils.getCompleteUrlForAccountLevelAzureConnector(url, projectName, repoName);
       } else {
-        gitUrl = url + PATH_SEPARATOR + repoName;
+        gitUrl = StringUtils.join(StringUtils.stripEnd(url, PATH_SEPARATOR), PATH_SEPARATOR,
+            StringUtils.stripStart(repoName, PATH_SEPARATOR));
       }
     } else {
       throw new InvalidArgumentsException(
@@ -295,6 +313,9 @@ public class IntegrationStageUtils {
 
     if (gitConnector.getConnectorType() == GITHUB) {
       GithubConnectorDTO gitConfigDTO = (GithubConnectorDTO) gitConnector.getConnectorConfig();
+      return getGitURL(ciCodebase, gitConfigDTO.getConnectionType(), gitConfigDTO.getUrl());
+    } else if (gitConnector.getConnectorType() == AZURE_REPO) {
+      AzureRepoConnectorDTO gitConfigDTO = (AzureRepoConnectorDTO) gitConnector.getConnectorConfig();
       return getGitURL(ciCodebase, gitConfigDTO.getConnectionType(), gitConfigDTO.getUrl());
     } else if (gitConnector.getConnectorType() == GITLAB) {
       GitlabConnectorDTO gitConfigDTO = (GitlabConnectorDTO) gitConnector.getConnectorConfig();
@@ -441,5 +462,96 @@ public class IntegrationStageUtils {
 
     K8sDirectInfraYaml k8sDirectInfraYaml = (K8sDirectInfraYaml) infrastructure;
     return resolveOSType(k8sDirectInfraYaml.getSpec().getOs());
+  }
+
+  public List<String> getStageConnectorRefs(IntegrationStageConfig integrationStageConfig) {
+    ArrayList<String> connectorIdentifiers = new ArrayList<>();
+    for (ExecutionWrapperConfig executionWrapper : integrationStageConfig.getExecution().getSteps()) {
+      if (executionWrapper.getStep() != null && !executionWrapper.getStep().isNull()) {
+        StepElementConfig stepElementConfig = IntegrationStageUtils.getStepElementConfig(executionWrapper);
+        String identifier = getConnectorIdentifier(stepElementConfig);
+        if (identifier != null) {
+          connectorIdentifiers.add(identifier);
+        }
+      } else if (executionWrapper.getParallel() != null && !executionWrapper.getParallel().isNull()) {
+        ParallelStepElementConfig parallelStepElementConfig =
+            IntegrationStageUtils.getParallelStepElementConfig(executionWrapper);
+        if (isNotEmpty(parallelStepElementConfig.getSections())) {
+          for (ExecutionWrapperConfig executionWrapperInParallel : parallelStepElementConfig.getSections()) {
+            if (executionWrapperInParallel.getStep() == null || executionWrapperInParallel.getStep().isNull()) {
+              continue;
+            }
+            StepElementConfig stepElementConfig =
+                IntegrationStageUtils.getStepElementConfig(executionWrapperInParallel);
+            String identifier = getConnectorIdentifier(stepElementConfig);
+            if (identifier != null) {
+              connectorIdentifiers.add(identifier);
+            }
+          }
+        }
+      }
+    }
+
+    if (integrationStageConfig.getServiceDependencies() == null
+        || isEmpty(integrationStageConfig.getServiceDependencies().getValue())) {
+      return connectorIdentifiers;
+    }
+
+    for (DependencyElement dependencyElement : integrationStageConfig.getServiceDependencies().getValue()) {
+      if (dependencyElement == null) {
+        continue;
+      }
+
+      if (dependencyElement.getDependencySpecType() instanceof CIServiceInfo) {
+        CIServiceInfo serviceInfo = (CIServiceInfo) dependencyElement.getDependencySpecType();
+        String connectorRef = resolveConnectorIdentifier(serviceInfo.getConnectorRef(), serviceInfo.getIdentifier());
+        if (connectorRef != null) {
+          connectorIdentifiers.add(connectorRef);
+        }
+      }
+    }
+    return connectorIdentifiers;
+  }
+
+  private String getConnectorIdentifier(StepElementConfig stepElementConfig) {
+    if (stepElementConfig.getStepSpecType() instanceof CIStepInfo) {
+      CIStepInfo ciStepInfo = (CIStepInfo) stepElementConfig.getStepSpecType();
+      switch (ciStepInfo.getNonYamlInfo().getStepInfoType()) {
+        case RUN:
+          return resolveConnectorIdentifier(((RunStepInfo) ciStepInfo).getConnectorRef(), ciStepInfo.getIdentifier());
+        case PLUGIN:
+          return resolveConnectorIdentifier(
+              ((PluginStepInfo) ciStepInfo).getConnectorRef(), ciStepInfo.getIdentifier());
+        case RUN_TESTS:
+          return resolveConnectorIdentifier(
+              ((RunTestsStepInfo) ciStepInfo).getConnectorRef(), ciStepInfo.getIdentifier());
+        case DOCKER:
+        case ECR:
+        case GCR:
+        case SAVE_CACHE_S3:
+        case RESTORE_CACHE_S3:
+        case RESTORE_CACHE_GCS:
+        case SAVE_CACHE_GCS:
+        case SECURITY:
+        case UPLOAD_ARTIFACTORY:
+        case UPLOAD_S3:
+        case UPLOAD_GCS:
+          return resolveConnectorIdentifier(
+              ((PluginCompatibleStep) ciStepInfo).getConnectorRef(), ciStepInfo.getIdentifier());
+        default:
+          return null;
+      }
+    }
+    return null;
+  }
+
+  private String resolveConnectorIdentifier(ParameterField<String> connectorRef, String stepIdentifier) {
+    if (connectorRef != null) {
+      String connectorIdentifier = resolveStringParameter("connectorRef", "Run", stepIdentifier, connectorRef, false);
+      if (!StringUtils.isEmpty(connectorIdentifier)) {
+        return connectorIdentifier;
+      }
+    }
+    return null;
   }
 }

@@ -81,6 +81,16 @@ public class EnvironmentRepositoryCustomImpl implements EnvironmentRepositoryCus
   }
 
   @Override
+  public UpdateResult deleteMany(Criteria criteria) {
+    Query query = new Query(criteria);
+    Update updateOperationsForDelete = EnvironmentFilterHelper.getUpdateOperationsForDelete();
+    RetryPolicy<Object> retryPolicy = getRetryPolicy(
+        "[Retrying]: Failed deleting Environment; attempt: {}", "[Failed]: Failed deleting Environment; attempt: {}");
+    return Failsafe.with(retryPolicy)
+        .get(() -> mongoTemplate.updateMulti(query, updateOperationsForDelete, Environment.class));
+  }
+
+  @Override
   public List<Environment> findAllRunTimeAccess(Criteria criteria) {
     Query query = new Query(criteria);
     return mongoTemplate.find(query, Environment.class);

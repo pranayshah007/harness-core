@@ -406,6 +406,14 @@ public class JiraTask extends AbstractDelegateRunnableTask {
     for (String issueId : parameters.getUpdateIssueIds()) {
       try {
         JiraIssueNG issue = jiraNGClient.getIssue(issueId);
+        if (issue == null) {
+          return JiraExecutionData.builder()
+              .executionStatus(ExecutionStatus.FAILED)
+              .errorMessage(String.format(
+                  "Wasn't able to find issue with provided issue identifier: \"%s\". Please, provide valid key or id.",
+                  issueId))
+              .build();
+        }
         String issueProject = issue.getFields().get("Project Key").toString();
 
         if (!issueProject.equals(parameters.getProject())) {

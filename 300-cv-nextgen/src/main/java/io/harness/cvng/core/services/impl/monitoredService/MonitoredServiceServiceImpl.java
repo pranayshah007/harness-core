@@ -372,8 +372,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
                                       .projectIdentifier(monitoredService.getProjectIdentifier())
                                       .build();
     updateOperations.set(MonitoredServiceKeys.notificationRuleRefs,
-        notificationRuleService.getNotificationRuleRefs(projectParams, monitoredServiceDTO.getNotificationRuleRefs(),
-            NotificationRuleType.MONITORED_SERVICE, Instant.ofEpochSecond(0)));
+        getNotificationRuleRefs(projectParams, monitoredService, monitoredServiceDTO));
     validateDependencyMetadata(projectParams, monitoredServiceDTO.getDependencies());
     serviceDependencyService.updateDependencies(
         projectParams, monitoredService.getIdentifier(), monitoredServiceDTO.getDependencies());
@@ -1553,28 +1552,6 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
     return monitoredServiceList;
   }
 
-  /*public PageResponse<NotificationRuleResponse> getNotificationRules(
-      ProjectParams projectParams, String monitoredServiceIdentifier, PageParams pageParams) {
-    MonitoredService monitoredService =
-        getMonitoredService(MonitoredServiceParams.builderWithProjectParams(projectParams)
-                                .monitoredServiceIdentifier(monitoredServiceIdentifier)
-                                .build());
-    List<NotificationRuleRef> notificationRuleRefList = monitoredService.getNotificationRuleRefs();
-    List<NotificationRuleResponse> notificationRuleResponseList =
-        notificationRuleService.getNotificationRuleResponse(projectParams, notificationRuleRefList);
-    PageResponse<NotificationRuleResponse> notificationRulePageResponse =
-        PageUtils.offsetAndLimit(notificationRuleResponseList, pageParams.getPage(), pageParams.getSize());
-
-    return PageResponse.<NotificationRuleResponse>builder()
-        .pageSize(pageParams.getSize())
-        .pageIndex(pageParams.getPage())
-        .totalPages(notificationRulePageResponse.getTotalPages())
-        .totalItems(notificationRulePageResponse.getTotalItems())
-        .pageItemCount(notificationRulePageResponse.getPageItemCount())
-        .content(notificationRulePageResponse.getContent())
-        .build();
-  }*/
-
   private void updateNotificationRuleRefInMonitoredService(
       ProjectParams projectParams, MonitoredService monitoredService, List<String> notificationRuleRefs) {
     List<NotificationRuleRef> allNotificationRuleRefs = new ArrayList<>();
@@ -1641,6 +1618,32 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
       default:
         return false;
     }
+  }
+
+  private List<NotificationRuleRef> getNotificationRuleRefs(
+      ProjectParams projectParams, MonitoredService monitoredService, MonitoredServiceDTO monitoredServiceDTO) {
+    List<NotificationRuleRef> notificationRuleRefs =
+        notificationRuleService.getNotificationRuleRefs(projectParams, monitoredServiceDTO.getNotificationRuleRefs(),
+            NotificationRuleType.MONITORED_SERVICE, Instant.ofEpochSecond(0));
+    deleteNotificationRuleRefs(projectParams, monitoredService, notificationRuleRefs);
+    return notificationRuleRefs;
+  }
+
+  private void deleteNotificationRuleRefs(
+      ProjectParams projectParams, MonitoredService monitoredService, List<NotificationRuleRef> notificationRuleRefs) {
+    List<String> existingNotificationRuleRefs = monitoredService.getNotificationRuleRefs()
+                                                    .stream()
+                                                    .map(NotificationRuleRef::getNotificationRuleRef)
+                                                    .collect(Collectors.toList());
+    List<String> updatedNotificationRuleRefs =
+        notificationRuleRefs.stream().map(NotificationRuleRef::getNotificationRuleRef).collect(Collectors.toList());
+    List<String> toBeDeletedNotificationRuleRefs = new ArrayList<>();
+    for (String notificationRuleRef : existingNotificationRuleRefs) {
+      if (!updatedNotificationRuleRefs.contains(notificationRuleRef)) {
+        toBeDeletedNotificationRuleRefs.add(notificationRuleRef);
+      }
+    }
+    notificationRuleService.delete(projectParams, toBeDeletedNotificationRuleRefs);
   }
 
   @Value

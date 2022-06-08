@@ -18,7 +18,6 @@ import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
 import io.harness.common.EntityReference;
 import io.harness.connector.ConnectorResponseDTO;
-import io.harness.connector.helper.EncryptionHelper;
 import io.harness.connector.services.ConnectorService;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
@@ -113,7 +112,7 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
   private final EntityDetailProtoToRestMapper entityDetailRestToProtoMapper;
   private final ExecutorService executorService;
   private final GitBranchService gitBranchService;
-  private final EncryptionHelper encryptionHelper;
+  private final GitFilePathHelper gitFilePathHelper;
   private final ScmOrchestratorService scmOrchestratorService;
   private final GitBranchSyncService gitBranchSyncService;
   private final GitCommitService gitCommitService;
@@ -129,7 +128,7 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
   public HarnessToGitHelperServiceImpl(@Named("connectorDecoratorService") ConnectorService connectorService,
       DecryptGitApiAccessHelper decryptScmApiAccess, GitEntityService gitEntityService,
       YamlGitConfigService yamlGitConfigService, EntityDetailProtoToRestMapper entityDetailRestToProtoMapper,
-      ExecutorService executorService, GitBranchService gitBranchService, EncryptionHelper encryptionHelper,
+      ExecutorService executorService, GitBranchService gitBranchService, GitFilePathHelper gitFilePathHelper,
       ScmOrchestratorService scmOrchestratorService, GitBranchSyncService gitBranchSyncService,
       GitCommitService gitCommitService, UserProfileHelper userProfileHelper, GitSyncErrorService gitSyncErrorService,
       GitSyncConnectorHelper gitSyncConnectorHelper, FullSyncJobService fullSyncJobService,
@@ -142,7 +141,7 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
     this.entityDetailRestToProtoMapper = entityDetailRestToProtoMapper;
     this.executorService = executorService;
     this.gitBranchService = gitBranchService;
-    this.encryptionHelper = encryptionHelper;
+    this.gitFilePathHelper = gitFilePathHelper;
     this.scmOrchestratorService = scmOrchestratorService;
     this.gitBranchSyncService = gitBranchSyncService;
     this.gitCommitService = gitCommitService;
@@ -373,7 +372,7 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
   @Override
   public GetFileResponse getFileByBranch(GetFileRequest getFileRequest) {
     try {
-      GitFilePathHelper.validateFilePath(getFileRequest.getFilePath());
+      gitFilePathHelper.validateFilePath(getFileRequest.getFilePath());
       ScmGetFileResponseDTO scmGetFileResponseDTO = scmFacilitatorService.getFileByBranch(
           ScmGetFileByBranchRequestDTO.builder()
               .branchName(getFileRequest.getBranchName())
@@ -401,7 +400,7 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
   @Override
   public io.harness.gitsync.CreateFileResponse createFile(CreateFileRequest createFileRequest) {
     try {
-      GitFilePathHelper.validateFilePath(createFileRequest.getFilePath());
+      gitFilePathHelper.validateFilePath(createFileRequest.getFilePath());
       ScmCommitFileResponseDTO scmCommitFileResponseDTO = scmFacilitatorService.createFile(
           ScmCreateFileRequestDTO.builder()
               .repoName(createFileRequest.getRepoName())
@@ -433,7 +432,7 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
   @Override
   public io.harness.gitsync.UpdateFileResponse updateFile(UpdateFileRequest updateFileRequest) {
     try {
-      GitFilePathHelper.validateFilePath(updateFileRequest.getFilePath());
+      gitFilePathHelper.validateFilePath(updateFileRequest.getFilePath());
       ScmCommitFileResponseDTO scmCommitFileResponseDTO = scmFacilitatorService.updateFile(
           ScmUpdateFileRequestDTO.builder()
               .repoName(updateFileRequest.getRepoName())

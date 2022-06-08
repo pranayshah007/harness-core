@@ -4536,6 +4536,9 @@
     "ParameterField": {
       "type": "object",
       "properties": {
+        "defaultValue": {
+          "type": "object"
+        },
         "expression": {
           "type": "boolean"
         },
@@ -4563,6 +4566,9 @@
     "ParameterFieldBoolean": {
       "type": "object",
       "properties": {
+        "defaultValue": {
+          "type": "boolean"
+        },
         "expression": {
           "type": "boolean"
         },
@@ -4620,6 +4626,9 @@
     "ParameterFieldString": {
       "type": "object",
       "properties": {
+        "defaultValue": {
+          "type": "string"
+        },
         "expression": {
           "type": "boolean"
         },

@@ -116,8 +116,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
       , @ApiResponse(code = 500, response = ErrorDTO.class, message = "Internal server error")
     })
 
-@Tag(name = "Pipeline InputSets",
-    description = "Contain APIs corresponding to the Input Sets, including Overlay Input Sets.")
+@Tag(name = "Pipeline Input Set", description = "This contains APIs related to Input Sets")
 @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Bad Request",
     content =
     {
@@ -142,7 +141,8 @@ public class InputSetResourcePMS {
   @ApiOperation(value = "Gets an InputSet by identifier", nickname = "getInputSetForPipeline")
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
   @Operation(operationId = "getInputSet",
-      summary = "Gets Input Set for a given identifier. Throws error if no Input Set exists for the given identifier.",
+      description = "Returns Input Set for a Given Identifier (Throws an Error if no Input Set Exists)",
+      summary = "Fetch Input Set",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -241,7 +241,8 @@ public class InputSetResourcePMS {
   @POST
   @ApiOperation(value = "Create an InputSet For Pipeline", nickname = "createInputSetForPipeline")
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)
-  @Operation(operationId = "postInputSet", summary = "Create an Input Set for a Pipeline",
+  @Operation(operationId = "postInputSet", description = "Creates an Input Set for a Pipeline",
+      summary = "Create Input Set",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
@@ -335,7 +336,8 @@ public class InputSetResourcePMS {
   @Path("{inputSetIdentifier}")
   @ApiOperation(value = "Update an InputSet by identifier", nickname = "updateInputSetForPipeline")
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)
-  @Operation(operationId = "putInputSet", summary = "Update Input Set for Pipeline",
+  @Operation(operationId = "putInputSet", description = "Updates the Input Set for a Pipeline",
+      summary = "Update Input Set",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
@@ -440,7 +442,8 @@ public class InputSetResourcePMS {
   @Path("{inputSetIdentifier}")
   @ApiOperation(value = "Delete an InputSet by identifier", nickname = "deleteInputSetForPipeline")
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_DELETE)
-  @Operation(operationId = "deleteInputSet", summary = "Delete the Input Set by Identifier",
+  @Operation(operationId = "deleteInputSet", description = "Deletes the Input Set by Identifier",
+      summary = "Delete Input Set",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -469,7 +472,8 @@ public class InputSetResourcePMS {
   @GET
   @ApiOperation(value = "Gets InputSets list for a pipeline", nickname = "getInputSetsListForPipeline")
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
-  @Operation(operationId = "listInputSet", summary = "List all Input Sets for a pipeline",
+  @Operation(operationId = "listInputSet", description = "Lists all Input Sets for a Pipeline",
+      summary = "List Input Sets",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
@@ -527,7 +531,8 @@ public class InputSetResourcePMS {
   @Path("template")
   @ApiOperation(value = "Get template from a pipeline YAML", nickname = "getTemplateFromPipeline")
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
-  @Operation(operationId = "runtimeInputTemplate", summary = "Fetch Runtime Input Template for a Pipeline",
+  @Operation(operationId = "runtimeInputTemplate", description = "Returns Runtime Input Template for a Pipeline",
+      summary = "Fetch Runtime Input Template",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",

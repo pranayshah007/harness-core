@@ -243,9 +243,9 @@ public class ExecutionHelper {
           InputSetTemplateHelper.createTemplateFromPipeline(pipelineEntity.getYaml()), mergedRuntimeInputYaml);
       if (EmptyPredicate.isNotEmpty(invalidFQNsInInputSet)) {
         throw new InvalidRequestException("Some fields are not valid: "
-            + invalidFQNsInInputSet.keySet()
+            + invalidFQNsInInputSet.entrySet()
                   .stream()
-                  .map(FQN::getExpressionFqn)
+                  .map(o -> o.getKey().getExpressionFqn() + ": " + o.getValue())
                   .collect(Collectors.toList())
                   .toString());
       }
