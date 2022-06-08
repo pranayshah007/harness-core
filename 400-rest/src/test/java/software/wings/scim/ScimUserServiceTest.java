@@ -430,13 +430,15 @@ public class ScimUserServiceTest extends WingsBaseTest {
   }
 
   private PatchRequest getOktaActivityReplaceOperation() {
-    JsonObject jsonObject = new JsonObject();
-    jsonObject.addProperty("active", false);
-    JsonNode jsonNode;
-
+    final String str = "{\"active\""
+        + ":"
+        + "false"
+        + "}";
+    ObjectMapper mapper = new ObjectMapper();
+    JsonNode actualObj;
     try {
-      jsonNode = mapper.readTree(jsonObject.toString());
-      OktaReplaceOperation replaceOperation = new OktaReplaceOperation(MEMBERS, jsonNode);
+      actualObj = mapper.readTree(str);
+      OktaReplaceOperation replaceOperation = new OktaReplaceOperation("active", actualObj.get("active"));
       return new PatchRequest(Collections.singletonList(replaceOperation));
     } catch (IOException ioe) {
       log.error("IO Exception while creating okta replace operation in SCIM", ioe);
