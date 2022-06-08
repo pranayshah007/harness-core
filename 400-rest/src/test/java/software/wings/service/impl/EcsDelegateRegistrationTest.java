@@ -116,6 +116,7 @@ public class EcsDelegateRegistrationTest {
 
     verify(underTest, never()).handleEcsDelegateKeepAlivePacket(any());
     verify(underTest).handleEcsDelegateRegistration(any());
+
   }
 
   /**
