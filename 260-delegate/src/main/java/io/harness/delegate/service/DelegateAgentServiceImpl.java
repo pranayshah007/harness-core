@@ -1504,6 +1504,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       try {
         log.debug("Sending local heartbeat");
         sendLocalHeartBeat();
+        logCurrentTasks();
       } catch (Exception e) {
         log.error("Exception while scheduling local heartbeat and filling status data", e);
       }
