@@ -31,6 +31,8 @@ public class RestCallToNGManagerClientUtils {
         log.info("response raw {}, body {}", response.raw(), response.body().getData());
         return response.body().getData();
       } else {
+        log.info("Request {}, Response {}", request.request(), response.body());
+        log.info("Response {}", response.errorBody());
         log.error("response {}, request {}, request body {}", response.body(), request.request(),
             request.request().body().toString());
         // todo @Nikhil Add the error message here, currently the error message is not stored in responsedto ?
