@@ -244,22 +244,6 @@ if [[ "" != "$API_URL" ]]; then
   yq write -i $CONFIG_FILE apiUrl "$API_URL"
 fi
 
-if [[ "" != "$TIMESCALE_PASSWORD" ]]; then
-  yq write -i $CONFIG_FILE timescaledb.timescaledbPassword "$TIMESCALE_PASSWORD"
-fi
-
-if [[ "" != "$TIMESCALE_URI" ]]; then
-  yq write -i $CONFIG_FILE timescaledb.timescaledbUrl "$TIMESCALE_URI"
-fi
-
-if [[ "" != "$TIMESCALEDB_USERNAME" ]]; then
-  yq write -i $CONFIG_FILE timescaledb.timescaledbUsername "$TIMESCALEDB_USERNAME"
-fi
-
-if [[ "" != "$ENABLE_DASHBOARD_TIMESCALE" ]]; then
-  yq write -i $CONFIG_FILE enableDashboardTimescale $ENABLE_DASHBOARD_TIMESCALE
-fi
-
 if [[ "" != "$MANAGER_SECRET" ]]; then
   yq write -i $CONFIG_FILE managerServiceSecret "$MANAGER_SECRET"
 fi
@@ -335,5 +319,3 @@ replace_key_value eventsFramework.redis.password $EVENTS_FRAMEWORK_REDIS_PASSWOR
 replace_key_value eventsFramework.redis.sslConfig.enabled $EVENTS_FRAMEWORK_REDIS_SSL_ENABLED
 replace_key_value eventsFramework.redis.sslConfig.CATrustStorePath $EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PATH
 replace_key_value eventsFramework.redis.sslConfig.CATrustStorePassword $EVENTS_FRAMEWORK_REDIS_SSL_CA_TRUST_STORE_PASSWORD
-
-replace_key_value enforcementClientConfiguration.enforcementCheckEnabled "$ENFORCEMENT_CHECK_ENABLED"

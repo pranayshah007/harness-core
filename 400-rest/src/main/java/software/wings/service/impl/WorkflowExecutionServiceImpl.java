@@ -4280,16 +4280,17 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
 
     RepeatStateExecutionData repeatStateExecutionData = (RepeatStateExecutionData) stateExecutionData;
 
-    Map<String, StateExecutionElement> elementMap = repeatStateExecutionData.getRepeatElements()
-                                                        .stream()
-                                                        .map(element
-                                                            -> StateExecutionElement.builder()
-                                                                   .executionContextElementId(element.getUuid())
-                                                                   .name(element.getName())
-                                                                   .progress(0)
-                                                                   .status(STARTING)
-                                                                   .build())
-                                                        .collect(toMap(StateExecutionElement::getName, identity()));
+    Map<String, StateExecutionElement> elementMap =
+        repeatStateExecutionData.getRepeatElements()
+            .stream()
+            .map(element
+                -> StateExecutionElement.builder()
+                       .executionContextElementId(element.getUuid())
+                       .name(element.getName())
+                       .progress(0)
+                       .status(STARTING)
+                       .build())
+            .collect(toMap(StateExecutionElement::getName, identity(), (o1, o2) -> o1));
 
     StateMachine stateMachine = stateExecutionService.obtainStateMachine(stateExecutionInstance);
 

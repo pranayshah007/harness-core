@@ -7,6 +7,8 @@
 
 package io.harness.cdng.service.steps;
 
+import static java.lang.Boolean.TRUE;
+
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -49,7 +51,7 @@ public class ServiceStepOutcome implements Outcome, ExecutionSweepingOutput {
     return ServiceStepOutcome.builder()
         .identifier(serviceEntity.getIdentifier())
         .name(serviceEntity.getName())
-        .description(serviceEntity.getName())
+        .description(serviceEntity.getDescription())
         .type(type)
         .tags(serviceEntity.getTags() == null
                 ? Collections.emptyMap()
@@ -65,7 +67,7 @@ public class ServiceStepOutcome implements Outcome, ExecutionSweepingOutput {
         .description(description)
         .tags(tags)
         .type(type)
-        .gitOpsEnabled(gitOpsEnabled)
+        .gitOpsEnabled(gitOpsEnabled == TRUE)
         .build();
   }
 }

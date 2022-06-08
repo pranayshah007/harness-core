@@ -86,7 +86,7 @@ public class FileFailsafeServiceImpl implements FileFailsafeService {
         return newFileDTO;
       }));
     } catch (DuplicateKeyException ex) {
-      throw new DuplicateFieldException(String.format("Try using another name, [%s] already exists with root [%s]",
+      throw new DuplicateFieldException(String.format("Try using another name, [%s] already exists in parent folder [%s]",
                                             newNGFile.getName(), newNGFile.getParentIdentifier()),
           USER, ex);
     }
