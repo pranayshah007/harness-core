@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.beans.InputSetReference;
 import io.harness.beans.NGTemplateReference;
+import io.harness.beans.ServiceOverridesReference;
 import io.harness.beans.TriggerReference;
 import io.harness.common.EntityReference;
 import io.harness.common.EntityTypeConstants;
@@ -243,7 +244,7 @@ public enum EntityType {
   INFRASTRUCTURE(
       ModuleType.CORE, EntityTypeConstants.INFRASTRUCTURE, IdentifierRef.class, EntityYamlRootNames.INFRASTRUCTURE),
   @JsonProperty(EntityTypeConstants.SERVICE_OVERRIDES)
-  SERVICE_OVERRIDES(ModuleType.CORE, EntityTypeConstants.SERVICE_OVERRIDES, IdentifierRef.class,
+  SERVICE_OVERRIDES(ModuleType.CORE, EntityTypeConstants.SERVICE_OVERRIDES, ServiceOverridesReference.class,
       EntityYamlRootNames.SERVICE_OVERRIDES);
 
   private final ModuleType moduleType;
