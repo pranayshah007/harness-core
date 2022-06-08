@@ -43,16 +43,16 @@ public class PcfUtils {
   private PcfUtils() {}
 
   public static void logStatus(boolean start, String method) {
-    log.debug("{}: {}, {}{}", CF_CALL, start ? CF_CALL_INFO_STATUS_START : CF_CALL_INFO_STATUS_END, CF_CALL_INFO_METHOD,
+    log.info("{}: {}, {}{}", CF_CALL, start ? CF_CALL_INFO_STATUS_START : CF_CALL_INFO_STATUS_END, CF_CALL_INFO_METHOD,
         method);
   }
 
   public static void logCliCommand(String command) {
-    log.debug("{}: CLI, {}", CF_CALL, command);
+    log.info("{}: CLI, {}", CF_CALL, command);
   }
 
   public static void logSdkCommand(String API, Object request, long timeInMillis) {
-    log.debug("{}: SDK, {}, request: {}, timeInMillis: {}", CF_CALL, API, request, timeInMillis);
+    log.info("{}: SDK, {}, request: {}, timeInMillis: {}", CF_CALL, API, request, timeInMillis);
   }
 
   public static boolean checkIfAppAutoscalarInstalled(final String cfCliPath, CfCliVersion cfCliVersion)
