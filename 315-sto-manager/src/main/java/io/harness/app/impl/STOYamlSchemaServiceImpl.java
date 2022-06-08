@@ -26,7 +26,6 @@ import io.harness.plancreator.steps.StepElementConfig;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.remote.client.RestClientUtils;
-import io.harness.utils.FeatureRestrictionsGetter;
 import io.harness.yaml.schema.SchemaGeneratorUtils;
 import io.harness.yaml.schema.YamlSchemaGenerator;
 import io.harness.yaml.schema.YamlSchemaProvider;
@@ -48,6 +47,7 @@ import com.google.common.collect.ImmutableSortedSet;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.lang.reflect.Field;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -67,19 +67,16 @@ public class STOYamlSchemaServiceImpl implements STOYamlSchemaService {
   private final Map<Class<?>, Set<Class<?>>> yamlSchemaSubtypes;
   private final List<YamlSchemaRootClass> yamlSchemaRootClasses;
   private final AccountClient accountClient;
-  private final FeatureRestrictionsGetter featureRestrictionsGetter;
 
   @Inject
   public STOYamlSchemaServiceImpl(YamlSchemaProvider yamlSchemaProvider, YamlSchemaGenerator yamlSchemaGenerator,
       @Named("yaml-schema-subtypes") Map<Class<?>, Set<Class<?>>> yamlSchemaSubtypes,
-      List<YamlSchemaRootClass> yamlSchemaRootClasses, AccountClient accountClient,
-      FeatureRestrictionsGetter featureRestrictionsGetter) {
+      List<YamlSchemaRootClass> yamlSchemaRootClasses, AccountClient accountClient) {
     this.yamlSchemaProvider = yamlSchemaProvider;
     this.yamlSchemaGenerator = yamlSchemaGenerator;
     this.yamlSchemaSubtypes = yamlSchemaSubtypes;
     this.yamlSchemaRootClasses = yamlSchemaRootClasses;
     this.accountClient = accountClient;
-    this.featureRestrictionsGetter = featureRestrictionsGetter;
   }
 
   @Override
@@ -142,16 +139,15 @@ public class STOYamlSchemaServiceImpl implements STOYamlSchemaService {
             .filter(FeatureFlag::isEnabled)
             .map(FeatureFlag::getName)
             .collect(Collectors.toSet());
-    Map<String, Boolean> featureRestrictionsMap =
-        featureRestrictionsGetter.getFeatureRestrictionsAvailability(stepSchemaWithDetails, accountIdentifier);
+
     // Should be after this modifyRefsNamespace call.
     YamlSchemaUtils.addOneOfInExecutionWrapperConfig(integrationStageSchema.get(DEFINITIONS_NODE),
         YamlSchemaUtils.getNodeClassesByYamlGroup(
-            yamlSchemaRootClasses, StepCategory.STEP.name(), enabledFeatureFlags, featureRestrictionsMap),
+            yamlSchemaRootClasses, StepCategory.STEP.name(), enabledFeatureFlags, Collections.emptyMap()),
         STO_NAMESPACE);
     if (stepSchemaWithDetails != null) {
       YamlSchemaUtils.addOneOfInExecutionWrapperConfig(integrationStageSchema.get(DEFINITIONS_NODE),
-          stepSchemaWithDetails, ModuleType.CD, enabledFeatureFlags, featureRestrictionsMap);
+          stepSchemaWithDetails, ModuleType.CD, enabledFeatureFlags, Collections.emptyMap());
     }
 
     ObjectMapper mapper = SchemaGeneratorUtils.getObjectMapperForSchemaGeneration();
