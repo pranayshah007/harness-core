@@ -31,10 +31,10 @@ import org.springframework.batch.core.Job;
 @Getter
 @OwnedBy(HarnessTeam.CE)
 public enum BatchJobType {
-  BILLING_DATA_PIPELINE(50, 1, ChronoUnit.HOURS, emptyList(), OUT_OF_CLUSTER),
-  SYNC_BILLING_REPORT_S3(100, 1, ChronoUnit.HOURS, emptyList(), OUT_OF_CLUSTER),
+  BILLING_DATA_PIPELINE(50, 1, ChronoUnit.HOURS, emptyList(), OUT_OF_CLUSTER_ECS),
+  SYNC_BILLING_REPORT_S3(100, 1, ChronoUnit.HOURS, emptyList(), OUT_OF_CLUSTER_ECS),
   SYNC_BILLING_REPORT_AZURE(100, 1, ChronoUnit.HOURS, emptyList(), OUT_OF_CLUSTER),
-  SYNC_BILLING_REPORT_GCP(100, 1, ChronoUnit.HOURS, emptyList(), OUT_OF_CLUSTER),
+  SYNC_BILLING_REPORT_GCP(100, 1, ChronoUnit.HOURS, emptyList(), OUT_OF_CLUSTER_ECS),
   AWS_ECS_CLUSTER_SYNC(110, 1, ChronoUnit.DAYS, emptyList(), OUT_OF_CLUSTER_ECS),
   AWS_ECS_CLUSTER_DATA_SYNC(115, 1, ChronoUnit.HOURS, emptyList(), OUT_OF_CLUSTER_ECS),
   AWS_ECS_SERVICE_RECOMMENDATION(130, 1, ChronoUnit.DAYS, singletonList(AWS_ECS_CLUSTER_DATA_SYNC), OUT_OF_CLUSTER_ECS),
