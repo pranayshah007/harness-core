@@ -21,6 +21,8 @@ import io.harness.ccm.graphql.dto.recommendation.FilterStatsDTO;
 import io.harness.ccm.graphql.dto.recommendation.K8sRecommendationFilterDTO;
 import io.harness.ccm.graphql.dto.recommendation.RecommendationsDTO;
 import io.harness.ccm.graphql.query.recommendation.RecommendationsOverviewQueryV2;
+import io.harness.ccm.helper.RecommendationQueryHelper;
+import io.harness.ccm.remote.beans.recommendation.CCMRecommendationFilterPropertiesDTO;
 import io.harness.ccm.remote.beans.recommendation.FilterValuesDTO;
 import io.harness.ccm.remote.utils.GraphQLToRESTHelper;
 import io.harness.ccm.utils.LogAccountIdentifier;
@@ -69,7 +71,7 @@ import org.springframework.stereotype.Service;
 public class RESTWrapperRecommendationOverview {
   @Inject private RecommendationsOverviewQueryV2 overviewQueryV2;
 
-  private static final String FILTER_DESCRIPTION = "Recommendations filter body.";
+  private static final String FILTER_DESCRIPTION = "CCM Recommendations filter body.";
 
   @POST
   @Path("list")
@@ -91,7 +93,8 @@ public class RESTWrapperRecommendationOverview {
   list(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
            NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @NotNull @Valid @RequestBody(
-          required = true, description = FILTER_DESCRIPTION) K8sRecommendationFilterDTO filter) {
+          required = true, description = FILTER_DESCRIPTION) CCMRecommendationFilterPropertiesDTO ccmFilter) {
+    K8sRecommendationFilterDTO filter = RecommendationQueryHelper.buildK8sRecommendationFilterDTO(ccmFilter);
     GraphQLToRESTHelper.setDefaultPaginatedFilterValues(filter);
     final ResolutionEnvironment env = GraphQLToRESTHelper.createResolutionEnv(accountId);
 
@@ -106,7 +109,7 @@ public class RESTWrapperRecommendationOverview {
   @Consumes(MediaType.APPLICATION_JSON)
   @ApiOperation(value = "Recommendations Statistics", nickname = "recommendationStats")
   @Operation(operationId = "recommendationStats",
-      description = "Returns the Cloud Cost Recommendations statistics for the specified filiters.",
+      description = "Returns the Cloud Cost Recommendations statistics for the specified filters.",
       summary = "Return Recommendations statistics",
       responses =
       {
@@ -118,7 +121,8 @@ public class RESTWrapperRecommendationOverview {
   stats(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
             NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @NotNull @Valid @RequestBody(
-          required = true, description = FILTER_DESCRIPTION) K8sRecommendationFilterDTO filter) {
+          required = true, description = FILTER_DESCRIPTION) CCMRecommendationFilterPropertiesDTO ccmFilter) {
+    K8sRecommendationFilterDTO filter = RecommendationQueryHelper.buildK8sRecommendationFilterDTO(ccmFilter);
     GraphQLToRESTHelper.setDefaultFilterValues(filter);
     final ResolutionEnvironment env = GraphQLToRESTHelper.createResolutionEnv(accountId);
 
@@ -145,7 +149,8 @@ public class RESTWrapperRecommendationOverview {
   count(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
             NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @NotNull @Valid @RequestBody(
-          required = true, description = FILTER_DESCRIPTION) K8sRecommendationFilterDTO filter) {
+          required = true, description = FILTER_DESCRIPTION) CCMRecommendationFilterPropertiesDTO ccmFilter) {
+    K8sRecommendationFilterDTO filter = RecommendationQueryHelper.buildK8sRecommendationFilterDTO(ccmFilter);
     GraphQLToRESTHelper.setDefaultFilterValues(filter);
     final ResolutionEnvironment env = GraphQLToRESTHelper.createResolutionEnv(accountId, filter);
 
@@ -178,7 +183,8 @@ public class RESTWrapperRecommendationOverview {
     }
 
     K8sRecommendationFilterDTO filter =
-        firstNonNull(filterValues.getFilter(), K8sRecommendationFilterDTO.builder().build());
+        firstNonNull(RecommendationQueryHelper.buildK8sRecommendationFilterDTO(filterValues.getFilter()),
+            K8sRecommendationFilterDTO.builder().build());
     GraphQLToRESTHelper.setDefaultFilterValues(filter);
     final ResolutionEnvironment env = GraphQLToRESTHelper.createResolutionEnv(accountId);
 

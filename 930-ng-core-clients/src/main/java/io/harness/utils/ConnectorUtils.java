@@ -110,6 +110,7 @@ public class ConnectorUtils {
       case GITLAB:
       case BITBUCKET:
       case CODECOMMIT:
+      case AZURE_REPO:
         connectorDetails = getGitConnectorDetails(ngAccess, connectorDTO, connectorDetailsBuilder);
         break;
       case GCP:

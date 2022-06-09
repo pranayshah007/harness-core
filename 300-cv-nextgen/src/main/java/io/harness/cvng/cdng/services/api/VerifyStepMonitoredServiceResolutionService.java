@@ -15,5 +15,5 @@ public interface VerifyStepMonitoredServiceResolutionService {
   ResolvedCVConfigInfo getResolvedCVConfigInfo(
       ServiceEnvironmentParams serviceEnvironmentParams, MonitoredServiceNode monitoredServiceNode);
   default void managePerpetualTasks(ServiceEnvironmentParams serviceEnvironmentParams,
-                                    ResolvedCVConfigInfo resolvedCVConfigInfo, String verificationJobInstanceId) {}
+      ResolvedCVConfigInfo resolvedCVConfigInfo, String verificationJobInstanceId) {}
 }

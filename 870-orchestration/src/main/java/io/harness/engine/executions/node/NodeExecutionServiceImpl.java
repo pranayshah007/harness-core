@@ -590,7 +590,13 @@ public class NodeExecutionServiceImpl implements NodeExecutionService {
       return;
     }
     finalList.addAll(children);
-    children.forEach(child -> extractChildList(parentChildrenMap, child.getUuid(), finalList));
+    children.forEach(child -> {
+      // NOTE: We are ignoring the status of steps inside strategy because of max concurrency defined.
+      // We need to run all the steps inside strategy once
+      if (child.getStepType().getStepCategory() != StepCategory.STRATEGY) {
+        extractChildList(parentChildrenMap, child.getUuid(), finalList);
+      }
+    });
   }
 
   @VisibleForTesting

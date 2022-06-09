@@ -38,11 +38,13 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(CDC)
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Slf4j
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -112,7 +114,11 @@ public class JiraIssueNG implements TicketNG {
         // Special handling for timetracking field.
         ((JiraTimeTrackingFieldNG) value).addToFields(fields);
       } else {
-        fields.put(name, value);
+        // Refer to -  https://harness.atlassian.net/browse/CDS-38402
+        if (fields.containsKey(name)) {
+          log.warn("Jira Issue: Found already existing name - {}. Skipping.", name);
+        }
+        fields.putIfAbsent(name, value);
       }
       return;
     }

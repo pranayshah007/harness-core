@@ -607,6 +607,29 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
     return false;
   }
 
+  @Override
+  public boolean isDelegateGroupWhitelisted(DelegateTask task, String delegateId) {
+    if (!task.isNGTask(task.getSetupAbstractions())) {
+      return false;
+    }
+
+    Delegate delegate = delegateCache.get(task.getAccountId(), delegateId, false);
+    if (delegate == null) {
+      return false;
+    }
+    List<Delegate> delegatesFromSameGroup =
+        delegateCache.getDelegatesForGroup(task.getAccountId(), delegate.getDelegateGroupId());
+    if (isEmpty(delegatesFromSameGroup)) {
+      return false;
+    }
+    for (Delegate del : delegatesFromSameGroup) {
+      if (isWhitelisted(task, del.getUuid())) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   public static boolean shouldValidateCriteria(Optional<DelegateConnectionResult> result, long now) {
     if (!result.isPresent()) {
       return true;

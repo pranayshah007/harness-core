@@ -82,6 +82,7 @@ import software.wings.stencils.DefaultValue;
 import com.github.reinert.jjschema.Attributes;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -202,6 +203,10 @@ public class GcbState extends State implements SweepingOutputStateMixin {
         ? context.getGlobalSettingValue(context.getAccountId(), gcbOptions.getRepositorySpec().getGitConfigId())
         : null;
 
+    List<EncryptedDataDetail> gitConfigEncryptionDetails = new ArrayList<>();
+    if (gitConfig != null) {
+      gitConfigEncryptionDetails = secretManager.getEncryptionDetails(gitConfig);
+    }
     if (gitConfig != null && gitConfig.getUrlType() == GitConfig.UrlType.ACCOUNT) {
       String repoName = gcbOptions.getRepositorySpec().getRepoName();
       gitConfig.setRepoName(repoName);
@@ -209,7 +214,6 @@ public class GcbState extends State implements SweepingOutputStateMixin {
     }
     List<EncryptedDataDetail> gcpEncryptionDetails =
         secretManager.getEncryptionDetails(gcpConfig, context.getAppId(), context.getWorkflowExecutionId());
-    List<EncryptedDataDetail> gitConfigEncryptionDetails = secretManager.getEncryptionDetails(gitConfig);
     List<EncryptedDataDetail> allEncryptionDetails = Stream.of(gcpEncryptionDetails, gitConfigEncryptionDetails)
                                                          .flatMap(Collection::stream)
                                                          .collect(Collectors.toList());

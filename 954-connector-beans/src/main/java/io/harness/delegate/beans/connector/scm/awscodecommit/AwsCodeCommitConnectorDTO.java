@@ -84,6 +84,11 @@ public class AwsCodeCommitConnectorDTO extends ConnectorConfigDTO implements Scm
   }
 
   @Override
+  public String getFileUrl(String branchName, String filePath, String repoName) {
+    return "";
+  }
+
+  @Override
   public void validate() {
     GitClientHelper.validateURL(url);
   }

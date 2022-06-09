@@ -280,7 +280,7 @@ public class CfMigrationService {
         log.info(
             "CF-SYNC Creating Rules for AccountIDs for FF[{}], environment [{}]", featureFlag.getName(), cfEnvironment);
         List<PatchInstruction> accountToBeAddedPatchInstruction =
-            cfAdminApi.getFeatureFlagRulesForTargetingAccounts(tobeAddedAccountIds, maxPriority + 100);
+            cfAdminApi.getFeatureFlagRulesForTargetingAccounts(tobeAddedAccountIds);
         instructions.addAll(accountToBeAddedPatchInstruction);
       }
 

@@ -15,15 +15,12 @@ import io.harness.EntityType;
 import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.app.intfc.STOYamlSchemaService;
-import io.harness.ci.plan.creator.execution.CIPipelineModuleInfo;
 import io.harness.common.EntityTypeConstants;
 import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
-import io.harness.plancreator.stages.stage.StageElementConfig;
-import io.harness.plancreator.steps.StepElementConfig;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.yaml.schema.YamlSchemaResource;
 import io.harness.yaml.schema.beans.PartialSchemaDTO;
@@ -73,32 +70,6 @@ public class STOYamlSchemaResource implements YamlSchemaResource {
         stoYamlSchemaService.getStageYamlSchema(accountIdentifier, orgIdentifier, projectIdentifier, scope));
 
     return ResponseDTO.newResponse(partialSchemaDTOList);
-  }
-
-  @GET
-  @ApiOperation(value = "dummy api for checking integration stage", nickname = "dummyApiForSwaggerStageSchemaCheck")
-  @Path("/dummyApiForSwaggerStageSchemaCheck")
-  // DO NOT DELETE THIS WITHOUT CONFIRMING WITH UI
-  public ResponseDTO<StageElementConfig> dummyApiForSwaggerSchemaCheckForStage() {
-    return ResponseDTO.newResponse(StageElementConfig.builder().build());
-  }
-
-  @GET
-  @ApiOperation(value = "dummy api for checking integration stage", nickname = "dummyApiForSwaggerStepSchemaCheck")
-  @Path("/dummyApiForSwaggerStepSchemaCheck")
-  // DO NOT DELETE THIS WITHOUT CONFIRMING WITH UI
-  public ResponseDTO<StepElementConfig> dummyApiForSwaggerSchemaCheckForStep() {
-    return ResponseDTO.newResponse(StepElementConfig.builder().build());
-  }
-
-  @GET
-  @ApiOperation(value = "dummy api for checking CIPipelineModuleInfo",
-      nickname = "dummyApiForSwaggerCIPipelineModuleInfoSchemaCheck")
-  @Path("/dummyApiForSwaggerCIPipelineModuleInfoSchemaCheck")
-  // DO NOT DELETE THIS WITHOUT CONFIRMING WITH UI
-  public ResponseDTO<CIPipelineModuleInfo>
-  dummyApiForSwaggerSchemaCheckForCIPipelineModuleInfo() {
-    return ResponseDTO.newResponse(CIPipelineModuleInfo.builder().build());
   }
 
   @GET

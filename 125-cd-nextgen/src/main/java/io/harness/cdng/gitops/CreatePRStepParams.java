@@ -23,6 +23,7 @@ public class CreatePRStepParams extends CreatePRBaseStepInfo implements GitOpsSp
       CreatePRStepUpdateConfigScriptWrapper updateConfigScriptWrapper, ParameterField<String> commitMessage,
       ParameterField<String> targetBranch, ParameterField<Boolean> isNewBranch, ParameterField<String> prTitle,
       ShellType shellType, ParameterField<Boolean> overrideConfig) {
-    super(shellType, overrideConfig, stringMap, updateConfigScriptWrapper, delegateSelectors, store, commitMessage, targetBranch, isNewBranch, prTitle);
+    super(shellType, overrideConfig, stringMap, updateConfigScriptWrapper, delegateSelectors, store, commitMessage,
+        targetBranch, isNewBranch, prTitle);
   }
 }

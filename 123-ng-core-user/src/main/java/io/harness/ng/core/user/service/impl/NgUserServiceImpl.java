@@ -148,8 +148,6 @@ public class NgUserServiceImpl implements NgUserService {
   private static final List<String> MANAGED_RESOURCE_GROUP_IDENTIFIERS = ImmutableList.of(
       ALL_RESOURCES_INCLUDING_CHILD_SCOPES_RESOURCE_GROUP_IDENTIFIER, DEFAULT_ACCOUNT_LEVEL_RESOURCE_GROUP_IDENTIFIER,
       DEFAULT_ORGANIZATION_LEVEL_RESOURCE_GROUP_IDENTIFIER, DEFAULT_PROJECT_LEVEL_RESOURCE_GROUP_IDENTIFIER);
-  private static final List<String> MANAGED_ROLE_IDENTIFIERS =
-      ImmutableList.of(ACCOUNT_VIEWER, ORGANIZATION_VIEWER, PROJECT_VIEWER);
   public static final int DEFAULT_PAGE_SIZE = 10000;
   private final UserClient userClient;
   private final AccountClient accountClient;
@@ -539,7 +537,7 @@ public class NgUserServiceImpl implements NgUserService {
               .build();
       roleAssignmentDTOs.add(roleAssignmentDTO);
     }
-    createRoleAssignments(serviceAccountId, scope, roleAssignmentDTOs);
+    createRoleAssignments(serviceAccountId, scope, roleAssignmentDTOs, false);
   }
 
   @Override
@@ -550,7 +548,8 @@ public class NgUserServiceImpl implements NgUserService {
         ngFeatureFlagHelperService.isEnabled(scope.getAccountIdentifier(), FeatureName.ACCOUNT_BASIC_ROLE);
     addUserToScopeInternal(userId, source, scope, getDefaultRoleIdentifier(scope, isAccountBasicFeatureFlagEnabled));
     addUserToParentScope(userId, scope, source, isAccountBasicFeatureFlagEnabled);
-    createRoleAssignments(userId, scope, createRoleAssignmentDTOs(roleBindings, userId, scope));
+    createRoleAssignments(
+        userId, scope, createRoleAssignmentDTOs(roleBindings, userId, scope), isAccountBasicFeatureFlagEnabled);
     userGroupService.addUserToUserGroups(scope, userId, getValidUserGroups(scope, userGroups));
   }
 
@@ -569,15 +568,20 @@ public class NgUserServiceImpl implements NgUserService {
   }
 
   @VisibleForTesting
-  protected void createRoleAssignments(String userId, Scope scope, List<RoleAssignmentDTO> roleAssignmentDTOs) {
+  protected void createRoleAssignments(String userId, Scope scope, List<RoleAssignmentDTO> roleAssignmentDTOs,
+      boolean isAccountBasicFeatureFlagEnabled) {
     if (isEmpty(roleAssignmentDTOs)) {
       return;
     }
     List<RoleAssignmentDTO> managedRoleAssignments =
-        roleAssignmentDTOs.stream().filter(this::isRoleAssignmentManaged).collect(toList());
+        roleAssignmentDTOs.stream()
+            .filter(role -> isRoleAssignmentManaged(role, isAccountBasicFeatureFlagEnabled))
+            .collect(toList());
     List<RoleAssignmentDTO> userRoleAssignments =
         roleAssignmentDTOs.stream()
-            .filter(((Predicate<RoleAssignmentDTO>) this::isRoleAssignmentManaged).negate())
+            .filter(
+                ((Predicate<RoleAssignmentDTO>) role -> isRoleAssignmentManaged(role, isAccountBasicFeatureFlagEnabled))
+                    .negate())
             .collect(toList());
 
     try {
@@ -602,9 +606,19 @@ public class NgUserServiceImpl implements NgUserService {
     }
   }
 
-  private boolean isRoleAssignmentManaged(RoleAssignmentDTO roleAssignmentDTO) {
-    return MANAGED_ROLE_IDENTIFIERS.stream().anyMatch(
-               roleIdentifier -> roleIdentifier.equals(roleAssignmentDTO.getRoleIdentifier()))
+  private List<String> getManagedRoleIdentifiers(
+      RoleAssignmentDTO roleAssignmentDTO, boolean isAccountBasicFeatureFlagEnabled) {
+    if (roleAssignmentDTO.getPrincipal().getType().equals(USER) && isAccountBasicFeatureFlagEnabled) {
+      return ImmutableList.of(ACCOUNT_BASIC, ORGANIZATION_VIEWER, PROJECT_VIEWER);
+    }
+    return ImmutableList.of(ACCOUNT_VIEWER, ORGANIZATION_VIEWER, PROJECT_VIEWER);
+  }
+
+  private boolean isRoleAssignmentManaged(
+      RoleAssignmentDTO roleAssignmentDTO, boolean isAccountBasicFeatureFlagEnabled) {
+    return getManagedRoleIdentifiers(roleAssignmentDTO, isAccountBasicFeatureFlagEnabled)
+               .stream()
+               .anyMatch(roleIdentifier -> roleIdentifier.equals(roleAssignmentDTO.getRoleIdentifier()))
         && MANAGED_RESOURCE_GROUP_IDENTIFIERS.stream().anyMatch(
             resourceGroupIdentifier -> resourceGroupIdentifier.equals(roleAssignmentDTO.getResourceGroupIdentifier()));
   }

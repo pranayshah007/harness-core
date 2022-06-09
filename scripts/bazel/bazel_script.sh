@@ -106,6 +106,7 @@ BAZEL_MODULES="\
   //870-orchestration:module \
   //874-orchestration-delay:module \
   //876-orchestration-beans:module \
+  //877-filestore:module \
   //878-ng-common-utilities:module \
   //879-pms-sdk:module \
   //882-pms-sdk-core:module \

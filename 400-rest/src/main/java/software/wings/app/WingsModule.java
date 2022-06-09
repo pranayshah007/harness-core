@@ -103,8 +103,10 @@ import io.harness.delegate.configuration.DelegateConfiguration;
 import io.harness.delegate.event.listener.OrganizationEntityCRUDEventListener;
 import io.harness.delegate.event.listener.ProjectEntityCRUDEventListener;
 import io.harness.delegate.outbox.DelegateOutboxEventHandler;
+import io.harness.delegate.service.impl.DelegateDownloadServiceImpl;
 import io.harness.delegate.service.impl.DelegateRingServiceImpl;
 import io.harness.delegate.service.impl.DelegateUpgraderServiceImpl;
+import io.harness.delegate.service.intfc.DelegateDownloadService;
 import io.harness.delegate.service.intfc.DelegateNgTokenService;
 import io.harness.delegate.service.intfc.DelegateRingService;
 import io.harness.delegate.service.intfc.DelegateUpgraderService;
@@ -1175,6 +1177,7 @@ public class WingsModule extends AbstractModule implements ServersModule {
     bind(DelegateTokenService.class).to(DelegateTokenServiceImpl.class);
     bind(InstanceDataService.class).to(InstanceDataServiceImpl.class);
     bind(EntityMetadataService.class).to(EntityMetadataServiceImpl.class);
+    bind(DelegateDownloadService.class).to(DelegateDownloadServiceImpl.class);
 
     bind(WingsMongoExportImport.class);
 

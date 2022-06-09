@@ -10,6 +10,7 @@ package io.harness.stateutils.buildstate;
 import static io.harness.beans.sweepingoutputs.StageInfraDetails.STAGE_INFRA_DETAILS;
 import static io.harness.rule.OwnerRule.ALEKSANDAR;
 import static io.harness.rule.OwnerRule.HARSH;
+import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -35,6 +36,8 @@ import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.docker.DockerAuthCredentialsDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesAuthCredentialDTO;
 import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitHttpsCredentialsSpecDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoHttpCredentialsSpecDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoUsernameTokenDTO;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitAuthenticationDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubHttpCredentialsSpecDTO;
 import io.harness.exception.InvalidArgumentsException;
@@ -81,6 +84,7 @@ public class ConnectorUtilsTest extends CIExecutionTestBase {
   @InjectMocks ConnectorUtils connectorUtils;
   @Mock private ExecutionSweepingOutputService executionSweepingOutputResolver;
   private NGAccess ngAccess;
+  private ConnectorDTO azureRepoConnectorDto;
   private ConnectorDTO gitHubConnectorDto;
   private ConnectorDTO dockerConnectorDto;
   private ConnectorDTO k8sConnectorDto;
@@ -96,6 +100,7 @@ public class ConnectorUtilsTest extends CIExecutionTestBase {
   private static final String connectorId03 = "k8sConnector";
   private static final String connectorId04 = "k8sConnectorFromDelegate";
   private static final String connectorId05 = "awsCodeCommitConnector";
+  private static final String connectorId06 = "azureRepoConnector";
   private static final String unsupportedConnectorId = "k8sConnectorFromDelegate";
   private static final Set<String> connectorIdSet =
       new HashSet<>(Arrays.asList(connectorId01, connectorId02, connectorId03));
@@ -115,6 +120,7 @@ public class ConnectorUtilsTest extends CIExecutionTestBase {
     k8sConnectorDto = ciExecutionPlanTestHelper.getK8sConnectorDTO();
     k8sConnectorFromDelegate = ciExecutionPlanTestHelper.getK8sConnectorFromDelegateDTO();
     awsCodeCommitConnectorDto = ciExecutionPlanTestHelper.getAwsCodeCommitConnectorDTO();
+    azureRepoConnectorDto = ciExecutionPlanTestHelper.getAzureRepoConnectorDTO();
   }
 
   @Test
@@ -361,5 +367,33 @@ public class ConnectorUtilsTest extends CIExecutionTestBase {
     List<TaskSelector> taskSelectors = connectorUtils.fetchDelegateSelector(ambiance, executionSweepingOutputResolver);
     assertThat(taskSelectors)
         .isEqualTo(Arrays.asList(TaskSelector.newBuilder().setSelector("delegate").setOrigin("").build()));
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testGetAzureRepoConnector() throws IOException {
+    Call<ResponseDTO<Optional<ConnectorDTO>>> getConnectorResourceCall = mock(Call.class);
+    ResponseDTO<Optional<ConnectorDTO>> responseDTO = ResponseDTO.newResponse(Optional.of(azureRepoConnectorDto));
+    when(getConnectorResourceCall.execute()).thenReturn(Response.success(responseDTO));
+
+    when(connectorResourceClient.get(eq(connectorId06), eq(ACCOUNT_ID), eq(ORG_ID), eq(PROJ_ID)))
+        .thenReturn(getConnectorResourceCall);
+    when(secretManagerClientService.getEncryptionDetails(eq(ngAccess), any(AzureRepoUsernameTokenDTO.class)))
+        .thenReturn(Collections.singletonList(EncryptedDataDetail.builder().build()));
+
+    ConnectorDetails connectorDetails = connectorUtils.getConnectorDetails(ngAccess, connectorId06);
+    assertThat(connectorDetails.getConnectorConfig())
+        .isEqualTo(azureRepoConnectorDto.getConnectorInfo().getConnectorConfig());
+    assertThat(connectorDetails.getConnectorType())
+        .isEqualTo(azureRepoConnectorDto.getConnectorInfo().getConnectorType());
+    assertThat(connectorDetails.getIdentifier()).isEqualTo(azureRepoConnectorDto.getConnectorInfo().getIdentifier());
+    assertThat(connectorDetails.getOrgIdentifier())
+        .isEqualTo(azureRepoConnectorDto.getConnectorInfo().getOrgIdentifier());
+    assertThat(connectorDetails.getProjectIdentifier())
+        .isEqualTo(azureRepoConnectorDto.getConnectorInfo().getProjectIdentifier());
+    verify(connectorResourceClient, times(1)).get(eq(connectorId06), eq(ACCOUNT_ID), eq(ORG_ID), eq(PROJ_ID));
+    verify(secretManagerClientService, times(1))
+        .getEncryptionDetails(eq(ngAccess), any(AzureRepoHttpCredentialsSpecDTO.class));
   }
 }

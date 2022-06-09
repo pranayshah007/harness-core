@@ -10,6 +10,7 @@ package io.harness.cdng.configfile.validator;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.cdng.manifest.yaml.harness.HarnessStoreConstants.HARNESS_STORE_TYPE;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.lang.String.format;
@@ -17,12 +18,13 @@ import static java.lang.String.format;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.manifest.ManifestStoreType;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
-import io.harness.cdng.manifest.yaml.harness.HarnessStoreConfig;
+import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.pms.yaml.ParameterField;
 
+import java.util.List;
 import lombok.experimental.UtilityClass;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -35,7 +37,7 @@ public class ConfigFileOutcomeValidator {
     }
 
     if (HARNESS_STORE_TYPE.equals(store.getKind())) {
-      validateHarnessStoreConfig(configFileIdentifier, (HarnessStoreConfig) store, allowExpression);
+      validateHarnessStore(configFileIdentifier, (HarnessStore) store, allowExpression);
     }
   }
 
@@ -68,13 +70,22 @@ public class ConfigFileOutcomeValidator {
     }
   }
 
-  private static void validateHarnessStoreConfig(
-      String configFileIdentifier, HarnessStoreConfig store, boolean allowExpression) {
-    if (!hasValue(store.getFileReference(), allowExpression)) {
+  private static void validateHarnessStore(String configFileIdentifier, HarnessStore store, boolean allowExpression) {
+    List<ParameterField<String>> fileReferences = store.getFileReferences();
+
+    if (isEmpty(fileReferences)) {
       throw new InvalidArgumentsException(
-          format("Missing or empty fileRef in %s store spec for configFile with identifier: %s", store.getKind(),
+          format("Missing or empty fileReferences in %s store for configFile with identifier: %s", store.getKind(),
               configFileIdentifier));
     }
+
+    fileReferences.forEach(fileReference -> {
+      if (!hasValue(fileReference, allowExpression)) {
+        throw new InvalidArgumentsException(
+            format("Missing or empty one of fileReferences in %s store spec for configFile with identifier: %s",
+                store.getKind(), configFileIdentifier));
+      }
+    });
   }
 
   private boolean hasValue(ParameterField<String> parameterField, boolean allowExpression) {

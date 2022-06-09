@@ -21,6 +21,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyMap;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -146,6 +147,29 @@ public class JiraTaskTest extends CategoryTest {
     MockitoAnnotations.initMocks(this);
   }
 
+  @Test
+  @Owner(developers = LUCAS_SALES)
+  @Category(UnitTests.class)
+  public void shouldReturnErrorWhenIssueIsNull() {
+    JiraTaskParameters taskParameters = getTaskParams(JiraAction.UPDATE_TICKET_NG);
+    taskParameters.setCustomFields(
+        singletonMap("customfield_10633", new JiraCustomFieldValue("user", taskParameters.getUserQuery())));
+    when(jiraNGClient.getIssue(JIRA_ISSUE_ID)).thenReturn(null);
+    List<JiraUserData> userDataList = Arrays.asList(new JiraUserData("accountId", "Lucas", true));
+
+    doReturn(jiraNGClient).when(spyJiraTask).getNGJiraClient(taskParameters);
+    doReturn(userDataList).when(jiraNGClient).getUsers(anyString(), any(), any());
+
+    DelegateResponseData delegateResponseData = spyJiraTask.run(new Object[] {taskParameters});
+    JiraExecutionData executionData =
+        JiraExecutionData.builder()
+            .executionStatus(ExecutionStatus.FAILED)
+            .errorMessage(String.format(
+                "Wasn't able to find issue with provided issue identifier: \"%s\". Please, provide valid key or id.",
+                JIRA_ISSUE_ID))
+            .build();
+    assertThat(delegateResponseData).isEqualToComparingFieldByField(executionData);
+  }
   @Test
   @Owner(developers = LUCAS_SALES)
   @Category(UnitTests.class)

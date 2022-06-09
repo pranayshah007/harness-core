@@ -12,10 +12,12 @@ import static io.harness.data.encoding.EncodingUtils.decodeBase64ToString;
 import static io.harness.rule.OwnerRule.AADITI;
 import static io.harness.rule.OwnerRule.ANUBHAW;
 import static io.harness.rule.OwnerRule.GARVIT;
+import static io.harness.rule.OwnerRule.PRABU;
 
 import static software.wings.beans.SettingAttribute.Builder.aSettingAttribute;
 import static software.wings.beans.artifact.Artifact.Builder.anArtifact;
 import static software.wings.beans.artifact.ArtifactStreamType.AMAZON_S3;
+import static software.wings.beans.artifact.ArtifactStreamType.CUSTOM;
 import static software.wings.helpers.ext.jenkins.BuildDetails.Builder.aBuildDetails;
 import static software.wings.utils.ArtifactType.DOCKER;
 import static software.wings.utils.ArtifactType.RPM;
@@ -42,6 +44,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -124,7 +128,10 @@ public class ArtifactCollectionServiceTest extends WingsBaseTest {
   public static final String LATEST_BUILD_NUMBER = "latest";
   public static final String GLOBAL_APP_ID = "__GLOBAL_APP_ID__";
   @Inject @Spy private HPersistence persistence;
-  @InjectMocks @Inject @Named("ArtifactCollectionService") private ArtifactCollectionService artifactCollectionService;
+  @InjectMocks
+  @Inject
+  @Named("AsyncArtifactCollectionService")
+  private ArtifactCollectionService artifactCollectionService;
   @InjectMocks @Inject private ArtifactCollectionUtils artifactCollectionUtils;
   @InjectMocks @Inject private DelegateArtifactCollectionUtils delegateArtifactCollectionUtils;
 
@@ -1182,6 +1189,64 @@ public class ArtifactCollectionServiceTest extends WingsBaseTest {
     CustomArtifactStream customArtifactStream =
         CustomArtifactStream.builder().accountId(ACCOUNT_ID).scripts(asList(script)).build();
     artifactCollectionUtils.renderCustomArtifactScriptString(customArtifactStream);
+  }
+
+  @Test
+  @Owner(developers = PRABU)
+  @Category(UnitTests.class)
+  public void shouldCollectNewArtifactsCustom() {
+    BuildDetails dockerBuildDetails = aBuildDetails().withNumber(LATEST_BUILD_NUMBER).build();
+    CustomArtifactStream customArtifactStream = CustomArtifactStream.builder()
+                                                    .uuid(ARTIFACT_STREAM_ID)
+                                                    .appId(APP_ID)
+                                                    .sourceName("ARTIFACT_SOURCE")
+                                                    .serviceId(SERVICE_ID)
+                                                    .settingId(SETTING_ID)
+                                                    .scripts(new ArrayList<>())
+                                                    .build();
+    customArtifactStream.setArtifactStreamType(CUSTOM.name());
+
+    when(artifactStreamService.get(ARTIFACT_STREAM_ID)).thenReturn(customArtifactStream);
+
+    Artifact newArtifact = artifactCollectionUtils.getArtifact(customArtifactStream, dockerBuildDetails);
+    when(artifactService.create(any(Artifact.class))).thenReturn(newArtifact);
+    when(buildSourceService.getBuilds(APP_ID, ARTIFACT_STREAM_ID, SETTING_ID)).thenReturn(asList(dockerBuildDetails));
+
+    Artifact collectedArtifact =
+        artifactCollectionService.collectNewArtifacts(APP_ID, customArtifactStream, LATEST_BUILD_NUMBER);
+    assertThat(collectedArtifact).isNotNull();
+    assertThat(collectedArtifact.getBuildNo()).isEqualTo(LATEST_BUILD_NUMBER);
+    verify(buildSourceService, never()).getBuilds(APP_ID, ARTIFACT_STREAM_ID, SETTING_ID);
+  }
+
+  @Test
+  @Owner(developers = PRABU)
+  @Category(UnitTests.class)
+  public void shouldCollectNewArtifactsCustomWithScript() {
+    BuildDetails dockerBuildDetails = aBuildDetails().withNumber(LATEST_BUILD_NUMBER).build();
+    CustomArtifactStream customArtifactStream =
+        CustomArtifactStream.builder()
+            .uuid(ARTIFACT_STREAM_ID)
+            .appId(APP_ID)
+            .sourceName("ARTIFACT_SOURCE")
+            .serviceId(SERVICE_ID)
+            .settingId(SETTING_ID)
+            .scripts(Collections.singletonList(CustomArtifactStream.Script.builder().scriptString("Script").build()))
+            .build();
+    customArtifactStream.setArtifactStreamType(CUSTOM.name());
+    customArtifactStream.setCollectionEnabled(false);
+
+    when(artifactStreamService.get(ARTIFACT_STREAM_ID)).thenReturn(customArtifactStream);
+
+    Artifact newArtifact = artifactCollectionUtils.getArtifact(customArtifactStream, dockerBuildDetails);
+    when(artifactService.create(any(Artifact.class))).thenReturn(newArtifact);
+    when(buildSourceService.getBuilds(APP_ID, ARTIFACT_STREAM_ID, SETTING_ID)).thenReturn(asList(dockerBuildDetails));
+
+    Artifact collectedArtifact =
+        artifactCollectionService.collectNewArtifacts(APP_ID, customArtifactStream, LATEST_BUILD_NUMBER);
+    assertThat(collectedArtifact).isNotNull();
+    assertThat(collectedArtifact.getBuildNo()).isEqualTo(LATEST_BUILD_NUMBER);
+    verify(buildSourceService).getBuilds(APP_ID, ARTIFACT_STREAM_ID, SETTING_ID);
   }
 
   private AmazonS3ArtifactStream getS3ArtifactStream() {

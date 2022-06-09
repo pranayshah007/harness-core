@@ -19,6 +19,7 @@ import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.pms.yaml.validation.RuntimeInputValuesValidator;
 import io.harness.serializer.JsonUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -43,21 +44,21 @@ public class MergeHelper {
   public String mergeRuntimeInputValuesIntoOriginalYaml(
       String originalYaml, String inputSetPipelineCompYaml, boolean appendInputSetValidator) {
     YamlConfig mergedYamlConfig = mergeRuntimeInputValuesIntoOriginalYamlInternal(
-        originalYaml, inputSetPipelineCompYaml, appendInputSetValidator);
+        originalYaml, inputSetPipelineCompYaml, appendInputSetValidator, false);
 
     return mergedYamlConfig.getYaml();
   }
 
-  public JsonNode mergeRuntimeInputIntoOriginalYamlJsonNode(
+  public JsonNode mergeExecutionInputIntoOriginalYamlJsonNode(
       String originalYaml, String inputSetPipelineCompYaml, boolean appendInputSetValidator) {
     YamlConfig mergedYamlConfig = mergeRuntimeInputValuesIntoOriginalYamlInternal(
-        originalYaml, inputSetPipelineCompYaml, appendInputSetValidator);
+        originalYaml, inputSetPipelineCompYaml, appendInputSetValidator, true);
 
     return mergedYamlConfig.getYamlMap();
   }
 
-  private YamlConfig mergeRuntimeInputValuesIntoOriginalYamlInternal(
-      String originalYaml, String inputSetPipelineCompYaml, boolean appendInputSetValidator) {
+  private YamlConfig mergeRuntimeInputValuesIntoOriginalYamlInternal(String originalYaml,
+      String inputSetPipelineCompYaml, boolean appendInputSetValidator, boolean isAtExecutionTime) {
     YamlConfig inputSetConfig = new YamlConfig(inputSetPipelineCompYaml);
     Map<FQN, Object> inputSetFQNMap = inputSetConfig.getFqnToValueMap();
 
@@ -71,6 +72,16 @@ public class MergeHelper {
         if (key.isType() || key.isIdentifierOrVariableName()) {
           if (!value.toString().equals(templateValue.toString())) {
             throwUpdatedKeyException(key, templateValue, value);
+          }
+        }
+        if (isAtExecutionTime) {
+          String valueText = ((JsonNode) value).asText();
+          if (NGExpressionUtils.matchesExecutionInputPattern(valueText)) {
+            ParameterField<?> inputSetParameterField =
+                RuntimeInputValuesValidator.getInputSetParameterField(((JsonNode) value).asText());
+            if (inputSetParameterField != null) {
+              value = inputSetParameterField.getValue();
+            }
           }
         }
         if (appendInputSetValidator) {
@@ -94,6 +105,7 @@ public class MergeHelper {
 
   private Object checkForRuntimeInputExpressions(Object inputSetValue, Object pipelineValue) {
     String pipelineValText = ((JsonNode) pipelineValue).asText();
+    String inputSetValueText = ((JsonNode) inputSetValue).asText();
     if (!NGExpressionUtils.matchesInputSetPattern(pipelineValText)) {
       return inputSetValue;
     }
@@ -114,6 +126,11 @@ public class MergeHelper {
               true, elementText, parameterField.getInputSetValidator(), element.getNodeType() != JsonNodeType.STRING));
         }
         return appendedValidator;
+      }
+      ParameterField<?> inputSetParameterField =
+          RuntimeInputValuesValidator.getInputSetParameterField(inputSetValueText);
+      if (inputSetParameterField != null && inputSetParameterField.isExecutionInput()) {
+        return inputSetValue;
       }
       return ParameterField.createExpressionField(true, ((JsonNode) inputSetValue).asText(),
           parameterField.getInputSetValidator(), ((JsonNode) inputSetValue).getNodeType() != JsonNodeType.STRING);

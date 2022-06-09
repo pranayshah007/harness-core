@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotation.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.concurrency.ConcurrentChildInstance;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
@@ -47,6 +48,7 @@ public class NodeExecutionsInfo {
   @Singular("stepDetails") List<NodeExecutionDetailsInfo> nodeExecutionDetailsInfoList;
   PmsStepParameters resolvedInputs;
   @Builder.Default @FdTtlIndex Date validUntil = Date.from(OffsetDateTime.now().plusMonths(TTL_MONTHS).toInstant());
+  ConcurrentChildInstance concurrentChildInstance;
 
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()

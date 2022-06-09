@@ -33,4 +33,6 @@ public interface ScmConnector {
   String getGitConnectionUrl(String repoName);
 
   @JsonIgnore GitRepositoryDTO getGitRepositoryDetails();
+
+  @JsonIgnore String getFileUrl(String branchName, String filePath, String repoName);
 }

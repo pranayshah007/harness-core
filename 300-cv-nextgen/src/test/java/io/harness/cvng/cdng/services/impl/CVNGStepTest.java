@@ -94,7 +94,8 @@ public class CVNGStepTest extends CvNextGenTestBase {
   private DefaultVerifyStepMonitoredServiceResolutionServiceImpl defaultVerifyStepMonitoredServiceResolutionService;
 
   private Map<MonitoredServiceSpecType, VerifyStepMonitoredServiceResolutionService> verifyStepCvConfigServiceMap;
-  private DefaultVerifyStepMonitoredServiceResolutionServiceImpl spiedDefaultVerifyStepMonitoredServiceResolutionService;
+  private DefaultVerifyStepMonitoredServiceResolutionServiceImpl
+      spiedDefaultVerifyStepMonitoredServiceResolutionService;
   private BuilderFactory builderFactory;
   private String accountId;
   private String projectIdentifier;

@@ -614,7 +614,6 @@ public enum ErrorCode {
 
   SPOTINST_NULL_ERROR;
 
-
   private Status status = BAD_REQUEST;
   private String description;
 
