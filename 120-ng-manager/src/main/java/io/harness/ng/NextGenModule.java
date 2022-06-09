@@ -249,6 +249,7 @@ import io.harness.service.DelegateServiceDriverModule;
 import io.harness.service.InstanceModule;
 import io.harness.service.stats.usagemetrics.eventconsumer.InstanceStatsEventListener;
 import io.harness.signup.SignupModule;
+import io.harness.subscription.SubscriptionModule;
 import io.harness.telemetry.AbstractTelemetryModule;
 import io.harness.telemetry.TelemetryConfiguration;
 import io.harness.time.TimeModule;
@@ -646,6 +647,7 @@ public class NextGenModule extends AbstractModule {
     });
 
     install(LicenseModule.getInstance());
+    install(SubscriptionModule.createInstance(appConfig.getSubscriptionConfig()));
     bind(AggregateUserService.class).to(AggregateUserServiceImpl.class);
     registerOutboxEventHandlers();
     bind(OutboxEventHandler.class).to(NextGenOutboxEventHandler.class);

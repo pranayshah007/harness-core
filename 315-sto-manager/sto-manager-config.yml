@@ -141,7 +141,7 @@ ciExecutionServiceConfig:
       entrypoint:
         - /bin/drone-s3
     securityConfig:
-      image: zeronorth/sto_plugin:dev.stable
+      image: zeronorth/sto_plugin:dev
       entrypoint:
         - /bin/sh
         - -c

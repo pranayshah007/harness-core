@@ -75,6 +75,7 @@ public class NextGenRegistrars {
           .add(FeedbackMorphiaRegistrars.class)
           .addAll(InstanceRegistrars.morphiaRegistrars)
           .addAll(DelegateTaskRegistrars.morphiaRegistrars)
+          .addAll(SubscriptionRegistrars.morphiaRegistrars)
           .build();
 
   public static final ImmutableList<YamlSchemaRootClass> yamlSchemaRegistrars =

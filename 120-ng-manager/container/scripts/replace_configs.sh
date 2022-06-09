@@ -477,3 +477,4 @@ replace_key_value opaServerConfig.secret "$OPA_SERVER_SECRET"
 replace_key_value gitopsResourceClientConfig.config.baseUrl "$GITOPS_SERVICE_CLIENT_BASEURL"
 replace_key_value gitopsResourceClientConfig.secret "$GITOPS_SERVICE_SECRET"
 
+replace_key_value subscriptionConfig.stripeApiKey "$STRIPE_API_KEY"

@@ -115,7 +115,7 @@ public class AwsResourceServiceImplTest extends CategoryTest {
     GitStoreDelegateConfig mockGitStoreDelegateConfig = GitStoreDelegateConfig.builder().build();
     doReturn(mockGitStoreDelegateConfig)
         .when(gitHelper)
-        .getGitStoreDelegateConfig(any(), any(), any(), any(), any(), anyString());
+        .getGitStoreDelegateConfig(any(), any(), any(), any(), any(), any(), anyString());
     List<AwsCFTemplateParamsData> response = new LinkedList<>();
     response.add(AwsCFTemplateParamsData.builder().paramKey("param1").paramType("value1").build());
     response.add(AwsCFTemplateParamsData.builder().paramKey("param2").paramType("value2").build());
@@ -127,7 +127,7 @@ public class AwsResourceServiceImplTest extends CategoryTest {
     doReturn(mockAwsCFTaskResponse).when(serviceHelper).getResponseData(any(), any(), anyString());
     IdentifierRef mockIdentifierRef = IdentifierRef.builder().build();
 
-    service.getCFparametersKeys("s3", "bar", true, "far", "cat", "baz", mockIdentifierRef, "quux", "corge");
+    service.getCFparametersKeys("s3", "bar", true, "far", null, "cat", "baz", mockIdentifierRef, "quux", "corge");
     assertThat(mockAwsCFTaskResponse.getListOfParams().size()).isEqualTo(2);
   }
 
@@ -146,7 +146,7 @@ public class AwsResourceServiceImplTest extends CategoryTest {
     GitStoreDelegateConfig mockGitStoreDelegateConfig = GitStoreDelegateConfig.builder().build();
     doReturn(mockGitStoreDelegateConfig)
         .when(gitHelper)
-        .getGitStoreDelegateConfig(any(), any(), any(), any(), any(), anyString());
+        .getGitStoreDelegateConfig(any(), any(), any(), any(), any(), any(), anyString());
     List<AwsCFTemplateParamsData> response = new LinkedList<>();
     response.add(AwsCFTemplateParamsData.builder().paramKey("param1").paramType("value1").build());
     response.add(AwsCFTemplateParamsData.builder().paramKey("param2").paramType("value2").build());
@@ -158,7 +158,7 @@ public class AwsResourceServiceImplTest extends CategoryTest {
     doReturn(mockAwsCFTaskResponse).when(serviceHelper).getResponseData(any(), any(), anyString());
     IdentifierRef mockIdentifierRef = IdentifierRef.builder().build();
 
-    service.getCFparametersKeys("s3", "bar", true, "far", "cat", "baz", mockIdentifierRef, "quux", "corge");
+    service.getCFparametersKeys("s3", "bar", true, "far", null, "zar", "baz", mockIdentifierRef, "quux", "corge");
   }
 
   @Test()
@@ -199,7 +199,7 @@ public class AwsResourceServiceImplTest extends CategoryTest {
     GitStoreDelegateConfig mockGitStoreDelegateConfig = GitStoreDelegateConfig.builder().build();
     doReturn(mockGitStoreDelegateConfig)
         .when(gitHelper)
-        .getGitStoreDelegateConfig(any(), any(), any(), any(), any(), anyString());
+        .getGitStoreDelegateConfig(any(), any(), any(), any(), any(), any(), anyString());
     List<AwsCFTemplateParamsData> response = new LinkedList<>();
     response.add(AwsCFTemplateParamsData.builder().paramKey("param1").paramType("value1").build());
     response.add(AwsCFTemplateParamsData.builder().paramKey("param2").paramType("value2").build());
@@ -212,22 +212,23 @@ public class AwsResourceServiceImplTest extends CategoryTest {
     IdentifierRef mockIdentifierRef = IdentifierRef.builder().build();
 
     assertThatThrownBy(
-        () -> service.getCFparametersKeys("s3", "bar", true, "far", "cat", "baz", mockIdentifierRef, "", "corge"))
+        () -> service.getCFparametersKeys("s3", "bar", true, "far", null, "cat", "baz", mockIdentifierRef, "", "corge"))
         .isInstanceOf(InvalidRequestException.class);
 
     assertThatThrownBy(
-        () -> service.getCFparametersKeys("git", "bar", true, "far", "cat", "baz", mockIdentifierRef, "", ""))
+        () -> service.getCFparametersKeys("git", "bar", true, "far", null, "cat", "baz", mockIdentifierRef, "", ""))
         .isInstanceOf(InvalidRequestException.class);
 
-    assertThatThrownBy(() -> service.getCFparametersKeys("", "", true, "", "", "", mockIdentifierRef, "", ""))
+    assertThatThrownBy(() -> service.getCFparametersKeys("", "", true, "", null, "", "", mockIdentifierRef, "", ""))
         .isInstanceOf(InvalidRequestException.class);
     AwsCFTaskResponse mockAwsCFTaskResponseFailed = AwsCFTaskResponse.builder()
                                                         .listOfParams(response)
                                                         .commandExecutionStatus(CommandExecutionStatus.FAILURE)
                                                         .build();
     doReturn(mockAwsCFTaskResponseFailed).when(serviceHelper).getResponseData(any(), any(), anyString());
-    assertThatThrownBy(
-        () -> service.getCFparametersKeys("s3", "bar", true, "far", "cat", "baz", mockIdentifierRef, "data", "corge"))
+    assertThatThrownBy(()
+                           -> service.getCFparametersKeys(
+                               "s3", "bar", true, "far", null, "cat", "baz", mockIdentifierRef, "data", "corge"))
         .isInstanceOf(AwsCFException.class);
   }
 }

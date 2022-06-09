@@ -303,6 +303,9 @@ segmentConfiguration:
   apiKey: "segment_api_key"
   certValidationRequired: false
 
+subscriptionConfig:
+  stripeApiKey: dummy
+
 accessControlClient:
   enableAccessControl: false
   accessControlServiceConfig:
