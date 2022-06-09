@@ -67,14 +67,6 @@ public class DeploymentStageConfig implements StageInfoConfig, Visitable {
   ServiceDefinitionType deploymentType;
   Boolean gitOpsEnabled;
 
-  public Boolean getGitOpsEnabled() {
-    return gitOpsEnabled == Boolean.TRUE;
-  }
-
-   Boolean gitOpsEnabled;
-
-  // TODO: need to remove infraStructure from here after multi-infra feature rollout. Need to keep environment instead
-  // of infraStructure
   // New Environment Yaml
   EnvironmentYamlV2 environment;
 
@@ -99,5 +91,9 @@ public class DeploymentStageConfig implements StageInfoConfig, Visitable {
       children.add(VisitableChild.builder().value(environment).fieldName("environment").build());
     }
     return VisitableChildren.builder().visitableChildList(children).build();
+  }
+
+  public Boolean getGitOpsEnabled() {
+    return gitOpsEnabled == Boolean.TRUE;
   }
 }
