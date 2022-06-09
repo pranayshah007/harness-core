@@ -142,7 +142,6 @@ public interface HarnessResourceGroupResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "This contains a list of Resource Groups")
       })
-  @NGAccessControlCheck(resourceType = RESOURCE_GROUP, permission = VIEW_RESOURCEGROUP_PERMISSION)
   ResponseDTO<PageResponse<ResourceGroupResponse>>
   list(@Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotNull @QueryParam(
            NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
@@ -164,7 +163,6 @@ public interface HarnessResourceGroupResource {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
             description = "This fetches the list of Resource Groups filtered by multiple fields.")
       })
-  @NGAccessControlCheck(resourceType = RESOURCE_GROUP, permission = VIEW_RESOURCEGROUP_PERMISSION)
   ResponseDTO<PageResponse<ResourceGroupResponse>>
   list(@RequestBody(description = "Filter Resource Groups based on multiple parameters",
            required = true) @NotNull ResourceGroupFilterDTO resourceGroupFilterDTO,
