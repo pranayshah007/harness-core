@@ -105,7 +105,8 @@ public class BudgetAlertsServiceImpl {
 
     List<String> userGroupIds = Arrays.asList(Optional.ofNullable(budget.getUserGroupIds()).orElse(new String[0]));
     emailAddresses.addAll(getEmailsForUserGroup(budget.getAccountId(), userGroupIds));
-    CESlackWebhook slackWebhook = ceSlackWebhookService.getByAccountId(budget.getAccountId());
+//    CESlackWebhook slackWebhook = ceSlackWebhookService.getByAccountId(budget.getAccountId());
+    CESlackWebhook slackWebhook = CESlackWebhook.builder().accountId(budget.getAccountId()).webhookUrl("https://hooks.slack.com/services/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").sendCostReport(true).build();
 
     // For sending alerts based on actual cost
     AlertThreshold[] alertsBasedOnActualCost =
@@ -176,15 +177,17 @@ public class BudgetAlertsServiceImpl {
   }
 
   private void sendBudgetAlertViaSlack(Budget budget, AlertThreshold alertThreshold, CESlackWebhook slackWebhook) {
-    if ((slackWebhook == null || !budget.isNotifyOnSlack()) && alertThreshold.getSlackWebhooks() == null) {
-      return;
-    }
+//    if ((slackWebhook == null || !budget.isNotifyOnSlack()) && alertThreshold.getSlackWebhooks() == null) {
+//      return;
+//    }
     List<String> slackWebhooks =
         Arrays.asList(Optional.ofNullable(alertThreshold.getSlackWebhooks()).orElse(new String[0]));
+    budget.setNotifyOnSlack(true);
     if (slackWebhook != null && budget.isNotifyOnSlack()) {
       slackWebhooks.add(slackWebhook.getWebhookUrl());
     }
     slackWebhooks.forEach(webhook -> {
+      log.info("*** Sending slack alert ***");
       SlackNotificationConfiguration slackConfig = new SlackNotificationSetting("#ccm-test", webhook);
       String slackMessageTemplate =
           "The cost associated with *${BUDGET_NAME}* has reached a limit of ${THRESHOLD_PERCENTAGE}%.";
