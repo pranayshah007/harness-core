@@ -292,15 +292,15 @@ public class EventJobScheduler {
 //    }
 //  }
 //
-//  @Scheduled(cron = "${scheduler-jobs-config.budgetAlertsJobCron}")
-//  public void runBudgetAlertsJob() {
-//    try {
-//      budgetAlertsService.sendBudgetAlerts();
-//      log.info("Budget alerts send");
-//    } catch (Exception ex) {
-//      log.error("Exception while running budgetAlertsJob", ex);
-//    }
-//  }
+  @Scheduled(cron = "0 */10 * * * ?")
+  public void runBudgetAlertsJob() {
+    try {
+      budgetAlertsService.sendBudgetAlerts();
+      log.info("Budget alerts send");
+    } catch (Exception ex) {
+      log.error("Exception while running budgetAlertsJob", ex);
+    }
+  }
 //
 //  @Scheduled(cron = "${scheduler-jobs-config.budgetCostUpdateJobCron}")
 //  public void runBudgetCostUpdateJob() {
