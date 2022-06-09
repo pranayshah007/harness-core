@@ -70,12 +70,12 @@ public class SubscriptionServiceImpl implements SubscriptionService {
   }
 
   @Override
-  public PriceCollectionDTO listPrices(String accountIdentifier, String module) {
+  public PriceCollectionDTO listPrices(String accountIdentifier, ModuleType module) {
     isSelfServiceEnable(accountIdentifier);
 
     List<String> prices;
 
-    switch (module) {
+    switch (module.toString()) {
       case "CI":
         prices = Arrays.asList(Prices.CI_PRICES);
         break;
