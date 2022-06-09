@@ -103,49 +103,49 @@ public class EventJobScheduler {
 
   // this job runs every 1 hours "0 0 * ? * *". For debugging, run every minute "* * * ? * *"
 
-//  @Scheduled(cron = "0 */20 * * * ?")
-//  public void runCloudEfficiencyInClusterJobs() {
-//    runCloudEfficiencyEventJobs(BatchJobBucket.IN_CLUSTER, true);
-//  }
-//
-//  @Scheduled(cron = "0 */30 * * * ?")
-//  public void runCloudEfficiencyInClusterRecommendationsJobs() {
-//    runCloudEfficiencyEventJobs(BatchJobBucket.IN_CLUSTER_RECOMMENDATION, true);
-//  }
-//
-//  @Scheduled(cron = "0 0 */1 * * ?") // run every hour
-//  public void runCloudEfficiencyInClusterNodeRecommendationJobs() {
-//    runCloudEfficiencyEventJobs(BatchJobBucket.IN_CLUSTER_NODE_RECOMMENDATION, true);
-//  }
-//
-//  @Scheduled(cron = "0 */1 * * * ?")
-//  public void runRecentlyAddedAccountJob() {
-//    boolean masterPod = accountShardService.isMasterPod();
-//    if (masterPod) {
-//      try {
-//        recentlyAddedAccountJobRunner.runJobForRecentlyAddedAccounts();
-//      } catch (Exception ex) {
-//        log.error("Exception while running runRecentlyAddedAccountJob Job", ex);
-//      }
-//    }
-//  }
-//
-//  @Scheduled(cron = "0 */15 * * * ?")
-//  public void runCloudEfficiencyInClusterBillingJobs() {
-//    runCloudEfficiencyEventJobs(BatchJobBucket.IN_CLUSTER_BILLING, true);
-//  }
-//
+  @Scheduled(cron = "0 */20 * * * ?")
+  public void runCloudEfficiencyInClusterJobs() {
+    runCloudEfficiencyEventJobs(BatchJobBucket.IN_CLUSTER, true);
+  }
+
+  @Scheduled(cron = "0 */30 * * * ?")
+  public void runCloudEfficiencyInClusterRecommendationsJobs() {
+    runCloudEfficiencyEventJobs(BatchJobBucket.IN_CLUSTER_RECOMMENDATION, true);
+  }
+
+  @Scheduled(cron = "0 0 */1 * * ?") // run every hour
+  public void runCloudEfficiencyInClusterNodeRecommendationJobs() {
+    runCloudEfficiencyEventJobs(BatchJobBucket.IN_CLUSTER_NODE_RECOMMENDATION, true);
+  }
+
+  @Scheduled(cron = "0 */1 * * * ?")
+  public void runRecentlyAddedAccountJob() {
+    boolean masterPod = accountShardService.isMasterPod();
+    if (masterPod) {
+      try {
+        recentlyAddedAccountJobRunner.runJobForRecentlyAddedAccounts();
+      } catch (Exception ex) {
+        log.error("Exception while running runRecentlyAddedAccountJob Job", ex);
+      }
+    }
+  }
+
+  @Scheduled(cron = "0 */15 * * * ?")
+  public void runCloudEfficiencyInClusterBillingJobs() {
+    runCloudEfficiencyEventJobs(BatchJobBucket.IN_CLUSTER_BILLING, true);
+  }
+
 
   @Scheduled(cron = "0 0 * ? * *") // 0 */10 * * * ?   for testing
   public void runCloudEfficiencyOutOfClusterJobs() {
     runCloudEfficiencyEventJobs(BatchJobBucket.OUT_OF_CLUSTER, true);
   }
 
-//  @Scheduled(cron = "0 30 * ? * *") // 0 */10 * * * ?   for testing
-//  public void runCloudEfficiencyOutOfClusterECSJobs() {
-//    runCloudEfficiencyEventJobs(BatchJobBucket.OUT_OF_CLUSTER_ECS, true);
-//  }
-//
+  @Scheduled(cron = "0 30 * ? * *") // 0 */10 * * * ?   for testing
+  public void runCloudEfficiencyOutOfClusterECSJobs() {
+    runCloudEfficiencyEventJobs(BatchJobBucket.OUT_OF_CLUSTER_ECS, true);
+  }
+
   private void runCloudEfficiencyEventJobs(BatchJobBucket batchJobBucket, boolean runningMode) {
     accountShardService.getCeEnabledAccountIds().forEach(account
         -> jobs.stream()
@@ -153,214 +153,214 @@ public class EventJobScheduler {
                .forEach(job -> runJob(account, job, runningMode)));
   }
 
-//  @Scheduled(cron = "0 0 */6 ? * *")
-//  public void scanDelayedJobs() {
-//    log.info("Inside scanning delayed jobs !! ");
-//    Stream.of(BatchJobBucket.values()).forEach(batchJobBucket -> runCloudEfficiencyEventJobs(batchJobBucket, false));
-//  }
-//
-//  // this job runs every 4 hours "0 0 */4 ? * *". For debugging, run every minute "0 * * ? * *"
+  @Scheduled(cron = "0 0 */6 ? * *")
+  public void scanDelayedJobs() {
+    log.info("Inside scanning delayed jobs !! ");
+    Stream.of(BatchJobBucket.values()).forEach(batchJobBucket -> runCloudEfficiencyEventJobs(batchJobBucket, false));
+  }
+
+  // this job runs every 4 hours "0 0 */4 ? * *". For debugging, run every minute "0 * * ? * *"
 //  @Scheduled(cron = "0 0 */4 ? * *")
 //  public void sendSegmentEvents() {
 //    runCloudEfficiencyEventJobs(BatchJobBucket.OTHERS, true);
 //  }
-//
-//  @Scheduled(cron = "0 * * ? * *")
-//  public void runGcpScheduledQueryJobs() {
-//    accountShardService.getCeEnabledAccountIds().forEach(account -> gcpScheduledQueryTriggerAction.execute(account));
-//  }
-//
-//  @Scheduled(cron = "0 0 8 * * ?")
-//  public void runTimescalePurgeJob() {
-//    boolean masterPod = accountShardService.isMasterPod();
-//    if (masterPod) {
-//      try {
-//        k8sUtilizationGranularDataService.purgeOldKubernetesUtilData();
-//      } catch (Exception ex) {
-//        log.error("Exception while running runTimescalePurgeJob", ex);
-//      }
-//
-//      try {
-//        utilizationDataService.purgeUtilisationData();
-//      } catch (Exception ex) {
-//        log.error("Exception while running runTimescalePurgeJob", ex);
-//      }
-//
-//      try {
-//        podCountComputationService.purgeActivePodCount();
-//      } catch (Exception ex) {
-//        log.error("Exception while running runTimescalePurgeJob", ex);
-//      }
-//
-//      try {
-//        billingDataService.purgeOldBillingData();
-//      } catch (Exception ex) {
-//        log.error("Exception while running runTimescalePurgeJob", ex);
-//      }
-//
-//      try {
-//        billingDataService.purgeOldHourlyBillingData(BatchJobType.INSTANCE_BILLING_HOURLY);
-//      } catch (Exception ex) {
-//        log.error("Exception while running purgeOldHourlyBillingData Job", ex);
-//      }
-//
-//      try {
-//        billingDataService.purgeOldHourlyBillingData(BatchJobType.INSTANCE_BILLING_HOURLY_AGGREGATION);
-//      } catch (Exception ex) {
-//        log.error("Exception while running purgeOldHourlyBillingData Job", ex);
-//      }
-//    }
-//  }
-//
-//  @Scheduled(cron = "0 0 */1 ? * *") //  0 */10 * * * ? for testing
-//  public void runConnectorsHealthStatusJob() {
-//    boolean masterPod = accountShardService.isMasterPod();
-//    if (masterPod) {
-//      try {
-//        log.info("running billing data pipeline health status service job");
-//        billingDataPipelineHealthStatusService.processAndUpdateHealthStatus();
-//      } catch (Exception ex) {
-//        log.error("Exception while running runConnectorsHealthStatusJob {}", ex);
-//      }
-//    }
-//  }
-//
-//  @Scheduled(cron = "0 0 6 * * ?")
-//  public void runAccountExpiryCleanup() {
-//    boolean masterPod = accountShardService.isMasterPod();
-//    if (masterPod) {
-//      try {
-//        accountExpiryCleanupService.execute();
-//      } catch (Exception ex) {
-//        log.error("Exception while running runAccountExpiryCleanup {}", ex);
-//      }
-//    }
-//  }
-//
-//  @Scheduled(cron = "${scheduler-jobs-config.weeklyReportsJobCron}")
-//  public void runWeeklyReportJob() {
-//    try {
-//      weeklyReportService.generateAndSendWeeklyReport();
-//      log.info("Weekly billing report generated and send");
-//    } catch (Exception ex) {
-//      log.error("Exception while running weeklyReportJob", ex);
-//    }
-//  }
-//
-//  @Scheduled(cron = "0 */30 * * * ?") // Run every 30 mins. Change to 0 */10 * * * ? for every 10 mins for testing
-//  public void runScheduledReportJob() {
-//    // In case jobs take longer time, the jobs will be queued and executed in turn
-//    try {
-//      scheduledReportService.generateAndSendScheduledReport();
-//      log.info("Scheduled reports generated and sent");
-//    } catch (Exception ex) {
-//      log.error("Exception while running runScheduledReportJob", ex);
-//    }
-//  }
-//
-//  @Scheduled(cron = "0 0 */1 ? * *")
-//  public void updateCostMetadatRecord() {
-//    try {
-//      ceMetaDataRecordUpdateService.updateCloudProviderMetadata();
-//      log.info("updated cost data");
-//    } catch (Exception ex) {
-//      log.error("Exception while running updateCostMetadatRecord", ex);
-//    }
-//  }
-//
-//  @Scheduled(cron = "0 0 */1 ? * *")
-//  public void processDataCleanupRequest() {
-//    boolean masterPod = accountShardService.isMasterPod();
-//    if (masterPod) {
-//      try {
-//        try (AutoLogContext ignore2 = new BatchJobTypeLogContext("DataCleanupRequest", OVERRIDE_ERROR)) {
-//          ceDataCleanupRequestService.processDataCleanUpRequest();
-//        }
-//      } catch (Exception ex) {
-//        log.error("Exception while running processDataCleanupRequest", ex);
-//      }
-//    }
-//  }
-//
-//  @Scheduled(cron = "0 30 8 * * ?")
-//  public void runViewUpdateCostJob() {
-//    try {
-//      viewCostUpdateService.updateTotalCost();
-//      log.info("Updated view total cost");
-//    } catch (Exception ex) {
-//      log.error("Exception while running runViewUpdateCostJob", ex);
-//    }
-//  }
-//
-//  @Scheduled(cron = "${scheduler-jobs-config.budgetAlertsJobCron}")
-//  public void runBudgetAlertsJob() {
-//    try {
-//      budgetAlertsService.sendBudgetAlerts();
-//      log.info("Budget alerts send");
-//    } catch (Exception ex) {
-//      log.error("Exception while running budgetAlertsJob", ex);
-//    }
-//  }
-//
-//  @Scheduled(cron = "${scheduler-jobs-config.budgetCostUpdateJobCron}")
-//  public void runBudgetCostUpdateJob() {
-//    try {
-//      budgetCostUpdateService.updateCosts();
-//      log.info("Costs updated for budgets");
-//    } catch (Exception ex) {
-//      log.error("Exception while running runBudgetCostUpdateJob", ex);
-//    }
-//  }
-//
-//  @Scheduled(cron = "${scheduler-jobs-config.connectorHealthUpdateJobCron}")
-//  public void runNGConnectorsHealthUpdateJob() {
-//    try {
-//      if (!batchMainConfig.getConnectorHealthUpdateJobConfig().isEnabled()) {
-//        log.info("connectorHealthUpdateJob is disabled in config");
-//        return;
-//      }
-//      connectorsHealthUpdateService.update();
-//      log.info("Updated health of the connectors in NG");
-//    } catch (Exception ex) {
-//      log.error("Exception while running runNGConnectorsHealthUpdateJob", ex);
-//    }
-//  }
-//
-//  @Scheduled(cron = "${scheduler-jobs-config.awsAccountTagsCollectionJobCron}") //  0 */10 * * * ? for testing
-//  public void runAwsAccountTagsCollectionJob() {
-//    try {
-//      if (!batchMainConfig.getAwsAccountTagsCollectionJobConfig().isEnabled()) {
-//        log.info("awsAccountTagsCollectionJobConfig is disabled in config");
-//        return;
-//      }
-//      log.info("running aws account tags collection job");
-//      awsAccountTagsCollectionService.update();
-//    } catch (Exception ex) {
-//      log.error("Exception while running runAwsAccountTagsCollectionJob", ex);
-//    }
-//  }
-//
-//  // log hit/miss rate and size of the LoadingCache periodically for tuning
-//  @Scheduled(cron = "0 0 */7 ? * *")
-//  public void printCacheStats() throws IllegalAccessException {
-//    harnessServiceInfoFetcher.logCacheStats();
-//    instanceDataService.logCacheStats();
-//    k8sLabelServiceInfoFetcher.logCacheStats();
-//    k8SWorkloadService.logCacheStats();
-//  }
-//
-//  @Scheduled(cron = "0 0 6 * * ?")
-//  public void runCfSampleJob() {
-//    if (cfClient == null) {
-//      return;
-//    }
-//    accountShardService.getCeEnabledAccountIds().forEach(account -> {
-//      Target target = Target.builder().name(account).identifier(account).build();
-//      boolean result = cfClient.boolVariation("cf_sample_flag", target, false);
-//      log.info(format(
-//          "The feature flag cf_sample_flag resolves to %s for account %s", Boolean.toString(result), target.getName()));
-//    });
-//  }
+
+  @Scheduled(cron = "0 * * ? * *")
+  public void runGcpScheduledQueryJobs() {
+    accountShardService.getCeEnabledAccountIds().forEach(account -> gcpScheduledQueryTriggerAction.execute(account));
+  }
+
+  @Scheduled(cron = "0 0 8 * * ?")
+  public void runTimescalePurgeJob() {
+    boolean masterPod = accountShardService.isMasterPod();
+    if (masterPod) {
+      try {
+        k8sUtilizationGranularDataService.purgeOldKubernetesUtilData();
+      } catch (Exception ex) {
+        log.error("Exception while running runTimescalePurgeJob", ex);
+      }
+
+      try {
+        utilizationDataService.purgeUtilisationData();
+      } catch (Exception ex) {
+        log.error("Exception while running runTimescalePurgeJob", ex);
+      }
+
+      try {
+        podCountComputationService.purgeActivePodCount();
+      } catch (Exception ex) {
+        log.error("Exception while running runTimescalePurgeJob", ex);
+      }
+
+      try {
+        billingDataService.purgeOldBillingData();
+      } catch (Exception ex) {
+        log.error("Exception while running runTimescalePurgeJob", ex);
+      }
+
+      try {
+        billingDataService.purgeOldHourlyBillingData(BatchJobType.INSTANCE_BILLING_HOURLY);
+      } catch (Exception ex) {
+        log.error("Exception while running purgeOldHourlyBillingData Job", ex);
+      }
+
+      try {
+        billingDataService.purgeOldHourlyBillingData(BatchJobType.INSTANCE_BILLING_HOURLY_AGGREGATION);
+      } catch (Exception ex) {
+        log.error("Exception while running purgeOldHourlyBillingData Job", ex);
+      }
+    }
+  }
+
+  @Scheduled(cron = "0 0 */1 ? * *") //  0 */10 * * * ? for testing
+  public void runConnectorsHealthStatusJob() {
+    boolean masterPod = accountShardService.isMasterPod();
+    if (masterPod) {
+      try {
+        log.info("running billing data pipeline health status service job");
+        billingDataPipelineHealthStatusService.processAndUpdateHealthStatus();
+      } catch (Exception ex) {
+        log.error("Exception while running runConnectorsHealthStatusJob {}", ex);
+      }
+    }
+  }
+
+  @Scheduled(cron = "0 0 6 * * ?")
+  public void runAccountExpiryCleanup() {
+    boolean masterPod = accountShardService.isMasterPod();
+    if (masterPod) {
+      try {
+        accountExpiryCleanupService.execute();
+      } catch (Exception ex) {
+        log.error("Exception while running runAccountExpiryCleanup {}", ex);
+      }
+    }
+  }
+
+  @Scheduled(cron = "${scheduler-jobs-config.weeklyReportsJobCron}")
+  public void runWeeklyReportJob() {
+    try {
+      weeklyReportService.generateAndSendWeeklyReport();
+      log.info("Weekly billing report generated and send");
+    } catch (Exception ex) {
+      log.error("Exception while running weeklyReportJob", ex);
+    }
+  }
+
+  @Scheduled(cron = "0 */30 * * * ?") // Run every 30 mins. Change to 0 */10 * * * ? for every 10 mins for testing
+  public void runScheduledReportJob() {
+    // In case jobs take longer time, the jobs will be queued and executed in turn
+    try {
+      scheduledReportService.generateAndSendScheduledReport();
+      log.info("Scheduled reports generated and sent");
+    } catch (Exception ex) {
+      log.error("Exception while running runScheduledReportJob", ex);
+    }
+  }
+
+  @Scheduled(cron = "0 0 */1 ? * *")
+  public void updateCostMetadatRecord() {
+    try {
+      ceMetaDataRecordUpdateService.updateCloudProviderMetadata();
+      log.info("updated cost data");
+    } catch (Exception ex) {
+      log.error("Exception while running updateCostMetadatRecord", ex);
+    }
+  }
+
+  @Scheduled(cron = "0 0 */1 ? * *")
+  public void processDataCleanupRequest() {
+    boolean masterPod = accountShardService.isMasterPod();
+    if (masterPod) {
+      try {
+        try (AutoLogContext ignore2 = new BatchJobTypeLogContext("DataCleanupRequest", OVERRIDE_ERROR)) {
+          ceDataCleanupRequestService.processDataCleanUpRequest();
+        }
+      } catch (Exception ex) {
+        log.error("Exception while running processDataCleanupRequest", ex);
+      }
+    }
+  }
+
+  @Scheduled(cron = "0 30 8 * * ?")
+  public void runViewUpdateCostJob() {
+    try {
+      viewCostUpdateService.updateTotalCost();
+      log.info("Updated view total cost");
+    } catch (Exception ex) {
+      log.error("Exception while running runViewUpdateCostJob", ex);
+    }
+  }
+
+  @Scheduled(cron = "${scheduler-jobs-config.budgetAlertsJobCron}")
+  public void runBudgetAlertsJob() {
+    try {
+      budgetAlertsService.sendBudgetAlerts();
+      log.info("Budget alerts send");
+    } catch (Exception ex) {
+      log.error("Exception while running budgetAlertsJob", ex);
+    }
+  }
+
+  @Scheduled(cron = "${scheduler-jobs-config.budgetCostUpdateJobCron}")
+  public void runBudgetCostUpdateJob() {
+    try {
+      budgetCostUpdateService.updateCosts();
+      log.info("Costs updated for budgets");
+    } catch (Exception ex) {
+      log.error("Exception while running runBudgetCostUpdateJob", ex);
+    }
+  }
+
+  @Scheduled(cron = "${scheduler-jobs-config.connectorHealthUpdateJobCron}")
+  public void runNGConnectorsHealthUpdateJob() {
+    try {
+      if (!batchMainConfig.getConnectorHealthUpdateJobConfig().isEnabled()) {
+        log.info("connectorHealthUpdateJob is disabled in config");
+        return;
+      }
+      connectorsHealthUpdateService.update();
+      log.info("Updated health of the connectors in NG");
+    } catch (Exception ex) {
+      log.error("Exception while running runNGConnectorsHealthUpdateJob", ex);
+    }
+  }
+
+  @Scheduled(cron = "${scheduler-jobs-config.awsAccountTagsCollectionJobCron}") //  0 */10 * * * ? for testing
+  public void runAwsAccountTagsCollectionJob() {
+    try {
+      if (!batchMainConfig.getAwsAccountTagsCollectionJobConfig().isEnabled()) {
+        log.info("awsAccountTagsCollectionJobConfig is disabled in config");
+        return;
+      }
+      log.info("running aws account tags collection job");
+      awsAccountTagsCollectionService.update();
+    } catch (Exception ex) {
+      log.error("Exception while running runAwsAccountTagsCollectionJob", ex);
+    }
+  }
+
+  // log hit/miss rate and size of the LoadingCache periodically for tuning
+  @Scheduled(cron = "0 0 */7 ? * *")
+  public void printCacheStats() throws IllegalAccessException {
+    harnessServiceInfoFetcher.logCacheStats();
+    instanceDataService.logCacheStats();
+    k8sLabelServiceInfoFetcher.logCacheStats();
+    k8SWorkloadService.logCacheStats();
+  }
+
+  @Scheduled(cron = "0 0 6 * * ?")
+  public void runCfSampleJob() {
+    if (cfClient == null) {
+      return;
+    }
+    accountShardService.getCeEnabledAccountIds().forEach(account -> {
+      Target target = Target.builder().name(account).identifier(account).build();
+      boolean result = cfClient.boolVariation("cf_sample_flag", target, false);
+      log.info(format(
+          "The feature flag cf_sample_flag resolves to %s for account %s", Boolean.toString(result), target.getName()));
+    });
+  }
 
   @SuppressWarnings("squid:S1166") // not required to rethrow exceptions.
   private void runJob(String accountId, Job job, boolean runningMode) {
