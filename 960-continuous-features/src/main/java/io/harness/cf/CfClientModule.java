@@ -44,11 +44,11 @@ public class CfClientModule extends AbstractModule {
     }
 
     HarnessConfig harnessConfig = HarnessConfig.builder()
-                                      .configUrl(cfClientConfig.getConfigUrl())
-                                      .eventUrl(cfClientConfig.getEventUrl())
-                                      .connectionTimeout(cfClientConfig.getConnectionTimeout())
-                                      .readTimeout(cfClientConfig.getReadTimeout())
-                                      .build();
+            .configUrl(cfClientConfig.getConfigUrl())
+            .eventUrl(cfClientConfig.getEventUrl())
+            .connectionTimeout(cfClientConfig.getConnectionTimeout())
+            .readTimeout(cfClientConfig.getReadTimeout())
+            .build();
 
     final HarnessConnector harnessConnector = new HarnessConnector(cfClientConfig.getApiKey(), harnessConfig);
 
@@ -58,7 +58,6 @@ public class CfClientModule extends AbstractModule {
     try {
       client.waitForInitialization();
     } catch (Exception e) {
-      log.error("Error initializing the SDK", e);
       return null;
     }
 
