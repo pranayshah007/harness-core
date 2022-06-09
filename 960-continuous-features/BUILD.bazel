@@ -17,6 +17,10 @@ java_library(
         "//999-annotations:module",
         "@maven//:io_harness_ff_java_server_sdk",
         "@maven//:org_slf4j_slf4j_api",
+        "@maven//:io_vavr_vavr",
+        "@maven//:io_vavr_vavr_match",
+        "@maven//:io_github_resilience4j_resilience4j_core",
+        "@maven//:io_github_resilience4j_resilience4j_retry",
     ],
 )
 
