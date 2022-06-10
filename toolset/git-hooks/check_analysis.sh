@@ -4,14 +4,12 @@
 # that can be found in the licenses directory at the root of this repository, also available at
 # https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
 
-#
-
 root_folders=()
 # generate a list of target folder with potential changes
 for file in $(git diff --dirstat=files,0,cumulative | cut -d '%' -f 2); do
   root_folder=$(echo "$file" | cut -d "/" -f 1)
   match=$(echo "${root_folders[@]:0}" | grep -c "$root_folder")
-  if [ $match == 0 ]
+  if [ "$match" == "0" ]
   then
     root_folders+=($root_folder)
   fi
@@ -23,6 +21,6 @@ for folder in "${root_folders[@]}"; do
   check=$?
   if [ $check == 0 ]
   then
-    bazel ${bazelrc} build ${GCP} ${BAZEL_ARGUMENTS} ${TARGETS} 2> /dev/null
+    bazel ${bazelrc} build ${GCP} ${BAZEL_ARGUMENTS} ${TARGETS} 2> /dev/null #skipcq: SH-2154: SH-2086
   fi
 done
