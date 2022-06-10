@@ -28,7 +28,6 @@ import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorDTO;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorWrapperDTO;
 import io.harness.jackson.JsonNodeUtils;
 import io.harness.manage.ManagedExecutorService;
-import io.harness.ng.core.dto.ProjectResponse;
 import io.harness.plancreator.stages.stage.StageElementConfig;
 import io.harness.plancreator.steps.StepElementConfig;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -41,7 +40,6 @@ import io.harness.pms.sdk.PmsSdkInstanceService;
 import io.harness.pms.utils.CompletableFutures;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.project.remote.ProjectClient;
-import io.harness.remote.client.NGRestUtils;
 import io.harness.yaml.schema.YamlSchemaGenerator;
 import io.harness.yaml.schema.YamlSchemaProvider;
 import io.harness.yaml.schema.YamlSchemaTransientHelper;
@@ -62,7 +60,6 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -184,7 +181,7 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
 
     PmsYamlSchemaHelper.flattenParallelElementConfig(pipelineDefinitions);
 
-    List<ModuleType> enabledModules = obtainEnabledModules(projectIdentifier, accountIdentifier, orgIdentifier);
+    List<ModuleType> enabledModules = obtainEnabledModules();
     enabledModules.add(ModuleType.PMS);
     List<YamlSchemaWithDetails> schemaWithDetailsList =
         fetchSchemaWithDetailsFromModules(accountIdentifier, enabledModules);
@@ -264,42 +261,20 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
   }
 
   @SuppressWarnings("unchecked")
-  private List<ModuleType> obtainEnabledModules(
-      String projectIdentifier, String accountIdentifier, String orgIdentifier) {
-    try {
-      Optional<ProjectResponse> resp =
-          NGRestUtils.getResponse(projectClient.getProject(projectIdentifier, accountIdentifier, orgIdentifier));
-      if (!resp.isPresent()) {
-        log.warn(
-            "[PMS] Cannot obtain project details for projectIdentifier : {}, accountIdentifier: {}, orgIdentifier: {}",
-            projectIdentifier, accountIdentifier, orgIdentifier);
-        return new ArrayList<>();
-      }
+  private List<ModuleType> obtainEnabledModules() {
+    List<ModuleType> modules =
+        ModuleType.getModules().stream().filter(moduleType -> !moduleType.isInternal()).collect(Collectors.toList());
 
-      List<ModuleType> projectModuleTypes = resp.get()
-                                                .getProject()
-                                                .getModules()
-                                                .stream()
-                                                .filter(moduleType -> !moduleType.isInternal())
-                                                .collect(Collectors.toList());
+    List<ModuleType> instanceModuleTypes = pmsSdkInstanceService.getActiveInstanceNames()
+                                               .stream()
+                                               .map(ModuleType::fromString)
+                                               .collect(Collectors.toList());
 
-      List<ModuleType> instanceModuleTypes = pmsSdkInstanceService.getActiveInstanceNames()
-                                                 .stream()
-                                                 .map(ModuleType::fromString)
-                                                 .collect(Collectors.toList());
-
-      if (instanceModuleTypes.size() != projectModuleTypes.size()) {
-        log.warn(
-            "There is a mismatch of instanceModuleTypes and projectModuleTypes. Please investigate if the sdk is registered or not");
-      }
-
-      return (List<ModuleType>) CollectionUtils.intersection(projectModuleTypes, instanceModuleTypes);
-    } catch (Exception e) {
+    if (instanceModuleTypes.size() != modules.size()) {
       log.warn(
-          "[PMS] Cannot obtain enabled module details for projectIdentifier : {}, accountIdentifier: {}, orgIdentifier: {}",
-          projectIdentifier, accountIdentifier, orgIdentifier, e);
-      return new ArrayList<>();
+          "There is a mismatch of instanceModuleTypes and projectModuleTypes. Please investigate if the sdk is registered or not");
     }
+    return (List<ModuleType>) CollectionUtils.intersection(modules, instanceModuleTypes);
   }
 
   protected List<YamlSchemaWithDetails> fetchSchemaWithDetailsFromModules(
@@ -325,7 +300,7 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
     }
     List<YamlSchemaWithDetails> yamlSchemaWithDetailsList = null;
     if (yamlGroup.equals(StepCategory.STAGE.toString())) {
-      List<ModuleType> enabledModules = obtainEnabledModules(projectIdentifier, accountId, orgIdentifier);
+      List<ModuleType> enabledModules = obtainEnabledModules();
       yamlSchemaWithDetailsList = fetchSchemaWithDetailsFromModules(accountId, enabledModules);
     }
     return schemaFetcher.fetchStepYamlSchema(
