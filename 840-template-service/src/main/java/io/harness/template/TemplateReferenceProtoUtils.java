@@ -68,28 +68,4 @@ public class TemplateReferenceProtoUtils {
 
     return templateRefBuilder.build();
   }
-
-  public TemplateReferenceProtoDTO createTemplateReferenceProto(String accountId, String orgIdentifier,
-      String projectIdentifier, String templateIdentifier, Scope scope, String versionLabel,
-      Map<String, String> metaData) {
-    TemplateReferenceProtoDTO.Builder templateRefBuilder = TemplateReferenceProtoDTO.newBuilder()
-                                                               .setIdentifier(StringValue.of(templateIdentifier))
-                                                               .setAccountIdentifier(StringValue.of(accountId))
-                                                               .setScope(ScopeProtoEnum.valueOf(scope.toString()))
-                                                               .setVersionLabel(StringValue.of(versionLabel));
-
-    if (isNotEmpty(orgIdentifier)) {
-      templateRefBuilder.setOrgIdentifier(StringValue.of(orgIdentifier));
-    }
-
-    if (isNotEmpty(projectIdentifier)) {
-      templateRefBuilder.setProjectIdentifier(StringValue.of(projectIdentifier));
-    }
-
-    if (isNotEmpty(metaData)) {
-      templateRefBuilder.putAllMetadata(metaData);
-    }
-
-    return templateRefBuilder.build();
-  }
 }
