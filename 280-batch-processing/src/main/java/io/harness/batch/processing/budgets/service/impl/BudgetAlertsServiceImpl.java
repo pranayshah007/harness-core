@@ -84,6 +84,19 @@ public class BudgetAlertsServiceImpl {
       budgets.forEach(budget -> {
         updateCGBudget(budget);
         try {
+          log.info("*** Sending slack alert ***");
+          String webhook = "https://hooks.slack.com/services/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";
+          SlackNotificationConfiguration slackConfig = new SlackNotificationSetting("#ccm-test", webhook);
+          String slackMessageTemplate =
+                  "The cost associated with *${BUDGET_NAME}* has reached a limit of ${THRESHOLD_PERCENTAGE}%.";
+          Map<String, String> params =
+                  ImmutableMap.<String, String>builder()
+                          .put("THRESHOLD_PERCENTAGE", String.format("%.1f", 4.0))
+                          .put("BUDGET_NAME", budget.getName())
+                          .build();
+          String slackMessage = replace(slackMessageTemplate, params);
+          slackNotificationService.sendMessage(
+                  slackConfig, stripToEmpty(slackConfig.getName()), HARNESS_NAME, slackMessage, budget.getAccountId());
           checkAndSendAlerts(budget);
         } catch (Exception e) {
           log.error("Can't send alert for budget : {}, Exception: ", budget.getUuid(), e);
@@ -93,7 +106,7 @@ public class BudgetAlertsServiceImpl {
   }
 
   private void checkAndSendAlerts(Budget budget) {
-    budget.setAlertThresholds(new AlertThreshold[] {AlertThreshold.builder().emailAddresses(new String[] {"trunapushpa.surkar@harness.io"}).slackWebhooks(new String[] {"https://hooks.slack.com/services/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"}).basedOn(ACTUAL_COST).percentage(1.0).build()});
+    budget.setAlertThresholds(new AlertThreshold[] {AlertThreshold.builder().emailAddresses(new String[] {"trunapushpa.surkar@harness.io"}).slackWebhooks(new String[] {"https://hooks.slack.com/services/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"}).basedOn(ACTUAL_COST).percentage(1.0).alertsSent(0).crossedAt(0).build()});
     checkNotNull(budget.getAlertThresholds());
     checkNotNull(budget.getAccountId());
 
