@@ -46,7 +46,6 @@ import org.springframework.stereotype.Service;
 @Consumes(MediaType.APPLICATION_JSON)
 @Hidden
 @NextGenManagerAuth
-@InternalApi
 @Slf4j
 @Service
 @OwnedBy(CE)
