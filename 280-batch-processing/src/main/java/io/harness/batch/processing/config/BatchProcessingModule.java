@@ -144,8 +144,8 @@ public class BatchProcessingModule extends AbstractModule {
         batchMainConfig.getNgManagerServiceSecret(), BATCH_PROCESSING.getServiceId(), ClientMode.PRIVILEGED));
     install(NgLicenseHttpClientModule.getInstance(batchMainConfig.getNgManagerServiceHttpClientConfig(),
         batchMainConfig.getNgManagerServiceSecret(), MANAGER.getServiceId()));
-    install(new NotificationResourceClientModule(batchMainConfig.getNgManagerServiceHttpClientConfig(),
-        batchMainConfig.getNgManagerServiceSecret(), BATCH_PROCESSING.getServiceId(), ClientMode.PRIVILEGED));
+    install(new NotificationResourceClientModule(batchMainConfig.getCeNgServiceHttpClientConfig(),
+        batchMainConfig.getCeNgServiceSecret(), BATCH_PROCESSING.getServiceId(), ClientMode.PRIVILEGED));
     install(new AbstractTelemetryModule() {
       @Override
       public TelemetryConfiguration telemetryConfiguration() {
