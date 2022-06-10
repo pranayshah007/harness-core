@@ -333,7 +333,6 @@ public class K8sStepHelperTest extends CategoryTest {
                        .paths(ParameterField.createValueField(asList("file1", "file2")))
                        .build())
             .build();
-
     doReturn(
         Optional.of(ConnectorResponseDTO.builder()
                         .connector(ConnectorInfoDTO.builder().connectorConfig(GitConfigDTO.builder().build()).build())
@@ -1503,14 +1502,16 @@ public class K8sStepHelperTest extends CategoryTest {
 
     TaskRequest taskRequest = TaskRequest.getDefaultInstance();
     TaskChainResponse taskChainResponse = TaskChainResponse.builder().chainEnd(false).taskRequest(taskRequest).build();
-    doReturn(taskChainResponse).when(k8sStepHelper).executeValuesFetchTask(any(), any(), any(), any(), any(), any());
+    doReturn(taskChainResponse)
+        .when(k8sStepHelper)
+        .executeValuesFetchTask(any(), any(), any(), any(), any(), any(), Collections.emptyMap(), "");
     k8sStepHelper.executeNextLink(k8sStepExecutor, ambiance, stepElementParams, passThroughData, responseDataSuplier);
 
     ArgumentCaptor<Map> valuesFilesContentCaptor = ArgumentCaptor.forClass(Map.class);
     verify(k8sStepHelper, times(1))
         .executeValuesFetchTask(eq(ambiance), eq(stepElementParams), eq(passThroughData.getInfrastructure()),
             eq(passThroughData.getK8sManifestOutcome()), eq(passThroughData.getValuesManifestOutcomes()),
-            valuesFilesContentCaptor.capture());
+            valuesFilesContentCaptor.capture(), Collections.emptyMap(), "");
 
     Map<String, HelmFetchFileResult> duplicatehelmChartValuesFileMapContent = valuesFilesContentCaptor.getValue();
     assertThat(duplicatehelmChartValuesFileMapContent).isNotEmpty();
@@ -2055,9 +2056,10 @@ public class K8sStepHelperTest extends CategoryTest {
 
     Map<String, HelmFetchFileResult> helmChartFetchFilesResultMap = new HashMap<>();
 
-    assertThatCode(()
-                       -> k8sStepHelper.executeValuesFetchTask(ambiance, stepElementParameters, outcomeBuilder.build(),
-                           manifestOutcome, aggregatedValuesManifests, helmChartFetchFilesResultMap));
+    assertThatCode(
+        ()
+            -> k8sStepHelper.executeValuesFetchTask(ambiance, stepElementParameters, outcomeBuilder.build(),
+                manifestOutcome, aggregatedValuesManifests, helmChartFetchFilesResultMap, Collections.emptyMap(), ""));
   }
 
   @Test

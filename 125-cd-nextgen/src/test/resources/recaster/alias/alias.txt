@@ -1,3 +1,4 @@
+io.harness.cdng.manifest.yaml.CustomRemoteStoreConfig
 io.harness.cdng.gitops.CreatePROutcome
 io.harness.cdng.gitops.CreatePRStepNode
 io.harness.cdng.gitOps.CreatePRPassThroughData

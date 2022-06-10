@@ -260,6 +260,7 @@ import io.harness.delegate.beans.serverless.ServerlessAwsLambdaRollbackResult;
 import io.harness.delegate.beans.serverless.ServerlessDeployResult;
 import io.harness.delegate.beans.serverless.ServerlessRollbackResult;
 import io.harness.delegate.beans.storeconfig.ArtifactoryStoreDelegateConfig;
+import io.harness.delegate.beans.storeconfig.CustomRemoteStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.beans.storeconfig.GcsHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
@@ -1478,5 +1479,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(JenkinsCapabilityHelper.class, 29302);
     kryo.register(JenkinsValidationParams.class, 29303);
     kryo.register(JenkinsArtifactDelegateRequest.class, 29304);
+
+    kryo.register(CustomRemoteStoreDelegateConfig.class, 29305);
   }
 }

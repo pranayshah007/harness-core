@@ -17,9 +17,11 @@ import io.harness.cdng.manifest.ManifestType;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.manifest.yaml.ValuesManifestOutcome;
 import io.harness.delegate.task.helm.HelmFetchFileResult;
+import io.harness.manifest.CustomSourceFile;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -38,6 +40,10 @@ public class K8sStepPassThroughData implements PassThroughData {
   InfrastructureOutcome infrastructure;
   Map<String, HelmFetchFileResult> helmValuesFileMapContents;
   String helmValuesFileContent;
+
+  // for custom source manifest and values files
+  Map<String, Collection<CustomSourceFile>> customFetchContent;
+  String zippedManifestFileId;
 
   public List<ValuesManifestOutcome> getValuesManifestOutcomes() {
     if (isEmpty(manifestOutcomeList)) {

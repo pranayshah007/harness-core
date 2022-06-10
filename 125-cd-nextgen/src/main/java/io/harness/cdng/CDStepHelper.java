@@ -49,6 +49,7 @@ import io.harness.cdng.manifest.ManifestType;
 import io.harness.cdng.manifest.mappers.ManifestOutcomeMapper;
 import io.harness.cdng.manifest.mappers.ManifestOutcomeValidator;
 import io.harness.cdng.manifest.steps.ManifestsOutcome;
+import io.harness.cdng.manifest.yaml.CustomRemoteStoreConfig;
 import io.harness.cdng.manifest.yaml.GcsStoreConfig;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.HelmChartManifestOutcome;
@@ -96,6 +97,7 @@ import io.harness.delegate.beans.connector.scm.gitlab.GitlabHttpCredentialsDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabTokenSpecDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabUsernameTokenDTO;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
+import io.harness.delegate.beans.storeconfig.CustomRemoteStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.beans.storeconfig.GcsHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
@@ -122,6 +124,8 @@ import io.harness.logging.UnitProgress;
 import io.harness.logging.UnitStatus;
 import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.logstreaming.NGLogCallback;
+import io.harness.manifest.CustomManifestSource;
+import io.harness.manifest.CustomSourceFile;
 import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
 import io.harness.plancreator.steps.common.StepElementParameters;
@@ -148,6 +152,7 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -569,6 +574,18 @@ public class CDStepHelper {
       return getGitStoreDelegateConfig(gitStoreConfig, connectorDTO, manifestOutcome, gitFilePaths, ambiance);
     }
 
+    if (ManifestStoreType.CUSTOM_REMOTE.equals(storeConfig.getKind())) {
+      CustomRemoteStoreConfig customRemoteStoreConfig = (CustomRemoteStoreConfig) storeConfig;
+
+      return CustomRemoteStoreDelegateConfig.builder()
+          .customManifestSource(CustomManifestSource.builder()
+                                    .filePaths(Arrays.asList(customRemoteStoreConfig.getFilePath().getValue()))
+                                    .script(customRemoteStoreConfig.getExtractionScript().getValue())
+                                    .accountId(AmbianceUtils.getAccountId(ambiance))
+                                    .build())
+          .build();
+    }
+
     if (ManifestStoreType.HTTP.equals(storeConfig.getKind())) {
       HttpStoreConfig httpStoreConfig = (HttpStoreConfig) storeConfig;
       ConnectorInfoDTO helmConnectorDTO =
@@ -785,7 +802,8 @@ public class CDStepHelper {
   }
 
   public List<String> getManifestFilesContents(Map<String, FetchFilesResult> gitFetchFilesResultMap,
-      List<ManifestOutcome> valuesManifests, Map<String, HelmFetchFileResult> helmChartFetchFilesResultMap) {
+      List<ManifestOutcome> valuesManifests, Map<String, HelmFetchFileResult> helmChartFetchFilesResultMap,
+      Map<String, Collection<CustomSourceFile>> customFetchContent) {
     List<String> valuesFileContents = new ArrayList<>();
 
     for (ManifestOutcome valuesManifest : valuesManifests) {
@@ -805,6 +823,11 @@ public class CDStepHelper {
             helmChartFetchFilesResultMap.get(valuesIdentifier).getValuesFileContents();
         if (isNotEmpty(helmChartValuesFileContent)) {
           valuesFileContents.addAll(helmChartValuesFileContent);
+        }
+      } else if (isNotEmpty(customFetchContent) && customFetchContent.containsKey(valuesIdentifier)) {
+        Collection<CustomSourceFile> customSourceFiles = customFetchContent.get(valuesIdentifier);
+        for (CustomSourceFile customSourceFile : customSourceFiles) {
+          valuesFileContents.add(customSourceFile.getFileContent());
         }
       }
       // TODO: for local store, add files directly

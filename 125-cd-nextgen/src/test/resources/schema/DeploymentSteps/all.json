@@ -99,12 +99,12 @@
           "oneOf": [
             {
               "required": [
-                "folderPath"
+                "commitId"
               ]
             },
             {
               "required": [
-                "paths"
+                "branch"
               ]
             }
           ]
@@ -113,12 +113,12 @@
           "oneOf": [
             {
               "required": [
-                "commitId"
+                "folderPath"
               ]
             },
             {
               "required": [
-                "branch"
+                "paths"
               ]
             }
           ]
@@ -611,6 +611,44 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "CustomRemoteStoreConfig": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StoreConfig"
+        },
+        {
+          "type": "object",
+          "required": [
+            "extractionScript",
+            "filePath"
+          ],
+          "properties": {
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "extractionScript": {
+              "type": "string"
+            },
+            "filePath": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "DeleteManifestPathSpec": {
       "allOf": [
         {
@@ -846,12 +884,12 @@
           "oneOf": [
             {
               "required": [
-                "folderPath"
+                "commitId"
               ]
             },
             {
               "required": [
-                "paths"
+                "branch"
               ]
             }
           ]
@@ -860,12 +898,12 @@
           "oneOf": [
             {
               "required": [
-                "commitId"
+                "folderPath"
               ]
             },
             {
               "required": [
-                "branch"
+                "paths"
               ]
             }
           ]
@@ -928,12 +966,12 @@
           "oneOf": [
             {
               "required": [
-                "folderPath"
+                "commitId"
               ]
             },
             {
               "required": [
-                "paths"
+                "branch"
               ]
             }
           ]
@@ -942,12 +980,12 @@
           "oneOf": [
             {
               "required": [
-                "commitId"
+                "folderPath"
               ]
             },
             {
               "required": [
-                "branch"
+                "paths"
               ]
             }
           ]
@@ -1010,12 +1048,12 @@
           "oneOf": [
             {
               "required": [
-                "folderPath"
+                "commitId"
               ]
             },
             {
               "required": [
-                "paths"
+                "branch"
               ]
             }
           ]
@@ -1024,12 +1062,12 @@
           "oneOf": [
             {
               "required": [
-                "commitId"
+                "folderPath"
               ]
             },
             {
               "required": [
-                "branch"
+                "paths"
               ]
             }
           ]
@@ -2756,6 +2794,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/BitbucketStore"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Custom Remote"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/CustomRemoteStoreConfig"
               }
             }
           }

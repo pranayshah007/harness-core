@@ -116,7 +116,8 @@ public class K8sBlueGreenStep extends TaskChainExecutableWithRollbackAndRbac imp
             .openshiftParamList(isOpenshiftTemplate ? manifestFilesContents : Collections.emptyList())
             .kustomizePatchesList(k8sStepHelper.renderPatches(k8sManifestOutcome, ambiance, manifestOverrideContents))
             .k8sInfraDelegateConfig(k8sStepHelper.getK8sInfraDelegateConfig(infrastructure, ambiance))
-            .manifestDelegateConfig(k8sStepHelper.getManifestDelegateConfig(k8sManifestOutcome, ambiance))
+            .manifestDelegateConfig(k8sStepHelper.getManifestDelegateConfigWrapper(
+                executionPassThroughData.getZippedManifestId(), k8sManifestOutcome, ambiance))
             .accountId(accountId)
             .skipResourceVersioning(k8sStepHelper.getSkipResourceVersioning(k8sManifestOutcome))
             .shouldOpenFetchFilesLogStream(shouldOpenFetchFilesLogStream)

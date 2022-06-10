@@ -1590,6 +1590,7 @@
 29302:io.harness.delegate.beans.connector.jenkins.JenkinsCapabilityHelper
 29303:io.harness.delegate.beans.connector.jenkins.JenkinsValidationParams
 29304:io.harness.delegate.task.artifacts.jenkins.JenkinsArtifactDelegateRequest
+29305:io.harness.delegate.task.manifests.request.CustomManifestValuesFetchRequest
 31010:java.lang.StackTraceElement[]
 31011:java.lang.StackTraceElement
 31012:io.harness.exception.DelegateErrorHandlerException

@@ -100,6 +100,7 @@ import com.google.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -541,8 +542,9 @@ public class NativeHelmStepHelper extends CDStepHelper {
         helmChartValuesFetchFilesResultMap, valuesFileContents, helmChartManifest.getIdentifier());
 
     if (isNotEmpty(gitFetchFilesResultMap) || isNotEmpty(helmChartValuesFetchFilesResultMap)) {
-      valuesFileContents.addAll(getManifestFilesContents(gitFetchFilesResultMap,
-          nativeHelmStepPassThroughData.getManifestOutcomeList(), helmChartValuesFetchFilesResultMap));
+      valuesFileContents.addAll(
+          getManifestFilesContents(gitFetchFilesResultMap, nativeHelmStepPassThroughData.getManifestOutcomeList(),
+              helmChartValuesFetchFilesResultMap, Collections.emptyMap()));
     }
     return nativeHelmStepExecutor.executeHelmTask(helmChartManifest, ambiance, stepElementParameters,
         valuesFileContents,
