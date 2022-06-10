@@ -21,6 +21,6 @@ for folder in "${root_folders[@]}"; do
   check=$?
   if [ $check == 0 ]
   then
-    bazel ${bazelrc} build ${GCP} ${BAZEL_ARGUMENTS} ${TARGETS} 2> /dev/null // skipcq: SH-2154, SH-2086
+    bazel ${bazelrc} build ${GCP} ${BAZEL_ARGUMENTS} ${TARGETS} 2> /dev/null
   fi
 done
