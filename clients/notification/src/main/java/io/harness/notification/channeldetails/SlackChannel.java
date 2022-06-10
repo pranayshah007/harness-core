@@ -18,7 +18,6 @@ import io.harness.notification.Team;
 import com.google.inject.Inject;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
