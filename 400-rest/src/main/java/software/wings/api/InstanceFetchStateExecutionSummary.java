@@ -23,6 +23,7 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 public class InstanceFetchStateExecutionSummary extends StepExecutionSummary implements DeploymentInfoExtractor {
   private String instanceFetchScript;
+  private String artifactId;
   private String scriptOutput;
   private String activityId;
   private List<String> tags;
@@ -32,6 +33,7 @@ public class InstanceFetchStateExecutionSummary extends StepExecutionSummary imp
     return Optional.of(singletonList(CustomDeploymentTypeInfo.builder()
                                          .scriptOutput(scriptOutput)
                                          .instanceFetchScript(instanceFetchScript)
+                                         .artifactId(artifactId)
                                          .tags(tags)
                                          .build()));
   }

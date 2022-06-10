@@ -178,6 +178,8 @@ public class DeploymentServiceImpl implements DeploymentService {
       query.filter(
           join(".", DeploymentSummaryKeys.customDeploymentKey, CustomDeploymentFieldKeys.instanceFetchScriptHash),
           customDeploymentKey.getInstanceFetchScriptHash());
+      query.filter(join(".", DeploymentSummaryKeys.customDeploymentKey, CustomDeploymentFieldKeys.artifactId),
+          customDeploymentKey.getArtifactId());
       if (isNotEmpty(customDeploymentKey.getTags())) {
         query.filter(join(".", DeploymentSummaryKeys.customDeploymentKey, CustomDeploymentFieldKeys.tags),
             customDeploymentKey.getTags());

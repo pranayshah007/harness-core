@@ -76,6 +76,7 @@ import software.wings.service.intfc.ServiceTemplateService;
 import software.wings.service.intfc.customdeployment.CustomDeploymentTypeService;
 import software.wings.service.intfc.sweepingoutput.SweepingOutputService;
 import software.wings.sm.ExecutionContext;
+import software.wings.sm.ExecutionContextImpl;
 import software.wings.sm.ExecutionResponse;
 import software.wings.sm.ExecutionResponse.ExecutionResponseBuilder;
 import software.wings.sm.InstanceStatusSummary;
@@ -243,7 +244,12 @@ public class InstanceFetchState extends State {
     delegateService.queueTask(delegateTask);
 
     appendDelegateTaskDetails(context, delegateTask);
-
+    String artifactId;
+    if (((ExecutionContextImpl) context).getStateExecutionInstance().isRollback()) {
+      artifactId = workflowStandardParams.getRollbackArtifactIds().get(0);
+    } else {
+      artifactId = workflowStandardParams.getArtifactIds().get(0);
+    }
     return ExecutionResponse.builder()
         .async(true)
         .correlationId(activityId)
@@ -252,6 +258,7 @@ public class InstanceFetchState extends State {
                                 .hostObjectArrayPath(deploymentTypeTemplate.getHostObjectArrayPath())
                                 .hostAttributes(deploymentTypeTemplate.getHostAttributes())
                                 .instanceFetchScript(getRenderedScriptExceptSecrets(taskParameters.getScriptBody()))
+                                .artifactId(artifactId)
                                 .tags(getRenderedTags(context))
                                 .build())
         .build();

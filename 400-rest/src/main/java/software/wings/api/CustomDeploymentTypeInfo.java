@@ -18,6 +18,7 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class CustomDeploymentTypeInfo extends DeploymentInfo {
+  private String artifactId;
   private String instanceFetchScript;
   private String scriptOutput;
   private List<String> tags;

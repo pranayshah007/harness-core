@@ -72,13 +72,13 @@ public class CustomDeploymentInstanceHandler extends InstanceHandler implements 
   @Override
   public void syncInstances(String appId, String infraMappingId, InstanceSyncFlow instanceSyncFlow) {
     if (MANUAL != instanceSyncFlow) {
-      syncInstancesInternal(appId, infraMappingId, null, null, instanceSyncFlow);
+      syncInstancesInternal(appId, infraMappingId, null, null, instanceSyncFlow, false);
     }
   }
 
   private void syncInstancesInternal(String appId, String infraMappingId,
       List<DeploymentSummary> newDeploymentSummaries, ShellScriptProvisionExecutionData response,
-      InstanceSyncFlow instanceSyncFlow) {
+      InstanceSyncFlow instanceSyncFlow, boolean rollback) {
     log.info("Performing Custom Deployment Type Instance sync via [{}], Infrastructure Mapping : [{}]",
         instanceSyncFlow, infraMappingId);
     InfrastructureMapping infrastructureMapping = infraMappingService.get(appId, infraMappingId);
@@ -99,24 +99,23 @@ public class CustomDeploymentInstanceHandler extends InstanceHandler implements 
             deploymentTypeTemplate.getHostObjectArrayPath(), scriptOutput, jsonMapper);
 
     if (instanceSyncFlow == InstanceSyncFlow.NEW_DEPLOYMENT) {
-      rewriteInstances(instancesInDb, latestHostInfos, newDeploymentSummaries, infrastructureMapping);
+      rewriteInstances(instancesInDb, latestHostInfos, newDeploymentSummaries, infrastructureMapping, rollback);
     } else {
-      incrementalUpdate(instancesInDb, latestHostInfos, newDeploymentSummaries, infrastructureMapping);
+      incrementalUpdate(instancesInDb, latestHostInfos, newDeploymentSummaries, infrastructureMapping, rollback);
     }
   }
 
   private void rewriteInstances(List<Instance> instancesInDb, List<PhysicalHostInstanceInfo> latestHostInfos,
-      List<DeploymentSummary> newDeploymentSummaries, InfrastructureMapping infraMapping) {
+      List<DeploymentSummary> newDeploymentSummaries, InfrastructureMapping infraMapping, boolean rollback) {
     log.info("Instances to be added {}", latestHostInfos.size());
     log.info("Instances to be deleted {}", instancesInDb.size());
 
     if (isNotEmpty(instancesInDb)) {
       instanceService.delete(instancesInDb.stream().map(Instance::getUuid).collect(Collectors.toSet()));
     }
-
     final DeploymentSummary deploymentSummary;
     if (isNotEmpty(latestHostInfos) && isNotEmpty(newDeploymentSummaries)) {
-      deploymentSummary = getDeploymentSummaryForInstanceCreation(newDeploymentSummaries.get(0), false);
+      deploymentSummary = getDeploymentSummaryForInstanceCreation(newDeploymentSummaries.get(0), rollback);
       latestHostInfos.stream()
           .map(hostInstanceInfo -> buildInstanceFromHostInfo(infraMapping, hostInstanceInfo, deploymentSummary))
           .forEach(instanceService::save);
@@ -124,7 +123,7 @@ public class CustomDeploymentInstanceHandler extends InstanceHandler implements 
   }
 
   private void incrementalUpdate(List<Instance> instancesInDb, List<PhysicalHostInstanceInfo> latestHostInfos,
-      List<DeploymentSummary> newDeploymentSummaries, InfrastructureMapping infraMapping) {
+      List<DeploymentSummary> newDeploymentSummaries, InfrastructureMapping infraMapping, boolean rollback) {
     Map<String, Instance> instancesInDbMap = instancesInDb.stream().collect(Collectors.toMap(
         instance -> ((PhysicalHostInstanceInfo) instance.getInstanceInfo()).getHostName(), Function.identity()));
 
@@ -161,7 +160,7 @@ public class CustomDeploymentInstanceHandler extends InstanceHandler implements 
         deploymentSummary = generateDeploymentSummaryFromInstance(
             instanceWithExecutionInfoOptional.get(), deploymentSummaryFromPrevious);
       } else {
-        deploymentSummary = getDeploymentSummaryForInstanceCreation(newDeploymentSummaries.get(0), false);
+        deploymentSummary = getDeploymentSummaryForInstanceCreation(newDeploymentSummaries.get(0), rollback);
       }
 
       instancesToBeAdded.stream()
@@ -217,7 +216,7 @@ public class CustomDeploymentInstanceHandler extends InstanceHandler implements 
     String infraMappingId = deploymentSummaries.iterator().next().getInfraMappingId();
     String appId = deploymentSummaries.iterator().next().getAppId();
 
-    syncInstancesInternal(appId, infraMappingId, deploymentSummaries, null, InstanceSyncFlow.NEW_DEPLOYMENT);
+    syncInstancesInternal(appId, infraMappingId, deploymentSummaries, null, InstanceSyncFlow.NEW_DEPLOYMENT, rollback);
   }
 
   @Override
@@ -249,6 +248,7 @@ public class CustomDeploymentInstanceHandler extends InstanceHandler implements 
     return CustomDeploymentKey.builder()
         .instanceFetchScriptHash(customDeploymentTypeInfo.getInstanceFetchScript().hashCode())
         .tags(customDeploymentTypeInfo.getTags())
+        .artifactId(customDeploymentTypeInfo.getArtifactId())
         .build();
   }
 
@@ -271,7 +271,7 @@ public class CustomDeploymentInstanceHandler extends InstanceHandler implements 
   public void processInstanceSyncResponseFromPerpetualTask(
       InfrastructureMapping infrastructureMapping, DelegateResponseData response) {
     syncInstancesInternal(infrastructureMapping.getAppId(), infrastructureMapping.getUuid(), null,
-        (ShellScriptProvisionExecutionData) response, InstanceSyncFlow.PERPETUAL_TASK);
+        (ShellScriptProvisionExecutionData) response, InstanceSyncFlow.PERPETUAL_TASK, false);
   }
 
   @Override
