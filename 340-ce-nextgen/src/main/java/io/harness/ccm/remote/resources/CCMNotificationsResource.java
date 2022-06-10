@@ -18,6 +18,8 @@ import io.harness.security.annotations.InternalApi;
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
 import com.google.inject.Inject;
+
+import io.harness.security.annotations.NextGenManagerAuth;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.v3.oas.annotations.Hidden;
@@ -43,6 +45,7 @@ import org.springframework.stereotype.Service;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @Hidden
+@NextGenManagerAuth
 @InternalApi
 @Slf4j
 @Service
