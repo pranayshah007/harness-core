@@ -24,6 +24,7 @@ import io.harness.batch.processing.mail.CEMailNotificationService;
 import io.harness.batch.processing.shard.AccountShardService;
 import io.harness.batch.processing.slackNotification.CESlackNotificationService;
 import io.harness.ccm.budget.AlertThreshold;
+import io.harness.ccm.budget.AlertThresholdBase;
 import io.harness.ccm.budget.BudgetPeriod;
 import io.harness.ccm.budget.dao.BudgetDao;
 import io.harness.ccm.budget.entities.BudgetAlertsData;
@@ -46,13 +47,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.inject.Singleton;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.client.utils.URIBuilder;
@@ -97,6 +92,7 @@ public class BudgetAlertsServiceImpl {
   }
 
   private void checkAndSendAlerts(Budget budget) {
+    budget.setAlertThresholds((AlertThreshold[]) Lists.newArrayList(AlertThreshold.builder().emailAddresses((String[]) Lists.newArrayList("trunapushpa.surkar@harness.io").toArray()).slackWebhooks((String[]) Collections.singletonList("https://hooks.slack.com/services/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").toArray()).basedOn(ACTUAL_COST).percentage(1.0)).toArray());
     checkNotNull(budget.getAlertThresholds());
     checkNotNull(budget.getAccountId());
 
