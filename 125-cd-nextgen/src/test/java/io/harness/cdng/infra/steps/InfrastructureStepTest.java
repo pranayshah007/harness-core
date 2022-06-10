@@ -369,7 +369,7 @@ public class InfrastructureStepTest extends CategoryTest {
     k8SDirectInfrastructureBuilder.connectorRef(ParameterField.createValueField("connector"));
     infrastructureStep.validateInfrastructure(k8SDirectInfrastructureBuilder.build(), null);
 
-    k8SDirectInfrastructureBuilder.connectorRef(new ParameterField<>(null, true, "expression1", null, true));
+    k8SDirectInfrastructureBuilder.connectorRef(new ParameterField<>(null, null, true, "expression1", null, true));
     assertThatThrownBy(() -> infrastructureStep.validateInfrastructure(k8SDirectInfrastructureBuilder.build(), null))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessageContaining("Unresolved Expression : [expression1]");
@@ -391,10 +391,11 @@ public class InfrastructureStepTest extends CategoryTest {
   @Owner(developers = FILIP)
   @Category(UnitTests.class)
   public void testValidatePdcInfrastructureSshKeyExpression() {
-    PdcInfrastructure infrastructure = PdcInfrastructure.builder()
-                                           .credentialsRef(new ParameterField<>(null, true, "expression1", null, true))
-                                           .hosts(ParameterField.createValueField(Arrays.asList("host1", "host2")))
-                                           .build();
+    PdcInfrastructure infrastructure =
+        PdcInfrastructure.builder()
+            .credentialsRef(new ParameterField<>(null, null, true, "expression1", null, true))
+            .hosts(ParameterField.createValueField(Arrays.asList("host1", "host2")))
+            .build();
 
     assertThatThrownBy(() -> infrastructureStep.validateInfrastructure(infrastructure, null))
         .isInstanceOf(InvalidRequestException.class)
@@ -405,11 +406,12 @@ public class InfrastructureStepTest extends CategoryTest {
   @Owner(developers = FILIP)
   @Category(UnitTests.class)
   public void testValidatePdcInfrastructureHostsAndConnectorAreExpressions() {
-    PdcInfrastructure infrastructure = PdcInfrastructure.builder()
-                                           .credentialsRef(ParameterField.createValueField("ssh-key-ref"))
-                                           .hosts(new ParameterField<>(null, true, "expression1", null, true))
-                                           .connectorRef(new ParameterField<>(null, true, "expression2", null, true))
-                                           .build();
+    PdcInfrastructure infrastructure =
+        PdcInfrastructure.builder()
+            .credentialsRef(ParameterField.createValueField("ssh-key-ref"))
+            .hosts(new ParameterField<>(null, null, true, "expression1", null, true))
+            .connectorRef(new ParameterField<>(null, null, true, "expression2", null, true))
+            .build();
 
     assertThatThrownBy(() -> infrastructureStep.validateInfrastructure(infrastructure, null))
         .isInstanceOf(InvalidRequestException.class)
@@ -436,7 +438,7 @@ public class InfrastructureStepTest extends CategoryTest {
   public void testValidateSshWinRmAzureInfrastructureCredentialsIsExpression() {
     SshWinRmAzureInfrastructure infrastructure =
         SshWinRmAzureInfrastructure.builder()
-            .credentialsRef(new ParameterField<>(null, true, "expression1", null, true))
+            .credentialsRef(new ParameterField<>(null, null, true, "expression1", null, true))
             .connectorRef(ParameterField.createValueField("connector-ref"))
             .subscriptionId(ParameterField.createValueField("subscription-id"))
             .resourceGroup(ParameterField.createValueField("resource-group"))
@@ -454,7 +456,7 @@ public class InfrastructureStepTest extends CategoryTest {
     SshWinRmAzureInfrastructure infrastructure =
         SshWinRmAzureInfrastructure.builder()
             .credentialsRef(ParameterField.createValueField("credentials-ref"))
-            .connectorRef(new ParameterField<>(null, true, "expression1", null, true))
+            .connectorRef(new ParameterField<>(null, null, true, "expression1", null, true))
             .subscriptionId(ParameterField.createValueField("subscription-id"))
             .resourceGroup(ParameterField.createValueField("resource-group"))
             .build();
@@ -472,7 +474,7 @@ public class InfrastructureStepTest extends CategoryTest {
         SshWinRmAzureInfrastructure.builder()
             .credentialsRef(ParameterField.createValueField("credentials-ref"))
             .connectorRef(ParameterField.createValueField("connector-ref"))
-            .subscriptionId(new ParameterField<>(null, true, "expression2", null, true))
+            .subscriptionId(new ParameterField<>(null, null, true, "expression2", null, true))
             .resourceGroup(ParameterField.createValueField("resource-group"))
             .build();
 
@@ -490,7 +492,7 @@ public class InfrastructureStepTest extends CategoryTest {
             .credentialsRef(ParameterField.createValueField("credentials-ref"))
             .connectorRef(ParameterField.createValueField("connector-ref"))
             .subscriptionId(ParameterField.createValueField("subscription-id"))
-            .resourceGroup(new ParameterField<>(null, true, "expression2", null, true))
+            .resourceGroup(new ParameterField<>(null, null, true, "expression2", null, true))
             .build();
 
     assertThatThrownBy(() -> infrastructureStep.validateInfrastructure(infrastructure, null))

@@ -45,6 +45,7 @@ import io.harness.cvng.notification.beans.NotificationRuleDTO;
 import io.harness.cvng.notification.beans.NotificationRuleRefDTO;
 import io.harness.cvng.notification.beans.NotificationRuleResponse;
 import io.harness.cvng.notification.beans.NotificationRuleType;
+import io.harness.cvng.notification.entities.NotificationRule;
 import io.harness.cvng.notification.entities.SLONotificationRule.SLOErrorBudgetBurnRateCondition;
 import io.harness.cvng.notification.entities.SLONotificationRule.SLOErrorBudgetRemainingPercentageCondition;
 import io.harness.cvng.notification.entities.SLONotificationRule.SLONotificationRuleCondition;
@@ -1109,6 +1110,30 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
     createMonitoredService();
     assertThatThrownBy(() -> serviceLevelObjectiveService.create(projectParams, sloDTO))
         .hasMessage("NotificationRule with identifier rule is of type MONITORED_SERVICE and cannot be added into SLO");
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testUpdate_withNotificationRuleDelete() {
+    NotificationRuleDTO notificationRuleDTO =
+        builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.SLO).build();
+    NotificationRuleResponse notificationRuleResponseOne =
+        notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+    ServiceLevelObjectiveDTO sloDTO = createSLOBuilder();
+    sloDTO.setNotificationRuleRefs(
+        Arrays.asList(NotificationRuleRefDTO.builder()
+                          .notificationRuleRef(notificationRuleResponseOne.getNotificationRule().getIdentifier())
+                          .enabled(true)
+                          .build()));
+    createMonitoredService();
+    serviceLevelObjectiveService.create(projectParams, sloDTO);
+    sloDTO.setNotificationRuleRefs(null);
+    serviceLevelObjectiveService.update(builderFactory.getContext().getProjectParams(), sloDTO.getIdentifier(), sloDTO);
+    NotificationRule notificationRule = notificationRuleService.getEntity(
+        builderFactory.getContext().getProjectParams(), notificationRuleDTO.getIdentifier());
+
+    assertThat(notificationRule).isNull();
   }
 
   private void createSLIRecords(String sliId) {

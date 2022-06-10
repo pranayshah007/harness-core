@@ -99,6 +99,7 @@ public class PerspectiveResource {
   private final TelemetryReporter telemetryReporter;
 
   private static final String PERSPECTIVE_CREATED = "Perspective Created";
+  private static final String PERSPECTIVE_ID = "Perspective ID";
   private static final String MODULE = "module";
   private static final String MODULE_NAME = "CCM";
   private static final String DATA_SOURCES = "data_sources";
@@ -263,9 +264,11 @@ public class PerspectiveResource {
       ceView.setUuid(null);
       ceView.setViewType(ViewType.CUSTOMER);
     }
+    CEView ceViewCheck = updateTotalCost(ceViewService.save(ceView, clone));
+    properties.put(PERSPECTIVE_ID, clone ? ceViewCheck.getUuid() : ceView.getUuid());
     telemetryReporter.sendTrackEvent(
         PERSPECTIVE_CREATED, null, accountId, properties, Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
-    return ResponseDTO.newResponse(updateTotalCost(ceViewService.save(ceView, clone)));
+    return ResponseDTO.newResponse(ceViewCheck);
   }
 
   private CEView updateTotalCost(CEView ceView) {
@@ -400,15 +403,17 @@ public class PerspectiveResource {
           "cloneName") String cloneName) {
     HashMap<String, Object> properties = new HashMap<>();
     properties.put(MODULE, MODULE_NAME);
-    properties.put(DATA_SOURCES,
-        ceViewService.get(perspectiveId)
-            .getDataSources()
-            .stream()
-            .map(Object::toString)
-            .collect(Collectors.joining(",")));
+    List<ViewFieldIdentifier> dataSourcesList = ceViewService.get(perspectiveId).getDataSources();
+    String dataSources = "";
+    if (dataSourcesList != null) {
+      dataSources = dataSourcesList.stream().map(Object::toString).collect(Collectors.joining(","));
+    }
+    properties.put(DATA_SOURCES, dataSources);
     properties.put(IS_CLONE, "YES");
+    CEView ceViewCheck = updateTotalCost(ceViewService.clone(accountId, perspectiveId, cloneName));
+    properties.put(PERSPECTIVE_ID, ceViewCheck.getUuid());
     telemetryReporter.sendTrackEvent(
         PERSPECTIVE_CREATED, null, accountId, properties, Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
-    return ResponseDTO.newResponse(updateTotalCost(ceViewService.clone(accountId, perspectiveId, cloneName)));
+    return ResponseDTO.newResponse(ceViewCheck);
   }
 }

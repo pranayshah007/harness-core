@@ -10,8 +10,10 @@ package io.harness.cdng.common.resources;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.exception.WingsException.USER;
+import static io.harness.validation.Validator.notEmptyCheck;
 
 import static java.lang.String.format;
+import static org.apache.commons.lang3.StringUtils.trimToEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
@@ -19,6 +21,7 @@ import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
 import io.harness.connector.validator.scmValidators.GitConfigAuthenticationInfoHelper;
+import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
@@ -61,8 +64,13 @@ public class GitResourceServiceHelper {
   }
 
   public GitStoreDelegateConfig getGitStoreDelegateConfig(ConnectorInfoDTO connectorDTO, NGAccess ngAccess,
-      FetchType fetchType, String branch, String commitId, String path) {
+      FetchType fetchType, String branch, String commitId, String path, String repoName) {
     GitConfigDTO gitConfigDTO = ScmConnectorMapper.toGitConfigDTO((ScmConnector) connectorDTO.getConnectorConfig());
+    if (gitConfigDTO.getGitConnectionType() == GitConnectionType.ACCOUNT) {
+      String repoUrl = getGitRepoUrl(gitConfigDTO, repoName);
+      gitConfigDTO.setUrl(repoUrl);
+      gitConfigDTO.setGitConnectionType(GitConnectionType.REPO);
+    }
     SSHKeySpecDTO sshKeySpecDTO = getSshKeySpecDTO(gitConfigDTO, ngAccess);
     List<EncryptedDataDetail> encryptedDataDetails =
         gitConfigAuthenticationInfoHelper.getEncryptedDataDetails(gitConfigDTO, sshKeySpecDTO, ngAccess);
@@ -81,5 +89,16 @@ public class GitResourceServiceHelper {
   public SSHKeySpecDTO getSshKeySpecDTO(GitConfigDTO gitConfigDTO, NGAccess ngAccess) {
     return gitConfigAuthenticationInfoHelper.getSSHKey(
         gitConfigDTO, ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
+  }
+
+  // This method needs to be here because if the repo was defined as an account repo, the repo url can be
+  // https://github.com/orgname/ or https://github.com/orgname and both are validated as correct by the connector
+  // validator Same thing for repo name and /nameoftherepo and nameoftherepo
+  private String getGitRepoUrl(ScmConnector scmConnector, String repoName) {
+    repoName = trimToEmpty(repoName);
+    notEmptyCheck("Repo name cannot be empty for Account level git connector", repoName);
+    String purgedRepoUrl = scmConnector.getUrl().replaceAll("/*$", "");
+    String purgedRepoName = repoName.replaceAll("^/*", "");
+    return purgedRepoUrl + "/" + purgedRepoName;
   }
 }

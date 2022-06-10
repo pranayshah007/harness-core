@@ -18,7 +18,6 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.data.Outcome;
-import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.steps.fork.ForkStepParameters;
 import io.harness.steps.fork.NGForkStep;
@@ -56,7 +55,7 @@ public class ManifestsStep extends NGForkStep {
     return stepResponse.withStepOutcomes(Collections.singleton(StepResponse.StepOutcome.builder()
                                                                    .name(OutcomeExpressionConstants.MANIFESTS)
                                                                    .outcome(manifestsOutcome)
-                                                                   .group(StepOutcomeGroup.STAGE.name())
+                                                                   .group(StepCategory.STAGE.name())
                                                                    .build()));
   }
 }

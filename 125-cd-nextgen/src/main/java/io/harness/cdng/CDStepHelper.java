@@ -61,6 +61,7 @@ import io.harness.cdng.manifest.yaml.KustomizeManifestOutcome;
 import io.harness.cdng.manifest.yaml.KustomizePatchesManifestOutcome;
 import io.harness.cdng.manifest.yaml.ManifestAttributes;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
+import io.harness.cdng.manifest.yaml.OciHelmChartConfig;
 import io.harness.cdng.manifest.yaml.OpenshiftManifestOutcome;
 import io.harness.cdng.manifest.yaml.OpenshiftParamManifestOutcome;
 import io.harness.cdng.manifest.yaml.S3StoreConfig;
@@ -77,6 +78,7 @@ import io.harness.delegate.beans.connector.artifactoryconnector.ArtifactoryConne
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
 import io.harness.delegate.beans.connector.helm.HttpHelmConnectorDTO;
+import io.harness.delegate.beans.connector.helm.OciHelmConnectorDTO;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
@@ -102,6 +104,7 @@ import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.beans.storeconfig.GcsHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.HttpHelmStoreDelegateConfig;
+import io.harness.delegate.beans.storeconfig.OciHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.S3HelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
@@ -535,6 +538,12 @@ public class CDStepHelper {
               format("Invalid connector selected in %s. Select Http Helm connector", message));
         }
         break;
+      case ManifestStoreType.OCI:
+        if (!(connectorInfoDTO.getConnectorConfig() instanceof OciHelmConnectorDTO)) {
+          throw new InvalidRequestException(
+              format("Invalid connector selected in %s. Select Oci Helm connector", message));
+        }
+        break;
 
       case ManifestStoreType.S3:
         if (!((connectorInfoDTO.getConnectorConfig()) instanceof AwsConnectorDTO)) {
@@ -598,6 +607,26 @@ public class CDStepHelper {
           .httpHelmConnector((HttpHelmConnectorDTO) helmConnectorDTO.getConnectorConfig())
           .encryptedDataDetails(
               k8sEntityHelper.getEncryptionDataDetails(helmConnectorDTO, AmbianceUtils.getNgAccess(ambiance)))
+          .build();
+    }
+
+    if (ManifestStoreType.OCI.equals(storeConfig.getKind())) {
+      if (!isHelmOciEnabled(AmbianceUtils.getAccountId(ambiance))) {
+        throw new UnsupportedOperationException(format("Unsupported Store Config type: [%s]", storeConfig.getKind()));
+      }
+      OciHelmChartConfig ociStoreConfig = (OciHelmChartConfig) storeConfig;
+      ConnectorInfoDTO helmConnectorDTO =
+          getConnector(getParameterFieldValue(ociStoreConfig.getConnectorReference()), ambiance);
+      validateManifest(storeConfig.getKind(), helmConnectorDTO, validationErrorMessage);
+
+      return OciHelmStoreDelegateConfig.builder()
+          .repoName(helmConnectorDTO.getIdentifier())
+          .basePath(getParameterFieldValue(ociStoreConfig.getBasePath()))
+          .repoDisplayName(helmConnectorDTO.getName())
+          .ociHelmConnector((OciHelmConnectorDTO) helmConnectorDTO.getConnectorConfig())
+          .encryptedDataDetails(
+              k8sEntityHelper.getEncryptionDataDetails(helmConnectorDTO, AmbianceUtils.getNgAccess(ambiance)))
+          .helmOciEnabled(isHelmOciEnabled(AmbianceUtils.getAccountId(ambiance)))
           .build();
     }
 
@@ -672,6 +701,10 @@ public class CDStepHelper {
 
   public boolean isUseNewKubectlVersion(String accountId) {
     return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.NEW_KUBECTL_VERSION);
+  }
+
+  public boolean isHelmOciEnabled(String accountId) {
+    return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.HELM_OCI_SUPPORT);
   }
 
   public boolean shouldCleanUpIncompleteCanaryDeployRelease(String accountId) {

@@ -28,6 +28,7 @@ public interface ManifestStoreType {
   String S3URL = "S3Url";
   String InheritFromManifest = "InheritFromManifest";
   String CUSTOM_REMOTE = "Custom Remote";
+  String OCI = "OciHelmChart";
 
   static boolean isInGitSubset(String manifestType) {
     switch (manifestType) {
@@ -47,6 +48,7 @@ public interface ManifestStoreType {
       case HTTP:
       case S3:
       case GCS:
+      case OCI:
         return true;
 
       default:
@@ -54,6 +56,6 @@ public interface ManifestStoreType {
     }
   }
 
-  Set<String> HelmChartRepo = ImmutableSet.of(HTTP, GCS, S3);
-  Set<String> HelmAllRepo = ImmutableSet.of(HTTP, GCS, S3, GIT, GITHUB, GITLAB, BITBUCKET);
+  Set<String> HelmChartRepo = ImmutableSet.of(HTTP, GCS, S3, OCI);
+  Set<String> HelmAllRepo = ImmutableSet.of(HTTP, GCS, S3, GIT, GITHUB, GITLAB, BITBUCKET, OCI);
 }

@@ -12,6 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.Scope;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
@@ -271,16 +272,25 @@ public class EntitySetupUsageServiceImpl implements EntitySetupUsageService {
   }
 
   @Override
-  public Page<EntitySetupUsageDTO> listAllEntityUsagePerEntityScope(int page, int size, String accountIdentifier,
-      String referredEntityFQScope, EntityType referredEntityType, EntityType referredByEntityType, Sort sort) {
+  public List<EntitySetupUsageDTO> listAllEntityUsagePerReferredEntityScope(Scope scope, String referredEntityFQScope,
+      EntityType referredEntityType, EntityType referredByEntityType, String referredByEntityName, Sort sort) {
     if (null == referredByEntityType) {
-      return Page.empty();
+      return Collections.emptyList();
     }
-    Criteria criteria = entitySetupUsageFilterHelper.createCriteriaForEntitiesInScope(
-        accountIdentifier, referredEntityFQScope, referredEntityType, referredByEntityType);
+    Criteria criteria = entitySetupUsageFilterHelper.createCriteriaForReferredEntitiesInScope(
+        scope, referredEntityFQScope, referredEntityType, referredByEntityType, referredByEntityName);
 
-    Pageable pageable = getPageRequest(page, size, sort);
-    Page<EntitySetupUsage> entityReferences = entityReferenceRepository.findAll(criteria, pageable);
-    return entityReferences.map(entityReference -> setupUsageEntityToDTO.createEntityReferenceDTO(entityReference));
+    return entityReferenceRepository.findAll(criteria, Pageable.unpaged())
+        .getContent()
+        .stream()
+        .map(entityReference -> setupUsageEntityToDTO.createEntityReferenceDTO(entityReference))
+        .collect(Collectors.toList());
+  }
+
+  @Override
+  public Long countReferredByEntitiesByFQNsIn(String accountIdentifier, List<String> referredEntityFQNs) {
+    Criteria criteria = entitySetupUsageFilterHelper.createCriteriaForReferredEntityFQNIn(
+        accountIdentifier, referredEntityFQNs, EntityType.FILES);
+    return entityReferenceRepository.countAll(criteria);
   }
 }

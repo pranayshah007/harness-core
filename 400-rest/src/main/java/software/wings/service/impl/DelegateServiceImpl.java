@@ -1425,10 +1425,8 @@ public class DelegateServiceImpl implements DelegateService {
       params.put(JRE_DIRECTORY, jreConfig.getJreDirectory());
       params.put(JRE_MAC_DIRECTORY, jreConfig.getJreMacDirectory());
       params.put(JRE_TAR_PATH, jreConfig.getJreTarPath());
-      params.put("isJdk11Delegate",
-          String.valueOf(featureFlagService.isEnabledReloadCache(JDK11_DELEGATE, templateParameters.getAccountId())));
-      params.put("isJdk11Watcher",
-          String.valueOf(featureFlagService.isEnabledReloadCache(JDK11_WATCHER, templateParameters.getAccountId())));
+      params.put("isJdk11Delegate", String.valueOf(isJdk11Delegate(templateParameters.getAccountId())));
+      params.put("isJdk11Watcher", String.valueOf(isJdk11Watcher(templateParameters.getAccountId())));
 
       if (jreConfig.getAlpnJarPath() != null) {
         params.put(ALPN_JAR_PATH, jreConfig.getAlpnJarPath());
@@ -1564,8 +1562,7 @@ public class DelegateServiceImpl implements DelegateService {
    * @return
    */
   private JreConfig getJreConfig(final String accountId, final boolean isWatcher) {
-    final boolean enabled = (featureFlagService.isEnabledReloadCache(JDK11_DELEGATE, accountId) && !isWatcher)
-        || (featureFlagService.isEnabledReloadCache(JDK11_WATCHER, accountId) && isWatcher);
+    final boolean enabled = (isJdk11Delegate(accountId) && !isWatcher) || (isJdk11Watcher(accountId) && isWatcher);
     final String jreVersion = enabled ? mainConfiguration.getMigrateToJre() : mainConfiguration.getCurrentJre();
     JreConfig jreConfig = mainConfiguration.getJreConfigs().get(jreVersion);
     final CdnConfig cdnConfig = mainConfiguration.getCdnConfig();
@@ -1582,6 +1579,16 @@ public class DelegateServiceImpl implements DelegateService {
                       .build();
     }
     return jreConfig;
+  }
+
+  private boolean isJdk11Watcher(final String accountId) {
+    return DeployMode.isOnPrem(mainConfiguration.getDeployMode().name())
+        || featureFlagService.isEnabledReloadCache(JDK11_WATCHER, accountId);
+  }
+
+  private boolean isJdk11Delegate(final String accountId) {
+    return DeployMode.isOnPrem(mainConfiguration.getDeployMode().name())
+        || featureFlagService.isEnabledReloadCache(JDK11_DELEGATE, accountId);
   }
 
   /**
@@ -4037,7 +4044,8 @@ public class DelegateServiceImpl implements DelegateService {
         .orElse(fetchDefaultDockerDelegateSize());
   }
 
-  private void checkUniquenessOfDelegateName(String accountId, String delegateName, boolean isNg) {
+  @Override
+  public void checkUniquenessOfDelegateName(String accountId, String delegateName, boolean isNg) {
     if (isNg) {
       Query<DelegateGroup> delegateGroupQuery = persistence.createQuery(DelegateGroup.class)
                                                     .filter(DelegateGroupKeys.accountId, accountId)

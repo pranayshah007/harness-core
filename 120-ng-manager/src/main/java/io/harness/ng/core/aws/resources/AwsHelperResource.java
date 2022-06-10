@@ -67,7 +67,7 @@ public class AwsHelperResource {
       @QueryParam("region") @NotNull String region, @QueryParam("isBranch") boolean isBranch,
       @QueryParam("branch") String branch, @QueryParam("filePath") String templatePath,
       @QueryParam("commitId") String commitId, @QueryParam("awsConnectorRef") @NotNull String awsConnectorRef,
-      @QueryParam("gitConnectorRef") String gitConnectorRefParam,
+      @QueryParam("gitConnectorRef") String gitConnectorRefParam, @QueryParam("repoName") String repoName,
       @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountIdentifier,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) @NotNull String orgIdentifier,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) @NotNull String projectIdentifier, String data) {
@@ -75,7 +75,7 @@ public class AwsHelperResource {
         IdentifierRefHelper.getIdentifierRef(awsConnectorRef, accountIdentifier, orgIdentifier, projectIdentifier);
 
     List<AwsCFTemplateParamsData> keys = awsHelperService.getCFparametersKeys(
-        type, region, isBranch, branch, templatePath, commitId, connectorRef, data, gitConnectorRefParam);
+        type, region, isBranch, branch, repoName, templatePath, commitId, connectorRef, data, gitConnectorRefParam);
 
     return ResponseDTO.newResponse(keys);
   }

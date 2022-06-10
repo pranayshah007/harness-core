@@ -18,6 +18,7 @@ import static io.harness.k8s.model.HelmVersion.V2;
 import static io.harness.k8s.model.HelmVersion.V3;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.INDER;
+import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 import static io.harness.rule.OwnerRule.YOGESH;
 
 import static java.lang.String.format;
@@ -49,8 +50,13 @@ import io.harness.delegate.beans.connector.helm.HttpHelmAuthType;
 import io.harness.delegate.beans.connector.helm.HttpHelmAuthenticationDTO;
 import io.harness.delegate.beans.connector.helm.HttpHelmConnectorDTO;
 import io.harness.delegate.beans.connector.helm.HttpHelmUsernamePasswordDTO;
+import io.harness.delegate.beans.connector.helm.OciHelmAuthType;
+import io.harness.delegate.beans.connector.helm.OciHelmAuthenticationDTO;
+import io.harness.delegate.beans.connector.helm.OciHelmConnectorDTO;
+import io.harness.delegate.beans.connector.helm.OciHelmUsernamePasswordDTO;
 import io.harness.delegate.beans.storeconfig.GcsHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.HttpHelmStoreDelegateConfig;
+import io.harness.delegate.beans.storeconfig.OciHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.S3HelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfigType;
@@ -354,6 +360,62 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
     verify(helmTaskHelperBase, times(1))
         .fetchChartFromRepo(REPO_NAME, REPO_DISPLAY_NAME, CHART_NAME, CHART_VERSION, chartOutput, V3,
             emptyHelmCommandFlag, timeout, false, "");
+  }
+
+  @Test
+  @Owner(developers = NAMAN_TALAYCHA)
+  @Category(UnitTests.class)
+  public void testdownloadChartFilesFromOciRepo() {
+    String repoUrl = "test.azurecr.io";
+    String username = "username";
+    char[] password = "password".toCharArray();
+    String chartOutput = "/directory";
+    long timeout = 90000L;
+
+    HelmChartManifestDelegateConfig helmChartManifestDelegateConfig =
+        HelmChartManifestDelegateConfig.builder()
+            .chartName(CHART_NAME)
+
+            .chartVersion(CHART_VERSION)
+            .helmVersion(V3)
+            .helmCommandFlag(emptyHelmCommandFlag)
+            .storeDelegateConfig(
+                OciHelmStoreDelegateConfig.builder()
+                    .repoName(REPO_NAME)
+                    .basePath("helm/")
+                    .repoDisplayName(REPO_DISPLAY_NAME)
+                    .ociHelmConnector(
+                        OciHelmConnectorDTO.builder()
+                            .helmRepoUrl(repoUrl)
+                            .auth(OciHelmAuthenticationDTO.builder()
+                                      .authType(OciHelmAuthType.USER_PASSWORD)
+                                      .credentials(
+                                          OciHelmUsernamePasswordDTO.builder()
+                                              .username(username)
+                                              .passwordRef(SecretRefData.builder().decryptedValue(password).build())
+                                              .build())
+                                      .build())
+                            .build())
+                    .build())
+            .build();
+
+    String updatedRepoName = "oci://test.azurecr.io/helm";
+
+    doNothing()
+        .when(helmTaskHelperBase)
+        .loginOciRegistry(repoUrl, username, password, HelmVersion.V380, timeout, chartOutput);
+    doNothing()
+        .when(helmTaskHelperBase)
+        .fetchChartFromRepo(updatedRepoName, REPO_DISPLAY_NAME, CHART_NAME, CHART_VERSION, chartOutput,
+            HelmVersion.V380, emptyHelmCommandFlag, timeout, false, "");
+
+    helmTaskHelperBase.downloadChartFilesFromOciRepo(helmChartManifestDelegateConfig, chartOutput, timeout);
+
+    verify(helmTaskHelperBase, times(1))
+        .loginOciRegistry(repoUrl, username, password, HelmVersion.V380, timeout, chartOutput);
+    verify(helmTaskHelperBase, times(1))
+        .fetchChartFromRepo(updatedRepoName, REPO_DISPLAY_NAME, CHART_NAME, CHART_VERSION, chartOutput,
+            HelmVersion.V380, emptyHelmCommandFlag, timeout, false, "");
   }
 
   @Test

@@ -30,4 +30,5 @@ public class CfClientConfig {
   @Default private int readTimeout = 10000;
   @Default private int retries = 6;
   @Default private int sleepInterval = 5000;
+  @Default private int bufferSize = 10240;
 }

@@ -168,7 +168,7 @@ public class UserGroupServiceImplTest extends CategoryTest {
       randomNum--;
     }
     ArgumentCaptor<Criteria> captor = ArgumentCaptor.forClass(Criteria.class);
-    doReturn(userGroups).when(userGroupRepository).findAll(captor.capture());
+    doReturn(userGroups).when(userGroupRepository).findAll(captor.capture(), any(), any());
     doReturn(Optional.of(UserGroup.builder()
                              .identifier("UG")
                              .users(new ArrayList<>())

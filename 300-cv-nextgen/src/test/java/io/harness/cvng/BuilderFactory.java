@@ -76,6 +76,8 @@ import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.MetricRespons
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
+import io.harness.cvng.core.beans.sidekick.VerificationJobInstanceCleanupSideKickData;
+import io.harness.cvng.core.beans.sidekick.VerificationJobInstanceCleanupSideKickData.VerificationJobInstanceCleanupSideKickDataBuilder;
 import io.harness.cvng.core.entities.AnalysisInfo;
 import io.harness.cvng.core.entities.AppDynamicsCVConfig;
 import io.harness.cvng.core.entities.AppDynamicsCVConfig.AppDynamicsCVConfigBuilder;
@@ -1138,6 +1140,16 @@ public class BuilderFactory {
         .monitoredServiceTemplateRef(
             ParameterField.<String>builder().value(context.getMonitoredServiceIdentifier()).build())
         .versionLabel("1");
+  }
+
+  public VerificationJobInstanceCleanupSideKickDataBuilder getVerificationJobInstanceCleanupSideKickDataBuilder(
+      String verificationJobInstanceId, List<String> sources) {
+    return VerificationJobInstanceCleanupSideKickData.builder()
+        .accountIdentifier(context.getAccountId())
+        .orgIdentifier(context.getOrgIdentifier())
+        .projectIdentifier(context.getProjectIdentifier())
+        .verificationJobInstanceIdentifier(verificationJobInstanceId)
+        .sourceIdentifiers(sources);
   }
 
   private List<NotificationRuleCondition> getNotificationRuleConditions(NotificationRuleType type) {

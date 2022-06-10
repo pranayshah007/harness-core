@@ -107,7 +107,7 @@ public class TokenGenerator {
       byte[] encodedKey = Hex.decodeHex(accountSecret.toCharArray());
       return new DirectEncrypter(new SecretKeySpec(encodedKey, 0, encodedKey.length, "AES"));
     } catch (DecoderException | KeyLengthException e) {
-      throw new EncryptDecryptException("Failed to initalize token generator", e, WingsException.USER_SRE);
+      throw new EncryptDecryptException("Failed to initialize token generator", e, WingsException.USER_SRE);
     }
   }
 }

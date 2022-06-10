@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CE;
 import static io.harness.filter.FilterConstants.CCM_RECOMMENDATION_FILTER;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.ccm.views.graphql.QLCEViewFilterWrapper;
 import io.harness.filter.FilterType;
 import io.harness.filter.dto.FilterPropertiesDTO;
 
@@ -18,6 +19,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModel;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.List;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -39,13 +41,17 @@ import lombok.experimental.FieldDefaults;
 @Schema(name = "CCMRecommendationFilterProperties",
     description = "Properties of the CCMRecommendation Filter defined in Harness")
 public class CCMRecommendationFilterPropertiesDTO extends FilterPropertiesDTO {
+  @Schema(name = "k8sRecommendationFilterPropertiesDTO", description = "Filter fields specific to K8s Recommendations")
   K8sRecommendationFilterPropertiesDTO k8sRecommendationFilterPropertiesDTO;
 
-  Double minSaving;
-  Double minCost;
+  @Schema(name = "perspectiveFilters", description = "Get Recommendations for a perspective")
+  List<QLCEViewFilterWrapper> perspectiveFilters;
 
-  Long offset;
-  Long limit;
+  @Schema(name = "minSaving", description = "Fetch recommendations with Saving more than minSaving") Double minSaving;
+  @Schema(name = "minCost", description = "Fetch recommendations with Cost more than minCost") Double minCost;
+
+  @Schema(name = "offset", description = "Query Offset") Long offset;
+  @Schema(name = "limit", description = "Query Limit") Long limit;
 
   @Override
   public FilterType getFilterType() {

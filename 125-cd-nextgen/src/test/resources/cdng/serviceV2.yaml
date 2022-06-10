@@ -1,0 +1,22 @@
+pipeline:
+  name: "Manager Service Deployment"
+  identifier: managerServiceDeployment
+  stages:
+    - stage:
+        identifier: qaStage
+        name: "qa stage"
+        type: Deployment
+        spec:
+          service:
+            serviceRef: service1
+          environment:
+            environmentRef: env1
+          execution:
+            steps:
+              - step:
+                  name: "Rollout Deployment"
+                  identifier: rolloutDeployment
+                  type: K8sRollingDeploy
+                  spec:
+                    timeout: 120000
+                    skipDryRun: false

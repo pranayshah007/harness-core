@@ -170,7 +170,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     assertThat(updatedTemplateEntity.getProjectIdentifier()).isEqualTo(PROJ_IDENTIFIER);
     assertThat(updatedTemplateEntity.getIdentifier()).isEqualTo(TEMPLATE_IDENTIFIER);
     assertThat(updatedTemplateEntity.getVersionLabel()).isEqualTo(TEMPLATE_VERSION_LABEL);
-    assertThat(updatedTemplateEntity.getVersion()).isEqualTo(2L);
+    assertThat(updatedTemplateEntity.getVersion()).isEqualTo(1L);
     assertThat(updatedTemplateEntity.getDescription()).isEqualTo(description);
 
     TemplateEntity incorrectTemplate = entity.withVersionLabel("incorrect version");
@@ -219,7 +219,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     assertThat(updateStableTemplateVersion.getProjectIdentifier()).isEqualTo(PROJ_IDENTIFIER);
     assertThat(updateStableTemplateVersion.getIdentifier()).isEqualTo(TEMPLATE_IDENTIFIER);
     assertThat(updateStableTemplateVersion.getVersionLabel()).isEqualTo("version2");
-    assertThat(updateStableTemplateVersion.getVersion()).isEqualTo(2L);
+    assertThat(updateStableTemplateVersion.getVersion()).isEqualTo(1L);
     assertThat(updateStableTemplateVersion.isStableTemplate()).isTrue();
 
     // Add 1 more entry to template db
@@ -389,7 +389,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     assertThat(updatedTemplateEntity.getProjectIdentifier()).isNull();
     assertThat(updatedTemplateEntity.getIdentifier()).isEqualTo(TEMPLATE_IDENTIFIER);
     assertThat(updatedTemplateEntity.getVersionLabel()).isEqualTo(TEMPLATE_VERSION_LABEL);
-    assertThat(updatedTemplateEntity.getVersion()).isEqualTo(2L);
+    assertThat(updatedTemplateEntity.getVersion()).isEqualTo(1L);
     assertThat(updatedTemplateEntity.getDescription()).isEqualTo(description);
 
     TemplateEntity incorrectTemplate = entity.withVersionLabel("incorrect version");
@@ -435,7 +435,7 @@ public class NGTemplateServiceImplTest extends TemplateServiceTestBase {
     assertThat(updateStableTemplateVersion.getProjectIdentifier()).isNull();
     assertThat(updateStableTemplateVersion.getIdentifier()).isEqualTo(TEMPLATE_IDENTIFIER);
     assertThat(updateStableTemplateVersion.getVersionLabel()).isEqualTo("version2");
-    assertThat(updateStableTemplateVersion.getVersion()).isEqualTo(2L);
+    assertThat(updateStableTemplateVersion.getVersion()).isEqualTo(1L);
     assertThat(updateStableTemplateVersion.isStableTemplate()).isTrue();
 
     // delete template stable template

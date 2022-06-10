@@ -14,11 +14,11 @@ public interface PipelineResourceConstants {
   String PIPELINE_ID_PARAM_MESSAGE = "Pipeline Identifier";
   String PIPELINE_NAME_PARAM_MESSAGE = "Pipeline Name";
   String PIPELINE_DESCRIPTION_PARAM_MESSAGE = "Pipeline Description";
-  String STAGE_NODE_ID_PARAM_MESSAGE = "Stage Node Identifier to get execution stats.";
+  String STAGE_NODE_ID_PARAM_MESSAGE = "Stage Node Identifier for which Stage Graph needs to be Rendered";
   String STAGE_NODE_EXECUTION_PARAM_MESSAGE =
-      "Stage Node Execution Id to get execution stats. To be Extracted from layoutNodeMap of the top graph";
+      "Stage Node Execution ID for which Stage Graph needs to be Rendered. (Needed only when there are Multiple Runs for a Given Stage. It can be Extracted from LayoutNodeMap Field)";
 
-  String GENERATE_FULL_GRAPH_PARAM_MESSAGE = "Generate full graph";
+  String GENERATE_FULL_GRAPH_PARAM_MESSAGE = "Generate Graph for all the Stages including Steps in each Stage";
   String INPUT_INSTANCE_PARAM = "Input Instance Identifier for Execution Input";
 
   String PIPELINE_ID_LIST_PARAM_MESSAGE = "Pipeline Identifier filter if exact pipelines needs to be filtered.";

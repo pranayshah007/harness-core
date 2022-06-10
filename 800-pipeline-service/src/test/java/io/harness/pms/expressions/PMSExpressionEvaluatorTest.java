@@ -215,7 +215,8 @@ public class PMSExpressionEvaluatorTest extends PipelineServiceTestBase {
 
     // pipeline children
     when(nodeExecutionService.findAllChildrenWithStatusIn(planExecutionId, nodeExecution1.getUuid(), null, false, true,
-             Sets.newHashSet(NodeExecutionKeys.parentId, NodeExecutionKeys.status), Collections.emptySet()))
+             Sets.newHashSet(NodeExecutionKeys.parentId, NodeExecutionKeys.status, NodeExecutionKeys.stepType),
+             Collections.emptySet()))
         .thenReturn(Arrays.asList(nodeExecution4, nodeExecution5));
 
     EngineExpressionEvaluator engineExpressionEvaluator = prepareEngineExpressionEvaluator(newAmbiance);

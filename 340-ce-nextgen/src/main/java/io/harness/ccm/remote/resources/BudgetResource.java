@@ -80,7 +80,6 @@ public class BudgetResource {
   private static final String BUDGET_PERIOD = "budget_period";
   private static final String BUDGET_TYPE = "budget_type";
   private static final String ALERTS_COUNT = "alerts_count";
-  private static final String IS_CLONE = "is_clone";
 
   @POST
   @Timed
@@ -109,10 +108,10 @@ public class BudgetResource {
     properties.put(BUDGET_PERIOD, budget.getPeriod());
     properties.put(BUDGET_TYPE, budget.getType());
     properties.put(ALERTS_COUNT, budget.getAlertThresholds().length);
-    properties.put(IS_CLONE, "NO");
+    String createCall = budgetService.create(budget);
     telemetryReporter.sendTrackEvent(
         BUDGET_CREATED, null, accountId, properties, Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
-    return ResponseDTO.newResponse(budgetService.create(budget));
+    return ResponseDTO.newResponse(createCall);
   }
 
   @POST
@@ -134,15 +133,6 @@ public class BudgetResource {
             NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId,
       @PathParam("id") @Parameter(required = true, description = "Unique identifier for the budget") String budgetId,
       @QueryParam("cloneName") @Parameter(required = true, description = "Name of the new budget") String budgetName) {
-    HashMap<String, Object> properties = new HashMap<>();
-    Budget budget = budgetService.get(budgetId, accountId);
-    properties.put(MODULE, MODULE_NAME);
-    properties.put(BUDGET_PERIOD, budget.getPeriod());
-    properties.put(BUDGET_TYPE, budget.getType());
-    properties.put(ALERTS_COUNT, budget.getAlertThresholds().length);
-    properties.put(IS_CLONE, "YES");
-    telemetryReporter.sendTrackEvent(
-        BUDGET_CREATED, null, accountId, properties, Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
     return ResponseDTO.newResponse(budgetService.clone(budgetId, budgetName, accountId));
   }
 

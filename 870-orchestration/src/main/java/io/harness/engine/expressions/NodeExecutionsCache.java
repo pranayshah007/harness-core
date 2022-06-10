@@ -105,7 +105,8 @@ public class NodeExecutionsCache {
   public List<Status> findAllTerminalChildrenStatusOnly(String parentId) {
     List<NodeExecution> nodeExecutions =
         nodeExecutionService.findAllChildrenWithStatusIn(ambiance.getPlanExecutionId(), parentId, null, false, true,
-            Sets.newHashSet(NodeExecutionKeys.parentId, NodeExecutionKeys.status), Collections.emptySet());
+            Sets.newHashSet(NodeExecutionKeys.parentId, NodeExecutionKeys.status, NodeExecutionKeys.stepType),
+            Sets.newHashSet());
     return nodeExecutions.stream()
         .map(NodeExecution::getStatus)
         .filter(status -> StatusUtils.finalStatuses().contains(status))

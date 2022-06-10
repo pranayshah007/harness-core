@@ -183,6 +183,18 @@ public class EnvironmentFilterHelper {
     return new Criteria().orOperator(criteriaForNames.toArray(new Criteria[0]));
   }
 
+  public Criteria createCriteriaForGetServiceOverrides(
+      String accountId, String orgIdentifier, String projectIdentifier, String environmentRef, String serviceRef) {
+    Criteria criteria = CoreCriteriaUtils.createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier);
+    criteria.and(NGServiceOverridesEntityKeys.environmentRef).is(environmentRef);
+
+    if (isNotBlank(serviceRef)) {
+      criteria.and(NGServiceOverridesEntityKeys.serviceRef).is(serviceRef);
+    }
+
+    return criteria;
+  }
+
   public Update getUpdateOperations(Environment environment) {
     Update update = new Update();
     update.set(EnvironmentKeys.accountId, environment.getAccountId());

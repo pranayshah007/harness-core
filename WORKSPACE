@@ -28,7 +28,7 @@ load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
 
 protobuf_deps()
 
-# Download the Go rules 
+# Download the Go rules
 http_archive(
     name = "io_bazel_rules_go",
     sha256 = "2b1641428dff9018f9e85c0384f03ec6c10660d935b750e3fa1492a281a53b0f",
@@ -1022,8 +1022,8 @@ go_repository(
 go_repository(
     name = "com_github_drone_go_scm",
     importpath = "github.com/drone/go-scm",
-    sum = "h1:lWDPRkl+4Ot2u+SSAfZxv0Et/+H80IkpOK4Hqd2hJzA=",
-    version = "v1.23.0",
+    sum = "h1:JL27huaUPBodZQosOPQwofeyRnm/DU5d5iVvD9w5k+o=",
+    version = "v1.23.1",
 )
 
 go_repository(
@@ -4658,7 +4658,7 @@ plain_artifacts = [
     "io.grpc:grpc-stub:1.33.1",
     "io.gsonfire:gson-fire:1.8.3",
     "io.harness.cv:data-collection-dsl:0.36-RELEASE",
-    "io.harness:ff-java-server-sdk:1.1.5",
+    "io.harness:ff-java-server-sdk:1.1.5.1",
     "io.jsonwebtoken:jjwt:0.9.1",
     "io.kubernetes:client-java-api:11.0.2",
     "io.kubernetes:client-java-extended:11.0.2",

@@ -814,13 +814,26 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
   }
 
   /**
-   * Sample Query for queryBuilderServiceDeployments():
-   * select status, time_entity, count(*) as records from (select service_status as status, service_startts as
-   * execution_time, time_bucket_gapfill(86400000, service_startts, 1620000000000, 1620864000000)as time_entity,
-   * pipeline_execution_summary_cd_id  from service_infra_info where pipeline_execution_summary_cd_id in (select id from
-   * pipeline_execution_summary_cd where accountid='accountId' and orgidentifier='orgId' and
-   * projectidentifier='projectId') and service_startts >= 1620000000000 and service_startts < 1620950400000) as
-   * innertable group by status, time_entity;
+   * select status, time_entity, count(*) as records from (
+   *    select service_status as status, service_startts as
+   *    execution_time, time_bucket_gapfill(86400000, service_startts, 1638403200000, 1654128000000) as time_entity,
+   *    pipeline_execution_summary_cd_id  from
+   *    service_infra_info as sii,
+   *    pipeline_execution_summary_cd as pesi
+   *    where pesi.accountid='ZVJHx0NyT9SciszZ0JQtFQ' and pesi.orgidentifier='PX' and
+   *    pesi.projectidentifier='horizonttdmetricscollector' and service_id='horzondeploymentmetrics'
+   *    and pesi.id=sii.pipeline_execution_summary_cd_id
+   *    and sii. service_startts >= 1652054400000 and sii.service_startts < 1654646400000
+   *    ) as service where status != ''
+   *    group by status, time_entity;
+   * @param accountIdentifier
+   * @param orgIdentifier
+   * @param projectIdentifier
+   * @param startTime
+   * @param endTime
+   * @param bucketSizeInDays
+   * @param serviceIdentifier
+   * @return
    */
   public String queryBuilderServiceDeployments(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       long startTime, long endTime, long bucketSizeInDays, String serviceIdentifier) {
@@ -830,20 +843,18 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
         "select status, time_entity, COUNT(*) as numberOfRecords from (select service_status as status, service_startts as execution_time, ";
     totalBuildSqlBuilder.append(selectQuery)
         .append(String.format(
-            "time_bucket_gapfill(%s, service_startts, %s, %s) as time_entity, pipeline_execution_summary_cd_id  from service_infra_info where pipeline_execution_summary_cd_id in ",
+            "time_bucket_gapfill(%s, service_startts, %s, %s) as time_entity, pipeline_execution_summary_cd_id  from service_infra_info as sii, pipeline_execution_summary_cd as pesi where ",
             bucketSizeInMS, startTime, endTime));
-    String selectPipelineIdQuery = "(select id from " + tableNameCD + " where ";
-    totalBuildSqlBuilder.append(selectPipelineIdQuery);
     if (accountIdentifier != null) {
-      totalBuildSqlBuilder.append(String.format("accountid='%s'", accountIdentifier));
+      totalBuildSqlBuilder.append(String.format("pesi.accountid='%s'", accountIdentifier));
     }
 
     if (orgIdentifier != null) {
-      totalBuildSqlBuilder.append(String.format(" and orgidentifier='%s'", orgIdentifier));
+      totalBuildSqlBuilder.append(String.format(" and pesi.orgidentifier='%s'", orgIdentifier));
     }
 
     if (projectIdentifier != null) {
-      totalBuildSqlBuilder.append(String.format(" and projectidentifier='%s'", projectIdentifier));
+      totalBuildSqlBuilder.append(String.format(" and pesi.projectidentifier='%s'", projectIdentifier));
     }
 
     if (serviceIdentifier != null) {
@@ -851,8 +862,9 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
     }
 
     totalBuildSqlBuilder.append(String.format(
-        ") and accountid='%s' and orgidentifier='%s' and projectidentifier='%s' and service_startts>=%s and service_startts<%s) as innertable group by status, time_entity;",
-        accountIdentifier, orgIdentifier, projectIdentifier, startTime, endTime));
+        " and pesi.id=sii.pipeline_execution_summary_cd_id and sii.service_startts>=%s and sii.service_startts<%s) as "
+            + "service where status != '' group by status, time_entity;",
+        startTime, endTime));
 
     return totalBuildSqlBuilder.toString();
   }

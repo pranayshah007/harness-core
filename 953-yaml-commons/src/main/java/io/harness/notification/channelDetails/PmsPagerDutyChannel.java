@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.notification.Team;
 import io.harness.notification.channeldetails.NotificationChannel;
 import io.harness.notification.channeldetails.PagerDutyChannel;
+import io.harness.pms.contracts.ambiance.Ambiance;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -34,7 +35,7 @@ public class PmsPagerDutyChannel extends PmsNotificationChannel {
   String integrationKey;
   @Override
   public NotificationChannel toNotificationChannel(String accountId, String orgIdentifier, String projectIdentifier,
-      String templateId, Map<String, String> templateData) {
+      String templateId, Map<String, String> templateData, Ambiance ambiance) {
     return PagerDutyChannel.builder()
         .accountId(accountId)
         .userGroups(
@@ -42,6 +43,9 @@ public class PmsPagerDutyChannel extends PmsNotificationChannel {
                 .map(e -> NotificationChannelUtils.getUserGroups(e, accountId, orgIdentifier, projectIdentifier))
                 .collect(Collectors.toList()))
         .team(Team.PIPELINE)
+        .orgIdentifier(orgIdentifier)
+        .projectIdentifier(projectIdentifier)
+        .expressionFunctorToken(ambiance.getExpressionFunctorToken())
         .templateId(templateId)
         .integrationKeys(Lists.newArrayList(integrationKey))
         .templateData(templateData)

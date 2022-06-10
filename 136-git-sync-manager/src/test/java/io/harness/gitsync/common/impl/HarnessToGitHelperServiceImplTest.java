@@ -44,6 +44,7 @@ import io.harness.gitsync.common.dtos.GitSyncEntityDTO;
 import io.harness.gitsync.common.dtos.ScmCommitFileResponseDTO;
 import io.harness.gitsync.common.dtos.ScmCreatePRResponseDTO;
 import io.harness.gitsync.common.dtos.ScmGetFileResponseDTO;
+import io.harness.gitsync.common.helper.GitFilePathHelper;
 import io.harness.gitsync.common.service.GitEntityService;
 import io.harness.gitsync.common.service.ScmFacilitatorService;
 import io.harness.gitsync.common.service.YamlGitConfigService;
@@ -68,6 +69,7 @@ public class HarnessToGitHelperServiceImplTest extends CategoryTest {
   @Mock GitEntityService gitEntityService;
   @Mock YamlGitConfigService yamlGitConfigService;
   @Mock ScmFacilitatorService scmFacilitatorService;
+  @Mock GitFilePathHelper gitFilePathHelper;
 
   String baseBranch = "baseBranch";
   String branch = "branch";

@@ -12,12 +12,17 @@ import static io.harness.delegate.beans.connector.ConnectorType.GITHUB;
 import static io.harness.delegate.beans.connector.scm.GitConnectionType.ACCOUNT;
 import static io.harness.delegate.beans.connector.scm.GitConnectionType.REPO;
 import static io.harness.rule.OwnerRule.JAMIE;
+import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.joor.Reflect.on;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import io.harness.PipelineUtils;
+import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.build.BuildStatusUpdateParameter;
 import io.harness.category.element.UnitTests;
@@ -28,21 +33,26 @@ import io.harness.executionplan.CIExecutionTestBase;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.plan.ExecutionMetadata;
+import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.stateutils.buildstate.ConnectorUtils;
 
+import java.io.IOException;
 import org.apache.groovy.util.Maps;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import retrofit2.Call;
+import retrofit2.Response;
 
 @OwnedBy(CI)
 public class BuildStatusPushParametersTest extends CIExecutionTestBase {
   private static final String SOME_URL = "https://url.com/owner/repo.git";
+  private static final String VANITY_URL = "https://vanity.harness.io";
 
+  @Mock AccountClient accountClient;
   @Mock private ConnectorUtils connectorUtils;
   @Mock GithubConnectorDTO gitConfigDTO;
   @Mock private PipelineUtils pipelineUtils;
@@ -55,14 +65,14 @@ public class BuildStatusPushParametersTest extends CIExecutionTestBase {
 
   @Before
   public void setup() {
-    MockitoAnnotations.initMocks(this);
+    on(gitBuildStatusUtility).set("ngBaseUrl", "https://app.harness.io/ng/#");
   }
 
   @Test
   @Owner(developers = JAMIE)
   @Category(UnitTests.class)
-  public void testIdentifierGeneration() {
-    prepareRepoLevelConnector(SOME_URL);
+  public void testIdentifierGeneration() throws IOException {
+    prepareRepoLevelConnector(SOME_URL, null);
     ExecutionMetadata executionMetadata = ExecutionMetadata.newBuilder()
                                               .setExecutionUuid("executionuuid")
                                               .setPipelineIdentifier("shortPipelineId")
@@ -83,8 +93,8 @@ public class BuildStatusPushParametersTest extends CIExecutionTestBase {
   @Test
   @Owner(developers = JAMIE)
   @Category(UnitTests.class)
-  public void testRepoNameGeneration() {
-    prepareAccountLevelConnector("https://github.com/");
+  public void testRepoNameGeneration() throws IOException {
+    prepareAccountLevelConnector("https://github.com/", null);
     ExecutionMetadata executionMetadata =
         ExecutionMetadata.newBuilder().setExecutionUuid("executionuuid").setPipelineIdentifier("pipelineId").build();
     BuildStatusUpdateParameter buildStatusUpdateParameter =
@@ -105,8 +115,8 @@ public class BuildStatusPushParametersTest extends CIExecutionTestBase {
   @Test
   @Owner(developers = JAMIE)
   @Category(UnitTests.class)
-  public void testIdentifierGenerationLongName() {
-    prepareRepoLevelConnector(SOME_URL);
+  public void testIdentifierGenerationLongName() throws IOException {
+    prepareRepoLevelConnector(SOME_URL, null);
     ExecutionMetadata executionMetadata =
         ExecutionMetadata.newBuilder()
             .setExecutionUuid("executionuuid")
@@ -129,6 +139,52 @@ public class BuildStatusPushParametersTest extends CIExecutionTestBase {
         .isEqualTo("longlonglonglonglonglonglon...-longlonglonglonglonglonglon...");
   }
 
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testGetBuildDetailsUrlWithoutVanityUrl() throws IOException {
+    prepareRepoLevelConnector(SOME_URL, null);
+    when(pipelineUtils.getBuildDetailsUrl(any(), any(), any(), any())).thenCallRealMethod();
+
+    ExecutionMetadata executionMetadata = ExecutionMetadata.newBuilder()
+                                              .setExecutionUuid("executionuuid")
+                                              .setPipelineIdentifier("shortPipelineId")
+                                              .build();
+    BuildStatusUpdateParameter buildStatusUpdateParameter =
+        getBuildStatusUpdateParameter("shortIdentifier", "shortname");
+
+    CIBuildStatusPushParameters pushParameters = gitBuildStatusUtility.getCIBuildStatusPushParams(
+        Ambiance.newBuilder(ambiance).setMetadata(executionMetadata).build(), buildStatusUpdateParameter,
+        Status.SUCCEEDED, "sha");
+
+    assertThat(pushParameters.getDetailsUrl())
+        .isEqualTo(
+            "https://app.harness.io/ng/#/account/accountId/ci/orgs/orgIdentifier/projects/projectIdentfier/pipelines/shortPipelineId/executions/executionuuid/pipeline");
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testGetBuildDetailsUrlWithVanityUrl() throws IOException {
+    prepareRepoLevelConnector(SOME_URL, VANITY_URL);
+    when(pipelineUtils.getBuildDetailsUrl(any(), any(), any(), any())).thenCallRealMethod();
+
+    ExecutionMetadata executionMetadata = ExecutionMetadata.newBuilder()
+                                              .setExecutionUuid("executionuuid")
+                                              .setPipelineIdentifier("shortPipelineId")
+                                              .build();
+    BuildStatusUpdateParameter buildStatusUpdateParameter =
+        getBuildStatusUpdateParameter("shortIdentifier", "shortname");
+
+    CIBuildStatusPushParameters pushParameters = gitBuildStatusUtility.getCIBuildStatusPushParams(
+        Ambiance.newBuilder(ambiance).setMetadata(executionMetadata).build(), buildStatusUpdateParameter,
+        Status.SUCCEEDED, "sha");
+
+    assertThat(pushParameters.getDetailsUrl())
+        .isEqualTo(
+            "https://vanity.harness.io/ng/#/account/accountId/ci/orgs/orgIdentifier/projects/projectIdentfier/pipelines/shortPipelineId/executions/executionuuid/pipeline");
+  }
+
   private BuildStatusUpdateParameter getBuildStatusUpdateParameter(String identifier, String name) {
     return BuildStatusUpdateParameter.builder().identifier(identifier).buildNumber("0").desc("desc").name(name).build();
   }
@@ -144,21 +200,29 @@ public class BuildStatusPushParametersTest extends CIExecutionTestBase {
         .build();
   }
 
-  private void prepareAccountLevelConnector(String url) {
+  private void prepareAccountLevelConnector(String url, String vanityUrl) throws IOException {
     when(connectorUtils.getConnectorDetails(any(), any())).thenReturn(connectorDetails);
     when(connectorDetails.getConnectorType()).thenReturn(GITHUB);
     when(connectorDetails.getConnectorConfig()).thenReturn(gitConfigDTO);
     when(gitConfigDTO.getUrl()).thenReturn(url);
     when(gitConfigDTO.getConnectionType()).thenReturn(ACCOUNT);
     when(pipelineUtils.getBuildDetailsUrl(any(), any(), any(), any())).thenReturn(SOME_URL);
+
+    Call vanityUrlCall = mock(Call.class);
+    when(vanityUrlCall.execute()).thenReturn(Response.success(new RestResponse<>(vanityUrl)));
+    when(accountClient.getVanityUrl(anyString())).thenReturn(vanityUrlCall);
   }
 
-  private void prepareRepoLevelConnector(String url) {
+  private void prepareRepoLevelConnector(String url, String vanityUrl) throws IOException {
     when(connectorUtils.getConnectorDetails(any(), any())).thenReturn(connectorDetails);
     when(connectorDetails.getConnectorType()).thenReturn(GITHUB);
     when(connectorDetails.getConnectorConfig()).thenReturn(gitConfigDTO);
     when(gitConfigDTO.getUrl()).thenReturn(url);
     when(gitConfigDTO.getConnectionType()).thenReturn(REPO);
     when(pipelineUtils.getBuildDetailsUrl(any(), any(), any(), any())).thenReturn(SOME_URL);
+
+    Call vanityUrlCall = mock(Call.class);
+    when(vanityUrlCall.execute()).thenReturn(Response.success(new RestResponse<>(vanityUrl)));
+    when(accountClient.getVanityUrl(anyString())).thenReturn(vanityUrlCall);
   }
 }

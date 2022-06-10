@@ -9,12 +9,17 @@ package io.harness.cvng.cdng.services.impl;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.rule.OwnerRule.ABHIJITH;
+import static io.harness.rule.OwnerRule.DHRUVX;
 import static io.harness.rule.OwnerRule.KAMAL;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CvNextGenTestBase;
@@ -25,10 +30,12 @@ import io.harness.cvng.activity.services.api.ActivityService;
 import io.harness.cvng.beans.activity.ActivityStatusDTO;
 import io.harness.cvng.beans.activity.ActivityVerificationStatus;
 import io.harness.cvng.cdng.beans.CVNGStepParameter;
+import io.harness.cvng.cdng.beans.MonitoredServiceSpec.MonitoredServiceSpecType;
 import io.harness.cvng.cdng.beans.TestVerificationJobSpec;
 import io.harness.cvng.cdng.entities.CVNGStepTask;
 import io.harness.cvng.cdng.entities.CVNGStepTask.CVNGStepTaskKeys;
 import io.harness.cvng.cdng.services.api.CVNGStepTaskService;
+import io.harness.cvng.cdng.services.api.VerifyStepMonitoredServiceResolutionService;
 import io.harness.cvng.cdng.services.impl.CVNGStep.VerifyStepOutcome;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
 import io.harness.cvng.core.services.api.FeatureFlagService;
@@ -66,6 +73,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Map;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -82,7 +90,12 @@ public class CVNGStepTest extends CvNextGenTestBase {
   @Inject private ChangeSourceService changeSourceService;
   @Inject private CVNGStepTaskService cvngStepTaskService;
   @Inject private VerificationJobInstanceService verificationJobInstanceService;
+  @Inject
+  private DefaultVerifyStepMonitoredServiceResolutionServiceImpl defaultVerifyStepMonitoredServiceResolutionService;
 
+  private Map<MonitoredServiceSpecType, VerifyStepMonitoredServiceResolutionService> verifyStepCvConfigServiceMap;
+  private DefaultVerifyStepMonitoredServiceResolutionServiceImpl
+      spiedDefaultVerifyStepMonitoredServiceResolutionService;
   private BuilderFactory builderFactory;
   private String accountId;
   private String projectIdentifier;
@@ -109,9 +122,14 @@ public class CVNGStepTest extends CvNextGenTestBase {
     envIdentifier = builderFactory.getContext().getEnvIdentifier();
     monitoredServiceDTO = builderFactory.monitoredServiceDTOBuilder().build();
     activityStartTime = builderFactory.getClock().instant().minus(Duration.ofMinutes(3)).toEpochMilli();
+    verifyStepCvConfigServiceMap = new HashMap<>();
+    spiedDefaultVerifyStepMonitoredServiceResolutionService = spy(defaultVerifyStepMonitoredServiceResolutionService);
+    verifyStepCvConfigServiceMap.put(
+        MonitoredServiceSpecType.DEFAULT, spiedDefaultVerifyStepMonitoredServiceResolutionService);
     FieldUtils.writeField(changeSourceService, "changeSourceUpdateHandlerMap", new HashMap<>(), true);
     FieldUtils.writeField(monitoredServiceService, "changeSourceService", changeSourceService, true);
     FieldUtils.writeField(cvngStep, "clock", builderFactory.getClock(), true);
+    FieldUtils.writeField(cvngStep, "verifyStepCvConfigServiceMap", verifyStepCvConfigServiceMap, true);
   }
 
   @Test
@@ -458,6 +476,20 @@ public class CVNGStepTest extends CvNextGenTestBase {
     cvngStep.handleAbort(ambiance, stepElementParameters,
         AsyncExecutableResponse.newBuilder().addCallbackIds(cvngStepTask.getCallbackId()).build());
     Mockito.verify(activityService).abort(cvngStepTask.getActivityId());
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testExecuteAsync_verifyManagePerpetualTasks() {
+    Ambiance ambiance = getAmbiance();
+    metricPackService.createDefaultMetricPackAndThresholds(accountId, orgIdentifier, projectIdentifier);
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    StepInputPackage stepInputPackage = StepInputPackage.builder().build();
+    StepElementParameters stepElementParameters = getStepElementParameters();
+    AsyncExecutableResponse asyncExecutableResponse =
+        cvngStep.executeAsync(ambiance, stepElementParameters, stepInputPackage, null);
+    verify(spiedDefaultVerifyStepMonitoredServiceResolutionService, times(1)).managePerpetualTasks(any(), any(), any());
   }
 
   private StepElementParameters getStepElementParameters() {

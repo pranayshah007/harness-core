@@ -115,6 +115,11 @@ public class AzureRepoConnectorDTO extends ConnectorConfigDTO implements ScmConn
   }
 
   @Override
+  public String getFileUrl(String branchName, String filePath, String repoName) {
+    return "";
+  }
+
+  @Override
   public void validate() {
     GitClientHelper.validateURL(url);
   }

@@ -13,6 +13,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.CUSTOM_REMOTE;
 import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.GIT;
 import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.HTTP_HELM;
+import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.OCI_HELM;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.filesystem.FileIo.getFilesUnderPath;
 import static io.harness.filesystem.FileIo.getFilesUnderPathMatchesFirstLine;
@@ -2422,6 +2423,7 @@ public class K8sTaskHelperBase {
       case HTTP_HELM:
       case S3_HELM:
       case GCS_HELM:
+      case OCI_HELM:
         return downloadFilesFromChartRepo(
             manifestDelegateConfig, manifestFilesDirectory, executionLogCallback, timeoutInMillis);
 
@@ -2578,6 +2580,9 @@ public class K8sTaskHelperBase {
 
       if (HTTP_HELM == manifestDelegateConfig.getStoreDelegateConfig().getType()) {
         helmTaskHelperBase.downloadChartFilesFromHttpRepo(
+            helmChartManifestConfig, destinationDirectory, timeoutInMillis);
+      } else if (OCI_HELM == manifestDelegateConfig.getStoreDelegateConfig().getType()) {
+        helmTaskHelperBase.downloadChartFilesFromOciRepo(
             helmChartManifestConfig, destinationDirectory, timeoutInMillis);
       } else {
         helmTaskHelperBase.downloadChartFilesUsingChartMuseum(

@@ -8,7 +8,7 @@ RUN chmod +x yq
 RUN mv yq /usr/local/bin
 
 # Add the capsule JAR and config.yml
-COPY rest-capsule.jar newrelic.yml keystore.jks config.yml hazelcast.xml redisson-jcache.yaml /opt/harness/
+COPY rest-capsule.jar newrelic.yml keystore.jks classpath_metadata.json config.yml hazelcast.xml redisson-jcache.yaml /opt/harness/
 
 COPY scripts /opt/harness
 

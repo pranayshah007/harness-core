@@ -210,6 +210,7 @@ import io.harness.cvng.core.services.impl.monitoredService.MonitoredServiceServi
 import io.harness.cvng.core.services.impl.monitoredService.ServiceDependencyServiceImpl;
 import io.harness.cvng.core.services.impl.sidekickexecutors.DemoActivitySideKickExecutor;
 import io.harness.cvng.core.services.impl.sidekickexecutors.RetryChangeSourceHandleDeleteSideKickExecutor;
+import io.harness.cvng.core.services.impl.sidekickexecutors.VerificationJobInstanceCleanupSideKickExecutor;
 import io.harness.cvng.core.services.impl.sidekickexecutors.VerificationTaskCleanupSideKickExecutor;
 import io.harness.cvng.core.transformer.changeEvent.ChangeEventEntityAndDTOTransformer;
 import io.harness.cvng.core.transformer.changeEvent.ChangeEventMetaDataTransformer;
@@ -808,7 +809,9 @@ public class CVServiceModule extends AbstractModule {
     sideKickExecutorMapBinder.addBinding(SideKick.Type.VERIFICATION_TASK_CLEANUP)
         .to(VerificationTaskCleanupSideKickExecutor.class)
         .in(Scopes.SINGLETON);
-
+    sideKickExecutorMapBinder.addBinding(SideKick.Type.VERIFICATION_JOB_INSTANCE_CLEANUP)
+        .to(VerificationJobInstanceCleanupSideKickExecutor.class)
+        .in(Scopes.SINGLETON);
     bind(NotificationRuleService.class).to(NotificationRuleServiceImpl.class);
     MapBinder<NotificationRuleType, NotificationRuleConditionTransformer>
         notificationRuleTypeNotificationRuleConditionTransformerMapBinder =
