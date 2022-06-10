@@ -193,7 +193,7 @@ public class EcsBlueGreenRoute53DNSWeightHandlerTest extends WingsBaseTest {
             .previousAwsAutoScalarConfigs(Arrays.asList(previousAwsAutoScalarConfig))
             .build();
     EcsCommandExecutionResponse response = task.executeTaskInternal(request, null, mockCallback);
-git add
+
     int expectedNumberOfLogItems = 5;
     verify(mockCallback, times(expectedNumberOfLogItems)).saveExecutionLog(any());
 
