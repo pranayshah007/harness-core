@@ -92,7 +92,7 @@ public class BudgetAlertsServiceImpl {
   }
 
   private void checkAndSendAlerts(Budget budget) {
-    budget.setAlertThresholds((AlertThreshold[]) Lists.newArrayList(AlertThreshold.builder().emailAddresses((String[]) Lists.newArrayList("trunapushpa.surkar@harness.io").toArray()).slackWebhooks((String[]) Collections.singletonList("https://hooks.slack.com/services/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").toArray()).basedOn(ACTUAL_COST).percentage(1.0)).toArray());
+    budget.setAlertThresholds(new AlertThreshold[] {AlertThreshold.builder().emailAddresses(new String[] {"trunapushpa.surkar@harness.io"}).slackWebhooks(new String[] {"https://hooks.slack.com/services/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"}).basedOn(ACTUAL_COST).percentage(1.0).build()});
     checkNotNull(budget.getAlertThresholds());
     checkNotNull(budget.getAccountId());
 
