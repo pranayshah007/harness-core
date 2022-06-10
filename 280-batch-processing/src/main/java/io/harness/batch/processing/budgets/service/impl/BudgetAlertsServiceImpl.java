@@ -34,6 +34,7 @@ import io.harness.ccm.communication.CESlackWebhookService;
 import io.harness.ccm.communication.entities.CESlackWebhook;
 import io.harness.timescaledb.TimeScaleDBService;
 
+import org.jooq.tools.StringUtils;
 import software.wings.beans.User;
 import software.wings.beans.notification.SlackNotificationConfiguration;
 import software.wings.beans.notification.SlackNotificationSetting;
@@ -176,8 +177,12 @@ public class BudgetAlertsServiceImpl {
 //    if ((slackWebhook == null || !budget.isNotifyOnSlack()) && alertThreshold.getSlackWebhooks() == null) {
 //      return;
 //    }
-    List<String> slackWebhooks =
-        Arrays.asList(Optional.ofNullable(alertThreshold.getSlackWebhooks()).orElse(new String[0]));
+    List<String> slackWebhooks = new ArrayList<>();
+    for (String webhook: alertThreshold.getSlackWebhooks()) {
+      if (!StringUtils.isEmpty(webhook)) {
+        slackWebhooks.add(webhook);
+      }
+    }
     budget.setNotifyOnSlack(true);
     if (slackWebhook != null && budget.isNotifyOnSlack()) {
       slackWebhooks.add(slackWebhook.getWebhookUrl());
