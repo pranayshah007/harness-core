@@ -86,7 +86,7 @@ public class BudgetAlertsServiceImpl {
         try {
           log.info("*** Sending slack alert ***");
           String webhook = "https://hooks.slack.com/services/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";
-          SlackNotificationConfiguration slackConfig = new SlackNotificationSetting("#ccm-test", webhook);
+          SlackNotificationConfiguration slackConfig = new SlackNotificationSetting("#nothing", webhook);
           String slackMessageTemplate =
                   "The cost associated with *${BUDGET_NAME}* has reached a limit of ${THRESHOLD_PERCENTAGE}%.";
           Map<String, String> params =
@@ -96,7 +96,12 @@ public class BudgetAlertsServiceImpl {
                           .build();
           String slackMessage = replace(slackMessageTemplate, params);
           slackNotificationService.sendMessage(
-                  slackConfig, stripToEmpty(slackConfig.getName()), HARNESS_NAME, slackMessage, budget.getAccountId());
+                  slackConfig,
+                  stripToEmpty(slackConfig.getName()),
+                  HARNESS_NAME,
+                  slackMessage,
+                  budget.getAccountId()
+          );
           checkAndSendAlerts(budget);
         } catch (Exception e) {
           log.error("Can't send alert for budget : {}, Exception: ", budget.getUuid(), e);
