@@ -8,9 +8,7 @@
 package io.harness.app;
 
 import static io.harness.annotations.dev.HarnessTeam.STO;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
-import static io.harness.pms.contracts.plan.ExpansionRequestType.KEY;
 import static io.harness.pms.listener.NgOrchestrationNotifyEventListener.NG_ORCHESTRATION;
 
 import static java.util.Collections.singletonList;
@@ -20,24 +18,13 @@ import io.harness.ModuleType;
 import io.harness.PipelineServiceUtilityModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cache.CacheModule;
-import io.harness.ci.app.InspectCommand;
 import io.harness.ci.plan.creator.CIModuleInfoProvider;
 import io.harness.ci.plan.creator.filter.CIFilterCreationResponseMerger;
-import io.harness.controller.PrimaryVersionChangeScheduler;
 import io.harness.delegate.beans.DelegateAsyncTaskResponse;
 import io.harness.delegate.beans.DelegateSyncTaskResponse;
 import io.harness.delegate.beans.DelegateTaskProgressResponse;
-import io.harness.enforcement.BuildRestrictionUsageImpl;
-import io.harness.enforcement.BuildsPerMonthRestrictionUsageImpl;
-import io.harness.enforcement.TotalBuildsRestrictionUsageImpl;
-import io.harness.enforcement.client.CustomRestrictionRegisterConfiguration;
-import io.harness.enforcement.client.RestrictionUsageRegisterConfiguration;
-import io.harness.enforcement.client.services.EnforcementSdkRegisterService;
-import io.harness.enforcement.client.usage.RestrictionUsageInterface;
-import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.exception.GeneralException;
 import io.harness.govern.ProviderModule;
-import io.harness.governance.DefaultConnectorRefExpansionHandler;
 import io.harness.health.HealthService;
 import io.harness.maintenance.MaintenanceController;
 import io.harness.mongo.AbstractMongoModule;
@@ -48,7 +35,6 @@ import io.harness.persistence.HPersistence;
 import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.Store;
 import io.harness.persistence.UserProvider;
-import io.harness.pms.contracts.plan.JsonExpansionInfo;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.events.base.PipelineEventConsumerController;
 import io.harness.pms.listener.NgOrchestrationNotifyEventListener;
@@ -67,12 +53,10 @@ import io.harness.pms.sdk.execution.events.orchestrationevent.OrchestrationEvent
 import io.harness.pms.sdk.execution.events.plan.CreatePartialPlanRedisConsumer;
 import io.harness.pms.sdk.execution.events.progress.ProgressEventRedisConsumer;
 import io.harness.pms.serializer.jackson.PmsBeansJacksonModule;
-import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.queue.QueueListenerController;
 import io.harness.queue.QueuePublisher;
 import io.harness.registrars.ExecutionAdvisers;
 import io.harness.registrars.STOExecutionRegistrar;
-import io.harness.resource.VersionInfoResource;
 import io.harness.security.NextGenAuthenticationFilter;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.serializer.CiBeansRegistrars;
@@ -81,8 +65,6 @@ import io.harness.serializer.ConnectorNextGenRegistrars;
 import io.harness.serializer.KryoModule;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.OrchestrationRegistrars;
-import io.harness.serializer.PersistenceRegistrars;
-import io.harness.serializer.PrimaryVersionManagerRegistrars;
 import io.harness.serializer.StoBeansRegistrars;
 import io.harness.serializer.YamlBeansModuleRegistrars;
 import io.harness.service.impl.DelegateAsyncServiceImpl;
@@ -156,7 +138,6 @@ public class STOManagerApplication extends Application<STOManagerConfiguration> 
   private static final String APP_NAME = "STO Manager Service Application";
   public static final String BASE_PACKAGE = "io.harness.app.resources";
   public static final String NG_PIPELINE_PACKAGE = "io.harness.ngpipeline";
-  public static final String ENFORCEMENT_CLIENT_PACKAGE = "io.harness.enforcement.client.resources";
 
   public static void main(String[] args) throws Exception {
     Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -171,8 +152,6 @@ public class STOManagerApplication extends Application<STOManagerConfiguration> 
     Set<Class<?>> classSet = basePackageClasses.getTypesAnnotatedWith(Path.class);
     Reflections pipelinePackageClasses = new Reflections(NG_PIPELINE_PACKAGE);
     classSet.addAll(pipelinePackageClasses.getTypesAnnotatedWith(Path.class));
-    Reflections enforcementClientPackageClasses = new Reflections(ENFORCEMENT_CLIENT_PACKAGE);
-    classSet.addAll(enforcementClientPackageClasses.getTypesAnnotatedWith(Path.class));
 
     return classSet;
   }
@@ -197,7 +176,6 @@ public class STOManagerApplication extends Application<STOManagerConfiguration> 
     log.info("Leaving startup maintenance mode");
     List<Module> modules = new ArrayList<>();
     modules.add(KryoModule.getInstance());
-    modules.add(new SCMGrpcClientModule(configuration.getScmConnectionConfig()));
     modules.add(new ProviderModule() {
       @Provides
       @Singleton
@@ -213,9 +191,7 @@ public class STOManagerApplication extends Application<STOManagerConfiguration> 
       @Provides
       @Singleton
       Set<Class<? extends MorphiaRegistrar>> morphiaRegistrars() {
-        return ImmutableSet.<Class<? extends MorphiaRegistrar>>builder()
-            .addAll(PrimaryVersionManagerRegistrars.morphiaRegistrars)
-            .build();
+        return ImmutableSet.<Class<? extends MorphiaRegistrar>>builder().build();
       }
 
       @Provides
@@ -233,7 +209,6 @@ public class STOManagerApplication extends Application<STOManagerConfiguration> 
       @Singleton
       Set<Class<? extends TypeConverter>> morphiaConverters() {
         return ImmutableSet.<Class<? extends TypeConverter>>builder()
-            .addAll(PersistenceRegistrars.morphiaConverters)
             .addAll(OrchestrationRegistrars.morphiaConverters)
             .build();
       }
@@ -267,7 +242,7 @@ public class STOManagerApplication extends Application<STOManagerConfiguration> 
       }
     });
 
-    modules.add(new CIPersistenceModule());
+    modules.add(new STOPersistenceModule());
     addGuiceValidationModule(modules);
     modules.add(new STOManagerServiceModule(configuration));
     modules.add(new CacheModule(configuration.getCacheConfig()));
@@ -289,12 +264,11 @@ public class STOManagerApplication extends Application<STOManagerConfiguration> 
     registerHealthCheck(environment, injector);
     registerAuthFilters(configuration, environment, injector);
     registerCorrelationFilter(environment, injector);
-    registerStores(configuration, injector);
+    //    registerStores(configuration, injector);
     registerYamlSdk(injector);
     scheduleJobs(injector, configuration);
     registerQueueListener(injector);
     registerPmsSdkEvents(injector);
-    initializeEnforcementFramework(injector);
     registerOasResource(configuration, environment, injector);
     log.info("Starting app done");
     MaintenanceController.forceMaintenance(false);
@@ -317,7 +291,6 @@ public class STOManagerApplication extends Application<STOManagerConfiguration> 
   public void initialize(Bootstrap<STOManagerConfiguration> bootstrap) {
     initializeLogging();
     log.info("bootstrapping ...");
-    bootstrap.addCommand(new InspectCommand<>(this));
     bootstrap.addCommand(new GenerateOpenApiSpecCommand());
 
     bootstrap.setConfigurationSourceProvider(new SubstitutingSourceProvider(
@@ -339,7 +312,6 @@ public class STOManagerApplication extends Application<STOManagerConfiguration> 
         environment.jersey().register(injector.getInstance(resource));
       }
     }
-    environment.jersey().register(injector.getInstance(VersionInfoResource.class));
   }
 
   private void registerPMSSDK(STOManagerConfiguration config, Injector injector) {
@@ -383,20 +355,10 @@ public class STOManagerApplication extends Application<STOManagerConfiguration> 
   }
 
   private List<JsonExpansionHandlerInfo> getJsonExpansionHandlers() {
-    List<JsonExpansionHandlerInfo> jsonExpansionHandlers = new ArrayList<>();
-    JsonExpansionInfo connectorRefExpansionInfo =
-        JsonExpansionInfo.newBuilder().setKey(YAMLFieldNameConstants.CONNECTOR_REF).setExpansionType(KEY).build();
-    JsonExpansionHandlerInfo connectorRefExpansionHandlerInfo =
-        JsonExpansionHandlerInfo.builder()
-            .jsonExpansionInfo(connectorRefExpansionInfo)
-            .expansionHandler(DefaultConnectorRefExpansionHandler.class)
-            .build();
-    jsonExpansionHandlers.add(connectorRefExpansionHandlerInfo);
-    return jsonExpansionHandlers;
+    return new ArrayList<>();
   }
 
   private void scheduleJobs(Injector injector, STOManagerConfiguration config) {
-    injector.getInstance(PrimaryVersionChangeScheduler.class).registerExecutors();
     injector.getInstance(NotifierScheduledExecutorService.class)
         .scheduleWithFixedDelay(
             injector.getInstance(NotifyResponseCleaner.class), random.nextInt(300), 300L, TimeUnit.SECONDS);
@@ -447,14 +409,6 @@ public class STOManagerApplication extends Application<STOManagerConfiguration> 
     modules.add(new ValidationModule(validatorFactory));
   }
 
-  private static void registerStores(STOManagerConfiguration config, Injector injector) {
-    final String ciMongo = config.getHarnessSTOMongo().getUri();
-    if (isNotEmpty(ciMongo) && !ciMongo.equals(config.getHarnessMongo().getUri())) {
-      final HPersistence hPersistence = injector.getInstance(HPersistence.class);
-      hPersistence.register(HARNESS_STORE, config.getHarnessMongo().getUri());
-    }
-  }
-
   private void registerWaitEnginePublishers(Injector injector) {
     final QueuePublisher<NotifyEvent> publisher =
         injector.getInstance(Key.get(new TypeLiteral<QueuePublisher<NotifyEvent>>() {}));
@@ -491,27 +445,5 @@ public class STOManagerApplication extends Application<STOManagerConfiguration> 
                                                     .requireValidatorInit(false)
                                                     .build();
     YamlSdkInitHelper.initialize(injector, yamlSdkConfiguration);
-  }
-
-  private void initializeEnforcementFramework(Injector injector) {
-    CustomRestrictionRegisterConfiguration customConfig =
-        CustomRestrictionRegisterConfiguration.builder()
-            .customRestrictionMap(
-                ImmutableMap
-                    .<FeatureRestrictionName,
-                        Class<? extends io.harness.enforcement.client.custom.CustomRestrictionInterface>>builder()
-                    .put(FeatureRestrictionName.BUILDS, BuildRestrictionUsageImpl.class)
-                    .build())
-            .build();
-    RestrictionUsageRegisterConfiguration restrictionUsageRegisterConfiguration =
-        RestrictionUsageRegisterConfiguration.builder()
-            .restrictionNameClassMap(
-                ImmutableMap.<FeatureRestrictionName, Class<? extends RestrictionUsageInterface>>builder()
-                    .put(FeatureRestrictionName.MAX_TOTAL_BUILDS, TotalBuildsRestrictionUsageImpl.class)
-                    .put(FeatureRestrictionName.MAX_BUILDS_PER_MONTH, BuildsPerMonthRestrictionUsageImpl.class)
-                    .build())
-            .build();
-    injector.getInstance(EnforcementSdkRegisterService.class)
-        .initialize(restrictionUsageRegisterConfiguration, customConfig);
   }
 }

@@ -12,11 +12,6 @@ import static io.harness.beans.execution.ExecutionSource.Type.WEBHOOK;
 import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.CODEBASE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.delegate.beans.connector.ConnectorType.BITBUCKET;
-import static io.harness.delegate.beans.connector.ConnectorType.CODECOMMIT;
-import static io.harness.delegate.beans.connector.ConnectorType.GIT;
-import static io.harness.delegate.beans.connector.ConnectorType.GITHUB;
-import static io.harness.delegate.beans.connector.ConnectorType.GITLAB;
 
 import static software.wings.beans.TaskType.SCM_GIT_REF_TASK;
 
@@ -36,14 +31,7 @@ import io.harness.beans.sweepingoutputs.CodebaseSweepingOutput;
 import io.harness.beans.sweepingoutputs.CodebaseSweepingOutput.CodeBaseCommit;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
-import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
-import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitConnectorDTO;
-import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitUrlType;
-import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
-import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
-import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
-import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
 import io.harness.delegate.task.scm.GitRefType;
 import io.harness.delegate.task.scm.ScmGitRefTaskParams;
 import io.harness.delegate.task.scm.ScmGitRefTaskResponseData;
@@ -69,6 +57,7 @@ import io.harness.product.ci.scm.proto.GetLatestCommitResponse;
 import io.harness.product.ci.scm.proto.ListCommitsInPRResponse;
 import io.harness.product.ci.scm.proto.PullRequest;
 import io.harness.serializer.KryoSerializer;
+import io.harness.stateutils.buildstate.CodebaseUtils;
 import io.harness.stateutils.buildstate.ConnectorUtils;
 import io.harness.steps.StepUtils;
 import io.harness.supplier.ThrowingSupplier;
@@ -80,7 +69,6 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 @Slf4j
@@ -111,8 +99,8 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
     ConnectorDetails connectorDetails =
         connectorUtils.getConnectorDetails(AmbianceUtils.getNgAccess(ambiance), stepParameters.getConnectorRef());
 
-    ScmGitRefTaskParams scmGitRefTaskParams =
-        obtainTaskParameters(manualExecutionSource, connectorDetails, stepParameters.getRepoName());
+    ScmGitRefTaskParams scmGitRefTaskParams = obtainTaskParameters(
+        manualExecutionSource, connectorDetails, stepParameters.getProjectName(), stepParameters.getRepoName());
 
     final TaskData taskData = TaskData.builder()
                                   .async(true)
@@ -176,14 +164,10 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
   }
 
   @VisibleForTesting
-  ScmGitRefTaskParams obtainTaskParameters(
-      ManualExecutionSource manualExecutionSource, ConnectorDetails connectorDetails, String repoName) {
+  ScmGitRefTaskParams obtainTaskParameters(ManualExecutionSource manualExecutionSource,
+      ConnectorDetails connectorDetails, String projectName, String repoName) {
     ScmConnector scmConnector = (ScmConnector) connectorDetails.getConnectorConfig();
-    String completeUrl = scmConnector.getUrl();
-    GitConnectionType gitConnectionType = getGitConnectionType(connectorDetails);
-    if (isNotEmpty(repoName) && (gitConnectionType == null || gitConnectionType == GitConnectionType.ACCOUNT)) {
-      completeUrl = StringUtils.stripEnd(scmConnector.getUrl(), "/") + "/" + StringUtils.stripStart(repoName, "/");
-    }
+    String completeUrl = CodebaseUtils.getCompleteURLFromConnector(connectorDetails, projectName, repoName);
     scmConnector.setUrl(completeUrl);
 
     String branch = manualExecutionSource.getBranch();
@@ -212,32 +196,6 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
           .build();
     } else {
       throw new CIStageExecutionException("Manual codebase git task needs at least PR number or branch");
-    }
-  }
-
-  public GitConnectionType getGitConnectionType(ConnectorDetails gitConnector) {
-    if (gitConnector == null) {
-      return null;
-    }
-
-    if (gitConnector.getConnectorType() == GITHUB) {
-      GithubConnectorDTO gitConfigDTO = (GithubConnectorDTO) gitConnector.getConnectorConfig();
-      return gitConfigDTO.getConnectionType();
-    } else if (gitConnector.getConnectorType() == GITLAB) {
-      GitlabConnectorDTO gitConfigDTO = (GitlabConnectorDTO) gitConnector.getConnectorConfig();
-      return gitConfigDTO.getConnectionType();
-    } else if (gitConnector.getConnectorType() == BITBUCKET) {
-      BitbucketConnectorDTO gitConfigDTO = (BitbucketConnectorDTO) gitConnector.getConnectorConfig();
-      return gitConfigDTO.getConnectionType();
-    } else if (gitConnector.getConnectorType() == CODECOMMIT) {
-      AwsCodeCommitConnectorDTO gitConfigDTO = (AwsCodeCommitConnectorDTO) gitConnector.getConnectorConfig();
-      return gitConfigDTO.getUrlType() == AwsCodeCommitUrlType.REPO ? GitConnectionType.REPO
-                                                                    : GitConnectionType.ACCOUNT;
-    } else if (gitConnector.getConnectorType() == GIT) {
-      GitConfigDTO gitConfigDTO = (GitConfigDTO) gitConnector.getConnectorConfig();
-      return gitConfigDTO.getGitConnectionType();
-    } else {
-      throw new CIStageExecutionException("Unsupported git connector type" + gitConnector.getConnectorType());
     }
   }
 

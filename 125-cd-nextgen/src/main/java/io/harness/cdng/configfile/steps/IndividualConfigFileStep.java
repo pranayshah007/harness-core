@@ -10,6 +10,7 @@ package io.harness.cdng.configfile.steps;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.cdng.manifest.yaml.harness.HarnessStoreConstants.HARNESS_STORE_TYPE;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static java.lang.String.format;
 
@@ -17,17 +18,15 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.configfile.ConfigFileAttributes;
 import io.harness.cdng.configfile.mapper.ConfigFileOutcomeMapper;
-import io.harness.cdng.manifest.yaml.harness.HarnessFileType;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
-import io.harness.cdng.manifest.yaml.harness.HarnessStoreConfig;
+import io.harness.cdng.manifest.yaml.harness.HarnessStoreFile;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
+import io.harness.common.ParameterFieldHelper;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
 import io.harness.connector.utils.ConnectorUtils;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
-import io.harness.exception.UnexpectedTypeException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.filestore.dto.node.FileStoreNodeDTO;
 import io.harness.filestore.service.FileStoreService;
@@ -96,19 +95,13 @@ public class IndividualConfigFileStep implements SyncExecutable<ConfigFileStepPa
       configFileAttributesList.add(stepParameters.getStageOverride());
     }
 
-    if (EmptyPredicate.isEmpty(configFileAttributesList)) {
+    if (isEmpty(configFileAttributesList)) {
       throw new InvalidArgumentsException("No found config file defined");
     }
 
     ConfigFileAttributes resultantConfigFile = configFileAttributesList.get(0);
     for (ConfigFileAttributes configFileAttributesOverride :
         configFileAttributesList.subList(1, configFileAttributesList.size())) {
-      if (!configFileAttributesOverride.getType().equals(resultantConfigFile.getType())) {
-        throw new UnexpectedTypeException(
-            format("Unable to apply configFile override of type '%s' to configFile of type '%s' with identifier '%s'",
-                configFileAttributesOverride.getType(), resultantConfigFile.getType(), stepParameters.getIdentifier()));
-      }
-
       resultantConfigFile = resultantConfigFile.applyOverrides(configFileAttributesOverride);
     }
 
@@ -120,46 +113,54 @@ public class IndividualConfigFileStep implements SyncExecutable<ConfigFileStepPa
     StoreConfig storeConfig = configFileAttributes.getStore().getValue().getSpec();
     String storeKind = storeConfig.getKind();
     if (HARNESS_STORE_TYPE.equals(storeKind)) {
-      validateFileByRef(configFileIdentifier, (HarnessStoreConfig) storeConfig, ambiance);
+      validateFileRefs(configFileIdentifier, (HarnessStore) storeConfig, ambiance);
     } else {
       validateConnectorByRef(configFileIdentifier, storeConfig, ambiance);
     }
   }
 
-  private void validateFileByRef(
-      String configFileIdentifier, HarnessStoreConfig harnessStoreConfig, Ambiance ambiance) {
-    if (ParameterField.isNull(harnessStoreConfig.getFileReference())) {
+  private void validateFileRefs(String configFileIdentifier, HarnessStore harnessStore, Ambiance ambiance) {
+    List<ParameterField<String>> fileReferences = harnessStore.getFileReferences();
+
+    if (isEmpty(fileReferences)) {
       throw new InvalidRequestException(
-          format("File ref field not present for store kind: %s in ConfigFile with identifier: %s ",
-              harnessStoreConfig.getKind(), configFileIdentifier));
+          format("Cannot find any file reference for ConfigFile with identifier: %s, store kind: %s",
+              configFileIdentifier, harnessStore.getKind()));
     }
 
-    if (harnessStoreConfig.getFileReference().isExpression()) {
+    harnessStore.getFiles().getValue().forEach(
+        file -> validateFileByRef(harnessStore, ambiance, file, configFileIdentifier));
+  }
+
+  private void validateFileByRef(
+      HarnessStore harnessStore, Ambiance ambiance, HarnessStoreFile file, final String configFileIdentifier) {
+    if (ParameterField.isNull(file.getRef())) {
+      throw new InvalidRequestException(
+          format("File ref not found for one of files, ConfigFile identifier: %s, store kind: %s", configFileIdentifier,
+              harnessStore.getKind()));
+    }
+
+    if (file.getRef().isExpression()) {
       return;
     }
 
-    String fileIdentifierRef = harnessStoreConfig.getFileReference().getValue();
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
-    IdentifierRef fileRef = IdentifierRefHelper.getIdentifierRef(fileIdentifierRef, ngAccess.getAccountIdentifier(),
-        ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
+    IdentifierRef fileRef = IdentifierRefHelper.getIdentifierRef(file.getRef().getValue(),
+        ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
 
-    HarnessStore harnessStore = (HarnessStore) harnessStoreConfig;
-    if (HarnessFileType.FILE_STORE == harnessStore.getFileType()) {
-      Optional<FileStoreNodeDTO> configFile = fileStoreService.get(fileRef.getAccountIdentifier(),
-          fileRef.getOrgIdentifier(), fileRef.getProjectIdentifier(), fileRef.getIdentifier(), false);
-
-      if (!configFile.isPresent()) {
-        throw new InvalidRequestException(
-            format("Config file not found in file store with identifier : [%s]", fileIdentifierRef));
-      }
-    }
-
-    if (HarnessFileType.ENCRYPTED == harnessStore.getFileType()) {
+    if (ParameterFieldHelper.getBooleanParameterFieldValue(file.getIsEncrypted()) == Boolean.TRUE) {
       NGEncryptedData ngEncryptedData = ngEncryptedDataService.get(fileRef.getAccountIdentifier(),
           fileRef.getOrgIdentifier(), fileRef.getProjectIdentifier(), fileRef.getIdentifier());
       if (ngEncryptedData == null) {
         throw new InvalidRequestException(
-            format("Config file not found in encrypted store with identifier : [%s]", fileIdentifierRef));
+            format("ConfigFile not found in Encrypted Store with identifier : [%s]", file));
+      }
+    } else {
+      Optional<FileStoreNodeDTO> configFile = fileStoreService.get(fileRef.getAccountIdentifier(),
+          fileRef.getOrgIdentifier(), fileRef.getProjectIdentifier(), fileRef.getIdentifier(), false);
+
+      if (!configFile.isPresent()) {
+        throw new InvalidRequestException(format("ConfigFile not found in File Store with identifier : [%s]", file));
       }
     }
   }
@@ -167,8 +168,8 @@ public class IndividualConfigFileStep implements SyncExecutable<ConfigFileStepPa
   private void validateConnectorByRef(String configFileIdentifier, StoreConfig storeConfig, Ambiance ambiance) {
     if (ParameterField.isNull(storeConfig.getConnectorReference())) {
       throw new InvalidRequestException(
-          format("Connector ref field not present for store kind: %s in ConfigFile with identifier: %s ",
-              storeConfig.getKind(), configFileIdentifier));
+          format("Connector ref field not present in ConfigFile with identifier: %s, store kind: %s ",
+              configFileIdentifier, storeConfig.getKind()));
     }
 
     if (storeConfig.getConnectorReference().isExpression()) {
@@ -183,8 +184,9 @@ public class IndividualConfigFileStep implements SyncExecutable<ConfigFileStepPa
     Optional<ConnectorResponseDTO> connectorDTO = connectorService.get(connectorRef.getAccountIdentifier(),
         connectorRef.getOrgIdentifier(), connectorRef.getProjectIdentifier(), connectorRef.getIdentifier());
     if (!connectorDTO.isPresent()) {
-      throw new InvalidRequestException(format("Connector not found for identifier : [%s]", connectorIdentifierRef));
+      throw new InvalidRequestException(format("Connector not found with identifier: [%s]", connectorIdentifierRef));
     }
+
     ConnectorUtils.checkForConnectorValidityOrThrow(connectorDTO.get());
   }
 }

@@ -94,6 +94,11 @@ import io.harness.delegate.beans.connector.helm.HttpHelmAuthType;
 import io.harness.delegate.beans.connector.helm.HttpHelmAuthenticationDTO;
 import io.harness.delegate.beans.connector.helm.HttpHelmConnectorDTO;
 import io.harness.delegate.beans.connector.helm.HttpHelmUsernamePasswordDTO;
+import io.harness.delegate.beans.connector.helm.OciHelmAuthCredentialsDTO;
+import io.harness.delegate.beans.connector.helm.OciHelmAuthType;
+import io.harness.delegate.beans.connector.helm.OciHelmAuthenticationDTO;
+import io.harness.delegate.beans.connector.helm.OciHelmConnectorDTO;
+import io.harness.delegate.beans.connector.helm.OciHelmUsernamePasswordDTO;
 import io.harness.delegate.beans.connector.jenkins.JenkinsAuthCredentialsDTO;
 import io.harness.delegate.beans.connector.jenkins.JenkinsAuthType;
 import io.harness.delegate.beans.connector.jenkins.JenkinsAuthenticationDTO;
@@ -392,5 +397,10 @@ public class ConnectorBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(JenkinsConnectorDTO.class, 29115);
     kryo.register(JenkinsUserNamePasswordDTO.class, 29116);
     kryo.register(JenkinsBearerTokenDTO.class, 29130);
+    kryo.register(OciHelmAuthCredentialsDTO.class, 29131);
+    kryo.register(OciHelmAuthenticationDTO.class, 29132);
+    kryo.register(OciHelmAuthType.class, 29133);
+    kryo.register(OciHelmConnectorDTO.class, 29134);
+    kryo.register(OciHelmUsernamePasswordDTO.class, 29135);
   }
 }

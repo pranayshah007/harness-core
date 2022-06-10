@@ -61,6 +61,7 @@ import org.apache.commons.lang3.StringUtils;
 @Singleton
 @Slf4j
 @OwnedBy(HarnessTeam.CI)
+@Deprecated
 public class VmInitializeStepUtils {
   @Inject CIFeatureFlagService featureFlagService;
 

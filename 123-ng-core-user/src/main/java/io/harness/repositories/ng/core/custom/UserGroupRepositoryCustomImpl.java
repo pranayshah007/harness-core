@@ -41,8 +41,12 @@ public class UserGroupRepositoryCustomImpl implements UserGroupRepositoryCustom 
   }
 
   @Override
-  public List<UserGroup> findAll(Criteria criteria) {
+  public List<UserGroup> findAll(Criteria criteria, Integer skip, Integer limit) {
     Query query = new Query(criteria);
+    if (null != skip && null != limit) {
+      query.skip(skip);
+      query.limit(limit);
+    }
     return mongoTemplate.find(query, UserGroup.class);
   }
 

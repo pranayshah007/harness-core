@@ -366,10 +366,9 @@ public class PMSPipelineRepositoryCustomImplTest extends CategoryTest {
                                         .yaml(pipelineYaml)
                                         .deleted(true)
                                         .build();
-    doReturn(pipelineEntity).when(mongoTemplate).findAndModify(any(), any(), any(), any(Class.class));
-    PipelineEntity deletedEntity =
-        pipelineRepository.delete(accountIdentifier, orgIdentifier, projectIdentifier, pipelineId);
-    assertThat(deletedEntity).isEqualTo(pipelineEntity);
+    doReturn(pipelineEntity).when(mongoTemplate).findAndRemove(any(), any());
+    pipelineRepository.delete(accountIdentifier, orgIdentifier, projectIdentifier, pipelineId);
+    verify(mongoTemplate, times(1)).findAndRemove(any(), any());
     verify(outboxService, times(1)).save(any());
   }
 

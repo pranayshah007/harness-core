@@ -52,12 +52,6 @@ public class PMSPipelineFilterHelper {
     return update;
   }
 
-  public Update getUpdateOperationsForDelete() {
-    Update update = new Update();
-    update.set(PipelineEntityKeys.deleted, true);
-    return update;
-  }
-
   public Criteria getCriteriaForFind(
       String accountId, String orgIdentifier, String projectIdentifier, String identifier, boolean notDeleted) {
     return Criteria.where(PipelineEntityKeys.deleted)
@@ -65,6 +59,16 @@ public class PMSPipelineFilterHelper {
         .and(PipelineEntityKeys.identifier)
         .is(identifier)
         .and(PipelineEntityKeys.projectIdentifier)
+        .is(projectIdentifier)
+        .and(PipelineEntityKeys.orgIdentifier)
+        .is(orgIdentifier)
+        .and(PipelineEntityKeys.accountId)
+        .is(accountId);
+  }
+
+  public Criteria getCriteriaForAllPipelinesInProject(
+      String accountId, String orgIdentifier, String projectIdentifier) {
+    return Criteria.where(PipelineEntityKeys.projectIdentifier)
         .is(projectIdentifier)
         .and(PipelineEntityKeys.orgIdentifier)
         .is(orgIdentifier)

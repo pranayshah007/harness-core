@@ -28,7 +28,6 @@ public final class ConfigFileOutcomeMapper {
     return ConfigFileOutcome.builder()
         .identifier(configFileStepParameters.getIdentifier())
         .store(store)
-        .configFileType(configFileAttributes.getType())
         .order(configFileStepParameters.getOrder())
         .build();
   }

@@ -28,6 +28,7 @@ import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.KryoSerializer;
 import io.harness.utils.YamlPipelineUtils;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.protobuf.ByteString;
 import java.io.IOException;
 import java.util.HashMap;
@@ -104,8 +105,9 @@ public class ServicePlanCreatorHelper {
     }
   }
 
-  private YamlField getResolvedServiceFieldForV2(DeploymentStageNode stageNode,
-      ServiceEntityService serviceEntityService, YamlField parentSpecField, PlanCreationContext ctx) {
+  @VisibleForTesting
+  YamlField getResolvedServiceFieldForV2(DeploymentStageNode stageNode, ServiceEntityService serviceEntityService,
+      YamlField parentSpecField, PlanCreationContext ctx) {
     ServiceYamlV2 serviceYamlV2 = stageNode.getDeploymentStageConfig().getService();
     if (serviceYamlV2 == null) {
       throw new InvalidRequestException("ServiceRef cannot be absent in a stage - " + stageNode.getIdentifier());
@@ -121,7 +123,7 @@ public class ServicePlanCreatorHelper {
     Optional<ServiceEntity> serviceEntity =
         serviceEntityService.get(accountIdentifier, orgIdentifier, projectIdentifier, serviceRef, false);
 
-    if (serviceEntity.isEmpty()) {
+    if (!serviceEntity.isPresent()) {
       throw new InvalidRequestException(
           String.format("No service found with %s identifier in %s project in %s org and %s account",
               serviceYamlV2.getServiceRef(), projectIdentifier, orgIdentifier, accountIdentifier));
@@ -138,13 +140,16 @@ public class ServicePlanCreatorHelper {
         serviceYaml = mergeServiceInputsIntoService(serviceYaml, serviceYamlV2.getServiceInputs());
       }
       YamlField yamlField = YamlUtils.injectUuidInYamlField(serviceYaml);
-      if (yamlField.getNode().getField(YamlTypes.SERVICE_DEFINITION) == null) {
+      if (yamlField.getNode().getField(YamlTypes.SERVICE_ENTITY).getNode().getField(YamlTypes.SERVICE_DEFINITION)
+          == null) {
         throw new InvalidRequestException(
             "Invalid Service being referred as serviceDefinition section is not there in DeploymentStage - "
             + stageNode.getIdentifier() + " for service - " + serviceRef);
       }
       return new YamlField(YamlTypes.SERVICE_ENTITY,
-          new YamlNode(YamlTypes.SERVICE_ENTITY, yamlField.getNode().getCurrJsonNode(), parentSpecField.getNode()));
+          new YamlNode(YamlTypes.SERVICE_ENTITY,
+              yamlField.getNode().getField(YamlTypes.SERVICE_ENTITY).getNode().getCurrJsonNode(),
+              parentSpecField.getNode()));
     } catch (IOException e) {
       throw new InvalidRequestException("Invalid service yaml in stage - " + stageNode.getIdentifier(), e);
     }

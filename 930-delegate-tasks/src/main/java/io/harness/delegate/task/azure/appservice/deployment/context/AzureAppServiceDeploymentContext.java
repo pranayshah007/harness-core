@@ -10,9 +10,9 @@ package io.harness.delegate.task.azure.appservice.deployment.context;
 import io.harness.azure.context.AzureWebClientContext;
 import io.harness.azure.model.AzureAppServiceApplicationSetting;
 import io.harness.azure.model.AzureAppServiceConnectionString;
-import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.azure.appservice.AzureAppServicePreDeploymentData;
 import io.harness.delegate.task.azure.appservice.deployment.AzureAppServiceDeploymentService;
+import io.harness.delegate.task.azure.common.AzureLogCallbackProvider;
 
 import java.util.Map;
 import lombok.AllArgsConstructor;
@@ -24,7 +24,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class AzureAppServiceDeploymentContext {
   private AzureWebClientContext azureWebClientContext;
-  private ILogStreamingTaskClient logStreamingTaskClient;
+  private AzureLogCallbackProvider logCallbackProvider;
   private Map<String, AzureAppServiceApplicationSetting> appSettingsToAdd;
   private Map<String, AzureAppServiceApplicationSetting> appSettingsToRemove;
   private Map<String, AzureAppServiceConnectionString> connSettingsToAdd;

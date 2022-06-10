@@ -49,7 +49,7 @@ public class RuntimeInputFormHelper {
     Map<FQN, Object> fullMap = yamlConfig.getFqnToValueMap();
     Map<FQN, Object> templateMap = new LinkedHashMap<>();
     fullMap.keySet().forEach(key -> {
-      String value = fullMap.get(key).toString().replace("\"", "");
+      String value = fullMap.get(key).toString().replace("\\\"", "").replace("\"", "");
       if (NGExpressionUtils.matchesExecutionInputPattern(value)) {
         templateMap.put(key, fullMap.get(key));
         fullMap.put(key,

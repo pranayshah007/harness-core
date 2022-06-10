@@ -129,14 +129,14 @@ fi
 
 cp 260-delegate/config-delegate.yml dist/delegate/config-delegate.yml
 
-jarsigner -storetype pkcs12 -keystore ${KEY_STORE} -storepass ${KEY_STORE_PASSWORD} dist/delegate/delegate-capsule.jar ${KEY_STORE_ALIAS}
+jarsigner -tsa http://timestamp.digicert.com -storetype pkcs12 -keystore ${KEY_STORE} -storepass ${KEY_STORE_PASSWORD} dist/delegate/delegate-capsule.jar ${KEY_STORE_ALIAS}
 cp dist/delegate/delegate-capsule.jar delegate-${VERSION}.jar
 cp protocol.info dist/delegate/.
 
 mkdir -p dist/watcher
 cp ${HOME}/.bazel-dirs/bin/960-watcher/module_deploy.jar dist/watcher/watcher-capsule.jar
 
-jarsigner -storetype pkcs12 -keystore ${KEY_STORE} -storepass ${KEY_STORE_PASSWORD} dist/watcher/watcher-capsule.jar ${KEY_STORE_ALIAS}
+jarsigner -tsa http://timestamp.digicert.com -storetype pkcs12 -keystore ${KEY_STORE} -storepass ${KEY_STORE_PASSWORD} dist/watcher/watcher-capsule.jar ${KEY_STORE_ALIAS}
 cp dist/watcher/watcher-capsule.jar watcher-${VERSION}.jar
 cp protocol.info dist/watcher/.
 
@@ -184,7 +184,6 @@ cp ../../310-ci-manager/key.pem .
 cp ../../310-ci-manager/cert.pem .
 cp ../../310-ci-manager/src/main/resources/redisson-jcache.yaml .
 
-
 cp ../../dockerization/ci-manager/Dockerfile-ci-manager-jenkins-k8-openjdk ./Dockerfile
 cp ../../dockerization/ci-manager/Dockerfile-ci-manager-jenkins-k8-gcr-openjdk ./Dockerfile-gcr
 cp ../../dockerization/ci-manager/Dockerfile-ci-manager-jenkins-k8-gcr-openjdk-ubi ./Dockerfile-gcr-ubi
@@ -196,28 +195,7 @@ if [ ! -z ${PURPOSE} ]
 then
     echo ${PURPOSE} > purpose.txt
 fi
-cd ../..
-
-mkdir -p dist/sto-manager
-cd dist/sto-manager
-cp ${HOME}/.bazel-dirs/bin/315-sto-manager/module_deploy.jar sto-manager-capsule.jar
-cp ../../315-sto-manager/sto-manager-config.yml .
-cp ../../keystore.jks .
-cp ../../315-sto-manager/key.pem .
-cp ../../315-sto-manager/cert.pem .
-cp ../../315-sto-manager/src/main/resources/redisson-jcache.yaml .
-
-cp ../../dockerization/sto-manager/Dockerfile-sto-manager-jenkins-k8-openjdk ./Dockerfile
-cp ../../dockerization/sto-manager/Dockerfile-sto-manager-jenkins-k8-gcr-openjdk ./Dockerfile-gcr
-cp ../../dockerization/sto-manager/Dockerfile-sto-manager-jenkins-k8-gcr-openjdk-ubi ./Dockerfile-gcr-ubi
-cp -r ../../dockerization/sto-manager/scripts/ .
-cp ../../sto-manager-protocol.info .
-echo ${JDK} > jdk.txt
-echo ${VERSION} > version.txt
-if [ ! -z ${PURPOSE} ]
-then
-    echo ${PURPOSE} > purpose.txt
-fi
+java -jar ci-manager-capsule.jar scan-classpath-metadata
 
 cd ../..
 
@@ -239,6 +217,7 @@ if [ ! -z ${PURPOSE} ]
 then
     echo ${PURPOSE} > purpose.txt
 fi
+java -jar platform-service-capsule.jar scan-classpath-metadata
 
 cd ../..
 
@@ -262,6 +241,7 @@ if [ ! -z ${PURPOSE} ]
 then
     echo ${PURPOSE} > purpose.txt
 fi
+java -jar pipeline-service-capsule.jar scan-classpath-metadata
 
 cd ../..
 
@@ -343,6 +323,7 @@ if [ ! -z ${PURPOSE} ]
 then
     echo ${PURPOSE} > purpose.txt
 fi
+java -jar accesscontrol-service-capsule.jar scan-classpath-metadata
 
 cd ../..
 
@@ -364,5 +345,7 @@ cp -r ../../dockerization/migrator/scripts/ .
 mv scripts/start_process_bazel.sh scripts/start_process.sh
 
 copy_common_files
+
+java -jar migrator-capsule.jar scan-classpath-metadata
 
 cd ../..

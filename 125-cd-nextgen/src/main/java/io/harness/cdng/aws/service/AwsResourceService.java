@@ -59,14 +59,19 @@ public interface AwsResourceService {
    * @param region AWS region
    * @param isBranch For GIT, the fetchType, (branch or commit)
    * @param branch The branch reference for GIT
+   * @param repoName the name of the repo
    * @param filePath The file path for the template
    * @param commitId The commit id for GIT
    * @param awsConnectorRef the IdentifierRef of the aws connector
    * @param data the template data if inline is selected
    * @param connectorDTO the IdentifierRef of the git connector
+   * @param accountIdentifier is the account id
+   * @param orgIdentifier is the org id
+   * @param projectIdentifier is the project id
    *
    * @return the list of Cloudformation param keys
    */
   List<AwsCFTemplateParamsData> getCFparametersKeys(String type, String region, boolean isBranch, String branch,
-      String filePath, String commitId, IdentifierRef awsConnectorRef, String data, String connectorDTO);
+      String repoName, String filePath, String commitId, IdentifierRef awsConnectorRef, String data,
+      String connectorDTO, String accountIdentifier, String orgIdentifier, String projectIdentifier);
 }

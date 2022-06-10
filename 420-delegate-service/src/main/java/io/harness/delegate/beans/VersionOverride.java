@@ -35,6 +35,7 @@ public class VersionOverride implements PersistentEntity {
   @NotEmpty private final String accountId;
   private final String version;
   private final VersionOverrideType overrideType;
+  private boolean validTillNextRelease;
   @FdTtlIndex @Builder.Default private final Date validUntil = DateTime.now().toDate();
 
   public static VersionOverrideBuilder builder(final String accountId) {

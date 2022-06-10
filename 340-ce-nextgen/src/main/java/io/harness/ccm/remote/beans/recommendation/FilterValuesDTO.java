@@ -7,8 +7,6 @@
 
 package io.harness.ccm.remote.beans.recommendation;
 
-import io.harness.ccm.graphql.dto.recommendation.K8sRecommendationFilterDTO;
-
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
@@ -22,5 +20,5 @@ import lombok.Data;
     description = "The applicable 'columns' values are 'name', 'resourceType', 'namespace', 'clusterName'")
 public class FilterValuesDTO {
   List<String> columns;
-  K8sRecommendationFilterDTO filter;
+  CCMRecommendationFilterPropertiesDTO filter;
 }

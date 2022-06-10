@@ -7,6 +7,7 @@
 
 package io.harness.event.app;
 
+import io.harness.event.config.EventDataBatchQueryConfig;
 import io.harness.grpc.server.Connector;
 import io.harness.mongo.MongoConfig;
 import io.harness.secret.ConfigSecret;
@@ -30,6 +31,7 @@ public class EventServiceConfig {
   @ConfigSecret
   private MongoConfig eventsMongo = MongoConfig.builder().build();
   @JsonProperty("secretsConfiguration") private SecretsConfiguration secretsConfiguration;
+  @JsonProperty("eventDataBatchQueryConfig") private EventDataBatchQueryConfig eventDataBatchQueryConfig;
 
   @Singular private List<Connector> connectors;
 }

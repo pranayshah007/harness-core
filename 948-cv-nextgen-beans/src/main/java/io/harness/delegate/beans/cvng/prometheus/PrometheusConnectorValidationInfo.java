@@ -10,7 +10,6 @@ package io.harness.delegate.beans.cvng.prometheus;
 import io.harness.delegate.beans.connector.prometheusconnector.PrometheusConnectorDTO;
 import io.harness.delegate.beans.cvng.ConnectorValidationInfo;
 
-import java.util.Collections;
 import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
@@ -32,6 +31,6 @@ public class PrometheusConnectorValidationInfo extends ConnectorValidationInfo<P
 
   @Override
   public Map<String, String> collectionHeaders() {
-    return Collections.emptyMap();
+    return PrometheusUtils.getHeaders(connectorConfigDTO);
   }
 }

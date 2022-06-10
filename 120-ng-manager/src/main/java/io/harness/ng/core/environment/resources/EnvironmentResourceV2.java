@@ -18,6 +18,7 @@ import static io.harness.rbac.CDNGRbacPermissions.ENVIRONMENT_UPDATE_PERMISSION;
 import static io.harness.rbac.CDNGRbacPermissions.ENVIRONMENT_VIEW_PERMISSION;
 import static io.harness.rbac.CDNGRbacPermissions.SERVICE_UPDATE_PERMISSION;
 import static io.harness.utils.PageUtils.getNGPageResponse;
+
 import static java.lang.Long.parseLong;
 import static javax.ws.rs.core.HttpHeaders.IF_MATCH;
 import static org.apache.commons.lang3.StringUtils.isNumeric;
@@ -586,6 +587,43 @@ public class EnvironmentResourceV2 {
 
     return ResponseDTO.newResponse(
         getNGPageResponse(serviceOverridesEntities.map(ServiceOverridesMapper::toResponseWrapper)));
+  }
+  @GET
+  @Path("/runtimeInputs")
+  @ApiOperation(value = "This api returns Environment inputs YAML", nickname = "getEnvironmentInputs")
+  @Hidden
+  public ResponseDTO<String> getEnvironmentInputs(
+      @Parameter(description = ENVIRONMENT_PARAM_MESSAGE) @NotNull @QueryParam(
+          "environmentIdentifier") @ResourceIdentifier String environmentIdentifier,
+      @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @NotNull @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @NotNull @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier) {
+    String environmentInputsYaml = environmentService.createEnvironmentInputsYaml(
+        accountId, projectIdentifier, orgIdentifier, environmentIdentifier);
+    return ResponseDTO.newResponse(environmentInputsYaml);
+  }
+
+  @GET
+  @Path("/serviceOverrides/runtimeInputs")
+  @ApiOperation(value = "This api returns Service Override inputs YAML", nickname = "getServiceOverrideInputs")
+  @Hidden
+  public ResponseDTO<String> getServiceOverrideInputs(
+      @Parameter(description = ENVIRONMENT_PARAM_MESSAGE) @NotNull @QueryParam(
+          NGCommonEntityConstants.ENVIRONMENT_IDENTIFIER_KEY) @ResourceIdentifier String environmentIdentifier,
+      @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @NotNull @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @NotNull @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
+      @Parameter(description = NGCommonEntityConstants.SERVICE_PARAM_MESSAGE) @NotNull @QueryParam(
+          NGCommonEntityConstants.SERVICE_IDENTIFIER_KEY) @ResourceIdentifier String serviceIdentifier) {
+    String environmentInputsYaml = serviceOverrideService.createServiceOverrideInputsYaml(
+        accountId, projectIdentifier, orgIdentifier, environmentIdentifier, serviceIdentifier);
+    return ResponseDTO.newResponse(environmentInputsYaml);
   }
 
   private void checkForServiceOverrideUpdateAccess(

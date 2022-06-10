@@ -7,6 +7,8 @@
 
 package io.harness.cvng.client;
 
+import static io.harness.ng.core.CorrelationContext.getCorrelationIdInterceptor;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.network.Http;
@@ -65,6 +67,7 @@ public class VerificationManagerClientFactory implements Provider<VerificationMa
           .readTimeout(30, TimeUnit.SECONDS)
           .retryOnConnectionFailure(true)
           .addInterceptor(new VerificationAuthInterceptor(tokenGenerator))
+          .addInterceptor(getCorrelationIdInterceptor())
           .sslSocketFactory(sslSocketFactory, (X509TrustManager) TRUST_ALL_CERTS.get(0))
           .hostnameVerifier(new NoopHostnameVerifier())
           .build();

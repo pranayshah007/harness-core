@@ -540,10 +540,34 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
     updateOperations.set(
         ServiceLevelObjectiveKeys.sloTargetPercentage, serviceLevelObjectiveDTO.getTarget().getSloTargetPercentage());
     updateOperations.set(ServiceLevelObjectiveKeys.notificationRuleRefs,
-        notificationRuleService.getNotificationRuleRefs(projectParams,
-            serviceLevelObjectiveDTO.getNotificationRuleRefs(), NotificationRuleType.SLO, Instant.ofEpochSecond(0)));
+        getNotificationRuleRefs(projectParams, serviceLevelObjective, serviceLevelObjectiveDTO));
     hPersistence.update(serviceLevelObjective, updateOperations);
     return serviceLevelObjective;
+  }
+
+  private List<NotificationRuleRef> getNotificationRuleRefs(ProjectParams projectParams,
+      ServiceLevelObjective serviceLevelObjective, ServiceLevelObjectiveDTO serviceLevelObjectiveDTO) {
+    List<NotificationRuleRef> notificationRuleRefs = notificationRuleService.getNotificationRuleRefs(projectParams,
+        serviceLevelObjectiveDTO.getNotificationRuleRefs(), NotificationRuleType.SLO, Instant.ofEpochSecond(0));
+    deleteNotificationRuleRefs(projectParams, serviceLevelObjective, notificationRuleRefs);
+    return notificationRuleRefs;
+  }
+
+  private void deleteNotificationRuleRefs(ProjectParams projectParams, ServiceLevelObjective serviceLevelObjective,
+      List<NotificationRuleRef> notificationRuleRefs) {
+    List<String> existingNotificationRuleRefs = serviceLevelObjective.getNotificationRuleRefs()
+                                                    .stream()
+                                                    .map(NotificationRuleRef::getNotificationRuleRef)
+                                                    .collect(Collectors.toList());
+    List<String> updatedNotificationRuleRefs =
+        notificationRuleRefs.stream().map(NotificationRuleRef::getNotificationRuleRef).collect(Collectors.toList());
+    List<String> toBeDeletedNotificationRuleRefs = new ArrayList<>();
+    for (String notificationRuleRef : existingNotificationRuleRefs) {
+      if (!updatedNotificationRuleRefs.contains(notificationRuleRef)) {
+        toBeDeletedNotificationRuleRefs.add(notificationRuleRef);
+      }
+    }
+    notificationRuleService.delete(projectParams, toBeDeletedNotificationRuleRefs);
   }
 
   private ServiceLevelObjectiveResponse getSLOResponse(String identifier, ProjectParams projectParams) {

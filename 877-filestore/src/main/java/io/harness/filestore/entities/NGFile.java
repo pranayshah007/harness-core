@@ -83,6 +83,7 @@ public class NGFile implements PersistentEntity, UuidAware, NGAccountAccess, NGO
   @NotEmpty String parentIdentifier;
   @NotEmpty String fileUuid;
   @NotEmpty String name;
+  @NotEmpty String path;
   ChecksumType checksumType;
   String checksum;
   String mimeType;
@@ -109,7 +110,8 @@ public class NGFile implements PersistentEntity, UuidAware, NGAccountAccess, NGO
                 .field(NGFiles.projectIdentifier)
                 .field(NGFiles.identifier)
                 .unique(true)
-                .build())
+                .build(),
+            CompoundMongoIndex.builder().name("path_idx").field(NGFiles.path).unique(false).build())
         .build();
   }
 

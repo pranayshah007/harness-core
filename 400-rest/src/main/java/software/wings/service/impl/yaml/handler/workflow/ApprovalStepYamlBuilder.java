@@ -43,14 +43,21 @@ public class ApprovalStepYamlBuilder extends StepYamlBuilder {
   private static final String JIRA_CONNECTOR_NAME = "jiraConnectorName";
   private static final String SNOW_CONNECTOR_ID = "snowConnectorId";
   private static final String SNOW_CONNECTOR_NAME = "snowConnectorName";
+  private static final String TEMPLATE_EXPRESSIONS = "templateExpressions";
 
   @Inject private UserGroupService userGroupService;
   @Inject private SettingsService settingsService;
 
   @Override
   public void validate(ChangeContext<StepYaml> changeContext) {
-    List<HashMap<String, Object>> templateExpressions =
-        (List<HashMap<String, Object>>) changeContext.getYaml().getProperties().get("templateExpressions");
+    List<HashMap<String, Object>> templateExpressions = null;
+    try {
+      templateExpressions = (List<HashMap<String, Object>>) getAndSanitizeTemplateExpressions(changeContext.getYaml());
+
+    } catch (ClassCastException e) {
+      throw new InvalidRequestException(
+          String.format("Template expressions in step [%s]", changeContext.getYaml().getName()));
+    }
     if (!isEmpty(templateExpressions)) {
       for (HashMap<String, Object> templateExpression : templateExpressions) {
         if (templateExpression.get("expression") == null) {
@@ -58,6 +65,17 @@ public class ApprovalStepYamlBuilder extends StepYamlBuilder {
         }
       }
     }
+  }
+
+  private Object getAndSanitizeTemplateExpressions(StepYaml yaml) {
+    Object value = yaml.getProperties().get(TEMPLATE_EXPRESSIONS);
+    if (value instanceof String) {
+      if (isEmpty((String) value) || value.equals("''")) {
+        yaml.getProperties().put(TEMPLATE_EXPRESSIONS, null);
+        value = null;
+      }
+    }
+    return value;
   }
 
   @Override

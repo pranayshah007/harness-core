@@ -19,7 +19,6 @@ import io.harness.cdng.infra.beans.SshWinRmAzureInfraMapping.SshWinRmAzureInfraM
 import io.harness.filters.ConnectorRefExtractorHelper;
 import io.harness.filters.WithConnectorRef;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
-import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlNode;
@@ -31,7 +30,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
@@ -87,11 +85,6 @@ public class SshWinRmAzureInfrastructure implements Infrastructure, Visitable, W
   @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
   @Wither
   ParameterField<Boolean> usePublicDns;
-
-  @YamlSchemaTypes({runtime})
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
-  @Wither
-  ParameterField<List<TaskSelectorYaml>> delegateSelectors;
 
   // For Visitor Framework Impl
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
@@ -149,9 +142,6 @@ public class SshWinRmAzureInfrastructure implements Infrastructure, Visitable, W
     }
     if (!ParameterField.isNull(config.getUsePublicDns())) {
       resultantInfra = resultantInfra.withUsePublicDns(config.getUsePublicDns());
-    }
-    if (!ParameterField.isNull(config.getDelegateSelectors())) {
-      resultantInfra = resultantInfra.withDelegateSelectors(config.getDelegateSelectors());
     }
 
     return resultantInfra;

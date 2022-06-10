@@ -16,6 +16,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 
 import java.util.List;
 
+@Deprecated
 public interface InitializeStepInfoBuilder {
   BuildJobEnvInfo getInitializeStepInfoBuilder(StageElementConfig stageElementConfig, Infrastructure infrastructure,
       CIExecutionArgs ciExecutionArgs, List<ExecutionWrapperConfig> steps, Ambiance ambiance);

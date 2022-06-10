@@ -8,6 +8,8 @@
 package io.harness.ng.core.delegate.client;
 
 import io.harness.NGCommonEntityConstants;
+import io.harness.delegate.DelegateDownloadResponse;
+import io.harness.delegate.beans.DelegateDownloadRequest;
 import io.harness.delegate.beans.DelegateGroup;
 import io.harness.delegate.beans.DelegateGroupDTO;
 import io.harness.delegate.beans.DelegateGroupListing;
@@ -40,6 +42,7 @@ public interface DelegateNgManagerCgManagerClient {
       DelegateMtlsApiConstants.API_ROOT_RELATIVE_NG_INTERNAL + "/" + DelegateMtlsApiConstants.API_PATH_ENDPOINT;
   String DELEGATE_MTLS_PREFIX_AVAILABLE_API = DelegateMtlsApiConstants.API_ROOT_RELATIVE_NG_INTERNAL + "/"
       + DelegateMtlsApiConstants.API_PATH_CHECK_AVAILABILITY;
+  String DELEGATE_DOWNLOAD_API = "delegate-download";
 
   //------------------------ Delegate Token -------------------------------------
 
@@ -148,4 +151,20 @@ public interface DelegateNgManagerCgManagerClient {
   Call<RestResponse<Boolean>> isDomainPrefixAvailable(
       @Query(NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountIdentifier,
       @Query(DelegateMtlsApiConstants.API_PARAM_DOMAIN_PREFIX_NAME) @NotNull String domainPrefix);
+
+  //------------------------ Delegate Download Apis -----------------------------------
+
+  @POST(DELEGATE_DOWNLOAD_API + "/kubernetes")
+  Call<RestResponse<DelegateDownloadResponse>> downloadKubernetesDelegate(
+      @Query(NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountIdentifier,
+      @Query(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Query(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @Body @NotNull DelegateDownloadRequest delegateDownloadRequest);
+
+  @POST(DELEGATE_DOWNLOAD_API + "/docker")
+  Call<RestResponse<DelegateDownloadResponse>> downloadDockerDelegate(
+      @Query(NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountIdentifier,
+      @Query(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @Query(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @Body @NotNull DelegateDownloadRequest delegateDownloadRequest);
 }

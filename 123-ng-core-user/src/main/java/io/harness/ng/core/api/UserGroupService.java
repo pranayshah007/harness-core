@@ -57,7 +57,7 @@ public interface UserGroupService {
   List<ScopeNameDTO> getInheritingChildScopeList(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String userGroupIdentifier);
 
-  List<UserGroup> list(Criteria criteria);
+  List<UserGroup> list(Criteria criteria, Integer skip, Integer limit);
 
   List<UserGroup> list(UserGroupFilterDTO userGroupFilterDTO);
 

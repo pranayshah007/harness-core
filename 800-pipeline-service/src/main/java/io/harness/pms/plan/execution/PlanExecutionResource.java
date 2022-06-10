@@ -85,7 +85,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.validator.constraints.NotEmpty;
 
-@Tag(name = "Pipeline Execute", description = "This contains APIs for executing a Pipeline.")
+@Tag(name = "Pipeline Execution", description = "This contains APIs for Executing a Pipeline")
 @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Bad Request",
     content =
     {
@@ -128,7 +128,8 @@ public class PlanExecutionResource {
       value = "Execute a pipeline with inputSet pipeline YAML", nickname = "postPipelineExecuteWithInputSetYaml")
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_EXECUTE)
   @Operation(operationId = "postPipelineExecuteWithInputSetYaml",
-      summary = "Execute a pipeline with inputSet pipeline yaml",
+      description = "Execute a Pipeline with Runtime Input YAML",
+      summary = "Execute a Pipeline with Runtime Input YAML",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -369,7 +370,8 @@ public class PlanExecutionResource {
 
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_EXECUTE)
   @Operation(operationId = "postPipelineExecuteWithInputSetList",
-      summary = "Execute a pipeline with input set references list",
+      description = "Execute a Pipeline with Input Set References",
+      summary = "Execute a Pipeline with Input Set References",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -439,7 +441,8 @@ public class PlanExecutionResource {
   @PUT
   @ApiOperation(value = "pause, resume or stop the pipeline executions", nickname = "handleInterrupt")
   @Path("/interrupt/{planExecutionId}")
-  @Operation(operationId = "putHandleInterrupt", summary = "Execute an Interrupt on an execution",
+  @Operation(operationId = "putHandleInterrupt", description = "Executes an Interrupt on a Given Execution",
+      summary = "Execute an Interrupt",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",

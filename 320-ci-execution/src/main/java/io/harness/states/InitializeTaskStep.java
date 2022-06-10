@@ -20,13 +20,7 @@ import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.beans.dependencies.ServiceDependency;
-import io.harness.beans.environment.BuildJobEnvInfo;
-import io.harness.beans.environment.K8BuildJobEnvInfo;
-import io.harness.beans.environment.VmBuildJobInfo;
-import io.harness.beans.environment.pod.PodSetupInfo;
-import io.harness.beans.environment.pod.container.ContainerDefinitionInfo;
-import io.harness.beans.environment.pod.container.ContainerImageDetails;
-import io.harness.beans.executionargs.CIExecutionArgs;
+import io.harness.beans.environment.ServiceDefinitionInfo;
 import io.harness.beans.outcomes.DependencyOutcome;
 import io.harness.beans.outcomes.LiteEnginePodDetailsOutcome;
 import io.harness.beans.outcomes.VmDetailsOutcome;
@@ -37,6 +31,7 @@ import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
 import io.harness.ci.integrationstage.BuildJobEnvInfoBuilder;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
+import io.harness.ci.integrationstage.K8InitializeServiceUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.ci.CIInitializeTaskParams;
@@ -48,12 +43,10 @@ import io.harness.delegate.beans.ci.vm.VmServiceStatus;
 import io.harness.delegate.beans.ci.vm.VmTaskExecutionResponse;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.CIStageExecutionException;
-import io.harness.k8s.model.ImageDetails;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logstreaming.LogStreamingHelper;
 import io.harness.ng.core.EntityDetail;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
-import io.harness.plancreator.stages.stage.StageElementConfig;
 import io.harness.plancreator.steps.ParallelStepElementConfig;
 import io.harness.plancreator.steps.StepElementConfig;
 import io.harness.plancreator.steps.common.StepElementParameters;
@@ -87,8 +80,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
@@ -104,6 +95,7 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
   public static final Long TASK_BUFFER_TIMEOUT_MILLIS = 30 * 1000L;
 
   @Inject private BuildSetupUtils buildSetupUtils;
+  @Inject private K8InitializeServiceUtils k8InitializeServiceUtils;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputResolver;
   @Inject private KryoSerializer kryoSerializer;
   @Inject private CIDelegateTaskExecutor ciDelegateTaskExecutor;
@@ -128,12 +120,8 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
     if (EmptyPredicate.isEmpty(principal)) {
       return;
     }
+
     InitializeStepInfo initializeStepInfo = (InitializeStepInfo) stepElementParameters.getSpec();
-
-    if (initializeStepInfo.getBuildJobEnvInfo() == null) {
-      initializeStepInfo.setBuildJobEnvInfo(fetchBuildJobEnvInfo(initializeStepInfo, ambiance));
-    }
-
     List<EntityDetail> connectorsEntityDetails =
         getConnectorIdentifiers(initializeStepInfo, accountIdentifier, projectIdentifier, orgIdentifier);
 
@@ -147,16 +135,12 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
       Ambiance ambiance, StepElementParameters stepElementParameters, StepInputPackage inputPackage) {
     InitializeStepInfo initializeStepInfo = (InitializeStepInfo) stepElementParameters.getSpec();
 
-    if (initializeStepInfo.getBuildJobEnvInfo() == null) {
-      initializeStepInfo.setBuildJobEnvInfo(fetchBuildJobEnvInfo(initializeStepInfo, ambiance));
-    }
-
     Map<String, String> taskIds = new HashMap<>();
     String logPrefix = getLogPrefix(ambiance);
     Map<String, String> stepLogKeys = getStepLogKeys(initializeStepInfo, ambiance, logPrefix);
 
     CIInitializeTaskParams buildSetupTaskParams =
-        buildSetupUtils.getBuildSetupTaskParams(initializeStepInfo, ambiance, taskIds, logPrefix, stepLogKeys);
+        buildSetupUtils.getBuildSetupTaskParams(initializeStepInfo, ambiance, logPrefix);
     log.info("Created params for build task: {}", buildSetupTaskParams);
 
     return StepUtils.prepareTaskRequest(
@@ -189,37 +173,10 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
         .build();
   }
 
-  /**
-     This code has been moved from plan creation to execution because expression resolution happens during execution.
-      It sets buildJobEnvInfo to step parameters which is being used to create delegate task parameters.
-      Plan creation code takes StageElementConfig however failure strategy does not get serialized on ci manager due
-      to which we have to create own copy of StageElementConfig without failure strategy.
-      Jira: https://harness.atlassian.net/browse/CI-3717
-   */
-
-  private BuildJobEnvInfo fetchBuildJobEnvInfo(InitializeStepInfo initializeStepInfo, Ambiance ambiance) {
-    return buildJobEnvInfoBuilder.getCIBuildJobEnvInfo(StageElementConfig.builder()
-                                                           .type("CI")
-                                                           .identifier(initializeStepInfo.getStageIdentifier())
-                                                           .variables(initializeStepInfo.getVariables())
-                                                           .stageType(initializeStepInfo.getStageElementConfig())
-                                                           .build(),
-        initializeStepInfo.getInfrastructure(),
-        CIExecutionArgs.builder()
-            .runSequence(String.valueOf(ambiance.getMetadata().getRunSequence()))
-            .executionSource(initializeStepInfo.getExecutionSource())
-            .build(),
-        initializeStepInfo.getExecutionElementConfig().getSteps(), ambiance);
-  }
-
   private StepResponse handleK8TaskResponse(
       Ambiance ambiance, StepElementParameters stepElementParameters, CITaskExecutionResponse ciTaskExecutionResponse) {
     K8sTaskExecutionResponse k8sTaskExecutionResponse = (K8sTaskExecutionResponse) ciTaskExecutionResponse;
     InitializeStepInfo initializeStepInfo = (InitializeStepInfo) stepElementParameters.getSpec();
-
-    if (initializeStepInfo.getBuildJobEnvInfo() == null) {
-      initializeStepInfo.setBuildJobEnvInfo(fetchBuildJobEnvInfo(initializeStepInfo, ambiance));
-    }
 
     DependencyOutcome dependencyOutcome =
         getK8DependencyOutcome(ambiance, initializeStepInfo, k8sTaskExecutionResponse.getK8sTaskResponse());
@@ -307,9 +264,10 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
 
   private DependencyOutcome getK8DependencyOutcome(
       Ambiance ambiance, InitializeStepInfo stepParameters, CiK8sTaskResponse ciK8sTaskResponse) {
-    List<ContainerDefinitionInfo> serviceContainers = buildSetupUtils.getBuildServiceContainers(stepParameters);
+    List<ServiceDefinitionInfo> serviceDefinitionInfos =
+        k8InitializeServiceUtils.getServiceInfos(stepParameters.getStageElementConfig());
     List<ServiceDependency> serviceDependencyList = new ArrayList<>();
-    if (serviceContainers == null) {
+    if (serviceDefinitionInfos == null) {
       return DependencyOutcome.builder().serviceDependencyList(serviceDependencyList).build();
     }
 
@@ -322,9 +280,9 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
     }
 
     String logPrefix = getLogPrefix(ambiance);
-    for (ContainerDefinitionInfo serviceContainer : serviceContainers) {
-      String logKey = format("%s/serviceId:%s", logPrefix, serviceContainer.getStepIdentifier());
-      String containerName = serviceContainer.getName();
+    for (ServiceDefinitionInfo serviceDefinitionInfo : serviceDefinitionInfos) {
+      String logKey = format("%s/serviceId:%s", logPrefix, serviceDefinitionInfo.getIdentifier());
+      String containerName = serviceDefinitionInfo.getContainerName();
       if (containerStatusMap.containsKey(containerName)) {
         CIContainerStatus containerStatus = containerStatusMap.get(containerName);
 
@@ -333,8 +291,8 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
           status = ServiceDependency.Status.ERROR;
         }
         serviceDependencyList.add(ServiceDependency.builder()
-                                      .identifier(serviceContainer.getStepIdentifier())
-                                      .name(serviceContainer.getStepName())
+                                      .identifier(serviceDefinitionInfo.getIdentifier())
+                                      .name(serviceDefinitionInfo.getName())
                                       .image(containerStatus.getImage())
                                       .startTime(containerStatus.getStartTime())
                                       .endTime(containerStatus.getEndTime())
@@ -343,15 +301,10 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
                                       .logKeys(Collections.singletonList(logKey))
                                       .build());
       } else {
-        ImageDetails imageDetails = serviceContainer.getContainerImageDetails().getImageDetails();
-        String image = imageDetails.getName();
-        if (isEmpty(imageDetails.getTag())) {
-          image += format(":%s", imageDetails.getTag());
-        }
         serviceDependencyList.add(ServiceDependency.builder()
-                                      .identifier(serviceContainer.getStepIdentifier())
-                                      .name(serviceContainer.getStepName())
-                                      .image(image)
+                                      .identifier(serviceDefinitionInfo.getIdentifier())
+                                      .name(serviceDefinitionInfo.getName())
+                                      .image(serviceDefinitionInfo.getImage())
                                       .errorMessage("Unknown")
                                       .status(ServiceDependency.Status.ERROR.getDisplayName())
                                       .logKeys(Collections.singletonList(logKey))
@@ -451,8 +404,9 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
           accountIdentifier, projectIdentifier, orgIdentifier));
     }
 
+    List<String> connectorRefs =
+        IntegrationStageUtils.getStageConnectorRefs(initializeStepInfo.getStageElementConfig());
     if (infrastructure.getType() == Infrastructure.Type.VM) {
-      ArrayList<String> connectorRefs = ((VmBuildJobInfo) initializeStepInfo.getBuildJobEnvInfo()).getConnectorRefs();
       if (!isEmpty(connectorRefs)) {
         entityDetails.addAll(
             connectorRefs.stream()
@@ -471,30 +425,12 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
       entityDetails.add(createEntityDetails(infraConnectorRef, accountIdentifier, projectIdentifier, orgIdentifier));
     }
 
-    K8BuildJobEnvInfo.PodsSetupInfo podSetupInfo =
-        ((K8BuildJobEnvInfo) initializeStepInfo.getBuildJobEnvInfo()).getPodsSetupInfo();
-    if (isEmpty(podSetupInfo.getPodSetupInfoList())) {
-      return new ArrayList<>();
-    }
-    Optional<PodSetupInfo> podSetupInfoOptional = podSetupInfo.getPodSetupInfoList().stream().findFirst();
-    try {
-      if (podSetupInfoOptional.isPresent()) {
-        entityDetails.addAll(podSetupInfoOptional.get()
-                                 .getPodSetupParams()
-                                 .getContainerDefinitionInfos()
-                                 .stream()
-                                 .map(ContainerDefinitionInfo::getContainerImageDetails)
-                                 .map(ContainerImageDetails::getConnectorIdentifier)
-                                 .filter(Objects::nonNull)
-                                 .map(connectorIdentifier -> {
-                                   return createEntityDetails(
-                                       connectorIdentifier, accountIdentifier, projectIdentifier, orgIdentifier);
-                                 })
-                                 .collect(Collectors.toList()));
-      }
-    } catch (Exception ex) {
-      throw new CIStageExecutionException("Failed to retrieve connector information", ex);
-    }
+    entityDetails.addAll(connectorRefs.stream()
+                             .map(connectorIdentifier -> {
+                               return createEntityDetails(
+                                   connectorIdentifier, accountIdentifier, projectIdentifier, orgIdentifier);
+                             })
+                             .collect(Collectors.toList()));
 
     return entityDetails;
   }

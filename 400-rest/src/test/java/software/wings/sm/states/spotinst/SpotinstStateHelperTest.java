@@ -40,6 +40,7 @@ import static software.wings.utils.WingsTestConstants.WORKFLOW_EXECUTION_ID;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
@@ -58,6 +59,7 @@ import io.harness.context.ContextElementType;
 import io.harness.delegate.task.aws.LoadBalancerDetailsForBGDeployment;
 import io.harness.delegate.task.spotinst.request.SpotInstSetupTaskParameters;
 import io.harness.delegate.task.spotinst.request.SpotInstTaskParameters;
+import io.harness.exception.SpotInstException;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 import io.harness.spotinst.model.ElastiGroup;
@@ -160,8 +162,52 @@ public class SpotinstStateHelperTest extends WingsBaseTest {
   @Owner(developers = SATYAM)
   @Category(UnitTests.class)
   public void testPrepareStateExecutionData() {
+    String minInstances = "3";
+    String maxInstances = "20";
+    String targetInstances = "5";
+    String elastigroupNamePrefix = "cdteam";
+    String image = "ami-id";
+
     ExecutionContextImpl mockContext = mock(ExecutionContextImpl.class);
     SpotInstServiceSetup mockState = mock(SpotInstServiceSetup.class);
+    init(mockContext, mockState);
+    SettingAttribute awsProvider = aSettingAttribute().withValue(AwsConfig.builder().build()).build();
+    SettingAttribute spotinst = aSettingAttribute().withValue(SpotInstConfig.builder().build()).build();
+    doReturn(awsProvider).doReturn(spotinst).when(mockSettingsService).get(any());
+
+    SpotInstSetupStateExecutionData executionData =
+        spotInstStateHelper.prepareStateExecutionData(mockContext, mockState);
+    assertThat(executionData).isNotNull();
+    ElastiGroupCapacity capacity = executionData.getElastiGroupOriginalConfig().getCapacity();
+    assertThat(capacity.getMaximum()).isEqualTo(Integer.valueOf(maxInstances));
+    assertThat(capacity.getMinimum()).isEqualTo(Integer.valueOf(minInstances));
+    assertThat(capacity.getTarget()).isEqualTo(Integer.valueOf(targetInstances));
+
+    SpotInstCommandRequest spotinstCommandRequest = executionData.getSpotinstCommandRequest();
+    assertThat(spotinstCommandRequest).isNotNull();
+    SpotInstTaskParameters spotInstTaskParameters = spotinstCommandRequest.getSpotInstTaskParameters();
+    assertThat(spotInstTaskParameters instanceof SpotInstSetupTaskParameters).isTrue();
+    SpotInstSetupTaskParameters setupParams = (SpotInstSetupTaskParameters) spotInstTaskParameters;
+    assertThat(setupParams.getElastiGroupNamePrefix()).isEqualTo(elastigroupNamePrefix);
+    assertThat(setupParams.getImage()).isEqualTo(image);
+    assertThat(setupParams.getUserData()).isEqualTo("dXNlckRhdGE=");
+  }
+
+  @Test
+  @Owner(developers = SATYAM)
+  @Category(UnitTests.class)
+  public void testPrepareStateExecutionDataNull() {
+    ExecutionContextImpl mockContext = mock(ExecutionContextImpl.class);
+    SpotInstServiceSetup mockState = mock(SpotInstServiceSetup.class);
+    init(mockContext, mockState);
+    SettingAttribute awsProvider = aSettingAttribute().withValue(AwsConfig.builder().build()).build();
+    doReturn(awsProvider).doReturn(null).when(mockSettingsService).get(any());
+
+    assertThatThrownBy(() -> spotInstStateHelper.prepareStateExecutionData(mockContext, mockState))
+        .isInstanceOf(SpotInstException.class);
+  }
+
+  private void init(ExecutionContextImpl mockContext, SpotInstServiceSetup mockState) {
     String minInstances = "3";
     String maxInstances = "20";
     String targetInstances = "5";
@@ -198,10 +244,8 @@ public class SpotinstStateHelperTest extends WingsBaseTest {
                                                             .withRegion("us-east-1")
                                                             .build();
     doReturn(infrastructureMapping).when(mockInfrastructureMappingService).get(any(), any());
-    SettingAttribute awsProvider = aSettingAttribute().withValue(AwsConfig.builder().build()).build();
-    SettingAttribute spotinst = aSettingAttribute().withValue(SpotInstConfig.builder().build()).build();
-    doReturn(awsProvider).doReturn(spotinst).when(mockSettingsService).get(any());
     doReturn(emptyList()).when(mockSecretManager).getEncryptionDetails(any(), any(), any());
+
     String userData = "userData";
     UserDataSpecification userDataSpecification = UserDataSpecification.builder().data(userData).build();
     doReturn(userDataSpecification).when(mockServiceResourceService).getUserDataSpecification(any(), any());
@@ -226,22 +270,6 @@ public class SpotinstStateHelperTest extends WingsBaseTest {
         .doReturn(userData)
         .when(mockContext)
         .renderExpression(any());
-    SpotInstSetupStateExecutionData executionData =
-        spotInstStateHelper.prepareStateExecutionData(mockContext, mockState);
-    assertThat(executionData).isNotNull();
-    ElastiGroupCapacity capacity = executionData.getElastiGroupOriginalConfig().getCapacity();
-    assertThat(capacity.getMaximum()).isEqualTo(Integer.valueOf(maxInstances));
-    assertThat(capacity.getMinimum()).isEqualTo(Integer.valueOf(minInstances));
-    assertThat(capacity.getTarget()).isEqualTo(Integer.valueOf(targetInstances));
-
-    SpotInstCommandRequest spotinstCommandRequest = executionData.getSpotinstCommandRequest();
-    assertThat(spotinstCommandRequest).isNotNull();
-    SpotInstTaskParameters spotInstTaskParameters = spotinstCommandRequest.getSpotInstTaskParameters();
-    assertThat(spotInstTaskParameters instanceof SpotInstSetupTaskParameters).isTrue();
-    SpotInstSetupTaskParameters setupParams = (SpotInstSetupTaskParameters) spotInstTaskParameters;
-    assertThat(setupParams.getElastiGroupNamePrefix()).isEqualTo(elastigroupNamePrefix);
-    assertThat(setupParams.getImage()).isEqualTo(image);
-    assertThat(setupParams.getUserData()).isEqualTo("dXNlckRhdGE=");
   }
 
   @Test
