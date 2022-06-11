@@ -85,7 +85,7 @@ public class BudgetAlertsServiceImpl {
         updateCGBudget(budget);
         try {
           log.info("*** Sending slack alert ***");
-          String webhook = "https://hooks.slack.com/services/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";
+          String webhook = "https://hooks.slack.com/services/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";
           SlackNotificationConfiguration slackConfig = new SlackNotificationSetting("#nothing", webhook);
           String slackMessageTemplate =
                   "The cost associated with *${BUDGET_NAME}* has reached a limit of ${THRESHOLD_PERCENTAGE}%.";
@@ -111,7 +111,7 @@ public class BudgetAlertsServiceImpl {
   }
 
   private void checkAndSendAlerts(Budget budget) {
-    budget.setAlertThresholds(new AlertThreshold[] {AlertThreshold.builder().emailAddresses(new String[] {"trunapushpa.surkar@harness.io"}).slackWebhooks(new String[] {"https://hooks.slack.com/services/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"}).basedOn(ACTUAL_COST).percentage(1.0).alertsSent(0).crossedAt(0).build()});
+    budget.setAlertThresholds(new AlertThreshold[] {AlertThreshold.builder().emailAddresses(new String[] {"trunapushpa.surkar@harness.io"}).slackWebhooks(new String[] {"https://hooks.slack.com/services/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"}).basedOn(ACTUAL_COST).percentage(1.0).alertsSent(0).crossedAt(0).build()});
     checkNotNull(budget.getAlertThresholds());
     checkNotNull(budget.getAccountId());
 
@@ -121,7 +121,7 @@ public class BudgetAlertsServiceImpl {
     List<String> userGroupIds = Arrays.asList(Optional.ofNullable(budget.getUserGroupIds()).orElse(new String[0]));
     emailAddresses.addAll(getEmailsForUserGroup(budget.getAccountId(), userGroupIds));
 //    CESlackWebhook slackWebhook = ceSlackWebhookService.getByAccountId(budget.getAccountId());
-    CESlackWebhook slackWebhook = CESlackWebhook.builder().accountId(budget.getAccountId()).webhookUrl("https://hooks.slack.com/services/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").sendCostReport(true).build();
+    CESlackWebhook slackWebhook = CESlackWebhook.builder().accountId(budget.getAccountId()).webhookUrl("https://hooks.slack.com/services/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").sendCostReport(true).build();
 
     // For sending alerts based on actual cost
     AlertThreshold[] alertsBasedOnActualCost =
