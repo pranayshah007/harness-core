@@ -9,6 +9,7 @@ package io.harness.delegate.service;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.data.structure.UUIDGenerator.convertFromBase64;
 import static io.harness.data.structure.UUIDGenerator.generateTimeBasedUuid;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.delegate.app.DelegateApplication.getProcessId;
@@ -213,6 +214,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -226,6 +228,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
 import javax.net.ssl.SSLException;
@@ -1442,7 +1446,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   }
 
   private void startHeartbeat(DelegateParamsBuilder builder, Socket socket) {
-    log.info("Starting heartbeat at interval {} ms", delegateConfiguration.getHeartbeatIntervalMs());
+    log.debug("Starting heartbeat at interval {} ms", delegateConfiguration.getHeartbeatIntervalMs());
     healthMonitorExecutor.scheduleAtFixedRate(() -> {
       try {
         sendHeartbeat(builder, socket);
@@ -1469,7 +1473,6 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   }
 
   private void startHeartbeat(DelegateParamsBuilder builder) {
-    log.info("Starting heartbeat at interval {} ms", delegateConfiguration.getHeartbeatIntervalMs());
     healthMonitorExecutor.scheduleAtFixedRate(() -> {
       try {
         sendHeartbeat(builder);
@@ -1649,6 +1652,10 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
 
   private void processHeartbeat(String message) {
     String receivedId;
+    List<String> msgWithTimestamp = Pattern.compile("[TID]").splitAsStream(message).collect(Collectors.toList());
+    if (msgWithTimestamp.size() > 1) {
+      message = msgWithTimestamp.get(0);
+    }
     if (isEcsDelegate()) {
       int indexForToken = message.lastIndexOf(TOKEN);
       receivedId = message.substring(3, indexForToken); // Remove the "[X]
@@ -1658,17 +1665,31 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     if (delegateId.equals(receivedId)) {
       long now = clock.millis();
       if ((now - lastHeartbeatSentAt.get()) > TimeUnit.MINUTES.toMillis(3)) {
-        log.warn("Delegate {} received heartbeat response {} after sending. {} since last response.", receivedId,
-            getDurationString(lastHeartbeatSentAt.get(), now), getDurationString(lastHeartbeatReceivedAt.get(), now));
-      } else {
         log.info("Delegate {} received heartbeat response {} after sending. {} since last response.", receivedId,
             getDurationString(lastHeartbeatSentAt.get(), now), getDurationString(lastHeartbeatReceivedAt.get(), now));
+
+      } else {
+        String harnessResponseAt = getDurationStringFromTID(msgWithTimestamp, now);
+        log.warn(
+            "Delegate {} received heartbeat response {} after sending, took more time than accepted delay. Harness response sent at {} and {} since last received heartbeat.",
+            receivedId, getDurationString(lastHeartbeatSentAt.get(), now),
+            getDurationString(lastHeartbeatReceivedAt.get(), now), harnessResponseAt);
       }
+
       handleEcsDelegateSpecificMessage(message);
       lastHeartbeatReceivedAt.set(now);
     } else {
       log.info("Heartbeat response for another delegate received: {}", receivedId);
     }
+  }
+
+  private String getDurationStringFromTID(List<String> msgWithTimestamp, long current) {
+    if (msgWithTimestamp.size() > 1) {
+      String tid = msgWithTimestamp.get(1);
+      UUID uuid = convertFromBase64(tid);
+      return getDurationString(uuid.timestamp(), current);
+    }
+    return EMPTY;
   }
 
   private void sendHeartbeat(DelegateParamsBuilder builder, Socket socket) {
@@ -1735,8 +1756,6 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     if (!shouldContactManager() || !acquireTasks.get() || frozen.get()) {
       return;
     }
-
-    log.debug("Sending heartbeat...");
     try {
       updateBuilderIfEcsDelegate(builder);
       DelegateParams delegateParams =
@@ -1755,8 +1774,9 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       RestResponse<DelegateHeartbeatResponse> delegateParamsResponse =
           executeRestCall(delegateAgentManagerClient.delegateHeartbeat(accountId, delegateParams));
       long now = clock.millis();
-      log.info("Delegate {} received heartbeat response {} after sending. {} since last response.", delegateId,
-          getDurationString(lastHeartbeatSentAt.get(), now), getDurationString(lastHeartbeatReceivedAt.get(), now));
+      log.info("[Polling]: Delegate {} received heartbeat response {} after sending at {}. {} since last response.",
+          delegateId, getDurationString(lastHeartbeatSentAt.get(), now), now,
+          getDurationString(lastHeartbeatReceivedAt.get(), now));
       lastHeartbeatReceivedAt.set(now);
 
       DelegateHeartbeatResponse receivedDelegateResponse = delegateParamsResponse.getResource();

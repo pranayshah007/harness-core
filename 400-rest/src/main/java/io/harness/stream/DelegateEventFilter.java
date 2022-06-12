@@ -21,6 +21,11 @@ import software.wings.service.intfc.DelegateService;
 import software.wings.service.intfc.DelegateTaskServiceClassic;
 
 import com.google.inject.Inject;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.atmosphere.cpr.AtmosphereRequest;
 import org.atmosphere.cpr.AtmosphereResource;
@@ -31,6 +36,9 @@ import org.jetbrains.annotations.NotNull;
 public class DelegateEventFilter extends BroadcastFilterAdapter {
   @Inject private DelegateService delegateService;
   @Inject private DelegateTaskServiceClassic delegateTaskServiceClassic;
+
+  private static final String TIMESTAMP_SEPARATOR = "[TID]";
+  private Pattern pattern = Pattern.compile("[TID]");
 
   @Override
   public BroadcastAction filter(String broadcasterId, AtmosphereResource r, Object originalMessage, Object message) {
@@ -76,8 +84,19 @@ public class DelegateEventFilter extends BroadcastFilterAdapter {
     if (message instanceof String && ((String) message).startsWith("[X]")) {
       String msg = (String) message;
       int seqIndex = msg.lastIndexOf("[TOKEN]");
+
+      List<String> msgWithTimeStamp = new ArrayList<>();
+
+      int tdIndex = msg.lastIndexOf("[T]");
+      if (tdIndex != -1) {
+        msgWithTimeStamp = Arrays.stream(msg.split("[T]")).collect(Collectors.toList());
+      }
+
       if (seqIndex != -1) {
         msg = msg.substring(3, seqIndex);
+      } else if (msgWithTimeStamp.size() > 1) {
+        String pre = msgWithTimeStamp.get(0);
+        msg = pre.substring(3);
       } else {
         msg = msg.substring(3);
       }
