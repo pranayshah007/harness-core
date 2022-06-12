@@ -47,6 +47,7 @@ import io.harness.delegate.beans.connector.awsconnector.AwsCredentialType;
 import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
 import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
+import io.harness.delegate.task.ssh.SshInfraDelegateConfig;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
@@ -59,6 +60,7 @@ import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
+import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.plan.ExecutionPrincipalInfo;
@@ -81,6 +83,7 @@ import io.harness.steps.StepUtils;
 import io.harness.steps.environment.EnvironmentOutcome;
 import io.harness.steps.executable.SyncExecutableWithRbac;
 import io.harness.steps.shellscript.K8sInfraDelegateConfigOutput;
+import io.harness.steps.shellscript.SshInfraDelegateConfigOutput;
 import io.harness.utils.IdentifierRefHelper;
 import io.harness.walktree.visitor.SimpleVisitorFactory;
 
@@ -157,7 +160,7 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
 
     saveExecutionLog(logCallback, color("Environment information fetched", Green));
 
-    publishInfraDelegateConfigOutput(infrastructureOutcome, ambiance);
+    publishInfraDelegateConfigOutput(serviceOutcome, infrastructureOutcome, ambiance);
 
     if (logCallback != null) {
       logCallback.saveExecutionLog(
@@ -180,7 +183,12 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
         .build();
   }
 
-  private void publishInfraDelegateConfigOutput(InfrastructureOutcome infrastructureOutcome, Ambiance ambiance) {
+  private void publishInfraDelegateConfigOutput(
+      ServiceStepOutcome serviceOutcome, InfrastructureOutcome infrastructureOutcome, Ambiance ambiance) {
+    if (ServiceSpecType.SSH.equals(serviceOutcome.getType())) {
+      publishSshInfraDelegateConfigOutput(infrastructureOutcome, ambiance);
+    }
+
     if (infrastructureOutcome instanceof K8sGcpInfrastructureOutcome
         || infrastructureOutcome instanceof K8sDirectInfrastructureOutcome) {
       K8sInfraDelegateConfig k8sInfraDelegateConfig =
@@ -193,11 +201,26 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
     }
   }
 
+  private void publishSshInfraDelegateConfigOutput(InfrastructureOutcome infrastructureOutcome, Ambiance ambiance) {
+    SshInfraDelegateConfig sshInfraDelegateConfig =
+        k8sStepHelper.getSshInfraDelegateConfig(infrastructureOutcome, ambiance);
+
+    SshInfraDelegateConfigOutput sshInfraDelegateConfigOutput =
+        SshInfraDelegateConfigOutput.builder().sshInfraDelegateConfig(sshInfraDelegateConfig).build();
+    executionSweepingOutputService.consume(ambiance, OutputExpressionConstants.SSH_INFRA_DELEGATE_CONFIG_OUTPUT_NAME,
+        sshInfraDelegateConfigOutput, StepOutcomeGroup.STAGE.name());
+  }
+
   @VisibleForTesting
   void validateConnector(Infrastructure infrastructure, Ambiance ambiance) {
     NGLogCallback logCallback = infrastructureStepHelper.getInfrastructureLogCallback(ambiance);
 
     if (infrastructure == null) {
+      return;
+    }
+
+    if (InfrastructureKind.PDC.equals(infrastructure.getKind())
+        && ParameterField.isNull(infrastructure.getConnectorReference())) {
       return;
     }
 

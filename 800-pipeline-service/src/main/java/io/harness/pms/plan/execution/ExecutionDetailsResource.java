@@ -89,7 +89,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
           @ApiResponse(code = 403, response = TemplateInputsErrorResponseDTO.class,
               message = "TemplateRefs Resolved failed in pipeline yaml.")
     })
-@Tag(name = "Pipeline Execution Details", description = "This contains APIs for fetching Pipeline Execution details.")
+@Tag(name = "Pipeline Execution Details", description = "This contains APIs for fetching Pipeline Execution Details")
 @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Bad Request",
     content =
     {
@@ -113,7 +113,7 @@ public class ExecutionDetailsResource {
   @Path("/summary")
   @ApiOperation(value = "Gets Executions list", nickname = "getListOfExecutions")
   @Operation(operationId = "getListOfExecutions",
-      summary = "Gets list of Executions of Pipelines for specific filters.",
+      description = "Returns a List of Pipeline Executions with Specific Filters", summary = "List Executions",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -142,8 +142,7 @@ public class ExecutionDetailsResource {
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
     log.info("Get List of executions");
     ByteString gitSyncBranchContext = pmsGitSyncHelper.getGitSyncBranchContextBytesThreadLocal();
-    if (EmptyPredicate.isEmpty(gitEntityBasicInfo.getBranch())
-        || EmptyPredicate.isEmpty(gitEntityBasicInfo.getYamlGitConfigId())) {
+    if (EmptyPredicate.isEmpty(gitEntityBasicInfo.getBranch())) {
       gitSyncBranchContext = null;
     }
     Criteria criteria = pmsExecutionService.formCriteria(accountId, orgId, projectId, pipelineIdentifier,
@@ -174,8 +173,8 @@ public class ExecutionDetailsResource {
   @Path("/v2/{planExecutionId}")
   @ApiOperation(value = "Gets Execution Detail V2", nickname = "getExecutionDetailV2")
   @Operation(operationId = "getExecutionDetailV2",
-      summary =
-          "Get the Pipeline Execution details for given PlanExecution Id without full graph unless specified explicitly",
+      description = "Returns the Pipeline Execution Details for a Given PlanExecution ID",
+      summary = "Fetch Pipeline Execution Details",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
@@ -230,12 +229,14 @@ public class ExecutionDetailsResource {
   @Path("/{planExecutionId}")
   @ApiOperation(value = "Gets Execution Detail", nickname = "getExecutionDetail")
   @Operation(operationId = "getExecutionDetail",
-      summary = "Get the Pipeline Execution details for given PlanExecution Id",
+      description = "Returns the Pipeline Execution Details for a Given PlanExecution ID",
+      summary = "Fetch Pipeline Execution Details",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(
             responseCode = "default", description = "Return the Pipeline Execution details for given PlanExecution Id")
-      })
+      },
+      deprecated = true)
   @Deprecated
   public ResponseDTO<PipelineExecutionDetailDTO>
   getExecutionDetail(@NotNull @Parameter(description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE, required = true)

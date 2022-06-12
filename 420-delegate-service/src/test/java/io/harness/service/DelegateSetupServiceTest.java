@@ -230,8 +230,6 @@ public class DelegateSetupServiceTest extends DelegateServiceTestBase {
         assertThat(group.getDelegateInstanceDetails())
             .extracting(DelegateGroupListing.DelegateInner::getUuid)
             .containsOnly(delegate1.getUuid(), delegate2.getUuid());
-        assertThat(group.getDelegateInsightsDetails()).isNotNull();
-        assertThat(group.getDelegateInsightsDetails().getInsights()).hasSize(2);
       } else if (group.getGroupName().equals("grp2")) {
         assertThat(group.getConnectivityStatus()).isEqualTo("disconnected");
         assertThat(group.getDelegateInstanceDetails())
@@ -537,8 +535,6 @@ public class DelegateSetupServiceTest extends DelegateServiceTestBase {
     assertThat(delegateGroupDetails.getDelegateInstanceDetails())
         .extracting(DelegateGroupListing.DelegateInner::isActivelyConnected)
         .containsOnly(true, false);
-    assertThat(delegateGroupDetails.getDelegateInsightsDetails()).isNotNull();
-    assertThat(delegateGroupDetails.getDelegateInsightsDetails().getInsights()).hasSize(2);
   }
 
   @Test
@@ -660,8 +656,6 @@ public class DelegateSetupServiceTest extends DelegateServiceTestBase {
     assertThat(delegateGroupDetails.getDelegateInstanceDetails())
         .extracting(DelegateGroupListing.DelegateInner::isActivelyConnected)
         .containsOnly(true, true);
-    assertThat(delegateGroupDetails.getDelegateInsightsDetails()).isNotNull();
-    assertThat(delegateGroupDetails.getDelegateInsightsDetails().getInsights()).hasSize(2);
   }
 
   @Test

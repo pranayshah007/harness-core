@@ -57,7 +57,7 @@ public class ServiceOverridesMapper {
       NGServiceOverrideConfig serviceOverrideConfig = YamlPipelineUtils.read(entityYaml, NGServiceOverrideConfig.class);
       return NGServiceOverrides.builder()
           .serviceRef(serviceOverrideConfig.getServiceOverrideInfoConfig().getServiceRef())
-          .variables(serviceOverrideConfig.getServiceOverrideInfoConfig().getVariableOverrides())
+          .variables(serviceOverrideConfig.getServiceOverrideInfoConfig().getVariables())
           .build();
     } catch (IOException e) {
       throw new InvalidRequestException(String.format("Cannot read serviceOverride yaml %s ", entityYaml));

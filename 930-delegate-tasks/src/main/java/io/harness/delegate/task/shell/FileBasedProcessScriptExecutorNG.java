@@ -9,20 +9,27 @@ package io.harness.delegate.task.shell;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.task.shell.ssh.ArtifactCommandUnitHandler;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
+import io.harness.logging.LogLevel;
 import io.harness.shell.AbstractScriptExecutor;
 import io.harness.shell.FileBasedProcessScriptExecutorHelper;
 
+import java.util.Map;
+
 @OwnedBy(HarnessTeam.CDC)
 public class FileBasedProcessScriptExecutorNG extends FileBasedAbstractScriptExecutorNG {
-  public FileBasedProcessScriptExecutorNG(LogCallback logCallback, boolean shouldSaveExecutionLogs) {
-    super(logCallback, shouldSaveExecutionLogs);
+  public FileBasedProcessScriptExecutorNG(LogCallback logCallback, boolean shouldSaveExecutionLogs,
+      Map<String, ArtifactCommandUnitHandler> artifactCommandHandlers) {
+    super(logCallback, shouldSaveExecutionLogs, artifactCommandHandlers);
   }
 
   @Override
   public CommandExecutionStatus scpOneFile(String remoteFilePath, AbstractScriptExecutor.FileProvider fileProvider) {
-    return FileBasedProcessScriptExecutorHelper.scpOneFile(
+    CommandExecutionStatus status = FileBasedProcessScriptExecutorHelper.scpOneFile(
         remoteFilePath, fileProvider, logCallback, shouldSaveExecutionLogs);
+    logCallback.saveExecutionLog("Command finished with status " + status, LogLevel.INFO, status);
+    return status;
   }
 }

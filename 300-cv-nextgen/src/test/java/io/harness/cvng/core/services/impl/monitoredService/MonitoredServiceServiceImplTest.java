@@ -17,6 +17,7 @@ import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
 import static io.harness.rule.OwnerRule.KAMAL;
 import static io.harness.rule.OwnerRule.KANHAIYA;
 import static io.harness.rule.OwnerRule.KAPIL;
+import static io.harness.rule.OwnerRule.NAVEEN;
 import static io.harness.rule.OwnerRule.PRAVEEN;
 import static io.harness.rule.OwnerRule.SOWMYA;
 
@@ -31,6 +32,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CvNextGenTestBase;
+import io.harness.audit.ResourceTypeConstants;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.CVNGTestConstants;
@@ -104,6 +106,10 @@ import io.harness.cvng.core.services.impl.PagerdutyChangeSourceUpdateHandler;
 import io.harness.cvng.dashboard.entities.HeatMap;
 import io.harness.cvng.dashboard.entities.HeatMap.HeatMapRisk;
 import io.harness.cvng.dashboard.services.api.HeatMapService;
+import io.harness.cvng.events.monitoredservice.MonitoredServiceCreateEvent;
+import io.harness.cvng.events.monitoredservice.MonitoredServiceDeleteEvent;
+import io.harness.cvng.events.monitoredservice.MonitoredServiceToggleEvent;
+import io.harness.cvng.events.monitoredservice.MonitoredServiceUpdateEvent;
 import io.harness.cvng.models.VerificationType;
 import io.harness.cvng.notification.beans.ChangeObservedConditionSpec;
 import io.harness.cvng.notification.beans.MonitoredServiceChangeEventType;
@@ -116,7 +122,9 @@ import io.harness.cvng.notification.beans.NotificationRuleType;
 import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule.MonitoredServiceChangeImpactCondition;
 import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule.MonitoredServiceChangeObservedCondition;
 import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule.MonitoredServiceHealthScoreCondition;
+import io.harness.cvng.notification.entities.NotificationRule;
 import io.harness.cvng.notification.services.api.NotificationRuleService;
+import io.harness.cvng.outbox.CVServiceOutboxEventHandler;
 import io.harness.cvng.servicelevelobjective.beans.ErrorBudgetRisk;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
@@ -126,14 +134,23 @@ import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.lock.PersistentLocker;
 import io.harness.ng.beans.PageResponse;
+import io.harness.ng.core.ProjectScope;
+import io.harness.ng.core.Resource;
+import io.harness.ng.core.ResourceScope;
 import io.harness.ng.core.environment.dto.EnvironmentResponse;
 import io.harness.ng.core.mapper.TagMapper;
 import io.harness.notification.notificationclient.NotificationResultWithoutStatus;
+import io.harness.outbox.OutboxEvent;
+import io.harness.outbox.api.OutboxService;
+import io.harness.outbox.filter.OutboxEventFilter;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
+import io.serializer.HObjectMapper;
 import java.net.SocketTimeoutException;
 import java.time.Clock;
 import java.time.Instant;
@@ -150,10 +167,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import javax.annotation.Nullable;
 import lombok.AccessLevel;
 import lombok.SneakyThrows;
 import lombok.experimental.FieldDefaults;
 import org.apache.commons.lang3.reflect.FieldUtils;
+import org.assertj.core.api.Assertions;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -175,6 +194,11 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
   @Inject VerificationTaskService verificationTaskService;
   @Inject NotificationRuleService notificationRuleService;
   @Inject private ActivityService activityService;
+
+  @Inject private OutboxService outboxService;
+
+  @Inject CVServiceOutboxEventHandler cvServiceOutboxEventHandler;
+
   @Mock SetupUsageEventService setupUsageEventService;
   @Mock ChangeSourceService changeSourceServiceMock;
   @Mock FakeNotificationClient notificationClient;
@@ -2437,6 +2461,211 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     assertThatThrownBy(
         () -> monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO))
         .hasMessage("NotificationRule with identifier rule is of type SLO and cannot be added into MONITORED_SERVICE");
+  }
+
+  @Test
+  @Owner(developers = NAVEEN)
+  @Category(UnitTests.class)
+  public void testAuditEntryForMonitoredServiceCreateEvent() throws JsonProcessingException {
+    MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTO();
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    List<OutboxEvent> outboxEvents = outboxService.list(OutboxEventFilter.builder().maximumEventsPolled(10).build());
+    OutboxEvent outboxEvent = outboxEvents.get(outboxEvents.size() - 1);
+    assertThat(outboxEvent.getEventType()).isEqualTo(MonitoredServiceCreateEvent.builder().build().getEventType());
+    MonitoredServiceCreateEvent monitoredServiceCreateEvent =
+        HObjectMapper.NG_DEFAULT_OBJECT_MAPPER.readValue(outboxEvent.getEventData(), MonitoredServiceCreateEvent.class);
+    assertThat(monitoredServiceCreateEvent.getAccountIdentifier()).isEqualTo(accountId);
+    assertThat(monitoredServiceCreateEvent.getOrgIdentifier()).isEqualTo(orgIdentifier);
+    assertThat(monitoredServiceCreateEvent.getProjectIdentifier()).isEqualTo(projectIdentifier);
+  }
+
+  @Test
+  @Owner(developers = NAVEEN)
+  @Category(UnitTests.class)
+  public void testAuditEntryForMonitoredServiceUpdateEvent() throws JsonProcessingException {
+    MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTO();
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    monitoredServiceDTO.setName("new-name");
+    monitoredServiceService.update(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    List<OutboxEvent> outboxEvents = outboxService.list(OutboxEventFilter.builder().maximumEventsPolled(10).build());
+    OutboxEvent outboxEvent = outboxEvents.get(outboxEvents.size() - 1);
+    assertThat(outboxEvent.getEventType()).isEqualTo(MonitoredServiceUpdateEvent.builder().build().getEventType());
+    MonitoredServiceUpdateEvent monitoredServiceUpdateEvent =
+        HObjectMapper.NG_DEFAULT_OBJECT_MAPPER.readValue(outboxEvent.getEventData(), MonitoredServiceUpdateEvent.class);
+    assertThat(monitoredServiceUpdateEvent.getAccountIdentifier()).isEqualTo(accountId);
+    assertThat(monitoredServiceUpdateEvent.getOrgIdentifier()).isEqualTo(orgIdentifier);
+    assertThat(monitoredServiceUpdateEvent.getProjectIdentifier()).isEqualTo(projectIdentifier);
+  }
+
+  @Test
+  @Owner(developers = NAVEEN)
+  @Category(UnitTests.class)
+  public void testAuditEntryForMonitoredServiceDeleteEvent() throws JsonProcessingException {
+    MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTO();
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    monitoredServiceService.delete(builderFactory.getContext().getProjectParams(), monitoredServiceDTO.getIdentifier());
+    List<OutboxEvent> outboxEvents = outboxService.list(OutboxEventFilter.builder().maximumEventsPolled(10).build());
+    OutboxEvent outboxEvent = outboxEvents.get(outboxEvents.size() - 1);
+    assertThat(outboxEvent.getEventType()).isEqualTo(MonitoredServiceDeleteEvent.builder().build().getEventType());
+    MonitoredServiceDeleteEvent monitoredServiceDeleteEvent =
+        HObjectMapper.NG_DEFAULT_OBJECT_MAPPER.readValue(outboxEvent.getEventData(), MonitoredServiceDeleteEvent.class);
+    assertThat(monitoredServiceDeleteEvent.getAccountIdentifier()).isEqualTo(accountId);
+    assertThat(monitoredServiceDeleteEvent.getOrgIdentifier()).isEqualTo(orgIdentifier);
+    assertThat(monitoredServiceDeleteEvent.getProjectIdentifier()).isEqualTo(projectIdentifier);
+  }
+
+  @Test
+  @Owner(developers = NAVEEN)
+  @Category(UnitTests.class)
+  public void testAuditEntryForMonitoredServiceToggleEvent() {
+    MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTO();
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    monitoredServiceService.setHealthMonitoringFlag(
+        builderFactory.getContext().getProjectParams(), monitoredServiceIdentifier, false);
+    List<OutboxEvent> outboxEvents = outboxService.list(OutboxEventFilter.builder().maximumEventsPolled(10).build());
+    OutboxEvent outboxEvent = outboxEvents.get(outboxEvents.size() - 1);
+    assertThat(outboxEvent.getEventType()).isEqualTo(MonitoredServiceToggleEvent.builder().build().getEventType());
+  }
+
+  @Test
+  @Owner(developers = NAVEEN)
+  @Category(UnitTests.class)
+  public void testOutboxCreateEventHandler() throws JsonProcessingException {
+    @Nullable ObjectMapper objectMapper;
+    objectMapper = HObjectMapper.NG_DEFAULT_OBJECT_MAPPER;
+    MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTO();
+    MonitoredServiceCreateEvent monitoredServiceCreateEvent =
+        MonitoredServiceCreateEvent.builder()
+            .resourceName(monitoredServiceDTO.getName())
+            .monitoredServiceIdentifier(monitoredServiceDTO.getIdentifier())
+            .accountIdentifier(monitoredServiceDTO.getIdentifier())
+            .orgIdentifier(monitoredServiceDTO.getOrgIdentifier())
+            .projectIdentifier(monitoredServiceDTO.getProjectIdentifier())
+            .build();
+    String createEventString = objectMapper.writeValueAsString(monitoredServiceCreateEvent);
+    ResourceScope resourceScope = new ProjectScope(monitoredServiceCreateEvent.getMonitoredServiceIdentifier(),
+        monitoredServiceCreateEvent.getOrgIdentifier(), monitoredServiceCreateEvent.getProjectIdentifier());
+    OutboxEvent outboxEvent = OutboxEvent.builder()
+                                  .eventType("MonitoredServiceCreateEvent")
+                                  .resourceScope(resourceScope)
+                                  .eventData(createEventString)
+                                  .createdAt(System.currentTimeMillis())
+                                  .resource(Resource.builder().type(ResourceTypeConstants.MONITORED_SERVICE).build())
+                                  .build();
+    Boolean returnValue = cvServiceOutboxEventHandler.handle(outboxEvent);
+    Assertions.assertThat(returnValue).isEqualTo(true);
+  }
+
+  @Test
+  @Owner(developers = NAVEEN)
+  @Category(UnitTests.class)
+  public void testOutboxUpdateEventHandler() throws JsonProcessingException {
+    @Nullable ObjectMapper objectMapper;
+    objectMapper = HObjectMapper.NG_DEFAULT_OBJECT_MAPPER;
+    MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTO();
+    MonitoredServiceUpdateEvent monitoredServiceUpdateEvent =
+        MonitoredServiceUpdateEvent.builder()
+            .resourceName(monitoredServiceDTO.getName())
+            .monitoredServiceIdentifier(monitoredServiceDTO.getIdentifier())
+            .accountIdentifier(monitoredServiceDTO.getIdentifier())
+            .orgIdentifier(monitoredServiceDTO.getOrgIdentifier())
+            .projectIdentifier(monitoredServiceDTO.getProjectIdentifier())
+            .build();
+    String createEventString = objectMapper.writeValueAsString(monitoredServiceUpdateEvent);
+    ResourceScope resourceScope = new ProjectScope(monitoredServiceUpdateEvent.getMonitoredServiceIdentifier(),
+        monitoredServiceUpdateEvent.getOrgIdentifier(), monitoredServiceUpdateEvent.getProjectIdentifier());
+    OutboxEvent outboxEvent = OutboxEvent.builder()
+                                  .eventType("MonitoredServiceUpdateEvent")
+                                  .resourceScope(resourceScope)
+                                  .eventData(createEventString)
+                                  .createdAt(System.currentTimeMillis())
+                                  .resource(Resource.builder().type(ResourceTypeConstants.MONITORED_SERVICE).build())
+                                  .build();
+    Boolean returnValue = cvServiceOutboxEventHandler.handle(outboxEvent);
+    Assertions.assertThat(returnValue).isEqualTo(true);
+  }
+
+  @Test
+  @Owner(developers = NAVEEN)
+  @Category(UnitTests.class)
+  public void testOutboxToggleEventHandler() throws JsonProcessingException {
+    @Nullable ObjectMapper objectMapper;
+    objectMapper = HObjectMapper.NG_DEFAULT_OBJECT_MAPPER;
+    MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTO();
+    MonitoredServiceToggleEvent monitoredServiceToggleEvent =
+        MonitoredServiceToggleEvent.builder()
+            .resourceName(monitoredServiceDTO.getName())
+            .monitoredServiceIdentifier(monitoredServiceDTO.getIdentifier())
+            .accountIdentifier(monitoredServiceDTO.getIdentifier())
+            .orgIdentifier(monitoredServiceDTO.getOrgIdentifier())
+            .projectIdentifier(monitoredServiceDTO.getProjectIdentifier())
+            .build();
+    String createEventString = objectMapper.writeValueAsString(monitoredServiceToggleEvent);
+    ResourceScope resourceScope = new ProjectScope(monitoredServiceToggleEvent.getMonitoredServiceIdentifier(),
+        monitoredServiceToggleEvent.getOrgIdentifier(), monitoredServiceToggleEvent.getProjectIdentifier());
+    OutboxEvent outboxEvent = OutboxEvent.builder()
+                                  .eventType("MonitoredServiceToggleEvent")
+                                  .resourceScope(resourceScope)
+                                  .eventData(createEventString)
+                                  .createdAt(System.currentTimeMillis())
+                                  .resource(Resource.builder().type(ResourceTypeConstants.MONITORED_SERVICE).build())
+                                  .build();
+    Boolean returnValue = cvServiceOutboxEventHandler.handle(outboxEvent);
+    Assertions.assertThat(returnValue).isEqualTo(true);
+  }
+
+  @Test
+  @Owner(developers = NAVEEN)
+  @Category(UnitTests.class)
+  public void testOutboxDeleteEventHandler() throws JsonProcessingException {
+    @Nullable ObjectMapper objectMapper;
+    MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTO();
+    objectMapper = HObjectMapper.NG_DEFAULT_OBJECT_MAPPER;
+    MonitoredServiceDeleteEvent monitoredServiceDeleteEvent =
+        MonitoredServiceDeleteEvent.builder()
+            .resourceName(monitoredServiceDTO.getName())
+            .monitoredServiceIdentifier(monitoredServiceDTO.getIdentifier())
+            .accountIdentifier(monitoredServiceDTO.getIdentifier())
+            .orgIdentifier(monitoredServiceDTO.getOrgIdentifier())
+            .projectIdentifier(monitoredServiceDTO.getProjectIdentifier())
+            .build();
+    String createEventString = objectMapper.writeValueAsString(monitoredServiceDeleteEvent);
+    ResourceScope resourceScope = new ProjectScope(monitoredServiceDeleteEvent.getMonitoredServiceIdentifier(),
+        monitoredServiceDeleteEvent.getOrgIdentifier(), monitoredServiceDeleteEvent.getProjectIdentifier());
+    OutboxEvent outboxEvent = OutboxEvent.builder()
+                                  .eventType("MonitoredServiceToggleEvent")
+                                  .resourceScope(resourceScope)
+                                  .eventData(createEventString)
+                                  .createdAt(System.currentTimeMillis())
+                                  .resource(Resource.builder().type(ResourceTypeConstants.MONITORED_SERVICE).build())
+                                  .build();
+    Boolean returnValue = cvServiceOutboxEventHandler.handle(outboxEvent);
+    Assertions.assertThat(returnValue).isEqualTo(true);
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testUpdate_withNotificationRuleDelete() {
+    NotificationRuleDTO notificationRuleDTO =
+        builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.MONITORED_SERVICE).build();
+    NotificationRuleResponse notificationRuleResponse =
+        notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+
+    MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTOWithCustomDependencies(
+        "service_1_local", environmentParams.getServiceIdentifier(), Sets.newHashSet());
+    monitoredServiceDTO.setNotificationRuleRefs(
+        Arrays.asList(NotificationRuleRefDTO.builder()
+                          .notificationRuleRef(notificationRuleResponse.getNotificationRule().getIdentifier())
+                          .enabled(true)
+                          .build()));
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    monitoredServiceDTO.setNotificationRuleRefs(null);
+    monitoredServiceService.update(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    NotificationRule notificationRule = notificationRuleService.getEntity(
+        builderFactory.getContext().getProjectParams(), notificationRuleDTO.getIdentifier());
+
+    assertThat(notificationRule).isNull();
   }
 
   private void createActivity(MonitoredServiceDTO monitoredServiceDTO) {

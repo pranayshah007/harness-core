@@ -60,7 +60,6 @@ import io.harness.exception.ReferencedEntityException;
 import io.harness.file.beans.NGBaseFile;
 import io.harness.filestore.FileStoreConfiguration;
 import io.harness.filestore.dto.filter.FilesFilterPropertiesDTO;
-import io.harness.filestore.dto.mapper.FileDTOMapper;
 import io.harness.filestore.dto.node.FileNodeDTO;
 import io.harness.filestore.dto.node.FileStoreNodeDTO;
 import io.harness.filestore.dto.node.FolderNodeDTO;
@@ -136,7 +135,7 @@ public class FileStoreServiceImplTest extends CategoryTest {
     when(fileStoreRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(
              any(), any(), any(), any()))
         .thenReturn(Optional.of(ngFile));
-    when(fileFailsafeService.updateAndPublish(ngFile, FileDTOMapper.updateNGFile(fileDto, ngFile))).thenReturn(fileDto);
+    when(fileFailsafeService.updateAndPublish(any(), any())).thenReturn(fileDto);
 
     FileDTO result = fileStoreService.update(fileDto, null, "identifier1");
 
@@ -243,6 +242,7 @@ public class FileStoreServiceImplTest extends CategoryTest {
                           .tags(Collections.emptyList())
                           .size(0L)
                           .parentIdentifier(fileDto.getParentIdentifier())
+                          .path("/Root/folder/file-name")
                           .build();
 
     verify(fileFailsafeService).saveAndPublish(expected);
@@ -321,6 +321,7 @@ public class FileStoreServiceImplTest extends CategoryTest {
                           .draft(true)
                           .tags(Collections.emptyList())
                           .parentIdentifier(fileDto.getParentIdentifier())
+                          .path("/Root/folder/file-name")
                           .build();
 
     verify(fileFailsafeService).saveAndPublish(expected);
@@ -788,9 +789,10 @@ public class FileStoreServiceImplTest extends CategoryTest {
     fileDto.setDraft(false);
     // When
     assertThatThrownBy(() -> fileStoreService.create(fileDto, getStreamWithDummyContent()))
-            .isInstanceOf(DuplicateFieldException.class)
-            .hasMessageContaining("Try creating another file, file with identifier [" + FileStoreConstants.ROOT_FOLDER_IDENTIFIER + "] already exists.",
-                    fileDto.getIdentifier());
+        .isInstanceOf(DuplicateFieldException.class)
+        .hasMessageContaining("Try creating another file, file with identifier ["
+                + FileStoreConstants.ROOT_FOLDER_IDENTIFIER + "] already exists.",
+            fileDto.getIdentifier());
   }
 
   @Test
@@ -804,9 +806,10 @@ public class FileStoreServiceImplTest extends CategoryTest {
     fileDto.setDraft(false);
     // When
     assertThatThrownBy(() -> fileStoreService.create(fileDto, null))
-            .isInstanceOf(DuplicateFieldException.class)
-            .hasMessageContaining("Try creating another folder, folder with identifier [" + FileStoreConstants.ROOT_FOLDER_IDENTIFIER + "] already exists.",
-                    fileDto.getIdentifier());
+        .isInstanceOf(DuplicateFieldException.class)
+        .hasMessageContaining("Try creating another folder, folder with identifier ["
+                + FileStoreConstants.ROOT_FOLDER_IDENTIFIER + "] already exists.",
+            fileDto.getIdentifier());
   }
 
   private static FileDTO aFileDto() {
@@ -817,6 +820,7 @@ public class FileStoreServiceImplTest extends CategoryTest {
         .name("file-name")
         .type(NGFileType.FILE)
         .parentIdentifier("parent-identifier")
+        .path("/Root/file-name")
         .build();
   }
 
@@ -927,17 +931,18 @@ public class FileStoreServiceImplTest extends CategoryTest {
   private void givenThatExistsParentFolderButNotFile(String parentIdentifier, String fileIdentifier) {
     NGFile parentFolder = mock(NGFile.class);
     when(parentFolder.isFolder()).thenReturn(true);
+    when(parentFolder.getPath()).thenReturn("/Root/folder");
     when(fileStoreRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndParentIdentifierAndName(
-            any(), any(), any(), eq(parentIdentifier), eq(fileIdentifier)))
-            .thenReturn(Optional.empty());
+             any(), any(), any(), eq(parentIdentifier), eq(fileIdentifier)))
+        .thenReturn(Optional.empty());
     when(fileStoreRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndParentIdentifierAndName(
-            any(), any(), any(), eq(parentIdentifier), eq(null)))
-            .thenReturn(Optional.of(parentFolder));
+             any(), any(), any(), eq(parentIdentifier), eq(null)))
+        .thenReturn(Optional.of(parentFolder));
     when(fileStoreRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(
-            any(), any(), any(), eq(fileIdentifier)))
-            .thenReturn(Optional.empty());
+             any(), any(), any(), eq(fileIdentifier)))
+        .thenReturn(Optional.empty());
     when(fileStoreRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(
-            any(), any(), any(), eq(parentIdentifier)))
-            .thenReturn(Optional.of(parentFolder));
+             any(), any(), any(), eq(parentIdentifier)))
+        .thenReturn(Optional.of(parentFolder));
   }
 }

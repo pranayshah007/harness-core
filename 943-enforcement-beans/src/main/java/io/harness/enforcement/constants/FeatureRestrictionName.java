@@ -69,6 +69,7 @@ public enum FeatureRestrictionName {
   CREATE_STACK,
   DELETE_STACK,
   ROLLBACK_STACK,
+  COMMAND,
 
   // STO Features
   SECURITY,

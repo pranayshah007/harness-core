@@ -60,7 +60,7 @@ public class FileDTO {
   @Schema(description = "Name of the File")
   @FormDataParam("name")
   private String name;
-  @NotBlank @Schema(description = "The path of the File") @FormDataParam("path") private String path;
+  @Schema(description = "The path of the File") @FormDataParam("path") private String path;
   @Schema(description = "This specifies the file usage") @FormDataParam("fileUsage") private FileUsage fileUsage;
   @ApiModelProperty(required = true)
   @NotNull

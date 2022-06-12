@@ -30,7 +30,7 @@ RUN ./client_tools.sh $disable_client_tools \
 ENV HOME=/opt/harness-delegate
 
 USER 1001
-COPY --chown=1001 --from=adoptopenjdk/openjdk11:ubi-minimal-jre /opt/java/openjdk/ ./jdk-11.0.14+9-jre/
+COPY --chown=1001 --from=adoptopenjdk/openjdk11:x86_64-ubi-minimal-jre-11.0.14_9 /opt/java/openjdk/ ./jdk-11.0.14+9-jre/
 COPY --chown=1001 --from=adoptopenjdk/openjdk8:jre8u242-b08-ubi-minimal /opt/java/openjdk/ ./jdk8u242-b08-jre/
 
 ARG watcher_version

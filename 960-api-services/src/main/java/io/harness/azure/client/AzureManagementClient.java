@@ -13,6 +13,7 @@ import io.harness.azure.model.AzureARMRGTemplateExportOptions;
 import io.harness.azure.model.AzureARMTemplate;
 import io.harness.azure.model.AzureConfig;
 import io.harness.azure.model.management.ManagementGroupInfo;
+import io.harness.azure.model.tag.TagDetails;
 
 import com.microsoft.azure.PagedList;
 import com.microsoft.azure.management.resources.Deployment;
@@ -178,4 +179,6 @@ public interface AzureManagementClient {
   PagedList<DeploymentOperationInner> getDeploymentOperations(ARMDeploymentSteadyStateContext context);
 
   String getARMDeploymentOutputs(ARMDeploymentSteadyStateContext context);
+
+  List<TagDetails> listTags(AzureConfig azureConfig, String subscriptionId);
 }

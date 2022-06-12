@@ -190,4 +190,16 @@ public class EntitySetupUsageQueryFilterHelper {
     populateGitCriteriaForReferredEntity(criteria);
     return criteria;
   }
+
+  public Criteria createCriteriaForReferredEntityFQNIn(
+      String accountIdentifier, List<String> referredEntityFQNs, EntityType referredEntityType) {
+    Criteria criteria = new Criteria();
+    criteria.and(EntitySetupUsageKeys.accountIdentifier).is(accountIdentifier);
+    criteria.and(EntitySetupUsageKeys.referredEntityFQN).in(referredEntityFQNs);
+    if (referredEntityType != null) {
+      criteria.and(EntitySetupUsageKeys.referredEntityType).is(referredEntityType.getYamlName());
+    }
+    populateGitCriteriaForReferredEntity(criteria);
+    return criteria;
+  }
 }

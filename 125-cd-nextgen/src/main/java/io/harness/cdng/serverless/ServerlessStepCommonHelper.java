@@ -20,7 +20,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
-import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.expressions.CDExpressionResolveFunctor;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.manifest.ManifestStoreType;
@@ -134,18 +133,6 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
                                .build())
           .build();
     }
-  }
-
-  public Optional<ArtifactOutcome> resolveArtifactsOutcome(Ambiance ambiance) {
-    OptionalOutcome artifactsOutcomeOption = outcomeService.resolveOptional(
-        ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.ARTIFACTS));
-    if (artifactsOutcomeOption.isFound()) {
-      ArtifactsOutcome artifactsOutcome = (ArtifactsOutcome) artifactsOutcomeOption.getOutcome();
-      if (artifactsOutcome.getPrimary() != null) {
-        return Optional.of(artifactsOutcome.getPrimary());
-      }
-    }
-    return Optional.empty();
   }
 
   public ServerlessArtifactConfig getArtifactoryConfig(ArtifactOutcome artifactOutcome, Ambiance ambiance) {

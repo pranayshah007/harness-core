@@ -49,4 +49,8 @@ public interface ServiceEntityService {
 
   ServiceEntity find(String accountIdentifier, String orgIdentifier, String projectIdentifier, String serviceIdentifier,
       boolean deleted);
+
+  String createServiceInputsYaml(String yaml);
+
+  boolean forceDeleteAllInProject(String accountId, String orgIdentifier, String projectIdentifier);
 }

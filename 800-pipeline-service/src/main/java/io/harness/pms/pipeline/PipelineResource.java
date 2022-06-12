@@ -111,7 +111,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
       @ApiResponse(code = 400, response = FailureDTO.class, message = "Bad Request")
       , @ApiResponse(code = 500, response = ErrorDTO.class, message = "Internal server error")
     })
-@Tag(name = "Pipelines", description = "This contains APIs related to pipelines")
+@Tag(name = "Pipeline", description = "This contains APIs related to Setup of Pipelines")
 @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Bad Request",
     content =
     {
@@ -144,7 +144,7 @@ public class PipelineResource implements YamlSchemaResource {
 
   @POST
   @ApiOperation(value = "Create a Pipeline", nickname = "createPipeline")
-  @Operation(operationId = "postPipeline", summary = "Create a Pipeline",
+  @Operation(operationId = "postPipeline", description = "Creates a Pipeline", summary = "Create a Pipeline",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -152,6 +152,7 @@ public class PipelineResource implements YamlSchemaResource {
       },
       deprecated = true)
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)
+  @Deprecated
   public ResponseDTO<String>
   createPipeline(@Parameter(description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE, required = true) @NotNull
                  @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
@@ -180,7 +181,7 @@ public class PipelineResource implements YamlSchemaResource {
   @POST
   @Path("/v2")
   @ApiOperation(value = "Create a Pipeline", nickname = "createPipelineV2")
-  @Operation(operationId = "postPipelineV2", summary = "Create a Pipeline API With Governance Checks",
+  @Operation(operationId = "postPipelineV2", description = "Creates a Pipeline", summary = "Create a Pipeline",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -308,7 +309,8 @@ public class PipelineResource implements YamlSchemaResource {
   @GET
   @Path("/{pipelineIdentifier}")
   @ApiOperation(value = "Gets a pipeline by identifier", nickname = "getPipeline")
-  @Operation(operationId = "getPipeline", summary = "Gets a Pipeline by identifier",
+  @Operation(operationId = "getPipeline", description = "Returns a Pipeline by Identifier",
+      summary = "Fetch a Pipeline",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -379,7 +381,8 @@ public class PipelineResource implements YamlSchemaResource {
   @PUT
   @Path("/{pipelineIdentifier}")
   @ApiOperation(value = "Update a Pipeline", nickname = "putPipeline")
-  @Operation(operationId = "updatePipeline", summary = "Update a Pipeline by identifier",
+  @Operation(operationId = "updatePipeline", description = "Updates a Pipeline by Identifier",
+      summary = "Update a Pipeline",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -387,6 +390,7 @@ public class PipelineResource implements YamlSchemaResource {
       },
       deprecated = true)
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_CREATE_AND_EDIT)
+  @Deprecated
   public ResponseDTO<String>
   updatePipeline(
       @Parameter(description = PipelineResourceConstants.IF_MATCH_PARAM_MESSAGE) @HeaderParam(IF_MATCH) String ifMatch,
@@ -417,7 +421,8 @@ public class PipelineResource implements YamlSchemaResource {
   @PUT
   @Path("/v2/{pipelineIdentifier}")
   @ApiOperation(value = "Update a Pipeline", nickname = "putPipelineV2")
-  @Operation(operationId = "updatePipelineV2", summary = "Updates a Pipeline by identifier with Governance checks",
+  @Operation(operationId = "updatePipelineV2", description = "Updates a Pipeline by Identifier",
+      summary = "Update a Pipeline",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -461,7 +466,8 @@ public class PipelineResource implements YamlSchemaResource {
   @DELETE
   @Path("/{pipelineIdentifier}")
   @ApiOperation(value = "Delete a pipeline", nickname = "softDeletePipeline")
-  @Operation(operationId = "deletePipeline", summary = "Deletes a Pipeline",
+  @Operation(operationId = "deletePipeline", description = "Deletes a Pipeline by Identifier",
+      summary = "Delete a Pipeline",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -490,7 +496,8 @@ public class PipelineResource implements YamlSchemaResource {
   @POST
   @Path("/list")
   @ApiOperation(value = "Gets Pipeline list", nickname = "getPipelineList")
-  @Operation(operationId = "getPipelineList", summary = "List of pipelines",
+  @Operation(operationId = "getPipelineList", description = "Returns List of Pipelines in the Given Project",
+      summary = "List Pipelines",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -534,7 +541,8 @@ public class PipelineResource implements YamlSchemaResource {
   @GET
   @Path("/summary/{pipelineIdentifier}")
   @ApiOperation(value = "Gets Pipeline Summary of a pipeline", nickname = "getPipelineSummary")
-  @Operation(operationId = "getPipelineSummary", summary = "Gets pipeline summary by pipeline identifier",
+  @Operation(operationId = "getPipelineSummary", description = "Returns Pipeline Summary by Identifier",
+      summary = "Fetch Pipeline Summary",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",

@@ -8,6 +8,7 @@
 package io.harness.artifactory;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.TMACARI;
 
 import static software.wings.helpers.ext.jenkins.BuildDetails.Builder.aBuildDetails;
@@ -15,6 +16,7 @@ import static software.wings.helpers.ext.jenkins.BuildDetails.Builder.aBuildDeta
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -26,6 +28,7 @@ import io.harness.rule.Owner;
 
 import software.wings.helpers.ext.jenkins.BuildDetails;
 
+import com.google.common.collect.ImmutableMap;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -74,5 +77,19 @@ public class ArtifactoryNgServiceImplTest extends CategoryTest {
 
     verify(artifactoryClient, times(1)).getBuildDetails(any(), any(), any(), anyInt());
     assertThat(result).isEqualTo(buildDetails);
+  }
+
+  @Test
+  @Owner(developers = ACASIAN)
+  @Category(UnitTests.class)
+  public void getFileSize() {
+    Long artifactFileSize = 100L;
+    Map<String, String> metadata = ImmutableMap.of("artifactPath", "path/to/artifactImage");
+    ArtifactoryConfigRequest artifactoryConfigRequest = ArtifactoryConfigRequest.builder().build();
+    doReturn(artifactFileSize).when(artifactoryClient).getFileSize(any(), any(), any());
+
+    Long result = artifactoryNgService.getFileSize(artifactoryConfigRequest, metadata, "artifactPath");
+    assertThat(result).isEqualTo(artifactFileSize);
+    verify(artifactoryClient, times(1)).getFileSize(eq(artifactoryConfigRequest), eq(metadata), eq("artifactPath"));
   }
 }

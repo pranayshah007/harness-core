@@ -27,14 +27,33 @@ import software.wings.beans.LogColor;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import lombok.extern.slf4j.Slf4j;
 import org.zeroturnaround.exec.ProcessExecutor;
 import org.zeroturnaround.exec.ProcessResult;
 
 @OwnedBy(HarnessTeam.CDP)
+@Slf4j
 public class PcfUtils {
   public static final String BIN_BASH = "/bin/bash";
+  public static final String CF_CALL = "[CF Call info]";
+  public static final String CF_CALL_INFO_STATUS_START = "Status: Start";
+  public static final String CF_CALL_INFO_STATUS_END = "Status: End";
+  public static final String CF_CALL_INFO_METHOD = "Method: ";
 
   private PcfUtils() {}
+
+  public static void logStatus(boolean start, String method) {
+    log.debug("{}: {}, {}{}", CF_CALL, start ? CF_CALL_INFO_STATUS_START : CF_CALL_INFO_STATUS_END, CF_CALL_INFO_METHOD,
+        method);
+  }
+
+  public static void logCliCommand(String command) {
+    log.debug("{}: CLI, {}", CF_CALL, command);
+  }
+
+  public static void logSdkCommand(String API, Object request, long timeInMillis) {
+    log.debug("{}: SDK, {}, request: {}, timeInMillis: {}", CF_CALL, API, request, timeInMillis);
+  }
 
   public static boolean checkIfAppAutoscalarInstalled(final String cfCliPath, CfCliVersion cfCliVersion)
       throws PivotalClientApiException {

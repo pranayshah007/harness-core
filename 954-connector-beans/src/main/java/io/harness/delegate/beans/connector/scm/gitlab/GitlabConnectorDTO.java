@@ -102,6 +102,11 @@ public class GitlabConnectorDTO extends ConnectorConfigDTO implements ScmConnect
   }
 
   @Override
+  public String getFileUrl(String branchName, String filePath, String repoName) {
+    return "";
+  }
+
+  @Override
   public void validate() {
     GitClientHelper.validateURL(url);
   }

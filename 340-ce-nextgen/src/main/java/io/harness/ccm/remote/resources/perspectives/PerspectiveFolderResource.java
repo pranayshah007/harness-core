@@ -87,8 +87,8 @@ public class PerspectiveFolderResource {
   private static final String MODULE_NAME = "CCM";
 
   @Inject
-  public PerspectiveFolderResource(CEViewFolderService ceViewFolderService, CEViewService ceViewService,
-      TelemetryReporter telemetryReporter) {
+  public PerspectiveFolderResource(
+      CEViewFolderService ceViewFolderService, CEViewService ceViewService, TelemetryReporter telemetryReporter) {
     this.ceViewFolderService = ceViewFolderService;
     this.ceViewService = ceViewService;
     this.telemetryReporter = telemetryReporter;
@@ -129,7 +129,7 @@ public class PerspectiveFolderResource {
           accountId, createPerspectiveFolderDTO.getPerspectiveIds(), ceViewFolder.getUuid());
     }
     telemetryReporter.sendTrackEvent(
-            FOLDER_CREATED, null, accountId, properties, Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
+        FOLDER_CREATED, null, accountId, properties, Collections.singletonMap(AMPLITUDE, true), Category.GLOBAL);
     return ResponseDTO.newResponse(ceViewFolder);
   }
 

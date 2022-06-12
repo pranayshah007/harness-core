@@ -8,7 +8,6 @@
 package io.harness.filestore.service.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.ng.core.EntityDetail.EntityDetailKeys;
 import static io.harness.ng.core.Resource.ResourceKeys;
 import static io.harness.ng.core.entitysetupusage.entity.EntitySetupUsage.EntitySetupUsageKeys;
@@ -24,17 +23,16 @@ import io.harness.exception.ReferencedEntityException;
 import io.harness.exception.UnexpectedException;
 import io.harness.filestore.entities.NGFile;
 import io.harness.filestore.service.FileReferenceService;
+import io.harness.filestore.service.FileStructureService;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.ng.core.entitysetupusage.service.EntitySetupUsageService;
 import io.harness.ng.core.filestore.NGFileType;
-import io.harness.repositories.spring.FileStoreRepository;
 import io.harness.utils.IdentifierRefHelper;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -50,7 +48,7 @@ public class FileReferenceServiceImpl implements FileReferenceService {
       EntitySetupUsageKeys.referredByEntity + "." + EntityDetailKeys.entityRef + "." + ResourceKeys.identifier;
 
   private final EntitySetupUsageService entitySetupUsageService;
-  private final FileStoreRepository fileStoreRepository;
+  private final FileStructureService fileStructureService;
 
   @Override
   public Long countEntitiesReferencingFile(NGFile file) {
@@ -83,39 +81,25 @@ public class FileReferenceServiceImpl implements FileReferenceService {
 
   @Override
   public void validateReferenceByAndThrow(NGFile fileOrFolder) {
-    Long count = countEntitiesReferencingFile(fileOrFolder);
     if (NGFileType.FOLDER.equals(fileOrFolder.getType())) {
-      count += countEntitiesReferencingFolder(fileOrFolder);
+      List<String> folderChildrenFQNs = fileStructureService.listFolderChildrenFQNs(fileOrFolder);
+
+      Long count = entitySetupUsageService.countReferredByEntitiesByFQNsIn(
+          fileOrFolder.getAccountIdentifier(), folderChildrenFQNs);
       if (count > 0L) {
         throw new ReferencedEntityException(format(
             "Folder [%s], or its subfolders, contain file(s) referenced by %s other entities and can not be deleted.",
             fileOrFolder.getIdentifier(), count));
       }
     } else {
+      Long count = countEntitiesReferencingFile(fileOrFolder);
+
       if (count > 0L) {
         throw new ReferencedEntityException(
             format("File [%s] is referenced by %s other entities and can not be deleted.", fileOrFolder.getIdentifier(),
                 count));
       }
     }
-  }
-
-  private long countEntitiesReferencingFolder(NGFile folder) {
-    List<NGFile> childrenFiles = listFilesByParent(folder);
-    if (isEmpty(childrenFiles)) {
-      return 0L;
-    }
-    return childrenFiles.stream()
-        .filter(Objects::nonNull)
-        .map(this::countEntitiesReferencingFile)
-        .reduce(Long::sum)
-        .orElse(0L);
-  }
-
-  private List<NGFile> listFilesByParent(NGFile parent) {
-    return fileStoreRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndParentIdentifier(
-        parent.getAccountIdentifier(), parent.getOrgIdentifier(), parent.getProjectIdentifier(),
-        parent.getIdentifier());
   }
 
   public List<EntitySetupUsageDTO> getAllReferencedByInScope(String accountIdentifier, String orgIdentifier,

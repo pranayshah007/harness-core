@@ -7,6 +7,8 @@
 
 package io.harness.delegate.beans.connector.scm.github;
 
+import static io.harness.utils.FilePathUtils.removeStartingAndEndingSlash;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
@@ -17,6 +19,7 @@ import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
+import io.harness.delegate.beans.connector.scm.utils.ScmConnectorHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.git.GitClientHelper;
 import io.harness.gitsync.beans.GitRepositoryDTO;
@@ -121,6 +124,14 @@ public class GithubConnectorDTO
           .build();
     }
     return GitRepositoryDTO.builder().org(GitClientHelper.getGitOwner(url, true)).build();
+  }
+
+  @Override
+  public String getFileUrl(String branchName, String filePath, String repoName) {
+    ScmConnectorHelper.validateGetFileUrlParams(branchName, filePath);
+    String repoUrl = removeStartingAndEndingSlash(getGitConnectionUrl(repoName));
+    filePath = removeStartingAndEndingSlash(filePath);
+    return String.format("%s/blob/%s/%s", repoUrl, branchName, filePath);
   }
 
   @Override

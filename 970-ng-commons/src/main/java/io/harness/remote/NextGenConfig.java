@@ -28,4 +28,5 @@ public class NextGenConfig {
   @ConfigSecret String ceNextGenServiceSecret;
   @ConfigSecret String ffServiceSecret;
   @ConfigSecret String cvngServiceSecret;
+  @ConfigSecret String templateServiceSecret;
 }

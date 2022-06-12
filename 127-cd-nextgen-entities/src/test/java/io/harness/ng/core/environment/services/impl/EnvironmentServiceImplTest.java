@@ -8,36 +8,55 @@
 package io.harness.ng.core.environment.services.impl;
 
 import static io.harness.rule.OwnerRule.ARCHIT;
+import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.YOGESH;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.doReturn;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.CDNGEntitiesTestBase;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidRequestException;
-import io.harness.ng.core.NGCoreTestBase;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.dto.EnvironmentResponseDTO;
 import io.harness.ng.core.environment.mappers.EnvironmentMapper;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
 import io.harness.rule.Owner;
+import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.PageUtils;
 
+import com.google.common.io.Resources;
 import com.google.inject.Inject;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.joor.Reflect;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.Mock;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
 
 @OwnedBy(HarnessTeam.CDC)
-public class EnvironmentServiceImplTest extends NGCoreTestBase {
+public class EnvironmentServiceImplTest extends CDNGEntitiesTestBase {
+  @Mock private NGFeatureFlagHelperService featureFlagHelperService;
   @Inject EnvironmentServiceImpl environmentService;
+
+  @Before
+  public void setUp() throws Exception {
+    Reflect.on(environmentService).set("ngFeatureFlagHelperService", featureFlagHelperService);
+  }
 
   @Test
   @Owner(developers = ARCHIT)
@@ -52,6 +71,7 @@ public class EnvironmentServiceImplTest extends NGCoreTestBase {
   @Owner(developers = YOGESH)
   @Category(UnitTests.class)
   public void testForceDeleteAll() {
+    doReturn(true).when(featureFlagHelperService).isEnabled("ACCOUNT_ID", FeatureName.HARD_DELETE_ENTITIES);
     Environment e1 = Environment.builder()
                          .accountId("ACCOUNT_ID")
                          .identifier(UUIDGenerator.generateUuid())
@@ -91,6 +111,88 @@ public class EnvironmentServiceImplTest extends NGCoreTestBase {
         environmentService.get("ACCOUNT_ID", "ORG_ID", "PROJECT_ID_1", e3.getIdentifier(), false);
     assertThat(environment3).isPresent();
     assertThat(environment3.get().getIdentifier()).isEqualTo(e3.getIdentifier());
+  }
+
+  @Test
+  @Owner(developers = YOGESH)
+  @Category(UnitTests.class)
+  public void testForceDeleteAllIdentifiersMustBeSpecified() {
+    doReturn(true).when(featureFlagHelperService).isEnabled("ACCOUNT_ID", FeatureName.HARD_DELETE_ENTITIES);
+    Environment e1 = Environment.builder()
+                         .accountId("ACCOUNT_ID")
+                         .identifier(UUIDGenerator.generateUuid())
+                         .orgIdentifier("ORG_ID")
+                         .projectIdentifier("PROJECT_ID")
+                         .build();
+
+    environmentService.create(e1);
+
+    assertThatExceptionOfType(Exception.class)
+        .isThrownBy(() -> environmentService.forceDeleteAllInProject("ACCOUNT_ID", "ORG_ID", null));
+    assertThatExceptionOfType(Exception.class)
+        .isThrownBy(() -> environmentService.forceDeleteAllInProject("ACCOUNT_ID", "ORG_ID", ""));
+    assertThatExceptionOfType(Exception.class)
+        .isThrownBy(() -> environmentService.forceDeleteAllInProject("ACCOUNT_ID", "", "PROJ_ID"));
+    assertThatExceptionOfType(Exception.class)
+        .isThrownBy(() -> environmentService.forceDeleteAllInProject("", "ORG_ID", "PROJ_ID"));
+  }
+
+  @Test
+  @Owner(developers = YOGESH)
+  @Category(UnitTests.class)
+  public void testDelete() {
+    doReturn(true).when(featureFlagHelperService).isEnabled("ACCOUNT_ID", FeatureName.HARD_DELETE_ENTITIES);
+    final String id = UUIDGenerator.generateUuid();
+    Environment createEnvironmentRequest = Environment.builder()
+                                               .accountId("ACCOUNT_ID")
+                                               .identifier(id)
+                                               .orgIdentifier("ORG_ID")
+                                               .projectIdentifier("PROJECT_ID")
+                                               .build();
+    Environment createdEnvironment = environmentService.create(createEnvironmentRequest);
+
+    boolean deleted = environmentService.delete("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", id, 0L);
+    assertThat(deleted).isTrue();
+
+    Optional<Environment> environment = environmentService.get("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", id, true);
+    assertThat(environment).isNotPresent();
+    environment = environmentService.get("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", id, false);
+    assertThat(environment).isNotPresent();
+  }
+
+  @Test
+  @Owner(developers = YOGESH)
+  @Category(UnitTests.class)
+  public void testDeleteWhenDoesNotExist() {
+    doReturn(true, false).when(featureFlagHelperService).isEnabled("ACCOUNT_ID", FeatureName.HARD_DELETE_ENTITIES);
+    final String id = UUIDGenerator.generateUuid();
+    assertThatExceptionOfType(InvalidRequestException.class)
+        .isThrownBy(() -> environmentService.delete("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", id, 0L));
+    assertThatExceptionOfType(InvalidRequestException.class)
+        .isThrownBy(() -> environmentService.delete("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", id, 0L));
+  }
+
+  @Test
+  @Owner(developers = YOGESH)
+  @Category(UnitTests.class)
+  public void testSoftDelete() {
+    doReturn(false).when(featureFlagHelperService).isEnabled("ACCOUNT_ID", FeatureName.HARD_DELETE_ENTITIES);
+    final String id = UUIDGenerator.generateUuid();
+    Environment createEnvironmentRequest = Environment.builder()
+                                               .accountId("ACCOUNT_ID")
+                                               .identifier(id)
+                                               .orgIdentifier("ORG_ID")
+                                               .projectIdentifier("PROJECT_ID")
+                                               .build();
+    Environment createdEnvironment = environmentService.create(createEnvironmentRequest);
+
+    boolean deleted = environmentService.delete("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", id, 0L);
+    assertThat(deleted).isTrue();
+
+    Optional<Environment> environment = environmentService.get("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", id, false);
+    assertThat(environment).isNotPresent();
+    environment = environmentService.get("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", id, true);
+    assertThat(environment).isPresent();
   }
 
   @Test
@@ -214,5 +316,51 @@ public class EnvironmentServiceImplTest extends NGCoreTestBase {
     Optional<Environment> deletedEnvironment =
         environmentService.get("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", "UPDATED_ENV", false);
     assertThat(deletedEnvironment.isPresent()).isFalse();
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testCreateEnvironmentInputs() throws IOException {
+    String filename = "env-with-runtime-inputs.yaml";
+    String yaml = readFile(filename);
+    Environment createEnvironmentRequest = Environment.builder()
+                                               .accountId("ACCOUNT_ID")
+                                               .identifier("IDENTIFIER")
+                                               .orgIdentifier("ORG_ID")
+                                               .projectIdentifier("PROJECT_ID")
+                                               .yaml(yaml)
+                                               .build();
+
+    environmentService.create(createEnvironmentRequest);
+
+    String environmentInputsYaml =
+        environmentService.createEnvironmentInputsYaml("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", "IDENTIFIER");
+    String resFile = "env-with-runtime-inputs-res.yaml";
+    String resInputs = readFile(resFile);
+    assertThat(environmentInputsYaml).isEqualTo(resInputs);
+
+    String updateYaml = readFile("env-without-runtime-inputs.yaml");
+    Environment updateEnvironmentRequest = Environment.builder()
+                                               .accountId("ACCOUNT_ID")
+                                               .identifier("IDENTIFIER")
+                                               .orgIdentifier("ORG_ID")
+                                               .projectIdentifier("PROJECT_ID")
+                                               .yaml(updateYaml)
+                                               .build();
+
+    environmentService.update(updateEnvironmentRequest);
+    String environmentInputsYaml2 =
+        environmentService.createEnvironmentInputsYaml("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", "IDENTIFIER");
+    assertThat(environmentInputsYaml2).isNull();
+  }
+
+  private String readFile(String filename) {
+    ClassLoader classLoader = getClass().getClassLoader();
+    try {
+      return Resources.toString(Objects.requireNonNull(classLoader.getResource(filename)), StandardCharsets.UTF_8);
+    } catch (IOException e) {
+      throw new InvalidRequestException("Could not read resource file: " + filename);
+    }
   }
 }

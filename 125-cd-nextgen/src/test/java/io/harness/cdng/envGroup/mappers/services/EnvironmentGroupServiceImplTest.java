@@ -150,7 +150,7 @@ public class EnvironmentGroupServiceImplTest extends CategoryTest {
         .listAllEntityUsage(
             0, 10, entity.getAccountId(), identifierRef.getFullyQualifiedName(), EntityType.ENVIRONMENT_GROUP, "");
     EnvironmentGroupEntity deletedEntity = entity.withDeleted(true);
-    doReturn(deletedEntity).when(environmentGroupRepository).deleteEnvGroup(deletedEntity);
+    doReturn(true).when(environmentGroupRepository).deleteEnvGroup(deletedEntity);
     EnvironmentGroupEntity isDeletedEntity = environmentGroupService.delete(ACC_ID, ORG_ID, PRO_ID, ENV_GROUP_ID, null);
 
     assertThat(isDeletedEntity.getDeleted()).isTrue();
@@ -167,7 +167,7 @@ public class EnvironmentGroupServiceImplTest extends CategoryTest {
 
     // case3: version is same as that in entity. Here entity fetched having deleted as false and should throw error
     EnvironmentGroupEntity nonDeletedEntity = entity.withDeleted(false);
-    doReturn(nonDeletedEntity).when(environmentGroupRepository).deleteEnvGroup(deletedEntity);
+    doReturn(false).when(environmentGroupRepository).deleteEnvGroup(deletedEntity);
     assertThatThrownBy(() -> environmentGroupService.delete(ACC_ID, ORG_ID, PRO_ID, ENV_GROUP_ID, 10L))
         .isInstanceOf(InvalidRequestException.class);
   }
@@ -204,7 +204,7 @@ public class EnvironmentGroupServiceImplTest extends CategoryTest {
         ArgumentCaptor.forClass(EnvironmentGroupEntity.class);
     doReturn(updatedEntity)
         .when(environmentGroupRepository)
-        .update(captorForUpdatedEntity.capture(), captorForOriginalEntity.capture());
+        .update(captorForUpdatedEntity.capture(), captorForOriginalEntity.capture(), any(Criteria.class));
     environmentGroupService.update(updatedEntity);
 
     EnvironmentGroupEntity capturedUpdatedEntity = captorForUpdatedEntity.getValue();

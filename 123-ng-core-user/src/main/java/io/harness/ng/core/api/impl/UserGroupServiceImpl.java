@@ -261,8 +261,8 @@ public class UserGroupServiceImpl implements UserGroupService {
   }
 
   @Override
-  public List<UserGroup> list(Criteria criteria) {
-    return userGroupRepository.findAll(criteria);
+  public List<UserGroup> list(Criteria criteria, Integer skip, Integer limit) {
+    return userGroupRepository.findAll(criteria, skip, limit);
   }
 
   @Override
@@ -425,7 +425,7 @@ public class UserGroupServiceImpl implements UserGroupService {
       @NotNull String userIdentifier) {
     Criteria criteria =
         createCriteriaByScopeAndUsersIn(accountIdentifier, orgIdentifier, projectIdentifier, userIdentifier);
-    List<UserGroup> userGroups = userGroupRepository.findAll(criteria);
+    List<UserGroup> userGroups = userGroupRepository.findAll(criteria, null, null);
     Scope scope = Scope.builder()
                       .accountIdentifier(accountIdentifier)
                       .orgIdentifier(orgIdentifier)
@@ -648,7 +648,7 @@ public class UserGroupServiceImpl implements UserGroupService {
   @Override
   public List<UserGroup> getUserGroupsBySsoId(String accountIdentifier, String ssoId) {
     Criteria criteria = getUserGroupbySsoIdCriteria(accountIdentifier, ssoId);
-    return userGroupRepository.findAll(criteria);
+    return userGroupRepository.findAll(criteria, null, null);
   }
 
   @Override
@@ -656,7 +656,7 @@ public class UserGroupServiceImpl implements UserGroupService {
     Criteria criteria = new Criteria();
     criteria.and(UserGroupKeys.isSsoLinked).is(true);
     criteria.and(UserGroupKeys.linkedSsoId).is(ssoId);
-    return userGroupRepository.findAll(criteria);
+    return userGroupRepository.findAll(criteria, null, null);
   }
 
   @Override
@@ -664,7 +664,7 @@ public class UserGroupServiceImpl implements UserGroupService {
     Criteria criteria = new Criteria();
     criteria.and(UserGroupKeys.accountIdentifier).is(accountIdentifier);
     criteria.and(UserGroupKeys.externallyManaged).is(true);
-    return userGroupRepository.findAll(criteria);
+    return userGroupRepository.findAll(criteria, null, null);
   }
 
   private Criteria getUserGroupbySsoIdCriteria(String ssoId) {

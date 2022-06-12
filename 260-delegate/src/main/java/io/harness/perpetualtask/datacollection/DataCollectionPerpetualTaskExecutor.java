@@ -140,7 +140,7 @@ public class DataCollectionPerpetualTaskExecutor implements PerpetualTaskExecuto
   @SuppressWarnings("PMD")
   private void run(DataCollectionPerpetualTaskParams taskParams, ConnectorConfigDTO connectorConfigDTO,
       DataCollectionTaskDTO dataCollectionTask) {
-    try {
+    try (DataCollectionLogContext closableLogContext = new DataCollectionLogContext(dataCollectionTask)) {
       DataCollectionInfo dataCollectionInfo = dataCollectionTask.getDataCollectionInfo();
       log.info("collecting data for {}", dataCollectionTask.getVerificationTaskId());
       List<ExecutionLog> executionLogs = new ArrayList<>();
@@ -225,7 +225,6 @@ public class DataCollectionPerpetualTaskExecutor implements PerpetualTaskExecuto
                                             .build();
       cvngRequestExecutor.execute(cvNextGenServiceClient.updateTaskStatus(taskParams.getAccountId(), result));
       log.info("Updated task status to success for {}.", dataCollectionTask.getVerificationTaskId());
-
     } catch (Throwable e) {
       updateStatusWithException(taskParams, dataCollectionTask, e);
     }

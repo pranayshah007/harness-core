@@ -120,10 +120,10 @@ public class AwsResourceServiceImpl implements AwsResourceService {
   }
 
   public List<AwsCFTemplateParamsData> getCFparametersKeys(String type, String region, boolean isBranch, String branch,
-      String templatePath, String commitId, IdentifierRef awsConnectorRef, String dataInput, String connectorDTO) {
+      String repoName, String templatePath, String commitId, IdentifierRef awsConnectorRef, String dataInput,
+      String connectorDTO, String accountIdentifier, String orgIdentifier, String projectIdentifier) {
     GitStoreDelegateConfig gitStoreDelegateConfig = null;
-    BaseNGAccess access = serviceHelper.getBaseNGAccess(awsConnectorRef.getAccountIdentifier(),
-        awsConnectorRef.getOrgIdentifier(), awsConnectorRef.getProjectIdentifier());
+    BaseNGAccess access = serviceHelper.getBaseNGAccess(accountIdentifier, orgIdentifier, projectIdentifier);
 
     if (AwsCFTemplatesType.S3.getValue().equalsIgnoreCase(type)
         || AwsCFTemplatesType.BODY.getValue().equalsIgnoreCase(type)) {
@@ -138,7 +138,7 @@ public class AwsResourceServiceImpl implements AwsResourceService {
 
       ConnectorInfoDTO connectorInfoDTO = gitResourceServiceHelper.getConnectorInfoDTO(connectorDTO, access);
       gitStoreDelegateConfig = gitResourceServiceHelper.getGitStoreDelegateConfig(
-          connectorInfoDTO, access, fetchType, branch, commitId, templatePath);
+          connectorInfoDTO, access, fetchType, branch, commitId, templatePath, repoName);
     } else {
       throw new InvalidRequestException("Unknown source type");
     }
