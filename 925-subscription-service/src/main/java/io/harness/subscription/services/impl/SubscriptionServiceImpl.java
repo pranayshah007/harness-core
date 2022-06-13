@@ -70,12 +70,12 @@ public class SubscriptionServiceImpl implements SubscriptionService {
   }
 
   @Override
-  public PriceCollectionDTO listPrices(String accountIdentifier, String module) {
+  public PriceCollectionDTO listPrices(String accountIdentifier, ModuleType module) {
     isSelfServiceEnable(accountIdentifier);
 
     List<String> prices;
 
-    switch (module) {
+    switch (module.toString()) {
       case "CI":
         prices = Arrays.asList(Prices.CI_PRICES);
         break;
@@ -145,12 +145,12 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
     val developerPriceId = stripeHelper.getPrice(
         Prices.getLookupKey("FF", subscriptionDTO.getEdition(), "DEVELOPERS", subscriptionDTO.getPaymentFreq()));
-    subscriptionItems.add(new ItemParams(developerPriceId.getId(), (long) subscriptionDTO.getNumberOfMau(),
+    subscriptionItems.add(new ItemParams(developerPriceId.getId(), (long) subscriptionDTO.getNumberOfDevelopers(),
         Prices.getLookupKey("FF", subscriptionDTO.getEdition(), "DEVELOPERS", subscriptionDTO.getPaymentFreq())));
 
     val mauPriceId = stripeHelper.getPrice(
         Prices.getLookupKey("FF", subscriptionDTO.getEdition(), "MAU", subscriptionDTO.getPaymentFreq()));
-    subscriptionItems.add(new ItemParams(mauPriceId.getId(), (long) subscriptionDTO.getNumberOfDevelopers(),
+    subscriptionItems.add(new ItemParams(mauPriceId.getId(), (long) subscriptionDTO.getNumberOfMau(),
         Prices.getLookupKey("FF", subscriptionDTO.getEdition(), "MAU", subscriptionDTO.getPaymentFreq())));
 
     if (subscriptionDTO.isPremiumSupport()) {
