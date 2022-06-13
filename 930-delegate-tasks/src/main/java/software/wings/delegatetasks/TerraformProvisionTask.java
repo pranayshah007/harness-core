@@ -118,6 +118,7 @@ import java.io.OutputStreamWriter;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -156,6 +157,7 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
   private static final String AWS_ACCESS_KEY_ID = "AWS_ACCESS_KEY_ID";
   private static final String AWS_SECRET_ACCESS_KEY = "AWS_SECRET_ACCESS_KEY";
   private static final String AWS_SESSION_TOKEN = "AWS_SESSION_TOKEN";
+  private static final String DEBUG_LOG = "TF_TASK_DEBUG_LOG: ";
 
   public TerraformProvisionTask(DelegateTaskPackage delegateTaskPackage, ILogStreamingTaskClient logStreamingTaskClient,
       Consumer<DelegateTaskResponse> consumer, BooleanSupplier preExecute) {
@@ -372,6 +374,14 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
               commandToLog = format("terraform plan -out=tfplan -input=false %s %s ", targetArgs, uiLogs);
               saveExecutionLog(commandToLog, CommandExecutionStatus.RUNNING, INFO, logCallback);
               code = executeShellCommand(command, scriptDirectory, parameters, envVars, logCallbackOutputStream);
+              try {
+                log.info(StringUtils.join(DEBUG_LOG, "trying to get tfplan bytes"));
+                final byte[] tfPLanBytes = Files.readAllBytes(Paths.get(scriptDirectory, getPlanName(parameters)));
+                log.info(StringUtils.join(DEBUG_LOG, format("size of tfplan is: %d", tfPLanBytes.length)));
+              } catch (Exception e) {
+                log.info(StringUtils.join(DEBUG_LOG, "getting tfplan bytes failed"));
+                e.printStackTrace();
+              }
 
               if (code == 0 && parameters.isSaveTerraformJson()) {
                 code = executeTerraformShowCommand(
@@ -507,6 +517,7 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
                                             .build();
 
       File tfStateFile = TerraformHelperUtils.getTerraformStateFile(scriptDirectory, parameters.getWorkspace());
+      log.info(StringUtils.join(DEBUG_LOG, "successfully fetched state file"));
       if (tfStateFile != null) {
         try (InputStream initialStream = new FileInputStream(tfStateFile)) {
           delegateFileManager.upload(delegateFile, initialStream);
@@ -516,6 +527,7 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
           delegateFileManager.upload(delegateFile, nullInputStream);
         }
       }
+      log.info(StringUtils.join(DEBUG_LOG, "successfully uploaded state file"));
 
       List<NameValuePair> backendConfigs =
           getAllVariables(parameters.getBackendConfigs(), parameters.getEncryptedBackendConfigs());
@@ -523,26 +535,40 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
           getAllVariables(parameters.getEnvironmentVariables(), parameters.getEncryptedEnvironmentVariables());
 
       if (parameters.isExportPlanToApplyStep()) {
-        byte[] terraformPlanFile = getTerraformPlanFile(scriptDirectory, parameters);
-        saveExecutionLog(
-            color("\nEncrypting terraform plan \n", Yellow, Bold), CommandExecutionStatus.RUNNING, INFO, logCallback);
+        log.info(StringUtils.join(DEBUG_LOG, "Inside exporting block"));
+        try {
+          byte[] terraformPlanFile = getTerraformPlanFile(scriptDirectory, parameters);
+          log.info(StringUtils.join(DEBUG_LOG, format("got tf plan bytes : %d", terraformPlanFile.length)));
 
-        if (parameters.isUseOptimizedTfPlanJson()) {
-          DelegateFile planDelegateFile =
-              aDelegateFile()
-                  .withAccountId(parameters.getAccountId())
-                  .withDelegateId(getDelegateId())
-                  .withTaskId(getTaskId())
-                  .withEntityId(parameters.getEntityId())
-                  .withBucket(FileBucket.TERRAFORM_PLAN)
-                  .withFileName(format(TERRAFORM_PLAN_FILE_OUTPUT_NAME, getPlanName(parameters)))
-                  .build();
-          encryptedTfPlan = (EncryptedRecordData) planEncryptDecryptHelper.encryptFile(
-              terraformPlanFile, parameters.getPlanName(), parameters.getSecretManagerConfig(), planDelegateFile);
+          saveExecutionLog(
+              color("\nEncrypting terraform plan \n", Yellow, Bold), CommandExecutionStatus.RUNNING, INFO, logCallback);
+          if (parameters.isUseOptimizedTfPlanJson()) {
+            DelegateFile planDelegateFile =
+                aDelegateFile()
+                    .withAccountId(parameters.getAccountId())
+                    .withDelegateId(getDelegateId())
+                    .withTaskId(getTaskId())
+                    .withEntityId(parameters.getEntityId())
+                    .withBucket(FileBucket.TERRAFORM_PLAN)
+                    .withFileName(format(TERRAFORM_PLAN_FILE_OUTPUT_NAME, getPlanName(parameters)))
+                    .build();
+            log.info(StringUtils.join(DEBUG_LOG, "trying encrypting tf plan file"));
+            encryptedTfPlan = (EncryptedRecordData) planEncryptDecryptHelper.encryptFile(
+                terraformPlanFile, parameters.getPlanName(), parameters.getSecretManagerConfig(), planDelegateFile);
 
-        } else {
-          encryptedTfPlan = (EncryptedRecordData) planEncryptDecryptHelper.encryptContent(
-              terraformPlanFile, parameters.getPlanName(), parameters.getSecretManagerConfig());
+          } else {
+            log.info(StringUtils.join(DEBUG_LOG, "trying encrypting tf plan content"));
+            encryptedTfPlan = (EncryptedRecordData) planEncryptDecryptHelper.encryptContent(
+                terraformPlanFile, parameters.getPlanName(), parameters.getSecretManagerConfig());
+            log.info(StringUtils.join(DEBUG_LOG,
+                format("encKey: %s, encVal: %s, backKey: %s, backVal: %s", encryptedTfPlan.getEncryptionKey(),
+                    Arrays.toString(encryptedTfPlan.getEncryptedValue()), encryptedTfPlan.getBackupEncryptionKey(),
+                    Arrays.toString(encryptedTfPlan.getBackupEncryptedValue()))));
+            log.info(StringUtils.join(DEBUG_LOG, "successfully encrypted"));
+          }
+        } catch (Exception e) {
+          log.info(StringUtils.join(DEBUG_LOG, "exception occurred in reading or encrypting"));
+          e.printStackTrace();
         }
       }
 
@@ -572,8 +598,9 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
       if (parameters.getCommandUnit() != TerraformCommandUnit.Destroy
           && commandExecutionStatus == CommandExecutionStatus.SUCCESS && !parameters.isRunPlanOnly()) {
         terraformExecutionDataBuilder.outputs(new String(Files.readAllBytes(tfOutputsFile.toPath()), Charsets.UTF_8));
+        log.info(StringUtils.join(DEBUG_LOG, "read outputs"));
       }
-
+      log.info(StringUtils.join(DEBUG_LOG, "built execution data"));
       return terraformExecutionDataBuilder.build();
 
     } catch (WingsException ex) {
