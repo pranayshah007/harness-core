@@ -19,6 +19,5 @@ import lombok.experimental.FieldNameConstants;
 @FieldNameConstants(innerTypeName = "CustomDeploymentFieldKeys")
 public class CustomDeploymentKey extends DeploymentKey {
   int instanceFetchScriptHash;
-  String artifactId;
   List<String> tags;
 }

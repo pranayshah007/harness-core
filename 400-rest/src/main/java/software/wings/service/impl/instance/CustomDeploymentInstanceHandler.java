@@ -115,11 +115,50 @@ public class CustomDeploymentInstanceHandler extends InstanceHandler implements 
     }
     final DeploymentSummary deploymentSummary;
     if (isNotEmpty(latestHostInfos) && isNotEmpty(newDeploymentSummaries)) {
-      deploymentSummary = getDeploymentSummaryForInstanceCreation(newDeploymentSummaries.get(0), rollback);
+      deploymentSummary =
+          getCustomDeploymentSummaryForInstanceCreation(instancesInDb, newDeploymentSummaries.get(0), rollback);
       latestHostInfos.stream()
           .map(hostInstanceInfo -> buildInstanceFromHostInfo(infraMapping, hostInstanceInfo, deploymentSummary))
           .forEach(instanceService::save);
     }
+  }
+
+  public DeploymentSummary getCustomDeploymentSummaryForInstanceCreation(
+      List<Instance> instancesInDb, DeploymentSummary newDeploymentSummary, boolean rollback) {
+    DeploymentSummary deploymentSummary;
+    if (rollback) {
+      deploymentSummary = getCustomDeploymentSummaryForRollback(instancesInDb, newDeploymentSummary);
+    } else {
+      deploymentSummary = newDeploymentSummary;
+    }
+    return deploymentSummary;
+  }
+
+  public DeploymentSummary getCustomDeploymentSummaryForRollback(
+      List<Instance> instancesInDb, DeploymentSummary deploymentSummary) {
+    try {
+      if (!instancesInDb.isEmpty()) {
+        WorkflowExecution lastSuccessfulWE =
+            workflowExecutionService.getLastSuccessfulWorkflowExecution(deploymentSummary.getAccountId(),
+                deploymentSummary.getAppId(), deploymentSummary.getWorkflowId(), instancesInDb.get(0).getEnvId(),
+                instancesInDb.get(0).getServiceId(), deploymentSummary.getInfraMappingId());
+        if (lastSuccessfulWE != null) {
+          List<Artifact> lastArtifacts = lastSuccessfulWE.getArtifacts();
+          if (lastArtifacts != null) {
+            if (!lastArtifacts.isEmpty()) {
+              deploymentSummary.setArtifactBuildNum(lastArtifacts.get(0).getBuildNo());
+              deploymentSummary.setArtifactName(lastArtifacts.get(0).getDisplayName());
+              deploymentSummary.setArtifactId(lastArtifacts.get(0).getUuid());
+              deploymentSummary.setArtifactSourceName(lastArtifacts.get(0).getArtifactSourceName());
+              deploymentSummary.setArtifactStreamId(lastArtifacts.get(0).getArtifactStreamId());
+            }
+          }
+        }
+      }
+    } catch (Exception e) {
+      log.error("Unable to fetch the last artifact from the workflow execution: {}", e);
+    }
+    return deploymentSummary;
   }
 
   private void incrementalUpdate(List<Instance> instancesInDb, List<PhysicalHostInstanceInfo> latestHostInfos,
@@ -248,7 +287,6 @@ public class CustomDeploymentInstanceHandler extends InstanceHandler implements 
     return CustomDeploymentKey.builder()
         .instanceFetchScriptHash(customDeploymentTypeInfo.getInstanceFetchScript().hashCode())
         .tags(customDeploymentTypeInfo.getTags())
-        .artifactId(customDeploymentTypeInfo.getArtifactId())
         .build();
   }
 

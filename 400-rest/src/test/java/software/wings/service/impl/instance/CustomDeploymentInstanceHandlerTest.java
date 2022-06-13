@@ -8,6 +8,7 @@
 package software.wings.service.impl.instance;
 
 import static io.harness.beans.EnvironmentType.NON_PROD;
+import static io.harness.rule.OwnerRule.RISHABH;
 import static io.harness.rule.OwnerRule.YOGESH;
 
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
@@ -18,6 +19,8 @@ import static software.wings.utils.WingsTestConstants.INFRA_MAPPING_ID;
 import static software.wings.utils.WingsTestConstants.SERVICE_ID;
 import static software.wings.utils.WingsTestConstants.TEMPLATE_ID;
 import static software.wings.utils.WingsTestConstants.WORKFLOW_EXECUTION_ID;
+import static software.wings.utils.WingsTestConstants.WORKFLOW_ID;
+import static software.wings.utils.WingsTestConstants.WORKFLOW_NAME;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -46,6 +49,8 @@ import software.wings.beans.Environment;
 import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.InfrastructureMappingType;
 import software.wings.beans.Service;
+import software.wings.beans.WorkflowExecution;
+import software.wings.beans.artifact.Artifact;
 import software.wings.beans.infrastructure.instance.Instance;
 import software.wings.beans.infrastructure.instance.InstanceType;
 import software.wings.beans.infrastructure.instance.info.PhysicalHostInstanceInfo;
@@ -57,6 +62,7 @@ import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.EnvironmentService;
 import software.wings.service.intfc.InfrastructureMappingService;
 import software.wings.service.intfc.ServiceResourceService;
+import software.wings.service.intfc.WorkflowExecutionService;
 import software.wings.service.intfc.customdeployment.CustomDeploymentTypeService;
 import software.wings.service.intfc.instance.InstanceService;
 
@@ -77,6 +83,7 @@ import org.mockito.Spy;
 
 public class CustomDeploymentInstanceHandlerTest extends WingsBaseTest {
   @Mock private CustomDeploymentInstanceSyncPTCreator perpetualTaskCreator;
+  @Mock private WorkflowExecutionService workflowExecutionService;
   @Mock private CustomDeploymentTypeService customDeploymentTypeService;
   @Mock private InfrastructureMappingService infraMappingService;
   @Mock private InstanceService instanceService;
@@ -338,6 +345,78 @@ public class CustomDeploymentInstanceHandlerTest extends WingsBaseTest {
         CustomDeploymentTypeInfo.builder().instanceFetchScript("echo hello").tags(asList("tag1", "tag2")).build());
     assertThat(deploymentKey.getInstanceFetchScriptHash()).isEqualTo("echo hello".hashCode());
     assertThat(deploymentKey.getTags()).containsExactly("tag1", "tag2");
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void shouldReturnUnmodifiedDeploymentSummaryOnFirstDeploymentInRollbackPhase() {
+    List<DeploymentSummary> deploymentSummary =
+        singletonList(buildDeploymentSummary(buildSampleInstancesJson(1, 2, 3)));
+    List<Instance> instancesInDb = new ArrayList<>();
+    DeploymentSummary newDeploymentSummary =
+        handler.getCustomDeploymentSummaryForInstanceCreation(instancesInDb, deploymentSummary.get(0), true);
+    assertThat(newDeploymentSummary.equals(deploymentSummary.get(0)));
+    verify(workflowExecutionService, times(0))
+        .getLastSuccessfulWorkflowExecution(any(), any(), any(), any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void shouldReturnLastArtifactInDeploymentSummaryInRollbackPhase() {
+    final String lastArtifactId = "last-success-artifact-id";
+    final String lastArtifactName = "hello-last-success-artifact";
+    final String newArtifactId = "new-artifact-id";
+    final String newArtifactName = "hello-new-artifact";
+    List<DeploymentSummary> deploymentSummary =
+        singletonList(buildDeploymentSummary(buildSampleInstancesJson(1, 2, 3), newArtifactId, newArtifactName));
+    List<DeploymentSummary> wantedNewDeploymentSummary =
+        singletonList(buildDeploymentSummary(buildSampleInstancesJson(1, 2, 3), lastArtifactId, lastArtifactName));
+    Artifact artifact = Artifact.Builder.anArtifact()
+                            .withAppId(APP_ID)
+                            .withUuid(lastArtifactId)
+                            .withDisplayName(lastArtifactName)
+                            .build();
+    List<Artifact> artifacts = new ArrayList<>();
+    artifacts.add(artifact);
+
+    WorkflowExecution workflowExecution = WorkflowExecution.builder()
+                                              .appId(APP_ID)
+                                              .status(ExecutionStatus.SUCCESS)
+                                              .envIds(asList(ENV_ID))
+                                              .serviceIds(asList(SERVICE_ID))
+                                              .infraMappingIds(asList(INFRA_MAPPING_ID))
+                                              .workflowId(WORKFLOW_ID)
+                                              .uuid(WORKFLOW_EXECUTION_ID)
+                                              .name(WORKFLOW_NAME)
+                                              .artifacts(artifacts)
+                                              .startTs(System.currentTimeMillis() - 10000)
+                                              .build();
+    doReturn(workflowExecution)
+        .when(workflowExecutionService)
+        .getLastSuccessfulWorkflowExecution(any(), any(), any(), any(), any(), any());
+
+    List<Instance> instancesInDb = buildSampleInstances(newArtifactId, newArtifactName, 1, 2, 3);
+    DeploymentSummary newDeploymentSummary =
+        handler.getCustomDeploymentSummaryForInstanceCreation(instancesInDb, deploymentSummary.get(0), true);
+    assertThat(newDeploymentSummary.equals(wantedNewDeploymentSummary.get(0)));
+    verify(workflowExecutionService, times(1))
+        .getLastSuccessfulWorkflowExecution(any(), any(), any(), any(), any(), any());
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void shouldReturnUnmodifiedDeploymentSummaryOnDeployment() {
+    List<DeploymentSummary> deploymentSummary =
+        singletonList(buildDeploymentSummary(buildSampleInstancesJson(1, 2, 3)));
+    List<Instance> instancesInDb = new ArrayList<>();
+    DeploymentSummary newDeploymentSummary =
+        handler.getCustomDeploymentSummaryForInstanceCreation(instancesInDb, deploymentSummary.get(0), false);
+    assertThat(newDeploymentSummary.equals(deploymentSummary.get(0)));
+    verify(workflowExecutionService, times(0))
+        .getLastSuccessfulWorkflowExecution(any(), any(), any(), any(), any(), any());
   }
 
   private List<Instance> buildSampleInstances(String artifactId, String artifactName, int... indexes) {
