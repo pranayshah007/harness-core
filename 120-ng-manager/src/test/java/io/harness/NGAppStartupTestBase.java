@@ -64,7 +64,7 @@ public class NGAppStartupTestBase extends CategoryTest {
   }
 
   //  @BeforeClass
-  public static void beforeClass() {
+  public static void beforeClass() throws Exception{
     MONGO_SERVER = startMongoServer();
     //        initializeDefaultInstance(any());
     SUPPORT = new DropwizardTestSupport<NextGenConfiguration>(NextGenApplication.class,

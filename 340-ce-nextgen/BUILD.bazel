@@ -54,7 +54,7 @@ shared_dependencies = [
     "@maven//:io_swagger_core_v3_swagger_integration",
     "@maven//:com_smoketurner_dropwizard_swagger",
     "@maven//:javax_validation_validation_api",
-    "@maven//:org_hibernate_hibernate_validator",
+    "@maven//:org_hibernate_validator_hibernate_validator",
     "@maven//:org_freemarker_freemarker",
     "@maven//:org_modelmapper_modelmapper",
     "@maven//:org_mongodb_morphia_morphia",
