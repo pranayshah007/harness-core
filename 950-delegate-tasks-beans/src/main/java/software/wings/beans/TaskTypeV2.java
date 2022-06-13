@@ -14,6 +14,8 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.TaskGroup;
+import io.harness.delegate.beans.ci.CIInitializeTaskParams;
+import io.harness.delegate.beans.ci.CITaskExecutionResponse;
 import io.harness.delegate.beans.ci.docker.CIDockerCleanupStepRequest;
 import io.harness.delegate.beans.ci.docker.CIDockerExecuteStepRequest;
 import io.harness.delegate.beans.ci.docker.CIDockerInitializeTaskRequest;
@@ -25,7 +27,8 @@ import io.harness.delegate.task.TaskParameters;
 public enum TaskTypeV2 {
   CI_DOCKER_INITIALIZE_TASK(TaskGroup.CI, CIDockerInitializeTaskRequest.class, DockerTaskExecutionResponse.class, true),
   CI_DOCKER_EXECUTE_TASK(TaskGroup.CI, CIDockerExecuteStepRequest.class, DockerTaskExecutionResponse.class, true),
-  CI_DOCKER_CLEANUP_TASK(TaskGroup.CI, CIDockerCleanupStepRequest.class, DockerTaskExecutionResponse.class, true);
+  CI_DOCKER_CLEANUP_TASK(TaskGroup.CI, CIDockerCleanupStepRequest.class, DockerTaskExecutionResponse.class, true),
+  INITIALIZATION_PHASE(TaskGroup.CI, CIInitializeTaskParams.class, CITaskExecutionResponse.class, false);
 
   private final TaskGroup taskGroup;
   private final String displayName;

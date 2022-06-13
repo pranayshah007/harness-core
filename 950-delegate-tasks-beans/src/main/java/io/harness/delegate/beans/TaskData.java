@@ -17,6 +17,7 @@ import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldNameConstants;
+import software.wings.beans.SerializationFormat;
 
 @Data
 @Builder
@@ -31,7 +32,9 @@ public class TaskData {
   private boolean async;
   @NotNull private String taskType;
   private Object[] parameters;
+  private String jsonData;
   private long timeout;
   private int expressionFunctorToken;
   Map<String, String> expressions;
+  @Builder.Default SerializationFormat serializationFormat = SerializationFormat.KRYO;
 }

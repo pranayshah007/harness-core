@@ -24,6 +24,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.harness.MockableTestMixin;
 import io.harness.beans.Cd1SetupFields;
 import io.harness.beans.DelegateTask;
@@ -121,6 +122,7 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
   private Server server;
   private Logger mockClientLogger;
   private Logger mockServerLogger;
+  private ObjectMapper objectMapper;
 
   @Before
   public void setUp() throws Exception {
@@ -145,7 +147,7 @@ public class DelegateServiceGrpcImplTest extends WingsBaseTest implements Mockab
     delegateTaskServiceClassic = mock(DelegateTaskServiceClassic.class);
     delegateTaskService = mock(DelegateTaskService.class);
     delegateServiceGrpcImpl = new DelegateServiceGrpcImpl(delegateCallbackRegistry, perpetualTaskService,
-        delegateService, delegateTaskService, kryoSerializer, delegateTaskServiceClassic);
+        delegateService, delegateTaskService, kryoSerializer, delegateTaskServiceClassic, objectMapper);
 
     server =
         InProcessServerBuilder.forName(serverName).directExecutor().addService(delegateServiceGrpcImpl).build().start();

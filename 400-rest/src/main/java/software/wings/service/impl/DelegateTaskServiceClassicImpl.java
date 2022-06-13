@@ -43,6 +43,8 @@ import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.harness.annotations.dev.BreakDependencyOn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
@@ -56,26 +58,10 @@ import io.harness.capability.CapabilityRequirement;
 import io.harness.capability.CapabilityTaskSelectionDetails;
 import io.harness.capability.service.CapabilityService;
 import io.harness.delegate.NoEligibleDelegatesInAccountException;
-import io.harness.delegate.beans.Delegate;
+import io.harness.delegate.beans.*;
 import io.harness.delegate.beans.Delegate.DelegateKeys;
-import io.harness.delegate.beans.DelegateInstanceStatus;
-import io.harness.delegate.beans.DelegateMetaInfo;
-import io.harness.delegate.beans.DelegateProgressData;
-import io.harness.delegate.beans.DelegateResponseData;
-import io.harness.delegate.beans.DelegateSyncTaskResponse;
-import io.harness.delegate.beans.DelegateTaskAbortEvent;
-import io.harness.delegate.beans.DelegateTaskEvent;
-import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskPackage.DelegateTaskPackageBuilder;
-import io.harness.delegate.beans.DelegateTaskRank;
-import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.DelegateTaskResponse.ResponseCode;
-import io.harness.delegate.beans.ErrorNotifyResponseData;
-import io.harness.delegate.beans.NoAvailableDelegatesException;
-import io.harness.delegate.beans.NoInstalledDelegatesException;
-import io.harness.delegate.beans.SecretDetail;
-import io.harness.delegate.beans.TaskGroup;
-import io.harness.delegate.beans.TaskSelectorMap;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.beans.executioncapability.ExecutionCapabilityDemander;
 import io.harness.delegate.beans.executioncapability.SelectorCapability;
@@ -125,12 +111,7 @@ import io.harness.version.VersionInfoManager;
 import io.harness.waiter.WaitNotifyEngine;
 
 import software.wings.app.MainConfiguration;
-import software.wings.beans.ExecutionCredential;
-import software.wings.beans.GitConfig;
-import software.wings.beans.GitValidationParameters;
-import software.wings.beans.HostValidationTaskParameters;
-import software.wings.beans.SettingAttribute;
-import software.wings.beans.TaskType;
+import software.wings.beans.*;
 import software.wings.common.AuditHelper;
 import software.wings.core.managerConfiguration.ConfigurationController;
 import software.wings.delegatetasks.cv.RateLimitExceededException;
@@ -819,6 +800,22 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
                                     .filter(DelegateTaskKeys.accountId, accountId)
                                     .filter(DelegateTaskKeys.uuid, taskId)
                                     .get();
+
+    // If the task is JSON serialized, deserialize the json data into the parameters
+    if(delegateTask.getData().getSerializationFormat().equals(SerializationFormat.JSON)) {
+      TaskType type = TaskType.valueOf(delegateTask.getData().getTaskType());
+      TaskParameters taskParameters;
+      ObjectMapper objectMapper = new ObjectMapper();
+      try {
+        taskParameters = objectMapper.readValue(delegateTask.getData().getJsonData(), type.getRequest());
+      } catch (JsonProcessingException e) {
+        throw new InvalidRequestException("oops", e);
+      }
+      TaskData taskData = delegateTask.getData();
+      taskData.setParameters(new Object[] {taskParameters});
+      delegateTask.setData(taskData);
+    }
+
     if (delegateTask != null) {
       try (AutoLogContext ignore = new TaskLogContext(taskId, delegateTask.getData().getTaskType(),
                TaskType.valueOf(delegateTask.getData().getTaskType()).getTaskGroup().name(), OVERRIDE_ERROR)) {
@@ -1249,7 +1246,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
       if (delegateTask.getData().isAsync()) {
         log.debug("Publishing async task response...");
         delegateCallbackService.publishAsyncTaskResponse(
-            delegateTask.getUuid(), kryoSerializer.asDeflatedBytes(response.getResponse()));
+            delegateTask.getUuid(), response);
       } else {
         log.debug("Publishing sync task response...");
         delegateCallbackService.publishSyncTaskResponse(

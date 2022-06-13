@@ -60,11 +60,7 @@ public class K8EventHandler {
   }
 
   public void stopEventWatch(Watch<CoreV1Event> watch) {
-    try {
-      watch.close();
-    } catch (IOException e) {
-      log.error("failed to stop event watch", e);
-    }
+    log.info("skipping watch cuz it doesn't work... ");
   }
 
   private Watch<CoreV1Event> createWatch(KubernetesConfig kubernetesConfig, String namespace, String fieldSelector)

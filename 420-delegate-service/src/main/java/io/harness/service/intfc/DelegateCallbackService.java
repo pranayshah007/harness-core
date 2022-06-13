@@ -7,9 +7,11 @@
 
 package io.harness.service.intfc;
 
+import io.harness.delegate.beans.DelegateTaskResponse;
+
 public interface DelegateCallbackService {
   void publishSyncTaskResponse(String delegateTaskId, byte[] responseData);
-  void publishAsyncTaskResponse(String delegateTaskId, byte[] responseData);
+  void publishAsyncTaskResponse(String delegateTaskId, DelegateTaskResponse response);
   void publishTaskProgressResponse(String delegateTaskId, String uuid, byte[] responseData);
   void destroy();
 }

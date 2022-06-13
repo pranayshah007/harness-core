@@ -13,6 +13,8 @@ import io.harness.annotations.dev.TargetModule;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Builder;
 import lombok.Data;
+import software.wings.beans.SerializationFormat;
+import software.wings.beans.TaskType;
 
 @Data
 @Builder
@@ -22,6 +24,9 @@ public class DelegateTaskResponse {
   private String accountId;
   private DelegateResponseData response;
   private ResponseCode responseCode;
+  TaskType taskType;
+  @Builder.Default
+  SerializationFormat serializationFormat = SerializationFormat.KRYO;
 
   public enum ResponseCode {
     OK,

@@ -9,6 +9,8 @@ package io.harness.grpc;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.harness.annotations.dev.BreakDependencyOn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
@@ -16,43 +18,17 @@ import io.harness.beans.DelegateTask;
 import io.harness.beans.DelegateTask.DelegateTaskBuilder;
 import io.harness.beans.DelegateTask.DelegateTaskKeys;
 import io.harness.callback.DelegateCallbackToken;
-import io.harness.delegate.CancelTaskRequest;
-import io.harness.delegate.CancelTaskResponse;
-import io.harness.delegate.CreatePerpetualTaskRequest;
-import io.harness.delegate.CreatePerpetualTaskResponse;
+import io.harness.delegate.*;
 import io.harness.delegate.DelegateServiceGrpc.DelegateServiceImplBase;
-import io.harness.delegate.DeletePerpetualTaskRequest;
-import io.harness.delegate.DeletePerpetualTaskResponse;
-import io.harness.delegate.ExecuteParkedTaskRequest;
-import io.harness.delegate.ExecuteParkedTaskResponse;
-import io.harness.delegate.FetchParkedTaskStatusRequest;
-import io.harness.delegate.FetchParkedTaskStatusResponse;
-import io.harness.delegate.RegisterCallbackRequest;
-import io.harness.delegate.RegisterCallbackResponse;
-import io.harness.delegate.ResetPerpetualTaskRequest;
-import io.harness.delegate.ResetPerpetualTaskResponse;
-import io.harness.delegate.SendTaskProgressRequest;
-import io.harness.delegate.SendTaskProgressResponse;
-import io.harness.delegate.SendTaskStatusRequest;
-import io.harness.delegate.SendTaskStatusResponse;
-import io.harness.delegate.SubmitTaskRequest;
-import io.harness.delegate.SubmitTaskResponse;
-import io.harness.delegate.TaskDetails;
-import io.harness.delegate.TaskExecutionStage;
-import io.harness.delegate.TaskId;
-import io.harness.delegate.TaskMode;
-import io.harness.delegate.TaskProgressRequest;
-import io.harness.delegate.TaskProgressResponse;
-import io.harness.delegate.TaskProgressUpdatesRequest;
-import io.harness.delegate.TaskProgressUpdatesResponse;
-import io.harness.delegate.TaskSelector;
 import io.harness.delegate.beans.DelegateProgressData;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.NoDelegatesException;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
+import io.harness.delegate.task.TaskParameters;
 import io.harness.exception.ExceptionUtils;
+import io.harness.exception.InvalidRequestException;
 import io.harness.perpetualtask.PerpetualTaskClientContext;
 import io.harness.perpetualtask.PerpetualTaskClientContext.PerpetualTaskClientContextBuilder;
 import io.harness.perpetualtask.PerpetualTaskId;
@@ -61,6 +37,7 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.service.intfc.DelegateCallbackRegistry;
 import io.harness.service.intfc.DelegateTaskService;
 
+import software.wings.beans.SerializationFormat;
 import software.wings.service.intfc.DelegateService;
 import software.wings.service.intfc.DelegateTaskServiceClassic;
 
@@ -90,18 +67,20 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
   private KryoSerializer kryoSerializer;
   private DelegateTaskService delegateTaskService;
   private DelegateTaskServiceClassic delegateTaskServiceClassic;
+  private ObjectMapper objectMapper;
 
   @Inject
   public DelegateServiceGrpcImpl(DelegateCallbackRegistry delegateCallbackRegistry,
       PerpetualTaskService perpetualTaskService, DelegateService delegateService,
       DelegateTaskService delegateTaskService, KryoSerializer kryoSerializer,
-      DelegateTaskServiceClassic delegateTaskServiceClassic) {
+      DelegateTaskServiceClassic delegateTaskServiceClassic, ObjectMapper objectMapper) {
     this.delegateCallbackRegistry = delegateCallbackRegistry;
     this.perpetualTaskService = perpetualTaskService;
     this.delegateService = delegateService;
     this.kryoSerializer = kryoSerializer;
     this.delegateTaskService = delegateTaskService;
     this.delegateTaskServiceClassic = delegateTaskServiceClassic;
+    this.objectMapper = objectMapper;
   }
 
   @Override
@@ -123,6 +102,8 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
       List<String> taskSelectors =
           request.getSelectorsList().stream().map(TaskSelector::getSelector).collect(Collectors.toList());
 
+
+
       DelegateTaskBuilder taskBuilder =
           DelegateTask.builder()
               .uuid(taskId)
@@ -137,16 +118,7 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
               .selectionLogsTrackingEnabled(request.getSelectionTrackingLogEnabled())
               .eligibleToExecuteDelegateIds(new LinkedList<>(request.getEligibleToExecuteDelegateIdsList()))
               .forceExecute(request.getForceExecute())
-              .data(TaskData.builder()
-                        .parked(taskDetails.getParked())
-                        .async(taskDetails.getMode() == TaskMode.ASYNC)
-                        .taskType(taskDetails.getType().getType())
-                        .parameters(new Object[] {
-                            kryoSerializer.asInflatedObject(taskDetails.getKryoParameters().toByteArray())})
-                        .timeout(Durations.toMillis(taskDetails.getExecutionTimeout()))
-                        .expressionFunctorToken((int) taskDetails.getExpressionFunctorToken())
-                        .expressions(taskDetails.getExpressionsMap())
-                        .build());
+                  .data(createTaskData(taskDetails));
 
       if (request.hasQueueTimeout()) {
         taskBuilder.expiry(System.currentTimeMillis() + Durations.toMillis(request.getQueueTimeout()));
@@ -178,6 +150,34 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
       }
       responseObserver.onError(io.grpc.Status.INTERNAL.withDescription(ex.getMessage()).asRuntimeException());
     }
+  }
+
+  private TaskData createTaskData(TaskDetails taskDetails) {
+    Object[] parameters = null;
+    String jsonData = "";
+    TaskType taskType = taskDetails.getType();
+    SerializationFormat serializationFormat;
+    if (taskDetails.getParametersCase().equals(TaskDetails.ParametersCase.KRYO_PARAMETERS)) {
+      serializationFormat = SerializationFormat.KRYO;
+      parameters = new Object[] {kryoSerializer.asInflatedObject(taskDetails.getKryoParameters().toByteArray())};
+    } else if (taskDetails.getParametersCase().equals(TaskDetails.ParametersCase.JSON_PARAMETERS)) {
+      serializationFormat = SerializationFormat.JSON;
+      jsonData = taskDetails.getJsonParameters().toStringUtf8();
+    } else {
+      throw new InvalidRequestException("Invalid task response type.");
+    }
+
+    return TaskData.builder()
+            .parked(taskDetails.getParked())
+            .async(taskDetails.getMode() == TaskMode.ASYNC)
+            .taskType(taskType.getType())
+            .parameters(parameters)
+            .jsonData(jsonData)
+            .timeout(Durations.toMillis(taskDetails.getExecutionTimeout()))
+            .expressionFunctorToken((int) taskDetails.getExpressionFunctorToken())
+            .expressions(taskDetails.getExpressionsMap())
+            .serializationFormat(serializationFormat)
+            .build();
   }
 
   @Override

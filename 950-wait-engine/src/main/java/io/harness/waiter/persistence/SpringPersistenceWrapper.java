@@ -17,12 +17,15 @@ import static java.util.stream.Collectors.toList;
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 import static org.springframework.data.mongodb.core.query.Query.query;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.serializer.KryoSerializer;
 import io.harness.springdata.SpringDataMongoUtils;
+import io.harness.tasks.BinaryResponseData;
 import io.harness.tasks.ResponseData;
 import io.harness.timeout.TimeoutEngine;
 import io.harness.timeout.TimeoutInstance;
@@ -55,6 +58,8 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.transaction.support.TransactionTemplate;
+import software.wings.beans.SerializationFormat;
+import software.wings.beans.TaskType;
 
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -115,8 +120,26 @@ public class SpringPersistenceWrapper implements PersistenceWrapper {
         isError = true;
       }
       if (notifyResponse.getResponseData() != null) {
-        responseMap.put(
-            notifyResponse.getUuid(), (ResponseData) kryoSerializer.asInflatedObject(notifyResponse.getResponseData()));
+        TaskType taskType = TaskType.valueOf(notifyResponse.getTaskType());
+        SerializationFormat serializationFormat = SerializationFormat.valueOf(notifyResponse.getSerializationFormat());
+        ResponseData responseData = null;
+        if(serializationFormat.equals(SerializationFormat.JSON)) {
+          ObjectMapper objectMapper = new ObjectMapper();
+          objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+          try {
+//            responseData = objectMapper.readValue(notifyResponse.getResponseData(), taskType.getResponse());
+            // Convert responseData into BinaryResponseData
+            BinaryResponseData binaryResponseData = BinaryResponseData.builder().data(notifyResponse.getResponseData()).build();
+            responseMap.put(notifyResponse.getUuid(), binaryResponseData);
+            continue;
+          } catch (Exception e) {
+            log.error(String.valueOf(e));
+          }
+        } else {
+          responseData = (ResponseData) kryoSerializer.asInflatedObject(notifyResponse.getResponseData());
+        }
+        // Substitute responseData with BinaryResponseData
+        responseMap.put(notifyResponse.getUuid(), responseData);
       }
     }
     return ProcessedMessageResponse.builder().isError(isError).responseDataMap(responseMap).build();

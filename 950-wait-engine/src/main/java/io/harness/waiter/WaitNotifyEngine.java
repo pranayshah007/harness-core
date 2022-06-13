@@ -16,8 +16,11 @@ import static java.lang.System.currentTimeMillis;
 import static java.util.Collections.singletonList;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.logging.AutoLogRemoveContext;
 import io.harness.serializer.KryoSerializer;
 import io.harness.tasks.ErrorResponseData;
@@ -41,6 +44,8 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import software.wings.beans.SerializationFormat;
+import software.wings.beans.TaskType;
 
 /**
  * WaitNotifyEngine allows tasks to register in waitQueue and get notified via callback.
@@ -133,11 +138,25 @@ public class WaitNotifyEngine {
     }
   }
 
-  public String doneWith(String correlationId, ResponseData response) {
-    return doneWith(correlationId, response, response instanceof ErrorResponseData);
+  public String doneWith(String correlationId, ResponseData responseData, TaskType taskType, SerializationFormat serializationFormat) throws JsonProcessingException {
+    byte[] response;
+    ObjectMapper objectMapper = new ObjectMapper();
+    if(serializationFormat.equals(SerializationFormat.JSON)) {
+      response = objectMapper.writeValueAsBytes(responseData);
+    } else {
+      response = kryoSerializer.asDeflatedBytes(responseData);
+    }
+    return doneWith(correlationId, responseData, responseData instanceof ErrorResponseData, response, serializationFormat, taskType);
   }
 
-  private String doneWith(String correlationId, ResponseData response, boolean error) {
+  public String doneWith(String correlationId, ResponseData response) {
+    return doneWith(correlationId, response, response instanceof ErrorResponseData,
+            kryoSerializer.asDeflatedBytes(response), SerializationFormat.KRYO, null);
+  }
+
+  // Update the args for this method so that it accepts the complete response
+  private String doneWith(String correlationId, ResponseData response, boolean error,
+                          byte[] responseData, SerializationFormat serializationFormat, TaskType taskType) {
     Preconditions.checkArgument(isNotBlank(correlationId), "correlationId is null or empty");
 
     if (log.isDebugEnabled()) {
@@ -147,10 +166,13 @@ public class WaitNotifyEngine {
     try {
       final Stopwatch stopwatch = Stopwatch.createStarted();
       long doneWithStartTime = stopwatch.elapsed(TimeUnit.MILLISECONDS);
+      log.info("saving notify response using persistence wrapper ... ");
       persistenceWrapper.save(NotifyResponse.builder()
                                   .uuid(correlationId)
                                   .createdAt(currentTimeMillis())
-                                  .responseData(kryoSerializer.asDeflatedBytes(response))
+                      .taskType(taskType.toString())
+                      .serializationFormat(serializationFormat.toString())
+                                  .responseData(responseData)
                                   .error(error || response instanceof ErrorResponseData)
                                   .build());
       long queryEndTime = stopwatch.elapsed(TimeUnit.MILLISECONDS);
@@ -158,6 +180,7 @@ public class WaitNotifyEngine {
       if (log.isDebugEnabled()) {
         log.debug("Process NotifyResponse mongo queryTime {}", queryEndTime - doneWithStartTime);
       }
+      log.info("handling notify response");
       handleNotifyResponse(correlationId);
       return correlationId;
     } catch (DuplicateKeyException | org.springframework.dao.DuplicateKeyException exception) {
@@ -169,8 +192,11 @@ public class WaitNotifyEngine {
   }
 
   public void sendNotification(WaitInstance waitInstance) {
+    log.info("sending notification dude ... ");
     try (AutoLogRemoveContext ignore = new AutoLogRemoveContext(WaitInstanceLogContext.ID)) {
       String publisher = waitInstance.getPublisher();
+
+      log.info("publisher is: {}", publisher);
 
       final NotifyQueuePublisher notifyQueuePublisher = publisherRegister.obtain(waitInstance.getPublisher());
 
@@ -186,6 +212,7 @@ public class WaitNotifyEngine {
   }
 
   public void handleNotifyResponse(String uuid) {
+    log.info("in handleNotifyResponse");
     WaitInstance waitInstance;
     while ((waitInstance = persistenceWrapper.modifyAndFetchWaitInstance(uuid)) != null) {
       if (isEmpty(waitInstance.getWaitingOnCorrelationIds())) {
@@ -197,6 +224,7 @@ public class WaitNotifyEngine {
   public boolean doneWithWithoutCallback(@NonNull String correlationId) {
     try {
       WaitInstance waitInstance;
+      log.info("in done without callback");
       while ((waitInstance = modifyAndFetchWaitInstance(correlationId)) != null) {
         if (isEmpty(waitInstance.getWaitingOnCorrelationIds())) {
           persistenceWrapper.deleteWaitInstance(waitInstance);

@@ -12,6 +12,8 @@ import static io.harness.persistence.HQuery.excludeAuthority;
 
 import static java.lang.System.currentTimeMillis;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateAsyncTaskResponse;
@@ -40,6 +42,8 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.UpdateOperations;
+import software.wings.beans.SerializationFormat;
+import software.wings.beans.TaskType;
 
 @Singleton
 @Slf4j
@@ -58,6 +62,8 @@ public class DelegateAsyncServiceImpl implements DelegateAsyncService {
   public void run() {
     // TODO - method guaranties at least one delivery
     Set<String> responsesToBeDeleted = new HashSet<>();
+
+    log.info("in process async service impl ... ");
 
     boolean consumeResponse = true;
     if (enablePrimaryCheck && queueController != null) {
@@ -94,11 +100,21 @@ public class DelegateAsyncServiceImpl implements DelegateAsyncService {
             lockedAsyncTaskResponse.getUuid(), queryTime, loopProcessingTime);
 
         loopStartTime = globalStopwatch.elapsed(TimeUnit.MILLISECONDS);
-        ResponseData responseData = disableDeserialization
-            ? BinaryResponseData.builder().data(lockedAsyncTaskResponse.getResponseData()).build()
-            : (DelegateResponseData) kryoSerializer.asInflatedObject(lockedAsyncTaskResponse.getResponseData());
+        SerializationFormat serializationFormat = SerializationFormat.valueOf(lockedAsyncTaskResponse.getSerializationFormat());
+        TaskType taskType = TaskType.valueOf(lockedAsyncTaskResponse.getTaskType());
+        ResponseData responseData = null;
+        if(serializationFormat.equals(SerializationFormat.JSON)) {
+          ObjectMapper objectMapper = new ObjectMapper();
+          objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+          responseData = objectMapper.readValue(lockedAsyncTaskResponse.getResponseData(), taskType.getResponse());
+          waitNotifyEngine.doneWith(lockedAsyncTaskResponse.getUuid(), responseData, taskType, serializationFormat);
+        } else {
+          responseData = disableDeserialization
+                  ? BinaryResponseData.builder().data(lockedAsyncTaskResponse.getResponseData()).build()
+                  : (DelegateResponseData) kryoSerializer.asInflatedObject(lockedAsyncTaskResponse.getResponseData());
+          waitNotifyEngine.doneWith(lockedAsyncTaskResponse.getUuid(), responseData);
+        }
         long doneWithStartTime = stopwatch.elapsed(TimeUnit.MILLISECONDS);
-        waitNotifyEngine.doneWith(lockedAsyncTaskResponse.getUuid(), responseData);
         long doneWithEndTime = stopwatch.elapsed(TimeUnit.MILLISECONDS);
 
         if (log.isDebugEnabled()) {

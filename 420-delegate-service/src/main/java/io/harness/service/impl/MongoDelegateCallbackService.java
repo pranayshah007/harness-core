@@ -9,10 +9,14 @@ package io.harness.service.impl;
 
 import static com.mongodb.DBCollection.ID_FIELD_NAME;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.inject.Inject;
 import io.harness.callback.MongoDatabase;
 import io.harness.delegate.beans.DelegateAsyncTaskResponse.DelegateAsyncTaskResponseKeys;
 import io.harness.delegate.beans.DelegateSyncTaskResponse.DelegateSyncTaskResponseKeys;
 import io.harness.delegate.beans.DelegateTaskProgressResponse.DelegateTaskProgressResponseKeys;
+import io.harness.delegate.beans.DelegateTaskResponse;
+import io.harness.serializer.KryoSerializer;
 import io.harness.service.intfc.DelegateCallbackService;
 
 import com.mongodb.MongoClient;
@@ -26,12 +30,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.bson.Document;
 import org.bson.conversions.Bson;
+import software.wings.beans.SerializationFormat;
 
 @Slf4j
 public class MongoDelegateCallbackService implements DelegateCallbackService {
   private static final String SYNC_TASK_COLLECTION_NAME_SUFFIX = "delegateSyncTaskResponses";
   private static final String ASYNC_TASK_COLLECTION_NAME_SUFFIX = "delegateAsyncTaskResponses";
   private static final String TASK_PROGRESS_COLLECTION_NAME_SUFFIX = "delegateTaskProgressResponses";
+  @Inject private KryoSerializer kryoSerializer;
 
   private final MongoClient mongoClient;
   private final com.mongodb.client.MongoDatabase database;
@@ -72,12 +78,25 @@ public class MongoDelegateCallbackService implements DelegateCallbackService {
   private static final UpdateOptions upsert = new UpdateOptions().upsert(true);
 
   @Override
-  public void publishAsyncTaskResponse(String delegateTaskId, byte[] responseData) {
+  public void publishAsyncTaskResponse(String delegateTaskId, DelegateTaskResponse response) {
+    byte[] responseData = null;
+    ObjectMapper objectMapper = new ObjectMapper();
+    if (response.getSerializationFormat().equals(SerializationFormat.JSON)) {
+      try {
+        responseData = objectMapper.writeValueAsBytes(response.getResponse());
+      } catch (Exception e) {
+        log.error("got an exception: {}", e);
+      }
+    } else {
+      responseData = kryoSerializer.asDeflatedBytes(response.getResponse());
+    }
     Bson filter = Filters.eq(ID_FIELD_NAME, delegateTaskId);
 
     Document document = new Document();
     document.put(ID_FIELD_NAME, delegateTaskId);
     document.put(DelegateAsyncTaskResponseKeys.responseData, responseData);
+    document.put(DelegateAsyncTaskResponseKeys.taskType, response.getTaskType().toString());
+    document.put(DelegateAsyncTaskResponseKeys.serializationFormat, response.getSerializationFormat().toString());
     document.put(DelegateAsyncTaskResponseKeys.processAfter, 0l);
 
     Bson update = new Document("$set", document);

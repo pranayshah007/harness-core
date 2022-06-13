@@ -20,6 +20,8 @@ import lombok.Value;
 import lombok.experimental.FieldNameConstants;
 import org.mongodb.morphia.annotations.Entity;
 import org.mongodb.morphia.annotations.Id;
+import software.wings.beans.SerializationFormat;
+import software.wings.beans.TaskType;
 
 @Value
 @Builder
@@ -31,6 +33,8 @@ public class DelegateAsyncTaskResponse implements PersistentEntity {
   private byte[] responseData;
   @FdIndex private long processAfter;
   private Long holdUntil;
+  String taskType;
+  @Builder.Default String serializationFormat = "KRYO";
 
   @FdTtlIndex @Builder.Default private Date validUntil = Date.from(OffsetDateTime.now().plusHours(24).toInstant());
 }

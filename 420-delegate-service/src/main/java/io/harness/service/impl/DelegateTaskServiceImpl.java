@@ -13,6 +13,7 @@ import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_TASK_R
 
 import static java.lang.System.currentTimeMillis;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.harness.beans.DelegateTask;
 import io.harness.beans.DelegateTask.DelegateTaskKeys;
 import io.harness.data.structure.EmptyPredicate;
@@ -38,6 +39,7 @@ import io.harness.version.VersionInfoManager;
 import io.harness.waiter.WaitNotifyEngine;
 
 import software.wings.beans.DelegateTaskUsageInsightsEventType;
+import software.wings.beans.SerializationFormat;
 import software.wings.beans.TaskType;
 import software.wings.service.impl.DelegateTaskStatusObserver;
 
@@ -109,6 +111,8 @@ public class DelegateTaskServiceImpl implements DelegateTaskService {
 
     DelegateTask delegateTask = taskQuery.get();
 
+  log.info("did the query stuff");
+
     if (delegateTask != null) {
       try (AutoLogContext ignore = new TaskLogContext(taskId, delegateTask.getData().getTaskType(),
                TaskType.valueOf(delegateTask.getData().getTaskType()).getTaskGroup().name(), OVERRIDE_ERROR)) {
@@ -144,9 +148,14 @@ public class DelegateTaskServiceImpl implements DelegateTaskService {
 
   @Override
   public void handleResponse(DelegateTask delegateTask, Query<DelegateTask> taskQuery, DelegateTaskResponse response) {
+    log.info("driver id is: {}", delegateTask.getDriverId());
     if (delegateTask.getDriverId() == null) {
+      log.info("going to in proc response");
       handleInprocResponse(delegateTask, response);
     } else {
+      log.info("going to driver response");
+      log.info("Delegate task is: {}", delegateTask);
+      log.info("response is: {}", response);
       handleDriverResponse(delegateTask, response);
     }
 
@@ -154,7 +163,7 @@ public class DelegateTaskServiceImpl implements DelegateTaskService {
       persistence.deleteOnServer(taskQuery);
     }
 
-    delegateMetricsService.recordDelegateTaskResponseMetrics(delegateTask, response, DELEGATE_TASK_RESPONSE);
+    delegateMetricsService.recordDelegateTaskResponseMetrics(delegateTask, DELEGATE_TASK_RESPONSE);
   }
 
   @VisibleForTesting
@@ -166,7 +175,7 @@ public class DelegateTaskServiceImpl implements DelegateTaskService {
     try (DelegateDriverLogContext driverLogContext =
              new DelegateDriverLogContext(delegateTask.getDriverId(), OVERRIDE_ERROR);
          TaskLogContext taskLogContext = new TaskLogContext(delegateTask.getUuid(), OVERRIDE_ERROR)) {
-      log.debug("Processing task response...");
+      log.info("Processing task response...");
 
       DelegateCallbackService delegateCallbackService =
           delegateCallbackRegistry.obtainDelegateCallbackService(delegateTask.getDriverId());
@@ -176,9 +185,11 @@ public class DelegateTaskServiceImpl implements DelegateTaskService {
         return;
       }
 
+      ObjectMapper objectMapper = new ObjectMapper();
+
       if (delegateTask.getData().isAsync()) {
         delegateCallbackService.publishAsyncTaskResponse(
-            delegateTask.getUuid(), kryoSerializer.asDeflatedBytes(response.getResponse()));
+            delegateTask.getUuid(), response);
       } else {
         delegateCallbackService.publishSyncTaskResponse(
             delegateTask.getUuid(), kryoSerializer.asDeflatedBytes(response.getResponse()));
@@ -191,12 +202,15 @@ public class DelegateTaskServiceImpl implements DelegateTaskService {
   private void handleInprocResponse(DelegateTask delegateTask, DelegateTaskResponse response) {
     if (delegateTask.getData().isAsync()) {
       String waitId = delegateTask.getWaitId();
+      log.info("wait id is: ", waitId);
       if (waitId != null) {
+        log.info("wait notify.done with");
         waitNotifyEngine.doneWith(waitId, response.getResponse());
       } else {
         log.error("Async task has no wait ID");
       }
     } else {
+      log.info("saving in sync task response");
       persistence.save(DelegateSyncTaskResponse.builder()
                            .uuid(delegateTask.getUuid())
                            .responseData(kryoSerializer.asDeflatedBytes(response.getResponse()))

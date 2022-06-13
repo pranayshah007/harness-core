@@ -11,7 +11,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 
 import io.harness.tasks.ResponseData;
-import software.wings.beans.TaskTypeV2;
+import software.wings.beans.TaskType;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -27,6 +27,6 @@ import lombok.Data;
 public class DelegateTaskResponseV2 {
   private String id;
   @JsonProperty("data") private ResponseData responseData;
-  @JsonProperty("type") private TaskTypeV2 taskType;
+  @JsonProperty("type") private TaskType taskType;
   @JsonProperty("code") private DelegateTaskResponse.ResponseCode responseCode;
 }

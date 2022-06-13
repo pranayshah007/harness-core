@@ -22,6 +22,8 @@ import io.harness.security.annotations.DelegateAuth;
 import io.harness.service.intfc.DelegateTaskService;
 
 import io.harness.tasks.ResponseData;
+import org.conscrypt.ct.Serialization;
+import software.wings.beans.SerializationFormat;
 import software.wings.security.annotations.Scope;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
@@ -79,12 +81,14 @@ public class DelegateTaskResource {
       @QueryParam("accountId") @NotEmpty String accountId, DelegateTaskResponseV2 delegateTaskResponseV2) {
     // Convert DelegateTaskResponseV2 to DelegateTaskResponse
     ResponseData responseData = delegateTaskResponseV2.getResponseData();
-    Class<? extends ResponseData> responseClass = delegateTaskResponseV2.getTaskType().getResponseClass();
+    Class<? extends ResponseData> responseClass = delegateTaskResponseV2.getTaskType().getResponse();
     DelegateResponseData delegateResponseData = (DelegateResponseData) responseClass.cast(responseData);
 
     DelegateTaskResponse delegateTaskResponse = DelegateTaskResponse.builder()
                                                     .responseCode(delegateTaskResponseV2.getResponseCode())
                                                     .response(delegateResponseData)
+            .taskType(delegateTaskResponseV2.getTaskType())
+            .serializationFormat(SerializationFormat.JSON)
                                                     .accountId(accountId)
                                                     .build();
 
@@ -92,7 +96,9 @@ public class DelegateTaskResource {
          AutoLogContext ignore2 = new AccountLogContext(accountId, OVERRIDE_ERROR);
          AutoLogContext ignore3 = new DelegateLogContext(delegateId, OVERRIDE_ERROR)) {
       try {
+        log.info("processing delegate response");
         delegateTaskService.processDelegateResponse(accountId, delegateId, taskId, delegateTaskResponse);
+        log.info("done processing delegate response");
       } catch (Exception exception) {
         log.error("Error during update task response. delegateId: {}, taskId: {}, delegateTaskResponse: {}.",
             delegateId, taskId, delegateTaskResponse, exception);

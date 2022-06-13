@@ -13,6 +13,7 @@ import static io.harness.waiter.WaitInstanceService.MAX_CALLBACK_PROCESSING_TIME
 
 import static java.util.stream.Collectors.toList;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.GeneralException;
@@ -39,11 +40,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
+import org.conscrypt.ct.Serialization;
 import org.mongodb.morphia.FindAndModifyOptions;
 import org.mongodb.morphia.Key;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.Sort;
 import org.mongodb.morphia.query.UpdateOperations;
+import software.wings.beans.SerializationFormat;
+import software.wings.beans.TaskType;
 
 @Slf4j
 @OwnedBy(HarnessTeam.DEL)
@@ -92,8 +96,20 @@ public class MorphiaPersistenceWrapper implements PersistenceWrapper {
           isError = true;
         }
         if (notifyResponse.getResponseData() != null) {
-          responseMap.put(notifyResponse.getUuid(),
-              (ResponseData) kryoSerializer.asInflatedObject(notifyResponse.getResponseData()));
+          TaskType taskType = TaskType.valueOf(notifyResponse.getTaskType());
+          SerializationFormat serializationFormat = SerializationFormat.valueOf(notifyResponse.getSerializationFormat());
+          ResponseData responseData = null;
+          if(serializationFormat.equals(SerializationFormat.JSON)) {
+            ObjectMapper objectMapper = new ObjectMapper();
+            try {
+              responseData = objectMapper.readValue(notifyResponse.getResponseData(), taskType.getResponse());
+            } catch (Exception e) {
+              log.error(String.valueOf(e));
+            }
+          } else {
+            responseData = (ResponseData) kryoSerializer.asInflatedObject(notifyResponse.getResponseData());
+          }
+          responseMap.put(notifyResponse.getUuid(), responseData);
         }
       }
     }
