@@ -18,6 +18,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.connector.awsconnector.AwsCapabilityHelper;
 import io.harness.delegate.beans.connector.azureconnector.AzureCapabilityHelper;
 import io.harness.delegate.beans.connector.gcp.GcpCapabilityHelper;
+import io.harness.delegate.beans.connector.helm.OciHelmConnectorDTO;
 import io.harness.delegate.beans.connector.k8Connector.K8sTaskCapabilityHelper;
 import io.harness.delegate.beans.connector.scm.GitCapabilityHelper;
 import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
@@ -29,11 +30,13 @@ import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.storeconfig.GcsHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.HttpHelmStoreDelegateConfig;
+import io.harness.delegate.beans.storeconfig.OciHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.S3HelmStoreDelegateConfig;
 import io.harness.delegate.capability.EncryptedDataDetailsCapabilityHelper;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.mixin.HttpConnectionExecutionCapabilityGenerator;
 import io.harness.expression.ExpressionEvaluator;
+import io.harness.k8s.model.HelmVersion;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import java.util.ArrayList;
@@ -114,6 +117,20 @@ public interface K8sDeployRequest extends TaskParameters, ExecutionCapabilityDem
                 httpHelmStoreConfig.getEncryptedDataDetails(), maskingEvaluator));
             populateDelegateSelectorCapability(
                 capabilities, httpHelmStoreConfig.getHttpHelmConnector().getDelegateSelectors());
+            break;
+
+          case OCI_HELM:
+            OciHelmStoreDelegateConfig ociHelmStoreConfig =
+                (OciHelmStoreDelegateConfig) helManifestConfig.getStoreDelegateConfig();
+            OciHelmConnectorDTO ociHelmConnector = ociHelmStoreConfig.getOciHelmConnector();
+            capabilities.add(HelmInstallationCapability.builder()
+                                 .version(HelmVersion.V380)
+                                 .criteria("OCI_HELM_REPO: " + ociHelmConnector.getHelmRepoUrl())
+                                 .build());
+            capabilities.addAll(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
+                ociHelmStoreConfig.getEncryptedDataDetails(), maskingEvaluator));
+            populateDelegateSelectorCapability(
+                capabilities, ociHelmStoreConfig.getOciHelmConnector().getDelegateSelectors());
             break;
 
           case S3_HELM:

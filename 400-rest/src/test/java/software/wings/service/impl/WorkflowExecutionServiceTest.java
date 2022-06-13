@@ -1587,6 +1587,81 @@ public class WorkflowExecutionServiceTest extends WingsBaseTest {
     verify(updateOperations).set(eq(WorkflowExecutionKeys.executionArgs_artifact_variables), eq(expectedArtifactVars));
     verify(updateOperations).set(eq(WorkflowExecutionKeys.artifacts), eq(expectedArtifacts));
     verify(updateOperations).set(eq(WorkflowExecutionKeys.executionArgs_artifacts), eq(expectedArtifacts));
+    verify(updateOperations).set(eq(WorkflowExecutionKeys.serviceIds), eq(asList("NA2uRPKLTqm9VU3dPENb-g")));
+    verify(updateOperations).set(eq(WorkflowExecutionKeys.infraDefinitionIds), eq(asList("62pv3U26RnmaLYFiZxjiTg")));
+  }
+
+  @Test
+  @Owner(developers = PRABU)
+  @Category(UnitTests.class)
+  public void testContinueExecutionOfPausedBuildPipelineExecution() {
+    final String appID = "nCLN8c84SqWPr44sqg65JQ";
+    final String pipelineStageElementId = "iibzVUjNTlWsv23lQIrkWw";
+    final String pipelineExecutionId = "3v2FfeZUTvqSnz7djyGMqQ";
+
+    ExecutionArgs executionArgs =
+        JsonUtils.readResourceFile("execution_args/execution_args_continue_pipeline.json", ExecutionArgs.class);
+    executionArgs.setWorkflowVariables(Collections.singletonMap("wf_variable", "value1"));
+    WorkflowExecution workflowExecution =
+        JsonUtils.readResourceFile("execution/runtime_pipeline_execution_stage2.json", WorkflowExecution.class);
+    workflowExecution.setServiceIds(null);
+    workflowExecution.setInfraDefinitionIds(null);
+    workflowExecution.setEnvIds(null);
+    workflowExecution.getExecutionArgs().setWorkflowVariables(new HashMap<>());
+
+    Pipeline pipeline = JsonUtils.readResourceFile("pipeline/k8s_two_stage_pipeline_without_vars.json", Pipeline.class);
+    pipeline.getPipelineStages().get(1).getPipelineStageElements().get(0).getProperties().remove("envId");
+    Workflow workflow = JsonUtils.readResourceFile("workflows/k8s_workflow.json", Workflow.class);
+    ((CanaryOrchestrationWorkflow) workflow.getOrchestrationWorkflow()).setUserVariables(new ArrayList<>());
+    Artifact artifact = JsonUtils.readResourceFile("artifacts/artifacts.json", Artifact.class);
+    StateExecutionInstance stateExecutionInstance = aStateExecutionInstance()
+                                                        .uuid("D7fBZxZyQniDAhWTHdnYHQ")
+                                                        .appId("nCLN8c84SqWPr44sqg65JQ")
+                                                        .status(ExecutionStatus.PAUSED)
+                                                        .executionUuid("dTFHGyWOTMSHXGQoI5kVKw")
+                                                        .contextElements(new LinkedList<>())
+                                                        .build();
+
+    ExecutionContextImpl context = mock(ExecutionContextImpl.class);
+    WorkflowStandardParams params = new WorkflowStandardParams();
+
+    when(artifactService.get(anyString(), anyString())).thenReturn(artifact);
+    when(wingsPersistence.getWithAppId(eq(WorkflowExecution.class), eq(appID), eq(pipelineExecutionId)))
+        .thenReturn(workflowExecution);
+    when(pipelineService.readPipelineWithVariables(eq(appID), anyString())).thenReturn(pipeline);
+    when(pipelineService.getPipeline(eq(appID), anyString())).thenReturn(pipeline);
+    doNothing().when(deploymentAuthHandler).authorizePipelineExecution(anyString(), anyString());
+    doNothing().when(authService).checkIfUserAllowedToDeployPipelineToEnv(anyString(), anyString());
+    when(workflowService.readWorkflow(eq(appID), anyString())).thenReturn(workflow);
+
+    Query query = mock(Query.class);
+    when(wingsPersistence.createQuery(eq(StateExecutionInstance.class))).thenReturn(query);
+    when(query.filter(anyString(), any())).thenReturn(query);
+    when(query.get()).thenReturn(stateExecutionInstance);
+    when(stateMachineExecutor.getExecutionContext(anyString(), anyString(), anyString())).thenReturn(context);
+    when(context.getContextElement(eq(ContextElementType.STANDARD))).thenReturn(params);
+    when(wingsPersistence.createUpdateOperations(eq(StateExecutionInstance.class)))
+        .thenReturn(mock(UpdateOperations.class));
+    // Test that updates are correct
+    UpdateOperations updateOperations = mock(UpdateOperations.class);
+    when(wingsPersistence.createQuery(eq(WorkflowExecution.class))).thenReturn(query);
+    when(wingsPersistence.createUpdateOperations(eq(WorkflowExecution.class))).thenReturn(updateOperations);
+    when(updateOperations.set(anyString(), any())).thenReturn(updateOperations);
+    workflowExecutionService.continuePipelineStage(appID, pipelineExecutionId, pipelineStageElementId, executionArgs);
+
+    List<Artifact> expectedArtifacts = JsonUtils.readResourceFile(
+        "artifacts/expected_artifacts_continue_pipeline.json", new TypeReference<List<Artifact>>() {});
+
+    List<ArtifactVariable> expectedArtifactVars = JsonUtils.readResourceFile(
+        "artifacts/expected_artifact_variables_continue_pipeline.json", new TypeReference<List<ArtifactVariable>>() {});
+
+    verify(updateOperations).set(eq(WorkflowExecutionKeys.startTs), anyLong());
+    verify(updateOperations).set(eq(WorkflowExecutionKeys.executionArgs_artifact_variables), eq(expectedArtifactVars));
+    verify(updateOperations).set(eq(WorkflowExecutionKeys.artifacts), eq(expectedArtifacts));
+    verify(updateOperations).set(eq(WorkflowExecutionKeys.executionArgs_artifacts), eq(expectedArtifacts));
+    verify(updateOperations, never()).set(eq(WorkflowExecutionKeys.serviceIds), anyList());
+    verify(updateOperations, never()).set(eq(WorkflowExecutionKeys.infraDefinitionIds), anyList());
+    verify(updateOperations, never()).set(eq(WorkflowExecutionKeys.envIds), anyList());
   }
 
   @Test

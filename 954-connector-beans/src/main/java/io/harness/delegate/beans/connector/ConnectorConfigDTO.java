@@ -30,6 +30,7 @@ import io.harness.delegate.beans.connector.gcpccm.GcpCloudCostConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
 import io.harness.delegate.beans.connector.gcpkmsconnector.GcpKmsConnectorDTO;
 import io.harness.delegate.beans.connector.helm.HttpHelmConnectorDTO;
+import io.harness.delegate.beans.connector.helm.OciHelmConnectorDTO;
 import io.harness.delegate.beans.connector.jenkins.JenkinsConnectorDTO;
 import io.harness.delegate.beans.connector.jira.JiraConnectorDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterConfigDTO;
@@ -95,7 +96,8 @@ import java.util.List;
       @JsonSubTypes.Type(value = ErrorTrackingConnectorDTO.class, name = "ErrorTracking"),
       @JsonSubTypes.Type(value = AzureRepoConnectorDTO.class, name = "AzureRepo"),
       @JsonSubTypes.Type(value = PhysicalDataCenterConnectorDTO.class, name = "Pdc"),
-      @JsonSubTypes.Type(value = JenkinsConnectorDTO.class, name = "Jenkins")
+      @JsonSubTypes.Type(value = JenkinsConnectorDTO.class, name = "Jenkins"),
+      @JsonSubTypes.Type(value = OciHelmConnectorDTO.class, name = "OciHelmRepo")
 })
 @OwnedBy(DX)
 @Schema(name = "ConnectorConfig", description = "This is the view of the ConnectorConfig entity defined in Harness")

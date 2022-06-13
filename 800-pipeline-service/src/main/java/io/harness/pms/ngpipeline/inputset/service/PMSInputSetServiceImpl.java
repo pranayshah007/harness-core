@@ -36,7 +36,6 @@ import io.harness.repositories.inputset.PMSInputSetRepository;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.mongodb.client.result.UpdateResult;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DuplicateKeyException;
@@ -239,11 +238,10 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
     if (gitSyncSdkService.isGitSyncEnabled(accountId, orgIdentifier, projectIdentifier)) {
       return deleteForOldGitSync(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, identifier, version);
     }
-    InputSetEntity deletedEntity =
-        inputSetRepository.delete(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, identifier);
-    if (deletedEntity.getDeleted()) {
+    try {
+      inputSetRepository.delete(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, identifier);
       return true;
-    } else {
+    } catch (Exception e) {
       throw new InvalidRequestException(
           format("InputSet [%s] for Pipeline [%s] under Project[%s], Organization [%s] could not be deleted.",
               identifier, pipelineIdentifier, projectIdentifier, orgIdentifier));
@@ -267,20 +265,13 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
     }
     InputSetEntity entityWithDelete = existingEntity.withDeleted(true);
     try {
-      InputSetEntity deletedEntity =
-          inputSetRepository.deleteForOldGitSync(entityWithDelete, InputSetYamlDTOMapper.toDTO(entityWithDelete));
-
-      if (deletedEntity.getDeleted()) {
-        return true;
-      } else {
-        throw new InvalidRequestException(
-            format("Input Set [%s], for pipeline [%s], under Project[%s], Organization [%s] couldn't be deleted.",
-                identifier, pipelineIdentifier, projectIdentifier, orgIdentifier));
-      }
+      inputSetRepository.deleteForOldGitSync(entityWithDelete, InputSetYamlDTOMapper.toDTO(entityWithDelete));
+      return true;
     } catch (Exception e) {
       log.error(String.format("Error while deleting input set [%s]", identifier), e);
       throw new InvalidRequestException(
-          String.format("Error while deleting input set [%s]: %s", identifier, e.getMessage()));
+          format("Input Set [%s], for pipeline [%s], under Project[%s], Organization [%s] couldn't be deleted.",
+              identifier, pipelineIdentifier, projectIdentifier, orgIdentifier));
     }
   }
 
@@ -302,15 +293,13 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
         .and(InputSetEntityKeys.pipelineIdentifier)
         .is(pipelineEntity.getIdentifier());
     Query query = new Query(criteria);
-
-    Update update = new Update();
-    update.set(InputSetEntityKeys.deleted, Boolean.TRUE);
-
-    UpdateResult updateResult = inputSetRepository.deleteAllInputSetsWhenPipelineDeleted(query, update);
-    if (!updateResult.wasAcknowledged()) {
-      throw new InvalidRequestException(format(
-          "InputSets for Pipeline [%s] under Project[%s], Organization [%s] couldn't be deleted.",
-          pipelineEntity.getIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineEntity.getOrgIdentifier()));
+    try {
+      inputSetRepository.deleteAllInputSetsWhenPipelineDeleted(query);
+    } catch (Exception e) {
+      throw new InvalidRequestException(
+          format("InputSets for Pipeline [%s] under Project[%s], Organization [%s] couldn't be deleted.",
+              pipelineEntity.getIdentifier(), pipelineEntity.getProjectIdentifier(), pipelineEntity.getOrgIdentifier()),
+          e);
     }
   }
 

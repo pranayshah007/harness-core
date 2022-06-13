@@ -99,11 +99,12 @@ public class AuthenticationSettingsResource {
   @Path("/")
   @ApiOperation(value = "Get authentication settings for an account", nickname = "getAuthenticationSettings")
   @Operation(operationId = "getAuthenticationSettings",
-      summary = "Get the authentication settings by accountIdentifier",
+      summary = "Gets authentication settings for the given Account ID",
+      description = "Gets authentication settings for the given Account ID.",
       responses =
       {
-        @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(responseCode = "default", description = "Returns Authentication settings of the Account")
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "default", description = "Successfully returns authentication settings of an Account")
       })
   public RestResponse<AuthenticationSettingsResponse>
   getAuthenticationSettings(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
@@ -118,12 +119,12 @@ public class AuthenticationSettingsResource {
   @GET
   @Path("/login-settings/password-strength")
   @ApiOperation(value = "Get Password strength settings", nickname = "getPasswordStrengthSettings")
-  @Operation(operationId = "getPasswordStrengthSettings",
-      summary = "Get the password strength settings by accountIdentifier",
+  @Operation(operationId = "getPasswordStrengthSettings", summary = "Get password strength",
+      description = "Gets password strength for the given Account ID.",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(responseCode = "default", description = "Returns Authentication settings of the Account")
+        ApiResponse(responseCode = "default", description = "Returns password strength of an Account")
       })
   public RestResponse<PasswordStrengthPolicy>
   getPasswordStrengthSettings(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
@@ -163,11 +164,12 @@ public class AuthenticationSettingsResource {
   @PUT
   @Path("/oauth/update-providers")
   @ApiOperation(value = "Update Oauth providers for an account", nickname = "updateOauthProviders")
-  @Operation(operationId = "updateOauthProviders", summary = "Updates the Oauth providers by accountIdentifier",
+  @Operation(operationId = "updateOauthProviders", summary = "Update Oauth providers",
+      description = "Updates OAuth providers for the given Account ID.",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(responseCode = "default", description = "Returns success response")
+        ApiResponse(responseCode = "default", description = "Successfully updated the Oauth providers for the account")
       })
   public RestResponse<Boolean>
   updateOauthProviders(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
@@ -185,11 +187,12 @@ public class AuthenticationSettingsResource {
   @DELETE
   @Path("/oauth/remove-mechanism")
   @ApiOperation(value = "Remove Oauth mechanism for an account", nickname = "removeOauthMechanism")
-  @Operation(operationId = "removeOauthMechanism", summary = "Deletes OAuth mechanism by accountIdentifier",
+  @Operation(operationId = "removeOauthMechanism", summary = "Delete OAuth Setting",
+      description = "Deletes OAuth settings for a given Account ID.",
       responses =
       {
-        @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(responseCode = "default", description = "Returns success response")
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "default", description = "Successfully removed OAuth settings configured to an account.")
       })
   public RestResponse<Boolean>
   removeOauthMechanism(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
@@ -203,11 +206,12 @@ public class AuthenticationSettingsResource {
   @PUT
   @Path("/update-auth-mechanism")
   @ApiOperation(value = "Update Auth mechanism for an account", nickname = "updateAuthMechanism")
-  @Operation(operationId = "updateAuthMechanism", summary = "Updates the Auth mechanism by accountIdentifier",
+  @Operation(operationId = "updateAuthMechanism", summary = "Update Auth mechanism",
+      description = "Updates the authentication mechanism for the given Account ID.",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(responseCode = "default", description = "Returns success response")
+        ApiResponse(responseCode = "default", description = "Successfully updated Auth mechanism for an account.")
       })
   public RestResponse<Boolean>
   updateAuthMechanism(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
@@ -223,11 +227,12 @@ public class AuthenticationSettingsResource {
   @PUT
   @Path("/whitelisted-domains")
   @ApiOperation(value = "Update Whitelisted domains for an account", nickname = "updateWhitelistedDomains")
-  @Operation(operationId = "updateWhitelistedDomains", summary = "Updates the Whitelisted domains by accountIdentifier",
+  @Operation(operationId = "updateWhitelistedDomains", summary = "Updates the whitelisted domains",
+      description = "Updates whitelisted domains configured for an account.",
       responses =
       {
-        @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(responseCode = "default", description = "Returns success response")
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
+            description = "Successfully updated whitelisted domains configured with an account")
       })
   public RestResponse<Boolean>
   updateWhitelistedDomains(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
@@ -244,11 +249,12 @@ public class AuthenticationSettingsResource {
   @Path("/saml-metadata-upload")
   @Consumes("multipart/form-data")
   @ApiOperation(value = "Create SAML Config", nickname = "uploadSamlMetaData")
-  @Operation(operationId = "uploadSamlMetaData", summary = "Uploads the SAML metadata by accountId",
+  @Operation(operationId = "uploadSamlMetaData", summary = "Upload SAML metadata",
+      description = "Updates the SAML metadata for the given Account ID.",
       responses =
       {
-        @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(responseCode = "default", description = "Returns SSO config of the account")
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
+            description = "Successfully uploads SAML metadata to the SAML setting configured for an account")
       })
   public RestResponse<SSOConfig>
   uploadSamlMetaData(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam("accountId") String accountId,
@@ -286,11 +292,12 @@ public class AuthenticationSettingsResource {
   @Path("/saml-metadata-upload")
   @Consumes("multipart/form-data")
   @ApiOperation(value = "Edit SAML Config", nickname = "updateSamlMetaData")
-  @Operation(operationId = "updateSamlMetaData", summary = "Updates the SAML metadata by accountId",
+  @Operation(operationId = "updateSamlMetaData", summary = "Update SAML metadata",
+      description = "Updates SAML metadata of the SAML configuration configured for an account",
       responses =
       {
-        @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(responseCode = "default", description = "Returns SSO config of the account")
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
+            description = "Successfully updated SAML metadata of SAML setting configured for an account")
       })
   public RestResponse<SSOConfig>
   updateSamlMetaData(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam("accountId") @NotNull String accountId,
@@ -328,11 +335,12 @@ public class AuthenticationSettingsResource {
   @DELETE
   @Path("/delete-saml-metadata")
   @ApiOperation(value = "Delete SAML Config", nickname = "deleteSamlMetaData")
-  @Operation(operationId = "deleteSamlMetaData", summary = "Deletes SAML meta data by accountIdentifier",
+  @Operation(operationId = "deleteSamlMetaData", summary = "Delete SAML meta data",
+      description = "Deletes SAML metadata for the given Account ID.",
       responses =
       {
-        @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(responseCode = "default", description = "Returns the enabled SSO OAuth Providers for the account")
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "default", description = "Successfully deleted SAML meta associated with a SAML setting")
       })
   public RestResponse<SSOConfig>
   deleteSamlMetadata(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
@@ -346,11 +354,12 @@ public class AuthenticationSettingsResource {
   @GET
   @Path("/saml-login-test")
   @ApiOperation(value = "Get SAML Login Test", nickname = "getSamlLoginTest")
-  @Operation(operationId = "getSamlLoginTest", summary = "Get the SAML login test by accountId",
+  @Operation(operationId = "getSamlLoginTest", summary = "Test SAML connectivity",
+      description = "Tests SAML connectivity for the given Account ID.",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(responseCode = "default", description = "Returns the login type enabled for the account")
+        ApiResponse(responseCode = "default", description = "Returns connectivity status")
       })
   public RestResponse<LoginTypeResponse>
   getSamlLoginTest(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam("accountId") @NotNull String accountId) {
@@ -363,12 +372,12 @@ public class AuthenticationSettingsResource {
   @PUT
   @Path("/two-factor-admin-override-settings")
   @ApiOperation(value = "Set account level two factor auth setting", nickname = "setTwoFactorAuthAtAccountLevel")
-  @Operation(operationId = "setTwoFactorAuthAtAccountLevel",
-      summary = "Set two factor auth at account lever by accountIdentifier",
+  @Operation(operationId = "setTwoFactorAuthAtAccountLevel", summary = "Set two factor authorization",
+      description = "Sets Two-Factor authorization for the given Account ID.",
       responses =
       {
-        @io.swagger.v3.oas.annotations.responses.
-        ApiResponse(responseCode = "default", description = "Returns the boolean status")
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "default", description = "Successfully configured two factor authorization for an account")
       })
   public RestResponse<Boolean>
   setTwoFactorAuthAtAccountLevel(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(

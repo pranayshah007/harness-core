@@ -24,6 +24,14 @@ import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
 import io.harness.connector.validator.scmValidators.GitConfigAuthenticationInfoHelper;
 import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.delegate.beans.connector.scm.GitAuthType;
+import io.harness.delegate.beans.connector.scm.GitConnectionType;
+import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubAuthenticationDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubHttpAuthenticationType;
+import io.harness.delegate.beans.connector.scm.github.GithubHttpCredentialsDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubUsernamePasswordDTO;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.exception.InvalidRequestException;
@@ -82,14 +90,97 @@ public class GitResourceServiceHelperTest extends CategoryTest {
   @Owner(developers = NGONZALEZ)
   @Category(UnitTests.class)
   public void testGetGitStoreDelegateConfig() {
-    ConnectorInfoDTO connectorInfoDTO = ConnectorInfoDTO.builder().connectorType(ConnectorType.GIT).build();
+    GithubConnectorDTO githubConnectorDTO =
+        GithubConnectorDTO.builder()
+            .connectionType(GitConnectionType.REPO)
+            .authentication(GithubAuthenticationDTO.builder()
+                                .authType(GitAuthType.HTTP)
+                                .credentials(GithubHttpCredentialsDTO.builder()
+                                                 .type(GithubHttpAuthenticationType.USERNAME_AND_PASSWORD)
+                                                 .httpCredentialsSpec(GithubUsernamePasswordDTO.builder()
+                                                                          .username("foobar")
+                                                                          .passwordRef(null)
+                                                                          .usernameRef(null)
+                                                                          .build())
+                                                 .build())
+                                .build())
+            .apiAccess(GithubApiAccessDTO.builder().build())
+            .url("url")
+            .build();
+    ConnectorInfoDTO connectorInfoDTO =
+        ConnectorInfoDTO.builder().connectorType(ConnectorType.GIT).connectorConfig(githubConnectorDTO).build();
     BaseNGAccess baseNGAccess =
         BaseNGAccess.builder().accountIdentifier("bar").orgIdentifier("baz").projectIdentifier("zar").build();
     doReturn(SSHKeySpecDTO.builder().build()).when(gitResourceServiceHelper).getSshKeySpecDTO(any(), any());
     List<EncryptedDataDetail> encryptedDataDetails = mock(List.class);
     doReturn(encryptedDataDetails).when(gitConfigAuthenticationInfoHelper).getEncryptedDataDetails(any(), any(), any());
     GitStoreDelegateConfig response = gitResourceServiceHelper.getGitStoreDelegateConfig(
-        connectorInfoDTO, baseNGAccess, FetchType.BRANCH, "fo", "bar", "farz");
+        connectorInfoDTO, baseNGAccess, FetchType.BRANCH, "fo", "bar", "farz", null);
     assertThat(response.getFetchType()).isEqualTo(FetchType.BRANCH);
+  }
+
+  @Test(expected = InvalidRequestException.class)
+  @Owner(developers = NGONZALEZ)
+  @Category(UnitTests.class)
+  public void testGetGitStoreAccountNoRepoName() {
+    GithubConnectorDTO githubConnectorDTO =
+        GithubConnectorDTO.builder()
+            .connectionType(GitConnectionType.ACCOUNT)
+            .authentication(GithubAuthenticationDTO.builder()
+                                .authType(GitAuthType.HTTP)
+                                .credentials(GithubHttpCredentialsDTO.builder()
+                                                 .type(GithubHttpAuthenticationType.USERNAME_AND_PASSWORD)
+                                                 .httpCredentialsSpec(GithubUsernamePasswordDTO.builder()
+                                                                          .username("foobar")
+                                                                          .passwordRef(null)
+                                                                          .usernameRef(null)
+                                                                          .build())
+                                                 .build())
+                                .build())
+            .apiAccess(GithubApiAccessDTO.builder().build())
+            .url("url")
+            .build();
+    ConnectorInfoDTO connectorInfoDTO =
+        ConnectorInfoDTO.builder().connectorType(ConnectorType.GIT).connectorConfig(githubConnectorDTO).build();
+    BaseNGAccess baseNGAccess =
+        BaseNGAccess.builder().accountIdentifier("bar").orgIdentifier("baz").projectIdentifier("zar").build();
+    doReturn(SSHKeySpecDTO.builder().build()).when(gitResourceServiceHelper).getSshKeySpecDTO(any(), any());
+    List<EncryptedDataDetail> encryptedDataDetails = mock(List.class);
+    doReturn(encryptedDataDetails).when(gitConfigAuthenticationInfoHelper).getEncryptedDataDetails(any(), any(), any());
+    gitResourceServiceHelper.getGitStoreDelegateConfig(
+        connectorInfoDTO, baseNGAccess, FetchType.BRANCH, "fo", "bar", "farz", "");
+  }
+
+  @Test
+  @Owner(developers = NGONZALEZ)
+  @Category(UnitTests.class)
+  public void testGetGitStoreAccount() {
+    GithubConnectorDTO githubConnectorDTO =
+        GithubConnectorDTO.builder()
+            .connectionType(GitConnectionType.ACCOUNT)
+            .authentication(GithubAuthenticationDTO.builder()
+                                .authType(GitAuthType.HTTP)
+                                .credentials(GithubHttpCredentialsDTO.builder()
+                                                 .type(GithubHttpAuthenticationType.USERNAME_AND_PASSWORD)
+                                                 .httpCredentialsSpec(GithubUsernamePasswordDTO.builder()
+                                                                          .username("foobar")
+                                                                          .passwordRef(null)
+                                                                          .usernameRef(null)
+                                                                          .build())
+                                                 .build())
+                                .build())
+            .apiAccess(GithubApiAccessDTO.builder().build())
+            .url("url")
+            .build();
+    ConnectorInfoDTO connectorInfoDTO =
+        ConnectorInfoDTO.builder().connectorType(ConnectorType.GIT).connectorConfig(githubConnectorDTO).build();
+    BaseNGAccess baseNGAccess =
+        BaseNGAccess.builder().accountIdentifier("bar").orgIdentifier("baz").projectIdentifier("zar").build();
+    doReturn(SSHKeySpecDTO.builder().build()).when(gitResourceServiceHelper).getSshKeySpecDTO(any(), any());
+    List<EncryptedDataDetail> encryptedDataDetails = mock(List.class);
+    doReturn(encryptedDataDetails).when(gitConfigAuthenticationInfoHelper).getEncryptedDataDetails(any(), any(), any());
+    GitStoreDelegateConfig response = gitResourceServiceHelper.getGitStoreDelegateConfig(
+        connectorInfoDTO, baseNGAccess, FetchType.BRANCH, "fo", "bar", "farz", "reponame");
+    assertThat(response.getGitConfigDTO().getUrl()).isEqualTo("url/reponame");
   }
 }

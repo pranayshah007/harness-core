@@ -533,7 +533,7 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
           delegateGroupQuery.or(delegateGroupQuery.criteria(DelegateGroupKeys.name).contains(searchTerm),
               delegateGroupQuery.criteria(DelegateGroupKeys.description).contains(searchTerm),
               delegateGroupQuery.criteria(DelegateGroupKeys.identifier).contains(searchTerm),
-              delegateGroupQuery.criteria(DelegateGroupKeys.tags).hasThisOne(searchTerm));
+              delegateGroupQuery.criteria(DelegateGroupKeys.tags).contains(searchTerm));
       delegateGroupQuery.and(criteria);
     }
 
@@ -552,6 +552,10 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
 
       if (isNotEmpty(filterProperties.getDescription())) {
         delegateGroupQuery.field(DelegateGroupKeys.description).contains(filterProperties.getDescription());
+      }
+
+      if (isNotEmpty(filterProperties.getDelegateTags())) {
+        delegateGroupQuery.field(DelegateGroupKeys.tags).hasAllOf(filterProperties.getDelegateTags());
       }
     }
     return delegateGroupQuery.field(DelegateGroupKeys.status)

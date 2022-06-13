@@ -54,6 +54,7 @@ import io.harness.exception.ShellExecutionException;
 import io.harness.exception.TerraformCommandExecutionException;
 import io.harness.exception.UnresolvedExpressionsException;
 import io.harness.exception.VerificationOperationException;
+import io.harness.exception.runtime.SshCommandExecutionException;
 import io.harness.exception.runtime.serverless.ServerlessAwsLambdaRuntimeException;
 import io.harness.exception.runtime.serverless.ServerlessCommandExecutionException;
 import io.harness.logging.LogLevel;
@@ -143,5 +144,6 @@ public class CommonsKryoRegistrar implements KryoRegistrar {
     kryo.register(ServerlessAwsLambdaRuntimeException.class, 980026);
     kryo.register(ServerlessCommandExecutionException.class, 980027);
     kryo.register(AzureAKSException.class, 980028);
+    kryo.register(SshCommandExecutionException.class, 980029);
   }
 }

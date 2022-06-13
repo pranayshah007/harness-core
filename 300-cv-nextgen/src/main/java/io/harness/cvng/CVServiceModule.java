@@ -268,6 +268,7 @@ import io.harness.cvng.notification.transformer.SLONotificationRuleConditionTran
 import io.harness.cvng.notification.transformer.SlackNotificationMethodTransformer;
 import io.harness.cvng.outbox.CVServiceOutboxEventHandler;
 import io.harness.cvng.outbox.MonitoredServiceOutboxEventHandler;
+import io.harness.cvng.outbox.ServiceLevelObjectiveOutboxEventHandler;
 import io.harness.cvng.servicelevelobjective.beans.SLIMetricType;
 import io.harness.cvng.servicelevelobjective.beans.SLOTargetType;
 import io.harness.cvng.servicelevelobjective.entities.RatioServiceLevelIndicator.RatioServiceLevelIndicatorUpdatableEntity;
@@ -858,6 +859,8 @@ public class CVServiceModule extends AbstractModule {
         MapBinder.newMapBinder(binder(), String.class, OutboxEventHandler.class);
     outboxEventHandlerMap.addBinding(ResourceTypeConstants.MONITORED_SERVICE)
         .to(MonitoredServiceOutboxEventHandler.class);
+    outboxEventHandlerMap.addBinding(ResourceTypeConstants.SERVICE_LEVEL_OBJECTIVE)
+        .to(ServiceLevelObjectiveOutboxEventHandler.class);
     bind(OutboxEventHandler.class).to(CVServiceOutboxEventHandler.class);
     bindRetryOnExceptionInterceptor();
   }

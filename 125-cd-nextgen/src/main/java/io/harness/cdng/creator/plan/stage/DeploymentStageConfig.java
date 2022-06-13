@@ -75,6 +75,10 @@ public class DeploymentStageConfig implements StageInfoConfig, Visitable {
   @ApiModelProperty(hidden = true)
   ServiceDefinitionType deploymentType;
 
+  public Boolean getGitOpsEnabled() {
+    return gitOpsEnabled == Boolean.TRUE;
+  }
+
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) Boolean gitOpsEnabled;
 
   // TODO: need to remove infraStructure from here after multi-infra feature rollout. Need to keep environment instead

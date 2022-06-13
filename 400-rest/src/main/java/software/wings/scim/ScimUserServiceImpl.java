@@ -227,6 +227,7 @@ public class ScimUserServiceImpl implements ScimUserService {
 
   @Override
   public ScimUser updateUser(String accountId, String userId, PatchRequest patchRequest) {
+    log.info("SCIM: Updating user : Patch - userId: {}, accountId: {}", userId, accountId);
     patchRequest.getOperations().forEach(patchOperation -> {
       try {
         applyUserUpdateOperation(accountId, userId, patchOperation);

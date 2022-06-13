@@ -8,15 +8,21 @@
 package io.harness.tiserviceclient;
 
 import static io.harness.rule.OwnerRule.AMAN;
+import static io.harness.rule.OwnerRule.DEV_MITTAL;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
 import static org.mockito.Mockito.when;
 
 import io.harness.beans.steps.CIStepInfoType;
+import io.harness.beans.sweepingoutputs.StageInfraDetails;
 import io.harness.category.element.UnitTests;
 import io.harness.ci.beans.entities.CIExecutionConfig;
+import io.harness.ci.beans.entities.CIExecutionImages;
 import io.harness.ci.config.CIExecutionServiceConfig;
+import io.harness.ci.config.Operation;
+import io.harness.ci.config.PluginField;
+import io.harness.ci.config.VmImageConfig;
 import io.harness.execution.CIExecutionConfigService;
 import io.harness.execution.DeprecatedImageInfo;
 import io.harness.executionplan.CIExecutionTestBase;
@@ -24,6 +30,7 @@ import io.harness.repositories.CIExecutionConfigRepository;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -219,10 +226,162 @@ public class CIExecutionConfigServiceTest extends CIExecutionTestBase {
                                             .gcsUploadImage("gcsUpload:1.2.3")
                                             .build();
     when(cIExecutionConfigRepository.findFirstByAccountIdentifier("acct")).thenReturn(Optional.of(executionConfig));
-    assertThat(ciExecutionConfigService.getPluginVersion(CIStepInfoType.GIT_CLONE, "acct").getImage())
+    assertThat(ciExecutionConfigService.getPluginVersionForK8(CIStepInfoType.GIT_CLONE, "acct").getImage())
         .isEqualTo("gc:abc");
-    assertThat(ciExecutionConfigService.getPluginVersion(CIStepInfoType.DOCKER, "acct").getImage())
+    assertThat(ciExecutionConfigService.getPluginVersionForK8(CIStepInfoType.DOCKER, "acct").getImage())
         .isEqualTo("bpdr:1.2.4");
+  }
+
+  @Test
+  @Owner(developers = DEV_MITTAL)
+  @Category(UnitTests.class)
+  public void getDefaulttest() {
+    CIExecutionImages ciExecutionImages = ciExecutionConfigService.getDefaultConfig(StageInfraDetails.Type.VM);
+    assertThat(ciExecutionImages.getAddonTag()).isNull();
+    assertThat(ciExecutionImages.getGitCloneTag()).isEqualTo("vm-gitClone");
+    assertThat(ciExecutionImages.getArtifactoryUploadTag()).isEqualTo("vm-artifactoryUpload");
+    assertThat(ciExecutionImages.getCacheGCSTag()).isEqualTo("vm-cacheGCS");
+    assertThat(ciExecutionImages.getSecurityTag()).isEqualTo("vm-security");
+
+    ciExecutionImages = ciExecutionConfigService.getDefaultConfig(StageInfraDetails.Type.K8);
+    assertThat(ciExecutionImages.getAddonTag()).isEqualTo("harness/ci-addon:1.4.0");
+    assertThat(ciExecutionImages.getGitCloneTag()).isEqualTo("gc:1.2.3");
+    assertThat(ciExecutionImages.getArtifactoryUploadTag()).isEqualTo("art:1.2.3");
+    assertThat(ciExecutionImages.getCacheGCSTag()).isEqualTo("cachegcs:1.2.3");
+    assertThat(ciExecutionImages.getSecurityTag()).isEqualTo("sc:1.2.3");
+  }
+
+  @Test
+  @Owner(developers = DEV_MITTAL)
+  @Category(UnitTests.class)
+  public void getPluginVersionVMTestCustomConfig_ShouldPass() {
+    VmImageConfig vmImageConfig =
+        VmImageConfig.builder().gitClone("vm_git_clone").buildAndPushDockerRegistry("docker").build();
+    CIExecutionConfig executionConfig = CIExecutionConfig.builder()
+                                            .accountIdentifier("acct")
+                                            .buildAndPushDockerRegistryImage("bpdr:1.2.4")
+                                            .gitCloneImage("gc:abc")
+                                            .buildAndPushECRImage("bpecr:1.2.3")
+                                            .buildAndPushGCRImage("bpgcr:1.2.3")
+                                            .gcsUploadImage("gcsupload:1.2.3")
+                                            .vmImageConfig(vmImageConfig)
+                                            .build();
+    when(cIExecutionConfigRepository.findFirstByAccountIdentifier("acct")).thenReturn(Optional.of(executionConfig));
+    assertThat(ciExecutionConfigService.getPluginVersionForVM(CIStepInfoType.GIT_CLONE, "acct"))
+        .isEqualTo("vm_git_clone");
+    assertThat(ciExecutionConfigService.getPluginVersionForVM(CIStepInfoType.DOCKER, "acct")).isEqualTo("docker");
+    assertThat(ciExecutionConfigService.getPluginVersionForVM(CIStepInfoType.ECR, "acct"))
+        .isEqualTo("vm-buildAndPushECR");
+    assertThat(ciExecutionConfigService.getPluginVersionForVM(CIStepInfoType.GCR, "acct"))
+        .isEqualTo("vm-buildAndPushGCR");
+    assertThat(ciExecutionConfigService.getPluginVersionForVM(CIStepInfoType.RESTORE_CACHE_S3, "acct"))
+        .isEqualTo("vm-cacheS3");
+    assertThat(ciExecutionConfigService.getPluginVersionForVM(CIStepInfoType.SAVE_CACHE_GCS, "acct"))
+        .isEqualTo("vm-cacheGCS");
+    assertThat(ciExecutionConfigService.getPluginVersionForVM(CIStepInfoType.SAVE_CACHE_S3, "acct"))
+        .isEqualTo("vm-cacheS3");
+    assertThat(ciExecutionConfigService.getPluginVersionForVM(CIStepInfoType.UPLOAD_ARTIFACTORY, "acct"))
+        .isEqualTo("vm-artifactoryUpload");
+    assertThat(ciExecutionConfigService.getPluginVersionForVM(CIStepInfoType.SECURITY, "acct"))
+        .isEqualTo("vm-security");
+  }
+
+  @Test
+  @Owner(developers = DEV_MITTAL)
+  @Category(UnitTests.class)
+  public void getCustomerConfigTest() {
+    VmImageConfig vmImageConfig =
+        VmImageConfig.builder().gitClone("vm_git_clone").buildAndPushDockerRegistry("docker").build();
+    CIExecutionConfig executionConfig = CIExecutionConfig.builder()
+                                            .addOnImage("addon")
+                                            .accountIdentifier("acct")
+                                            .buildAndPushDockerRegistryImage("bpdr:1.2.4")
+                                            .gitCloneImage("gc:abc")
+                                            .buildAndPushECRImage("bpecr:1.2.3")
+                                            .buildAndPushGCRImage("bpgcr:1.2.3")
+                                            .gcsUploadImage("gcsupload:1.2.3")
+                                            .vmImageConfig(vmImageConfig)
+                                            .build();
+    when(cIExecutionConfigRepository.findFirstByAccountIdentifier("acct")).thenReturn(Optional.of(executionConfig));
+
+    // For VM overrides only
+    CIExecutionImages ciExecutionImages =
+        ciExecutionConfigService.getCustomerConfig("acct", StageInfraDetails.Type.VM, true);
+
+    assertThat(ciExecutionImages.getAddonTag()).isNull();
+    assertThat(ciExecutionImages.getGitCloneTag()).isEqualTo("vm_git_clone");
+    assertThat(ciExecutionImages.getBuildAndPushDockerRegistryTag()).isEqualTo("docker");
+    assertThat(ciExecutionImages.getCacheGCSTag()).isNull();
+    assertThat(ciExecutionImages.getSecurityTag()).isNull();
+
+    // For K8 overrides only
+    ciExecutionImages = ciExecutionConfigService.getCustomerConfig("acct", StageInfraDetails.Type.K8, true);
+
+    assertThat(ciExecutionImages.getAddonTag()).isEqualTo("addon");
+    assertThat(ciExecutionImages.getGitCloneTag()).isEqualTo("gc:abc");
+    assertThat(ciExecutionImages.getBuildAndPushDockerRegistryTag()).isEqualTo("bpdr:1.2.4");
+    assertThat(ciExecutionImages.getCacheGCSTag()).isNull();
+    assertThat(ciExecutionImages.getSecurityTag()).isNull();
+
+    // For VM whole config
+    ciExecutionImages = ciExecutionConfigService.getCustomerConfig("acct", StageInfraDetails.Type.VM, false);
+
+    assertThat(ciExecutionImages.getAddonTag()).isNull();
+    assertThat(ciExecutionImages.getGitCloneTag()).isEqualTo("vm_git_clone");
+    assertThat(ciExecutionImages.getBuildAndPushDockerRegistryTag()).isEqualTo("docker");
+    assertThat(ciExecutionImages.getCacheGCSTag()).isEqualTo("vm-cacheGCS");
+    assertThat(ciExecutionImages.getSecurityTag()).isEqualTo("vm-security");
+    assertThat(ciExecutionImages.getCacheS3Tag()).isEqualTo("vm-cacheS3");
+
+    // For K8 whole config
+    ciExecutionImages = ciExecutionConfigService.getCustomerConfig("acct", StageInfraDetails.Type.K8, false);
+
+    assertThat(ciExecutionImages.getAddonTag()).isEqualTo("addon");
+    assertThat(ciExecutionImages.getGitCloneTag()).isEqualTo("gc:abc");
+    assertThat(ciExecutionImages.getBuildAndPushDockerRegistryTag()).isEqualTo("bpdr:1.2.4");
+    assertThat(ciExecutionImages.getCacheGCSTag()).isEqualTo("cachegcs:1.2.3");
+    assertThat(ciExecutionImages.getSecurityTag()).isEqualTo("sc:1.2.3");
+  }
+
+  @Test
+  @Owner(developers = DEV_MITTAL)
+  @Category(UnitTests.class)
+  public void updateTest() {
+    VmImageConfig vmImageConfig =
+        VmImageConfig.builder().gitClone("vm_git_clone").buildAndPushDockerRegistry("docker").build();
+    CIExecutionConfig executionConfig = CIExecutionConfig.builder()
+                                            .addOnImage("addon")
+                                            .accountIdentifier("acct")
+                                            .buildAndPushDockerRegistryImage("bpdr:1.2.4")
+                                            .gitCloneImage("gc:abc")
+                                            .buildAndPushECRImage("bpecr:1.2.3")
+                                            .buildAndPushGCRImage("bpgcr:1.2.3")
+                                            .gcsUploadImage("gcsupload:1.2.3")
+                                            .vmImageConfig(vmImageConfig)
+                                            .build();
+    when(cIExecutionConfigRepository.findFirstByAccountIdentifier("acct")).thenReturn(Optional.of(executionConfig));
+
+    ArrayList<Operation> operations = new ArrayList<>();
+
+    Operation operation1 = new Operation();
+    operation1.setField(PluginField.BUILD_PUSH_ECR.getLabel());
+    operation1.setValue("ecr_vm");
+
+    Operation operation2 = new Operation();
+    operation2.setField(PluginField.GIT_CLONE.getLabel());
+    operation2.setValue("vm_git_clone_changed");
+
+    operations.add(operation1);
+    operations.add(operation2);
+
+    ciExecutionConfigService.updateCIContainerTags("acct", operations, StageInfraDetails.Type.VM);
+    assertThat(executionConfig.getVmImageConfig().getGitClone()).isEqualTo("vm_git_clone_changed");
+    assertThat(executionConfig.getVmImageConfig().getBuildAndPushECR()).isEqualTo("ecr_vm");
+    assertThat(executionConfig.getGitCloneImage()).isEqualTo("gc:abc");
+
+    ciExecutionConfigService.updateCIContainerTags("acct", operations, StageInfraDetails.Type.K8);
+    assertThat(executionConfig.getGitCloneImage()).isEqualTo("vm_git_clone_changed");
+    assertThat(executionConfig.getBuildAndPushECRImage()).isEqualTo("ecr_vm");
   }
 
   @Test
@@ -245,9 +404,9 @@ public class CIExecutionConfigServiceTest extends CIExecutionTestBase {
                                             .cacheS3Tag("caches3:1.2.3")
                                             .build();
     when(cIExecutionConfigRepository.findFirstByAccountIdentifier("acct")).thenReturn(Optional.empty());
-    assertThat(ciExecutionConfigService.getPluginVersion(CIStepInfoType.GIT_CLONE, "acct").getImage())
+    assertThat(ciExecutionConfigService.getPluginVersionForK8(CIStepInfoType.GIT_CLONE, "acct").getImage())
         .isEqualTo("gc:1.2.3");
-    assertThat(ciExecutionConfigService.getPluginVersion(CIStepInfoType.DOCKER, "acct").getImage())
+    assertThat(ciExecutionConfigService.getPluginVersionForK8(CIStepInfoType.DOCKER, "acct").getImage())
         .isEqualTo("bpdr:1.2.3");
   }
 }

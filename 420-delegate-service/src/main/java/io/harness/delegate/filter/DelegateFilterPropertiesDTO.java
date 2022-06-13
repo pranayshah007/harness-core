@@ -18,6 +18,7 @@ import io.harness.filter.dto.FilterPropertiesDTO;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModel;
+import java.util.Set;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -43,6 +44,7 @@ public class DelegateFilterPropertiesDTO extends FilterPropertiesDTO {
   private String delegateName;
   private String delegateType;
   private String delegateGroupIdentifier;
+  private Set<String> delegateTags;
 
   @Override
   public FilterType getFilterType() {

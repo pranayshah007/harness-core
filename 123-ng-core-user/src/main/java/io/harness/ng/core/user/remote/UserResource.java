@@ -138,7 +138,8 @@ public class UserResource {
   @GET
   @Path("currentUser")
   @ApiOperation(value = "get current user information", nickname = "getCurrentUserInfo")
-  @Operation(operationId = "getCurrentUserInfo", summary = "Gets current logged in User information",
+  @Operation(operationId = "getCurrentUserInfo", summary = "Get Current User Info",
+      description = "Gets current logged in User information",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -153,8 +154,8 @@ public class UserResource {
   @GET
   @Path("two-factor-auth/{authMechanism}")
   @ApiOperation(value = "get two factor auth settings", nickname = "getTwoFactorAuthSettings")
-  @Operation(operationId = "getTwoFactorAuthSettings",
-      summary = "Gets two factor authentication settings information of the current logged in user",
+  @Operation(operationId = "getTwoFactorAuthSettings", summary = "Gets Two Factor Auth Settings",
+      description = "Gets two factor authentication settings information of the current logged in user",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(
@@ -222,14 +223,15 @@ public class UserResource {
   @GET
   @Path("currentgen")
   @ApiOperation(value = "Get users from current gen for an account", nickname = "getCurrentGenUsers")
-  @Operation(operationId = "getCurrentGenUsers",
-      summary = "List of current gen users with the given Account Identifier",
+  @Operation(operationId = "getCurrentGenUsers", summary = "List Current Gen Users from Account",
+      description = "List of current gen users with the given Account Identifier",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
             description =
                 "This retrieves a list of Current Generation Users corresponding to the specified Account Identifier.")
-      })
+      },
+      hidden = true)
   public ResponseDTO<PageResponse<UserMetadataDTO>>
   getCurrentGenUsers(
       @Parameter(description = "This is the Account Identifier. Users corresponding to this Account will be retrieved.")
@@ -249,13 +251,15 @@ public class UserResource {
   @GET
   @Path("projects")
   @ApiOperation(value = "get user project information", nickname = "getUserProjectInfo")
-  @Operation(operationId = "getUserProjectInfo",
-      summary = "Retrieves the list of projects of the current user corresponding to the specified Account Identifier.",
+  @Operation(operationId = "getUserProjectInfo", summary = "Get User's Projects",
+      description =
+          "Retrieves the list of projects of the current user corresponding to the specified Account Identifier",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
             description = "List of projects of the current user corresponding to the specified Account Identifier")
-      })
+      },
+      hidden = true)
   public ResponseDTO<PageResponse<ProjectDTO>>
   getUserProjectInfo(
       @Parameter(
@@ -279,7 +283,8 @@ public class UserResource {
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
             description = "Returns the list of project(s) of current user in the passed account Id in form of List")
-      })
+      },
+      hidden = true)
   public ResponseDTO<List<ProjectDTO>>
   getUserAllProjectsInfo(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam("accountId") String accountId,
       @Parameter(description = "User Identifier") @QueryParam("userId") String userId) {
@@ -295,7 +300,8 @@ public class UserResource {
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
             description = "Returns the count of projects that are accessible to a user filtered by CreatedAt time")
-      })
+      },
+      hidden = true)
   public ResponseDTO<ActiveProjectsCountDTO>
   getAccessibleProjectsCount(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
                                  NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
@@ -311,8 +317,8 @@ public class UserResource {
   @GET
   @Path("last-admin")
   @ApiOperation(value = "check if user is last admin at the scope", nickname = "checkIfLastAdmin")
-  @Operation(operationId = "checkIfLastAdmin",
-      summary = "Boolean status whether the user is last admin at scope or not",
+  @Operation(operationId = "checkIfLastAdmin", summary = "Check if user is last admin",
+      description = "Check whether the user is last admin at scope or not",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
@@ -339,7 +345,7 @@ public class UserResource {
   @POST
   @Path("batch")
   @ApiOperation(value = "Get a list of users", nickname = "getUsers")
-  @Operation(operationId = "getUsers", summary = "List of user's Metadata for a given scope",
+  @Operation(operationId = "getUsers", summary = "Get users list", description = "Get list of user's for a given scope",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -378,8 +384,8 @@ public class UserResource {
   @GET
   @Path("/aggregate/{userId}")
   @ApiOperation(value = "Get a user by userId for access control", nickname = "getAggregatedUser")
-  @Operation(operationId = "getAggregatedUser",
-      summary = "Returns the user metadata along with rolesAssignments by userId and scope",
+  @Operation(operationId = "getAggregatedUser", summary = "Get detailed user information",
+      description = "Returns the user metadata along with rolesAssignments by userId and scope",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
@@ -412,8 +418,8 @@ public class UserResource {
   @POST
   @Path("aggregate")
   @ApiOperation(value = "Get a page of active users for access control", nickname = "getAggregatedUsers")
-  @Operation(operationId = "getAggregatedUsers",
-      summary = "List of all the user's metadata along with rolesAssignments who have access to given scope",
+  @Operation(operationId = "getAggregatedUsers", summary = "Get list of users",
+      description = "List of all the user's metadata along with rolesAssignments who have access to given scope",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
@@ -447,7 +453,7 @@ public class UserResource {
   @POST
   @Path("users")
   @ApiOperation(value = "Add users to a scope", nickname = "addUsers")
-  @Operation(operationId = "addUsers", summary = "Add user(s) to given scope",
+  @Operation(operationId = "addUsers", summary = "Add user(s) to scope",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -468,7 +474,7 @@ public class UserResource {
 
   @PUT
   @ApiOperation(value = "update user information", nickname = "updateUserInfo")
-  @Operation(operationId = "updateUserInfo", summary = "Updates the User information",
+  @Operation(operationId = "updateUserInfo", summary = "Update User", description = "Updates the User information",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -488,7 +494,8 @@ public class UserResource {
   @PUT
   @Path("password")
   @ApiOperation(value = "Change user password", nickname = "changeUserPassword")
-  @Operation(operationId = "changeUserPassword", summary = "Updates the User password",
+  @Operation(operationId = "changeUserPassword", summary = "Change user password",
+      description = "Updates the User password",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
@@ -504,7 +511,8 @@ public class UserResource {
   @PUT
   @Path("enable-two-factor-auth")
   @ApiOperation(value = "enable two factor auth settings", nickname = "enableTwoFactorAuth")
-  @Operation(operationId = "enableTwoFactorAuth", summary = "Enables two-factor-auth for an user in an account",
+  @Operation(operationId = "enableTwoFactorAuth", summary = "Enable two factor authentication",
+      description = "Enables two-factor-auth for an user in an account",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -521,7 +529,8 @@ public class UserResource {
   @PUT
   @Path("disable-two-factor-auth")
   @ApiOperation(value = "disable two factor auth settings", nickname = "disableTwoFactorAuth")
-  @Operation(operationId = "disableTTwoFactorAuth", summary = "Disables two-factor-auth for an user in an account",
+  @Operation(operationId = "disableTTwoFactorAuth", summary = "Disable two factor authentication",
+      description = "Disables two-factor-auth for an user in an account",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -539,7 +548,8 @@ public class UserResource {
   @Produces("application/json")
   @Consumes()
   @ApiOperation(value = "Remove user as the collaborator from the scope", nickname = "removeUser")
-  @Operation(operationId = "removeUser", summary = "Remove user as the collaborator from the scope",
+  @Operation(operationId = "removeUser", summary = "Remove user from scope",
+      description = "Remove user as the collaborator from the scope",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(
@@ -608,7 +618,7 @@ public class UserResource {
   @Produces("application/json")
   @Consumes()
   @ApiOperation(value = "unlock user", nickname = "unlockUser")
-  @Operation(operationId = "unlockUser", summary = "unlock user in a given scope",
+  @Operation(operationId = "unlockUser", summary = "Unlock user", description = "unlock user in a given scope",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.

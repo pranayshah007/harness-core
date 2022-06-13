@@ -601,7 +601,8 @@ public class CDStepHelperTest extends CategoryTest {
   public void testValidateManifest() {
     when(connectorInfoDTO.getConnectorConfig()).thenReturn(null);
     String[] manifestStoreTypes = {ManifestStoreType.GIT, ManifestStoreType.GITHUB, ManifestStoreType.BITBUCKET,
-        ManifestStoreType.GITLAB, ManifestStoreType.HTTP, ManifestStoreType.S3, ManifestStoreType.GCS};
+        ManifestStoreType.GITLAB, ManifestStoreType.HTTP, ManifestStoreType.S3, ManifestStoreType.GCS,
+        ManifestStoreType.OCI};
     for (String storeType : manifestStoreTypes) {
       assertThatThrownBy(() -> CDStepHelper.validateManifest(storeType, ConnectorInfoDTO.builder().build(), ""))
           .isInstanceOf(InvalidRequestException.class);

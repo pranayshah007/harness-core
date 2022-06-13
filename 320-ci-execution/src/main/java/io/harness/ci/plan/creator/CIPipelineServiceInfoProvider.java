@@ -50,6 +50,7 @@ import io.harness.plancreator.SecurityStepPlanCreator;
 import io.harness.plancreator.execution.ExecutionPmsPlanCreator;
 import io.harness.plancreator.stages.parallel.ParallelPlanCreator;
 import io.harness.plancreator.steps.NGStageStepsPlanCreator;
+import io.harness.plancreator.strategy.StrategyConfigPlanCreator;
 import io.harness.pms.contracts.steps.StepInfo;
 import io.harness.pms.contracts.steps.StepMetaData;
 import io.harness.pms.sdk.core.pipeline.filters.FilterJsonCreator;
@@ -92,6 +93,7 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
     planCreators.add(new NGStageStepsPlanCreator());
     planCreators.add(new ExecutionPmsPlanCreator());
     planCreators.add(new ParallelPlanCreator());
+    planCreators.add(new StrategyConfigPlanCreator());
     injectorUtils.injectMembers(planCreators);
     return planCreators;
   }

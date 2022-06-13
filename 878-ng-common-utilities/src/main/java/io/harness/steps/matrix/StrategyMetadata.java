@@ -19,4 +19,6 @@ public class StrategyMetadata {
   String childNodeId;
   String strategyNodeId;
   List<AdviserObtainment> adviserObtainments;
+  String strategyNodeName;
+  String strategyNodeIdentifier;
 }

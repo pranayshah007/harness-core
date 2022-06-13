@@ -24,13 +24,13 @@ public class ProjectMigrationDetails implements MigrationDetails {
 
   @Override
   public boolean isBackground() {
-    return false;
+    return true;
   }
 
   @Override
   public List<Pair<Integer, Class<? extends NGMigration>>> getMigrations() {
     return new ImmutableList.Builder<Pair<Integer, Class<? extends NGMigration>>>()
-        .add(Pair.of(2, ProjectModulesMigration.class))
+        .add(Pair.of(3, ProjectModulesMigration.class))
         .build();
   }
 }
