@@ -32,7 +32,6 @@ import java.util.List;
 import javax.validation.constraints.NotNull;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -49,6 +48,7 @@ public class RESTWrapperRecommendationOverviewTest extends CategoryTest {
   private ArgumentCaptor<ResolutionEnvironment> envCaptor;
   private ArgumentCaptor<K8sRecommendationFilterDTO> filterCaptor;
   private CCMRecommendationFilterPropertiesDTO ccmFilter;
+  private ArgumentCaptor<RecommendationOverviewStats> recCaptor;
 
   private static final String ACCOUNT_ID = "ACCOUNT_ID";
   private static final GraphQLUtils graphQLUtils = new GraphQLUtils();
@@ -59,6 +59,7 @@ public class RESTWrapperRecommendationOverviewTest extends CategoryTest {
 
     envCaptor = ArgumentCaptor.forClass(ResolutionEnvironment.class);
     filterCaptor = ArgumentCaptor.forClass(K8sRecommendationFilterDTO.class);
+    recCaptor = ArgumentCaptor.forClass(RecommendationOverviewStats.class);
   }
 
   @After
@@ -95,9 +96,8 @@ public class RESTWrapperRecommendationOverviewTest extends CategoryTest {
   @Test
   @Owner(developers = OwnerRule.UTSAV)
   @Category(UnitTests.class)
-  @Ignore("TODO: please provide clear motivation why this test is ignored")
   public void testCount() throws Exception {
-    when(overviewQueryV2.count(any(RecommendationOverviewStats.class), envCaptor.capture())).thenReturn(10);
+    when(overviewQueryV2.count(recCaptor.capture(), envCaptor.capture())).thenReturn(10);
 
     assertThat(restWrapperRecommendationOverview.count(ACCOUNT_ID, ccmFilter).getData()).isEqualTo(10);
 

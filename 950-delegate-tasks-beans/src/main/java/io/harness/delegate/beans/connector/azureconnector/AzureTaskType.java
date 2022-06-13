@@ -21,4 +21,5 @@ public enum AzureTaskType {
   GET_ACR_TOKEN,
   LIST_WEBAPP_NAMES,
   LIST_DEPLOYMENT_SLOTS,
+  LIST_TAGS
 }

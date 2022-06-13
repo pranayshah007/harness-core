@@ -32,6 +32,7 @@ import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
 import io.harness.delegate.beans.connector.helm.HttpHelmConnectorDTO;
+import io.harness.delegate.beans.connector.helm.OciHelmConnectorDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesAuthCredentialDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterConfigDTO;
 import io.harness.delegate.beans.connector.k8Connector.KubernetesClusterDetailsDTO;
@@ -80,6 +81,15 @@ public class K8sEntityHelper {
         List<DecryptableEntity> decryptableEntities = httpHelmConnectorDTO.getDecryptableEntities();
         if (isNotEmpty(decryptableEntities)) {
           return secretManagerClientService.getEncryptionDetails(ngAccess, decryptableEntities.get(0));
+        } else {
+          return emptyList();
+        }
+
+      case OCI_HELM_REPO:
+        OciHelmConnectorDTO ociHelmConnectorDTO = (OciHelmConnectorDTO) connectorDTO.getConnectorConfig();
+        List<DecryptableEntity> ociDecryptableEntities = ociHelmConnectorDTO.getDecryptableEntities();
+        if (isNotEmpty(ociDecryptableEntities)) {
+          return secretManagerClientService.getEncryptionDetails(ngAccess, ociDecryptableEntities.get(0));
         } else {
           return emptyList();
         }

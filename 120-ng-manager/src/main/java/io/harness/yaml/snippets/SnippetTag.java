@@ -61,5 +61,6 @@ public enum SnippetTag implements YamlSnippetTags {
   errortracking,
   azure,
   pdc,
-  azurerepo
+  azurerepo,
+  ocihelmrepo
 }

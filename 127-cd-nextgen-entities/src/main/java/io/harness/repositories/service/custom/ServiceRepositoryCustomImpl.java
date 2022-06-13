@@ -14,6 +14,7 @@ import io.harness.ng.core.service.entity.ServiceEntity.ServiceEntityKeys;
 import io.harness.ng.core.service.mappers.ServiceFilterHelper;
 
 import com.google.inject.Inject;
+import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
 import java.time.Duration;
 import java.util.List;
@@ -74,13 +75,32 @@ public class ServiceRepositoryCustomImpl implements ServiceRepositoryCustom {
   }
 
   @Override
-  public UpdateResult delete(Criteria criteria) {
+  public boolean softDelete(Criteria criteria) {
     Query query = new Query(criteria);
     Update updateOperationsForDelete = ServiceFilterHelper.getUpdateOperationsForDelete();
     RetryPolicy<Object> retryPolicy = getRetryPolicy(
         "[Retrying]: Failed deleting Service; attempt: {}", "[Failed]: Failed deleting Service; attempt: {}");
-    return Failsafe.with(retryPolicy)
-        .get(() -> mongoTemplate.updateFirst(query, updateOperationsForDelete, ServiceEntity.class));
+    UpdateResult updateResult =
+        Failsafe.with(retryPolicy)
+            .get(() -> mongoTemplate.updateFirst(query, updateOperationsForDelete, ServiceEntity.class));
+    return updateResult.wasAcknowledged() && updateResult.getModifiedCount() == 1;
+  }
+
+  @Override
+  public boolean delete(Criteria criteria) {
+    Query query = new Query(criteria);
+    RetryPolicy<Object> retryPolicy = getRetryPolicy(
+        "[Retrying]: Failed deleting Service; attempt: {}", "[Failed]: Failed deleting Service; attempt: {}");
+    DeleteResult deleteResult = Failsafe.with(retryPolicy).get(() -> mongoTemplate.remove(query, ServiceEntity.class));
+    return deleteResult.wasAcknowledged() && deleteResult.getDeletedCount() == 1;
+  }
+
+  @Override
+  public DeleteResult deleteMany(Criteria criteria) {
+    Query query = new Query(criteria);
+    RetryPolicy<Object> retryPolicy = getRetryPolicy(
+        "[Retrying]: Failed deleting Services; attempt: {}", "[Failed]: Failed deleting Services; attempt: {}");
+    return Failsafe.with(retryPolicy).get(() -> mongoTemplate.remove(query, ServiceEntity.class));
   }
 
   @Override

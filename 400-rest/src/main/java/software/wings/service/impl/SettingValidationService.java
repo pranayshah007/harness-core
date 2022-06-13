@@ -335,10 +335,14 @@ public class SettingValidationService {
       }
     } else if (settingValue instanceof RancherConfig) {
       validateRancherConfig(settingAttribute);
+    } else if (settingValue instanceof DockerConfig) {
+      if (!((DockerConfig) settingValue).isSkipValidation()) {
+        buildSourceService.getBuildService(settingAttribute, GLOBAL_APP_ID)
+            .validateArtifactServer(settingValue, encryptedDataDetails);
+      }
     } else if (settingValue instanceof JenkinsConfig || settingValue instanceof BambooConfig
-        || settingValue instanceof NexusConfig || settingValue instanceof DockerConfig
-        || settingValue instanceof SmbConfig || settingValue instanceof SftpConfig
-        || settingValue instanceof AzureArtifactsConfig) {
+        || settingValue instanceof NexusConfig || settingValue instanceof SmbConfig
+        || settingValue instanceof SftpConfig || settingValue instanceof AzureArtifactsConfig) {
       buildSourceService.getBuildService(settingAttribute, GLOBAL_APP_ID)
           .validateArtifactServer(settingValue, encryptedDataDetails);
     } else if (settingValue instanceof ArtifactoryConfig) {

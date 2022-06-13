@@ -173,6 +173,14 @@ if [[ "" != "$NEXT_GEN_MANAGER_SECRET" ]]; then
   yq write -i $CONFIG_FILE nextGen.ffServiceSecret "$NEXT_GEN_MANAGER_SECRET"
 fi
 
+if [[ "" != "$TEMPLATE_SERVICE_ENDPOINT" ]]; then
+  yq write -i $CONFIG_FILE templateServiceClientConfig.baseUrl $TEMPLATE_SERVICE_ENDPOINT
+fi
+
+if [[ "" != "$TEMPLATE_SERVICE_SECRET" ]]; then
+  yq write -i $CONFIG_FILE nextGen.templateServiceSecret $TEMPLATE_SERVICE_SECRET
+fi
+
 if [[ "" != "$AUTH_ENABLED" ]]; then
   yq write -i $CONFIG_FILE enableAuth "$AUTH_ENABLED"
 fi
@@ -477,3 +485,4 @@ replace_key_value opaServerConfig.secret "$OPA_SERVER_SECRET"
 replace_key_value gitopsResourceClientConfig.config.baseUrl "$GITOPS_SERVICE_CLIENT_BASEURL"
 replace_key_value gitopsResourceClientConfig.secret "$GITOPS_SERVICE_SECRET"
 
+replace_key_value subscriptionConfig.stripeApiKey "$STRIPE_API_KEY"

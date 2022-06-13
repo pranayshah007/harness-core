@@ -16,7 +16,7 @@ COPY scripts /opt/harness
 
 RUN chmod +x /opt/harness/*.sh
 
-RUN addgroup -S 65534 && adduser -S 65534 -G 65534
+RUN adduser -S 65534 -G 65534
 RUN chown -R 65534:65534 /opt/harness/ /tmp
 RUN chmod 700 -R /opt/harness/
 RUN chmod 700 -R /tmp

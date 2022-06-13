@@ -25,6 +25,7 @@ import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketUsernameTokenA
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubAppSpecDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubOauthDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubTokenSpecDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabApiAccessDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
@@ -197,6 +198,9 @@ public class ScmGitProviderMapper {
       case TOKEN:
         String accessToken = getAccessToken(githubConnector);
         return GithubProvider.newBuilder().setAccessToken(accessToken).build();
+      case OAUTH:
+        String oauthToken = getOauthToken(githubConnector);
+        return GithubProvider.newBuilder().setAccessToken(oauthToken).build();
       default:
         throw new NotImplementedException(String.format(
             "The scm apis for the api access type %s is not supported", githubConnector.getApiAccess().getType()));
@@ -229,5 +233,14 @@ public class ScmGitProviderMapper {
       throw new InvalidArgumentsException("The personal access token is not set");
     }
     return String.valueOf(apiAccessDTO.getTokenRef().getDecryptedValue());
+  }
+
+  private String getOauthToken(GithubConnectorDTO githubConnector) {
+    GithubApiAccessDTO apiAccess = githubConnector.getApiAccess();
+    GithubOauthDTO githubOauthDTO = (GithubOauthDTO) apiAccess.getSpec();
+    if (githubOauthDTO.getTokenRef() == null || githubOauthDTO.getTokenRef().getDecryptedValue() == null) {
+      throw new InvalidArgumentsException("The personal access token is not set");
+    }
+    return String.valueOf(githubOauthDTO.getTokenRef().getDecryptedValue());
   }
 }

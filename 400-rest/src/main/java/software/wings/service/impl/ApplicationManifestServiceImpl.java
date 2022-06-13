@@ -1068,7 +1068,7 @@ public class ApplicationManifestServiceImpl implements ApplicationManifestServic
     if (settingAttribute != null && settingAttribute.getValue() != null
         && settingAttribute.getValue().getType().equals(OCI_HELM_REPO.toString())) {
       if (helmChartConfig.getChartVersion() != null && helmChartConfig.getChartVersion().equals("latest")) {
-        throw new InvalidArgumentsException("latest tag as chart version is not support by OCI Registry", USER);
+        throw new InvalidArgumentsException("latest tag as chart version is not supported by OCI registry", USER);
       }
     }
   }

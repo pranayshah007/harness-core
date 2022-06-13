@@ -14,7 +14,6 @@ import io.harness.git.model.ChangeType;
 import io.harness.pms.inputset.gitsync.InputSetYamlDTO;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 
-import com.mongodb.client.result.UpdateResult;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
@@ -49,12 +48,12 @@ public interface PMSInputSetRepositoryCustom {
   InputSetEntity update(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, Criteria criteria, Update update);
 
-  InputSetEntity deleteForOldGitSync(InputSetEntity entityToDelete, InputSetYamlDTO yamlDTO);
+  void deleteForOldGitSync(InputSetEntity entityToDelete, InputSetYamlDTO yamlDTO);
 
-  InputSetEntity delete(
+  void delete(
       String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier, String identifier);
 
-  UpdateResult deleteAllInputSetsWhenPipelineDeleted(Query query, Update update);
+  void deleteAllInputSetsWhenPipelineDeleted(Query query);
 
   boolean existsByAccountIdAndOrgIdentifierAndProjectIdentifierAndPipelineIdentifierAndDeletedNot(
       String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier, boolean notDeleted);

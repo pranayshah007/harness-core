@@ -8,7 +8,6 @@
 package io.harness.app;
 
 import static io.harness.annotations.dev.HarnessTeam.STO;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.LoggingInitializer.initializeLogging;
 import static io.harness.pms.listener.NgOrchestrationNotifyEventListener.NG_ORCHESTRATION;
 
@@ -19,7 +18,6 @@ import io.harness.ModuleType;
 import io.harness.PipelineServiceUtilityModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cache.CacheModule;
-import io.harness.ci.app.InspectCommand;
 import io.harness.ci.plan.creator.CIModuleInfoProvider;
 import io.harness.ci.plan.creator.filter.CIFilterCreationResponseMerger;
 import io.harness.delegate.beans.DelegateAsyncTaskResponse;
@@ -67,8 +65,6 @@ import io.harness.serializer.ConnectorNextGenRegistrars;
 import io.harness.serializer.KryoModule;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.OrchestrationRegistrars;
-import io.harness.serializer.PersistenceRegistrars;
-import io.harness.serializer.PrimaryVersionManagerRegistrars;
 import io.harness.serializer.StoBeansRegistrars;
 import io.harness.serializer.YamlBeansModuleRegistrars;
 import io.harness.service.impl.DelegateAsyncServiceImpl;
@@ -180,7 +176,6 @@ public class STOManagerApplication extends Application<STOManagerConfiguration> 
     log.info("Leaving startup maintenance mode");
     List<Module> modules = new ArrayList<>();
     modules.add(KryoModule.getInstance());
-    modules.add(new SCMGrpcClientModule(configuration.getScmConnectionConfig()));
     modules.add(new ProviderModule() {
       @Provides
       @Singleton
@@ -196,9 +191,7 @@ public class STOManagerApplication extends Application<STOManagerConfiguration> 
       @Provides
       @Singleton
       Set<Class<? extends MorphiaRegistrar>> morphiaRegistrars() {
-        return ImmutableSet.<Class<? extends MorphiaRegistrar>>builder()
-            .addAll(PrimaryVersionManagerRegistrars.morphiaRegistrars)
-            .build();
+        return ImmutableSet.<Class<? extends MorphiaRegistrar>>builder().build();
       }
 
       @Provides
@@ -216,7 +209,6 @@ public class STOManagerApplication extends Application<STOManagerConfiguration> 
       @Singleton
       Set<Class<? extends TypeConverter>> morphiaConverters() {
         return ImmutableSet.<Class<? extends TypeConverter>>builder()
-            .addAll(PersistenceRegistrars.morphiaConverters)
             .addAll(OrchestrationRegistrars.morphiaConverters)
             .build();
       }
@@ -250,7 +242,7 @@ public class STOManagerApplication extends Application<STOManagerConfiguration> 
       }
     });
 
-    modules.add(new CIPersistenceModule());
+    modules.add(new STOPersistenceModule());
     addGuiceValidationModule(modules);
     modules.add(new STOManagerServiceModule(configuration));
     modules.add(new CacheModule(configuration.getCacheConfig()));
@@ -272,7 +264,7 @@ public class STOManagerApplication extends Application<STOManagerConfiguration> 
     registerHealthCheck(environment, injector);
     registerAuthFilters(configuration, environment, injector);
     registerCorrelationFilter(environment, injector);
-    registerStores(configuration, injector);
+    //    registerStores(configuration, injector);
     registerYamlSdk(injector);
     scheduleJobs(injector, configuration);
     registerQueueListener(injector);
@@ -299,7 +291,6 @@ public class STOManagerApplication extends Application<STOManagerConfiguration> 
   public void initialize(Bootstrap<STOManagerConfiguration> bootstrap) {
     initializeLogging();
     log.info("bootstrapping ...");
-    bootstrap.addCommand(new InspectCommand<>(this));
     bootstrap.addCommand(new GenerateOpenApiSpecCommand());
 
     bootstrap.setConfigurationSourceProvider(new SubstitutingSourceProvider(
@@ -416,14 +407,6 @@ public class STOManagerApplication extends Application<STOManagerConfiguration> 
                                             .parameterNameProvider(new ReflectionParameterNameProvider())
                                             .buildValidatorFactory();
     modules.add(new ValidationModule(validatorFactory));
-  }
-
-  private static void registerStores(STOManagerConfiguration config, Injector injector) {
-    final String ciMongo = config.getHarnessSTOMongo().getUri();
-    if (isNotEmpty(ciMongo) && !ciMongo.equals(config.getHarnessMongo().getUri())) {
-      final HPersistence hPersistence = injector.getInstance(HPersistence.class);
-      hPersistence.register(HARNESS_STORE, config.getHarnessMongo().getUri());
-    }
   }
 
   private void registerWaitEnginePublishers(Injector injector) {

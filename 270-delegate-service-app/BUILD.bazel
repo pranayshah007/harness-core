@@ -469,7 +469,6 @@ shared_dependencies = [
     "@maven//:org_apache_neethi_neethi",
     "@maven//:org_apache_santuario_xmlsec",
     "@maven//:org_apache_sshd_sshd_core",
-    "@maven//:org_apache_velocity_velocity",
     "@maven//:org_apache_ws_xmlschema_xmlschema_core",
     "@maven//:org_atmosphere_atmosphere_runtime",
     "@maven//:org_atmosphere_wasync",

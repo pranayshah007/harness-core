@@ -14,6 +14,7 @@ import io.harness.connector.entities.embedded.githubconnector.GithubAuthenticati
 import io.harness.connector.entities.embedded.githubconnector.GithubConnector;
 import io.harness.connector.entities.embedded.githubconnector.GithubHttpAuth;
 import io.harness.connector.entities.embedded.githubconnector.GithubHttpAuthentication;
+import io.harness.connector.entities.embedded.githubconnector.GithubOauth;
 import io.harness.connector.entities.embedded.githubconnector.GithubSshAuthentication;
 import io.harness.connector.entities.embedded.githubconnector.GithubTokenApiAccess;
 import io.harness.connector.entities.embedded.githubconnector.GithubUsernamePassword;
@@ -30,6 +31,7 @@ import io.harness.delegate.beans.connector.scm.github.GithubCredentialsDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubHttpAuthenticationType;
 import io.harness.delegate.beans.connector.scm.github.GithubHttpCredentialsDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubHttpCredentialsSpecDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubOauthDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubSshCredentialsDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubTokenSpecDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubUsernamePasswordDTO;
@@ -110,6 +112,12 @@ public class GithubEntityToDTO implements ConnectorEntityToDTOMapper<GithubConne
                 .usernameRef(usernameRef)
                 .build();
         break;
+      case OAUTH:
+        final GithubOauth githubOauth = (GithubOauth) auth;
+
+        githubHttpCredentialsSpecDTO =
+            GithubOauthDTO.builder().tokenRef(SecretRefHelper.createSecretRef(githubOauth.getTokenRef())).build();
+        break;
       default:
         Switch.unhandled(type);
     }
@@ -133,6 +141,11 @@ public class GithubEntityToDTO implements ConnectorEntityToDTOMapper<GithubConne
         apiAccessSpecDTO = GithubTokenSpecDTO.builder()
                                .tokenRef(SecretRefHelper.createSecretRef(githubTokenApiAccess.getTokenRef()))
                                .build();
+        break;
+      case OAUTH:
+        final GithubOauth githubOauth = (GithubOauth) connector.getGithubApiAccess();
+        apiAccessSpecDTO =
+            GithubOauthDTO.builder().tokenRef(SecretRefHelper.createSecretRef(githubOauth.getTokenRef())).build();
         break;
       default:
         Switch.unhandled(apiAccessType);

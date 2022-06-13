@@ -50,17 +50,23 @@ public class SlackChannel extends NotificationChannel {
   public NotificationRequest buildNotificationRequest() {
     NotificationRequest.Builder builder = NotificationRequest.newBuilder();
     String notificationId = generateUuid();
-    return builder.setId(notificationId)
-        .setAccountId(accountId)
-        .setTeam(team)
-        .setSlack(builder.getSlackBuilder()
-                      .addAllSlackWebHookUrls(webhookUrls)
-                      .setTemplateId(templateId)
-                      .putAllTemplateData(templateData)
-                      .addAllUserGroup(CollectionUtils.emptyIfNull(userGroups))
-                      .setOrgIdentifier(orgIdentifier)
-                      .setProjectIdentifier(projectIdentifier)
-                      .setExpressionFunctorToken(expressionFunctorToken))
-        .build();
+    return builder.setId(notificationId).setAccountId(accountId).setTeam(team).setSlack(buildSlack(builder)).build();
+  }
+
+  private NotificationRequest.Slack buildSlack(NotificationRequest.Builder builder) {
+    NotificationRequest.Slack.Builder slackBuilder = builder.getSlackBuilder()
+                                                         .addAllSlackWebHookUrls(webhookUrls)
+                                                         .setTemplateId(templateId)
+                                                         .putAllTemplateData(templateData)
+                                                         .addAllUserGroup(CollectionUtils.emptyIfNull(userGroups));
+
+    if (orgIdentifier != null) {
+      slackBuilder.setOrgIdentifier(orgIdentifier);
+    }
+    if (projectIdentifier != null) {
+      slackBuilder.setProjectIdentifier(projectIdentifier);
+    }
+    slackBuilder.setExpressionFunctorToken(expressionFunctorToken);
+    return slackBuilder.build();
   }
 }

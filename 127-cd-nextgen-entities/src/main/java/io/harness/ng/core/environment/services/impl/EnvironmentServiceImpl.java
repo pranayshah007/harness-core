@@ -7,18 +7,23 @@
 
 package io.harness.ng.core.environment.services.impl;
 
+import static io.harness.beans.FeatureName.HARD_DELETE_ENTITIES;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
 import static io.harness.springdata.TransactionUtils.DEFAULT_TRANSACTION_RETRY_POLICY;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
+import io.harness.cdng.gitops.service.ClusterService;
+import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.eventsframework.EventsFrameworkMetadataConstants;
 import io.harness.eventsframework.api.EventsFrameworkDownException;
@@ -38,9 +43,17 @@ import io.harness.ng.core.events.EnvironmentCreateEvent;
 import io.harness.ng.core.events.EnvironmentDeleteEvent;
 import io.harness.ng.core.events.EnvironmentUpdatedEvent;
 import io.harness.ng.core.events.EnvironmentUpsertEvent;
+import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.outbox.api.OutboxService;
+import io.harness.pms.merger.helpers.RuntimeInputFormHelper;
+import io.harness.pms.yaml.YamlField;
+import io.harness.pms.yaml.YamlUtils;
+import io.harness.repositories.UpsertOptions;
 import io.harness.repositories.environment.spring.EnvironmentRepository;
+import io.harness.utils.NGFeatureFlagHelperService;
+import io.harness.utils.YamlPipelineUtils;
 
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
@@ -48,13 +61,18 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.google.protobuf.StringValue;
 import com.mongodb.client.result.UpdateResult;
+import java.io.IOException;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
@@ -79,16 +97,24 @@ public class EnvironmentServiceImpl implements EnvironmentService {
   private static final String DUP_KEY_EXP_FORMAT_STRING_FOR_ORG =
       "Environment [%s] under Organization [%s] in Account [%s] already exists";
   private static final String DUP_KEY_EXP_FORMAT_STRING_FOR_ACCOUNT = "Environment [%s] in Account [%s] already exists";
+  private final NGFeatureFlagHelperService ngFeatureFlagHelperService;
+  private final InfrastructureEntityService infrastructureEntityService;
+  private final ClusterService clusterService;
 
   @Inject
   public EnvironmentServiceImpl(EnvironmentRepository environmentRepository,
       EntitySetupUsageService entitySetupUsageService, @Named(ENTITY_CRUD) Producer eventProducer,
-      OutboxService outboxService, TransactionTemplate transactionTemplate) {
+      OutboxService outboxService, TransactionTemplate transactionTemplate,
+      NGFeatureFlagHelperService ngFeatureFlagHelperService, InfrastructureEntityService infrastructureEntityService,
+      ClusterService clusterService) {
     this.environmentRepository = environmentRepository;
     this.entitySetupUsageService = entitySetupUsageService;
     this.eventProducer = eventProducer;
     this.outboxService = outboxService;
     this.transactionTemplate = transactionTemplate;
+    this.ngFeatureFlagHelperService = ngFeatureFlagHelperService;
+    this.infrastructureEntityService = infrastructureEntityService;
+    this.clusterService = clusterService;
   }
 
   @Override
@@ -177,7 +203,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
   }
 
   @Override
-  public Environment upsert(Environment requestEnvironment) {
+  public Environment upsert(Environment requestEnvironment, UpsertOptions upsertOptions) {
     validatePresenceOfRequiredFields(requestEnvironment.getAccountId(), requestEnvironment.getIdentifier());
     setName(requestEnvironment);
     Criteria criteria = getEnvironmentEqualityCriteria(requestEnvironment, requestEnvironment.getDeleted());
@@ -189,12 +215,14 @@ public class EnvironmentServiceImpl implements EnvironmentService {
             requestEnvironment.getIdentifier(), requestEnvironment.getProjectIdentifier(),
             requestEnvironment.getOrgIdentifier()));
       }
-      outboxService.save(EnvironmentUpsertEvent.builder()
-                             .accountIdentifier(requestEnvironment.getAccountId())
-                             .orgIdentifier(requestEnvironment.getOrgIdentifier())
-                             .projectIdentifier(requestEnvironment.getProjectIdentifier())
-                             .environment(requestEnvironment)
-                             .build());
+      if (upsertOptions.isSendOutboxEvent()) {
+        outboxService.save(EnvironmentUpsertEvent.builder()
+                               .accountIdentifier(requestEnvironment.getAccountId())
+                               .orgIdentifier(requestEnvironment.getOrgIdentifier())
+                               .projectIdentifier(requestEnvironment.getProjectIdentifier())
+                               .environment(requestEnvironment)
+                               .build());
+      }
       return tempResult;
     }));
     publishEvent(requestEnvironment.getAccountId(), requestEnvironment.getOrgIdentifier(),
@@ -211,6 +239,10 @@ public class EnvironmentServiceImpl implements EnvironmentService {
   @Override
   public boolean delete(
       String accountId, String orgIdentifier, String projectIdentifier, String environmentIdentifier, Long version) {
+    checkArgument(isNotEmpty(accountId), "accountId must be present");
+    checkArgument(isNotEmpty(environmentIdentifier), "environment Identifier must be present");
+
+    final boolean hardDelete = ngFeatureFlagHelperService.isEnabled(accountId, HARD_DELETE_ENTITIES);
     Environment environment = Environment.builder()
                                   .accountId(accountId)
                                   .orgIdentifier(orgIdentifier)
@@ -224,8 +256,9 @@ public class EnvironmentServiceImpl implements EnvironmentService {
         get(accountId, orgIdentifier, projectIdentifier, environmentIdentifier, false);
     if (environmentOptional.isPresent()) {
       Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
-        UpdateResult updateResult = environmentRepository.delete(criteria);
-        if (!updateResult.wasAcknowledged() || updateResult.getModifiedCount() != 1) {
+        final boolean deleted =
+            hardDelete ? environmentRepository.delete(criteria) : environmentRepository.softDelete(criteria);
+        if (!deleted) {
           throw new InvalidRequestException(
               String.format("Environment [%s] under Project[%s], Organization [%s] couldn't be deleted.",
                   environmentIdentifier, projectIdentifier, orgIdentifier));
@@ -236,6 +269,11 @@ public class EnvironmentServiceImpl implements EnvironmentService {
                                .projectIdentifier(projectIdentifier)
                                .environment(environmentOptional.get())
                                .build());
+        processQuietly(()
+                           -> infrastructureEntityService.forceDeleteAllInEnv(
+                               accountId, orgIdentifier, projectIdentifier, environmentIdentifier));
+        processQuietly(
+            () -> clusterService.deleteAllFromEnv(accountId, orgIdentifier, projectIdentifier, environmentIdentifier));
         return true;
       }));
       publishEvent(accountId, orgIdentifier, projectIdentifier, environmentIdentifier,
@@ -251,7 +289,16 @@ public class EnvironmentServiceImpl implements EnvironmentService {
 
   @Override
   public boolean forceDeleteAllInProject(String accountId, String orgIdentifier, String projectIdentifier) {
-    Criteria criteria = getEnvironmentEqualityCriteriaWithinProject(accountId, orgIdentifier, projectIdentifier, false);
+    checkArgument(isNotEmpty(accountId), "accountId must be present");
+    final boolean shouldHardDelete = ngFeatureFlagHelperService.isEnabled(accountId, HARD_DELETE_ENTITIES);
+    if (!shouldHardDelete) {
+      return false;
+    }
+
+    checkArgument(isNotEmpty(orgIdentifier), "orgIdentifier must be present");
+    checkArgument(isNotEmpty(projectIdentifier), "project Identifier must be present");
+
+    Criteria criteria = getAllEnvironmentsEqualityCriteriaWithinProject(accountId, orgIdentifier, projectIdentifier);
     return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
       UpdateResult updateResult = environmentRepository.deleteMany(criteria);
       if (!updateResult.wasAcknowledged()) {
@@ -300,6 +347,45 @@ public class EnvironmentServiceImpl implements EnvironmentService {
     return environmentRepository.fetchesNonDeletedEnvironmentFromListOfIdentifiers(criteria);
   }
 
+  @Override
+  public String createEnvironmentInputsYaml(
+      String accountId, String orgIdentifier, String projectIdentifier, String envIdentifier) {
+    Map<String, Object> yamlInputs =
+        createEnvironmentInputsYamlInternal(accountId, orgIdentifier, projectIdentifier, envIdentifier);
+
+    if (isEmpty(yamlInputs)) {
+      return null;
+    }
+    return YamlPipelineUtils.writeYamlString(yamlInputs);
+  }
+
+  public Map<String, Object> createEnvironmentInputsYamlInternal(
+      String accountId, String orgIdentifier, String projectIdentifier, String envIdentifier) {
+    Map<String, Object> yamlInputs = new HashMap<>();
+    Optional<Environment> environment = get(accountId, orgIdentifier, projectIdentifier, envIdentifier, false);
+    if (environment.isPresent()) {
+      if (EmptyPredicate.isEmpty(environment.get().getYaml())) {
+        throw new InvalidRequestException("Environment yaml cannot be empty");
+      }
+      try {
+        String environmentInputsYaml = RuntimeInputFormHelper.createRuntimeInputForm(environment.get().getYaml(), true);
+        if (isEmpty(environmentInputsYaml)) {
+          return null;
+        }
+        YamlField environmentYamlField =
+            YamlUtils.readTree(environmentInputsYaml).getNode().getField(YamlTypes.ENVIRONMENT_YAML);
+        ObjectNode environmentNode = (ObjectNode) environmentYamlField.getNode().getCurrJsonNode();
+        yamlInputs.put(YamlTypes.ENVIRONMENT_INPUTS, environmentNode);
+      } catch (IOException e) {
+        throw new InvalidRequestException("Error occurred while creating environment inputs", e);
+      }
+    } else {
+      throw new NotFoundException(String.format("Environment with identifier [%s] in project [%s], org [%s] not found",
+          envIdentifier, projectIdentifier, orgIdentifier));
+    }
+    return yamlInputs;
+  }
+
   private void checkThatEnvironmentIsNotReferredByOthers(Environment environment) {
     List<EntityDetail> referredByEntities;
     IdentifierRef identifierRef = IdentifierRef.builder()
@@ -320,11 +406,10 @@ public class EnvironmentServiceImpl implements EnvironmentService {
       throw new UnexpectedException(
           "Error while deleting the Environment as was not able to check entity reference records.");
     }
-    if (EmptyPredicate.isNotEmpty(referredByEntities)) {
-      throw new InvalidRequestException(
-          String.format("Could not delete the Environment %s as it is referenced by other entities - "
-                  + referredByEntities.toString(),
-              environment.getIdentifier()));
+    if (isNotEmpty(referredByEntities)) {
+      throw new InvalidRequestException(String.format(
+          "Could not delete the Environment %s as it is referenced by other entities - " + referredByEntities,
+          environment.getIdentifier()));
     }
   }
 
@@ -358,16 +443,13 @@ public class EnvironmentServiceImpl implements EnvironmentService {
     return criteria;
   }
 
-  private Criteria getEnvironmentEqualityCriteriaWithinProject(
-      String accountId, String orgId, String projectId, boolean deleted) {
+  private Criteria getAllEnvironmentsEqualityCriteriaWithinProject(String accountId, String orgId, String projectId) {
     return Criteria.where(EnvironmentKeys.accountId)
         .is(accountId)
         .and(EnvironmentKeys.orgIdentifier)
         .is(orgId)
         .and(EnvironmentKeys.projectIdentifier)
-        .is(projectId)
-        .and(EnvironmentKeys.deleted)
-        .is(deleted);
+        .is(projectId);
   }
 
   private void publishEvent(
@@ -392,5 +474,14 @@ public class EnvironmentServiceImpl implements EnvironmentService {
     } catch (EventsFrameworkDownException e) {
       log.error("Failed to send event to events framework environment Identifier: {}", identifier, e);
     }
+  }
+
+  boolean processQuietly(BooleanSupplier b) {
+    try {
+      return b.getAsBoolean();
+    } catch (Exception ex) {
+      // ignore this
+    }
+    return false;
   }
 }

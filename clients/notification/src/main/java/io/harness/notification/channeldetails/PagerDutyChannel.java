@@ -53,14 +53,24 @@ public class PagerDutyChannel extends NotificationChannel {
     return builder.setId(notificationId)
         .setAccountId(accountId)
         .setTeam(team)
-        .setPagerDuty(builder.getPagerDutyBuilder()
-                          .addAllPagerDutyIntegrationKeys(integrationKeys)
-                          .setTemplateId(templateId)
-                          .putAllTemplateData(templateData)
-                          .addAllUserGroup(CollectionUtils.emptyIfNull(userGroups))
-                          .setOrgIdentifier(orgIdentifier)
-                          .setProjectIdentifier(projectIdentifier)
-                          .setExpressionFunctorToken(expressionFunctorToken))
+        .setPagerDuty(buildPagerDuty(builder))
         .build();
+  }
+
+  private NotificationRequest.PagerDuty buildPagerDuty(NotificationRequest.Builder builder) {
+    NotificationRequest.PagerDuty.Builder pagerDutyBuilder =
+        builder.getPagerDutyBuilder()
+            .addAllPagerDutyIntegrationKeys(integrationKeys)
+            .setTemplateId(templateId)
+            .putAllTemplateData(templateData)
+            .addAllUserGroup(CollectionUtils.emptyIfNull(userGroups));
+    if (orgIdentifier != null) {
+      pagerDutyBuilder.setOrgIdentifier(orgIdentifier);
+    }
+    if (projectIdentifier != null) {
+      pagerDutyBuilder.setProjectIdentifier(projectIdentifier);
+    }
+    pagerDutyBuilder.setExpressionFunctorToken(expressionFunctorToken);
+    return pagerDutyBuilder.build();
   }
 }

@@ -22,7 +22,6 @@ import io.harness.ng.core.artifacts.resources.util.ArtifactResourceUtils;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
-import io.harness.pipeline.remote.PipelineServiceClient;
 import io.harness.utils.IdentifierRefHelper;
 
 import com.google.inject.Inject;
@@ -58,7 +57,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ArtifactoryArtifactResource {
   private final ArtifactoryResourceService artifactoryResourceService;
-  private final PipelineServiceClient pipelineServiceClient;
+  private final ArtifactResourceUtils artifactResourceUtils;
 
   /* Note:
     This API is used for both Artifactory Docker and Artifactory Generic.
@@ -105,8 +104,8 @@ public class ArtifactoryArtifactResource {
       @NotNull String runtimeInputYaml) {
     IdentifierRef connectorRef = IdentifierRefHelper.getIdentifierRef(
         artifactoryConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
-    artifactPath = ArtifactResourceUtils.getResolvedImagePath(pipelineServiceClient, accountId, orgIdentifier,
-        projectIdentifier, pipelineIdentifier, runtimeInputYaml, artifactPath, fqnPath, gitEntityBasicInfo);
+    artifactPath = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier,
+        pipelineIdentifier, runtimeInputYaml, artifactPath, fqnPath, gitEntityBasicInfo);
     ArtifactoryResponseDTO buildDetails = artifactoryResourceService.getBuildDetails(connectorRef, repository,
         artifactPath, repositoryFormat, artifactRepositoryUrl, orgIdentifier, projectIdentifier);
     return ResponseDTO.newResponse(buildDetails);

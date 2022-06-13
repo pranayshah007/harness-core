@@ -118,6 +118,7 @@ public class CodeBaseTaskStepTest extends CategoryTest {
     CodebaseSweepingOutput codebaseSweepingOutput =
         codeBaseTaskStep.buildCommitShaCodebaseSweepingOutput(scmGitRefTaskResponseData, "tag");
     assertThat(codebaseSweepingOutput.getCommitSha()).isEqualTo("commitId");
+    assertThat(codebaseSweepingOutput.getShortCommitSha()).isEqualTo("commitI");
     assertThat(codebaseSweepingOutput.getBranch()).isEqualTo("main");
     assertThat(codebaseSweepingOutput.getRepoUrl()).isEqualTo("http://github.com/octocat/hello-world");
   }
@@ -178,6 +179,7 @@ public class CodeBaseTaskStepTest extends CategoryTest {
     assertThat(codebaseSweepingOutput.getPrNumber()).isEqualTo("1");
     assertThat(codebaseSweepingOutput.getPrTitle()).isEqualTo("Title");
     assertThat(codebaseSweepingOutput.getCommitSha()).isEqualTo("commitId");
+    assertThat(codebaseSweepingOutput.getShortCommitSha()).isEqualTo("commitI");
     assertThat(codebaseSweepingOutput.getBaseCommitSha()).isEqualTo("commitIdBase");
     assertThat(codebaseSweepingOutput.getCommitRef()).isEqualTo("ref");
     assertThat(codebaseSweepingOutput.getRepoUrl()).isEqualTo("http://github.com/octocat/hello-world");
@@ -240,6 +242,7 @@ public class CodeBaseTaskStepTest extends CategoryTest {
     assertThat(codebaseSweepingOutput.getPrNumber()).isEqualTo("1");
     assertThat(codebaseSweepingOutput.getPrTitle()).isEqualTo("Title");
     assertThat(codebaseSweepingOutput.getCommitSha()).isEqualTo("commitId");
+    assertThat(codebaseSweepingOutput.getShortCommitSha()).isEqualTo("commitI");
     assertThat(codebaseSweepingOutput.getBaseCommitSha()).isEqualTo("commitIdBase");
     assertThat(codebaseSweepingOutput.getRepoUrl()).isEqualTo("http://github.com/octocat/hello-world");
     assertThat(codebaseSweepingOutput.getGitUser()).isEqualTo("First Last");
@@ -273,6 +276,7 @@ public class CodeBaseTaskStepTest extends CategoryTest {
     assertThat(codebaseSweepingOutput.getBranch()).isEqualTo("main");
     assertThat(codebaseSweepingOutput.getTargetBranch()).isEqualTo("main");
     assertThat(codebaseSweepingOutput.getCommitSha()).isEqualTo("commitId");
+    assertThat(codebaseSweepingOutput.getShortCommitSha()).isEqualTo("commitI");
     assertThat(codebaseSweepingOutput.getRepoUrl()).isEqualTo("http://github.com/octocat/hello-world");
     assertThat(codebaseSweepingOutput.getGitUser()).isEqualTo("First Last");
     assertThat(codebaseSweepingOutput.getGitUserEmail()).isEqualTo("first.last@email.com");

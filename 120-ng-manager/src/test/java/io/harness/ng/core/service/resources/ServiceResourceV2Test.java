@@ -30,6 +30,7 @@ import io.harness.ng.core.service.dto.ServiceRequestDTO;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.pms.rbac.NGResourceType;
+import io.harness.repositories.UpsertOptions;
 import io.harness.rule.Owner;
 
 import java.io.IOException;
@@ -167,7 +168,7 @@ public class ServiceResourceV2Test extends CategoryTest {
     when(orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
              ORG_IDENTIFIER, PROJ_IDENTIFIER, ACCOUNT_ID))
         .thenReturn(true);
-    when(serviceEntityService.upsert(any())).thenReturn(entity);
+    when(serviceEntityService.upsert(any(), eq(UpsertOptions.DEFAULT))).thenReturn(entity);
     serviceResourceV2.upsert("IF_MATCH", ACCOUNT_ID, serviceRequestDTO);
     verify(accessControlClient, times(1))
         .checkForAccessOrThrow(ResourceScope.of(ACCOUNT_ID, serviceRequestDTO.getOrgIdentifier(),
