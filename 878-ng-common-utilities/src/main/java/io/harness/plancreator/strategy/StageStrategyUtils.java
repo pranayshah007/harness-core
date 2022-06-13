@@ -10,7 +10,8 @@ package io.harness.plancreator.strategy;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STAGES;
 
 import io.harness.advisers.nextstep.NextStepAdviserParameters;
-import io.harness.plancreator.stages.stage.AbstractStageNode;
+import io.harness.exception.InvalidYamlException;
+ import io.harness.plancreator.stages.stage.AbstractStageNode;
 import io.harness.plancreator.stages.stage.StageElementConfig;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
@@ -134,5 +135,14 @@ public class StageStrategyUtils {
             .setEdgeLayoutList(EdgeLayoutList.newBuilder().build())
             .build());
     return stageYamlFieldMap;
+  }
+
+  public void validateStrategyNode(StrategyConfig config) {
+    if (config.getMatrixConfig() != null) {
+      Map<String, AxisConfig> axisConfig = ((MatrixConfig)config.getMatrixConfig()).getAxes();
+      if (axisConfig.size() == 0) {
+        throw new InvalidYamlException("No Axes defined in matrix. Please define at least one axis");
+      }
+    }
   }
 }

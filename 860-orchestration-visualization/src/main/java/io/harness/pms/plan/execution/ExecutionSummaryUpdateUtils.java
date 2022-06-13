@@ -50,7 +50,7 @@ public class ExecutionSummaryUpdateUtils {
           status);
       update.set(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.layoutNodeMap + "." + nodeExecution.getNodeId()
               + ".moduleInfo.stepParameters",
-          RecastOrchestrationUtils.toMap(nodeExecution.getResolvedStepParameters()));
+          nodeExecution.getResolvedStepParameters());
     }
     if (!OrchestrationUtils.isStageNode(nodeExecution)) {
       return;

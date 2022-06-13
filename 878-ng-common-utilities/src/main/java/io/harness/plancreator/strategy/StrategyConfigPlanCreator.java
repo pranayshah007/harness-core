@@ -9,6 +9,7 @@ package io.harness.plancreator.strategy;
 
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.InvalidYamlException;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.execution.OrchestrationFacilitatorType;
@@ -19,6 +20,7 @@ import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.creators.ChildrenPlanCreator;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.matrix.StrategyConstants;
@@ -57,15 +59,23 @@ public class StrategyConfigPlanCreator extends ChildrenPlanCreator<StrategyConfi
       log.error("childNodeId and strategyNodeId not passed from parent. Please pass it.");
       throw new InvalidRequestException("Invalid use of strategy field. Please check");
     }
-
+    ParameterField<Integer> maxConcurrency=null;
+    if (config.getMatrixConfig() != null) {
+      MatrixConfig matrixConfig = (MatrixConfig) config.getMatrixConfig();
+      maxConcurrency = matrixConfig.getMaxConcurrency();
+    }
+    if (config.getForConfig() != null) {
+      maxConcurrency = config.getForConfig().getMaxConcurrency();
+    }
+    StageStrategyUtils.validateStrategyNode(config);
     StepParameters stepParameters =
-        StrategyStepParameters.builder().childNodeId(childNodeId).strategyConfig(config).build();
+        StrategyStepParameters.builder().childNodeId(childNodeId).strategyConfig(config).maxConcurrency(maxConcurrency).build();
     return PlanNode.builder()
         .uuid(strategyNodeId)
-        .identifier(YAMLFieldNameConstants.STRATEGY)
+        .identifier(metadata.getStrategyNodeIdentifier())
         .stepType(StrategyStep.STEP_TYPE)
         .group(StepOutcomeGroup.STRATEGY.name())
-        .name(YAMLFieldNameConstants.STRATEGY)
+        .name(metadata.getStrategyNodeName())
         .stepParameters(stepParameters)
         .facilitatorObtainment(
             FacilitatorObtainment.newBuilder()

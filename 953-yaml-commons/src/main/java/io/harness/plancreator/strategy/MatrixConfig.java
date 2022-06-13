@@ -42,6 +42,7 @@ public class MatrixConfig implements MatrixConfigInterface {
 
   @ApiModelProperty(hidden = true) @Builder.Default Map<String, AxisConfig> axes = new LinkedHashMap<>();
   List<ExcludeConfig> exclude;
+
   @ApiModelProperty(dataType = INTEGER_CLASSPATH)
   @JsonProperty("maxConcurrency")
   ParameterField<Integer> maxConcurrency;

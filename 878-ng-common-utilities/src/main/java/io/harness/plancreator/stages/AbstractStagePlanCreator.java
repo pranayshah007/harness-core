@@ -93,6 +93,8 @@ public abstract class AbstractStagePlanCreator<T extends AbstractStageNode> exte
                                                  .adviserObtainments(StageStrategyUtils.getAdviserObtainments(
                                                      ctx.getCurrentField(), kryoSerializer, false))
                                                  .childNodeId(strategyField.getNode().getUuid())
+                              .strategyNodeName(field.getName())
+                              .strategyNodeIdentifier(field.getIdentifier())
                                                  .build())));
     }
   }
