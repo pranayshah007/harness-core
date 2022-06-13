@@ -8,6 +8,7 @@
 package software.wings.service.impl;
 
 import static io.harness.beans.DelegateTask.Status.QUEUED;
+import static io.harness.beans.FeatureName.ENABLE_VERBOSE_LOGGING_FOR_TASK_PROCESSING;
 import static io.harness.data.structure.CollectionUtils.trimmedLowercaseSet;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -948,6 +949,11 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
       return canAssignDelegateProfileScopes;
     }
 
+    final boolean verboseLoggingEnabled =
+        featureFlagService.isEnabled(ENABLE_VERBOSE_LOGGING_FOR_TASK_PROCESSING, task.getAccountId());
+    if (verboseLoggingEnabled) {
+      log.info("Getting Delegates for task {}", task.getUuid());
+    }
     boolean canAssignSelectors = canAssignSelectors(delegate, task.getExecutionCapabilities());
     if (!canAssignSelectors) {
       task.getNonAssignableDelegates().putIfAbsent(CAN_NOT_ASSIGN_SELECTOR_TASK_GROUP, new ArrayList<>());

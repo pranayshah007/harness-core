@@ -13,6 +13,8 @@ import static io.harness.beans.DelegateTask.Status.ERROR;
 import static io.harness.beans.DelegateTask.Status.QUEUED;
 import static io.harness.beans.DelegateTask.Status.STARTED;
 import static io.harness.beans.DelegateTask.Status.runningStatuses;
+import static io.harness.beans.FeatureName.DELEGATE_ENABLE_DYNAMIC_HANDLING_OF_REQUEST;
+import static io.harness.beans.FeatureName.ENABLE_VERBOSE_LOGGING_FOR_TASK_PROCESSING;
 import static io.harness.beans.FeatureName.GIT_HOST_CONNECTIVITY;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -433,11 +435,24 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
     try (AutoLogContext ignore = new TaskLogContext(task.getUuid(), task.getData().getTaskType(),
              TaskType.valueOf(task.getData().getTaskType()).getTaskGroup().name(), OVERRIDE_ERROR)) {
       try {
+        final boolean verboseLoggingEnabled =
+            featureFlagService.isEnabled(ENABLE_VERBOSE_LOGGING_FOR_TASK_PROCESSING, task.getAccountId());
         // capabilities created,then appended to task.executionCapabilities to get eligible delegates
+        if (verboseLoggingEnabled) {
+          log.info("Generating capabilities for Delegate task {}", task.getUuid());
+        }
         generateCapabilitiesForTask(task);
+        if (verboseLoggingEnabled) {
+          log.info("Capabilities for Delegate task {} are {}", task.getUuid(), task.getExecutionCapabilities());
+        }
         convertToExecutionCapability(task);
-
+        if (verboseLoggingEnabled) {
+          log.info("Fetching delegates for Delegate task {}", task.getUuid());
+        }
         List<String> eligibleListOfDelegates = assignDelegateService.getEligibleDelegatesToExecuteTask(task);
+        if (verboseLoggingEnabled) {
+          log.info("Eligible Delegates for Delegate task {} are [{}]", task.getUuid(), eligibleListOfDelegates);
+        }
         delegateSelectionLogsService.logDelegateTaskInfo(task);
         if (eligibleListOfDelegates.isEmpty()) {
           addToTaskActivityLog(task, NO_ELIGIBLE_DELEGATES);
