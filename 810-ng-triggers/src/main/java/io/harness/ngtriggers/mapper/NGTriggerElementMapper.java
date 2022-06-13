@@ -384,6 +384,10 @@ public class NGTriggerElementMapper {
         isConfirmationMessage = headerValues.stream().anyMatch(AMZ_SUBSCRIPTION_CONFIRMATION_TYPE::equalsIgnoreCase);
       }
     } else {
+      if (isEmpty(accountIdentifier) || isEmpty(orgIdentifier) || isEmpty(projectIdentifier)) {
+        throw new InvalidRequestException(
+            "AccountIdentifier, OrgIdentifier, ProjectIdentifier can not be null for custom webhook executions");
+      }
       webhookTriggerType = CUSTOM;
     }
 

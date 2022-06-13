@@ -12,6 +12,7 @@ import io.harness.ng.core.environment.beans.Environment.EnvironmentKeys;
 import io.harness.ng.core.environment.mappers.EnvironmentFilterHelper;
 
 import com.google.inject.Inject;
+import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
 import java.time.Duration;
 import java.util.List;
@@ -71,13 +72,24 @@ public class EnvironmentRepositoryCustomImpl implements EnvironmentRepositoryCus
                      query, updateOperations, new FindAndModifyOptions().returnNew(true), Environment.class));
   }
 
-  public UpdateResult delete(Criteria criteria) {
+  public boolean softDelete(Criteria criteria) {
     Query query = new Query(criteria);
     Update updateOperationsForDelete = EnvironmentFilterHelper.getUpdateOperationsForDelete();
     RetryPolicy<Object> retryPolicy = getRetryPolicy(
         "[Retrying]: Failed deleting Environment; attempt: {}", "[Failed]: Failed deleting Environment; attempt: {}");
-    return Failsafe.with(retryPolicy)
-        .get(() -> mongoTemplate.updateFirst(query, updateOperationsForDelete, Environment.class));
+    UpdateResult updateResult =
+        Failsafe.with(retryPolicy)
+            .get(() -> mongoTemplate.updateFirst(query, updateOperationsForDelete, Environment.class));
+    return updateResult.wasAcknowledged() && updateResult.getModifiedCount() == 1;
+  }
+
+  @Override
+  public boolean delete(Criteria criteria) {
+    Query query = new Query(criteria);
+    RetryPolicy<Object> retryPolicy = getRetryPolicy(
+        "[Retrying]: Failed deleting Environment; attempt: {}", "[Failed]: Failed deleting Environment; attempt: {}");
+    DeleteResult deleteResult = Failsafe.with(retryPolicy).get(() -> mongoTemplate.remove(query, Environment.class));
+    return deleteResult.wasAcknowledged() && deleteResult.getDeletedCount() > 0;
   }
 
   @Override

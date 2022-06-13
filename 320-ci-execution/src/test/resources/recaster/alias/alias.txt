@@ -52,6 +52,7 @@ io.harness.beans.sweepingoutputs.StepTaskDetails
 io.harness.steps.approval.step.jira.beans.CriteriaSpecWrapper
 io.harness.beans.stages.IntegrationStageStepParametersPMS
 io.harness.steps.shellscript.K8sInfraDelegateConfigOutput
+io.harness.steps.shellscript.SshInfraDelegateConfigOutput
 io.harness.beans.steps.stepinfo.GCRStepInfo
 io.harness.steps.common.pipeline.PipelineSetupStepParameters
 io.harness.beans.steps.stepinfo.UploadToGCSStepInfo

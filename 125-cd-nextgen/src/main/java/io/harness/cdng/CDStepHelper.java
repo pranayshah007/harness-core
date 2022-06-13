@@ -16,6 +16,7 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
 import static io.harness.data.structure.ListUtils.trimStrings;
 import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
+import static io.harness.exception.WingsException.USER;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.UnitStatus.RUNNING;
 import static io.harness.ng.core.infrastructure.InfrastructureKind.KUBERNETES_AZURE;
@@ -33,6 +34,8 @@ import static org.apache.commons.lang3.StringUtils.trimToEmpty;
 
 import io.harness.beans.DecryptableEntity;
 import io.harness.beans.FeatureName;
+import io.harness.cdng.artifact.outcome.ArtifactOutcome;
+import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.configfile.steps.ConfigFilesOutcome;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
@@ -66,6 +69,7 @@ import io.harness.cdng.manifest.yaml.OpenshiftParamManifestOutcome;
 import io.harness.cdng.manifest.yaml.S3StoreConfig;
 import io.harness.cdng.manifest.yaml.ValuesManifestOutcome;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
+import io.harness.cdng.ssh.SshEntityHelper;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.common.NGTimeConversionHelper;
 import io.harness.common.ParameterFieldHelper;
@@ -109,6 +113,7 @@ import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.delegate.task.helm.HelmFetchFileConfig;
 import io.harness.delegate.task.helm.HelmFetchFileResult;
 import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
+import io.harness.delegate.task.ssh.SshInfraDelegateConfig;
 import io.harness.encryption.SecretRefData;
 import io.harness.eraro.Level;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
@@ -164,12 +169,14 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.hibernate.validator.constraints.NotEmpty;
 
 public class CDStepHelper {
+  public static final String MISSING_INFRASTRUCTURE_ERROR = "Infrastructure section is missing or is not configured";
   @Inject private GitConfigAuthenticationInfoHelper gitConfigAuthenticationInfoHelper;
   @Named("PRIVILEGED") @Inject private SecretManagerClientService secretManagerClientService;
   @Inject protected CDFeatureFlagHelper cdFeatureFlagHelper;
   @Inject private EngineExpressionService engineExpressionService;
   @Named(DEFAULT_CONNECTOR_SERVICE) @Inject private ConnectorService connectorService;
   @Inject private K8sEntityHelper k8sEntityHelper;
+  @Inject private SshEntityHelper sshEntityHelper;
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
   @Inject private EntityReferenceExtractorUtils entityReferenceExtractorUtils;
   @Inject private PipelineRbacHelper pipelineRbacHelper;
@@ -678,6 +685,10 @@ public class CDStepHelper {
     return k8sEntityHelper.getK8sInfraDelegateConfig(infrastructure, ngAccess);
   }
 
+  public SshInfraDelegateConfig getSshInfraDelegateConfig(InfrastructureOutcome infrastructure, Ambiance ambiance) {
+    return sshEntityHelper.getSshInfraDelegateConfig(infrastructure, ambiance);
+  }
+
   public boolean isUseLatestKustomizeVersion(String accountId) {
     return cdFeatureFlagHelper.isEnabled(accountId, FeatureName.NEW_KUSTOMIZE_BINARY);
   }
@@ -912,5 +923,27 @@ public class CDStepHelper {
     }
 
     return Optional.of((ConfigFilesOutcome) configFilesOutcome.getOutcome());
+  }
+
+  public InfrastructureOutcome getInfrastructureOutcome(Ambiance ambiance) {
+    OptionalOutcome optionalOutcome = outcomeService.resolveOptional(
+        ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
+    if (!optionalOutcome.isFound()) {
+      throw new InvalidRequestException(MISSING_INFRASTRUCTURE_ERROR, USER);
+    }
+
+    return (InfrastructureOutcome) optionalOutcome.getOutcome();
+  }
+
+  public Optional<ArtifactOutcome> resolveArtifactsOutcome(Ambiance ambiance) {
+    OptionalOutcome artifactsOutcomeOption = outcomeService.resolveOptional(
+        ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.ARTIFACTS));
+    if (artifactsOutcomeOption.isFound()) {
+      ArtifactsOutcome artifactsOutcome = (ArtifactsOutcome) artifactsOutcomeOption.getOutcome();
+      if (artifactsOutcome.getPrimary() != null) {
+        return Optional.of(artifactsOutcome.getPrimary());
+      }
+    }
+    return Optional.empty();
   }
 }

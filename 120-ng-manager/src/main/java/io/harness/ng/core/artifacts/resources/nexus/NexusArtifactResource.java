@@ -20,7 +20,6 @@ import io.harness.ng.core.artifacts.resources.util.ArtifactResourceUtils;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
-import io.harness.pipeline.remote.PipelineServiceClient;
 import io.harness.utils.IdentifierRefHelper;
 
 import com.google.inject.Inject;
@@ -54,7 +53,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class NexusArtifactResource {
   private final NexusResourceService nexusResourceService;
-  private final PipelineServiceClient pipelineServiceClient;
+  private final ArtifactResourceUtils artifactResourceUtils;
 
   @GET
   @Path("getBuildDetails")
@@ -91,8 +90,8 @@ public class NexusArtifactResource {
       @NotNull String runtimeInputYaml) {
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(nexusConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
-    artifactPath = ArtifactResourceUtils.getResolvedImagePath(pipelineServiceClient, accountId, orgIdentifier,
-        projectIdentifier, pipelineIdentifier, runtimeInputYaml, artifactPath, fqnPath, gitEntityBasicInfo);
+    artifactPath = artifactResourceUtils.getResolvedImagePath(accountId, orgIdentifier, projectIdentifier,
+        pipelineIdentifier, runtimeInputYaml, artifactPath, fqnPath, gitEntityBasicInfo);
     NexusResponseDTO buildDetails = nexusResourceService.getBuildDetails(connectorRef, repository, repositoryPort,
         artifactPath, repositoryFormat, artifactRepositoryUrl, orgIdentifier, projectIdentifier);
     return ResponseDTO.newResponse(buildDetails);

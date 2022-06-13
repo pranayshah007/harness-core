@@ -233,8 +233,7 @@ public class AwsResourceServiceImplTest extends CategoryTest {
                                                         .build();
     doReturn(mockAwsCFTaskResponseFailed).when(serviceHelper).getResponseData(any(), any(), anyString());
     assertThatThrownBy(()
-                           -> service.getCFparametersKeys(
-                               "s3", "bar", true, "far", null, "cat", "baz",
+                           -> service.getCFparametersKeys("s3", "bar", true, "far", null, "cat", "baz",
                                mockIdentifierRef, "data", "corge", "abc", "efg", "hij"))
         .isInstanceOf(AwsCFException.class);
   }

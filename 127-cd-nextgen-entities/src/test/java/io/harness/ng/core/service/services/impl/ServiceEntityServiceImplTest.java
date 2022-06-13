@@ -9,6 +9,7 @@ package io.harness.ng.core.service.services.impl;
 
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.DEEPAK;
+import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.MOHIT_GARG;
 import static io.harness.rule.OwnerRule.PRABU;
 
@@ -17,15 +18,18 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.CDNGEntitiesTestBase;
+import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ReferencedEntityException;
 import io.harness.ng.core.EntityDetail;
-import io.harness.ng.core.NGCoreTestBase;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.ng.core.entitysetupusage.impl.EntitySetupUsageServiceImpl;
 import io.harness.ng.core.service.dto.ServiceResponseDTO;
@@ -33,43 +37,45 @@ import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.mappers.ServiceElementMapper;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
 import io.harness.rule.Owner;
+import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.PageUtils;
 
+import com.google.common.io.Resources;
 import com.google.inject.Inject;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.joor.Reflect;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
 
 @OwnedBy(HarnessTeam.CDC)
-public class ServiceEntityServiceImplTest extends NGCoreTestBase {
+public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
+  @Mock NGFeatureFlagHelperService ngFeatureFlagHelperService;
   @Mock EntitySetupUsageServiceImpl entitySetupUsageService;
   @Inject @InjectMocks ServiceEntityServiceImpl serviceEntityService;
   private static final String ACCOUNT_ID = "ACCOUNT_ID";
   private static final String ORG_ID = "ORG_ID";
   private static final String PROJECT_ID = "PROJECT_ID";
 
-  @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
-
   @Before
   public void setup() {
     entitySetupUsageService = Mockito.mock(EntitySetupUsageServiceImpl.class);
     Reflect.on(serviceEntityService).set("entitySetupUsageService", entitySetupUsageService);
+    Reflect.on(serviceEntityService).set("ngFeatureFlagHelperService", ngFeatureFlagHelperService);
   }
 
   @Test
@@ -330,6 +336,104 @@ public class ServiceEntityServiceImplTest extends NGCoreTestBase {
         .isInstanceOf(ReferencedEntityException.class)
         .hasMessage(
             "The service SERVICE cannot be deleted because it is being referenced in 2 entities. To delete your service, please remove the reference service from these entities.");
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testDeleteAllServicesInProject() {
+    doReturn(true).when(ngFeatureFlagHelperService).isEnabled("ACCOUNT_ID", FeatureName.HARD_DELETE_ENTITIES);
+    ServiceEntity serviceEntity1 = ServiceEntity.builder()
+                                       .accountId("ACCOUNT_ID")
+                                       .identifier("IDENTIFIER_1")
+                                       .orgIdentifier("ORG_ID")
+                                       .projectIdentifier("PROJECT_ID")
+                                       .name("Service")
+                                       .build();
+
+    ServiceEntity serviceEntity2 = ServiceEntity.builder()
+                                       .accountId("ACCOUNT_ID")
+                                       .identifier("IDENTIFIER_2")
+                                       .orgIdentifier("ORG_ID")
+                                       .projectIdentifier("PROJECT_ID")
+                                       .name("Service")
+                                       .build();
+
+    // Create operations
+    serviceEntityService.create(serviceEntity1);
+    serviceEntityService.create(serviceEntity2);
+
+    boolean delete = serviceEntityService.forceDeleteAllInProject("ACCOUNT_ID", "ORG_ID", "PROJECT_ID");
+    assertThat(delete).isTrue();
+
+    // List services operations.
+    Criteria criteriaFromServiceFilter =
+        CoreCriteriaUtils.createCriteriaForGetList("ACCOUNT_ID", "ORG_ID", "PROJECT_ID");
+    Pageable pageRequest = PageUtils.getPageRequest(0, 10, null);
+    Page<ServiceEntity> list = serviceEntityService.list(criteriaFromServiceFilter, pageRequest);
+    assertThat(list.getContent()).isNotNull();
+    assertThat(list.getContent().size()).isEqualTo(0);
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testHardDeleteService() {
+    doReturn(true).when(ngFeatureFlagHelperService).isEnabled("ACCOUNT_ID", FeatureName.HARD_DELETE_ENTITIES);
+    final String id = UUIDGenerator.generateUuid();
+    ServiceEntity serviceEntity = ServiceEntity.builder()
+                                      .accountId("ACCOUNT_ID")
+                                      .identifier(id)
+                                      .orgIdentifier("ORG_ID")
+                                      .projectIdentifier("PROJECT_ID")
+                                      .name("Service")
+                                      .build();
+
+    serviceEntityService.create(serviceEntity);
+    when(entitySetupUsageService.listAllEntityUsage(anyInt(), anyInt(), anyString(), anyString(), any(), anyString()))
+        .thenReturn(Page.empty());
+    boolean delete = serviceEntityService.delete("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", id, 0L);
+    assertThat(delete).isTrue();
+
+    // list both deleted true/false services
+    Criteria criteriaFromServiceFilter =
+        CoreCriteriaUtils.createCriteriaForGetList("ACCOUNT_ID", "ORG_ID", "PROJECT_ID");
+    Pageable pageRequest = PageUtils.getPageRequest(0, 10, null);
+    Page<ServiceEntity> list = serviceEntityService.list(criteriaFromServiceFilter, pageRequest);
+    assertThat(list.getContent().size()).isEqualTo(0);
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testCreateServiceInputsForServiceWithNoRuntimeInputs() {
+    String filename = "service-without-runtime-inputs.yaml";
+    String yaml = readFile(filename);
+    String templateYaml = serviceEntityService.createServiceInputsYaml(yaml);
+    assertThat(templateYaml).isNullOrEmpty();
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testCreateServiceInputsForServiceWithRuntimeInputs() {
+    String filename = "service-with-runtime-inputs.yaml";
+    String yaml = readFile(filename);
+    String templateYaml = serviceEntityService.createServiceInputsYaml(yaml);
+    assertThat(templateYaml).isNotNull();
+
+    String resFile = "service-with-runtime-inputs-res.yaml";
+    String resTemplate = readFile(resFile);
+    assertThat(templateYaml).isEqualTo(resTemplate);
+  }
+
+  private String readFile(String filename) {
+    ClassLoader classLoader = getClass().getClassLoader();
+    try {
+      return Resources.toString(Objects.requireNonNull(classLoader.getResource(filename)), StandardCharsets.UTF_8);
+    } catch (IOException e) {
+      throw new InvalidRequestException("Could not read resource file: " + filename);
+    }
   }
 
   private EntitySetupUsageDTO getEntitySetupUsageDTO() {

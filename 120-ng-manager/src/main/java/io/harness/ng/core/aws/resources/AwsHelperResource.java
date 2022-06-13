@@ -75,8 +75,8 @@ public class AwsHelperResource {
         IdentifierRefHelper.getIdentifierRef(awsConnectorRef, accountIdentifier, orgIdentifier, projectIdentifier);
 
     List<AwsCFTemplateParamsData> keys =
-        awsHelperService.getCFparametersKeys(type, region, isBranch, branch, repoName, templatePath, commitId, connectorRef, data,
-            gitConnectorRefParam, accountIdentifier, orgIdentifier, projectIdentifier);
+        awsHelperService.getCFparametersKeys(type, region, isBranch, branch, repoName, templatePath, commitId,
+            connectorRef, data, gitConnectorRefParam, accountIdentifier, orgIdentifier, projectIdentifier);
 
     return ResponseDTO.newResponse(keys);
   }

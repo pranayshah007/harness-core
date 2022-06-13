@@ -184,7 +184,7 @@ public class TemplateMergeHelper {
         .mergedPipelineYaml(convertToYaml(resMap))
         .templateReferenceSummaries(templateReferenceSummaries)
         .mergedPipelineYamlWithTemplateRef(mergeTemplateInputsInObject == null
-                ? ""
+                ? null
                 : convertToYaml(mergeTemplateInputsInObject.getResMapWithOpaResponse()))
         .build();
   }

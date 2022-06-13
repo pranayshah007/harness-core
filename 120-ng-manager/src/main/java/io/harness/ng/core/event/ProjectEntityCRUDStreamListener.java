@@ -23,6 +23,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.entities.Project;
 import io.harness.ng.core.entities.Project.ProjectKeys;
 import io.harness.ng.core.environment.services.EnvironmentService;
+import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.services.ProjectService;
 
 import com.google.inject.Inject;
@@ -40,11 +41,14 @@ import org.springframework.data.mongodb.core.query.Criteria;
 public class ProjectEntityCRUDStreamListener implements MessageListener {
   private final ProjectService projectService;
   private final EnvironmentService environmentService;
+  private final ServiceEntityService serviceEntityService;
 
   @Inject
-  public ProjectEntityCRUDStreamListener(ProjectService projectService, EnvironmentService environmentService) {
+  public ProjectEntityCRUDStreamListener(
+      ProjectService projectService, EnvironmentService environmentService, ServiceEntityService serviceEntityService) {
     this.projectService = projectService;
     this.environmentService = environmentService;
+    this.serviceEntityService = serviceEntityService;
   }
 
   @Override
@@ -105,8 +109,13 @@ public class ProjectEntityCRUDStreamListener implements MessageListener {
   }
 
   private boolean processProjectDeleteEvent(ProjectEntityChangeDTO projectEntityChangeDTO) {
-    return environmentService.forceDeleteAllInProject(projectEntityChangeDTO.getAccountIdentifier(),
-        projectEntityChangeDTO.getOrgIdentifier(), projectEntityChangeDTO.getIdentifier());
+    boolean envDeletionProcessed =
+        environmentService.forceDeleteAllInProject(projectEntityChangeDTO.getAccountIdentifier(),
+            projectEntityChangeDTO.getOrgIdentifier(), projectEntityChangeDTO.getIdentifier());
+    boolean serviceDeletionProcessed =
+        serviceEntityService.forceDeleteAllInProject(projectEntityChangeDTO.getAccountIdentifier(),
+            projectEntityChangeDTO.getOrgIdentifier(), projectEntityChangeDTO.getIdentifier());
+    return envDeletionProcessed && serviceDeletionProcessed;
   }
 
   private boolean processOrganizationEntityChangeEvent(

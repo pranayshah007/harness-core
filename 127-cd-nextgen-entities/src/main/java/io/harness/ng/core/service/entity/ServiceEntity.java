@@ -86,7 +86,7 @@ public class ServiceEntity implements PersistentEntity {
   @Wither @CreatedDate Long createdAt;
   @Wither @LastModifiedDate Long lastModifiedAt;
   @Wither @Version Long version;
-  @Builder.Default Boolean deleted = Boolean.FALSE;
+  @Wither @Builder.Default Boolean deleted = Boolean.FALSE;
   @Builder.Default Boolean gitOpsEnabled;
   ServiceDefinitionType type;
 

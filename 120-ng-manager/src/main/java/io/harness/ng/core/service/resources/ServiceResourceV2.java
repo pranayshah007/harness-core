@@ -398,6 +398,34 @@ public class ServiceResourceV2 {
     return ResponseDTO.newResponse(NGServiceConfig.builder().build());
   }
 
+  @GET
+  @Path("/runtimeInputs/{serviceIdentifier}")
+  @ApiOperation(value = "This api returns runtime input YAML", nickname = "getRuntimeInputsServiceEntity")
+  @Hidden
+  public ResponseDTO<String> getServiceRuntimeInputs(
+      @Parameter(description = SERVICE_PARAM_MESSAGE) @PathParam(
+          "serviceIdentifier") @ResourceIdentifier String serviceIdentifier,
+      @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier) {
+    Optional<ServiceEntity> serviceEntity =
+        serviceEntityService.get(accountId, orgIdentifier, projectIdentifier, serviceIdentifier, false);
+
+    if (serviceEntity.isPresent()) {
+      if (EmptyPredicate.isEmpty(serviceEntity.get().getYaml())) {
+        throw new InvalidRequestException("Service is not configured with a Service definition. Service Yaml is empty");
+      }
+      String serviceInputYaml = serviceEntityService.createServiceInputsYaml(serviceEntity.get().getYaml());
+      return ResponseDTO.newResponse(serviceInputYaml);
+    } else {
+      throw new NotFoundException(String.format("Service with identifier [%s] in project [%s], org [%s] not found",
+          serviceIdentifier, projectIdentifier, orgIdentifier));
+    }
+  }
+
   private List<ServiceResponse> filterByPermissionAndId(
       List<AccessControlDTO> accessControlList, List<ServiceResponse> serviceList) {
     List<ServiceResponse> filteredAccessControlDtoList = new ArrayList<>();

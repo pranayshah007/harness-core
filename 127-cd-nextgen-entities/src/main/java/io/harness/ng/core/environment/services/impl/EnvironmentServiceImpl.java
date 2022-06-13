@@ -7,12 +7,15 @@
 
 package io.harness.ng.core.environment.services.impl;
 
+import static io.harness.beans.FeatureName.HARD_DELETE_ENTITIES;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
 import static io.harness.springdata.TransactionUtils.DEFAULT_TRANSACTION_RETRY_POLICY;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.EntityType;
@@ -44,6 +47,7 @@ import io.harness.pms.merger.helpers.RuntimeInputFormHelper;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.repositories.environment.spring.EnvironmentRepository;
+import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -89,16 +93,19 @@ public class EnvironmentServiceImpl implements EnvironmentService {
   private static final String DUP_KEY_EXP_FORMAT_STRING_FOR_ORG =
       "Environment [%s] under Organization [%s] in Account [%s] already exists";
   private static final String DUP_KEY_EXP_FORMAT_STRING_FOR_ACCOUNT = "Environment [%s] in Account [%s] already exists";
+  private final NGFeatureFlagHelperService ngFeatureFlagHelperService;
 
   @Inject
   public EnvironmentServiceImpl(EnvironmentRepository environmentRepository,
       EntitySetupUsageService entitySetupUsageService, @Named(ENTITY_CRUD) Producer eventProducer,
-      OutboxService outboxService, TransactionTemplate transactionTemplate) {
+      OutboxService outboxService, TransactionTemplate transactionTemplate,
+      NGFeatureFlagHelperService ngFeatureFlagHelperService) {
     this.environmentRepository = environmentRepository;
     this.entitySetupUsageService = entitySetupUsageService;
     this.eventProducer = eventProducer;
     this.outboxService = outboxService;
     this.transactionTemplate = transactionTemplate;
+    this.ngFeatureFlagHelperService = ngFeatureFlagHelperService;
   }
 
   @Override
@@ -221,6 +228,10 @@ public class EnvironmentServiceImpl implements EnvironmentService {
   @Override
   public boolean delete(
       String accountId, String orgIdentifier, String projectIdentifier, String environmentIdentifier, Long version) {
+    checkArgument(isNotEmpty(accountId), "accountId must be present");
+    checkArgument(isNotEmpty(environmentIdentifier), "environment Identifier must be present");
+
+    final boolean hardDelete = ngFeatureFlagHelperService.isEnabled(accountId, HARD_DELETE_ENTITIES);
     Environment environment = Environment.builder()
                                   .accountId(accountId)
                                   .orgIdentifier(orgIdentifier)
@@ -234,8 +245,9 @@ public class EnvironmentServiceImpl implements EnvironmentService {
         get(accountId, orgIdentifier, projectIdentifier, environmentIdentifier, false);
     if (environmentOptional.isPresent()) {
       Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
-        UpdateResult updateResult = environmentRepository.delete(criteria);
-        if (!updateResult.wasAcknowledged() || updateResult.getModifiedCount() != 1) {
+        final boolean deleted =
+            hardDelete ? environmentRepository.delete(criteria) : environmentRepository.softDelete(criteria);
+        if (!deleted) {
           throw new InvalidRequestException(
               String.format("Environment [%s] under Project[%s], Organization [%s] couldn't be deleted.",
                   environmentIdentifier, projectIdentifier, orgIdentifier));
@@ -261,7 +273,16 @@ public class EnvironmentServiceImpl implements EnvironmentService {
 
   @Override
   public boolean forceDeleteAllInProject(String accountId, String orgIdentifier, String projectIdentifier) {
-    Criteria criteria = getEnvironmentEqualityCriteriaWithinProject(accountId, orgIdentifier, projectIdentifier, false);
+    checkArgument(isNotEmpty(accountId), "accountId must be present");
+    final boolean shouldHardDelete = ngFeatureFlagHelperService.isEnabled(accountId, HARD_DELETE_ENTITIES);
+    if (!shouldHardDelete) {
+      return false;
+    }
+
+    checkArgument(isNotEmpty(orgIdentifier), "orgIdentifier must be present");
+    checkArgument(isNotEmpty(projectIdentifier), "project Identifier must be present");
+
+    Criteria criteria = getAllEnvironmentsEqualityCriteriaWithinProject(accountId, orgIdentifier, projectIdentifier);
     return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
       UpdateResult updateResult = environmentRepository.deleteMany(criteria);
       if (!updateResult.wasAcknowledged()) {
@@ -369,11 +390,10 @@ public class EnvironmentServiceImpl implements EnvironmentService {
       throw new UnexpectedException(
           "Error while deleting the Environment as was not able to check entity reference records.");
     }
-    if (EmptyPredicate.isNotEmpty(referredByEntities)) {
-      throw new InvalidRequestException(
-          String.format("Could not delete the Environment %s as it is referenced by other entities - "
-                  + referredByEntities.toString(),
-              environment.getIdentifier()));
+    if (isNotEmpty(referredByEntities)) {
+      throw new InvalidRequestException(String.format(
+          "Could not delete the Environment %s as it is referenced by other entities - " + referredByEntities,
+          environment.getIdentifier()));
     }
   }
 
@@ -407,16 +427,13 @@ public class EnvironmentServiceImpl implements EnvironmentService {
     return criteria;
   }
 
-  private Criteria getEnvironmentEqualityCriteriaWithinProject(
-      String accountId, String orgId, String projectId, boolean deleted) {
+  private Criteria getAllEnvironmentsEqualityCriteriaWithinProject(String accountId, String orgId, String projectId) {
     return Criteria.where(EnvironmentKeys.accountId)
         .is(accountId)
         .and(EnvironmentKeys.orgIdentifier)
         .is(orgId)
         .and(EnvironmentKeys.projectIdentifier)
-        .is(projectId)
-        .and(EnvironmentKeys.deleted)
-        .is(deleted);
+        .is(projectId);
   }
 
   private void publishEvent(

@@ -71,7 +71,8 @@ public class DelegateListDataFetcher
         utils.setStringFilter(delegateQuery.field(DelegateKeys.delegateName), qlDelegateFilter.getDelegateName());
       }
       if (qlDelegateFilter.getDelegateStatus() != null) {
-        utils.setStringFilter(delegateQuery.field(DelegateKeys.status), qlDelegateFilter.getDelegateStatus().getStringValue());
+        utils.setStringFilter(
+            delegateQuery.field(DelegateKeys.status), qlDelegateFilter.getDelegateStatus().getStringValue());
       }
       if (qlDelegateFilter.getDelegateType() != null) {
         delegateField = delegateQuery.field(DelegateKeys.delegateType);

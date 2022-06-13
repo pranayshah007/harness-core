@@ -1,1 +1,813 @@
-{"schema":{"type":"object","required":["identifier","name","spec","type"],"properties":{"description":{"type":"string"},"failureStrategies":{"type":"array","items":{"$ref":"#/definitions/cvng/FailureStrategyConfig"}},"identifier":{"type":"string","pattern":"^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$"},"name":{"type":"string","pattern":"^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"},"timeout":{"type":"string","pattern":"^(([1-9])+\\d+[s])|(((([1-9])+\\d*[mhwd])+([\\s]?\\d+[smhwd])*)|(<\\+input>.*)|(.*<\\+.*>.*))$"},"type":{"type":"string","enum":["Verify"]},"when":{"$ref":"#/definitions/cvng/StepWhenCondition"}},"$schema":"http://json-schema.org/draft-07/schema#","allOf":[{"if":{"properties":{"type":{"const":"Verify"}}},"then":{"properties":{"spec":{"$ref":"#/definitions/cvng/CVNGStepInfo"}}}}],"definitions":{"cvng":{"AbortFailureActionConfig":{"allOf":[{"$ref":"#/definitions/cvng/FailureStrategyActionConfig"},{"type":"object","required":["type"],"properties":{"type":{"type":"string","enum":["Abort"]}}}],"$schema":"http://json-schema.org/draft-07/schema#"},"BlueGreenVerificationJobSpec":{"allOf":[{"$ref":"#/definitions/cvng/VerificationJobSpec"},{"type":"object","properties":{"trafficSplitPercentage":{"type":"string","description":"Example: 50, You can put max upto 50."}}}],"$schema":"http://json-schema.org/draft-07/schema#"},"CVNGStepInfo":{"type":"object","required":["type"],"properties":{"monitoredService":{"$ref":"#/definitions/cvng/MonitoredServiceNode"},"type":{"type":"string"}},"$schema":"http://json-schema.org/draft-07/schema#","allOf":[{"if":{"properties":{"type":{"const":"Bluegreen"}}},"then":{"properties":{"spec":{"$ref":"#/definitions/cvng/BlueGreenVerificationJobSpec"}}}},{"if":{"properties":{"type":{"const":"Canary"}}},"then":{"properties":{"spec":{"$ref":"#/definitions/cvng/CanaryVerificationJobSpec"}}}},{"if":{"properties":{"type":{"const":"LoadTest"}}},"then":{"properties":{"spec":{"$ref":"#/definitions/cvng/TestVerificationJobSpec"}}}},{"if":{"properties":{"type":{"const":"Rolling"}}},"then":{"properties":{"spec":{"$ref":"#/definitions/cvng/ImprovisedCanaryVerificationJobSpec"}}}}]},"CVVerifyStepNode":{"type":"object","required":["identifier","name","spec","type"],"properties":{"description":{"type":"string"},"failureStrategies":{"type":"array","items":{"$ref":"#/definitions/cvng/FailureStrategyConfig"}},"identifier":{"type":"string","pattern":"^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$"},"name":{"type":"string","pattern":"^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"},"timeout":{"type":"string","pattern":"^(([1-9])+\\d+[s])|(((([1-9])+\\d*[mhwd])+([\\s]?\\d+[smhwd])*)|(<\\+input>.*)|(.*<\\+.*>.*))$"},"type":{"type":"string","enum":["Verify"]},"when":{"$ref":"#/definitions/cvng/StepWhenCondition"}},"$schema":"http://json-schema.org/draft-07/schema#","allOf":[{"if":{"properties":{"type":{"const":"Verify"}}},"then":{"properties":{"spec":{"$ref":"#/definitions/cvng/CVNGStepInfo"}}}}]},"CanaryVerificationJobSpec":{"allOf":[{"$ref":"#/definitions/cvng/VerificationJobSpec"},{"type":"object","properties":{"trafficSplitPercentage":{"type":"string","description":"Example: 50, You can put max upto 50."}}}],"$schema":"http://json-schema.org/draft-07/schema#"},"ConfiguredMonitoredServiceSpec":{"allOf":[{"$ref":"#/definitions/cvng/MonitoredServiceSpec"},{"type":"object","required":["monitoredServiceRef"],"properties":{"monitoredServiceRef":{"type":"string"}}}],"$schema":"http://json-schema.org/draft-07/schema#"},"DefaultMonitoredServiceSpec":{"allOf":[{"$ref":"#/definitions/cvng/MonitoredServiceSpec"},{"type":"object"}],"$schema":"http://json-schema.org/draft-07/schema#"},"FailureStrategyActionConfig":{"type":"object","required":["type"],"discriminator":"type","properties":{"type":{"type":"string","enum":["Ignore","Retry","MarkAsSuccess","Abort","StageRollback","StepGroupRollback","ManualIntervention"]}},"$schema":"http://json-schema.org/draft-07/schema#"},"FailureStrategyConfig":{"type":"object","required":["onFailure"],"properties":{"onFailure":{"$ref":"#/definitions/cvng/OnFailureConfig"}},"$schema":"http://json-schema.org/draft-07/schema#"},"IgnoreFailureActionConfig":{"allOf":[{"$ref":"#/definitions/cvng/FailureStrategyActionConfig"},{"type":"object","required":["type"],"properties":{"type":{"type":"string","enum":["Ignore"]}}}],"$schema":"http://json-schema.org/draft-07/schema#"},"ImprovisedCanaryVerificationJobSpec":{"allOf":[{"$ref":"#/definitions/cvng/VerificationJobSpec"},{"type":"object","properties":{"trafficSplitPercentage":{"type":"string","description":"Example: 50, You can put max upto 50."}}}],"$schema":"http://json-schema.org/draft-07/schema#"},"ManualFailureSpecConfig":{"type":"object","required":["onTimeout","timeout"],"properties":{"onTimeout":{"$ref":"#/definitions/cvng/OnTimeoutConfig"},"timeout":{"type":"string"}},"$schema":"http://json-schema.org/draft-07/schema#"},"ManualInterventionFailureActionConfig":{"allOf":[{"$ref":"#/definitions/cvng/FailureStrategyActionConfig"},{"type":"object","required":["spec","type"],"properties":{"spec":{"readOnly":true,"$ref":"#/definitions/cvng/ManualFailureSpecConfig"},"type":{"type":"string","enum":["ManualIntervention"]}}}],"$schema":"http://json-schema.org/draft-07/schema#"},"MarkAsSuccessFailureActionConfig":{"allOf":[{"$ref":"#/definitions/cvng/FailureStrategyActionConfig"},{"type":"object","required":["type"],"properties":{"type":{"type":"string","enum":["MarkAsSuccess"]}}}],"$schema":"http://json-schema.org/draft-07/schema#"},"MonitoredServiceNode":{"type":"object","required":["type"],"properties":{"type":{"type":"string"}},"$schema":"http://json-schema.org/draft-07/schema#","allOf":[{"if":{"properties":{"type":{"const":"CONFIGURED"}}},"then":{"properties":{"spec":{"$ref":"#/definitions/cvng/ConfiguredMonitoredServiceSpec"}}}},{"if":{"properties":{"type":{"const":"DEFAULT"}}},"then":{"properties":{"spec":{"$ref":"#/definitions/cvng/DefaultMonitoredServiceSpec"}}}},{"if":{"properties":{"type":{"const":"TEMPLATE"}}},"then":{"properties":{"spec":{"$ref":"#/definitions/cvng/TemplateMonitoredServiceSpec"}}}}]},"MonitoredServiceSpec":{"type":"object","discriminator":"type","$schema":"http://json-schema.org/draft-07/schema#"},"OnFailureConfig":{"type":"object","required":["action","errors"],"properties":{"action":{"oneOf":[{"$ref":"#/definitions/cvng/AbortFailureActionConfig"},{"$ref":"#/definitions/cvng/IgnoreFailureActionConfig"},{"$ref":"#/definitions/cvng/ManualInterventionFailureActionConfig"},{"$ref":"#/definitions/cvng/MarkAsSuccessFailureActionConfig"},{"$ref":"#/definitions/cvng/RetryFailureActionConfig"},{"$ref":"#/definitions/cvng/StageRollbackFailureActionConfig"},{"$ref":"#/definitions/cvng/StepGroupFailureActionConfig"}]},"errors":{"type":"array","items":{"type":"string","enum":["Unknown","AllErrors","Authentication","Connectivity","Timeout","Authorization","Verification","DelegateProvisioning","PolicyEvaluationFailure"]}}},"$schema":"http://json-schema.org/draft-07/schema#"},"OnRetryFailureConfig":{"type":"object","properties":{"action":{"oneOf":[{"$ref":"#/definitions/cvng/AbortFailureActionConfig"},{"$ref":"#/definitions/cvng/IgnoreFailureActionConfig"},{"$ref":"#/definitions/cvng/ManualInterventionFailureActionConfig"},{"$ref":"#/definitions/cvng/MarkAsSuccessFailureActionConfig"},{"$ref":"#/definitions/cvng/RetryFailureActionConfig"},{"$ref":"#/definitions/cvng/StageRollbackFailureActionConfig"},{"$ref":"#/definitions/cvng/StepGroupFailureActionConfig"}]}},"$schema":"http://json-schema.org/draft-07/schema#"},"OnTimeoutConfig":{"type":"object","properties":{"action":{"oneOf":[{"$ref":"#/definitions/cvng/AbortFailureActionConfig"},{"$ref":"#/definitions/cvng/IgnoreFailureActionConfig"},{"$ref":"#/definitions/cvng/ManualInterventionFailureActionConfig"},{"$ref":"#/definitions/cvng/MarkAsSuccessFailureActionConfig"},{"$ref":"#/definitions/cvng/RetryFailureActionConfig"},{"$ref":"#/definitions/cvng/StageRollbackFailureActionConfig"},{"$ref":"#/definitions/cvng/StepGroupFailureActionConfig"}]}},"$schema":"http://json-schema.org/draft-07/schema#"},"RetryFailureActionConfig":{"allOf":[{"$ref":"#/definitions/cvng/FailureStrategyActionConfig"},{"type":"object","required":["spec","type"],"properties":{"spec":{"readOnly":true,"$ref":"#/definitions/cvng/RetryFailureSpecConfig"},"type":{"type":"string","enum":["Retry"]}}}],"$schema":"http://json-schema.org/draft-07/schema#"},"RetryFailureSpecConfig":{"type":"object","required":["onRetryFailure","retryCount","retryIntervals"],"properties":{"onRetryFailure":{"$ref":"#/definitions/cvng/OnRetryFailureConfig"},"retryCount":{"type":"integer","format":"int32"},"retryIntervals":{"type":"array","items":{"type":"string"},"maxItems":2147483647,"minItems":1}},"$schema":"http://json-schema.org/draft-07/schema#"},"StageRollbackFailureActionConfig":{"allOf":[{"$ref":"#/definitions/cvng/FailureStrategyActionConfig"},{"type":"object","required":["type"],"properties":{"type":{"type":"string","enum":["StageRollback"]}}}],"$schema":"http://json-schema.org/draft-07/schema#"},"StepGroupFailureActionConfig":{"allOf":[{"$ref":"#/definitions/cvng/FailureStrategyActionConfig"},{"type":"object","required":["type"],"properties":{"type":{"type":"string","enum":["StepGroupRollback"]}}}],"$schema":"http://json-schema.org/draft-07/schema#"},"StepWhenCondition":{"type":"object","required":["stageStatus"],"properties":{"condition":{"type":"string"},"stageStatus":{"type":"string","enum":["Success","Failure","All"]}},"$schema":"http://json-schema.org/draft-07/schema#"},"TemplateMonitoredServiceSpec":{"allOf":[{"$ref":"#/definitions/cvng/MonitoredServiceSpec"},{"type":"object","required":["monitoredServiceTemplateRef","versionLabel"],"properties":{"monitoredServiceTemplateRef":{"type":"string"},"versionLabel":{"type":"string"}}}],"$schema":"http://json-schema.org/draft-07/schema#"},"TestVerificationJobSpec":{"allOf":[{"$ref":"#/definitions/cvng/VerificationJobSpec"},{"type":"object","properties":{}}],"$schema":"http://json-schema.org/draft-07/schema#"},"VerificationJobSpec":{"type":"object","required":["deploymentTag","duration","sensitivity"],"discriminator":"type","properties":{"deploymentTag":{"type":"string","description":"You can put expression <+serviceConfig.artifacts.primary.tag> to resolve primary tag"},"duration":{"type":"string","description":"Format example: 5m, 30m, please put multiple of 5"},"sensitivity":{"type":"string","description":"Possible values: [Low, Medium, High]"}},"$schema":"http://json-schema.org/draft-07/schema#"}}}},"nodeType":"Verify","nodeName":"CVNGStageInfo","namespace":"cvng","skipStageSchema":true,"moduleType":"CV"}
+{
+  "schema": {
+    "type": "object",
+    "required": [
+      "identifier",
+      "name",
+      "spec",
+      "type"
+    ],
+    "properties": {
+      "description": {
+        "type": "string"
+      },
+      "failureStrategies": {
+        "type": "array",
+        "items": {
+          "$ref": "#/definitions/cvng/FailureStrategyConfig"
+        }
+      },
+      "identifier": {
+        "type": "string",
+        "pattern": "^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$"
+      },
+      "name": {
+        "type": "string",
+        "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"
+      },
+      "timeout": {
+        "type": "string",
+        "pattern": "^(([1-9])+\\d+[s])|(((([1-9])+\\d*[mhwd])+([\\s]?\\d+[smhwd])*)|(<\\+input>.*)|(.*<\\+.*>.*))$"
+      },
+      "type": {
+        "type": "string",
+        "enum": [
+          "Verify"
+        ]
+      },
+      "when": {
+        "$ref": "#/definitions/cvng/StepWhenCondition"
+      }
+    },
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "allOf": [
+      {
+        "if": {
+          "properties": {
+            "type": {
+              "const": "Verify"
+            }
+          }
+        },
+        "then": {
+          "properties": {
+            "spec": {
+              "$ref": "#/definitions/cvng/CVNGStepInfo"
+            }
+          }
+        }
+      }
+    ],
+    "definitions": {
+      "cvng": {
+        "AbortFailureActionConfig": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/cvng/FailureStrategyActionConfig"
+            },
+            {
+              "type": "object",
+              "required": [
+                "type"
+              ],
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "Abort"
+                  ]
+                }
+              }
+            }
+          ],
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "BlueGreenVerificationJobSpec": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/cvng/VerificationJobSpec"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "trafficSplitPercentage": {
+                  "type": "string",
+                  "description": "Example: 50, You can put max upto 50."
+                }
+              }
+            }
+          ],
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "CVNGStepInfo": {
+          "type": "object",
+          "required": [
+            "spec",
+            "type"
+          ],
+          "properties": {
+            "monitoredService": {
+              "$ref": "#/definitions/cvng/MonitoredServiceNode"
+            },
+            "type": {
+              "type": "string"
+            }
+          },
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "type": {
+                    "const": "Bluegreen"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "spec": {
+                    "$ref": "#/definitions/cvng/BlueGreenVerificationJobSpec"
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "type": {
+                    "const": "Canary"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "spec": {
+                    "$ref": "#/definitions/cvng/CanaryVerificationJobSpec"
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "type": {
+                    "const": "LoadTest"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "spec": {
+                    "$ref": "#/definitions/cvng/TestVerificationJobSpec"
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "type": {
+                    "const": "Rolling"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "spec": {
+                    "$ref": "#/definitions/cvng/ImprovisedCanaryVerificationJobSpec"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "CVVerifyStepNode": {
+          "type": "object",
+          "required": [
+            "identifier",
+            "name",
+            "spec",
+            "type"
+          ],
+          "properties": {
+            "description": {
+              "type": "string"
+            },
+            "failureStrategies": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/cvng/FailureStrategyConfig"
+              }
+            },
+            "identifier": {
+              "type": "string",
+              "pattern": "^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$"
+            },
+            "name": {
+              "type": "string",
+              "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"
+            },
+            "timeout": {
+              "type": "string",
+              "pattern": "^(([1-9])+\\d+[s])|(((([1-9])+\\d*[mhwd])+([\\s]?\\d+[smhwd])*)|(<\\+input>.*)|(.*<\\+.*>.*))$"
+            },
+            "type": {
+              "type": "string",
+              "enum": [
+                "Verify"
+              ]
+            },
+            "when": {
+              "$ref": "#/definitions/cvng/StepWhenCondition"
+            }
+          },
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "type": {
+                    "const": "Verify"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "spec": {
+                    "$ref": "#/definitions/cvng/CVNGStepInfo"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "CanaryVerificationJobSpec": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/cvng/VerificationJobSpec"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "trafficSplitPercentage": {
+                  "type": "string",
+                  "description": "Example: 50, You can put max upto 50."
+                }
+              }
+            }
+          ],
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "ConfiguredMonitoredServiceSpec": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/cvng/MonitoredServiceSpec"
+            },
+            {
+              "type": "object",
+              "required": [
+                "monitoredServiceRef"
+              ],
+              "properties": {
+                "monitoredServiceRef": {
+                  "type": "string"
+                }
+              }
+            }
+          ],
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "DefaultMonitoredServiceSpec": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/cvng/MonitoredServiceSpec"
+            },
+            {
+              "type": "object",
+              "properties": {
+
+              }
+            }
+          ],
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "FailureStrategyActionConfig": {
+          "type": "object",
+          "required": [
+            "type"
+          ],
+          "discriminator": "type",
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "Ignore",
+                "Retry",
+                "MarkAsSuccess",
+                "Abort",
+                "StageRollback",
+                "StepGroupRollback",
+                "ManualIntervention"
+              ]
+            }
+          },
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "FailureStrategyConfig": {
+          "type": "object",
+          "required": [
+            "onFailure"
+          ],
+          "properties": {
+            "onFailure": {
+              "$ref": "#/definitions/cvng/OnFailureConfig"
+            }
+          },
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "IgnoreFailureActionConfig": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/cvng/FailureStrategyActionConfig"
+            },
+            {
+              "type": "object",
+              "required": [
+                "type"
+              ],
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "Ignore"
+                  ]
+                }
+              }
+            }
+          ],
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "ImprovisedCanaryVerificationJobSpec": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/cvng/VerificationJobSpec"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "trafficSplitPercentage": {
+                  "type": "string",
+                  "description": "Example: 50, You can put max upto 50."
+                }
+              }
+            }
+          ],
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "JsonNode": {
+          "type": "object",
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "ManualFailureSpecConfig": {
+          "type": "object",
+          "required": [
+            "onTimeout",
+            "timeout"
+          ],
+          "properties": {
+            "onTimeout": {
+              "$ref": "#/definitions/cvng/OnTimeoutConfig"
+            },
+            "timeout": {
+              "type": "string"
+            }
+          },
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "ManualInterventionFailureActionConfig": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/cvng/FailureStrategyActionConfig"
+            },
+            {
+              "type": "object",
+              "required": [
+                "spec",
+                "type"
+              ],
+              "properties": {
+                "spec": {
+                  "readOnly": true,
+                  "$ref": "#/definitions/cvng/ManualFailureSpecConfig"
+                },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "ManualIntervention"
+                  ]
+                }
+              }
+            }
+          ],
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "MarkAsSuccessFailureActionConfig": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/cvng/FailureStrategyActionConfig"
+            },
+            {
+              "type": "object",
+              "required": [
+                "type"
+              ],
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "MarkAsSuccess"
+                  ]
+                }
+              }
+            }
+          ],
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "MonitoredServiceNode": {
+          "type": "object",
+          "required": [
+            "spec",
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "type": "string"
+            }
+          },
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "type": {
+                    "const": "Configured"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "spec": {
+                    "$ref": "#/definitions/cvng/ConfiguredMonitoredServiceSpec"
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "type": {
+                    "const": "Default"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "spec": {
+                    "$ref": "#/definitions/cvng/DefaultMonitoredServiceSpec"
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "type": {
+                    "const": "Template"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "spec": {
+                    "$ref": "#/definitions/cvng/TemplateMonitoredServiceSpec"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "MonitoredServiceSpec": {
+          "type": "object",
+          "discriminator": "type",
+          "properties": {
+            "type": {
+              "type": "string"
+            }
+          },
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "OnFailureConfig": {
+          "type": "object",
+          "required": [
+            "action",
+            "errors"
+          ],
+          "properties": {
+            "action": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/cvng/AbortFailureActionConfig"
+                },
+                {
+                  "$ref": "#/definitions/cvng/IgnoreFailureActionConfig"
+                },
+                {
+                  "$ref": "#/definitions/cvng/ManualInterventionFailureActionConfig"
+                },
+                {
+                  "$ref": "#/definitions/cvng/MarkAsSuccessFailureActionConfig"
+                },
+                {
+                  "$ref": "#/definitions/cvng/RetryFailureActionConfig"
+                },
+                {
+                  "$ref": "#/definitions/cvng/StageRollbackFailureActionConfig"
+                },
+                {
+                  "$ref": "#/definitions/cvng/StepGroupFailureActionConfig"
+                }
+              ]
+            },
+            "errors": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "Unknown",
+                  "AllErrors",
+                  "Authentication",
+                  "Connectivity",
+                  "Timeout",
+                  "Authorization",
+                  "Verification",
+                  "DelegateProvisioning",
+                  "PolicyEvaluationFailure"
+                ]
+              }
+            }
+          },
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "OnRetryFailureConfig": {
+          "type": "object",
+          "properties": {
+            "action": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/cvng/AbortFailureActionConfig"
+                },
+                {
+                  "$ref": "#/definitions/cvng/IgnoreFailureActionConfig"
+                },
+                {
+                  "$ref": "#/definitions/cvng/ManualInterventionFailureActionConfig"
+                },
+                {
+                  "$ref": "#/definitions/cvng/MarkAsSuccessFailureActionConfig"
+                },
+                {
+                  "$ref": "#/definitions/cvng/RetryFailureActionConfig"
+                },
+                {
+                  "$ref": "#/definitions/cvng/StageRollbackFailureActionConfig"
+                },
+                {
+                  "$ref": "#/definitions/cvng/StepGroupFailureActionConfig"
+                }
+              ]
+            }
+          },
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "OnTimeoutConfig": {
+          "type": "object",
+          "properties": {
+            "action": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/cvng/AbortFailureActionConfig"
+                },
+                {
+                  "$ref": "#/definitions/cvng/IgnoreFailureActionConfig"
+                },
+                {
+                  "$ref": "#/definitions/cvng/ManualInterventionFailureActionConfig"
+                },
+                {
+                  "$ref": "#/definitions/cvng/MarkAsSuccessFailureActionConfig"
+                },
+                {
+                  "$ref": "#/definitions/cvng/RetryFailureActionConfig"
+                },
+                {
+                  "$ref": "#/definitions/cvng/StageRollbackFailureActionConfig"
+                },
+                {
+                  "$ref": "#/definitions/cvng/StepGroupFailureActionConfig"
+                }
+              ]
+            }
+          },
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "RetryFailureActionConfig": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/cvng/FailureStrategyActionConfig"
+            },
+            {
+              "type": "object",
+              "required": [
+                "spec",
+                "type"
+              ],
+              "properties": {
+                "spec": {
+                  "readOnly": true,
+                  "$ref": "#/definitions/cvng/RetryFailureSpecConfig"
+                },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "Retry"
+                  ]
+                }
+              }
+            }
+          ],
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "RetryFailureSpecConfig": {
+          "type": "object",
+          "required": [
+            "onRetryFailure",
+            "retryCount",
+            "retryIntervals"
+          ],
+          "properties": {
+            "onRetryFailure": {
+              "$ref": "#/definitions/cvng/OnRetryFailureConfig"
+            },
+            "retryCount": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "retryIntervals": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "maxItems": 2147483647,
+              "minItems": 1
+            }
+          },
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "StageRollbackFailureActionConfig": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/cvng/FailureStrategyActionConfig"
+            },
+            {
+              "type": "object",
+              "required": [
+                "type"
+              ],
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "StageRollback"
+                  ]
+                }
+              }
+            }
+          ],
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "StepGroupFailureActionConfig": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/cvng/FailureStrategyActionConfig"
+            },
+            {
+              "type": "object",
+              "required": [
+                "type"
+              ],
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "StepGroupRollback"
+                  ]
+                }
+              }
+            }
+          ],
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "StepWhenCondition": {
+          "type": "object",
+          "required": [
+            "stageStatus"
+          ],
+          "properties": {
+            "condition": {
+              "type": "string"
+            },
+            "stageStatus": {
+              "type": "string",
+              "enum": [
+                "Success",
+                "Failure",
+                "All"
+              ]
+            }
+          },
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "TemplateMonitoredServiceSpec": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/cvng/MonitoredServiceSpec"
+            },
+            {
+              "type": "object",
+              "required": [
+                "monitoredServiceTemplateRef",
+                "templateInputs",
+                "versionLabel"
+              ],
+              "properties": {
+                "monitoredServiceTemplateRef": {
+                  "type": "string"
+                },
+                "templateInputs": {
+                  "$ref": "#/definitions/cvng/JsonNode"
+                },
+                "versionLabel": {
+                  "type": "string"
+                }
+              }
+            }
+          ],
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "TestVerificationJobSpec": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/cvng/VerificationJobSpec"
+            },
+            {
+              "type": "object",
+              "properties": {
+
+              }
+            }
+          ],
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "VerificationJobSpec": {
+          "type": "object",
+          "required": [
+            "deploymentTag",
+            "duration",
+            "sensitivity"
+          ],
+          "discriminator": "type",
+          "properties": {
+            "deploymentTag": {
+              "type": "string",
+              "description": "You can put expression <+serviceConfig.artifacts.primary.tag> to resolve primary tag"
+            },
+            "duration": {
+              "type": "string",
+              "description": "Format example: 5m, 30m, please put multiple of 5"
+            },
+            "sensitivity": {
+              "type": "string",
+              "description": "Possible values: [Low, Medium, High]"
+            }
+          },
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        }
+      }
+    }
+  },
+  "nodeType": "Verify",
+  "nodeName": "CVNGStageInfo",
+  "namespace": "cvng",
+  "skipStageSchema": true,
+  "moduleType": "CV"
+}

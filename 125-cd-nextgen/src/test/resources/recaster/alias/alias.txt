@@ -112,6 +112,7 @@ io.harness.steps.approval.step.jira.beans.CriteriaSpecWrapper
 io.harness.cdng.manifest.yaml.OpenshiftManifestOutcome
 io.harness.cdng.artifact.bean.yaml.EcrArtifactConfig
 io.harness.steps.shellscript.K8sInfraDelegateConfigOutput
+io.harness.steps.shellscript.SshInfraDelegateConfigOutput
 io.harness.cdng.infra.beans.K8sGcpInfraMapping
 io.harness.cdng.infra.beans.K8sAzureInfraMapping
 io.harness.cdng.infra.beans.PdcInfraMapping
@@ -280,6 +281,15 @@ io.harness.steps.policy.PolicyStepInfo
 io.harness.steps.policy.PolicyStepNode
 io.harness.steps.policy.custom.CustomPolicyStepSpec
 io.harness.cdng.service.beans.SshServiceSpec
+io.harness.cdng.ssh.CommandStepInfo
+io.harness.cdng.ssh.CommandStepNode
+io.harness.cdng.ssh.CommandStepParameters
+io.harness.cdng.ssh.TailFilePattern
+io.harness.cdng.ssh.CommandUnitWrapper
+io.harness.cdng.ssh.StepCommandUnit
+io.harness.cdng.ssh.ScriptCommandUnitSpec
+io.harness.cdng.ssh.CopyCommandUnitSpec
+io.harness.cdng.ssh.CommandUnitSourceType
 io.harness.steps.servicenow.create.ServiceNowCreateSpecParameters
 io.harness.steps.servicenow.create.ServiceNowCreateStepNode
 io.harness.steps.servicenow.create.ServiceNowCreateStepInfo

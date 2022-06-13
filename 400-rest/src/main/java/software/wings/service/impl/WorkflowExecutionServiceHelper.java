@@ -40,6 +40,7 @@ import software.wings.api.DeploymentType;
 import software.wings.api.WorkflowElement;
 import software.wings.beans.CanaryOrchestrationWorkflow;
 import software.wings.beans.ExecutionArgs;
+import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.Pipeline;
 import software.wings.beans.PipelineStage;
 import software.wings.beans.PipelineStage.PipelineStageElement;
@@ -80,6 +81,7 @@ import java.util.Set;
 import java.util.StringJoiner;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
+import lombok.NonNull;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.Sort;
 
@@ -480,7 +482,8 @@ public class WorkflowExecutionServiceHelper {
     return !(matchesVariablePattern(defaultValuePresent) && !defaultValuePresent.contains("."));
   }
 
-  public List<String> getInfraMappings(Workflow workflow, Map<String, String> workflowVariables) {
+  @NonNull
+  public List<InfrastructureMapping> getInfraMappings(Workflow workflow, Map<String, String> workflowVariables) {
     if (workflow == null || workflow.getOrchestrationWorkflow() == null) {
       return new ArrayList<>();
     }
@@ -491,7 +494,7 @@ public class WorkflowExecutionServiceHelper {
     return orchestrationWorkflow.getWorkflowPhases()
         .stream()
         .map(phase
-            -> infrastructureMappingService.getInfraMappingsByServiceAndInfraDefinitionIds(workflow.getAppId(),
+            -> infrastructureMappingService.getInfraMappingWithDeploymentType(workflow.getAppId(),
                 workflowService.getResolvedServiceIdFromPhase(phase, workflowVariables),
                 workflowService.getResolvedInfraDefinitionIdFromPhase(phase, workflowVariables)))
         .filter(Objects::nonNull)

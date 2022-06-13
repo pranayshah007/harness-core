@@ -11,7 +11,6 @@ import io.harness.ng.core.environment.beans.Environment;
 
 import java.util.List;
 import java.util.Optional;
-import javax.validation.constraints.NotNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -33,8 +32,7 @@ public interface EnvironmentService {
   boolean delete(
       String accountId, String orgIdentifier, String projectIdentifier, String environmentIdentifier, Long version);
 
-  boolean forceDeleteAllInProject(
-      @NotNull String accountId, @NotNull String orgIdentifier, @NotNull String projectIdentifier);
+  boolean forceDeleteAllInProject(String accountId, String orgIdentifier, String projectIdentifier);
 
   List<Environment> listAccess(Criteria criteria);
 

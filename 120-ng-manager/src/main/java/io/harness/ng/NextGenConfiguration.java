@@ -156,6 +156,7 @@ public class NextGenConfiguration extends Configuration {
   @JsonProperty("auditClientConfig") private ServiceHttpClientConfig auditClientConfig;
   @JsonProperty("ceNextGenClientConfig") private ServiceHttpClientConfig ceNextGenClientConfig;
   @JsonProperty("lightwingClientConfig") private ServiceHttpClientConfig lightwingClientConfig;
+  @JsonProperty("templateServiceClientConfig") private ServiceHttpClientConfig templateServiceClientConfig;
   @JsonProperty("eventsFramework") @ConfigSecret private EventsFrameworkConfiguration eventsFrameworkConfiguration;
   @JsonProperty("redisLockConfig") @ConfigSecret private RedisConfig redisLockConfig;
   @JsonProperty(value = "enableAuth", defaultValue = "true") private boolean enableAuth;
@@ -234,19 +235,33 @@ public class NextGenConfiguration extends Configuration {
         .getTypesAnnotatedWith(Path.class)
         .stream()
         .filter(klazz
-            -> StringUtils.startsWithAny(klazz.getPackage().getName(), NextGenConfiguration.CORE_PACKAGE, NextGenConfiguration.CONNECTOR_PACKAGE,
-                NextGenConfiguration.GITOPS_PROVIDER_RESOURCE_PACKAGE, NextGenConfiguration.GIT_SYNC_PACKAGE, NextGenConfiguration.CDNG_RESOURCES_PACKAGE,
-                NextGenConfiguration.OVERLAY_INPUT_SET_RESOURCE_PACKAGE, NextGenConfiguration.YAML_PACKAGE, NextGenConfiguration.FILTER_PACKAGE, NextGenConfiguration.SIGNUP_PACKAGE, NextGenConfiguration.MOCKSERVER_PACKAGE,
-                NextGenConfiguration.ACCOUNT_PACKAGE, NextGenConfiguration.LICENSE_PACKAGE, NextGenConfiguration.SUBSCRIPTION_PACKAGE, NextGenConfiguration.POLLING_PACKAGE, NextGenConfiguration.ENFORCEMENT_PACKAGE,
-                NextGenConfiguration.ENFORCEMENT_CLIENT_PACKAGE, NextGenConfiguration.ARTIFACTS_PACKAGE, NextGenConfiguration.AUTHENTICATION_SETTINGS_PACKAGE, NextGenConfiguration.CD_OVERVIEW_PACKAGE,
-                NextGenConfiguration.ACTIVITY_HISTORY_PACKAGE, NextGenConfiguration.SERVICE_PACKAGE, NextGenConfiguration.SERVICE_ACCOUNTS_PACKAGE, NextGenConfiguration.BUCKETS_PACKAGE,
-                NextGenConfiguration.CLUSTER_GCP_PACKAGE, NextGenConfiguration.WEBHOOK_PACKAGE, NextGenConfiguration.ENVIRONMENT_PACKAGE, NextGenConfiguration.USERPROFILE_PACKAGE, NextGenConfiguration.JIRA_PACKAGE,
-                NextGenConfiguration.EXECUTION_PACKAGE, NextGenConfiguration.ENTITYSETUP_PACKAGE, NextGenConfiguration.SCHEMA_PACKAGE, NextGenConfiguration.DELEGATE_PACKAGE, NextGenConfiguration.ACCESS_CONTROL_PACKAGE,
-                NextGenConfiguration.FEEDBACK_PACKAGE, NextGenConfiguration.INSTANCE_SYNC_PACKAGE, NextGenConfiguration.INVITE_PACKAGE, NextGenConfiguration.USER_PACKAGE, NextGenConfiguration.INSTANCE_NG_PACKAGE,
-                NextGenConfiguration.LICENSING_USAGE_PACKAGE, NextGenConfiguration.SMTP_NG_RESOURCE, NextGenConfiguration.SERVICENOW_PACKAGE, NextGenConfiguration.SCIM_NG_RESOURCE,
-                NextGenConfiguration.NG_GLOBAL_KMS_RESOURCE_PACKAGE, NextGenConfiguration.ACCOUNT_SETTING_PACKAGE, NextGenConfiguration.ENV_GROUP_RESOURCE, NextGenConfiguration.AZURE_RESOURCES_PACKAGE,
-                NextGenConfiguration.NG_TRIAL_SIGNUP_PACKAGE, NextGenConfiguration.VARIABLE_RESOURCE_PACKAGE, NextGenConfiguration.FILE_STORE_RESOURCE_PACKAGE,
-                NextGenConfiguration.GITOPS_RESOURCE_PACKAGE, NextGenConfiguration.INFRA_RESOURCE_PACKAGE, NextGenConfiguration.AWS_PACKAGE))
+            -> StringUtils.startsWithAny(klazz.getPackage().getName(), NextGenConfiguration.CORE_PACKAGE,
+                NextGenConfiguration.CONNECTOR_PACKAGE, NextGenConfiguration.GITOPS_PROVIDER_RESOURCE_PACKAGE,
+                NextGenConfiguration.GIT_SYNC_PACKAGE, NextGenConfiguration.CDNG_RESOURCES_PACKAGE,
+                NextGenConfiguration.OVERLAY_INPUT_SET_RESOURCE_PACKAGE, NextGenConfiguration.YAML_PACKAGE,
+                NextGenConfiguration.FILTER_PACKAGE, NextGenConfiguration.SIGNUP_PACKAGE,
+                NextGenConfiguration.MOCKSERVER_PACKAGE, NextGenConfiguration.ACCOUNT_PACKAGE,
+                NextGenConfiguration.LICENSE_PACKAGE, NextGenConfiguration.SUBSCRIPTION_PACKAGE,
+                NextGenConfiguration.POLLING_PACKAGE, NextGenConfiguration.ENFORCEMENT_PACKAGE,
+                NextGenConfiguration.ENFORCEMENT_CLIENT_PACKAGE, NextGenConfiguration.ARTIFACTS_PACKAGE,
+                NextGenConfiguration.AUTHENTICATION_SETTINGS_PACKAGE, NextGenConfiguration.CD_OVERVIEW_PACKAGE,
+                NextGenConfiguration.ACTIVITY_HISTORY_PACKAGE, NextGenConfiguration.SERVICE_PACKAGE,
+                NextGenConfiguration.SERVICE_ACCOUNTS_PACKAGE, NextGenConfiguration.BUCKETS_PACKAGE,
+                NextGenConfiguration.CLUSTER_GCP_PACKAGE, NextGenConfiguration.WEBHOOK_PACKAGE,
+                NextGenConfiguration.ENVIRONMENT_PACKAGE, NextGenConfiguration.USERPROFILE_PACKAGE,
+                NextGenConfiguration.JIRA_PACKAGE, NextGenConfiguration.EXECUTION_PACKAGE,
+                NextGenConfiguration.ENTITYSETUP_PACKAGE, NextGenConfiguration.SCHEMA_PACKAGE,
+                NextGenConfiguration.DELEGATE_PACKAGE, NextGenConfiguration.ACCESS_CONTROL_PACKAGE,
+                NextGenConfiguration.FEEDBACK_PACKAGE, NextGenConfiguration.INSTANCE_SYNC_PACKAGE,
+                NextGenConfiguration.INVITE_PACKAGE, NextGenConfiguration.USER_PACKAGE,
+                NextGenConfiguration.INSTANCE_NG_PACKAGE, NextGenConfiguration.LICENSING_USAGE_PACKAGE,
+                NextGenConfiguration.SMTP_NG_RESOURCE, NextGenConfiguration.SERVICENOW_PACKAGE,
+                NextGenConfiguration.SCIM_NG_RESOURCE, NextGenConfiguration.NG_GLOBAL_KMS_RESOURCE_PACKAGE,
+                NextGenConfiguration.ACCOUNT_SETTING_PACKAGE, NextGenConfiguration.ENV_GROUP_RESOURCE,
+                NextGenConfiguration.AZURE_RESOURCES_PACKAGE, NextGenConfiguration.NG_TRIAL_SIGNUP_PACKAGE,
+                NextGenConfiguration.VARIABLE_RESOURCE_PACKAGE, NextGenConfiguration.FILE_STORE_RESOURCE_PACKAGE,
+                NextGenConfiguration.GITOPS_RESOURCE_PACKAGE, NextGenConfiguration.INFRA_RESOURCE_PACKAGE,
+                NextGenConfiguration.AWS_PACKAGE))
         .collect(Collectors.toSet());
   }
 
