@@ -10,8 +10,10 @@ package io.harness.plancreator.strategy;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STAGES;
 
 import io.harness.advisers.nextstep.NextStepAdviserParameters;
-import io.harness.plancreator.stages.stage.AbstractStageNode;
+import io.harness.exception.InvalidYamlException;
+ import io.harness.plancreator.stages.stage.AbstractStageNode;
 import io.harness.plancreator.stages.stage.StageElementConfig;
+import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
 import io.harness.pms.contracts.plan.EdgeLayoutList;
@@ -39,6 +41,17 @@ public class StageStrategyUtils {
   }
 
   public String getSwappedPlanNodeId(PlanCreationContext ctx, AbstractStageNode stageNode) {
+    YamlField strategyField = ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.STRATEGY);
+    // Since strategy is a child of stage but in execution we want to wrap stage around strategy,
+    // we are swapping the uuid of stage and strategy node.
+    String planNodeId = stageNode.getUuid();
+    if (strategyField != null) {
+      planNodeId = strategyField.getNode().getUuid();
+    }
+    return planNodeId;
+  }
+
+  public String getSwappedPlanNodeId(PlanCreationContext ctx, AbstractStepNode stageNode) {
     YamlField strategyField = ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.STRATEGY);
     // Since strategy is a child of stage but in execution we want to wrap stage around strategy,
     // we are swapping the uuid of stage and strategy node.
@@ -122,5 +135,14 @@ public class StageStrategyUtils {
             .setEdgeLayoutList(EdgeLayoutList.newBuilder().build())
             .build());
     return stageYamlFieldMap;
+  }
+
+  public void validateStrategyNode(StrategyConfig config) {
+    if (config.getMatrixConfig() != null) {
+      Map<String, AxisConfig> axisConfig = ((MatrixConfig)config.getMatrixConfig()).getAxes();
+      if (axisConfig.size() == 0) {
+        throw new InvalidYamlException("No Axes defined in matrix. Please define at least one axis");
+      }
+    }
   }
 }

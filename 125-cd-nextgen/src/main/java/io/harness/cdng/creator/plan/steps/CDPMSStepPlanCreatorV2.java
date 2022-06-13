@@ -39,11 +39,13 @@ import io.harness.plancreator.steps.AbstractStepPlanCreator;
 import io.harness.plancreator.steps.FailureStrategiesUtils;
 import io.harness.plancreator.steps.GenericPlanCreatorUtils;
 import io.harness.plancreator.steps.common.WithStepElementParameters;
+import io.harness.plancreator.strategy.StageStrategyUtils;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
 import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
+import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.execution.utils.SkipInfoUtils;
 import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
 import io.harness.pms.sdk.core.adviser.abort.OnAbortAdviser;
@@ -60,6 +62,7 @@ import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.timeout.AbsoluteSdkTimeoutTrackerParameters;
 import io.harness.pms.timeout.SdkTimeoutObtainment;
+import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
@@ -104,11 +107,13 @@ public abstract class CDPMSStepPlanCreatorV2<T extends CdAbstractStepNode> exten
     }
 
     List<AdviserObtainment> adviserObtainmentFromMetaData = getAdviserObtainmentFromMetaData(ctx.getCurrentField());
-
+    Map<String, YamlField> dependenciesNodeMap = new HashMap<>();
+    Map<String, ByteString> metadataMap = new HashMap<>();
     StepParameters stepParameters = getStepParameters(ctx, stepElement);
+    addStrategyFieldDependencyIfPresent(ctx, stepElement, dependenciesNodeMap, metadataMap);
     PlanNode stepPlanNode =
         PlanNode.builder()
-            .uuid(ctx.getCurrentField().getNode().getUuid())
+            .uuid(StageStrategyUtils.getSwappedPlanNodeId(ctx, stepElement))
             .name(getName(stepElement))
             .identifier(stepElement.getIdentifier())
             .stepType(stepElement.getStepSpecType().getStepType())
@@ -131,7 +136,10 @@ public abstract class CDPMSStepPlanCreatorV2<T extends CdAbstractStepNode> exten
                     .build())
             .skipUnresolvedExpressionsCheck(stepElement.getStepSpecType().skipUnresolvedExpressionsCheck())
             .build();
-    return PlanCreationResponse.builder().planNode(stepPlanNode).build();
+    return PlanCreationResponse.builder().planNode(stepPlanNode).dependencies(DependenciesUtils.toDependenciesProto(dependenciesNodeMap)
+            .toBuilder()
+            .putDependencyMetadata(stepElement.getUuid(), Dependency.newBuilder().putAllMetadata(metadataMap).build())
+            .build()).build();
   }
 
   protected List<AdviserObtainment> getAdviserObtainmentFromMetaData(YamlField currentField) {

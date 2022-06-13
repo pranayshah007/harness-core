@@ -8,6 +8,7 @@
 package io.harness.plancreator.strategy;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.beans.SwaggerConstants.INTEGER_CLASSPATH;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
@@ -41,9 +42,10 @@ public class MatrixConfig implements MatrixConfigInterface {
 
   @ApiModelProperty(hidden = true) @Builder.Default Map<String, AxisConfig> axes = new LinkedHashMap<>();
   List<ExcludeConfig> exclude;
-  // Todo: Make it ParameterField
-  @JsonProperty("maxConcurrency") int maxConcurrency;
 
+  @ApiModelProperty(dataType = INTEGER_CLASSPATH)
+  @JsonProperty("maxConcurrency")
+  ParameterField<Integer> maxConcurrency;
   @JsonAnySetter
   void setAxis(String key, Object value) {
     try {
