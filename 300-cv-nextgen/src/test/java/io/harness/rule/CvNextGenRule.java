@@ -99,7 +99,6 @@ import org.junit.rules.MethodRule;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.Statement;
 import org.mockito.Mockito;
-import org.mockito.Mockito.mock;
 import org.mockito.stubbing.Answer;
 import org.mongodb.morphia.converters.TypeConverter;
 import org.springframework.core.convert.converter.Converter;
@@ -186,7 +185,7 @@ public class CvNextGenRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
       binder.bind(Clock.class).toInstance(CVNGTestConstants.FIXED_TIME_FOR_TESTS);
       binder.bind(TemplateResourceClient.class).toInstance(getMockedTemplateResourceClient());
       binder.bind(NextGenService.class).to(FakeNextGenService.class);
-      binder.bind(EnforcementClientService.class).toInstance(mock(EnforcementClientService.class));
+      binder.bind(EnforcementClientService.class).toInstance(Mockito.mock(EnforcementClientService.class));
     }));
     MongoBackendConfiguration mongoBackendConfiguration =
         MongoBackendConfiguration.builder().uri("mongodb://localhost:27017/notificationChannel").build();
