@@ -7,24 +7,26 @@
 
 package io.harness.cdng.gitops;
 
-import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.annotations.dev.HarnessTeam.GITOPS;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.ListUtils.trimStrings;
+import static io.harness.exception.WingsException.USER;
 import static io.harness.steps.StepUtils.prepareCDTaskRequest;
 
-import static java.lang.String.format;
+import static org.apache.commons.lang3.StringUtils.trim;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
-import io.harness.cdng.expressions.CDExpressionResolveFunctor;
+import io.harness.cdng.k8s.K8sStepHelper;
+import io.harness.cdng.manifest.ManifestType;
+import io.harness.cdng.manifest.steps.ManifestsOutcome;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
-import io.harness.cdng.manifest.yaml.ValuesManifestOutcome;
-import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.TaskData;
-import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.task.git.GitFetchFilesConfig;
@@ -32,8 +34,8 @@ import io.harness.delegate.task.git.GitOpsTaskType;
 import io.harness.delegate.task.git.NGGitOpsResponse;
 import io.harness.delegate.task.git.NGGitOpsTaskParams;
 import io.harness.delegate.task.git.TaskStatus;
+import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
-import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.plancreator.steps.common.rollback.TaskChainExecutableWithRollbackAndRbac;
@@ -44,8 +46,8 @@ import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
+import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
@@ -58,15 +60,13 @@ import io.harness.tasks.ResponseData;
 
 import software.wings.beans.TaskType;
 
-import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
-@OwnedBy(CDP)
+@OwnedBy(GITOPS)
 @Slf4j
 public class CreatePRStep extends TaskChainExecutableWithRollbackAndRbac {
   public static final StepType STEP_TYPE = StepType.newBuilder()
@@ -74,14 +74,12 @@ public class CreatePRStep extends TaskChainExecutableWithRollbackAndRbac {
                                                .setStepCategory(StepCategory.STEP)
                                                .build();
 
-  @Inject private EngineExpressionService engineExpressionService;
   @Inject private KryoSerializer kryoSerializer;
   @Inject private CDStepHelper cdStepHelper;
   @Inject private StepHelper stepHelper;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
-
-  private final Set<ConnectorType> validConnectorTypes =
-      ImmutableSet.of(ConnectorType.GITHUB, ConnectorType.GITLAB, ConnectorType.BITBUCKET, ConnectorType.AZURE_REPO);
+  @Inject protected OutcomeService outcomeService;
+  @Inject private K8sStepHelper k8sStepHelper;
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {}
@@ -127,6 +125,27 @@ public class CreatePRStep extends TaskChainExecutableWithRollbackAndRbac {
         .build();
   }
 
+  public ManifestOutcome getReleaseRepoOutcome(Ambiance ambiance) {
+    ManifestsOutcome manifestsOutcomes = k8sStepHelper.resolveManifestsOutcome(ambiance);
+
+    List<ManifestOutcome> releaseRepoManifests =
+        manifestsOutcomes.values()
+            .stream()
+            .filter(manifestOutcome -> ManifestType.ReleaseRepo.equals(manifestOutcome.getType()))
+            .collect(Collectors.toList());
+
+    if (isEmpty(releaseRepoManifests)) {
+      throw new InvalidRequestException("Release Repo Manifests are mandatory for Create PR step. Select one from "
+              + String.join(", ", ManifestType.ReleaseRepo),
+          USER);
+    }
+
+    if (releaseRepoManifests.size() > 1) {
+      throw new InvalidRequestException("There can be only a single Release Repo manifest", USER);
+    }
+    return releaseRepoManifests.get(0);
+  }
+
   @Override
   public TaskChainResponse startChainLinkAfterRbac(
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
@@ -137,32 +156,21 @@ public class CreatePRStep extends TaskChainExecutableWithRollbackAndRbac {
      5. Improve logging for commitAndPush, createPR, etc
      */
     CreatePRStepParams gitOpsSpecParams = (CreatePRStepParams) stepParameters.getSpec();
-    StoreConfig store = gitOpsSpecParams.getStore().getValue().getSpec();
-    Map<String, String> stringMap = gitOpsSpecParams.getStringMap().getValue();
-    ExpressionEvaluatorUtils.updateExpressions(
-        store, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
-    ExpressionEvaluatorUtils.updateExpressions(
-        stringMap, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
 
     List<GitFetchFilesConfig> gitFetchFilesConfig = new ArrayList<>();
-    // TODO: Should ManifestOutcome type be changed
-    gitFetchFilesConfig.add(
-        getGitFetchFilesConfig(ambiance, store, ValuesManifestOutcome.builder().identifier("dummy").build()));
 
-    stringMap.remove("__uuid");
+    ManifestOutcome releaseRepoOutcome = getReleaseRepoOutcome(ambiance);
+    gitFetchFilesConfig.add(getGitFetchFilesConfig(ambiance, releaseRepoOutcome));
 
     NGGitOpsTaskParams ngGitOpsTaskParams =
         NGGitOpsTaskParams.builder()
             .gitOpsTaskType(GitOpsTaskType.CREATE_PR)
             .gitFetchFilesConfig(gitFetchFilesConfig.get(0))
+            .overrideConfig(CDStepHelper.getParameterFieldBooleanValue(gitOpsSpecParams.getOverrideConfig(),
+                CreatePRStepInfo.CreatePRBaseStepInfoKeys.overrideConfig, stepParameters))
             .accountId(AmbianceUtils.getAccountId(ambiance))
-            .stringMap(stringMap)
-            .isNewBranch(gitOpsSpecParams.getIsNewBranch().getValue())
-            .commitMessage(gitOpsSpecParams.getCommitMessage().getValue())
-            .prTitle(gitOpsSpecParams.getPrTitle().getValue())
-            .targetBranch(gitOpsSpecParams.getTargetBranch().getValue())
-            .connectorInfoDTO(cdStepHelper.getConnector(store.getConnectorReference().getValue(), ambiance))
-            .sourceBranch(gitFetchFilesConfig.get(0).getGitStoreDelegateConfig().getBranch())
+            .connectorInfoDTO(
+                cdStepHelper.getConnector(releaseRepoOutcome.getStore().getConnectorReference().getValue(), ambiance))
             .build();
 
     final TaskData taskData = TaskData.builder()
@@ -184,7 +192,6 @@ public class CreatePRStep extends TaskChainExecutableWithRollbackAndRbac {
         .taskRequest(taskRequest)
         .passThroughData(CreatePRPassThroughData.builder()
                              .filePaths(gitFetchFilesConfig.get(0).getGitStoreDelegateConfig().getPaths())
-                             .stringMap(stringMap)
                              .build())
         .build();
   }
@@ -194,9 +201,8 @@ public class CreatePRStep extends TaskChainExecutableWithRollbackAndRbac {
     return null;
   }
 
-  public GitFetchFilesConfig getGitFetchFilesConfig(
-      Ambiance ambiance, StoreConfig store, ManifestOutcome manifestOutcome) {
-    GitStoreConfig gitStoreConfig = (GitStoreConfig) store;
+  public GitFetchFilesConfig getGitFetchFilesConfig(Ambiance ambiance, ManifestOutcome manifestOutcome) {
+    GitStoreConfig gitStoreConfig = (GitStoreConfig) manifestOutcome.getStore();
     String connectorId = gitStoreConfig.getConnectorRef().getValue();
     ConnectorInfoDTO connectorDTO = cdStepHelper.getConnector(connectorId, ambiance);
 
@@ -206,19 +212,31 @@ public class CreatePRStep extends TaskChainExecutableWithRollbackAndRbac {
     GitStoreDelegateConfig gitStoreDelegateConfig =
         cdStepHelper.getGitStoreDelegateConfig(gitStoreConfig, connectorDTO, manifestOutcome, gitFilePaths, ambiance);
 
-    ScmConnector scmConnector = gitStoreDelegateConfig.getGitConfigDTO();
+    ScmConnector scmConnector = (ScmConnector) connectorDTO.getConnectorConfig();
 
-    if (!validConnectorTypes.contains(scmConnector.getConnectorType())) {
-      // TODO: Handle in case this exception is thrown
-      throw new UnsupportedOperationException(
-          format("Create PR step is not supported for connector type: [%s]", scmConnector.getConnectorType()));
-    }
+    // Overriding the gitStoreDelegateConfig to set the correct version of scmConnector that allows
+    // to retain gitConnector metadata required for creating PR
+    GitStoreDelegateConfig rebuiltGitStoreDelegateConfig =
+        GitStoreDelegateConfig.builder()
+            .gitConfigDTO(scmConnector)
+            .apiAuthEncryptedDataDetails(gitStoreDelegateConfig.getApiAuthEncryptedDataDetails())
+            .sshKeySpecDTO(gitStoreDelegateConfig.getSshKeySpecDTO())
+            .encryptedDataDetails(gitStoreDelegateConfig.getEncryptedDataDetails())
+            .fetchType(gitStoreConfig.getGitFetchType())
+            .branch(trim(getParameterFieldValue(gitStoreConfig.getBranch())))
+            .commitId(trim(getParameterFieldValue(gitStoreConfig.getCommitId())))
+            .paths(trimStrings(gitFilePaths))
+            .connectorName(connectorDTO.getName())
+            .manifestType(manifestOutcome.getType())
+            .manifestId(manifestOutcome.getIdentifier())
+            .optimizedFilesFetch(gitStoreDelegateConfig.isOptimizedFilesFetch())
+            .build();
 
     return GitFetchFilesConfig.builder()
         .identifier(manifestOutcome.getIdentifier())
         .manifestType(manifestOutcome.getType())
         .succeedIfFileNotFound(false)
-        .gitStoreDelegateConfig(gitStoreDelegateConfig)
+        .gitStoreDelegateConfig(rebuiltGitStoreDelegateConfig)
         .build();
   }
 }
