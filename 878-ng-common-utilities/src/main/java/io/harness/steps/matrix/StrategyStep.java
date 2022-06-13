@@ -41,7 +41,7 @@ public class StrategyStep implements ChildrenExecutable<StrategyStepParameters> 
       return ChildrenExecutableResponse.newBuilder()
           .addAllChildren(
               matrixConfigService.fetchChildren(stepParameters.getStrategyConfig(), stepParameters.getChildNodeId()))
-          .setMaxConcurrency(((MatrixConfig) stepParameters.getStrategyConfig().getMatrixConfig()).getMaxConcurrency())
+          .setMaxConcurrency(((MatrixConfig) stepParameters.getStrategyConfig().getMatrixConfig()).getMaxConcurrency().getValue())
           .build();
     }
     if (stepParameters.getStrategyConfig().getForConfig() != null) {

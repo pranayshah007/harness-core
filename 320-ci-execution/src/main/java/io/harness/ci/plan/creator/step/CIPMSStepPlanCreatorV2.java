@@ -38,6 +38,7 @@ import io.harness.pms.contracts.advisers.AdviserType;
 import io.harness.pms.contracts.execution.failure.FailureType;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
+import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.execution.utils.SkipInfoUtils;
 import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
 import io.harness.pms.sdk.core.adviser.abort.OnAbortAdviser;
@@ -54,6 +55,7 @@ import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.pms.timeout.AbsoluteSdkTimeoutTrackerParameters;
 import io.harness.pms.timeout.SdkTimeoutObtainment;
+import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
@@ -95,8 +97,10 @@ public abstract class CIPMSStepPlanCreatorV2<T extends CIAbstractStepNode> exten
     }
 
     List<AdviserObtainment> adviserObtainmentFromMetaData = getAdviserObtainmentFromMetaData(ctx.getCurrentField());
-
+    Map<String, YamlField> dependenciesNodeMap = new HashMap<>();
+    Map<String, ByteString> metadataMap = new HashMap<>();
     StepParameters stepParameters = getStepParameters(ctx, stepElement);
+    addStrategyFieldDependencyIfPresent(ctx, stepElement, dependenciesNodeMap, metadataMap);
     PlanNode stepPlanNode =
         PlanNode.builder()
             .uuid(ctx.getCurrentField().getNode().getUuid())
@@ -122,7 +126,10 @@ public abstract class CIPMSStepPlanCreatorV2<T extends CIAbstractStepNode> exten
                     .build())
             .skipUnresolvedExpressionsCheck(stepElement.getStepSpecType().skipUnresolvedExpressionsCheck())
             .build();
-    return PlanCreationResponse.builder().node(stepPlanNode.getUuid(), stepPlanNode).build();
+    return PlanCreationResponse.builder().node(stepPlanNode.getUuid(), stepPlanNode).dependencies(DependenciesUtils.toDependenciesProto(dependenciesNodeMap)
+            .toBuilder()
+            .putDependencyMetadata(stepElement.getUuid(), Dependency.newBuilder().putAllMetadata(metadataMap).build())
+            .build()).build();
   }
 
   protected List<AdviserObtainment> getAdviserObtainmentFromMetaData(YamlField currentField) {

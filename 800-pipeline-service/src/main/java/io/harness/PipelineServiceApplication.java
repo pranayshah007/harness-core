@@ -591,6 +591,8 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
     aliases.put(OrchestrationConstants.PIPELINE_SUCCESS,
         "<+pipeline.currentStatus> == \"SUCCEEDED\" || <+pipeline.currentStatus> == \"IGNORE_FAILED\"");
     aliases.put(OrchestrationConstants.ALWAYS, "true");
+    aliases.put(OrchestrationConstants.MATRIX, "strategy.matrix");
+    aliases.put(OrchestrationConstants.MATRIX, "strategy.matrix");
     return aliases;
   }
 
