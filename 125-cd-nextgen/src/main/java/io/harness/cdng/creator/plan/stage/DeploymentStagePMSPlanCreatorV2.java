@@ -35,6 +35,7 @@ import io.harness.plancreator.stages.AbstractStagePlanCreator;
 import io.harness.plancreator.steps.GenericStepPMSPlanCreator;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.plancreator.steps.common.StageElementParameters.StageElementParametersBuilder;
+import io.harness.plancreator.strategy.StageStrategyUtils;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.plan.Dependencies;
@@ -140,7 +141,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
         Preconditions.checkNotNull(ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.SPEC));
     stageParameters.specConfig(getSpecParameters(specField.getNode().getUuid(), ctx, stageNode));
     return PlanNode.builder()
-        .uuid(stageNode.getUuid())
+        .uuid(StageStrategyUtils.getSwappedPlanNodeId(ctx, stageNode))
         .name(stageNode.getName())
         .identifier(stageNode.getIdentifier())
         .group(StepOutcomeGroup.STAGE.name())
@@ -165,6 +166,9 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
       // Validate Stage Failure strategy.
       validateFailureStrategy(stageNode);
 
+      Map<String, YamlField> dependenciesNodeMap = new HashMap<>();
+      Map<String, ByteString> metadataMap = new HashMap<>();
+
       YamlField specField =
           Preconditions.checkNotNull(ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.SPEC));
 
@@ -186,6 +190,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
         throw new InvalidRequestException("Execution section cannot be absent in a pipeline");
       }
       addCDExecutionDependencies(planCreationResponseMap, executionField);
+      addStrategyFieldDependencyIfPresent(ctx, stageNode, planCreationResponseMap, metadataMap);
 
       return planCreationResponseMap;
     } catch (IOException e) {
