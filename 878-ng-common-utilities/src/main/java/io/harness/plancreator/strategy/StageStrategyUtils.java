@@ -120,9 +120,9 @@ public class StageStrategyUtils {
         GraphLayoutNode.newBuilder()
             .setNodeUUID(yamlField.getNode().getUuid())
             .setNodeType(strategyType.name())
-            .setName(YAMLFieldNameConstants.STRATEGY)
+            .setName(yamlField.getNode().getName())
             .setNodeGroup(StepOutcomeGroup.STRATEGY.name())
-            .setNodeIdentifier(YAMLFieldNameConstants.STRATEGY)
+            .setNodeIdentifier(yamlField.getNode().getIdentifier())
             .setEdgeLayoutList(edgeLayoutList)
             .build());
     stageYamlFieldMap.put(planNodeId,
