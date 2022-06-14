@@ -1226,7 +1226,14 @@
       "type": "object",
       "properties": {
         "cpu": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "number"
+            }
+          ]
         },
         "memory": {
           "type": "string"
