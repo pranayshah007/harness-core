@@ -8,6 +8,7 @@
 package io.harness.licensing.remote;
 
 import io.harness.ModuleType;
+import io.harness.licensing.beans.modules.AccountLicenseDTO;
 import io.harness.licensing.beans.modules.ModuleLicenseDTO;
 import io.harness.licensing.beans.response.CheckExpiryResultDTO;
 import io.harness.licensing.beans.summary.LicensesWithSummaryDTO;
@@ -24,6 +25,7 @@ public interface NgLicenseHttpClient {
   String SOFT_DELETE_API = "licenses/{accountId}/soft-delete";
   String LICENSE_SUMMARY_API = "licenses/{accountId}/summary";
   String MODULE_LICENSE_EXPIRY_API = "licenses/{moduleType}/enabled";
+  String MODULE_LICENSE_FOR_ACCOUNT = "licenses/account";
   @GET(CHECK_NG_LICENSE_EXPIRY_API)
   Call<ResponseDTO<CheckExpiryResultDTO>> checkExpiry(@Path("accountId") String accountId);
 
@@ -36,4 +38,7 @@ public interface NgLicenseHttpClient {
   @GET(MODULE_LICENSE_EXPIRY_API)
   Call<ResponseDTO<List<ModuleLicenseDTO>>> getModuleLicensesByModuleType(
       @Path("moduleType") ModuleType moduleType, @Query("expiryTime") long expiryTime);
+
+  @GET(MODULE_LICENSE_FOR_ACCOUNT)
+  Call<ResponseDTO<AccountLicenseDTO>> getAccountLicensesDTO(@Path("moduleType") String accountIdentifier);
 }

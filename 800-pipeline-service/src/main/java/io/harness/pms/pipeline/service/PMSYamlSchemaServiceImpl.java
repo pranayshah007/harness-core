@@ -21,12 +21,16 @@ import io.harness.ModuleType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.exception.InvalidYamlException;
 import io.harness.exception.JsonSchemaException;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorDTO;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorWrapperDTO;
 import io.harness.jackson.JsonNodeUtils;
+import io.harness.licensing.beans.modules.AccountLicenseDTO;
+import io.harness.licensing.beans.modules.ModuleLicenseDTO;
+import io.harness.licensing.remote.NgLicenseHttpClient;
 import io.harness.manage.ManagedExecutorService;
 import io.harness.plancreator.stages.stage.StageElementConfig;
 import io.harness.plancreator.steps.StepElementConfig;
@@ -40,6 +44,7 @@ import io.harness.pms.sdk.PmsSdkInstanceService;
 import io.harness.pms.utils.CompletableFutures;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.project.remote.ProjectClient;
+import io.harness.remote.client.NGRestUtils;
 import io.harness.yaml.schema.YamlSchemaGenerator;
 import io.harness.yaml.schema.YamlSchemaProvider;
 import io.harness.yaml.schema.YamlSchemaTransientHelper;
@@ -84,15 +89,15 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
   private final ApprovalYamlSchemaService approvalYamlSchemaService;
   private final FeatureFlagYamlService featureFlagYamlService;
   private final SchemaFetcher schemaFetcher;
-  private final ProjectClient projectClient;
+  private final NgLicenseHttpClient ngLicenseHttpClient;
   Integer allowedParallelStages;
 
   @Inject
   public PMSYamlSchemaServiceImpl(YamlSchemaProvider yamlSchemaProvider, YamlSchemaGenerator yamlSchemaGenerator,
       YamlSchemaValidator yamlSchemaValidator, PmsSdkInstanceService pmsSdkInstanceService,
       PmsYamlSchemaHelper pmsYamlSchemaHelper, ApprovalYamlSchemaService approvalYamlSchemaService,
-      FeatureFlagYamlService featureFlagYamlService, SchemaFetcher schemaFetcher, ProjectClient projectClient,
-      @Named("allowedParallelStages") Integer allowedParallelStages) {
+      FeatureFlagYamlService featureFlagYamlService, SchemaFetcher schemaFetcher,
+      NgLicenseHttpClient ngLicenseHttpClient, @Named("allowedParallelStages") Integer allowedParallelStages) {
     this.yamlSchemaProvider = yamlSchemaProvider;
     this.yamlSchemaGenerator = yamlSchemaGenerator;
     this.yamlSchemaValidator = yamlSchemaValidator;
@@ -101,7 +106,7 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
     this.approvalYamlSchemaService = approvalYamlSchemaService;
     this.featureFlagYamlService = featureFlagYamlService;
     this.schemaFetcher = schemaFetcher;
-    this.projectClient = projectClient;
+    this.ngLicenseHttpClient = ngLicenseHttpClient;
     this.allowedParallelStages = allowedParallelStages;
   }
 
@@ -181,7 +186,7 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
 
     PmsYamlSchemaHelper.flattenParallelElementConfig(pipelineDefinitions);
 
-    List<ModuleType> enabledModules = obtainEnabledModules();
+    List<ModuleType> enabledModules = obtainEnabledModules(accountIdentifier);
     enabledModules.add(ModuleType.PMS);
     List<YamlSchemaWithDetails> schemaWithDetailsList =
         fetchSchemaWithDetailsFromModules(accountIdentifier, enabledModules);
@@ -262,9 +267,15 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
 
   // TODO: get enabled modules for the account and filter on it
   @SuppressWarnings("unchecked")
-  private List<ModuleType> obtainEnabledModules() {
-    List<ModuleType> modules =
-        ModuleType.getModules().stream().filter(moduleType -> !moduleType.isInternal()).collect(Collectors.toList());
+  private List<ModuleType> obtainEnabledModules(String accountIdentifier) {
+    List<ModuleType> modules = new ArrayList<>();
+    AccountLicenseDTO accountLicense =
+        NGRestUtils.getResponse(ngLicenseHttpClient.getAccountLicensesDTO(accountIdentifier));
+    accountLicense.getAllModuleLicenses().forEach((moduleType, value) -> {
+      if (EmptyPredicate.isNotEmpty(value)) {
+        modules.add(moduleType);
+      }
+    });
 
     List<ModuleType> instanceModuleTypes = pmsSdkInstanceService.getActiveInstanceNames()
                                                .stream()
@@ -301,7 +312,7 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
     }
     List<YamlSchemaWithDetails> yamlSchemaWithDetailsList = null;
     if (yamlGroup.equals(StepCategory.STAGE.toString())) {
-      List<ModuleType> enabledModules = obtainEnabledModules();
+      List<ModuleType> enabledModules = obtainEnabledModules(accountIdentifier);
       yamlSchemaWithDetailsList = fetchSchemaWithDetailsFromModules(accountId, enabledModules);
     }
     return schemaFetcher.fetchStepYamlSchema(
