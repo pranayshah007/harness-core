@@ -11,7 +11,6 @@ http_archive(
     strip_prefix = "rules_jvm-main",
     url = "https://github.com/gn-harness/rules_jvm/archive/refs/heads/main.zip",
 )
-
 load("@contrib_rules_jvm//:repositories.bzl", "contrib_rules_jvm_deps", "contrib_rules_jvm_gazelle_deps")
 
 contrib_rules_jvm_deps()
