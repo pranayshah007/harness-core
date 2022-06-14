@@ -243,6 +243,7 @@ import io.harness.secrets.SecretNGManagerClientModule;
 import io.harness.security.ServiceTokenGenerator;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.ManagerRegistrars;
+import io.harness.serializer.NGLdapServiceRegistrars;
 import io.harness.serializer.NextGenRegistrars;
 import io.harness.serializer.kryo.KryoConverterFactory;
 import io.harness.service.DelegateServiceDriverModule;
@@ -574,7 +575,10 @@ public class NextGenModule extends AbstractModule {
       @Provides
       @Singleton
       Set<Class<? extends KryoRegistrar>> kryoRegistrars() {
-        return ImmutableSet.<Class<? extends KryoRegistrar>>builder().addAll(NextGenRegistrars.kryoRegistrars).build();
+        return ImmutableSet.<Class<? extends KryoRegistrar>>builder()
+            .addAll(NextGenRegistrars.kryoRegistrars)
+            .addAll(NGLdapServiceRegistrars.kryoRegistrars)
+            .build();
       }
 
       @Provides
@@ -582,6 +586,7 @@ public class NextGenModule extends AbstractModule {
       Set<Class<? extends MorphiaRegistrar>> morphiaRegistrars() {
         return ImmutableSet.<Class<? extends MorphiaRegistrar>>builder()
             .addAll(NextGenRegistrars.morphiaRegistrars)
+            .addAll(NGLdapServiceRegistrars.morphiaRegistrars)
             .build();
       }
 
