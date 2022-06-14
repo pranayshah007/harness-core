@@ -74,6 +74,7 @@ public abstract class ServiceLevelIndicator
   private String healthSourceIdentifier;
   private String monitoredServiceIdentifier;
   private ServiceLevelIndicatorType type;
+  boolean enabled;
   private SLIMetricType sliMetricType;
   private SLIMissingDataType sliMissingDataType;
   private int version;
