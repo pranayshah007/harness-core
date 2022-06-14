@@ -59,7 +59,7 @@ public interface NGLdapResource {
   @GET
   @Path("test/{userIdentifier}")
   @Hidden
-  Response getUser(@PathParam("userIdentifier") String userIdentifier,
+  Response test(@PathParam("userIdentifier") String userIdentifier,
       @Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotBlank @QueryParam(
           NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier);
 }

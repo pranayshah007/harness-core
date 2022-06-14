@@ -18,7 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class NGLdapResourceImpl implements NGLdapResource {
   @Override
-  public Response getUser(String userIdentifier, String accountIdentifier) {
+  public Response test(String userIdentifier, String accountIdentifier) {
     log.info("NGLDAP: Received request: " + userIdentifier);
     return Response.status(Response.Status.OK).entity(userIdentifier).build();
   }
