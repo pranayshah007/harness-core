@@ -7,7 +7,6 @@
 
 package io.harness.service.impl;
 
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
@@ -39,6 +38,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jooq.tools.StringUtils;
 
@@ -104,19 +104,16 @@ public class DelegateSyncServiceImpl implements DelegateSyncService {
 
     if (taskResponse == null) {
       List<String> capabilityErrorMsgsList = new ArrayList<>();
-      boolean capabilityErrorMsgToBeUsed = true;
       if (isNotEmpty(executionCapabilities)) {
         for (ExecutionCapability executionCapability : executionCapabilities) {
-          if (isEmpty(executionCapability.getCapabilityToString())) {
-            capabilityErrorMsgToBeUsed = false;
-            break;
+          if (isNotEmpty(executionCapability.getCapabilityToString())) {
+            capabilityErrorMsgsList.add(executionCapability.getCapabilityToString());
           }
-          capabilityErrorMsgsList.add(executionCapability.getCapabilityToString());
         }
       }
       String errorMsg =
           "Task has expired. It wasn't picked up by any delegate or delegate did not have enough time to finish the execution";
-      if (capabilityErrorMsgToBeUsed) {
+      if (CollectionUtils.isNotEmpty(capabilityErrorMsgsList)) {
         errorMsg = errorMsg
             + String.format(" or None of the delegate had following capabilities [%s]",
                 StringUtils.join(capabilityErrorMsgsList, ","));

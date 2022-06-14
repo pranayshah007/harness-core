@@ -16,10 +16,13 @@ import io.harness.exception.InvalidRequestException;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.experimental.UtilityClass;
+import org.apache.commons.lang3.StringUtils;
 
 @UtilityClass
 @OwnedBy(HarnessTeam.DX)
 public class FilePathUtils {
+  public static final String FILE_PATH_SEPARATOR = "/";
+
   public static boolean isFilePartOfFolder(String folderPath, String filePath) {
     if (filePath == null || folderPath == null) {
       throw new InvalidRequestException(
@@ -60,6 +63,14 @@ public class FilePathUtils {
       return filePath;
     }
     return filePath + "/";
+  }
+
+  public static String removeStartingAndEndingSlash(String path) {
+    if (path == null) {
+      throw new InvalidRequestException("Path cannot be null.");
+    }
+    path = StringUtils.stripStart(path, FILE_PATH_SEPARATOR);
+    return StringUtils.stripEnd(path, FILE_PATH_SEPARATOR);
   }
 
   // ---------------------------------- PRIVATE METHODS ----------------------------

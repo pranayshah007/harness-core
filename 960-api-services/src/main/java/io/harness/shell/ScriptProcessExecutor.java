@@ -153,7 +153,7 @@ public class ScriptProcessExecutor extends AbstractScriptExecutor {
         }
       }
     } catch (IOException e) {
-      saveExecutionLog("IOException:" + e, ERROR);
+      saveExecutionLog("IOException:" + e, ERROR, FAILURE);
     }
     return commandExecutionStatus;
   }

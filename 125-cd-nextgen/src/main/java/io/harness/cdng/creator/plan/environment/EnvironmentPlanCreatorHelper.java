@@ -162,7 +162,7 @@ public class EnvironmentPlanCreatorHelper {
     List<InfrastructureEntity> infrastructureEntityList;
     Map<String, Map<String, Object>> refToInputMap = new HashMap<>();
     String envIdentifier = environmentV2.getEnvironmentRef().getValue();
-    if (!environmentV2.getDeployToAll()) {
+    if (!environmentV2.isDeployToAll()) {
       List<String> infraIdentifierList = new ArrayList<>();
 
       for (InfraStructureDefinitionYaml infraYaml : environmentV2.getInfrastructureDefinitions()) {
@@ -200,8 +200,8 @@ public class EnvironmentPlanCreatorHelper {
     }
   }
 
-  public static Map<String, ByteString> prepareMetadata(String serviceSpecNodeId, String infraSectionUuid,
-      String environmentUuid, boolean gitOpsEnabled, KryoSerializer kryoSerializer) {
+  public static Map<String, ByteString> prepareMetadata(String environmentUuid, String infraSectionUuid,
+      String serviceSpecNodeId, boolean gitOpsEnabled, KryoSerializer kryoSerializer) {
     Map<String, ByteString> metadataDependency = new HashMap<>();
 
     metadataDependency.put(YamlTypes.NEXT_UUID, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(serviceSpecNodeId)));

@@ -7,6 +7,7 @@ io.harness.plancreator.steps.internal.FlagConfigurationStepInfo
 io.harness.steps.jira.update.beans.TransitionTo
 barrierSpecParameters
 io.harness.steps.shellscript.K8sInfraDelegateConfigOutput
+io.harness.steps.shellscript.SshInfraDelegateConfigOutput
 io.harness.steps.common.pipeline.PipelineSetupStepParameters
 io.harness.when.beans.StepWhenCondition
 io.harness.plancreator.steps.common.StepElementParameters
@@ -114,3 +115,4 @@ io.harness.plancreator.strategy.MatrixConfig
 io.harness.plancreator.strategy.StrategyConfig
 io.harness.plancreator.strategy.HarnessForConfig
 io.harness.steps.customstage.CustomStageSpecParams
+io.harness.ng.core.envGroup.EnvironmentGroupOutcome

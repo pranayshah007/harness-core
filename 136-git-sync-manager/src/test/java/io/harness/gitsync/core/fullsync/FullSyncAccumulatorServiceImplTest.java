@@ -117,14 +117,8 @@ public class FullSyncAccumulatorServiceImplTest extends GitSyncTestBase {
     fullSyncAccumulatorService.triggerFullSync(fullSyncEventRequest, messageId);
     verify(fullSyncServiceBlockingStub).getEntitiesForFullSync(any());
     verify(fullSyncJobService).save(any());
-
-    fullSyncServiceBlockingStubMap.remove((io.harness.Microservice) Microservice.CD); // Cast to deepsource happy
-    fullSyncServiceBlockingStubMap.put(Microservice.POLICYMGMT, fullSyncServiceBlockingStub);
-    FieldUtils.writeField(
-        fullSyncAccumulatorService, "fullSyncServiceBlockingStubMap", fullSyncServiceBlockingStubMap, true);
-    fullSyncAccumulatorService.triggerFullSync(fullSyncEventRequest, messageId);
-    verify(fullSyncJobService, times(1)).save(any());
   }
+
   @Test
   @Owner(developers = DEEPAK)
   @Category(UnitTests.class)

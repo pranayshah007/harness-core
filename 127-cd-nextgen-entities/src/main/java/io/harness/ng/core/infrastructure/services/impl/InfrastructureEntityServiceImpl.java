@@ -9,11 +9,16 @@ package io.harness.ng.core.infrastructure.services.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.IDENTIFIER;
 import static io.harness.springdata.TransactionUtils.DEFAULT_TRANSACTION_RETRY_POLICY;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
@@ -22,15 +27,25 @@ import io.harness.ng.DuplicateKeyExceptionParser;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity.InfrastructureEntityKeys;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
+import io.harness.pms.merger.helpers.RuntimeInputFormHelper;
+import io.harness.pms.yaml.YamlField;
+import io.harness.pms.yaml.YamlUtils;
 import io.harness.repositories.infrastructure.spring.InfrastructureRepository;
+import io.harness.utils.YamlPipelineUtils;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.mongodb.client.result.DeleteResult;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -103,7 +118,6 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
         get(requestInfra.getAccountId(), requestInfra.getOrgIdentifier(), requestInfra.getProjectIdentifier(),
             requestInfra.getEnvIdentifier(), requestInfra.getIdentifier());
     if (infraEntityOptional.isPresent()) {
-      InfrastructureEntity oldInfra = infraEntityOptional.get();
       return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
         InfrastructureEntity updatedResult = infrastructureRepository.update(criteria, requestInfra);
         if (updatedResult == null) {
@@ -178,6 +192,31 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
     }
   }
 
+  @Override
+  public boolean forceDeleteAllInEnv(
+      String accountId, String orgIdentifier, String projectIdentifier, String envIdentifier) {
+    checkArgument(isNotEmpty(accountId), "account id must be present");
+    checkArgument(isNotEmpty(orgIdentifier), "org id must be present");
+    checkArgument(isNotEmpty(projectIdentifier), "project id must be present");
+    checkArgument(isNotEmpty(envIdentifier), "env id must be present");
+
+    Criteria criteria =
+        getInfrastructureEqualityCriteriaForEnv(accountId, orgIdentifier, projectIdentifier, envIdentifier);
+    DeleteResult deleteResult = infrastructureRepository.delete(criteria);
+    return deleteResult.wasAcknowledged() && deleteResult.getDeletedCount() > 0;
+  }
+
+  @Override
+  public boolean forceDeleteAllInProject(String accountId, String orgIdentifier, String projectIdentifier) {
+    checkArgument(isNotEmpty(accountId), "account id must be present");
+    checkArgument(isNotEmpty(orgIdentifier), "org id must be present");
+    checkArgument(isNotEmpty(projectIdentifier), "project id must be present");
+
+    Criteria criteria = getInfrastructureEqualityCriteriaForProject(accountId, orgIdentifier, projectIdentifier);
+    DeleteResult deleteResult = infrastructureRepository.delete(criteria);
+    return deleteResult.wasAcknowledged() && deleteResult.getDeletedCount() > 0;
+  }
+
   private void setNameIfNotPresent(InfrastructureEntity requestInfra) {
     if (isEmpty(requestInfra.getName())) {
       requestInfra.setName(requestInfra.getIdentifier());
@@ -238,6 +277,69 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
         accountIdentifier, orgIdentifier, projectIdentifier, envIdentifier);
   }
 
+  @Override
+  public String createInfrastructureInputsFromYaml(String accountId, String projectIdentifier, String orgIdentifier,
+      String environmentIdentifier, List<String> infraIdentifiers, boolean deployToAll) {
+    Map<String, Object> yamlInputs = createInfrastructureInputsYamlInternal(
+        accountId, orgIdentifier, projectIdentifier, environmentIdentifier, deployToAll, infraIdentifiers);
+
+    if (isEmpty(yamlInputs)) {
+      return null;
+    }
+    return YamlPipelineUtils.writeYamlString(yamlInputs);
+  }
+
+  public Map<String, Object> createInfrastructureInputsYamlInternal(String accountId, String orgIdentifier,
+      String projectIdentifier, String envIdentifier, boolean deployToAll, List<String> infraIdentifiers) {
+    Map<String, Object> yamlInputs = new HashMap<>();
+    // create one mapper for all infra defs
+    ObjectMapper mapper = new ObjectMapper();
+    List<Object> infraDefinitionInputList = new ArrayList<>();
+    if (deployToAll) {
+      List<InfrastructureEntity> infrastructureEntities =
+          getAllInfrastructureFromEnvIdentifier(accountId, orgIdentifier, projectIdentifier, envIdentifier);
+
+      for (InfrastructureEntity infraEntity : infrastructureEntities) {
+        createInfraDefinitionInputs(infraEntity, infraDefinitionInputList, mapper);
+      }
+    } else {
+      List<InfrastructureEntity> infrastructureEntities = getAllInfrastructureFromIdentifierList(
+          accountId, orgIdentifier, projectIdentifier, envIdentifier, infraIdentifiers);
+      for (InfrastructureEntity infraEntity : infrastructureEntities) {
+        createInfraDefinitionInputs(infraEntity, infraDefinitionInputList, mapper);
+      }
+    }
+    if (isNotEmpty(infraDefinitionInputList)) {
+      yamlInputs.put(YamlTypes.INFRASTRUCTURE_DEFS, infraDefinitionInputList);
+    }
+    return yamlInputs;
+  }
+
+  private void createInfraDefinitionInputs(
+      InfrastructureEntity infraEntity, List<Object> infraDefinitionInputList, ObjectMapper mapper) {
+    String yaml = infraEntity.getYaml();
+    if (isEmpty(yaml)) {
+      throw new InvalidRequestException("Infrastructure Yaml cannot be empty");
+    }
+    try {
+      String infraDefinitionInputs = RuntimeInputFormHelper.createRuntimeInputForm(yaml, true);
+      if (isEmpty(infraDefinitionInputs)) {
+        return;
+      }
+
+      YamlField infrastructureDefinitionYamlField =
+          YamlUtils.readTree(infraDefinitionInputs).getNode().getField(YamlTypes.INFRASTRUCTURE_DEF);
+      ObjectNode infraDefinitionNode = (ObjectNode) infrastructureDefinitionYamlField.getNode().getCurrJsonNode();
+      ObjectNode infraNode = mapper.createObjectNode();
+      infraNode.set(YamlTypes.REF, infraDefinitionNode.get(IDENTIFIER));
+      infraNode.set(YamlTypes.INPUTS, infraDefinitionNode);
+
+      infraDefinitionInputList.add(infraNode);
+    } catch (IOException e) {
+      throw new InvalidRequestException("Error occurred while creating Service Override inputs ", e);
+    }
+  }
+
   String getDuplicateInfrastructureExistsErrorMessage(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String envIdentifier, String infraIdentifier) {
     if (EmptyPredicate.isEmpty(orgIdentifier)) {
@@ -294,5 +396,27 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
       return;
     }
     infrastructureEntityList.forEach(this::modifyInfraRequest);
+  }
+
+  private Criteria getInfrastructureEqualityCriteriaForEnv(
+      String accountId, String orgIdentifier, String projectIdentifier, String envIdentifier) {
+    return Criteria.where(InfrastructureEntityKeys.accountId)
+        .is(accountId)
+        .and(InfrastructureEntityKeys.orgIdentifier)
+        .is(orgIdentifier)
+        .and(InfrastructureEntityKeys.projectIdentifier)
+        .is(projectIdentifier)
+        .and(InfrastructureEntityKeys.envIdentifier)
+        .is(envIdentifier);
+  }
+
+  private Criteria getInfrastructureEqualityCriteriaForProject(
+      String accountId, String orgIdentifier, String projectIdentifier) {
+    return Criteria.where(InfrastructureEntityKeys.accountId)
+        .is(accountId)
+        .and(InfrastructureEntityKeys.orgIdentifier)
+        .is(orgIdentifier)
+        .and(InfrastructureEntityKeys.projectIdentifier)
+        .is(projectIdentifier);
   }
 }

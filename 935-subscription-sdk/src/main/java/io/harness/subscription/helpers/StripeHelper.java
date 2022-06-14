@@ -7,25 +7,33 @@
 
 package io.harness.subscription.helpers;
 
-import io.harness.subscription.dto.CustomerDetail;
-import io.harness.subscription.dto.InvoiceDetail;
+import io.harness.subscription.dto.CustomerDetailDTO;
+import io.harness.subscription.dto.InvoiceDetailDTO;
+import io.harness.subscription.dto.PaymentMethodCollectionDTO;
 import io.harness.subscription.dto.PriceCollectionDTO;
-import io.harness.subscription.dto.SubscriptionDetail;
+import io.harness.subscription.dto.SubscriptionDetailDTO;
 import io.harness.subscription.params.CustomerParams;
 import io.harness.subscription.params.SubscriptionParams;
 
+import com.stripe.model.Price;
 import java.util.List;
 
 public interface StripeHelper {
-  CustomerDetail createCustomer(CustomerParams customerParams);
+  CustomerDetailDTO createCustomer(CustomerParams customerParams);
 
-  CustomerDetail updateCustomer(CustomerParams customerParams);
+  CustomerDetailDTO updateCustomer(CustomerParams customerParams);
 
-  CustomerDetail getCustomer(String customerId);
+  CustomerDetailDTO getCustomer(String customerId);
 
+  Price getPrice(String lookupKey);
   PriceCollectionDTO listPrices(List<String> lookupKeys);
-  SubscriptionDetail createSubscription(SubscriptionParams subscriptionParams);
-  SubscriptionDetail updateSubscriptionQuantity(SubscriptionParams subscriptionParams);
-  SubscriptionDetail updateSubscriptionPeriod(SubscriptionParams subscriptionParams);
-  InvoiceDetail previewInvoice(SubscriptionParams subscriptionParams);
+  SubscriptionDetailDTO createSubscription(SubscriptionParams subscriptionParams);
+  SubscriptionDetailDTO updateSubscription(SubscriptionParams subscriptionParams);
+  SubscriptionDetailDTO updateSubscriptionDefaultPayment(SubscriptionParams subscriptionParams);
+  void cancelSubscription(SubscriptionParams subscriptionParams);
+  SubscriptionDetailDTO retrieveSubscription(SubscriptionParams subscriptionParams);
+  InvoiceDetailDTO getUpcomingInvoice(String invoiceParams);
+  InvoiceDetailDTO previewInvoice(SubscriptionParams subscriptionParams);
+
+  PaymentMethodCollectionDTO listPaymentMethods(String customerId);
 }

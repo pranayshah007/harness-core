@@ -54,7 +54,19 @@ public class ApproversDTO {
       throw new InvalidRequestException("At least 1 user group is required");
     }
 
-    int minimumCount = (int) approvers.getMinimumCount().fetchFinalValue();
+    Object minCountObj = approvers.getMinimumCount().fetchFinalValue();
+    int minimumCount;
+    if (minCountObj instanceof String) {
+      try {
+        minimumCount = Integer.parseInt((String) minCountObj);
+      } catch (NumberFormatException ne) {
+        throw new InvalidRequestException("The minimum count value (" + minCountObj + ") must be a valid integer");
+      }
+    } else if (minCountObj instanceof Integer) {
+      minimumCount = (int) minCountObj;
+    } else {
+      throw new InvalidRequestException("The minimum count value (" + minCountObj + ") must be a valid integer");
+    }
     if (minimumCount < 1) {
       throw new InvalidRequestException("Minimum count should be > 0");
     }

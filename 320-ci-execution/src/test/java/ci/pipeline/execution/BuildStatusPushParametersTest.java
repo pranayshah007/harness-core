@@ -157,9 +157,9 @@ public class BuildStatusPushParametersTest extends CIExecutionTestBase {
         Ambiance.newBuilder(ambiance).setMetadata(executionMetadata).build(), buildStatusUpdateParameter,
         Status.SUCCEEDED, "sha");
 
-    assertThat(pushParameters.getDetailsUrl()).
-       isEqualTo(
-          "https://app.harness.io/ng/#/account/accountId/ci/orgs/orgIdentifier/projects/projectIdentfier/pipelines/shortPipelineId/executions/executionuuid/pipeline");
+    assertThat(pushParameters.getDetailsUrl())
+        .isEqualTo(
+            "https://app.harness.io/ng/#/account/accountId/ci/orgs/orgIdentifier/projects/projectIdentfier/pipelines/shortPipelineId/executions/executionuuid/pipeline");
   }
 
   @Test
@@ -180,9 +180,9 @@ public class BuildStatusPushParametersTest extends CIExecutionTestBase {
         Ambiance.newBuilder(ambiance).setMetadata(executionMetadata).build(), buildStatusUpdateParameter,
         Status.SUCCEEDED, "sha");
 
-    assertThat(pushParameters.getDetailsUrl()).
-            isEqualTo(
-               "https://vanity.harness.io/ng/#/account/accountId/ci/orgs/orgIdentifier/projects/projectIdentfier/pipelines/shortPipelineId/executions/executionuuid/pipeline");
+    assertThat(pushParameters.getDetailsUrl())
+        .isEqualTo(
+            "https://vanity.harness.io/ng/#/account/accountId/ci/orgs/orgIdentifier/projects/projectIdentfier/pipelines/shortPipelineId/executions/executionuuid/pipeline");
   }
 
   private BuildStatusUpdateParameter getBuildStatusUpdateParameter(String identifier, String name) {

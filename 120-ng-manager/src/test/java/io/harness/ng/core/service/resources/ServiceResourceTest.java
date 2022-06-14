@@ -30,6 +30,7 @@ import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.services.ServiceEntityManagementService;
 import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
+import io.harness.repositories.UpsertOptions;
 import io.harness.rule.Owner;
 
 import java.util.Arrays;
@@ -166,7 +167,7 @@ public class ServiceResourceTest extends CategoryTest {
   @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
   public void testUpsert() {
-    doReturn(serviceEntity).when(serviceEntityService).upsert(serviceEntity);
+    doReturn(serviceEntity).when(serviceEntityService).upsert(serviceEntity, UpsertOptions.DEFAULT);
     ServiceResponseDTO response =
         serviceResource.upsert("0", serviceEntity.getAccountId(), serviceRequestDTO).getData();
     assertThat(response).isNotNull();

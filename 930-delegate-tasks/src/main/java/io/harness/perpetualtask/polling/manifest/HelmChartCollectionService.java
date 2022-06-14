@@ -14,6 +14,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.storeconfig.GcsHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.HttpHelmStoreDelegateConfig;
+import io.harness.delegate.beans.storeconfig.OciHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.S3HelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
 import io.harness.delegate.exception.ManifestCollectionException;
@@ -70,6 +71,9 @@ public class HelmChartCollectionService implements ManifestCollectionService {
       case HTTP_HELM:
         HttpHelmStoreDelegateConfig helmStoreConfig = (HttpHelmStoreDelegateConfig) storeDelegateConfig;
         return MANIFEST_COLLECTION_DIR_BASE + HTTP_HELM.name() + "-" + helmStoreConfig.getRepoName();
+      case OCI_HELM:
+        OciHelmStoreDelegateConfig ociHelmStoreConfig = (OciHelmStoreDelegateConfig) storeDelegateConfig;
+        return MANIFEST_COLLECTION_DIR_BASE + HTTP_HELM.name() + "-" + ociHelmStoreConfig.getRepoName();
       case S3_HELM:
         S3HelmStoreDelegateConfig s3StoreConfig = (S3HelmStoreDelegateConfig) storeDelegateConfig;
         return MANIFEST_COLLECTION_DIR_BASE + HTTP_HELM.name() + "-" + s3StoreConfig.getRepoName();

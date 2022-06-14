@@ -76,6 +76,7 @@ import io.harness.exception.GeneralException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
 import io.harness.exception.WingsException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.ff.FeatureFlagService;
 import io.harness.git.model.ChangeType;
 import io.harness.logging.AccountLogContext;
@@ -295,6 +296,7 @@ public class YamlGitServiceImpl implements YamlGitService {
       List<EncryptedDataDetail> encryptionDetails =
           secretManager.getEncryptionDetails(attributeValue, GLOBAL_APP_ID, null);
       managerDecryptionService.decrypt(attributeValue, encryptionDetails);
+      ExceptionMessageSanitizer.storeAllSecretsForSanitizing(attributeValue, encryptionDetails);
       return settingAttributeForSshKey;
     }
 

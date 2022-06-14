@@ -82,6 +82,7 @@ import io.harness.delegate.task.terraform.TerraformCommand;
 import io.harness.delegate.task.terraform.TerraformCommandUnit;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.ff.FeatureFlagService;
 import io.harness.provision.TfVarScriptRepositorySource;
 import io.harness.provision.TfVarSource;
@@ -269,7 +270,7 @@ public abstract class TerraformProvisionState extends State {
       json.forEach((key, object) -> outputs.put(key, ((Map<String, Object>) object).get("value")));
 
     } catch (IOException exception) {
-      log.error("", exception);
+      log.error("", ExceptionMessageSanitizer.sanitizeException(exception));
     }
 
     return outputs;

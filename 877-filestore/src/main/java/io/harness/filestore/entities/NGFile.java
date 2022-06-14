@@ -110,7 +110,8 @@ public class NGFile implements PersistentEntity, UuidAware, NGAccountAccess, NGO
                 .field(NGFiles.projectIdentifier)
                 .field(NGFiles.identifier)
                 .unique(true)
-                .build())
+                .build(),
+            CompoundMongoIndex.builder().name("path_idx").field(NGFiles.path).unique(false).build())
         .build();
   }
 

@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.cdng.gitops.steps;
 
 import static java.util.Arrays.asList;
@@ -13,11 +20,13 @@ import io.harness.category.element.UnitTests;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
 import io.harness.cdng.envGroup.services.EnvironmentGroupService;
 import io.harness.cdng.gitops.service.ClusterService;
+import io.harness.exception.InvalidRequestException;
 import io.harness.gitops.models.Cluster;
 import io.harness.gitops.models.ClusterQuery;
 import io.harness.gitops.remote.GitopsResourceClient;
 import io.harness.logging.DummyLogCallbackImpl;
 import io.harness.logging.LogCallback;
+import io.harness.logstreaming.LogStreamingClientFactory;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -32,8 +41,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
+import org.assertj.core.api.Assertions;
 import org.jooq.tools.reflect.Reflect;
 import org.junit.Before;
 import org.junit.Test;
@@ -52,8 +63,9 @@ public class GitopsClustersStepTest extends CategoryTest {
   @Mock private EnvironmentGroupService environmentGroupService;
   @Mock private GitopsResourceClient gitopsResourceClient;
   @Mock private ClusterService clusterService;
+  @Mock private LogStreamingClientFactory logStreamingClientFactory;
 
-  private LogCallback logCallback = new DummyLogCallbackImpl();
+  private final LogCallback logCallback = new DummyLogCallbackImpl();
 
   /*
   envgroup -> envGroupId
@@ -110,10 +122,9 @@ public class GitopsClustersStepTest extends CategoryTest {
                           .pageSize(2)
                           .filter(ImmutableMap.of("identifier", ImmutableMap.of("$in", ImmutableSet.of("c1", "c2"))))
                           .build());
-    doReturn(Response.success(PageResponse.builder()
-                                  .content(asList(Cluster.builder().identifier("c1").name("c1-name").build(),
-                                      Cluster.builder().identifier("c2").name("c2-name").build()))
-                                  .build()))
+    doReturn(
+        Response.success(
+            PageResponse.builder().content(asList(new Cluster("c1", "c1-name"), new Cluster("c2", "c2-name"))).build()))
         .when(rmock1)
         .execute();
 
@@ -130,10 +141,9 @@ public class GitopsClustersStepTest extends CategoryTest {
                 .pageSize(3)
                 .filter(ImmutableMap.of("identifier", ImmutableMap.of("$in", ImmutableSet.of("c3", "c4", "c5"))))
                 .build());
-    doReturn(Response.success(PageResponse.builder()
-                                  .content(asList(Cluster.builder().identifier("c3").name("c3-name").build(),
-                                      Cluster.builder().identifier("c4").name("c4-name").build()))
-                                  .build()))
+    doReturn(
+        Response.success(
+            PageResponse.builder().content(asList(new Cluster("c3", "c3-name"), new Cluster("c4", "c4-name"))).build()))
         .when(rmock2)
         .execute();
 
@@ -150,10 +160,8 @@ public class GitopsClustersStepTest extends CategoryTest {
                               "identifier", ImmutableMap.of("$in", ImmutableSet.of("c3", "c4", "c5", "c1", "c2"))))
                           .build());
     doReturn(Response.success(PageResponse.builder()
-                                  .content(asList(Cluster.builder().identifier("c1").name("c1-name").build(),
-                                      Cluster.builder().identifier("c2").name("c2-name").build(),
-                                      Cluster.builder().identifier("c3").name("c3-name").build(),
-                                      Cluster.builder().identifier("c4").name("c4-name").build()))
+                                  .content(asList(new Cluster("c1", "c1-name"), new Cluster("c2", "c2-name"),
+                                      new Cluster("c3", "c3-name"), new Cluster("c4", "c4-name")))
                                   .build()))
         .when(rmock3)
         .execute();
@@ -169,9 +177,7 @@ public class GitopsClustersStepTest extends CategoryTest {
                           .pageSize(1)
                           .filter(ImmutableMap.of("identifier", ImmutableMap.of("$in", ImmutableSet.of("c4"))))
                           .build());
-    doReturn(
-        Response.success(
-            PageResponse.builder().content(asList(Cluster.builder().identifier("c4").name("c4-name").build())).build()))
+    doReturn(Response.success(PageResponse.builder().content(asList(new Cluster("c4", "c4-name"))).build()))
         .when(rmock4)
         .execute();
   }
@@ -191,8 +197,26 @@ public class GitopsClustersStepTest extends CategoryTest {
 
     step.executeSyncAfterRbac(buildAmbiance(), input, StepInputPackage.builder().build(), null);
 
+    verify(sweepingOutputService).resolveOptional(any(), any());
     verify(sweepingOutputService).consume(any(), eq("gitops"), eq(expectedOutcome), eq("STAGE"));
     reset(sweepingOutputService);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.YOGESH)
+  @Category(UnitTests.class)
+  @Parameters(method = "getDataForExceptions")
+  public void testExecuteSyncAfterRbacShouldThrow(ClusterStepParameters input, GitopsClustersOutcome expectedOutcome) {
+    GitopsClustersStep step = new GitopsClustersStep();
+
+    Reflect.on(step).set("executionSweepingOutputResolver", sweepingOutputService);
+    Reflect.on(step).set("environmentGroupService", environmentGroupService);
+    Reflect.on(step).set("clusterService", clusterService);
+    Reflect.on(step).set("gitopsResourceClient", gitopsResourceClient);
+    Reflect.on(step).set("logger", logCallback);
+
+    Assertions.assertThatExceptionOfType(InvalidRequestException.class)
+        .isThrownBy(() -> step.executeSyncAfterRbac(buildAmbiance(), input, StepInputPackage.builder().build(), null));
   }
 
   // Test cases
@@ -210,8 +234,7 @@ public class GitopsClustersStepTest extends CategoryTest {
     };
     final Object[] set3 = new Object[] {
         ClusterStepParameters.builder()
-            .envClusterRefs(
-                asList(ClusterStepParameters.EnvClusterRefs.builder().envRef("env1").deployToAll(true).build()))
+            .envClusterRefs(asList(EnvClusterRefs.builder().envRef("env1").deployToAll(true).build()))
             .deployToAllEnvs(false)
             .build(),
         new GitopsClustersOutcome(new ArrayList<>()).appendCluster("env1", "c1-name").appendCluster("env1", "c2-name"),
@@ -220,8 +243,7 @@ public class GitopsClustersStepTest extends CategoryTest {
 
     final Object[] set4 = new Object[] {
         ClusterStepParameters.builder()
-            .envClusterRefs(
-                asList(ClusterStepParameters.EnvClusterRefs.builder().envRef("env2").deployToAll(true).build()))
+            .envClusterRefs(asList(EnvClusterRefs.builder().envRef("env2").deployToAll(true).build()))
             .deployToAllEnvs(false)
             .build(),
         new GitopsClustersOutcome(new ArrayList<>()).appendCluster("env2", "c3-name").appendCluster("env2", "c4-name"),
@@ -229,17 +251,30 @@ public class GitopsClustersStepTest extends CategoryTest {
 
     final Object[] set5 = new Object[] {
         ClusterStepParameters.builder()
-            .envClusterRefs(asList(ClusterStepParameters.EnvClusterRefs.builder()
-                                       .envRef("env2")
-                                       .deployToAll(false)
-                                       .clusterRefs(asList("c4"))
-                                       .build()))
+            .envClusterRefs(
+                asList(EnvClusterRefs.builder().envRef("env2").deployToAll(false).clusterRefs(Set.of("c4")).build()))
             .deployToAllEnvs(false)
             .build(),
         new GitopsClustersOutcome(new ArrayList<>()).appendCluster("env2", "c4-name"),
     };
 
-    return new Object[][] {set1, set2, set3, set4, set5};
+    return new Object[][] {set2, set3, set4, set5};
+  }
+
+  // Test cases
+  private Object[][] getDataForExceptions() {
+    final Object[] set1 =
+        new Object[] {ClusterStepParameters.builder().build(), new GitopsClustersOutcome(new ArrayList<>())};
+    final Object[] set2 = new Object[] {
+        ClusterStepParameters.builder().envGroupRef("envGroupId").deployToAllEnvs(true).build(),
+        new GitopsClustersOutcome(new ArrayList<>())
+            .appendCluster("envGroupId", "env2", "c3-name")
+            .appendCluster("envGroupId", "env2", "c4-name")
+            .appendCluster("envGroupId", "env1", "c1-name")
+            .appendCluster("envGroupId", "env1", "c2-name"),
+
+    };
+    return new Object[][] {set1};
   }
 
   private Ambiance buildAmbiance() {

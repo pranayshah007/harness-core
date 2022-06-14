@@ -211,12 +211,12 @@ public class ArtifactCollectionServiceAsyncImpl implements ArtifactCollectionSer
       return null;
     }
     CustomArtifactStream.Script versionScript =
-            artifactStream.getScripts()
-                    .stream()
-                    .filter(script
-                            -> script.getAction() == null || script.getAction() == CustomArtifactStream.Action.FETCH_VERSIONS)
-                    .findFirst()
-                    .orElse(CustomArtifactStream.Script.builder().build());
+        artifactStream.getScripts()
+            .stream()
+            .filter(script
+                -> script.getAction() == null || script.getAction() == CustomArtifactStream.Action.FETCH_VERSIONS)
+            .findFirst()
+            .orElse(CustomArtifactStream.Script.builder().build());
     if (isNotEmpty(versionScript.getScriptString())) {
       return null;
     }

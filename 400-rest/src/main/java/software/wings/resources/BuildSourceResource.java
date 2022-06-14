@@ -37,7 +37,6 @@ import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -253,19 +252,19 @@ public class BuildSourceResource {
               .map(artifact -> BuildDetails.Builder.aBuildDetails().withNumber(artifact.getBuildNo()).build())
               .collect(toList());
     } else {
-        if (ArtifactStreamType.CUSTOM.name().equals(artifactStream.getArtifactStreamType())) {
-          CustomArtifactStream customArtifactStream = (CustomArtifactStream) artifactStream;
-          CustomArtifactStream.Script versionScript =
-                  customArtifactStream.getScripts()
-                          .stream()
-                          .filter(script
-                                  -> script.getAction() == null || script.getAction() == CustomArtifactStream.Action.FETCH_VERSIONS)
-                          .findFirst()
-                          .orElse(CustomArtifactStream.Script.builder().build());
-          if (isEmpty(versionScript.getScriptString())) {
-            return new RestResponse<>(new ArrayList<>());
-          }
+      if (ArtifactStreamType.CUSTOM.name().equals(artifactStream.getArtifactStreamType())) {
+        CustomArtifactStream customArtifactStream = (CustomArtifactStream) artifactStream;
+        CustomArtifactStream.Script versionScript =
+            customArtifactStream.getScripts()
+                .stream()
+                .filter(script
+                    -> script.getAction() == null || script.getAction() == CustomArtifactStream.Action.FETCH_VERSIONS)
+                .findFirst()
+                .orElse(CustomArtifactStream.Script.builder().build());
+        if (isEmpty(versionScript.getScriptString())) {
+          return new RestResponse<>(new ArrayList<>());
         }
+      }
       buildDetails = buildSourceService.getBuilds(appId, artifactStreamId, artifactStream.getSettingId());
       buildDetails = buildDetails.stream().sorted(new BuildDetailsComparator()).collect(toList());
     }

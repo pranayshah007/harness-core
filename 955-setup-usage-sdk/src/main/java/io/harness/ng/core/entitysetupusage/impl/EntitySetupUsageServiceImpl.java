@@ -286,4 +286,11 @@ public class EntitySetupUsageServiceImpl implements EntitySetupUsageService {
         .map(entityReference -> setupUsageEntityToDTO.createEntityReferenceDTO(entityReference))
         .collect(Collectors.toList());
   }
+
+  @Override
+  public Long countReferredByEntitiesByFQNsIn(String accountIdentifier, List<String> referredEntityFQNs) {
+    Criteria criteria = entitySetupUsageFilterHelper.createCriteriaForReferredEntityFQNIn(
+        accountIdentifier, referredEntityFQNs, EntityType.FILES);
+    return entityReferenceRepository.countAll(criteria);
+  }
 }

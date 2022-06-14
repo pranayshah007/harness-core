@@ -21,12 +21,26 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 @OwnedBy(CE)
 public class CEViewPreferenceUtils {
-  public ViewPreferences getCEViewPreferences(final CEView ceView) {
-    final List<ViewFieldIdentifier> dataSources = ceView.getDataSources();
+  public ViewPreferences getCEViewPreferencesForMigration(final CEView ceView) {
     return ViewPreferences.builder()
         .includeOthers(true)
-        .includeUnallocatedCost(Objects.nonNull(dataSources) && dataSources.contains(ViewFieldIdentifier.CLUSTER)
-            && dataSources.size() == 1)
+        .includeUnallocatedCost(isClusterDataSourceOnly(ceView.getDataSources()))
         .build();
+  }
+
+  public ViewPreferences getCEViewPreferences(final CEView ceView) {
+    final ViewPreferences viewPreferences = ceView.getViewPreferences();
+    final boolean includeOthers =
+        Objects.nonNull(viewPreferences) && Boolean.TRUE.equals(viewPreferences.getIncludeOthers());
+    final boolean includeUnallocatedCost =
+        Objects.nonNull(viewPreferences) && Boolean.TRUE.equals(viewPreferences.getIncludeUnallocatedCost());
+    return ViewPreferences.builder()
+        .includeOthers(includeOthers)
+        .includeUnallocatedCost(includeUnallocatedCost && isClusterDataSourceOnly(ceView.getDataSources()))
+        .build();
+  }
+
+  private boolean isClusterDataSourceOnly(final List<ViewFieldIdentifier> dataSources) {
+    return Objects.nonNull(dataSources) && dataSources.contains(ViewFieldIdentifier.CLUSTER) && dataSources.size() == 1;
   }
 }

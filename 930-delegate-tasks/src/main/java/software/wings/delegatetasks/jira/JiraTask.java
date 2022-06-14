@@ -97,6 +97,7 @@ public class JiraTask extends AbstractDelegateRunnableTask {
 
   private static final String JIRA_APPROVAL_FIELD_KEY = "name";
   private static final String WEBHOOK_CREATION_URL = "/rest/webhooks/1.0/webhook/";
+  private static final String DISABLE_ISSUETYPE_OPTIMIZATION = "DISABLE_ISSUETYPE_OPTIMIZATION";
 
   public JiraTask(DelegateTaskPackage delegateTaskPackage, ILogStreamingTaskClient logStreamingTaskClient,
       Consumer<DelegateTaskResponse> consumer, BooleanSupplier preExecute) {
@@ -227,11 +228,22 @@ public class JiraTask extends AbstractDelegateRunnableTask {
     }
   }
 
+  boolean getDisableOptimizationFlag() {
+    String flag = System.getenv(DISABLE_ISSUETYPE_OPTIMIZATION);
+    boolean disableOptimization = Boolean.parseBoolean(flag);
+
+    log.info("Jira optimization disabled: {}", disableOptimization);
+
+    return disableOptimization;
+  }
+
   private DelegateResponseData getCreateMetadata(JiraTaskParameters parameters) {
     URI uri = null;
     try {
       log.info("Getting decrypted jira client configs for GET_CREATE_METADATA");
       JiraClient jiraClient = getJiraClient(parameters);
+
+      boolean disableOptimization = getDisableOptimizationFlag();
 
       log.info("Building URI for GET_CREATE_METADATA");
       Map<String, String> queryParams = new HashMap<>();
@@ -241,14 +253,13 @@ public class JiraTask extends AbstractDelegateRunnableTask {
         queryParams.put("expand", "projects.issuetypes.fields");
       }
 
-      if (EmptyPredicate.isNotEmpty(parameters.getIssueType())) {
+      if (!disableOptimization && EmptyPredicate.isNotEmpty(parameters.getIssueType())) {
         queryParams.put("issuetypeNames", parameters.getIssueType());
       }
 
       if (EmptyPredicate.isNotEmpty(parameters.getProject())) {
         queryParams.put("projectKeys", parameters.getProject());
       }
-
       uri = jiraClient.getRestClient().buildURI(Resource.getBaseUri() + "issue/createmeta", queryParams);
 
       log.info(" Fetching metadata from jira for GET_CREATE_METADATA");
@@ -406,6 +417,14 @@ public class JiraTask extends AbstractDelegateRunnableTask {
     for (String issueId : parameters.getUpdateIssueIds()) {
       try {
         JiraIssueNG issue = jiraNGClient.getIssue(issueId);
+        if (issue == null) {
+          return JiraExecutionData.builder()
+              .executionStatus(ExecutionStatus.FAILED)
+              .errorMessage(String.format(
+                  "Wasn't able to find issue with provided issue identifier: \"%s\". Please, provide valid key or id.",
+                  issueId))
+              .build();
+        }
         String issueProject = issue.getFields().get("Project Key").toString();
 
         if (!issueProject.equals(parameters.getProject())) {

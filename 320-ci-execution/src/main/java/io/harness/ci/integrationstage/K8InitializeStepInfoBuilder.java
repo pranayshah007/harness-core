@@ -114,6 +114,7 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 @Slf4j
 @OwnedBy(HarnessTeam.CI)
+@Deprecated
 public class K8InitializeStepInfoBuilder implements InitializeStepInfoBuilder {
   private static final String PLUGIN_USERNAME = "PLUGIN_USERNAME";
   private static final String PLUGIN_PASSW = "PLUGIN_PASSWORD";

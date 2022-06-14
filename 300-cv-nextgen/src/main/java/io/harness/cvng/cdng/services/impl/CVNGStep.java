@@ -119,7 +119,7 @@ public class CVNGStep extends AsyncExecutableWithRollback {
 
     MonitoredServiceNode monitoredServiceNode = stepParameters.getMonitoredService();
     MonitoredServiceSpecType monitoredServiceType = Objects.nonNull(monitoredServiceNode)
-        ? MonitoredServiceSpecType.valueOf(monitoredServiceNode.getType())
+        ? MonitoredServiceSpecType.getByName(monitoredServiceNode.getType())
         : MonitoredServiceSpecType.DEFAULT;
 
     ResolvedCVConfigInfo resolvedCVConfigInfo =

@@ -12,6 +12,8 @@ import io.harness.common.NGExpressionUtils;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.validation.InputSetValidator;
+import io.harness.serializer.JsonUtils;
+import io.harness.utils.NGRuntimeInputUtils;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
@@ -86,8 +88,15 @@ public class ParameterFieldDeserializer extends StdDeserializer<ParameterField<?
     InputSetValidator inputSetValidator = getInputSetValidator(text);
 
     if (NGExpressionUtils.matchesInputSetPattern(text)) {
-      return ParameterField.createExpressionField(
-          true, NGExpressionUtils.DEFAULT_INPUT_SET_EXPRESSION, inputSetValidator, isTypeString);
+      String defaultValue = NGRuntimeInputUtils.extractParameters(text, "default");
+      boolean isExecutionInput = NGExpressionUtils.matchesExecutionInputPattern(text);
+      // if default is not null then keep the isExpression field false. As the default value should be treated as final
+      // value. This will be useful in current Runtime inputs. In Execution inputs, we give the input template with
+      // pre-filled default values. So user will always provide value.
+      return ParameterField.createFieldWithDefaultValue(defaultValue == null, isExecutionInput,
+          NGExpressionUtils.DEFAULT_INPUT_SET_EXPRESSION,
+          defaultValue == null ? null : JsonUtils.asObject(defaultValue, this.referenceType.getRawClass()),
+          inputSetValidator, isTypeString);
     }
     if (inputSetValidator != null) {
       String value = getLeftSideOfExpression(text);
@@ -125,9 +134,10 @@ public class ParameterFieldDeserializer extends StdDeserializer<ParameterField<?
     for (InputSetValidatorTypeWithPattern validatorTypeWithPattern : inputSetValidationPatternList) {
       if (NGExpressionUtils.containsPattern(validatorTypeWithPattern.validatorPattern, field)) {
         // This will get the content inside the validation pattern.
-        String validationParameters = validatorTypeWithPattern.validatorPattern.split(field)[1];
-        return new InputSetValidator(validatorTypeWithPattern.validatorType,
-            validationParameters.substring(0, validationParameters.length() - 1));
+        //        String validationParameters = validatorTypeWithPattern.validatorPattern.split(field)[1];
+        String validationParameters =
+            NGRuntimeInputUtils.extractParameters(field, validatorTypeWithPattern.validatorType.getYamlName());
+        return new InputSetValidator(validatorTypeWithPattern.validatorType, validationParameters);
       }
     }
     return null;

@@ -30,6 +30,7 @@ import io.harness.ccm.views.service.CEViewFolderService;
 import io.harness.ccm.views.service.CEViewService;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.rule.Owner;
+import io.harness.telemetry.TelemetryReporter;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -37,7 +38,11 @@ import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
 
+@RunWith(MockitoJUnitRunner.class)
 public class PerspectiveFolderResourceTest extends CategoryTest {
   private CEViewService ceViewService = mock(CEViewService.class);
   private CEViewFolderService ceViewFolderService = mock(CEViewFolderService.class);
@@ -55,6 +60,8 @@ public class PerspectiveFolderResourceTest extends CategoryTest {
   private CEView perspective;
   private CEViewFolder perspectiveFolder;
   private QLCEView qlceView;
+
+  @Mock private TelemetryReporter telemetryReporter;
 
   @Before
   public void setUp() throws IllegalAccessException, IOException {
@@ -76,7 +83,7 @@ public class PerspectiveFolderResourceTest extends CategoryTest {
     when(ceViewFolderService.moveMultipleCEViews(any(), any(), any()))
         .thenReturn(Collections.singletonList(perspective));
     when(ceViewFolderService.delete(any(), any())).thenReturn(true);
-    perspectiveFolderResource = new PerspectiveFolderResource(ceViewFolderService, ceViewService);
+    perspectiveFolderResource = new PerspectiveFolderResource(ceViewFolderService, ceViewService, telemetryReporter);
   }
 
   @Test

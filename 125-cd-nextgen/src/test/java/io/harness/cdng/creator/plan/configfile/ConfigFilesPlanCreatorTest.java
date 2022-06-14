@@ -118,14 +118,9 @@ public class ConfigFilesPlanCreatorTest extends CDNGTestBase {
         configFileIdentifier, configFileStepParameters, configFilesYamlNodes, planCreationResponseMap);
     assertThat(planCreationResponseMap.size()).isEqualTo(2);
 
-    configFileIdentifier = yamlNodes.get(2).getField(YamlTypes.CONFIG_FILE).getNode().getIdentifier();
-    configFilesPlanCreator.addDependenciesForIndividualConfigFile(
-        configFileIdentifier, configFileStepParameters, configFilesYamlNodes, planCreationResponseMap);
-    assertThat(planCreationResponseMap.size()).isEqualTo(3);
-
     // should return the first from the list
     configFilesPlanCreator.addDependenciesForIndividualConfigFile(
         "notExistingIdentifier", configFileStepParameters, configFilesYamlNodes, planCreationResponseMap);
-    assertThat(planCreationResponseMap.size()).isEqualTo(4);
+    assertThat(planCreationResponseMap.size()).isEqualTo(3);
   }
 }

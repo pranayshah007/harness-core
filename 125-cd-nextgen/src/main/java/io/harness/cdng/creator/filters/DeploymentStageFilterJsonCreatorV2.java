@@ -121,7 +121,7 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
               YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
     }
 
-    if (gitOpsEnabled != Boolean.TRUE && env.getDeployToAll() == Boolean.TRUE) {
+    if (gitOpsEnabled != true && env.isDeployToAll()) {
       throw new InvalidYamlRuntimeException(
           "Deploy to all environments is not supported yet. Please select a specific infrastructure and try again");
     }

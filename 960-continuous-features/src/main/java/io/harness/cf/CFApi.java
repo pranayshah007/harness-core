@@ -28,8 +28,7 @@ public class CFApi extends DefaultApi {
     super(apiClient);
   }
 
-  public List<PatchInstruction> getFeatureFlagRulesForTargetingAccounts(
-      Collection<String> accountIDs) {
+  public List<PatchInstruction> getFeatureFlagRulesForTargetingAccounts(Collection<String> accountIDs) {
     List<PatchInstruction> patchInstructions = new ArrayList<>();
     List<String> accountIDList = new ArrayList<>(accountIDs);
     AddTargetToVariationMapParams params = new AddTargetToVariationMapParams("true", accountIDList);

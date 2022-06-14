@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.accesscontrol.roleassignments.migration;
 
 import static io.harness.accesscontrol.principals.PrincipalType.USER;
@@ -23,8 +30,10 @@ import com.google.inject.Singleton;
 import java.util.HashMap;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.query.Criteria;
 
 @Slf4j
@@ -62,27 +71,34 @@ public class AccountBasicRoleAssignmentAdditionMigration implements NGMigration 
                               .and(RoleAssignmentDBOKeys.scopeLevel)
                               .is(HarnessScopeLevel.ACCOUNT.getName())
                               .and(RoleAssignmentDBOKeys.principalType)
-                              .is(USER)
-                              .and(RoleAssignmentDBOKeys.managed)
-                              .is(true);
+                              .is(USER);
 
-      List<RoleAssignmentDBO> roleAssignmentList = roleAssignmentRepository.findAll(criteria, pageable).getContent();
+      List<RoleAssignmentDBO> roleAssignmentList =
+          roleAssignmentRepository
+              .findAll(criteria, pageable, Sort.by(Sort.Direction.ASC, RoleAssignmentDBOKeys.createdAt))
+              .getContent();
       if (isEmpty(roleAssignmentList)) {
         break;
       }
       for (RoleAssignmentDBO roleAssignment : roleAssignmentList) {
-        String accountId =
-            scopeService.buildScopeFromScopeIdentifier(roleAssignment.getScopeIdentifier()).getInstanceId();
-        try {
-          featureFlagForAccounts.computeIfAbsent(
-              accountId, accId -> featureFlagHelperService.isEnabled(FeatureName.ACCOUNT_BASIC_ROLE, accId));
-          if (Boolean.TRUE.equals(featureFlagForAccounts.get(accountId))) {
-            RoleAssignmentDBO newRoleAssignmentDBO = buildRoleAssignmentDBO(roleAssignment);
-            roleAssignmentRepository.save(newRoleAssignmentDBO);
-            roleAssignmentRepository.updateById(roleAssignment.getId(), update(RoleAssignmentDBOKeys.managed, false));
+        if (roleAssignment.isManaged()) {
+          String accountId =
+              scopeService.buildScopeFromScopeIdentifier(roleAssignment.getScopeIdentifier()).getInstanceId();
+          try {
+            featureFlagForAccounts.computeIfAbsent(
+                accountId, accId -> featureFlagHelperService.isEnabled(FeatureName.ACCOUNT_BASIC_ROLE, accId));
+            if (Boolean.TRUE.equals(featureFlagForAccounts.get(accountId))) {
+              RoleAssignmentDBO newRoleAssignmentDBO = buildRoleAssignmentDBO(roleAssignment);
+              try {
+                roleAssignmentRepository.save(newRoleAssignmentDBO);
+              } catch (DuplicateKeyException e) {
+                log.error("Corresponding account basic was already created {}", newRoleAssignmentDBO.toString(), e);
+              }
+              roleAssignmentRepository.updateById(roleAssignment.getId(), update(RoleAssignmentDBOKeys.managed, false));
+            }
+          } catch (Exception exception) {
+            log.error("[AccountBasicRoleAssignmentAdditionMigration] Unexpected error occurred.", exception);
           }
-        } catch (Exception exception) {
-          log.error("[AccountBasicRoleAssignmentAdditionMigration] Unexpected error occurred.", exception);
         }
       }
       pageIndex++;

@@ -126,10 +126,12 @@ public class PrometheusConfig extends SettingValue implements EncryptableSetting
     private String password;
 
     @Builder
-    public PrometheusYaml(
-        String type, String harnessApiVersion, String prometheusUrl, UsageRestrictions.Yaml usageRestrictions) {
+    public PrometheusYaml(String type, String harnessApiVersion, String prometheusUrl,
+        UsageRestrictions.Yaml usageRestrictions, String username, String password) {
       super(type, harnessApiVersion, usageRestrictions);
       this.prometheusUrl = prometheusUrl;
+      this.username = username;
+      this.password = password;
     }
   }
 }

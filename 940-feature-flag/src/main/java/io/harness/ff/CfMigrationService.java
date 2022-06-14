@@ -50,7 +50,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
-import org.jetbrains.annotations.NotNull;
 
 @Singleton
 @Slf4j
@@ -303,7 +302,6 @@ public class CfMigrationService {
     }
   }
 
-  @NotNull
   private InlineObject createCFFeatureFlag(String featureName, Scope scope, String project) {
     InlineObject inlineObject = new InlineObject();
     inlineObject.setProject(project);

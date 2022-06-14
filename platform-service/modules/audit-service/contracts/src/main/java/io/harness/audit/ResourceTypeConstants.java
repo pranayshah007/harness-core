@@ -47,4 +47,5 @@ public class ResourceTypeConstants {
   public static final String MONITORED_SERVICE = "MONITORED_SERVICE";
   public static final String CHAOS_AGENT = "CHAOS_AGENT";
   public static final String CHAOS_WORKFLOW = "CHAOS_WORKFLOW";
+  public static final String SERVICE_LEVEL_OBJECTIVE = "SERVICE_LEVEL_OBJECTIVE";
 }

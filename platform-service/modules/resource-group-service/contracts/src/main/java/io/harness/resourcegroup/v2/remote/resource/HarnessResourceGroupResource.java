@@ -96,7 +96,8 @@ public interface HarnessResourceGroupResource {
   @GET
   @Path("{identifier}")
   @ApiOperation(value = "Get a resource group by Identifier", nickname = "getResourceGroupV2")
-  @Operation(operationId = "getResourceGroupV2", summary = "Get a resource group by identifier",
+  @Operation(operationId = "getResourceGroupV2", summary = "Get Resource Group",
+      description = "Get a resource group by identifier",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -136,7 +137,8 @@ public interface HarnessResourceGroupResource {
 
   @GET
   @ApiOperation(value = "Get list of resource groups", nickname = "getResourceGroupListV2")
-  @Operation(operationId = "getResourceGroupListV2", summary = "Get list of resource groups",
+  @Operation(operationId = "getResourceGroupListV2", summary = "List Resource Groups",
+      description = "Get list of resource groups",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -157,7 +159,8 @@ public interface HarnessResourceGroupResource {
   @POST
   @Path("filter")
   @ApiOperation(value = "Get filtered resource group list", nickname = "getFilterResourceGroupListV2")
-  @Operation(operationId = "getFilterResourceGroupListV2", summary = "This fetches a filtered list of Resource Groups",
+  @Operation(operationId = "getFilterResourceGroupListV2", summary = "List Resource Groups by filter",
+      description = "This fetches a filtered list of Resource Groups",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
@@ -171,7 +174,8 @@ public interface HarnessResourceGroupResource {
 
   @POST
   @ApiOperation(value = "Create a resource group", nickname = "createResourceGroupV2")
-  @Operation(operationId = "createResourceGroupV2", summary = "Create a resource group",
+  @Operation(operationId = "createResourceGroupV2", summary = "Create Resource Group",
+      description = "Create a resource group",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -191,7 +195,8 @@ public interface HarnessResourceGroupResource {
   @PUT
   @Path("{identifier}")
   @ApiOperation(value = "Update a resource group", nickname = "updateResourceGroupV2")
-  @Operation(operationId = "updateResourceGroup", summary = "Update a resource group",
+  @Operation(operationId = "updateResourceGroup", summary = "Update Resource Group",
+      description = "Update a resource group",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -212,7 +217,8 @@ public interface HarnessResourceGroupResource {
   @DELETE
   @Path("{identifier}")
   @ApiOperation(value = "Delete a resource group", nickname = "deleteResourceGroupV2")
-  @Operation(operationId = "deleteResourceGroupV2", summary = "Delete a resource group",
+  @Operation(operationId = "deleteResourceGroupV2", summary = "Delete Resource Group",
+      description = "Delete a resource group",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.

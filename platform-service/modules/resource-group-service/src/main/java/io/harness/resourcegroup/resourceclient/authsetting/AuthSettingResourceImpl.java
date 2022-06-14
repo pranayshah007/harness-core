@@ -27,6 +27,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+
+import io.harness.resourcegroup.v2.model.AttributeFilter;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -65,5 +67,10 @@ public class AuthSettingResourceImpl implements Resource {
   @Override
   public ResourceInfo getResourceInfoFromEvent(Message message) {
     return null;
+  }
+
+  @Override
+  public boolean isValidAttributeFilter(AttributeFilter attributeFilter) {
+    return false;
   }
 }

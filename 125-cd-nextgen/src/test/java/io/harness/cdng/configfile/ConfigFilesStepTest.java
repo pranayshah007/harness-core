@@ -54,8 +54,7 @@ public class ConfigFilesStepTest extends CDNGTestBase {
     Ambiance ambiance = Ambiance.newBuilder().build();
     Map<String, ResponseData> responseData = new HashMap<>();
     when(serviceStepsHelper.getChildrenOutcomes(responseData))
-        .thenReturn(Collections.singletonList(
-            ConfigFileOutcome.builder().identifier(identifier).configFileType(ConfigFileType.LOCAL_FILE).build()));
+        .thenReturn(Collections.singletonList(ConfigFileOutcome.builder().identifier(identifier).build()));
     when(executionSweepingOutputService.listOutputsWithGivenNameAndSetupIds(
              any(), eq(FAILED_CHILDREN_OUTPUT), anyList()))
         .thenReturn(Collections.emptyList());
@@ -69,7 +68,6 @@ public class ConfigFilesStepTest extends CDNGTestBase {
     StepResponse.StepOutcome[] stepOutcomes = response.getStepOutcomes().toArray(new StepResponse.StepOutcome[1]);
     ConfigFilesOutcome configFilesOutcome = (ConfigFilesOutcome) stepOutcomes[0].getOutcome();
     ConfigFileOutcome configFileOutcome = configFilesOutcome.get(identifier);
-    assertThat(configFileOutcome.getConfigFileType()).isEqualTo(ConfigFileType.LOCAL_FILE);
     assertThat(configFileOutcome.getIdentifier()).isEqualTo(identifier);
   }
 }

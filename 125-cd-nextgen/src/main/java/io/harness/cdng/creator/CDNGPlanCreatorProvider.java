@@ -18,6 +18,7 @@ import io.harness.cdng.creator.plan.artifact.SideCarArtifactPlanCreator;
 import io.harness.cdng.creator.plan.artifact.SideCarListPlanCreator;
 import io.harness.cdng.creator.plan.configfile.ConfigFilesPlanCreator;
 import io.harness.cdng.creator.plan.configfile.IndividualConfigFilePlanCreator;
+import io.harness.cdng.creator.plan.envGroup.EnvGroupPlanCreator;
 import io.harness.cdng.creator.plan.environment.EnvironmentPlanCreatorV2;
 import io.harness.cdng.creator.plan.execution.CDExecutionPMSPlanCreator;
 import io.harness.cdng.creator.plan.manifest.IndividualManifestPlanCreator;
@@ -33,6 +34,7 @@ import io.harness.cdng.creator.plan.steps.CDPMSStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.CloudformationCreateStackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.CloudformationDeleteStackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.CloudformationRollbackStackStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.CommandStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.GitOpsCreatePRStepPlanCreatorV2;
 import io.harness.cdng.creator.plan.steps.HelmDeployStepPlanCreatorV2;
 import io.harness.cdng.creator.plan.steps.HelmRollbackStepPlanCreatorV2;
@@ -66,6 +68,7 @@ import io.harness.cdng.creator.variables.K8sRollingStepVariableCreator;
 import io.harness.cdng.creator.variables.K8sScaleStepVariableCreator;
 import io.harness.cdng.creator.variables.ServerlessAwsLambdaDeployStepVariableCreator;
 import io.harness.cdng.creator.variables.ServerlessAwsLambdaRollbackStepVariableCreator;
+import io.harness.cdng.creator.variables.SshVariableCreator;
 import io.harness.cdng.provision.cloudformation.variablecreator.CloudformationCreateStepVariableCreator;
 import io.harness.cdng.provision.cloudformation.variablecreator.CloudformationDeleteStepVariableCreator;
 import io.harness.cdng.provision.cloudformation.variablecreator.CloudformationRollbackStepVariableCreator;
@@ -132,6 +135,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new ServicePlanCreator());
     planCreators.add(new ServiceDefinitionPlanCreator());
     planCreators.add(new EnvironmentPlanCreatorV2());
+    planCreators.add(new EnvGroupPlanCreator());
     planCreators.add(new ArtifactsPlanCreator());
     planCreators.add(new PrimaryArtifactPlanCreator());
     planCreators.add(new SideCarListPlanCreator());
@@ -148,6 +152,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new CloudformationRollbackStackStepPlanCreator());
     planCreators.add(new IndividualConfigFilePlanCreator());
     planCreators.add(new ConfigFilesPlanCreator());
+    planCreators.add(new CommandStepPlanCreator());
     planCreators.add(new SpecNodePlanCreator());
     injectorUtils.injectMembers(planCreators);
     return planCreators;
@@ -190,6 +195,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     variableCreators.add(new CloudformationCreateStepVariableCreator());
     variableCreators.add(new CloudformationDeleteStepVariableCreator());
     variableCreators.add(new CloudformationRollbackStepVariableCreator());
+    variableCreators.add(new SshVariableCreator());
     return variableCreators;
   }
 
@@ -333,6 +339,15 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
             .setFeatureFlag(FeatureName.NG_NATIVE_HELM.name())
             .build();
 
+    StepInfo executeCommand =
+        StepInfo.newBuilder()
+            .setName("Command")
+            .setType(StepSpecTypeConstants.COMMAND)
+            .setFeatureRestrictionName(FeatureRestrictionName.COMMAND.name())
+            .setFeatureFlag(FeatureName.SSH_NG.name())
+            .setStepMetaData(StepMetaData.newBuilder().addCategory("Ssh").addFolderPaths("Ssh").build())
+            .build();
+
     StepInfo serverlessDeploy =
         StepInfo.newBuilder()
             .setName("Serverless Lambda Deploy")
@@ -407,6 +422,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     stepInfos.add(createStack);
     stepInfos.add(deleteStack);
     stepInfos.add(rollbackStack);
+    stepInfos.add(executeCommand);
     return stepInfos;
   }
 }

@@ -15,7 +15,6 @@ import static io.harness.rule.OwnerRule.VIKAS_M;
 import static junit.framework.TestCase.assertEquals;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -33,7 +32,6 @@ import io.harness.eventsframework.entity_crud.project.ProjectEntityChangeDTO;
 import io.harness.ng.core.api.SecretCrudService;
 import io.harness.ng.core.event.SecretEntityCRUDStreamListener;
 import io.harness.rule.Owner;
-import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
@@ -49,16 +47,13 @@ public class SecretEntityCRUDStreamListenerTest extends CategoryTest {
   private SecretCrudService secretCrudService;
   private SecretEntityCRUDEventHandler secretEntityCRUDEventHandler;
   @Inject @InjectMocks private SecretEntityCRUDStreamListener secretEntityCRUDStreamListener;
-  private NGFeatureFlagHelperService ngFeatureFlagHelperService;
 
   @Before
   public void setup() {
     secretCrudService = mock(SecretCrudService.class);
     secretEntityCRUDEventHandler = mock(SecretEntityCRUDEventHandler.class);
-    ngFeatureFlagHelperService = mock(NGFeatureFlagHelperService.class);
-    secretEntityCRUDStreamListener = spy(new SecretEntityCRUDStreamListener(
-        secretCrudService, secretEntityCRUDEventHandler, ngFeatureFlagHelperService));
-    when(ngFeatureFlagHelperService.isEnabled(anyString(), any())).thenReturn(true);
+    secretEntityCRUDStreamListener =
+        spy(new SecretEntityCRUDStreamListener(secretCrudService, secretEntityCRUDEventHandler));
   }
 
   @Test

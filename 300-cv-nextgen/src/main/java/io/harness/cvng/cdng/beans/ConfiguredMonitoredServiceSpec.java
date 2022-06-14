@@ -23,7 +23,7 @@ import lombok.experimental.SuperBuilder;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@JsonTypeName("CONFIGURED")
+@JsonTypeName("Configured")
 @OwnedBy(HarnessTeam.CV)
 @SuperBuilder
 public class ConfiguredMonitoredServiceSpec extends MonitoredServiceSpec {

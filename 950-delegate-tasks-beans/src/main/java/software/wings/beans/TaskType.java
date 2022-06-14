@@ -352,7 +352,10 @@ public enum TaskType {
   ACR_ARTIFACT_TASK_NG(TaskGroup.ARTIFACT_COLLECT_NG, "ACR Task"),
   SERVERLESS_GIT_FETCH_TASK_NG(TaskGroup.SERVERLESS_NG, "Git Fetch Files Task"),
   SERVERLESS_COMMAND_TASK(TaskGroup.SERVERLESS_NG, "Serverless Deploy Task"),
-  FETCH_S3_FILE_TASK_NG(TaskGroup.AWS, "Fetch S3 files Task");
+  FETCH_S3_FILE_TASK_NG(TaskGroup.AWS, "Fetch S3 files Task"),
+  OCI_HELM_CONNECTIVITY_TASK(TaskGroup.HELM_REPO_CONFIG_VALIDATION),
+  AZURE_WEB_APP_TASK_NG(TaskGroup.AZURE, "Azure Web App Task"),
+  COMMAND_TASK_NG(TaskGroup.COMMAND_TASK_NG, "Command Task");
 
   private final TaskGroup taskGroup;
   private final String displayName;

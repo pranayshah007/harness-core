@@ -38,6 +38,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import io.harness.resourcegroup.v2.model.AttributeFilter;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
@@ -104,5 +106,10 @@ public class OrganizationResourceImpl implements Resource {
         .resourceType(getType())
         .resourceIdentifier(stripToNull(organizationEntityChangeDTO.getIdentifier()))
         .build();
+  }
+
+  @Override
+  public boolean isValidAttributeFilter(AttributeFilter attributeFilter) {
+    return false;
   }
 }

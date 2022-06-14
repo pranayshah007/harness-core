@@ -36,6 +36,9 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.azure.AzureEnvironmentType;
+import io.harness.azure.model.tag.AzureListTagsResponse;
+import io.harness.azure.model.tag.TagDetails;
+import io.harness.azure.model.tag.TagValue;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.k8s.model.KubernetesConfig;
@@ -183,9 +186,9 @@ public class AzureHelperServiceTest extends WingsBaseTest {
     doReturn(responseCall).when(azureManagementRestClient).listTags(anyString(), anyString());
 
     AzureListTagsResponse azureListTagsResponse = new AzureListTagsResponse();
-    TagDetails tagDetails = new TagDetails();
+    io.harness.azure.model.tag.TagDetails tagDetails = new TagDetails();
     tagDetails.setTagName("tagName");
-    TagValue tagValue = new TagValue();
+    io.harness.azure.model.tag.TagValue tagValue = new TagValue();
     tagValue.setTagValue("tagValue");
     tagDetails.setValues(asList(tagValue));
     azureListTagsResponse.setValue(asList(tagDetails));

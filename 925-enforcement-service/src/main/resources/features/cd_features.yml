@@ -322,3 +322,18 @@ features:
       COMMUNITY:
         restrictionType: AVAILABILITY
         enabled: true
+  - name: COMMAND
+    description: The restriction on command step
+    restrictions:
+      FREE:
+        restrictionType: AVAILABILITY
+        enabled: true
+      TEAM:
+        restrictionType: AVAILABILITY
+        enabled: true
+      ENTERPRISE:
+        restrictionType: AVAILABILITY
+        enabled: true
+      COMMUNITY:
+        restrictionType: AVAILABILITY
+        enabled: true

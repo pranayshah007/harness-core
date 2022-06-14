@@ -33,9 +33,14 @@ import io.harness.cvng.core.entities.SideKick;
 import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.persistence.HPersistence;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
+import java.io.IOException;
+import java.net.URL;
 import java.util.Collections;
 import java.util.List;
 import org.apache.commons.lang3.reflect.FieldUtils;
@@ -45,11 +50,10 @@ import org.junit.experimental.categories.Category;
 import org.mongodb.morphia.query.Query;
 
 public class TemplateVerifyStepMonitoredServiceResolutionServiceImplTest extends CvNextGenTestBase {
-  @Inject private MonitoredServiceService monitoredServiceService;
   @Inject private TemplateVerifyStepMonitoredServiceResolutionServiceImpl templateService;
   @Inject private MetricPackService metricPackService;
   @Inject HPersistence hPersistence;
-  private MonitoredServiceService mockMonitoredServiceService;
+  @Inject ObjectMapper objectMapper;
   private BuilderFactory builderFactory;
   private String accountId;
   private String projectIdentifier;
@@ -60,9 +64,10 @@ public class TemplateVerifyStepMonitoredServiceResolutionServiceImplTest extends
   private TemplateMonitoredServiceSpec templateMonitoredServiceSpec;
   private MonitoredServiceDTO monitoredServiceDTO;
   private ServiceEnvironmentParams serviceEnvironmentParams;
+  private MonitoredServiceService mockMonitoredServiceService;
 
   @Before
-  public void setup() throws IllegalAccessException {
+  public void setup() throws IllegalAccessException, IOException {
     mockMonitoredServiceService = mock(MonitoredServiceService.class);
     builderFactory = BuilderFactory.getDefault();
     accountId = builderFactory.getContext().getAccountId();
@@ -71,10 +76,17 @@ public class TemplateVerifyStepMonitoredServiceResolutionServiceImplTest extends
     serviceIdentifier = builderFactory.getContext().getServiceIdentifier();
     envIdentifier = builderFactory.getContext().getEnvIdentifier();
     monitoredServiceDTO = builderFactory.monitoredServiceDTOBuilder().build();
-    templateMonitoredServiceSpec = builderFactory.getTemplateMonitoredServiceSpecBuilder().build();
-    monitoredServiceNode = getDefaultMonitoredServiceNode();
     serviceEnvironmentParams = getServiceEnvironmentParams();
     metricPackService.createDefaultMetricPackAndThresholds(accountId, orgIdentifier, projectIdentifier);
+    URL testFile =
+        TemplateVerifyStepMonitoredServiceResolutionServiceImplTest.class.getResource("verify-step-with-template.json");
+    JsonNode templateInputsNode = objectMapper.readTree(testFile);
+    ParameterField<JsonNode> parameterField = new ParameterField<>();
+    parameterField.setValue(templateInputsNode);
+    templateMonitoredServiceSpec =
+        builderFactory.getTemplateMonitoredServiceSpecBuilder().templateInputs(parameterField).build();
+    when(mockMonitoredServiceService.getExpandedMonitoredServiceFromYaml(any(), any())).thenReturn(monitoredServiceDTO);
+    monitoredServiceNode = getDefaultMonitoredServiceNode();
     FieldUtils.writeField(templateService, "monitoredServiceService", mockMonitoredServiceService, true);
   }
 
@@ -84,14 +96,13 @@ public class TemplateVerifyStepMonitoredServiceResolutionServiceImplTest extends
   public void testGetMonitoredServiceIdentifier() {
     String actualIdentifier = templateService.getResolvedCVConfigInfo(serviceEnvironmentParams, monitoredServiceNode)
                                   .getMonitoredServiceIdentifier();
-    assertThat(actualIdentifier).isNull();
+    assertThat(actualIdentifier).isNotBlank();
   }
 
   @Test
   @Owner(developers = DHRUVX)
   @Category(UnitTests.class)
   public void testGetCVConfigs() {
-    when(mockMonitoredServiceService.getExpandedMonitoredServiceFromYaml(any(), any())).thenReturn(monitoredServiceDTO);
     List<CVConfig> actualCvConfigs =
         templateService.getResolvedCVConfigInfo(serviceEnvironmentParams, monitoredServiceNode).getCvConfigs();
     assertThat(actualCvConfigs).hasSize(1);
@@ -112,7 +123,6 @@ public class TemplateVerifyStepMonitoredServiceResolutionServiceImplTest extends
   @Category(UnitTests.class)
   public void testGetCVConfigs_healthSourcesDoNotExist() {
     monitoredServiceDTO.getSources().setHealthSources(Collections.emptySet());
-    when(mockMonitoredServiceService.getExpandedMonitoredServiceFromYaml(any(), any())).thenReturn(monitoredServiceDTO);
     List<CVConfig> actualCvConfigs =
         templateService.getResolvedCVConfigInfo(serviceEnvironmentParams, monitoredServiceNode).getCvConfigs();
     assertThat(actualCvConfigs).hasSize(0);
@@ -123,7 +133,6 @@ public class TemplateVerifyStepMonitoredServiceResolutionServiceImplTest extends
   @Category(UnitTests.class)
   public void testGetCVConfigs_SourcesDoNotExist() {
     monitoredServiceDTO.setSources(null);
-    when(mockMonitoredServiceService.getExpandedMonitoredServiceFromYaml(any(), any())).thenReturn(monitoredServiceDTO);
     List<CVConfig> actualCvConfigs =
         templateService.getResolvedCVConfigInfo(serviceEnvironmentParams, monitoredServiceNode).getCvConfigs();
     assertThat(actualCvConfigs).hasSize(0);
@@ -133,7 +142,6 @@ public class TemplateVerifyStepMonitoredServiceResolutionServiceImplTest extends
   @Owner(developers = DHRUVX)
   @Category(UnitTests.class)
   public void testManagePerpetualTasks_verifyPerpetualTasksGotCreated() {
-    when(mockMonitoredServiceService.getExpandedMonitoredServiceFromYaml(any(), any())).thenReturn(monitoredServiceDTO);
     ResolvedCVConfigInfo resolvedCVConfigInfo =
         templateService.getResolvedCVConfigInfo(serviceEnvironmentParams, monitoredServiceNode);
     String verificationJobInstanceId = generateUuid();
@@ -151,7 +159,6 @@ public class TemplateVerifyStepMonitoredServiceResolutionServiceImplTest extends
   @Owner(developers = DHRUVX)
   @Category(UnitTests.class)
   public void testManagePerpetualTasks_verifySideKickGotCreated() {
-    when(mockMonitoredServiceService.getExpandedMonitoredServiceFromYaml(any(), any())).thenReturn(monitoredServiceDTO);
     ResolvedCVConfigInfo resolvedCVConfigInfo =
         templateService.getResolvedCVConfigInfo(serviceEnvironmentParams, monitoredServiceNode);
     String verificationJobInstanceId = generateUuid();
@@ -172,7 +179,6 @@ public class TemplateVerifyStepMonitoredServiceResolutionServiceImplTest extends
   @Category(UnitTests.class)
   public void testManagePerpetualTasks_noHealthSources() {
     monitoredServiceDTO.setSources(null);
-    when(mockMonitoredServiceService.getExpandedMonitoredServiceFromYaml(any(), any())).thenReturn(monitoredServiceDTO);
     ResolvedCVConfigInfo resolvedCVConfigInfo =
         templateService.getResolvedCVConfigInfo(serviceEnvironmentParams, monitoredServiceNode);
     String verificationJobInstanceId = generateUuid();

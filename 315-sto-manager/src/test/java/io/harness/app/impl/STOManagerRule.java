@@ -14,11 +14,8 @@ import static io.harness.cache.CacheBackend.NOOP;
 import io.harness.AccessControlClientConfiguration;
 import io.harness.ModuleType;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.app.PrimaryVersionManagerModule;
-import io.harness.app.SCMGrpcClientModule;
 import io.harness.app.STOManagerConfiguration;
 import io.harness.app.STOManagerServiceModule;
-import io.harness.app.ScmConnectionConfig;
 import io.harness.cache.CacheConfig;
 import io.harness.cache.CacheConfig.CacheConfigBuilder;
 import io.harness.cache.CacheModule;
@@ -35,7 +32,7 @@ import io.harness.pms.sdk.PmsSdkConfiguration;
 import io.harness.pms.sdk.PmsSdkModule;
 import io.harness.pms.sdk.core.SdkDeployMode;
 import io.harness.registrars.ExecutionAdvisers;
-import io.harness.registrars.ExecutionRegistrar;
+import io.harness.registrars.STOExecutionRegistrar;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.rule.Cache;
 import io.harness.rule.InjectorRuleMixin;
@@ -44,8 +41,6 @@ import io.harness.serializer.CiExecutionRegistrars;
 import io.harness.serializer.ConnectorNextGenRegistrars;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.serializer.OrchestrationBeansRegistrars;
-import io.harness.serializer.PersistenceRegistrars;
-import io.harness.serializer.PrimaryVersionManagerRegistrars;
 import io.harness.serializer.YamlBeansModuleRegistrars;
 import io.harness.springdata.SpringPersistenceTestModule;
 import io.harness.sto.beans.entities.STOServiceConfig;
@@ -92,14 +87,12 @@ public class STOManagerRule implements MethodRule, InjectorRuleMixin, MongoRuleM
 
     List<Module> modules = new ArrayList<>();
     modules.add(YamlSdkModule.getInstance());
-    modules.add(PrimaryVersionManagerModule.getInstance());
     modules.add(new ProviderModule() {
       @Provides
       @Singleton
       Set<Class<? extends KryoRegistrar>> registrars() {
         return ImmutableSet.<Class<? extends KryoRegistrar>>builder()
             .addAll(YamlBeansModuleRegistrars.kryoRegistrars)
-            .addAll(CiBeansRegistrars.kryoRegistrars)
             .addAll(CiExecutionRegistrars.kryoRegistrars)
             .addAll(ConnectorNextGenRegistrars.kryoRegistrars)
             .build();
@@ -108,17 +101,13 @@ public class STOManagerRule implements MethodRule, InjectorRuleMixin, MongoRuleM
       @Provides
       @Singleton
       Set<Class<? extends MorphiaRegistrar>> morphiaRegistrars() {
-        return ImmutableSet.<Class<? extends MorphiaRegistrar>>builder()
-            .addAll(CiExecutionRegistrars.morphiaRegistrars)
-            .addAll(PrimaryVersionManagerRegistrars.morphiaRegistrars)
-            .build();
+        return ImmutableSet.<Class<? extends MorphiaRegistrar>>builder().build();
       }
 
       @Provides
       @Singleton
       Set<Class<? extends TypeConverter>> morphiaConverters() {
         return ImmutableSet.<Class<? extends TypeConverter>>builder()
-            .addAll(PersistenceRegistrars.morphiaConverters)
             .addAll(OrchestrationBeansRegistrars.morphiaConverters)
             .build();
       }
@@ -126,9 +115,7 @@ public class STOManagerRule implements MethodRule, InjectorRuleMixin, MongoRuleM
       @Provides
       @Singleton
       List<Class<? extends Converter<?, ?>>> springConverters() {
-        return ImmutableList.<Class<? extends Converter<?, ?>>>builder()
-            .addAll(CiExecutionRegistrars.springConverters)
-            .build();
+        return ImmutableList.<Class<? extends Converter<?, ?>>>builder().build();
       }
 
       @Provides
@@ -170,7 +157,6 @@ public class STOManagerRule implements MethodRule, InjectorRuleMixin, MongoRuleM
                 TIServiceConfig.builder().baseUrl("http://localhost-inc:8078").globalToken("global-token").build())
             .stoServiceConfig(
                 STOServiceConfig.builder().baseUrl("http://localhost-inc:4000").globalToken("global-token").build())
-            .scmConnectionConfig(ScmConnectionConfig.builder().url("localhost:8181").build())
             .managerServiceSecret("IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM")
             .ngManagerClientConfig(ServiceHttpClientConfig.builder().baseUrl("http://localhost:7457/").build())
             .managerClientConfig(ServiceHttpClientConfig.builder().baseUrl("http://localhost:3457/").build())
@@ -178,7 +164,6 @@ public class STOManagerRule implements MethodRule, InjectorRuleMixin, MongoRuleM
             .apiUrl("https://localhost:8181/#/")
             .build();
 
-    modules.add(new SCMGrpcClientModule(configuration.getScmConnectionConfig()));
     modules.add(new ClosingFactoryModule(closingFactory));
     modules.add(mongoTypeModule(annotations));
     modules.add(TestMongoModule.getInstance());
@@ -192,7 +177,7 @@ public class STOManagerRule implements MethodRule, InjectorRuleMixin, MongoRuleM
     return PmsSdkConfiguration.builder()
         .deploymentMode(SdkDeployMode.LOCAL)
         .moduleType(ModuleType.STO)
-        .engineSteps(ExecutionRegistrar.getEngineSteps())
+        .engineSteps(STOExecutionRegistrar.getEngineSteps())
         .engineAdvisers(ExecutionAdvisers.getEngineAdvisers())
         .engineEventHandlersMap(OrchestrationExecutionEventHandlerRegistrar.getEngineEventHandlers())
         .build();

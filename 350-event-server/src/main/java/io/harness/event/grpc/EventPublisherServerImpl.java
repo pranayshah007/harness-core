@@ -38,12 +38,15 @@ import io.harness.metrics.service.api.MetricService;
 import io.harness.perpetualtask.k8s.watch.K8SClusterSyncEvent;
 import io.harness.persistence.HPersistence;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.grpc.Context;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
@@ -58,6 +61,12 @@ public class EventPublisherServerImpl extends EventPublisherGrpc.EventPublisherI
   private final LastReceivedPublishedMessageRepository lastReceivedPublishedMessageRepository;
   private final MessageProcessorRegistry messageProcessorRegistry;
   private final MetricService metricService;
+
+  private final String POD_UTILIZATION = "io.harness.event.payloads.PodMetric";
+  private final String NODE_UTILIZATION = "io.harness.event.payloads.NodeMetric";
+  private final String PV_UTILIZATION = "io.harness.event.payloads.PVMetric";
+  private final String K8S_CONTAINER_STATE = "io.harness.event.payloads.ContainerStateProto";
+  private final String K8S_WORKLOAD_SPEC = "io.harness.perpetualtask.k8s.watch.K8sWorkloadSpec";
 
   @Inject
   public EventPublisherServerImpl(EventDataBulkWriteService eventDataBulkWriteService,
@@ -162,17 +171,24 @@ public class EventPublisherServerImpl extends EventPublisherGrpc.EventPublisherI
       String accountId, boolean enableBatchWrite, PublishMessage publishMessage) {
     try {
       String uuid = StringUtils.defaultIfEmpty(publishMessage.getMessageId(), generateUuid());
+      String messageType = AnyUtils.toFqcn(publishMessage.getPayload());
+      Date validUntil = Date.from(OffsetDateTime.now().plusDays(14).toInstant());
       if (enableBatchWrite) {
         uuid = generateUuid();
+      }
+      if (ImmutableSet.of(POD_UTILIZATION, NODE_UTILIZATION, PV_UTILIZATION, K8S_CONTAINER_STATE, K8S_WORKLOAD_SPEC)
+              .contains(messageType)) {
+        validUntil = Date.from(OffsetDateTime.now().plusDays(7).toInstant());
       }
       return PublishedMessage.builder()
           .uuid(uuid)
           .accountId(accountId)
           .data(publishMessage.getPayload().toByteArray())
-          .type(AnyUtils.toFqcn(publishMessage.getPayload()))
+          .type(messageType)
           .attributes(publishMessage.getAttributesMap())
           .category(publishMessage.getCategory())
           .occurredAt(HTimestamps.toMillis(publishMessage.getOccurredAt()))
+          .validUntil(validUntil)
           .build();
     } catch (Exception e) {
       log.error("Error persisting message {}", publishMessage, e);
