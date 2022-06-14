@@ -279,8 +279,8 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
   }
 
   public String queryBuilderServiceTag(String queryIdCdTable) {
-    String selectStatusQuery =
-        "select service_name,tag,pipeline_execution_summary_cd_id from " + tableNameServiceAndInfra + " where ";
+    String selectStatusQuery = "select service_name,tag,env_type,env_id,pipeline_execution_summary_cd_id from "
+        + tableNameServiceAndInfra + " where ";
     StringBuilder totalBuildSqlBuilder = new StringBuilder(20480);
 
     totalBuildSqlBuilder.append(String.format(
@@ -492,11 +492,14 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
           String pipeline_execution_summary_cd_id = resultSet.getString("pipeline_execution_summary_cd_id");
           String service_name = resultSet.getString("service_name");
           String tag = resultSet.getString("tag");
+          String env_type = resultSet.getString("env_type");
+          String env_id = resultSet.getString("env_id");
           if (serviceTagMap.containsKey(pipeline_execution_summary_cd_id)) {
-            serviceTagMap.get(pipeline_execution_summary_cd_id).add(getServiceDeployment(service_name, tag));
+            serviceTagMap.get(pipeline_execution_summary_cd_id)
+                .add(getServiceDeployment(service_name, tag, env_id, env_type));
           } else {
             List<ServiceDeploymentInfo> serviceDeploymentInfos = new ArrayList<>();
-            serviceDeploymentInfos.add(getServiceDeployment(service_name, tag));
+            serviceDeploymentInfos.add(getServiceDeployment(service_name, tag, env_id, env_type));
             serviceTagMap.put(pipeline_execution_summary_cd_id, serviceDeploymentInfos);
           }
         }
@@ -1169,12 +1172,47 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
         .build();
   }
 
-  private ServiceDeploymentInfo getServiceDeployment(String service_name, String tag) {
+  private ServiceDeploymentInfo getServiceDeployment(
+      String service_name, String tag, String environment_id, String environment_type) {
     if (service_name != null) {
       if (tag != null) {
+        if (environment_id != null) {
+          if (environment_type != null) {
+            return ServiceDeploymentInfo.builder()
+                .serviceName(service_name)
+                .serviceTag(tag)
+                .environmentId(environment_id)
+                .environmentType(environment_type)
+                .build();
+          } else {
+            return ServiceDeploymentInfo.builder()
+                .serviceName(service_name)
+                .serviceTag(tag)
+                .environmentId(environment_id)
+                .build();
+          }
+        }
         return ServiceDeploymentInfo.builder().serviceName(service_name).serviceTag(tag).build();
       } else {
+        if (environment_id != null) {
+          if (environment_type != null) {
+            return ServiceDeploymentInfo.builder()
+                .serviceName(service_name)
+                .environmentId(environment_id)
+                .environmentType(environment_type)
+                .build();
+          } else {
+            return ServiceDeploymentInfo.builder().serviceName(service_name).environmentId(environment_id).build();
+          }
+        }
         return ServiceDeploymentInfo.builder().serviceName(service_name).build();
+      }
+    }
+    if (environment_id != null) {
+      if (environment_type != null) {
+        return ServiceDeploymentInfo.builder().environmentId(environment_id).environmentType(environment_type).build();
+      } else {
+        return ServiceDeploymentInfo.builder().environmentId(environment_id).build();
       }
     }
     return ServiceDeploymentInfo.builder().build();

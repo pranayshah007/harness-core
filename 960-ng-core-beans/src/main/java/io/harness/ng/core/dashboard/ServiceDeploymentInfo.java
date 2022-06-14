@@ -19,4 +19,6 @@ import lombok.Value;
 public class ServiceDeploymentInfo {
   private String serviceName;
   private String serviceTag;
+  private String environmentId;
+  private String environmentType;
 }
