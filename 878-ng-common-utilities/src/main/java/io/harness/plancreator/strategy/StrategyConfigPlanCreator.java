@@ -59,7 +59,7 @@ public class StrategyConfigPlanCreator extends ChildrenPlanCreator<StrategyConfi
       log.error("childNodeId and strategyNodeId not passed from parent. Please pass it.");
       throw new InvalidRequestException("Invalid use of strategy field. Please check");
     }
-    ParameterField<Integer> maxConcurrency=null;
+    ParameterField<Integer> maxConcurrency = null;
     if (config.getMatrixConfig() != null) {
       MatrixConfig matrixConfig = (MatrixConfig) config.getMatrixConfig();
       maxConcurrency = matrixConfig.getMaxConcurrency();
@@ -67,9 +67,19 @@ public class StrategyConfigPlanCreator extends ChildrenPlanCreator<StrategyConfi
     if (config.getForConfig() != null) {
       maxConcurrency = config.getForConfig().getMaxConcurrency();
     }
+    StrategyType strategyType = StrategyType.FOR;
+    if (ctx.getCurrentField().getNode().getField("matrix") != null) {
+      strategyType = StrategyType.MATRIX;
+    } else if (ctx.getCurrentField().getNode().getField("parallelism") != null) {
+      strategyType = StrategyType.PARALLELISM;
+    }
     StageStrategyUtils.validateStrategyNode(config);
-    StepParameters stepParameters =
-        StrategyStepParameters.builder().childNodeId(childNodeId).strategyConfig(config).maxConcurrency(maxConcurrency).build();
+    StepParameters stepParameters = StrategyStepParameters.builder()
+                                        .childNodeId(childNodeId)
+                                        .strategyConfig(config)
+                                        .maxConcurrency(maxConcurrency)
+                                        .strategyType(strategyType)
+                                        .build();
     return PlanNode.builder()
         .uuid(strategyNodeId)
         .identifier(metadata.getStrategyNodeIdentifier())

@@ -11,7 +11,7 @@ import static io.harness.pms.yaml.YAMLFieldNameConstants.STAGES;
 
 import io.harness.advisers.nextstep.NextStepAdviserParameters;
 import io.harness.exception.InvalidYamlException;
- import io.harness.plancreator.stages.stage.AbstractStageNode;
+import io.harness.plancreator.stages.stage.AbstractStageNode;
 import io.harness.plancreator.stages.stage.StageElementConfig;
 import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
@@ -115,6 +115,9 @@ public class StageStrategyUtils {
     StrategyType strategyType = StrategyType.FOR;
     if (yamlField.getNode().getField(YAMLFieldNameConstants.STRATEGY).getNode().getField("matrix") != null) {
       strategyType = StrategyType.MATRIX;
+    } else if (yamlField.getNode().getField(YAMLFieldNameConstants.STRATEGY).getNode().getField("parallelism")
+        != null) {
+      strategyType = StrategyType.PARALLELISM;
     }
     stageYamlFieldMap.put(yamlField.getNode().getUuid(),
         GraphLayoutNode.newBuilder()
@@ -139,7 +142,7 @@ public class StageStrategyUtils {
 
   public void validateStrategyNode(StrategyConfig config) {
     if (config.getMatrixConfig() != null) {
-      Map<String, AxisConfig> axisConfig = ((MatrixConfig)config.getMatrixConfig()).getAxes();
+      Map<String, AxisConfig> axisConfig = ((MatrixConfig) config.getMatrixConfig()).getAxes();
       if (axisConfig.size() == 0) {
         throw new InvalidYamlException("No Axes defined in matrix. Please define at least one axis");
       }

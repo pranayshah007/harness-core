@@ -34,14 +34,17 @@ public class StrategyStep implements ChildrenExecutable<StrategyStepParameters> 
 
   @Inject MatrixConfigService matrixConfigService;
   @Inject ForLoopStrategyConfigService forLoopStrategyConfigService;
+  @Inject ParallelismStrategyConfigService parallelismStrategyConfigService;
 
   @Override
   public ChildrenExecutableResponse obtainChildren(
       Ambiance ambiance, StrategyStepParameters stepParameters, StepInputPackage inputPackage) {
     if (stepParameters.getStrategyConfig().getMatrixConfig() != null) {
-      int maxConcurrency=0;
-      if (!ParameterField.isBlank(((MatrixConfig)stepParameters.getStrategyConfig().getMatrixConfig()).getMaxConcurrency())) {
-        maxConcurrency = ((MatrixConfig)stepParameters.getStrategyConfig().getMatrixConfig()).getMaxConcurrency().getValue();
+      int maxConcurrency = 0;
+      if (!ParameterField.isBlank(
+              ((MatrixConfig) stepParameters.getStrategyConfig().getMatrixConfig()).getMaxConcurrency())) {
+        maxConcurrency =
+            ((MatrixConfig) stepParameters.getStrategyConfig().getMatrixConfig()).getMaxConcurrency().getValue();
       }
       return ChildrenExecutableResponse.newBuilder()
           .addAllChildren(
@@ -50,7 +53,7 @@ public class StrategyStep implements ChildrenExecutable<StrategyStepParameters> 
           .build();
     }
     if (stepParameters.getStrategyConfig().getForConfig() != null) {
-      int maxConcurrency=0;
+      int maxConcurrency = 0;
       if (!ParameterField.isBlank(stepParameters.getStrategyConfig().getForConfig().getMaxConcurrency())) {
         maxConcurrency = stepParameters.getStrategyConfig().getForConfig().getMaxConcurrency().getValue();
       }
@@ -58,6 +61,12 @@ public class StrategyStep implements ChildrenExecutable<StrategyStepParameters> 
           .addAllChildren(forLoopStrategyConfigService.fetchChildren(
               stepParameters.getStrategyConfig(), stepParameters.getChildNodeId()))
           .setMaxConcurrency(maxConcurrency)
+          .build();
+    }
+    if (stepParameters.getStrategyConfig().getParallelism() != null) {
+      return ChildrenExecutableResponse.newBuilder()
+          .addAllChildren(parallelismStrategyConfigService.fetchChildren(
+              stepParameters.getStrategyConfig(), stepParameters.getChildNodeId()))
           .build();
     }
     return ChildrenExecutableResponse.newBuilder()
