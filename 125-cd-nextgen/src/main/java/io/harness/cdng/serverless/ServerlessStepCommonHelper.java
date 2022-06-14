@@ -41,7 +41,9 @@ import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.git.TaskStatus;
 import io.harness.delegate.task.serverless.ServerlessArtifactConfig;
+import io.harness.delegate.task.serverless.ServerlessArtifactType;
 import io.harness.delegate.task.serverless.ServerlessDeployConfig;
+import io.harness.delegate.task.serverless.ServerlessEcrArtifactConfig;
 import io.harness.delegate.task.serverless.ServerlessGitFetchFileConfig;
 import io.harness.delegate.task.serverless.ServerlessInfraConfig;
 import io.harness.delegate.task.serverless.ServerlessManifestConfig;
@@ -97,7 +99,8 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
   @Inject private ServerlessEntityHelper serverlessEntityHelper;
   @Inject private KryoSerializer kryoSerializer;
   @Inject private StepHelper stepHelper;
-  private static final String ARTIFACT_PATH = "<+artifact.path>";
+  private static final String PRIMARY_ARTIFACT_PATH_FOR_ARTIFACTORY = "<+artifact.path>";
+  private static final String PRIMARY_ARTIFACT_PATH_FOR_ECR = "<+artifact.image>";
   private static final String ARTIFACT_ACTUAL_PATH = "harnessArtifact/artifactFile";
 
   public TaskChainResponse startChainLink(
@@ -135,7 +138,7 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
     }
   }
 
-  public ServerlessArtifactConfig getArtifactoryConfig(ArtifactOutcome artifactOutcome, Ambiance ambiance) {
+  public ServerlessArtifactConfig getArtifactConfig(ArtifactOutcome artifactOutcome, Ambiance ambiance) {
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
     return serverlessEntityHelper.getServerlessArtifactConfig(artifactOutcome, ngAccess);
   }
@@ -355,12 +358,17 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
         .build();
   }
 
-  public String renderManifestContent(Ambiance ambiance, String manifestFileContent) {
+  public String renderManifestContent(
+      Ambiance ambiance, String manifestFileContent, ServerlessArtifactConfig serverlessArtifactConfig) {
     if (isEmpty(manifestFileContent)) {
       return manifestFileContent;
     }
-    if (manifestFileContent.contains(ARTIFACT_PATH)) {
-      manifestFileContent = manifestFileContent.replace(ARTIFACT_PATH, ARTIFACT_ACTUAL_PATH);
+    if (serverlessArtifactConfig != null
+        && serverlessArtifactConfig.getServerlessArtifactType().equals(ServerlessArtifactType.ECR)) {
+      manifestFileContent = manifestFileContent.replace(
+          PRIMARY_ARTIFACT_PATH_FOR_ECR, ((ServerlessEcrArtifactConfig) serverlessArtifactConfig).getImage());
+    } else if (manifestFileContent.contains(PRIMARY_ARTIFACT_PATH_FOR_ARTIFACTORY)) {
+      manifestFileContent = manifestFileContent.replace(PRIMARY_ARTIFACT_PATH_FOR_ARTIFACTORY, ARTIFACT_ACTUAL_PATH);
     }
     return engineExpressionService.renderExpression(ambiance, manifestFileContent);
   }

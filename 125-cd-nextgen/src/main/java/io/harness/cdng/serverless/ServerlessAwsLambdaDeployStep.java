@@ -92,14 +92,14 @@ public class ServerlessAwsLambdaDeployStep
         (ServerlessAwsLambdaDeployStepParameters) stepElementParameters.getSpec();
     ServerlessAwsLambdaStepExecutorParams serverlessAwsLambdaStepExecutorParams =
         (ServerlessAwsLambdaStepExecutorParams) serverlessStepExecutorParams;
-    String manifestFileOverrideContent = serverlessStepCommonHelper.renderManifestContent(
-        ambiance, serverlessAwsLambdaStepExecutorParams.getManifestFilePathContent().getValue());
     final String accountId = AmbianceUtils.getAccountId(ambiance);
     ServerlessArtifactConfig serverlessArtifactConfig = null;
     Optional<ArtifactOutcome> artifactOutcome = serverlessStepCommonHelper.resolveArtifactsOutcome(ambiance);
     if (artifactOutcome.isPresent()) {
-      serverlessArtifactConfig = serverlessStepCommonHelper.getArtifactoryConfig(artifactOutcome.get(), ambiance);
+      serverlessArtifactConfig = serverlessStepCommonHelper.getArtifactConfig(artifactOutcome.get(), ambiance);
     }
+    String manifestFileOverrideContent = serverlessStepCommonHelper.renderManifestContent(ambiance,
+        serverlessAwsLambdaStepExecutorParams.getManifestFilePathContent().getValue(), serverlessArtifactConfig);
     ServerlessDeployConfig serverlessDeployConfig = serverlessStepCommonHelper.getServerlessDeployConfig(
         serverlessDeployStepParameters, serverlessAwsLambdaStepHelper);
     Map<String, Object> manifestParams = new HashMap<>();
