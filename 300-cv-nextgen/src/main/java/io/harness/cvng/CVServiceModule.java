@@ -13,6 +13,7 @@ import static io.harness.eventsframework.EventsFrameworkConstants.SRM_STATEMACHI
 import static io.harness.outbox.OutboxSDKConstants.DEFAULT_OUTBOX_POLL_CONFIGURATION;
 
 import io.harness.AuthorizationServiceHeader;
+import io.harness.account.AccountClientModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.retry.MethodExecutionHelper;
@@ -408,6 +409,9 @@ public class CVServiceModule extends AbstractModule {
     install(PrimaryVersionManagerModule.getInstance());
     install(new TemplateResourceClientModule(verificationConfiguration.getTemplateServiceClientConfig(),
         verificationConfiguration.getTemplateServiceSecret(), AuthorizationServiceHeader.CV_NEXT_GEN.getServiceId()));
+    install(new AccountClientModule(getManagerClientConfig(verificationConfiguration.getManagerClientConfig()),
+        verificationConfiguration.getNgManagerServiceConfig().getManagerServiceSecret(),
+        AuthorizationServiceHeader.CV_NEXT_GEN.toString()));
     bind(HPersistence.class).to(MongoPersistence.class);
     bind(TimeSeriesRecordService.class).to(TimeSeriesRecordServiceImpl.class);
     bind(OrchestrationService.class).to(OrchestrationServiceImpl.class);
@@ -998,5 +1002,16 @@ public class CVServiceModule extends AbstractModule {
   @Singleton
   List<YamlSchemaRootClass> yamlSchemaRootClasses() {
     return ImmutableList.<YamlSchemaRootClass>builder().addAll(CvNextGenRegistrars.yamlSchemaRegistrars).build();
+  }
+
+  private ServiceHttpClientConfig getManagerClientConfig(ServiceHttpClientConfig serviceHttpClientConfig) {
+    String managerBaseUrl = serviceHttpClientConfig.getBaseUrl();
+    managerBaseUrl = managerBaseUrl + (managerBaseUrl.endsWith("/") ? "api/" : "/api/");
+    return ServiceHttpClientConfig.builder()
+        .baseUrl(managerBaseUrl)
+        .connectTimeOutSeconds(serviceHttpClientConfig.getConnectTimeOutSeconds())
+        .readTimeOutSeconds(serviceHttpClientConfig.getReadTimeOutSeconds())
+        .enableHttpLogging(serviceHttpClientConfig.getEnableHttpLogging())
+        .build();
   }
 }

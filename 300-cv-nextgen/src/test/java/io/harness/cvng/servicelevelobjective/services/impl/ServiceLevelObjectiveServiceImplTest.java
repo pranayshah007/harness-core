@@ -22,6 +22,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CvNextGenTestBase;
+import io.harness.account.AccountClient;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.CVNGTestConstants;
@@ -50,6 +51,7 @@ import io.harness.cvng.notification.entities.SLONotificationRule.SLOErrorBudgetB
 import io.harness.cvng.notification.entities.SLONotificationRule.SLOErrorBudgetRemainingPercentageCondition;
 import io.harness.cvng.notification.entities.SLONotificationRule.SLONotificationRuleCondition;
 import io.harness.cvng.notification.services.api.NotificationRuleService;
+import io.harness.cvng.notification.utils.NotificationRuleCommonUtils;
 import io.harness.cvng.servicelevelobjective.SLORiskCountResponse;
 import io.harness.cvng.servicelevelobjective.beans.DayOfWeek;
 import io.harness.cvng.servicelevelobjective.beans.ErrorBudgetRisk;
@@ -89,9 +91,11 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageResponse;
 import io.harness.notification.notificationclient.NotificationResultWithoutStatus;
 import io.harness.persistence.HPersistence;
+import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
+import java.io.IOException;
 import java.text.ParseException;
 import java.time.Clock;
 import java.time.Duration;
@@ -111,8 +115,10 @@ import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.Answers;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import retrofit2.Response;
 
 public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
   @Inject ServiceLevelObjectiveService serviceLevelObjectiveService;
@@ -126,6 +132,8 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
   @Inject HPersistence hPersistence;
   @Inject NotificationRuleService notificationRuleService;
   @Mock FakeNotificationClient notificationClient;
+  @Inject NotificationRuleCommonUtils notificationRuleCommonUtils;
+  @Mock(answer = Answers.RETURNS_DEEP_STUBS) AccountClient accountClient;
   @Inject private SLIRecordServiceImpl sliRecordService;
   String accountId;
   String orgIdentifier;
@@ -206,6 +214,9 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
     FieldUtils.writeField(sliRecordService, "clock", clock, true);
     FieldUtils.writeField(serviceLevelObjectiveService, "sliRecordService", sliRecordService, true);
     FieldUtils.writeField(serviceLevelObjectiveService, "notificationClient", notificationClient, true);
+    FieldUtils.writeField(
+        serviceLevelObjectiveService, "notificationRuleCommonUtils", notificationRuleCommonUtils, true);
+    FieldUtils.writeField(notificationRuleCommonUtils, "accountClient", accountClient, true);
   }
 
   @Test
@@ -952,7 +963,7 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = KAPIL)
   @Category(UnitTests.class)
-  public void testSendNotification() throws IllegalAccessException {
+  public void testSendNotification() throws IllegalAccessException, IOException {
     NotificationRuleDTO notificationRuleDTO =
         builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.SLO).build();
     NotificationRuleResponse notificationRuleResponseOne =
@@ -984,6 +995,7 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
     FieldUtils.writeField(serviceLevelObjectiveService, "clock", clock, true);
     when(notificationClient.sendNotificationAsync(any()))
         .thenReturn(NotificationResultWithoutStatus.builder().notificationId("notificationId").build());
+    when(accountClient.getVanityUrl(any()).execute()).thenReturn(Response.success(new RestResponse()));
 
     serviceLevelObjectiveService.sendNotification(serviceLevelObjective);
     verify(notificationClient, times(1)).sendNotificationAsync(any());
