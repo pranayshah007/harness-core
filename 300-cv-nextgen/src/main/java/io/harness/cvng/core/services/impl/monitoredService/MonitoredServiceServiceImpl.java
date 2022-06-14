@@ -8,9 +8,7 @@
 package io.harness.cvng.core.services.impl.monitoredService;
 
 import static io.harness.cvng.core.beans.params.ServiceEnvironmentParams.builderWithProjectParams;
-import static io.harness.cvng.notification.utils.NotificationRuleCommonUtils.COOL_OFF_DURATION;
-import static io.harness.cvng.notification.utils.NotificationRuleCommonUtils.getNotificationTemplateData;
-import static io.harness.cvng.notification.utils.NotificationRuleCommonUtils.getNotificationTemplateId;
+import static io.harness.cvng.notification.utils.NotificationRuleCommonUtils.*;
 import static io.harness.data.structure.CollectionUtils.distinctByKey;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -1145,15 +1143,15 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
   @Override
   public HealthMonitoringFlagResponse setHealthMonitoringFlag(
       ProjectParams projectParams, String identifier, boolean enable) {
+    MonitoredService monitoredService = getMonitoredService(projectParams, identifier);
     if (enable == true) {
       long increment = 0;
-      if (!isUniqueService(projectParams, identifier)) {
+      if (!isUniqueService(projectParams, monitoredService)) {
         increment = 1;
       }
       enforcementClientService.checkAvailabilityWithIncrement(
           FeatureRestrictionName.SRM_SERVICES, projectParams.getAccountIdentifier(), increment);
     }
-    MonitoredService monitoredService = getMonitoredService(projectParams, identifier);
     Preconditions.checkNotNull(monitoredService, "Monitored service with identifier %s does not exists", identifier);
     healthSourceService.setHealthMonitoringFlag(projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
         projectParams.getProjectIdentifier(), monitoredService.getIdentifier(),
@@ -1178,9 +1176,8 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
         .build();
   }
 
-  private boolean isUniqueService(ProjectParams projectParams, String identifier) {
+  private boolean isUniqueService(ProjectParams projectParams, MonitoredService monitoredService) {
     List<MonitoredService> enabledMonitoredServices = getEnabledMonitoredServices(projectParams.getAccountIdentifier());
-    MonitoredService monitoredService = getMonitoredService(projectParams, identifier);
     return enabledMonitoredServices.stream().anyMatch(
         x -> x.getServiceIdentifier().equals(monitoredService.getServiceIdentifier()));
   }
@@ -1588,15 +1585,6 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
     List<MonitoredService> enabledMonitoredServices = getEnabledMonitoredServices(accountId);
 
     return enabledMonitoredServices.stream().filter(distinctByKey(x -> x.getServiceIdentifier())).count();
-
-    /*Set<String> uniqueEnabledServiceSet = new HashSet<>();
-
-    for (MonitoredService monitoredService : enabledMonitoredServices) {
-      if (!uniqueEnabledServiceSet.contains(monitoredService.getServiceIdentifier())) {
-        uniqueEnabledServiceSet.add(monitoredService.getServiceIdentifier());
-      }
-    }
-    return uniqueEnabledServiceSet.size();*/
   }
 
   private List<MonitoredService> getEnabledMonitoredServices(String accountId) {

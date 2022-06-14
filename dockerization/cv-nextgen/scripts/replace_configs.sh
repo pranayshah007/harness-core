@@ -41,8 +41,8 @@ if [[ "" != "$NG_MANAGER_URL" ]]; then
   yq write -i $CONFIG_FILE nextGen.ngManagerUrl "$NG_MANAGER_URL"
 fi
 
-if [[ "" != "$NG_MANAGER_URL" ]]; then
-  yq write -i $CONFIG_FILE ngManagerClientConfig.baseUrl "$NG_MANAGER_URL"
+if [[ "" != "$NG_MANAGER_CLIENT_BASEURL" ]]; then
+  yq write -i $CONFIG_FILE ngManagerClientConfig.baseUrl "$NG_MANAGER_CLIENT_BASEURL"
 fi
 
   yq write -i /opt/harness/cv-nextgen-config.yml server.requestLog.appenders[0].type "console"

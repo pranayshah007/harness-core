@@ -61,7 +61,7 @@ ngManagerClientConfig:
   readTimeOutSeconds: 15
 
 enforcementClientConfiguration:
-  enforcementCheckEnabled: true
+  enforcementCheckEnabled: false
 
 templateServiceClientConfig:
   baseUrl: http://localhost:15001/api/
