@@ -54,6 +54,7 @@ public class GitConfigDTO extends ConnectorConfigDTO implements ScmConnector, De
   private String branchName;
   private Set<String> delegateSelectors;
   private Boolean executeOnDelegate;
+  private String gitConnectionUrl;
 
   @JsonProperty("spec")
   @JsonTypeInfo(
@@ -94,6 +95,11 @@ public class GitConfigDTO extends ConnectorConfigDTO implements ScmConnector, De
   @Override
   public GitRepositoryDTO getGitRepositoryDetails() {
     return GitRepositoryDTO.builder().build();
+  }
+
+  @Override
+  public String getFileUrl(String branchName, String filePath, String repoName) {
+    return "";
   }
 
   @Override

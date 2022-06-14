@@ -17,17 +17,10 @@
       store:
         type: Harness
         spec:
-          fileReference: harnessEncFileIdentifier
-          filePath: secretManagerIdentifier
-          fileType: Encrypted
-      type: Encrypted
-- configFile:
-    identifier: harnessFSConfigFileIdentifier
-    spec:
-      store:
-        type: Harness
-        spec:
-          fileReference: harnessFSFileIdentifier
-          filePath: harnessFSFileIdentifier
-          fileType: FileStore
-      type: LocalFile
+          files:
+            - ref: folderIdentifer
+              path: Root/folder,
+              isEncrypted: true
+            - ref: fileIdentifer,
+              path: Root/folder/fileName.txt,
+              isEncrypted: false

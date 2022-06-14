@@ -27,12 +27,17 @@ public class FileStoreNodeDTOMapper {
                                                 .identifier(ngFile.getIdentifier())
                                                 .parentIdentifier(ngFile.getParentIdentifier())
                                                 .name(ngFile.getName())
+                                                .path(ngFile.getPath())
                                                 .fileUsage(ngFile.getFileUsage())
                                                 .description(ngFile.getDescription())
                                                 .tags(ngFile.getTags())
                                                 .lastModifiedAt(ngFile.getLastModifiedAt())
                                                 .lastModifiedBy(fromEmbeddedUser(ngFile.getLastUpdatedBy()))
                                                 .mimeType(ngFile.getMimeType());
+
+    if (ngFile.getSize() != null) {
+      fileNodeDTOBuilder.size(ngFile.getSize());
+    }
 
     if (StringUtils.isNotBlank(content)) {
       fileNodeDTOBuilder.content(content);
@@ -46,6 +51,7 @@ public class FileStoreNodeDTOMapper {
         .identifier(ngFile.getIdentifier())
         .parentIdentifier(ngFile.getParentIdentifier())
         .name(ngFile.getName())
+        .path(ngFile.getPath())
         .lastModifiedAt(ngFile.getLastModifiedAt())
         .lastModifiedBy(fromEmbeddedUser(ngFile.getLastUpdatedBy()))
         .build();

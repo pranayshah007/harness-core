@@ -12,14 +12,20 @@ import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ACTION
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.DELETE_ACTION;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ENTITY_TYPE;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ORGANIZATION_ENTITY;
+import static io.harness.eventsframework.EventsFrameworkMetadataConstants.PROJECT_ENTITY;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.RESTORE_ACTION;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.gitops.service.ClusterService;
 import io.harness.eventsframework.consumer.Message;
 import io.harness.eventsframework.entity_crud.organization.OrganizationEntityChangeDTO;
+import io.harness.eventsframework.entity_crud.project.ProjectEntityChangeDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.entities.Project;
 import io.harness.ng.core.entities.Project.ProjectKeys;
+import io.harness.ng.core.environment.services.EnvironmentService;
+import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
+import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.services.ProjectService;
 
 import com.google.inject.Inject;
@@ -28,6 +34,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BooleanSupplier;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.query.Criteria;
 
@@ -36,34 +43,106 @@ import org.springframework.data.mongodb.core.query.Criteria;
 @Singleton
 public class ProjectEntityCRUDStreamListener implements MessageListener {
   private final ProjectService projectService;
+  private final EnvironmentService environmentService;
+  private final ServiceEntityService serviceEntityService;
+  private final InfrastructureEntityService infraService;
+  private final ClusterService clusterService;
 
   @Inject
-  public ProjectEntityCRUDStreamListener(ProjectService projectService) {
+  public ProjectEntityCRUDStreamListener(ProjectService projectService, EnvironmentService environmentService,
+      InfrastructureEntityService infraService, ServiceEntityService serviceEntityService,
+      ClusterService clusterService) {
     this.projectService = projectService;
+    this.environmentService = environmentService;
+    this.serviceEntityService = serviceEntityService;
+    this.infraService = infraService;
+    this.clusterService = clusterService;
   }
 
   @Override
   public boolean handleMessage(Message message) {
     if (message != null && message.hasMessage()) {
       Map<String, String> metadataMap = message.getMessage().getMetadataMap();
-      if (metadataMap != null && metadataMap.get(ENTITY_TYPE) != null) {
+      if (metadataMap.get(ENTITY_TYPE) != null) {
         String entityType = metadataMap.get(ENTITY_TYPE);
         if (ORGANIZATION_ENTITY.equals(entityType)) {
-          OrganizationEntityChangeDTO organizationEntityChangeDTO;
-          try {
-            organizationEntityChangeDTO = OrganizationEntityChangeDTO.parseFrom(message.getMessage().getData());
-          } catch (InvalidProtocolBufferException e) {
-            throw new InvalidRequestException(
-                String.format("Exception in unpacking EntityChangeDTO for key %s", message.getId()), e);
-          }
-          String action = metadataMap.get(ACTION);
-          if (action != null) {
-            return processOrganizationEntityChangeEvent(organizationEntityChangeDTO, action);
-          }
+          handleOrgEvent(message);
+        } else if (PROJECT_ENTITY.equals(entityType)) {
+          handleProjectEvent(message);
         }
       }
     }
     return true;
+  }
+
+  private void handleOrgEvent(Message message) {
+    final Map<String, String> metadataMap = message.getMessage().getMetadataMap();
+    OrganizationEntityChangeDTO organizationEntityChangeDTO;
+    try {
+      organizationEntityChangeDTO = OrganizationEntityChangeDTO.parseFrom(message.getMessage().getData());
+    } catch (InvalidProtocolBufferException e) {
+      throw new InvalidRequestException(
+          String.format("Exception in unpacking EntityChangeDTO for key %s", message.getId()), e);
+    }
+    String action = metadataMap.get(ACTION);
+    if (action != null) {
+      boolean status = processOrganizationEntityChangeEvent(organizationEntityChangeDTO, action);
+      if (!status) {
+        log.warn("failed to process org {} {}", organizationEntityChangeDTO, action);
+      }
+    }
+  }
+
+  private void handleProjectEvent(Message message) {
+    final Map<String, String> metadataMap = message.getMessage().getMetadataMap();
+    ProjectEntityChangeDTO projectEntityChangeDTO;
+    try {
+      projectEntityChangeDTO = ProjectEntityChangeDTO.parseFrom(message.getMessage().getData());
+    } catch (InvalidProtocolBufferException e) {
+      throw new InvalidRequestException(
+          String.format("Exception in unpacking EntityChangeDTO for key %s", message.getId()), e);
+    }
+    String action = metadataMap.get(ACTION);
+    if (action != null) {
+      switch (action) {
+        case DELETE_ACTION:
+          boolean status = processProjectDeleteEvent(projectEntityChangeDTO);
+          if (!status) {
+            log.warn("Failed to process project {} deletion event", projectEntityChangeDTO);
+          }
+          break;
+        default:
+      }
+    }
+  }
+
+  private boolean processProjectDeleteEvent(ProjectEntityChangeDTO projectEntityChangeDTO) {
+    final String accountIdentifier = projectEntityChangeDTO.getAccountIdentifier();
+    final String orgIdentifier = projectEntityChangeDTO.getOrgIdentifier();
+    final String identifier = projectEntityChangeDTO.getIdentifier();
+
+    boolean envDeleted =
+        processQuietly(() -> environmentService.forceDeleteAllInProject(accountIdentifier, orgIdentifier, identifier));
+    boolean infraDeleted =
+        processQuietly(() -> infraService.forceDeleteAllInProject(accountIdentifier, orgIdentifier, identifier));
+    boolean clustersDeleted =
+        processQuietly(() -> clusterService.deleteAllFromProj(accountIdentifier, orgIdentifier, identifier));
+    boolean serviceDeleted = processQuietly(
+        () -> serviceEntityService.forceDeleteAllInProject(accountIdentifier, orgIdentifier, identifier));
+
+    return envDeleted && infraDeleted && serviceDeleted && clustersDeleted;
+  }
+
+  boolean processQuietly(BooleanSupplier b) {
+    try {
+      b.getAsBoolean();
+      // supplier processed
+      return true;
+    } catch (Exception ex) {
+      log.error("failed to process entity deletion", ex);
+      // ignore this
+      return false;
+    }
   }
 
   private boolean processOrganizationEntityChangeEvent(

@@ -12,10 +12,9 @@ import io.harness.ccm.views.entities.CEView;
 import io.harness.ccm.views.entities.ViewFieldIdentifier;
 import io.harness.ccm.views.entities.ViewState;
 import io.harness.ccm.views.graphql.QLCEView;
-
-import com.google.cloud.bigquery.BigQuery;
 import io.harness.ccm.views.graphql.QLCEViewSortCriteria;
 
+import com.google.cloud.bigquery.BigQuery;
 import java.util.List;
 import java.util.Map;
 
@@ -30,7 +29,8 @@ public interface CEViewService {
   CEView updateTotalCost(CEView ceView, BigQuery bigQuery, String cloudProviderTableName);
   boolean delete(String uuid, String accountId);
   List<QLCEView> getAllViews(String accountId, boolean includeDefault, QLCEViewSortCriteria sortCriteria);
-  List<QLCEView> getAllViews(String accountId, String folderId, boolean includeDefault, QLCEViewSortCriteria sortCriteria);
+  List<QLCEView> getAllViews(
+      String accountId, String folderId, boolean includeDefault, QLCEViewSortCriteria sortCriteria);
   List<CEView> getViewByState(String accountId, ViewState viewState);
   void createDefaultView(String accountId, ViewFieldIdentifier viewFieldIdentifier);
   DefaultViewIdDto getDefaultViewIds(String accountId);

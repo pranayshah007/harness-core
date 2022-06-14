@@ -22,6 +22,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -40,6 +41,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Api("scim")
 @Path("/scim/account/{accountIdentifier}")
+@Hidden
 @Consumes({"application/scim+json", "application/json"})
 @Produces("application/scim+json")
 @Slf4j
@@ -68,7 +70,7 @@ public class NGScimUserResource extends ScimResource {
   @POST
   @Path("Users")
   @ApiOperation(value = "Create a new user", nickname = "createScimUser")
-  @Operation(operationId = "createScimUser", summary = "Creates a new user via Scim",
+  @Operation(operationId = "createScimUser", summary = "Creates a new user via SCIM",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -86,8 +88,9 @@ public class NGScimUserResource extends ScimResource {
 
   @PUT
   @Path("Users/{userIdentifier}")
+  @Hidden
   @ApiOperation(value = "Update an existing user by uuid", nickname = "updateScimUser")
-  @Operation(operationId = "updateScimUser", summary = "Updates a Scim user",
+  @Operation(operationId = "updateScimUser", summary = "Updates a SCIM user",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -106,8 +109,10 @@ public class NGScimUserResource extends ScimResource {
 
   @GET
   @Path("Users/{userIdentifier}")
+  @Hidden
   @ApiOperation(value = "Get an existing user by uuid", nickname = "getScimUser")
-  @Operation(operationId = "getScimUser", summary = "Get the user by accountIdentifier and userIdentifier",
+  @Operation(operationId = "getScimUser", summary = "Get user details",
+      description = "Gets the user details for the given Account ID and User ID.",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
@@ -128,13 +133,14 @@ public class NGScimUserResource extends ScimResource {
 
   @GET
   @Path("Users")
+  @Hidden
   @ApiOperation(
       value =
           "Search users by their email address. Supports pagination. If nothing is passed in filter, all results will be returned.",
       nickname = "searchScimUser")
-  @Operation(operationId = "searchScimUser",
-      summary =
-          "Search users by their email address. Supports pagination. If nothing is passed in filter, all results will be returned.",
+  @Operation(operationId = "searchScimUser", summary = "Search for users by email addresses",
+      description =
+          "Search for users by email addresses. If the filter parameter is left blank, all the users will be returned.",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(
@@ -156,8 +162,9 @@ public class NGScimUserResource extends ScimResource {
 
   @DELETE
   @Path("Users/{userIdentifier}")
+  @Hidden
   @ApiOperation(value = "Delete an user by uuid", nickname = "deleteScimUser")
-  @Operation(operationId = "deleteScimUser", summary = "Deletes user by ID",
+  @Operation(operationId = "deleteScimUser", summary = "Deletes user for the given ID",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -172,8 +179,9 @@ public class NGScimUserResource extends ScimResource {
 
   @PATCH
   @Path("Users/{userIdentifier}")
+  @Hidden
   @ApiOperation(value = "Update some fields of a user by uuid", nickname = "patchScimUser")
-  @Operation(operationId = "patchScimUser", summary = "Updates the user",
+  @Operation(operationId = "patchScimUser", summary = "Updates user for the given UUID",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.

@@ -9,11 +9,15 @@ package io.harness.ng.core.serviceoverride.mapper;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
 import io.harness.ng.core.serviceoverride.beans.ServiceOverrideRequestDTO;
 import io.harness.ng.core.serviceoverride.beans.ServiceOverrideResponseDTO;
 import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideConfig;
+import io.harness.utils.YamlPipelineUtils;
+import io.harness.yaml.core.variables.NGServiceOverrides;
 
+import java.io.IOException;
 import lombok.experimental.UtilityClass;
 
 @OwnedBy(HarnessTeam.CDC)
@@ -46,5 +50,17 @@ public class ServiceOverridesMapper {
         .serviceRef(serviceOverridesEntity.getServiceRef())
         .yaml(serviceOverridesEntity.getYaml())
         .build();
+  }
+
+  public NGServiceOverrides toServiceOverrides(String entityYaml) {
+    try {
+      NGServiceOverrideConfig serviceOverrideConfig = YamlPipelineUtils.read(entityYaml, NGServiceOverrideConfig.class);
+      return NGServiceOverrides.builder()
+          .serviceRef(serviceOverrideConfig.getServiceOverrideInfoConfig().getServiceRef())
+          .variables(serviceOverrideConfig.getServiceOverrideInfoConfig().getVariables())
+          .build();
+    } catch (IOException e) {
+      throw new InvalidRequestException(String.format("Cannot read serviceOverride yaml %s ", entityYaml));
+    }
   }
 }

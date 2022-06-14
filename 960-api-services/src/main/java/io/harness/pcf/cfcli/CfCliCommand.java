@@ -15,9 +15,11 @@ import io.harness.pcf.model.CfCliVersion;
 
 import java.util.List;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @AllArgsConstructor
 @OwnedBy(HarnessTeam.CDP)
+@Slf4j
 public abstract class CfCliCommand {
   private CfCliCommand() {}
 
@@ -29,6 +31,8 @@ public abstract class CfCliCommand {
   Options options;
 
   public String getCommand() {
-    return CfCliCommandBuilder.buildCommand(this);
+    String command = CfCliCommandBuilder.buildCommand(this);
+    log.debug("Command generated: {}", command);
+    return command;
   }
 }

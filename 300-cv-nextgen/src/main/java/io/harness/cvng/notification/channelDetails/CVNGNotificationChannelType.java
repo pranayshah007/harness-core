@@ -20,8 +20,8 @@ import org.apache.commons.collections4.MapUtils;
 public enum CVNGNotificationChannelType {
   @JsonProperty("Email") EMAIL("Email"),
   @JsonProperty("Slack") SLACK("Slack"),
-  @JsonProperty("Pagerduty") PAGERDUTY("Pagerduty"),
-  @JsonProperty("Msteams") MSTEAMS("Msteams");
+  @JsonProperty("PagerDuty") PAGERDUTY("PagerDuty"),
+  @JsonProperty("MsTeams") MSTEAMS("MsTeams");
 
   @Getter private String templateSuffixIdentifier;
 

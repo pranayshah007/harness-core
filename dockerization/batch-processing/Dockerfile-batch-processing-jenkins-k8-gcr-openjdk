@@ -1,6 +1,6 @@
 # to be used when building in Jenkins
 FROM us.gcr.io/platform-205701/alpine:safe-alpine3.15.4-bt1276-apm
-RUN apk add --no-cache tar gzip python3 py3-pip
+RUN apk add --no-cache tar gzip python3 py3-pip libc6-compat
 
 # Add the capsule JAR and config.yml
 COPY batch-processing-capsule.jar batch-processing-config.yml protocol.info /opt/harness/

@@ -22,7 +22,11 @@ import io.harness.ng.core.utils.CoreCriteriaUtils;
 import io.harness.rule.Owner;
 import io.harness.utils.PageUtils;
 
+import com.google.common.io.Resources;
 import com.google.inject.Inject;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.springframework.data.domain.Page;
@@ -60,7 +64,7 @@ public class ServiceOverrideServiceImplTest extends NGCoreTestBase {
             .environmentRef(ENV_REF)
             .serviceRef(SERVICE_REF)
             .yaml(
-                "serviceOverride:\n  orgIdentifier: orgIdentifier\\\n  projectIdentifier: projectIdentifier\n  environmentRef: envIdentifier\n  serviceRef: serviceIdentifier\n  variableOverrides: \n    - name: op1\n      value: var1\n      type: String\n    - name: op1\n      value: var1\n      type: String")
+                "serviceOverrides:\n  orgIdentifier: orgIdentifier\\\n  projectIdentifier: projectIdentifier\n  environmentRef: envIdentifier\n  serviceRef: serviceIdentifier\n  variables: \n    - name: op1\n      value: var1\n      type: String\n    - name: op1\n      value: var1\n      type: String")
             .build();
     assertThatThrownBy(() -> serviceOverrideService.validateOverrideValues(serviceOverridesEntity))
         .isInstanceOf(InvalidRequestException.class)
@@ -81,7 +85,7 @@ public class ServiceOverrideServiceImplTest extends NGCoreTestBase {
             .environmentRef(ENV_REF)
             .serviceRef(SERVICE_REF)
             .yaml(
-                "serviceOverride:\n  orgIdentifier: orgIdentifier\\\n  projectIdentifier: projectIdentifier\n  environmentRef: envIdentifier\n  serviceRef: serviceIdentifier\n  variableOverrides: \n    - name: memory\n      value: var1\n      type: String\n    - name: cpu\n      value: var1\n      type: String")
+                "serviceOverrides:\n  orgIdentifier: orgIdentifier\\\n  projectIdentifier: projectIdentifier\n  environmentRef: envIdentifier\n  serviceRef: serviceIdentifier\n  variableOverrides: \n    - name: memory\n      value: var1\n      type: String\n    - name: cpu\n      value: var1\n      type: String")
             .build();
     NGServiceOverridesEntity upsertedServiceOverridesEntity = serviceOverrideService.upsert(serviceOverridesEntity);
     assertThat(upsertedServiceOverridesEntity).isNotNull();
@@ -101,5 +105,62 @@ public class ServiceOverrideServiceImplTest extends NGCoreTestBase {
     Page<NGServiceOverridesEntity> list = serviceOverrideService.list(criteriaFromFilter, pageRequest);
     assertThat(list.getContent()).isNotNull();
     assertThat(list.getContent().size()).isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testCreateServiceOverridesInputs() throws IOException {
+    String filename = "serviceOverrides-with-runtime-inputs.yaml";
+    String yaml = readFile(filename);
+
+    NGServiceOverridesEntity serviceOverridesEntity = NGServiceOverridesEntity.builder()
+                                                          .accountId(ACCOUNT_ID)
+                                                          .orgIdentifier(ORG_IDENTIFIER)
+                                                          .projectIdentifier(PROJECT_IDENTIFIER)
+                                                          .environmentRef(ENV_REF)
+                                                          .serviceRef(SERVICE_REF)
+                                                          .yaml(yaml)
+                                                          .build();
+    serviceOverrideService.upsert(serviceOverridesEntity);
+
+    String serviceOverrideInputs = serviceOverrideService.createServiceOverrideInputsYaml(
+        ACCOUNT_ID, PROJECT_IDENTIFIER, ORG_IDENTIFIER, ENV_REF, SERVICE_REF);
+
+    String resFile = "serviceOverrides-with-runtime-inputs-res.yaml";
+    String resInputs = readFile(resFile);
+    assertThat(serviceOverrideInputs).isEqualTo(resInputs);
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testCreateServiceOverridesInputsWithoutRuntimeInputs() throws IOException {
+    String filename = "serviceOverrides-without-runtime-inputs.yaml";
+    String yaml = readFile(filename);
+
+    NGServiceOverridesEntity serviceOverridesEntity = NGServiceOverridesEntity.builder()
+                                                          .accountId(ACCOUNT_ID)
+                                                          .orgIdentifier(ORG_IDENTIFIER)
+                                                          .projectIdentifier(PROJECT_IDENTIFIER)
+                                                          .environmentRef(ENV_REF)
+                                                          .serviceRef(SERVICE_REF)
+                                                          .yaml(yaml)
+                                                          .build();
+    serviceOverrideService.upsert(serviceOverridesEntity);
+
+    String serviceOverrideInputs = serviceOverrideService.createServiceOverrideInputsYaml(
+        ACCOUNT_ID, PROJECT_IDENTIFIER, ORG_IDENTIFIER, ENV_REF, SERVICE_REF);
+
+    assertThat(serviceOverrideInputs).isNull();
+  }
+
+  private String readFile(String filename) {
+    ClassLoader classLoader = getClass().getClassLoader();
+    try {
+      return Resources.toString(Objects.requireNonNull(classLoader.getResource(filename)), StandardCharsets.UTF_8);
+    } catch (IOException e) {
+      throw new InvalidRequestException("Could not read resource file: " + filename);
+    }
   }
 }

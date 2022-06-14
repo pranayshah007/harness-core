@@ -33,7 +33,6 @@ import io.harness.delegate.beans.DelegateGroupDetails;
 import io.harness.delegate.beans.DelegateGroupListing;
 import io.harness.delegate.beans.DelegateGroupStatus;
 import io.harness.delegate.beans.DelegateGroupTags;
-import io.harness.delegate.beans.DelegateInsightsDetails;
 import io.harness.delegate.beans.DelegateInstanceStatus;
 import io.harness.delegate.beans.DelegateProfile;
 import io.harness.delegate.beans.DelegateProfile.DelegateProfileKeys;
@@ -50,7 +49,6 @@ import io.harness.filter.service.FilterService;
 import io.harness.outbox.api.OutboxService;
 import io.harness.persistence.HPersistence;
 import io.harness.service.intfc.DelegateCache;
-import io.harness.service.intfc.DelegateInsightsService;
 import io.harness.service.intfc.DelegateSetupService;
 
 import software.wings.beans.SelectorType;
@@ -87,7 +85,6 @@ import org.mongodb.morphia.query.UpdateOperations;
 public class DelegateSetupServiceImpl implements DelegateSetupService {
   @Inject private HPersistence persistence;
   @Inject private DelegateCache delegateCache;
-  @Inject private DelegateInsightsService delegateInsightsService;
   @Inject private DelegateConnectionDao delegateConnectionDao;
   @Inject private FilterService filterService;
   @Inject private OutboxService outboxService;
@@ -158,11 +155,6 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
     }
 
     return hostname;
-  }
-
-  private DelegateInsightsDetails retrieveDelegateInsightsDetails(String accountId, String delegateGroupId) {
-    return delegateInsightsService.retrieveDelegateInsightsDetails(
-        accountId, delegateGroupId, System.currentTimeMillis() - TimeUnit.HOURS.toMillis(1));
   }
 
   @Override
@@ -465,7 +457,6 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
         .delegateConfigurationId(delegateConfigurationId)
         .groupImplicitSelectors(retrieveDelegateGroupImplicitSelectors(delegateGroup))
         .groupCustomSelectors(groupCustomSelectors)
-        .delegateInsightsDetails(retrieveDelegateInsightsDetails(accountId, delegateGroupId))
         .lastHeartBeat(lastHeartBeat)
         .delegateInstanceDetails(delegateInstanceDetails)
         .connectivityStatus(connectivityStatus)
@@ -542,7 +533,7 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
           delegateGroupQuery.or(delegateGroupQuery.criteria(DelegateGroupKeys.name).contains(searchTerm),
               delegateGroupQuery.criteria(DelegateGroupKeys.description).contains(searchTerm),
               delegateGroupQuery.criteria(DelegateGroupKeys.identifier).contains(searchTerm),
-              delegateGroupQuery.criteria(DelegateGroupKeys.tags).hasThisOne(searchTerm));
+              delegateGroupQuery.criteria(DelegateGroupKeys.tags).contains(searchTerm));
       delegateGroupQuery.and(criteria);
     }
 
@@ -561,6 +552,10 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
 
       if (isNotEmpty(filterProperties.getDescription())) {
         delegateGroupQuery.field(DelegateGroupKeys.description).contains(filterProperties.getDescription());
+      }
+
+      if (isNotEmpty(filterProperties.getDelegateTags())) {
+        delegateGroupQuery.field(DelegateGroupKeys.tags).hasAllOf(filterProperties.getDelegateTags());
       }
     }
     return delegateGroupQuery.field(DelegateGroupKeys.status)

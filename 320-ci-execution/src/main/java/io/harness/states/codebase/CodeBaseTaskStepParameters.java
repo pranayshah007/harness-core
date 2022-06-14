@@ -23,5 +23,6 @@ import lombok.Value;
 public class CodeBaseTaskStepParameters implements StepParameters {
   String connectorRef;
   String repoName;
+  String projectName;
   ExecutionSource executionSource;
 }

@@ -25,8 +25,11 @@ import static io.harness.common.BuildEnvironmentConstants.DRONE_SOURCE_BRANCH;
 import static io.harness.common.BuildEnvironmentConstants.DRONE_TAG;
 import static io.harness.common.BuildEnvironmentConstants.DRONE_TARGET_BRANCH;
 import static io.harness.common.CIExecutionConstants.AWS_CODE_COMMIT_URL_REGEX;
+import static io.harness.common.CIExecutionConstants.AZURE_REPO_GIT_LABEL;
+import static io.harness.common.CIExecutionConstants.PATH_SEPARATOR;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.delegate.beans.connector.ConnectorType.AZURE_REPO;
 import static io.harness.delegate.beans.connector.ConnectorType.BITBUCKET;
 import static io.harness.delegate.beans.connector.ConnectorType.CODECOMMIT;
 import static io.harness.delegate.beans.connector.ConnectorType.GIT;
@@ -42,11 +45,15 @@ import io.harness.ci.integrationstage.IntegrationStageUtils;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
+import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitAuthType;
 import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitConnectorDTO;
 import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitHttpsAuthType;
 import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitHttpsCredentialsDTO;
 import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitUrlType;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoHttpAuthenticationType;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoHttpCredentialsDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketHttpAuthenticationType;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketHttpCredentialsDTO;
@@ -77,6 +84,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 @Singleton
 @Slf4j
@@ -167,6 +175,10 @@ public class CodebaseUtils {
       GithubConnectorDTO gitConfigDTO = (GithubConnectorDTO) gitConnector.getConnectorConfig();
       validateGithubConnectorAuth(gitConfigDTO);
       envVars = retrieveGitSCMEnvVar(ciCodebase, gitConfigDTO.getConnectionType(), gitConfigDTO.getUrl());
+    } else if (gitConnector.getConnectorType() == AZURE_REPO) {
+      AzureRepoConnectorDTO gitConfigDTO = (AzureRepoConnectorDTO) gitConnector.getConnectorConfig();
+      validateAzureRepoConnectorAuth(gitConfigDTO);
+      envVars = retrieveGitSCMEnvVar(ciCodebase, gitConfigDTO.getConnectionType(), gitConfigDTO.getUrl());
     } else if (gitConnector.getConnectorType() == GITLAB) {
       GitlabConnectorDTO gitConfigDTO = (GitlabConnectorDTO) gitConnector.getConnectorConfig();
       validateGitlabConnectorAuth(gitConfigDTO);
@@ -207,7 +219,8 @@ public class CodebaseUtils {
       case HTTP:
         GithubHttpCredentialsDTO gitAuth = (GithubHttpCredentialsDTO) gitConfigDTO.getAuthentication().getCredentials();
         if (gitAuth.getType() != GithubHttpAuthenticationType.USERNAME_AND_PASSWORD
-            && gitAuth.getType() != GithubHttpAuthenticationType.USERNAME_AND_TOKEN) {
+            && gitAuth.getType() != GithubHttpAuthenticationType.USERNAME_AND_TOKEN
+            && gitAuth.getType() != GithubHttpAuthenticationType.OAUTH) {
           throw new CIStageExecutionException("Unsupported github connector auth type" + gitAuth.getType());
         }
         break;
@@ -233,6 +246,23 @@ public class CodebaseUtils {
       default:
         throw new CIStageExecutionException(
             "Unsupported bitbucket connector auth" + gitConfigDTO.getAuthentication().getAuthType());
+    }
+  }
+
+  private void validateAzureRepoConnectorAuth(AzureRepoConnectorDTO gitConfigDTO) {
+    switch (gitConfigDTO.getAuthentication().getAuthType()) {
+      case HTTP:
+        AzureRepoHttpCredentialsDTO gitAuth =
+            (AzureRepoHttpCredentialsDTO) gitConfigDTO.getAuthentication().getCredentials();
+        if (gitAuth.getType() != AzureRepoHttpAuthenticationType.USERNAME_AND_TOKEN) {
+          throw new CIStageExecutionException("Unsupported azure repo connector auth type" + gitAuth.getType());
+        }
+        break;
+      case SSH:
+        break;
+      default:
+        throw new CIStageExecutionException(
+            "Unsupported azure repo connector auth" + gitConfigDTO.getAuthentication().getAuthType());
     }
   }
 
@@ -313,7 +343,7 @@ public class CodebaseUtils {
     }
     if (gitConnector.getConnectorType() != GIT && gitConnector.getConnectorType() != ConnectorType.GITHUB
         && gitConnector.getConnectorType() != ConnectorType.GITLAB && gitConnector.getConnectorType() != BITBUCKET
-        && gitConnector.getConnectorType() != CODECOMMIT) {
+        && gitConnector.getConnectorType() != CODECOMMIT && gitConnector.getConnectorType() != AZURE_REPO) {
       log.error("Git connector ref is not of type git {}", gitConnector.getConnectorType());
       throw new InvalidArgumentsException(
           "Connector type is not from supported connectors list GITHUB, GITLAB, BITBUCKET, CODECOMMIT ",
@@ -342,5 +372,66 @@ public class CodebaseUtils {
       throw new CIStageExecutionException("Git connector is mandatory in case git clone is enabled");
     }
     return connectorUtils.getConnectorDetails(ngAccess, codeBase.getConnectorRef().getValue());
+  }
+
+  public static String getCompleteURLFromConnector(
+      ConnectorDetails connectorDetails, String projectName, String repoName) {
+    ScmConnector scmConnector = (ScmConnector) connectorDetails.getConnectorConfig();
+    GitConnectionType gitConnectionType = getGitConnectionType(connectorDetails);
+    String completeURL = scmConnector.getUrl();
+
+    if (isNotEmpty(repoName) && (gitConnectionType == null || gitConnectionType == GitConnectionType.ACCOUNT)) {
+      if (scmConnector instanceof AzureRepoConnectorDTO) {
+        if (isEmpty(projectName)) {
+          throw new IllegalArgumentException("Project name is not set for azure repo");
+        }
+        completeURL = getCompleteUrlForAccountLevelAzureConnector(completeURL, projectName, repoName);
+      } else {
+        completeURL = StringUtils.join(StringUtils.stripEnd(scmConnector.getUrl(), PATH_SEPARATOR), PATH_SEPARATOR,
+            StringUtils.stripStart(repoName, PATH_SEPARATOR));
+      }
+    }
+
+    return completeURL;
+  }
+
+  public static GitConnectionType getGitConnectionType(ConnectorDetails gitConnector) {
+    if (gitConnector == null) {
+      return null;
+    }
+
+    if (gitConnector.getConnectorType() == GITHUB) {
+      GithubConnectorDTO gitConfigDTO = (GithubConnectorDTO) gitConnector.getConnectorConfig();
+      return gitConfigDTO.getConnectionType();
+    } else if (gitConnector.getConnectorType() == AZURE_REPO) {
+      AzureRepoConnectorDTO gitConfigDTO = (AzureRepoConnectorDTO) gitConnector.getConnectorConfig();
+      return gitConfigDTO.getConnectionType();
+    } else if (gitConnector.getConnectorType() == GITLAB) {
+      GitlabConnectorDTO gitConfigDTO = (GitlabConnectorDTO) gitConnector.getConnectorConfig();
+      return gitConfigDTO.getConnectionType();
+    } else if (gitConnector.getConnectorType() == BITBUCKET) {
+      BitbucketConnectorDTO gitConfigDTO = (BitbucketConnectorDTO) gitConnector.getConnectorConfig();
+      return gitConfigDTO.getConnectionType();
+    } else if (gitConnector.getConnectorType() == CODECOMMIT) {
+      AwsCodeCommitConnectorDTO gitConfigDTO = (AwsCodeCommitConnectorDTO) gitConnector.getConnectorConfig();
+      return gitConfigDTO.getUrlType() == AwsCodeCommitUrlType.REPO ? GitConnectionType.REPO
+                                                                    : GitConnectionType.ACCOUNT;
+    } else if (gitConnector.getConnectorType() == GIT) {
+      GitConfigDTO gitConfigDTO = (GitConfigDTO) gitConnector.getConnectorConfig();
+      return gitConfigDTO.getGitConnectionType();
+    } else {
+      throw new CIStageExecutionException("Unsupported git connector type" + gitConnector.getConnectorType());
+    }
+  }
+
+  public static String getCompleteUrlForAccountLevelAzureConnector(String url, String projectName, String repoName) {
+    String azureCompleteUrl = StringUtils.join(
+        StringUtils.stripEnd(url, PATH_SEPARATOR), PATH_SEPARATOR, StringUtils.stripStart(projectName, PATH_SEPARATOR));
+    if (GitClientHelper.isHTTPProtocol(azureCompleteUrl)) {
+      azureCompleteUrl = StringUtils.join(azureCompleteUrl, AZURE_REPO_GIT_LABEL);
+    } else if (GitClientHelper.isSSHProtocol(azureCompleteUrl)) {
+      azureCompleteUrl = StringUtils.join(azureCompleteUrl, PATH_SEPARATOR);
+    }
+    return StringUtils.join(azureCompleteUrl, StringUtils.stripStart(repoName, PATH_SEPARATOR));
   }
 }

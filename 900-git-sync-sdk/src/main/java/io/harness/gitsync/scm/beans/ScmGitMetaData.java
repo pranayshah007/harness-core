@@ -25,4 +25,5 @@ public class ScmGitMetaData {
   String commitId;
   String filePath;
   String blobId;
+  String fileUrl;
 }

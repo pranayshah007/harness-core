@@ -9,6 +9,7 @@ package io.harness.ci.beans.entities;
 
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotation.StoreIn;
+import io.harness.ci.config.VmImageConfig;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UuidAware;
@@ -46,5 +47,6 @@ public class CIExecutionConfig implements PersistentEntity, UuidAware, CreatedAt
   @NotBlank String artifactoryUploadTag;
   @NotBlank String cacheGCSTag;
   @NotBlank String cacheS3Tag;
+  VmImageConfig vmImageConfig;
   @SchemaIgnore private long createdAt;
 }

@@ -119,7 +119,7 @@ public class CVNGStep extends AsyncExecutableWithRollback {
 
     MonitoredServiceNode monitoredServiceNode = stepParameters.getMonitoredService();
     MonitoredServiceSpecType monitoredServiceType = Objects.nonNull(monitoredServiceNode)
-        ? MonitoredServiceSpecType.valueOf(monitoredServiceNode.getType())
+        ? MonitoredServiceSpecType.getByName(monitoredServiceNode.getType())
         : MonitoredServiceSpecType.DEFAULT;
 
     ResolvedCVConfigInfo resolvedCVConfigInfo =
@@ -171,6 +171,8 @@ public class CVNGStep extends AsyncExecutableWithRollback {
         activity.fillInVerificationJobInstanceDetails(verificationJobInstanceBuilder);
         verificationJobInstanceId = verificationJobInstanceService.create(verificationJobInstanceBuilder.build());
       }
+      verifyStepCvConfigServiceMap.get(monitoredServiceType)
+          .managePerpetualTasks(serviceEnvironmentParams, resolvedCVConfigInfo, verificationJobInstanceId);
       activity.setVerificationJobInstanceIds(Arrays.asList(verificationJobInstanceId));
       String activityId = activityService.upsert(activity);
       CVNGStepTask cvngStepTask = CVNGStepTask.builder()

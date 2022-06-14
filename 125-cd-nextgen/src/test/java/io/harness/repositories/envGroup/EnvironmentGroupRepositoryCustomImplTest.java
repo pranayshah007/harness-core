@@ -7,30 +7,30 @@
 
 package io.harness.repositories.envGroup;
 
-import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
+import static io.harness.rule.OwnerRule.YOGESH;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatCode;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.doReturn;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
-import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.CDNGTestBase;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
+import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity.EnvironmentGroupKeys;
+import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidRequestException;
-import io.harness.git.model.ChangeType;
 import io.harness.gitsync.persistance.GitAwarePersistence;
-import io.harness.gitsync.persistance.GitSyncSdkService;
-import io.harness.ng.core.environment.services.EnvironmentService;
+import io.harness.ng.core.environment.beans.Environment;
+import io.harness.ng.core.environment.services.impl.EnvironmentServiceImpl;
+import io.harness.outbox.api.OutboxService;
 import io.harness.rule.Owner;
 
+import com.google.inject.Inject;
 import java.util.Arrays;
 import java.util.Optional;
+import org.joor.Reflect;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -38,56 +38,85 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 
-public class EnvironmentGroupRepositoryCustomImplTest extends CategoryTest {
+public class EnvironmentGroupRepositoryCustomImplTest extends CDNGTestBase {
   private String ACC_ID = "accId";
   private String ORG_ID = "orgId";
   private String PRO_ID = "proId";
-  @Mock private GitSyncSdkService gitSyncSdkService;
-  @Mock private EnvironmentService environmentService;
+
   @Mock private GitAwarePersistence gitAwarePersistence;
+  @Mock private OutboxService outboxService;
+
+  @Inject private MongoTemplate mongoTemplate;
+  @Inject private EnvironmentServiceImpl environmentService;
 
   @InjectMocks private EnvironmentGroupRepositoryCustomImpl environmentGroupRepositoryCustom;
 
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
+    Reflect.on(environmentGroupRepositoryCustom).set("mongoTemplate", mongoTemplate);
+    Reflect.on(environmentGroupRepositoryCustom).set("environmentService", environmentService);
+
+    environmentService.create(Environment.builder()
+                                  .accountId(ACC_ID)
+                                  .orgIdentifier(ORG_ID)
+                                  .projectIdentifier(PRO_ID)
+                                  .identifier("env1")
+                                  .build());
+    environmentService.create(Environment.builder()
+                                  .accountId(ACC_ID)
+                                  .orgIdentifier(ORG_ID)
+                                  .projectIdentifier(PRO_ID)
+                                  .identifier("env2")
+                                  .build());
   }
 
   @Test
-  @Owner(developers = PRASHANTSHARMA)
+  @Owner(developers = YOGESH)
+  @Category(UnitTests.class)
+  public void testEnvNotPresent() {
+    EnvironmentGroupEntity environmentGroupEntity = EnvironmentGroupEntity.builder()
+                                                        .accountId(ACC_ID)
+                                                        .orgIdentifier(ORG_ID)
+                                                        .projectIdentifier(PRO_ID)
+                                                        .identifier("envGroup")
+                                                        .name("envGroup")
+                                                        .envIdentifiers(Arrays.asList(UUIDGenerator.generateUuid()))
+                                                        .color("col")
+                                                        .createdAt(1L)
+                                                        .lastModifiedAt(2L)
+                                                        .yaml("yaml")
+                                                        .build();
+    assertThatExceptionOfType(InvalidRequestException.class)
+        .isThrownBy(() -> environmentGroupRepositoryCustom.create(environmentGroupEntity))
+        .withMessageContaining("not present for this project");
+  }
+
+  @Test
+  @Owner(developers = YOGESH)
   @Category(UnitTests.class)
   public void testFindByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndDeletedNot() {
-    Criteria criteria = Criteria.where(EnvironmentGroupEntity.EnvironmentGroupKeys.deleted)
-                            .is(false)
-                            .and(EnvironmentGroupEntity.EnvironmentGroupKeys.projectIdentifier)
-                            .is(PRO_ID)
-                            .and(EnvironmentGroupEntity.EnvironmentGroupKeys.orgIdentifier)
-                            .is(ORG_ID)
-                            .and(EnvironmentGroupEntity.EnvironmentGroupKeys.accountId)
-                            .is(ACC_ID)
-                            .and(EnvironmentGroupEntity.EnvironmentGroupKeys.identifier)
-                            .is("envGroup");
-    Optional<EnvironmentGroupEntity> environmentGroupEntity =
-        Optional.ofNullable(EnvironmentGroupEntity.builder()
-                                .accountId(ACC_ID)
-                                .orgIdentifier(ORG_ID)
-                                .projectIdentifier(PRO_ID)
-                                .identifier("envGroup")
-                                .name("envGroup")
-                                .envIdentifiers(Arrays.asList("env1", "env2"))
-                                .color("col")
-                                .createdAt(1L)
-                                .lastModifiedAt(2L)
-                                .yaml("yaml")
-                                .build());
-    doReturn(environmentGroupEntity)
-        .when(gitAwarePersistence)
-        .findOne(criteria, PRO_ID, ORG_ID, ACC_ID, EnvironmentGroupEntity.class);
+    EnvironmentGroupEntity environmentGroupEntity = EnvironmentGroupEntity.builder()
+                                                        .accountId(ACC_ID)
+                                                        .orgIdentifier(ORG_ID)
+                                                        .projectIdentifier(PRO_ID)
+                                                        .identifier("envGroup")
+                                                        .name("envGroup")
+                                                        .envIdentifiers(Arrays.asList("env1", "env2"))
+                                                        .color("col")
+                                                        .createdAt(1L)
+                                                        .lastModifiedAt(2L)
+                                                        .yaml("yaml")
+                                                        .build();
+    environmentGroupRepositoryCustom.create(environmentGroupEntity);
+
     Optional<EnvironmentGroupEntity> environmentGroup =
         environmentGroupRepositoryCustom.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndDeletedNot(
             ACC_ID, ORG_ID, PRO_ID, "envGroup", true);
+
     EnvironmentGroupEntity resultedEntity = environmentGroup.get();
     assertThat(resultedEntity.getEnvIdentifiers().size()).isEqualTo(2);
     assertThat(resultedEntity.getAccountId()).isEqualTo(ACC_ID);
@@ -97,71 +126,18 @@ public class EnvironmentGroupRepositoryCustomImplTest extends CategoryTest {
   }
 
   @Test
-  @Owner(developers = PRASHANTSHARMA)
+  @Owner(developers = YOGESH)
   @Category(UnitTests.class)
   public void testCreate() {
-    EnvironmentGroupEntity environmentGroupEntity = getDummyEnvironmentEntity();
+    EnvironmentGroupEntity entity = getDummyEnvironmentEntity();
 
-    ArgumentCaptor<EnvironmentGroupEntity> captorForEntity = ArgumentCaptor.forClass(EnvironmentGroupEntity.class);
-    ArgumentCaptor<String> captorForYaml = ArgumentCaptor.forClass(String.class);
-    ArgumentCaptor<ChangeType> captorForChangeEntityType = ArgumentCaptor.forClass(ChangeType.class);
-    ArgumentCaptor<Class> captorForClassType = ArgumentCaptor.forClass(Class.class);
+    EnvironmentGroupEntity resultedEntity = environmentGroupRepositoryCustom.create(entity);
 
-    doReturn(environmentGroupEntity)
-        .when(gitAwarePersistence)
-        .save(captorForEntity.capture(), captorForYaml.capture(), captorForChangeEntityType.capture(),
-            captorForClassType.capture(), any());
-    doReturn(Arrays.asList("env1", "env2"))
-        .when(environmentService)
-        .fetchesNonDeletedEnvIdentifiersFromList(environmentGroupEntity.getAccountId(),
-            environmentGroupEntity.getOrgIdentifier(), environmentGroupEntity.getProjectIdentifier(),
-            environmentGroupEntity.getEnvIdentifiers());
-    EnvironmentGroupEntity resultedEntity = environmentGroupRepositoryCustom.create(environmentGroupEntity);
-
-    // capture assertions
-    assertThat(captorForEntity.getValue()).isEqualTo(environmentGroupEntity);
-    assertThat(captorForYaml.getValue()).isEqualTo(environmentGroupEntity.getYaml());
-    assertThat(captorForChangeEntityType.getValue()).isEqualTo(ChangeType.ADD);
-    assertThat(captorForClassType.getValue()).isEqualTo(EnvironmentGroupEntity.class);
-
-    // entity assertion
     assertThat(resultedEntity.getEnvIdentifiers().size()).isEqualTo(2);
     assertThat(resultedEntity.getAccountId()).isEqualTo(ACC_ID);
     assertThat(resultedEntity.getOrgIdentifier()).isEqualTo(ORG_ID);
     assertThat(resultedEntity.getProjectIdentifier()).isEqualTo(PRO_ID);
-    assertThat(resultedEntity.getIdentifier()).isEqualTo("envGroup");
-  }
-
-  @Test
-  @Owner(developers = PRASHANTSHARMA)
-  @Category(UnitTests.class)
-  public void testValidateNotExistentEnvIdentifiers() {
-    EnvironmentGroupEntity environmentGroupEntity = getDummyEnvironmentEntity();
-
-    doReturn(Arrays.asList("env1", "env2"))
-        .when(environmentService)
-        .fetchesNonDeletedEnvIdentifiersFromList(environmentGroupEntity.getAccountId(),
-            environmentGroupEntity.getOrgIdentifier(), environmentGroupEntity.getProjectIdentifier(),
-            environmentGroupEntity.getEnvIdentifiers());
-
-    assertThatCode(() -> environmentGroupRepositoryCustom.validateNotExistentEnvIdentifiers(environmentGroupEntity))
-        .doesNotThrowAnyException();
-
-    doReturn(Arrays.asList("env1"))
-        .when(environmentService)
-        .fetchesNonDeletedEnvIdentifiersFromList(environmentGroupEntity.getAccountId(),
-            environmentGroupEntity.getOrgIdentifier(), environmentGroupEntity.getProjectIdentifier(),
-            environmentGroupEntity.getEnvIdentifiers());
-    assertThatThrownBy(() -> environmentGroupRepositoryCustom.validateNotExistentEnvIdentifiers(environmentGroupEntity))
-        .isInstanceOf(InvalidRequestException.class);
-
-    doReturn(Arrays.asList("env2"))
-        .when(environmentService)
-        .fetchesNonDeletedEnvIdentifiersFromList(environmentGroupEntity.getAccountId(),
-            environmentGroupEntity.getOrgIdentifier(), environmentGroupEntity.getProjectIdentifier(),
-            environmentGroupEntity.getEnvIdentifiers());
-    assertThatThrownBy(() -> environmentGroupRepositoryCustom.validateNotExistentEnvIdentifiers(environmentGroupEntity))
-        .isInstanceOf(InvalidRequestException.class);
+    assertThat(resultedEntity.getIdentifier()).isEqualTo(entity.getIdentifier());
   }
 
   private EnvironmentGroupEntity getDummyEnvironmentEntity() {
@@ -169,7 +145,7 @@ public class EnvironmentGroupRepositoryCustomImplTest extends CategoryTest {
         .accountId(ACC_ID)
         .orgIdentifier(ORG_ID)
         .projectIdentifier(PRO_ID)
-        .identifier("envGroup")
+        .identifier(UUIDGenerator.generateUuid())
         .name("envGroup")
         .envIdentifiers(Arrays.asList("env1", "env2"))
         .color("col")
@@ -180,73 +156,62 @@ public class EnvironmentGroupRepositoryCustomImplTest extends CategoryTest {
   }
 
   @Test
-  @Owner(developers = PRASHANTSHARMA)
+  @Owner(developers = YOGESH)
   @Category(UnitTests.class)
   public void testList() {
-    EnvironmentGroupEntity environmentGroupEntity = getDummyEnvironmentEntity();
+    EnvironmentGroupEntity entity1 = getDummyEnvironmentEntity();
+    EnvironmentGroupEntity entity2 = getDummyEnvironmentEntity();
+    environmentGroupRepositoryCustom.create(entity1);
+    environmentGroupRepositoryCustom.create(entity2);
 
     Criteria criteria = new Criteria();
     Pageable pageRequest =
         PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, EnvironmentGroupEntity.EnvironmentGroupKeys.createdAt));
 
-    doReturn(Arrays.asList(environmentGroupEntity))
-        .when(gitAwarePersistence)
-        .find(criteria, pageRequest, PRO_ID, ORG_ID, ACC_ID, EnvironmentGroupEntity.class);
-    doReturn(1L).when(gitAwarePersistence).count(criteria, PRO_ID, ORG_ID, ACC_ID, EnvironmentGroupEntity.class);
     Page<EnvironmentGroupEntity> page =
         environmentGroupRepositoryCustom.list(criteria, pageRequest, PRO_ID, ORG_ID, ACC_ID);
-    assertThat(page.get().count()).isEqualTo(1L);
+    assertThat(page.get().count()).isEqualTo(2L);
   }
 
   @Test
-  @Owner(developers = PRASHANTSHARMA)
+  @Owner(developers = YOGESH)
   @Category(UnitTests.class)
   public void testDeleteEnvGroup() {
-    EnvironmentGroupEntity environmentGroupEntity = getDummyEnvironmentEntity();
+    EnvironmentGroupEntity entity = getDummyEnvironmentEntity();
+    environmentGroupRepositoryCustom.create(entity);
 
-    EnvironmentGroupEntity entityWithDeleted = environmentGroupEntity.withDeleted(true);
-    ArgumentCaptor<EnvironmentGroupEntity> captorForEntity = ArgumentCaptor.forClass(EnvironmentGroupEntity.class);
-    ArgumentCaptor<String> captorForYaml = ArgumentCaptor.forClass(String.class);
-    ArgumentCaptor<ChangeType> captorForChangeEntityType = ArgumentCaptor.forClass(ChangeType.class);
-    ArgumentCaptor<Class> captorForClassType = ArgumentCaptor.forClass(Class.class);
+    EnvironmentGroupEntity entityWithDeleted = entity.withDeleted(true);
 
-    doReturn(entityWithDeleted)
-        .when(gitAwarePersistence)
-        .save(captorForEntity.capture(), captorForYaml.capture(), captorForChangeEntityType.capture(),
-            captorForClassType.capture(), any());
+    boolean b = environmentGroupRepositoryCustom.deleteEnvGroup(entityWithDeleted);
 
-    environmentGroupRepositoryCustom.deleteEnvGroup(entityWithDeleted);
-    assertThat(captorForEntity.getValue()).isEqualTo(entityWithDeleted);
-    assertThat(captorForYaml.getValue()).isEqualTo(environmentGroupEntity.getYaml());
-    assertThat(captorForChangeEntityType.getValue()).isEqualTo(ChangeType.DELETE);
-    assertThat(captorForClassType.getValue()).isEqualTo(EnvironmentGroupEntity.class);
+    assertThat(b).isTrue();
+
+    Optional<EnvironmentGroupEntity> entityFromDb =
+        environmentGroupRepositoryCustom.findByAccountIdAndOrgIdentifierAndProjectIdentifierAndIdentifierAndDeletedNot(
+            entity.getAccountId(), entity.getOrgIdentifier(), entity.getProjectIdentifier(), entity.getIdentifier(),
+            true);
+    assertThat(entityFromDb).isNotPresent();
   }
 
   @Test
-  @Owner(developers = PRASHANTSHARMA)
+  @Owner(developers = YOGESH)
   @Category(UnitTests.class)
   public void testUpdate() {
     EnvironmentGroupEntity originalEntity = getDummyEnvironmentEntity();
 
-    EnvironmentGroupEntity updaetdEntity = originalEntity.withName("newName");
-    ArgumentCaptor<EnvironmentGroupEntity> captorForEntity = ArgumentCaptor.forClass(EnvironmentGroupEntity.class);
-    ArgumentCaptor<String> captorForYaml = ArgumentCaptor.forClass(String.class);
-    ArgumentCaptor<ChangeType> captorForChangeEntityType = ArgumentCaptor.forClass(ChangeType.class);
-    ArgumentCaptor<Class> captorForClassType = ArgumentCaptor.forClass(Class.class);
+    EnvironmentGroupEntity updatedEntity = originalEntity.withName("newName");
 
-    doReturn(updaetdEntity.getEnvIdentifiers())
-        .when(environmentService)
-        .fetchesNonDeletedEnvIdentifiersFromList(ACC_ID, ORG_ID, PRO_ID, updaetdEntity.getEnvIdentifiers());
+    environmentGroupRepositoryCustom.create(originalEntity);
 
-    doReturn(updaetdEntity)
-        .when(gitAwarePersistence)
-        .save(captorForEntity.capture(), captorForYaml.capture(), captorForChangeEntityType.capture(),
-            captorForClassType.capture(), any());
-
-    environmentGroupRepositoryCustom.update(updaetdEntity, originalEntity);
-    assertThat(captorForEntity.getValue()).isEqualTo(updaetdEntity);
-    assertThat(captorForYaml.getValue()).isEqualTo(originalEntity.getYaml());
-    assertThat(captorForChangeEntityType.getValue()).isEqualTo(ChangeType.MODIFY);
-    assertThat(captorForClassType.getValue()).isEqualTo(EnvironmentGroupEntity.class);
+    EnvironmentGroupEntity updated = environmentGroupRepositoryCustom.update(updatedEntity, originalEntity,
+        Criteria.where(EnvironmentGroupKeys.accountId)
+            .is(ACC_ID)
+            .and(EnvironmentGroupKeys.orgIdentifier)
+            .is(ORG_ID)
+            .and(EnvironmentGroupKeys.projectIdentifier)
+            .is(PRO_ID)
+            .and(EnvironmentGroupKeys.identifier));
+    assertThat(updated).isEqualToIgnoringGivenFields(originalEntity, "name", "version");
+    assertThat(updated.getName()).isEqualTo("newName");
   }
 }

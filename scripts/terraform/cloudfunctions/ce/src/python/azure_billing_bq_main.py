@@ -52,18 +52,23 @@ def main(event, context):
     jsonData["cloudProvider"] = "AZURE"
     # path is folder name in this format vZYBQdFRSlesqo3CMB90Ag/myqO-niJS46aVm3b646SKA/cereportnikunj/20210201-20210228/
     # or in  vZYBQdFRSlesqo3CMB90Ag/myqO-niJS46aVm3b646SKA/<tenantid>/cereportnikunj/20210201-20210228/
+    # or in 0Z0vv0uwRoax_oZ62jBFfg/tKFNTih2SPyIdWt_yJMZvg/8445d4f3-c4d8-4c5e-a6f1-743cee2c9e84/HarnessExport/20220501-20220531/.....partitioned csv format
     ps = jsonData["path"].split("/")
-    if len(ps) not in [3, 4, 5]:
+    path_length = len(ps)
+    if path_length not in [3, 4, 5, 7]:
         raise Exception("Invalid path format %s" % jsonData["path"])
     else:
-        if len(ps) in [3, 4]:
+        if path_length in [3, 4]:
             # old flow
             jsonData["tenant_id"] = ""
-        elif len(ps) == 5:
-            # TODO: IMP. Check this in new flow
+            monthfolder = ps[-1]  # last folder in path
+            jsonData["is_partitioned_csv"] = False
+        elif path_length == 5:
             jsonData["tenant_id"] = ps[2]
+            monthfolder = ps[-1]  # last folder in path
+            jsonData["is_partitioned_csv"] = False
 
-    monthfolder = ps[-1]  # last folder in path
+
     jsonData["reportYear"] = monthfolder.split("-")[0][:4]
     jsonData["reportMonth"] = monthfolder.split("-")[0][4:6]
 
@@ -114,24 +119,61 @@ def main(event, context):
     ingest_data_to_costagg(jsonData)
     print_("Completed")
 
+def is_valid_month_folder(folderstr):
+    try:
+        report_month = folderstr.split("-")
+        startstr = report_month[0]
+        endstr = report_month[1]
+        if (len(startstr) != 8) or (len(endstr) != 8):
+            raise
+        if not int(endstr) > int(startstr):
+            raise
+        # Check for valid dates
+        datetime.datetime.strptime(startstr, '%Y%m%d')
+        datetime.datetime.strptime(endstr, '%Y%m%d')
+    except Exception as e:
+        # Any error we should not take this path for processing
+        return False
+    return True
 
 def ingest_data_from_csv(jsonData):
-    # Determine blob of highest size in this folder
-    # TODO: This can be moved to CF1
+    csvtoingest = None
+    # Determine either 'sub folder' of highest size in this month folder or max size csv
     blobs = storage_client.list_blobs(
         jsonData["bucket"], prefix=jsonData["path"]
     )
-    maxsize = 0
-    csvtoingest = None
+    subfolder_maxsize = 0
+    blob_maxsize = 0
+    single_csvtoingest = None
+    partitioned_csvtoingest = None
+    unique_subfolder_size_map = {}
     for blob in blobs:
         if blob.name.endswith(".csv") or blob.name.endswith(".csv.gz"):
-            if blob.size > maxsize:
-                maxsize = blob.size
-                csvtoingest = blob.name
+            folder = "/".join(blob.name.split('/')[:-1])
+            if is_valid_month_folder(folder):
+                # Unpartitioned CSV way
+                if blob.size > blob_maxsize:
+                    blob_maxsize = blob.size
+                    single_csvtoingest = blob.name
+            else:
+                # Partitioned CSV way
+                try:
+                    unique_subfolder_size_map[folder] += blob.size
+                except:
+                    unique_subfolder_size_map[folder] = blob.size
+                if unique_subfolder_size_map[folder] > subfolder_maxsize:
+                    subfolder_maxsize = unique_subfolder_size_map[folder]
+                    partitioned_csvtoingest = folder + "/*.csv"
+    # We can have both partitioned and non partitioned in the same folder
+    if blob_maxsize > subfolder_maxsize:
+        csvtoingest = single_csvtoingest
+    else:
+        csvtoingest = partitioned_csvtoingest
+
     if not csvtoingest:
         print_("No CSV to insert. GCS bucket might be empty", "WARN")
         return
-    print_(csvtoingest)
+    print_("csvtoingest: %s" % csvtoingest)
 
     job_config = bigquery.LoadJobConfig(
         max_bad_records=10,  # TODO: Temporary fix until https://issuetracker.google.com/issues/74021820 is available
@@ -163,9 +205,8 @@ def ingest_data_from_csv(jsonData):
         jsonData["bucket"], prefix=jsonData["path"]
     )
     for blob in blobs:
-        if blob.name.endswith(".csv") or blob.name.endswith(".csv.gz"):
-            blob.delete()
-            print_("Blob {} deleted.".format(blob.name))
+        blob.delete()
+        print_("Cleaned up {}.".format(blob.name))
 
 
 def get_unique_subs_id(jsonData, azure_column_mapping):

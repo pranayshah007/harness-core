@@ -35,6 +35,12 @@ public interface InfrastructureEntityService {
   boolean delete(@NotEmpty String accountId, @NotEmpty String orgIdentifier, @NotEmpty String projectIdentifier,
       @NotEmpty String envIdentifier, @NotEmpty String infraIdentifier);
 
+  boolean forceDeleteAllInEnv(@NotEmpty String accountId, @NotEmpty String orgIdentifier,
+      @NotEmpty String projectIdentifier, @NotEmpty String envIdentifier);
+
+  boolean forceDeleteAllInProject(
+      @NotEmpty String accountId, @NotEmpty String orgIdentifier, @NotEmpty String projectIdentifier);
+
   Page<InfrastructureEntity> bulkCreate(
       @NotEmpty String accountId, @NotNull List<InfrastructureEntity> infrastructureEntities);
 
@@ -46,4 +52,7 @@ public interface InfrastructureEntityService {
 
   List<InfrastructureEntity> getAllInfrastructureFromEnvIdentifier(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String envIdentifier);
+
+  String createInfrastructureInputsFromYaml(String accountId, String projectIdentifier, String orgIdentifier,
+      String environmentIdentifier, List<String> infraIdentifiers, boolean deployToAll);
 }

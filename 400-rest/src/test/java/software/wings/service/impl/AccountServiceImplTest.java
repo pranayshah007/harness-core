@@ -251,6 +251,7 @@ public class AccountServiceImplTest extends WingsBaseTest {
     account.setAppId("testappid");
     wingsPersistence.save(account);
     when(dbCache.get(Account.class, ACCOUNT_ID)).thenReturn(account);
+    when(wingsPersistence.get(any(), any())).thenReturn(account);
     return account;
   }
 }

@@ -426,6 +426,33 @@ public class ArtifactoryClientImpl {
     return null;
   }
 
+  public Long getFileSize(
+      ArtifactoryConfigRequest artifactoryConfig, Map<String, String> metadata, String artifactPathMetadataKey) {
+    String artifactPath = metadata.get(artifactPathMetadataKey);
+    log.info("Retrieving file paths for artifactPath {}", artifactPath);
+    Artifactory artifactory = getArtifactoryClient(artifactoryConfig);
+    try {
+      String apiStorageQuery = "api/storage/" + artifactPath;
+
+      ArtifactoryRequest repositoryRequest =
+          new ArtifactoryRequestImpl().apiUrl(apiStorageQuery).method(GET).requestType(TEXT).responseType(JSON);
+      ArtifactoryResponse artifactoryResponse = artifactory.restCall(repositoryRequest);
+      handleErrorResponse(artifactoryResponse);
+      LinkedHashMap<String, String> response = artifactoryResponse.parseBody(LinkedHashMap.class);
+      if (response != null && isNotBlank(response.get("size"))) {
+        return Long.valueOf(response.get("size"));
+      } else {
+        throw new ArtifactoryServerException(
+            "Unable to get artifact file size. The file probably does not exist", INVALID_ARTIFACT_SERVER, USER);
+      }
+    } catch (Exception e) {
+      log.error("Error occurred while retrieving File Paths from Artifactory server {}",
+          artifactoryConfig.getArtifactoryUrl(), e);
+      handleAndRethrow(e, USER);
+    }
+    return 0L;
+  }
+
   private String getPath(List<String> pathElems) {
     StringBuilder groupIdBuilder = new StringBuilder();
     for (int i = 0; i < pathElems.size(); i++) {

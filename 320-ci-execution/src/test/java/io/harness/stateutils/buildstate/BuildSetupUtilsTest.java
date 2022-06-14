@@ -112,8 +112,7 @@ public class BuildSetupUtilsTest extends CIExecutionTestBase {
         .thenReturn(K8PodDetails.builder().stageID("stage").build());
 
     CIInitializeTaskParams buildSetupTaskParams = buildSetupUtils.getBuildSetupTaskParams(
-        ciExecutionPlanTestHelper.getExpectedLiteEngineTaskInfoOnFirstPodWithSetCallbackId(), ambiance, taskIds, "test",
-        logKeys);
+        ciExecutionPlanTestHelper.getExpectedLiteEngineTaskInfoOnFirstPodWithSetCallbackId(), ambiance, "test");
     assertThat(buildSetupTaskParams).isNotNull();
     verify(logServiceUtils, times(1)).getLogServiceConfig();
     verify(logServiceUtils, times(1)).getLogServiceToken(any());
@@ -164,7 +163,7 @@ public class BuildSetupUtilsTest extends CIExecutionTestBase {
 
     CIInitializeTaskParams buildSetupTaskParams = buildSetupUtils.getBuildSetupTaskParams(
         ciExecutionPlanTestHelper.getExpectedLiteEngineTaskInfoOnFirstPodWithSetCallbackIdReponameSet(), ambiance,
-        taskIds, "test", logKeys);
+        "test");
     assertThat(buildSetupTaskParams).isNotNull();
     verify(logServiceUtils, times(1)).getLogServiceConfig();
     verify(logServiceUtils, times(1)).getLogServiceToken(any());

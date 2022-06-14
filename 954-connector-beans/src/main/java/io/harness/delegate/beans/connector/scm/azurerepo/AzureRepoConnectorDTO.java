@@ -7,6 +7,8 @@
 
 package io.harness.delegate.beans.connector.scm.azurerepo;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
@@ -63,6 +65,7 @@ public class AzureRepoConnectorDTO extends ConnectorConfigDTO implements ScmConn
   @Schema(description = "API access details, to be used in Harness Triggers and Git Experience")
   AzureRepoApiAccessDTO apiAccess;
   @Schema(description = "Selected Connectivity Modes") Set<String> delegateSelectors;
+  @Schema(description = "Connection URL for connecting Azure Repo") String gitConnectionUrl;
 
   @Builder
   public AzureRepoConnectorDTO(GitConnectionType connectionType, String url, String validationProject,
@@ -99,6 +102,14 @@ public class AzureRepoConnectorDTO extends ConnectorConfigDTO implements ScmConn
   }
 
   @Override
+  public String getUrl() {
+    if (isNotEmpty(gitConnectionUrl)) {
+      return gitConnectionUrl;
+    }
+    return url;
+  }
+
+  @Override
   @JsonIgnore
   public ConnectorType getConnectorType() {
     return ConnectorType.AZURE_REPO;
@@ -112,6 +123,11 @@ public class AzureRepoConnectorDTO extends ConnectorConfigDTO implements ScmConn
   @Override
   public GitRepositoryDTO getGitRepositoryDetails() {
     return GitRepositoryDTO.builder().build();
+  }
+
+  @Override
+  public String getFileUrl(String branchName, String filePath, String repoName) {
+    return "";
   }
 
   @Override

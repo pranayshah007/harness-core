@@ -15,7 +15,11 @@ java_library(
         "//:lombok",
         "//980-commons:module",
         "//999-annotations:module",
+        "@maven//:io_github_resilience4j_resilience4j_core",
+        "@maven//:io_github_resilience4j_resilience4j_retry",
         "@maven//:io_harness_ff_java_server_sdk",
+        "@maven//:io_vavr_vavr",
+        "@maven//:io_vavr_vavr_match",
         "@maven//:org_slf4j_slf4j_api",
     ],
 )

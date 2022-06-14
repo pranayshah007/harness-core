@@ -984,16 +984,6 @@ public class K8sStepHelper extends CDStepHelper {
     }
   }
 
-  public InfrastructureOutcome getInfrastructureOutcome(Ambiance ambiance) {
-    OptionalOutcome optionalOutcome = outcomeService.resolveOptional(
-        ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
-    if (!optionalOutcome.isFound()) {
-      throw new InvalidRequestException(MISSING_INFRASTRUCTURE_ERROR, USER);
-    }
-
-    return (InfrastructureOutcome) optionalOutcome.getOutcome();
-  }
-
   public StepResponse handleTaskException(
       Ambiance ambiance, K8sExecutionPassThroughData executionPassThroughData, Exception e) throws Exception {
     // Trying to figure out if exception is coming from k8s task or it is an exception from delegate service.

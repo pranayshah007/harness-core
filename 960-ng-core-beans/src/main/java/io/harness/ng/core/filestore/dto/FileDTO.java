@@ -60,6 +60,7 @@ public class FileDTO {
   @Schema(description = "Name of the File")
   @FormDataParam("name")
   private String name;
+  @Schema(description = "The path of the File") @FormDataParam("path") private String path;
   @Schema(description = "This specifies the file usage") @FormDataParam("fileUsage") private FileUsage fileUsage;
   @ApiModelProperty(required = true)
   @NotNull
@@ -98,14 +99,15 @@ public class FileDTO {
 
   @Builder
   public FileDTO(String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier,
-      String name, FileUsage fileUsage, NGFileType type, String parentIdentifier, String description, List<NGTag> tags,
-      String mimeType, Boolean draft, EmbeddedUserDetailsDTO createdBy, EmbeddedUserDetailsDTO lastModifiedBy,
-      Long lastModifiedAt) {
+      String name, String path, FileUsage fileUsage, NGFileType type, String parentIdentifier, String description,
+      List<NGTag> tags, String mimeType, Boolean draft, EmbeddedUserDetailsDTO createdBy,
+      EmbeddedUserDetailsDTO lastModifiedBy, Long lastModifiedAt) {
     this.accountIdentifier = accountIdentifier;
     this.orgIdentifier = orgIdentifier;
     this.projectIdentifier = projectIdentifier;
     this.identifier = identifier;
     this.name = name;
+    this.path = path;
     this.fileUsage = fileUsage;
     this.type = type;
     this.parentIdentifier = parentIdentifier;

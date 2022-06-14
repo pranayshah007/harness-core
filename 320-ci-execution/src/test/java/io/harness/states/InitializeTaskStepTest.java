@@ -18,11 +18,11 @@ import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.environment.pod.container.ContainerDefinitionInfo;
-import io.harness.beans.environment.pod.container.ContainerImageDetails;
+import io.harness.beans.environment.ServiceDefinitionInfo;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.category.element.UnitTests;
 import io.harness.ci.integrationstage.BuildJobEnvInfoBuilder;
+import io.harness.ci.integrationstage.K8InitializeServiceUtils;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.ci.k8s.CIContainerStatus;
 import io.harness.delegate.beans.ci.k8s.CiK8sTaskResponse;
@@ -31,7 +31,6 @@ import io.harness.delegate.beans.ci.k8s.PodStatus;
 import io.harness.delegate.beans.ci.vm.VmTaskExecutionResponse;
 import io.harness.executionplan.CIExecutionPlanTestHelper;
 import io.harness.executionplan.CIExecutionTestBase;
-import io.harness.k8s.model.ImageDetails;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -44,6 +43,7 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.stateutils.buildstate.BuildSetupUtils;
 
 import com.google.inject.Inject;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -63,6 +63,7 @@ public class InitializeTaskStepTest extends CIExecutionTestBase {
   @Mock private BuildJobEnvInfoBuilder buildJobEnvInfoBuilder;
   @InjectMocks private InitializeTaskStep initializeTaskStep;
   @Inject private CIExecutionPlanTestHelper ciExecutionPlanTestHelper;
+  @Mock private K8InitializeServiceUtils k8InitializeServiceUtils;
   private Ambiance ambiance;
   private InitializeStepInfo initializeStepInfo;
   private StepElementParameters stepElementParameters;
@@ -123,8 +124,7 @@ public class InitializeTaskStepTest extends CIExecutionTestBase {
                                                      .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                                                      .k8sTaskResponse(taskResponse)
                                                      .build();
-
-    when(buildSetupUtils.getBuildServiceContainers(initializeStepInfo)).thenReturn(null);
+    when(k8InitializeServiceUtils.getServiceInfos(any())).thenReturn(new ArrayList<>());
     StepResponse stepResponse = initializeTaskStep.handleTaskResultWithSecurityContext(
         ambiance, stepElementParameters, () -> executionResponse);
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
@@ -144,7 +144,7 @@ public class InitializeTaskStepTest extends CIExecutionTestBase {
                                                      .k8sTaskResponse(taskResponse)
                                                      .build();
 
-    when(buildSetupUtils.getBuildServiceContainers(initializeStepInfo)).thenReturn(null);
+    when(k8InitializeServiceUtils.getServiceInfos(any())).thenReturn(new ArrayList<>());
     StepResponse stepResponse = initializeTaskStep.handleTaskResultWithSecurityContext(
         ambiance, stepElementParameters, () -> executionResponse);
     assertThat(stepResponse.getStatus()).isEqualTo(Status.FAILED);
@@ -170,14 +170,18 @@ public class InitializeTaskStepTest extends CIExecutionTestBase {
     CiK8sTaskResponse taskResponse =
         CiK8sTaskResponse.builder().podName("test").podNamespace("test").podStatus(podStatus).build();
 
-    ContainerDefinitionInfo serviceContainer =
-        ContainerDefinitionInfo.builder().stepIdentifier(stepId).stepName(stepName).name(containerName).build();
+    ServiceDefinitionInfo serviceDefinitionInfo = ServiceDefinitionInfo.builder()
+                                                      .identifier(stepId)
+                                                      .name(stepName)
+                                                      .containerName(containerName)
+                                                      .image(image)
+                                                      .build();
     K8sTaskExecutionResponse executionResponse = K8sTaskExecutionResponse.builder()
                                                      .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                                                      .k8sTaskResponse(taskResponse)
                                                      .build();
 
-    when(buildSetupUtils.getBuildServiceContainers(initializeStepInfo)).thenReturn(Arrays.asList(serviceContainer));
+    when(k8InitializeServiceUtils.getServiceInfos(any())).thenReturn(Arrays.asList(serviceDefinitionInfo));
     StepResponse stepResponse = initializeTaskStep.handleTaskResultWithSecurityContext(
         ambiance, stepElementParameters, () -> executionResponse);
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
@@ -191,24 +195,24 @@ public class InitializeTaskStepTest extends CIExecutionTestBase {
     String containerName = "ctr";
     String stepId = "cache";
     String stepName = "cache";
+    String image = "redis";
     PodStatus podStatus = PodStatus.builder().build();
     CiK8sTaskResponse taskResponse =
         CiK8sTaskResponse.builder().podNamespace("test").podName("test").podStatus(podStatus).build();
 
-    ContainerDefinitionInfo serviceContainer =
-        ContainerDefinitionInfo.builder()
-            .stepIdentifier(stepId)
-            .stepName(stepName)
-            .name(containerName)
-            .containerImageDetails(
-                ContainerImageDetails.builder().imageDetails(ImageDetails.builder().name("redis").build()).build())
-            .build();
+    ServiceDefinitionInfo serviceDefinitionInfo = ServiceDefinitionInfo.builder()
+                                                      .identifier(stepId)
+                                                      .name(stepName)
+                                                      .containerName(containerName)
+                                                      .image(image)
+                                                      .build();
+
     K8sTaskExecutionResponse executionResponse = K8sTaskExecutionResponse.builder()
                                                      .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                                                      .k8sTaskResponse(taskResponse)
                                                      .build();
 
-    when(buildSetupUtils.getBuildServiceContainers(initializeStepInfo)).thenReturn(Arrays.asList(serviceContainer));
+    when(k8InitializeServiceUtils.getServiceInfos(any())).thenReturn(Arrays.asList(serviceDefinitionInfo));
     StepResponse stepResponse = initializeTaskStep.handleTaskResultWithSecurityContext(
         ambiance, stepElementParameters, () -> executionResponse);
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);

@@ -15,9 +15,7 @@ import io.harness.accesscontrol.ProjectIdentifier;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateEntityOwner;
-import io.harness.delegate.beans.DelegateGroup;
 import io.harness.delegate.beans.DelegateGroupListing;
-import io.harness.delegate.beans.DelegateSetupDetails;
 import io.harness.delegate.beans.DelegateTokenDetails;
 import io.harness.delegate.beans.DelegateTokenStatus;
 import io.harness.delegate.service.intfc.DelegateNgTokenService;
@@ -27,7 +25,6 @@ import io.harness.security.annotations.InternalApi;
 import io.harness.service.intfc.DelegateSetupService;
 
 import software.wings.security.annotations.Scope;
-import software.wings.service.intfc.DelegateService;
 
 import com.codahale.metrics.annotation.ExceptionMetered;
 import com.codahale.metrics.annotation.Timed;
@@ -44,7 +41,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import lombok.extern.slf4j.Slf4j;
-import retrofit2.http.Body;
 
 @Api("/delegate-token/ng")
 @Path("/delegate-token/ng")
@@ -57,13 +53,11 @@ import retrofit2.http.Body;
 public class DelegateNgTokenInternalResource {
   private final DelegateNgTokenService delegateTokenService;
   private final DelegateSetupService delegateSetupService;
-  private final DelegateService delegateService;
 
   @Inject
-  public DelegateNgTokenInternalResource(DelegateNgTokenService delegateTokenService,
-      DelegateSetupService delegateSetupService, DelegateService delegateService) {
+  public DelegateNgTokenInternalResource(
+      DelegateNgTokenService delegateTokenService, DelegateSetupService delegateSetupService) {
     this.delegateTokenService = delegateTokenService;
-    this.delegateService = delegateService;
     this.delegateSetupService = delegateSetupService;
   }
 
@@ -148,20 +142,5 @@ public class DelegateNgTokenInternalResource {
       @Parameter(description = "Delegate Token name") @QueryParam("delegateTokenName") String delegateTokenName) {
     return new RestResponse<>(delegateSetupService.listDelegateGroupDetails(
         accountIdentifier, orgIdentifier, projectIdentifier, delegateTokenName));
-  }
-
-  @PUT
-  @Timed
-  @Path("/upsert")
-  @ExceptionMetered
-  @InternalApi
-  public RestResponse<DelegateGroup> upsert(
-      @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
-          NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountIdentifier,
-      @Parameter(description = "Delegate name") @QueryParam(
-          NGCommonEntityConstants.NAME_KEY) @NotNull String delegateName,
-      @Parameter(description = "Setup details of the delegate") @Body DelegateSetupDetails delegateSetupDetails) {
-    return new RestResponse<>(
-        delegateService.upsertDelegateGroup(delegateName, accountIdentifier, delegateSetupDetails));
   }
 }

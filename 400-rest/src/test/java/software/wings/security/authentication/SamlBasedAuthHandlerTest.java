@@ -154,7 +154,7 @@ public class SamlBasedAuthHandlerTest extends WingsBaseTest {
     List<SamlSettings> samlSettingsList = Arrays.asList(samlSettings);
     doReturn(samlSettingsList.iterator()).when(samlClientService).getSamlSettingsFromOrigin(any(), any());
     doReturn(samlClient).when(samlClientService).getSamlClient(samlSettings);
-    when(samlClient.decodeAndValidateSamlResponse(anyString())).thenReturn(samlResponse);
+    when(samlClient.decodeAndValidateSamlResponse(anyString(), anyString())).thenReturn(samlResponse);
 
     User returnedUser = authHandler.authenticate(oktaIdpUrl, samlResponseString).getUser();
     assertThat(returnedUser).isEqualTo(user);
@@ -205,7 +205,7 @@ public class SamlBasedAuthHandlerTest extends WingsBaseTest {
         .thenReturn(Arrays.asList(googleSamlSettings1, googleSamlSettings2).iterator());
 
     doReturn(samlClient).when(samlClientService).getSamlClient(any(SamlSettings.class));
-    when(samlClient.decodeAndValidateSamlResponse(any())).thenReturn(samlResponse);
+    when(samlClient.decodeAndValidateSamlResponse(any(), anyString())).thenReturn(samlResponse);
 
     User returnedUser = authHandler.authenticate(googleIdpUrl1, samlResponseString, "TestGoogleAuthAccount2").getUser();
     assertThat(returnedUser).isEqualTo(user);
@@ -257,7 +257,7 @@ public class SamlBasedAuthHandlerTest extends WingsBaseTest {
         .thenReturn(Arrays.asList(azureSetting1, azureSetting2).iterator());
 
     doReturn(samlClient).when(samlClientService).getSamlClient(any(SamlSettings.class));
-    when(samlClient.decodeAndValidateSamlResponse(anyString())).thenReturn(samlResponse);
+    when(samlClient.decodeAndValidateSamlResponse(anyString(), anyString())).thenReturn(samlResponse);
 
     User returnedUser = authHandler.authenticate(azureIdpUrl2, samlResponseString, null).getUser();
     assertThat(returnedUser).isEqualTo(user);
@@ -314,7 +314,7 @@ public class SamlBasedAuthHandlerTest extends WingsBaseTest {
         .thenReturn(Arrays.asList(azureSetting1, azureSetting2).iterator());
 
     doReturn(samlClient).when(samlClientService).getSamlClient(any(SamlSettings.class));
-    when(samlClient.decodeAndValidateSamlResponse(anyString())).thenReturn(samlResponse);
+    when(samlClient.decodeAndValidateSamlResponse(anyString(), anyString())).thenReturn(samlResponse);
 
     User returnedUser = authHandler.authenticate(azureIdpUrl2, samlResponseString, accountId1).getUser();
     assertThat(returnedUser).isEqualTo(user);
@@ -344,7 +344,7 @@ public class SamlBasedAuthHandlerTest extends WingsBaseTest {
     List<SamlSettings> samlSettingsList = Arrays.asList(samlSettings);
     doReturn(samlSettingsList.iterator()).when(samlClientService).getSamlSettingsFromOrigin(any(), any());
     doReturn(samlClient).when(samlClientService).getSamlClient(samlSettings);
-    when(samlClient.decodeAndValidateSamlResponse(anyString())).thenReturn(samlResponse);
+    when(samlClient.decodeAndValidateSamlResponse(anyString(), anyString())).thenReturn(samlResponse);
 
     doNothing().when(samlUserGroupSync).syncUserGroup(any(SamlUserAuthorization.class), any(), any());
     doReturn(true).when(samlSettings).isAuthorizationEnabled();
@@ -415,7 +415,7 @@ public class SamlBasedAuthHandlerTest extends WingsBaseTest {
     List<SamlSettings> samlSettingsList = Arrays.asList(samlSettings);
     doReturn(samlSettingsList.iterator()).when(samlClientService).getSamlSettingsFromOrigin(any(), any());
     doReturn(samlClient).when(samlClientService).getSamlClient(samlSettings);
-    when(samlClient.decodeAndValidateSamlResponse(anyString())).thenReturn(samlResponse);
+    when(samlClient.decodeAndValidateSamlResponse(anyString(), anyString())).thenReturn(samlResponse);
 
     doNothing().when(samlUserGroupSync).syncUserGroup(any(SamlUserAuthorization.class), any(), any());
     doReturn(true).when(samlSettings).isAuthorizationEnabled();
@@ -468,7 +468,7 @@ public class SamlBasedAuthHandlerTest extends WingsBaseTest {
 
     when(ssoSettingService.getSamlSettingsByAccountId(anyString())).thenReturn(samlSettings);
     doReturn(samlClient).when(samlClientService).getSamlClient(samlSettings);
-    when(samlClient.decodeAndValidateSamlResponse(anyString())).thenReturn(samlResponse);
+    when(samlClient.decodeAndValidateSamlResponse(anyString(), anyString())).thenReturn(samlResponse);
     Assertion samlAssertionValue = this.getSamlAssertion(samlResponseString);
 
     doNothing().when(samlUserGroupSync).syncUserGroup(any(SamlUserAuthorization.class), anyString(), anyString());

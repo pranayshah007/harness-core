@@ -10,7 +10,6 @@ package io.harness.cvng.core.services.impl;
 import static io.harness.annotations.dev.HarnessTeam.CV;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.beans.AppdynamicsValidationResponse;
@@ -38,6 +37,7 @@ import io.harness.cvng.core.services.api.AppDynamicsService;
 import io.harness.cvng.core.services.api.OnboardingService;
 import io.harness.datacollection.entity.TimeSeriesRecord;
 import io.harness.ng.beans.PageResponse;
+import io.harness.ng.core.CorrelationContext;
 import io.harness.serializer.JsonUtils;
 import io.harness.utils.PageUtils;
 
@@ -152,7 +152,7 @@ public class AppDynamicsServiceImpl implements AppDynamicsService {
                                                     .connectorIdentifier(connectorIdentifier)
                                                     .accountId(accountId)
                                                     .orgIdentifier(orgIdentifier)
-                                                    .tracingId(generateUuid())
+                                                    .tracingId(CorrelationContext.getCorrelationId())
                                                     .projectIdentifier(projectIdentifier)
                                                     .build();
 
@@ -184,7 +184,7 @@ public class AppDynamicsServiceImpl implements AppDynamicsService {
                                                     .dataCollectionRequest(request)
                                                     .connectorIdentifier(connectorIdentifier)
                                                     .accountId(accountId)
-                                                    .tracingId(generateUuid())
+                                                    .tracingId(CorrelationContext.getCorrelationId())
                                                     .orgIdentifier(orgIdentifier)
                                                     .projectIdentifier(projectIdentifier)
                                                     .build();

@@ -17,6 +17,7 @@ import io.harness.ccm.commons.beans.recommendation.ResourceType;
 import io.harness.ccm.remote.beans.recommendation.CCMRecommendationFilterProperties;
 import io.harness.ccm.remote.beans.recommendation.CCMRecommendationFilterPropertiesDTO;
 import io.harness.ccm.remote.beans.recommendation.K8sRecommendationFilterPropertiesDTO;
+import io.harness.ccm.views.graphql.QLCEViewFilterWrapper;
 import io.harness.filter.FilterType;
 import io.harness.filter.dto.FilterPropertiesDTO;
 import io.harness.filter.entity.FilterProperties;
@@ -46,6 +47,7 @@ public class CCMRecommendationFilterPropertiesMapperTest extends CategoryTest {
           .build();
   Double minSaving = 123.45;
   Double minCost = 1234.5;
+  List<QLCEViewFilterWrapper> perspectiveFilters = Arrays.asList(QLCEViewFilterWrapper.builder().build());
   @InjectMocks CCMRecommendationFilterPropertiesMapper ccmRecommendationFilterPropertiesMapper;
 
   @Before
@@ -59,6 +61,7 @@ public class CCMRecommendationFilterPropertiesMapperTest extends CategoryTest {
   public void testWriteDTO() {
     FilterProperties filterProperties = CCMRecommendationFilterProperties.builder()
                                             .k8sRecommendationFilterPropertiesDTO(k8sRecommendationFilterPropertiesDTO)
+                                            .perspectiveFilters(perspectiveFilters)
                                             .minSaving(minSaving)
                                             .minCost(minCost)
                                             .build();
@@ -67,6 +70,7 @@ public class CCMRecommendationFilterPropertiesMapperTest extends CategoryTest {
     assertThat(filterPropertiesDTO.getFilterType()).isEqualTo(FilterType.CCMRECOMMENDATION);
     assertThat(filterPropertiesDTO.getK8sRecommendationFilterPropertiesDTO())
         .isEqualTo(k8sRecommendationFilterPropertiesDTO);
+    assertThat(filterPropertiesDTO.getPerspectiveFilters()).isEqualTo(perspectiveFilters);
     assertThat(filterPropertiesDTO.getMinSaving()).isEqualTo(minSaving);
     assertThat(filterPropertiesDTO.getMinCost()).isEqualTo(minCost);
   }
@@ -78,6 +82,7 @@ public class CCMRecommendationFilterPropertiesMapperTest extends CategoryTest {
     FilterPropertiesDTO filterPropertiesDTO =
         CCMRecommendationFilterPropertiesDTO.builder()
             .k8sRecommendationFilterPropertiesDTO(k8sRecommendationFilterPropertiesDTO)
+            .perspectiveFilters(perspectiveFilters)
             .minSaving(minSaving)
             .minCost(minCost)
             .build();
@@ -86,6 +91,7 @@ public class CCMRecommendationFilterPropertiesMapperTest extends CategoryTest {
     assertThat(filterProperties.getType()).isEqualTo(FilterType.CCMRECOMMENDATION);
     assertThat(filterProperties.getK8sRecommendationFilterPropertiesDTO())
         .isEqualTo(k8sRecommendationFilterPropertiesDTO);
+    assertThat(filterProperties.getPerspectiveFilters()).isEqualTo(perspectiveFilters);
     assertThat(filterProperties.getMinSaving()).isEqualTo(minSaving);
     assertThat(filterProperties.getMinCost()).isEqualTo(minCost);
   }

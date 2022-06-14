@@ -30,6 +30,7 @@ import static software.wings.utils.WingsTestConstants.APP_ID;
 import static software.wings.utils.WingsTestConstants.ARTIFACT_ID;
 import static software.wings.utils.WingsTestConstants.ARTIFACT_SOURCE_NAME;
 import static software.wings.utils.WingsTestConstants.ARTIFACT_STREAM_ID;
+import static software.wings.utils.WingsTestConstants.DELEGATE_ID;
 import static software.wings.utils.WingsTestConstants.SERVICE_ID;
 import static software.wings.utils.WingsTestConstants.SETTING_ID;
 
@@ -709,5 +710,61 @@ public class ArtifactCollectionStateTest extends CategoryTest {
     verify(artifactService).updateMetadataAndRevision(any(), any(), any(), any());
     assertThat(executionResponse.getExecutionStatus()).isEqualTo(SUCCESS);
     assertThat(executionResponse.getStateExecutionData()).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = PRABU)
+  @Category(UnitTests.class)
+  public void shouldExecuteForCustomArtifactStream() {
+    customArtifactStream.setArtifactStreamParameterized(false);
+    customArtifactStream.setCollectionEnabled(false);
+    customArtifactStream.setScripts(Collections.singletonList(CustomArtifactStream.Script.builder().build()));
+
+    when(artifactStreamService.get(ARTIFACT_STREAM_ID)).thenReturn(customArtifactStream);
+    when(artifactService.fetchLastCollectedApprovedArtifactForArtifactStream(customArtifactStream))
+        .thenReturn(anArtifact().build());
+
+    when(featureFlagService.isEnabled(ARTIFACT_COLLECTION_CONFIGURABLE, ACCOUNT_ID)).thenReturn(true);
+    Map<String, String> map = new HashMap<>();
+    map.put("buildNo", "1.1");
+    Artifact artifact =
+        Artifact.Builder.anArtifact().withMetadata(new ArtifactMetadata(map)).withUuid(ARTIFACT_ID).build();
+    when(artifactCollectionUtils.getArtifact(any(), any())).thenReturn(artifact);
+    when(artifactService.create(artifact)).thenReturn(artifact);
+
+    ExecutionResponse executionResponse = artifactCollectionState.execute(executionContext);
+    assertThat(executionResponse.getExecutionStatus()).isEqualTo(ExecutionStatus.SUCCESS);
+  }
+
+  @Test
+  @Owner(developers = PRABU)
+  @Category(UnitTests.class)
+  public void shouldExecuteForCustomArtifactWithScript() {
+    customArtifactStream.setArtifactStreamParameterized(false);
+    customArtifactStream.setCollectionEnabled(false);
+    customArtifactStream.setScripts(
+        Collections.singletonList(CustomArtifactStream.Script.builder().scriptString("script").build()));
+
+    when(artifactStreamService.get(ARTIFACT_STREAM_ID)).thenReturn(customArtifactStream);
+    when(artifactService.fetchLastCollectedApprovedArtifactForArtifactStream(customArtifactStream))
+        .thenReturn(anArtifact().build());
+
+    when(featureFlagService.isEnabled(ARTIFACT_COLLECTION_CONFIGURABLE, ACCOUNT_ID)).thenReturn(true);
+    Map<String, String> map = new HashMap<>();
+    map.put("buildNo", "1.1");
+    Artifact artifact =
+        Artifact.Builder.anArtifact().withMetadata(new ArtifactMetadata(map)).withUuid(ARTIFACT_ID).build();
+    when(artifactCollectionUtils.getArtifact(any(), any())).thenReturn(artifact);
+    when(artifactService.create(artifact)).thenReturn(artifact);
+
+    artifactCollectionState.setTimeoutMillis(10000);
+    when(delegateService.queueTask(any())).thenReturn(DELEGATE_ID);
+    when(artifactCollectionUtils.renderCustomArtifactScriptString(customArtifactStream))
+        .thenReturn(ArtifactStreamAttributes.builder().build());
+    when(artifactCollectionUtils.fetchCustomDelegateTask(
+             anyString(), any(), any(), eq(false), eq(BuildSourceParameters.BuildSourceRequestType.GET_BUILD), any()))
+        .thenReturn(DelegateTask.builder());
+    ExecutionResponse executionResponse = artifactCollectionState.execute(executionContext);
+    assertThat(executionResponse.getExecutionStatus()).isEqualTo(ExecutionStatus.SUCCESS);
   }
 }

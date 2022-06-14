@@ -121,11 +121,10 @@ public class EnvironmentGroupServiceImpl implements EnvironmentGroupService {
     }
     EnvironmentGroupEntity entityWithDelete = existingEntity.withDeleted(true);
     try {
-      EnvironmentGroupEntity deletedEntity = environmentRepository.deleteEnvGroup(entityWithDelete);
-
-      if (deletedEntity.getDeleted()) {
-        setupUsagesForEnvironmentList(deletedEntity);
-        return deletedEntity;
+      boolean deleted = environmentRepository.deleteEnvGroup(entityWithDelete);
+      if (deleted) {
+        setupUsagesForEnvironmentList(entityWithDelete);
+        return entityWithDelete;
       } else {
         throw new InvalidRequestException(
             format("Environment Group Set [%s] under Project[%s], Organization [%s] couldn't be deleted.", envGroupId,
@@ -166,7 +165,17 @@ public class EnvironmentGroupServiceImpl implements EnvironmentGroupService {
                                                .withEnvIdentifiers(requestedEntity.getEnvIdentifiers())
                                                .withTags(requestedEntity.getTags())
                                                .withYaml(requestedEntity.getYaml());
-    EnvironmentGroupEntity savedEntity = environmentRepository.update(updatedEntity, originalEntity);
+    final Criteria criteria = where(EnvironmentGroupKeys.accountId)
+                                  .is(originalEntity.getAccountId())
+                                  .and(EnvironmentGroupKeys.orgIdentifier)
+                                  .is(originalEntity.getOrgIdentifier())
+                                  .and(EnvironmentGroupKeys.projectIdentifier)
+                                  .is(originalEntity.getProjectIdentifier())
+                                  .and(EnvironmentGroupKeys.identifier)
+                                  .is(originalEntity.getIdentifier())
+                                  .and(EnvironmentGroupKeys.deleted)
+                                  .is(false);
+    EnvironmentGroupEntity savedEntity = environmentRepository.update(updatedEntity, originalEntity, criteria);
     setupUsagesForEnvironmentList(savedEntity);
     return savedEntity;
   }
@@ -180,9 +189,9 @@ public class EnvironmentGroupServiceImpl implements EnvironmentGroupService {
         list(criteria, pageRequest, projectIdentifier, orgIdentifier, accountId);
 
     for (EnvironmentGroupEntity entity : envGroupListPage) {
-      EnvironmentGroupEntity deletedEntity = environmentRepository.deleteEnvGroup(entity.withDeleted(true));
-      if (deletedEntity.getDeleted()) {
-        setupUsagesForEnvironmentList(deletedEntity);
+      boolean deleted = environmentRepository.deleteEnvGroup(entity.withDeleted(true));
+      if (deleted) {
+        setupUsagesForEnvironmentList(entity);
       }
     }
   }

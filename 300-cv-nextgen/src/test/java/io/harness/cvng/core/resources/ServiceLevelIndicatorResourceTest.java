@@ -38,6 +38,7 @@ import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.ServiceLevelIndicatorTransformer;
+import io.harness.ng.core.CorrelationContext;
 import io.harness.persistence.HPersistence;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
@@ -97,6 +98,7 @@ public class ServiceLevelIndicatorResourceTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void testGetOnboardingGraph() throws IOException, IllegalAccessException {
     String tracingId = "tracingId";
+    CorrelationContext.setCorrelationId(tracingId);
     ServiceLevelIndicatorDTO serviceLevelIndicatorDTO =
         builderFactory.getThresholdServiceLevelIndicatorDTOBuilder().build();
     String monitoredServiceIdentifier = "monitoredServiceIdentifier";

@@ -8,12 +8,16 @@
 package io.harness.cvng.core.services.impl;
 
 import static io.harness.rule.OwnerRule.ARPITJ;
+import static io.harness.rule.OwnerRule.DHRUVX;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
@@ -64,6 +68,8 @@ public class SideKickServiceImplTest extends CvNextGenTestBase {
     typeSideKickExecutorMap.put(Type.RETRY_CHANGE_SOURCE_HANDLE_DELETE, retryChangeSourceHandleDeleteSideKickExecutor);
     FieldUtils.writeField(sideKickService, "typeSideKickExecutorMap", typeSideKickExecutorMap, true);
     FieldUtils.writeField(sideKickService, "clock", Clock.systemDefaultZone(), true);
+    when(retryChangeSourceHandleDeleteSideKickExecutor.canExecute(any())).thenCallRealMethod();
+    when(retryChangeSourceHandleDeleteSideKickExecutor.delayExecutionBy()).thenCallRealMethod();
   }
 
   @Test
@@ -130,11 +136,28 @@ public class SideKickServiceImplTest extends CvNextGenTestBase {
     doReturn(RetryData.builder().shouldRetry(false).nextRetryTime(Instant.now()).build())
         .when(retryChangeSourceHandleDeleteSideKickExecutor)
         .shouldRetry(2);
-
     sideKickService.processNext();
     SideKick sideKick = hPersistence.createQuery(SideKick.class).order(Sort.descending(SidekickKeys.createdAt)).get();
 
     assertThat(sideKick.getStatus()).isEqualTo(Status.FAILED);
+  }
+
+  @Test
+  @Owner(developers = DHRUVX)
+  @Category(UnitTests.class)
+  public void testProcessNext_CantExecute() {
+    when(retryChangeSourceHandleDeleteSideKickExecutor.canExecute(any())).thenReturn(false);
+    RetryChangeSourceHandleDeleteSideKickData sideKickData = createRetryChangeSourceHandleDeleteSideKick();
+    sideKickService.schedule(sideKickData, Instant.now());
+    SideKick sideKickBeforeProcessing =
+        hPersistence.createQuery(SideKick.class).order(Sort.descending(SidekickKeys.createdAt)).get();
+    sideKickService.processNext();
+    SideKick sideKickAfterProcessing =
+        hPersistence.createQuery(SideKick.class).filter(SidekickKeys.uuid, sideKickBeforeProcessing.getUuid()).get();
+    assertThat(sideKickAfterProcessing.getStatus()).isEqualTo(Status.QUEUED);
+    assertThat(sideKickAfterProcessing.getRunAfter()).isAfterOrEqualTo(sideKickBeforeProcessing.getRunAfter());
+    assertThat(sideKickAfterProcessing.getLastUpdatedAt()).isGreaterThan(sideKickBeforeProcessing.getLastUpdatedAt());
+    verify(retryChangeSourceHandleDeleteSideKickExecutor, times(0)).execute(any());
   }
 
   private RetryChangeSourceHandleDeleteSideKickData createRetryChangeSourceHandleDeleteSideKick() {

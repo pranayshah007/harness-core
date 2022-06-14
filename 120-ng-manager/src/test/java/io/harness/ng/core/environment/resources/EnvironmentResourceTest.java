@@ -29,6 +29,7 @@ import io.harness.ng.core.environment.services.impl.EnvironmentServiceImpl;
 import io.harness.ng.core.environment.yaml.NGEnvironmentConfig;
 import io.harness.ng.core.environment.yaml.NGEnvironmentInfoConfig;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
+import io.harness.repositories.UpsertOptions;
 import io.harness.rule.Owner;
 
 import software.wings.beans.Environment.EnvironmentKeys;
@@ -165,7 +166,7 @@ public class EnvironmentResourceTest extends CategoryTest {
   @Owner(developers = ARCHIT)
   @Category(UnitTests.class)
   public void testUpsert() {
-    doReturn(environmentEntity).when(environmentService).upsert(environmentEntity);
+    doReturn(environmentEntity).when(environmentService).upsert(environmentEntity, UpsertOptions.DEFAULT);
     EnvironmentResponseDTO response =
         environmentResource.upsert("0", environmentEntity.getAccountId(), environmentRequestDTO).getData();
     assertThat(response).isNotNull();

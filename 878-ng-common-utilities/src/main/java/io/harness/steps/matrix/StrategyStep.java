@@ -10,6 +10,7 @@ package io.harness.steps.matrix;
 import static io.harness.steps.StepUtils.createStepResponseFromChildResponse;
 
 import io.harness.plancreator.NGCommonUtilPlanCreationConstants;
+import io.harness.plancreator.strategy.MatrixConfig;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
 import io.harness.pms.contracts.steps.StepCategory;
@@ -40,12 +41,14 @@ public class StrategyStep implements ChildrenExecutable<StrategyStepParameters> 
       return ChildrenExecutableResponse.newBuilder()
           .addAllChildren(
               matrixConfigService.fetchChildren(stepParameters.getStrategyConfig(), stepParameters.getChildNodeId()))
+          .setMaxConcurrency(((MatrixConfig) stepParameters.getStrategyConfig().getMatrixConfig()).getMaxConcurrency())
           .build();
     }
     if (stepParameters.getStrategyConfig().getForConfig() != null) {
       return ChildrenExecutableResponse.newBuilder()
           .addAllChildren(forLoopStrategyConfigService.fetchChildren(
               stepParameters.getStrategyConfig(), stepParameters.getChildNodeId()))
+          .setMaxConcurrency(stepParameters.getStrategyConfig().getForConfig().getMaxConcurrency().getValue())
           .build();
     }
     return ChildrenExecutableResponse.newBuilder()

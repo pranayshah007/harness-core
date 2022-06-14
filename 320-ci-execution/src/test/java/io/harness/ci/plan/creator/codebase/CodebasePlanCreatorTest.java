@@ -8,6 +8,7 @@
 package io.harness.ci.plan.creator.codebase;
 
 import static io.harness.rule.OwnerRule.ALEKSANDAR;
+import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
@@ -27,6 +28,7 @@ import io.harness.pms.sdk.core.plan.PlanNode;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
+import io.harness.states.codebase.CodeBaseTaskStepParameters;
 import io.harness.yaml.extended.ci.codebase.Build;
 import io.harness.yaml.extended.ci.codebase.BuildType;
 import io.harness.yaml.extended.ci.codebase.CodeBase;
@@ -63,6 +65,7 @@ public class CodebasePlanCreatorTest extends CategoryTest {
 
     codeBase = CodeBase.builder()
                    .repoName(ParameterField.createValueField("main"))
+                   .projectName(ParameterField.createValueField("project"))
                    .connectorRef(ParameterField.createValueField("connectorRef"))
                    .build(ParameterField.createValueField(build))
                    .build();
@@ -97,5 +100,14 @@ public class CodebasePlanCreatorTest extends CategoryTest {
     assertThat(task.getFacilitatorObtainments())
         .containsExactly(
             FacilitatorObtainment.newBuilder().setType(FacilitatorType.newBuilder().setType("TASK").build()).build());
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void createPlanForCodeBaseTaskWithProjectName() {
+    PlanNode task = CodebasePlanCreator.createPlanForCodeBaseTask(codeBase, executionSource, "TASK", codeBaseFieldUuid);
+    CodeBaseTaskStepParameters codeBaseTaskStepParameters = (CodeBaseTaskStepParameters) task.getStepParameters();
+    assertThat(codeBaseTaskStepParameters.getProjectName()).isEqualTo("project");
   }
 }

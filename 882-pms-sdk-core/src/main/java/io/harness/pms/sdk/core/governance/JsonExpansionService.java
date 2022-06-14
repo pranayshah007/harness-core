@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(PIPELINE)
@@ -44,6 +45,8 @@ public class JsonExpansionService extends JsonExpansionServiceImplBase {
     ExpansionResponseBatch.Builder expansionResponseBatchBuilder = ExpansionResponseBatch.newBuilder();
     Map<String, ExpansionResponse> jsonNodeMap = new HashMap<>();
     List<ExpansionRequestProto> expansionRequests = requestsBatch.getExpansionRequestProtoList();
+    log.info("Initiating expansion request for the following FQNs: "
+        + expansionRequests.stream().map(ExpansionRequestProto::getFqn).collect(Collectors.toSet()));
     for (ExpansionRequestProto request : expansionRequests) {
       String fqn = request.getFqn();
       try {

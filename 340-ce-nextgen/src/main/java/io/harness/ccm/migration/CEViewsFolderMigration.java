@@ -36,9 +36,8 @@ public class CEViewsFolderMigration implements NGMigration {
       log.info("Starting migration of all CCM Perspectives");
 
       // Delete all perspectives of type DEFAULT_AZURE
-      Query<CEView> deleteQuery = hPersistence.createQuery(CEView.class)
-          .field(CEViewKeys.viewType)
-          .equal("DEFAULT_AZURE");
+      Query<CEView> deleteQuery =
+          hPersistence.createQuery(CEView.class).field(CEViewKeys.viewType).equal("DEFAULT_AZURE");
       hPersistence.delete(deleteQuery);
 
       List<String> accountIds = hPersistence.createQuery(CEView.class).getCollection().distinct("accountId");

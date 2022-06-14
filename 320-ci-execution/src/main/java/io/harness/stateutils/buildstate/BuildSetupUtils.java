@@ -11,41 +11,31 @@ import static io.harness.govern.Switch.unhandled;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.environment.pod.container.ContainerDefinitionInfo;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
+import io.harness.ci.integrationstage.K8InitializeTaskParamsBuilder;
+import io.harness.ci.integrationstage.VmInitializeTaskParamsBuilder;
 import io.harness.delegate.beans.ci.CIInitializeTaskParams;
 import io.harness.pms.contracts.ambiance.Ambiance;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import java.util.List;
-import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
 @Singleton
 @Slf4j
 @OwnedBy(HarnessTeam.CI)
 public class BuildSetupUtils {
-  @Inject private K8BuildSetupUtils k8BuildSetupUtils;
-  @Inject private VmInitializeTaskUtils vmInitializeTaskUtils;
+  @Inject private K8InitializeTaskParamsBuilder k8InitializeTaskParamsBuilder;
+  @Inject private VmInitializeTaskParamsBuilder vmInitializeTaskParamsBuilder;
 
-  public CIInitializeTaskParams getBuildSetupTaskParams(InitializeStepInfo initializeStepInfo, Ambiance ambiance,
-      Map<String, String> taskIds, String logPrefix, Map<String, String> stepLogKeys) {
-    switch (initializeStepInfo.getBuildJobEnvInfo().getType()) {
-      case K8:
-        return k8BuildSetupUtils.getCIk8BuildTaskParams(initializeStepInfo, ambiance, taskIds, logPrefix, stepLogKeys);
+  public CIInitializeTaskParams getBuildSetupTaskParams(
+      InitializeStepInfo initializeStepInfo, Ambiance ambiance, String logPrefix) {
+    switch (initializeStepInfo.getInfrastructure().getType()) {
+      case KUBERNETES_DIRECT:
+      case KUBERNETES_HOSTED:
+        return k8InitializeTaskParamsBuilder.getK8InitializeTaskParams(initializeStepInfo, ambiance, logPrefix);
       case VM:
-        return vmInitializeTaskUtils.getInitializeTaskParams(initializeStepInfo, ambiance, logPrefix);
-      default:
-        unhandled(initializeStepInfo.getBuildJobEnvInfo().getType());
-    }
-    return null;
-  }
-
-  public List<ContainerDefinitionInfo> getBuildServiceContainers(InitializeStepInfo initializeStepInfo) {
-    switch (initializeStepInfo.getBuildJobEnvInfo().getType()) {
-      case K8:
-        return k8BuildSetupUtils.getCIk8BuildServiceContainers(initializeStepInfo);
+        return vmInitializeTaskParamsBuilder.getVmInitializeTaskParams(initializeStepInfo, ambiance, logPrefix);
       default:
         unhandled(initializeStepInfo.getBuildJobEnvInfo().getType());
     }

@@ -33,7 +33,6 @@ import io.harness.pms.ngpipeline.inputset.mappers.PMSInputSetFilterHelper;
 import io.harness.springdata.TransactionHelper;
 
 import com.google.inject.Inject;
-import com.mongodb.client.result.UpdateResult;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
@@ -286,35 +285,33 @@ public class PMSInputSetRepositoryCustomImpl implements PMSInputSetRepositoryCus
   }
 
   @Override
-  public InputSetEntity deleteForOldGitSync(InputSetEntity entityToDelete, InputSetYamlDTO yamlDTO) {
-    Supplier<OutboxEvent> functor = ()
-        -> outboxService.save(InputSetDeleteEvent.builder()
-                                  .accountIdentifier(entityToDelete.getAccountIdentifier())
-                                  .orgIdentifier(entityToDelete.getOrgIdentifier())
-                                  .projectIdentifier(entityToDelete.getProjectIdentifier())
-                                  .pipelineIdentifier(entityToDelete.getPipelineIdentifier())
-                                  .inputSet(entityToDelete)
-                                  .build());
-    return gitAwarePersistence.save(
-        entityToDelete, entityToDelete.getYaml(), ChangeType.DELETE, InputSetEntity.class, functor);
+  public void deleteForOldGitSync(InputSetEntity entityToDelete, InputSetYamlDTO yamlDTO) {
+    gitAwarePersistence.delete(entityToDelete, ChangeType.DELETE, InputSetEntity.class);
+    outboxService.save(InputSetDeleteEvent.builder()
+                           .accountIdentifier(entityToDelete.getAccountIdentifier())
+                           .orgIdentifier(entityToDelete.getOrgIdentifier())
+                           .projectIdentifier(entityToDelete.getProjectIdentifier())
+                           .pipelineIdentifier(entityToDelete.getPipelineIdentifier())
+                           .inputSet(entityToDelete)
+                           .build());
   }
 
   @Override
-  public InputSetEntity delete(
+  public void delete(
       String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier, String identifier) {
     Criteria criteria = PMSInputSetFilterHelper.getCriteriaForFind(
         accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, identifier, true);
     Query query = new Query(criteria);
-    Update updateOperationsForDelete = PMSInputSetFilterHelper.getUpdateOperationsForDelete();
-    return mongoTemplate.findAndModify(
-        query, updateOperationsForDelete, new FindAndModifyOptions().returnNew(true), InputSetEntity.class);
+    InputSetEntity removedEntity = mongoTemplate.findAndRemove(query, InputSetEntity.class);
+    outboxService.save(
+        new InputSetDeleteEvent(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, removedEntity));
   }
 
   @Override
-  public UpdateResult deleteAllInputSetsWhenPipelineDeleted(Query query, Update update) {
+  public void deleteAllInputSetsWhenPipelineDeleted(Query query) {
     RetryPolicy<Object> retryPolicy = getRetryPolicy(
         "[Retrying]: Failed deleting Input Set; attempt: {}", "[Failed]: Failed deleting Input Set; attempt: {}");
-    return Failsafe.with(retryPolicy).get(() -> mongoTemplate.updateMulti(query, update, InputSetEntity.class));
+    Failsafe.with(retryPolicy).get(() -> mongoTemplate.findAllAndRemove(query, InputSetEntity.class));
   }
 
   @Override

@@ -106,6 +106,11 @@ import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitHttpsA
 import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitHttpsCredentialsDTO;
 import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitSecretKeyAccessKeyDTO;
 import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitUrlType;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoAuthenticationDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoHttpAuthenticationType;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoHttpCredentialsDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoUsernameTokenDTO;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitHTTPAuthenticationDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubAuthenticationDTO;
@@ -1152,6 +1157,40 @@ public class CIExecutionPlanTestHelper {
                 .build())
         .build();
   }
+
+  public ConnectorDTO getAzureRepoConnectorDTO() {
+    return ConnectorDTO.builder()
+        .connectorInfo(
+            ConnectorInfoDTO.builder()
+                .name("azureRepoConnector")
+                .identifier("azureRepoConnector")
+                .connectorType(ConnectorType.AZURE_REPO)
+                .connectorConfig(
+                    AzureRepoConnectorDTO.builder()
+                        .url("https://dev.azure.com/harness/project/repo")
+                        .connectionType(GitConnectionType.REPO)
+                        .authentication(
+                            AzureRepoAuthenticationDTO.builder()
+                                .authType(GitAuthType.HTTP)
+                                .credentials(
+                                    AzureRepoHttpCredentialsDTO.builder()
+                                        .type(AzureRepoHttpAuthenticationType.USERNAME_AND_TOKEN)
+                                        .httpCredentialsSpec(AzureRepoUsernameTokenDTO.builder()
+                                                                 .username("username")
+                                                                 .tokenRef(SecretRefData.builder()
+                                                                               .identifier("gitPassword")
+                                                                               .scope(Scope.ACCOUNT)
+                                                                               .decryptedValue("password".toCharArray())
+                                                                               .build())
+                                                                 .build())
+                                        .build())
+                                .build())
+
+                        .build())
+                .build())
+        .build();
+  }
+
   public ConnectorDTO getAwsCodeCommitConnectorDTO() {
     return ConnectorDTO.builder()
         .connectorInfo(
@@ -1276,6 +1315,7 @@ public class CIExecutionPlanTestHelper {
         .variables(getStageNGVariables())
         .build();
   }
+
   public IntegrationStageConfig getIntegrationStageConfig() {
     return IntegrationStageConfigImpl.builder()
         .execution(getExecutionElementConfig())
