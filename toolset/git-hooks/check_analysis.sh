@@ -8,8 +8,8 @@ root_folders=()
 # generate a list of target folder with potential changes
 for file in $(git diff --dirstat=files,0,cumulative | cut -d '%' -f 2); do
   root_folder=$(echo "$file" | cut -d "/" -f 1)
-  match=$(echo "${root_folders[@]:0}" | grep -c "$root_folder")
-  if [ "$match" == "0" ]
+  unique=$(echo "${root_folders[@]:0}" | grep -c "$root_folder")
+  if [ "$unique" == "0" ]
   then
     root_folders+=($root_folder)
   fi
@@ -18,8 +18,8 @@ done
 # bazel build targets which contain changes
 for folder in "${root_folders[@]}"; do
   TARGETS=$(bazel query "attr(tags, \"analysis\", //$folder/...:*)" 2> /dev/null)
-  check=$?
-  if [ $check == 0 ]
+  buildable_targets=$?
+  if [ $buildable_targets == 0 ]
   then
     bazel ${bazelrc} build ${GCP} ${BAZEL_ARGUMENTS} ${TARGETS} 2> /dev/null
   fi
