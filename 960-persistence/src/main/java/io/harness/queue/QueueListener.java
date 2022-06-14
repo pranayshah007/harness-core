@@ -20,6 +20,7 @@ import static java.time.Duration.ofSeconds;
 import io.harness.exception.WingsException;
 import io.harness.logging.ExceptionLogger;
 import io.harness.manage.GlobalContextManager.GlobalContextGuard;
+import io.harness.metrics.impl.QueueListenerMetricsServiceImpl;
 import io.harness.mongo.DelayLogContext;
 import io.harness.mongo.MessageLogContext;
 import io.harness.mongo.ProcessTimeLogContext;
@@ -41,6 +42,7 @@ public abstract class QueueListener<T extends Queuable> implements Runnable {
 
   private AtomicBoolean shouldStop = new AtomicBoolean(false);
 
+  @Inject private QueueListenerMetricsServiceImpl queueListenerMetricsService;
   @Inject private TimerScheduledExecutorService timer;
   @Inject private QueueController queueController;
 
@@ -79,9 +81,13 @@ public abstract class QueueListener<T extends Queuable> implements Runnable {
     } catch (Exception exception) {
       if (exception.getCause() instanceof InterruptedException) {
         log.info("Thread interrupted, shutting down for queue {}", queueConsumer.getName());
+        queueListenerMetricsService.recordQueueListenerMetrics(
+            queueConsumer.getName(), QueueListenerMetricsServiceImpl.LISTENER_ERROR);
         return false;
       }
       log.error("Exception happened while fetching message from queue {}", queueConsumer.getName(), exception);
+      queueListenerMetricsService.recordQueueListenerMetrics(
+          queueConsumer.getName(), QueueListenerMetricsServiceImpl.LISTENER_ERROR);
     }
 
     if (message != null) {
@@ -100,9 +106,13 @@ public abstract class QueueListener<T extends Queuable> implements Runnable {
       } catch (Exception exception) {
         if (exception.getCause() instanceof InterruptedException) {
           log.info("Thread interrupted, shutting down for queue {}", queueConsumer.getName());
+          queueListenerMetricsService.recordQueueListenerMetrics(
+              queueConsumer.getName(), QueueListenerMetricsServiceImpl.LISTENER_ERROR);
           return;
         }
         log.error("Exception happened while fetching message from queue {}", queueConsumer.getName(), exception);
+        queueListenerMetricsService.recordQueueListenerMetrics(
+            queueConsumer.getName(), QueueListenerMetricsServiceImpl.LISTENER_ERROR);
       }
 
       if (message == null) {
@@ -126,6 +136,8 @@ public abstract class QueueListener<T extends Queuable> implements Runnable {
         long delay = startTime - message.getEarliestGet().toInstant().toEpochMilli();
         try (DelayLogContext ignore2 = new DelayLogContext(delay, OVERRIDE_ERROR)) {
           log.info("Working on message");
+          queueListenerMetricsService.recordQueueListenerMetrics(
+              queueConsumer.getName(), QueueListenerMetricsServiceImpl.LISTENER_WORKING_ON_MESSAGE);
         }
 
         onMessage(message);
@@ -136,6 +148,9 @@ public abstract class QueueListener<T extends Queuable> implements Runnable {
       queueConsumer.ack(message);
     } catch (InstantiationError exception) {
       log.error("Critical exception happened in onMessage {}", queueConsumer.getName(), exception);
+      queueListenerMetricsService.recordQueueListenerMetrics(
+          queueConsumer.getName(), QueueListenerMetricsServiceImpl.LISTENER_ERROR);
+
       queueConsumer.ack(message);
     } catch (Throwable exception) {
       onException(exception, message);
@@ -143,6 +158,8 @@ public abstract class QueueListener<T extends Queuable> implements Runnable {
       long processTime = currentTimeMillis() - startTime;
       try (ProcessTimeLogContext ignore2 = new ProcessTimeLogContext(processTime, OVERRIDE_ERROR)) {
         log.info("Done with message");
+        queueListenerMetricsService.recordQueueListenerMetricsWithDuration(queueConsumer.getName(),
+            Duration.ofMillis(processTime), QueueListenerMetricsServiceImpl.LISTENER_PROCESSING_TIME);
       } catch (Throwable exception) {
         log.error("Exception while recording the processing of message", exception);
       }

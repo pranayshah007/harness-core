@@ -1,0 +1,4 @@
+name: QueueListener
+identifier: queue_listener
+labels:
+  - queueName

@@ -1,0 +1,22 @@
+name: Queue Listener Metrics
+identifier: queue_listener_metrics
+metricGroup: queue_listener
+metrics:
+  - metricName: queue_listener_error
+    metricDefinition: Exception occurred while processing queue_listener
+    type: Count
+    unit: "1"
+  - metricName: queue_listener_working_on_queue_listener
+    metricDefinition: Queue Listener working on queue_listener
+    type: Count
+    unit: "1"
+  - metricName: queue_listener_processing_time
+    metricDefinition: Queue Listener entity processing time
+    type: Duration
+    distribution: [ 0m, 15s, 30s, 1m, 2m, 4m, 8m, 16m, 32m ]
+    unit: "ms"
+  - metricName: queue_listener_delay
+    metricDefinition: Queue Listener taking more time than acceptableExecutionTime to process
+    type: Duration
+    distribution: [ 0m, 15s, 30s, 1m, 2m, 4m, 8m, 16m, 32m ]
+    unit: "ms"
