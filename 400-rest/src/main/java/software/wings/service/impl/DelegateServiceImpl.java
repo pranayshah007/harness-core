@@ -16,7 +16,8 @@ import static io.harness.beans.FeatureName.USE_IMMUTABLE_DELEGATE;
 import static io.harness.configuration.DeployVariant.DEPLOY_VERSION;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-import static io.harness.data.structure.UUIDGenerator.*;
+import static io.harness.data.structure.UUIDGenerator.convertFromBase64;
+import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.delegate.beans.DelegateType.CE_KUBERNETES;
 import static io.harness.delegate.beans.DelegateType.DOCKER;
 import static io.harness.delegate.beans.DelegateType.ECS;
@@ -36,7 +37,6 @@ import static io.harness.eventsframework.EventsFrameworkMetadataConstants.DELETE
 import static io.harness.exception.WingsException.USER;
 import static io.harness.k8s.KubernetesConvention.getAccountIdentifier;
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_NESTS;
-import static io.harness.logging.Misc.getDurationString;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_DESTROYED;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_DISCONNECTED;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_REGISTRATION_FAILED;
@@ -79,6 +79,8 @@ import io.harness.annotations.dev.BreakDependencyOn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.beans.DelegateHeartbeatResponse;
+import io.harness.beans.DelegateHeartbeatResponse.DelegateHeartbeatResponseBuilder;
 import io.harness.beans.DelegateTask;
 import io.harness.beans.EmbeddedUser;
 import io.harness.beans.PageRequest;
@@ -2528,6 +2530,7 @@ public class DelegateServiceImpl implements DelegateService {
                                   .currentlyExecutingDelegateTasks(delegateParams.getCurrentlyExecutingDelegateTasks())
                                   .ceEnabled(delegateParams.isCeEnabled())
                                   .delegateTokenName(delegateTokenName.orElse(null))
+                                  .sendAsDelegateHeartBeat(delegateParams.isSendAsDelegateHeartBeat())
                                   .build();
 
     if (ECS.equals(delegateParams.getDelegateType())) {
@@ -2593,7 +2596,7 @@ public class DelegateServiceImpl implements DelegateService {
     long now = clock.millis();
     long skew = Math.abs(now - delegateHeartbeat);
     if (skew > TimeUnit.MINUTES.toMillis(2L)) {
-      log.debug("Delegate {} has clock skew of {}", delegate.getUuid(), getDurationString(skew));
+      log.debug("Delegate {} has clock skew of {}", delegate.getUuid(), Misc.getDurationString(skew));
     }
     delegate.setLastHeartBeat(now);
     delegate.setValidUntil(Date.from(OffsetDateTime.now().plusDays(Delegate.TTL.toDays()).toInstant()));
@@ -2631,14 +2634,38 @@ public class DelegateServiceImpl implements DelegateService {
 
     // Not needed to be done when polling is enabled for delegate
     if (isDelegateWithoutPollingEnabled(delegate)) {
-      // Broadcast Message containing, DelegateId and SeqNum (if applicable) and append timestamp
-      String timeStampId = generateTimeBasedUuid();
-      StringBuilder message = new StringBuilder(1024).append("[X]").append(delegate.getUuid()).append("|").append(timeStampId);
-      updateBroadcastMessageIfEcsDelegate(message, delegate, registeredDelegate);
-      broadcasterFactory.lookup(STREAM_DELEGATE + delegate.getAccountId(), true).broadcast(message.toString());
+      if (delegate.isSendAsDelegateHeartBeat()) {
+        broadcastDelegateHeartBeatResponse(delegate, registeredDelegate);
+      } else {
+        // Broadcast Message containing, DelegateId and SeqNum (if applicable)
+        StringBuilder message = new StringBuilder(128).append("[X]").append(delegate.getUuid());
+        updateBroadcastMessageIfEcsDelegate(message, delegate, registeredDelegate);
+        broadcasterFactory.lookup(STREAM_DELEGATE + delegate.getAccountId(), true).broadcast(message.toString());
+      }
     }
 
     return registeredDelegate;
+  }
+
+  private void broadcastDelegateHeartBeatResponse(Delegate delegate, Delegate registeredDelegate) {
+    DelegateHeartbeatResponseBuilder builder = DelegateHeartbeatResponse.builder()
+                                                   .delegateId(delegate.getUuid())
+                                                   .status(delegate.getStatus().toString())
+                                                   .useCdn(delegate.isUseCdn());
+    if (ECS.equals(delegate.getDelegateType())) {
+      String hostName = getDelegateHostNameByRemovingSeqNum(registeredDelegate);
+      String seqNum = getDelegateSeqNumFromHostName(registeredDelegate);
+      DelegateSequenceConfig sequenceConfig =
+          getDelegateSequenceConfig(delegate.getAccountId(), hostName, Integer.parseInt(seqNum));
+      registeredDelegate.setDelegateRandomToken(sequenceConfig.getDelegateToken());
+      registeredDelegate.setSequenceNum(sequenceConfig.getSequenceNum().toString());
+      builder.delegateRandomToken(sequenceConfig.getDelegateToken())
+          .sequenceNumber(sequenceConfig.getSequenceNum().toString());
+    }
+    long now = clock.millis();
+    builder.requestStartedAt(now);
+    DelegateHeartbeatResponse response = builder.build();
+    broadcasterFactory.lookup(STREAM_DELEGATE + delegate.getAccountId(), true).broadcast(response);
   }
 
   private boolean isGroupedCgDelegate(final Delegate delegate) {
