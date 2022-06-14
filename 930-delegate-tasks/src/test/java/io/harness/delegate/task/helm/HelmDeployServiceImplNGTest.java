@@ -558,6 +558,10 @@ public class HelmDeployServiceImplNGTest extends CategoryTest {
 
   private void initForRollback() throws Exception {
     doReturn(helmCliResponse).when(helmClient).rollback(any(), eq(true));
+    doReturn(
+        HelmCliResponse.builder().commandExecutionStatus(SUCCESS).output(HelmTestConstants.RELEASE_HIST_V3).build())
+        .when(helmClient)
+        .releaseHistory(any(), eq(true));
   }
 
   private HelmCommandResponseNG executeRollbackWithReleaseHistory(ReleaseHistory releaseHistory, int version)

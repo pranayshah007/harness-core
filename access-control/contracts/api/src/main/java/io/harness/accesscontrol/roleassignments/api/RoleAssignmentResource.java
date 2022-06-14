@@ -24,6 +24,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -79,7 +80,8 @@ import retrofit2.http.Body;
 public interface RoleAssignmentResource {
   @GET
   @ApiOperation(value = "Get Role Assignments", nickname = "getRoleAssignmentList")
-  @Operation(operationId = "getRoleAssignmentList", summary = "List role assignments in the given scope",
+  @Operation(operationId = "getRoleAssignmentList", summary = "List Role Assignments",
+      description = "List role assignments in the given scope",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -91,8 +93,8 @@ public interface RoleAssignmentResource {
   @POST
   @Path("filter")
   @ApiOperation(value = "Get Filtered Role Assignments", nickname = "getFilteredRoleAssignmentList")
-  @Operation(operationId = "getFilteredRoleAssignmentList",
-      summary = "List role assignments in the scope according to the given filter",
+  @Operation(operationId = "getFilteredRoleAssignmentList", summary = "List Role Assignments by filter",
+      description = "List role assignments in the scope according to the given filter",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -125,8 +127,8 @@ public interface RoleAssignmentResource {
   @POST
   @Path("aggregate")
   @ApiOperation(value = "Get Role Assignments Aggregate", nickname = "getRoleAssignmentsAggregate")
-  @Operation(operationId = "getRoleAssignmentAggregateList",
-      summary = "List role assignments in the scope according to the given filter with added metadata",
+  @Operation(operationId = "getRoleAssignmentAggregateList", summary = "List Aggregated Role Assignments by filter",
+      description = "List role assignments in the scope according to the given filter with added metadata",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(
@@ -140,7 +142,8 @@ public interface RoleAssignmentResource {
 
   @POST
   @ApiOperation(value = "Create Role Assignment", nickname = "postRoleAssignment")
-  @Operation(operationId = "postRoleAssignment", summary = "Creates role assignment within the specified scope.",
+  @Operation(operationId = "postRoleAssignment", summary = "Create Role Assignment",
+      description = "Creates role assignment within the specified scope.",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -154,6 +157,7 @@ public interface RoleAssignmentResource {
   @PUT
   @Path("{identifier}")
   @ApiOperation(value = "Update Role Assignment", nickname = "putRoleAssignment")
+  @Hidden
   @Operation(operationId = "putRoleAssignment",
       summary =
           "Update existing role assignment by identifier and scope. Only changing the disabled/enabled state is allowed.",
@@ -161,7 +165,8 @@ public interface RoleAssignmentResource {
       {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(description = "This has the details of the updated Role Assignment.")
-      })
+      },
+      hidden = true)
   ResponseDTO<RoleAssignmentResponseDTO>
   update(@Parameter(description = "Identifier of the role assignment to update") @NotNull @PathParam(IDENTIFIER_KEY)
          String identifier, @BeanParam HarnessScopeParams harnessScopeParams,
@@ -171,8 +176,8 @@ public interface RoleAssignmentResource {
   @POST
   @Path("/multi")
   @ApiOperation(value = "Create Multiple Role Assignments", nickname = "postRoleAssignments")
-  @Operation(operationId = "postRoleAssignments",
-      summary =
+  @Operation(operationId = "postRoleAssignments", summary = "Create Role Assignments",
+      description =
           "Create multiple role assignments in a scope. Returns all successfully created role assignments. Ignores failures and duplicates.",
       responses =
       { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Successfully created role assignments") })
@@ -199,7 +204,8 @@ public interface RoleAssignmentResource {
   @POST
   @Path("/validate")
   @ApiOperation(value = "Validate Role Assignment", nickname = "validateRoleAssignment")
-  @Operation(operationId = "validateRoleAssignment", summary = "Check whether a proposed role assignment is valid.",
+  @Operation(operationId = "validateRoleAssignment", summary = "Validate Role Assignment",
+      description = "Check whether a proposed role assignment is valid.",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -213,7 +219,8 @@ public interface RoleAssignmentResource {
   @DELETE
   @Path("{identifier}")
   @ApiOperation(value = "Delete Role Assignment", nickname = "deleteRoleAssignment")
-  @Operation(operationId = "deleteRoleAssignment", summary = "Delete an existing role assignment by identifier",
+  @Operation(operationId = "deleteRoleAssignment", summary = "Delete Role Assignment",
+      description = "Delete an existing role assignment by identifier",
       responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Deleted role assignment") })
   ResponseDTO<RoleAssignmentResponseDTO>
   delete(@BeanParam HarnessScopeParams harnessScopeParams,

@@ -20,6 +20,7 @@ import io.harness.exception.ScmUnauthorizedException;
 import io.harness.exception.ScmUnexpectedException;
 import io.harness.exception.WingsException;
 import io.harness.gitsync.GitSyncTestBase;
+import io.harness.gitsync.common.scmerrorhandling.dtos.ErrorMetadata;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
@@ -44,7 +45,8 @@ public class BitbucketServerCreatePullRequestScmApiErrorHandlerTest extends GitS
   @Category(UnitTests.class)
   public void testHandleErrorOnUnauthorizedResponse() {
     try {
-      bitbucketServerCreatePullRequestScmApiErrorHandler.handleError(401, errorMessage);
+      bitbucketServerCreatePullRequestScmApiErrorHandler.handleError(
+          401, errorMessage, ErrorMetadata.builder().build());
     } catch (Exception ex) {
       WingsException exception = ExceptionUtils.cause(ScmUnauthorizedException.class, ex);
       assertThat(exception).isNotNull();
@@ -57,7 +59,8 @@ public class BitbucketServerCreatePullRequestScmApiErrorHandlerTest extends GitS
   @Category(UnitTests.class)
   public void testHandleErrorOnUnauthenticatedResponse() {
     try {
-      bitbucketServerCreatePullRequestScmApiErrorHandler.handleError(403, errorMessage);
+      bitbucketServerCreatePullRequestScmApiErrorHandler.handleError(
+          403, errorMessage, ErrorMetadata.builder().build());
     } catch (Exception ex) {
       WingsException exception = ExceptionUtils.cause(ScmUnauthorizedException.class, ex);
       assertThat(exception).isNotNull();
@@ -70,7 +73,8 @@ public class BitbucketServerCreatePullRequestScmApiErrorHandlerTest extends GitS
   @Category(UnitTests.class)
   public void testHandleErrorOnResourceNotFoundResponse() {
     try {
-      bitbucketServerCreatePullRequestScmApiErrorHandler.handleError(404, errorMessage);
+      bitbucketServerCreatePullRequestScmApiErrorHandler.handleError(
+          404, errorMessage, ErrorMetadata.builder().build());
     } catch (Exception ex) {
       WingsException exception = ExceptionUtils.cause(ScmBadRequestException.class, ex);
       assertThat(exception).isNotNull();
@@ -83,7 +87,8 @@ public class BitbucketServerCreatePullRequestScmApiErrorHandlerTest extends GitS
   @Category(UnitTests.class)
   public void testHandleErrorOnBadRequestResponse() {
     try {
-      bitbucketServerCreatePullRequestScmApiErrorHandler.handleError(400, errorMessage);
+      bitbucketServerCreatePullRequestScmApiErrorHandler.handleError(
+          400, errorMessage, ErrorMetadata.builder().build());
     } catch (Exception ex) {
       WingsException exception = ExceptionUtils.cause(ScmBadRequestException.class, ex);
       assertThat(exception).isNotNull();
@@ -96,7 +101,8 @@ public class BitbucketServerCreatePullRequestScmApiErrorHandlerTest extends GitS
   @Category(UnitTests.class)
   public void testHandleErrorOAlreadyExistsResponse() {
     try {
-      bitbucketServerCreatePullRequestScmApiErrorHandler.handleError(409, errorMessage);
+      bitbucketServerCreatePullRequestScmApiErrorHandler.handleError(
+          409, errorMessage, ErrorMetadata.builder().build());
     } catch (Exception ex) {
       WingsException exception = ExceptionUtils.cause(ScmBadRequestException.class, ex);
       assertThat(exception).isNotNull();
@@ -109,7 +115,8 @@ public class BitbucketServerCreatePullRequestScmApiErrorHandlerTest extends GitS
   @Category(UnitTests.class)
   public void testHandleErrorWhenUnexpectedStatusCode() {
     try {
-      bitbucketServerCreatePullRequestScmApiErrorHandler.handleError(405, errorMessage);
+      bitbucketServerCreatePullRequestScmApiErrorHandler.handleError(
+          405, errorMessage, ErrorMetadata.builder().build());
     } catch (Exception ex) {
       WingsException exception = ExceptionUtils.cause(ScmUnexpectedException.class, ex);
       assertThat(exception).isNotNull();

@@ -9,10 +9,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
-	"io/ioutil"
-	"os"
-
 	"github.com/ghodss/yaml"
 	grpc_retry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
 	"github.com/harness/harness-core/commons/go/lib/filesystem"
@@ -25,6 +21,12 @@ import (
 	"github.com/harness/harness-core/product/ci/ti-service/types"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
+	"io"
+	"io/ioutil"
+	"net/http"
+	"os"
+	"path/filepath"
+	"runtime"
 )
 
 var (
@@ -239,4 +241,94 @@ func getTiConfig(fs filesystem.FileSystem) (types.TiConfig, error) {
 		return res, errors.Wrap(err, "could not unmarshal ticonfig file")
 	}
 	return res, nil
+}
+
+// installAgents checks if the required artifacts are installed for the language
+// and if not, installs them. It returns back the directory where all the agents are installed.
+func installAgents(ctx context.Context, path, language, framework, frameworkVersion, buildEnvironment string, log *zap.SugaredLogger, fs filesystem.FileSystem) (string, error) {
+	// Create TI proxy client (lite engine)
+	client, err := grpcclient.NewTiProxyClient(consts.LiteEnginePort, log)
+	if err != nil {
+		return "", err
+	}
+	req := &pb.DownloadLinkRequest{
+		Language:  language,
+		Os:        runtime.GOOS,
+		Arch:      runtime.GOARCH,
+		Framework: framework,
+		Version:   frameworkVersion,
+		Env:       buildEnvironment,
+	}
+	resp, err := client.Client().DownloadLink(ctx, req)
+	if err != nil {
+		return "", err
+	}
+	var links []types.DownloadLink
+	err = json.Unmarshal([]byte(resp.Links), &links)
+
+	var installDir string // directory where all the agents are installed
+
+	// Install the Artifacts
+	for idx, l := range links {
+		absPath := filepath.Join(path, l.RelPath)
+		if idx == 0 {
+			installDir = filepath.Dir(absPath)
+		} else if filepath.Dir(absPath) != installDir {
+			return "", fmt.Errorf("artifacts don't have the same relative path: link %s and installDir %s", l, installDir)
+		}
+		err := downloadFile(ctx, absPath, l.URL, fs)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	return installDir, nil
+}
+
+/*
+Downloads url to path with specified fs.
+Args:
+  ctx (context.Context): context of the current thread
+  path (string): local path where it downloads to
+  url (url): remote file url
+  fs (filesystem.FileSystem): file system used to create directory and save file
+Returns:
+  err (error): Error if there's one, nil otherwise.
+*/
+func downloadFile(ctx context.Context, path, url string, fs filesystem.FileSystem) error {
+	// Create the nested directory if it doesn't exist
+	dir := filepath.Dir(path)
+	if err := fs.MkdirAll(dir, os.ModePerm); err != nil {
+		return fmt.Errorf("could not create nested directory: %s", err)
+	}
+	// Create the file
+	out, err := fs.Create(path)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	// Get the data
+	req, err := http.NewRequestWithContext(ctx, "GET", url, http.NoBody)
+	if err != nil {
+		return err
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	// Check server response
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("bad status: %s", resp.Status)
+	}
+
+	// Write the body to file
+	_, err = io.Copy(out, resp.Body)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

@@ -67,6 +67,7 @@ import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideConfig;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
 import io.harness.rbac.CDNGRbacUtility;
+import io.harness.repositories.UpsertOptions;
 import io.harness.security.annotations.NextGenManagerAuth;
 import io.harness.utils.PageUtils;
 
@@ -293,7 +294,7 @@ public class EnvironmentResourceV2 {
     requestEnvironment.setVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
     orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(requestEnvironment.getOrgIdentifier(),
         requestEnvironment.getProjectIdentifier(), requestEnvironment.getAccountId());
-    Environment upsertEnvironment = environmentService.upsert(requestEnvironment);
+    Environment upsertEnvironment = environmentService.upsert(requestEnvironment, UpsertOptions.DEFAULT);
     return ResponseDTO.newResponse(
         upsertEnvironment.getVersion().toString(), EnvironmentMapper.toResponseWrapper(upsertEnvironment));
   }

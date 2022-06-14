@@ -391,6 +391,10 @@ public class K8InitializeTaskUtils {
   }
 
   public ContainerSecurityContext getCtrSecurityContext(Infrastructure infrastructure) {
+    if (infrastructure.getType() != Infrastructure.Type.KUBERNETES_DIRECT) {
+      return ContainerSecurityContext.builder().build();
+    }
+
     OSType os = getOS(infrastructure);
     SecurityContext securityContext = null;
     if (infrastructure.getType() == Infrastructure.Type.KUBERNETES_DIRECT
