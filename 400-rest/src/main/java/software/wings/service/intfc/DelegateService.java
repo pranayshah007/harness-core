@@ -102,6 +102,8 @@ public interface DelegateService extends OwnedByAccount {
 
   String getLatestDelegateVersion(String accountId);
 
+  String getLatestWatcherVersion(String accountId);
+
   File downloadScripts(String managerHost, String verificationServiceUrl, String accountId, String delegateName,
       String delegateProfile, String tokenName) throws IOException;
 

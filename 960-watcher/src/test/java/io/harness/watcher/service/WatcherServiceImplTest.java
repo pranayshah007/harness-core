@@ -362,7 +362,7 @@ public class WatcherServiceImplTest {
   public void testCheckForWatcherUpgradeValidFiveDigitsVersion() throws Exception {
     when(watcherConfiguration.isDoUpgrade()).thenReturn(true);
     when(watcherConfiguration.getDelegateCheckLocation()).thenReturn(DELEGATE_CHECK_LOCATION);
-    doReturn(VALID_FIVE_DIGITS_VERSION).when(watcherService).getResponseStringFromUrl();
+    doReturn(VALID_FIVE_DIGITS_VERSION).when(watcherService).fetchLatestWatcherVersion();
     when(watcherService.getVersion()).thenReturn(CURRENT_VERSION);
     doReturn(true).when(watcherService).downloadRunScriptsBeforeRestartingDelegateAndWatcher();
 
@@ -378,7 +378,7 @@ public class WatcherServiceImplTest {
   public void testCheckForWatcherUpgradeValidFiveDigitsWithHyphenVersion() throws Exception {
     when(watcherConfiguration.isDoUpgrade()).thenReturn(true);
     when(watcherConfiguration.getDelegateCheckLocation()).thenReturn(DELEGATE_CHECK_LOCATION);
-    doReturn(VALID_FIVE_DIGITS_WITH_HYPHEN).when(watcherService).getResponseStringFromUrl();
+    doReturn(VALID_FIVE_DIGITS_WITH_HYPHEN).when(watcherService).fetchLatestWatcherVersion();
     when(watcherService.getVersion()).thenReturn(CURRENT_VERSION);
     doReturn(true).when(watcherService).downloadRunScriptsBeforeRestartingDelegateAndWatcher();
 
@@ -394,7 +394,7 @@ public class WatcherServiceImplTest {
   public void testCheckForWatcherUpgradeValidSixDigitsVersion() throws Exception {
     when(watcherConfiguration.isDoUpgrade()).thenReturn(true);
     when(watcherConfiguration.getDelegateCheckLocation()).thenReturn(DELEGATE_CHECK_LOCATION);
-    doReturn(VALID_SIX_DIGITS_VERSION).when(watcherService).getResponseStringFromUrl();
+    doReturn(VALID_SIX_DIGITS_VERSION).when(watcherService).fetchLatestWatcherVersion();
     when(watcherService.getVersion()).thenReturn(CURRENT_VERSION);
     doReturn(true).when(watcherService).downloadRunScriptsBeforeRestartingDelegateAndWatcher();
 
@@ -410,7 +410,7 @@ public class WatcherServiceImplTest {
   public void testCheckForWatcherUpgradeValidSixDigitsWithHyphenVersion() throws Exception {
     when(watcherConfiguration.isDoUpgrade()).thenReturn(true);
     when(watcherConfiguration.getDelegateCheckLocation()).thenReturn(DELEGATE_CHECK_LOCATION);
-    doReturn(VALID_SIX_DIGITS_VERSION_WITH_HYPHEN).when(watcherService).getResponseStringFromUrl();
+    doReturn(VALID_SIX_DIGITS_VERSION_WITH_HYPHEN).when(watcherService).fetchLatestWatcherVersion();
     when(watcherService.getVersion()).thenReturn(CURRENT_VERSION);
     doReturn(true).when(watcherService).downloadRunScriptsBeforeRestartingDelegateAndWatcher();
 
@@ -426,7 +426,7 @@ public class WatcherServiceImplTest {
   public void testCheckForWatcherUpgradeInvalidVersion() throws Exception {
     when(watcherConfiguration.isDoUpgrade()).thenReturn(true);
     when(watcherConfiguration.getDelegateCheckLocation()).thenReturn(DELEGATE_CHECK_LOCATION);
-    doReturn(INVALID_UPGRADE_VERSION).when(watcherService).getResponseStringFromUrl();
+    doReturn(INVALID_UPGRADE_VERSION).when(watcherService).fetchLatestWatcherVersion();
     when(watcherService.getVersion()).thenReturn(CURRENT_VERSION);
 
     watcherService.checkForWatcherUpgrade();

@@ -33,6 +33,7 @@ import static software.wings.security.PermissionAttribute.Action.READ;
 import static software.wings.security.PermissionAttribute.Action.UPDATE;
 import static software.wings.security.PermissionAttribute.PermissionType.MANAGE_APPLICATIONS;
 
+import static java.util.Base64.getUrlDecoder;
 import static java.util.stream.Collectors.toSet;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
@@ -397,13 +398,14 @@ public class AuthServiceImpl implements AuthService {
   @Override
   public void validateDelegateToken(
       String accountId, String tokenString, String delegateId, boolean shouldSetTokenNameInGlobalContext) {
-    delegateTokenAuthenticator.validateDelegateToken(
-        accountId, tokenString, delegateId, shouldSetTokenNameInGlobalContext);
-  }
-
-  @Override
-  public void validateDelegateToken(String accountId, String tokenString) {
-    delegateTokenAuthenticator.validateDelegateAuth2Token(accountId, tokenString);
+    java.util.Base64.Decoder decoder = getUrlDecoder();
+    final String authHeader = new String(decoder.decode(tokenString.split("\\.")[0]));
+    if (authHeader.contains("HS256")) {
+      delegateTokenAuthenticator.validateDelegateAuth2Token(accountId, tokenString);
+    } else {
+      delegateTokenAuthenticator.validateDelegateToken(
+          accountId, tokenString, delegateId, shouldSetTokenNameInGlobalContext);
+    }
   }
 
   @Override

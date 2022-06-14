@@ -40,6 +40,7 @@ import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_DISCON
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_REGISTRATION_FAILED;
 import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_RESTARTED;
 import static io.harness.mongo.MongoUtils.setUnset;
+import static io.harness.network.Http.getResponseStringFromUrl;
 import static io.harness.obfuscate.Obfuscator.obfuscate;
 import static io.harness.persistence.HQuery.excludeAuthority;
 
@@ -1236,6 +1237,16 @@ public class DelegateServiceImpl implements DelegateService {
       log.error("Execution exception", e);
     }
     return substringBefore(delegateMatadata, " ").trim();
+  }
+
+  public String getLatestWatcherVersion(String accountId) {
+    final String watcherMetadataUrl = infraDownloadService.getCdnWatcherMetaDataFileUrl();
+    try {
+      String watcherMetadata = Http.getResponseStringFromUrl(watcherMetadataUrl, 10, 10);
+      return watcherMetadata;
+    } catch (Exception ex) {
+      throw new IllegalStateException("Unable to fetch watcher version");
+    }
   }
 
   private String fetchDelegateMetadataFromStorage() {
