@@ -74,12 +74,6 @@ public class MaxConcurrentChildCallback implements OldNotifyCallback {
     NodeExecution nodeExecution =
         nodeExecutionService.getWithFieldsIncluded(nodeExecutionToStart, NodeProjectionUtils.withAmbianceAndStatus);
     engine.startNodeExecution(nodeExecution.getAmbiance());
-    MaxConcurrentChildCallback maxConcurrentChildCallback = MaxConcurrentChildCallback.builder()
-                                                                .parentNodeExecutionId(parentNodeExecutionId)
-                                                                .ambiance(ambiance)
-                                                                .maxConcurrency(maxConcurrency)
-                                                                .build();
-    waitNotifyEngine.waitForAllOn(publisherName, maxConcurrentChildCallback, nodeExecution.getUuid());
   }
 
   @Override

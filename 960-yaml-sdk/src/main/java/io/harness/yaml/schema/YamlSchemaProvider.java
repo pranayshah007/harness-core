@@ -13,7 +13,6 @@ import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.yaml.schema.beans.SchemaConstants.CONST_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.DEFINITIONS_NODE;
-import static io.harness.yaml.schema.beans.SchemaConstants.ONE_OF_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.PROPERTIES_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.REF_NODE;
 import static io.harness.yaml.schema.beans.SchemaConstants.REQUIRED_NODE;
@@ -26,7 +25,6 @@ import io.harness.jackson.JsonNodeUtils;
 import io.harness.yaml.schema.beans.YamlSchemaWithDetails;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.ValueNode;
 import com.google.common.annotations.VisibleForTesting;
@@ -71,20 +69,27 @@ public class YamlSchemaProvider {
       ObjectNode secondLevelNode = getSecondLevelNode(schema);
       ObjectNode secondLevelNodeProperties = getSecondLevelNodeProperties(secondLevelNode);
 
-      if (secondLevelNodeProperties == null) {
-        ArrayNode oneOfNodes = (ArrayNode) secondLevelNode.get(ONE_OF_NODE);
-        if (oneOfNodes != null) {
-          for (JsonNode oneOfNode : oneOfNodes) {
-            if (oneOfNode.has(PROPERTIES_NODE)) {
-              secondLevelNodeProperties = getSecondLevelNodeProperties(oneOfNode);
-              addingScopeToSchema((ObjectNode) oneOfNode, secondLevelNodeProperties, orgIdentifier, projectIdentifier,
-                  scope, schemaDetailsForEntityType);
-            }
-          }
+      if (scope == Scope.ACCOUNT && schemaDetailsForEntityType.isAvailableAtAccountLevel()) {
+        JsonNodeUtils.deletePropertiesInJsonNode(secondLevelNodeProperties, PROJECT_KEY, ORG_KEY);
+      } else if (scope == Scope.ORG && schemaDetailsForEntityType.isAvailableAtOrgLevel()) {
+        JsonNodeUtils.deletePropertiesInJsonNode(secondLevelNodeProperties, PROJECT_KEY);
+        if (isNotEmpty(orgIdentifier)) {
+          JsonNodeUtils.upsertPropertyInObjectNode(secondLevelNodeProperties.get(ORG_KEY), CONST_NODE, orgIdentifier);
         }
-      } else {
-        addingScopeToSchema(secondLevelNode, secondLevelNodeProperties, orgIdentifier, projectIdentifier, scope,
-            schemaDetailsForEntityType);
+        if (secondLevelNodeProperties.has(ORG_KEY)) {
+          JsonNodeUtils.upsertPropertyInObjectNode(secondLevelNode, REQUIRED_NODE, ORG_KEY);
+        }
+      } else if (scope == Scope.PROJECT && schemaDetailsForEntityType.isAvailableAtProjectLevel()) {
+        if (isNotEmpty(orgIdentifier)) {
+          JsonNodeUtils.upsertPropertyInObjectNode(secondLevelNodeProperties.get(ORG_KEY), CONST_NODE, orgIdentifier);
+        }
+        if (isNotEmpty(projectIdentifier)) {
+          JsonNodeUtils.upsertPropertyInObjectNode(
+              secondLevelNodeProperties.get(PROJECT_KEY), CONST_NODE, projectIdentifier);
+        }
+        if (secondLevelNodeProperties.has(ORG_KEY) && secondLevelNodeProperties.has(PROJECT_KEY)) {
+          JsonNodeUtils.upsertPropertyInObjectNode(secondLevelNode, REQUIRED_NODE, ORG_KEY, PROJECT_KEY);
+        }
       }
     } catch (Exception e) {
       log.info("Exception in adding scope to schema. {}", e);
@@ -92,32 +97,6 @@ public class YamlSchemaProvider {
 
     // returning original snippet in worst case.
     return schema;
-  }
-
-  private void addingScopeToSchema(ObjectNode secondLevelNode, ObjectNode secondLevelNodeProperties,
-      String orgIdentifier, String projectIdentifier, Scope scope, YamlSchemaWithDetails schemaDetailsForEntityType) {
-    if (scope == Scope.ACCOUNT && schemaDetailsForEntityType.isAvailableAtAccountLevel()) {
-      JsonNodeUtils.deletePropertiesInJsonNode(secondLevelNodeProperties, PROJECT_KEY, ORG_KEY);
-    } else if (scope == Scope.ORG && schemaDetailsForEntityType.isAvailableAtOrgLevel()) {
-      JsonNodeUtils.deletePropertiesInJsonNode(secondLevelNodeProperties, PROJECT_KEY);
-      if (isNotEmpty(orgIdentifier)) {
-        JsonNodeUtils.upsertPropertyInObjectNode(secondLevelNodeProperties.get(ORG_KEY), CONST_NODE, orgIdentifier);
-      }
-      if (secondLevelNodeProperties.has(ORG_KEY)) {
-        JsonNodeUtils.upsertPropertyInObjectNode(secondLevelNode, REQUIRED_NODE, ORG_KEY);
-      }
-    } else if (scope == Scope.PROJECT && schemaDetailsForEntityType.isAvailableAtProjectLevel()) {
-      if (isNotEmpty(orgIdentifier)) {
-        JsonNodeUtils.upsertPropertyInObjectNode(secondLevelNodeProperties.get(ORG_KEY), CONST_NODE, orgIdentifier);
-      }
-      if (isNotEmpty(projectIdentifier)) {
-        JsonNodeUtils.upsertPropertyInObjectNode(
-            secondLevelNodeProperties.get(PROJECT_KEY), CONST_NODE, projectIdentifier);
-      }
-      if (secondLevelNodeProperties.has(ORG_KEY) && secondLevelNodeProperties.has(PROJECT_KEY)) {
-        JsonNodeUtils.upsertPropertyInObjectNode(secondLevelNode, REQUIRED_NODE, ORG_KEY, PROJECT_KEY);
-      }
-    }
   }
 
   @VisibleForTesting

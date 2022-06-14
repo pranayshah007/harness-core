@@ -22,6 +22,7 @@ import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
+import io.harness.cdng.gitops.service.ClusterService;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.eventsframework.EventsFrameworkMetadataConstants;
@@ -42,10 +43,12 @@ import io.harness.ng.core.events.EnvironmentCreateEvent;
 import io.harness.ng.core.events.EnvironmentDeleteEvent;
 import io.harness.ng.core.events.EnvironmentUpdatedEvent;
 import io.harness.ng.core.events.EnvironmentUpsertEvent;
+import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.outbox.api.OutboxService;
 import io.harness.pms.merger.helpers.RuntimeInputFormHelper;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.repositories.UpsertOptions;
 import io.harness.repositories.environment.spring.EnvironmentRepository;
 import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.YamlPipelineUtils;
@@ -65,6 +68,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -94,18 +98,23 @@ public class EnvironmentServiceImpl implements EnvironmentService {
       "Environment [%s] under Organization [%s] in Account [%s] already exists";
   private static final String DUP_KEY_EXP_FORMAT_STRING_FOR_ACCOUNT = "Environment [%s] in Account [%s] already exists";
   private final NGFeatureFlagHelperService ngFeatureFlagHelperService;
+  private final InfrastructureEntityService infrastructureEntityService;
+  private final ClusterService clusterService;
 
   @Inject
   public EnvironmentServiceImpl(EnvironmentRepository environmentRepository,
       EntitySetupUsageService entitySetupUsageService, @Named(ENTITY_CRUD) Producer eventProducer,
       OutboxService outboxService, TransactionTemplate transactionTemplate,
-      NGFeatureFlagHelperService ngFeatureFlagHelperService) {
+      NGFeatureFlagHelperService ngFeatureFlagHelperService, InfrastructureEntityService infrastructureEntityService,
+      ClusterService clusterService) {
     this.environmentRepository = environmentRepository;
     this.entitySetupUsageService = entitySetupUsageService;
     this.eventProducer = eventProducer;
     this.outboxService = outboxService;
     this.transactionTemplate = transactionTemplate;
     this.ngFeatureFlagHelperService = ngFeatureFlagHelperService;
+    this.infrastructureEntityService = infrastructureEntityService;
+    this.clusterService = clusterService;
   }
 
   @Override
@@ -194,7 +203,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
   }
 
   @Override
-  public Environment upsert(Environment requestEnvironment) {
+  public Environment upsert(Environment requestEnvironment, UpsertOptions upsertOptions) {
     validatePresenceOfRequiredFields(requestEnvironment.getAccountId(), requestEnvironment.getIdentifier());
     setName(requestEnvironment);
     Criteria criteria = getEnvironmentEqualityCriteria(requestEnvironment, requestEnvironment.getDeleted());
@@ -206,12 +215,14 @@ public class EnvironmentServiceImpl implements EnvironmentService {
             requestEnvironment.getIdentifier(), requestEnvironment.getProjectIdentifier(),
             requestEnvironment.getOrgIdentifier()));
       }
-      outboxService.save(EnvironmentUpsertEvent.builder()
-                             .accountIdentifier(requestEnvironment.getAccountId())
-                             .orgIdentifier(requestEnvironment.getOrgIdentifier())
-                             .projectIdentifier(requestEnvironment.getProjectIdentifier())
-                             .environment(requestEnvironment)
-                             .build());
+      if (upsertOptions.isSendOutboxEvent()) {
+        outboxService.save(EnvironmentUpsertEvent.builder()
+                               .accountIdentifier(requestEnvironment.getAccountId())
+                               .orgIdentifier(requestEnvironment.getOrgIdentifier())
+                               .projectIdentifier(requestEnvironment.getProjectIdentifier())
+                               .environment(requestEnvironment)
+                               .build());
+      }
       return tempResult;
     }));
     publishEvent(requestEnvironment.getAccountId(), requestEnvironment.getOrgIdentifier(),
@@ -258,6 +269,11 @@ public class EnvironmentServiceImpl implements EnvironmentService {
                                .projectIdentifier(projectIdentifier)
                                .environment(environmentOptional.get())
                                .build());
+        processQuietly(()
+                           -> infrastructureEntityService.forceDeleteAllInEnv(
+                               accountId, orgIdentifier, projectIdentifier, environmentIdentifier));
+        processQuietly(
+            () -> clusterService.deleteAllFromEnv(accountId, orgIdentifier, projectIdentifier, environmentIdentifier));
         return true;
       }));
       publishEvent(accountId, orgIdentifier, projectIdentifier, environmentIdentifier,
@@ -458,5 +474,14 @@ public class EnvironmentServiceImpl implements EnvironmentService {
     } catch (EventsFrameworkDownException e) {
       log.error("Failed to send event to events framework environment Identifier: {}", identifier, e);
     }
+  }
+
+  boolean processQuietly(BooleanSupplier b) {
+    try {
+      return b.getAsBoolean();
+    } catch (Exception ex) {
+      // ignore this
+    }
+    return false;
   }
 }

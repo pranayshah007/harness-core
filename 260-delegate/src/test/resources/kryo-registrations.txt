@@ -1705,6 +1705,15 @@
 73985:io.harness.delegate.beans.DelegateEntityOwner
 73986:io.harness.delegate.beans.DelegateSizeDetails
 73987:io.harness.delegate.beans.DelegateSize
+83071:io.harness.delegate.beans.connector.awsconnector.AwsListEC2InstancesTaskParamsRequest
+83072:io.harness.delegate.beans.connector.awsconnector.AwsListEC2InstancesTaskResponse
+83073:software.wings.service.impl.aws.model.AwsEC2Instance
+83074:io.harness.delegate.beans.connector.awsconnector.AwsListASGInstancesTaskParamsRequest
+83075:io.harness.delegate.beans.connector.awsconnector.AwsListVpcTaskResponse
+83076:io.harness.delegate.beans.connector.awsconnector.AwsListTagsTaskParamsRequest
+83077:io.harness.delegate.beans.connector.awsconnector.AwsListTagsTaskResponse
+83078:io.harness.delegate.beans.connector.awsconnector.AwsListLoadBalancersTaskResponse
+83079:io.harness.delegate.beans.connector.awsconnector.AwsListASGNamesTaskResponse
 95001:io.harness.delegate.beans.logstreaming.UnitProgressData
 95002:io.harness.waiter.WaitInstanceTimeoutCallback
 96001:io.harness.springdata.exceptions.WingsTransactionFailureException

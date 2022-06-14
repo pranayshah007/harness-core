@@ -43,6 +43,7 @@ import io.harness.outbox.api.OutboxService;
 import io.harness.pms.merger.helpers.RuntimeInputFormHelper;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.repositories.UpsertOptions;
 import io.harness.repositories.service.spring.ServiceRepository;
 import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.YamlPipelineUtils;
@@ -171,7 +172,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   }
 
   @Override
-  public ServiceEntity upsert(@Valid ServiceEntity requestService) {
+  public ServiceEntity upsert(@Valid ServiceEntity requestService, UpsertOptions upsertOptions) {
     validatePresenceOfRequiredFields(requestService.getAccountId(), requestService.getIdentifier());
     setNameIfNotPresent(requestService);
     modifyServiceRequest(requestService);
@@ -183,12 +184,14 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
             "Service [%s] under Project[%s], Organization [%s] couldn't be upserted.", requestService.getIdentifier(),
             requestService.getProjectIdentifier(), requestService.getOrgIdentifier()));
       }
-      outboxService.save(ServiceUpsertEvent.builder()
-                             .accountIdentifier(requestService.getAccountId())
-                             .orgIdentifier(requestService.getOrgIdentifier())
-                             .projectIdentifier(requestService.getProjectIdentifier())
-                             .service(requestService)
-                             .build());
+      if (upsertOptions.isSendOutboxEvent()) {
+        outboxService.save(ServiceUpsertEvent.builder()
+                               .accountIdentifier(requestService.getAccountId())
+                               .orgIdentifier(requestService.getOrgIdentifier())
+                               .projectIdentifier(requestService.getProjectIdentifier())
+                               .service(requestService)
+                               .build());
+      }
       return result;
     }));
   }

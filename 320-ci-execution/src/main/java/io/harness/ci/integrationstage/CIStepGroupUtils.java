@@ -240,7 +240,8 @@ public class CIStepGroupUtils {
       entrypoint = ciExecutionServiceConfig.getStepConfig().getGitCloneConfig().getWindowsEntrypoint();
     }
 
-    String gitCloneImage = ciExecutionConfigService.getPluginVersion(CIStepInfoType.GIT_CLONE, accountId).getImage();
+    String gitCloneImage =
+        ciExecutionConfigService.getPluginVersionForK8(CIStepInfoType.GIT_CLONE, accountId).getImage();
     PluginStepInfo step = PluginStepInfo.builder()
                               .identifier(GIT_CLONE_STEP_ID)
                               .image(ParameterField.createValueField(gitCloneImage))

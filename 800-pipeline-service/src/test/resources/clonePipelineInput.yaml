@@ -1,0 +1,33 @@
+pipeline:
+  name: for cp
+  identifier: for_cp
+  projectIdentifier: localproj
+  orgIdentifier: default
+  tags:
+    aaaa: ""
+    tagss: valuuu
+  stages:
+    - stage:
+        name: first
+        identifier: first
+        type: CI
+        spec:
+          cloneCodebase: false
+          infrastructure:
+            type: KubernetesDirect
+            spec:
+              connectorRef: account.localkubecon
+              namespace: harness-deligate
+              automountServiceAccountToken: true
+              nodeSelector: {}
+          execution:
+            steps:
+              - step:
+                  type: Run
+                  name: runst
+                  identifier: runst
+                  spec:
+                    connectorRef: account.harnessImage
+                    image: golang:1.15
+                    shell: Sh
+                    command: echo jkashjfdasjk

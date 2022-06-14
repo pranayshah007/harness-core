@@ -12,6 +12,7 @@ import static io.harness.rule.OwnerRule.DEEPAK;
 import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.MOHIT_GARG;
 import static io.harness.rule.OwnerRule.PRABU;
+import static io.harness.rule.OwnerRule.YOGESH;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -19,7 +20,10 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.internal.verification.VerificationModeFactory.times;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -36,6 +40,8 @@ import io.harness.ng.core.service.dto.ServiceResponseDTO;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.mappers.ServiceElementMapper;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
+import io.harness.outbox.api.OutboxService;
+import io.harness.repositories.UpsertOptions;
 import io.harness.rule.Owner;
 import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.PageUtils;
@@ -56,7 +62,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -64,18 +69,20 @@ import org.springframework.data.mongodb.core.query.Criteria;
 
 @OwnedBy(HarnessTeam.CDC)
 public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
-  @Mock NGFeatureFlagHelperService ngFeatureFlagHelperService;
-  @Mock EntitySetupUsageServiceImpl entitySetupUsageService;
-  @Inject @InjectMocks ServiceEntityServiceImpl serviceEntityService;
+  @Mock private OutboxService outboxService;
+  @Mock private NGFeatureFlagHelperService ngFeatureFlagHelperService;
+  @Mock private EntitySetupUsageServiceImpl entitySetupUsageService;
+  @Inject @InjectMocks private ServiceEntityServiceImpl serviceEntityService;
   private static final String ACCOUNT_ID = "ACCOUNT_ID";
   private static final String ORG_ID = "ORG_ID";
   private static final String PROJECT_ID = "PROJECT_ID";
 
   @Before
   public void setup() {
-    entitySetupUsageService = Mockito.mock(EntitySetupUsageServiceImpl.class);
+    entitySetupUsageService = mock(EntitySetupUsageServiceImpl.class);
     Reflect.on(serviceEntityService).set("entitySetupUsageService", entitySetupUsageService);
     Reflect.on(serviceEntityService).set("ngFeatureFlagHelperService", ngFeatureFlagHelperService);
+    Reflect.on(serviceEntityService).set("outboxService", outboxService);
   }
 
   @Test
@@ -147,7 +154,7 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
                                              .name("UPSERTED_SERVICE")
                                              .description("NEW_DESCRIPTION")
                                              .build();
-    ServiceEntity upsertService = serviceEntityService.upsert(upsertServiceRequest);
+    ServiceEntity upsertService = serviceEntityService.upsert(upsertServiceRequest, UpsertOptions.DEFAULT);
     assertThat(upsertService.getAccountId()).isEqualTo(upsertServiceRequest.getAccountId());
     assertThat(upsertService.getOrgIdentifier()).isEqualTo(upsertServiceRequest.getOrgIdentifier());
     assertThat(upsertService.getProjectIdentifier()).isEqualTo(upsertServiceRequest.getProjectIdentifier());
@@ -179,7 +186,7 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
                                                      .name("UPSERTED_SERVICE")
                                                      .description("NEW_DESCRIPTION")
                                                      .build();
-    upsertService = serviceEntityService.upsert(upsertServiceRequestOrgLevel);
+    upsertService = serviceEntityService.upsert(upsertServiceRequestOrgLevel, UpsertOptions.DEFAULT);
     assertThat(upsertService.getAccountId()).isEqualTo(upsertServiceRequest.getAccountId());
     assertThat(upsertService.getOrgIdentifier()).isEqualTo(upsertServiceRequest.getOrgIdentifier());
     assertThat(upsertService.getProjectIdentifier()).isNull();
@@ -425,6 +432,35 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
     String resFile = "service-with-runtime-inputs-res.yaml";
     String resTemplate = readFile(resFile);
     assertThat(templateYaml).isEqualTo(resTemplate);
+  }
+
+  @Test
+  @Owner(developers = YOGESH)
+  @Category(UnitTests.class)
+  public void testUpsertWithoutOutbox() {
+    ServiceEntity createRequest = ServiceEntity.builder()
+                                      .accountId("ACCOUNT_ID")
+                                      .identifier(UUIDGenerator.generateUuid())
+                                      .orgIdentifier("ORG_ID")
+                                      .projectIdentifier("PROJECT_ID")
+                                      .build();
+
+    ServiceEntity created = serviceEntityService.create(createRequest);
+
+    ServiceEntity upsertRequest = ServiceEntity.builder()
+                                      .accountId("ACCOUNT_ID")
+                                      .identifier(created.getIdentifier())
+                                      .orgIdentifier("ORG_ID")
+                                      .projectIdentifier("PROJECT_ID")
+                                      .name("UPSERTED_ENV")
+                                      .description("NEW_DESCRIPTION")
+                                      .build();
+
+    ServiceEntity upserted = serviceEntityService.upsert(upsertRequest, UpsertOptions.DEFAULT.withNoOutbox());
+
+    assertThat(upserted).isNotNull();
+
+    verify(outboxService, times(1)).save(any());
   }
 
   private String readFile(String filename) {

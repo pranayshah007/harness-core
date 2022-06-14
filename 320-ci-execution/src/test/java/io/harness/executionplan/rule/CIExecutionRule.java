@@ -26,6 +26,7 @@ import io.harness.callback.DelegateCallbackToken;
 import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.config.CIStepConfig;
 import io.harness.ci.config.StepImageConfig;
+import io.harness.ci.config.VmImageConfig;
 import io.harness.delegate.DelegateServiceGrpc;
 import io.harness.engine.pms.tasks.NgDelegate2TaskExecutor;
 import io.harness.entitysetupusageclient.EntitySetupUsageClientModule;
@@ -145,6 +146,20 @@ public class CIExecutionRule implements MethodRule, InjectorRuleMixin, MongoRule
 
     modules.add(TestMongoModule.getInstance());
     modules.add(new SpringPersistenceTestModule());
+
+    VmImageConfig vmImageConfig = VmImageConfig.builder()
+                                      .gitClone("vm-gitClone")
+                                      .artifactoryUpload("vm-artifactoryUpload")
+                                      .s3Upload("vm-s3Upload")
+                                      .gcsUpload("vm-gcsUpload")
+                                      .buildAndPushDockerRegistry("vm-buildAndPushDockerRegistry")
+                                      .buildAndPushECR("vm-buildAndPushECR")
+                                      .buildAndPushGCR("vm-buildAndPushGCR")
+                                      .cacheGCS("vm-cacheGCS")
+                                      .cacheS3("vm-cacheS3")
+                                      .security("vm-security")
+                                      .build();
+
     CIStepConfig ciStepConfig =
         CIStepConfig.builder()
             .gitCloneConfig(StepImageConfig.builder().image("gc:1.2.3").build())
@@ -158,6 +173,7 @@ public class CIExecutionRule implements MethodRule, InjectorRuleMixin, MongoRule
             .cacheGCSConfig(StepImageConfig.builder().image("cachegcs:1.2.3").build())
             .cacheS3Config(StepImageConfig.builder().image("caches3:1.2.3").build())
             .gcsUploadConfig(StepImageConfig.builder().image("gcsUpload:1.2.3").build())
+            .vmImageConfig(vmImageConfig)
             .build();
 
     modules.add(new CIExecutionServiceModule(CIExecutionServiceConfig.builder()

@@ -95,4 +95,5 @@ public interface EntityTypeConstants {
   String CLOUDFORMATION_ROLLBACK_STACK_STEP = "RollbackStack";
   String INFRASTRUCTURE = "Infrastructure";
   String COMMAND = "Command";
+  String STRATEGY_NODE = "StrategyNode";
 }

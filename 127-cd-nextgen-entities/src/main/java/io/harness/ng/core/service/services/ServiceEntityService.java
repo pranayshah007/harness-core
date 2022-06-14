@@ -10,6 +10,7 @@ package io.harness.ng.core.service.services;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.service.entity.ServiceEntity;
+import io.harness.repositories.UpsertOptions;
 
 import java.util.List;
 import java.util.Optional;
@@ -28,7 +29,7 @@ public interface ServiceEntityService {
   ServiceEntity update(ServiceEntity requestService);
 
   // TODO(archit): make it transactional
-  ServiceEntity upsert(ServiceEntity requestService);
+  ServiceEntity upsert(ServiceEntity requestService, UpsertOptions upsertOptions);
 
   Page<ServiceEntity> list(Criteria criteria, Pageable pageable);
 

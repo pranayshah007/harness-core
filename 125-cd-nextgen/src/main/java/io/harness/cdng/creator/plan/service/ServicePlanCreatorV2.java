@@ -7,6 +7,8 @@
 
 package io.harness.cdng.creator.plan.service;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.creator.plan.PlanCreatorConstants;
@@ -16,7 +18,6 @@ import io.harness.cdng.service.steps.ServiceSectionStepParameters;
 import io.harness.cdng.service.steps.ServiceStepParametersV2;
 import io.harness.cdng.service.steps.ServiceStepV2;
 import io.harness.cdng.visitor.YamlTypes;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
@@ -65,7 +66,7 @@ public class ServicePlanCreatorV2 extends ChildrenPlanCreator<NGServiceV2InfoCon
 
     YamlField serviceField = ctx.getCurrentField();
     YamlField serviceDefField = serviceField.getNode().getField(YamlTypes.SERVICE_DEFINITION);
-    if (serviceDefField == null || EmptyPredicate.isEmpty(serviceDefField.getNode().getUuid())) {
+    if (serviceDefField == null || isEmpty(serviceDefField.getNode().getUuid())) {
       throw new InvalidRequestException("ServiceDefinition node is invalid in service - " + config.getIdentifier());
     }
 

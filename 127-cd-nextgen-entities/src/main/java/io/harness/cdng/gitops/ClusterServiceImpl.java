@@ -8,11 +8,11 @@
 package io.harness.cdng.gitops;
 
 import static io.harness.annotations.dev.HarnessTeam.GITOPS;
-import static io.harness.cdng.gitops.ClusterServiceConstants.CLUSTER_DOES_NOT_EXIST;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static org.springframework.data.mongodb.core.query.Criteria.where;
 
 import io.harness.NGResourceFilterConstants;
@@ -21,7 +21,6 @@ import io.harness.cdng.gitops.entity.Cluster;
 import io.harness.cdng.gitops.entity.Cluster.ClusterKeys;
 import io.harness.cdng.gitops.service.ClusterService;
 import io.harness.exception.DuplicateFieldException;
-import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
 import io.harness.ng.DuplicateKeyExceptionParser;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
@@ -35,7 +34,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import javax.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
@@ -55,8 +53,8 @@ public class ClusterServiceImpl implements ClusterService {
   private final ClusterRepository clusterRepository;
 
   @Override
-  public Optional<Cluster> get(String orgIdentifier, String projectIdentifier, String accountId, String envIdentifier,
-      String clusterRef, boolean deleted) {
+  public Optional<Cluster> get(
+      String accountId, String orgIdentifier, String projectIdentifier, String envIdentifier, String clusterRef) {
     Criteria criteria =
         getClusterEqualityCriteria(accountId, orgIdentifier, projectIdentifier, envIdentifier, clusterRef);
     return Optional.ofNullable(clusterRepository.findOne(criteria));
@@ -72,17 +70,6 @@ public class ClusterServiceImpl implements ClusterService {
               cluster.getProjectIdentifier(), cluster.getClusterRef()),
           USER, ex);
     }
-  }
-
-  @Override
-  public Cluster update(Cluster cluster) {
-    Criteria criteria = getClusterEqualityCriteria(cluster);
-    Cluster updated = clusterRepository.update(criteria, cluster);
-    if (updated == null) {
-      throw new InvalidRequestException(String.format(
-          CLUSTER_DOES_NOT_EXIST, cluster.getClusterRef(), cluster.getProjectIdentifier(), cluster.getOrgIdentifier()));
-    }
-    return updated;
   }
 
   @Override
@@ -102,6 +89,11 @@ public class ClusterServiceImpl implements ClusterService {
   @Override
   public boolean delete(
       String accountId, String orgIdentifier, String projectIdentifier, String envIdentifier, String clusterRef) {
+    checkArgument(isNotEmpty(accountId), "accountId must be present");
+    checkArgument(isNotEmpty(orgIdentifier), "org identifier must be present");
+    checkArgument(isNotEmpty(projectIdentifier), "project identifier must be present");
+    checkArgument(isNotEmpty(clusterRef), "cluster identifier must be present");
+
     Criteria criteria =
         getClusterEqualityCriteria(accountId, orgIdentifier, projectIdentifier, envIdentifier, clusterRef);
     DeleteResult delete = clusterRepository.delete(criteria);
@@ -111,8 +103,37 @@ public class ClusterServiceImpl implements ClusterService {
   @Override
   public DeleteResult deleteFromAllEnv(
       String accountId, String orgIdentifier, String projectIdentifier, String clusterRef) {
-    Criteria criteria = getClusterEqualityCriteria(accountId, orgIdentifier, projectIdentifier, clusterRef);
+    checkArgument(isNotEmpty(accountId), "accountId must be present");
+    checkArgument(isNotEmpty(orgIdentifier), "org identifier must be present");
+    checkArgument(isNotEmpty(projectIdentifier), "project identifier must be present");
+    checkArgument(isNotEmpty(clusterRef), "cluster identifier must be present");
+
+    Criteria criteria = getClusterEqualityCriteriaForAllEnv(accountId, orgIdentifier, projectIdentifier, clusterRef);
     return clusterRepository.delete(criteria);
+  }
+
+  @Override
+  public boolean deleteAllFromEnv(
+      String accountId, String orgIdentifier, String projectIdentifier, String envIdentifier) {
+    checkArgument(isNotEmpty(accountId), "accountId must be present");
+    checkArgument(isNotEmpty(orgIdentifier), "org identifier must be present");
+    checkArgument(isNotEmpty(projectIdentifier), "project identifier must be present");
+    checkArgument(isNotEmpty(envIdentifier), "environment identifier must be present");
+
+    Criteria criteria = getClusterEqCriteriaForAllClusters(accountId, orgIdentifier, projectIdentifier, envIdentifier);
+    DeleteResult delete = clusterRepository.delete(criteria);
+    return delete.wasAcknowledged() && delete.getDeletedCount() > 0;
+  }
+
+  @Override
+  public boolean deleteAllFromProj(String accountId, String orgIdentifier, String projectIdentifier) {
+    checkArgument(isNotEmpty(accountId), "accountId must be present");
+    checkArgument(isNotEmpty(orgIdentifier), "org identifier must be present");
+    checkArgument(isNotEmpty(projectIdentifier), "project identifier must be present");
+
+    Criteria criteria = getClusterEqCriteriaForAllClusters(accountId, orgIdentifier, projectIdentifier);
+    DeleteResult delete = clusterRepository.delete(criteria);
+    return delete.wasAcknowledged() && delete.getDeletedCount() > 0;
   }
 
   public Page<Cluster> list(int page, int size, String accountIdentifier, String orgIdentifier,
@@ -142,11 +163,6 @@ public class ClusterServiceImpl implements ClusterService {
     return clusterRepository.find(criteria, pageRequest);
   }
 
-  private Criteria getClusterEqualityCriteria(@Valid Cluster cluster) {
-    return getClusterEqualityCriteria(cluster.getAccountId(), cluster.getOrgIdentifier(),
-        cluster.getProjectIdentifier(), cluster.getEnvRef(), cluster.getClusterRef());
-  }
-
   private Criteria getClusterEqualityCriteria(
       String accountId, String orgId, String projectId, String envIdentifier, String identifier) {
     return where(ClusterKeys.accountId)
@@ -173,7 +189,8 @@ public class ClusterServiceImpl implements ClusterService {
         .in(envRefs);
   }
 
-  private Criteria getClusterEqualityCriteria(String accountId, String orgId, String projectId, String identifier) {
+  private Criteria getClusterEqualityCriteriaForAllEnv(
+      String accountId, String orgId, String projectId, String identifier) {
     return where(ClusterKeys.accountId)
         .is(accountId)
         .and(ClusterKeys.orgIdentifier)
@@ -182,6 +199,27 @@ public class ClusterServiceImpl implements ClusterService {
         .is(projectId)
         .and(ClusterKeys.clusterRef)
         .is(identifier);
+  }
+
+  private Criteria getClusterEqCriteriaForAllClusters(String accountId, String orgId, String projectId) {
+    return where(ClusterKeys.accountId)
+        .is(accountId)
+        .and(ClusterKeys.orgIdentifier)
+        .is(orgId)
+        .and(ClusterKeys.projectIdentifier)
+        .is(projectId);
+  }
+
+  private Criteria getClusterEqCriteriaForAllClusters(
+      String accountId, String orgId, String projectId, String envIdentifier) {
+    return where(ClusterKeys.accountId)
+        .is(accountId)
+        .and(ClusterKeys.orgIdentifier)
+        .is(orgId)
+        .and(ClusterKeys.projectIdentifier)
+        .is(projectId)
+        .and(ClusterKeys.envRef)
+        .is(envIdentifier);
   }
 
   private String getDuplicateExistsErrorMessage(

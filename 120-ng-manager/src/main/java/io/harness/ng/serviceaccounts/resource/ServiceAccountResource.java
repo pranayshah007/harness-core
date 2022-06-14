@@ -99,7 +99,8 @@ public class ServiceAccountResource {
 
   @POST
   @ApiOperation(value = "Create service account", nickname = "createServiceAccount")
-  @Operation(operationId = "createServiceAccount", summary = "Creates a Service Account",
+  @Operation(operationId = "createServiceAccount", summary = "Create Service Account",
+      description = "Creates a Service Account",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -123,7 +124,8 @@ public class ServiceAccountResource {
   @PUT
   @Path("{identifier}")
   @ApiOperation(value = "Update service account", nickname = "updateServiceAccount")
-  @Operation(operationId = "updateServiceAccount", summary = "Updates the Service Account.",
+  @Operation(operationId = "updateServiceAccount", summary = "Update Service Account",
+      description = "Updates the Service Account.",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -149,7 +151,8 @@ public class ServiceAccountResource {
   @DELETE
   @Path("{identifier}")
   @ApiOperation(value = "Delete service account", nickname = "deleteServiceAccount")
-  @Operation(operationId = "deleteServiceAccount", summary = "Deletes Service Account by ID",
+  @Operation(operationId = "deleteServiceAccount", summary = "Delete Service Account",
+      description = "Deletes Service Account by ID",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
@@ -174,8 +177,8 @@ public class ServiceAccountResource {
 
   @GET
   @ApiOperation(value = "List service account", nickname = "listServiceAccount")
-  @Operation(operationId = "listServiceAccount",
-      summary = "Fetches the list of Service Accounts corresponding to the request's filter criteria.",
+  @Operation(operationId = "listServiceAccount", summary = "List Service Accounts by filter",
+      description = "Fetches the list of Service Accounts corresponding to the request's filter criteria.",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -200,8 +203,8 @@ public class ServiceAccountResource {
   @GET
   @Path("aggregate")
   @ApiOperation(value = "List service account", nickname = "listAggregatedServiceAccounts")
-  @Operation(operationId = "listAggregatedServiceAccounts",
-      summary = "Fetches the list of Aggregated Service Accounts corresponding to the request's filter criteria.",
+  @Operation(operationId = "listAggregatedServiceAccounts", summary = "List aggregated Service Accounts",
+      description = "Fetches the list of Aggregated Service Accounts corresponding to the request's filter criteria.",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(
@@ -243,8 +246,8 @@ public class ServiceAccountResource {
   @GET
   @Path("aggregate/{identifier}")
   @ApiOperation(value = "Get service account", nickname = "getAggregatedServiceAccount")
-  @Operation(operationId = "getAggregatedServiceAccount",
-      summary = "Get the Service Account by accountIdentifier and Service Account ID and Scope.",
+  @Operation(operationId = "getAggregatedServiceAccount", summary = "Get aggregated Service Account",
+      description = "Get the Service Account by accountIdentifier and Service Account ID and Scope.",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",

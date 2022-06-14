@@ -104,4 +104,5 @@ public class EntityYamlRootNames {
   public static String CLOUDFORMATION_ROLLBACK_STACK_STEP = "RollbackStack";
   public static final String INFRASTRUCTURE = "infrastructure";
   public static final String COMMAND = "Command";
+  public static final String STRATEGY_NODE = "StrategyNode";
 }
