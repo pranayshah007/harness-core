@@ -16,7 +16,15 @@ import static software.wings.service.impl.instance.InstanceSyncFlow.ITERATOR;
 import static software.wings.service.impl.instance.InstanceSyncFlow.MANUAL;
 import static software.wings.service.impl.instance.InstanceSyncFlow.NEW_DEPLOYMENT;
 import static software.wings.service.impl.instance.InstanceSyncFlow.PERPETUAL_TASK;
-import static software.wings.utils.WingsTestConstants.*;
+import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
+import static software.wings.utils.WingsTestConstants.APP_ID;
+import static software.wings.utils.WingsTestConstants.ENV_ID;
+import static software.wings.utils.WingsTestConstants.INFRA_MAPPING_ID;
+import static software.wings.utils.WingsTestConstants.SERVICE1_ID;
+import static software.wings.utils.WingsTestConstants.SERVICE2_ID;
+import static software.wings.utils.WingsTestConstants.SERVICE_ID;
+import static software.wings.utils.WingsTestConstants.WORKFLOW_EXECUTION_ID;
+import static software.wings.utils.WingsTestConstants.WORKFLOW_ID;
 import static software.wings.utils.WingsTestConstants.WORKFLOW_NAME;
 
 import static java.util.Arrays.asList;
