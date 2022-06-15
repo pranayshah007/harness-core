@@ -126,7 +126,7 @@ public enum ErrorCode {
 
   UNEXPECTED,
 
-  UNKNOWN_ERROR,
+  UNKNOWN_ERROR(INTERNAL_SERVER_ERROR),
 
   UNKNOWN_EXECUTOR_TYPE_ERROR,
 
@@ -613,7 +613,6 @@ public enum ErrorCode {
   SCM_UNAUTHORIZED_ERROR_V2,
 
   SPOTINST_NULL_ERROR;
-
 
   private Status status = BAD_REQUEST;
   private String description;

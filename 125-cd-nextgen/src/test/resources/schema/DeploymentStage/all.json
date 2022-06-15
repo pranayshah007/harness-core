@@ -4536,6 +4536,9 @@
     "ParameterField": {
       "type": "object",
       "properties": {
+        "defaultValue": {
+          "type": "object"
+        },
         "expression": {
           "type": "boolean"
         },
@@ -4563,6 +4566,9 @@
     "ParameterFieldBoolean": {
       "type": "object",
       "properties": {
+        "defaultValue": {
+          "type": "boolean"
+        },
         "expression": {
           "type": "boolean"
         },
@@ -4620,6 +4626,9 @@
     "ParameterFieldString": {
       "type": "object",
       "properties": {
+        "defaultValue": {
+          "type": "string"
+        },
         "expression": {
           "type": "boolean"
         },
@@ -6564,21 +6573,6 @@
             "credentialsRef": {
               "type": "string",
               "minLength": 1
-            },
-            "delegateSelectors": {
-              "oneOf": [
-                {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
-                  "minLength": 1
-                }
-              ]
             },
             "resourceGroup": {
               "type": "string",

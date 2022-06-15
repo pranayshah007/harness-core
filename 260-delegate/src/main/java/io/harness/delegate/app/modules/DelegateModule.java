@@ -201,6 +201,8 @@ import io.harness.delegate.task.helm.HelmDeployServiceNG;
 import io.harness.delegate.task.helm.HelmValuesFetchTaskNG;
 import io.harness.delegate.task.helm.HttpHelmConnectivityDelegateTask;
 import io.harness.delegate.task.helm.HttpHelmValidationHandler;
+import io.harness.delegate.task.helm.OciHelmConnectivityDelegateTask;
+import io.harness.delegate.task.helm.OciHelmValidationHandler;
 import io.harness.delegate.task.jenkins.JenkinsTestConnectionDelegateTask;
 import io.harness.delegate.task.jenkins.JenkinsValidationHandler;
 import io.harness.delegate.task.jira.JiraTaskNG;
@@ -1579,6 +1581,7 @@ public class DelegateModule extends AbstractModule {
         .toInstance(CEKubernetesTestConnectionDelegateTask.class);
     mapBinder.addBinding(TaskType.K8S_SERVICE_ACCOUNT_INFO).toInstance(K8sFetchServiceAccountTask.class);
     mapBinder.addBinding(TaskType.HTTP_HELM_CONNECTIVITY_TASK).toInstance(HttpHelmConnectivityDelegateTask.class);
+    mapBinder.addBinding(TaskType.OCI_HELM_CONNECTIVITY_TASK).toInstance(OciHelmConnectivityDelegateTask.class);
     mapBinder.addBinding(TaskType.NG_AZURE_TASK).toInstance(AzureTask.class);
 
     mapBinder.addBinding(TaskType.K8_FETCH_NAMESPACES).toInstance(ServiceImplDelegateTask.class);
@@ -1693,7 +1696,8 @@ public class DelegateModule extends AbstractModule {
         .to(JenkinsValidationHandler.class);
     connectorTypeToConnectorValidationHandlerMap.addBinding(ConnectorType.HTTP_HELM_REPO.getDisplayName())
         .to(HttpHelmValidationHandler.class);
-
+    connectorTypeToConnectorValidationHandlerMap.addBinding(ConnectorType.OCI_HELM_REPO.getDisplayName())
+        .to(OciHelmValidationHandler.class);
     connectorTypeToConnectorValidationHandlerMap.addBinding(ConnectorType.VAULT.getDisplayName())
         .to(UpsertSecretTaskValidationHandler.class);
     connectorTypeToConnectorValidationHandlerMap.addBinding(ConnectorType.AZURE_KEY_VAULT.getDisplayName())

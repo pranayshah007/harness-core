@@ -11,11 +11,13 @@ import static io.harness.beans.execution.WebhookEvent.Type.BRANCH;
 import static io.harness.beans.execution.WebhookEvent.Type.PR;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveOSType;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParameter;
+import static io.harness.common.CIExecutionConstants.AZURE_REPO_BASE_URL;
 import static io.harness.common.CIExecutionConstants.GIT_URL_SUFFIX;
 import static io.harness.common.CIExecutionConstants.IMAGE_PATH_SPLIT_REGEX;
 import static io.harness.common.CIExecutionConstants.PATH_SEPARATOR;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.delegate.beans.connector.ConnectorType.AZURE_REPO;
 import static io.harness.delegate.beans.connector.ConnectorType.BITBUCKET;
 import static io.harness.delegate.beans.connector.ConnectorType.CODECOMMIT;
 import static io.harness.delegate.beans.connector.ConnectorType.DOCKER;
@@ -52,6 +54,7 @@ import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitConnectorDTO;
 import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitUrlType;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
@@ -74,6 +77,7 @@ import io.harness.pms.contracts.triggers.TriggerPayload;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.stateutils.buildstate.CodebaseUtils;
 import io.harness.stateutils.buildstate.ConnectorUtils;
 import io.harness.util.WebhookTriggerProcessorUtils;
 import io.harness.yaml.extended.ci.codebase.Build;
@@ -266,7 +270,7 @@ public class IntegrationStageUtils {
   public String getGitURL(CodeBase ciCodebase, GitConnectionType connectionType, String url) {
     String gitUrl = retrieveGenericGitConnectorURL(ciCodebase, connectionType, url);
 
-    if (!gitUrl.endsWith(GIT_URL_SUFFIX) && !gitUrl.contains("dev.azure.com")) {
+    if (!gitUrl.endsWith(GIT_URL_SUFFIX) && !gitUrl.contains(AZURE_REPO_BASE_URL)) {
       gitUrl += GIT_URL_SUFFIX;
     }
     return gitUrl;
@@ -285,11 +289,14 @@ public class IntegrationStageUtils {
         throw new IllegalArgumentException("Repo name is not set in CI codebase spec");
       }
 
+      String projectName = ciCodebase.getProjectName().getValue();
       String repoName = ciCodebase.getRepoName().getValue();
-      if (url.endsWith(PATH_SEPARATOR)) {
-        gitUrl = url + repoName;
+
+      if (isNotEmpty(projectName) && url.contains(AZURE_REPO_BASE_URL)) {
+        gitUrl = CodebaseUtils.getCompleteUrlForAccountLevelAzureConnector(url, projectName, repoName);
       } else {
-        gitUrl = url + PATH_SEPARATOR + repoName;
+        gitUrl = StringUtils.join(StringUtils.stripEnd(url, PATH_SEPARATOR), PATH_SEPARATOR,
+            StringUtils.stripStart(repoName, PATH_SEPARATOR));
       }
     } else {
       throw new InvalidArgumentsException(
@@ -306,6 +313,9 @@ public class IntegrationStageUtils {
 
     if (gitConnector.getConnectorType() == GITHUB) {
       GithubConnectorDTO gitConfigDTO = (GithubConnectorDTO) gitConnector.getConnectorConfig();
+      return getGitURL(ciCodebase, gitConfigDTO.getConnectionType(), gitConfigDTO.getUrl());
+    } else if (gitConnector.getConnectorType() == AZURE_REPO) {
+      AzureRepoConnectorDTO gitConfigDTO = (AzureRepoConnectorDTO) gitConnector.getConnectorConfig();
       return getGitURL(ciCodebase, gitConfigDTO.getConnectionType(), gitConfigDTO.getUrl());
     } else if (gitConnector.getConnectorType() == GITLAB) {
       GitlabConnectorDTO gitConfigDTO = (GitlabConnectorDTO) gitConnector.getConnectorConfig();

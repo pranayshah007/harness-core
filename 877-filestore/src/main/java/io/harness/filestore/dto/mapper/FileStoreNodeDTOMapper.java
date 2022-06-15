@@ -35,6 +35,10 @@ public class FileStoreNodeDTOMapper {
                                                 .lastModifiedBy(fromEmbeddedUser(ngFile.getLastUpdatedBy()))
                                                 .mimeType(ngFile.getMimeType());
 
+    if (ngFile.getSize() != null) {
+      fileNodeDTOBuilder.size(ngFile.getSize());
+    }
+
     if (StringUtils.isNotBlank(content)) {
       fileNodeDTOBuilder.content(content);
     }

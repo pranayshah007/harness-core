@@ -12,6 +12,7 @@ import static io.harness.delegate.beans.ci.pod.SecretParams.Type.TEXT;
 import static io.harness.delegate.task.citasks.cik8handler.SecretSpecBuilder.SECRET_KEY;
 import static io.harness.rule.OwnerRule.ALEKSANDAR;
 import static io.harness.rule.OwnerRule.HARSH;
+import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -31,6 +32,8 @@ import io.harness.delegate.beans.connector.docker.DockerAuthType;
 import io.harness.delegate.beans.connector.docker.DockerAuthenticationDTO;
 import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
 import io.harness.delegate.beans.connector.docker.DockerUserNamePasswordDTO;
+import io.harness.delegate.beans.connector.scm.GitAuthType;
+import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitAuthType;
 import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitAuthenticationDTO;
 import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitConnectorDTO;
@@ -38,6 +41,11 @@ import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitHttpsA
 import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitHttpsCredentialsDTO;
 import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitSecretKeyAccessKeyDTO;
 import io.harness.delegate.beans.connector.scm.awscodecommit.AwsCodeCommitUrlType;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoAuthenticationDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoHttpAuthenticationType;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoHttpCredentialsDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoUsernameTokenDTO;
 import io.harness.delegate.task.citasks.cik8handler.helper.ConnectorEnvVariablesHelper;
 import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
@@ -226,6 +234,53 @@ public class SecretSpecBuilderTest extends CategoryTest {
     assertThat(gitSecretVariables.get("DRONE_AWS_SECRET_KEY"))
         .isEqualTo(SecretParams.builder()
                        .secretKey("DRONE_AWS_SECRET_KEY")
+                       .value(encodeBase64("S3CR3TKEYEXAMPLE"))
+                       .type(TEXT)
+                       .build());
+  }
+
+  @Test()
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void shouldDecryptGitSecretVariablesForAzureRepoConnector() {
+    AzureRepoUsernameTokenDTO azureRepoUsernameTokenDTO =
+        AzureRepoUsernameTokenDTO.builder()
+            .username("username")
+            .tokenRef(SecretRefData.builder()
+                          .identifier("secretKeyRefIdentifier")
+                          .scope(Scope.ACCOUNT)
+                          .decryptedValue("S3CR3TKEYEXAMPLE".toCharArray())
+                          .build())
+            .build();
+    AzureRepoConnectorDTO azureRepoConnectorDTO =
+        AzureRepoConnectorDTO.builder()
+            .url("https://dev.azure.com/org/project/repo")
+            .connectionType(GitConnectionType.REPO)
+            .authentication(AzureRepoAuthenticationDTO.builder()
+                                .authType(GitAuthType.HTTP)
+                                .credentials(AzureRepoHttpCredentialsDTO.builder()
+                                                 .type(AzureRepoHttpAuthenticationType.USERNAME_AND_TOKEN)
+                                                 .httpCredentialsSpec(azureRepoUsernameTokenDTO)
+                                                 .build())
+
+                                .build())
+            .build();
+    ConnectorDetails connectorDetails = ConnectorDetails.builder()
+                                            .connectorType(ConnectorType.AZURE_REPO)
+                                            .connectorConfig(azureRepoConnectorDTO)
+                                            .build();
+    when(secretDecryptionService.decrypt(eq(azureRepoConnectorDTO), any())).thenReturn(azureRepoConnectorDTO);
+    Map<String, SecretParams> gitSecretVariables = secretSpecBuilder.decryptGitSecretVariables(connectorDetails);
+    assertThat(gitSecretVariables).containsOnlyKeys("DRONE_NETRC_USERNAME", "DRONE_NETRC_PASSWORD");
+    assertThat(gitSecretVariables.get("DRONE_NETRC_USERNAME"))
+        .isEqualTo(SecretParams.builder()
+                       .secretKey("DRONE_NETRC_USERNAME")
+                       .value(encodeBase64("username"))
+                       .type(TEXT)
+                       .build());
+    assertThat(gitSecretVariables.get("DRONE_NETRC_PASSWORD"))
+        .isEqualTo(SecretParams.builder()
+                       .secretKey("DRONE_NETRC_PASSWORD")
                        .value(encodeBase64("S3CR3TKEYEXAMPLE"))
                        .type(TEXT)
                        .build());

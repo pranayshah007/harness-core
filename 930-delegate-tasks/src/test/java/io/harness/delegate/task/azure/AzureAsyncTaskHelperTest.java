@@ -8,12 +8,14 @@
 package io.harness.delegate.task.azure;
 
 import static io.harness.rule.OwnerRule.BUHA;
+import static io.harness.rule.OwnerRule.FILIP;
 import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.VLICA;
 
 import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
@@ -31,8 +33,10 @@ import io.harness.azure.client.AzureAuthorizationClient;
 import io.harness.azure.client.AzureComputeClient;
 import io.harness.azure.client.AzureContainerRegistryClient;
 import io.harness.azure.client.AzureKubernetesClient;
+import io.harness.azure.client.AzureManagementClient;
 import io.harness.azure.model.AzureAuthenticationType;
 import io.harness.azure.model.AzureConfig;
+import io.harness.azure.model.tag.TagDetails;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectivityStatus;
 import io.harness.connector.ConnectorValidationResult;
@@ -44,6 +48,7 @@ import io.harness.delegate.beans.azure.response.AzureRegistriesResponse;
 import io.harness.delegate.beans.azure.response.AzureRepositoriesResponse;
 import io.harness.delegate.beans.azure.response.AzureResourceGroupsResponse;
 import io.harness.delegate.beans.azure.response.AzureSubscriptionsResponse;
+import io.harness.delegate.beans.azure.response.AzureTagsResponse;
 import io.harness.delegate.beans.azure.response.AzureWebAppNamesResponse;
 import io.harness.delegate.beans.connector.azureconnector.AzureAuthDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureClientKeyCertDTO;
@@ -104,6 +109,7 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
   @Mock private AzureComputeClient azureComputeClient;
   @Mock private AzureContainerRegistryClient azureContainerRegistryClient;
   @Mock private AzureKubernetesClient azureKubernetesClient;
+  @Mock private AzureManagementClient azureManagementClient;
   private static String CLIENT_ID = "clientId";
   private static String BAD_CLIENT_ID = "badclientId";
   private static String TENANT_ID = "tenantId";
@@ -459,6 +465,28 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testGetImageTagsUsingSystemAssignedManagedIdentity() {
     testGetImageTags(getAzureConfigSystemAssignedMSI());
+  }
+
+  @Test
+  @Owner(developers = FILIP)
+  @Category(UnitTests.class)
+  public void testListTags() {
+    // Given
+    TagDetails tag1 = new TagDetails();
+    tag1.setTagName("tag-name-1");
+    TagDetails tag2 = new TagDetails();
+    tag2.setTagName("tag-name-2");
+
+    when(azureManagementClient.listTags(any(), eq("subscriptionId"))).thenReturn(Arrays.asList(tag1, tag2));
+
+    // When
+    AzureTagsResponse response = azureAsyncTaskHelper.listTags(
+        Collections.emptyList(), getAzureConnectorDTOWithSecretType(AzureSecretType.SECRET_KEY), "subscriptionId");
+
+    // Then
+    assertThat(response).isNotNull();
+    assertThat(response.getCommandExecutionStatus()).isEqualTo(CommandExecutionStatus.SUCCESS);
+    assertThat(response.getTags()).isNotNull().hasSize(2).containsExactlyInAnyOrder("tag-name-1", "tag-name-2");
   }
 
   @Test

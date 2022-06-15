@@ -20,6 +20,7 @@ import io.harness.cdng.pipeline.executions.beans.CDStageModuleInfo.CDStageModule
 import io.harness.cdng.pipeline.executions.beans.InfraExecutionSummary;
 import io.harness.cdng.pipeline.executions.beans.ServiceExecutionSummary;
 import io.harness.cdng.service.steps.ServiceConfigStep;
+import io.harness.cdng.service.steps.ServiceSectionStep;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.data.structure.EmptyPredicate;
@@ -101,7 +102,9 @@ public class CDNGModuleInfoProvider implements ExecutionSummaryModuleInfoProvide
   }
 
   private boolean isServiceNodeAndCompleted(StepType stepType, Status status) {
-    return Objects.equals(stepType, ServiceConfigStep.STEP_TYPE) && StatusUtils.isFinalStatus(status);
+    return (Objects.equals(stepType, ServiceConfigStep.STEP_TYPE)
+               || Objects.equals(stepType, ServiceSectionStep.STEP_TYPE))
+        && StatusUtils.isFinalStatus(status);
   }
 
   private boolean isInfrastructureNodeAndCompleted(StepType stepType, Status status) {

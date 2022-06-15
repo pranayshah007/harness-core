@@ -199,29 +199,6 @@ java -jar ci-manager-capsule.jar scan-classpath-metadata
 
 cd ../..
 
-mkdir -p dist/sto-manager
-cd dist/sto-manager
-cp ${HOME}/.bazel-dirs/bin/315-sto-manager/module_deploy.jar sto-manager-capsule.jar
-cp ../../315-sto-manager/sto-manager-config.yml .
-cp ../../keystore.jks .
-cp ../../315-sto-manager/key.pem .
-cp ../../315-sto-manager/cert.pem .
-cp ../../315-sto-manager/src/main/resources/redisson-jcache.yaml .
-
-cp ../../dockerization/sto-manager/Dockerfile-sto-manager-jenkins-k8-openjdk ./Dockerfile
-cp ../../dockerization/sto-manager/Dockerfile-sto-manager-jenkins-k8-gcr-openjdk ./Dockerfile-gcr
-cp ../../dockerization/sto-manager/Dockerfile-sto-manager-jenkins-k8-gcr-openjdk-ubi ./Dockerfile-gcr-ubi
-cp -r ../../dockerization/sto-manager/scripts/ .
-cp ../../sto-manager-protocol.info .
-echo ${JDK} > jdk.txt
-echo ${VERSION} > version.txt
-if [ ! -z ${PURPOSE} ]
-then
-    echo ${PURPOSE} > purpose.txt
-fi
-
-cd ../..
-
 mkdir -p dist/platform-service
 cd dist/platform-service
 

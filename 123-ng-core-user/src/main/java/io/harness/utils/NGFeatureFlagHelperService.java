@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.utils;
 
 import io.harness.account.AccountClient;
@@ -18,11 +25,11 @@ import net.jodah.failsafe.RetryPolicy;
 @Slf4j
 @OwnedBy(HarnessTeam.PL)
 public class NGFeatureFlagHelperService {
-  private static final  String ERROR_MESSAGE = "Unexpected error, could not fetch the feature flag";
+  private static final String ERROR_MESSAGE = "Unexpected error, could not fetch the feature flag";
 
   @Inject AccountClient accountClient;
   private static final RetryPolicy<Object> fetchRetryPolicy = RetryUtils.getRetryPolicy(
-          ERROR_MESSAGE, ERROR_MESSAGE, Lists.newArrayList(InvalidRequestException.class), Duration.ofSeconds(5), 3, log);
+      ERROR_MESSAGE, ERROR_MESSAGE, Lists.newArrayList(InvalidRequestException.class), Duration.ofSeconds(5), 3, log);
 
   public boolean isEnabled(String accountId, FeatureName featureName) {
     try {

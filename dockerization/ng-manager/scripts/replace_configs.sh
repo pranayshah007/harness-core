@@ -457,6 +457,7 @@ replace_key_value cfClientConfig.eventUrl "$CF_CLIENT_EVENT_URL"
 replace_key_value cfClientConfig.analyticsEnabled "$CF_CLIENT_ANALYTICS_ENABLED"
 replace_key_value cfClientConfig.connectionTimeout "$CF_CLIENT_CONNECTION_TIMEOUT"
 replace_key_value cfClientConfig.readTimeout "$CF_CLIENT_READ_TIMEOUT"
+replace_key_value cfClientConfig.bufferSize "$CF_CLIENT_BUFFER_SIZE"
 replace_key_value featureFlagConfig.featureFlagSystem "$FEATURE_FLAG_SYSTEM"
 replace_key_value featureFlagConfig.syncFeaturesToCF "$SYNC_FEATURES_TO_CF"
 replace_key_value ceAzureSetupConfig.azureAppClientId "$AZURE_APP_CLIENT_ID"
@@ -471,6 +472,8 @@ replace_key_value secretsConfiguration.secretResolutionEnabled "$RESOLVE_SECRETS
 
 replace_key_value opaServerConfig.baseUrl "$OPA_SERVER_BASEURL"
 replace_key_value opaServerConfig.secret "$OPA_SERVER_SECRET"
+
+replace_key_value subscriptionConfig.stripeApiKey "$STRIPE_API_KEY"
 
 replace_key_value gitopsResourceClientConfig.config.baseUrl "$GITOPS_SERVICE_CLIENT_BASEURL"
 replace_key_value gitopsResourceClientConfig.secret "$GITOPS_SERVICE_SECRET"

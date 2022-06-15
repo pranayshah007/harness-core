@@ -19,6 +19,7 @@ import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
+import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.eventsframework.EventsFrameworkMetadataConstants;
 import io.harness.eventsframework.api.EventsFrameworkDownException;
@@ -39,8 +40,13 @@ import io.harness.ng.core.events.EnvironmentDeleteEvent;
 import io.harness.ng.core.events.EnvironmentUpdatedEvent;
 import io.harness.ng.core.events.EnvironmentUpsertEvent;
 import io.harness.outbox.api.OutboxService;
+import io.harness.pms.merger.helpers.RuntimeInputFormHelper;
+import io.harness.pms.yaml.YamlField;
+import io.harness.pms.yaml.YamlUtils;
 import io.harness.repositories.environment.spring.EnvironmentRepository;
+import io.harness.utils.YamlPipelineUtils;
 
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
@@ -48,13 +54,17 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.google.protobuf.StringValue;
 import com.mongodb.client.result.UpdateResult;
+import java.io.IOException;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import javax.ws.rs.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import net.jodah.failsafe.Failsafe;
 import net.jodah.failsafe.RetryPolicy;
@@ -298,6 +308,45 @@ public class EnvironmentServiceImpl implements EnvironmentService {
                             .and(EnvironmentKeys.identifier)
                             .in(envIdentifierList);
     return environmentRepository.fetchesNonDeletedEnvironmentFromListOfIdentifiers(criteria);
+  }
+
+  @Override
+  public String createEnvironmentInputsYaml(
+      String accountId, String orgIdentifier, String projectIdentifier, String envIdentifier) {
+    Map<String, Object> yamlInputs =
+        createEnvironmentInputsYamlInternal(accountId, orgIdentifier, projectIdentifier, envIdentifier);
+
+    if (isEmpty(yamlInputs)) {
+      return null;
+    }
+    return YamlPipelineUtils.writeYamlString(yamlInputs);
+  }
+
+  public Map<String, Object> createEnvironmentInputsYamlInternal(
+      String accountId, String orgIdentifier, String projectIdentifier, String envIdentifier) {
+    Map<String, Object> yamlInputs = new HashMap<>();
+    Optional<Environment> environment = get(accountId, orgIdentifier, projectIdentifier, envIdentifier, false);
+    if (environment.isPresent()) {
+      if (EmptyPredicate.isEmpty(environment.get().getYaml())) {
+        throw new InvalidRequestException("Environment yaml cannot be empty");
+      }
+      try {
+        String environmentInputsYaml = RuntimeInputFormHelper.createRuntimeInputForm(environment.get().getYaml(), true);
+        if (isEmpty(environmentInputsYaml)) {
+          return null;
+        }
+        YamlField environmentYamlField =
+            YamlUtils.readTree(environmentInputsYaml).getNode().getField(YamlTypes.ENVIRONMENT_YAML);
+        ObjectNode environmentNode = (ObjectNode) environmentYamlField.getNode().getCurrJsonNode();
+        yamlInputs.put(YamlTypes.ENVIRONMENT_INPUTS, environmentNode);
+      } catch (IOException e) {
+        throw new InvalidRequestException("Error occurred while creating environment inputs", e);
+      }
+    } else {
+      throw new NotFoundException(String.format("Environment with identifier [%s] in project [%s], org [%s] not found",
+          envIdentifier, projectIdentifier, orgIdentifier));
+    }
+    return yamlInputs;
   }
 
   private void checkThatEnvironmentIsNotReferredByOthers(Environment environment) {

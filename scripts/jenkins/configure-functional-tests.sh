@@ -29,8 +29,6 @@ replace_text "uri: mongodb://localhost:27017/events" "uri: ${MONGO_URI}_events" 
 replace_text "uri: mongodb://localhost:27017/harness" "uri: ${MONGO_URI}" 210-command-library-server/command-library-server-config.yml
 replace_text "uri: mongodb://localhost:27017/harnessci" "uri: ${MONGO_URI}_ci" 310-ci-manager/ci-manager-config.yml
 replace_text "uri: mongodb://localhost:27017/harness" "uri: ${MONGO_URI}" 310-ci-manager/ci-manager-config.yml
-replace_text "uri: mongodb://localhost:27017/harnesssto" "uri: ${MONGO_URI}_sto" 315-sto-manager/sto-manager-config.yml
-replace_text "uri: mongodb://localhost:27017/harness" "uri: ${MONGO_URI}" 315-sto-manager/sto-manager-config.yml
 
 CONFIG_FILES=(360-cg-manager/config.yml 350-event-server/event-service-config.yml 280-batch-processing/batch-processing-config.yml 210-command-library-server/command-library-server-config.yml 310-ci-manager/ci-manager-config.yml)
 

@@ -4025,13 +4025,15 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
 
   private void updateServiceInfraEnvInPipelineExecution(WorkflowExecution pipelineExecution,
       Map<String, String> wfVariables, List<Variable> workflowVariables, String envIdInStage) {
-    if (pipelineExecution.getEnvIds() == null) {
-      List<String> envIds = new ArrayList<>();
-      envIds.add(envIdInStage);
-      pipelineExecution.setEnvIds(envIds);
-    } else {
-      if (!pipelineExecution.getEnvIds().contains(envIdInStage)) {
-        pipelineExecution.getEnvIds().add(envIdInStage);
+    if (envIdInStage != null) {
+      if (pipelineExecution.getEnvIds() == null) {
+        List<String> envIds = new ArrayList<>();
+        envIds.add(envIdInStage);
+        pipelineExecution.setEnvIds(envIds);
+      } else {
+        if (!pipelineExecution.getEnvIds().contains(envIdInStage)) {
+          pipelineExecution.getEnvIds().add(envIdInStage);
+        }
       }
     }
 
@@ -4049,8 +4051,10 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
             .collect(toList());
 
     List<String> infraIdsFromRuntime = infraVariableNames.stream().map(wfVariables::get).collect(toList());
-    List<String> infraIdsSeparated =
-        infraIdsFromRuntime.stream().flatMap(infraId -> Stream.of(infraId.split(","))).collect(toList());
+    List<String> infraIdsSeparated = infraIdsFromRuntime.stream()
+                                         .filter(Objects::nonNull)
+                                         .flatMap(infraId -> Stream.of(infraId.split(",")))
+                                         .collect(toList());
 
     if (isNotEmpty(infraIdsSeparated)) {
       if (pipelineExecution.getInfraDefinitionIds() == null) {

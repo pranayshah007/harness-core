@@ -7,17 +7,20 @@
 
 package io.harness.cdng.manifest.yaml.harness;
 
-import io.harness.annotations.dev.HarnessTeam;
+import static io.harness.annotations.dev.HarnessTeam.CDP;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.filters.WithFileRef;
 import io.harness.pms.yaml.ParameterField;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.util.List;
 
-@OwnedBy(HarnessTeam.CDP)
+@OwnedBy(CDP)
 public interface HarnessStoreConfig extends StoreConfig, WithFileRef {
-  @JsonIgnore ParameterField<String> getFileReference();
+  @JsonIgnore List<ParameterField<String>> getFileReferences();
+  @JsonIgnore ParameterField<List<HarnessStoreFile>> getFiles();
 
   @JsonIgnore
   default ParameterField<String> getConnectorReference() {

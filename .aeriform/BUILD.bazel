@@ -274,6 +274,8 @@ aeriform("//925-enforcement-service:module")
 
 aeriform("//925-enforcement-service:tests")
 
+aeriform("//925-subscription-service:module")
+
 aeriform("//930-delegate-tasks:module")
 
 aeriform("//930-delegate-tasks:tests")
@@ -357,6 +359,8 @@ aeriform("//950-ng-signup-beans:module")
 aeriform("//950-opa-client:module")
 
 aeriform("//950-opa-client:tests")
+
+aeriform("//950-subscription-beans:module")
 
 aeriform("//950-telemetry:module")
 

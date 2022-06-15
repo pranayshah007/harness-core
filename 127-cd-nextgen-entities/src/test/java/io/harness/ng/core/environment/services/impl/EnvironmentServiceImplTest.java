@@ -8,7 +8,9 @@
 package io.harness.ng.core.environment.services.impl;
 
 import static io.harness.rule.OwnerRule.ARCHIT;
+import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.YOGESH;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -25,8 +27,12 @@ import io.harness.ng.core.utils.CoreCriteriaUtils;
 import io.harness.rule.Owner;
 import io.harness.utils.PageUtils;
 
+import com.google.common.io.Resources;
 import com.google.inject.Inject;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.junit.Test;
@@ -214,5 +220,51 @@ public class EnvironmentServiceImplTest extends NGCoreTestBase {
     Optional<Environment> deletedEnvironment =
         environmentService.get("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", "UPDATED_ENV", false);
     assertThat(deletedEnvironment.isPresent()).isFalse();
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testCreateEnvironmentInputs() throws IOException {
+    String filename = "env-with-runtime-inputs.yaml";
+    String yaml = readFile(filename);
+    Environment createEnvironmentRequest = Environment.builder()
+                                               .accountId("ACCOUNT_ID")
+                                               .identifier("IDENTIFIER")
+                                               .orgIdentifier("ORG_ID")
+                                               .projectIdentifier("PROJECT_ID")
+                                               .yaml(yaml)
+                                               .build();
+
+    environmentService.create(createEnvironmentRequest);
+
+    String environmentInputsYaml =
+        environmentService.createEnvironmentInputsYaml("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", "IDENTIFIER");
+    String resFile = "env-with-runtime-inputs-res.yaml";
+    String resInputs = readFile(resFile);
+    assertThat(environmentInputsYaml).isEqualTo(resInputs);
+
+    String updateYaml = readFile("env-without-runtime-inputs.yaml");
+    Environment updateEnvironmentRequest = Environment.builder()
+                                               .accountId("ACCOUNT_ID")
+                                               .identifier("IDENTIFIER")
+                                               .orgIdentifier("ORG_ID")
+                                               .projectIdentifier("PROJECT_ID")
+                                               .yaml(updateYaml)
+                                               .build();
+
+    environmentService.update(updateEnvironmentRequest);
+    String environmentInputsYaml2 =
+        environmentService.createEnvironmentInputsYaml("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", "IDENTIFIER");
+    assertThat(environmentInputsYaml2).isNull();
+  }
+
+  private String readFile(String filename) {
+    ClassLoader classLoader = getClass().getClassLoader();
+    try {
+      return Resources.toString(Objects.requireNonNull(classLoader.getResource(filename)), StandardCharsets.UTF_8);
+    } catch (IOException e) {
+      throw new InvalidRequestException("Could not read resource file: " + filename);
+    }
   }
 }

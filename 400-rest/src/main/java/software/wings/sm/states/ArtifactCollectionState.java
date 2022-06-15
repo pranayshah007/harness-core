@@ -302,12 +302,12 @@ public class ArtifactCollectionState extends State {
     if (CUSTOM.name().equals(artifactStream.getArtifactStreamType())) {
       CustomArtifactStream customArtifactStream = (CustomArtifactStream) artifactStream;
       CustomArtifactStream.Script versionScript =
-              customArtifactStream.getScripts()
-                      .stream()
-                      .filter(script
-                              -> script.getAction() == null || script.getAction() == CustomArtifactStream.Action.FETCH_VERSIONS)
-                      .findFirst()
-                      .orElse(CustomArtifactStream.Script.builder().build());
+          customArtifactStream.getScripts()
+              .stream()
+              .filter(script
+                  -> script.getAction() == null || script.getAction() == CustomArtifactStream.Action.FETCH_VERSIONS)
+              .findFirst()
+              .orElse(CustomArtifactStream.Script.builder().build());
       if (Boolean.FALSE.equals(artifactStream.getCollectionEnabled()) && isEmpty(versionScript.getScriptString())) {
         return saveCustomArtifactResponse(customArtifactStream, evaluatedBuildNo, timeout);
       }
@@ -376,22 +376,22 @@ public class ArtifactCollectionState extends State {
   }
 
   private ExecutionResponse saveCustomArtifactResponse(
-          CustomArtifactStream customArtifactStream, String buildNo, Integer timeout) {
+      CustomArtifactStream customArtifactStream, String buildNo, Integer timeout) {
     BuildDetails buildDetails = BuildDetails.Builder.aBuildDetails().withNumber(buildNo).build();
 
     Artifact artifact = artifactService.create(artifactCollectionUtils.getArtifact(customArtifactStream, buildDetails));
     ArtifactCollectionExecutionData artifactCollectionExecutionData =
-            ArtifactCollectionExecutionData.builder()
-                    .timeout(valueOf(timeout))
-                    .artifactSource(customArtifactStream.getSourceName())
-                    .buildNo(buildNo)
-                    .artifactId(artifact.getUuid())
-                    .artifactSource(customArtifactStream.getSourceName())
-                    .build();
-    return ExecutionResponse.builder()
-            .executionStatus(SUCCESS)
-            .stateExecutionData(artifactCollectionExecutionData)
+        ArtifactCollectionExecutionData.builder()
+            .timeout(valueOf(timeout))
+            .artifactSource(customArtifactStream.getSourceName())
+            .buildNo(buildNo)
+            .artifactId(artifact.getUuid())
+            .artifactSource(customArtifactStream.getSourceName())
             .build();
+    return ExecutionResponse.builder()
+        .executionStatus(SUCCESS)
+        .stateExecutionData(artifactCollectionExecutionData)
+        .build();
   }
 
   private ExecutionResponse executeManifest(ExecutionContext context) {

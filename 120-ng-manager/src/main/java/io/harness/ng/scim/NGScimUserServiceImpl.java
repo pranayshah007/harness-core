@@ -146,6 +146,7 @@ public class NGScimUserServiceImpl implements ScimUserService {
 
   @Override
   public ScimUser updateUser(String accountId, String userId, PatchRequest patchRequest) {
+    log.info("NGSCIM: Updating user : Patch - userId: {}, accountId: {}", userId, accountId);
     // Call CG to update the user as it is
     ngUserService.updateScimUser(accountId, userId, patchRequest);
     Optional<UserMetadataDTO> userMetadataDTOOptional = ngUserService.getUserMetadata(userId);

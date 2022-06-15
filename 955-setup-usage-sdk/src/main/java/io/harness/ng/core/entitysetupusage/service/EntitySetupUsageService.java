@@ -57,4 +57,6 @@ public interface EntitySetupUsageService {
 
   List<EntitySetupUsageDTO> listAllEntityUsagePerReferredEntityScope(Scope scope, String referredEntityFQScope,
       EntityType referredEntityType, EntityType referredByEntityType, String referredByEntityName, Sort sort);
+
+  Long countReferredByEntitiesByFQNsIn(String accountIdentifier, List<String> referredEntityFQNs);
 }

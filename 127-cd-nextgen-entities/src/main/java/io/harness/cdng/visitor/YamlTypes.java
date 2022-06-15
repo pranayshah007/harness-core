@@ -103,4 +103,9 @@ public interface YamlTypes {
   String APP_SERVICE = "appService";
   String DEPLOYMENT_SLOT = "deploymentSlot";
   String TARGET_SLOT = "targetSlot";
+
+  String ENVIRONMENT_INPUTS = "environmentInputs";
+  String SERVICE_OVERRIDE_INPUTS = "serviceOverrideInputs";
+  String INPUTS = "inputs";
+  String REF = "ref";
 }
