@@ -305,7 +305,7 @@ public class PMSPipelineServiceHelper {
       Criteria approvalStageCriteria =
           Criteria
               .where(String.format("%s.%s.stageTypes", PipelineEntityKeys.filters, ModuleType.PMS.name().toLowerCase()))
-              .in("Approval");
+              .exists(true);
       for (ModuleType moduleType : ModuleType.values()) {
         if (moduleType.isInternal()) {
           continue;
