@@ -242,6 +242,24 @@ public abstract class InstanceHandler {
     return deploymentSummary;
   }
 
+  /**
+   * This updates the deployment summary from the last workflow execution in case of rollbacks.
+   * @param instancesInDb instances from a previous deployment
+   * @param newDeploymentSummary deployment summary to be updated.
+   * @param rollback rollback
+   * @return
+   */
+  protected DeploymentSummary getDeploymentSummaryForInstanceCreation(
+      List<Instance> instancesInDb, DeploymentSummary newDeploymentSummary, boolean rollback) {
+    DeploymentSummary deploymentSummary;
+    if (rollback) {
+      deploymentSummary = getDeploymentSummaryForRollback(instancesInDb, newDeploymentSummary);
+    } else {
+      deploymentSummary = newDeploymentSummary;
+    }
+    return deploymentSummary;
+  }
+
   protected DeploymentSummary getDeploymentSummaryForRollback(DeploymentSummary deploymentSummary) {
     Optional<DeploymentSummary> summaryOptional = deploymentService.get(deploymentSummary);
     if (summaryOptional != null && summaryOptional.isPresent()) {
@@ -254,6 +272,34 @@ public abstract class InstanceHandler {
       deploymentSummary.setArtifactStreamId(deploymentSummaryFromDB.getArtifactStreamId());
     } else {
       log.info("Unable to find DeploymentSummary while rolling back " + deploymentSummary);
+    }
+    return deploymentSummary;
+  }
+
+  protected DeploymentSummary getDeploymentSummaryForRollback(
+      List<Instance> instancesInDb, DeploymentSummary deploymentSummary) {
+    try {
+      if (!instancesInDb.isEmpty()) {
+        WorkflowExecution lastSuccessfulWE =
+            workflowExecutionService.getLastSuccessfulWorkflowExecution(deploymentSummary.getAccountId(),
+                deploymentSummary.getAppId(), deploymentSummary.getWorkflowId(), instancesInDb.get(0).getEnvId(),
+                instancesInDb.get(0).getServiceId(), deploymentSummary.getInfraMappingId());
+        if (lastSuccessfulWE != null) {
+          List<Artifact> lastArtifacts = lastSuccessfulWE.getArtifacts();
+          if (lastArtifacts != null) {
+            if (!lastArtifacts.isEmpty()) {
+              // Copy Artifact Information for rollback version in previous successful workflow execution
+              deploymentSummary.setArtifactBuildNum(lastArtifacts.get(0).getBuildNo());
+              deploymentSummary.setArtifactName(lastArtifacts.get(0).getDisplayName());
+              deploymentSummary.setArtifactId(lastArtifacts.get(0).getUuid());
+              deploymentSummary.setArtifactSourceName(lastArtifacts.get(0).getArtifactSourceName());
+              deploymentSummary.setArtifactStreamId(lastArtifacts.get(0).getArtifactStreamId());
+            }
+          }
+        }
+      }
+    } catch (Exception e) {
+      log.error("Unable to fetch the last artifact from the workflow execution", e);
     }
     return deploymentSummary;
   }
