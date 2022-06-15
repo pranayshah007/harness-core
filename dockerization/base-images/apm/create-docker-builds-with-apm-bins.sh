@@ -15,7 +15,10 @@ function download_apm_binaries(){
 	curl ${APPD_AGENT} --output ${APPD_AGENT##*/}; STATUS3=$?
 	echo "INFO: Download Status: ${APPD_AGENT##*/}: $STATUS3"
 
-	if [ "${STATUS1}" -eq 0 ] && [ "${STATUS2}" -eq 0 ] && [ "${STATUS3}" -eq 0 ]; then
+	curl ${OCELET_AGENT} --output ${OCELET_AGENT##*/}; STATUS4=$?
+	echo "INFO: Download Status: ${OCELET_AGENT##*/}: $STATUS4"
+
+	if [ "${STATUS1}" -eq 0 ] && [ "${STATUS2}" -eq 0 ] && [ "${STATUS3}" -eq 0 ] && [ "${STATUS4}" -eq 0 ]; then
 		echo "Download Finished..."
 	else
 		echo "Failed to Download APM Binaries. Exiting..."
@@ -43,7 +46,8 @@ function create_and_push_docker_build(){
 	 --build-arg BUILD_TAG="${local_tag}" --build-arg REGISTRY_PATH="${REGISTRY_PATH}" \
    --build-arg REPO_PATH="${REPO_PATH}" --build-arg SERVICE_NAME="${local_service_name}" \
    --build-arg APPD_AGENT="${APPD_AGENT##*/}" --build-arg TAKIPI_AGENT="${TAKIPI_AGENT##*/}" \
-   --build-arg ET_AGENT="${ET_AGENT##*/}" -f Dockerfile .; STATUS1=$?
+   --build-arg OCELET_AGENT="${OCELET_AGENT##*/}" --build-arg ET_AGENT="${ET_AGENT##*/}" \
+   -f Dockerfile .; STATUS1=$?
 
   echo "INFO: Pushing APM IMAGE...."
 	docker push "${local_apm_image_path}"; STATUS2=$?
@@ -61,14 +65,15 @@ function create_and_push_docker_build(){
 export APPD_AGENT='https://harness.jfrog.io/artifactory/BuildsTools/docker/apm/appd/AppServerAgent-1.8-21.11.2.33305.zip'
 export TAKIPI_AGENT='https://harness.jfrog.io/artifactory/BuildsTools/docker/apm/overops/takipi-agent-latest.tar.gz'
 export ET_AGENT='https://get.et.harness.io/releases/latest/nix/harness-et-agent.tar.gz'
+export OCELET_AGENT='https://github.com/inspectIT/inspectit-ocelot/releases/download/1.16.0/inspectit-ocelot-agent-1.16.0.jar'
 
 export REGISTRY_PATH='us.gcr.io/platform-205701'
 export REPO_PATH='harness/saas-openjdk-temurin-11'
 export APM_PATH='apm-images'
 export VERSION=${VERSION}
 
-IMAGES_LIST=(manager ng-manager verification-service batch-processing event-server pipeline-service cv-nextgen ce-nextgen \
-template-service ci-manager command-library-server change-data-capture platform-service eventsapi-monitor dms ng-dashboard-aggregator)
+IMAGES_LIST=(manager ng-manager verification-service pipeline-service cv-nextgen ce-nextgen \
+template-service ci-manager command-library-server platform-service eventsapi-monitor dms)
 
 #<+steps.build.output.outputVariables.VERSION>
 if [ -z "${VERSION}" ]; then

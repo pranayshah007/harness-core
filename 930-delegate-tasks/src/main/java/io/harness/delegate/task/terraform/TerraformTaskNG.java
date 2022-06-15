@@ -22,6 +22,7 @@ import io.harness.delegate.task.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.terraform.handlers.TerraformAbstractTaskHandler;
 import io.harness.exception.UnexpectedTypeException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.logging.LogCallback;
 
 import com.google.inject.Inject;
@@ -66,7 +67,8 @@ public class TerraformTaskNG extends AbstractDelegateRunnableTask {
       terraformTaskNGResponse.setUnitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress));
       return terraformTaskNGResponse;
     } catch (Exception e) {
-      throw new TaskNGDataException(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress), e);
+      throw new TaskNGDataException(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress),
+          ExceptionMessageSanitizer.sanitizeException(e));
     }
   }
 

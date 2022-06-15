@@ -20,6 +20,7 @@ import io.harness.delegate.task.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 
 import software.wings.service.impl.aws.model.AwsCFGetTemplateParamsRequest;
 import software.wings.service.impl.aws.model.AwsCFGetTemplateParamsResponse;
@@ -75,9 +76,10 @@ public class AwsCFTask extends AbstractDelegateRunnableTask {
         }
       }
     } catch (WingsException exception) {
-      throw exception;
+      throw(WingsException) ExceptionMessageSanitizer.sanitizeException(exception);
     } catch (Exception ex) {
-      throw new InvalidRequestException(ex.getMessage(), WingsException.USER);
+      throw new InvalidRequestException(
+          ExceptionMessageSanitizer.sanitizeException(ex).getMessage(), WingsException.USER);
     }
   }
 }

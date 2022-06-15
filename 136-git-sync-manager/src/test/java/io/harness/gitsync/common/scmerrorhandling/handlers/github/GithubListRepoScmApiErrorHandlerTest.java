@@ -16,6 +16,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.ScmException;
 import io.harness.gitsync.GitSyncTestBase;
+import io.harness.gitsync.common.scmerrorhandling.dtos.ErrorMetadata;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
@@ -37,7 +38,8 @@ public class GithubListRepoScmApiErrorHandlerTest extends GitSyncTestBase {
   @Owner(developers = BHAVYA)
   @Category(UnitTests.class)
   public void testHandleError() {
-    assertThatThrownBy(() -> githubListRepoScmApiErrorHandler.handleError(405, "error"))
+    assertThatThrownBy(
+        () -> githubListRepoScmApiErrorHandler.handleError(405, "error", ErrorMetadata.builder().build()))
         .isInstanceOf(ScmException.class);
   }
 }

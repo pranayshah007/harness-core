@@ -23,6 +23,7 @@ import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.TaskParameters;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.perpetualtask.manifest.ManifestRepositoryService;
 
 import software.wings.beans.appmanifest.HelmChart;
@@ -87,7 +88,8 @@ public class HelmCollectChartTask extends AbstractDelegateRunnableTask {
 
       return HelmCollectChartResponse.builder()
           .commandExecutionStatus(FAILURE)
-          .errorMessage("Execution failed with Exception: " + e.getMessage())
+          .errorMessage(
+              "Execution failed with Exception: " + ExceptionMessageSanitizer.sanitizeException(e).getMessage())
           .build();
     }
   }

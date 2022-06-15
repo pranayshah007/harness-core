@@ -23,7 +23,8 @@ public enum MonitoredServiceDataSourceType {
   @JsonProperty("Dynatrace") DYNATRACE,
   @JsonProperty("ErrorTracking") ERROR_TRACKING,
   @JsonProperty("CustomHealthMetric") CUSTOM_HEALTH_METRIC,
-  @JsonProperty("CustomHealthLog") CUSTOM_HEALTH_LOG;
+  @JsonProperty("CustomHealthLog") CUSTOM_HEALTH_LOG,
+  @JsonProperty("SplunkMetric") SPLUNK_METRIC;
 
   public static Map<DataSourceType, MonitoredServiceDataSourceType> dataSourceTypeMonitoredServiceDataSourceTypeMap =
       new HashMap<DataSourceType, MonitoredServiceDataSourceType>() {
@@ -40,6 +41,7 @@ public enum MonitoredServiceDataSourceType {
           put(DataSourceType.CUSTOM_HEALTH_METRIC, CUSTOM_HEALTH_METRIC);
           put(DataSourceType.CUSTOM_HEALTH_LOG, CUSTOM_HEALTH_LOG);
           put(DataSourceType.ERROR_TRACKING, ERROR_TRACKING);
+          put(DataSourceType.SPLUNK_METRIC, SPLUNK_METRIC);
         }
       };
 }

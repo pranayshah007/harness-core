@@ -1110,6 +1110,9 @@
 9107:io.harness.delegate.task.git.NGGitOpsTaskParams
 9108:io.harness.delegate.task.git.NGGitOpsResponse
 9109:io.harness.delegate.task.git.GitOpsTaskType
+9110:io.harness.cvng.beans.SplunkMetricDataCollectionInfo
+9111:io.harness.cvng.beans.SplunkMetricDataCollectionInfo.MetricInfo
+9112:io.harness.cvng.beans.splunk.SplunkMetricSampleDataCollectionRequest
 9501:io.harness.timeout.trackers.absolute.AbsoluteTimeoutParameters
 9701:io.harness.logging.UnitProgress
 9702:io.harness.logging.UnitStatus
@@ -1485,6 +1488,7 @@
 19550:io.harness.delegate.beans.executioncapability.GitInstallationCapability
 19551:io.harness.delegate.beans.connector.ConnectorValidationParameterResponse
 19552:io.harness.delegate.beans.connector.scm.github.GithubOauthDTO
+19630:io.harness.delegate.beans.connector.helm.OciHelmValidationParams
 19640:io.harness.delegate.beans.connector.helm.HttpHelmConnectivityTaskParams
 19641:io.harness.delegate.beans.connector.helm.HttpHelmConnectivityTaskResponse
 19642:io.harness.delegate.beans.storeconfig.HttpHelmStoreDelegateConfig

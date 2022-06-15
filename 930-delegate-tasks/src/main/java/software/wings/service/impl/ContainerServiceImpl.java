@@ -22,6 +22,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.WingsException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.helm.HelmConstants;
 import io.harness.k8s.KubernetesContainerService;
 import io.harness.k8s.model.KubernetesConfig;
@@ -115,6 +116,8 @@ public class ContainerServiceImpl implements ContainerService {
       KubernetesClusterConfig kubernetesClusterConfig =
           (KubernetesClusterConfig) containerServiceParams.getSettingAttribute().getValue();
       encryptionService.decrypt(kubernetesClusterConfig, containerServiceParams.getEncryptionDetails(), isInstanceSync);
+      ExceptionMessageSanitizer.storeAllSecretsForSanitizing(
+          kubernetesClusterConfig, containerServiceParams.getEncryptionDetails());
       kubernetesConfig = kubernetesClusterConfig.createKubernetesConfig(containerServiceParams.getNamespace());
     }
 
@@ -296,7 +299,8 @@ public class ContainerServiceImpl implements ContainerService {
     } else if (value instanceof KubernetesClusterConfig) {
       KubernetesClusterConfig kubernetesClusterConfig = (KubernetesClusterConfig) value;
       encryptionService.decrypt(kubernetesClusterConfig, containerServiceParams.getEncryptionDetails(), false);
-
+      ExceptionMessageSanitizer.storeAllSecretsForSanitizing(
+          kubernetesClusterConfig, containerServiceParams.getEncryptionDetails());
       KubernetesConfig kubernetesConfig = kubernetesClusterConfig.createKubernetesConfig(namespace);
       kubernetesContainerService.validate(kubernetesConfig, useNewKubectlVersion);
       return true;
