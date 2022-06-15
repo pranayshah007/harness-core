@@ -238,7 +238,7 @@ if [[ "" != "$CE_NG_SERVICE_HTTP_CLIENT_CONFIG_BASE_URL" ]]; then
 fi
 
 if [[ "" != "$CE_NG_SERVICE_SECRET" ]]; then
-  yq write -i $CONFIG_FILE ceNgServiceSecret "$CE_NG_SERVICE_SECRET"
+  yq write -i $CONFIG_FILE ceNgServiceSecret "$NEXT_GEN_MANAGER_SECRET"
 fi
 
 if [[ "" != "$CONNECTOR_HEALTH_UPDATE_JOB_ENABLED" ]]; then

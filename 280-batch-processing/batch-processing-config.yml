@@ -124,7 +124,7 @@ ngManagerServiceHttpClientConfig:
   readTimeOutSeconds: 15
 
 ceNgServiceHttpClientConfig:
-  baseUrl: https://nginx-ingress-controller.ingress-nginx.svc.cluster.local/ccm/api/
+  baseUrl: http://localhost:7340/api/
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
 
