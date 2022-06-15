@@ -67,7 +67,7 @@ import org.apache.commons.lang3.tuple.Pair;
 @TargetModule(HarnessModule._420_DELEGATE_AGENT)
 @OwnedBy(CE)
 public class K8sMetricCollector {
-  private static final TemporalAmount AGGREGATION_WINDOW = Duration.ofMinutes(20);
+  private static final TemporalAmount AGGREGATION_WINDOW = Duration.ofMinutes(3);
 
   @Value
   @Builder
@@ -112,6 +112,8 @@ public class K8sMetricCollector {
 
   public void collectAndPublishMetrics(
       K8sMetricsClient k8sMetricsClient, Instant now, CoreV1Api coreV1Api, K8sControllerFetcher controllerFetcher) {
+    log.info("collectAndPublishMetrics, now: {}", now);
+    log.info("collectAndPublishMetrics, lastMetricPublished: {}", lastMetricPublished);
     collectNodeMetrics(k8sMetricsClient);
     List<PodMetrics> podMetricsList = k8sMetricsClient.podMetrics().list().getObject().getItems();
     collectPodMetrics(podMetricsList);
@@ -205,6 +207,7 @@ public class K8sMetricCollector {
       String namespace = podMetrics.getMetadata().getNamespace();
       String podName = podMetrics.getMetadata().getName();
       Pair<String, String> workloadInfo = getWorkloadInfo(namespace, podName, coreV1Api, controllerFetcher);
+      log.info("collectContainerStates, workloadInfo {} for padName {}", workloadInfo, podName);
       if (workloadInfo == null) {
         continue;
       }
@@ -252,7 +255,7 @@ public class K8sMetricCollector {
     V1PodList podList;
     try {
       podList = coreV1Api.listNamespacedPod(
-          namespace, null, false, null, "metadata.name=" + podName, null, 1, null, null, false);
+          namespace, null, false, null, "metadata.name=" + podName, null, 1, null, null, null, false);
     } catch (ApiException e) {
       log.warn("Failed to get pod {} in namespace {}: {}", podName, namespace, e);
       return null;
@@ -347,11 +350,14 @@ public class K8sMetricCollector {
   }
 
   private void publishContainerStates() {
+    log.info("containerStateProto cache size: {}", containerStatesCache.estimatedSize());
     containerStatesCache.asMap()
         .entrySet()
         .stream()
         .map(e -> {
           ContainerStateCacheKey key = e.getKey();
+          log.info("ContainerStateCacheKey workloadKind: {}", key.getWorkloadKind());
+          log.info("ContainerStateCacheKey workloadName: {}", key.getWorkloadName());
           ContainerState containerState = e.getValue();
           HistogramCheckpoint histogramCheckpoint = containerState.getCpuHistogram().saveToCheckpoint();
           HistogramCheckpoint histogramCheckpointV2 = containerState.getCpuHistogramV2().saveToCheckpoint();

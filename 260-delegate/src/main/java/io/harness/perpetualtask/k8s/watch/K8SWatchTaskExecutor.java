@@ -47,7 +47,9 @@ import com.google.gson.JsonSyntaxException;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.protobuf.Timestamp;
+import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.V1Node;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolume;
@@ -104,8 +106,8 @@ public class K8SWatchTaskExecutor implements PerpetualTaskExecutor {
 
         K8sControllerFetcher controllerFetcher =
             requireNonNull(k8sWatchServiceDelegate.getK8sControllerFetcher(watchId));
-        DefaultK8sMetricsClient k8sMetricsClient =
-            new DefaultK8sMetricsClient(apiClientFactory.getClient(kubernetesConfig));
+        ApiClient apiClient = apiClientFactory.getClient(kubernetesConfig);
+        DefaultK8sMetricsClient k8sMetricsClient = new DefaultK8sMetricsClient(apiClient);
 
         final Instant now = Instant.now();
 
@@ -131,7 +133,7 @@ public class K8SWatchTaskExecutor implements PerpetualTaskExecutor {
                           .build();
                   return new K8sMetricCollector(eventPublisher, clusterDetails, heartbeatTime);
                 })
-            .collectAndPublishMetrics(k8sMetricsClient, now, k8sMetricsClient /* as CoreV1API */, controllerFetcher);
+            .collectAndPublishMetrics(k8sMetricsClient, now, new CoreV1Api(apiClient), controllerFetcher);
 
       } catch (JsonSyntaxException ex) {
         ApiExceptionLogger.logErrorIfNotSeenRecently(
