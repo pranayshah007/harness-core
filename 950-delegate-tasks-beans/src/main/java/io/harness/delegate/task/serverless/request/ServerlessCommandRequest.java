@@ -25,7 +25,9 @@ import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.capability.EncryptedDataDetailsCapabilityHelper;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.serverless.ServerlessArtifactConfig;
+import io.harness.delegate.task.serverless.ServerlessArtifactType;
 import io.harness.delegate.task.serverless.ServerlessArtifactoryArtifactConfig;
+import io.harness.delegate.task.serverless.ServerlessArtifactsConfig;
 import io.harness.delegate.task.serverless.ServerlessAwsLambdaInfraConfig;
 import io.harness.delegate.task.serverless.ServerlessAwsLambdaManifestConfig;
 import io.harness.delegate.task.serverless.ServerlessCommandType;
@@ -37,6 +39,8 @@ import io.harness.security.encryption.EncryptedDataDetail;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+
 import org.hibernate.validator.constraints.NotEmpty;
 
 @OwnedBy(HarnessTeam.CDP)
@@ -48,13 +52,13 @@ public interface ServerlessCommandRequest extends TaskParameters, ExecutionCapab
   ServerlessInfraConfig getServerlessInfraConfig();
   ServerlessManifestConfig getServerlessManifestConfig();
   Integer getTimeoutIntervalInMin();
-  ServerlessArtifactConfig getServerlessArtifactConfig();
+  ServerlessArtifactsConfig getServerlessArtifactsConfig();
 
   @Override
   default List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {
     ServerlessInfraConfig serverlessInfraConfig = getServerlessInfraConfig();
     ServerlessManifestConfig serverlessManifestConfig = getServerlessManifestConfig();
-    ServerlessArtifactConfig serverlessArtifactConfig = getServerlessArtifactConfig();
+    ServerlessArtifactsConfig serverlessArtifactsConfig = getServerlessArtifactsConfig();
     List<EncryptedDataDetail> cloudProviderEncryptionDetails = serverlessInfraConfig.getEncryptionDataDetails();
 
     List<ExecutionCapability> capabilities =
@@ -82,14 +86,22 @@ public interface ServerlessCommandRequest extends TaskParameters, ExecutionCapab
         }
       }
     }
-    if (getServerlessArtifactConfig() != null) {
-      if (serverlessArtifactConfig instanceof ServerlessArtifactoryArtifactConfig) {
-        ServerlessArtifactoryArtifactConfig serverlessArtifactoryArtifactConfig =
-            (ServerlessArtifactoryArtifactConfig) serverlessArtifactConfig;
+
+    if (serverlessArtifactsConfig != null) {
+      ServerlessArtifactConfig primaryArtifact = serverlessArtifactsConfig.getPrimary();
+      if (primaryArtifact != null && primaryArtifact instanceof ServerlessArtifactoryArtifactConfig) {
         capabilities.addAll(ArtifactoryCapabilityHelper.fetchRequiredExecutionCapabilities(
-            serverlessArtifactoryArtifactConfig.getConnectorDTO().getConnectorConfig(), maskingEvaluator));
+                ((ServerlessArtifactoryArtifactConfig) primaryArtifact).getConnectorDTO().getConnectorConfig(), maskingEvaluator));
       }
-    }
+      if (serverlessArtifactsConfig.getSidecars() != null) {
+        for(ServerlessArtifactConfig serverlessArtifactConfig : serverlessArtifactsConfig.getSidecars().values()) {
+          if (serverlessArtifactConfig.getServerlessArtifactType().equals(ServerlessArtifactType.ARTIFACTORY)) {
+            capabilities.addAll(ArtifactoryCapabilityHelper.fetchRequiredExecutionCapabilities(
+                    ((ServerlessArtifactoryArtifactConfig) serverlessArtifactConfig).getConnectorDTO().getConnectorConfig(), maskingEvaluator));
+          }
+        }
+      }
+
     capabilities.add(ServerlessInstallationCapability.builder().criteria("Serverless Installed").build());
     return capabilities;
   }

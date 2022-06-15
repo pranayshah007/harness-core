@@ -104,6 +104,7 @@ public class ServerlessTaskHelperBase {
   private static final String ARTIFACTORY_ARTIFACT_PATH = "artifactPath";
   private static final String ARTIFACTORY_ARTIFACT_NAME = "artifactName";
   private static final String ARTIFACT_FILE_NAME = "artifactFile";
+  private static final String SIDECAR_ARTIFACT_FILE_NAME_PREFIX = "sidecar-artifact-";
   private static final String ARTIFACT_DIR_NAME = "harnessArtifact";
 
   public LogCallback getLogCallback(ILogStreamingTaskClient logStreamingTaskClient, String commandUnitName,

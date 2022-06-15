@@ -101,6 +101,8 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
   @Inject private StepHelper stepHelper;
   private static final String PRIMARY_ARTIFACT_PATH_FOR_ARTIFACTORY = "<+artifact.path>";
   private static final String PRIMARY_ARTIFACT_PATH_FOR_ECR = "<+artifact.image>";
+  private static final String SIDECAR_ARTIFACT_PATH_PREFIX = "<+sidecar.artifact.";
+  private static final String SIDECAR_ARTIFACT_FILE_NAME_PREFIX = "sidecar-artifact-";
   private static final String ARTIFACT_ACTUAL_PATH = "harnessArtifact/artifactFile";
 
   public TaskChainResponse startChainLink(
@@ -359,10 +361,11 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
   }
 
   public String renderManifestContent(
-      Ambiance ambiance, String manifestFileContent, ServerlessArtifactConfig serverlessArtifactConfig) {
+      Ambiance ambiance, String manifestFileContent, ServerlessArtifactConfig serverlessArtifactConfig, Map<String, ServerlessArtifactConfig> sidecarServerlessArtifactConfigMap) {
     if (isEmpty(manifestFileContent)) {
       return manifestFileContent;
     }
+
     if (serverlessArtifactConfig != null
         && serverlessArtifactConfig.getServerlessArtifactType().equals(ServerlessArtifactType.ECR)) {
       manifestFileContent = manifestFileContent.replace(
@@ -370,6 +373,19 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
     } else if (manifestFileContent.contains(PRIMARY_ARTIFACT_PATH_FOR_ARTIFACTORY)) {
       manifestFileContent = manifestFileContent.replace(PRIMARY_ARTIFACT_PATH_FOR_ARTIFACTORY, ARTIFACT_ACTUAL_PATH);
     }
+
+    for (Map.Entry<String, ServerlessArtifactConfig> entry : sidecarServerlessArtifactConfigMap.entrySet()) {
+      String identifier = SIDECAR_ARTIFACT_PATH_PREFIX + entry.getKey() + ">";
+      if (manifestFileContent.contains(identifier)) {
+        if(entry.getValue().getServerlessArtifactType().equals(ServerlessArtifactType.ECR)) {
+          manifestFileContent = manifestFileContent.replace(
+                  identifier, ((ServerlessEcrArtifactConfig) entry.getValue()).getImage());
+        } else if(entry.getValue().getServerlessArtifactType().equals(ServerlessArtifactType.ARTIFACTORY)) {
+          manifestFileContent = manifestFileContent.replace(identifier, SIDECAR_ARTIFACT_FILE_NAME_PREFIX + entry.getKey());
+        }
+      }
+    }
+
     return engineExpressionService.renderExpression(ambiance, manifestFileContent);
   }
 

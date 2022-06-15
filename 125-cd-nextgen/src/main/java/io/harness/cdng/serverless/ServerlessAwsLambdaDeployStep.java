@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
+import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
@@ -26,9 +27,11 @@ import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.exception.ServerlessNGException;
 import io.harness.delegate.task.serverless.ServerlessArtifactConfig;
+import io.harness.delegate.task.serverless.ServerlessArtifactsConfig;
 import io.harness.delegate.task.serverless.ServerlessCommandType;
 import io.harness.delegate.task.serverless.ServerlessDeployConfig;
 import io.harness.delegate.task.serverless.ServerlessManifestConfig;
+import io.harness.delegate.task.serverless.SidecarsServerlessArtifactConfig;
 import io.harness.delegate.task.serverless.request.ServerlessDeployRequest;
 import io.harness.delegate.task.serverless.response.ServerlessDeployResponse;
 import io.harness.exception.ExceptionUtils;
@@ -95,11 +98,24 @@ public class ServerlessAwsLambdaDeployStep
     final String accountId = AmbianceUtils.getAccountId(ambiance);
     ServerlessArtifactConfig serverlessArtifactConfig = null;
     Optional<ArtifactOutcome> artifactOutcome = serverlessStepCommonHelper.resolveArtifactsOutcome(ambiance);
+    Optional<ArtifactsOutcome> artifactsOutcome = serverlessStepCommonHelper.getArtifactsOutcome(ambiance);
+
+    Map<String, ServerlessArtifactConfig> sidecarServerlessArtifactConfigMap = new HashMap<>();
+    if (artifactsOutcome.isPresent()) {
+      artifactsOutcome.get().getSidecars().forEach((key, value) -> {
+        if(value != null) {
+          sidecarServerlessArtifactConfigMap.put(key, serverlessStepCommonHelper.getArtifactConfig(value, ambiance));
+        }
+      });
+    }
+
     if (artifactOutcome.isPresent()) {
       serverlessArtifactConfig = serverlessStepCommonHelper.getArtifactConfig(artifactOutcome.get(), ambiance);
     }
+    ServerlessArtifactsConfig serverlessArtifactsConfig = ServerlessArtifactsConfig.builder().primary(serverlessArtifactConfig)
+            .sidecars(sidecarServerlessArtifactConfigMap).build();
     String manifestFileOverrideContent = serverlessStepCommonHelper.renderManifestContent(ambiance,
-        serverlessAwsLambdaStepExecutorParams.getManifestFilePathContent().getValue(), serverlessArtifactConfig);
+        serverlessAwsLambdaStepExecutorParams.getManifestFilePathContent().getValue(), serverlessArtifactConfig, sidecarServerlessArtifactConfigMap);
     ServerlessDeployConfig serverlessDeployConfig = serverlessStepCommonHelper.getServerlessDeployConfig(
         serverlessDeployStepParameters, serverlessAwsLambdaStepHelper);
     Map<String, Object> manifestParams = new HashMap<>();
@@ -122,7 +138,7 @@ public class ServerlessAwsLambdaDeployStep
             .serverlessInfraConfig(serverlessStepCommonHelper.getServerlessInfraConfig(infrastructureOutcome, ambiance))
             .serverlessDeployConfig(serverlessDeployConfig)
             .serverlessManifestConfig(serverlessManifestConfig)
-            .serverlessArtifactConfig(serverlessArtifactConfig)
+                .serverlessArtifactsConfig(serverlessArtifactsConfig)
             .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))
             .manifestContent(manifestFileOverrideContent)

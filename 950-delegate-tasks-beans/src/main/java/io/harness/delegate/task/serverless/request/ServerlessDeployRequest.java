@@ -12,7 +12,7 @@ import static io.harness.expression.Expression.ALLOW_SECRETS;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
-import io.harness.delegate.task.serverless.ServerlessArtifactConfig;
+import io.harness.delegate.task.serverless.ServerlessArtifactsConfig;
 import io.harness.delegate.task.serverless.ServerlessCommandType;
 import io.harness.delegate.task.serverless.ServerlessDeployConfig;
 import io.harness.delegate.task.serverless.ServerlessInfraConfig;
@@ -31,7 +31,7 @@ public class ServerlessDeployRequest implements ServerlessCommandRequest, Nested
   String accountId;
   ServerlessCommandType serverlessCommandType;
   String commandName;
-  @NonFinal @Expression(ALLOW_SECRETS) ServerlessArtifactConfig serverlessArtifactConfig;
+  @NonFinal @Expression(ALLOW_SECRETS) ServerlessArtifactsConfig serverlessArtifactsConfig;
   CommandUnitsProgress commandUnitsProgress;
   @NonFinal @Expression(ALLOW_SECRETS) ServerlessManifestConfig serverlessManifestConfig;
   @NonFinal @Expression(ALLOW_SECRETS) ServerlessInfraConfig serverlessInfraConfig;
