@@ -22,6 +22,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EmbeddedUser;
 import io.harness.beans.FeatureName;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.ff.FeatureFlagService;
 import io.harness.perpetualtask.PerpetualTaskService;
 
@@ -63,7 +64,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
@@ -280,25 +280,24 @@ public abstract class InstanceHandler {
   protected DeploymentSummary getDeploymentSummaryForRollback(
       List<Instance> instancesInDb, DeploymentSummary deploymentSummary) {
     try {
-      if (!instancesInDb.isEmpty()) {
+      if (EmptyPredicate.isNotEmpty(instancesInDb)) {
         WorkflowExecution lastSuccessfulWE =
             workflowExecutionService.getLastSuccessfulWorkflowExecution(deploymentSummary.getAccountId(),
                 deploymentSummary.getAppId(), deploymentSummary.getWorkflowId(), instancesInDb.get(0).getEnvId(),
                 instancesInDb.get(0).getServiceId(), deploymentSummary.getInfraMappingId());
         if (lastSuccessfulWE != null) {
-          List<Artifact> lastArtifacts = lastSuccessfulWE.getArtifacts();
-          lastArtifacts = lastArtifacts.stream()
-                              .filter(a -> a.getServiceIds().contains(instancesInDb.get(0).getServiceId()))
-                              .collect(Collectors.toList());
-          if (lastArtifacts != null) {
-            if (!lastArtifacts.isEmpty()) {
-              // Copy Artifact Information for rollback version in previous successful workflow execution
-              deploymentSummary.setArtifactBuildNum(lastArtifacts.get(0).getBuildNo());
-              deploymentSummary.setArtifactName(lastArtifacts.get(0).getDisplayName());
-              deploymentSummary.setArtifactId(lastArtifacts.get(0).getUuid());
-              deploymentSummary.setArtifactSourceName(lastArtifacts.get(0).getArtifactSourceName());
-              deploymentSummary.setArtifactStreamId(lastArtifacts.get(0).getArtifactStreamId());
-            }
+          Artifact lastArtifact = lastSuccessfulWE.getArtifacts()
+                                      .stream()
+                                      .filter(a -> a.getServiceIds().contains(instancesInDb.get(0).getServiceId()))
+                                      .findFirst()
+                                      .orElse(null);
+          if (lastArtifact != null) {
+            // Copy Artifact Information for rollback version in previous successful workflow execution
+            deploymentSummary.setArtifactBuildNum(lastArtifact.getBuildNo());
+            deploymentSummary.setArtifactName(lastArtifact.getDisplayName());
+            deploymentSummary.setArtifactId(lastArtifact.getUuid());
+            deploymentSummary.setArtifactSourceName(lastArtifact.getArtifactSourceName());
+            deploymentSummary.setArtifactStreamId(lastArtifact.getArtifactStreamId());
           }
         }
       }
