@@ -13,7 +13,7 @@ import retrofit2.http.Query;
 
 @OwnedBy(HarnessTeam.CE)
 public interface NotificationResourceClient {
-  String BASE_API = "ccm/notification";
+  String BASE_API = "notification";
 
   @POST(BASE_API)
   Call<RestResponse<NotificationResult>> sendNotification(

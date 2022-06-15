@@ -143,10 +143,10 @@ public class AnomalyAlertsServiceImpl implements AnomalyAlertsService {
   @Override
   public void testAnomalyAlerts() {
     EmailChannelBuilder emailChannelBuilder = EmailChannel.builder()
-                                                  .accountId("kmpySmUISimoRrJL6NL73w")
+                                                  .accountId("zEaak-FLS425IEO7OLzMUg")
                                                   .recipients(Collections.singletonList("shubhanshu.verma@harness.io"))
-                                                  .team(Team.OTHER)
-                                                  .templateId("email_ccm_anomaly_alert.txt")
+                                                  .team(Team.PL)
+                                                  .templateId("email_ccm_anomaly_alert")
                                                   .userGroups(Collections.emptyList());
 
     Map<String, String> templateData = new HashMap<>();
@@ -156,7 +156,7 @@ public class AnomalyAlertsServiceImpl implements AnomalyAlertsService {
 
     // Sending email alerts
     emailChannelBuilder.templateData(templateData);
-    notificationResourceClient.sendNotification("", emailChannelBuilder.build());
+    notificationResourceClient.sendNotification("zEaak-FLS425IEO7OLzMUg", emailChannelBuilder.build());
     log.info("done");
   }
 
