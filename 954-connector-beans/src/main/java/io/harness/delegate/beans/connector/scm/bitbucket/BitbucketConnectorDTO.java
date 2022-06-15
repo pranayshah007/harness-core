@@ -103,7 +103,6 @@ public class BitbucketConnectorDTO extends ConnectorConfigDTO implements ScmConn
     return ConnectorType.BITBUCKET;
   }
 
-  @Override
   public String getUrl() {
     if (isNotEmpty(gitConnectionUrl)) {
       return gitConnectionUrl;
@@ -112,21 +111,17 @@ public class BitbucketConnectorDTO extends ConnectorConfigDTO implements ScmConn
   }
 
   @Override
-  public String getGitConnectionUrl(String repoName) {
-    if (isNotEmpty(gitConnectionUrl)) {
-      return gitConnectionUrl;
-    }
-
+  public String getGitConnectionUrl(GitRepositoryDTO gitRepositoryDTO) {
     if (connectionType == GitConnectionType.REPO) {
       String linkedRepo = getGitRepositoryDetails().getName();
-      if (!linkedRepo.equals(repoName)) {
+      if (!linkedRepo.equals(gitRepositoryDTO.getName())) {
         throw new InvalidRequestException(
             String.format("Provided repoName [%s] does not match with the repoName [%s] provided in connector.",
-                repoName, linkedRepo));
+                gitRepositoryDTO.getName(), linkedRepo));
       }
       return getUrl();
     }
-    return FilePathUtils.addEndingSlashIfMissing(getUrl()) + repoName;
+    return FilePathUtils.addEndingSlashIfMissing(getUrl()) + gitRepositoryDTO.getName();
   }
 
   @Override
@@ -144,9 +139,9 @@ public class BitbucketConnectorDTO extends ConnectorConfigDTO implements ScmConn
   }
 
   @Override
-  public String getFileUrl(String branchName, String filePath, String repoName) {
+  public String getFileUrl(String branchName, String filePath, GitRepositoryDTO gitRepositoryDTO) {
     ScmConnectorHelper.validateGetFileUrlParams(branchName, filePath);
-    String repoUrl = removeStartingAndEndingSlash(getGitConnectionUrl(repoName));
+    String repoUrl = removeStartingAndEndingSlash(getGitConnectionUrl(gitRepositoryDTO));
     filePath = removeStartingAndEndingSlash(filePath);
     if (GitClientHelper.isBitBucketSAAS(repoUrl)) {
       return String.format("%s/src/%s/%s", repoUrl, branchName, filePath);

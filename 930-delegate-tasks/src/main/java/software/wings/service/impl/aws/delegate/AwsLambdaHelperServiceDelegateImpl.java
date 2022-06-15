@@ -40,6 +40,7 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.TimeoutException;
 import io.harness.exception.WingsException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.filesystem.FileIo;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
@@ -168,6 +169,7 @@ public class AwsLambdaHelperServiceDelegateImpl
     AwsConfig awsConfig = request.getAwsConfig();
     List<EncryptedDataDetail> encryptionDetails = request.getEncryptionDetails();
     encryptionService.decrypt(awsConfig, encryptionDetails, false);
+    ExceptionMessageSanitizer.storeAllSecretsForSanitizing(awsConfig, encryptionDetails);
     try (CloseableAmazonWebServiceClient<AWSLambdaClient> closeableAWSLambdaClient =
              new CloseableAmazonWebServiceClient(getAmazonLambdaClient(request.getRegion(), request.getAwsConfig()))) {
       InvokeRequest invokeRequest = new InvokeRequest()
@@ -202,7 +204,8 @@ public class AwsLambdaHelperServiceDelegateImpl
     } catch (AmazonClientException amazonClientException) {
       handleAmazonClientException(amazonClientException);
     } catch (Exception e) {
-      throw new InvalidRequestException(ExceptionUtils.getMessage(e), e);
+      Exception sanitizeException = ExceptionMessageSanitizer.sanitizeException(e);
+      throw new InvalidRequestException(ExceptionUtils.getMessage(sanitizeException), sanitizeException);
     }
     return null;
   }
@@ -212,6 +215,7 @@ public class AwsLambdaHelperServiceDelegateImpl
     AwsConfig awsConfig = request.getAwsConfig();
     List<EncryptedDataDetail> encryptionDetails = request.getEncryptionDetails();
     encryptionService.decrypt(awsConfig, encryptionDetails, false);
+    ExceptionMessageSanitizer.storeAllSecretsForSanitizing(awsConfig, encryptionDetails);
     try (CloseableAmazonWebServiceClient<AWSLambdaClient> closeableAWSLambdaClient =
              new CloseableAmazonWebServiceClient(getAmazonLambdaClient(request.getRegion(), request.getAwsConfig()))) {
       AwsLambdaFunctionResponseBuilder response = AwsLambdaFunctionResponse.builder();
@@ -236,7 +240,8 @@ public class AwsLambdaHelperServiceDelegateImpl
     } catch (AmazonClientException amazonClientException) {
       handleAmazonClientException(amazonClientException);
     } catch (Exception e) {
-      throw new InvalidRequestException(ExceptionUtils.getMessage(e), e);
+      Exception sanitizeException = ExceptionMessageSanitizer.sanitizeException(e);
+      throw new InvalidRequestException(ExceptionUtils.getMessage(sanitizeException), sanitizeException);
     }
     return null;
   }
@@ -250,6 +255,7 @@ public class AwsLambdaHelperServiceDelegateImpl
     responseBuilder.region(request.getRegion());
     List<EncryptedDataDetail> encryptionDetails = request.getEncryptionDetails();
     encryptionService.decrypt(awsConfig, encryptionDetails, false);
+    ExceptionMessageSanitizer.storeAllSecretsForSanitizing(awsConfig, encryptionDetails);
 
     try (CloseableAmazonWebServiceClient<AWSLambdaClient> closeableAWSLambdaClient =
              new CloseableAmazonWebServiceClient(getAmazonLambdaClient(request.getRegion(), request.getAwsConfig()))) {
@@ -306,7 +312,8 @@ public class AwsLambdaHelperServiceDelegateImpl
           .errorMessage(ExceptionUtils.getMessage(ioException))
           .build();
     } catch (Exception e) {
-      throw new InvalidRequestException(ExceptionUtils.getMessage(e), e);
+      Exception sanitizeException = ExceptionMessageSanitizer.sanitizeException(e);
+      throw new InvalidRequestException(ExceptionUtils.getMessage(sanitizeException), sanitizeException);
     }
     return responseBuilder.build();
   }
@@ -575,12 +582,12 @@ public class AwsLambdaHelperServiceDelegateImpl
       });
     } catch (UncheckedTimeoutException e) {
       throw new TimeoutException("Timed out waiting for function to reach " + ACTIVE_FUNCTION_STATE + " state",
-          "Timeout", e, WingsException.SRE);
+          "Timeout", ExceptionMessageSanitizer.sanitizeException(e), WingsException.SRE);
     } catch (WingsException e) {
-      throw e;
+      throw(WingsException) ExceptionMessageSanitizer.sanitizeException(e);
     } catch (Exception e) {
-      throw new InvalidRequestException(
-          "Error while waiting for function to reach " + ACTIVE_FUNCTION_STATE + " state", e);
+      throw new InvalidRequestException("Error while waiting for function to reach " + ACTIVE_FUNCTION_STATE + " state",
+          ExceptionMessageSanitizer.sanitizeException(e));
     }
   }
 
@@ -613,9 +620,9 @@ public class AwsLambdaHelperServiceDelegateImpl
       });
     } catch (UncheckedTimeoutException e) {
       throw new TimeoutException("Timed out waiting for function to reach " + ACTIVE_LAST_UPDATE_STATUS + " status",
-          "Timeout", e, WingsException.SRE);
+          "Timeout", ExceptionMessageSanitizer.sanitizeException(e), WingsException.SRE);
     } catch (WingsException e) {
-      throw e;
+      throw(WingsException) ExceptionMessageSanitizer.sanitizeException(e);
     } catch (Exception e) {
       throw new InvalidRequestException(
           "Error while waiting for function to reach " + ACTIVE_LAST_UPDATE_STATUS + " status", e);
@@ -847,6 +854,7 @@ public class AwsLambdaHelperServiceDelegateImpl
     final AwsConfig awsConfig = request.getAwsConfig();
     final List<EncryptedDataDetail> encryptionDetails = request.getEncryptionDetails();
     encryptionService.decrypt(awsConfig, encryptionDetails, isInstanceSync);
+    ExceptionMessageSanitizer.storeAllSecretsForSanitizing(awsConfig, encryptionDetails);
 
     try (CloseableAmazonWebServiceClient<AWSLambdaClient> closeableAWSLambdaClient =
              new CloseableAmazonWebServiceClient(getAmazonLambdaClient(request.getRegion(), request.getAwsConfig()))) {
@@ -875,7 +883,8 @@ public class AwsLambdaHelperServiceDelegateImpl
     } catch (AmazonClientException amazonClientException) {
       handleAmazonClientException(amazonClientException);
     } catch (Exception e) {
-      throw new InvalidRequestException(ExceptionUtils.getMessage(e), e);
+      Exception sanitizeException = ExceptionMessageSanitizer.sanitizeException(e);
+      throw new InvalidRequestException(ExceptionUtils.getMessage(sanitizeException), sanitizeException);
     }
     return null;
   }

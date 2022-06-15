@@ -25,6 +25,7 @@ import io.harness.delegate.task.azure.arm.AzureARMTaskResponse;
 import io.harness.delegate.task.azure.arm.response.AzureARMDeploymentResponse;
 import io.harness.exception.AzureClientException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
@@ -43,14 +44,15 @@ public abstract class AbstractAzureARMTaskHandler {
 
       return handleARMTaskResponse(azureARMTaskResponse);
     } catch (AzureClientException ex) {
-      throw ex;
+      throw(AzureClientException) ExceptionMessageSanitizer.sanitizeException(ex);
     } catch (Exception ex) {
-      String message = AzureResourceUtility.getAzureCloudExceptionMessage(ex);
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(ex);
+      String message = AzureResourceUtility.getAzureCloudExceptionMessage(sanitizedException);
       if (azureARMTaskParameters.isSyncTask()) {
-        throw new InvalidRequestException(message, ex);
+        throw new InvalidRequestException(message, sanitizedException);
       }
 
-      logErrorMsg(azureARMTaskParameters, ex, message);
+      logErrorMsg(azureARMTaskParameters, sanitizedException, message);
       return handleFailureARMTaskResponse(message);
     }
   }

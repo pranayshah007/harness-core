@@ -17,10 +17,14 @@ import io.harness.expression.ExpressionEvaluator;
 
 import java.util.Collections;
 import java.util.List;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @OwnedBy(CDP)
+@NoArgsConstructor
+@AllArgsConstructor
 public abstract class AbstractWebAppTaskRequest implements AzureWebAppTaskRequest {
   @Getter @Setter private CommandUnitsProgress commandUnitsProgress;
   @Getter private AzureWebAppInfraDelegateConfig infrastructure;

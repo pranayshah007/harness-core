@@ -25,4 +25,28 @@ java_library(
     ],
 )
 
+java_library(
+    name = "tests",
+    testonly = True,
+    srcs = glob(["src/test/**/*.java"]),
+    data = [
+        "//930-ng-core-clients/src/test/resources:resource",
+    ],
+    resources = [
+        "//930-ng-core-clients/src/test/resources:resource",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":module",
+        "//:lombok",
+        "//980-commons:tests",
+        "//990-commons-test:module",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+    ],
+)
+
+run_tests()
+
 run_analysis()

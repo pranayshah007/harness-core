@@ -16,8 +16,10 @@ import io.harness.filestore.dto.node.FileNodeDTO.FileNodeDTOBuilder;
 import io.harness.filestore.dto.node.FolderNodeDTO;
 import io.harness.filestore.entities.NGFile;
 
+import javax.validation.constraints.NotNull;
 import lombok.experimental.UtilityClass;
 import org.apache.commons.lang3.StringUtils;
+import org.hibernate.validator.constraints.NotBlank;
 
 @OwnedBy(CDP)
 @UtilityClass
@@ -54,6 +56,18 @@ public class FileStoreNodeDTOMapper {
         .path(ngFile.getPath())
         .lastModifiedAt(ngFile.getLastModifiedAt())
         .lastModifiedBy(fromEmbeddedUser(ngFile.getLastUpdatedBy()))
+        .build();
+  }
+
+  public FolderNodeDTO getFolderNodeDTO(
+      FolderNodeDTO folderNodeDTO, final @NotNull String parentIdentifier, final @NotBlank String path) {
+    return FolderNodeDTO.builder()
+        .identifier(folderNodeDTO.getIdentifier())
+        .parentIdentifier(parentIdentifier)
+        .name(folderNodeDTO.getName())
+        .path(path)
+        .lastModifiedAt(folderNodeDTO.getLastModifiedAt())
+        .lastModifiedBy(folderNodeDTO.getLastModifiedBy())
         .build();
   }
 }

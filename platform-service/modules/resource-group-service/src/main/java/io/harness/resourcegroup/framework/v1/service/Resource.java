@@ -14,6 +14,7 @@ import io.harness.beans.Scope;
 import io.harness.beans.ScopeLevel;
 import io.harness.eventsframework.consumer.Message;
 import io.harness.resourcegroup.beans.ValidatorType;
+import io.harness.resourcegroup.v2.model.AttributeFilter;
 
 import java.util.EnumSet;
 import java.util.List;
@@ -38,4 +39,6 @@ public interface Resource {
   List<Boolean> validate(List<String> resourceIds, Scope scope);
 
   Map<ScopeLevel, EnumSet<ValidatorType>> getSelectorKind();
+
+  boolean isValidAttributeFilter(AttributeFilter attributeFilter);
 }

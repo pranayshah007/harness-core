@@ -7,10 +7,15 @@
 
 package io.harness.beans.yaml.extended;
 
+import io.harness.annotation.RecasterAlias;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
+import org.springframework.data.annotation.TypeAlias;
 
+@TypeAlias("archiveFormat")
+@RecasterAlias("io.harness.beans.yaml.extended.ArchiveFormat")
 public enum ArchiveFormat {
   @JsonProperty("Tar") TAR("tar"),
   @JsonProperty("Gzip") GZIP("gzip");

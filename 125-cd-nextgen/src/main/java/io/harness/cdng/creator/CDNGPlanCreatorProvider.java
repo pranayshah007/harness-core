@@ -10,6 +10,10 @@ package io.harness.cdng.creator;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
+import io.harness.cdng.azure.webapp.variablecreator.AzureWebAppRollbackStepVariableCreator;
+import io.harness.cdng.azure.webapp.variablecreator.AzureWebAppSlotDeploymentStepVariableCreator;
+import io.harness.cdng.azure.webapp.variablecreator.AzureWebAppSwapSlotStepVariableCreator;
+import io.harness.cdng.azure.webapp.variablecreator.AzureWebAppTrafficShiftStepVariableCreator;
 import io.harness.cdng.creator.filters.DeploymentStageFilterJsonCreatorV2;
 import io.harness.cdng.creator.plan.CDStepsPlanCreator;
 import io.harness.cdng.creator.plan.artifact.ArtifactsPlanCreator;
@@ -36,6 +40,7 @@ import io.harness.cdng.creator.plan.steps.CloudformationDeleteStackStepPlanCreat
 import io.harness.cdng.creator.plan.steps.CloudformationRollbackStackStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.CommandStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.GitOpsCreatePRStepPlanCreatorV2;
+import io.harness.cdng.creator.plan.steps.GitOpsMergePRStepPlanCreatorV2;
 import io.harness.cdng.creator.plan.steps.HelmDeployStepPlanCreatorV2;
 import io.harness.cdng.creator.plan.steps.HelmRollbackStepPlanCreatorV2;
 import io.harness.cdng.creator.plan.steps.K8sApplyStepPlanCreator;
@@ -51,10 +56,15 @@ import io.harness.cdng.creator.plan.steps.TerraformApplyStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.TerraformDestroyStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.TerraformPlanStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.TerraformRollbackStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.azure.webapp.AzureWebAppRollbackStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.azure.webapp.AzureWebAppSlotDeploymentStepPlanCreator;
+import io.harness.cdng.creator.plan.steps.azure.webapp.AzureWebAppSlotSwapSlotPlanCreator;
+import io.harness.cdng.creator.plan.steps.azure.webapp.AzureWebAppTrafficShiftStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.serverless.ServerlessAwsLambdaDeployStepPlanCreator;
 import io.harness.cdng.creator.plan.steps.serverless.ServerlessAwsLambdaRollbackStepPlanCreator;
 import io.harness.cdng.creator.variables.DeploymentStageVariableCreator;
 import io.harness.cdng.creator.variables.GitOpsCreatePRStepVariableCreator;
+import io.harness.cdng.creator.variables.GitOpsMergePRStepVariableCreator;
 import io.harness.cdng.creator.variables.HelmDeployStepVariableCreator;
 import io.harness.cdng.creator.variables.HelmRollbackStepVariableCreator;
 import io.harness.cdng.creator.variables.K8sApplyStepVariableCreator;
@@ -111,6 +121,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
   public List<PartialPlanCreator<?>> getPlanCreators() {
     List<PartialPlanCreator<?>> planCreators = new LinkedList<>();
     planCreators.add(new GitOpsCreatePRStepPlanCreatorV2());
+    planCreators.add(new GitOpsMergePRStepPlanCreatorV2());
     planCreators.add(new DeploymentStagePMSPlanCreatorV2());
     planCreators.add(new ServicePlanCreatorV2());
     planCreators.add(new CDPMSStepPlanCreator());
@@ -154,6 +165,10 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     planCreators.add(new ConfigFilesPlanCreator());
     planCreators.add(new CommandStepPlanCreator());
     planCreators.add(new SpecNodePlanCreator());
+    planCreators.add(new AzureWebAppRollbackStepPlanCreator());
+    planCreators.add(new AzureWebAppSlotDeploymentStepPlanCreator());
+    planCreators.add(new AzureWebAppSlotSwapSlotPlanCreator());
+    planCreators.add(new AzureWebAppTrafficShiftStepPlanCreator());
     injectorUtils.injectMembers(planCreators);
     return planCreators;
   }
@@ -173,6 +188,7 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
   public List<VariableCreator> getVariableCreators() {
     List<VariableCreator> variableCreators = new ArrayList<>();
     variableCreators.add(new GitOpsCreatePRStepVariableCreator());
+    variableCreators.add(new GitOpsMergePRStepVariableCreator());
     variableCreators.add(new DeploymentStageVariableCreator());
     variableCreators.add(new ExecutionVariableCreator());
     variableCreators.add(new K8sApplyStepVariableCreator());
@@ -196,6 +212,10 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     variableCreators.add(new CloudformationDeleteStepVariableCreator());
     variableCreators.add(new CloudformationRollbackStepVariableCreator());
     variableCreators.add(new SshVariableCreator());
+    variableCreators.add(new AzureWebAppSlotDeploymentStepVariableCreator());
+    variableCreators.add(new AzureWebAppTrafficShiftStepVariableCreator());
+    variableCreators.add(new AzureWebAppSwapSlotStepVariableCreator());
+    variableCreators.add(new AzureWebAppRollbackStepVariableCreator());
     return variableCreators;
   }
 
@@ -205,6 +225,14 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
         StepInfo.newBuilder()
             .setName("GitOps Create PR")
             .setType(StepSpecTypeConstants.GITOPS_CREATE_PR)
+            .setFeatureFlag(FeatureName.NG_GITOPS.name())
+            .setStepMetaData(StepMetaData.newBuilder().addCategory("Kubernetes").setFolderPath("GitOps").build())
+            .build();
+
+    StepInfo gitOpsMergePR =
+        StepInfo.newBuilder()
+            .setName("GitOps Merge PR")
+            .setType(StepSpecTypeConstants.GITOPS_MERGE_PR)
             .setFeatureFlag(FeatureName.NG_GITOPS.name())
             .setStepMetaData(StepMetaData.newBuilder().addCategory("Kubernetes").setFolderPath("GitOps").build())
             .build();
@@ -399,9 +427,46 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
                                  .setFeatureFlag(FeatureName.CLOUDFORMATION_NG.name())
                                  .build();
 
+    StepInfo azureWebAppSlotDeployment =
+        StepInfo.newBuilder()
+            .setName("Azure Slot Deployment")
+            .setType(StepSpecTypeConstants.AZURE_SLOT_DEPLOYMENT)
+            .setFeatureRestrictionName(FeatureRestrictionName.AZURE_SLOT_DEPLOYMENT.name())
+            .setStepMetaData(StepMetaData.newBuilder().addCategory("AzureWebApp").addFolderPaths("AzureWebApp").build())
+            .setFeatureFlag(FeatureName.AZURE_WEBAPP_NG.name())
+            .build();
+
+    StepInfo azureWebAppTrafficShift =
+        StepInfo.newBuilder()
+            .setName("Azure Traffic Shift")
+            .setType(StepSpecTypeConstants.AZURE_TRAFFIC_SHIFT)
+            .setFeatureRestrictionName(FeatureRestrictionName.AZURE_TRAFFIC_SHIFT.name())
+            .setStepMetaData(StepMetaData.newBuilder().addCategory("AzureWebApp").addFolderPaths("AzureWebApp").build())
+            .setFeatureFlag(FeatureName.AZURE_WEBAPP_NG.name())
+            .build();
+
+    StepInfo azureWebAppSwapSlot =
+        StepInfo.newBuilder()
+            .setName("Azure Swap Slot")
+            .setType(StepSpecTypeConstants.AZURE_SWAP_SLOT)
+            .setFeatureRestrictionName(FeatureRestrictionName.AZURE_SWAP_SLOT.name())
+            .setStepMetaData(StepMetaData.newBuilder().addCategory("AzureWebApp").addFolderPaths("AzureWebApp").build())
+            .setFeatureFlag(FeatureName.AZURE_WEBAPP_NG.name())
+            .build();
+
+    StepInfo azureWebAppRollback =
+        StepInfo.newBuilder()
+            .setName("Azure WebApp Rollback")
+            .setType(StepSpecTypeConstants.AZURE_WEBAPP_ROLLBACK)
+            .setFeatureRestrictionName(FeatureRestrictionName.AZURE_WEBAPP_ROLLBACK.name())
+            .setStepMetaData(StepMetaData.newBuilder().addCategory("AzureWebApp").addFolderPaths("AzureWebApp").build())
+            .setFeatureFlag(FeatureName.AZURE_WEBAPP_NG.name())
+            .build();
+
     List<StepInfo> stepInfos = new ArrayList<>();
 
     stepInfos.add(gitOpsCreatePR);
+    stepInfos.add(gitOpsMergePR);
     stepInfos.add(k8sRolling);
     stepInfos.add(delete);
     stepInfos.add(canaryDeploy);
@@ -423,6 +488,10 @@ public class CDNGPlanCreatorProvider implements PipelineServiceInfoProvider {
     stepInfos.add(deleteStack);
     stepInfos.add(rollbackStack);
     stepInfos.add(executeCommand);
+    stepInfos.add(azureWebAppSlotDeployment);
+    stepInfos.add(azureWebAppTrafficShift);
+    stepInfos.add(azureWebAppSwapSlot);
+    stepInfos.add(azureWebAppRollback);
     return stepInfos;
   }
 }

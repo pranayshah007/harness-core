@@ -986,9 +986,6 @@ public class JiraTask extends AbstractDelegateRunnableTask {
     if (EmptyPredicate.isNotEmpty(parameters.getComment())) {
       fields.put("Comment", parameters.getComment());
     }
-    if (EmptyPredicate.isNotEmpty(parameters.getStatus())) {
-      fields.put("Status", parameters.getStatus());
-    }
     if (EmptyPredicate.isNotEmpty(userTypeFields)) {
       for (Map.Entry<String, String> userField : userTypeFields.entrySet()) {
         fields.put(userField.getKey(), userField.getValue());
