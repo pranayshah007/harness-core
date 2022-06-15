@@ -33,6 +33,7 @@ import io.harness.plancreator.steps.AbstractStepPlanCreator;
 import io.harness.plancreator.steps.FailureStrategiesUtils;
 import io.harness.plancreator.steps.GenericPlanCreatorUtils;
 import io.harness.plancreator.steps.common.WithStepElementParameters;
+import io.harness.plancreator.strategy.StageStrategyUtils;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
 import io.harness.pms.contracts.execution.failure.FailureType;
@@ -103,7 +104,7 @@ public abstract class CIPMSStepPlanCreatorV2<T extends CIAbstractStepNode> exten
     addStrategyFieldDependencyIfPresent(ctx, stepElement, dependenciesNodeMap, metadataMap);
     PlanNode stepPlanNode =
         PlanNode.builder()
-            .uuid(ctx.getCurrentField().getNode().getUuid())
+            .uuid(StageStrategyUtils.getSwappedPlanNodeId(ctx, stepElement))
             .name(getName(stepElement))
             .identifier(stepElement.getIdentifier())
             .stepType(stepElement.getStepSpecType().getStepType())
@@ -126,10 +127,14 @@ public abstract class CIPMSStepPlanCreatorV2<T extends CIAbstractStepNode> exten
                     .build())
             .skipUnresolvedExpressionsCheck(stepElement.getStepSpecType().skipUnresolvedExpressionsCheck())
             .build();
-    return PlanCreationResponse.builder().node(stepPlanNode.getUuid(), stepPlanNode).dependencies(DependenciesUtils.toDependenciesProto(dependenciesNodeMap)
-            .toBuilder()
-            .putDependencyMetadata(stepElement.getUuid(), Dependency.newBuilder().putAllMetadata(metadataMap).build())
-            .build()).build();
+    return PlanCreationResponse.builder()
+        .node(stepPlanNode.getUuid(), stepPlanNode)
+        .dependencies(DependenciesUtils.toDependenciesProto(dependenciesNodeMap)
+                          .toBuilder()
+                          .putDependencyMetadata(
+                              stepElement.getUuid(), Dependency.newBuilder().putAllMetadata(metadataMap).build())
+                          .build())
+        .build();
   }
 
   protected List<AdviserObtainment> getAdviserObtainmentFromMetaData(YamlField currentField) {
