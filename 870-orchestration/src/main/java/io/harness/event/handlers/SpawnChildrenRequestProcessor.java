@@ -62,6 +62,11 @@ public class SpawnChildrenRequestProcessor implements SdkResponseProcessor {
       List<String> callbackIds = new ArrayList<>();
       int currentChild = 0;
       int maxConcurrency = (int) request.getChildren().getMaxConcurrency();
+      // If maxConcurrency is not defined then we will run all children in parallel therefore maxConcurrency should be
+      // number of children
+      if (maxConcurrency == 0) {
+        maxConcurrency = request.getChildren().getChildrenCount();
+      }
       for (Child child : request.getChildren().getChildrenList()) {
         String uuid = generateUuid();
         callbackIds.add(uuid);
@@ -81,10 +86,7 @@ public class SpawnChildrenRequestProcessor implements SdkResponseProcessor {
       if (isMatrixFeatureEnabled) {
         // Save the ConcurrentChildInstance in db
         nodeExecutionInfoService.addConcurrentChildInformation(
-            ConcurrentChildInstance.builder()
-                .childrenNodeExecutionIds(callbackIds)
-                .cursor((int) request.getChildren().getMaxConcurrency())
-                .build(),
+            ConcurrentChildInstance.builder().childrenNodeExecutionIds(callbackIds).cursor(maxConcurrency).build(),
             nodeExecutionId);
       }
 
@@ -101,7 +103,7 @@ public class SpawnChildrenRequestProcessor implements SdkResponseProcessor {
   }
 
   private boolean shouldCreateAndStart(int maxConcurrency, int currentChild) {
-    return maxConcurrency == 0 || currentChild < maxConcurrency;
+    return currentChild < maxConcurrency;
   }
 
   private void createAndStart(Ambiance ambiance, String parentNodeExecutionId, String childNodeExecutionId,
