@@ -48,7 +48,6 @@ import io.harness.plancreator.steps.common.WithDelegateSelector;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.execution.Status;
-import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.tasks.DelegateTaskRequest;
 import io.harness.pms.contracts.execution.tasks.TaskCategory;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
@@ -95,26 +94,18 @@ public class StepUtils {
 
   public static StepResponse createStepResponseFromChildResponse(Map<String, ResponseData> responseDataMap) {
     StepResponseBuilder responseBuilder = StepResponse.builder().status(Status.SUCCEEDED);
-    FailureInfo.Builder failureInfoBuilder = FailureInfo.newBuilder();
+
     List<Status> childStatuses = new LinkedList<>();
     String nodeExecutionId = "";
-    boolean hasFailureInfo = false;
+
     for (ResponseData responseData : responseDataMap.values()) {
       StepResponseNotifyData responseNotifyData = (StepResponseNotifyData) responseData;
       Status executionStatus = responseNotifyData.getStatus();
       childStatuses.add(executionStatus);
       nodeExecutionId = responseNotifyData.getNodeUuid();
       if (StatusUtils.brokeStatuses().contains(executionStatus)) {
-        if (responseNotifyData.getFailureInfo() != null) {
-          failureInfoBuilder.addAllFailureData(responseNotifyData.getFailureInfo().getFailureDataList());
-          failureInfoBuilder.addAllFailureTypes(responseNotifyData.getFailureInfo().getFailureTypesList());
-          failureInfoBuilder.setErrorMessage(responseNotifyData.getFailureInfo().getErrorMessage());
-          hasFailureInfo = true;
-        }
+        responseBuilder.failureInfo(responseNotifyData.getFailureInfo());
       }
-    }
-    if (hasFailureInfo) {
-      responseBuilder.failureInfo(failureInfoBuilder.build());
     }
     responseBuilder.status(StatusUtils.calculateStatusForNode(childStatuses, nodeExecutionId));
     return responseBuilder.build();
@@ -446,26 +437,25 @@ public class StepUtils {
         // Delegate Selector Precedence: 1)Step -> 2)stepGroup -> 3)Stage ->  4)Pipeline
 
         ParameterField<List<TaskSelectorYaml>> delegateSelectors = withDelegateSelector.fetchDelegateSelectors();
-        if (!ParameterField.isNull(withDelegateSelector.fetchDelegateSelectors())
-            && !isEmpty(delegateSelectors.getValue())) {
+        if (!ParameterField.isNull(withDelegateSelector.fetchDelegateSelectors())) {
           setOriginAndDelegateSelectors(delegateSelectors, withDelegateSelector, STEP);
           return;
         }
 
         delegateSelectors = delegateSelectorsFromFqn(ctx, STEP_GROUP);
-        if (!ParameterField.isNull(delegateSelectors) && !isEmpty(delegateSelectors.getValue())) {
+        if (!ParameterField.isNull(delegateSelectors)) {
           setOriginAndDelegateSelectors(delegateSelectors, withDelegateSelector, STEP_GROUP);
           return;
         }
 
         delegateSelectors = delegateSelectorsFromFqn(ctx, STAGE);
-        if (!ParameterField.isNull(delegateSelectors) && !isEmpty(delegateSelectors.getValue())) {
+        if (!ParameterField.isNull(delegateSelectors)) {
           setOriginAndDelegateSelectors(delegateSelectors, withDelegateSelector, STAGE);
           return;
         }
 
         delegateSelectors = delegateSelectorsFromFqn(ctx, YAMLFieldNameConstants.PIPELINE);
-        if (!ParameterField.isNull(delegateSelectors) && !isEmpty(delegateSelectors.getValue())) {
+        if (!ParameterField.isNull(delegateSelectors)) {
           setOriginAndDelegateSelectors(delegateSelectors, withDelegateSelector, YAMLFieldNameConstants.PIPELINE);
         }
       }

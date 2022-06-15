@@ -83,7 +83,6 @@ import software.wings.sm.ExecutionContext;
 import software.wings.sm.ExecutionContextImpl;
 import software.wings.sm.ExecutionResponse;
 import software.wings.sm.WorkflowStandardParams;
-import software.wings.sm.WorkflowStandardParamsExtensionService;
 import software.wings.sm.states.gcbconfigs.GcbOptions;
 import software.wings.sm.states.gcbconfigs.GcbRemoteBuildSpec;
 import software.wings.sm.states.gcbconfigs.GcbTriggerBuildSpec;
@@ -124,7 +123,6 @@ public class GcbStateTest extends CategoryTest {
   @Mock private SettingsService settingService;
   @Mock private InfrastructureMappingService infrastructureMappingService;
   @Mock private StateExecutionServiceImpl stateExecutionService;
-  @Mock private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
 
   @InjectMocks private GcbState state = spy(new GcbState("gcb"));
 
@@ -225,8 +223,8 @@ public class GcbStateTest extends CategoryTest {
     SettingAttribute settingAttribute = new SettingAttribute();
     settingAttribute.setValue(new GcpConfig());
     when(delegateService.executeTask(any())).thenReturn(response);
-    when(settingService.get(any())).thenReturn(settingAttribute);
-    when(secretManager.getEncryptionDetails(any(GcpConfig.class), any(), any())).thenReturn(emptyList());
+    when(settingService.get(anyString())).thenReturn(settingAttribute);
+    when(secretManager.getEncryptionDetails(any(GcpConfig.class), anyString(), anyString())).thenReturn(emptyList());
     when(context.getStateExecutionData()).thenReturn(gcbExecutionData);
     when(gcbExecutionData.getExecutionDetails())
         .thenReturn(singletonMap("buildNo", ExecutionDataValue.builder().value("123").build()));
