@@ -14,6 +14,7 @@ import static io.harness.beans.SweepingOutputInstance.Scope.WORKFLOW;
 import static io.harness.rule.OwnerRule.AADITI;
 import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.MARKO;
+import static io.harness.rule.OwnerRule.NAVNEET;
 import static io.harness.rule.OwnerRule.PRABU;
 import static io.harness.shell.AccessType.KEY;
 import static io.harness.shell.ScriptType.BASH;
@@ -46,6 +47,8 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -700,5 +703,34 @@ public class ShellScriptStateTest extends WingsBaseTest {
         .thenReturn(anApplication().uuid(APP_ID).name(APP_NAME).build());
     when(workflowStandardParamsExtensionService.getEnv(workflowStandardParams))
         .thenReturn(anEnvironment().uuid(ENV_ID).name(ENV_NAME).environmentType(NON_PROD).build());
+  }
+
+  @Test
+  @Owner(developers = NAVNEET)
+  @Category(UnitTests.class)
+  public void shouldSkipAddCloudProviderDelegateTag() throws IllegalAccessException {
+    Map<String, Object> variableMap = new HashMap<>();
+    variableMap.put("var", "Sample Variable");
+
+    setFieldsInShellScriptState(true);
+    FieldUtils.writeField(shellScriptState, "executeOnDelegate", true, true);
+    FieldUtils.writeField(shellScriptState, "includeInfraSelectors", false, true);
+
+    when(templateUtils.processTemplateVariables(any(), any())).thenReturn(variableMap);
+    when(executionContext.getContextElement(ContextElementType.STANDARD)).thenReturn(workflowStandardParams);
+    when(executionContext.fetchInfraMappingId()).thenReturn(INFRA_MAPPING_ID);
+    when(executionContext.renderExpression(eq("echo ${var}"), any(StateExecutionContext.class)))
+        .thenReturn("echo \"Sample Variable\"");
+    when(workflowStandardParams.getAppId()).thenReturn(APP_ID);
+    when(workflowStandardParamsExtensionService.getApp(workflowStandardParams))
+        .thenReturn(anApplication().uuid(APP_ID).name(APP_NAME).build());
+    when(workflowStandardParamsExtensionService.getEnv(workflowStandardParams))
+        .thenReturn(anEnvironment().uuid(ENV_ID).name(ENV_NAME).environmentType(NON_PROD).build());
+    doReturn("TASKID").when(delegateService).queueTask(any());
+
+    ShellScriptState newShellScriptState = spy(shellScriptState);
+
+    newShellScriptState.execute(executionContext);
+    verify(newShellScriptState, never()).getTagFromCloudProvider(any());
   }
 }

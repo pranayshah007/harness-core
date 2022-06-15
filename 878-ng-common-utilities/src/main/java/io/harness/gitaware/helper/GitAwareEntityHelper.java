@@ -18,6 +18,7 @@ import io.harness.gitsync.scm.SCMGitSyncHelper;
 import io.harness.gitsync.scm.beans.ScmCreateFileGitRequest;
 import io.harness.gitsync.scm.beans.ScmCreateFileGitResponse;
 import io.harness.gitsync.scm.beans.ScmGetFileResponse;
+import io.harness.gitsync.scm.beans.ScmGitMetaData;
 import io.harness.gitsync.scm.beans.ScmUpdateFileGitRequest;
 import io.harness.gitsync.scm.beans.ScmUpdateFileGitResponse;
 import io.harness.persistence.gitaware.GitAware;
@@ -122,6 +123,18 @@ public class GitAwareEntityHelper {
 
   public ScmUpdateFileGitResponse updateEntityOnGit(GitAware gitAwareEntity, String yaml, Scope scope) {
     GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
+    return updateEntityOnGit(
+        gitAwareEntity, yaml, scope, gitEntityInfo.getLastObjectId(), gitEntityInfo.getLastCommitId());
+  }
+
+  public ScmUpdateFileGitResponse updateFileImportedFromGit(GitAware gitAwareEntity, String yaml, Scope scope) {
+    ScmGitMetaData scmGitMetaData = GitAwareContextHelper.getScmGitMetaData();
+    return updateEntityOnGit(gitAwareEntity, yaml, scope, scmGitMetaData.getBlobId(), scmGitMetaData.getCommitId());
+  }
+
+  ScmUpdateFileGitResponse updateEntityOnGit(
+      GitAware gitAwareEntity, String yaml, Scope scope, String oldFileSHA, String oldCommitID) {
+    GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
     String repoName = gitAwareEntity.getRepo();
     if (isNullOrDefault(repoName)) {
       throw new InvalidRequestException("No repo name provided.");
@@ -151,8 +164,8 @@ public class GitAwareEntityHelper {
                                                           .isCommitToNewBranch(gitEntityInfo.isNewBranch())
                                                           .commitMessage(commitMsg)
                                                           .baseBranch(baseBranch)
-                                                          .oldFileSha(gitEntityInfo.getLastObjectId())
-                                                          .oldCommitId(gitEntityInfo.getLastCommitId())
+                                                          .oldFileSha(oldFileSHA)
+                                                          .oldCommitId(oldCommitID)
                                                           .build();
 
     ScmUpdateFileGitResponse scmUpdateFileGitResponse =

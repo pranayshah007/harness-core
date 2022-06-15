@@ -1230,7 +1230,14 @@
       "type": "object",
       "properties": {
         "cpu": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "number"
+            }
+          ]
         },
         "memory": {
           "type": "string"
@@ -1727,138 +1734,98 @@
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "PipelineInfoConfig": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "oneOf": [
-        {
-          "type": "object",
-          "required": [
-            "identifier",
-            "name",
-            "stages"
-          ],
-          "properties": {
-            "allowStageExecutions": {
-              "type": "boolean"
-            },
-            "delegateSelectors": {
-              "oneOf": [
-                {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "string",
-                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
-                  "minLength": 1
-                }
-              ]
-            },
-            "description": {
-              "type": "string"
-            },
-            "flowControl": {
-              "$ref": "#/definitions/FlowControlConfig"
-            },
-            "identifier": {
-              "type": "string",
-              "pattern": "^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$"
-            },
-            "name": {
-              "type": "string",
-              "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"
-            },
-            "notificationRules": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/NotificationRules"
-              }
-            },
-            "orgIdentifier": {
-              "type": "string"
-            },
-            "projectIdentifier": {
-              "type": "string"
-            },
-            "properties": {
-              "$ref": "#/definitions/NGProperties"
-            },
-            "stages": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/StageElementWrapperConfig"
-              },
-              "maxItems": 2147483647,
-              "minItems": 1
-            },
-            "tags": {
-              "type": "object",
-              "additionalProperties": {
-                "type": "string"
-              }
-            },
-            "timeout": {
-              "type": "string",
-              "pattern": "^(([1-9])+\\d+[s])|(((([1-9])+\\d*[mhwd])+([\\s]?\\d+[smhwd])*)|(<\\+input>.*)|(.*<\\+.*>.*))$"
-            },
-            "variables": {
-              "type": "array",
-              "items": {
-                "oneOf": [
-                  {
-                    "$ref": "#/definitions/NumberNGVariable"
-                  },
-                  {
-                    "$ref": "#/definitions/SecretNGVariable"
-                  },
-                  {
-                    "$ref": "#/definitions/StringNGVariable"
-                  }
-                ]
-              }
-            }
-          },
-          "additionalProperties": false
+      "type": "object",
+      "required": [
+        "identifier",
+        "name"
+      ],
+      "properties": {
+        "allowStageExecutions": {
+          "type": "boolean"
         },
-        {
-          "type": "object",
-          "required": [
-            "identifier",
-            "name",
-            "template"
-          ],
-          "properties": {
-            "description": {
-              "type": "string"
-            },
-            "identifier": {
-              "type": "string",
-              "pattern": "^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$"
-            },
-            "name": {
-              "type": "string",
-              "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"
-            },
-            "orgIdentifier": {
-              "type": "string"
-            },
-            "projectIdentifier": {
-              "type": "string"
-            },
-            "tags": {
-              "type": "object",
-              "additionalProperties": {
+        "delegateSelectors": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
                 "type": "string"
               }
             },
-            "template": {
-              "$ref": "#/definitions/TemplateLinkConfig"
+            {
+              "type": "string",
+              "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+              "minLength": 1
             }
+          ]
+        },
+        "description": {
+          "type": "string"
+        },
+        "flowControl": {
+          "$ref": "#/definitions/FlowControlConfig"
+        },
+        "identifier": {
+          "type": "string",
+          "pattern": "^[a-zA-Z_][0-9a-zA-Z_$]{0,63}$"
+        },
+        "name": {
+          "type": "string",
+          "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"
+        },
+        "notificationRules": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/NotificationRules"
+          }
+        },
+        "orgIdentifier": {
+          "type": "string"
+        },
+        "projectIdentifier": {
+          "type": "string"
+        },
+        "properties": {
+          "$ref": "#/definitions/NGProperties"
+        },
+        "stages": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/StageElementWrapperConfig"
           },
-          "additionalProperties": false
+          "maxItems": 2147483647,
+          "minItems": 1
+        },
+        "tags": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "template": {
+          "$ref": "#/definitions/TemplateLinkConfig"
+        },
+        "timeout": {
+          "type": "string",
+          "pattern": "^(([1-9])+\\d+[s])|(((([1-9])+\\d*[mhwd])+([\\s]?\\d+[smhwd])*)|(<\\+input>.*)|(.*<\\+.*>.*))$"
+        },
+        "variables": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "$ref": "#/definitions/NumberNGVariable"
+              },
+              {
+                "$ref": "#/definitions/SecretNGVariable"
+              },
+              {
+                "$ref": "#/definitions/StringNGVariable"
+              }
+            ]
+          }
         }
-      ]
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "PmsEmailChannel": {
       "allOf": [
@@ -2742,8 +2709,7 @@
             "shell": {
               "type": "string",
               "enum": [
-                "Bash",
-                "PowerShell"
+                "Bash"
               ]
             },
             "source": {

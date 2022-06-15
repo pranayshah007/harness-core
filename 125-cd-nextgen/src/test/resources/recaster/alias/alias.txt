@@ -393,3 +393,15 @@ io.harness.cdng.infra.yaml.AzureWebAppInfrastructure
 io.harness.cdng.infra.beans.AzureWebAppInfrastructureOutcome
 io.harness.cdng.gitops.steps.ClusterStepParameters.EnvClusterRefs
 io.harness.cdng.gitops.steps.GitopsClustersOutcome
+io.harness.cdng.azure.webapp.AzureWebAppRollbackStepInfo
+io.harness.cdng.azure.webapp.AzureWebAppRollbackStepNode
+io.harness.cdng.azure.webapp.AzureWebAppRollbackStepParameters
+io.harness.cdng.azure.webapp.AzureWebAppSlotDeploymentStepInfo
+io.harness.cdng.azure.webapp.AzureWebAppSlotDeploymentStepNode
+io.harness.cdng.azure.webapp.AzureWebAppSlotDeploymentParameters
+io.harness.cdng.azure.webapp.AzureWebAppSwapSlotStepInfo
+io.harness.cdng.azure.webapp.AzureWebAppSwapSlotStepNode
+io.harness.cdng.azure.webapp.AzureWebAppSwapSlotStepParameters
+io.harness.cdng.azure.webapp.AzureWebAppTrafficShiftStepInfo
+io.harness.cdng.azure.webapp.AzureWebAppTrafficShiftStepNode
+io.harness.cdng.azure.webapp.AzureWebAppTrafficShiftStepParameters

@@ -156,7 +156,7 @@ public class ApiCallLogRecord extends CVNGLogRecord {
   @Override
   public void recordsMetrics(MetricService metricService, Map<String, String> tags) {
     try (AutoMetricContext cvngLogMetricContext = new ApiCallLogMetricContext(tags.get(TAG_ACCOUNT_ID),
-             tags.containsKey(TAG_DATA_SOURCE) ? tags.get(TAG_DATA_SOURCE).toLowerCase() : null,
+             tags.get(TAG_DATA_SOURCE) != null ? tags.get(TAG_DATA_SOURCE).toLowerCase() : null,
              tags.get(TAG_VERIFICATION_TYPE))) {
       metricService.recordDuration(
           API_CALL_EXECUTION_TIME, Duration.between(this.getRequestTime(), this.getResponseTime()));

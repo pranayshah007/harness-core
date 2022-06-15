@@ -50,12 +50,15 @@ import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.steps.StepUtils;
 import io.harness.steps.executable.SyncExecutableWithRbac;
+import io.harness.utils.RetryUtils;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -66,11 +69,13 @@ import java.util.stream.Collectors;
 import lombok.Builder;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import net.jodah.failsafe.Failsafe;
+import net.jodah.failsafe.RetryPolicy;
 import retrofit2.Response;
 
 @Slf4j
 public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepParameters> {
-  private static final String GITOPS_SWEEPING_OUTPUT = "gitops";
+  public static final String GITOPS_SWEEPING_OUTPUT = "gitops";
   private static final int UNLIMITED_SIZE = 100000;
 
   @Inject private ClusterService clusterService;
@@ -78,6 +83,10 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
   @Inject private GitopsResourceClient gitopsResourceClient;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputResolver;
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
+
+  private static final RetryPolicy<Object> retryPolicyForGitopsClustersFetch = RetryUtils.getRetryPolicy(
+      "Error getting clusters from Harness Gitops..retrying", "Failed to fetch clusters from Harness Gitops",
+      Collections.singletonList(IOException.class), Duration.ofMillis(10), 3, log);
 
   private LogCallback logger;
 
@@ -107,7 +116,7 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
         : null;
 
     try {
-      Map<String, IndividualClusterInternal> validatedClusters = validatedClusters(ambiance, stepParameters);
+      final Map<String, IndividualClusterInternal> validatedClusters = validatedClusters(ambiance, stepParameters);
       final GitopsClustersOutcome outcome = toOutcome(validatedClusters, variables);
       executionSweepingOutputResolver.consume(ambiance, GITOPS_SWEEPING_OUTPUT, outcome, StepOutcomeGroup.STAGE.name());
       stepResponseBuilder.stepOutcome(StepOutcome.builder().name(GITOPS_SWEEPING_OUTPUT).outcome(outcome).build());
@@ -172,7 +181,9 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
                                      .pageSize(clusterIdentifiers.size())
                                      .filter(filter)
                                      .build();
-      final Response<PageResponse<Cluster>> response = gitopsResourceClient.listClusters(query).execute();
+      final Response<PageResponse<Cluster>> response =
+          Failsafe.with(retryPolicyForGitopsClustersFetch)
+              .get(() -> gitopsResourceClient.listClusters(query).execute());
       if (response.isSuccessful() && response.body() != null) {
         List<Cluster> content = emptyIfNull(response.body().getContent());
 
@@ -180,10 +191,10 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
 
         content.forEach(c -> {
           if (individualClusters.containsKey(c.getIdentifier())) {
-            individualClusters.get(c.getIdentifier()).setOriginalCluster(c);
+            individualClusters.get(c.getIdentifier()).setClusterName(c.name());
           }
         });
-        individualClusters.values().removeIf(c -> c.getOriginalCluster() == null);
+        individualClusters.values().removeIf(c -> c.getClusterName() == null);
 
         saveExecutionLog(format("%d clusters %s selected after filtering from Harness Gitops",
             individualClusters.size(), individualClusters));
@@ -191,8 +202,9 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
       }
       throw new InvalidRequestException(format("Failed to fetch clusters from gitops. %s",
           response.errorBody() != null ? response.errorBody().string() : ""));
-    } catch (IOException e) {
-      throw new InvalidRequestException(format("Failed to fetch clusters from gitops. %s", e.getMessage()));
+    } catch (Exception e) {
+      log.error("Failed to fetch clusters from gitops", e);
+      throw new InvalidRequestException("Failed to fetch clusters from gitops");
     }
   }
 
@@ -236,7 +248,7 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
     }
 
     return clusterRefs.stream().collect(
-        Collectors.toMap(IndividualClusterInternal::getClusterRef, Function.identity()));
+        Collectors.toMap(IndividualClusterInternal::getClusterRef, Function.identity(), (k1, k2) -> k1));
   }
 
   private GitopsClustersOutcome toOutcome(
@@ -245,8 +257,8 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
 
     for (String clusterId : validatedClusters.keySet()) {
       IndividualClusterInternal clusterInternal = validatedClusters.get(clusterId);
-      outcome.appendCluster(clusterInternal.getEnvGroupRef(), clusterInternal.getEnvRef(),
-          clusterInternal.getOriginalCluster().getName(), variables);
+      outcome.appendCluster(
+          clusterInternal.getEnvGroupRef(), clusterInternal.getEnvRef(), clusterInternal.getClusterName(), variables);
     }
 
     return outcome;
@@ -258,7 +270,7 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
     String envGroupRef;
     String envRef;
     String clusterRef;
-    Cluster originalCluster;
+    String clusterName;
   }
 
   private void saveExecutionLog(String log, Collection<?> mustBeNotNull) {

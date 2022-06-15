@@ -7,11 +7,16 @@
 
 package io.harness.beans.execution;
 
+import io.harness.annotation.RecasterAlias;
+
 import lombok.Builder;
 import lombok.Value;
+import org.springframework.data.annotation.TypeAlias;
 
 @Value
 @Builder
+@TypeAlias("repository")
+@RecasterAlias("io.harness.beans.execution.Repository")
 public class Repository {
   private String name;
   private String namespace;

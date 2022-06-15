@@ -22,6 +22,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.exception.FileReadException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.filesystem.FileIo;
 import io.harness.git.model.GitRepositoryType;
 import io.harness.logging.CommandExecutionStatus;
@@ -137,6 +138,8 @@ public class TerragruntProvisionTaskHelper {
           CommandExecutionStatus.RUNNING);
 
       encryptionService.decrypt(tfVarGitSource.getGitConfig(), tfVarGitSource.getEncryptedDataDetails(), false);
+      ExceptionMessageSanitizer.storeAllSecretsForSanitizing(
+          tfVarGitSource.getGitConfig(), tfVarGitSource.getEncryptedDataDetails());
       gitClient.downloadFiles(tfVarGitSource.getGitConfig(),
           GitFetchFilesRequest.builder()
               .branch(tfVarGitSource.getGitFileConfig().getBranch())

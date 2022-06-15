@@ -172,7 +172,7 @@ export HARNESS_JAVA_AGENT=-javaagent:/addon/bin/java-agent.jar=/test/tmp/config.
 echo x
 mvn -am -DharnessArgLine=-javaagent:/addon/bin/java-agent.jar=/test/tmp/config.ini -DargLine=-javaagent:/addon/bin/java-agent.jar=/test/tmp/config.ini clean test
 echo y`
-	got, err := r.getCmd(ctx, outputFile)
+	got, err := r.getCmd(ctx, "/tmp/addon/agent", outputFile)
 	assert.Nil(t, err)
 	assert.Equal(t, r.runOnlySelectedTests, false) // If no errors, we should run only selected tests
 	assert.Equal(t, got, want)
@@ -245,7 +245,7 @@ export HARNESS_JAVA_AGENT=-javaagent:/addon/bin/java-agent.jar=/test/tmp/config.
 echo x
 mvn -am -DharnessArgLine=-javaagent:/addon/bin/java-agent.jar=/test/tmp/config.ini -DargLine=-javaagent:/addon/bin/java-agent.jar=/test/tmp/config.ini clean test
 echo y`
-	got, err := r.getCmd(ctx, outputFile)
+	got, err := r.getCmd(ctx, "/tmp/addon/agent", outputFile)
 	assert.Nil(t, err)
 	assert.Equal(t, r.runOnlySelectedTests, false) // Since selection returns all the tests
 	assert.Equal(t, got, want)
@@ -313,7 +313,7 @@ export HARNESS_JAVA_AGENT=-javaagent:/addon/bin/java-agent.jar=/test/tmp/config.
 echo x
 mvn -am -DharnessArgLine=-javaagent:/addon/bin/java-agent.jar=/test/tmp/config.ini -DargLine=-javaagent:/addon/bin/java-agent.jar=/test/tmp/config.ini clean test
 echo y`
-	got, err := r.getCmd(ctx, outputFile)
+	got, err := r.getCmd(ctx, "/tmp/addon/agent", outputFile)
 	assert.Nil(t, err)
 	assert.Equal(t, r.runOnlySelectedTests, false) // Since there was an error in execution
 	assert.Equal(t, got, want)
@@ -381,7 +381,7 @@ export HARNESS_JAVA_AGENT=-javaagent:/addon/bin/java-agent.jar=/test/tmp/config.
 echo x
 mvn clean test
 echo y`
-	got, err := r.getCmd(ctx, outputFile)
+	got, err := r.getCmd(ctx, "/tmp/addon/agent", outputFile)
 	assert.Nil(t, err)
 	assert.Equal(t, r.runOnlySelectedTests, false) // Since it's a manual execution
 	assert.Equal(t, got, want)
@@ -443,7 +443,7 @@ instrPackages: p1, p2, p3`
 		return false
 	}
 
-	_, err := r.getCmd(ctx, outputFile)
+	_, err := r.getCmd(ctx, "/tmp/addon/agent", outputFile)
 	assert.NotNil(t, err)
 }
 
@@ -581,6 +581,14 @@ instrPackages: p1, p2, p3`
 		return nil
 	}
 
+	oldInstallAgent := installAgentFn
+	defer func() {
+		installAgentFn = oldInstallAgent
+	}()
+	installAgentFn = func(ctx context.Context, path, language, framework, frameworkVersion, buildEnvironment string, log *zap.SugaredLogger, fs filesystem.FileSystem) (string, error) {
+		return "", nil
+	}
+
 	_, _, err := r.Run(ctx)
 	assert.Nil(t, err)
 	assert.Equal(t, called, 2) // Make sure both CG collection and report collection are called
@@ -693,6 +701,14 @@ instrPackages: p1, p2, p3`
 		return nil
 	}
 
+	oldInstallAgent := installAgentFn
+	defer func() {
+		installAgentFn = oldInstallAgent
+	}()
+	installAgentFn = func(ctx context.Context, path, language, framework, frameworkVersion, buildEnvironment string, log *zap.SugaredLogger, fs filesystem.FileSystem) (string, error) {
+		return "", nil
+	}
+
 	_, _, err := r.Run(ctx)
 	assert.Equal(t, err, expErr)
 	assert.Equal(t, called, 2) // makes ure both functions are called even on failure
@@ -802,6 +818,13 @@ instrPackages: p1, p2, p3`
 		return nil
 	}
 
+	oldInstallAgent := installAgentFn
+	defer func() {
+		installAgentFn = oldInstallAgent
+	}()
+	installAgentFn = func(ctx context.Context, path, language, framework, frameworkVersion, buildEnvironment string, log *zap.SugaredLogger, fs filesystem.FileSystem) (string, error) {
+		return "", nil
+	}
 	_, _, err := r.Run(ctx)
 	assert.Equal(t, err, errCg)
 }
@@ -908,6 +931,14 @@ instrPackages: p1, p2, p3`
 	}()
 	collectTestReportsFn = func(ctx context.Context, reports []*pb.Report, stepID string, log *zap.SugaredLogger) error {
 		return errReport
+	}
+
+	oldInstallAgent := installAgentFn
+	defer func() {
+		installAgentFn = oldInstallAgent
+	}()
+	installAgentFn = func(ctx context.Context, path, language, framework, frameworkVersion, buildEnvironment string, log *zap.SugaredLogger, fs filesystem.FileSystem) (string, error) {
+		return "", nil
 	}
 
 	_, _, err := r.Run(ctx)

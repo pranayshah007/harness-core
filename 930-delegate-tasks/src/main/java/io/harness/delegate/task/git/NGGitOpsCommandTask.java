@@ -7,7 +7,7 @@
 
 package io.harness.delegate.task.git;
 
-import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.annotations.dev.HarnessTeam.GITOPS;
 import static io.harness.git.model.ChangeType.MODIFY;
 import static io.harness.logging.LogLevel.INFO;
 
@@ -46,6 +46,7 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
 import io.harness.ng.core.dto.secrets.SSHKeySpecDTO;
+import io.harness.product.ci.scm.proto.CreateBranchResponse;
 import io.harness.product.ci.scm.proto.CreatePRResponse;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
@@ -71,14 +72,17 @@ import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.jooq.tools.json.JSONObject;
 import org.jooq.tools.json.JSONParser;
 import org.jooq.tools.json.ParseException;
 import org.jose4j.lang.JoseException;
 
 @Slf4j
-@OwnedBy(CDP)
+@OwnedBy(GITOPS)
 public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
+  private static final String PR_TITLE = "Harness: Updating config overrides";
+  private static final String COMMIT_MSG = "Updating Config files";
   @Inject private SecretDecryptionService secretDecryptionService;
   @Inject private ScmFetchFilesHelperNG scmFetchFilesHelper;
   @Inject private GitFetchFilesTaskHelper gitFetchFilesTaskHelper;
@@ -89,6 +93,8 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
   public static final String UpdateFiles = "Update GitOps Configuration files";
   public static final String CommitAndPush = "Commit and Push";
   public static final String CreatePR = "Create PR";
+
+  private LogCallback logCallback;
 
   public NGGitOpsCommandTask(DelegateTaskPackage delegateTaskPackage, ILogStreamingTaskClient logStreamingTaskClient,
       Consumer<DelegateTaskResponse> consumer, BooleanSupplier preExecute) {
@@ -121,44 +127,47 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
     try {
       log.info("Running Create PR Task for activityId {}", gitOpsTaskParams.getActivityId());
 
-      LogCallback logCallback =
-          new NGDelegateLogCallback(getLogStreamingTaskClient(), FetchFiles, true, commandUnitsProgress);
+      logCallback = new NGDelegateLogCallback(getLogStreamingTaskClient(), FetchFiles, true, commandUnitsProgress);
 
-      logCallback.saveExecutionLog(color(format("%nStarting Git Fetch Files"), LogColor.White, LogWeight.Bold));
-
-      FetchFilesResult fetchFilesResult =
-          fetchFilesFromRepo(gitOpsTaskParams.getGitFetchFilesConfig(), logCallback, gitOpsTaskParams.getAccountId());
-
-      logCallback.saveExecutionLog(
-          color(format("%nGit Fetch Files completed successfully."), LogColor.White, LogWeight.Bold), INFO);
+      FetchFilesResult fetchFilesResult = getFetchFilesResult(gitOpsTaskParams);
 
       logCallback = markDoneAndStartNew(logCallback, UpdateFiles, commandUnitsProgress);
 
-      updateFiles(gitOpsTaskParams, fetchFilesResult);
-
-      logCallback = markDoneAndStartNew(logCallback, CommitAndPush, commandUnitsProgress);
+      String baseBranch = gitOpsTaskParams.getGitFetchFilesConfig().getGitStoreDelegateConfig().getBranch();
+      String newBranch = baseBranch + "_" + RandomStringUtils.randomAlphabetic(12);
 
       ScmConnector scmConnector =
           gitOpsTaskParams.getGitFetchFilesConfig().getGitStoreDelegateConfig().getGitConfigDTO();
 
-      CommitAndPushResult gitCommitAndPushResult =
-          commit(gitOpsTaskParams, fetchFilesResult, gitOpsTaskParams.getCommitMessage());
+      createNewBranch(scmConnector, newBranch, baseBranch);
+      updateFiles(gitOpsTaskParams, fetchFilesResult);
 
+      logCallback = markDoneAndStartNew(logCallback, CommitAndPush, commandUnitsProgress);
+
+      CommitAndPushResult gitCommitAndPushResult = commit(gitOpsTaskParams, fetchFilesResult, COMMIT_MSG, newBranch);
+
+      List<GitFileChange> files = gitCommitAndPushResult.getFilesCommittedToGit();
+      StringBuilder sb = new StringBuilder(1024);
+      files.forEach(f -> sb.append("\n- ").append(f.getFilePath()));
+
+      logCallback.saveExecutionLog(format("Following files have been committed to branch %s", newBranch), INFO);
+      logCallback.saveExecutionLog(sb.toString(), INFO);
       logCallback = markDoneAndStartNew(logCallback, CreatePR, commandUnitsProgress);
 
-      CreatePRResponse createPRResponse = createPullRequest(scmConnector, gitOpsTaskParams.getSourceBranch(),
-          gitOpsTaskParams.getTargetBranch(), gitOpsTaskParams.getPrTitle(), gitOpsTaskParams.getAccountId());
+      CreatePRResponse createPRResponse =
+          createPullRequest(scmConnector, newBranch, baseBranch, PR_TITLE, gitOpsTaskParams.getAccountId());
+      String prLink = getPRLink(createPRResponse.getNumber(), scmConnector.getConnectorType(), scmConnector.getUrl());
 
+      logCallback.saveExecutionLog("Created PR " + prLink, INFO);
       logCallback.saveExecutionLog("Done.", INFO, CommandExecutionStatus.SUCCESS);
 
       return NGGitOpsResponse.builder()
           .commitId(gitCommitAndPushResult.getGitCommitResult().getCommitId())
           .prNumber(createPRResponse.getNumber())
-          .prLink(getPRLink(createPRResponse.getNumber(), scmConnector.getConnectorType(), scmConnector.getUrl()))
+          .prLink(prLink)
           .taskStatus(TaskStatus.SUCCESS)
           .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
           .build();
-
     } catch (Exception e) {
       return NGGitOpsResponse.builder()
           .taskStatus(TaskStatus.FAILURE)
@@ -166,6 +175,17 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
           .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
           .build();
     }
+  }
+
+  private FetchFilesResult getFetchFilesResult(NGGitOpsTaskParams gitOpsTaskParams) throws IOException {
+    logCallback.saveExecutionLog(color(format("%nStarting Git Fetch Files"), LogColor.White, LogWeight.Bold));
+
+    FetchFilesResult fetchFilesResult =
+        fetchFilesFromRepo(gitOpsTaskParams.getGitFetchFilesConfig(), logCallback, gitOpsTaskParams.getAccountId());
+
+    logCallback.saveExecutionLog(
+        color(format("%nGit Fetch Files completed successfully."), LogColor.White, LogWeight.Bold), INFO);
+    return fetchFilesResult;
   }
 
   public String getPRLink(int prNumber, ConnectorType connectorType, String url) {
@@ -180,15 +200,16 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
   }
 
   public CommitAndPushResult commit(
-      NGGitOpsTaskParams gitOpsTaskParams, FetchFilesResult fetchFilesResult, String commitMessage) {
-    ScmConnector scmConnector = gitOpsTaskParams.getGitFetchFilesConfig().getGitStoreDelegateConfig().getGitConfigDTO();
-    SSHKeySpecDTO sshKeySpecDTO =
-        gitOpsTaskParams.getGitFetchFilesConfig().getGitStoreDelegateConfig().getSshKeySpecDTO();
+      NGGitOpsTaskParams gitOpsTaskParams, FetchFilesResult fetchFilesResult, String commitMessage, String newBranch) {
+    GitStoreDelegateConfig gitStoreDelegateConfig =
+        gitOpsTaskParams.getGitFetchFilesConfig().getGitStoreDelegateConfig();
+    ScmConnector scmConnector = gitStoreDelegateConfig.getGitConfigDTO();
+    SSHKeySpecDTO sshKeySpecDTO = gitStoreDelegateConfig.getSshKeySpecDTO();
     GitConfigDTO gitConfig = ScmConnectorMapper.toGitConfigDTO(scmConnector);
-    gitConfig.setBranchName(gitOpsTaskParams.getSourceBranch());
-    List<EncryptedDataDetail> encryptionDetails =
-        gitOpsTaskParams.getGitFetchFilesConfig().getGitStoreDelegateConfig().getEncryptedDataDetails();
-    String commitId = gitOpsTaskParams.getGitFetchFilesConfig().getGitStoreDelegateConfig().getCommitId();
+
+    gitConfig.setBranchName(newBranch);
+    List<EncryptedDataDetail> encryptionDetails = gitStoreDelegateConfig.getEncryptedDataDetails();
+    String commitId = gitStoreDelegateConfig.getCommitId();
 
     gitDecryptionHelper.decryptGitConfig(gitConfig, encryptionDetails);
     SshSessionConfig sshSessionConfig = gitDecryptionHelper.getSSHSessionConfig(sshKeySpecDTO, encryptionDetails);
@@ -204,7 +225,7 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
 
     CommitAndPushRequest gitCommitRequest = CommitAndPushRequest.builder()
                                                 .gitFileChanges(gitFileChanges)
-                                                .branch(gitOpsTaskParams.getSourceBranch())
+                                                .branch(newBranch)
                                                 .commitId(commitId)
                                                 .repoUrl(gitConfig.getUrl())
                                                 .accountId(gitOpsTaskParams.getAccountId())
@@ -224,6 +245,10 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
     return logCallback;
   }
 
+  public CreateBranchResponse createNewBranch(ScmConnector scmConnector, String branch, String baseBranch) {
+    return scmFetchFilesHelper.createNewBranch(scmConnector, branch, baseBranch);
+  }
+
   public CreatePRResponse createPullRequest(
       ScmConnector scmConnector, String sourceBranch, String targetBranch, String title, String accountId) {
     return scmFetchFilesHelper.createPR(scmConnector,
@@ -235,7 +260,7 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
             .build());
   }
 
-  public JSONObject mapToJson(Map<String, String> stringMap) {
+  public JSONObject mapToJson(Map<String, Object> stringMap) {
     JSONObject fieldsToUpdate = new JSONObject(stringMap);
     JSONObject nestedFields = new JSONObject();
 
@@ -292,7 +317,7 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
 
   public void updateFiles(NGGitOpsTaskParams gitOpsTaskParams, FetchFilesResult fetchFilesResult)
       throws ParseException, IOException {
-    Map<String, String> stringMap = gitOpsTaskParams.getStringMap();
+    Map<String, Object> stringMap = gitOpsTaskParams.getVariables();
     List<String> fetchedFilesContents = new ArrayList<>();
 
     for (GitFile gitFile : fetchFilesResult.getFiles()) {
@@ -319,7 +344,7 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
     fetchFilesResult.setFiles(updatedGitFiles);
   }
 
-  public List<String> replaceFieldsNew(List<String> fileList, Map<String, String> fieldsToModify)
+  public List<String> replaceFieldsNew(List<String> fileList, Map<String, Object> fieldsToModify)
       throws ParseException, JsonProcessingException {
     JSONObject fieldsToUpdate = mapToJson(fieldsToModify); // get the list of fields to be updated
     List<String> result = new ArrayList<>();

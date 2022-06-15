@@ -9,6 +9,8 @@ package io.harness.beans.execution;
 
 import static io.harness.beans.execution.ExecutionSource.Type.CUSTOM;
 
+import io.harness.annotation.RecasterAlias;
+
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import lombok.Builder;
 import lombok.Value;
@@ -18,6 +20,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @JsonTypeName("Custom")
 @TypeAlias("CUSTOM")
+@RecasterAlias("io.harness.beans.execution.CustomExecutionSource")
 public class CustomExecutionSource implements ExecutionSource {
   private String branch;
   private String tag;

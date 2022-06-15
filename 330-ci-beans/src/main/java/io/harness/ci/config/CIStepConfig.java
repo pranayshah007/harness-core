@@ -7,11 +7,16 @@
 
 package io.harness.ci.config;
 
+import io.harness.annotation.RecasterAlias;
+
 import lombok.Builder;
 import lombok.Value;
+import org.springframework.data.annotation.TypeAlias;
 
 @Value
 @Builder
+@TypeAlias("ciStepConfig")
+@RecasterAlias("io.harness.ci.config.CIStepConfig")
 public class CIStepConfig {
   StepImageConfig gitCloneConfig;
   StepImageConfig buildAndPushDockerRegistryConfig;

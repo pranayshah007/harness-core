@@ -32,6 +32,7 @@ import io.harness.azure.model.blueprint.assignment.Assignment;
 import io.harness.azure.model.blueprint.assignment.WhoIsBlueprintContract;
 import io.harness.azure.model.blueprint.assignment.operation.AssignmentOperation;
 import io.harness.azure.utility.AzureResourceUtility;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.serializer.JsonUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -87,7 +88,7 @@ public class AzureBlueprintClientImpl extends AzureClient implements AzureBluepr
             ServiceResponse<Blueprint> clientResponse = createOrUpdateBlueprintDelegate(response);
             return Observable.just(clientResponse);
           } catch (Exception t) {
-            return Observable.error(t);
+            return Observable.error(ExceptionMessageSanitizer.sanitizeException(t));
           }
         });
   }
@@ -125,7 +126,7 @@ public class AzureBlueprintClientImpl extends AzureClient implements AzureBluepr
             ServiceResponse<Blueprint> clientResponse = getBlueprintDelegate(response);
             return Observable.just(clientResponse);
           } catch (Exception t) {
-            return Observable.error(t);
+            return Observable.error(ExceptionMessageSanitizer.sanitizeException(t));
           }
         });
   }
@@ -176,7 +177,7 @@ public class AzureBlueprintClientImpl extends AzureClient implements AzureBluepr
             ServiceResponse<Artifact> clientResponse = createOrUpdateArtifactDelegate(response);
             return Observable.just(clientResponse);
           } catch (Exception t) {
-            return Observable.error(t);
+            return Observable.error(ExceptionMessageSanitizer.sanitizeException(t));
           }
         });
   }
@@ -220,7 +221,7 @@ public class AzureBlueprintClientImpl extends AzureClient implements AzureBluepr
             ServiceResponse<PublishedBlueprint> clientResponse = publishBlueprintDefinitionDelegate(response);
             return Observable.just(clientResponse);
           } catch (Exception t) {
-            return Observable.error(t);
+            return Observable.error(ExceptionMessageSanitizer.sanitizeException(t));
           }
         });
   }
@@ -265,7 +266,7 @@ public class AzureBlueprintClientImpl extends AzureClient implements AzureBluepr
             ServiceResponse<PublishedBlueprint> clientResponse = getPublishedBlueprintVersionDelegate(response);
             return Observable.just(clientResponse);
           } catch (Exception t) {
-            return Observable.error(t);
+            return Observable.error(ExceptionMessageSanitizer.sanitizeException(t));
           }
         });
   }
@@ -315,7 +316,7 @@ public class AzureBlueprintClientImpl extends AzureClient implements AzureBluepr
             ServiceResponse<PageImpl<PublishedBlueprint>> result = listPublishedBlueprintVersionsDelegate(response);
             return Observable.just(new ServiceResponse<Page<PublishedBlueprint>>(result.body(), result.response()));
           } catch (Exception t) {
-            return Observable.error(t);
+            return Observable.error(ExceptionMessageSanitizer.sanitizeException(t));
           }
         });
   }
@@ -334,7 +335,7 @@ public class AzureBlueprintClientImpl extends AzureClient implements AzureBluepr
             ServiceResponse<PageImpl<PublishedBlueprint>> result = listPublishedBlueprintVersionsDelegate(response);
             return Observable.just(new ServiceResponse<Page<PublishedBlueprint>>(result.body(), result.response()));
           } catch (Exception t) {
-            return Observable.error(t);
+            return Observable.error(ExceptionMessageSanitizer.sanitizeException(t));
           }
         });
   }
@@ -383,7 +384,7 @@ public class AzureBlueprintClientImpl extends AzureClient implements AzureBluepr
             ServiceResponse<Assignment> clientResponse = beginCreateOrUpdateAssignmentDelegate(response);
             return Observable.just(clientResponse);
           } catch (Exception t) {
-            return Observable.error(t);
+            return Observable.error(ExceptionMessageSanitizer.sanitizeException(t));
           }
         });
   }
@@ -425,7 +426,7 @@ public class AzureBlueprintClientImpl extends AzureClient implements AzureBluepr
             ServiceResponse<Assignment> clientResponse = getAssignmentDelegate(response);
             return Observable.just(clientResponse);
           } catch (Exception t) {
-            return Observable.error(t);
+            return Observable.error(ExceptionMessageSanitizer.sanitizeException(t));
           }
         });
   }
@@ -467,7 +468,7 @@ public class AzureBlueprintClientImpl extends AzureClient implements AzureBluepr
             ServiceResponse<PageImpl<Assignment>> result = listBlueprintAssignmentsDelegate(response);
             return Observable.just(new ServiceResponse<Page<Assignment>>(result.body(), result.response()));
           } catch (Exception t) {
-            return Observable.error(t);
+            return Observable.error(ExceptionMessageSanitizer.sanitizeException(t));
           }
         });
   }
@@ -486,7 +487,7 @@ public class AzureBlueprintClientImpl extends AzureClient implements AzureBluepr
             ServiceResponse<PageImpl<Assignment>> result = listBlueprintAssignmentsDelegate(response);
             return Observable.just(new ServiceResponse<Page<Assignment>>(result.body(), result.response()));
           } catch (Exception t) {
-            return Observable.error(t);
+            return Observable.error(ExceptionMessageSanitizer.sanitizeException(t));
           }
         });
   }
@@ -533,7 +534,7 @@ public class AzureBlueprintClientImpl extends AzureClient implements AzureBluepr
             ServiceResponse<PageImpl<AssignmentOperation>> result = listAssignmentOperationsDelegate(response);
             return Observable.just(new ServiceResponse<Page<AssignmentOperation>>(result.body(), result.response()));
           } catch (Exception t) {
-            return Observable.error(t);
+            return Observable.error(ExceptionMessageSanitizer.sanitizeException(t));
           }
         });
   }
@@ -552,7 +553,7 @@ public class AzureBlueprintClientImpl extends AzureClient implements AzureBluepr
             ServiceResponse<PageImpl<AssignmentOperation>> result = listAssignmentOperationsDelegate(response);
             return Observable.just(new ServiceResponse<Page<AssignmentOperation>>(result.body(), result.response()));
           } catch (Exception t) {
-            return Observable.error(t);
+            return Observable.error(ExceptionMessageSanitizer.sanitizeException(t));
           }
         });
   }
@@ -594,7 +595,7 @@ public class AzureBlueprintClientImpl extends AzureClient implements AzureBluepr
             ServiceResponse<WhoIsBlueprintContract> clientResponse = whoIsBlueprintDelegate(response);
             return Observable.just(clientResponse);
           } catch (Exception t) {
-            return Observable.error(t);
+            return Observable.error(ExceptionMessageSanitizer.sanitizeException(t));
           }
         });
   }

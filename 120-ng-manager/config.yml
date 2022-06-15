@@ -335,9 +335,6 @@ gitGrpcClientConfigs:
   cf:
     target: localhost:11001
     authority: localhost
-  policymgmt:
-    target: localhost:11002
-    authority: localhost
   pms:
     target: localhost:14001
     authority: localhost

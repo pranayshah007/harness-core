@@ -37,6 +37,7 @@ public class MonitoredServiceListItemDTO {
   HistoricalTrend historicalTrend;
   ChangeSummaryDTO changeSummary;
   Map<String, String> tags;
+  boolean serviceLicenseEnabled;
 
   List<SloHealthIndicatorDTO> sloHealthIndicators;
 

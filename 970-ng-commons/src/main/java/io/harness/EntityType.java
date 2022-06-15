@@ -246,7 +246,18 @@ public enum EntityType {
   COMMAND_STEP(ModuleType.CD, EntityTypeConstants.COMMAND, IdentifierRef.class, EntityYamlRootNames.COMMAND),
   @JsonProperty(EntityTypeConstants.STRATEGY_NODE)
   STRATEGY_NODE(
-      ModuleType.PMS, EntityTypeConstants.STRATEGY_NODE, IdentifierRef.class, EntityYamlRootNames.STRATEGY_NODE);
+      ModuleType.PMS, EntityTypeConstants.STRATEGY_NODE, IdentifierRef.class, EntityYamlRootNames.STRATEGY_NODE),
+  AZURE_SLOT_DEPLOYMENT_STEP(ModuleType.CD, EntityTypeConstants.AZURE_SLOT_DEPLOYMENT, IdentifierRef.class,
+      EntityYamlRootNames.AZURE_SLOT_DEPLOYMENT_STEP),
+  @JsonProperty(EntityTypeConstants.AZURE_TRAFFIC_SHIFT)
+  AZURE_TRAFFIC_SHIFT_STEP(ModuleType.CD, EntityTypeConstants.AZURE_TRAFFIC_SHIFT, IdentifierRef.class,
+      EntityYamlRootNames.AZURE_TRAFFIC_SHIFT_STEP),
+  @JsonProperty(EntityTypeConstants.AZURE_SWAP_SLOT)
+  AZURE_SWAP_SLOT_STEP(ModuleType.CD, EntityTypeConstants.AZURE_SWAP_SLOT, IdentifierRef.class,
+      EntityYamlRootNames.AZURE_SWAP_SLOT_STEP),
+  @JsonProperty(EntityTypeConstants.AZURE_WEBAPP_ROLLBACK)
+  AZURE_WEBAPP_ROLLBACK_STEP(ModuleType.CD, EntityTypeConstants.AZURE_WEBAPP_ROLLBACK, IdentifierRef.class,
+      EntityYamlRootNames.AZURE_WEBAPP_ROLLBACK_STEP);
 
   private final ModuleType moduleType;
   String yamlName;

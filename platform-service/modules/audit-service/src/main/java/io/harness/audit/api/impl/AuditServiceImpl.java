@@ -29,7 +29,6 @@ import io.harness.audit.beans.Principal;
 import io.harness.audit.beans.PrincipalType;
 import io.harness.audit.beans.ResourceDTO;
 import io.harness.audit.beans.ResourceScopeDTO;
-import io.harness.audit.beans.YamlDiffRecordDTO;
 import io.harness.audit.entities.AuditEvent;
 import io.harness.audit.entities.AuditEvent.AuditEventKeys;
 import io.harness.audit.entities.Resource;
@@ -38,7 +37,6 @@ import io.harness.audit.entities.YamlDiffRecord;
 import io.harness.audit.mapper.ResourceMapper;
 import io.harness.audit.mapper.ResourceScopeMapper;
 import io.harness.audit.repositories.AuditRepository;
-import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageRequest;
 import io.harness.ng.core.common.beans.KeyValuePair;
 import io.harness.ng.core.common.beans.KeyValuePair.KeyValuePairKeys;
@@ -61,7 +59,6 @@ import org.springframework.transaction.support.TransactionTemplate;
 @OwnedBy(PL)
 @Slf4j
 public class AuditServiceImpl implements AuditService {
-  private static final long MAXIMUM_ALLOWED_YAML_SIZE = 512L * 512;
   private final TransactionTemplate transactionTemplate;
 
   private final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_TRANSACTION_RETRY_POLICY;
@@ -81,7 +78,6 @@ public class AuditServiceImpl implements AuditService {
 
   @Override
   public Boolean create(AuditEventDTO auditEventDTO) {
-    validate(auditEventDTO);
     AuditEvent auditEvent = fromDTO(auditEventDTO);
     try {
       long startTime = System.currentTimeMillis();
@@ -101,20 +97,6 @@ public class AuditServiceImpl implements AuditService {
       log.error("Could not audit this event with id {} and account identifier {}", auditEvent.getInsertId(),
           auditEvent.getResourceScope().getAccountIdentifier(), e);
       return false;
-    }
-  }
-
-  private void validate(AuditEventDTO auditEventDTO) {
-    if (auditEventDTO.getYamlDiffRecord() != null) {
-      YamlDiffRecordDTO yamlDiffRecordDTO = auditEventDTO.getYamlDiffRecord();
-      if (isNotEmpty(yamlDiffRecordDTO.getNewYaml())
-          && yamlDiffRecordDTO.getNewYaml().length() > MAXIMUM_ALLOWED_YAML_SIZE) {
-        throw new InvalidRequestException("New Yaml size exceeds the maximum allowed limit.");
-      }
-      if (isNotEmpty(yamlDiffRecordDTO.getOldYaml())
-          && yamlDiffRecordDTO.getOldYaml().length() > MAXIMUM_ALLOWED_YAML_SIZE) {
-        throw new InvalidRequestException("Old Yaml size exceeds the maximum allowed limit.");
-      }
     }
   }
 

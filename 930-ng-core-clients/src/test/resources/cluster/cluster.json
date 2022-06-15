@@ -1,0 +1,34 @@
+{
+  "accountIdentifier": "kmpySmUISimoRrJL6NL73w",
+  "orgIdentifier": "default",
+  "projectIdentifier": "Harness_Argo",
+  "agentIdentifier": "agent1",
+  "identifier": "clusterid",
+  "cluster": {
+    "server": "https://15.223.21.128",
+    "name": "mycluster",
+    "config": {
+      "bearerToken": "********",
+      "tlsClientConfig": {
+        "insecure": true
+      },
+      "clusterConnectionType": "SERVICE_ACCOUNT"
+    },
+    "connectionState": {
+      "status": "Successful",
+      "attemptedAt": "2022-05-18T05:23:38Z"
+    },
+    "serverVersion": "1.21",
+    "info": {
+      "connectionState": {
+        "status": "Successful",
+        "attemptedAt": "2022-05-18T05:23:38Z"
+      },
+      "serverVersion": "1.21",
+      "cacheInfo": {}
+    },
+    "project": "bc19f3cd"
+  },
+  "createdAt": "2022-05-18T05:23:38.497636371Z",
+  "lastModifiedAt": "2022-05-18T05:23:38.497636371Z"
+}

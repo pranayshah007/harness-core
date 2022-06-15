@@ -7,12 +7,17 @@
 
 package io.harness.beans.execution;
 
+import io.harness.annotation.RecasterAlias;
+
 import lombok.Builder;
 import lombok.Value;
 import org.hibernate.validator.constraints.NotEmpty;
+import org.springframework.data.annotation.TypeAlias;
 
 @Value
 @Builder
+@TypeAlias("commitDetails")
+@RecasterAlias("io.harness.beans.execution.CommitDetails")
 public class CommitDetails {
   @NotEmpty private String commitId;
   private String link;

@@ -32,7 +32,6 @@ public class AzureWebAppInfrastructureOutcome implements InfrastructureOutcome {
   String resourceGroup;
   String appService;
   String deploymentSlot;
-  String targetSlot;
 
   @Override
   public String getKind() {

@@ -7,6 +7,7 @@
 
 package io.harness.beans.environment.pod.container;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.delegate.beans.ci.pod.CIContainerType;
 import io.harness.delegate.beans.ci.pod.ContainerResourceParams;
 import io.harness.yaml.core.variables.SecretNGVariable;
@@ -16,6 +17,7 @@ import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 import org.hibernate.validator.constraints.NotEmpty;
+import org.springframework.data.annotation.TypeAlias;
 
 /**
  * Stores all details require to spawn container
@@ -23,6 +25,8 @@ import org.hibernate.validator.constraints.NotEmpty;
 
 @Data
 @Builder
+@TypeAlias("containerDefinitionInfo")
+@RecasterAlias("io.harness.beans.environment.pod.container.ContainerDefinitionInfo")
 public class ContainerDefinitionInfo {
   @NotEmpty private String name;
   @NotEmpty private ContainerImageDetails containerImageDetails;

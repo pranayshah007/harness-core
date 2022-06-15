@@ -16,7 +16,9 @@ import io.harness.exception.ScmBadRequestException;
 import io.harness.exception.ScmUnauthorizedException;
 import io.harness.exception.ScmUnexpectedException;
 import io.harness.exception.WingsException;
+import io.harness.gitsync.common.scmerrorhandling.dtos.ErrorMetadata;
 import io.harness.gitsync.common.scmerrorhandling.handlers.ScmApiErrorHandler;
+import io.harness.gitsync.common.scmerrorhandling.util.ErrorMessageFormatter;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -25,30 +27,35 @@ import lombok.extern.slf4j.Slf4j;
 public class GithubCreatePullRequestScmApiErrorHandler implements ScmApiErrorHandler {
   public static final String CREATE_PULL_REQUEST_FAILURE = "The pull request could not be created in Github. ";
   public static final String CREATE_PULL_REQUEST_VALIDATION_FAILED_EXPLANATION = "Please check the following:\n"
-      + "1. If already a pull request exists for request source branch to target branch.\n"
-      + "2. If source branch and target branch both exists in Github repository.\n"
+      + "1. If already a pull request exists for request source branch<BRANCH> to target branch<TARGET_BRANCH>.\n"
+      + "2. If source branch<BRANCH> and target branch<TARGET_BRANCH> both exists in Github repository.\n"
       + "3. If title of the pull request is empty.";
   public static final String CREATE_PULL_REQUEST_VALIDATION_FAILED_HINT =
       "There was issue while creating pull request. Possible reasons can be:\n"
-      + "1. There is already an open pull request from source branch to target branch for given Github repository.\n"
-      + "2. The source branch or target branch doesn't exist for given Github repository.\n"
+      + "1. There is already an open pull request from source branch<BRANCH> to target branch<TARGET_BRANCH> for given Github repository.\n"
+      + "2. The source branch<BRANCH> or target branch<TARGET_BRANCH> doesn't exist for given Github repository.\n"
       + "3. The title of the pull request is empty";
 
   @Override
-  public void handleError(int statusCode, String errorMessage) throws WingsException {
+  public void handleError(int statusCode, String errorMessage, ErrorMetadata errorMetadata) throws WingsException {
     switch (statusCode) {
       case 401:
       case 403:
-        throw NestedExceptionUtils.hintWithExplanationException(ScmErrorHints.INVALID_CREDENTIALS,
-            CREATE_PULL_REQUEST_FAILURE + ScmErrorExplanations.INVALID_CONNECTOR_CREDS,
+        throw NestedExceptionUtils.hintWithExplanationException(
+            ErrorMessageFormatter.formatMessage(ScmErrorHints.INVALID_CREDENTIALS, errorMetadata),
+            ErrorMessageFormatter.formatMessage(
+                CREATE_PULL_REQUEST_FAILURE + ScmErrorExplanations.INVALID_CONNECTOR_CREDS, errorMetadata),
             new ScmUnauthorizedException(errorMessage));
       case 404:
-        throw NestedExceptionUtils.hintWithExplanationException(ScmErrorHints.REPO_NOT_FOUND,
-            CREATE_PULL_REQUEST_FAILURE + ScmErrorExplanations.REPO_NOT_FOUND,
+        throw NestedExceptionUtils.hintWithExplanationException(
+            ErrorMessageFormatter.formatMessage(ScmErrorHints.REPO_NOT_FOUND, errorMetadata),
+            ErrorMessageFormatter.formatMessage(
+                CREATE_PULL_REQUEST_FAILURE + ScmErrorExplanations.REPO_NOT_FOUND, errorMetadata),
             new ScmBadRequestException(SCMExceptionErrorMessages.REPOSITORY_NOT_FOUND_ERROR));
       case 422:
-        throw NestedExceptionUtils.hintWithExplanationException(CREATE_PULL_REQUEST_VALIDATION_FAILED_HINT,
-            CREATE_PULL_REQUEST_VALIDATION_FAILED_EXPLANATION,
+        throw NestedExceptionUtils.hintWithExplanationException(
+            ErrorMessageFormatter.formatMessage(CREATE_PULL_REQUEST_VALIDATION_FAILED_HINT, errorMetadata),
+            ErrorMessageFormatter.formatMessage(CREATE_PULL_REQUEST_VALIDATION_FAILED_EXPLANATION, errorMetadata),
             new ScmBadRequestException(SCMExceptionErrorMessages.CREATE_PULL_REQUEST_VALIDATION_FAILED));
       default:
         log.error(String.format("Error while creating github pull request: [%s: %s]", statusCode, errorMessage));
