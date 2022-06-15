@@ -8,8 +8,9 @@
 package io.harness.cvng.core.services.impl.monitoredService;
 
 import static io.harness.cvng.core.beans.params.ServiceEnvironmentParams.builderWithProjectParams;
-import static io.harness.cvng.notification.utils.NotificationRuleCommonUtils.*;
-import static io.harness.data.structure.CollectionUtils.distinctByKey;
+import static io.harness.cvng.notification.utils.NotificationRuleCommonUtils.COOL_OFF_DURATION;
+import static io.harness.cvng.notification.utils.NotificationRuleCommonUtils.getNotificationTemplateData;
+import static io.harness.cvng.notification.utils.NotificationRuleCommonUtils.getNotificationTemplateId;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -1178,8 +1179,15 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
 
   private boolean isUniqueService(ProjectParams projectParams, MonitoredService monitoredService) {
     List<MonitoredService> enabledMonitoredServices = getEnabledMonitoredServices(projectParams.getAccountIdentifier());
-    return enabledMonitoredServices.stream().anyMatch(
-        x -> x.getServiceIdentifier().equals(monitoredService.getServiceIdentifier()));
+    List<String> ServiceList = new ArrayList<String>() {
+      {
+        add(monitoredService.getServiceIdentifier());
+        add(monitoredService.getOrgIdentifier());
+        add(monitoredService.getProjectIdentifier());
+      }
+    };
+
+    return getDistictServicesFromMonitoredServices(enabledMonitoredServices).contains(ServiceList);
   }
 
   @Override
@@ -1584,7 +1592,26 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
   public long countUniqueEnabledServices(String accountId) {
     List<MonitoredService> enabledMonitoredServices = getEnabledMonitoredServices(accountId);
 
-    return enabledMonitoredServices.stream().filter(distinctByKey(x -> x.getServiceIdentifier())).count();
+    return getDistictServicesFromMonitoredServices(enabledMonitoredServices).size();
+  }
+
+  private Set<List<String>> getDistictServicesFromMonitoredServices(List<MonitoredService> monitoredServices) {
+    Set<List<String>> distinctServiceSet = new HashSet<>();
+
+    for (MonitoredService monitoredService : monitoredServices) {
+      List<String> ServiceList = new ArrayList<String>() {
+        {
+          add(monitoredService.getServiceIdentifier());
+          add(monitoredService.getOrgIdentifier());
+          add(monitoredService.getProjectIdentifier());
+        }
+      };
+      if (!distinctServiceSet.contains(ServiceList)) {
+        distinctServiceSet.add(ServiceList);
+      }
+    }
+
+    return distinctServiceSet;
   }
 
   private List<MonitoredService> getEnabledMonitoredServices(String accountId) {
