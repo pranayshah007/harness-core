@@ -1,0 +1,20 @@
+{
+    "serviceRef": "service5",
+    "sources": {
+      "healthSources": [
+        {
+          "identifier": "appd_id_1",
+          "spec": {
+            "connectorRef": "appdynamics_prod2"
+          }
+        }
+      ]
+    },
+    "variables": [
+      {
+        "name": "environmentIdentifier",
+        "type": "String",
+        "value": "env2"
+      }
+    ]
+  }

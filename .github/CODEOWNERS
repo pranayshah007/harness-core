@@ -1,4 +1,6 @@
 DockerFile* diptiman.adak@harness.io udham.singh@harness.io guna.chandrasekaran@harness.io
+.bazel* diptiman.adak@harness.io udham.singh@harness.io
+bazel* diptiman.adak@harness.io udham.singh@harness.io
 /dockerization/delegate/ raghu@harness.io abhinav.singh@harness.io jenny.james@harness.io marko.milic@harness.io arpit.tiwari@harness.io gaurav.jain@harness.io
 /access-control/ utkarsh.gupta@harness.io ankit.singhal@harness.io mallavarapu.reetika@harness.io manish.manchanda@harness.io
 /clients/access-control/ utkarsh.gupta@harness.io ankit.singhal@harness.io mallavarapu.reetika@harness.io manish.manchanda@harness.io

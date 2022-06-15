@@ -123,6 +123,10 @@ public class InfraVariableCreator {
           addVariablesForServerlessAwsInfra(infraDefNode, yamlPropertiesMap);
           break;
 
+        case InfrastructureKind.SSH_WINRM_AWS:
+          addVariablesForSshWinRmAwsInfra(infraDefNode, yamlPropertiesMap);
+          break;
+
         case InfrastructureKind.AZURE_WEB_APP:
           addVariablesForAzureWebAppInfra(infraDefNode, yamlPropertiesMap);
           break;
@@ -183,7 +187,6 @@ public class InfraVariableCreator {
     addVariableForYamlType(YamlTypes.RESOURCE_GROUP, infraSpecNode, yamlPropertiesMap);
     addVariableForYamlType(YamlTypes.APP_SERVICE, infraSpecNode, yamlPropertiesMap);
     addVariableForYamlType(YamlTypes.DEPLOYMENT_SLOT, infraSpecNode, yamlPropertiesMap);
-    addVariableForYamlType(YamlTypes.TARGET_SLOT, infraSpecNode, yamlPropertiesMap);
   }
 
   private static void addVariablesForPhysicalDataCenterInfra(
@@ -199,6 +202,19 @@ public class InfraVariableCreator {
     addVariableForYamlType(YamlTypes.ATTRIBUTE_FILTERS, infraSpecNode, yamlPropertiesMap);
     addVariableForYamlType(YamlTypes.HOST_FILTERS, infraSpecNode, yamlPropertiesMap);
     addVariableForYamlType(YamlTypes.DELEGATE_SELECTORS, infraSpecNode, yamlPropertiesMap);
+  }
+
+  private static void addVariablesForSshWinRmAwsInfra(
+      YamlField infraDefNode, Map<String, YamlProperties> yamlPropertiesMap) {
+    YamlField infraSpecNode = infraDefNode.getNode().getField(YamlTypes.SPEC);
+    if (infraSpecNode == null) {
+      return;
+    }
+
+    addVariableForYamlType(YamlTypes.CONNECTOR_REF, infraSpecNode, yamlPropertiesMap);
+    addVariableForYamlType(YamlTypes.REGION, infraSpecNode, yamlPropertiesMap);
+    addVariableForYamlType(YamlTypes.LOAD_BALANCER, infraSpecNode, yamlPropertiesMap);
+    addVariableForYamlType(YamlTypes.HOST_NAME_CONVENTION, infraSpecNode, yamlPropertiesMap);
   }
 
   private void addVariablesForServerlessAwsInfra(

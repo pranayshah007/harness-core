@@ -131,7 +131,6 @@ public class ConnectorUtils {
   @Inject private CIFeatureFlagService featureFlagService;
   private final Duration RETRY_SLEEP_DURATION = Duration.ofSeconds(2);
   private final int MAX_ATTEMPTS = 6;
-  private final String AXA_ACCOUNT_ID = "UVxMDMhNQxOCvroqqImWdQ";
 
   @Inject
   public ConnectorUtils(ConnectorResourceClient connectorResourceClient, SecretUtils secretUtils,
@@ -182,8 +181,7 @@ public class ConnectorUtils {
   public List<TaskSelector> fetchDelegateSelector(
       Ambiance ambiance, ExecutionSweepingOutputService executionSweepingOutputResolver) {
     String accountID = AmbianceUtils.getAccountId(ambiance);
-    if (featureFlagService.isEnabled(FeatureName.DISABLE_CI_STAGE_DEL_SELECTOR, accountID)
-        || accountID.equals(AXA_ACCOUNT_ID)) {
+    if (featureFlagService.isEnabled(FeatureName.DISABLE_CI_STAGE_DEL_SELECTOR, accountID)) {
       log.info("DISABLE_CI_STAGE_DEL_SELECTOR Feature flag is enabled for account {}", accountID);
       return Collections.emptyList();
     }

@@ -61,6 +61,7 @@ import io.harness.stateutils.buildstate.CodebaseUtils;
 import io.harness.stateutils.buildstate.ConnectorUtils;
 import io.harness.steps.StepUtils;
 import io.harness.supplier.ThrowingSupplier;
+import io.harness.util.WebhookTriggerProcessorUtils;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
@@ -217,6 +218,9 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
       build = new Build("tag");
     }
 
+    String commitSha = listCommitsResponse.getCommit().getSha();
+    String shortCommitSha = WebhookTriggerProcessorUtils.getShortCommitSha(commitSha);
+
     return CodebaseSweepingOutput.builder()
         .branch(scmGitRefTaskResponseData.getBranch())
         .tag(tag)
@@ -230,7 +234,8 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
                             .ownerId(listCommitsResponse.getCommit().getAuthor().getLogin())
                             .timeStamp(listCommitsResponse.getCommit().getAuthor().getDate().getSeconds())
                             .build()))
-        .commitSha(listCommitsResponse.getCommit().getSha())
+        .commitSha(commitSha)
+        .shortCommitSha(shortCommitSha)
         .repoUrl(scmGitRefTaskResponseData.getRepoUrl())
         .build();
   }
@@ -255,6 +260,9 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
         }
       }
 
+      String commitSha = prWebhookEvent.getBaseAttributes().getAfter();
+      String shortCommitSha = WebhookTriggerProcessorUtils.getShortCommitSha(commitSha);
+
       return CodebaseSweepingOutput.builder()
           .commits(codeBaseCommits)
           .state(getState(prWebhookEvent))
@@ -264,7 +272,8 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
           .prNumber(String.valueOf(prWebhookEvent.getPullRequestId()))
           .prTitle(prWebhookEvent.getTitle())
           .build(new Build("PR"))
-          .commitSha(prWebhookEvent.getBaseAttributes().getAfter())
+          .commitSha(commitSha)
+          .shortCommitSha(shortCommitSha)
           .baseCommitSha(prWebhookEvent.getBaseAttributes().getBefore())
           .repoUrl(prWebhookEvent.getRepository().getLink())
           .pullRequestLink(prWebhookEvent.getPullRequestLink())
@@ -290,12 +299,16 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
         }
       }
 
+      String commitSha = branchWebhookEvent.getBaseAttributes().getAfter();
+      String shortCommitSha = WebhookTriggerProcessorUtils.getShortCommitSha(commitSha);
+
       return CodebaseSweepingOutput.builder()
           .branch(branchWebhookEvent.getBranchName())
           .commits(codeBaseCommits)
           .build(new Build("branch"))
           .targetBranch(branchWebhookEvent.getBranchName())
-          .commitSha(branchWebhookEvent.getBaseAttributes().getAfter())
+          .commitSha(commitSha)
+          .shortCommitSha(shortCommitSha)
           .repoUrl(branchWebhookEvent.getRepository().getLink())
           .gitUser(branchWebhookEvent.getBaseAttributes().getAuthorName())
           .gitUserEmail(branchWebhookEvent.getBaseAttributes().getAuthorEmail())
@@ -312,11 +325,16 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
     if (isNotEmpty(manualExecutionSource.getTag())) {
       build = new Build("tag");
     }
+
+    String commitSha = manualExecutionSource.getCommitSha();
+    String shortCommitSha = WebhookTriggerProcessorUtils.getShortCommitSha(commitSha);
+
     return CodebaseSweepingOutput.builder()
         .build(build)
         .branch(manualExecutionSource.getBranch())
         .tag(manualExecutionSource.getTag())
-        .commitSha(manualExecutionSource.getCommitSha())
+        .commitSha(commitSha)
+        .shortCommitSha(shortCommitSha)
         .build();
   }
 
@@ -350,13 +368,17 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
                               .build());
     }
 
+    String commitSha = pr.getSha();
+    String shortCommitSha = WebhookTriggerProcessorUtils.getShortCommitSha(commitSha);
+
     codebaseSweepingOutput = CodebaseSweepingOutput.builder()
                                  .branch(pr.getTarget())
                                  .sourceBranch(pr.getSource())
                                  .targetBranch(pr.getTarget())
                                  .prNumber(String.valueOf(pr.getNumber()))
                                  .prTitle(pr.getTitle())
-                                 .commitSha(pr.getSha())
+                                 .commitSha(commitSha)
+                                 .shortCommitSha(shortCommitSha)
                                  .build(new Build("PR"))
                                  .baseCommitSha(pr.getBase().getSha())
                                  .commitRef(pr.getRef())

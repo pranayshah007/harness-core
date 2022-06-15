@@ -20,6 +20,9 @@ import io.harness.delegate.beans.connector.awsconnector.AwsCFTaskParamsRequest;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialType;
+import io.harness.delegate.beans.connector.awsconnector.AwsListASGInstancesTaskParamsRequest;
+import io.harness.delegate.beans.connector.awsconnector.AwsListEC2InstancesTaskParamsRequest;
+import io.harness.delegate.beans.connector.awsconnector.AwsListTagsTaskParamsRequest;
 import io.harness.delegate.beans.connector.awsconnector.AwsTaskParams;
 import io.harness.delegate.beans.connector.awsconnector.AwsTaskType;
 import io.harness.delegate.beans.connector.awsconnector.AwsValidateTaskResponse;
@@ -47,6 +50,11 @@ public class AwsDelegateTask extends AbstractDelegateRunnableTask {
   @Inject private AwsS3DelegateTaskHelper awsS3DelegateTaskHelper;
   @Inject private AwsIAMDelegateTaskHelper awsIAMDelegateTaskHelper;
   @Inject private AwsCFDelegateTaskHelper awsCFDelegateTaskHelper;
+  @Inject private AwsListEC2InstancesDelegateTaskHelper awsListEC2InstancesDelegateTaskHelper;
+  @Inject private AwsASGDelegateTaskHelper awsASGDelegateTaskHelper;
+  @Inject private AwsListVpcDelegateTaskHelper awsListVpcDelegateTaskHelper;
+  @Inject private AwsListTagsDelegateTaskHelper awsListTagsDelegateTaskHelper;
+  @Inject private AwsListLoadBalancersDelegateTaskHelper awsListLoadBalancersDelegateTaskHelper;
 
   public AwsDelegateTask(DelegateTaskPackage delegateTaskPackage, ILogStreamingTaskClient logStreamingTaskClient,
       Consumer<DelegateTaskResponse> consumer, BooleanSupplier preExecute) {
@@ -82,6 +90,18 @@ public class AwsDelegateTask extends AbstractDelegateRunnableTask {
         return awsIAMDelegateTaskHelper.getIAMRoleList(awsTaskParams);
       case CF_LIST_PARAMS:
         return awsCFDelegateTaskHelper.getCFParamsList((AwsCFTaskParamsRequest) parameters);
+      case LIST_EC2_INSTANCES:
+        return awsListEC2InstancesDelegateTaskHelper.getInstances((AwsListEC2InstancesTaskParamsRequest) parameters);
+      case LIST_ASG_INSTANCES:
+        return awsASGDelegateTaskHelper.getInstances((AwsListASGInstancesTaskParamsRequest) parameters);
+      case LIST_ASG_NAMES:
+        return awsASGDelegateTaskHelper.getASGNames(awsTaskParams);
+      case LIST_VPC:
+        return awsListVpcDelegateTaskHelper.getVpcList(awsTaskParams);
+      case LIST_TAGS:
+        return awsListTagsDelegateTaskHelper.getTagList((AwsListTagsTaskParamsRequest) awsTaskParams);
+      case LIST_LOAD_BALANCERS:
+        return awsListLoadBalancersDelegateTaskHelper.getLoadBalancerList(awsTaskParams);
       default:
         throw new InvalidRequestException("Task type not identified");
     }

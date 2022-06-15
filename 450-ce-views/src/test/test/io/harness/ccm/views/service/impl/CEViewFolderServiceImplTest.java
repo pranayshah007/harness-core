@@ -42,6 +42,7 @@ public class CEViewFolderServiceImplTest extends CategoryTest {
   private static final String FOLDER_NAME = "folder_name";
   private static final String VIEW_NAME = "view_name";
   private static final String UUID = "uuid";
+  private static final String UUID2 = "uuid2";
 
   @Before
   public void setUp() throws Exception {
@@ -128,7 +129,7 @@ public class CEViewFolderServiceImplTest extends CategoryTest {
     doReturn(ceViewFolder()).when(ceViewFolderDao).getDefaultFolder(any());
     doReturn(Collections.emptyList()).when(ceViewDao).moveMultiplePerspectiveFolder(any(), any(), any());
     doReturn(true).when(ceViewFolderDao).delete(any(), any());
-    boolean folderDeleted = ceViewFolderService.delete(ACCOUNT_ID, UUID);
+    boolean folderDeleted = ceViewFolderService.delete(ACCOUNT_ID, UUID2);
     assertThat(folderDeleted).isEqualTo(true);
   }
 

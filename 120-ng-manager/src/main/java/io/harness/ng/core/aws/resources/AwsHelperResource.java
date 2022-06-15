@@ -12,21 +12,28 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.aws.service.AwsResourceServiceImpl;
+import io.harness.data.structure.CollectionUtils;
+import io.harness.ng.core.dto.AwsListInstancesFilterDTO;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.utils.IdentifierRefHelper;
 
 import software.wings.service.impl.aws.model.AwsCFTemplateParamsData;
+import software.wings.service.impl.aws.model.AwsEC2Instance;
+import software.wings.service.impl.aws.model.AwsVPC;
 
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
+import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -67,15 +74,16 @@ public class AwsHelperResource {
       @QueryParam("region") @NotNull String region, @QueryParam("isBranch") boolean isBranch,
       @QueryParam("branch") String branch, @QueryParam("filePath") String templatePath,
       @QueryParam("commitId") String commitId, @QueryParam("awsConnectorRef") @NotNull String awsConnectorRef,
-      @QueryParam("gitConnectorRef") String gitConnectorRefParam,
+      @QueryParam("gitConnectorRef") String gitConnectorRefParam, @QueryParam("repoName") String repoName,
       @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @NotNull String accountIdentifier,
       @QueryParam(NGCommonEntityConstants.ORG_KEY) @NotNull String orgIdentifier,
       @QueryParam(NGCommonEntityConstants.PROJECT_KEY) @NotNull String projectIdentifier, String data) {
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(awsConnectorRef, accountIdentifier, orgIdentifier, projectIdentifier);
 
-    List<AwsCFTemplateParamsData> keys = awsHelperService.getCFparametersKeys(
-        type, region, isBranch, branch, templatePath, commitId, connectorRef, data, gitConnectorRefParam);
+    List<AwsCFTemplateParamsData> keys =
+        awsHelperService.getCFparametersKeys(type, region, isBranch, branch, repoName, templatePath, commitId,
+            connectorRef, data, gitConnectorRefParam, accountIdentifier, orgIdentifier, projectIdentifier);
 
     return ResponseDTO.newResponse(keys);
   }
@@ -104,5 +112,77 @@ public class AwsHelperResource {
     IdentifierRef connectorRef =
         IdentifierRefHelper.getIdentifierRef(awsConnectorRef, accountIdentifier, orgIdentifier, projectIdentifier);
     return ResponseDTO.newResponse(awsHelperService.getRolesARNs(connectorRef, orgIdentifier, projectIdentifier));
+  }
+
+  @GET
+  @Path("hosts")
+  @ApiOperation(value = "Get all the IAM hosts", nickname = "filterHosts")
+  public ResponseDTO<List<String>> filterHosts(@NotNull @QueryParam("awsConnectorRef") String awsConnectorRef,
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @RequestBody(required = true, description = "Filter body") @Valid AwsListInstancesFilterDTO filterDTO) {
+    IdentifierRef connectorRef =
+        IdentifierRefHelper.getIdentifierRef(awsConnectorRef, accountIdentifier, orgIdentifier, projectIdentifier);
+    List<AwsEC2Instance> instances = awsHelperService.filterHosts(connectorRef, filterDTO.isWinRm(),
+        filterDTO.getRegion(), filterDTO.getVpcIds(), filterDTO.getTags(), filterDTO.getAutoScalingGroupName());
+    List<String> result = CollectionUtils.emptyIfNull(instances)
+                              .stream()
+                              .map(AwsEC2Instance::getPublicDnsName)
+                              .collect(Collectors.toList());
+    return ResponseDTO.newResponse(result);
+  }
+
+  @GET
+  @Path("vpcs")
+  @ApiOperation(value = "Get all the vpcs", nickname = "vpcs")
+  public ResponseDTO<List<AwsVPC>> getVpcs(@NotNull @QueryParam("awsConnectorRef") String awsConnectorRef,
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @NotNull @QueryParam("region") String region) {
+    IdentifierRef connectorRef =
+        IdentifierRefHelper.getIdentifierRef(awsConnectorRef, accountIdentifier, orgIdentifier, projectIdentifier);
+    return ResponseDTO.newResponse(awsHelperService.getVPCs(connectorRef, region));
+  }
+
+  @GET
+  @Path("tags")
+  @ApiOperation(value = "Get all the tags", nickname = "tags")
+  public ResponseDTO<Set<String>> getTags(@NotNull @QueryParam("awsConnectorRef") String awsConnectorRef,
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @NotNull @QueryParam("region") String region) {
+    IdentifierRef connectorRef =
+        IdentifierRefHelper.getIdentifierRef(awsConnectorRef, accountIdentifier, orgIdentifier, projectIdentifier);
+    Map<String, String> tags = awsHelperService.getTags(connectorRef, region);
+    return ResponseDTO.newResponse(tags.keySet());
+  }
+
+  @GET
+  @Path("load-balancers")
+  @ApiOperation(value = "Get load balancers", nickname = "loadBalancers")
+  public ResponseDTO<List<String>> getLoadBalancers(@NotNull @QueryParam("awsConnectorRef") String awsConnectorRef,
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @NotNull @QueryParam("region") String region) {
+    IdentifierRef connectorRef =
+        IdentifierRefHelper.getIdentifierRef(awsConnectorRef, accountIdentifier, orgIdentifier, projectIdentifier);
+    return ResponseDTO.newResponse(awsHelperService.getLoadBalancers(connectorRef, region));
+  }
+
+  @GET
+  @Path("auto-scaling-groups")
+  @ApiOperation(value = "Get auto scaling groups", nickname = "autoScalingGroups")
+  public ResponseDTO<List<String>> getASGNames(@NotNull @QueryParam("awsConnectorRef") String awsConnectorRef,
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
+      @NotNull @QueryParam("region") String region) {
+    IdentifierRef connectorRef =
+        IdentifierRefHelper.getIdentifierRef(awsConnectorRef, accountIdentifier, orgIdentifier, projectIdentifier);
+    return ResponseDTO.newResponse(awsHelperService.getASGNames(connectorRef, region));
   }
 }

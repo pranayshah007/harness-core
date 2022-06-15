@@ -62,6 +62,7 @@ import io.harness.delegate.task.TaskParameters;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.secretmanagerclient.EncryptDecryptHelper;
@@ -175,12 +176,14 @@ public class TerragruntProvisionTask extends AbstractDelegateRunnableTask {
 
       try {
         encryptionService.decrypt(gitConfig, parameters.getSourceRepoEncryptionDetails(), false);
+        ExceptionMessageSanitizer.storeAllSecretsForSanitizing(gitConfig, parameters.getSourceRepoEncryptionDetails());
         gitClient.ensureRepoLocallyClonedAndUpdated(gitOperationContext);
       } catch (RuntimeException ex) {
-        log.error("Exception in processing git operation", ex);
+        Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(ex);
+        log.error("Exception in processing git operation", sanitizedException);
         return TerragruntExecutionData.builder()
             .executionStatus(ExecutionStatus.FAILED)
-            .errorMessage(TerraformTaskUtils.getGitExceptionMessageIfExists(ex))
+            .errorMessage(TerraformTaskUtils.getGitExceptionMessageIfExists(sanitizedException))
             .build();
       }
 
@@ -196,11 +199,12 @@ public class TerragruntProvisionTask extends AbstractDelegateRunnableTask {
       try {
         copyFilesToWorkingDirectory(gitClientHelper.getRepoDirectory(gitOperationContext), workingDir);
       } catch (Exception ex) {
-        log.error("Exception in copying files to provisioner specific directory", ex);
+        Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(ex);
+        log.error("Exception in copying files to provisioner specific directory", sanitizedException);
         FileUtils.deleteQuietly(new File(baseDir));
         return TerragruntExecutionData.builder()
             .executionStatus(ExecutionStatus.FAILED)
-            .errorMessage(ExceptionUtils.getMessage(ex))
+            .errorMessage(ExceptionUtils.getMessage(sanitizedException))
             .build();
       }
 
@@ -211,7 +215,8 @@ public class TerragruntProvisionTask extends AbstractDelegateRunnableTask {
       fetchConfigFilesLogCallback.saveExecutionLog("Config files have been fetched successfully", INFO, SUCCESS);
 
     } catch (Exception ex) {
-      String message = String.format("Failed to fetch config files successfully - [%s]", ex.getMessage());
+      String message = format("Failed to fetch config files successfully - [%s]",
+          ExceptionMessageSanitizer.sanitizeException(ex).getMessage());
       fetchConfigFilesLogCallback.saveExecutionLog(message, ERROR, FAILURE);
       throw ex;
     }
@@ -317,7 +322,8 @@ public class TerragruntProvisionTask extends AbstractDelegateRunnableTask {
           initLogCallback.saveExecutionLog(
               "Finished terragrunt init task", INFO, terragruntCliResponse.getCommandExecutionStatus());
         } catch (Exception ex) {
-          String message = String.format("Failed to perform terragrunt init tasks - [%s]", ex.getMessage());
+          String message = format("Failed to perform terragrunt init tasks - [%s]",
+              ExceptionMessageSanitizer.sanitizeException(ex).getMessage());
           initLogCallback.saveExecutionLog(message, ERROR, FAILURE);
           throw ex;
         }
@@ -433,17 +439,23 @@ public class TerragruntProvisionTask extends AbstractDelegateRunnableTask {
       return terragruntExecutionDataBuilder.build();
 
     } catch (WingsException ex) {
-      return logErrorAndGetFailureResponse(wrapUpLogCallBack, ex, ExceptionUtils.getMessage(ex));
-    } catch (IOException ex) {
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(ex);
       return logErrorAndGetFailureResponse(
-          wrapUpLogCallBack, ex, format("IO Failure occurred while performing Terragrunt Task: %s", ex.getMessage()));
+          wrapUpLogCallBack, sanitizedException, ExceptionUtils.getMessage(sanitizedException));
+    } catch (IOException ex) {
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(ex);
+      return logErrorAndGetFailureResponse(wrapUpLogCallBack, sanitizedException,
+          format("IO Failure occurred while performing Terragrunt Task: %s", sanitizedException.getMessage()));
     } catch (InterruptedException ex) {
       Thread.currentThread().interrupt();
-      return logErrorAndGetFailureResponse(wrapUpLogCallBack, ex, "Interrupted while performing Terragrunt Task");
+      return logErrorAndGetFailureResponse(wrapUpLogCallBack, ExceptionMessageSanitizer.sanitizeException(ex),
+          "Interrupted while performing Terragrunt Task");
     } catch (TimeoutException | UncheckedTimeoutException ex) {
-      return logErrorAndGetFailureResponse(wrapUpLogCallBack, ex, "Timed out while performing Terragrunt Task");
+      return logErrorAndGetFailureResponse(wrapUpLogCallBack, ExceptionMessageSanitizer.sanitizeException(ex),
+          "Timed out while performing Terragrunt Task");
     } catch (Exception ex) {
-      return logErrorAndGetFailureResponse(wrapUpLogCallBack, ex, "Failed to complete Terragrunt Task");
+      return logErrorAndGetFailureResponse(
+          wrapUpLogCallBack, ExceptionMessageSanitizer.sanitizeException(ex), "Failed to complete Terragrunt Task");
     } finally {
       FileUtils.deleteQuietly(new File(workingDir));
       FileUtils.deleteQuietly(new File(baseDir));
@@ -456,14 +468,15 @@ public class TerragruntProvisionTask extends AbstractDelegateRunnableTask {
             log.info("Terraform Plan has been safely deleted from vault");
           }
         } catch (Exception ex) {
+          Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(ex);
           wrapUpLogCallBack.saveExecutionLog(
               color(format("Failed to delete secret: [%s] from vault: [%s], please clean it up",
                         parameters.getEncryptedTfPlan().getEncryptionKey(),
                         parameters.getSecretManagerConfig().getName()),
                   LogColor.Yellow, LogWeight.Bold),
               WARN, CommandExecutionStatus.RUNNING);
-          wrapUpLogCallBack.saveExecutionLog(ex.getMessage(), WARN, CommandExecutionStatus.RUNNING);
-          log.error("Exception occurred while deleting Terraform Plan from vault", ex);
+          wrapUpLogCallBack.saveExecutionLog(sanitizedException.getMessage(), WARN, CommandExecutionStatus.RUNNING);
+          log.error("Exception occurred while deleting Terraform Plan from vault", sanitizedException);
         }
       }
     }
@@ -540,7 +553,7 @@ public class TerragruntProvisionTask extends AbstractDelegateRunnableTask {
 
   private TerragruntExecutionData logErrorAndGetFailureResponse(LogCallback logCallback, Exception ex, String message) {
     logCallback.saveExecutionLog(message, ERROR, CommandExecutionStatus.FAILURE);
-    log.error("Exception in processing terragrunt operation", ex);
+    log.error("Exception in processing terragrunt operation", ExceptionMessageSanitizer.sanitizeException(ex));
     return TerragruntExecutionData.builder().executionStatus(ExecutionStatus.FAILED).errorMessage(message).build();
   }
 

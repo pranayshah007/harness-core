@@ -18,25 +18,32 @@ import io.harness.exception.ScmBadRequestException;
 import io.harness.exception.ScmUnauthorizedException;
 import io.harness.exception.ScmUnexpectedException;
 import io.harness.exception.WingsException;
+import io.harness.gitsync.common.scmerrorhandling.dtos.ErrorMetadata;
 import io.harness.gitsync.common.scmerrorhandling.handlers.ScmApiErrorHandler;
+import io.harness.gitsync.common.scmerrorhandling.util.ErrorMessageFormatter;
 
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @OwnedBy(PL)
 public class BitbucketGetFileScmApiErrorHandler implements ScmApiErrorHandler {
-  public static final String GET_FILE_REQUEST_FAILURE = "The requested file could not be fetched from Bitbucket. ";
+  public static final String GET_FILE_REQUEST_FAILURE =
+      "The requested file<FILEPATH> could not be fetched from Bitbucket. ";
 
   @Override
-  public void handleError(int statusCode, String errorMessage) throws WingsException {
+  public void handleError(int statusCode, String errorMessage, ErrorMetadata errorMetadata) throws WingsException {
     switch (statusCode) {
       case 401:
       case 403:
-        throw NestedExceptionUtils.hintWithExplanationException(INVALID_CREDENTIALS,
-            GET_FILE_REQUEST_FAILURE + ScmErrorExplanations.INVALID_CONNECTOR_CREDS,
+        throw NestedExceptionUtils.hintWithExplanationException(
+            ErrorMessageFormatter.formatMessage(INVALID_CREDENTIALS, errorMetadata),
+            ErrorMessageFormatter.formatMessage(
+                GET_FILE_REQUEST_FAILURE + ScmErrorExplanations.INVALID_CONNECTOR_CREDS, errorMetadata),
             new ScmUnauthorizedException(errorMessage));
       case 404:
-        throw NestedExceptionUtils.hintWithExplanationException(FILE_NOT_FOUND, ScmErrorExplanations.FILE_NOT_FOUND,
+        throw NestedExceptionUtils.hintWithExplanationException(
+            ErrorMessageFormatter.formatMessage(FILE_NOT_FOUND, errorMetadata),
+            ErrorMessageFormatter.formatMessage(ScmErrorExplanations.FILE_NOT_FOUND, errorMetadata),
             new ScmBadRequestException(SCMExceptionErrorMessages.FILE_NOT_FOUND_ERROR));
       default:
         log.error(String.format("Error while getting bitbucket file: [%s: %s]", statusCode, errorMessage));

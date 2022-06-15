@@ -97,6 +97,8 @@ if [ "${EXECUTE_NEW_VERSION_CODE}" == "true" ]; then
     echo "VERSION was also empty - aborting setting fix versions"
     exit 0
   fi
+  # Version doesn't have trailing 00 - so adding it here
+  NEXT_VERSION="$NEXT_VERSION""00"
   echo "Setting Fix Version to $NEXT_VERSION on issues in this release"
   EXCLUDE_PROJECTS=",ART,CCE,CDC,CDNG,CDP,CE,COMP,CV,CVNG,CVS,DX,ER,GIT,GTM,LWG,OENG,ONP,OPS,SEC,SWAT,"
   for KEY in ${KEYS}

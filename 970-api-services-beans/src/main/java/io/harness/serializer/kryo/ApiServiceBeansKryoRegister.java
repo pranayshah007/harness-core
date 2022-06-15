@@ -124,6 +124,7 @@ import io.harness.shell.ScriptType;
 import io.harness.shell.ShellExecutionData;
 import io.harness.spotinst.model.ElastiGroup;
 import io.harness.spotinst.model.ElastiGroupCapacity;
+import io.harness.ssh.FileSourceType;
 
 import software.wings.api.ContainerServiceData;
 import software.wings.beans.AmazonClientSDKDefaultBackoffStrategy;
@@ -429,5 +430,6 @@ public class ApiServiceBeansKryoRegister implements KryoRegistrar {
     kryo.register(AzureKubernetesCluster.class, 5538);
     kryo.register(SecretManagementDelegateException.class, 5585);
     kryo.register(ServiceNowTemplate.class, 97113);
+    kryo.register(FileSourceType.class, 97115);
   }
 }

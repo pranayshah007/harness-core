@@ -65,7 +65,6 @@ import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -146,7 +145,7 @@ public class ClusterResource {
         accountId, orgIdentifier, projectIdentifier, environmentIdentifier, ENVIRONMENT_VIEW_PERMISSION, "view");
 
     Optional<Cluster> entity =
-        clusterService.get(orgIdentifier, projectIdentifier, accountId, environmentIdentifier, clusterRef, deleted);
+        clusterService.get(accountId, orgIdentifier, projectIdentifier, environmentIdentifier, clusterRef);
     if (!entity.isPresent()) {
       throw new NotFoundException(format("Cluster with clusterRef [%s] in project [%s], org [%s] not found", clusterRef,
           projectIdentifier, orgIdentifier));
@@ -254,28 +253,6 @@ public class ClusterResource {
         accountId, orgIdentifier, projectIdentifier, environmentIdentifier, ENVIRONMENT_UPDATE_PERMISSION, "delete");
     return ResponseDTO.newResponse(
         clusterService.delete(accountId, orgIdentifier, projectIdentifier, environmentIdentifier, clusterRef));
-  }
-
-  @PUT
-  @ApiOperation(value = "Update a cluster by identifier", nickname = "updateCluster")
-  @Operation(operationId = "updateCluster", summary = "Update a cluster by identifier",
-      responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns the updated Cluster") },
-      hidden = true)
-  public ResponseDTO<ClusterResponse>
-  update(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
-             NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
-      @Parameter(description = "Details of the Cluster to be updated") @Valid ClusterRequest request) {
-    throwExceptionForNoRequestDTO(request);
-    orgAndProjectValidationHelper.checkThatTheOrganizationAndProjectExists(
-        request.getOrgIdentifier(), request.getProjectIdentifier(), accountId);
-    environmentValidationHelper.checkThatEnvExists(
-        accountId, request.getOrgIdentifier(), request.getProjectIdentifier(), request.getEnvRef());
-    checkForAccessOrThrow(accountId, request.getOrgIdentifier(), request.getProjectIdentifier(), request.getEnvRef(),
-        ENVIRONMENT_UPDATE_PERMISSION, "update");
-
-    Cluster entity = ClusterEntityMapper.toEntity(accountId, request);
-    Cluster updatedEntity = clusterService.update(entity);
-    return ResponseDTO.newResponse(ClusterEntityMapper.writeDTO(updatedEntity));
   }
 
   @GET

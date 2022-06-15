@@ -16,6 +16,7 @@ java_library(
         "//930-delegate-tasks:module",
         "//930-ng-core-clients:module",
         "//942-enforcement-sdk:module",
+        "//945-account-mgmt:module",
         "//959-timeout-engine:module",
         "//950-log-client:module",
         "//959-debezium-beans:module",

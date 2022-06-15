@@ -27,14 +27,34 @@ import software.wings.beans.LogColor;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import lombok.extern.slf4j.Slf4j;
 import org.zeroturnaround.exec.ProcessExecutor;
 import org.zeroturnaround.exec.ProcessResult;
 
 @OwnedBy(HarnessTeam.CDP)
+@Slf4j
 public class PcfUtils {
   public static final String BIN_BASH = "/bin/bash";
-
+  public static final String CF_CALL = "[CF Call info]";
   private PcfUtils() {}
+
+  public static void logCliCommand(String command, long timeInMillis) {
+    log.debug("{}: CLI, {}, timeInMillis: {}", CF_CALL, command, timeInMillis);
+  }
+
+  public static void logCliCommandFailure(String command, long timeInMillis, int exitCode, String message) {
+    log.debug("{}: Failure from CLI, {}, timeInMillis: {}, exitCode: {}, message: {}", CF_CALL, command, timeInMillis,
+        exitCode, message);
+  }
+
+  public static void logSdkCommand(String API, Object request, long timeInMillis) {
+    log.debug("{}: SDK, {}, request: {}, timeInMillis: {}", CF_CALL, API, request, timeInMillis);
+  }
+
+  public static void logSdkCommandFailure(String API, Object request, long timeInMillis, String message) {
+    log.debug("{}: Failure from SDK, {}, request: {}, timeInMillis: {}, message: {}", CF_CALL, API, request,
+        timeInMillis, message);
+  }
 
   public static boolean checkIfAppAutoscalarInstalled(final String cfCliPath, CfCliVersion cfCliVersion)
       throws PivotalClientApiException {

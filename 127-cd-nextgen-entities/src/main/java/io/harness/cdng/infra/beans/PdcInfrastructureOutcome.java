@@ -10,6 +10,7 @@ package io.harness.cdng.infra.beans;
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.steps.environment.EnvironmentOutcome;
 
@@ -39,5 +40,9 @@ public class PdcInfrastructureOutcome implements InfrastructureOutcome {
   @Override
   public String getKind() {
     return InfrastructureKind.PDC;
+  }
+
+  public boolean useInfrastructureHosts() {
+    return EmptyPredicate.isNotEmpty(hosts);
   }
 }

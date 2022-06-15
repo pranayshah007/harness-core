@@ -43,6 +43,7 @@ import io.harness.cvng.core.beans.OnboardingRequestDTO;
 import io.harness.cvng.core.beans.OnboardingResponseDTO;
 import io.harness.delegate.beans.connector.appdynamicsconnector.AppDynamicsConnectorDTO;
 import io.harness.ng.beans.PageResponse;
+import io.harness.ng.core.CorrelationContext;
 import io.harness.rule.Owner;
 import io.harness.serializer.JsonUtils;
 
@@ -88,6 +89,7 @@ public class AppDynamicsServiceimplTest extends CvNextGenTestBase {
     FieldUtils.writeField(onboardingService, "nextGenService", nextGenService, true);
     FieldUtils.writeField(onboardingService, "verificationManagerService", verificationManagerService, true);
     FieldUtils.writeField(appDynamicsService, "clock", builderFactory.getClock(), true);
+    CorrelationContext.setCorrelationId(generateUuid());
 
     when(nextGenService.get(anyString(), anyString(), anyString(), anyString()))
         .then(invocation

@@ -32,6 +32,7 @@ import io.harness.pms.rbac.PrincipalTypeProtoToPrincipalTypeMapper;
 import io.harness.pms.tags.TagUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rbac.CDNGRbacPermissions;
+import io.harness.repositories.UpsertOptions;
 import io.harness.steps.environment.EnvironmentOutcome;
 
 import java.util.Optional;
@@ -77,7 +78,7 @@ public class InfraStepUtils {
       environmentYaml.setName(environmentYaml.getIdentifier());
     }
     Environment environment = getEnvironmentObject(environmentYaml, ambiance);
-    environmentService.upsert(environment);
+    environmentService.upsert(environment, UpsertOptions.DEFAULT.withNoOutbox());
     return EnvironmentMapper.toOutcome(environmentYaml);
   }
 

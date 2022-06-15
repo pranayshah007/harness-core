@@ -12,9 +12,12 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
+import io.harness.delegate.task.shell.ssh.ArtifactCommandUnitHandler;
 import io.harness.logging.LogCallback;
 import io.harness.shell.ScriptSshExecutor;
 import io.harness.shell.SshSessionConfig;
+
+import java.util.Map;
 
 @OwnedBy(HarnessTeam.CDC)
 public class SshExecutorFactoryNG {
@@ -25,11 +28,12 @@ public class SshExecutorFactoryNG {
         sshSessionConfig);
   }
 
-  public FileBasedScriptExecutorNG getFileBasedExecutor(SshSessionConfig sshSessionConfig,
-      ILogStreamingTaskClient logStreamingTaskClient, CommandUnitsProgress commandUnitsProgress) {
+  public FileBasedSshScriptExecutorNG getFileBasedExecutor(SshSessionConfig sshSessionConfig,
+      ILogStreamingTaskClient logStreamingTaskClient, CommandUnitsProgress commandUnitsProgress,
+      Map<String, ArtifactCommandUnitHandler> artifactCommandHandlers) {
     return new FileBasedSshScriptExecutorNG(
-        getExecutionLogCallback(sshSessionConfig, logStreamingTaskClient, commandUnitsProgress), true,
-        sshSessionConfig);
+        getExecutionLogCallback(sshSessionConfig, logStreamingTaskClient, commandUnitsProgress), true, sshSessionConfig,
+        artifactCommandHandlers);
   }
 
   private static LogCallback getExecutionLogCallback(SshSessionConfig sshSessionConfig,

@@ -120,7 +120,8 @@ public class UserGroupResource {
 
   @POST
   @ApiOperation(value = "Create a User Group", nickname = "postUserGroup")
-  @Operation(operationId = "postUserGroup", summary = "Create a User Group in an account/org/project",
+  @Operation(operationId = "postUserGroup", summary = "Create User Group",
+      description = "Create a User Group in an account/org/project",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -146,7 +147,8 @@ public class UserGroupResource {
 
   @PUT
   @ApiOperation(value = "Update a User Group", nickname = "putUserGroup")
-  @Operation(operationId = "putUserGroup", summary = "Update a User Group in an account/org/project",
+  @Operation(operationId = "putUserGroup", description = "Update a User Group in an account/org/project",
+      summary = "Update User Group",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -174,7 +176,8 @@ public class UserGroupResource {
   @PUT
   @Path("/copy")
   @ApiOperation(value = "Copy a User Group to several scopes", nickname = "copyUserGroup")
-  @Operation(operationId = "copyUserGroup", summary = "Get a User Group in an account/org/project",
+  @Operation(operationId = "copyUserGroup", summary = "Copy User Group",
+      description = "Copy a User Group in an account/org/project",
       responses =
       { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "Returns whether the copy was successful") })
   public ResponseDTO<Boolean>
@@ -191,7 +194,8 @@ public class UserGroupResource {
   @GET
   @Path("{identifier}")
   @ApiOperation(value = "Get a User Group", nickname = "getUserGroup")
-  @Operation(operationId = "getUserGroup", summary = "Get a User Group in an account/org/project",
+  @Operation(operationId = "getUserGroup", summary = "Get User Group",
+      description = "Get a User Group in an account/org/project",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -217,7 +221,8 @@ public class UserGroupResource {
   @DELETE
   @Path("{identifier}")
   @ApiOperation(value = "Delete a User Group", nickname = "deleteUserGroup")
-  @Operation(operationId = "deleteUserGroup", summary = "Delete a User Group in an account/org/project",
+  @Operation(operationId = "deleteUserGroup", description = "Delete User Group",
+      summary = "Delete a User Group in an account/org/project",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -245,7 +250,8 @@ public class UserGroupResource {
 
   @GET
   @ApiOperation(value = "Get User Group List", nickname = "getUserGroupList")
-  @Operation(operationId = "getUserGroupList", summary = "List the User Groups in an account/org/project",
+  @Operation(operationId = "getUserGroupList", description = "List User Groups",
+      summary = "List the User Groups in an account/org/project",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -277,7 +283,8 @@ public class UserGroupResource {
   @GET
   @Path("{identifier}/scopes")
   @ApiOperation(value = "Get Inheriting Child Scope List", nickname = "getInheritingChildScopeList")
-  @Operation(operationId = "getInheritingChildScopeList", summary = "List the Child Scopes inheriting this User Group",
+  @Operation(operationId = "getInheritingChildScopeList", summary = "Get Inheriting Child Scopes",
+      description = "List the Child Scopes inheriting this User Group",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -301,8 +308,8 @@ public class UserGroupResource {
   @POST
   @Path("{identifier}/users")
   @ApiOperation(value = "List users in a user group", nickname = "getUsersInUserGroup")
-  @Operation(operationId = "getUserListInUserGroup",
-      summary = "List the users in a User Group in an account/org/project",
+  @Operation(operationId = "getUserListInUserGroup", summary = "List users in User Group",
+      description = "List the users in a User Group in an account/org/project",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -331,8 +338,8 @@ public class UserGroupResource {
   @POST
   @Path("batch")
   @ApiOperation(value = "Get Batch User Group List", nickname = "getBatchUserGroupList")
-  @Operation(operationId = "getBatchUsersGroupList",
-      summary = "List the User Groups selected by a filter in an account/org/project",
+  @Operation(operationId = "getBatchUsersGroupList", summary = "List User Groups by filter",
+      description = "List the User Groups selected by a filter in an account/org/project",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -355,8 +362,8 @@ public class UserGroupResource {
   @GET
   @Path("{identifier}/member/{userIdentifier}")
   @ApiOperation(value = "Check if the user is part of the user group", nickname = "checkMember")
-  @Operation(operationId = "getMember",
-      summary = "Check if the user is part of the user group in an account/org/project",
+  @Operation(operationId = "getMember", summary = "Check user membership",
+      description = "Check if the user is part of the user group in an account/org/project",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -382,7 +389,8 @@ public class UserGroupResource {
   @PUT
   @Path("{identifier}/member/{userIdentifier}")
   @ApiOperation(value = "Add a user to the user group", nickname = "addMember")
-  @Operation(operationId = "putMember", summary = "Add a user to the user group in an account/org/project",
+  @Operation(operationId = "putMember", summary = "Add user to User Group",
+      description = "Add a user to the user group in an account/org/project",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -409,7 +417,8 @@ public class UserGroupResource {
   @DELETE
   @Path("{identifier}/member/{userIdentifier}")
   @ApiOperation(value = "Remove a user from the user group", nickname = "removeMember")
-  @Operation(operationId = "deleteMember", summary = "Remove a user from the user group in an account/org/project",
+  @Operation(operationId = "deleteMember", summary = "Remove user from User Group",
+      description = "Remove a user from the user group in an account/org/project",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.

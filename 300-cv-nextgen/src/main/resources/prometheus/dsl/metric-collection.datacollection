@@ -14,7 +14,7 @@ while Var:index !=  Var:lengthOfItems {
     Var metricIdentifier =  Env:metricIdentifiers[Var:index]
 
     if Env:collectHostData == "true" {
-        Var hostQuery = concat(Env:baseUrl, "api/v1/label/", Var:serviceInstanceField, "/values?start=", Env:startTimeSeconds,"&end=", Env:endTimeSeconds)
+        Var hostQuery = concat(Env:baseUrl, "api/v1/label/", Var:serviceInstanceField, "/values?start=", Env:startTimeSeconds,"&end=", Env:endTimeSeconds, "&match[]={", Var:filters, "}")
         Var hostResult = sync-call(url=Var:hostQuery, header=Env:commonHeaders)
         Var hostList = extract(Var:hostResult,$.data)
         Var hostListLength = Var:hostList.length()

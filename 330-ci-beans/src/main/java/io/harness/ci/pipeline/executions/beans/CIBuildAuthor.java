@@ -9,15 +9,20 @@ package io.harness.ci.pipeline.executions.beans;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_EMPTY;
 
+import io.harness.annotation.RecasterAlias;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Builder;
 import lombok.Value;
+import org.springframework.data.annotation.TypeAlias;
 
 @Value
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(NON_EMPTY)
+@TypeAlias("ciBuildAuthor")
+@RecasterAlias("io.harness.ci.pipeline.executions.beans.CIBuildAuthor")
 public class CIBuildAuthor {
   private String id;
   private String name;

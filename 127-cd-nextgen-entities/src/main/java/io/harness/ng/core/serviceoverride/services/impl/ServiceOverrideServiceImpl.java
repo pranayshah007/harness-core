@@ -7,12 +7,14 @@
 
 package io.harness.ng.core.serviceoverride.services.impl;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.eventsframework.EventsFrameworkConstants.ENTITY_CRUD;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
 import static io.harness.springdata.TransactionUtils.DEFAULT_TRANSACTION_RETRY_POLICY;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.eventsframework.api.Producer;
 import io.harness.exception.InvalidRequestException;
@@ -22,10 +24,14 @@ import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity.NGServi
 import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.serviceoverride.yaml.NGServiceOverrideConfig;
 import io.harness.outbox.api.OutboxService;
+import io.harness.pms.merger.helpers.RuntimeInputFormHelper;
+import io.harness.pms.yaml.YamlField;
+import io.harness.pms.yaml.YamlUtils;
 import io.harness.repositories.serviceoverride.spring.ServiceOverrideRepository;
 import io.harness.utils.YamlPipelineUtils;
 import io.harness.yaml.core.variables.NGVariable;
 
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
@@ -33,8 +39,10 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.mongodb.client.result.DeleteResult;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -102,7 +110,7 @@ public class ServiceOverrideServiceImpl implements ServiceOverrideService {
       try {
         final NGServiceOverrideConfig config =
             YamlPipelineUtils.read(requestServiceOverride.getYaml(), NGServiceOverrideConfig.class);
-        variableOverrides = config.getServiceOverrideInfoConfig().getVariableOverrides();
+        variableOverrides = config.getServiceOverrideInfoConfig().getVariables();
       } catch (IOException e) {
         throw new InvalidRequestException("Cannot create service ng service config due to " + e.getMessage());
       }
@@ -159,6 +167,44 @@ public class ServiceOverrideServiceImpl implements ServiceOverrideService {
           "Service Override for Service [%s], Environment [%s], Project[%s], Organization [%s] doesn't exist.",
           serviceRef, environmentRef, projectIdentifier, orgIdentifier));
     }
+  }
+
+  @Override
+  public String createServiceOverrideInputsYaml(String accountId, String projectIdentifier, String orgIdentifier,
+      String environmentIdentifier, String serviceIdentifier) {
+    Map<String, Object> yamlInputs = createServiceOverrideInputsYamlInternal(
+        accountId, orgIdentifier, projectIdentifier, environmentIdentifier, serviceIdentifier);
+    if (isEmpty(yamlInputs)) {
+      return null;
+    }
+    return YamlPipelineUtils.writeYamlString(yamlInputs);
+  }
+
+  public Map<String, Object> createServiceOverrideInputsYamlInternal(String accountId, String orgIdentifier,
+      String projectIdentifier, String envIdentifier, String serviceIdentifier) {
+    Map<String, Object> yamlInputs = new HashMap<>();
+    Optional<NGServiceOverridesEntity> serviceOverridesEntityOptional =
+        get(accountId, orgIdentifier, projectIdentifier, envIdentifier, serviceIdentifier);
+    if (serviceOverridesEntityOptional.isPresent()) {
+      String yaml = serviceOverridesEntityOptional.get().getYaml();
+      if (isEmpty(yaml)) {
+        throw new InvalidRequestException("");
+      }
+      try {
+        String serviceOverrideInputs = RuntimeInputFormHelper.createRuntimeInputForm(yaml, true);
+        if (isEmpty(serviceOverrideInputs)) {
+          return null;
+        }
+        YamlField serviceOverridesYamlField =
+            YamlUtils.readTree(serviceOverrideInputs).getNode().getField(YamlTypes.SERVICE_OVERRIDE);
+        ObjectNode serviceOverridesNode = (ObjectNode) serviceOverridesYamlField.getNode().getCurrJsonNode();
+
+        yamlInputs.put(YamlTypes.SERVICE_OVERRIDE_INPUTS, serviceOverridesNode);
+      } catch (IOException e) {
+        throw new InvalidRequestException("Error occurred while creating Service Override inputs ", e);
+      }
+    }
+    return yamlInputs;
   }
 
   void validatePresenceOfRequiredFields(Object... fields) {

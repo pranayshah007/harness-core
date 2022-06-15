@@ -40,6 +40,8 @@ public interface NGTemplateRepositoryCustom {
 
   TemplateEntity deleteTemplate(TemplateEntity templateToDelete, String comments);
 
+  void hardDeleteTemplate(TemplateEntity templateEntity, String comments);
+
   Page<TemplateEntity> findAll(Criteria criteria, Pageable pageable, String accountIdentifier, String orgIdentifier,
       String projectIdentifier, boolean getDistinctFromBranches);
 

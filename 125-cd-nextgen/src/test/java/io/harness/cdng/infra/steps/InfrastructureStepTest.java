@@ -17,6 +17,7 @@ import static io.harness.rule.OwnerRule.NAVNEET;
 import static io.harness.rule.OwnerRule.SAHIL;
 import static io.harness.rule.OwnerRule.TMACARI;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
+import static io.harness.rule.OwnerRule.VITALIE;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -48,6 +49,8 @@ import io.harness.cdng.infra.yaml.K8SDirectInfrastructure.K8SDirectInfrastructur
 import io.harness.cdng.infra.yaml.K8sAzureInfrastructure;
 import io.harness.cdng.infra.yaml.K8sGcpInfrastructure;
 import io.harness.cdng.infra.yaml.PdcInfrastructure;
+import io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure;
+import io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure.SshWinRmAwsInfrastructureBuilder;
 import io.harness.cdng.infra.yaml.SshWinRmAzureInfrastructure;
 import io.harness.cdng.k8s.K8sStepHelper;
 import io.harness.cdng.pipeline.PipelineInfrastructure;
@@ -61,6 +64,7 @@ import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpCredentialType;
 import io.harness.delegate.beans.connector.gcpconnector.GcpManualDetailsDTO;
 import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
+import io.harness.delegate.task.ssh.PdcSshInfraDelegateConfig;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.sdk.EntityValidityDetails;
 import io.harness.logging.CommandExecutionStatus;
@@ -69,16 +73,20 @@ import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.ng.core.environment.services.EnvironmentService;
+import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.reflection.ReflectionUtils;
+import io.harness.repositories.UpsertOptions;
 import io.harness.rule.Owner;
 import io.harness.steps.OutputExpressionConstants;
 import io.harness.steps.environment.EnvironmentOutcome;
+import io.harness.steps.shellscript.SshInfraDelegateConfigOutput;
 
 import com.google.inject.name.Named;
 import java.util.Arrays;
@@ -90,6 +98,7 @@ import java.util.Optional;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
@@ -156,7 +165,7 @@ public class InfrastructureStepTest extends CategoryTest {
              any(), eq(RefObjectUtils.getSweepingOutputRefObject(OutputExpressionConstants.ENVIRONMENT))))
         .thenReturn(EnvironmentOutcome.builder().build());
     when(outcomeService.resolve(any(), eq(RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE))))
-        .thenReturn(ServiceStepOutcome.builder().build());
+        .thenReturn(ServiceStepOutcome.builder().type(ServiceSpecType.KUBERNETES).build());
     when(k8sStepHelper.getK8sInfraDelegateConfig(any(), eq(ambiance))).thenReturn(k8sInfraDelegateConfig);
 
     infrastructureStep.executeSyncAfterRbac(ambiance, infrastructureSpec, StepInputPackage.builder().build(), null);
@@ -173,6 +182,37 @@ public class InfrastructureStepTest extends CategoryTest {
     // Verifies `ngLogCallback` is used at least 2 times for the static logs
     verify(infrastructureStepHelper, atLeast(3)).getInfrastructureLogCallback(ambiance);
     verify(ngLogCallback, atLeast(2)).saveExecutionLog(anyString());
+  }
+
+  @Test
+  @Owner(developers = ACASIAN)
+  @Category(UnitTests.class)
+  public void testExecSyncAfterRbacWithPdcInfra() {
+    Ambiance ambiance = Ambiance.newBuilder().putSetupAbstractions(SetupAbstractionKeys.accountId, ACCOUNT_ID).build();
+
+    PdcSshInfraDelegateConfig pdcSshInfraDelegateConfig = PdcSshInfraDelegateConfig.builder().build();
+    Infrastructure infrastructureSpec = PdcInfrastructure.builder()
+                                            .credentialsRef(ParameterField.createValueField("sshKeyRef"))
+                                            .hosts(ParameterField.createValueField(Arrays.asList("host1", "host2")))
+                                            .build();
+
+    when(executionSweepingOutputService.resolve(
+             any(), eq(RefObjectUtils.getSweepingOutputRefObject(OutputExpressionConstants.ENVIRONMENT))))
+        .thenReturn(EnvironmentOutcome.builder().build());
+    when(outcomeService.resolve(any(), eq(RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE))))
+        .thenReturn(ServiceStepOutcome.builder().type(ServiceSpecType.SSH).build());
+    when(k8sStepHelper.getSshInfraDelegateConfig(any(), eq(ambiance))).thenReturn(pdcSshInfraDelegateConfig);
+
+    infrastructureStep.executeSyncAfterRbac(ambiance, infrastructureSpec, StepInputPackage.builder().build(), null);
+
+    ArgumentCaptor<SshInfraDelegateConfigOutput> pdcConfigOutputCaptor =
+        ArgumentCaptor.forClass(SshInfraDelegateConfigOutput.class);
+    verify(executionSweepingOutputService, times(1))
+        .consume(eq(ambiance), eq(OutputExpressionConstants.SSH_INFRA_DELEGATE_CONFIG_OUTPUT_NAME),
+            pdcConfigOutputCaptor.capture(), eq(StepOutcomeGroup.STAGE.name()));
+    SshInfraDelegateConfigOutput k8sInfraDelegateConfigOutput = pdcConfigOutputCaptor.getValue();
+    assertThat(k8sInfraDelegateConfigOutput).isNotNull();
+    assertThat(k8sInfraDelegateConfigOutput.getSshInfraDelegateConfig()).isEqualTo(pdcSshInfraDelegateConfig);
   }
 
   @Test
@@ -352,7 +392,7 @@ public class InfrastructureStepTest extends CategoryTest {
                                   .tags(Collections.emptyList())
                                   .build();
 
-    doReturn(expectedEnv).when(environmentService).upsert(expectedEnv);
+    doReturn(expectedEnv).when(environmentService).upsert(expectedEnv, UpsertOptions.DEFAULT);
   }
 
   @Test
@@ -574,6 +614,31 @@ public class InfrastructureStepTest extends CategoryTest {
   }
 
   @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testValidateSshWinRmAwsInfrastructure() {
+    SshWinRmAwsInfrastructureBuilder builder = SshWinRmAwsInfrastructure.builder();
+
+    infrastructureStep.validateInfrastructure(builder.build(), null);
+
+    builder.credentialsRef(new ParameterField<>(null, null, true, "expression1", null, true))
+        .connectorRef(ParameterField.createValueField("value"))
+        .build();
+
+    assertThatThrownBy(() -> infrastructureStep.validateInfrastructure(builder.build(), null))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining("Unresolved Expression : [expression1]");
+
+    builder.connectorRef(new ParameterField<>(null, null, true, "expression2", null, true))
+        .credentialsRef(ParameterField.createValueField("value"))
+        .build();
+
+    assertThatThrownBy(() -> infrastructureStep.validateInfrastructure(builder.build(), null))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining("Unresolved Expression : [expression2]");
+  }
+
+  @Test
   @Owner(developers = TMACARI)
   @Category(UnitTests.class)
   public void testValidateAzureWebAppInfrastructure() {
@@ -583,7 +648,6 @@ public class InfrastructureStepTest extends CategoryTest {
                                                    .resourceGroup(ParameterField.createValueField("resource-group"))
                                                    .appService(ParameterField.createValueField("appService"))
                                                    .deploymentSlot(ParameterField.createValueField("deployment-slot"))
-                                                   .targetSlot(ParameterField.createValueField("target-slot"))
                                                    .build();
 
     infrastructureStep.validateInfrastructure(infrastructure, null);

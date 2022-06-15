@@ -1899,72 +1899,74 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   }
 
   private void dispatchDelegateTask(DelegateTaskEvent delegateTaskEvent) {
-    log.info("DelegateTaskEvent received - {}", delegateTaskEvent);
-    String delegateTaskId = delegateTaskEvent.getDelegateTaskId();
+    try (TaskLogContext ignore = new TaskLogContext(delegateTaskEvent.getDelegateTaskId(), OVERRIDE_ERROR)) {
+      log.info("DelegateTaskEvent received - {}", delegateTaskEvent);
+      String delegateTaskId = delegateTaskEvent.getDelegateTaskId();
 
-    try {
-      if (frozen.get()) {
-        log.info(
-            "Delegate process with detected time out of sync or with revoked token is running. Won't acquire tasks.");
-        return;
+      try {
+        if (frozen.get()) {
+          log.info(
+              "Delegate process with detected time out of sync or with revoked token is running. Won't acquire tasks.");
+          return;
+        }
+
+        if (!acquireTasks.get()) {
+          log.info("[Old] Upgraded process is running. Won't acquire task while completing other tasks");
+          return;
+        }
+
+        if (upgradePending.get() && !delegateTaskEvent.isSync()) {
+          log.info("[Old] Upgrade pending, won't acquire async task");
+          return;
+        }
+
+        if (currentlyAcquiringTasks.contains(delegateTaskId)) {
+          log.info("Task [DelegateTaskEvent: {}] currently acquiring. Don't acquire again", delegateTaskEvent);
+          return;
+        }
+
+        if (currentlyValidatingTasks.containsKey(delegateTaskId)) {
+          log.info("Task [DelegateTaskEvent: {}] already validating. Don't validate again", delegateTaskEvent);
+          return;
+        }
+
+        currentlyAcquiringTasks.add(delegateTaskId);
+
+        log.debug("Try to acquire DelegateTask - accountId: {}", accountId);
+
+        DelegateTaskPackage delegateTaskPackage = executeRestCall(
+            delegateAgentManagerClient.acquireTask(delegateId, delegateTaskId, accountId, delegateInstanceId));
+        if (delegateTaskPackage == null || delegateTaskPackage.getData() == null) {
+          log.warn("Delegate task data not available for task: {} - accountId: {}", delegateTaskId,
+              delegateTaskEvent.getAccountId());
+          return;
+        } else {
+          log.info("received task package {} for delegateInstance {}", delegateTaskPackage, delegateInstanceId);
+        }
+
+        if (isEmpty(delegateTaskPackage.getDelegateInstanceId())) {
+          // Not whitelisted. Perform validation.
+          // TODO: Remove this once TaskValidation does not use secrets
+
+          // applyDelegateSecretFunctor(delegatePackage);
+          DelegateValidateTask delegateValidateTask = getDelegateValidateTask(delegateTaskEvent, delegateTaskPackage);
+          injector.injectMembers(delegateValidateTask);
+          currentlyValidatingTasks.put(delegateTaskPackage.getDelegateTaskId(), delegateTaskPackage);
+          updateCounterIfLessThanCurrent(maxValidatingTasksCount, currentlyValidatingTasks.size());
+          delegateValidateTask.validationResults();
+        } else if (delegateInstanceId.equals(delegateTaskPackage.getDelegateInstanceId())) {
+          applyDelegateSecretFunctor(delegateTaskPackage);
+          // Whitelisted. Proceed immediately.
+          log.info("Delegate {} whitelisted for task and accountId: {}", delegateId, accountId);
+          executeTask(delegateTaskPackage);
+        }
+
+      } catch (IOException e) {
+        log.error("Unable to get task for validation", e);
+      } finally {
+        currentlyAcquiringTasks.remove(delegateTaskId);
+        currentlyExecutingFutures.remove(delegateTaskId);
       }
-
-      if (!acquireTasks.get()) {
-        log.info("[Old] Upgraded process is running. Won't acquire task while completing other tasks");
-        return;
-      }
-
-      if (upgradePending.get() && !delegateTaskEvent.isSync()) {
-        log.info("[Old] Upgrade pending, won't acquire async task");
-        return;
-      }
-
-      if (currentlyAcquiringTasks.contains(delegateTaskId)) {
-        log.info("Task [DelegateTaskEvent: {}] currently acquiring. Don't acquire again", delegateTaskEvent);
-        return;
-      }
-
-      if (currentlyValidatingTasks.containsKey(delegateTaskId)) {
-        log.info("Task [DelegateTaskEvent: {}] already validating. Don't validate again", delegateTaskEvent);
-        return;
-      }
-
-      currentlyAcquiringTasks.add(delegateTaskId);
-
-      log.debug("Try to acquire DelegateTask - accountId: {}", accountId);
-
-      DelegateTaskPackage delegateTaskPackage = executeRestCall(
-          delegateAgentManagerClient.acquireTask(delegateId, delegateTaskId, accountId, delegateInstanceId));
-      if (delegateTaskPackage == null || delegateTaskPackage.getData() == null) {
-        log.warn("Delegate task data not available for task: {} - accountId: {}", delegateTaskId,
-            delegateTaskEvent.getAccountId());
-        return;
-      } else {
-        log.info("received task package {} for delegateInstance {}", delegateTaskPackage, delegateInstanceId);
-      }
-
-      if (isEmpty(delegateTaskPackage.getDelegateInstanceId())) {
-        // Not whitelisted. Perform validation.
-        // TODO: Remove this once TaskValidation does not use secrets
-
-        // applyDelegateSecretFunctor(delegatePackage);
-        DelegateValidateTask delegateValidateTask = getDelegateValidateTask(delegateTaskEvent, delegateTaskPackage);
-        injector.injectMembers(delegateValidateTask);
-        currentlyValidatingTasks.put(delegateTaskPackage.getDelegateTaskId(), delegateTaskPackage);
-        updateCounterIfLessThanCurrent(maxValidatingTasksCount, currentlyValidatingTasks.size());
-        delegateValidateTask.validationResults();
-      } else if (delegateInstanceId.equals(delegateTaskPackage.getDelegateInstanceId())) {
-        applyDelegateSecretFunctor(delegateTaskPackage);
-        // Whitelisted. Proceed immediately.
-        log.info("Delegate {} whitelisted for task and accountId: {}", delegateId, accountId);
-        executeTask(delegateTaskPackage);
-      }
-
-    } catch (IOException e) {
-      log.error("Unable to get task for validation", e);
-    } finally {
-      currentlyAcquiringTasks.remove(delegateTaskId);
-      currentlyExecutingFutures.remove(delegateTaskId);
     }
   }
 
@@ -2280,7 +2282,12 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
             log.info("Task {} response sent to manager", taskId);
             break;
           }
-          log.warn("Failed to send response for task {}: {}. {}", taskId, response == null ? "null" : response.code(),
+          log.warn("Failed to send response for task {}: {}. error: {}. requested url: {} {}", taskId,
+              response == null ? "null" : response.code(),
+              response == null || response.errorBody() == null ? "null" : response.errorBody().string(),
+              response == null || response.raw() == null || response.raw().request() == null
+                  ? "null"
+                  : response.raw().request().url(),
               attempt < (retries - 1) ? "Retrying." : "Giving up.");
           if (attempt < retries - 1) {
             // Do not sleep for last loop round, as we are going to fail.
@@ -2656,8 +2663,11 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
           log.info("Task {} response sent to manager", taskId);
           return;
         }
-        log.warn(
-            "Failed to send response for task {}: {}. {}", taskId, resp == null ? "null" : resp.code(), "Retrying.");
+        log.warn("Failed to send response for task {}: {}. error: {}. requested url: {} {}", taskId,
+            resp == null ? "null" : resp.code(),
+            resp == null || resp.errorBody() == null ? "null" : resp.errorBody().string(),
+            resp == null || resp.raw() == null || resp.raw().request() == null ? "null" : resp.raw().request().url(),
+            "Retrying.");
         sleep(ofSeconds(FibonacciBackOff.getFibonacciElement(attempt)));
       }
     } catch (Exception e) {

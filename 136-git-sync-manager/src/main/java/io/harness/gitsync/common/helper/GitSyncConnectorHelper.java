@@ -29,6 +29,7 @@ import io.harness.delegate.beans.git.YamlGitConfigDTO;
 import io.harness.exception.ConnectorNotFoundException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.UnexpectedException;
+import io.harness.gitsync.beans.GitRepositoryDTO;
 import io.harness.gitsync.common.service.YamlGitConfigService;
 import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
@@ -278,7 +279,8 @@ public class GitSyncConnectorHelper {
   public ScmConnector getScmConnectorForGivenRepo(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorRef, String repoName) {
     ScmConnector scmConnector = getScmConnector(accountIdentifier, orgIdentifier, projectIdentifier, connectorRef);
-    scmConnector.setUrl(scmConnector.getGitConnectionUrl(repoName));
+    scmConnector.setGitConnectionUrl(
+        scmConnector.getGitConnectionUrl(GitRepositoryDTO.builder().name(repoName).build()));
     return scmConnector;
   }
 
@@ -286,7 +288,8 @@ public class GitSyncConnectorHelper {
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorRef, String repoName) {
     ScmConnector scmConnector =
         getDecryptedConnectorByRef(accountIdentifier, orgIdentifier, projectIdentifier, connectorRef);
-    scmConnector.setUrl(scmConnector.getGitConnectionUrl(repoName));
+    scmConnector.setGitConnectionUrl(
+        scmConnector.getGitConnectionUrl(GitRepositoryDTO.builder().name(repoName).build()));
     return scmConnector;
   }
 }

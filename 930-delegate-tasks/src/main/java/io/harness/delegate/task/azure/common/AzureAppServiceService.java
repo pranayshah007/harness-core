@@ -64,7 +64,7 @@ public class AzureAppServiceService {
     return getAzureAppServicePreDeploymentDataAndLog(dockerDeploymentContext.getAzureWebClientContext(),
         dockerDeploymentContext.getSlotName(), dockerDeploymentContext.getTargetSlotName(),
         dockerDeploymentContext.getAppSettingsToAdd(), dockerDeploymentContext.getConnSettingsToAdd(), true,
-        dockerDeploymentContext.getLogCallbackProvider());
+        dockerDeploymentContext.getLogCallbackProvider(), dockerDeploymentContext.isSkipTargetSlotValidation());
   }
 
   public AzureAppServicePreDeploymentData getPackageDeploymentPreDeploymentData(
@@ -72,7 +72,7 @@ public class AzureAppServiceService {
     return getAzureAppServicePreDeploymentDataAndLog(packageDeploymentContext.getAzureWebClientContext(),
         packageDeploymentContext.getSlotName(), packageDeploymentContext.getTargetSlotName(),
         packageDeploymentContext.getAppSettingsToAdd(), packageDeploymentContext.getConnSettingsToAdd(), false,
-        packageDeploymentContext.getLogCallbackProvider());
+        packageDeploymentContext.getLogCallbackProvider(), false);
   }
 
   @VisibleForTesting
@@ -80,13 +80,15 @@ public class AzureAppServiceService {
       AzureWebClientContext azureWebClientContext, final String slotName, String targetSlotName,
       Map<String, AzureAppServiceApplicationSetting> userAddedAppSettings,
       Map<String, AzureAppServiceConnectionString> userAddedConnStrings, boolean includeDockerSettings,
-      AzureLogCallbackProvider logCallbackProvider) {
+      AzureLogCallbackProvider logCallbackProvider, boolean skipTargetSlotValidation) {
     LogCallback logCallback = logCallbackProvider.obtainLogCallback(SAVE_EXISTING_CONFIGURATIONS);
     logCallback.saveExecutionLog(String.format("Saving existing configurations for slot - [%s] of App Service - [%s]",
         slotName, azureWebClientContext.getAppName()));
 
     try {
-      validateSlotStatus(azureWebClientContext, slotName, targetSlotName, logCallback);
+      if (!skipTargetSlotValidation) {
+        validateSlotStatus(azureWebClientContext, slotName, targetSlotName, logCallback);
+      }
 
       AzureAppServicePreDeploymentDataBuilder preDeploymentDataBuilder =
           getDefaultPreDeploymentDataBuilder(azureWebClientContext.getAppName(), slotName);

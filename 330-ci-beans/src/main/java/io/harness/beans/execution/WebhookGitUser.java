@@ -7,11 +7,16 @@
 
 package io.harness.beans.execution;
 
+import io.harness.annotation.RecasterAlias;
+
 import lombok.Builder;
 import lombok.Value;
+import org.springframework.data.annotation.TypeAlias;
 
 @Value
 @Builder
+@TypeAlias("webhookGitUser")
+@RecasterAlias("io.harness.beans.execution.WebhookGitUser")
 public class WebhookGitUser {
   private String gitId;
   private String name;

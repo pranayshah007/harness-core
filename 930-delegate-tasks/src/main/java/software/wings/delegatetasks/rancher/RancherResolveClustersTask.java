@@ -19,6 +19,7 @@ import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.exception.InvalidArgumentsException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
@@ -99,7 +100,7 @@ public class RancherResolveClustersTask extends AbstractDelegateRunnableTask {
           CommandExecutionStatus.FAILURE);
       RancherResolveClustersResponse response =
           RancherResolveClustersResponse.builder().executionStatus(ExecutionStatus.FAILED).build();
-      response.setErrorMessage(e.getLocalizedMessage());
+      response.setErrorMessage(ExceptionMessageSanitizer.sanitizeException(e).getLocalizedMessage());
       return response;
     }
 

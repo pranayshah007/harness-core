@@ -10,6 +10,7 @@ package io.harness.beans.quantity;
 import static io.harness.annotations.dev.HarnessTeam.CI;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.quantity.unit.StorageQuantityUnit;
 import io.harness.exception.InvalidArgumentsException;
@@ -22,10 +23,13 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import lombok.Builder;
 import lombok.Data;
+import org.springframework.data.annotation.TypeAlias;
 
 @Data
 @Builder
 @OwnedBy(CI)
+@TypeAlias("storageQuantity")
+@RecasterAlias("io.harness.beans.quantity.StorageQuantity")
 public class StorageQuantity {
   private String numericValue;
   private StorageQuantityUnit unit;
