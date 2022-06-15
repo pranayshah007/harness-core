@@ -184,6 +184,7 @@ import io.harness.delegate.beans.connector.helm.HttpHelmConnectivityTaskResponse
 import io.harness.delegate.beans.connector.helm.HttpHelmValidationParams;
 import io.harness.delegate.beans.connector.helm.OciHelmConnectivityTaskParams;
 import io.harness.delegate.beans.connector.helm.OciHelmConnectivityTaskResponse;
+import io.harness.delegate.beans.connector.helm.OciHelmValidationParams;
 import io.harness.delegate.beans.connector.jenkins.JenkinsCapabilityHelper;
 import io.harness.delegate.beans.connector.jenkins.JenkinsTestConnectionTaskParams;
 import io.harness.delegate.beans.connector.jenkins.JenkinsTestConnectionTaskResponse;
@@ -1107,6 +1108,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(HttpHelmValidationParams.class, 19549);
     kryo.register(ConnectorValidationParameterResponse.class, 19551);
 
+    kryo.register(OciHelmValidationParams.class, 19630);
     kryo.register(HttpHelmConnectivityTaskParams.class, 19640);
     kryo.register(HttpHelmConnectivityTaskResponse.class, 19641);
     kryo.register(HttpHelmStoreDelegateConfig.class, 19642);

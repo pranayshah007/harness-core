@@ -123,7 +123,7 @@ public class InitiateNodeHandlerTest extends OrchestrationTestBase {
                                   .setInitiateMode(InitiateMode.CREATE_AND_START)
                                   .build();
     initiateNodeHandler.handleEventWithContext(event);
-    verify(engine).initiateNode(eq(ambiance), eq(event.getNodeId()), eq(event.getRuntimeId()), eq(null),
-        eq(null), eq(InitiateMode.CREATE_AND_START));
+    verify(engine).initiateNode(eq(ambiance), eq(event.getNodeId()), eq(event.getRuntimeId()), eq(null), eq(null),
+        eq(InitiateMode.CREATE_AND_START));
   }
 }

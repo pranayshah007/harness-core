@@ -8,11 +8,13 @@
 package io.harness.yaml.extended.ci.container;
 
 import static io.harness.annotations.dev.HarnessTeam.CI;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.number;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
+import io.harness.yaml.YamlSchemaTypes;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -49,7 +51,10 @@ public class ContainerResource {
     @ApiModelProperty(hidden = true)
     String uuid;
     @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) private ParameterField<String> memory;
-    @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) @Min(0) private ParameterField<String> cpu;
+    @YamlSchemaTypes(value = {number})
+    @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
+    @Min(0)
+    private ParameterField<String> cpu;
 
     @Builder
     @JsonCreator

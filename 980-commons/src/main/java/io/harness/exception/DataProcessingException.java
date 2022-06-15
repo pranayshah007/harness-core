@@ -16,6 +16,11 @@ import java.util.EnumSet;
 public class DataProcessingException extends WingsException {
   private static final String MESSAGE_ARG = "message";
 
+  public DataProcessingException(String message) {
+    super(message, null, DATA_PROCESSING_ERROR, Level.ERROR, null, null);
+    super.param(MESSAGE_ARG, message);
+  }
+
   public DataProcessingException(String message, EnumSet<ReportTarget> reportTargets) {
     super(message, null, DATA_PROCESSING_ERROR, Level.ERROR, reportTargets, null);
     super.param(MESSAGE_ARG, message);

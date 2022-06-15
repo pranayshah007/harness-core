@@ -22,6 +22,7 @@ import io.harness.delegate.task.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.k8s.ContainerDeploymentDelegateBaseHelper;
 import io.harness.exception.WingsException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogLevel;
@@ -98,15 +99,16 @@ public class KubernetesSteadyStateCheckTask extends AbstractDelegateRunnableTask
           .build();
     } catch (UncheckedTimeoutException e) {
       String msg = "Timed out waiting for controller to reach steady state";
-      log.error(msg, e);
+      log.error(msg, ExceptionMessageSanitizer.sanitizeException(e));
       executionLogCallback.saveExecutionLog(msg, LogLevel.ERROR, CommandExecutionStatus.FAILURE);
       return KubernetesSteadyStateCheckResponse.builder().executionStatus(ExecutionStatus.FAILED).build();
     } catch (WingsException e) {
-      Misc.logAllMessages(e, executionLogCallback);
+      Misc.logAllMessages(ExceptionMessageSanitizer.sanitizeException(e), executionLogCallback);
       throw e;
     } catch (Exception e) {
-      log.error("Exception in KubernetesSteadyStateCheck", e);
-      Misc.logAllMessages(e, executionLogCallback);
+      Exception sanitiseException = ExceptionMessageSanitizer.sanitizeException(e);
+      log.error("Exception in KubernetesSteadyStateCheck", sanitiseException);
+      Misc.logAllMessages(sanitiseException, executionLogCallback);
       executionLogCallback.saveExecutionLog("Exception occurred while waiting for controller to reach steady state",
           LogLevel.ERROR, CommandExecutionStatus.FAILURE);
       return KubernetesSteadyStateCheckResponse.builder().executionStatus(ExecutionStatus.FAILED).build();

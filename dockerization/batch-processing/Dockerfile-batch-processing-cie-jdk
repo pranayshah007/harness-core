@@ -18,11 +18,11 @@ RUN pip3 install awscli
 RUN curl -LO https://aka.ms/downloadazcopy-v10-linux && tar -xvf downloadazcopy-v10-linux && cp ./azcopy_linux_amd64_*/azcopy /usr/local/bin/ \
     && chmod +x /usr/local/bin/azcopy
 
+ENV AZCOPY_LOG_LOCATION=/opt/harness/azlogs
+
 COPY --chown=65534:65534 scripts /opt/harness
 
 RUN chmod +x /opt/harness/*.sh && chmod 700 -R /opt/harness/ && chown -R 65534:65534 /opt/harness/
-
-WORKDIR /opt/harness
 
 CMD [ "./run.sh" ]
 
