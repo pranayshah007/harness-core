@@ -16,6 +16,7 @@ import java.util.List;
 public enum DataSourceType {
   APP_DYNAMICS("Appdynamics", VerificationType.TIME_SERIES, "appdynamics"),
   SPLUNK("Splunk", VerificationType.LOG, "splunk"),
+  SPLUNK_METRIC("Splunk Metrics", VerificationType.TIME_SERIES, "prometheus"),
   STACKDRIVER("Stackdriver", VerificationType.TIME_SERIES, "prometheus"),
   STACKDRIVER_LOG("Stackdriver Log", VerificationType.LOG, "splunk"),
   KUBERNETES("Kubernetes", VerificationType.TIME_SERIES, "prometheus"),

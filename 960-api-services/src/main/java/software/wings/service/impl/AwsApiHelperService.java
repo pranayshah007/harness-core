@@ -30,6 +30,7 @@ import io.harness.exception.AwsAutoScaleException;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.serializer.JsonUtils;
 
 import software.wings.beans.AmazonClientSDKDefaultBackoffStrategy;
@@ -129,8 +130,9 @@ public class AwsApiHelperService {
     } catch (AmazonClientException amazonClientException) {
       handleAmazonClientException(amazonClientException);
     } catch (Exception e) {
-      log.error("Exception listRegions", e);
-      throw new InvalidRequestException(ExceptionUtils.getMessage(e), e);
+      Exception sanitizeException = ExceptionMessageSanitizer.sanitizeException(e);
+      log.error("Exception listRegions", sanitizeException);
+      throw new InvalidRequestException(ExceptionUtils.getMessage(sanitizeException), sanitizeException);
     }
     return emptyList();
   }
@@ -165,8 +167,9 @@ public class AwsApiHelperService {
     } catch (AmazonClientException amazonClientException) {
       handleAmazonClientException(amazonClientException);
     } catch (Exception e) {
-      log.error("Exception listS3Buckets", e);
-      throw new InvalidRequestException(ExceptionUtils.getMessage(e), e);
+      Exception sanitizeException = ExceptionMessageSanitizer.sanitizeException(e);
+      log.error("Exception listS3Buckets", sanitizeException);
+      throw new InvalidRequestException(ExceptionUtils.getMessage(sanitizeException), sanitizeException);
     }
     return emptyList();
   }
@@ -289,50 +292,52 @@ public class AwsApiHelperService {
   }
 
   public void handleAmazonClientException(AmazonClientException amazonClientException) {
-    log.error("AWS API Client call exception", amazonClientException);
-    String errorMessage = amazonClientException.getMessage();
+    AmazonClientException sanitizeException =
+        (AmazonClientException) ExceptionMessageSanitizer.sanitizeException(amazonClientException);
+    log.error("AWS API Client call exception", sanitizeException);
+    String errorMessage = sanitizeException.getMessage();
     if (isNotEmpty(errorMessage) && errorMessage.contains("/meta-data/iam/security-credentials/")) {
       throw new InvalidRequestException("The IAM role on the Ec2 delegate does not exist OR does not"
               + " have required permissions.",
-          amazonClientException, USER);
+          sanitizeException, USER);
     } else {
       log.error("Unhandled aws exception");
       throw new InvalidRequestException(
-          amazonClientException.getMessage() != null ? amazonClientException.getMessage() : "Exception Message",
+          sanitizeException.getMessage() != null ? sanitizeException.getMessage() : "Exception Message",
           ErrorCode.AWS_ACCESS_DENIED, USER);
     }
   }
 
   public void handleAmazonServiceException(AmazonServiceException amazonServiceException) {
-    log.error("AWS API call exception", amazonServiceException);
+    AmazonServiceException sanitizeException =
+        (AmazonServiceException) ExceptionMessageSanitizer.sanitizeException(amazonServiceException);
+    log.error("AWS API call exception", sanitizeException);
     if (amazonServiceException instanceof AmazonCodeDeployException) {
-      throw new WingsException(ErrorCode.AWS_ACCESS_DENIED).addParam("message", amazonServiceException.getMessage());
+      throw new WingsException(ErrorCode.AWS_ACCESS_DENIED).addParam("message", sanitizeException.getMessage());
     } else if (amazonServiceException instanceof AmazonEC2Exception) {
-      throw new WingsException(ErrorCode.AWS_ACCESS_DENIED).addParam("message", amazonServiceException.getMessage());
+      throw new WingsException(ErrorCode.AWS_ACCESS_DENIED).addParam("message", sanitizeException.getMessage());
     } else if (amazonServiceException instanceof ClusterNotFoundException) {
-      throw new WingsException(ErrorCode.AWS_CLUSTER_NOT_FOUND)
-          .addParam("message", amazonServiceException.getMessage());
+      throw new WingsException(ErrorCode.AWS_CLUSTER_NOT_FOUND).addParam("message", sanitizeException.getMessage());
     } else if (amazonServiceException instanceof ServiceNotFoundException) {
-      throw new WingsException(ErrorCode.AWS_SERVICE_NOT_FOUND)
-          .addParam("message", amazonServiceException.getMessage());
+      throw new WingsException(ErrorCode.AWS_SERVICE_NOT_FOUND).addParam("message", sanitizeException.getMessage());
     } else if (amazonServiceException instanceof AmazonAutoScalingException) {
-      throw new AwsAutoScaleException(amazonServiceException.getMessage(), ErrorCode.GENERAL_ERROR, USER);
+      throw new AwsAutoScaleException(sanitizeException.getMessage(), ErrorCode.GENERAL_ERROR, USER);
     } else if (amazonServiceException instanceof AmazonECSException
         || amazonServiceException instanceof AmazonECRException) {
       if (amazonServiceException instanceof ClientException) {
-        log.warn(amazonServiceException.getErrorMessage(), amazonServiceException);
+        log.warn(sanitizeException.getErrorMessage(), amazonServiceException);
         throw amazonServiceException;
       }
-      throw new WingsException(ErrorCode.AWS_ACCESS_DENIED).addParam("message", amazonServiceException.getMessage());
+      throw new WingsException(ErrorCode.AWS_ACCESS_DENIED).addParam("message", sanitizeException.getMessage());
     } else if (amazonServiceException instanceof AmazonCloudFormationException) {
-      if (amazonServiceException.getMessage().contains("No updates are to be performed")) {
-        log.error("Nothing to update on stack" + amazonServiceException.getMessage());
+      if (sanitizeException.getMessage().contains("No updates are to be performed")) {
+        log.error("Nothing to update on stack" + sanitizeException.getMessage());
       } else {
-        throw new InvalidRequestException(amazonServiceException.getMessage(), amazonServiceException);
+        throw new InvalidRequestException(sanitizeException.getMessage(), sanitizeException);
       }
     } else {
       log.error("Unhandled aws exception");
-      throw new WingsException(ErrorCode.AWS_ACCESS_DENIED).addParam("message", amazonServiceException.getMessage());
+      throw new WingsException(ErrorCode.AWS_ACCESS_DENIED).addParam("message", sanitizeException.getMessage());
     }
   }
 

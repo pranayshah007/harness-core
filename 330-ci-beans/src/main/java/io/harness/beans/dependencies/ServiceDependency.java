@@ -7,6 +7,7 @@
 
 package io.harness.beans.dependencies;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.pms.yaml.YamlNode;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -21,6 +22,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Data
 @Builder
 @TypeAlias("serviceDependency")
+@RecasterAlias("io.harness.beans.dependencies.ServiceDependency")
 public class ServiceDependency {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })

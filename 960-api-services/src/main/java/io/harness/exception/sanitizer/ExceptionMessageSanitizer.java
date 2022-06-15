@@ -11,6 +11,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.expression.SecretString.SECRET_MASK;
 import static io.harness.reflection.ReflectionUtils.getFieldByName;
 
+import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.replaceEach;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -114,6 +115,9 @@ public class ExceptionMessageSanitizer {
       return;
     }
     for (EncryptedDataDetail encryptedDataDetail : encryptedDataDetails) {
+      if (isBlank(encryptedDataDetail.getFieldName())) {
+        return;
+      }
       Field f = getFieldByName(object.getClass(), encryptedDataDetail.getFieldName());
       if (f == null) {
         log.warn("Could not find field {} in class {}", encryptedDataDetail.getFieldName(), object.getClass());

@@ -11,7 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.pcf.PcfUtils.logSdkCommand;
-import static io.harness.pcf.PcfUtils.logStatus;
+import static io.harness.pcf.PcfUtils.logSdkCommandFailure;
 import static io.harness.pcf.model.PcfConstants.PCF_ROUTE_PATH_SEPARATOR;
 import static io.harness.pcf.model.PcfConstants.PIVOTAL_CLOUD_FOUNDRY_CLIENT_EXCEPTION;
 import static io.harness.pcf.model.PcfConstants.PIVOTAL_CLOUD_FOUNDRY_LOG_PREFIX;
@@ -92,7 +92,6 @@ public class CfSdkClientImpl implements CfSdkClient {
       throws PivotalClientApiException, InterruptedException {
     log.info(format("%s Fetching Organizations", PIVOTAL_CLOUD_FOUNDRY_LOG_PREFIX));
 
-    logStatus(true, "getOrganizations");
     List<OrganizationSummary> organizations = new ArrayList<>();
 
     AtomicBoolean exceptionOccurred = new AtomicBoolean(false);
@@ -110,13 +109,15 @@ public class CfSdkClientImpl implements CfSdkClient {
 
       waitTillCompletion(latch, pcfRequestConfig.getTimeOutIntervalInMins());
       Instant end = Instant.now();
-      logSdkCommand(
-          "getCloudFoundryOperations().organizations().list()", null, Duration.between(start, end).toMillis());
       if (exceptionOccurred.get()) {
+        logSdkCommandFailure("getCloudFoundryOperations().organizations().list()", null,
+            Duration.between(start, end).toMillis(), errorBuilder.toString());
         throw new PivotalClientApiException(
             format("Exception occurred while fetching Organizations, Error: %s", errorBuilder.toString()));
+      } else {
+        logSdkCommand(
+            "getCloudFoundryOperations().organizations().list()", null, Duration.between(start, end).toMillis());
       }
-      logStatus(false, "getOrganizations");
       return organizations;
     }
   }
@@ -131,7 +132,6 @@ public class CfSdkClientImpl implements CfSdkClient {
   public List<String> getSpacesForOrganization(CfRequestConfig pcfRequestConfig)
       throws PivotalClientApiException, InterruptedException {
     log.info(format("%s Fetching Spaces", PIVOTAL_CLOUD_FOUNDRY_LOG_PREFIX));
-    logStatus(true, "getSpacesForOrganization");
     List<OrganizationDetail> organizationDetails = new ArrayList<>();
     List<String> spaces = new ArrayList<>();
 
@@ -152,14 +152,16 @@ public class CfSdkClientImpl implements CfSdkClient {
 
       waitTillCompletion(latch, pcfRequestConfig.getTimeOutIntervalInMins());
       Instant end = Instant.now();
-      logSdkCommand(
-          ".getCloudFoundryOperations().organizations().get()", request, Duration.between(start, end).toMillis());
+
       if (exceptionOccurred.get()) {
+        logSdkCommandFailure(".getCloudFoundryOperations().organizations().get()", request,
+            Duration.between(start, end).toMillis(), errorBuilder.toString());
         throw new PivotalClientApiException(
             format("Exception occurred while fetching Spaces, Error: %s", errorBuilder.toString()));
+      } else {
+        logSdkCommand(
+            ".getCloudFoundryOperations().organizations().get()", request, Duration.between(start, end).toMillis());
       }
-
-      logStatus(false, "getSpacesForOrganization");
 
       if (!CollectionUtils.isEmpty(organizationDetails)) {
         return organizationDetails.stream()
@@ -174,7 +176,6 @@ public class CfSdkClientImpl implements CfSdkClient {
   public List<ApplicationSummary> getApplications(CfRequestConfig pcfRequestConfig)
       throws PivotalClientApiException, InterruptedException {
     log.info(format("%s Fetching PCF Applications", PIVOTAL_CLOUD_FOUNDRY_LOG_PREFIX));
-    logStatus(true, "getApplications");
 
     List<ApplicationSummary> applicationSummaries = new ArrayList<>();
 
@@ -194,12 +195,15 @@ public class CfSdkClientImpl implements CfSdkClient {
 
       waitTillCompletion(latch, pcfRequestConfig.getTimeOutIntervalInMins());
       Instant end = Instant.now();
-      logSdkCommand(
-          ".getCloudFoundryOperations().applications().list()", null, Duration.between(start, end).toMillis());
-      logStatus(false, "getApplications");
+
       if (exceptionOccurred.get()) {
+        logSdkCommandFailure(".getCloudFoundryOperations().applications().list()", null,
+            Duration.between(start, end).toMillis(), errorBuilder.toString());
         throw new PivotalClientApiException(
             format("Exception occurred while fetching Applications, Error: %s", errorBuilder.toString()));
+      } else {
+        logSdkCommand(
+            ".getCloudFoundryOperations().applications().list()", null, Duration.between(start, end).toMillis());
       }
       return applicationSummaries;
     }
@@ -210,7 +214,6 @@ public class CfSdkClientImpl implements CfSdkClient {
       throws PivotalClientApiException, InterruptedException {
     log.info(
         format("%s Getting application: %s", PIVOTAL_CLOUD_FOUNDRY_LOG_PREFIX, pcfRequestConfig.getApplicationName()));
-    logStatus(true, "getApplicationByName");
     List<ApplicationDetail> applicationDetails = new ArrayList<>();
 
     CountDownLatch latch = new CountDownLatch(1);
@@ -232,12 +235,15 @@ public class CfSdkClientImpl implements CfSdkClient {
 
       waitTillCompletion(latch, pcfRequestConfig.getTimeOutIntervalInMins());
       Instant end = Instant.now();
-      logSdkCommand(
-          ".getCloudFoundryOperations().applications().get()", request, Duration.between(start, end).toMillis());
-      logStatus(false, "getApplicationByName");
+
       if (exceptionOccurred.get()) {
+        logSdkCommandFailure(".getCloudFoundryOperations().applications().get()", request,
+            Duration.between(start, end).toMillis(), errorBuilder.toString());
         throw new PivotalClientApiException(format("Exception occurred while getting application: %s, Error: %s",
             pcfRequestConfig.getApplicationName(), errorBuilder.toString()));
+      } else {
+        logSdkCommand(
+            ".getCloudFoundryOperations().applications().get()", request, Duration.between(start, end).toMillis());
       }
       return isNotEmpty(applicationDetails) ? applicationDetails.get(0) : null;
     }
@@ -255,7 +261,6 @@ public class CfSdkClientImpl implements CfSdkClient {
     log.info(
         format("%s Starting application: %s", PIVOTAL_CLOUD_FOUNDRY_LOG_PREFIX, pcfRequestConfig.getApplicationName()));
 
-    logStatus(true, "startApplication");
     CountDownLatch latch = new CountDownLatch(1);
     AtomicBoolean exceptionOccurred = new AtomicBoolean(false);
     StringBuilder errorBuilder = new StringBuilder();
@@ -273,12 +278,15 @@ public class CfSdkClientImpl implements CfSdkClient {
 
       waitTillCompletion(latch, pcfRequestConfig.getTimeOutIntervalInMins());
       Instant end = Instant.now();
-      logSdkCommand(
-          ".getCloudFoundryOperations().applications().start()", request, Duration.between(start, end).toMillis());
-      logStatus(false, "startApplication");
+
       if (exceptionOccurred.get()) {
+        logSdkCommandFailure(".getCloudFoundryOperations().applications().start()", request,
+            Duration.between(start, end).toMillis(), errorBuilder.toString());
         throw new PivotalClientApiException(format("Exception occurred while starting application: %s, Error: %s",
             pcfRequestConfig.getApplicationName(), errorBuilder.toString()));
+      } else {
+        logSdkCommand(
+            ".getCloudFoundryOperations().applications().start()", request, Duration.between(start, end).toMillis());
       }
     }
   }
@@ -288,7 +296,6 @@ public class CfSdkClientImpl implements CfSdkClient {
       throws PivotalClientApiException, InterruptedException {
     log.info(format("%s Scaling Applications: %s, to count: %s", PIVOTAL_CLOUD_FOUNDRY_LOG_PREFIX,
         pcfRequestConfig.getApplicationName(), pcfRequestConfig.getDesiredCount()));
-    logStatus(true, "scaleApplications");
     CountDownLatch latch = new CountDownLatch(1);
     AtomicBoolean exceptionOccurred = new AtomicBoolean(false);
     StringBuilder errorBuilder = new StringBuilder();
@@ -308,13 +315,16 @@ public class CfSdkClientImpl implements CfSdkClient {
 
       waitTillCompletion(latch, pcfRequestConfig.getTimeOutIntervalInMins());
       Instant end = Instant.now();
-      logSdkCommand(
-          ".getCloudFoundryOperations().applications().scale()", request, Duration.between(start, end).toMillis());
-      logStatus(false, "scaleApplications");
+
       if (exceptionOccurred.get()) {
+        logSdkCommandFailure(".getCloudFoundryOperations().applications().scale()", request,
+            Duration.between(start, end).toMillis(), errorBuilder.toString());
         throw new PivotalClientApiException(
             format("Exception occurred Scaling Applications: %s, to count: %s, Error: %s",
                 pcfRequestConfig.getApplicationName(), pcfRequestConfig.getDesiredCount(), errorBuilder.toString()));
+      } else {
+        logSdkCommand(
+            ".getCloudFoundryOperations().applications().scale()", request, Duration.between(start, end).toMillis());
       }
     }
   }
@@ -323,7 +333,6 @@ public class CfSdkClientImpl implements CfSdkClient {
   public void stopApplication(CfRequestConfig pcfRequestConfig) throws PivotalClientApiException, InterruptedException {
     log.info(
         format("%s Stopping Application: %s", PIVOTAL_CLOUD_FOUNDRY_LOG_PREFIX, pcfRequestConfig.getApplicationName()));
-    logStatus(true, "stopApplication");
     CountDownLatch latch = new CountDownLatch(1);
     AtomicBoolean exceptionOccurred = new AtomicBoolean(false);
     StringBuilder errorBuilder = new StringBuilder();
@@ -342,12 +351,14 @@ public class CfSdkClientImpl implements CfSdkClient {
       waitTillCompletion(latch, pcfRequestConfig.getTimeOutIntervalInMins());
       Instant end = Instant.now();
 
-      logSdkCommand(
-          ".getCloudFoundryOperations().applications().stop()", request, Duration.between(start, end).toMillis());
-      logStatus(false, "stopApplication");
       if (exceptionOccurred.get()) {
+        logSdkCommandFailure(".getCloudFoundryOperations().applications().stop()", request,
+            Duration.between(start, end).toMillis(), errorBuilder.toString());
         throw new PivotalClientApiException(format("Exception occurred while stopping Application: %s, Error: %s",
             pcfRequestConfig.getApplicationName(), errorBuilder.toString()));
+      } else {
+        logSdkCommand(
+            ".getCloudFoundryOperations().applications().stop()", request, Duration.between(start, end).toMillis());
       }
     }
   }
@@ -372,7 +383,6 @@ public class CfSdkClientImpl implements CfSdkClient {
       throws PivotalClientApiException, InterruptedException {
     log.info(
         format("%s Renaming Application: %s", PIVOTAL_CLOUD_FOUNDRY_LOG_PREFIX, cfRenameRequest.getApplicationName()));
-    logStatus(true, "renameApplicationInternal");
     CountDownLatch latch = new CountDownLatch(1);
     AtomicBoolean exceptionOccurred = new AtomicBoolean(false);
     StringBuilder errorBuilder = new StringBuilder();
@@ -391,12 +401,15 @@ public class CfSdkClientImpl implements CfSdkClient {
 
       waitTillCompletion(latch, cfRenameRequest.getTimeOutIntervalInMins());
       Instant end = Instant.now();
-      logSdkCommand(
-          ".getCloudFoundryOperations().applications().rename()", request, Duration.between(start, end).toMillis());
-      logStatus(false, "renameApplicationInternal");
+
       if (exceptionOccurred.get()) {
+        logSdkCommandFailure(".getCloudFoundryOperations().applications().rename()", request,
+            Duration.between(start, end).toMillis(), errorBuilder.toString());
         throw new PivotalClientApiException(format("Exception occurred while renaming Application: %s, Error: %s",
             cfRenameRequest.getApplicationName(), errorBuilder.toString()));
+      } else {
+        logSdkCommand(
+            ".getCloudFoundryOperations().applications().rename()", request, Duration.between(start, end).toMillis());
       }
     }
   }
@@ -406,7 +419,6 @@ public class CfSdkClientImpl implements CfSdkClient {
       throws PivotalClientApiException, InterruptedException {
     log.info(
         format("%s Deleting application: %s", PIVOTAL_CLOUD_FOUNDRY_LOG_PREFIX, pcfRequestConfig.getApplicationName()));
-    logStatus(true, "deleteApplication");
     StringBuilder errorBuilder = new StringBuilder();
     CountDownLatch latch = new CountDownLatch(1);
     AtomicBoolean exceptionOccured = new AtomicBoolean(false);
@@ -424,12 +436,15 @@ public class CfSdkClientImpl implements CfSdkClient {
 
       waitTillCompletion(latch, pcfRequestConfig.getTimeOutIntervalInMins());
       Instant end = Instant.now();
-      logSdkCommand(
-          ".getCloudFoundryOperations().applications().delete()", request, Duration.between(start, end).toMillis());
-      logStatus(false, "deleteApplication");
+
       if (exceptionOccured.get()) {
+        logSdkCommandFailure(".getCloudFoundryOperations().applications().delete()", request,
+            Duration.between(start, end).toMillis(), errorBuilder.toString());
         throw new PivotalClientApiException(format("Exception occurred while deleting application: %s, Error: %s",
             pcfRequestConfig.getApplicationName(), errorBuilder.toString()));
+      } else {
+        logSdkCommand(
+            ".getCloudFoundryOperations().applications().delete()", request, Duration.between(start, end).toMillis());
       }
     }
   }
@@ -438,7 +453,6 @@ public class CfSdkClientImpl implements CfSdkClient {
   public void pushAppBySdk(CfRequestConfig pcfRequestConfig, Path path, LogCallback logCallback)
       throws PivotalClientApiException, InterruptedException {
     logCallback.saveExecutionLog("Using SDK to create application, Deprecated... Please enable flag: USE_PCF_CLI");
-    logStatus(true, "pushAppBySdk");
     List<ApplicationManifest> applicationManifests = ApplicationManifestUtils.read(path);
     ApplicationManifest applicationManifest = applicationManifests.get(0);
     applicationManifest = initializeApplicationManifest(applicationManifest, pcfRequestConfig);
@@ -460,13 +474,16 @@ public class CfSdkClientImpl implements CfSdkClient {
 
       waitTillCompletion(latch, 10);
       Instant end = Instant.now();
-      logSdkCommand(".getCloudFoundryOperations().applications().pushManifest()", request,
-          Duration.between(start, end).toMillis());
-      logStatus(false, "pushAppBySdk");
 
       if (exceptionOccurred.get()) {
+        logSdkCommandFailure(".getCloudFoundryOperations().applications().pushManifest()", request,
+            Duration.between(start, end).toMillis(), errorBuilder.toString());
+
         throw new PivotalClientApiException(format("Exception occurred while creating Application: %s, Error: %s",
             pcfRequestConfig.getApplicationName(), errorBuilder.toString()));
+      } else {
+        logSdkCommand(".getCloudFoundryOperations().applications().pushManifest()", request,
+            Duration.between(start, end).toMillis());
       }
     }
   }
@@ -549,7 +566,6 @@ public class CfSdkClientImpl implements CfSdkClient {
         PIVOTAL_CLOUD_FOUNDRY_LOG_PREFIX, host + "." + domain, pcfRequestConfig.getEndpointUrl(),
         pcfRequestConfig.getOrgName(), pcfRequestConfig.getSpaceName(), pcfRequestConfig.getApplicationName()));
 
-    logStatus(true, "createRouteMap");
     path = isBlank(path) ? null : path;
     CreateRouteRequest.Builder createRouteRequestBuilder =
         getCreateRouteRequest(pcfRequestConfig, host, domain, path, tcpRoute, useRandomPort, port);
@@ -571,14 +587,18 @@ public class CfSdkClientImpl implements CfSdkClient {
 
       waitTillCompletion(latch2, 5);
       Instant end = Instant.now();
-      logSdkCommand(".getCloudFoundryOperations().routes().create()", request, Duration.between(start, end).toMillis());
-      logStatus(false, "createRouteMap");
+
       if (exceptionOccurred.get()) {
+        logSdkCommandFailure(".getCloudFoundryOperations().routes().create()", request,
+            Duration.between(start, end).toMillis(), errorBuilder.toString());
         throw new PivotalClientApiException(format(
             "Exception occurred while creating routeMap: %s for Endpoint: %s, Organization: %s, for Space: %s, AppName: %s, Host: %s, Domain: %s, Path: %s, Port %s, Error: %s",
             host + "." + domain, pcfRequestConfig.getEndpointUrl(), pcfRequestConfig.getOrgName(),
             pcfRequestConfig.getSpaceName(), pcfRequestConfig.getApplicationName(), host, domain, path, port,
             errorBuilder.toString()));
+      } else {
+        logSdkCommand(
+            ".getCloudFoundryOperations().routes().create()", request, Duration.between(start, end).toMillis());
       }
     }
   }
@@ -615,7 +635,6 @@ public class CfSdkClientImpl implements CfSdkClient {
       throws PivotalClientApiException, InterruptedException {
     log.info(format("%s Unmapping routeMap for Application: %s", PIVOTAL_CLOUD_FOUNDRY_LOG_PREFIX,
         cfRequestConfig.getApplicationName()));
-    logStatus(true, "unmapRouteMapForApp");
     CountDownLatch latch = new CountDownLatch(1);
     UnmapRouteRequest.Builder builder = UnmapRouteRequest.builder()
                                             .applicationName(cfRequestConfig.getApplicationName())
@@ -641,12 +660,16 @@ public class CfSdkClientImpl implements CfSdkClient {
 
       waitTillCompletion(latch, cfRequestConfig.getTimeOutIntervalInMins());
       Instant end = Instant.now();
-      logSdkCommand(".getCloudFoundryOperations().routes().unmap()", request, Duration.between(start, end).toMillis());
-      logStatus(false, "unmapRouteMapForApp");
+
       if (exceptionOccurred.get()) {
+        logSdkCommandFailure(".getCloudFoundryOperations().routes().unmap()", request,
+            Duration.between(start, end).toMillis(), errorBuilder.toString());
         throw new PivotalClientApiException(
             format("Exception occurred while unmapping routeMap for Application: %s, Error: %s",
                 cfRequestConfig.getApplicationName(), errorBuilder.toString()));
+      } else {
+        logSdkCommand(
+            ".getCloudFoundryOperations().routes().unmap()", request, Duration.between(start, end).toMillis());
       }
     }
   }
@@ -743,7 +766,6 @@ public class CfSdkClientImpl implements CfSdkClient {
       throws PivotalClientApiException, InterruptedException {
     log.info(format("%s Mapping routeMap: %s, AppName: %s", PIVOTAL_CLOUD_FOUNDRY_LOG_PREFIX, route,
         cfRequestConfig.getApplicationName()));
-    logStatus(true, "mapRouteMapForApp");
 
     MapRouteRequest.Builder builder = MapRouteRequest.builder()
                                           .applicationName(cfRequestConfig.getApplicationName())
@@ -770,12 +792,15 @@ public class CfSdkClientImpl implements CfSdkClient {
 
       waitTillCompletion(latch, cfRequestConfig.getTimeOutIntervalInMins());
       Instant end = Instant.now();
-      logSdkCommand(".getCloudFoundryOperations().routes().map()", request, Duration.between(start, end).toMillis());
-      logStatus(false, "mapRouteMapForApp");
+
       if (exceptionOccurred.get()) {
+        logSdkCommandFailure(".getCloudFoundryOperations().routes().map()", request,
+            Duration.between(start, end).toMillis(), errorBuilder.toString());
         throw new PivotalClientApiException(
             format("Exception occurred while mapping routeMap: %s, AppName: %s, Error: %s", route,
                 cfRequestConfig.getApplicationName(), errorBuilder.toString()));
+      } else {
+        logSdkCommand(".getCloudFoundryOperations().routes().map()", request, Duration.between(start, end).toMillis());
       }
     }
   }
@@ -823,7 +848,6 @@ public class CfSdkClientImpl implements CfSdkClient {
       throws PivotalClientApiException, InterruptedException {
     log.info(format("%s Getting routeMaps for Application: %s", PIVOTAL_CLOUD_FOUNDRY_LOG_PREFIX,
         cfRequestConfig.getApplicationName()));
-    logStatus(true, "getAllRoutesForSpace");
     List<Route> routes = new ArrayList<>();
 
     CountDownLatch latch = new CountDownLatch(1);
@@ -842,12 +866,15 @@ public class CfSdkClientImpl implements CfSdkClient {
 
       waitTillCompletion(latch, cfRequestConfig.getTimeOutIntervalInMins());
       Instant end = Instant.now();
-      logSdkCommand(".getCloudFoundryOperations().routes().list()", request, Duration.between(start, end).toMillis());
-      logStatus(false, "getAllRoutesForSpace");
+
       if (exceptionOccurred.get()) {
+        logSdkCommandFailure(".getCloudFoundryOperations().routes().list()", request,
+            Duration.between(start, end).toMillis(), errorBuilder.toString());
         throw new PivotalClientApiException(
             format("Exception occurred while getting routeMaps for Application: %s, Error: %s",
                 cfRequestConfig.getApplicationName(), errorBuilder.toString()));
+      } else {
+        logSdkCommand(".getCloudFoundryOperations().routes().list()", request, Duration.between(start, end).toMillis());
       }
       return routes;
     }
@@ -863,11 +890,11 @@ public class CfSdkClientImpl implements CfSdkClient {
   @Override
   public List<LogMessage> getRecentLogs(CfRequestConfig cfRequestConfig, long logsAfterTsNs)
       throws PivotalClientApiException {
-    logStatus(true, "getRecentLogs");
+    Instant start = Instant.now();
     try (CloudFoundryOperationsWrapper operationsWrapper =
              cloudFoundryOperationsProvider.getCloudFoundryOperationsWrapper(cfRequestConfig)) {
       LogsRequest request = LogsRequest.builder().name(cfRequestConfig.getApplicationName()).recent(true).build();
-      Instant start = Instant.now();
+
       List<LogMessage> result =
           operationsWrapper.getCloudFoundryOperations()
               .applications()
@@ -881,12 +908,13 @@ public class CfSdkClientImpl implements CfSdkClient {
       Instant end = Instant.now();
       logSdkCommand(
           ".getCloudFoundryOperations().applications().logs()", request, Duration.between(start, end).toMillis());
-      logStatus(false, "getRecentLogs");
       return result;
     } catch (Exception e) {
       final StringBuilder errorBuilder = new StringBuilder();
       handleException(e, "getRecentLogs", errorBuilder);
-
+      Instant end = Instant.now();
+      logSdkCommandFailure(".getCloudFoundryOperations().applications().logs()", cfRequestConfig.getApplicationName(),
+          Duration.between(start, end).toMillis(), e.getMessage());
       throw new PivotalClientApiException(
           format("Exception occurred while getting recent logs for application:  %s, Error: %s",
               cfRequestConfig.getApplicationName(), errorBuilder.toString()));
@@ -898,7 +926,6 @@ public class CfSdkClientImpl implements CfSdkClient {
       throws PivotalClientApiException {
     log.info(
         format("%s Getting application: %s", PIVOTAL_CLOUD_FOUNDRY_LOG_PREFIX, cfRequestConfig.getApplicationName()));
-    logStatus(true, "getApplicationEnvironmentsByName");
     List<ApplicationEnvironments> applicationEnvironments = new ArrayList<>();
 
     CountDownLatch latch = new CountDownLatch(1);
@@ -919,13 +946,16 @@ public class CfSdkClientImpl implements CfSdkClient {
 
       waitTillCompletion(latch, cfRequestConfig.getTimeOutIntervalInMins());
       Instant end = Instant.now();
-      logSdkCommand(".getCloudFoundryOperations().applications().getEnvironments()", request,
-          Duration.between(start, end).toMillis());
-      logStatus(false, "getApplicationEnvironmentsByName");
+
       if (exceptionOccurred.get()) {
+        logSdkCommandFailure(".getCloudFoundryOperations().applications().getEnvironments()", request,
+            Duration.between(start, end).toMillis(), errorBuilder.toString());
         throw new PivotalClientApiException(
             format("Exception occurred while getting application Environments: %s, Error: %s",
                 cfRequestConfig.getApplicationName(), errorBuilder.toString()));
+      } else {
+        logSdkCommand(".getCloudFoundryOperations().applications().getEnvironments()", request,
+            Duration.between(start, end).toMillis());
       }
 
       return isNotEmpty(applicationEnvironments) ? applicationEnvironments.get(0) : null;
@@ -941,7 +971,6 @@ public class CfSdkClientImpl implements CfSdkClient {
   public void getTasks(CfRequestConfig cfRequestConfig) throws PivotalClientApiException, InterruptedException {
     log.info(format("%s Getting Tasks for Applications: %s", PIVOTAL_CLOUD_FOUNDRY_LOG_PREFIX,
         cfRequestConfig.getApplicationName()));
-    logStatus(true, "getTasks");
     List<Task> tasks = new ArrayList<>();
 
     CountDownLatch latch = new CountDownLatch(1);
@@ -962,13 +991,16 @@ public class CfSdkClientImpl implements CfSdkClient {
 
       waitTillCompletion(latch, cfRequestConfig.getTimeOutIntervalInMins());
       Instant end = Instant.now();
-      logSdkCommand(
-          ".getCloudFoundryOperations().applications().listTasks()", request, Duration.between(start, end).toMillis());
-      logStatus(false, "getTasks");
+
       if (exceptionOccurred.get()) {
+        logSdkCommandFailure(".getCloudFoundryOperations().applications().listTasks()", request,
+            Duration.between(start, end).toMillis(), errorBuilder.toString());
         throw new PivotalClientApiException(
             format("Exception occurred while getting Tasks for Application: %s, Error: %s",
                 cfRequestConfig.getApplicationName(), errorBuilder.toString()));
+      } else {
+        logSdkCommand(".getCloudFoundryOperations().applications().listTasks()", request,
+            Duration.between(start, end).toMillis());
       }
     }
   }
@@ -978,7 +1010,6 @@ public class CfSdkClientImpl implements CfSdkClient {
       throws PivotalClientApiException, InterruptedException {
     log.info(
         format("%s Getting Domains for Space: %s", PIVOTAL_CLOUD_FOUNDRY_LOG_PREFIX, cfRequestConfig.getSpaceName()));
-    logStatus(true, "getAllDomainsForSpace");
     List<Domain> domains = new ArrayList<>();
 
     CountDownLatch latch = new CountDownLatch(1);
@@ -997,11 +1028,13 @@ public class CfSdkClientImpl implements CfSdkClient {
       waitTillCompletion(latch, cfRequestConfig.getTimeOutIntervalInMins());
       Instant end = Instant.now();
 
-      logSdkCommand(".getCloudFoundryOperations().domains().list()", null, Duration.between(start, end).toMillis());
-      logStatus(false, "getAllDomainsForSpace");
       if (exceptionOccurred.get()) {
+        logSdkCommandFailure(".getCloudFoundryOperations().domains().list()", null,
+            Duration.between(start, end).toMillis(), errorBuilder.toString());
         throw new PivotalClientApiException(format("Exception occurred while getting domains for space: %s, Error: %s",
             cfRequestConfig.getSpaceName(), errorBuilder.toString()));
+      } else {
+        logSdkCommand(".getCloudFoundryOperations().domains().list()", null, Duration.between(start, end).toMillis());
       }
       return domains;
     }

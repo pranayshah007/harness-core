@@ -10,7 +10,6 @@ package io.harness.gitsync;
 import static io.harness.Microservice.CF;
 import static io.harness.Microservice.CORE;
 import static io.harness.Microservice.PMS;
-import static io.harness.Microservice.POLICYMGMT;
 import static io.harness.Microservice.TEMPLATESERVICE;
 import static io.harness.connector.ConnectorModule.DEFAULT_CONNECTOR_SERVICE;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
@@ -252,7 +251,6 @@ public class GitSyncTestRule implements InjectorRuleMixin, MethodRule, MongoRule
       Map<EntityType, Microservice> getEntityTypeMicroserviceMap() {
         return ImmutableMap.<EntityType, Microservice>builder()
             .put(EntityType.CONNECTORS, CORE)
-            .put(EntityType.OPAPOLICIES, POLICYMGMT)
             .put(EntityType.PIPELINES, PMS)
             .put(EntityType.FEATURE_FLAGS, CF)
             .put(EntityType.INPUT_SETS, PMS)
@@ -263,7 +261,7 @@ public class GitSyncTestRule implements InjectorRuleMixin, MethodRule, MongoRule
       @Provides
       @Singleton
       List<Microservice> getMicroservicesProcessingOrder() {
-        return Arrays.asList(CORE, TEMPLATESERVICE, CF, POLICYMGMT, PMS);
+        return Arrays.asList(CORE, TEMPLATESERVICE, CF, PMS);
       }
 
       @Provides

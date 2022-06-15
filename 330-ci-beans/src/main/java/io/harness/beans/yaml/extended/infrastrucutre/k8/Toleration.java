@@ -11,6 +11,7 @@ import static io.harness.beans.SwaggerConstants.INTEGER_CLASSPATH;
 import static io.harness.beans.SwaggerConstants.STRING_CLASSPATH;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.YamlSchemaTypes;
 
@@ -18,10 +19,13 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.TypeAlias;
 
 @Data
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
+@TypeAlias("toleration")
+@RecasterAlias("io.harness.beans.yaml.extended.infrastrucutre.k8.Toleration")
 public class Toleration {
   @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> effect;
   @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> key;

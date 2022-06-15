@@ -54,7 +54,6 @@ import software.wings.sm.StateMachineExecutor;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.time.Duration;
-import java.util.concurrent.ExecutorService;
 import lombok.extern.slf4j.Slf4j;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.Sort;
@@ -69,10 +68,10 @@ public class WorkflowExecutionMonitorHandler implements Handler<WorkflowExecutio
   @Inject private PersistenceIteratorFactory persistenceIteratorFactory;
   @Inject private WingsPersistence wingsPersistence;
   @Inject private ExecutionInterruptManager executionInterruptManager;
-  @Inject private ExecutorService executorService;
   @Inject private StateMachineExecutor stateMachineExecutor;
   @Inject private FeatureFlagService featureFlagService;
   @Inject private MorphiaPersistenceProvider<WorkflowExecution> persistenceProvider;
+  @Inject private WorkflowExecutionZombieHandler zombieHandler;
 
   private static final Duration INACTIVITY_TIMEOUT = Duration.ofMinutes(3);
   private static final Duration EXPIRE_THRESHOLD = Duration.ofMinutes(10);
@@ -203,6 +202,10 @@ public class WorkflowExecutionMonitorHandler implements Handler<WorkflowExecutio
           stateMachineExecutor.executeCallback(executionContext, stateExecutionInstance, finalStatus, null);
         }
       }
+
+      // APPLY ZOMBIE RULES TO FORCE ABORT A STUCK EXECUTION
+      zombieHandler.handle(entity);
+
     } catch (WingsException exception) {
       ExceptionLogger.logProcessedMessages(exception, MANAGER, log);
     } catch (Exception exception) {

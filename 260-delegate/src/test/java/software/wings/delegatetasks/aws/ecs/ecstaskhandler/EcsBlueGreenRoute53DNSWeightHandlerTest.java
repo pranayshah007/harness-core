@@ -194,7 +194,8 @@ public class EcsBlueGreenRoute53DNSWeightHandlerTest extends WingsBaseTest {
             .build();
     EcsCommandExecutionResponse response = task.executeTaskInternal(request, null, mockCallback);
 
-    verify(mockCallback, times(4)).saveExecutionLog(any());
+    int expectedNumberOfLogItems = 5;
+    verify(mockCallback, times(expectedNumberOfLogItems)).saveExecutionLog(any());
 
     verify(mockEcsSwapRoutesCommandTaskHelper)
         .upsizeOlderService(any(), any(), any(), any(), anyInt(), any(), any(), anyInt(), anyBoolean());
@@ -206,6 +207,9 @@ public class EcsBlueGreenRoute53DNSWeightHandlerTest extends WingsBaseTest {
     verify(mockEcsSwapRoutesCommandTaskHelper)
         .restoreAwsAutoScalarConfig(
             any(), any(), any(), eq(Arrays.asList(previousAwsAutoScalarConfig)), eq(true), any());
+    verify(mockEcsSwapRoutesCommandTaskHelper)
+            .downsizeOlderService(
+                    any(), any(), any(), any(), any(), any(), anyInt());
 
     assertThat(response).isNotNull();
     assertThat(response.getCommandExecutionStatus()).isEqualTo(SUCCESS);

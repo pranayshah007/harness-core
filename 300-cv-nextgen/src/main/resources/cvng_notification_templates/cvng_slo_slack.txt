@@ -1,3 +1,17 @@
 {
-    "text": "This is a SLO notification from Harness. You have breached your SLO Error Budget with name ${sloName} inside project ${projectIdentifier}, organisation ${orgIdentifier} and account ${accountIdentifier}."
+    "text" : "*Harness SRM*\n*The Error Budget for SLO <${URL}|${SLO_NAME}> has breached a condition*\n",
+    "attachments" : [
+        {
+          "color" : "${COLOR}",
+          "blocks" : [
+            {
+              "type" : "section",
+              "text" : {
+                "type" : "mrkdwn",
+                "text": "AccountID ${ACCOUNT_ID}\nOrganisationID ${ORG_ID}\nProjectID ${PROJECT_ID}\n*Rule:* ${RULE_NAME}\n*Condition:* ${CONDITION_NAME}\n _Incident occurred<!date^${START_TS_SECS}^ {date_short_pretty} at {time}| ${START_DATE}>_. \nClick <${URL}|here> for SLO dashboard"
+              }
+            }
+          ]
+        }
+    ]
 }

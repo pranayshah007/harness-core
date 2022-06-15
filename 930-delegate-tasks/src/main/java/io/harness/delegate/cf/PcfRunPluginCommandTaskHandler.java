@@ -32,6 +32,7 @@ import io.harness.delegate.task.pcf.response.CfCommandExecutionResponse;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.UnexpectedException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.filesystem.FileIo;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
@@ -78,6 +79,7 @@ public class PcfRunPluginCommandTaskHandler extends PcfCommandTaskHandler {
     executionLogCallback.saveExecutionLog(color("---------- Starting PCF Run Plugin Command Execution", White, Bold));
     CfInternalConfig pcfConfig = cfCommandRequest.getPcfConfig();
     secretDecryptionService.decrypt(pcfConfig, encryptedDataDetails, false);
+    ExceptionMessageSanitizer.storeAllSecretsForSanitizing(pcfConfig, encryptedDataDetails);
     File workingDirectory = null;
     try {
       workingDirectory = createWorkingDirectory();

@@ -182,7 +182,7 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
 
       resources = printHelmChartKubernetesResources(commandRequest);
 
-      helmChartInfo = getHelmChartDetails(commandRequest.getManifestDelegateConfig(), commandRequest.getWorkingDir());
+      helmChartInfo = getHelmChartDetails(commandRequest);
 
       logCallback = markDoneAndStartNew(commandRequest, logCallback, InstallUpgrade);
 
@@ -222,6 +222,9 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
       commandResponse.setReleaseName(commandRequest.getReleaseName());
 
       boolean useSteadyStateCheck = useSteadyStateCheck(commandRequest.isK8SteadyStateCheckEnabled(), logCallback);
+
+      commandRequest.setPrevReleaseVersion(prevVersion);
+      commandRequest.setNewReleaseVersion(prevVersion + 1);
 
       List<KubernetesResourceId> workloads = useSteadyStateCheck
           ? steadyStateSaveResources(commandRequest, resources, CommandExecutionStatus.SUCCESS)
@@ -495,8 +498,8 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
       }
       commandResponse.setContainerInfoList(containerInfos);
       commandResponse.setHelmVersion(commandRequest.getHelmVersion());
-      HelmChartInfo helmChartInfo =
-          getHelmChartDetails(commandRequest.getManifestDelegateConfig(), commandRequest.getWorkingDir());
+
+      HelmChartInfo helmChartInfo = getHelmChartDetails(commandRequest);
       commandResponse.setHelmChartInfo(helmChartInfo);
 
       logCallback.saveExecutionLog("\nDone", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
@@ -923,13 +926,28 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
         .build();
   }
 
-  private HelmChartInfo getHelmChartDetails(ManifestDelegateConfig manifestDelegateConfig, String workingDir)
-      throws IOException {
+  private HelmChartInfo getHelmChartDetails(HelmCommandRequestNG commandRequest) throws Exception {
+    ManifestDelegateConfig manifestDelegateConfig = commandRequest.getManifestDelegateConfig();
+
     HelmChartManifestDelegateConfig helmChartManifestDelegateConfig =
         (HelmChartManifestDelegateConfig) manifestDelegateConfig;
 
-    HelmChartInfo helmChartInfo =
-        helmTaskHelperBase.getHelmChartInfoFromChartsYamlFile(Paths.get(workingDir, CHARTS_YAML_KEY).toString());
+    HelmChartInfo helmChartInfo = null;
+
+    if (commandRequest instanceof HelmRollbackCommandRequestNG) {
+      HelmCliResponse helmHistResponse =
+          helmClient.releaseHistory(HelmCommandDataMapperNG.getHelmCmdDataNG(commandRequest), true);
+      List<ReleaseInfo> releaseInfoList = parseHelmReleaseCommandOutput(helmHistResponse.getOutput(), RELEASE_HISTORY);
+      String chartName = releaseInfoList.get(releaseInfoList.size() - 1).getChart();
+      int index = chartName.lastIndexOf('-');
+      String version = chartName.substring(index + 1);
+      helmChartInfo = HelmChartInfo.builder().name(chartName).version(version).build();
+    }
+
+    else {
+      helmChartInfo = helmTaskHelperBase.getHelmChartInfoFromChartsYamlFile(
+          Paths.get(commandRequest.getWorkingDir(), CHARTS_YAML_KEY).toString());
+    }
 
     try {
       switch (manifestDelegateConfig.getStoreDelegateConfig().getType()) {

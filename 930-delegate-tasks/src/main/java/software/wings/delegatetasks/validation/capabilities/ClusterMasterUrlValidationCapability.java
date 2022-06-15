@@ -62,4 +62,9 @@ public class ClusterMasterUrlValidationCapability implements ExecutionCapability
   public Duration getPeriodUntilNextValidation() {
     return Duration.ofHours(4);
   }
+
+  @Override
+  public String getCapabilityToString() {
+    return String.format("Cluster master URL: %s is unreachable", fetchCapabilityBasis());
+  }
 }

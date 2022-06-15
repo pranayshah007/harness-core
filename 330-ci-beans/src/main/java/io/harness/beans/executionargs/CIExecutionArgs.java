@@ -7,17 +7,21 @@
 
 package io.harness.beans.executionargs;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.beans.execution.ExecutionSource;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.annotation.TypeAlias;
 
 @Data
 @Builder
 @AllArgsConstructor
 @Slf4j
+@TypeAlias("ciExecutionArgs")
+@RecasterAlias("io.harness.beans.executionargs.CIExecutionArgs")
 public class CIExecutionArgs implements ExecutionArgs {
   private ExecutionSource executionSource;
   private String runSequence;

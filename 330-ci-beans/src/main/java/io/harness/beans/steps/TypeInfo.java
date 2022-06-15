@@ -9,6 +9,7 @@ package io.harness.beans.steps;
 
 import static io.harness.annotations.dev.HarnessTeam.CI;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.contracts.steps.StepType;
 
@@ -25,6 +26,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @TypeAlias("typeInfo")
 @OwnedBy(CI)
+@RecasterAlias("io.harness.beans.steps.TypeInfo")
 public class TypeInfo implements NonYamlInfo {
   @NotNull CIStepInfoType stepInfoType;
   @NotNull StepType stepType;
