@@ -7,6 +7,7 @@
 
 package io.harness.beans.yaml.extended.reports;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.pms.yaml.YamlNode;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -23,6 +24,7 @@ import org.springframework.data.annotation.TypeAlias;
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
 @TypeAlias("junit_report")
+@RecasterAlias("io.harness.beans.yaml.extended.reports.UnitTestReport")
 public class UnitTestReport {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })

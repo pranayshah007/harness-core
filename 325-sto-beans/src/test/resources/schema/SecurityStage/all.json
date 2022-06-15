@@ -2430,7 +2430,14 @@
       "type": "object",
       "properties": {
         "cpu": {
-          "type": "string"
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "number"
+            }
+          ]
         },
         "memory": {
           "type": "string"
@@ -5124,8 +5131,7 @@
             "shell": {
               "type": "string",
               "enum": [
-                "Bash",
-                "PowerShell"
+                "Bash"
               ]
             },
             "source": {

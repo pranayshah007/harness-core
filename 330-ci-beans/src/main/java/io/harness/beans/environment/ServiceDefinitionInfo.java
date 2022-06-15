@@ -7,11 +7,16 @@
 
 package io.harness.beans.environment;
 
+import io.harness.annotation.RecasterAlias;
+
 import lombok.Builder;
 import lombok.Data;
+import org.springframework.data.annotation.TypeAlias;
 
 @Data
 @Builder
+@TypeAlias("serviceDefinitionInfo")
+@RecasterAlias("io.harness.beans.environment.ServiceDefinitionInfo")
 public class ServiceDefinitionInfo {
   private String identifier;
   private String name;

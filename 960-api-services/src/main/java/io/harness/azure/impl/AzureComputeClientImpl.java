@@ -46,6 +46,7 @@ import io.harness.azure.model.image.AzureMachineImage;
 import io.harness.azure.model.image.AzureMachineImageFactory;
 import io.harness.azure.utility.AzureResourceUtility;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Singleton;
@@ -348,7 +349,7 @@ public class AzureComputeClientImpl extends AzureClient implements AzureComputeC
           format("Error while creating virtual machine scale set, newVirtualMachineScaleSetName: %s, "
                   + "harnessRevision: %s, infraMappingId: %s",
               newVirtualMachineScaleSetName, tags.getHarnessRevision(), tags.getInfraMappingId()),
-          e);
+          ExceptionMessageSanitizer.sanitizeException(e));
     }
   }
 
@@ -521,7 +522,7 @@ public class AzureComputeClientImpl extends AzureClient implements AzureComputeC
       } catch (NumberFormatException e) {
         log.error(format("Unable to convert VM instance id to numeric type, id: %s instanceIds: %s", id,
                       Arrays.toString(instanceIds)),
-            e);
+            ExceptionMessageSanitizer.sanitizeException(e));
         return false;
       }
     }

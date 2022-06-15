@@ -44,6 +44,7 @@ import io.harness.delegate.task.azure.response.AzureVMSSSwitchRoutesResponse;
 import io.harness.delegate.task.azure.response.AzureVMSSTaskExecutionResponse;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 
 import software.wings.beans.command.ExecutionLogCallback;
 
@@ -339,7 +340,8 @@ public class AzureVMSSSwitchRouteTaskHandler extends AzureVMSSTaskHandler {
         return Boolean.TRUE;
       });
     } catch (Exception e) {
-      throw new InvalidRequestException("Error while updating Virtual Machine Scale Set VM instances", e);
+      throw new InvalidRequestException("Error while updating Virtual Machine Scale Set VM instances",
+          ExceptionMessageSanitizer.sanitizeException(e));
     }
   }
 

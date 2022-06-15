@@ -7,6 +7,7 @@
 
 package io.harness.beans.steps.outcome;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.execution.PublishedFileArtifact;
@@ -16,10 +17,13 @@ import java.util.List;
 import lombok.Builder;
 import lombok.Singular;
 import lombok.Value;
+import org.springframework.data.annotation.TypeAlias;
 
 @Value
 @Builder
 @OwnedBy(HarnessTeam.CI)
+@TypeAlias("stepArtifacts")
+@RecasterAlias("io.harness.beans.steps.outcome.StepArtifacts")
 public class StepArtifacts {
   @Singular List<PublishedFileArtifact> publishedFileArtifacts;
   @Singular List<PublishedImageArtifact> publishedImageArtifacts;

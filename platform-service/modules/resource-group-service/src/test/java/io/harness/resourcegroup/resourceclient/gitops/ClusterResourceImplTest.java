@@ -82,7 +82,7 @@ public class ClusterResourceImplTest {
     List<Cluster> clusters = new ArrayList<>();
     for (int i = 0; i < 205; i++) {
       resourceIds.add(String.valueOf(i));
-      clusters.add(Cluster.builder().identifier(String.valueOf(i)).build());
+      clusters.add(new Cluster(String.valueOf(i), String.valueOf(i)));
     }
 
     Call call = Mockito.mock(Call.class);

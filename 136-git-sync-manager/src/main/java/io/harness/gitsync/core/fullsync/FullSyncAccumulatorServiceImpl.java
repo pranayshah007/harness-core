@@ -85,16 +85,14 @@ public class FullSyncAccumulatorServiceImpl implements FullSyncAccumulatorServic
       FullSyncServiceBlockingStub fullSyncServiceBlockingStub = fullSyncStubEntry.getValue();
       Microservice microservice = fullSyncStubEntry.getKey();
       FileChanges entitiesForFullSync = null;
-      if (isFullSyncEnabled(microservice)) {
-        try {
-          // todo(abhinav): add retryInputSetReferenceProtoDTO
-          log.info("Trying to get of the files for the message Id {} for the microservice {}", messageId, microservice);
-          entitiesForFullSync = GitSyncGrpcClientUtils.retryAndProcessException(
-              fullSyncServiceBlockingStub::getEntitiesForFullSync, scopeDetails);
-        } catch (Exception e) {
-          log.error("Error encountered while getting entities while full sync for msvc {}", microservice, e);
-          continue;
-        }
+      try {
+        // todo(abhinav): add retryInputSetReferenceProtoDTO
+        log.info("Trying to get of the files for the message Id {} for the microservice {}", messageId, microservice);
+        entitiesForFullSync = GitSyncGrpcClientUtils.retryAndProcessException(
+            fullSyncServiceBlockingStub::getEntitiesForFullSync, scopeDetails);
+      } catch (Exception e) {
+        log.error("Error encountered while getting entities while full sync for msvc {}", microservice, e);
+        continue;
       }
       if (entitiesForFullSync != null) {
         isEntitiesAvailableForFullSync =
@@ -152,10 +150,6 @@ public class FullSyncAccumulatorServiceImpl implements FullSyncAccumulatorServic
       return true;
     }
     return false;
-  }
-
-  private boolean isFullSyncEnabled(Microservice microservice) {
-    return microservice != Microservice.POLICYMGMT;
   }
 
   private GitFullSyncJob saveTheFullSyncJob(FullSyncEventRequest fullSyncEventRequest, String messageId) {

@@ -9,7 +9,10 @@ package io.harness.signup.dto;
 
 import static io.harness.annotations.dev.HarnessTeam.GTM;
 
+import io.harness.ModuleType;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.licensing.Edition;
+import io.harness.ng.core.user.SignupAction;
 import io.harness.ng.core.user.UtmInfo;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -26,4 +29,7 @@ public class OAuthSignupDTO {
   String email;
   String name;
   UtmInfo utmInfo;
+  ModuleType intent;
+  SignupAction signupAction;
+  Edition edition;
 }

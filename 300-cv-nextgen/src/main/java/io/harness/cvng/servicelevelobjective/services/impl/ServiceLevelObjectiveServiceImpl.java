@@ -8,7 +8,6 @@
 package io.harness.cvng.servicelevelobjective.services.impl;
 
 import static io.harness.cvng.notification.utils.NotificationRuleCommonUtils.COOL_OFF_DURATION;
-import static io.harness.cvng.notification.utils.NotificationRuleCommonUtils.getNotificationTemplateData;
 import static io.harness.cvng.notification.utils.NotificationRuleCommonUtils.getNotificationTemplateId;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -35,6 +34,7 @@ import io.harness.cvng.notification.entities.SLONotificationRule;
 import io.harness.cvng.notification.entities.SLONotificationRule.SLOErrorBudgetBurnRateCondition;
 import io.harness.cvng.notification.entities.SLONotificationRule.SLONotificationRuleCondition;
 import io.harness.cvng.notification.services.api.NotificationRuleService;
+import io.harness.cvng.notification.utils.NotificationRuleCommonUtils;
 import io.harness.cvng.servicelevelobjective.SLORiskCountResponse;
 import io.harness.cvng.servicelevelobjective.SLORiskCountResponse.RiskCount;
 import io.harness.cvng.servicelevelobjective.beans.ErrorBudgetRisk;
@@ -109,6 +109,7 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
   @Inject private CVNGLogService cvngLogService;
   @Inject private NotificationRuleService notificationRuleService;
   @Inject private NotificationClient notificationClient;
+  @Inject private NotificationRuleCommonUtils notificationRuleCommonUtils;
 
   @Inject private OutboxService outboxService;
 
@@ -442,8 +443,6 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
                                       .projectIdentifier(serviceLevelObjective.getProjectIdentifier())
                                       .build();
     List<NotificationRule> notificationRules = getNotificationRules(serviceLevelObjective);
-    Map<String, String> templateData =
-        getNotificationTemplateData(projectParams, templateIdentifierName, serviceLevelObjective.getName());
     Set<String> notificationRuleRefsWithChange = new HashSet<>();
 
     for (NotificationRule notificationRule : notificationRules) {
@@ -452,13 +451,19 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
         if (shouldSendNotification(serviceLevelObjective, condition)) {
           CVNGNotificationChannel notificationChannel = notificationRule.getNotificationMethod();
           String templateId = getNotificationTemplateId(notificationRule.getType(), notificationChannel.getType());
-          NotificationResult notificationResult =
-              notificationClient.sendNotificationAsync(notificationChannel.toNotificationChannel(
-                  serviceLevelObjective.getAccountId(), serviceLevelObjective.getOrgIdentifier(),
-                  serviceLevelObjective.getProjectIdentifier(), templateId, templateData));
-          log.info("Notification with Notification ID {}, Notification Rule {}, Condition {} for SLO {} sent",
-              notificationResult.getNotificationId(), notificationRule.getName(), condition.getType().getDisplayName(),
-              serviceLevelObjective.getName());
+          Map<String, String> templateData = notificationRuleCommonUtils.getNotificationTemplateDataForSLO(
+              serviceLevelObjective, notificationRule.getName(), condition.getType().getDisplayName(), clock.instant());
+          try {
+            NotificationResult notificationResult =
+                notificationClient.sendNotificationAsync(notificationChannel.toNotificationChannel(
+                    serviceLevelObjective.getAccountId(), serviceLevelObjective.getOrgIdentifier(),
+                    serviceLevelObjective.getProjectIdentifier(), templateId, templateData));
+            log.info("Notification with Notification ID {}, Notification Rule {}, Condition {} for SLO {} sent",
+                notificationResult.getNotificationId(), notificationRule.getName(),
+                condition.getType().getDisplayName(), serviceLevelObjective.getName());
+          } catch (Exception ex) {
+            log.error("Unable to send notification because of following exception", ex);
+          }
           notificationRuleRefsWithChange.add(notificationRule.getIdentifier());
         }
       }

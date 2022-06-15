@@ -13,10 +13,9 @@
 #     -t <tag> \
 #     .
 
-FROM us.gcr.io/platform-205701/ubi/cie-agents/java-go-cie-agent:latest
+FROM us.gcr.io/platform-205701/ubi/ubi-java:latest
 
 USER root
 
-RUN yum install -y yum-utils
-RUN yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo \
+RUN yum install -y yum-utils && yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo \
     && yum install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin

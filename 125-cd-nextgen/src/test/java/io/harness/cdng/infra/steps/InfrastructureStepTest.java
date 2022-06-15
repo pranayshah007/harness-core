@@ -648,7 +648,6 @@ public class InfrastructureStepTest extends CategoryTest {
                                                    .resourceGroup(ParameterField.createValueField("resource-group"))
                                                    .appService(ParameterField.createValueField("appService"))
                                                    .deploymentSlot(ParameterField.createValueField("deployment-slot"))
-                                                   .targetSlot(ParameterField.createValueField("target-slot"))
                                                    .build();
 
     infrastructureStep.validateInfrastructure(infrastructure, null);

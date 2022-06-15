@@ -10,6 +10,7 @@ package io.harness.beans.yaml.extended.volumes;
 import static io.harness.annotations.dev.HarnessTeam.CI;
 import static io.harness.beans.SwaggerConstants.STRING_CLASSPATH;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.yaml.ParameterField;
 
@@ -29,6 +30,7 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName("HostPath")
 @TypeAlias("hostPathYaml")
 @OwnedBy(CI)
+@RecasterAlias("io.harness.beans.yaml.extended.volumes.HostPathYaml")
 public class HostPathYaml implements CIVolume {
   @Builder.Default @NotNull private CIVolume.Type type = Type.HOST_PATH;
   @NotNull @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> mountPath;

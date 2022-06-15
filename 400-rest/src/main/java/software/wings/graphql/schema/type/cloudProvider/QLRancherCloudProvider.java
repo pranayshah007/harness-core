@@ -9,8 +9,8 @@ package software.wings.graphql.schema.type.cloudProvider;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
-
 import io.harness.ccm.health.CEHealthStatus;
+
 import software.wings.graphql.schema.type.QLUser;
 import software.wings.security.PermissionAttribute.ResourceType;
 import software.wings.security.annotations.Scope;
