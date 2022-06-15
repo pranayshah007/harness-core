@@ -47,7 +47,6 @@ import software.wings.api.cloudformation.CloudFormationElement;
 import software.wings.beans.Activity;
 import software.wings.beans.Activity.ActivityBuilder;
 import software.wings.beans.Activity.Type;
-import software.wings.beans.AmazonClientSDKDefaultBackoffStrategy;
 import software.wings.beans.Application;
 import software.wings.beans.AwsConfig;
 import software.wings.beans.CloudFormationInfrastructureProvisioner;
@@ -88,6 +87,7 @@ import software.wings.sm.WorkflowStandardParams;
 import software.wings.sm.WorkflowStandardParamsExtensionService;
 import software.wings.sm.states.ManagerExecutionLogCallback;
 import software.wings.stencils.DefaultValue;
+import software.wings.service.impl.aws.manager.AwsHelperServiceManager;
 
 import com.github.reinert.jjschema.Attributes;
 import com.google.common.annotations.VisibleForTesting;
@@ -231,7 +231,7 @@ public abstract class CloudFormationState extends State {
     } else {
       awsConfig = getAwsConfig(awsConfigId);
     }
-    setAmazonClientSDKDefaultBackoffStrategyIfExists(context, awsConfig);
+    AwsHelperServiceManager.setAmazonClientSDKDefaultBackoffStrategyIfExists(context,awsConfig);
 
     return buildAndQueueDelegateTask(executionContext, cloudFormationInfrastructureProvisioner, awsConfig, activityId);
   }
@@ -317,52 +317,6 @@ public abstract class CloudFormationState extends State {
     return activityService.save(activity).getUuid();
   }
 
-  @VisibleForTesting
-  public void setAmazonClientSDKDefaultBackoffStrategyIfExists(ExecutionContext context, AwsConfig awsConfig) {
-    if (!validateSDKDefaultBackoffStrategyAccountVariables(context)) {
-      return;
-    }
-
-    AmazonClientSDKDefaultBackoffStrategy sdkDefaultBackoffStrategy =
-        AmazonClientSDKDefaultBackoffStrategy.builder()
-            .baseDelayInMs(resolveAccountVariable(context, BASE_DELAY_ACCOUNT_VARIABLE))
-            .throttledBaseDelayInMs(resolveAccountVariable(context, THROTTLED_BASE_DELAY_ACCOUNT_VARIABLE))
-            .maxBackoffInMs(resolveAccountVariable(context, MAX_BACKOFF_ACCOUNT_VARIABLE))
-            .maxErrorRetry(resolveAccountVariable(context, MAX_ERROR_RETRY_ACCOUNT_VARIABLE))
-            .build();
-    awsConfig.setAmazonClientSDKDefaultBackoffStrategy(sdkDefaultBackoffStrategy);
-    log.info("Using Amazon SDK default backoff strategy for CloudFormation operations with account level values: {}",
-        sdkDefaultBackoffStrategy);
-  }
-
-  private boolean validateSDKDefaultBackoffStrategyAccountVariables(ExecutionContext context) {
-    if (isRenderedExpressionBlank(context, BASE_DELAY_ACCOUNT_VARIABLE)
-        || isRenderedExpressionBlank(context, THROTTLED_BASE_DELAY_ACCOUNT_VARIABLE)
-        || isRenderedExpressionBlank(context, MAX_BACKOFF_ACCOUNT_VARIABLE)
-        || isRenderedExpressionBlank(context, MAX_ERROR_RETRY_ACCOUNT_VARIABLE)) {
-      return false;
-    }
-
-    try {
-      resolveAccountVariable(context, BASE_DELAY_ACCOUNT_VARIABLE);
-      resolveAccountVariable(context, THROTTLED_BASE_DELAY_ACCOUNT_VARIABLE);
-      resolveAccountVariable(context, MAX_BACKOFF_ACCOUNT_VARIABLE);
-      resolveAccountVariable(context, MAX_ERROR_RETRY_ACCOUNT_VARIABLE);
-    } catch (Exception ex) {
-      log.error("Not valid account level backoff strategy variables, msg: {}", ex.getMessage());
-      return false;
-    }
-    return true;
-  }
-
-  private boolean isRenderedExpressionBlank(ExecutionContext context, final String expression) {
-    String renderedExpression = context.renderExpression(expression);
-    return isBlank(renderedExpression) || NULL_STR.equals(renderedExpression);
-  }
-
-  private int resolveAccountVariable(ExecutionContext context, final String expression) {
-    return Integer.parseInt(context.renderExpression(expression));
-  }
 
   protected String getStackNameSuffix(ExecutionContextImpl executionContext, String provisionerId) {
     if (executionContext.getOrchestrationWorkflowType() != null

@@ -131,6 +131,7 @@ import software.wings.helpers.ext.ecs.response.EcsDeployRollbackDataFetchRespons
 import software.wings.helpers.ext.ecs.response.EcsServiceDeployResponse;
 import software.wings.helpers.ext.k8s.request.K8sValuesLocation;
 import software.wings.service.impl.artifact.ArtifactCollectionUtils;
+import software.wings.service.impl.aws.manager.AwsHelperServiceManager;
 import software.wings.service.impl.aws.model.AwsEcsAllPhaseRollbackData;
 import software.wings.service.intfc.ActivityService;
 import software.wings.service.intfc.DelegateService;
@@ -153,6 +154,7 @@ import software.wings.sm.WorkflowStandardParamsExtensionService;
 import software.wings.sm.states.ContainerServiceSetup.ContainerServiceSetupKeys;
 import software.wings.sm.states.EcsSetupContextVariableHolder.EcsSetupContextVariableHolderBuilder;
 import software.wings.utils.EcsConvention;
+
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
@@ -592,6 +594,7 @@ public class EcsStateHelper {
     AwsConfig awsConfig = (AwsConfig) settingValue;
     List<EncryptedDataDetail> encryptedDataDetails = secretManager.getEncryptionDetails(
         awsConfig, executionContext.getAppId(), executionContext.getWorkflowExecutionId());
+    AwsHelperServiceManager.setAmazonClientSDKDefaultBackoffStrategyIfExists(executionContext,awsConfig);
 
     return EcsRunTaskDataBag.builder()
         .applicationAccountId(app.getAccountId())
