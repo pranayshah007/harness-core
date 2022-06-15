@@ -17,6 +17,7 @@ import static com.slack.api.webhook.WebhookPayloads.payload;
 import io.harness.batch.processing.anomalydetection.alerts.SlackMessageGenerator;
 import io.harness.batch.processing.anomalydetection.alerts.service.itfc.AnomalyAlertsService;
 import io.harness.batch.processing.shard.AccountShardService;
+import io.harness.ccm.RestCallToCENGClientUtils;
 import io.harness.ccm.anomaly.entities.AnomalyEntity;
 import io.harness.ccm.anomaly.service.itfc.AnomalyService;
 import io.harness.ccm.commons.dao.notifications.CCMNotificationsDao;
@@ -156,7 +157,8 @@ public class AnomalyAlertsServiceImpl implements AnomalyAlertsService {
 
     // Sending email alerts
     emailChannelBuilder.templateData(templateData);
-    notificationResourceClient.sendNotification("zEaak-FLS425IEO7OLzMUg", emailChannelBuilder.build());
+    RestCallToCENGClientUtils.execute(
+        notificationResourceClient.sendNotification("zEaak-FLS425IEO7OLzMUg", emailChannelBuilder.build()));
     log.info("done");
   }
 
