@@ -8,3 +8,4 @@ filegroup(
     name = "resource",
     srcs = glob(["**"]),
 )
+
