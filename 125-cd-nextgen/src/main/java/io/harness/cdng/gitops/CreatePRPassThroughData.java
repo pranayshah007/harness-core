@@ -26,6 +26,6 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("CreatePRPassThroughData")
 @RecasterAlias("io.harness.cdng.gitOps.CreatePRPassThroughData")
 public class CreatePRPassThroughData implements PassThroughData {
-  Map<String, String> stringMap;
+  Map<String, Object> variables;
   @Setter List<String> filePaths;
 }

@@ -1,3 +1,8 @@
+# Copyright 2022 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
 # CIE AGENT - JAVA+GO+BUILD TOOLS
 
 # Usage: Used to run CIE builds for harness-core compilation, test
@@ -11,9 +16,6 @@
 FROM us.gcr.io/platform-205701/ubi/ubi-java:latest
 
 USER root
-
-#Disabling Subscription of RedHat
-RUN sed -i 's/enabled=1/enabled=0/g' /etc/yum/pluginconf.d/subscription-manager.conf
 
 RUN mkdir -p /deployments
 
@@ -35,15 +37,17 @@ ENV CXX /usr/bin/g++
 
 ##TODO: google-cloud-cli can be removed, update pipelines for the same
 RUN yum update -y \
-    && yum install -y hostname wget unzip git mongodb-org-shell google-cloud-cli gcc gcc-c++ jq bc zlib-devel\
-    && yum install -y autoconf binutils gdb glibc-devel redhat-rpm-config rpm-build \
+    && yum install -y wget git mongodb-org-shell google-cloud-cli gcc gcc-c++ jq bc zlib-devel --nodocs --skip-broken\
+    && yum install -y autoconf binutils gdb glibc-devel redhat-rpm-config rpm-build --nodocs --skip-broken\
     && git --version \
     && curl -Lo /usr/local/bin/bazel https://github.com/bazelbuild/bazelisk/releases/download/v1.7.4/bazelisk-linux-amd64 \
     && chown root:root /usr/local/bin/bazel \
     && chmod 0755 /usr/local/bin/bazel \
     && bazel version \
     && cd / \
-    && rm -rf /tmp/*
+    && rm -rf /tmp/* \
+    && yum clean all \
+    && rm -rf /var/tmp/yum-*
 
 CMD [ "/deployments/run-java.sh" ]
 

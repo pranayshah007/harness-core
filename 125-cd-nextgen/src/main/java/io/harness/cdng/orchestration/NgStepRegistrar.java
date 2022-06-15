@@ -18,6 +18,7 @@ import io.harness.cdng.configfile.steps.ConfigFilesStep;
 import io.harness.cdng.configfile.steps.IndividualConfigFileStep;
 import io.harness.cdng.creator.plan.environment.steps.EnvironmentStepV2;
 import io.harness.cdng.gitops.CreatePRStep;
+import io.harness.cdng.gitops.steps.GitopsClustersStep;
 import io.harness.cdng.helm.HelmDeployStep;
 import io.harness.cdng.helm.HelmRollbackStep;
 import io.harness.cdng.infra.steps.EnvironmentStep;
@@ -57,6 +58,7 @@ import io.harness.cdng.service.steps.ServiceSectionStep;
 import io.harness.cdng.service.steps.ServiceSpecStep;
 import io.harness.cdng.service.steps.ServiceStep;
 import io.harness.cdng.service.steps.ServiceStepV2;
+import io.harness.cdng.ssh.CommandStep;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.sdk.core.steps.Step;
 import io.harness.registrar.NGCommonUtilStepsRegistrar;
@@ -119,7 +121,9 @@ public class NgStepRegistrar {
     engineSteps.put(ServerlessAwsLambdaRollbackStep.STEP_TYPE, ServerlessAwsLambdaRollbackStep.class);
     engineSteps.put(IndividualConfigFileStep.STEP_TYPE, IndividualConfigFileStep.class);
     engineSteps.put(ConfigFilesStep.STEP_TYPE, ConfigFilesStep.class);
+    engineSteps.put(CommandStep.STEP_TYPE, CommandStep.class);
     engineSteps.putAll(NGCommonUtilStepsRegistrar.getEngineSteps());
+    engineSteps.put(GitopsClustersStep.STEP_TYPE, GitopsClustersStep.class);
     return engineSteps;
   }
 }

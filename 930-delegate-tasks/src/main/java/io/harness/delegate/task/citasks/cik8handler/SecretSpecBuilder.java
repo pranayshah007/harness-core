@@ -50,6 +50,7 @@ import io.harness.delegate.beans.connector.scm.genericgitconnector.GitHTTPAuthen
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubHttpAuthenticationType;
 import io.harness.delegate.beans.connector.scm.github.GithubHttpCredentialsDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubOauthDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubUsernamePasswordDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubUsernameTokenDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
@@ -339,6 +340,25 @@ public class SecretSpecBuilder {
         secretData.put(DRONE_NETRC_PASSWORD,
             SecretParams.builder().secretKey(DRONE_NETRC_PASSWORD).value(encodeBase64(token)).type(TEXT).build());
 
+      } else if (gitHTTPAuthenticationDTO.getType() == GithubHttpAuthenticationType.OAUTH) {
+        GithubOauthDTO githubOauthDTO = (GithubOauthDTO) gitHTTPAuthenticationDTO.getHttpCredentialsSpec();
+
+        String username = GithubOauthDTO.userName;
+        if (isEmpty(username)) {
+          throw new CIStageExecutionException("Github connector should have not empty username");
+        }
+        secretData.put(DRONE_NETRC_USERNAME,
+            SecretParams.builder().secretKey(DRONE_NETRC_USERNAME).value(encodeBase64(username)).type(TEXT).build());
+
+        if (githubOauthDTO.getTokenRef() == null) {
+          throw new CIStageExecutionException("Github connector should have not empty tokenRef");
+        }
+        String token = String.valueOf(githubOauthDTO.getTokenRef().getDecryptedValue());
+        if (isEmpty(token)) {
+          throw new CIStageExecutionException("Github connector should have not empty token");
+        }
+        secretData.put(DRONE_NETRC_PASSWORD,
+            SecretParams.builder().secretKey(DRONE_NETRC_PASSWORD).value(encodeBase64(token)).type(TEXT).build());
       } else {
         throw new CIStageExecutionException(
             "Unsupported github connector auth type" + gitHTTPAuthenticationDTO.getType());

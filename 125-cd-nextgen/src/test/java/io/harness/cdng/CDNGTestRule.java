@@ -59,10 +59,12 @@ import io.harness.pms.serializer.jackson.PmsBeansJacksonModule;
 import io.harness.queue.QueueController;
 import io.harness.redis.RedisConfig;
 import io.harness.registrars.CDServiceAdviserRegistrar;
+import io.harness.remote.client.ClientMode;
 import io.harness.repositories.outbox.OutboxEventRepository;
 import io.harness.rule.Cache;
 import io.harness.rule.InjectorRuleMixin;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
+import io.harness.secrets.remote.SecretNGManagerClient;
 import io.harness.serializer.CDNGRegistrars;
 import io.harness.serializer.KryoModule;
 import io.harness.serializer.KryoRegistrar;
@@ -233,6 +235,9 @@ public class CDNGTestRule implements InjectorRuleMixin, MethodRule, MongoRuleMix
         bind(Producer.class)
             .annotatedWith(Names.named(EventsFrameworkConstants.SETUP_USAGE))
             .toInstance(mock(NoOpProducer.class));
+        bind(SecretNGManagerClient.class)
+            .annotatedWith(Names.named(ClientMode.PRIVILEGED.name()))
+            .toInstance(mock(SecretNGManagerClient.class));
       }
     });
     modules.add(TimeModule.getInstance());

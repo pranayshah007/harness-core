@@ -9,7 +9,9 @@ package io.harness.connector.mappers.githubconnector;
 
 import static io.harness.delegate.beans.connector.scm.GitAuthType.HTTP;
 import static io.harness.delegate.beans.connector.scm.github.GithubApiAccessType.GITHUB_APP;
+import static io.harness.delegate.beans.connector.scm.github.GithubApiAccessType.OAUTH;
 import static io.harness.rule.OwnerRule.ABHINAV;
+import static io.harness.rule.OwnerRule.HEN;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -18,6 +20,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.connector.entities.embedded.githubconnector.GithubAppApiAccess;
 import io.harness.connector.entities.embedded.githubconnector.GithubConnector;
 import io.harness.connector.entities.embedded.githubconnector.GithubHttpAuthentication;
+import io.harness.connector.entities.embedded.githubconnector.GithubOauth;
 import io.harness.connector.entities.embedded.githubconnector.GithubUsernamePassword;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.github.GithubApiAccessDTO;
@@ -26,6 +29,7 @@ import io.harness.delegate.beans.connector.scm.github.GithubAuthenticationDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubHttpAuthenticationType;
 import io.harness.delegate.beans.connector.scm.github.GithubHttpCredentialsDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubOauthDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubUsernamePasswordDTO;
 import io.harness.encryption.SecretRefHelper;
 import io.harness.rule.Owner;
@@ -106,6 +110,60 @@ public class GithubEntityToDTOTest extends CategoryTest {
                     .type(GithubHttpAuthenticationType.USERNAME_AND_PASSWORD)
                     .auth(GithubUsernamePassword.builder().username(username).passwordRef(passwordRef).build())
                     .build())
+            .build();
+    final GithubConnectorDTO githubConnector = githubEntityToDTO.createConnectorDTO(githubConnector1);
+    ObjectMapper objectMapper = new ObjectMapper();
+    assertThat(objectMapper.readTree(objectMapper.writeValueAsString(githubConnector)))
+        .isEqualTo(objectMapper.readTree(objectMapper.writeValueAsString(githubConnectorDTO)));
+  }
+
+  @Test
+  @Owner(developers = HEN)
+  @Category(UnitTests.class)
+  public void testToConnectorEntity_1() throws IOException {
+    final String url = "https://github.com/harness-core";
+    final String username = "username";
+    final String appId = "appId";
+    final String insId = "insId";
+    final String tokenRef = "tokenRef";
+    final String validationRepo = "validationRepo";
+
+    final GithubAuthenticationDTO githubAuthenticationDTO =
+        GithubAuthenticationDTO.builder()
+            .authType(HTTP)
+            .credentials(GithubHttpCredentialsDTO.builder()
+                             .type(GithubHttpAuthenticationType.OAUTH)
+                             .httpCredentialsSpec(
+                                 GithubOauthDTO.builder().tokenRef(SecretRefHelper.createSecretRef(tokenRef)).build())
+                             .build())
+            .build();
+
+    final GithubApiAccessDTO githubApiAccessDTO =
+        GithubApiAccessDTO.builder()
+            .type(OAUTH)
+            .spec(GithubOauthDTO.builder().tokenRef(SecretRefHelper.createSecretRef(tokenRef)).build())
+            .build();
+    final GithubConnectorDTO githubConnectorDTO = GithubConnectorDTO.builder()
+                                                      .url(url)
+                                                      .validationRepo(validationRepo)
+                                                      .connectionType(GitConnectionType.ACCOUNT)
+                                                      .authentication(githubAuthenticationDTO)
+                                                      .apiAccess(githubApiAccessDTO)
+                                                      .build();
+
+    final GithubConnector githubConnector1 =
+        GithubConnector.builder()
+            .hasApiAccess(true)
+            .url(url)
+            .validationRepo(validationRepo)
+            .githubApiAccess(GithubOauth.builder().tokenRef(tokenRef).build())
+            .apiAccessType(OAUTH)
+            .connectionType(GitConnectionType.ACCOUNT)
+            .authType(HTTP)
+            .authenticationDetails(GithubHttpAuthentication.builder()
+                                       .type(GithubHttpAuthenticationType.OAUTH)
+                                       .auth(GithubOauth.builder().tokenRef(tokenRef).build())
+                                       .build())
             .build();
     final GithubConnectorDTO githubConnector = githubEntityToDTO.createConnectorDTO(githubConnector1);
     ObjectMapper objectMapper = new ObjectMapper();

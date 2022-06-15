@@ -45,6 +45,7 @@ public class AwsCodeCommitConnectorDTO extends ConnectorConfigDTO implements Scm
   @NotNull @NotBlank String url;
   @Valid @NotNull AwsCodeCommitAuthenticationDTO authentication;
   Set<String> delegateSelectors;
+  String gitConnectionUrl;
 
   @Builder
   public AwsCodeCommitConnectorDTO(
@@ -74,7 +75,7 @@ public class AwsCodeCommitConnectorDTO extends ConnectorConfigDTO implements Scm
   }
 
   @Override
-  public String getGitConnectionUrl(String repoName) {
+  public String getGitConnectionUrl(GitRepositoryDTO gitRepositoryDTO) {
     return "";
   }
 
@@ -84,7 +85,7 @@ public class AwsCodeCommitConnectorDTO extends ConnectorConfigDTO implements Scm
   }
 
   @Override
-  public String getFileUrl(String branchName, String filePath, String repoName) {
+  public String getFileUrl(String branchName, String filePath, GitRepositoryDTO gitRepositoryDTO) {
     return "";
   }
 

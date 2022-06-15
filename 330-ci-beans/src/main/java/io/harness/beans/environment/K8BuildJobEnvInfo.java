@@ -7,6 +7,7 @@
 
 package io.harness.beans.environment;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.beans.environment.pod.PodSetupInfo;
 import io.harness.delegate.beans.ci.pod.EnvVariableEnum;
 
@@ -27,6 +28,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Value
 @Builder
 @TypeAlias("k8BuildJobEnvInfo")
+@RecasterAlias("io.harness.beans.environment.K8BuildJobEnvInfo")
 public class K8BuildJobEnvInfo implements BuildJobEnvInfo {
   @NotEmpty private PodsSetupInfo podsSetupInfo;
   @NotEmpty private String workDir;

@@ -11,8 +11,9 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.WingsException;
+import io.harness.gitsync.common.scmerrorhandling.dtos.ErrorMetadata;
 
 @OwnedBy(PL)
 public interface ScmApiErrorHandler {
-  void handleError(int statusCode, String errorMessage) throws WingsException;
+  void handleError(int statusCode, String errorMessage, ErrorMetadata errorMetadata) throws WingsException;
 }

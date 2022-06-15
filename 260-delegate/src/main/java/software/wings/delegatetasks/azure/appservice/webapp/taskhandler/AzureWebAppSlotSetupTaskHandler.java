@@ -31,6 +31,7 @@ import io.harness.delegate.task.azure.appservice.deployment.context.AzureAppServ
 import io.harness.delegate.task.azure.appservice.webapp.request.AzureWebAppSlotSetupParameters;
 import io.harness.delegate.task.azure.appservice.webapp.response.AzureAppDeploymentData;
 import io.harness.delegate.task.azure.appservice.webapp.response.AzureWebAppSlotSetupResponse;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 
 import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.delegatetasks.azure.appservice.webapp.AbstractAzureWebAppTaskHandler;
@@ -93,8 +94,9 @@ public class AzureWebAppSlotSetupTaskHandler extends AbstractAzureWebAppTaskHand
           .preDeploymentData(azureAppServicePreDeploymentData)
           .build();
     } catch (Exception ex) {
-      String message = AzureResourceUtility.getAzureCloudExceptionMessage(ex);
-      logErrorMsg(azureAppServiceTaskParameters, logStreamingTaskClient, ex, message);
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(ex);
+      String message = AzureResourceUtility.getAzureCloudExceptionMessage(sanitizedException);
+      logErrorMsg(azureAppServiceTaskParameters, logStreamingTaskClient, sanitizedException, message);
       return AzureWebAppSlotSetupResponse.builder()
           .errorMsg(message)
           .preDeploymentData(azureAppServicePreDeploymentData)
@@ -135,8 +137,9 @@ public class AzureWebAppSlotSetupTaskHandler extends AbstractAzureWebAppTaskHand
           .preDeploymentData(azureAppServicePreDeploymentData)
           .build();
     } catch (Exception ex) {
-      String message = AzureResourceUtility.getAzureCloudExceptionMessage(ex);
-      logErrorMsg(azureAppServiceTaskParameters, logStreamingTaskClient, ex, message);
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(ex);
+      String message = AzureResourceUtility.getAzureCloudExceptionMessage(sanitizedException);
+      logErrorMsg(azureAppServiceTaskParameters, logStreamingTaskClient, sanitizedException, message);
       return AzureWebAppSlotSetupResponse.builder()
           .errorMsg(message)
           .preDeploymentData(azureAppServicePreDeploymentData)

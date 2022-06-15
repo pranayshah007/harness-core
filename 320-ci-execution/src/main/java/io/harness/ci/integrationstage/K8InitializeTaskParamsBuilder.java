@@ -116,7 +116,7 @@ public class K8InitializeTaskParamsBuilder {
           initializeStepInfo, k8PodDetails, (K8sDirectInfraYaml) infrastructure, ambiance, logPrefix);
     } else if (infrastructure.getType() == Infrastructure.Type.KUBERNETES_HOSTED) {
       return buildK8HostedTaskParams(
-              initializeStepInfo, k8PodDetails, (K8sHostedInfraYaml) infrastructure, ambiance, logPrefix);
+          initializeStepInfo, k8PodDetails, (K8sHostedInfraYaml) infrastructure, ambiance, logPrefix);
     }
     return null;
   }

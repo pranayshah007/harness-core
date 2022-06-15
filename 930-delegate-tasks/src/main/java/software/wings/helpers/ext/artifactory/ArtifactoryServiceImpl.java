@@ -14,7 +14,6 @@ import static io.harness.artifactory.ArtifactoryClientImpl.handleAndRethrow;
 import static io.harness.artifactory.ArtifactoryClientImpl.handleErrorResponse;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.eraro.ErrorCode.ARTIFACT_SERVER_ERROR;
-import static io.harness.eraro.ErrorCode.INVALID_ARTIFACT_SERVER;
 import static io.harness.exception.WingsException.USER;
 
 import static software.wings.helpers.ext.jenkins.BuildDetails.Builder.aBuildDetails;
@@ -22,7 +21,6 @@ import static software.wings.helpers.ext.jenkins.BuildDetails.Builder.aBuildDeta
 import static java.lang.String.format;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isBlank;
-import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.jfrog.artifactory.client.ArtifactoryRequest.ContentType.JSON;
 import static org.jfrog.artifactory.client.ArtifactoryRequest.ContentType.TEXT;
 import static org.jfrog.artifactory.client.ArtifactoryRequest.Method.GET;
@@ -61,7 +59,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
@@ -299,29 +296,7 @@ public class ArtifactoryServiceImpl implements ArtifactoryService {
 
   @Override
   public Long getFileSize(ArtifactoryConfigRequest artifactoryConfig, Map<String, String> metadata) {
-    String artifactPath = metadata.get(ArtifactMetadataKeys.artifactPath);
-    log.info("Retrieving file paths for artifactPath {}", artifactPath);
-    Artifactory artifactory = getArtifactoryClient(artifactoryConfig);
-    try {
-      String apiStorageQuery = "api/storage/" + artifactPath;
-
-      ArtifactoryRequest repositoryRequest =
-          new ArtifactoryRequestImpl().apiUrl(apiStorageQuery).method(GET).requestType(TEXT).responseType(JSON);
-      ArtifactoryResponse artifactoryResponse = artifactory.restCall(repositoryRequest);
-      handleErrorResponse(artifactoryResponse);
-      LinkedHashMap<String, String> response = artifactoryResponse.parseBody(LinkedHashMap.class);
-      if (response != null && isNotBlank(response.get("size"))) {
-        return Long.valueOf(response.get("size"));
-      } else {
-        throw new ArtifactoryServerException(
-            "Unable to get artifact file size. The file probably does not exist", INVALID_ARTIFACT_SERVER, USER);
-      }
-    } catch (Exception e) {
-      log.error("Error occurred while retrieving File Paths from Artifactory server {}",
-          artifactoryConfig.getArtifactoryUrl(), e);
-      handleAndRethrow(e, USER);
-    }
-    return 0L;
+    return artifactoryClient.getFileSize(artifactoryConfig, metadata, ArtifactMetadataKeys.artifactPath);
   }
 
   @Override

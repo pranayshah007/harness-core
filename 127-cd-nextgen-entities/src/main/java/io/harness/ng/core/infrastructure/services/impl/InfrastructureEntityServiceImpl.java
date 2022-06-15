@@ -15,6 +15,8 @@ import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPL
 import static io.harness.pms.yaml.YAMLFieldNameConstants.IDENTIFIER;
 import static io.harness.springdata.TransactionUtils.DEFAULT_TRANSACTION_RETRY_POLICY;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.EmptyPredicate;
@@ -116,7 +118,6 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
         get(requestInfra.getAccountId(), requestInfra.getOrgIdentifier(), requestInfra.getProjectIdentifier(),
             requestInfra.getEnvIdentifier(), requestInfra.getIdentifier());
     if (infraEntityOptional.isPresent()) {
-      InfrastructureEntity oldInfra = infraEntityOptional.get();
       return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
         InfrastructureEntity updatedResult = infrastructureRepository.update(criteria, requestInfra);
         if (updatedResult == null) {
@@ -189,6 +190,31 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
           String.format("Infrastructure [%s] under Environment [%s], Project[%s], Organization [%s] doesn't exist.",
               infraIdentifier, envIdentifier, projectIdentifier, orgIdentifier));
     }
+  }
+
+  @Override
+  public boolean forceDeleteAllInEnv(
+      String accountId, String orgIdentifier, String projectIdentifier, String envIdentifier) {
+    checkArgument(isNotEmpty(accountId), "account id must be present");
+    checkArgument(isNotEmpty(orgIdentifier), "org id must be present");
+    checkArgument(isNotEmpty(projectIdentifier), "project id must be present");
+    checkArgument(isNotEmpty(envIdentifier), "env id must be present");
+
+    Criteria criteria =
+        getInfrastructureEqualityCriteriaForEnv(accountId, orgIdentifier, projectIdentifier, envIdentifier);
+    DeleteResult deleteResult = infrastructureRepository.delete(criteria);
+    return deleteResult.wasAcknowledged() && deleteResult.getDeletedCount() > 0;
+  }
+
+  @Override
+  public boolean forceDeleteAllInProject(String accountId, String orgIdentifier, String projectIdentifier) {
+    checkArgument(isNotEmpty(accountId), "account id must be present");
+    checkArgument(isNotEmpty(orgIdentifier), "org id must be present");
+    checkArgument(isNotEmpty(projectIdentifier), "project id must be present");
+
+    Criteria criteria = getInfrastructureEqualityCriteriaForProject(accountId, orgIdentifier, projectIdentifier);
+    DeleteResult deleteResult = infrastructureRepository.delete(criteria);
+    return deleteResult.wasAcknowledged() && deleteResult.getDeletedCount() > 0;
   }
 
   private void setNameIfNotPresent(InfrastructureEntity requestInfra) {
@@ -370,5 +396,27 @@ public class InfrastructureEntityServiceImpl implements InfrastructureEntityServ
       return;
     }
     infrastructureEntityList.forEach(this::modifyInfraRequest);
+  }
+
+  private Criteria getInfrastructureEqualityCriteriaForEnv(
+      String accountId, String orgIdentifier, String projectIdentifier, String envIdentifier) {
+    return Criteria.where(InfrastructureEntityKeys.accountId)
+        .is(accountId)
+        .and(InfrastructureEntityKeys.orgIdentifier)
+        .is(orgIdentifier)
+        .and(InfrastructureEntityKeys.projectIdentifier)
+        .is(projectIdentifier)
+        .and(InfrastructureEntityKeys.envIdentifier)
+        .is(envIdentifier);
+  }
+
+  private Criteria getInfrastructureEqualityCriteriaForProject(
+      String accountId, String orgIdentifier, String projectIdentifier) {
+    return Criteria.where(InfrastructureEntityKeys.accountId)
+        .is(accountId)
+        .and(InfrastructureEntityKeys.orgIdentifier)
+        .is(orgIdentifier)
+        .and(InfrastructureEntityKeys.projectIdentifier)
+        .is(projectIdentifier);
   }
 }

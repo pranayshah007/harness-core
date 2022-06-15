@@ -8,7 +8,9 @@
 package io.harness.ci.beans.entities;
 
 import io.harness.annotation.HarnessEntity;
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotation.StoreIn;
+import io.harness.ci.config.VmImageConfig;
 import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UuidAware;
@@ -21,6 +23,7 @@ import lombok.experimental.FieldNameConstants;
 import org.hibernate.validator.constraints.NotBlank;
 import org.mongodb.morphia.annotations.Entity;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Data
@@ -31,6 +34,8 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @StoreIn("harnessci")
 @Document("ciexecutionconfig")
 @HarnessEntity(exportable = true)
+@TypeAlias("ciExecutionConfig")
+@RecasterAlias("io.harness.ci.beans.entities.CIExecutionConfig")
 public class CIExecutionConfig implements PersistentEntity, UuidAware, CreatedAtAware {
   @Id @org.mongodb.morphia.annotations.Id String uuid;
   @NotBlank String accountIdentifier;
@@ -46,5 +51,6 @@ public class CIExecutionConfig implements PersistentEntity, UuidAware, CreatedAt
   @NotBlank String artifactoryUploadTag;
   @NotBlank String cacheGCSTag;
   @NotBlank String cacheS3Tag;
+  VmImageConfig vmImageConfig;
   @SchemaIgnore private long createdAt;
 }

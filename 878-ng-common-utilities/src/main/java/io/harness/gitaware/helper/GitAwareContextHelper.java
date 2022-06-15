@@ -74,6 +74,7 @@ public class GitAwareContextHelper {
         .repoName(scmGitMetaData.getRepoName())
         .filePath(scmGitMetaData.getFilePath())
         .commitId(scmGitMetaData.getCommitId())
+        .fileUrl(scmGitMetaData.getFileUrl())
         .build();
   }
 

@@ -9,12 +9,16 @@ package io.harness.beans.quantity.unit;
 
 import static io.harness.annotations.dev.HarnessTeam.CI;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 
 import lombok.Getter;
+import org.springframework.data.annotation.TypeAlias;
 
 @Getter
 @OwnedBy(CI)
+@TypeAlias("decimalQuantityUnit")
+@RecasterAlias("io.harness.beans.quantity.unit.DecimalQuantityUnit")
 public enum DecimalQuantityUnit {
   m(10, -3, "m"),
   unitless(10, 0, "");

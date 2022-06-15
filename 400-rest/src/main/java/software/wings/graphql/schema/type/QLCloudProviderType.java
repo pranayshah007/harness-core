@@ -20,7 +20,8 @@ public enum QLCloudProviderType implements QLEnum {
   GCP,
   KUBERNETES_CLUSTER,
   PCF,
-  SPOT_INST;
+  SPOT_INST,
+  RANCHER;
 
   @Override
   public String getStringValue() {

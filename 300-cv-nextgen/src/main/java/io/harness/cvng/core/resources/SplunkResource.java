@@ -8,6 +8,7 @@
 package io.harness.cvng.core.resources;
 
 import io.harness.cvng.beans.SplunkSavedSearch;
+import io.harness.cvng.core.beans.TimeSeriesSampleDTO;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.services.api.SplunkService;
 import io.harness.rest.RestResponse;
@@ -20,6 +21,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.SortedSet;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.BeanParam;
 import javax.ws.rs.GET;
@@ -56,6 +58,20 @@ public class SplunkResource {
       @NotNull @NotEmpty @QueryParam("query") String query, @QueryParam("requestGuid") @NotNull String requestGuid) {
     return new RestResponse<>(
         splunkService.getSampleData(projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
+            projectParams.getProjectIdentifier(), connectorIdentifier, query, requestGuid));
+  }
+
+  @GET
+  @Path("metric-sample-data")
+  @Timed
+  @ExceptionMetered
+  @ApiOperation(value = "validates given setting for splunk data source", nickname = "getSplunkMetricSampleData")
+  public RestResponse<SortedSet<TimeSeriesSampleDTO>> getMetricSampleData(
+      @NotNull @BeanParam ProjectParams projectParams,
+      @NotNull @QueryParam("connectorIdentifier") String connectorIdentifier,
+      @NotNull @NotEmpty @QueryParam("query") String query, @QueryParam("requestGuid") @NotNull String requestGuid) {
+    return new RestResponse<>(
+        splunkService.getMetricSampleData(projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
             projectParams.getProjectIdentifier(), connectorIdentifier, query, requestGuid));
   }
 

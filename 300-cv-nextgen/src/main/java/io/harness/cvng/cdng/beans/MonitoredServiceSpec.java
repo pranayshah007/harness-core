@@ -14,7 +14,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import io.swagger.annotations.ApiModelProperty;
+import java.util.Arrays;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
@@ -27,7 +27,26 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @NoArgsConstructor
 public abstract class MonitoredServiceSpec {
-  @ApiModelProperty(hidden = true) public abstract String getType();
+  public abstract String getType();
 
-  public enum MonitoredServiceSpecType { DEFAULT, CONFIGURED, TEMPLATE }
+  public enum MonitoredServiceSpecType {
+    DEFAULT("Default"),
+    CONFIGURED("Configured"),
+    TEMPLATE("Template");
+    final String name;
+    MonitoredServiceSpecType(String name) {
+      this.name = name;
+    }
+
+    public static MonitoredServiceSpecType getByName(String name) {
+      return Arrays.stream(values())
+          .filter(spec -> spec.name.equals(name))
+          .findFirst()
+          .orElseThrow(
+              ()
+                  -> new IllegalArgumentException(
+                      "No enum constant of type io.harness.cvng.cdng.beans.MonitoredServiceSpec.MonitoredServiceSpecType for name "
+                      + name));
+    }
+  }
 }

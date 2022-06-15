@@ -37,6 +37,7 @@ java_library(
     deps = [
         ":module",
         "//:lombok",
+        "//878-ng-common-utilities:module",
         "//950-ng-core:tests",
         "//960-persistence:supporter-test",
         "//990-commons-test:module",

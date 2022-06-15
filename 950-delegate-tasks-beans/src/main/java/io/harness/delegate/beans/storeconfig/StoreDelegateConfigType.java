@@ -6,4 +6,4 @@
  */
 
 package io.harness.delegate.beans.storeconfig;
-public enum StoreDelegateConfigType { GIT, HTTP_HELM, S3_HELM, GCS_HELM, ARTIFACTORY, CUSTOM_REMOTE, OCI_HELM }
+public enum StoreDelegateConfigType { CUSTOM_REMOTE, GIT, HTTP_HELM, S3_HELM, GCS_HELM, ARTIFACTORY, OCI_HELM, HARNESS }

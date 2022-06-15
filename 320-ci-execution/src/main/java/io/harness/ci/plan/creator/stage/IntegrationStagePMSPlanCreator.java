@@ -63,9 +63,12 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
+import com.google.protobuf.ByteString;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
@@ -81,6 +84,8 @@ public class IntegrationStagePMSPlanCreator extends GenericStagePlanCreator {
       PlanCreationContext ctx, StageElementConfig stageElementConfig) {
     log.info("Received plan creation request for integration stage {}", stageElementConfig.getIdentifier());
     LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap = new LinkedHashMap<>();
+    Map<String, YamlField> dependenciesNodeMap = new HashMap<>();
+    Map<String, ByteString> metadataMap = new HashMap<>();
 
     YamlField specField =
         Preconditions.checkNotNull(ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.SPEC));
@@ -103,6 +108,8 @@ public class IntegrationStagePMSPlanCreator extends GenericStagePlanCreator {
 
     ExecutionElementConfig modifiedExecutionPlan =
         modifyYAMLWithImplicitSteps(ctx, executionSource, executionField, stageElementConfig);
+
+    addStrategyFieldDependencyIfPresent(ctx, stageElementConfig, planCreationResponseMap, metadataMap);
 
     putNewExecutionYAMLInResponseMap(executionField, planCreationResponseMap, modifiedExecutionPlan, parentNode);
 

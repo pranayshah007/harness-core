@@ -8,6 +8,7 @@
 package io.harness.repositories.envGroup;
 
 import static io.harness.exception.WingsException.USER_SRE;
+
 import static java.lang.String.format;
 
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
@@ -95,7 +96,7 @@ public class EnvironmentGroupRepositoryCustomImpl implements EnvironmentGroupRep
   @Override
   public Page<EnvironmentGroupEntity> list(
       Criteria criteria, Pageable pageRequest, String projectIdentifier, String orgIdentifier, String accountId) {
-    final Query query = new Query(criteria);
+    final Query query = new Query(criteria).with(pageRequest);
     final List<EnvironmentGroupEntity> entities = mongoTemplate.find(query, EnvironmentGroupEntity.class);
     return PageableExecutionUtils.getPage(entities, pageRequest,
         () -> mongoTemplate.count(Query.of(query).limit(-1).skip(-1), EnvironmentGroupEntity.class));
