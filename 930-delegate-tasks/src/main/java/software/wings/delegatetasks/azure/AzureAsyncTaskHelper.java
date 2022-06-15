@@ -7,6 +7,9 @@
 
 package software.wings.delegatetasks.azure;
 
+import static io.harness.azure.model.AzureConstants.DEPLOYMENT_SLOT_FULL_NAME_PATTERN;
+import static io.harness.azure.model.AzureConstants.DEPLOYMENT_SLOT_NON_PRODUCTION_TYPE;
+import static io.harness.azure.model.AzureConstants.DEPLOYMENT_SLOT_PRODUCTION_TYPE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import static java.lang.String.format;
@@ -21,16 +24,22 @@ import io.harness.azure.client.AzureAuthorizationClient;
 import io.harness.azure.client.AzureComputeClient;
 import io.harness.azure.client.AzureContainerRegistryClient;
 import io.harness.azure.client.AzureKubernetesClient;
+import io.harness.azure.client.AzureManagementClient;
 import io.harness.azure.model.AzureConfig;
 import io.harness.azure.model.kube.AzureKubeConfig;
+import io.harness.azure.model.tag.TagDetails;
 import io.harness.connector.ConnectivityStatus;
 import io.harness.connector.ConnectorValidationResult;
 import io.harness.delegate.beans.azure.response.AzureAcrTokenTaskResponse;
 import io.harness.delegate.beans.azure.response.AzureClustersResponse;
+import io.harness.delegate.beans.azure.response.AzureDeploymentSlotResponse;
+import io.harness.delegate.beans.azure.response.AzureDeploymentSlotsResponse;
 import io.harness.delegate.beans.azure.response.AzureRegistriesResponse;
 import io.harness.delegate.beans.azure.response.AzureRepositoriesResponse;
 import io.harness.delegate.beans.azure.response.AzureResourceGroupsResponse;
 import io.harness.delegate.beans.azure.response.AzureSubscriptionsResponse;
+import io.harness.delegate.beans.azure.response.AzureTagsResponse;
+import io.harness.delegate.beans.azure.response.AzureWebAppNamesResponse;
 import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
 import io.harness.delegate.task.artifacts.mappers.AcrRequestResponseMapper;
 import io.harness.exception.AzureAKSException;
@@ -48,6 +57,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.microsoft.azure.management.appservice.DeploymentSlot;
 import com.microsoft.azure.management.containerregistry.Registry;
 import com.microsoft.azure.management.containerservice.KubernetesCluster;
 import com.microsoft.azure.management.resources.Subscription;
@@ -58,6 +68,7 @@ import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
+import org.jetbrains.annotations.NotNull;
 
 @OwnedBy(HarnessTeam.CDP)
 @Singleton
@@ -67,6 +78,7 @@ public class AzureAsyncTaskHelper {
   @Inject private AzureComputeClient azureComputeClient;
   @Inject private AzureContainerRegistryClient azureContainerRegistryClient;
   @Inject private AzureKubernetesClient azureKubernetesClient;
+  @Inject private AzureManagementClient azureManagementClient;
 
   private final String TAG_LABEL = "Tag#";
 
@@ -122,6 +134,59 @@ public class AzureAsyncTaskHelper {
     return response;
   }
 
+  public AzureWebAppNamesResponse listWebAppNames(List<EncryptedDataDetail> encryptionDetails,
+      AzureConnectorDTO azureConnector, String subscriptionId, String resourceGroup) {
+    AzureConfig azureConfig = AcrRequestResponseMapper.toAzureInternalConfig(azureConnector.getCredential(),
+        encryptionDetails, azureConnector.getCredential().getAzureCredentialType(),
+        azureConnector.getAzureEnvironmentType(), secretDecryptionService);
+
+    AzureWebAppNamesResponse response;
+    response = AzureWebAppNamesResponse.builder()
+                   .webAppNames(azureComputeClient.listWebAppNamesBySubscriptionIdAndResourceGroup(
+                       azureConfig, subscriptionId, resourceGroup))
+                   .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                   .build();
+    return response;
+  }
+
+  public AzureDeploymentSlotsResponse listDeploymentSlots(List<EncryptedDataDetail> encryptionDetails,
+      AzureConnectorDTO azureConnector, String subscriptionId, String resourceGroup, String webAppName) {
+    AzureConfig azureConfig = AcrRequestResponseMapper.toAzureInternalConfig(azureConnector.getCredential(),
+        encryptionDetails, azureConnector.getCredential().getAzureCredentialType(),
+        azureConnector.getAzureEnvironmentType(), secretDecryptionService);
+
+    AzureDeploymentSlotsResponse response;
+    List<DeploymentSlot> webAppDeploymentSlots =
+        azureComputeClient.listWebAppDeploymentSlots(azureConfig, subscriptionId, resourceGroup, webAppName);
+    List<AzureDeploymentSlotResponse> deploymentSlotsData = toDeploymentSlotData(webAppDeploymentSlots, webAppName);
+
+    response = AzureDeploymentSlotsResponse.builder()
+                   .deploymentSlots(addProductionDeploymentSlotData(deploymentSlotsData, webAppName))
+                   .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                   .build();
+    return response;
+  }
+
+  private List<AzureDeploymentSlotResponse> addProductionDeploymentSlotData(
+      List<AzureDeploymentSlotResponse> deploymentSlots, String webAppName) {
+    deploymentSlots.add(
+        AzureDeploymentSlotResponse.builder().name(webAppName).type(DEPLOYMENT_SLOT_PRODUCTION_TYPE).build());
+    return deploymentSlots;
+  }
+
+  @NotNull
+  private List<AzureDeploymentSlotResponse> toDeploymentSlotData(
+      List<DeploymentSlot> deploymentSlots, String webAppName) {
+    return deploymentSlots.stream()
+        .map(DeploymentSlot::name)
+        .map(slotName
+            -> AzureDeploymentSlotResponse.builder()
+                   .name(format(DEPLOYMENT_SLOT_FULL_NAME_PATTERN, webAppName, slotName))
+                   .type(DEPLOYMENT_SLOT_NON_PRODUCTION_TYPE)
+                   .build())
+        .collect(Collectors.toList());
+  }
+
   public AzureRegistriesResponse listContainerRegistries(
       List<EncryptedDataDetail> encryptionDetails, AzureConnectorDTO azureConnector, String subscriptionId) {
     AzureConfig azureConfig = AcrRequestResponseMapper.toAzureInternalConfig(azureConnector.getCredential(),
@@ -158,6 +223,21 @@ public class AzureAsyncTaskHelper {
             .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
             .build();
     return response;
+  }
+
+  public AzureTagsResponse listTags(
+      List<EncryptedDataDetail> encryptionDetails, AzureConnectorDTO azureConnector, String subscriptionId) {
+    AzureConfig azureConfig = AcrRequestResponseMapper.toAzureInternalConfig(azureConnector.getCredential(),
+        encryptionDetails, azureConnector.getCredential().getAzureCredentialType(),
+        azureConnector.getAzureEnvironmentType(), secretDecryptionService);
+
+    return AzureTagsResponse.builder()
+        .tags(azureManagementClient.listTags(azureConfig, subscriptionId)
+                  .stream()
+                  .map(TagDetails::getTagName)
+                  .collect(Collectors.toList()))
+        .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+        .build();
   }
 
   public KubernetesConfig getClusterConfig(AzureConnectorDTO azureConnector, String subscriptionId,

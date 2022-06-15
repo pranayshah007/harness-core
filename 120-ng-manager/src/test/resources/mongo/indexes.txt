@@ -600,6 +600,7 @@ ngApiKeys {"name": "list_keys_idx", "background": true} {"accountIdentifier": 1,
 ngApiKeys {"name": "unique_idx", "unique": true, "collation": {"locale": "en", "strength": 1}} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "identifier": 1, "parentIdentifier": 1, "apiKeyType": 1}
 ngEncryptedRecords {"name": "uniqueNGEncryptedDataIdx", "unique": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "identifier": 1}
 ngFiles {"name": "list_files_idx", "unique": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "identifier": 1}
+ngFiles {"name": "path_idx", "background": true} {"path": 1}
 ngFiles {"name": "unique_idx", "unique": true, "collation": {"locale": "en", "strength": 1}} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "parentIdentifier": 1, "name": 1}
 ngGcsFileMetadata {"name": "accountId_1", "background": true} {"accountId": 1}
 ngGcsFileMetadata {"name": "entityId_1", "background": true} {"entityId": 1}
@@ -731,6 +732,7 @@ serviceInstance {"name": "createdAt_1", "background": true} {"createdAt": 1}
 serviceInstance {"name": "hostId_1", "background": true} {"hostId": 1}
 serviceInstance {"name": "infraMappingId_1", "background": true} {"infraMappingId": 1}
 serviceInstance {"name": "publicDns_1", "background": true} {"publicDns": 1}
+serviceOverridesNG {"name": "unique_accountId_organizationIdentifier_projectIdentifier_environmentRef_serviceRef", "unique": true} {"accountId": 1, "orgIdentifier": 1, "projectIdentifier": 1, "environmentRef": 1, "serviceRef": 1}
 serviceSecrets {"name": "serviceType_1", "unique": true} {"serviceType": 1}
 serviceTemplates {"name": "accountId_1", "background": true} {"accountId": 1}
 serviceTemplates {"name": "appId_1", "background": true} {"appId": 1}

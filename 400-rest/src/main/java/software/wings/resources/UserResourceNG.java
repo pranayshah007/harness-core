@@ -51,6 +51,8 @@ import software.wings.service.intfc.UserService;
 
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -279,8 +281,16 @@ public class UserResourceNG {
 
   @PUT
   @Path("password")
-  public RestResponse<PasswordChangeResponse> changeUserPassword(
-      @QueryParam("userId") String userId, PasswordChangeDTO passwordChangeDTO) {
+  @ApiOperation(value = "Change user password", nickname = "changeUserPassword")
+  @Operation(operationId = "changeUserPassword", summary = "Change User Password",
+      description = "Changes user password.",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Successfully changed password of the user")
+      })
+  public RestResponse<PasswordChangeResponse>
+  changeUserPassword(@QueryParam("userId") String userId, PasswordChangeDTO passwordChangeDTO) {
     return new RestResponse<>(userService.changePassword(userId, passwordChangeDTO));
   }
 
@@ -299,7 +309,16 @@ public class UserResourceNG {
 
   @PUT
   @Path("/user")
-  public RestResponse<Optional<UserInfo>> updateUser(@Body UserInfo userInfo) {
+  @ApiOperation(value = "Update user information", nickname = "updateUserInfo")
+  @Operation(operationId = "updateUserInfo", summary = "Update user info",
+      description = "Updates user information for the given user ID.",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Successfully updated user information")
+      })
+  public RestResponse<Optional<UserInfo>>
+  updateUser(@Body UserInfo userInfo) {
     User user = convertNgUserToUserWithNameUpdated(userInfo);
     user = userService.update(user);
     return new RestResponse<>(Optional.ofNullable(convertUserToNgUser(user)));
@@ -338,8 +357,16 @@ public class UserResourceNG {
 
   @GET
   @Path("/two-factor-auth/{auth-mechanism}")
-  public RestResponse<Optional<TwoFactorAuthenticationSettings>> getTwoFactorAuthSettings(
-      @PathParam("auth-mechanism") TwoFactorAuthenticationMechanism authMechanism,
+  @ApiOperation(value = "Create two factor authorization setting", nickname = "createTwoFactorAuth")
+  @Operation(operationId = "createTwoFactorAuth", summary = "Create two factor authorization setting",
+      description = "Creates Two-Factor authorization settings.",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
+            description = "Successfully created two factor authorization setting for an account")
+      })
+  public RestResponse<Optional<TwoFactorAuthenticationSettings>>
+  getTwoFactorAuthSettings(@PathParam("auth-mechanism") TwoFactorAuthenticationMechanism authMechanism,
       @QueryParam("emailId") String emailId) {
     return new RestResponse<>(Optional.ofNullable(twoFactorAuthenticationManager.createTwoFactorAuthenticationSettings(
         userService.getUserByEmail(emailId), authMechanism)));
@@ -347,8 +374,16 @@ public class UserResourceNG {
 
   @PUT
   @Path("/enable-two-factor-auth")
-  public RestResponse<Optional<UserInfo>> enableTwoFactorAuth(
-      @QueryParam("emailId") String emailId, @Body TwoFactorAuthenticationSettings settings) {
+  @ApiOperation(value = "Enable two factor authorization", nickname = "enableTwoFactorAuth")
+  @Operation(operationId = "enableTwoFactorAuth", summary = "Enables Two-Factor authorization",
+      description = "Enables Two-Factor authorization.",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "default", description = "Successfully enabled two factor authorization for an account")
+      })
+  public RestResponse<Optional<UserInfo>>
+  enableTwoFactorAuth(@QueryParam("emailId") String emailId, @Body TwoFactorAuthenticationSettings settings) {
     return new RestResponse<>(
         Optional.ofNullable(convertUserToNgUser(twoFactorAuthenticationManager.enableTwoFactorAuthenticationSettings(
             userService.getUserByEmail(emailId), settings))));
@@ -356,7 +391,16 @@ public class UserResourceNG {
 
   @PUT
   @Path("/disable-two-factor-auth")
-  public RestResponse<Optional<UserInfo>> disableTwoFactorAuth(@QueryParam("emailId") String emailId) {
+  @ApiOperation(value = "Disable two factor authorization", nickname = "disableTwoFactorAuth")
+  @Operation(operationId = "disableTwoFactorAuth", summary = "Disable two factor authorization",
+      description = "Disables Two-Factor authorization.",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(
+            responseCode = "default", description = "Successfully disabled two factor authorization for an account")
+      })
+  public RestResponse<Optional<UserInfo>>
+  disableTwoFactorAuth(@QueryParam("emailId") String emailId) {
     return new RestResponse<>(Optional.ofNullable(convertUserToNgUser(
         twoFactorAuthenticationManager.disableTwoFactorAuthentication(userService.getUserByEmail(emailId)))));
   }
@@ -489,8 +533,16 @@ public class UserResourceNG {
 
   @PUT
   @Path("/unlock-user")
-  public RestResponse<Optional<UserInfo>> unlockUser(
-      @NotEmpty @QueryParam("email") String email, @NotEmpty @QueryParam("accountId") String accountId) {
+  @ApiOperation(value = "Unlock user", nickname = "unlockUser")
+  @Operation(operationId = "unlockUser", summary = "Unlocks a locked user",
+      description = "Unlocks a locked user of an account",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Successfully unlocked locked user of an account")
+      })
+  public RestResponse<Optional<UserInfo>>
+  unlockUser(@NotEmpty @QueryParam("email") String email, @NotEmpty @QueryParam("accountId") String accountId) {
     return new RestResponse<>(Optional.ofNullable(convertUserToNgUser(userService.unlockUser(email, accountId))));
   }
 

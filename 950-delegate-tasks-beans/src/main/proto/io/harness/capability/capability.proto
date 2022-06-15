@@ -180,4 +180,5 @@ message LiteEngineConnectionParameters {
 // Testing whether a delegate can connect to a given VM pool (CI)
 message CIVMParameters {
   string pool_id = 1;
+  string stage_runtime_id = 2;
 }

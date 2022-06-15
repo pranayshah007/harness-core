@@ -14,6 +14,7 @@ import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
+import io.harness.cdng.configfile.ConfigFileWrapper;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.yaml.core.variables.NGVariable;
 
@@ -28,5 +29,6 @@ public interface ServiceSpec {
   ArtifactListConfig getArtifacts();
   List<ManifestConfigWrapper> getManifests();
   List<NGVariable> getVariables();
+  List<ConfigFileWrapper> getConfigFiles();
   @JsonIgnore String getType();
 }

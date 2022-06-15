@@ -23,18 +23,22 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.rule.Owner;
+import io.harness.serializer.KryoSerializer;
 
 import com.google.inject.Inject;
+import com.google.protobuf.ByteString;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 @OwnedBy(HarnessTeam.CDC)
 public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
+  @Inject KryoSerializer kryoSerializer;
   @Inject DeploymentStagePMSPlanCreatorV2 deploymentStagePMSPlanCreator;
 
   private YamlField getYamlFieldFromPath(String path) throws IOException {
@@ -103,11 +107,27 @@ public class DeploymentStagePMSPlanCreatorV2Test extends CDNGTestBase {
     EnvironmentPlanCreatorConfig environmentPlanCreatorConfig =
         YamlUtils.read(envPlanCreatorConfigYaml, EnvironmentPlanCreatorConfig.class);
     LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap = new LinkedHashMap<>();
-    deploymentStagePMSPlanCreator.addEnvironmentV2Dependency(
-        planCreationResponseMap, environmentPlanCreatorConfig, environmentYamlV2, false);
+    EnvironmentPlanCreatorHelper.addEnvironmentV2Dependency(planCreationResponseMap, environmentPlanCreatorConfig,
+        environmentYamlV2, false, "environmentUuid", "infraSectionUuid", "serviceSpecNodeUuid", kryoSerializer);
     assertThat(planCreationResponseMap.size()).isEqualTo(1);
     String key = planCreationResponseMap.keySet().iterator().next();
     assertThat(planCreationResponseMap.get(key).getYamlUpdates().getFqnToYamlCount()).isEqualTo(1);
     assertThat(planCreationResponseMap.get(key).getDependencies().getDependenciesMap().size()).isEqualTo(1);
+
+    Map<String, ByteString> dependencyMetadata =
+        planCreationResponseMap.get(key).getDependencies().getDependencyMetadataMap().get(key).getMetadataMap();
+
+    assertThat(dependencyMetadata.size()).isEqualTo(4);
+    assertThat(dependencyMetadata.containsKey(YamlTypes.UUID)).isTrue();
+    assertThat(dependencyMetadata.get(YamlTypes.UUID))
+        .isEqualTo(ByteString.copyFrom(kryoSerializer.asDeflatedBytes(key)));
+
+    assertThat(dependencyMetadata.containsKey(YamlTypes.NEXT_UUID)).isTrue();
+    assertThat(dependencyMetadata.get(YamlTypes.NEXT_UUID))
+        .isEqualTo(ByteString.copyFrom(kryoSerializer.asDeflatedBytes("serviceSpecNodeUuid")));
+
+    assertThat(dependencyMetadata.containsKey(YamlTypes.INFRA_SECTION_UUID)).isTrue();
+    assertThat(dependencyMetadata.get(YamlTypes.INFRA_SECTION_UUID))
+        .isEqualTo(ByteString.copyFrom(kryoSerializer.asDeflatedBytes("infraSectionUuid")));
   }
 }

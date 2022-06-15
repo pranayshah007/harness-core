@@ -75,6 +75,9 @@
         "parentIdentifier": {
           "type": "string"
         },
+        "path": {
+          "type": "string"
+        },
         "projectIdentifier": {
           "type": "string"
         },

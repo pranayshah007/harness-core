@@ -10,6 +10,7 @@ package io.harness.ci.plan.creator;
 import static io.harness.beans.execution.WebhookEvent.Type.BRANCH;
 import static io.harness.beans.execution.WebhookEvent.Type.PR;
 import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.CODEBASE;
+import static io.harness.common.CIExecutionConstants.AZURE_REPO_BASE_URL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.git.GitClientHelper.getGitRepo;
@@ -102,55 +103,58 @@ public class CIModuleInfoProvider implements ExecutionSummaryModuleInfoProvider 
     BaseNGAccess baseNGAccess = retrieveBaseNGAccess(ambiance);
     try {
       StepElementParameters stepElementParameters = (StepElementParameters) event.getResolvedStepParameters();
-      InitializeStepInfo initializeStepInfo = (InitializeStepInfo) stepElementParameters.getSpec();
+      if (stepElementParameters != null) {
+        InitializeStepInfo initializeStepInfo = (InitializeStepInfo) stepElementParameters.getSpec();
 
-      if (initializeStepInfo == null) {
-        return null;
-      }
-
-      ParameterField<Build> buildParameterField = null;
-      if (initializeStepInfo.getCiCodebase() != null) {
-        buildParameterField = initializeStepInfo.getCiCodebase().getBuild();
-
-        if (isNotEmpty(initializeStepInfo.getCiCodebase().getRepoName().getValue())) {
-          repoName = initializeStepInfo.getCiCodebase().getRepoName().getValue();
+        if (initializeStepInfo == null) {
+          return null;
         }
-        if (initializeStepInfo.getCiCodebase().getConnectorRef().getValue() != null) {
-          try {
-            ConnectorDetails connectorDetails = connectorUtils.getConnectorDetails(
-                baseNGAccess, initializeStepInfo.getCiCodebase().getConnectorRef().getValue());
-            if (executionTriggerInfo.getTriggerType() == TriggerType.WEBHOOK) {
-              url = IntegrationStageUtils.getGitURLFromConnector(connectorDetails, initializeStepInfo.getCiCodebase());
-            }
-            if (url == null) {
-              url = connectorUtils.retrieveURL(connectorDetails);
-            }
-            if (isEmpty(repoName) || repoName.equals(NULL_STR)) {
-              repoName = getGitRepo(url);
-            }
 
-          } catch (Exception exception) {
-            log.warn("Failed to retrieve repo");
+        ParameterField<Build> buildParameterField = null;
+        if (initializeStepInfo.getCiCodebase() != null) {
+          buildParameterField = initializeStepInfo.getCiCodebase().getBuild();
+
+          if (isNotEmpty(initializeStepInfo.getCiCodebase().getRepoName().getValue())) {
+            repoName = initializeStepInfo.getCiCodebase().getRepoName().getValue();
+          }
+          if (initializeStepInfo.getCiCodebase().getConnectorRef().getValue() != null) {
+            try {
+              ConnectorDetails connectorDetails = connectorUtils.getConnectorDetails(
+                  baseNGAccess, initializeStepInfo.getCiCodebase().getConnectorRef().getValue());
+              if (executionTriggerInfo.getTriggerType() == TriggerType.WEBHOOK) {
+                url =
+                    IntegrationStageUtils.getGitURLFromConnector(connectorDetails, initializeStepInfo.getCiCodebase());
+              }
+              if (url == null) {
+                url = connectorUtils.retrieveURL(connectorDetails);
+              }
+              if (isEmpty(repoName) || repoName.equals(NULL_STR)) {
+                repoName = getGitRepo(url);
+              }
+
+            } catch (Exception exception) {
+              log.warn("Failed to retrieve repo");
+            }
           }
         }
-      }
-      isPrivateRepo = isPrivateRepo(url);
-      Build build = RunTimeInputHandler.resolveBuild(buildParameterField);
-      if (build != null) {
-        buildType = build.getType().toString();
-      }
-      if (build != null && build.getType().equals(BuildType.BRANCH)) {
-        branch = (String) ((BranchBuildSpec) build.getSpec()).getBranch().fetchFinalValue();
-      }
-
-      if (build != null && build.getType().equals(BuildType.PR)) {
-        if (((PRBuildSpec) build.getSpec()).getNumber().isExpression() == false) {
-          prNumber = (String) ((PRBuildSpec) build.getSpec()).getNumber().fetchFinalValue();
+        isPrivateRepo = isPrivateRepo(url);
+        Build build = RunTimeInputHandler.resolveBuild(buildParameterField);
+        if (build != null) {
+          buildType = build.getType().toString();
         }
-      }
+        if (build != null && build.getType().equals(BuildType.BRANCH)) {
+          branch = (String) ((BranchBuildSpec) build.getSpec()).getBranch().fetchFinalValue();
+        }
 
-      if (build != null && build.getType().equals(BuildType.TAG)) {
-        tag = (String) ((TagBuildSpec) build.getSpec()).getTag().fetchFinalValue();
+        if (build != null && build.getType().equals(BuildType.PR)) {
+          if (((PRBuildSpec) build.getSpec()).getNumber().isExpression() == false) {
+            prNumber = (String) ((PRBuildSpec) build.getSpec()).getNumber().fetchFinalValue();
+          }
+        }
+
+        if (build != null && build.getType().equals(BuildType.TAG)) {
+          tag = (String) ((TagBuildSpec) build.getSpec()).getTag().fetchFinalValue();
+        }
       }
     } catch (Exception ex) {
       log.error("Failed to retrieve branch and tag for filtering", ex);
@@ -206,8 +210,20 @@ public class CIModuleInfoProvider implements ExecutionSummaryModuleInfoProvider 
     if (codebaseSweepingOutput != null) {
       log.info("Codebase sweeping output {}", codebaseSweepingOutput);
 
-      if (isEmpty(branch) && codebaseSweepingOutput != null) {
+      if (isEmpty(branch)) {
         branch = codebaseSweepingOutput.getBranch();
+      }
+
+      if (isEmpty(prNumber)) {
+        prNumber = codebaseSweepingOutput.getPrNumber();
+      }
+
+      if (isEmpty(tag)) {
+        tag = codebaseSweepingOutput.getTag();
+      }
+
+      if (isEmpty(repoName) && isNotEmpty(codebaseSweepingOutput.getRepoUrl())) {
+        repoName = getGitRepo(codebaseSweepingOutput.getRepoUrl());
       }
     }
 
@@ -231,7 +247,9 @@ public class CIModuleInfoProvider implements ExecutionSummaryModuleInfoProvider 
 
     List<CIBuildCommit> ciBuildCommits = new ArrayList<>();
     if (isNotEmpty(codebaseSweepingOutput.getCommits())) {
-      Collections.reverse(codebaseSweepingOutput.getCommits());
+      if (shouldReverseCommitList(codebaseSweepingOutput.getRepoUrl())) {
+        Collections.reverse(codebaseSweepingOutput.getCommits());
+      }
       for (CodebaseSweepingOutput.CodeBaseCommit commit : codebaseSweepingOutput.getCommits()) {
         ciBuildCommits.add(CIBuildCommit.builder()
                                .id(commit.getId())
@@ -359,5 +377,10 @@ public class CIModuleInfoProvider implements ExecutionSummaryModuleInfoProvider 
       log.warn("Failed to get repo info, assuming private. url", e);
       return true;
     }
+  }
+
+  private boolean shouldReverseCommitList(String repoUrl) {
+    // Azure gives latest commit first
+    return !repoUrl.contains(AZURE_REPO_BASE_URL);
   }
 }

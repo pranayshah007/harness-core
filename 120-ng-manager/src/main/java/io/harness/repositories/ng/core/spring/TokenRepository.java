@@ -21,11 +21,11 @@ import org.springframework.data.repository.PagingAndSortingRepository;
 @OwnedBy(PL)
 @HarnessRepo
 public interface TokenRepository extends PagingAndSortingRepository<Token, String>, TokenCustomRepository {
-  long deleteAllByAccountIdentifierAndOrgIdentifierAndParentIdentifierAndApiKeyTypeAndParentIdentifier(
+  long deleteAllByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndApiKeyTypeAndParentIdentifier(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, ApiKeyType apiKeyType,
       String parentIdentifier);
   long
-  deleteAllByAccountIdentifierAndOrgIdentifierAndParentIdentifierAndApiKeyTypeAndParentIdentifierAndApiKeyIdentifier(
+  deleteAllByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndApiKeyTypeAndParentIdentifierAndApiKeyIdentifier(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, ApiKeyType apiKeyType,
       String parentIdentifier, String apiKeyIdentifier);
   Optional<Token>

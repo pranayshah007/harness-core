@@ -13,6 +13,7 @@ import io.harness.cdng.artifact.bean.artifactsource.ArtifactSource;
 import io.harness.cdng.artifact.bean.artifactsource.DockerArtifactSource;
 import io.harness.cdng.artifact.steps.ArtifactStepParameters;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
+import io.harness.cdng.infra.beans.AzureWebAppInfraMapping;
 import io.harness.cdng.infra.beans.InfraMapping;
 import io.harness.cdng.infra.beans.InfraUseFromStage;
 import io.harness.cdng.infra.beans.K8sAzureInfraMapping;
@@ -20,6 +21,7 @@ import io.harness.cdng.infra.beans.K8sDirectInfraMapping;
 import io.harness.cdng.infra.beans.K8sGcpInfraMapping;
 import io.harness.cdng.infra.beans.PdcInfraMapping;
 import io.harness.cdng.infra.beans.ServerlessAwsLambdaInfraMapping;
+import io.harness.cdng.infra.beans.SshWinRmAwsInfraMapping;
 import io.harness.cdng.infra.beans.SshWinRmAzureInfraMapping;
 import io.harness.cdng.infra.steps.InfraStepParameters;
 import io.harness.cdng.pipeline.executions.CDAccountExecutionMetadata;
@@ -50,6 +52,8 @@ public class NGMorphiaRegistrar implements MorphiaRegistrar {
     set.add(CDAccountExecutionMetadata.class);
     set.add(EnvironmentGroupEntity.class);
     set.add(ServerlessAwsLambdaInfraMapping.class);
+    set.add(SshWinRmAwsInfraMapping.class);
+    set.add(AzureWebAppInfraMapping.class);
   }
 
   @Override

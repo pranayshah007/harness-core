@@ -46,11 +46,14 @@ import io.harness.azure.model.image.AzureMachineImage;
 import io.harness.azure.model.image.AzureMachineImageFactory;
 import io.harness.azure.utility.AzureResourceUtility;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Singleton;
 import com.microsoft.azure.PagedList;
 import com.microsoft.azure.management.Azure;
+import com.microsoft.azure.management.appservice.DeploymentSlot;
+import com.microsoft.azure.management.appservice.WebApp;
 import com.microsoft.azure.management.compute.GalleryImage;
 import com.microsoft.azure.management.compute.SshConfiguration;
 import com.microsoft.azure.management.compute.SshPublicKey;
@@ -233,6 +236,38 @@ public class AzureComputeClientImpl extends AzureClient implements AzureComputeC
   }
 
   @Override
+  public List<String> listWebAppNamesBySubscriptionIdAndResourceGroup(
+      AzureConfig azureConfig, String subscriptionId, String resourceGroup) {
+    Azure azure = getAzureClient(azureConfig, subscriptionId);
+    Objects.notNull(azure, AZURE_MANAGEMENT_CLIENT_NULL_VALIDATION_MSG);
+    log.debug("Start listing Web App Names for tenantId {}", azureConfig.getTenantId());
+    PagedList<WebApp> webAppNames = azure.webApps().listByResourceGroup(resourceGroup);
+    return webAppNames.stream().map(HasName::name).collect(Collectors.toList());
+  }
+
+  @Override
+  public List<DeploymentSlot> listWebAppDeploymentSlots(
+      AzureConfig azureConfig, String subscriptionId, String resourceGroup, String webAppName) {
+    Azure azure = getAzureClient(azureConfig, subscriptionId);
+    Objects.notNull(azure, AZURE_MANAGEMENT_CLIENT_NULL_VALIDATION_MSG);
+    log.debug("Start listing Web App deployment slots for tenantId {}", azureConfig.getTenantId());
+    WebApp webApp = getWebApp(azure, resourceGroup, webAppName);
+
+    PagedList<DeploymentSlot> deploymentSlots = webApp.deploymentSlots().list();
+    return deploymentSlots.stream().collect(Collectors.toList());
+  }
+
+  @NotNull
+  private WebApp getWebApp(Azure azure, String resourceGroupName, String webAppName) {
+    WebApp webApp = azure.webApps().getByResourceGroup(resourceGroupName, webAppName);
+    if (webApp == null) {
+      throw new IllegalArgumentException(
+          format("Not found Web App with name: %s, resource group name: %s", webAppName, resourceGroupName));
+    }
+    return webApp;
+  }
+
+  @Override
   public List<String> listResourceGroupsNamesBySubscriptionId(AzureConfig azureConfig, String subscriptionId) {
     Azure azure = getAzureClient(azureConfig, subscriptionId);
 
@@ -314,7 +349,7 @@ public class AzureComputeClientImpl extends AzureClient implements AzureComputeC
           format("Error while creating virtual machine scale set, newVirtualMachineScaleSetName: %s, "
                   + "harnessRevision: %s, infraMappingId: %s",
               newVirtualMachineScaleSetName, tags.getHarnessRevision(), tags.getInfraMappingId()),
-          e);
+          ExceptionMessageSanitizer.sanitizeException(e));
     }
   }
 
@@ -487,7 +522,7 @@ public class AzureComputeClientImpl extends AzureClient implements AzureComputeC
       } catch (NumberFormatException e) {
         log.error(format("Unable to convert VM instance id to numeric type, id: %s instanceIds: %s", id,
                       Arrays.toString(instanceIds)),
-            e);
+            ExceptionMessageSanitizer.sanitizeException(e));
         return false;
       }
     }

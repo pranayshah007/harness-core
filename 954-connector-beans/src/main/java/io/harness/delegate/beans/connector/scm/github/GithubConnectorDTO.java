@@ -7,6 +7,9 @@
 
 package io.harness.delegate.beans.connector.scm.github;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.utils.FilePathUtils.removeStartingAndEndingSlash;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
@@ -17,6 +20,7 @@ import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
+import io.harness.delegate.beans.connector.scm.utils.ScmConnectorHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.git.GitClientHelper;
 import io.harness.gitsync.beans.GitRepositoryDTO;
@@ -57,6 +61,7 @@ public class GithubConnectorDTO
   @Valid GithubApiAccessDTO apiAccess;
   Set<String> delegateSelectors;
   Boolean executeOnDelegate;
+  String gitConnectionUrl;
 
   @Builder
   public GithubConnectorDTO(GitConnectionType connectionType, String url, String validationRepo,
@@ -98,18 +103,25 @@ public class GithubConnectorDTO
     return ConnectorType.GITHUB;
   }
 
+  public String getUrl() {
+    if (isNotEmpty(gitConnectionUrl)) {
+      return gitConnectionUrl;
+    }
+    return url;
+  }
+
   @Override
-  public String getGitConnectionUrl(String repoName) {
+  public String getGitConnectionUrl(GitRepositoryDTO gitRepositoryDTO) {
     if (connectionType == GitConnectionType.REPO) {
-      String linkedRepo = GitClientHelper.getGitRepo(url);
-      if (!linkedRepo.equals(repoName)) {
+      String linkedRepo = getGitRepositoryDetails().getName();
+      if (!linkedRepo.equals(gitRepositoryDTO.getName())) {
         throw new InvalidRequestException(
             String.format("Provided repoName [%s] does not match with the repoName [%s] provided in connector.",
-                repoName, linkedRepo));
+                gitRepositoryDTO.getName(), linkedRepo));
       }
       return getUrl();
     }
-    return FilePathUtils.addEndingSlashIfMissing(getUrl()) + repoName;
+    return FilePathUtils.addEndingSlashIfMissing(getUrl()) + gitRepositoryDTO.getName();
   }
 
   @Override
@@ -121,6 +133,14 @@ public class GithubConnectorDTO
           .build();
     }
     return GitRepositoryDTO.builder().org(GitClientHelper.getGitOwner(url, true)).build();
+  }
+
+  @Override
+  public String getFileUrl(String branchName, String filePath, GitRepositoryDTO gitRepositoryDTO) {
+    ScmConnectorHelper.validateGetFileUrlParams(branchName, filePath);
+    String repoUrl = removeStartingAndEndingSlash(getGitConnectionUrl(gitRepositoryDTO));
+    filePath = removeStartingAndEndingSlash(filePath);
+    return String.format("%s/blob/%s/%s", repoUrl, branchName, filePath);
   }
 
   @Override

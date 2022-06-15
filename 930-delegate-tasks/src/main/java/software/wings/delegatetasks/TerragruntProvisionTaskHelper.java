@@ -21,6 +21,8 @@ import static java.lang.String.format;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.exception.FileReadException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.filesystem.FileIo;
 import io.harness.git.model.GitRepositoryType;
 import io.harness.logging.CommandExecutionStatus;
@@ -136,6 +138,8 @@ public class TerragruntProvisionTaskHelper {
           CommandExecutionStatus.RUNNING);
 
       encryptionService.decrypt(tfVarGitSource.getGitConfig(), tfVarGitSource.getEncryptedDataDetails(), false);
+      ExceptionMessageSanitizer.storeAllSecretsForSanitizing(
+          tfVarGitSource.getGitConfig(), tfVarGitSource.getEncryptedDataDetails());
       gitClient.downloadFiles(tfVarGitSource.getGitConfig(),
           GitFetchFilesRequest.builder()
               .branch(tfVarGitSource.getGitFileConfig().getBranch())
@@ -200,8 +204,7 @@ public class TerragruntProvisionTaskHelper {
     return "";
   }
 
-  public void downloadTfStateFile(TerragruntProvisionParameters parameters, String terraformConfigFileDirectory)
-      throws IOException {
+  public void downloadTfStateFile(TerragruntProvisionParameters parameters, String terraformConfigFileDirectory) {
     File tfStateFile = (isEmpty(parameters.getWorkspace()))
         ? Paths.get(terraformConfigFileDirectory, TERRAFORM_STATE_FILE_NAME).toFile()
         : Paths.get(terraformConfigFileDirectory, format(WORKSPACE_STATE_FILE_PATH_FORMAT, parameters.getWorkspace()))
@@ -218,6 +221,9 @@ public class TerragruntProvisionTaskHelper {
           pushbackInputStream.unread(firstByte);
           FileUtils.copyInputStreamToFile(pushbackInputStream, tfStateFile);
         }
+      } catch (IOException ex) {
+        throw new FileReadException(
+            format("Could not download Terraform state file with id: %s", parameters.getCurrentStateFileId()));
       }
     } else {
       FileUtils.deleteQuietly(tfStateFile);

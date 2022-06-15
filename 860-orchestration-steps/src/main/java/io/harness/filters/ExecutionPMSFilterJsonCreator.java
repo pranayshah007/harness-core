@@ -58,7 +58,7 @@ public class ExecutionPMSFilterJsonCreator extends ChildrenFilterJsonCreator<Exe
   }
 
   @Override
-  public PipelineFilter getFilterForGivenField() {
+  public PipelineFilter getFilterForGivenField(FilterCreationContext filterCreationContext) {
     return null;
   }
 }

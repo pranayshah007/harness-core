@@ -10,7 +10,6 @@ package io.harness.serializer;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.serializer.kryo.CgOrchestrationBeansKryoRegistrar;
-import io.harness.serializer.kryo.CvNextGenCommonsBeansKryoRegistrar;
 import io.harness.serializer.kryo.DelegateAgentBeansKryoRegister;
 import io.harness.serializer.kryo.DelegateServiceKryoRegister;
 import io.harness.serializer.kryo.NgAuthenticationServiceKryoRegistrar;
@@ -28,7 +27,7 @@ import lombok.experimental.UtilityClass;
 public class DelegateRegistrars {
   public static final ImmutableSet<Class<? extends KryoRegistrar>> kryoRegistrars =
       ImmutableSet.<Class<? extends KryoRegistrar>>builder()
-          .addAll(CvNextGenCommonsRegistrars.kryoRegistrars)
+          .addAll(CvNextGenBeansRegistrars.kryoRegistrars)
           .addAll(ConnectorBeansRegistrars.kryoRegistrars)
           .addAll(DelegateTasksBeansRegistrars.kryoRegistrars)
           .addAll(CgOrchestrationRegistrars.kryoRegistrars)
@@ -40,7 +39,6 @@ public class DelegateRegistrars {
           .addAll(SMCoreRegistrars.kryoRegistrars)
           .addAll(FileServiceCommonsRegistrars.kryoRegistrars)
           .add(NotificationBeansKryoRegistrar.class)
-          .add(CvNextGenCommonsBeansKryoRegistrar.class)
           .addAll(LicenseBeanRegistrar.kryoRegistrars)
           // temporary:
           .add(NotificationDelegateTasksKryoRegistrar.class)

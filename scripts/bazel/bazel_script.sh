@@ -57,13 +57,12 @@ fi
 BAZEL_MODULES="\
   //100-migrator:module \
   //270-verification:module \
-  //280-batch-processing:module \
   //290-dashboard-service:module \
   //295-cdng-contracts:module \
   //300-cv-nextgen:module \
   //310-ci-manager:module \
   //320-ci-execution:module \
-  //323-sto-execution:module \
+  //323-sto-utilities:module \
   //325-sto-beans:module \
   //330-ci-beans:module \
   //340-ce-nextgen:module \
@@ -106,6 +105,7 @@ BAZEL_MODULES="\
   //870-orchestration:module \
   //874-orchestration-delay:module \
   //876-orchestration-beans:module \
+  //877-filestore:module \
   //878-ng-common-utilities:module \
   //879-pms-sdk:module \
   //882-pms-sdk-core:module \
@@ -136,6 +136,7 @@ BAZEL_MODULES="\
   //945-license-usage-sdk:module \
   //clients/audit:module \
   //947-scim-core:module \
+  //948-cv-nextgen-beans:module \
   //950-command-library-common:module \
   //959-common-entities:module \
   //950-delegate-tasks-beans/src/main/proto:all \
@@ -196,11 +197,7 @@ BAZEL_MODULES="\
   //990-commons-test:module \
   //999-annotations:module \
   //access-control/service:module \
-  //access-control/libs/aggregator:module \
-  //access-control/libs/core:module \
   //access-control/contracts:module \
-  //clients/access-control/admin-client:module \
-  //clients/access-control/sdk:module \
   //product/ci/engine/proto:all \
   //product/ci/scm/proto:all \
 "
@@ -294,6 +291,8 @@ build_protocol_info(){
 
 build_bazel_module 100-migrator
 build_bazel_module 320-ci-execution
+build_bazel_module 323-sto-utilities
+build_bazel_module 325-sto-beans
 build_bazel_module 330-ci-beans
 build_bazel_module 380-cg-graphql
 build_bazel_module 400-rest
@@ -334,6 +333,7 @@ build_bazel_module 932-connector-task
 build_bazel_module 940-feature-flag
 build_bazel_module 940-secret-manager-client
 build_bazel_module 947-scim-core
+build_bazel_module 948-cv-nextgen-beans
 build_bazel_module 950-command-library-common
 build_bazel_module 959-common-entities
 build_bazel_module 950-delegate-tasks-beans

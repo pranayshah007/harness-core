@@ -14,7 +14,7 @@ import static io.harness.beans.ExecutionStatus.PREPARING;
 import static io.harness.beans.ExecutionStatus.RUNNING;
 import static io.harness.beans.ExecutionStatus.SUCCESS;
 import static io.harness.beans.ExecutionStatus.WAITING;
-import static io.harness.beans.FeatureName.DISABLE_ARTIFACT_COLLECTION;
+import static io.harness.beans.FeatureName.ARTIFACT_COLLECTION_CONFIGURABLE;
 import static io.harness.beans.FeatureName.WEBHOOK_TRIGGER_AUTHORIZATION;
 import static io.harness.beans.PageRequest.PageRequestBuilder.aPageRequest;
 import static io.harness.beans.SearchFilter.Operator.EQ;
@@ -32,6 +32,7 @@ import static io.harness.rule.OwnerRule.PRASHANT;
 import static io.harness.rule.OwnerRule.RAGHU;
 import static io.harness.rule.OwnerRule.RAMA;
 import static io.harness.rule.OwnerRule.SRINIVAS;
+import static io.harness.rule.OwnerRule.TATHAGAT;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
 import static io.harness.rule.OwnerRule.VIKAS_S;
 import static io.harness.threading.Poller.pollFor;
@@ -1945,8 +1946,44 @@ public class WorkflowExecutionServiceImplTest extends WingsBaseTest {
     assertThat(workflowExecution1).isNotNull().hasFieldOrPropertyWithValue("releaseNo", "1");
 
     List<Artifact> artifacts = workflowExecutionService.obtainLastGoodDeployedArtifacts(
-        workflowExecution2, workflowExecution1.getInfraMappingIds());
+        workflowExecution2, workflowExecution1.getInfraMappingIds(), true);
     assertThat(artifacts).isNotEmpty();
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testShouldUseInfraBasedRollbackArtifactFfOn() {
+    when(featureFlagService.isEnabled(FeatureName.INFRA_MAPPING_BASED_ROLLBACK_ARTIFACT, ACCOUNT_ID)).thenReturn(true);
+    List<InfrastructureMapping> infrastructureMappingList1 =
+        asList(DirectKubernetesInfrastructureMapping.builder().deploymentType(DeploymentType.AZURE_VMSS.name()).build(),
+            DirectKubernetesInfrastructureMapping.builder().deploymentType(DeploymentType.KUBERNETES.name()).build());
+
+    assertThat(workflowExecutionService.shouldUseInfraBasedRollbackArtifact(ACCOUNT_ID, infrastructureMappingList1))
+        .isTrue();
+
+    List<InfrastructureMapping> infrastructureMappingList2 = asList(
+        DirectKubernetesInfrastructureMapping.builder().deploymentType(DeploymentType.AZURE_VMSS.name()).build());
+    assertThat(workflowExecutionService.shouldUseInfraBasedRollbackArtifact(ACCOUNT_ID, infrastructureMappingList2))
+        .isFalse();
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testShouldUseInfraBasedRollbackArtifactFfOff() {
+    when(featureFlagService.isEnabled(FeatureName.INFRA_MAPPING_BASED_ROLLBACK_ARTIFACT, ACCOUNT_ID)).thenReturn(false);
+    List<InfrastructureMapping> infrastructureMappingList1 =
+        asList(DirectKubernetesInfrastructureMapping.builder().deploymentType(DeploymentType.AZURE_VMSS.name()).build(),
+            DirectKubernetesInfrastructureMapping.builder().deploymentType(DeploymentType.KUBERNETES.name()).build());
+
+    assertThat(workflowExecutionService.shouldUseInfraBasedRollbackArtifact(ACCOUNT_ID, infrastructureMappingList1))
+        .isFalse();
+
+    List<InfrastructureMapping> infrastructureMappingList2 = asList(
+        DirectKubernetesInfrastructureMapping.builder().deploymentType(DeploymentType.AZURE_VMSS.name()).build());
+    assertThat(workflowExecutionService.shouldUseInfraBasedRollbackArtifact(ACCOUNT_ID, infrastructureMappingList2))
+        .isFalse();
   }
 
   @Test
@@ -1961,7 +1998,7 @@ public class WorkflowExecutionServiceImplTest extends WingsBaseTest {
 
     List<String> infraMappingList = singletonList("infraMappingId");
     List<Artifact> artifacts =
-        workflowExecutionService.obtainLastGoodDeployedArtifacts(workflowExecution, infraMappingList);
+        workflowExecutionService.obtainLastGoodDeployedArtifacts(workflowExecution, infraMappingList, false);
     assertThat(artifacts).isEmpty();
   }
 
@@ -2589,7 +2626,7 @@ public class WorkflowExecutionServiceImplTest extends WingsBaseTest {
                                                   .name("testNexus")
                                                   .build();
     when(artifactStreamService.get(ARTIFACT_STREAM_ID)).thenReturn(nexusArtifactStream);
-    when(buildSourceService.getBuild(anyString(), anyString(), anyString(), any()))
+    when(buildSourceService.getBuild(any(), any(), any(), any()))
         .thenReturn(BuildDetails.Builder.aBuildDetails().withNumber("1.0").build());
     Map<String, String> map = new HashMap<>();
     map.put("buildNo", "1.0");
@@ -2715,7 +2752,7 @@ public class WorkflowExecutionServiceImplTest extends WingsBaseTest {
                                                   .name("testNexus")
                                                   .build();
     when(artifactStreamService.get(ARTIFACT_STREAM_ID)).thenReturn(nexusArtifactStream);
-    when(buildSourceService.getBuild(anyString(), anyString(), anyString(), any()))
+    when(buildSourceService.getBuild(any(), any(), any(), any()))
         .thenReturn(BuildDetails.Builder.aBuildDetails().withNumber("1.0").build());
     Map<String, String> map = new HashMap<>();
     map.put("buildNo", "1.0");
@@ -2981,7 +3018,7 @@ public class WorkflowExecutionServiceImplTest extends WingsBaseTest {
                                               .infraMappingIds(infraMappingList)
                                               .build();
     WorkflowStandardParams stdParams = aWorkflowStandardParams().build();
-    workflowExecutionService.populateRollbackArtifacts(workflowExecution, infraMappingList, stdParams);
+    workflowExecutionService.populateRollbackArtifacts(workflowExecution, infraMappingList, stdParams, true);
     assertThat(stdParams.getRollbackArtifactIds()).isNotNull().isEmpty();
     assertThat(workflowExecution.getRollbackArtifacts()).isNotNull().isEmpty();
   }
@@ -3004,7 +3041,7 @@ public class WorkflowExecutionServiceImplTest extends WingsBaseTest {
     wingsPersistence.save(workflowExecution);
     WorkflowStandardParams stdParams = aWorkflowStandardParams().build();
     workflowExecutionService.populateRollbackArtifacts(
-        workflowExecution, asList(INFRA_MAPPING_ID, INFRA_MAPPING_ID), stdParams);
+        workflowExecution, asList(INFRA_MAPPING_ID, INFRA_MAPPING_ID), stdParams, false);
     assertThat(stdParams.getRollbackArtifactIds()).containsExactly(ARTIFACT_ID);
     assertThat(workflowExecution.getRollbackArtifacts()).hasSize(1);
   }
@@ -3151,7 +3188,7 @@ public class WorkflowExecutionServiceImplTest extends WingsBaseTest {
                                                   .name("testNexus")
                                                   .build();
     when(artifactStreamService.get(ARTIFACT_STREAM_ID)).thenReturn(nexusArtifactStream);
-    when(buildSourceService.getBuild(anyString(), anyString(), anyString(), any()))
+    when(buildSourceService.getBuild(any(), any(), any(), any()))
         .thenReturn(BuildDetails.Builder.aBuildDetails().withNumber("1.0").build());
     Map<String, String> map = new HashMap<>();
     map.put("buildNo", "1.0");
@@ -3280,7 +3317,7 @@ public class WorkflowExecutionServiceImplTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void shouldTriggerWorkflowWithArtifactInputsAndDisableArtifactCollectionFFOn() throws InterruptedException {
     String appId = app.getUuid();
-    when(featureFlagService.isEnabled(eq(DISABLE_ARTIFACT_COLLECTION), anyString())).thenReturn(true);
+    when(featureFlagService.isEnabled(eq(ARTIFACT_COLLECTION_CONFIGURABLE), anyString())).thenReturn(true);
 
     SettingAttribute computeProvider =
         aSettingAttribute().withAppId(app.getUuid()).withValue(aPhysicalDataCenterConfig().build()).build();

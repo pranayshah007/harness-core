@@ -1275,11 +1275,6 @@ gcpInstanceInventorySchema = [
     },
     {
         "mode": "NULLABLE",
-        "name": "projectNumber",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
         "name": "status",
         "type": "STRING"
     },
@@ -1366,11 +1361,6 @@ gcpInstanceInventorySchema = [
         "mode": "NULLABLE",
         "name": "lastUpdatedAt",
         "type": "TIMESTAMP"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "projectNumberPartition",
-        "type": "INTEGER"
     }
 ]
 
@@ -1403,11 +1393,6 @@ gcpDiskInventorySchema = [
     {
         "mode": "NULLABLE",
         "name": "projectId",
-        "type": "STRING"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "projectNumber",
         "type": "STRING"
     },
     {
@@ -1574,10 +1559,5 @@ gcpDiskInventorySchema = [
         "mode": "NULLABLE",
         "name": "lastUpdatedAt",
         "type": "TIMESTAMP"
-    },
-    {
-        "mode": "NULLABLE",
-        "name": "projectNumberPartition",
-        "type": "INTEGER"
     }
 ]

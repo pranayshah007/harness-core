@@ -26,13 +26,14 @@ import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.azure.appservice.AzureAppServicePreDeploymentData;
 import io.harness.delegate.task.azure.appservice.AzureAppServiceTaskParameters;
 import io.harness.delegate.task.azure.appservice.AzureAppServiceTaskResponse;
+import io.harness.delegate.task.azure.appservice.deployment.context.AzureAppServiceDockerDeploymentContext;
+import io.harness.delegate.task.azure.appservice.deployment.context.AzureAppServicePackageDeploymentContext;
 import io.harness.delegate.task.azure.appservice.webapp.request.AzureWebAppSlotSetupParameters;
 import io.harness.delegate.task.azure.appservice.webapp.response.AzureAppDeploymentData;
 import io.harness.delegate.task.azure.appservice.webapp.response.AzureWebAppSlotSetupResponse;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 
 import software.wings.beans.artifact.ArtifactStreamAttributes;
-import software.wings.delegatetasks.azure.appservice.deployment.context.AzureAppServiceDockerDeploymentContext;
-import software.wings.delegatetasks.azure.appservice.deployment.context.AzureAppServicePackageDeploymentContext;
 import software.wings.delegatetasks.azure.appservice.webapp.AbstractAzureWebAppTaskHandler;
 import software.wings.delegatetasks.azure.common.AutoCloseableWorkingDirectory;
 import software.wings.delegatetasks.azure.common.AzureContainerRegistryService;
@@ -93,8 +94,9 @@ public class AzureWebAppSlotSetupTaskHandler extends AbstractAzureWebAppTaskHand
           .preDeploymentData(azureAppServicePreDeploymentData)
           .build();
     } catch (Exception ex) {
-      String message = AzureResourceUtility.getAzureCloudExceptionMessage(ex);
-      logErrorMsg(azureAppServiceTaskParameters, logStreamingTaskClient, ex, message);
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(ex);
+      String message = AzureResourceUtility.getAzureCloudExceptionMessage(sanitizedException);
+      logErrorMsg(azureAppServiceTaskParameters, logStreamingTaskClient, sanitizedException, message);
       return AzureWebAppSlotSetupResponse.builder()
           .errorMsg(message)
           .preDeploymentData(azureAppServicePreDeploymentData)
@@ -135,8 +137,9 @@ public class AzureWebAppSlotSetupTaskHandler extends AbstractAzureWebAppTaskHand
           .preDeploymentData(azureAppServicePreDeploymentData)
           .build();
     } catch (Exception ex) {
-      String message = AzureResourceUtility.getAzureCloudExceptionMessage(ex);
-      logErrorMsg(azureAppServiceTaskParameters, logStreamingTaskClient, ex, message);
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(ex);
+      String message = AzureResourceUtility.getAzureCloudExceptionMessage(sanitizedException);
+      logErrorMsg(azureAppServiceTaskParameters, logStreamingTaskClient, sanitizedException, message);
       return AzureWebAppSlotSetupResponse.builder()
           .errorMsg(message)
           .preDeploymentData(azureAppServicePreDeploymentData)
@@ -158,7 +161,7 @@ public class AzureWebAppSlotSetupTaskHandler extends AbstractAzureWebAppTaskHand
         slotSetupParameters.getImageName(), slotSetupParameters.getImageTag());
 
     return AzureAppServiceDockerDeploymentContext.builder()
-        .logStreamingTaskClient(logStreamingTaskClient)
+        .logCallbackProvider(logCallbackProviderFactory.createCg(logStreamingTaskClient))
         .appSettingsToAdd(appSettingsToAdd)
         .connSettingsToAdd(connSettingsToAdd)
         .dockerSettings(dockerSettings)
@@ -206,7 +209,7 @@ public class AzureWebAppSlotSetupTaskHandler extends AbstractAzureWebAppTaskHand
         getConnSettingsToAdd(slotSetupParameters.getConnectionStrings());
 
     return AzureAppServicePackageDeploymentContext.builder()
-        .logStreamingTaskClient(logStreamingTaskClient)
+        .logCallbackProvider(logCallbackProviderFactory.createCg(logStreamingTaskClient))
         .appSettingsToAdd(appSettingsToAdd)
         .connSettingsToAdd(connSettingsToAdd)
         .slotName(slotSetupParameters.getSlotName())

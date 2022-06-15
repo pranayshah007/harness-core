@@ -11,11 +11,10 @@ import static io.harness.azure.model.AzureConstants.BLUEPRINT_JSON_FILE_BLANK_VA
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import io.harness.delegate.task.azure.common.validator.Validator;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.WingsException;
 import io.harness.serializer.JsonUtils;
-
-import software.wings.delegatetasks.azure.common.validator.Validator;
 
 public class BlueprintJsonValidator implements Validator<String> {
   @Override

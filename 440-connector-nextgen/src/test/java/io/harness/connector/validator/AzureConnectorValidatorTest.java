@@ -66,7 +66,7 @@ public class AzureConnectorValidatorTest extends CategoryTest {
   @Test
   @Owner(developers = OwnerRule.BUHA)
   @Category(UnitTests.class)
-  public void validateAzureConnectionWithManualCredentials() {
+  public void validateAzureConnectionWithManualCredentialsWithSecret() {
     SecretRefData secretRef = SecretRefData.builder().identifier("secretKey").scope(Scope.ACCOUNT).build();
     AzureConnectorDTO azureConnectorDTO =
         AzureConnectorDTO.builder()
@@ -77,6 +77,39 @@ public class AzureConnectorValidatorTest extends CategoryTest {
                                         .tenantId("tenant")
                                         .authDTO(AzureAuthDTO.builder()
                                                      .azureSecretType(AzureSecretType.SECRET_KEY)
+                                                     .credentials(
+                                                         AzureClientSecretKeyDTO.builder().secretKey(secretRef).build())
+                                                     .build())
+                                        .build())
+                            .build())
+            .build();
+    when(ngSecretService.getEncryptionDetails(any(), any())).thenReturn(null);
+    when(encryptionHelper.getEncryptionDetail(any(), any(), any(), any())).thenReturn(null);
+
+    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+        .thenReturn(AzureValidateTaskResponse.builder()
+                        .connectorValidationResult(
+                            ConnectorValidationResult.builder().status(ConnectivityStatus.SUCCESS).build())
+                        .build());
+    azureConnectorValidator.validate(
+        azureConnectorDTO, "accountIdentifier", "orgIdentifier", "projectIdentifier", "identifier");
+    verify(delegateGrpcClientWrapper, times(1)).executeSyncTask(any());
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.MLUKIC)
+  @Category(UnitTests.class)
+  public void validateAzureConnectionWithManualCredentialsWithCertificate() {
+    SecretRefData secretRef = SecretRefData.builder().identifier("certificate").scope(Scope.ACCOUNT).build();
+    AzureConnectorDTO azureConnectorDTO =
+        AzureConnectorDTO.builder()
+            .credential(AzureCredentialDTO.builder()
+                            .azureCredentialType(AzureCredentialType.MANUAL_CREDENTIALS)
+                            .config(AzureManualDetailsDTO.builder()
+                                        .clientId("client")
+                                        .tenantId("tenant")
+                                        .authDTO(AzureAuthDTO.builder()
+                                                     .azureSecretType(AzureSecretType.KEY_CERT)
                                                      .credentials(
                                                          AzureClientSecretKeyDTO.builder().secretKey(secretRef).build())
                                                      .build())

@@ -8,16 +8,15 @@
 package io.harness.cvng.notification.transformer;
 
 import io.harness.cvng.notification.channelDetails.CVNGPagerDutyChannelSpec;
+import io.harness.cvng.notification.entities.NotificationRule;
 import io.harness.cvng.notification.entities.NotificationRule.CVNGPagerDutyChannel;
 
 public class PagerDutyNotificationMethodTransformer
     extends NotificationMethodTransformer<CVNGPagerDutyChannel, CVNGPagerDutyChannelSpec> {
   @Override
   public CVNGPagerDutyChannel getEntityNotificationMethod(CVNGPagerDutyChannelSpec notificationChannelSpec) {
-    return CVNGPagerDutyChannel.builder()
-        .integrationKey(notificationChannelSpec.getIntegrationKey())
-        .userGroups(notificationChannelSpec.getUserGroups())
-        .build();
+    return new NotificationRule.CVNGPagerDutyChannel(
+        notificationChannelSpec.getUserGroups(), notificationChannelSpec.getIntegrationKey());
   }
 
   @Override

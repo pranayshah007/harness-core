@@ -19,22 +19,28 @@ import com.google.inject.Provides;
 import com.google.inject.Scopes;
 
 public class GitopsResourceClientModule extends AbstractModule {
-  private final ServiceHttpClientConfig ngManagerClientConfig;
+  private final ServiceHttpClientConfig clientConfig;
   private final String serviceSecret;
   private final String clientId;
 
   @Inject
-  public GitopsResourceClientModule(
-      ServiceHttpClientConfig ngManagerClientConfig, String serviceSecret, String clientId) {
-    this.ngManagerClientConfig = ngManagerClientConfig;
+  public GitopsResourceClientModule(ServiceHttpClientConfig clientConfig, String serviceSecret, String clientId) {
+    this.clientConfig = clientConfig;
     this.serviceSecret = serviceSecret;
     this.clientId = clientId;
   }
 
+  @Inject
+  public GitopsResourceClientModule(GitopsResourceClientConfig config, String clientId) {
+    this.clientConfig = config.getClientConfig();
+    this.serviceSecret = config.getServiceSecret();
+    this.clientId = clientId;
+  }
+
   @Provides
-  private GitopsResourceClientHttpFactory templateResourceClientHttpFactory(KryoConverterFactory kryoConverterFactory) {
+  private GitopsResourceClientHttpFactory gitopsResourceClientHttpFactory(KryoConverterFactory kryoConverterFactory) {
     return new GitopsResourceClientHttpFactory(
-        this.ngManagerClientConfig, this.serviceSecret, new ServiceTokenGenerator(), kryoConverterFactory, clientId);
+        this.clientConfig, this.serviceSecret, new ServiceTokenGenerator(), kryoConverterFactory, clientId);
   }
 
   @Override

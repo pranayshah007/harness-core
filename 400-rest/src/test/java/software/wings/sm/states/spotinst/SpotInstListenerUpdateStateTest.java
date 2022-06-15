@@ -26,7 +26,6 @@ import static software.wings.utils.WingsTestConstants.SERVICE_ID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyList;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -94,9 +93,9 @@ public class SpotInstListenerUpdateStateTest extends WingsBaseTest {
     doReturn(env).when(workflowStandardParamsExtensionService).fetchRequiredEnv(mockParams);
     AwsAmiInfrastructureMapping infrastructureMapping =
         anAwsAmiInfrastructureMapping().withAmiDeploymentType(SPOTINST).withRegion("us-east-1").build();
-    doReturn(infrastructureMapping).when(mockInfrastructureMappingService).get(anyString(), anyString());
+    doReturn(infrastructureMapping).when(mockInfrastructureMappingService).get(any(), any());
     Application application = anApplication().appId(APP_ID).accountId(ACCOUNT_ID).uuid(APP_ID).build();
-    doReturn(application).when(mockAppService).get(anyString());
+    doReturn(application).when(mockAppService).get(any());
     String newId = "newId";
     String oldId = "oldId";
     SpotInstSetupContextElement element =
@@ -124,18 +123,15 @@ public class SpotInstListenerUpdateStateTest extends WingsBaseTest {
                     .spotInstTaskParameters(SpotInstSetupTaskParameters.builder().timeoutIntervalInMin(10).build())
                     .build())
             .build();
-    doReturn(element).when(mockSpotinstStateHelper).getSetupElementFromSweepingOutput(any(), anyString());
+    doReturn(element).when(mockSpotinstStateHelper).getSetupElementFromSweepingOutput(any(), any());
     Activity activity = Activity.builder().uuid(ACTIVITY_ID).build();
-    doReturn(activity)
-        .when(mockSpotinstStateHelper)
-        .createActivity(any(), any(), anyString(), anyString(), any(), anyList());
+    doReturn(activity).when(mockSpotinstStateHelper).createActivity(any(), any(), any(), any(), any(), anyList());
     SpotInstCommandRequestBuilder builder = SpotInstCommandRequest.builder();
     doReturn(builder).when(mockSpotinstStateHelper).generateSpotInstCommandRequest(any(), any());
     DelegateTask task = DelegateTask.builder().description("desc").build();
     doReturn(task)
         .when(mockSpotinstStateHelper)
-        .getDelegateTask(anyString(), anyString(), any(), anyString(), anyString(), anyString(), any(), any(),
-            anyString(), eq(true));
+        .getDelegateTask(any(), any(), any(), any(), any(), any(), any(), any(), any(), eq(true));
     ExecutionResponse response = state.execute(mockContext);
     assertThat(response).isNotNull();
     assertThat(response.getExecutionStatus()).isEqualTo(SUCCESS);

@@ -654,6 +654,9 @@
             "SourceBranch"
           ]
         },
+        "projectName": {
+          "type": "string"
+        },
         "repoName": {
           "type": "string"
         },
@@ -1593,13 +1596,13 @@
         {
           "type": "object",
           "required": [
-            "approvalMessage",
             "approvers",
             "includePipelineExecutionHistory"
           ],
           "properties": {
             "approvalMessage": {
-              "type": "string"
+              "type": "string",
+              "minLength": 1
             },
             "approverInputs": {
               "type": "array",
@@ -1623,22 +1626,6 @@
           }
         }
       ],
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "HoldingScope": {
-      "type": "object",
-      "required": [
-        "nodeSetupId",
-        "scope"
-      ],
-      "properties": {
-        "nodeSetupId": {
-          "type": "string"
-        },
-        "scope": {
-          "type": "string"
-        }
-      },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "HostPathVolume": {
@@ -2459,7 +2446,7 @@
               "type": "string",
               "enum": [
                 "Linux",
-                "Osx",
+                "MacOS",
                 "Windows"
               ]
             },
@@ -2607,8 +2594,7 @@
           ]
         },
         "memory": {
-          "type": "string",
-          "pattern": "^(([0-9]*[.])?[0-9]+)([GM]i?)|<\\+input>$"
+          "type": "string"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -3037,6 +3023,12 @@
     "ParameterField": {
       "type": "object",
       "properties": {
+        "defaultValue": {
+          "type": "object"
+        },
+        "executionInput": {
+          "type": "boolean"
+        },
         "expression": {
           "type": "boolean"
         },
@@ -3064,6 +3056,12 @@
     "ParameterFieldBoolean": {
       "type": "object",
       "properties": {
+        "defaultValue": {
+          "type": "boolean"
+        },
+        "executionInput": {
+          "type": "boolean"
+        },
         "expression": {
           "type": "boolean"
         },
@@ -3091,6 +3089,15 @@
     "ParameterFieldListDependencyElement": {
       "type": "object",
       "properties": {
+        "defaultValue": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/DependencyElement"
+          }
+        },
+        "executionInput": {
+          "type": "boolean"
+        },
         "expression": {
           "type": "boolean"
         },
@@ -3121,6 +3128,15 @@
     "ParameterFieldListString": {
       "type": "object",
       "properties": {
+        "defaultValue": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "executionInput": {
+          "type": "boolean"
+        },
         "expression": {
           "type": "boolean"
         },
@@ -3151,6 +3167,15 @@
     "ParameterFieldMapStringJsonNode": {
       "type": "object",
       "properties": {
+        "defaultValue": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/JsonNode"
+          }
+        },
+        "executionInput": {
+          "type": "boolean"
+        },
         "expression": {
           "type": "boolean"
         },
@@ -3647,7 +3672,13 @@
               ]
             },
             "holdingScope": {
-              "$ref": "#/definitions/HoldingScope"
+              "type": "string",
+              "enum": [
+                "PLAN",
+                "PIPELINE",
+                "STAGE",
+                "STEP_GROUP"
+              ]
             },
             "name": {
               "type": "string"
@@ -4015,6 +4046,22 @@
             "args": {
               "type": "string"
             },
+            "buildEnvironment": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "Core",
+                    "Framework"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "minLength": 1
+                }
+              ]
+            },
             "buildTool": {
               "oneOf": [
                 {
@@ -4047,6 +4094,22 @@
                 },
                 {
                   "type": "string"
+                }
+              ]
+            },
+            "frameworkVersion": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "5.0",
+                    "6.0"
+                  ]
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "minLength": 1
                 }
               ]
             },
@@ -4085,6 +4148,9 @@
                   "minLength": 1
                 }
               ]
+            },
+            "namespaces": {
+              "type": "string"
             },
             "outputVariables": {
               "oneOf": [
@@ -6163,7 +6229,7 @@
               "type": "string",
               "enum": [
                 "Linux",
-                "Osx",
+                "MacOS",
                 "Windows"
               ]
             },

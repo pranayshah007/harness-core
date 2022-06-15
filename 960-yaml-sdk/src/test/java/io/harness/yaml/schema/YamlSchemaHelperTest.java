@@ -20,7 +20,6 @@ import io.harness.rule.Owner;
 import io.harness.yaml.TestClass;
 import io.harness.yaml.schema.beans.YamlSchemaRootClass;
 import io.harness.yaml.schema.beans.YamlSchemaWithDetails;
-import io.harness.yaml.utils.YamlSchemaUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -33,13 +32,8 @@ import java.util.Map;
 import org.apache.commons.io.IOUtils;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 @OwnedBy(HarnessTeam.DX)
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({YamlSchemaUtils.class, IOUtils.class})
 public class YamlSchemaHelperTest extends CategoryTest {
   YamlSchemaHelper yamlSchemaHelper;
 

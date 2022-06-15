@@ -29,14 +29,16 @@ import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.azure.appservice.AzureAppServicePreDeploymentData;
 import io.harness.delegate.task.azure.appservice.AzureAppServiceTaskResponse;
+import io.harness.delegate.task.azure.appservice.deployment.AzureAppServiceDeploymentService;
+import io.harness.delegate.task.azure.appservice.deployment.context.AzureAppServiceDeploymentContext;
 import io.harness.delegate.task.azure.appservice.webapp.request.AzureWebAppSwapSlotsParameters;
+import io.harness.delegate.task.azure.common.AzureLogCallbackProvider;
+import io.harness.delegate.task.azure.common.AzureLogCallbackProviderFactory;
 import io.harness.exception.InvalidArgumentsException;
 import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
-import software.wings.delegatetasks.azure.appservice.deployment.AzureAppServiceDeploymentService;
-import software.wings.delegatetasks.azure.appservice.deployment.context.AzureAppServiceDeploymentContext;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -56,6 +58,8 @@ public class AzureWebAppSlotSwapTaskHandlerTest extends WingsBaseTest {
 
   @Mock private ILogStreamingTaskClient mockLogStreamingTaskClient;
   @Mock private LogCallback mockLogCallback;
+  @Mock private AzureLogCallbackProvider mockLogCallbackProvider;
+  @Mock private AzureLogCallbackProviderFactory mockLogCallbackProviderFactory;
   @Mock private AzureAppServiceDeploymentService azureAppServiceDeploymentService;
 
   @Spy @InjectMocks AzureWebAppSlotSwapTaskHandler slotSwapTaskHandler;
@@ -63,6 +67,7 @@ public class AzureWebAppSlotSwapTaskHandlerTest extends WingsBaseTest {
   @Before
   public void setup() {
     doReturn(mockLogCallback).when(mockLogStreamingTaskClient).obtainLogCallback(anyString());
+    doReturn(mockLogCallbackProvider).when(mockLogCallbackProviderFactory).createCg(mockLogStreamingTaskClient);
     doNothing().when(mockLogCallback).saveExecutionLog(anyString(), any(), any());
     doNothing().when(mockLogCallback).saveExecutionLog(anyString(), any());
     doNothing().when(mockLogCallback).saveExecutionLog(anyString());

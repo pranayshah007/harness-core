@@ -10,14 +10,18 @@ package io.harness.cvng;
 import static io.harness.cvng.beans.change.ChangeSourceType.HARNESS_CD;
 import static io.harness.cvng.cdng.services.impl.CVNGNotifyEventListener.CVNG_ORCHESTRATION;
 import static io.harness.eventsframework.EventsFrameworkConstants.SRM_STATEMACHINE_EVENT;
+import static io.harness.outbox.OutboxSDKConstants.DEFAULT_OUTBOX_POLL_CONFIGURATION;
 
 import io.harness.AuthorizationServiceHeader;
+import io.harness.account.AccountClientModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.retry.MethodExecutionHelper;
 import io.harness.annotations.retry.RetryOnException;
 import io.harness.annotations.retry.RetryOnExceptionInterceptor;
 import io.harness.app.PrimaryVersionManagerModule;
+import io.harness.audit.ResourceTypeConstants;
+import io.harness.audit.client.remote.AuditClientModule;
 import io.harness.concurrent.HTimeLimiter;
 import io.harness.cvng.activity.entities.Activity.ActivityUpdatableEntity;
 import io.harness.cvng.activity.entities.DeploymentActivity.DeploymentActivityUpdatableEntity;
@@ -56,11 +60,16 @@ import io.harness.cvng.analysis.services.impl.VerificationJobInstanceAnalysisSer
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.activity.ActivityType;
 import io.harness.cvng.beans.change.ChangeSourceType;
+import io.harness.cvng.cdng.beans.MonitoredServiceSpec.MonitoredServiceSpecType;
 import io.harness.cvng.cdng.services.api.CVNGStepService;
 import io.harness.cvng.cdng.services.api.CVNGStepTaskService;
 import io.harness.cvng.cdng.services.api.VerifyStepDemoService;
+import io.harness.cvng.cdng.services.api.VerifyStepMonitoredServiceResolutionService;
 import io.harness.cvng.cdng.services.impl.CVNGStepServiceImpl;
 import io.harness.cvng.cdng.services.impl.CVNGStepTaskServiceImpl;
+import io.harness.cvng.cdng.services.impl.ConfiguredVerifyStepMonitoredServiceResolutionServiceImpl;
+import io.harness.cvng.cdng.services.impl.DefaultVerifyStepMonitoredServiceResolutionServiceImpl;
+import io.harness.cvng.cdng.services.impl.TemplateVerifyStepMonitoredServiceResolutionServiceImpl;
 import io.harness.cvng.cdng.services.impl.VerifyStepDemoServiceImpl;
 import io.harness.cvng.client.NextGenService;
 import io.harness.cvng.client.NextGenServiceImpl;
@@ -79,6 +88,7 @@ import io.harness.cvng.core.entities.NewRelicCVConfig.NewRelicCVConfigUpdatableE
 import io.harness.cvng.core.entities.PrometheusCVConfig.PrometheusUpdatableEntity;
 import io.harness.cvng.core.entities.SideKick;
 import io.harness.cvng.core.entities.SplunkCVConfig.SplunkCVConfigUpdatableEntity;
+import io.harness.cvng.core.entities.SplunkMetricCVConfig.SplunkMetricUpdatableEntity;
 import io.harness.cvng.core.entities.StackdriverCVConfig.StackDriverCVConfigUpdatableEntity;
 import io.harness.cvng.core.entities.StackdriverLogCVConfig.StackdriverLogCVConfigUpdatableEntity;
 import io.harness.cvng.core.entities.changeSource.ChangeSource;
@@ -180,6 +190,7 @@ import io.harness.cvng.core.services.impl.ServiceGuardDataCollectionTaskServiceI
 import io.harness.cvng.core.services.impl.SetupUsageEventServiceImpl;
 import io.harness.cvng.core.services.impl.SideKickServiceImpl;
 import io.harness.cvng.core.services.impl.SplunkDataCollectionInfoMapper;
+import io.harness.cvng.core.services.impl.SplunkMetricDataCollectionInfoMapper;
 import io.harness.cvng.core.services.impl.SplunkServiceImpl;
 import io.harness.cvng.core.services.impl.StackdriverDataCollectionInfoMapper;
 import io.harness.cvng.core.services.impl.StackdriverLogDataCollectionInfoMapper;
@@ -202,6 +213,7 @@ import io.harness.cvng.core.services.impl.monitoredService.MonitoredServiceServi
 import io.harness.cvng.core.services.impl.monitoredService.ServiceDependencyServiceImpl;
 import io.harness.cvng.core.services.impl.sidekickexecutors.DemoActivitySideKickExecutor;
 import io.harness.cvng.core.services.impl.sidekickexecutors.RetryChangeSourceHandleDeleteSideKickExecutor;
+import io.harness.cvng.core.services.impl.sidekickexecutors.VerificationJobInstanceCleanupSideKickExecutor;
 import io.harness.cvng.core.services.impl.sidekickexecutors.VerificationTaskCleanupSideKickExecutor;
 import io.harness.cvng.core.transformer.changeEvent.ChangeEventEntityAndDTOTransformer;
 import io.harness.cvng.core.transformer.changeEvent.ChangeEventMetaDataTransformer;
@@ -226,6 +238,7 @@ import io.harness.cvng.core.utils.monitoredService.ErrorTrackingHealthSourceSpec
 import io.harness.cvng.core.utils.monitoredService.NewRelicHealthSourceSpecTransformer;
 import io.harness.cvng.core.utils.monitoredService.PrometheusHealthSourceSpecTransformer;
 import io.harness.cvng.core.utils.monitoredService.SplunkHealthSourceSpecTransformer;
+import io.harness.cvng.core.utils.monitoredService.SplunkMetricHealthSourceSpecTransformer;
 import io.harness.cvng.core.utils.monitoredService.StackdriverLogHealthSourceSpecTransformer;
 import io.harness.cvng.core.utils.monitoredService.StackdriverMetricHealthSourceSpecTransformer;
 import io.harness.cvng.dashboard.services.api.ErrorTrackingDashboardService;
@@ -257,6 +270,9 @@ import io.harness.cvng.notification.transformer.NotificationRuleConditionTransfo
 import io.harness.cvng.notification.transformer.PagerDutyNotificationMethodTransformer;
 import io.harness.cvng.notification.transformer.SLONotificationRuleConditionTransformer;
 import io.harness.cvng.notification.transformer.SlackNotificationMethodTransformer;
+import io.harness.cvng.outbox.CVServiceOutboxEventHandler;
+import io.harness.cvng.outbox.MonitoredServiceOutboxEventHandler;
+import io.harness.cvng.outbox.ServiceLevelObjectiveOutboxEventHandler;
 import io.harness.cvng.servicelevelobjective.beans.SLIMetricType;
 import io.harness.cvng.servicelevelobjective.beans.SLOTargetType;
 import io.harness.cvng.servicelevelobjective.entities.RatioServiceLevelIndicator.RatioServiceLevelIndicatorUpdatableEntity;
@@ -313,10 +329,17 @@ import io.harness.eventsframework.EventsFrameworkMetadataConstants;
 import io.harness.govern.ProviderMethodInterceptor;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.mongo.MongoPersistence;
+import io.harness.outbox.TransactionOutboxModule;
+import io.harness.outbox.api.OutboxDao;
+import io.harness.outbox.api.OutboxEventHandler;
+import io.harness.outbox.api.OutboxService;
+import io.harness.outbox.api.impl.OutboxDaoImpl;
+import io.harness.outbox.api.impl.OutboxServiceImpl;
 import io.harness.packages.HarnessPackages;
 import io.harness.persistence.HPersistence;
 import io.harness.pms.sdk.core.waiter.AsyncWaitEngine;
 import io.harness.redis.RedisConfig;
+import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.serializer.CvNextGenRegistrars;
 import io.harness.template.TemplateResourceClientModule;
 import io.harness.threading.ThreadPool;
@@ -390,6 +413,9 @@ public class CVServiceModule extends AbstractModule {
     install(PrimaryVersionManagerModule.getInstance());
     install(new TemplateResourceClientModule(verificationConfiguration.getTemplateServiceClientConfig(),
         verificationConfiguration.getTemplateServiceSecret(), AuthorizationServiceHeader.CV_NEXT_GEN.getServiceId()));
+    install(new AccountClientModule(getManagerClientConfig(verificationConfiguration.getManagerClientConfig()),
+        verificationConfiguration.getNgManagerServiceConfig().getManagerServiceSecret(),
+        AuthorizationServiceHeader.CV_NEXT_GEN.toString()));
     bind(HPersistence.class).to(MongoPersistence.class);
     bind(TimeSeriesRecordService.class).to(TimeSeriesRecordServiceImpl.class);
     bind(OrchestrationService.class).to(OrchestrationServiceImpl.class);
@@ -431,6 +457,9 @@ public class CVServiceModule extends AbstractModule {
         .in(Scopes.SINGLETON);
     dataSourceTypeToHealthSourceTransformerMapBinder.addBinding(DataSourceType.SPLUNK)
         .to(SplunkHealthSourceSpecTransformer.class)
+        .in(Scopes.SINGLETON);
+    dataSourceTypeToHealthSourceTransformerMapBinder.addBinding(DataSourceType.SPLUNK_METRIC)
+        .to(SplunkMetricHealthSourceSpecTransformer.class)
         .in(Scopes.SINGLETON);
     dataSourceTypeToHealthSourceTransformerMapBinder.addBinding(DataSourceType.PROMETHEUS)
         .to(PrometheusHealthSourceSpecTransformer.class)
@@ -476,6 +505,9 @@ public class CVServiceModule extends AbstractModule {
     dataSourceTypeDataCollectionInfoMapperMapBinder.addBinding(DataSourceType.SPLUNK)
         .to(SplunkDataCollectionInfoMapper.class)
         .in(Scopes.SINGLETON);
+    dataSourceTypeDataCollectionInfoMapperMapBinder.addBinding(DataSourceType.SPLUNK_METRIC)
+        .to(SplunkMetricDataCollectionInfoMapper.class)
+        .in(Scopes.SINGLETON);
     dataSourceTypeDataCollectionInfoMapperMapBinder.addBinding(DataSourceType.PROMETHEUS)
         .to(PrometheusDataCollectionInfoMapper.class)
         .in(Scopes.SINGLETON);
@@ -517,6 +549,22 @@ public class CVServiceModule extends AbstractModule {
         .in(Scopes.SINGLETON);
     dataSourceTypeDataCollectionSLIInfoMapperMapBinder.addBinding(DataSourceType.DYNATRACE)
         .to(DynatraceDataCollectionInfoMapper.class)
+        .in(Scopes.SINGLETON);
+    dataSourceTypeDataCollectionSLIInfoMapperMapBinder.addBinding(DataSourceType.SPLUNK_METRIC)
+        .to(SplunkMetricDataCollectionInfoMapper.class)
+        .in(Scopes.SINGLETON);
+
+    MapBinder<MonitoredServiceSpecType, VerifyStepMonitoredServiceResolutionService>
+        verifyStepCvConfigServiceMapBinder = MapBinder.newMapBinder(
+            binder(), MonitoredServiceSpecType.class, VerifyStepMonitoredServiceResolutionService.class);
+    verifyStepCvConfigServiceMapBinder.addBinding(MonitoredServiceSpecType.CONFIGURED)
+        .to(ConfiguredVerifyStepMonitoredServiceResolutionServiceImpl.class)
+        .in(Scopes.SINGLETON);
+    verifyStepCvConfigServiceMapBinder.addBinding(MonitoredServiceSpecType.DEFAULT)
+        .to(DefaultVerifyStepMonitoredServiceResolutionServiceImpl.class)
+        .in(Scopes.SINGLETON);
+    verifyStepCvConfigServiceMapBinder.addBinding(MonitoredServiceSpecType.TEMPLATE)
+        .to(TemplateVerifyStepMonitoredServiceResolutionServiceImpl.class)
         .in(Scopes.SINGLETON);
 
     bind(MetricPackService.class).to(MetricPackServiceImpl.class);
@@ -624,6 +672,9 @@ public class CVServiceModule extends AbstractModule {
         .in(Scopes.SINGLETON);
     dataSourceTypeCVConfigMapBinder.addBinding(DataSourceType.ERROR_TRACKING)
         .to(ErrorTrackingCVConfigUpdatableEntity.class)
+        .in(Scopes.SINGLETON);
+    dataSourceTypeCVConfigMapBinder.addBinding(DataSourceType.SPLUNK_METRIC)
+        .to(SplunkMetricUpdatableEntity.class)
         .in(Scopes.SINGLETON);
 
     MapBinder<SLIMetricType, ServiceLevelIndicatorUpdatableEntity> serviceLevelIndicatorMapBinder =
@@ -778,7 +829,9 @@ public class CVServiceModule extends AbstractModule {
     sideKickExecutorMapBinder.addBinding(SideKick.Type.VERIFICATION_TASK_CLEANUP)
         .to(VerificationTaskCleanupSideKickExecutor.class)
         .in(Scopes.SINGLETON);
-
+    sideKickExecutorMapBinder.addBinding(SideKick.Type.VERIFICATION_JOB_INSTANCE_CLEANUP)
+        .to(VerificationJobInstanceCleanupSideKickExecutor.class)
+        .in(Scopes.SINGLETON);
     bind(NotificationRuleService.class).to(NotificationRuleServiceImpl.class);
     MapBinder<NotificationRuleType, NotificationRuleConditionTransformer>
         notificationRuleTypeNotificationRuleConditionTransformerMapBinder =
@@ -813,6 +866,21 @@ public class CVServiceModule extends AbstractModule {
     channelTypeNotificationMethodTransformerMapBinder.addBinding(CVNGNotificationChannelType.MSTEAMS)
         .to(MSTeamsNotificationMethodTransformer.class)
         .in(Scopes.SINGLETON);
+    ServiceHttpClientConfig serviceHttpClientConfig = this.verificationConfiguration.getAuditClientConfig();
+    String secret = this.verificationConfiguration.getTemplateServiceSecret();
+    String serviceId = AuthorizationServiceHeader.CV_NEXT_GEN.getServiceId();
+    bind(OutboxDao.class).to(OutboxDaoImpl.class);
+    bind(OutboxService.class).to(OutboxServiceImpl.class);
+    install(new AuditClientModule(
+        serviceHttpClientConfig, secret, serviceId, this.verificationConfiguration.isEnableAudit()));
+    install(new TransactionOutboxModule(DEFAULT_OUTBOX_POLL_CONFIGURATION, serviceId, false));
+    MapBinder<String, OutboxEventHandler> outboxEventHandlerMap =
+        MapBinder.newMapBinder(binder(), String.class, OutboxEventHandler.class);
+    outboxEventHandlerMap.addBinding(ResourceTypeConstants.MONITORED_SERVICE)
+        .to(MonitoredServiceOutboxEventHandler.class);
+    outboxEventHandlerMap.addBinding(ResourceTypeConstants.SERVICE_LEVEL_OBJECTIVE)
+        .to(ServiceLevelObjectiveOutboxEventHandler.class);
+    bind(OutboxEventHandler.class).to(CVServiceOutboxEventHandler.class);
     bindRetryOnExceptionInterceptor();
   }
 
@@ -952,5 +1020,16 @@ public class CVServiceModule extends AbstractModule {
   @Singleton
   List<YamlSchemaRootClass> yamlSchemaRootClasses() {
     return ImmutableList.<YamlSchemaRootClass>builder().addAll(CvNextGenRegistrars.yamlSchemaRegistrars).build();
+  }
+
+  private ServiceHttpClientConfig getManagerClientConfig(ServiceHttpClientConfig serviceHttpClientConfig) {
+    String managerBaseUrl = serviceHttpClientConfig.getBaseUrl();
+    managerBaseUrl = managerBaseUrl + (managerBaseUrl.endsWith("/") ? "api/" : "/api/");
+    return ServiceHttpClientConfig.builder()
+        .baseUrl(managerBaseUrl)
+        .connectTimeOutSeconds(serviceHttpClientConfig.getConnectTimeOutSeconds())
+        .readTimeOutSeconds(serviceHttpClientConfig.getReadTimeOutSeconds())
+        .enableHttpLogging(serviceHttpClientConfig.getEnableHttpLogging())
+        .build();
   }
 }

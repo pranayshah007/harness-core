@@ -31,26 +31,41 @@ import lombok.NoArgsConstructor;
 @EqualsAndHashCode(callSuper = true)
 public class MSTeamChannel extends NotificationChannel {
   List<String> msTeamKeys;
+  String orgIdentifier;
+  String projectIdentifier;
+  long expressionFunctorToken;
 
   @Builder
   public MSTeamChannel(String accountId, List<NotificationRequest.UserGroup> userGroups, String templateId,
-      Map<String, String> templateData, Team team, List<String> msTeamKeys) {
+      Map<String, String> templateData, Team team, List<String> msTeamKeys, String orgIdentifier,
+      String projectIdentifier, long expressionFunctorToken) {
     super(accountId, userGroups, templateId, templateData, team);
     this.msTeamKeys = msTeamKeys;
+    this.orgIdentifier = orgIdentifier;
+    this.projectIdentifier = projectIdentifier;
+    this.expressionFunctorToken = expressionFunctorToken;
   }
 
   @Override
   public NotificationRequest buildNotificationRequest() {
     NotificationRequest.Builder builder = NotificationRequest.newBuilder();
     String notificationId = generateUuid();
-    return builder.setId(notificationId)
-        .setAccountId(accountId)
-        .setTeam(team)
-        .setMsTeam(builder.getMsTeamBuilder()
-                       .addAllMsTeamKeys(msTeamKeys)
-                       .setTemplateId(templateId)
-                       .putAllTemplateData(templateData)
-                       .addAllUserGroup(CollectionUtils.emptyIfNull(userGroups)))
-        .build();
+    return builder.setId(notificationId).setAccountId(accountId).setTeam(team).setMsTeam(buildMSTeams(builder)).build();
+  }
+
+  private NotificationRequest.MSTeam buildMSTeams(NotificationRequest.Builder builder) {
+    NotificationRequest.MSTeam.Builder msTeamsBuilder = builder.getMsTeamBuilder()
+                                                            .addAllMsTeamKeys(msTeamKeys)
+                                                            .setTemplateId(templateId)
+                                                            .putAllTemplateData(templateData)
+                                                            .addAllUserGroup(CollectionUtils.emptyIfNull(userGroups));
+    if (orgIdentifier != null) {
+      msTeamsBuilder.setOrgIdentifier(orgIdentifier);
+    }
+    if (projectIdentifier != null) {
+      msTeamsBuilder.setProjectIdentifier(projectIdentifier);
+    }
+    msTeamsBuilder.setExpressionFunctorToken(expressionFunctorToken);
+    return msTeamsBuilder.build();
   }
 }

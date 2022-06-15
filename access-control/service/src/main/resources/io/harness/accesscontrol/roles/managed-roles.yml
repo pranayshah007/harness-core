@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: rolesConfiguration
-version: 24
+version: 26
 roles:
     - identifier: _project_admin
       name: Project Admin
@@ -115,6 +115,12 @@ roles:
         - chaos_chaoshub_view
         - chaos_chaoshub_edit
         - chaos_chaoshub_delete
+        - chaos_chaosagent_view
+        - chaos_chaosagent_edit
+        - chaos_chaosagent_delete
+        - chaos_chaosworkflow_view
+        - chaos_chaosworkflow_edit
+        - chaos_chaosworkflow_delete
       allowedScopeLevels:
         - project
       managed: true
@@ -156,6 +162,8 @@ roles:
         - core_file_view
         - core_variable_view
         - chaos_chaoshub_view
+        - chaos_chaosagent_view
+        - chaos_chaosworkflow_view
       allowedScopeLevels:
         - project
       managed: true
@@ -278,6 +286,12 @@ roles:
         - chaos_chaoshub_view
         - chaos_chaoshub_edit
         - chaos_chaoshub_delete
+        - chaos_chaosagent_view
+        - chaos_chaosagent_edit
+        - chaos_chaosagent_delete
+        - chaos_chaosworkflow_view
+        - chaos_chaosworkflow_edit
+        - chaos_chaosworkflow_delete
       allowedScopeLevels:
         - organization
       managed: true
@@ -321,6 +335,8 @@ roles:
         - core_file_view
         - core_variable_view
         - chaos_chaoshub_view
+        - chaos_chaosagent_view
+        - chaos_chaosworkflow_view
       allowedScopeLevels:
         - organization
       managed: true
@@ -450,6 +466,12 @@ roles:
         - chaos_chaoshub_view
         - chaos_chaoshub_edit
         - chaos_chaoshub_delete
+        - chaos_chaosagent_view
+        - chaos_chaosagent_edit
+        - chaos_chaosagent_delete
+        - chaos_chaosworkflow_view
+        - chaos_chaosworkflow_edit
+        - chaos_chaosworkflow_delete
       allowedScopeLevels:
         - account
       managed: true
@@ -496,6 +518,8 @@ roles:
         - core_file_view
         - core_variable_view
         - chaos_chaoshub_view
+        - chaos_chaosagent_view
+        - chaos_chaosworkflow_view
       allowedScopeLevels:
         - account
       managed: true
@@ -571,3 +595,12 @@ roles:
         - account
         - organization
         - project
+    - identifier: _account_basic
+      name: Account Basic
+      description: Account Basic
+      permissions:
+        - core_license_view
+        - core_account_view
+      managed: true
+      allowedScopeLevels:
+        - account

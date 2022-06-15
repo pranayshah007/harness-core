@@ -20,6 +20,7 @@ import io.harness.eventsframework.consumer.Message;
 import io.harness.eventsframework.entity_crud.EntityChangeDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitops.models.Application;
+import io.harness.gitops.models.ApplicationQuery;
 import io.harness.gitops.remote.GitopsResourceClient;
 import io.harness.ng.beans.PageResponse;
 import io.harness.resourcegroup.beans.ValidatorType;
@@ -39,6 +40,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import io.harness.resourcegroup.v2.model.AttributeFilter;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -86,6 +89,11 @@ public class ApplicationResourceImpl implements Resource {
   }
 
   @Override
+  public boolean isValidAttributeFilter(AttributeFilter attributeFilter) {
+    return false;
+  }
+
+  @Override
   public List<Boolean> validate(List<String> resourceIds, Scope scope) {
     if (resourceIds.isEmpty()) {
       return Collections.EMPTY_LIST;
@@ -93,10 +101,15 @@ public class ApplicationResourceImpl implements Resource {
     Map<String, Object> filter = ImmutableMap.of("name", ImmutableMap.of("$in", resourceIds));
     final Response<PageResponse<Application>> response;
     try {
-      response = gitopsResourceClient
-                     .listApps(scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), 0,
-                         resourceIds.size(), filter)
-                     .execute();
+      final ApplicationQuery query = ApplicationQuery.builder()
+                                         .accountId(scope.getAccountIdentifier())
+                                         .orgIdentifier(scope.getOrgIdentifier())
+                                         .projectIdentifier(scope.getProjectIdentifier())
+                                         .pageIndex(0)
+                                         .pageSize(resourceIds.size())
+                                         .filter(filter)
+                                         .build();
+      response = gitopsResourceClient.listApps(query).execute();
       final List<Application> apps = response.body().getContent();
       final Set<String> appsSet = apps.stream().map(Application::getIdentifier).collect(Collectors.toSet());
       return resourceIds.stream().map(appsSet::contains).collect(toList());

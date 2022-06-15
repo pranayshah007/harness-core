@@ -59,9 +59,9 @@ public class ServiceFilterHelperTest extends CategoryTest {
     Set<String> stringSet = ((Document) updateOperations.getUpdateObject().get("$set")).keySet();
     PropertyDescriptor[] propertyDescriptors = BeanUtils.getPropertyDescriptors(ServiceEntity.class);
     Set<String> excludedFields = new HashSet<>(Arrays.asList(ServiceEntityKeys.id, ServiceEntityKeys.createdAt,
-        ServiceEntityKeys.deletedAt, ServiceEntityKeys.version, ServiceEntityKeys.yaml,
-        ServiceEntityKeys.objectIdOfYaml, ServiceEntityKeys.isFromDefaultBranch, ServiceEntityKeys.branch,
-        ServiceEntityKeys.yamlGitConfigRef, ServiceEntityKeys.filePath, ServiceEntityKeys.rootFolder, "class"));
+        ServiceEntityKeys.deletedAt, ServiceEntityKeys.version, ServiceEntityKeys.objectIdOfYaml,
+        ServiceEntityKeys.isFromDefaultBranch, ServiceEntityKeys.branch, ServiceEntityKeys.yamlGitConfigRef,
+        ServiceEntityKeys.filePath, ServiceEntityKeys.rootFolder, "class"));
 
     for (PropertyDescriptor propertyDescriptor : propertyDescriptors) {
       boolean shouldExist =

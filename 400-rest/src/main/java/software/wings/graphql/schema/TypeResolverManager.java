@@ -62,6 +62,7 @@ import software.wings.graphql.schema.type.cloudProvider.QLGcpCloudProvider;
 import software.wings.graphql.schema.type.cloudProvider.QLKubernetesClusterCloudProvider;
 import software.wings.graphql.schema.type.cloudProvider.QLPcfCloudProvider;
 import software.wings.graphql.schema.type.cloudProvider.QLPhysicalDataCenterCloudProvider;
+import software.wings.graphql.schema.type.cloudProvider.QLRancherCloudProvider;
 import software.wings.graphql.schema.type.cloudProvider.QLSpotInstCloudProvider;
 import software.wings.graphql.schema.type.connector.QLAmazonS3Connector;
 import software.wings.graphql.schema.type.connector.QLAmazonS3HelmRepoConnector;
@@ -296,6 +297,8 @@ public class TypeResolverManager {
     public static final String JIRA_APPROVAL_DETAILS = "JiraApprovalDetails";
     public static final String SNOW_APPROVAL_DETAILS = "SNOWApprovalDetails";
     public static final String SHELL_SCRIPT_DETAILS = "ShellScriptDetails";
+
+    public static final String RancherCloudProvider = "RancherCloudProvider";
   }
 
   /**
@@ -324,6 +327,7 @@ public class TypeResolverManager {
                     .put(QLKubernetesClusterCloudProvider.class, TypeResolverManagerTypes.KubernetesCloudProvider)
                     .put(QLPcfCloudProvider.class, TypeResolverManagerTypes.PcfCloudProvider)
                     .put(QLSpotInstCloudProvider.class, TypeResolverManagerTypes.SpotInstCloudProvider)
+                    .put(QLRancherCloudProvider.class, TypeResolverManagerTypes.RancherCloudProvider)
                     .build()))
         .put(TypeResolverManagerUnifaces.Connector,
             getResultTypeResolver(

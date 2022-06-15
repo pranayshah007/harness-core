@@ -9,7 +9,11 @@ package io.harness.delegate.task.helm;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.GCS_HELM;
+import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.GIT;
 import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.HTTP_HELM;
+import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.OCI_HELM;
+import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.S3_HELM;
 import static io.harness.delegate.task.helm.HelmCommandRequestNG.HelmCommandType.RELEASE_HISTORY;
 import static io.harness.delegate.task.helm.HelmTaskHelperBase.getChartDirectory;
 import static io.harness.exception.WingsException.USER;
@@ -92,6 +96,7 @@ import software.wings.helpers.ext.helm.response.ReleaseInfo;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.TimeLimiter;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.google.inject.Inject;
@@ -108,6 +113,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -120,6 +126,8 @@ import org.apache.commons.lang3.tuple.Pair;
 
 @Slf4j
 public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
+  private static final Set<StoreDelegateConfigType> HELM_SUPPORTED_STORE_TYPES =
+      ImmutableSet.of(GIT, HTTP_HELM, S3_HELM, GCS_HELM, OCI_HELM);
   @Inject private HelmClient helmClient;
   @Inject private HelmTaskHelperBase helmTaskHelperBase;
   @Inject private ContainerDeploymentDelegateBaseHelper containerDeploymentDelegateBaseHelper;
@@ -174,7 +182,7 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
 
       resources = printHelmChartKubernetesResources(commandRequest);
 
-      helmChartInfo = getHelmChartDetails(commandRequest.getManifestDelegateConfig(), commandRequest.getWorkingDir());
+      helmChartInfo = getHelmChartDetails(commandRequest);
 
       logCallback = markDoneAndStartNew(commandRequest, logCallback, InstallUpgrade);
 
@@ -214,6 +222,9 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
       commandResponse.setReleaseName(commandRequest.getReleaseName());
 
       boolean useSteadyStateCheck = useSteadyStateCheck(commandRequest.isK8SteadyStateCheckEnabled(), logCallback);
+
+      commandRequest.setPrevReleaseVersion(prevVersion);
+      commandRequest.setNewReleaseVersion(prevVersion + 1);
 
       List<KubernetesResourceId> workloads = useSteadyStateCheck
           ? steadyStateSaveResources(commandRequest, resources, CommandExecutionStatus.SUCCESS)
@@ -487,8 +498,8 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
       }
       commandResponse.setContainerInfoList(containerInfos);
       commandResponse.setHelmVersion(commandRequest.getHelmVersion());
-      HelmChartInfo helmChartInfo =
-          getHelmChartDetails(commandRequest.getManifestDelegateConfig(), commandRequest.getWorkingDir());
+
+      HelmChartInfo helmChartInfo = getHelmChartDetails(commandRequest);
       commandResponse.setHelmChartInfo(helmChartInfo);
 
       logCallback.saveExecutionLog("\nDone", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
@@ -633,6 +644,7 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
       case HTTP_HELM:
       case S3_HELM:
       case GCS_HELM:
+      case OCI_HELM:
         fetchChartRepo(commandRequest, timeoutInMillis);
         break;
       default:
@@ -719,6 +731,9 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
 
       if (HTTP_HELM == manifestDelegateConfig.getStoreDelegateConfig().getType()) {
         helmTaskHelperBase.downloadChartFilesFromHttpRepo(
+            helmChartManifestConfig, destinationDirectory, timeoutInMillis);
+      } else if (OCI_HELM == manifestDelegateConfig.getStoreDelegateConfig().getType()) {
+        helmTaskHelperBase.downloadChartFilesFromOciRepo(
             helmChartManifestConfig, destinationDirectory, timeoutInMillis);
       } else {
         helmTaskHelperBase.downloadChartFilesUsingChartMuseum(
@@ -811,9 +826,7 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
         Optional.ofNullable(manifestDelegateConfig.getStoreDelegateConfig())
             .map(StoreDelegateConfig::getType)
             .filter(Objects::nonNull)
-            .filter(storeType
-                -> storeType == StoreDelegateConfigType.S3_HELM || storeType == StoreDelegateConfigType.HTTP_HELM
-                    || storeType == StoreDelegateConfigType.GIT || storeType == StoreDelegateConfigType.GCS_HELM);
+            .filter(HELM_SUPPORTED_STORE_TYPES::contains);
 
     if (!storeTypeOpt.isPresent()) {
       log.warn("Unsupported store type, storeType: {}",
@@ -913,13 +926,28 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
         .build();
   }
 
-  private HelmChartInfo getHelmChartDetails(ManifestDelegateConfig manifestDelegateConfig, String workingDir)
-      throws IOException {
+  private HelmChartInfo getHelmChartDetails(HelmCommandRequestNG commandRequest) throws Exception {
+    ManifestDelegateConfig manifestDelegateConfig = commandRequest.getManifestDelegateConfig();
+
     HelmChartManifestDelegateConfig helmChartManifestDelegateConfig =
         (HelmChartManifestDelegateConfig) manifestDelegateConfig;
 
-    HelmChartInfo helmChartInfo =
-        helmTaskHelperBase.getHelmChartInfoFromChartsYamlFile(Paths.get(workingDir, CHARTS_YAML_KEY).toString());
+    HelmChartInfo helmChartInfo = null;
+
+    if (commandRequest instanceof HelmRollbackCommandRequestNG) {
+      HelmCliResponse helmHistResponse =
+          helmClient.releaseHistory(HelmCommandDataMapperNG.getHelmCmdDataNG(commandRequest), true);
+      List<ReleaseInfo> releaseInfoList = parseHelmReleaseCommandOutput(helmHistResponse.getOutput(), RELEASE_HISTORY);
+      String chartName = releaseInfoList.get(releaseInfoList.size() - 1).getChart();
+      int index = chartName.lastIndexOf('-');
+      String version = chartName.substring(index + 1);
+      helmChartInfo = HelmChartInfo.builder().name(chartName).version(version).build();
+    }
+
+    else {
+      helmChartInfo = helmTaskHelperBase.getHelmChartInfoFromChartsYamlFile(
+          Paths.get(commandRequest.getWorkingDir(), CHARTS_YAML_KEY).toString());
+    }
 
     try {
       switch (manifestDelegateConfig.getStoreDelegateConfig().getType()) {
@@ -931,6 +959,7 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
         case HTTP_HELM:
         case GCS_HELM:
         case S3_HELM:
+        case OCI_HELM:
           helmChartInfo.setRepoUrl(getRepoUrlForHelmRepoConfig(helmChartManifestDelegateConfig));
           break;
         default:

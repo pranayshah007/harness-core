@@ -29,7 +29,11 @@ public class StageOverridesUtility {
         + "   - manifest:\n"
         + "       identifier: manifestIdentifier\n"
         + "       spec:\n"
-        + "       type: K8sManifest\n";
+        + "       type: K8sManifest\n"
+        + "configFiles:\n"
+        + "   - configFile:\n"
+        + "       identifier: configFileIdentifier\n"
+        + "       spec:\n";
 
     YamlField overrideYamlField;
     try {

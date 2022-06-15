@@ -59,8 +59,8 @@ import javax.ws.rs.QueryParam;
 public interface PermissionResource {
   @GET
   @ApiOperation(value = "Get All Permissions in a Scope", nickname = "getPermissionList")
-  @Operation(operationId = "getPermissionList",
-      summary = "Get all permissions in a scope or all permissions in the system.",
+  @Operation(operationId = "getPermissionList", summary = "List Permissions",
+      description = "Get all permissions in a scope or all permissions in the system",
       responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "List of all permissions") })
   ResponseDTO<List<PermissionResponseDTO>>
   get(@BeanParam HarnessScopeParams scopeParams,
@@ -73,8 +73,8 @@ public interface PermissionResource {
   @Path("/resourcetypes")
   @ApiOperation(
       value = "Get All Resource Types for Permissions in a Scope", nickname = "getPermissionResourceTypesList")
-  @Operation(operationId = "getPermissionResourceTypesList",
-      summary = "Get all resource types for permissions in a scope or in the system.",
+  @Operation(operationId = "getPermissionResourceTypesList", summary = "List Resource Types",
+      description = "Get all resource types for permissions in a scope or in the system.",
       responses = { @io.swagger.v3.oas.annotations.responses.ApiResponse(description = "List of resource types") })
   ResponseDTO<Set<String>>
   getResourceTypes(@BeanParam HarnessScopeParams scopeParams,

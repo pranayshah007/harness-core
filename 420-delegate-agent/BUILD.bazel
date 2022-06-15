@@ -11,7 +11,7 @@ java_library(
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
-        "//430-cv-nextgen-commons:module",
+        "//890-sm-core:module",
         "//910-delegate-task-grpc-service:module",
         "//950-log-client:module",
         "//960-expression-service:module",

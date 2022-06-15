@@ -27,6 +27,7 @@ import io.harness.resourcegroup.beans.ValidatorType;
 import io.harness.resourcegroup.framework.v1.service.Resource;
 import io.harness.resourcegroup.framework.v1.service.ResourceInfo;
 import io.harness.resourcegroup.v1.remote.dto.ResourceGroupFilterDTO;
+import io.harness.resourcegroup.v2.model.AttributeFilter;
 import io.harness.resourcegroup.v2.remote.dto.ResourceGroupResponse;
 import io.harness.resourcegroupclient.remote.ResourceGroupClient;
 
@@ -128,5 +129,10 @@ public class ResourceGroupResourceImpl implements Resource {
         .resourceType(getType())
         .resourceIdentifier(entityChangeDTO.getIdentifier())
         .build();
+  }
+
+  @Override
+  public boolean isValidAttributeFilter(AttributeFilter attributeFilter) {
+    return false;
   }
 }

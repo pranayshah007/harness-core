@@ -9,6 +9,7 @@ package software.wings.delegatetasks.buildsource;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.rule.OwnerRule.DEEPAK_PUTHRAYA;
+import static io.harness.rule.OwnerRule.PRABU;
 import static io.harness.rule.OwnerRule.PRASHANT;
 
 import static software.wings.beans.StringValue.Builder.aStringValue;
@@ -35,6 +36,7 @@ import software.wings.beans.config.ArtifactoryConfig;
 import software.wings.beans.config.NexusConfig;
 import software.wings.delegatetasks.buildsource.BuildSourceParameters.BuildSourceParametersBuilder;
 
+import java.util.Collections;
 import java.util.List;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -240,5 +242,21 @@ public class BuildSourceParametersTest extends WingsBaseTest {
             .build();
     List<ExecutionCapability> capabilityList = buildSourceParameters.fetchRequiredExecutionCapabilities(null);
     assertThat(capabilityList).hasSize(0);
+  }
+
+  @Test
+  @Owner(developers = PRABU)
+  @Category(UnitTests.class)
+  public void shouldFetchRequiredExecutionCapabilitiesOthersWithDelegateSelectors() {
+    BuildSourceParameters buildSourceParameters =
+        sourceParametersBuilder.settingValue(aStringValue().withValue("value").build())
+            .artifactStreamType(ArtifactStreamType.SMB.name())
+            .artifactStreamAttributes(ArtifactStreamAttributes.builder().build())
+            .buildCollectParameters(
+                BuildCollectParameters.builder().delegateSelectors(Collections.singleton("DELEGATE_SELECTOR")).build())
+            .build();
+    buildSourceParameters.setBuildSourceRequestType(BuildSourceParameters.BuildSourceRequestType.GET_BUILD);
+    List<ExecutionCapability> capabilityList = buildSourceParameters.fetchRequiredExecutionCapabilities(null);
+    assertThat(capabilityList).hasSize(1);
   }
 }

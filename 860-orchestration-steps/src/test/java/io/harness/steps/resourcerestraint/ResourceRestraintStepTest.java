@@ -37,12 +37,13 @@ import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.rule.Owner;
 import io.harness.steps.resourcerestraint.beans.AcquireMode;
 import io.harness.steps.resourcerestraint.beans.HoldingScope;
-import io.harness.steps.resourcerestraint.beans.HoldingScope.HoldingScopeBuilder;
 import io.harness.steps.resourcerestraint.beans.ResourceRestraint;
 import io.harness.steps.resourcerestraint.beans.ResourceRestraintInstance;
+import io.harness.steps.resourcerestraint.beans.ResourceRestraintResponseData;
 import io.harness.steps.resourcerestraint.service.ResourceRestraintInstanceService;
 import io.harness.steps.resourcerestraint.service.ResourceRestraintService;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import java.util.Collections;
 import org.junit.Before;
@@ -55,7 +56,6 @@ import org.mockito.Mock;
 public class ResourceRestraintStepTest extends OrchestrationStepsTestBase {
   private static final String RESOURCE_RESTRAINT_ID = generateUuid();
   private static final String RESOURCE_UNIT = generateUuid();
-  private static final HoldingScope HOLDING_SCOPE = HoldingScopeBuilder.aPlan().build();
 
   @Mock private ResourceRestraintInstanceService resourceRestraintInstanceService;
   @Mock private ResourceRestraintService resourceRestraintService;
@@ -71,7 +71,7 @@ public class ResourceRestraintStepTest extends OrchestrationStepsTestBase {
                                                .build();
     ConstraintId constraintId = new ConstraintId(RESOURCE_RESTRAINT_ID);
     when(resourceRestraintService.getByNameAndAccountId(any(), any())).thenReturn(resourceConstraint);
-    when(resourceRestraintService.get(any(), any())).thenReturn(resourceConstraint);
+    when(resourceRestraintService.get(any())).thenReturn(resourceConstraint);
     doReturn(Constraint.builder()
                  .id(constraintId)
                  .spec(Constraint.Spec.builder().limits(1).strategy(Constraint.Strategy.FIFO).build())
@@ -88,9 +88,9 @@ public class ResourceRestraintStepTest extends OrchestrationStepsTestBase {
     String uuid = generateUuid();
     String planNodeId = generateUuid();
     String consumerId = generateUuid();
-    HoldingScope holdingScope = HoldingScopeBuilder.aPlan().build();
+    String planExecutionId = generateUuid();
     Ambiance ambiance = Ambiance.newBuilder()
-                            .setPlanExecutionId(generateUuid())
+                            .setPlanExecutionId(planExecutionId)
                             .addAllLevels(Collections.singletonList(
                                 Level.newBuilder().setRuntimeId(uuid).setSetupId(planNodeId).build()))
                             .build();
@@ -98,7 +98,7 @@ public class ResourceRestraintStepTest extends OrchestrationStepsTestBase {
     ResourceRestraintSpecParameters specParameters = ResourceRestraintSpecParameters.builder()
                                                          .resourceUnit(RESOURCE_UNIT)
                                                          .acquireMode(AcquireMode.ACCUMULATE)
-                                                         .holdingScope(holdingScope)
+                                                         .holdingScope(HoldingScope.PIPELINE)
                                                          .permits(1)
                                                          .build();
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(specParameters).build();
@@ -106,8 +106,8 @@ public class ResourceRestraintStepTest extends OrchestrationStepsTestBase {
     doReturn(Collections.singletonList(ResourceRestraintInstance.builder()
                                            .state(Consumer.State.ACTIVE)
                                            .permits(1)
-                                           .releaseEntityType(holdingScope.getScope())
-                                           .releaseEntityId(holdingScope.getNodeSetupId())
+                                           .releaseEntityType(HoldingScope.PIPELINE.name())
+                                           .releaseEntityId(planExecutionId)
                                            .build()))
         .when(resourceRestraintInstanceService)
         .getAllByRestraintIdAndResourceUnitAndStates(any(), any(), any());
@@ -126,8 +126,9 @@ public class ResourceRestraintStepTest extends OrchestrationStepsTestBase {
   public void shouldTestExecuteSync() {
     String uuid = generateUuid();
     String planNodeId = generateUuid();
+    String planExecutionId = generateUuid();
     Ambiance ambiance = Ambiance.newBuilder()
-                            .setPlanExecutionId(generateUuid())
+                            .setPlanExecutionId(planExecutionId)
                             .addAllLevels(Collections.singletonList(
                                 Level.newBuilder().setRuntimeId(uuid).setSetupId(planNodeId).build()))
                             .build();
@@ -135,13 +136,20 @@ public class ResourceRestraintStepTest extends OrchestrationStepsTestBase {
     ResourceRestraintSpecParameters specParameters = ResourceRestraintSpecParameters.builder()
                                                          .resourceUnit(RESOURCE_UNIT)
                                                          .acquireMode(AcquireMode.ACCUMULATE)
-                                                         .holdingScope(HOLDING_SCOPE)
+                                                         .holdingScope(HoldingScope.PIPELINE)
                                                          .permits(1)
                                                          .build();
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(specParameters).build();
-
+    ResourceRestraintPassThroughData passThroughData = ResourceRestraintPassThroughData.builder()
+                                                           .name(specParameters.getName())
+                                                           .resourceRestraintId(generateUuid())
+                                                           .resourceUnit(RESOURCE_UNIT)
+                                                           .capacity(100)
+                                                           .releaseEntityType(specParameters.getHoldingScope().name())
+                                                           .releaseEntityId(planExecutionId)
+                                                           .build();
     StepResponse stepResponse =
-        resourceRestraintStep.executeSync(ambiance, stepElementParameters, stepInputPackage, null);
+        resourceRestraintStep.executeSync(ambiance, stepElementParameters, stepInputPackage, passThroughData);
 
     assertThat(stepResponse).isNotNull();
     assertThat(stepResponse.getStatus()).isEqualTo(SUCCEEDED);
@@ -161,20 +169,23 @@ public class ResourceRestraintStepTest extends OrchestrationStepsTestBase {
     ResourceRestraintSpecParameters specParameters = ResourceRestraintSpecParameters.builder()
                                                          .resourceUnit(RESOURCE_UNIT)
                                                          .acquireMode(AcquireMode.ACCUMULATE)
-                                                         .holdingScope(HOLDING_SCOPE)
+                                                         .holdingScope(HoldingScope.PIPELINE)
                                                          .permits(1)
                                                          .build();
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(specParameters).build();
 
     doNothing().when(resourceRestraintInstanceService).updateBlockedConstraints(any());
 
-    StepResponse stepResponse = resourceRestraintStep.handleAsyncResponse(ambiance, stepElementParameters, null);
+    ResourceRestraintResponseData responseData = ResourceRestraintResponseData.builder()
+                                                     .resourceRestraintId(generateUuid())
+                                                     .resourceUnit(generateUuid())
+                                                     .build();
+
+    StepResponse stepResponse = resourceRestraintStep.handleAsyncResponse(
+        ambiance, stepElementParameters, ImmutableMap.of(generateUuid(), responseData));
 
     assertThat(stepResponse).isNotNull();
     assertThat(stepResponse.getStatus()).isEqualTo(SUCCEEDED);
-
-    verify(resourceRestraintService).getByNameAndAccountId(any(), any());
-    verify(resourceRestraintInstanceService).updateBlockedConstraints(any());
   }
 
   @Test
@@ -191,7 +202,7 @@ public class ResourceRestraintStepTest extends OrchestrationStepsTestBase {
     ResourceRestraintSpecParameters specParameters = ResourceRestraintSpecParameters.builder()
                                                          .resourceUnit(RESOURCE_UNIT)
                                                          .acquireMode(AcquireMode.ACCUMULATE)
-                                                         .holdingScope(HOLDING_SCOPE)
+                                                         .holdingScope(HoldingScope.PIPELINE)
                                                          .permits(1)
                                                          .build();
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(specParameters).build();
@@ -219,7 +230,7 @@ public class ResourceRestraintStepTest extends OrchestrationStepsTestBase {
     ResourceRestraintSpecParameters specParameters = ResourceRestraintSpecParameters.builder()
                                                          .resourceUnit(RESOURCE_UNIT)
                                                          .acquireMode(AcquireMode.ACCUMULATE)
-                                                         .holdingScope(HOLDING_SCOPE)
+                                                         .holdingScope(HoldingScope.PIPELINE)
                                                          .permits(1)
                                                          .build();
     StepElementParameters stepElementParameters = StepElementParameters.builder().spec(specParameters).build();

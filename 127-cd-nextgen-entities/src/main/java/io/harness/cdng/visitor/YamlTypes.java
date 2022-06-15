@@ -17,13 +17,18 @@ import io.harness.walktree.visitor.utilities.VisitorParentPathUtils;
 
 @OwnedBy(CDC)
 public interface YamlTypes {
+  String GITOPS_CREATE_PR = StepSpecTypeConstants.GITOPS_CREATE_PR;
+
   String PRIMARY_ARTIFACT = "primary";
   String ARTIFACT_LIST_CONFIG = "artifacts";
   String SIDECAR_ARTIFACT_CONFIG = "sidecar";
   String SIDECARS_ARTIFACT_CONFIG = "sidecars";
   String ENVIRONMENT_YAML = "environment";
+  String ENVIRONMENT_GROUP_YAML = "environmentGroup";
+  String GITOPS_CLUSTERS = "gitopsClusters";
   String ENVIRONMENT_REF = "environmentRef";
   String INFRASTRUCTURE_DEF = "infrastructureDefinition";
+  String INFRASTRUCTURE_DEFS = "infrastructureDefinitions";
   String INFRASTRUCTURE_STEP_PARAMETERS = "infrastructureStepParameters";
   String ENVIRONMENT_NODE_ID = "environmentNodeId";
 
@@ -42,6 +47,7 @@ public interface YamlTypes {
 
   String SERVERLESS_AWS_LAMBDA_DEPLOY = StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_DEPLOY;
   String SERVERLESS_AWS_LAMBDA_ROLLBACK = StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK;
+  String COMMAND = StepSpecTypeConstants.COMMAND;
 
   String MANIFEST_LIST_CONFIG = "manifests";
   String MANIFEST_CONFIG = "manifest";
@@ -52,10 +58,13 @@ public interface YamlTypes {
   String SPEC = "spec";
   String PIPELINE_INFRASTRUCTURE = "infrastructure";
   String SERVICE_CONFIG = "serviceConfig";
+  String SERVICE_SECTION = "serviceSection";
   String SERVICE_ENTITY = "service";
   String SERVICE_REF = "serviceRef";
   String SERVICE_DEFINITION = "serviceDefinition";
   String SERVICE_SPEC = "spec";
+  String SERVICE_OVERRIDE = "serviceOverrides";
+  String SERVICE_INPUTS = "serviceInputs";
   String STAGE_OVERRIDES_CONFIG = "stageOverrides";
   String PATH_CONNECTOR = VisitorParentPathUtils.PATH_CONNECTOR;
   String CONNECTOR_REF = "connectorRef";
@@ -68,6 +77,8 @@ public interface YamlTypes {
   String RELEASE_NAME = "releaseName";
   String CLUSTER = "cluster";
   String STORE_CONFIG_WRAPPER = "store";
+  String CONFIG_FILES = "configFiles";
+  String CONFIG_FILE = "configFile";
 
   String SKIP_DRY_RUN = "skipDryRun";
   String OUTPUT = "output";
@@ -86,4 +97,23 @@ public interface YamlTypes {
 
   String SUBSCRIPTION = "subscription";
   String RESOURCE_GROUP = "resourceGroup";
+
+  // METADATA for Service and Environment Plan Creator
+  String SERVICE_SPEC_UUID = "service_spec_uuid";
+  String POST_SERVICE_SPEC_UUID = "service_spec_uuid";
+  String INFRA_SECTION_UUID = "infra_section_uuid";
+  String NEXT_UUID = "nextUuid";
+
+  String CLOUD_PROVIDER = "cloudProvider";
+  String LOAD_BALANCER = "loadBalancer";
+  String HOST_NAME_CONVENTION = "hostNameConvention";
+
+  String APP_SERVICE = "appService";
+  String DEPLOYMENT_SLOT = "deploymentSlot";
+  String TARGET_SLOT = "targetSlot";
+
+  String ENVIRONMENT_INPUTS = "environmentInputs";
+  String SERVICE_OVERRIDE_INPUTS = "serviceOverrideInputs";
+  String INPUTS = "inputs";
+  String REF = "ref";
 }

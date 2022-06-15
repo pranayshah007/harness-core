@@ -12,6 +12,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.plan.Dependencies;
+import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.contracts.plan.GraphLayoutInfo;
 import io.harness.pms.contracts.plan.GraphLayoutNode;
 import io.harness.pms.contracts.plan.PlanCreationBlobResponse;
@@ -21,6 +22,7 @@ import io.harness.pms.contracts.plan.YamlUpdates;
 import io.harness.pms.merger.helpers.MergeHelper;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
@@ -47,7 +49,7 @@ public class PlanCreationBlobResponseUtils {
     if (EmptyPredicate.isEmpty(currResponse.getYamlUpdates().getFqnToYamlMap())) {
       return builder.build();
     }
-    Map<String, String> yamlUpdateFqnMap = new HashMap<>(builder.getYamlUpdates().getFqnToYamlMap());
+    Map<String, String> yamlUpdateFqnMap = new LinkedHashMap<>(builder.getYamlUpdates().getFqnToYamlMap());
     yamlUpdateFqnMap.putAll(currResponse.getYamlUpdates().getFqnToYamlMap());
     builder.setYamlUpdates(YamlUpdates.newBuilder().putAllFqnToYaml(yamlUpdateFqnMap).build());
     return builder.build();
@@ -91,6 +93,9 @@ public class PlanCreationBlobResponseUtils {
       return builder.build();
     }
     dependencies.getDependenciesMap().forEach((key, value) -> addDependency(builder, key, value));
+    if (dependencies.getDependencyMetadataMap() != null) {
+      dependencies.getDependencyMetadataMap().forEach((key, value) -> addDependencyMetadata(builder, key, value));
+    }
 
     if (builder.getDeps() == null || EmptyPredicate.isEmpty(builder.getDeps().getYaml())) {
       builder.setDeps(builder.getDeps().toBuilder().setYaml(dependencies.getYaml()).build());
@@ -99,6 +104,16 @@ public class PlanCreationBlobResponseUtils {
           mergeYamlUpdates(builder.getDeps().getYaml(), currResponse.getYamlUpdates().getFqnToYamlMap());
       builder.setDeps(builder.getDeps().toBuilder().setYaml(updatedPipelineJson).build());
     }
+    return builder.build();
+  }
+
+  private static PlanCreationBlobResponse addDependencyMetadata(
+      PlanCreationBlobResponse.Builder builder, String nodeId, Dependency dependency) {
+    if (builder.containsNodes(nodeId)) {
+      return builder.build();
+    }
+
+    builder.setDeps(builder.getDeps().toBuilder().putDependencyMetadata(nodeId, dependency).build());
     return builder.build();
   }
 
@@ -112,7 +127,7 @@ public class PlanCreationBlobResponseUtils {
   }
 
   public PlanCreationBlobResponse removeDependency(PlanCreationBlobResponse.Builder builder, String nodeId) {
-    builder.setDeps(builder.getDeps().toBuilder().removeDependencies(nodeId).build());
+    builder.setDeps(builder.getDeps().toBuilder().removeDependencies(nodeId).removeDependencyMetadata(nodeId).build());
     return builder.build();
   }
 

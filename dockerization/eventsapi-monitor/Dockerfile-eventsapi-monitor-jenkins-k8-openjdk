@@ -1,8 +1,8 @@
 # to be used when building in Jenkins
-FROM us.gcr.io/platform-205701/alpine:safe-alpine3.12-sec1338-apm
+FROM us.gcr.io/platform-205701/alpine:safe-alpine3.15.4-bt1276
 
 # Add the capsule JAR and other files
-COPY eventsapi-monitor-capsule.jar config.yml redislabs_ca.pem install_redis.sh alpn-boot-8.1.13.v20181017.jar /opt/harness/
+COPY eventsapi-monitor-capsule.jar config.yml redislabs_ca.pem install_redis.sh /opt/harness/
 
 RUN wget https://github.com/mikefarah/yq/releases/download/3.3.2/yq_linux_amd64 -O /usr/bin/yq -O /usr/bin/yq
 RUN chmod +x /usr/bin/yq
@@ -16,7 +16,7 @@ COPY scripts /opt/harness
 
 RUN chmod +x /opt/harness/*.sh
 
-RUN addgroup -S 65534 && adduser -S 65534 -G 65534
+RUN adduser -S 65534 -G 65534
 RUN chown -R 65534:65534 /opt/harness/ /tmp
 RUN chmod 700 -R /opt/harness/
 RUN chmod 700 -R /tmp

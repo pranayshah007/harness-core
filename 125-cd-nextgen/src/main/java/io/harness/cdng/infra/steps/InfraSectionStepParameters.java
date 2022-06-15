@@ -29,4 +29,5 @@ public class InfraSectionStepParameters implements StepParameters {
   private EnvironmentYaml environment;
   private ParameterField<String> environmentRef;
   private InfraUseFromStage useFromStage;
+  private ParameterField<String> ref;
 }

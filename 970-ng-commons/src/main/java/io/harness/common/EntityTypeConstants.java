@@ -13,6 +13,7 @@ import io.harness.annotations.dev.OwnedBy;
 
 @OwnedBy(PL)
 public interface EntityTypeConstants {
+  String GITOPS_CREATE_PR = "CreatePR";
   String PROJECTS = "Projects";
   String PIPELINES = "Pipelines";
   String PIPELINE_STEPS = "PipelineSteps";
@@ -93,4 +94,6 @@ public interface EntityTypeConstants {
   String SERVERLESS_AWS_LAMBDA_ROLLBACK = "ServerlessAwsLambdaRollback";
   String CLOUDFORMATION_ROLLBACK_STACK_STEP = "RollbackStack";
   String INFRASTRUCTURE = "Infrastructure";
+  String COMMAND = "Command";
+  String STRATEGY_NODE = "StrategyNode";
 }

@@ -8,9 +8,7 @@
 package io.harness.cvng.core.services.impl;
 
 import static io.harness.cvng.CVConstants.TAG_ACCOUNT_ID;
-import static io.harness.cvng.CVConstants.TAG_DATA_SOURCE;
 import static io.harness.cvng.CVConstants.TAG_ONBOARDING;
-import static io.harness.cvng.CVConstants.TAG_UNRECORDED;
 import static io.harness.cvng.CVConstants.TAG_VERIFICATION_TYPE;
 import static io.harness.cvng.beans.cvnglog.CVNGLogType.EXECUTION_LOG;
 import static io.harness.cvng.beans.cvnglog.TraceableType.ONBOARDING;
@@ -263,12 +261,8 @@ public class CVNGLogServiceImpl implements CVNGLogService {
           tagsMap.putAll(verificationTask.get().getTags());
           verificationTask.get().getTags().forEach(
               (key, value) -> cvngLogTags.add(CVNGLogTag.builder().key(key).value(value).type(TagType.STRING).build()));
-        } else {
-          tagsMap.put(TAG_DATA_SOURCE, TAG_UNRECORDED);
-          tagsMap.put(TAG_VERIFICATION_TYPE, TAG_UNRECORDED);
         }
       } else if (cvngLogDTO.getTraceableType() == ONBOARDING) {
-        tagsMap.put(TAG_DATA_SOURCE, TAG_ONBOARDING);
         tagsMap.put(TAG_VERIFICATION_TYPE, TAG_ONBOARDING);
       }
     } else {

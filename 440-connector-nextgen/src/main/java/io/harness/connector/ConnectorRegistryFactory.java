@@ -27,6 +27,7 @@ import io.harness.connector.heartbeat.JiraValidationParamsProvider;
 import io.harness.connector.heartbeat.K8sConnectorValidationParamsProvider;
 import io.harness.connector.heartbeat.NexusValidationParamsProvider;
 import io.harness.connector.heartbeat.NoOpConnectorValidationParamsProvider;
+import io.harness.connector.heartbeat.OciHelmConnectorValidationParamsProvider;
 import io.harness.connector.heartbeat.PhysicalDataCenterConnectorValidationParamsProvider;
 import io.harness.connector.heartbeat.ScmConnectorValidationParamsProvider;
 import io.harness.connector.heartbeat.ServiceNowValidationParamsProvider;
@@ -75,6 +76,10 @@ import io.harness.connector.mappers.gitlabconnector.GitlabDTOToEntity;
 import io.harness.connector.mappers.gitlabconnector.GitlabEntityToDTO;
 import io.harness.connector.mappers.helm.HttpHelmDTOToEntity;
 import io.harness.connector.mappers.helm.HttpHelmEntityToDTO;
+import io.harness.connector.mappers.helm.OciHelmDTOToEntity;
+import io.harness.connector.mappers.helm.OciHelmEntityToDTO;
+import io.harness.connector.mappers.jenkins.JenkinsDTOToEntity;
+import io.harness.connector.mappers.jenkins.JenkinsEntityToDTO;
 import io.harness.connector.mappers.jira.JiraDTOToEntity;
 import io.harness.connector.mappers.jira.JiraEntityToDTO;
 import io.harness.connector.mappers.kubernetesMapper.KubernetesDTOToEntity;
@@ -121,9 +126,11 @@ import io.harness.connector.validator.DockerConnectionValidator;
 import io.harness.connector.validator.ErrorTrackingConnectorValidator;
 import io.harness.connector.validator.GcpConnectorValidator;
 import io.harness.connector.validator.HttpHelmRepoConnectionValidator;
+import io.harness.connector.validator.JenkinsConnectionValidator;
 import io.harness.connector.validator.JiraConnectorValidator;
 import io.harness.connector.validator.KubernetesConnectionValidator;
 import io.harness.connector.validator.NexusConnectorValidator;
+import io.harness.connector.validator.OciHelmRepoConnectionValidator;
 import io.harness.connector.validator.PhysicalDataCenterConnectorValidator;
 import io.harness.connector.validator.SecretManagerConnectorValidator;
 import io.harness.connector.validator.ServiceNowConnectorValidator;
@@ -133,6 +140,7 @@ import io.harness.connector.validator.scmValidators.BitbucketConnectorValidator;
 import io.harness.connector.validator.scmValidators.GitConnectorValidator;
 import io.harness.connector.validator.scmValidators.GithubConnectorValidator;
 import io.harness.connector.validator.scmValidators.GitlabConnectorValidator;
+import io.harness.connector.validator.scmValidators.JenkinsConnectorValidationsParamsProvider;
 import io.harness.delegate.beans.connector.ConnectorType;
 
 import java.util.HashMap;
@@ -267,6 +275,10 @@ public class ConnectorRegistryFactory {
         new ConnectorRegistrar(ConnectorCategory.ARTIFACTORY, HttpHelmRepoConnectionValidator.class,
             HttpHelmConnectorValidationParamsProvider.class, HttpHelmDTOToEntity.class, HttpHelmEntityToDTO.class,
             NotSupportedValidationHandler.class));
+    registrar.put(ConnectorType.OCI_HELM_REPO,
+        new ConnectorRegistrar(ConnectorCategory.ARTIFACTORY, OciHelmRepoConnectionValidator.class,
+            OciHelmConnectorValidationParamsProvider.class, OciHelmDTOToEntity.class, OciHelmEntityToDTO.class,
+            NotSupportedValidationHandler.class));
     registrar.put(ConnectorType.PAGER_DUTY,
         new ConnectorRegistrar(ConnectorCategory.MONITORING, CVConnectorValidator.class,
             CVConnectorParamsProvider.class, PagerDutyDTOToEntity.class, PagerDutyEntityToDTO.class,
@@ -291,6 +303,10 @@ public class ConnectorRegistryFactory {
         new ConnectorRegistrar(ConnectorCategory.CLOUD_PROVIDER, PhysicalDataCenterConnectorValidator.class,
             PhysicalDataCenterConnectorValidationParamsProvider.class, PhysicalDataCenterDTOToEntity.class,
             PhysicalDataCenterEntityToDTO.class, NotSupportedValidationHandler.class));
+    registrar.put(ConnectorType.JENKINS,
+        new ConnectorRegistrar(ConnectorCategory.ARTIFACTORY, JenkinsConnectionValidator.class,
+            JenkinsConnectorValidationsParamsProvider.class, JenkinsDTOToEntity.class, JenkinsEntityToDTO.class,
+            NotSupportedValidationHandler.class));
   }
 
   public static Class<? extends ConnectionValidator> getConnectorValidator(ConnectorType connectorType) {

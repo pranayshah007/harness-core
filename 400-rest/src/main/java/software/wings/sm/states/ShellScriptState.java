@@ -20,6 +20,7 @@ import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static software.wings.beans.delegation.ShellScriptParameters.CommandUnit;
 
 import static com.google.common.collect.Lists.newArrayList;
+import static java.lang.Boolean.FALSE;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 
@@ -456,9 +457,12 @@ public class ShellScriptState extends State implements SweepingOutputStateMixin 
 
     List<String> allTags = newArrayList();
     List<String> renderedTags = newArrayList();
-    String cloudProviderTag = getTagFromCloudProvider(containerServiceParams);
-    if (isNotEmpty(cloudProviderTag)) {
-      allTags.add(cloudProviderTag);
+
+    if (!Objects.equals(includeInfraSelectors, FALSE)) {
+      String cloudProviderTag = getTagFromCloudProvider(containerServiceParams);
+      if (isNotEmpty(cloudProviderTag)) {
+        allTags.add(cloudProviderTag);
+      }
     }
 
     if (isNotEmpty(delegateSelectors)) {
@@ -579,7 +583,7 @@ public class ShellScriptState extends State implements SweepingOutputStateMixin 
         .build();
   }
 
-  private String getTagFromCloudProvider(ContainerServiceParams containerServiceParams) {
+  String getTagFromCloudProvider(ContainerServiceParams containerServiceParams) {
     if (containerServiceParams != null) {
       SettingAttribute settingAttribute = containerServiceParams.getSettingAttribute();
       SettingValue settingValue = settingAttribute.getValue();

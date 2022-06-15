@@ -27,6 +27,7 @@ import io.harness.cvng.core.utils.analysisinfo.SLIMetricTransformer;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.google.common.base.Preconditions;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -72,6 +73,9 @@ public class PrometheusCVConfig extends MetricCVConfig<MetricInfo> {
 
   @Override
   public List<MetricInfo> getMetricInfos() {
+    if (metricInfoList == null) {
+      return Collections.emptyList();
+    }
     return metricInfoList;
   }
 

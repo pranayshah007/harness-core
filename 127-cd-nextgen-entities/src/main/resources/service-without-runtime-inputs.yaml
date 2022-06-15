@@ -1,0 +1,29 @@
+service:
+  name: test-serv
+  identifier: testserv
+  tags:
+    first: ""
+  gitOpsEnabled: false
+  serviceDefinition:
+    spec:
+      manifests:
+        - manifest:
+            identifier: mani_id
+            type: HelmChart
+            spec:
+              store:
+                type: Http
+                spec:
+                  connectorRef: charts_stable
+              chartName: redis
+              chartVersion: ""
+              helmVersion: V2
+              skipResourceVersioning: false
+      variables:
+        - name: variable1
+          type: String
+          value: val
+        - name: memory
+          type: String
+          value: "8"
+    type: Kubernetes

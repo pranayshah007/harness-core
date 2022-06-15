@@ -1,4 +1,4 @@
-summary: "This is a SLO notification from Harness. You have breached your SLO Error Budget with name ${sloName} inside project ${projectIdentifier}, organisation ${orgIdentifier} and account ${accountIdentifier}."
+summary: "Harness SRM. The Error Budget for SLO ${SLO_NAME} has breached a condition. AccountID ${ACCOUNT_ID} OrganisationID ${ORG_ID} ProjectID ${PROJECT_ID} Rule ${RULE_NAME} Condition ${CONDITION_NAME}. Incident occurred ${START_DATE}. Click URL to goto SLO dashboard ${URL}"
 link:
     href: harness.io
     text: Harness

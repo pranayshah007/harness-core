@@ -27,6 +27,7 @@ import software.wings.api.ServiceElement;
 import software.wings.api.ecs.EcsBGSetupData;
 import software.wings.beans.AmiDeploymentType;
 import software.wings.beans.AppContainer;
+import software.wings.beans.ApprovalDetails;
 import software.wings.beans.ArtifactStreamMetadata;
 import software.wings.beans.ArtifactVariable;
 import software.wings.beans.AwsInstanceFilter;
@@ -140,5 +141,6 @@ public class CgOrchestrationBeansKryoRegistrar implements KryoRegistrar {
     kryo.register(HelmChart.class, 71106);
     kryo.register(Artifact.ContentStatus.class, 7193);
     kryo.register(Artifact.Status.class, 7194);
+    kryo.register(ApprovalDetails.Action.class, 7461);
   }
 }

@@ -40,6 +40,8 @@ import com.codahale.metrics.annotation.Timed;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.validation.Valid;
@@ -387,10 +389,19 @@ public class UserGroupResource {
    */
   @PUT
   @Path("{userGroupId}/unlink")
+  @ApiOperation(value = "unlink Harness User Group from SSO Group", nickname = "unlinkUserGroupFromSSO")
+  @Operation(operationId = "unlinkUserGroupFromSSO", summary = "Unlinks user group from an SSO group",
+      description = "Unlinks user group from an SSO group.",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
+            description = "Successfully unlinked Harness User Group from SSO group that was linked")
+      })
   @Timed
   @ExceptionMetered
-  public RestResponse<UserGroup> unlinkSsoGroup(@PathParam("userGroupId") String userGroupId,
-      @QueryParam("accountId") @NotEmpty String accountId, @QueryParam("retainMembers") boolean retainMembers) {
+  public RestResponse<UserGroup>
+  unlinkSsoGroup(@PathParam("userGroupId") String userGroupId, @QueryParam("accountId") @NotEmpty String accountId,
+      @QueryParam("retainMembers") boolean retainMembers) {
     return new RestResponse<>(
         getPublicUserGroup(userGroupService.unlinkSsoGroup(accountId, userGroupId, retainMembers)));
   }
@@ -406,11 +417,19 @@ public class UserGroupResource {
    */
   @PUT
   @Path("{userGroupId}/link/saml/{samlId}")
+  @ApiOperation(value = "Link Harness User Group with SAML group", nickname = "linkUserGroupWithSAMLGroup")
+  @Operation(operationId = "linkUserGroupWithSAMLGroup", summary = "Link a User Group to a SAML Group",
+      description = "Links the given user group to a SAML group.",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
+            description = "Successfully linked Harness user group with the SAML group of SSO Provider")
+      })
   @Timed
   @ExceptionMetered
-  public RestResponse<UserGroup> linkToSamlGroup(@PathParam("userGroupId") String userGroupId,
-      @PathParam("samlId") String samlId, @QueryParam("accountId") @NotEmpty String accountId,
-      @NotNull @Valid SamlLinkGroupRequest groupRequest) {
+  public RestResponse<UserGroup>
+  linkToSamlGroup(@PathParam("userGroupId") String userGroupId, @PathParam("samlId") String samlId,
+      @QueryParam("accountId") @NotEmpty String accountId, @NotNull @Valid SamlLinkGroupRequest groupRequest) {
     return new RestResponse<>(userGroupService.linkToSsoGroup(accountId, userGroupId, SSOType.SAML, samlId,
         groupRequest.getSamlGroupName(), groupRequest.getSamlGroupName()));
   }

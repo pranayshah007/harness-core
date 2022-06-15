@@ -246,13 +246,7 @@ public class NGTriggerElementMapper {
                                                .metadata(toMetadata(config.getSource()))
                                                .enabled(config.getEnabled())
                                                .tags(TagMapper.convertToList(config.getTags()));
-    if (isNotEmpty(config.getPipelineBranchName())) {
-      entityBuilder.pipelineBranchName(config.getPipelineBranchName());
-    }
 
-    if (isNotEmpty(config.getInputSetRefs())) {
-      entityBuilder.inputSetRefs(config.getInputSetRefs());
-    }
     if (config.getSource().getType() == NGTriggerType.SCHEDULED) {
       entityBuilder.nextIterations(new ArrayList<>());
     }
@@ -390,6 +384,10 @@ public class NGTriggerElementMapper {
         isConfirmationMessage = headerValues.stream().anyMatch(AMZ_SUBSCRIPTION_CONFIRMATION_TYPE::equalsIgnoreCase);
       }
     } else {
+      if (isEmpty(accountIdentifier) || isEmpty(orgIdentifier) || isEmpty(projectIdentifier)) {
+        throw new InvalidRequestException(
+            "AccountIdentifier, OrgIdentifier, ProjectIdentifier can not be null for custom webhook executions");
+      }
       webhookTriggerType = CUSTOM;
     }
 

@@ -1,4 +1,4 @@
-summary: "This is a Monitored Service notification from Harness. You have breached your Monitored Service Health with name ${monitoredServiceName} inside project ${projectIdentifier}, organisation ${orgIdentifier} and account ${accountIdentifier}."
+summary: "Harness SRM. The Service Health for service ${SERVICE_NAME} in environment ${ENVIRONMENT_NAME}  has breached a condition. AccountID ${ACCOUNT_ID} OrganisationID ${ORG_ID} ProjectID ${PROJECT_ID} Rule ${RULE_NAME} Condition ${CONDITION_NAME}. Incident occurred ${START_DATE}. Click URL to goto Service Health dashboard ${URL}"
 link:
     href: harness.io
     text: Harness

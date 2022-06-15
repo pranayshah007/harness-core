@@ -9,11 +9,13 @@ package io.harness.filters;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.plancreator.PipelineServiceFilter;
 import io.harness.pms.pipeline.filter.PipelineFilter;
 import io.harness.pms.plan.creation.PlanCreatorUtils;
 import io.harness.pms.sdk.core.filter.creation.beans.FilterCreationContext;
 import io.harness.pms.sdk.core.pipeline.filters.ChildrenFilterJsonCreator;
 import io.harness.pms.yaml.YamlField;
+import io.harness.pms.yaml.YamlNode;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -33,8 +35,14 @@ public class ParallelFilterJsonCreator extends ChildrenFilterJsonCreator<YamlFie
   }
 
   @Override
-  public PipelineFilter getFilterForGivenField() {
-    return null;
+  public PipelineFilter getFilterForGivenField(FilterCreationContext filterCreationContext) {
+    return PipelineServiceFilter.builder()
+        .stageTypes(StagesFilterJsonCreator.getStageYamlFields(filterCreationContext.getCurrentField())
+                        .stream()
+                        .map(YamlField::getNode)
+                        .map(YamlNode::getType)
+                        .collect(Collectors.toSet()))
+        .build();
   }
 
   @Override

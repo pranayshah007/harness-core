@@ -1,0 +1,13 @@
+infrastructureDefinition:
+    name: IDENTIFIER
+    identifier: IDENTIFIER
+    description: 1st infra
+    tags: {}
+    type: KubernetesDirect
+    spec:
+        connectorRef: k8s_master_url
+        namespace: <+input>
+        releaseName: release-<+INFRA_KEY>
+    orgIdentifier: ORG_ID
+    projectIdentifier: PROJECT_ID
+    envIdentifier: ENV_IDENTIFIER

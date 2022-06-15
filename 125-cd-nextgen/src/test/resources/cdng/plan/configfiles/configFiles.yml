@@ -1,0 +1,26 @@
+- configFile:
+    identifier: gitConfigFileIdentifier
+    spec:
+      store:
+        type: Git
+        spec:
+          connectorRef: gitConnectorIdentifier
+          gitFetchType: Branch
+          paths:
+            - test/1
+          repoName: repoName
+          branch: test
+      type: Remote
+- configFile:
+    identifier: harnessEncConfigFileIdentifier
+    spec:
+      store:
+        type: Harness
+        spec:
+          files:
+            - ref: folderIdentifer
+              path: Root/folder,
+              isEncrypted: true
+            - ref: fileIdentifer,
+              path: Root/folder/fileName.txt,
+              isEncrypted: false

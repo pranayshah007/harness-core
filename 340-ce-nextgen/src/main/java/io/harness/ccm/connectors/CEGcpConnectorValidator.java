@@ -7,21 +7,14 @@
 
 package io.harness.ccm.connectors;
 
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
-
-import io.harness.annotations.dev.HarnessTeam;
-import io.harness.annotations.dev.OwnedBy;
-import io.harness.ccm.CENextGenConfiguration;
-import io.harness.connector.ConnectivityStatus;
-import io.harness.connector.ConnectorResponseDTO;
-import io.harness.connector.ConnectorValidationResult;
-import io.harness.delegate.beans.connector.CEFeatures;
-import io.harness.delegate.beans.connector.ConnectorType;
-import io.harness.delegate.beans.connector.gcpccm.GcpCloudCostConnectorDTO;
-import io.harness.ng.core.dto.ErrorDetail;
-
+import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
+import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.gax.paging.Page;
+import com.google.api.services.cloudresourcemanager.CloudResourceManager;
+import com.google.api.services.cloudresourcemanager.model.TestIamPermissionsRequest;
+import com.google.api.services.cloudresourcemanager.model.TestIamPermissionsResponse;
 import com.google.auth.Credentials;
+import com.google.auth.http.HttpCredentialsAdapter;
 import com.google.auth.oauth2.ImpersonatedCredentials;
 import com.google.auth.oauth2.ServiceAccountCredentials;
 import com.google.cloud.bigquery.BigQuery;
@@ -33,16 +26,32 @@ import com.google.cloud.bigquery.TableId;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import io.harness.annotations.dev.HarnessTeam;
+import io.harness.annotations.dev.OwnedBy;
+import io.harness.ccm.CENextGenConfiguration;
+import io.harness.connector.ConnectivityStatus;
+import io.harness.connector.ConnectorResponseDTO;
+import io.harness.connector.ConnectorValidationResult;
+import io.harness.delegate.beans.connector.CEFeatures;
+import io.harness.delegate.beans.connector.ConnectorType;
+import io.harness.delegate.beans.connector.gcpccm.GcpCloudCostConnectorDTO;
+import io.harness.ng.core.dto.ErrorDetail;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
+import java.util.Set;
+
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 @Slf4j
 @Service
@@ -64,11 +73,15 @@ public class CEGcpConnectorValidator extends io.harness.ccm.connectors.AbstractC
     String orgIdentifier = connectorResponseDTO.getConnector().getOrgIdentifier();
     String connectorIdentifier = connectorResponseDTO.getConnector().getIdentifier();
     String projectId = gcpCloudCostConnectorDTO.getProjectId(); // Source project id
-    String datasetId = gcpCloudCostConnectorDTO.getBillingExportSpec().getDatasetId();
-    String gcpTableName = gcpCloudCostConnectorDTO.getBillingExportSpec().getTableId();
     String impersonatedServiceAccount = gcpCloudCostConnectorDTO.getServiceAccountEmail();
     final List<CEFeatures> featuresEnabled = gcpCloudCostConnectorDTO.getFeaturesEnabled();
     final List<ErrorDetail> errorList = new ArrayList<>();
+    String datasetId = "";
+    String gcpTableName = "";
+    if (gcpCloudCostConnectorDTO.getBillingExportSpec() != null) {
+      datasetId = gcpCloudCostConnectorDTO.getBillingExportSpec().getDatasetId();
+      gcpTableName = gcpCloudCostConnectorDTO.getBillingExportSpec().getTableId();
+    }
     if (featuresEnabled.contains(CEFeatures.BILLING)
         && (projectId.isEmpty() || datasetId.isEmpty() || impersonatedServiceAccount.isEmpty())) {
       return ConnectorValidationResult.builder()
@@ -82,29 +95,66 @@ public class CEGcpConnectorValidator extends io.harness.ccm.connectors.AbstractC
           .status(ConnectivityStatus.FAILURE)
           .build();
     }
+    CloudResourceManager service = null;
     try {
-      ConnectorValidationResult connectorValidationResult =
-          validateAccessToBillingReport(projectId, datasetId, gcpTableName, impersonatedServiceAccount);
-      if (connectorValidationResult != null) {
-        return connectorValidationResult;
+      if (!configuration.getCeGcpSetupConfig().isEnableServiceAccountPermissionsCheck()) {
+        log.info("Service-account permissions check is disabled in config.");
       } else {
-        // 4. Check for data at destination only when 24 hrs have elapsed since connector last modified at
-        long now = Instant.now().toEpochMilli() - 24 * 60 * 60 * 1000;
-        if (connectorResponseDTO.getCreatedAt() < now) {
-          if (featuresEnabled.contains(CEFeatures.BILLING)
-              && !ceConnectorsHelper.isDataSyncCheck(accountIdentifier, connectorIdentifier,
-                  ConnectorType.GCP_CLOUD_COST, ceConnectorsHelper.JOB_TYPE_CLOUDFUNCTION)) {
-            log.error("Error with processing data"); // Used for log based metrics
-            errorList.add(ErrorDetail.builder()
-                              .reason("Error with processing data")
-                              .message("") // UI adds "Contact Harness Support or Harness Community Forum." in this case
-                              .code(500)
-                              .build());
-            return ConnectorValidationResult.builder()
-                .errorSummary("Error with processing data")
-                .errors(errorList)
-                .status(ConnectivityStatus.FAILURE)
-                .build();
+        service = createCloudResourceManagerService(impersonatedServiceAccount);
+      }
+    } catch (IOException | GeneralSecurityException e) {
+      log.error("Unable to initialize Cloud-Resource-Manager Service: ", e);
+      errorList.add(ErrorDetail.builder()
+                        .reason("Failed to test required permissions for service account " + impersonatedServiceAccount)
+                        .message("") // UI adds "Contact Harness Support or Harness Community Forum." in this case
+                        .code(500)
+                        .build());
+      return ConnectorValidationResult.builder()
+          .errorSummary("Failed to test required permissions for service account " + impersonatedServiceAccount)
+          .errors(errorList)
+          .status(ConnectivityStatus.FAILURE)
+          .build();
+    }
+    try {
+      if (configuration.getCeGcpSetupConfig().isEnableServiceAccountPermissionsCheck()) {
+        Set<String> requiredPermissions = new HashSet<>();
+        if (featuresEnabled.contains(CEFeatures.VISIBILITY)) {
+          requiredPermissions.addAll(getRequiredPermissionsForVisibility());
+        }
+        if (featuresEnabled.contains(CEFeatures.OPTIMIZATION)) {
+          requiredPermissions.addAll(getRequiredPermissionsForOptimization());
+        }
+        ConnectorValidationResult permissionsValidationResult = validatePermissionsList(
+            service, projectId, new ArrayList<>(requiredPermissions), impersonatedServiceAccount);
+        if (permissionsValidationResult != null) {
+          return permissionsValidationResult;
+        }
+      }
+      if (featuresEnabled.contains(CEFeatures.BILLING)) {
+        ConnectorValidationResult connectorValidationResult =
+            validateAccessToBillingReport(projectId, datasetId, gcpTableName, impersonatedServiceAccount);
+        if (connectorValidationResult != null) {
+          return connectorValidationResult;
+        } else {
+          // 4. Check for data at destination only when 24 hrs have elapsed since connector last modified at
+          long now = Instant.now().toEpochMilli() - 24 * 60 * 60 * 1000;
+          if (connectorResponseDTO.getCreatedAt() < now) {
+            if (featuresEnabled.contains(CEFeatures.BILLING)
+                && !ceConnectorsHelper.isDataSyncCheck(accountIdentifier, connectorIdentifier,
+                    ConnectorType.GCP_CLOUD_COST, ceConnectorsHelper.JOB_TYPE_CLOUDFUNCTION)) {
+              log.error("Error with processing data"); // Used for log based metrics
+              errorList.add(
+                  ErrorDetail.builder()
+                      .reason("Error with processing data")
+                      .message("") // UI adds "Contact Harness Support or Harness Community Forum." in this case
+                      .code(500)
+                      .build());
+              return ConnectorValidationResult.builder()
+                  .errorSummary("Error with processing data")
+                  .errors(errorList)
+                  .status(ConnectivityStatus.FAILURE)
+                  .build();
+            }
           }
         }
       }
@@ -118,11 +168,112 @@ public class CEGcpConnectorValidator extends io.harness.ccm.connectors.AbstractC
           .status(ConnectivityStatus.FAILURE)
           .build();
     }
+
     log.info("Validation successful for connector {}", connectorIdentifier);
     return ConnectorValidationResult.builder()
         .status(ConnectivityStatus.SUCCESS)
         .testedAt(Instant.now().toEpochMilli())
         .build();
+  }
+
+  private CloudResourceManager createCloudResourceManagerService(String impersonatedServiceAccount)
+      throws GeneralSecurityException, IOException {
+    ServiceAccountCredentials serviceAccountCredentials = getGcpCredentials(GCP_CREDENTIALS_PATH);
+    if (serviceAccountCredentials == null) {
+      return null;
+    }
+    Credentials credentials = getGcpImpersonatedCredentials(serviceAccountCredentials, impersonatedServiceAccount);
+
+    return new CloudResourceManager
+        .Builder(GoogleNetHttpTransport.newTrustedTransport(), JacksonFactory.getDefaultInstance(),
+            new HttpCredentialsAdapter(credentials))
+        .setApplicationName("service-accounts")
+        .build();
+  }
+
+  public ConnectorValidationResult validatePermissionsList(
+      CloudResourceManager service, String projectId, List<String> permissionsList, String impersonatedServiceAccount) {
+    final List<ErrorDetail> errorList = new ArrayList<>();
+    TestIamPermissionsRequest requestBody = new TestIamPermissionsRequest().setPermissions(permissionsList);
+    try {
+      TestIamPermissionsResponse testIamPermissionsResponse =
+          service.projects().testIamPermissions(projectId, requestBody).execute();
+
+      if (testIamPermissionsResponse.getPermissions() != null
+          && testIamPermissionsResponse.getPermissions().containsAll(permissionsList)) {
+        return null;
+      }
+
+      List<String> missingPermissions = new ArrayList<>(permissionsList);
+      if (testIamPermissionsResponse.getPermissions() != null) {
+        missingPermissions.removeAll(testIamPermissionsResponse.getPermissions());
+      }
+      log.error("Some required permissions were found to be missing for service account {}. {}",
+          impersonatedServiceAccount, missingPermissions);
+      for (String missingPermission : missingPermissions) {
+        errorList.add(ErrorDetail.builder()
+                          .reason(missingPermission + " permission was found to be missing for service account "
+                              + impersonatedServiceAccount)
+                          .message("Review GCP access permissions as per the documentation.")
+                          .code(403)
+                          .build());
+      }
+      return ConnectorValidationResult.builder()
+          .errorSummary(
+              "Some required permissions were found to be missing for service account " + impersonatedServiceAccount)
+          .errors(errorList)
+          .status(ConnectivityStatus.FAILURE)
+          .testedAt(Instant.now().toEpochMilli())
+          .build();
+    } catch (IOException e) {
+      log.error("Failed to test required permissions", e);
+      errorList.add(ErrorDetail.builder()
+                        .reason("Failed to test required permissions")
+                        .message("") // UI adds "Contact Harness Support or Harness Community Forum." in this case
+                        .build());
+      return ConnectorValidationResult.builder()
+          .errorSummary("Failed to test required permissions for service account " + impersonatedServiceAccount)
+          .errors(errorList)
+          .status(ConnectivityStatus.FAILURE)
+          .build();
+    }
+  }
+
+  public List<String> getRequiredPermissionsForVisibility() {
+    return Arrays.asList(
+        "compute.disks.list", "compute.instances.list", "compute.regions.list", "compute.snapshots.list");
+  }
+
+  public List<String> getRequiredPermissionsForOptimization() {
+    return Arrays.asList("compute.addresses.create", "compute.addresses.createInternal", "compute.addresses.delete",
+        "compute.addresses.deleteInternal", "compute.addresses.get", "compute.addresses.list",
+        "compute.addresses.setLabels", "compute.addresses.use", "compute.addresses.useInternal",
+        "compute.autoscalers.create", "compute.autoscalers.delete", "compute.autoscalers.get",
+        "compute.autoscalers.list", "compute.autoscalers.update", "compute.instanceGroupManagers.create",
+        "compute.instanceGroupManagers.delete", "compute.instanceGroupManagers.get",
+        "compute.instanceGroupManagers.list", "compute.instanceGroupManagers.update",
+        "compute.instanceGroupManagers.use", "compute.instanceGroups.create", "compute.instanceGroups.delete",
+        "compute.instanceGroups.get", "compute.instanceGroups.list", "compute.instanceGroups.update",
+        "compute.instanceGroups.use", "compute.instances.addAccessConfig", "compute.instances.attachDisk",
+        "compute.instances.create", "compute.instances.createTagBinding", "compute.instances.delete",
+        "compute.instances.deleteAccessConfig", "compute.instances.deleteTagBinding", "compute.instances.detachDisk",
+        "compute.instances.get", "compute.instances.getEffectiveFirewalls", "compute.instances.getIamPolicy",
+        "compute.instances.getSerialPortOutput", "compute.instances.list", "compute.instances.listEffectiveTags",
+        "compute.instances.listTagBindings", "compute.instances.osAdminLogin", "compute.instances.osLogin",
+        "compute.instances.removeResourcePolicies", "compute.instances.reset", "compute.instances.resume",
+        "compute.instances.sendDiagnosticInterrupt", "compute.instances.setDeletionProtection",
+        "compute.instances.setDiskAutoDelete", "compute.instances.setIamPolicy", "compute.instances.setLabels",
+        "compute.instances.setMachineResources", "compute.instances.setMachineType", "compute.instances.setMetadata",
+        "compute.instances.setMinCpuPlatform", "compute.instances.setScheduling", "compute.instances.setServiceAccount",
+        "compute.instances.setShieldedInstanceIntegrityPolicy", "compute.instances.setShieldedVmIntegrityPolicy",
+        "compute.instances.setTags", "compute.instances.start", "compute.instances.stop", "compute.instances.suspend",
+        "compute.instances.update", "compute.instances.updateAccessConfig", "compute.instances.updateDisplayDevice",
+        "compute.instances.updateNetworkInterface", "compute.instances.updateSecurity",
+        "compute.instances.updateShieldedInstanceConfig", "compute.instances.updateShieldedVmConfig",
+        "compute.instances.use", "compute.instances.useReadOnly", "compute.machineTypes.list",
+        "compute.networks.access", "compute.networks.get", "compute.networks.getEffectiveFirewalls",
+        "compute.networks.getRegionEffectiveFirewalls", "compute.networks.list", "compute.networks.mirror",
+        "compute.regions.get", "compute.regions.list", "secretmanager.versions.access");
   }
 
   public ConnectorValidationResult validateAccessToBillingReport(
@@ -162,13 +313,7 @@ public class CEGcpConnectorValidator extends io.harness.ccm.connectors.AbstractC
       } else {
         // 2. Check presence of table "gcp_billing_export_v1_*"
         log.info("dataset '{}' is present in gcp project '{}'", datasetId, projectId);
-        if (!isEmpty(gcpTableName)) {
-          TableId tableIdBq = TableId.of(projectId, datasetId, gcpTableName);
-          tableGranularData = bigQuery.getTable(tableIdBq);
-          if (tableGranularData != null) {
-            isTablePresent = true;
-          }
-        } else {
+        if (isEmpty(gcpTableName)) {
           Page<Table> tableList = dataset.list(BigQuery.TableListOption.pageSize(1000));
           for (Table table : tableList.getValues()) {
             if (table.getTableId().getTable().contains(GCP_BILLING_EXPORT_V_1)) {
@@ -178,6 +323,12 @@ public class CEGcpConnectorValidator extends io.harness.ccm.connectors.AbstractC
             }
           }
         }
+        TableId tableIdBq = TableId.of(projectId, datasetId, gcpTableName);
+        tableGranularData = bigQuery.getTable(tableIdBq);
+        if (tableGranularData != null) {
+          isTablePresent = true;
+        }
+
         if (!isTablePresent) {
           errorList.add(ErrorDetail.builder()
                             .reason("Pricing table at source not found")

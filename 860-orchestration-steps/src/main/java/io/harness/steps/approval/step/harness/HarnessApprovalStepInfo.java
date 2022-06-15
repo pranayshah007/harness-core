@@ -32,8 +32,8 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldDefaults;
+import org.hibernate.validator.constraints.NotEmpty;
 import org.springframework.data.annotation.TypeAlias;
-
 @OwnedBy(CDC)
 @Data
 @Builder
@@ -42,7 +42,7 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("harnessApprovalStepInfo")
 @RecasterAlias("io.harness.steps.approval.step.harness.HarnessApprovalStepInfo")
 public class HarnessApprovalStepInfo implements PMSStepInfo {
-  @NotNull @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> approvalMessage;
+  @NotEmpty @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> approvalMessage;
 
   @NotNull
   @YamlSchemaTypes(value = {string})

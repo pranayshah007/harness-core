@@ -144,8 +144,7 @@ public class ScalyrStateTest extends APMStateVerificationTestBase {
     hosts.put("host3", "default");
     String resolvedAnalysisServerConfigId = generateUuid();
 
-    when(cvActivityLogService.getLoggerByStateExecutionId(anyString(), anyString()))
-        .thenReturn(mock(CVActivityLogger.class));
+    when(cvActivityLogService.getLoggerByStateExecutionId(any(), any())).thenReturn(mock(CVActivityLogger.class));
 
     ScalyrConfig scalyrConfig = ScalyrConfig.builder().url(generateUuid()).build();
     SettingAttribute settingAttribute =

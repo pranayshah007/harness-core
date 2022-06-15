@@ -21,8 +21,9 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.steps.environment.EnvironmentOutcome;
 import io.harness.yaml.core.variables.NGServiceOverrides;
+import io.harness.yaml.core.variables.StringNGVariable;
 
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import org.junit.Test;
@@ -66,7 +67,14 @@ public class EnvironmentMapperTest extends CDNGTestBase {
             .name("name")
             .identifier("identifier")
             .description("description")
-            .serviceOverrides(Arrays.asList(NGServiceOverrides.builder().serviceRef("ser").build()))
+            .serviceOverrides(
+                NGServiceOverrides.builder()
+                    .serviceRef("ser")
+                    .variables(Collections.singletonList(StringNGVariable.builder()
+                                                             .name("name")
+                                                             .value(ParameterField.createValueField("value"))
+                                                             .build()))
+                    .build())
             .build();
     EnvironmentStepParameters environmentStepParameters =
         EnvironmentMapper.toEnvironmentStepParameters(environmentPlanCreatorConfig);
@@ -75,5 +83,34 @@ public class EnvironmentMapperTest extends CDNGTestBase {
     assertThat(environmentStepParameters.getName()).isEqualTo("name");
     assertThat(environmentStepParameters.getDescription()).isEqualTo("description");
     assertThat(environmentStepParameters.getServiceOverrides().size()).isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = PRASHANTSHARMA)
+  @Category(UnitTests.class)
+  public void testOverrideOutcome() {
+    Map<String, Object> serviceOverrides = new HashMap<>();
+    serviceOverrides.put("val1", "value1");
+    serviceOverrides.put("val2", "value2");
+
+    Map<String, Object> variables = new HashMap<>();
+    variables.put("val3", "value3");
+    variables.put("val4", "value4");
+
+    variables.put("val1", "newValue1");
+
+    EnvironmentStepParameters environmentStepParameters = EnvironmentStepParameters.builder()
+                                                              .environmentRef(ParameterField.createValueField("ref"))
+                                                              .variables(variables)
+                                                              .serviceOverrides(serviceOverrides)
+                                                              .build();
+    EnvironmentOutcome environmentOutcome = EnvironmentMapper.toEnvironmentOutcome(environmentStepParameters);
+
+    Map<String, Object> resultedVariables = environmentOutcome.getVariables();
+    assertThat(resultedVariables.size()).isEqualTo(4);
+    assertThat(resultedVariables.get("val1")).isEqualTo("value1");
+    assertThat(resultedVariables.get("val2")).isEqualTo("value2");
+    assertThat(resultedVariables.get("val3")).isEqualTo("value3");
+    assertThat(resultedVariables.get("val4")).isEqualTo("value4");
   }
 }

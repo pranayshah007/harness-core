@@ -7,13 +7,11 @@ HarnessTeam = "CV"
 java_library(
     name = "module",
     srcs = glob(["src/main/java/**/*.java"]),
-    resources = [
-        "//430-cv-nextgen-commons/src/main/resources:resource",
-    ],
     visibility = ["//visibility:public"],
     deps = [
         "//:lombok",
         "//440-connector-nextgen:module",
+        "//948-cv-nextgen-beans:module",
         "//950-delegate-tasks-beans:module",
         "//954-connector-beans:module",
         "//959-common-entities:module",
@@ -36,6 +34,7 @@ java_library(
     deps = [
         ":module",
         "//:lombok",
+        "//948-cv-nextgen-beans:module",
         "//954-connector-beans:module",
         "//959-common-entities:module",
         "//960-persistence:module",

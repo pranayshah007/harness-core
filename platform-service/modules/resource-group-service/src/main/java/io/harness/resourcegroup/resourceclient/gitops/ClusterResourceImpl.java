@@ -20,6 +20,7 @@ import io.harness.eventsframework.consumer.Message;
 import io.harness.eventsframework.entity_crud.EntityChangeDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitops.models.Cluster;
+import io.harness.gitops.models.ClusterQuery;
 import io.harness.gitops.remote.GitopsResourceClient;
 import io.harness.ng.beans.PageResponse;
 import io.harness.resourcegroup.beans.ValidatorType;
@@ -39,6 +40,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import io.harness.resourcegroup.v2.model.AttributeFilter;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -86,6 +89,11 @@ public class ClusterResourceImpl implements Resource {
   }
 
   @Override
+  public boolean isValidAttributeFilter(AttributeFilter attributeFilter) {
+    return false;
+  }
+
+  @Override
   public List<Boolean> validate(List<String> resourceIds, Scope scope) {
     if (resourceIds.isEmpty()) {
       return Collections.EMPTY_LIST;
@@ -93,10 +101,15 @@ public class ClusterResourceImpl implements Resource {
     Map<String, Object> filter = ImmutableMap.of("identifier", ImmutableMap.of("$in", resourceIds));
     Response<PageResponse<Cluster>> response = null;
     try {
-      response = gitopsResourceClient
-                     .listClusters(scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(),
-                         0, resourceIds.size(), filter)
-                     .execute();
+      final ClusterQuery query = ClusterQuery.builder()
+                                     .accountId(scope.getAccountIdentifier())
+                                     .orgIdentifier(scope.getOrgIdentifier())
+                                     .projectIdentifier(scope.getProjectIdentifier())
+                                     .pageIndex(0)
+                                     .pageSize(resourceIds.size())
+                                     .filter(filter)
+                                     .build();
+      response = gitopsResourceClient.listClusters(query).execute();
       final List<Cluster> clusters = response.body().getContent();
       final Set<String> clusterSet = clusters.stream().map(Cluster::getIdentifier).collect(Collectors.toSet());
       return resourceIds.stream().map(clusterSet::contains).collect(toList());

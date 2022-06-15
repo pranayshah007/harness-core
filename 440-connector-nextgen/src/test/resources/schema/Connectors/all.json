@@ -1908,7 +1908,9 @@
             "ServiceNow",
             "ErrorTracking",
             "Pdc",
-            "AzureRepo"
+            "AzureRepo",
+            "Jenkins",
+            "OciHelmRepo"
           ]
         }
       },
@@ -2318,6 +2320,22 @@
           "if": {
             "properties": {
               "type": {
+                "const": "Jenkins"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/JenkinsConnectorDTO"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "Jira"
               }
             }
@@ -2390,6 +2408,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/NexusConnector"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "OciHelmRepo"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/OciHelmConnectorDTO"
               }
             }
           }
@@ -2582,7 +2616,7 @@
       ],
       "properties": {
         "encryptedValueRef": {
-          "$ref": "#/definitions/SecretRefData"
+          "type": "string"
         },
         "key": {
           "type": "string"
@@ -3145,7 +3179,8 @@
           "type": "string",
           "enum": [
             "GithubApp",
-            "Token"
+            "Token",
+            "OAuth"
           ]
         }
       },
@@ -3163,6 +3198,22 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/GithubAppSpec"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "OAuth"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/GithubOauth"
               }
             }
           }
@@ -3334,8 +3385,25 @@
               "type": "string",
               "enum": [
                 "UsernamePassword",
-                "UsernameToken"
+                "UsernameToken",
+                "OAuth"
               ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "OAuth"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/GithubOauth"
+              }
             }
           }
         },
@@ -3376,6 +3444,25 @@
     },
     "GithubHttpCredentialsSpecDTO": {
       "type": "object",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "GithubOauth": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/GithubHttpCredentialsSpecDTO"
+        },
+        {
+          "type": "object",
+          "required": [
+            "tokenRef"
+          ],
+          "properties": {
+            "tokenRef": {
+              "type": "string"
+            }
+          }
+        }
+      ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "GithubSshCredentials": {
@@ -3966,6 +4053,157 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "JenkinsAuthCredentialsDTO": {
+      "type": "object",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "JenkinsAuthenticationDTO": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "UsernamePassword",
+            "Anonymous",
+            "Bearer Token(HTTP Header)"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Bearer Token(HTTP Header)"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/JenkinsBearerTokenDTO"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "UsernamePassword"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/JenkinsUserNamePasswordDTO"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "JenkinsBearerTokenDTO": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/JenkinsAuthCredentialsDTO"
+        },
+        {
+          "type": "object",
+          "required": [
+            "tokenRef"
+          ],
+          "properties": {
+            "tokenRef": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "oneOf": [
+            {
+              "required": [
+                "tokenRef"
+              ]
+            }
+          ]
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "JenkinsConnectorDTO": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ConnectorConfigDTO"
+        },
+        {
+          "type": "object",
+          "required": [
+            "jenkinsUrl"
+          ],
+          "properties": {
+            "auth": {
+              "$ref": "#/definitions/JenkinsAuthenticationDTO"
+            },
+            "delegateSelectors": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string"
+              }
+            },
+            "jenkinsUrl": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "JenkinsUserNamePasswordDTO": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/JenkinsAuthCredentialsDTO"
+        },
+        {
+          "type": "object",
+          "required": [
+            "passwordRef"
+          ],
+          "properties": {
+            "passwordRef": {
+              "type": "string"
+            },
+            "username": {
+              "type": "string"
+            },
+            "usernameRef": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "oneOf": [
+            {
+              "required": [
+                "usernameRef"
+              ]
+            },
+            {
+              "required": [
+                "username"
+              ]
+            }
+          ]
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "JiraConnector": {
       "allOf": [
         {
@@ -4497,6 +4735,112 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "OciHelmAuthCredentialsDTO": {
+      "type": "object",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "OciHelmAuthenticationDTO": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "UsernamePassword",
+            "Anonymous"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "UsernamePassword"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/OciHelmUsernamePasswordDTO"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "OciHelmConnectorDTO": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ConnectorConfigDTO"
+        },
+        {
+          "type": "object",
+          "required": [
+            "helmRepoUrl"
+          ],
+          "properties": {
+            "auth": {
+              "$ref": "#/definitions/OciHelmAuthenticationDTO"
+            },
+            "delegateSelectors": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string"
+              }
+            },
+            "helmRepoUrl": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "OciHelmUsernamePasswordDTO": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/OciHelmAuthCredentialsDTO"
+        },
+        {
+          "type": "object",
+          "required": [
+            "passwordRef"
+          ],
+          "properties": {
+            "passwordRef": {
+              "type": "string"
+            },
+            "username": {
+              "type": "string"
+            },
+            "usernameRef": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "oneOf": [
+            {
+              "required": [
+                "usernameRef"
+              ]
+            },
+            {
+              "required": [
+                "username"
+              ]
+            }
+          ]
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "PagerDutyConnectorDTO": {
       "allOf": [
         {
@@ -4567,39 +4911,24 @@
                 "type": "string"
               }
             },
+            "headers": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/CustomHealthKeyAndValue"
+              }
+            },
+            "passwordRef": {
+              "type": "string"
+            },
             "url": {
+              "type": "string"
+            },
+            "username": {
               "type": "string"
             }
           }
         }
       ],
-      "$schema": "http://json-schema.org/draft-07/schema#"
-    },
-    "SecretRefData": {
-      "type": "object",
-      "properties": {
-        "decryptedValue": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "identifier": {
-          "type": "string"
-        },
-        "null": {
-          "type": "boolean"
-        },
-        "scope": {
-          "type": "string",
-          "enum": [
-            "account",
-            "org",
-            "project",
-            "unknown"
-          ]
-        }
-      },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "ServiceNowConnector": {

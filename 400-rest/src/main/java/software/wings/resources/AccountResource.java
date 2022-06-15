@@ -664,7 +664,7 @@ public class AccountResource {
     }
   }
 
-  @POST
+  @GET
   @Path("{accountId}/reset-cache")
   public RestResponse<Boolean> resetCache(@PathParam("accountId") String accountId) {
     User existingUser = UserThreadLocal.get();

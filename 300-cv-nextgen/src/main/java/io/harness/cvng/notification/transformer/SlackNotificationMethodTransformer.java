@@ -8,16 +8,15 @@
 package io.harness.cvng.notification.transformer;
 
 import io.harness.cvng.notification.channelDetails.CVNGSlackChannelSpec;
+import io.harness.cvng.notification.entities.NotificationRule;
 import io.harness.cvng.notification.entities.NotificationRule.CVNGSlackChannel;
 
 public class SlackNotificationMethodTransformer
     extends NotificationMethodTransformer<CVNGSlackChannel, CVNGSlackChannelSpec> {
   @Override
   public CVNGSlackChannel getEntityNotificationMethod(CVNGSlackChannelSpec notificationChannelSpec) {
-    return CVNGSlackChannel.builder()
-        .webhookUrl(notificationChannelSpec.getWebhookUrl())
-        .userGroups(notificationChannelSpec.getUserGroups())
-        .build();
+    return new NotificationRule.CVNGSlackChannel(
+        notificationChannelSpec.getUserGroups(), notificationChannelSpec.getWebhookUrl());
   }
 
   @Override

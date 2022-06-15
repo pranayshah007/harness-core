@@ -18,6 +18,7 @@ import static io.harness.k8s.model.HelmVersion.V2;
 import static io.harness.k8s.model.HelmVersion.V3;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.INDER;
+import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 import static io.harness.rule.OwnerRule.YOGESH;
 
 import static java.lang.String.format;
@@ -49,8 +50,13 @@ import io.harness.delegate.beans.connector.helm.HttpHelmAuthType;
 import io.harness.delegate.beans.connector.helm.HttpHelmAuthenticationDTO;
 import io.harness.delegate.beans.connector.helm.HttpHelmConnectorDTO;
 import io.harness.delegate.beans.connector.helm.HttpHelmUsernamePasswordDTO;
+import io.harness.delegate.beans.connector.helm.OciHelmAuthType;
+import io.harness.delegate.beans.connector.helm.OciHelmAuthenticationDTO;
+import io.harness.delegate.beans.connector.helm.OciHelmConnectorDTO;
+import io.harness.delegate.beans.connector.helm.OciHelmUsernamePasswordDTO;
 import io.harness.delegate.beans.storeconfig.GcsHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.HttpHelmStoreDelegateConfig;
+import io.harness.delegate.beans.storeconfig.OciHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.S3HelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfigType;
@@ -117,12 +123,8 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
     doReturn("v2/helm").when(k8sGlobalConfigService).getHelmPath(HelmVersion.V2);
     doReturn("v3/helm").when(k8sGlobalConfigService).getHelmPath(V3);
 
-    doReturn(processExecutor)
-        .when(helmTaskHelperBase)
-        .createProcessExecutor(anyString(), anyString(), anyLong(), anyMap());
-    doReturn(processExecutor)
-        .when(helmTaskHelperBase)
-        .createProcessExecutor(anyString(), anyString(), anyLong(), anyMap());
+    doReturn(processExecutor).when(helmTaskHelperBase).createProcessExecutor(any(), any(), anyLong(), anyMap());
+    doReturn(processExecutor).when(helmTaskHelperBase).createProcessExecutor(any(), any(), anyLong(), anyMap());
 
     chartMuseumServer =
         ChartMuseumServer.builder().port(CHARTMUSEUM_SERVER_PORT).startedProcess(chartmuseumStartedProcess).build();
@@ -358,6 +360,62 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
     verify(helmTaskHelperBase, times(1))
         .fetchChartFromRepo(REPO_NAME, REPO_DISPLAY_NAME, CHART_NAME, CHART_VERSION, chartOutput, V3,
             emptyHelmCommandFlag, timeout, false, "");
+  }
+
+  @Test
+  @Owner(developers = NAMAN_TALAYCHA)
+  @Category(UnitTests.class)
+  public void testdownloadChartFilesFromOciRepo() {
+    String repoUrl = "test.azurecr.io";
+    String username = "username";
+    char[] password = "password".toCharArray();
+    String chartOutput = "/directory";
+    long timeout = 90000L;
+
+    HelmChartManifestDelegateConfig helmChartManifestDelegateConfig =
+        HelmChartManifestDelegateConfig.builder()
+            .chartName(CHART_NAME)
+
+            .chartVersion(CHART_VERSION)
+            .helmVersion(V3)
+            .helmCommandFlag(emptyHelmCommandFlag)
+            .storeDelegateConfig(
+                OciHelmStoreDelegateConfig.builder()
+                    .repoName(REPO_NAME)
+                    .basePath("helm/")
+                    .repoDisplayName(REPO_DISPLAY_NAME)
+                    .ociHelmConnector(
+                        OciHelmConnectorDTO.builder()
+                            .helmRepoUrl(repoUrl)
+                            .auth(OciHelmAuthenticationDTO.builder()
+                                      .authType(OciHelmAuthType.USER_PASSWORD)
+                                      .credentials(
+                                          OciHelmUsernamePasswordDTO.builder()
+                                              .username(username)
+                                              .passwordRef(SecretRefData.builder().decryptedValue(password).build())
+                                              .build())
+                                      .build())
+                            .build())
+                    .build())
+            .build();
+
+    String updatedRepoName = "oci://test.azurecr.io/helm";
+
+    doNothing()
+        .when(helmTaskHelperBase)
+        .loginOciRegistry(repoUrl, username, password, HelmVersion.V380, timeout, chartOutput);
+    doNothing()
+        .when(helmTaskHelperBase)
+        .fetchChartFromRepo(updatedRepoName, REPO_DISPLAY_NAME, CHART_NAME, CHART_VERSION, chartOutput,
+            HelmVersion.V380, emptyHelmCommandFlag, timeout, false, "");
+
+    helmTaskHelperBase.downloadChartFilesFromOciRepo(helmChartManifestDelegateConfig, chartOutput, timeout);
+
+    verify(helmTaskHelperBase, times(1))
+        .loginOciRegistry(repoUrl, username, password, HelmVersion.V380, timeout, chartOutput);
+    verify(helmTaskHelperBase, times(1))
+        .fetchChartFromRepo(updatedRepoName, REPO_DISPLAY_NAME, CHART_NAME, CHART_VERSION, chartOutput,
+            HelmVersion.V380, emptyHelmCommandFlag, timeout, false, "");
   }
 
   @Test
@@ -768,7 +826,7 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
         getHelmChartManifestDelegateConfig(repoUrl, username, password, V3, HTTP_HELM);
     doReturn(new ProcessResult(0, null)).when(processExecutor).execute();
 
-    doAnswer(invocationOnMock -> invocationOnMock.getArgumentAt(0, String.class))
+    doAnswer(invocationOnMock -> invocationOnMock.getArgument(0, String.class))
         .when(helmTaskHelperBase)
         .createDirectory(directory);
     doReturn(new ProcessResult(0, new ProcessOutput(getHelmCollectionResult().getBytes())))
@@ -809,14 +867,14 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
         getHelmChartManifestDelegateConfig(repoUrl, username, password, V2, HTTP_HELM);
     doReturn(new ProcessResult(0, null)).when(processExecutor).execute();
 
-    doAnswer(invocationOnMock -> invocationOnMock.getArgumentAt(0, String.class))
+    doAnswer(invocationOnMock -> invocationOnMock.getArgument(0, String.class))
         .when(helmTaskHelperBase)
         .createDirectory(directory);
     doReturn(new ProcessResult(0, new ProcessOutput(getHelmCollectionResult().getBytes())))
         .when(helmTaskHelperBase)
         .executeCommand(anyMap(), eq(V_2_HELM_SEARCH_REPO_COMMAND), eq(directory), anyString(), eq(timeout),
             any(HelmCliCommandType.class));
-    doAnswer(invocationOnMock -> invocationOnMock.getArgumentAt(0, String.class))
+    doAnswer(invocationOnMock -> invocationOnMock.getArgument(0, String.class))
         .when(helmTaskHelperBase)
         .applyHelmHomePath(V_2_HELM_SEARCH_REPO_COMMAND, directory);
 
@@ -856,10 +914,10 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
         .when(ngChartmuseumClientFactory)
         .createClient(helmChartManifestDelegateConfig.getStoreDelegateConfig(), RESOURCE_DIR_BASE);
     doReturn(new ProcessResult(0, null)).when(processExecutor).execute();
-    doAnswer(invocationOnMock -> invocationOnMock.getArgumentAt(0, String.class))
+    doAnswer(invocationOnMock -> invocationOnMock.getArgument(0, String.class))
         .when(helmTaskHelperBase)
         .createNewDirectoryAtPath(RESOURCE_DIR_BASE);
-    doAnswer(invocationOnMock -> invocationOnMock.getArgumentAt(0, String.class))
+    doAnswer(invocationOnMock -> invocationOnMock.getArgument(0, String.class))
         .when(helmTaskHelperBase)
         .createDirectory(directory);
     doReturn(new ProcessResult(0, new ProcessOutput(getHelmCollectionResult().getBytes())))
@@ -890,7 +948,7 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
 
     processExecutor.readOutput(true);
     doReturn(new ProcessResult(0, null)).when(processExecutor).execute();
-    doAnswer(invocationOnMock -> invocationOnMock.getArgumentAt(0, String.class))
+    doAnswer(invocationOnMock -> invocationOnMock.getArgument(0, String.class))
         .when(helmTaskHelperBase)
         .createDirectory(directory);
     doReturn(new ProcessResult(0, new ProcessOutput("".getBytes())))
@@ -934,6 +992,7 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
         .createClient(helmChartManifestDelegateConfig.getStoreDelegateConfig(), RESOURCE_DIR_BASE);
     doAnswer(new Answer() {
       private int count = 0;
+
       public Object answer(InvocationOnMock invocation) throws TimeoutException {
         if (count++ == 0) {
           return new ProcessResult(0, null);
@@ -943,10 +1002,10 @@ public class HelmTaskHelperBaseTest extends CategoryTest {
     })
         .when(processExecutor)
         .execute();
-    doAnswer(invocationOnMock -> invocationOnMock.getArgumentAt(0, String.class))
+    doAnswer(invocationOnMock -> invocationOnMock.getArgument(0, String.class))
         .when(helmTaskHelperBase)
         .createNewDirectoryAtPath(RESOURCE_DIR_BASE);
-    doAnswer(invocationOnMock -> invocationOnMock.getArgumentAt(0, String.class))
+    doAnswer(invocationOnMock -> invocationOnMock.getArgument(0, String.class))
         .when(helmTaskHelperBase)
         .createDirectory(directory);
 

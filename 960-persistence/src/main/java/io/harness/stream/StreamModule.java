@@ -47,7 +47,7 @@ public class StreamModule extends AbstractModule {
   @Singleton
   AtmosphereServlet getAtmosphereServelet(
       AtmosphereBroadcaster atmosphereBroadcaster, @Named("atmosphere") Provider<RedisConfig> redisConfigProvider) {
-    AtmosphereServlet atmosphereServlet = new AtmosphereServlet();
+    AtmosphereServlet atmosphereServlet = new AtmosphereServlet(false, false);
     atmosphereServlet.framework()
         .addInitParameter(ApplicationConfig.WEBSOCKET_CONTENT_TYPE, "application/json")
         .addInitParameter(ApplicationConfig.BROADCASTER_MESSAGE_PROCESSING_THREADPOOL_MAXSIZE,
@@ -58,6 +58,7 @@ public class StreamModule extends AbstractModule {
             isEmpty(System.getenv(ATMOSPHERE_ASYNC_WRITE_THREADPOOL_MAXSIZE))
                 ? "40"
                 : System.getenv(ATMOSPHERE_ASYNC_WRITE_THREADPOOL_MAXSIZE))
+        .addInitParameter(ApplicationConfig.WEBSOCKET_SUPPRESS_JSR356, "true")
         .addInitParameter(ApplicationConfig.WEBSOCKET_SUPPORT, "true")
         .addInitParameter(ApplicationConfig.ANNOTATION_PACKAGE, getClass().getPackage().getName());
 

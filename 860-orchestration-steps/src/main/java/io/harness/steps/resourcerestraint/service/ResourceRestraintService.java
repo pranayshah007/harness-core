@@ -18,7 +18,7 @@ import javax.validation.Valid;
 
 @OwnedBy(PIPELINE)
 public interface ResourceRestraintService {
-  ResourceRestraint get(String ownerId, String id);
+  ResourceRestraint get(String id);
   ResourceRestraint getByNameAndAccountId(String name, String accountId);
   ResourceRestraint save(@Valid ResourceRestraint resourceConstraint);
   List<ResourceRestraint> getConstraintsIn(Set<String> constraintIds);

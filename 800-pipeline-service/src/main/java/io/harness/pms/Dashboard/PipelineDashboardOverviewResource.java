@@ -29,6 +29,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -55,7 +56,7 @@ import lombok.extern.slf4j.Slf4j;
       @ApiResponse(code = 400, response = FailureDTO.class, message = "Bad Request")
       , @ApiResponse(code = 500, response = ErrorDTO.class, message = "Internal server error")
     })
-@Tag(name = "Pipelines Dashboard", description = "This contains APIs related to Pipeline Dashboard")
+@Tag(name = "Pipeline Dashboard", description = "This contains APIs related to Pipeline Dashboard")
 @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Bad Request",
     content =
     {
@@ -79,6 +80,7 @@ public class PipelineDashboardOverviewResource {
       },
       deprecated = true)
   @NGAccessControlCheck(resourceType = "PROJECT", permission = "core_project_view")
+  @Hidden
   @Deprecated
   public ResponseDTO<DashboardPipelineHealthInfo>
   getPipelinedHealth(@Parameter(description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE, required = true) @NotNull
@@ -107,7 +109,8 @@ public class PipelineDashboardOverviewResource {
   @Path("/pipelineExecution")
   @ApiOperation(value = "Get pipeline execution", nickname = "getPipelineExecution")
   @Operation(operationId = "getPipelineExecution",
-      summary = "Fetches Pipeline Executions details for a given Interval and will be presented in day wise format",
+      description = "Returns Pipeline Execution Details for a Given Interval (Presented in Day Wise Format)",
+      summary = "Fetch Pipeline Execution Details",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",

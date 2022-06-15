@@ -178,7 +178,6 @@ public class EnvironmentMapperTest extends CategoryTest {
     assertThat(cfg.getName()).isEqualTo("name");
     assertThat(cfg.getType()).isEqualTo(PreProduction);
     assertThat(cfg.getTags().get("k1")).isEqualTo("v1");
-    assertThat(cfg.getServiceOverrides()).isNull();
     assertThat(cfg.getVariables()).isNull();
   }
 
@@ -206,7 +205,6 @@ public class EnvironmentMapperTest extends CategoryTest {
     assertThat(cfg.getName()).isEqualTo("name");
     assertThat(cfg.getType()).isEqualTo(PreProduction);
     assertThat(cfg.getTags().get("k1")).isEqualTo("v1");
-    assertThat(cfg.getServiceOverrides()).isNull();
     assertThat(cfg.getVariables()).isNull();
   }
 }

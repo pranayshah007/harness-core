@@ -231,17 +231,17 @@ public class ResourceConstraintServiceImplTest extends WingsBaseTest {
     UpdateResults updateResults = mock(UpdateResults.class);
 
     doReturn(query).when(wingsPersistence).createQuery(eq(ResourceConstraintInstance.class));
-    doReturn(query).when(query).filter(eq(ResourceConstraintInstanceKeys.appId), anyString());
-    doReturn(query).when(query).filter(eq(ResourceConstraintInstanceKeys.uuid), anyString());
-    doReturn(query).when(query).filter(eq(ResourceConstraintInstanceKeys.resourceUnit), anyString());
+    doReturn(query).when(query).filter(eq(ResourceConstraintInstanceKeys.appId), any());
+    doReturn(query).when(query).filter(eq(ResourceConstraintInstanceKeys.uuid), any());
+    doReturn(query).when(query).filter(eq(ResourceConstraintInstanceKeys.resourceUnit), any());
     doReturn(fieldEnd).when(query).field(ResourceConstraintInstanceKeys.state);
     doReturn(query).when(fieldEnd).in(any());
     doReturn(mockOps).when(wingsPersistence).createUpdateOperations(any());
-    doReturn(mockOps).when(mockOps).set(eq(ResourceConstraintInstanceKeys.state), anyString());
+    doReturn(mockOps).when(mockOps).set(eq(ResourceConstraintInstanceKeys.state), any());
     doReturn(updateResults).when(wingsPersistence).update(query, mockOps);
     doReturn(2).when(updateResults).getUpdatedCount();
-    doReturn(true).when(featureFlagService).isEnabled(any(FeatureName.class), anyString());
-    doReturn(true).when(workflowExecutionService).checkWorkflowExecutionInFinalStatus(anyString(), anyString());
+    doReturn(true).when(featureFlagService).isEnabled(any(), any());
+    doReturn(true).when(workflowExecutionService).checkWorkflowExecutionInFinalStatus(any(), any());
 
     boolean response = resourceConstraintService.updateActiveConstraintForInstance(resourceConstraintInstance);
 

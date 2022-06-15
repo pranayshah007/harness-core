@@ -20,6 +20,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.beans.AwsConfig;
@@ -62,6 +63,7 @@ public class AwsS3HelperServiceDelegateImpl extends AwsHelperServiceDelegateBase
   @Override
   public List<String> listBucketNames(AwsConfig awsConfig, List<EncryptedDataDetail> encryptionDetails) {
     encryptionService.decrypt(awsConfig, encryptionDetails, false);
+    ExceptionMessageSanitizer.storeAllSecretsForSanitizing(awsConfig, encryptionDetails);
     try (CloseableAmazonWebServiceClient<AmazonS3Client> closeableAmazonS3Client =
              new CloseableAmazonWebServiceClient(getAmazonS3Client(awsConfig))) {
       tracker.trackS3Call("List Buckets");
@@ -75,8 +77,9 @@ public class AwsS3HelperServiceDelegateImpl extends AwsHelperServiceDelegateBase
     } catch (AmazonClientException amazonClientException) {
       handleAmazonClientException(amazonClientException);
     } catch (Exception e) {
+      Exception sanitizeException = ExceptionMessageSanitizer.sanitizeException(e);
       log.error("Exception listBucketNames", e);
-      throw new InvalidRequestException(ExceptionUtils.getMessage(e), e);
+      throw new InvalidRequestException(ExceptionUtils.getMessage(sanitizeException), sanitizeException);
     }
     return emptyList();
   }
@@ -115,8 +118,9 @@ public class AwsS3HelperServiceDelegateImpl extends AwsHelperServiceDelegateBase
     } catch (AmazonClientException amazonClientException) {
       awsApiHelperService.handleAmazonClientException(amazonClientException);
     } catch (Exception e) {
-      log.error("Exception isVersioningEnabledForBucket", e);
-      throw new InvalidRequestException(ExceptionUtils.getMessage(e), e);
+      Exception sanitizeException = ExceptionMessageSanitizer.sanitizeException(e);
+      log.error("Exception isVersioningEnabledForBucket", sanitizeException);
+      throw new InvalidRequestException(ExceptionUtils.getMessage(sanitizeException), sanitizeException);
     }
     return false;
   }
@@ -133,8 +137,9 @@ public class AwsS3HelperServiceDelegateImpl extends AwsHelperServiceDelegateBase
     } catch (AmazonClientException amazonClientException) {
       awsApiHelperService.handleAmazonClientException(amazonClientException);
     } catch (Exception e) {
-      log.error("Exception getObjectMetadataFromS3", e);
-      throw new InvalidRequestException(ExceptionUtils.getMessage(e), e);
+      Exception sanitizeException = ExceptionMessageSanitizer.sanitizeException(e);
+      log.error("Exception getObjectMetadataFromS3", sanitizeException);
+      throw new InvalidRequestException(ExceptionUtils.getMessage(sanitizeException), sanitizeException);
     }
     return null;
   }
@@ -183,8 +188,9 @@ public class AwsS3HelperServiceDelegateImpl extends AwsHelperServiceDelegateBase
     } catch (AmazonClientException amazonClientException) {
       awsApiHelperService.handleAmazonClientException(amazonClientException);
     } catch (Exception e) {
-      log.error("Exception getBucketRegion", e);
-      throw new InvalidRequestException(ExceptionUtils.getMessage(e), e);
+      Exception sanitizeException = ExceptionMessageSanitizer.sanitizeException(e);
+      log.error("Exception getBucketRegion", sanitizeException);
+      throw new InvalidRequestException(ExceptionUtils.getMessage(sanitizeException), sanitizeException);
     }
     return null;
   }

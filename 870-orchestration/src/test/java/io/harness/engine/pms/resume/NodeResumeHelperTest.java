@@ -95,7 +95,7 @@ public class NodeResumeHelperTest extends OrchestrationTestBase {
         .thenReturn(Collections.singletonList(child));
     when(pmsOutcomeService.fetchOutcomeRefs(eq(nodeExecutionId))).thenReturn(Collections.emptyList());
     Map<String, ByteString> responseMap = resumeHelper.buildResponseMap(metadata, new HashMap<>());
-    assertThat(responseMap).containsKey(childSetupId);
+    assertThat(responseMap).containsKey(childId);
   }
 
   @Test

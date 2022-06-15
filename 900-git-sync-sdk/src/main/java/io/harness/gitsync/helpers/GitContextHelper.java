@@ -32,6 +32,9 @@ public class GitContextHelper {
     GitEntityInfo gitBranchInfo = gitSyncBranchContext.getGitBranchInfo();
     if (gitBranchInfo == null || gitBranchInfo.getYamlGitConfigId() == null || gitBranchInfo.getBranch() == null
         || gitBranchInfo.getYamlGitConfigId().equals(DEFAULT) || gitBranchInfo.getBranch().equals(DEFAULT)) {
+      if (gitBranchInfo != null && gitBranchInfo.getStoreType() != null) {
+        return gitBranchInfo;
+      }
       return null;
     }
     return gitBranchInfo;

@@ -16,6 +16,7 @@ import io.harness.data.structure.EmptyPredicate;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.plancreator.steps.common.StageElementParameters.StageElementParametersBuilder;
 import io.harness.plancreator.steps.common.StepParametersUtils;
+import io.harness.plancreator.strategy.StageStrategyUtils;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
 import io.harness.pms.contracts.steps.StepType;
@@ -67,7 +68,7 @@ public abstract class AbstractPmsStagePlanCreator<T extends PmsAbstractStageNode
         Preconditions.checkNotNull(ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.SPEC));
     stageParameters.specConfig(getSpecParameters(specField.getNode().getUuid(), ctx, stageNode));
     return PlanNode.builder()
-        .uuid(stageNode.getUuid())
+        .uuid(StageStrategyUtils.getSwappedPlanNodeId(ctx, stageNode))
         .name(stageNode.getName())
         .identifier(stageNode.getIdentifier())
         .group(StepOutcomeGroup.STAGE.name())

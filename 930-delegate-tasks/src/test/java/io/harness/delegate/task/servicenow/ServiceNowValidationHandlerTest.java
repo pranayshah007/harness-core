@@ -75,7 +75,7 @@ public class ServiceNowValidationHandlerTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testValidateFailure() {
     doThrow(new RuntimeException("Invalid Credentials")).when(serviceNowTaskNgHelper).getServiceNowResponse(any());
-    doAnswer(invocationOnMock -> invocationOnMock.getArgumentAt(0, String.class))
+    doAnswer(invocationOnMock -> invocationOnMock.getArgument(0, String.class))
         .when(ngErrorHelper)
         .getErrorSummary(any());
     String secretKeyRefIdentifier = "secretKeyRefIdentifier";

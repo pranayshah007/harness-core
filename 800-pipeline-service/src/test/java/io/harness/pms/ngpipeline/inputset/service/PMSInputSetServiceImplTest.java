@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -27,6 +28,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.InvalidRequestException;
 import io.harness.git.model.ChangeType;
+import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntityType;
@@ -40,7 +42,6 @@ import io.harness.utils.PageUtils;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.Resources;
 import com.google.inject.Inject;
-import com.mongodb.client.result.UpdateResult;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -55,13 +56,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.data.mongodb.core.query.Update;
 
 @OwnedBy(PIPELINE)
 public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
   @Inject PMSInputSetServiceImpl pmsInputSetService;
   @InjectMocks PMSInputSetServiceImpl pmsInputSetServiceMock;
-  @Mock private UpdateResult updateResult;
   @Mock private PMSInputSetRepository inputSetRepository;
   @Mock private GitSyncSdkService gitSyncSdkService;
 
@@ -72,7 +71,6 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
 
   String INPUT_SET_IDENTIFIER = "identifier";
   String NAME = "identifier";
-  String YAML_GIT_CONFIG_REF = "git_config_ref";
   String YAML;
 
   InputSetEntity inputSetEntity;
@@ -115,7 +113,7 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
                          .orgIdentifier(ORG_IDENTIFIER)
                          .projectIdentifier(PROJ_IDENTIFIER)
                          .pipelineIdentifier(PIPELINE_IDENTIFIER)
-                         .yamlGitConfigRef(YAML_GIT_CONFIG_REF)
+                         .storeType(StoreType.INLINE)
                          .build();
 
     OVERLAY_YAML = "overlayInputSet:\n"
@@ -137,6 +135,7 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
                                 .projectIdentifier(PROJ_IDENTIFIER)
                                 .pipelineIdentifier(PIPELINE_IDENTIFIER)
                                 .inputSetReferences(inputSetReferences)
+                                .storeType(StoreType.INLINE)
                                 .build();
 
     String pipelineYamlFileName = "failure-strategy.yaml";
@@ -151,6 +150,7 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
                          .name(PIPELINE_IDENTIFIER)
                          .yaml(pipelineYaml)
                          .build();
+    doReturn(false).when(gitSyncSdkService).isGitSyncEnabled(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER);
   }
 
   @Test
@@ -283,15 +283,9 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
         .is(PIPELINE_IDENTIFIER);
     Query query = new Query(criteria);
 
-    Update update = new Update();
-    update.set("deleted", Boolean.TRUE);
-
-    doReturn(true).when(updateResult).wasAcknowledged();
-    doReturn(updateResult).when(inputSetRepository).deleteAllInputSetsWhenPipelineDeleted(query, update);
-
     pmsInputSetServiceMock.deleteInputSetsOnPipelineDeletion(pipelineEntity);
 
-    verify(inputSetRepository, times(1)).deleteAllInputSetsWhenPipelineDeleted(query, update);
+    verify(inputSetRepository, times(1)).deleteAllInputSetsWhenPipelineDeleted(query);
   }
 
   @Test
@@ -309,11 +303,9 @@ public class PMSInputSetServiceImplTest extends PipelineServiceTestBase {
         .is(PIPELINE_IDENTIFIER);
     Query query = new Query(criteria);
 
-    Update update = new Update();
-    update.set("deleted", Boolean.TRUE);
-
-    doReturn(false).when(updateResult).wasAcknowledged();
-    doReturn(updateResult).when(inputSetRepository).deleteAllInputSetsWhenPipelineDeleted(query, update);
+    doThrow(new InvalidRequestException("random exception"))
+        .when(inputSetRepository)
+        .deleteAllInputSetsWhenPipelineDeleted(query);
 
     assertThatThrownBy(() -> pmsInputSetServiceMock.deleteInputSetsOnPipelineDeletion(pipelineEntity))
         .isInstanceOf(InvalidRequestException.class)

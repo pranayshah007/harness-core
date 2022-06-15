@@ -17,6 +17,7 @@ import io.harness.delegate.beans.TaskGroup;
 @OwnedBy(CDC)
 @TargetModule(HarnessModule._955_DELEGATE_BEANS)
 public enum TaskType {
+  GITOPS_TASK_NG(TaskGroup.GIT),
   BATCH_CAPABILITY_CHECK(TaskGroup.BATCH_CAPABILITY_CHECK),
   CAPABILITY_VALIDATION(TaskGroup.CAPABILITY_VALIDATION),
   COMMAND(TaskGroup.COMMAND),
@@ -32,6 +33,7 @@ public enum TaskType {
   JENKINS_LAST_SUCCESSFUL_BUILD(TaskGroup.JENKINS),
   JENKINS_GET_PLANS(TaskGroup.JENKINS),
   JENKINS_VALIDATE_ARTIFACT_SERVER(TaskGroup.JENKINS),
+  JENKINS_CONNECTIVITY_TEST_TASK(TaskGroup.JENKINS),
   BAMBOO(TaskGroup.BAMBOO),
   BAMBOO_COLLECTION(TaskGroup.BAMBOO),
   BAMBOO_GET_BUILDS(TaskGroup.BAMBOO),
@@ -279,6 +281,7 @@ public enum TaskType {
   GIT_FETCH_NEXT_GEN_TASK(TaskGroup.GIT, "Git Fetch Files Task"),
   BUILD_SOURCE_TASK(TaskGroup.BUILD_SOURCE),
   DOCKER_ARTIFACT_TASK_NG(TaskGroup.ARTIFACT_COLLECT_NG, "DockerHub Task"),
+  JENKINS_ARTIFACT_TASK_NG(TaskGroup.ARTIFACT_COLLECT_NG, "Jenkins Task"),
   GCR_ARTIFACT_TASK_NG(TaskGroup.ARTIFACT_COLLECT_NG, "GCR Task"),
   NEXUS_ARTIFACT_TASK_NG(TaskGroup.ARTIFACT_COLLECT_NG),
   ARTIFACTORY_ARTIFACT_TASK_NG(TaskGroup.ARTIFACT_COLLECT_NG),
@@ -349,7 +352,10 @@ public enum TaskType {
   ACR_ARTIFACT_TASK_NG(TaskGroup.ARTIFACT_COLLECT_NG, "ACR Task"),
   SERVERLESS_GIT_FETCH_TASK_NG(TaskGroup.SERVERLESS_NG, "Git Fetch Files Task"),
   SERVERLESS_COMMAND_TASK(TaskGroup.SERVERLESS_NG, "Serverless Deploy Task"),
-  FETCH_S3_FILE_TASK_NG(TaskGroup.AWS, "Fetch S3 files Task");
+  FETCH_S3_FILE_TASK_NG(TaskGroup.AWS, "Fetch S3 files Task"),
+  OCI_HELM_CONNECTIVITY_TASK(TaskGroup.HELM_REPO_CONFIG_VALIDATION),
+  AZURE_WEB_APP_TASK_NG(TaskGroup.AZURE, "Azure Web App Task"),
+  COMMAND_TASK_NG(TaskGroup.COMMAND_TASK_NG, "Command Task");
 
   private final TaskGroup taskGroup;
   private final String displayName;

@@ -49,6 +49,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -88,7 +89,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
           @ApiResponse(code = 403, response = TemplateInputsErrorResponseDTO.class,
               message = "TemplateRefs Resolved failed in pipeline yaml.")
     })
-@Tag(name = "Execution Details", description = "This contains APIs for fetching Pipeline Execution details.")
+@Tag(name = "Pipeline Execution Details", description = "This contains APIs for fetching Pipeline Execution Details")
 @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Bad Request",
     content =
     {
@@ -112,7 +113,7 @@ public class ExecutionDetailsResource {
   @Path("/summary")
   @ApiOperation(value = "Gets Executions list", nickname = "getListOfExecutions")
   @Operation(operationId = "getListOfExecutions",
-      summary = "Gets list of Executions of Pipelines for specific filters.",
+      description = "Returns a List of Pipeline Executions with Specific Filters", summary = "List Executions",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -141,8 +142,7 @@ public class ExecutionDetailsResource {
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
     log.info("Get List of executions");
     ByteString gitSyncBranchContext = pmsGitSyncHelper.getGitSyncBranchContextBytesThreadLocal();
-    if (EmptyPredicate.isEmpty(gitEntityBasicInfo.getBranch())
-        || EmptyPredicate.isEmpty(gitEntityBasicInfo.getYamlGitConfigId())) {
+    if (EmptyPredicate.isEmpty(gitEntityBasicInfo.getBranch())) {
       gitSyncBranchContext = null;
     }
     Criteria criteria = pmsExecutionService.formCriteria(accountId, orgId, projectId, pipelineIdentifier,
@@ -173,8 +173,8 @@ public class ExecutionDetailsResource {
   @Path("/v2/{planExecutionId}")
   @ApiOperation(value = "Gets Execution Detail V2", nickname = "getExecutionDetailV2")
   @Operation(operationId = "getExecutionDetailV2",
-      summary =
-          "Get the Pipeline Execution details for given PlanExecution Id without full graph unless specified explicitly",
+      description = "Returns the Pipeline Execution Details for a Given PlanExecution ID",
+      summary = "Fetch Pipeline Execution Details",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
@@ -191,6 +191,8 @@ public class ExecutionDetailsResource {
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
       @Parameter(description = PipelineResourceConstants.STAGE_NODE_ID_PARAM_MESSAGE) @QueryParam(
           "stageNodeId") String stageNodeId,
+      @Parameter(description = PipelineResourceConstants.STAGE_NODE_EXECUTION_PARAM_MESSAGE) @QueryParam(
+          "stageNodeExecutionId") String stageNodeExecutionId,
       @Parameter(description = PipelineResourceConstants.GENERATE_FULL_GRAPH_PARAM_MESSAGE) @QueryParam(
           "renderFullBottomGraph") Boolean renderFullBottomGraph,
       @Parameter(description = "Plan Execution Id for which we want to get the Execution details",
@@ -219,7 +221,7 @@ public class ExecutionDetailsResource {
         PipelineExecutionDetailDTO.builder()
             .pipelineExecutionSummary(PipelineExecutionSummaryDtoMapper.toDto(executionSummaryEntity, entityGitDetails))
             .executionGraph(ExecutionGraphMapper.toExecutionGraph(
-                pmsExecutionService.getOrchestrationGraph(stageNodeId, planExecutionId)))
+                pmsExecutionService.getOrchestrationGraph(stageNodeId, planExecutionId, stageNodeExecutionId)))
             .build());
   }
 
@@ -227,12 +229,15 @@ public class ExecutionDetailsResource {
   @Path("/{planExecutionId}")
   @ApiOperation(value = "Gets Execution Detail", nickname = "getExecutionDetail")
   @Operation(operationId = "getExecutionDetail",
-      summary = "Get the Pipeline Execution details for given PlanExecution Id",
+      description = "Returns the Pipeline Execution Details for a Given PlanExecution ID",
+      summary = "Fetch Pipeline Execution Details",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(
             responseCode = "default", description = "Return the Pipeline Execution details for given PlanExecution Id")
-      })
+      },
+      deprecated = true)
+  @Deprecated
   public ResponseDTO<PipelineExecutionDetailDTO>
   getExecutionDetail(@NotNull @Parameter(description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE, required = true)
                      @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
@@ -242,6 +247,8 @@ public class ExecutionDetailsResource {
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectId,
       @Parameter(description = PipelineResourceConstants.STAGE_NODE_ID_PARAM_MESSAGE) @QueryParam(
           "stageNodeId") String stageNodeId,
+      @Parameter(description = PipelineResourceConstants.STAGE_NODE_EXECUTION_PARAM_MESSAGE) @QueryParam(
+          "stageNodeExecutionId") String stageNodeExecutionId,
       @Parameter(description = "Plan Execution Id for which we want to get the Execution details",
           required = true) @PathParam(NGCommonEntityConstants.PLAN_KEY) String planExecutionId) {
     PipelineExecutionSummaryEntity executionSummaryEntity =
@@ -262,7 +269,7 @@ public class ExecutionDetailsResource {
         PipelineExecutionDetailDTO.builder()
             .pipelineExecutionSummary(PipelineExecutionSummaryDtoMapper.toDto(executionSummaryEntity, entityGitDetails))
             .executionGraph(ExecutionGraphMapper.toExecutionGraph(
-                pmsExecutionService.getOrchestrationGraph(stageNodeId, planExecutionId)))
+                pmsExecutionService.getOrchestrationGraph(stageNodeId, planExecutionId, stageNodeExecutionId)))
             .build());
   }
 
@@ -278,6 +285,7 @@ public class ExecutionDetailsResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Return the Input Set YAML used for given Plan Execution")
       })
+  @Hidden
   public String
   getInputsetYaml(@NotNull @Parameter(description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE, required = true)
                   @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
@@ -303,6 +311,7 @@ public class ExecutionDetailsResource {
         @io.swagger.v3.oas.annotations.responses.
         ApiResponse(responseCode = "default", description = "Return the Input Set YAML used for given Plan Execution")
       })
+  @Hidden
   public ResponseDTO<InputSetYamlWithTemplateDTO>
   getInputsetYamlV2(@NotNull @Parameter(description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE, required = true)
                     @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,

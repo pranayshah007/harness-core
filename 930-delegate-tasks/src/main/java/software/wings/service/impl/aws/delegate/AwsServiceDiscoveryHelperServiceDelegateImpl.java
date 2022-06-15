@@ -14,6 +14,7 @@ import static java.lang.String.format;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.beans.AwsConfig;
@@ -50,6 +51,7 @@ public class AwsServiceDiscoveryHelperServiceDelegateImpl
       AwsConfig awsConfig, List<EncryptedDataDetail> encryptionDetails, String region, String serviceId) {
     try {
       encryptionService.decrypt(awsConfig, encryptionDetails, false);
+      ExceptionMessageSanitizer.storeAllSecretsForSanitizing(awsConfig, encryptionDetails);
       AWSServiceDiscovery client = getAmazonServiceDiscoveryClient(region, awsConfig);
       tracker.trackSDSCall("Get Service");
       GetServiceResult getServiceResult = client.getService(new GetServiceRequest().withId(serviceId));

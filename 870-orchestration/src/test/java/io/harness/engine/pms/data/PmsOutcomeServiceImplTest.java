@@ -25,7 +25,6 @@ import io.harness.category.element.UnitTests;
 import io.harness.data.OutcomeInstance;
 import io.harness.engine.expressions.ExpressionEvaluatorProvider;
 import io.harness.expression.EngineExpressionEvaluator;
-import io.harness.expression.VariableResolverTracker;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
 import io.harness.pms.contracts.data.StepOutcomeRef;
@@ -220,8 +219,7 @@ public class PmsOutcomeServiceImplTest extends OrchestrationTestBase {
     String outcomeJson = RecastOrchestrationUtils.toJson(DummyOrchestrationOutcome.builder().test("test").build());
     pmsOutcomeService.consume(ambiance, outcomeName, outcomeJson, null);
 
-    when(expressionEvaluatorProvider.get(
-             any(VariableResolverTracker.class), any(Ambiance.class), anySet(), anyBoolean()))
+    when(expressionEvaluatorProvider.get(any(), any(Ambiance.class), anySet(), anyBoolean()))
         .thenReturn(prepareEngineExpressionEvaluator(
             ImmutableMap.of(outcomeName, DummyOrchestrationOutcome.builder().test("test").build())));
 

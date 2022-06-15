@@ -19,6 +19,7 @@ import io.harness.licensing.entities.modules.CEModuleLicense;
 import io.harness.licensing.entities.modules.CFModuleLicense;
 import io.harness.licensing.entities.modules.CIModuleLicense;
 import io.harness.licensing.entities.modules.ModuleLicense;
+import io.harness.licensing.entities.modules.STOModuleLicense;
 
 import com.google.inject.Singleton;
 import java.time.Duration;
@@ -192,6 +193,14 @@ public class ModuleLicenseHelper {
       current.setTrialExtended(update.getTrialExtended());
     }
 
+    if (update.isPremiumSupport() != current.isPremiumSupport()) {
+      current.setPremiumSupport(update.isPremiumSupport());
+    }
+
+    if (update.isSelfService() != current.isSelfService()) {
+      current.setSelfService(update.isSelfService());
+    }
+
     switch (update.getModuleType()) {
       case CD:
         CDModuleLicense cdLicense = (CDModuleLicense) update;
@@ -236,6 +245,14 @@ public class ModuleLicenseHelper {
         if (ciLicense.getNumberOfCommitters() != null
             && !ciLicense.getNumberOfCommitters().equals(currentCILicense.getNumberOfCommitters())) {
           currentCILicense.setNumberOfCommitters(ciLicense.getNumberOfCommitters());
+        }
+        break;
+      case STO:
+        STOModuleLicense stoLicense = (STOModuleLicense) update;
+        STOModuleLicense currentSTOLicense = (STOModuleLicense) current;
+        if (stoLicense.getNumberOfDevelopers() != null
+            && !stoLicense.getNumberOfDevelopers().equals(currentSTOLicense.getNumberOfDevelopers())) {
+          currentSTOLicense.setNumberOfDevelopers(stoLicense.getNumberOfDevelopers());
         }
         break;
       default:

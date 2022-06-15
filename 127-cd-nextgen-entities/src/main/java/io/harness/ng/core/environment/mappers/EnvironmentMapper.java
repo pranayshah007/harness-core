@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import javax.validation.Valid;
 import lombok.experimental.UtilityClass;
 
 @OwnedBy(PIPELINE)
@@ -141,6 +142,15 @@ public class EnvironmentMapper {
         .build();
   }
 
+  // To be used for EnvironmentV2
+  public static NGEnvironmentConfig toNGEnvironmentConfig(String yaml) {
+    try {
+      return YamlUtils.read(yaml, NGEnvironmentConfig.class);
+    } catch (IOException e) {
+      throw new InvalidRequestException("Cannot create environment config due to " + e.getMessage());
+    }
+  }
+
   public static NGEnvironmentConfig toNGEnvironmentConfig(EnvironmentRequestDTO dto) {
     if (isNotEmpty(dto.getYaml())) {
       try {
@@ -162,7 +172,7 @@ public class EnvironmentMapper {
         .build();
   }
 
-  public static String toYaml(NGEnvironmentConfig ngEnvironmentConfig) {
+  public static String toYaml(@Valid NGEnvironmentConfig ngEnvironmentConfig) {
     try {
       return YamlPipelineUtils.getYamlString(ngEnvironmentConfig);
     } catch (IOException e) {

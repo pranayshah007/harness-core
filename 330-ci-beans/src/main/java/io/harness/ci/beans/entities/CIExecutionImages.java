@@ -7,12 +7,15 @@
 
 package io.harness.ci.beans.entities;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import lombok.Builder;
 import lombok.Data;
 import org.hibernate.validator.constraints.NotBlank;
 
 @Data
 @Builder
+@JsonInclude(Include.NON_NULL)
 public class CIExecutionImages {
   @NotBlank String addonTag;
   @NotBlank String liteEngineTag;

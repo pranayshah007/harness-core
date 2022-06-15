@@ -32,6 +32,8 @@ public interface HarnessToGitHelperService {
 
   Boolean isGitSyncEnabled(EntityScopeInfo entityScopeInfo);
 
+  Boolean isGitSimplificationEnabled(EntityScopeInfo entityScopeInfo);
+
   BranchDetails getBranchDetails(RepoDetails repoDetails);
 
   PushFileResponse pushFile(FileInfo request);

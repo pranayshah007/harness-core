@@ -85,7 +85,11 @@ public class AcrArtifactConfig implements ArtifactConfig, Visitable, WithConnect
   /**
    * Identifier for artifact.
    */
-  @VariableExpression(skipVariableExpression = true) @EntityIdentifier String identifier;
+  @EntityIdentifier @VariableExpression(skipVariableExpression = true) String identifier;
+
+  /** Whether this config corresponds to primary artifact.*/
+  @VariableExpression(skipVariableExpression = true) boolean primaryArtifact;
+
   /**
    * Whether this config corresponds to primary artifact.
    */

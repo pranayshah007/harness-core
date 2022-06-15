@@ -10,7 +10,6 @@ package io.harness.gitsync;
 import static io.harness.Microservice.CF;
 import static io.harness.Microservice.CORE;
 import static io.harness.Microservice.PMS;
-import static io.harness.Microservice.POLICYMGMT;
 import static io.harness.Microservice.TEMPLATESERVICE;
 import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.eventsframework.EventsFrameworkConstants.GIT_FULL_SYNC_STREAM;
@@ -109,7 +108,6 @@ public class GitSyncModule extends AbstractModule {
   Map<EntityType, Microservice> getEntityTypeMicroserviceMap() {
     return ImmutableMap.<EntityType, Microservice>builder()
         .put(EntityType.CONNECTORS, CORE)
-        .put(EntityType.OPAPOLICIES, POLICYMGMT)
         .put(EntityType.PIPELINES, PMS)
         .put(EntityType.FEATURE_FLAGS, CF)
         .put(EntityType.INPUT_SETS, PMS)
@@ -120,7 +118,7 @@ public class GitSyncModule extends AbstractModule {
   @Provides
   @Singleton
   List<Microservice> getMicroservicesProcessingOrder() {
-    return Arrays.asList(CORE, TEMPLATESERVICE, CF, POLICYMGMT, PMS);
+    return Arrays.asList(CORE, TEMPLATESERVICE, CF, PMS);
   }
 
   @Override

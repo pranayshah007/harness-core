@@ -15,7 +15,9 @@ import static io.harness.remote.client.NGRestUtils.getResponse;
 
 import static java.lang.String.format;
 
+import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.enforcement.client.services.EnforcementClientService;
@@ -24,7 +26,10 @@ import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.eventsframework.schemas.entity.TemplateReferenceProtoDTO;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.ExceptionUtils;
+import io.harness.exception.ExplanationException;
+import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.ScmException;
 import io.harness.git.model.ChangeType;
 import io.harness.gitsync.common.utils.GitEntityFilePath;
 import io.harness.gitsync.common.utils.GitSyncFilePathUtils;
@@ -35,6 +40,7 @@ import io.harness.gitsync.scm.EntityObjectIdUtils;
 import io.harness.grpc.utils.StringValueUtils;
 import io.harness.organization.remote.OrganizationClient;
 import io.harness.project.remote.ProjectClient;
+import io.harness.remote.client.RestClientUtils;
 import io.harness.repositories.NGTemplateRepository;
 import io.harness.springdata.TransactionHelper;
 import io.harness.template.TemplateFilterPropertiesDTO;
@@ -76,6 +82,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
   @Inject @Named("PRIVILEGED") private ProjectClient projectClient;
   @Inject @Named("PRIVILEGED") private OrganizationClient organizationClient;
   @Inject private TemplateReferenceHelper templateReferenceHelper;
+  @Inject private AccountClient accountClient;
 
   private static final String DUP_KEY_EXP_FORMAT_STRING =
       "Template [%s] of versionLabel [%s] under Project[%s], Organization [%s] already exists";
@@ -127,7 +134,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
               finalTemplateEntity.getIdentifier(), finalTemplateEntity.getVersionLabel());
           makePreviousLastUpdatedTemplateFalse(finalTemplateEntity.getAccountIdentifier(),
               finalTemplateEntity.getOrgIdentifier(), finalTemplateEntity.getProjectIdentifier(),
-              finalTemplateEntity.getIdentifier());
+              finalTemplateEntity.getIdentifier(), finalTemplateEntity.getVersionLabel());
           return templateRepository.save(finalTemplateEntity, finalComments);
         });
       } else {
@@ -135,7 +142,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
         return transactionHelper.performTransaction(() -> {
           makePreviousLastUpdatedTemplateFalse(finalTemplateEntity.getAccountIdentifier(),
               finalTemplateEntity.getOrgIdentifier(), finalTemplateEntity.getProjectIdentifier(),
-              finalTemplateEntity.getIdentifier());
+              finalTemplateEntity.getIdentifier(), finalTemplateEntity.getVersionLabel());
           return templateRepository.save(finalTemplateEntity, finalComments1);
         });
       }
@@ -145,6 +152,11 @@ public class NGTemplateServiceImpl implements NGTemplateService {
           format(DUP_KEY_EXP_FORMAT_STRING, templateEntity.getIdentifier(), templateEntity.getVersionLabel(),
               templateEntity.getProjectIdentifier(), templateEntity.getOrgIdentifier()),
           USER_SRE, ex);
+    } catch (ExplanationException | HintException | ScmException e) {
+      log.error(String.format("Error while creating template [%s] of versionLabel [%s]", templateEntity.getIdentifier(),
+                    templateEntity.getVersionLabel()),
+          e);
+      throw e;
     } catch (Exception e) {
       log.error(String.format("Error while saving template [%s] of versionLabel [%s]", templateEntity.getIdentifier(),
                     templateEntity.getVersionLabel()),
@@ -163,7 +175,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     //    templateReferenceHelper.populateTemplateReferences(templateEntity);
     return transactionHelper.performTransaction(() -> {
       makePreviousLastUpdatedTemplateFalse(templateEntity.getAccountIdentifier(), templateEntity.getOrgIdentifier(),
-          templateEntity.getProjectIdentifier(), templateEntity.getIdentifier());
+          templateEntity.getProjectIdentifier(), templateEntity.getIdentifier(), templateEntity.getVersionLabel());
       return updateTemplateHelper(templateEntity.getOrgIdentifier(), templateEntity.getProjectIdentifier(),
           templateEntity, changeType, setDefaultTemplate, true, comments, null);
     });
@@ -245,6 +257,11 @@ public class NGTemplateServiceImpl implements NGTemplateService {
           format(DUP_KEY_EXP_FORMAT_STRING, templateEntity.getIdentifier(), templateEntity.getVersionLabel(),
               templateEntity.getProjectIdentifier(), templateEntity.getOrgIdentifier()),
           USER_SRE, ex);
+    } catch (ExplanationException | HintException | ScmException e) {
+      log.error(String.format("Error while updating template [%s] of versionLabel [%s]", templateEntity.getIdentifier(),
+                    templateEntity.getVersionLabel()),
+          e);
+      throw e;
     } catch (Exception e) {
       log.error(String.format("Error while saving template [%s] of versionLabel [%s]", templateEntity.getIdentifier(),
                     templateEntity.getVersionLabel()),
@@ -369,6 +386,11 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     return true;
   }
 
+  public boolean isHardDeleteEntitiesFeatureFlagEnabled(String accountId) {
+    return RestClientUtils.getResponse(
+        accountClient.isFeatureFlagEnabled(FeatureName.HARD_DELETE_ENTITIES.name(), accountId));
+  }
+
   private boolean deleteSingleTemplateHelper(String accountId, String orgIdentifier, String projectIdentifier,
       String templateIdentifier, TemplateEntity templateToDelete, Long version, boolean canDeleteStableTemplate,
       String comments) {
@@ -391,13 +413,18 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     }
     TemplateEntity withDeleted = templateToDelete.withLastUpdatedTemplate(false).withDeleted(true);
     try {
-      TemplateEntity deletedTemplate = templateRepository.deleteTemplate(withDeleted, comments);
-      if (deletedTemplate.getDeleted()) {
+      if (isHardDeleteEntitiesFeatureFlagEnabled(accountId)) {
+        templateRepository.hardDeleteTemplate(templateToDelete, comments);
         return true;
       } else {
-        throw new InvalidRequestException(format(
-            "Template with identifier [%s] and versionLabel [%s], under Project[%s], Organization [%s] couldn't be deleted.",
-            templateIdentifier, versionLabel, projectIdentifier, orgIdentifier));
+        TemplateEntity deletedTemplate = templateRepository.deleteTemplate(withDeleted, comments);
+        if (deletedTemplate.getDeleted()) {
+          return true;
+        } else {
+          throw new InvalidRequestException(format(
+              "Template with identifier [%s] and versionLabel [%s], under Project[%s], Organization [%s] couldn't be deleted.",
+              templateIdentifier, versionLabel, projectIdentifier, orgIdentifier));
+        }
       }
     } catch (Exception e) {
       log.error(String.format("Error while deleting template with identifier [%s] and versionLabel [%s]",
@@ -582,7 +609,8 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     try {
       makePreviousStableTemplateFalse(
           accountIdentifier, orgIdentifier, projectIdentifier, templateIdentifier, newStableTemplateVersion);
-      makePreviousLastUpdatedTemplateFalse(accountIdentifier, orgIdentifier, projectIdentifier, templateIdentifier);
+      makePreviousLastUpdatedTemplateFalse(
+          accountIdentifier, orgIdentifier, projectIdentifier, templateIdentifier, newStableTemplateVersion);
       Optional<TemplateEntity> optionalTemplateEntity = getOrThrowExceptionIfInvalid(
           accountIdentifier, orgIdentifier, projectIdentifier, templateIdentifier, newStableTemplateVersion, false);
       if (!optionalTemplateEntity.isPresent()) {
@@ -625,6 +653,11 @@ public class NGTemplateServiceImpl implements NGTemplateService {
             templateToUpdate.getProjectIdentifier(), templateToUpdate.getOrgIdentifier()));
       }
       return updatedTemplate;
+    } catch (ExplanationException | HintException | ScmException e) {
+      log.error(String.format("Error while updating template [%s] of versionLabel [%s]",
+                    templateToUpdate.getIdentifier(), templateToUpdate.getVersionLabel()),
+          e);
+      throw e;
     } catch (Exception e) {
       log.error(String.format("Error while updating template with identifier [%s] and versionLabel [%s]",
                     templateToUpdate.getIdentifier(), templateToUpdate.getVersionLabel()),
@@ -712,8 +745,8 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     }
   }
 
-  private void makePreviousLastUpdatedTemplateFalse(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, String templateIdentifier) {
+  private void makePreviousLastUpdatedTemplateFalse(String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, String templateIdentifier, String currentTemplateVersion) {
     NGTemplateServiceHelper.validatePresenceOfRequiredFields(accountIdentifier, templateIdentifier);
     Optional<TemplateEntity> optionalTemplateEntity =
         templateRepository
@@ -722,6 +755,13 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     if (optionalTemplateEntity.isPresent()) {
       // make previous last updated template as false.
       TemplateEntity oldTemplate = optionalTemplateEntity.get();
+
+      if (EmptyPredicate.isNotEmpty(currentTemplateVersion)
+          && currentTemplateVersion.equals(oldTemplate.getVersionLabel())) {
+        log.info(
+            "Ignoring marking previous updated template as false, as new versionLabel given is same as already existing one.");
+        return;
+      }
 
       // Update the git context with details of the template on which the operation is going to run.
       try (TemplateGitSyncBranchContextGuard ignored = templateServiceHelper.getTemplateGitContextForGivenTemplate(

@@ -59,9 +59,10 @@ public class EnvironmentPlanCreatorConfig implements Visitable {
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) String description;
   @ApiModelProperty(required = true) EnvironmentType type;
   List<NGVariable> variables;
-  List<NGServiceOverrides> serviceOverrides;
+  NGServiceOverrides serviceOverrides;
 
   // linked Infra Info
+  boolean deployToAll;
   List<InfrastructurePlanCreatorConfig> infrastructureDefinitions;
-  List<String> clusterRefs;
+  List<String> gitOpsClusterRefs;
 }

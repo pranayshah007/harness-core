@@ -58,6 +58,7 @@ public class ExplanationException extends WingsException {
   public static String INVALID_GIT_REPO = "Provided repo url is invalid.";
   public static String INVALID_GIT_AUTHORIZATION = "Provided credentials are not authorized.";
   public static String INVALID_GIT_AUTHENTICATION = "Authentication is not supported.";
+  public static String GIT_TIME_OUT = "Git connection timed out";
 
   public static String INVALID_GIT_API_AUTHORIZATION = "Provided api access credentials are not authorized.";
 

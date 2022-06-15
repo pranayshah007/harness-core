@@ -17,9 +17,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
+import io.harness.beans.Scope;
 import io.harness.category.element.UnitTests;
 import io.harness.common.EntityReference;
-import io.harness.encryption.Scope;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.manage.GlobalContextManager;
@@ -76,7 +76,7 @@ public class EntitySetupUsageServiceImplTest extends EntitySetupUsageTestBase {
   private EntityDetail getEntityDetailsWithRepoBranch(String identifier, String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String name, EntityType type, String repo, String branch, Boolean isDefault) {
     IdentifierRef ref = IdentifierRef.builder()
-                            .scope(Scope.PROJECT)
+                            .scope(io.harness.encryption.Scope.PROJECT)
                             .accountIdentifier(accountIdentifier)
                             .orgIdentifier(orgIdentifier)
                             .projectIdentifier(projectIdentifier)
@@ -658,5 +658,14 @@ public class EntitySetupUsageServiceImplTest extends EntitySetupUsageTestBase {
     assertThat(
         entityReferencesDTO.getEntitySetupUsageBatchList().get(1).getReferredByEntity().equals(referredByEntityFQN1)
         && entityReferencesDTO.getEntitySetupUsageBatchList().get(1).getReferredEntities().size() == 1);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.VLAD)
+  @Category(UnitTests.class)
+  public void verifyListAllWhenReferreByTypeIsEmpty() {
+    List<EntitySetupUsageDTO> result = entitySetupUsageService.listAllEntityUsagePerReferredEntityScope(
+        Scope.of(accountIdentifier, null, null), referredByEntityName, EntityType.FILES, null, null, null);
+    assertThat(result).isEmpty();
   }
 }

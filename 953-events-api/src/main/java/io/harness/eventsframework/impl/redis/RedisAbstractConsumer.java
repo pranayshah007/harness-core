@@ -62,6 +62,14 @@ public abstract class RedisAbstractConsumer extends AbstractConsumer {
     initConsumerGroup(topicName, redissonClient, maxProcessingTime, batchSize, envNamespace);
   }
 
+  public RedisAbstractConsumer(String topicName, String groupName, @NotNull RedissonClient redissonClient,
+      Duration maxProcessingTime, int batchSize, String envNamespace,
+      RedisEventMetricPublisher redisEventMetricPublisher) {
+    super(topicName, groupName);
+    initConsumerGroup(topicName, redissonClient, maxProcessingTime, batchSize, envNamespace);
+    this.redisEventMetricPublisher = redisEventMetricPublisher;
+  }
+
   public RedisAbstractConsumer(String topicName, String groupName, String consumerName, RedisConfig redisConfig,
       Duration maxProcessingTime, int batchSize) {
     super(topicName, groupName, consumerName);

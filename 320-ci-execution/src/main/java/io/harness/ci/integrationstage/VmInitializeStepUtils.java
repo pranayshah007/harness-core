@@ -61,6 +61,7 @@ import org.apache.commons.lang3.StringUtils;
 @Singleton
 @Slf4j
 @OwnedBy(HarnessTeam.CI)
+@Deprecated
 public class VmInitializeStepUtils {
   @Inject CIFeatureFlagService featureFlagService;
 
@@ -117,7 +118,7 @@ public class VmInitializeStepUtils {
   }
 
   private String getStepMountPath(OSType os) {
-    if (os.equals(OSType.Osx)) {
+    if (os.equals(OSType.MacOS)) {
       return OSX_STEP_MOUNT_PATH;
     }
     return STEP_MOUNT_PATH;

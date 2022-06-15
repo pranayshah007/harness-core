@@ -20,7 +20,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
-import io.harness.cdng.artifact.outcome.ArtifactsOutcome;
 import io.harness.cdng.expressions.CDExpressionResolveFunctor;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.manifest.ManifestStoreType;
@@ -71,7 +70,6 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.data.OptionalOutcome;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
-import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
@@ -95,7 +93,6 @@ import org.hibernate.validator.constraints.NotEmpty;
 @OwnedBy(HarnessTeam.CDP)
 @Singleton
 public class ServerlessStepCommonHelper extends ServerlessStepUtils {
-  @Inject private OutcomeService outcomeService;
   @Inject private EngineExpressionService engineExpressionService;
   @Inject private ServerlessEntityHelper serverlessEntityHelper;
   @Inject private KryoSerializer kryoSerializer;
@@ -136,18 +133,6 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
                                .build())
           .build();
     }
-  }
-
-  public Optional<ArtifactOutcome> resolveArtifactsOutcome(Ambiance ambiance) {
-    OptionalOutcome artifactsOutcomeOption = outcomeService.resolveOptional(
-        ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.ARTIFACTS));
-    if (artifactsOutcomeOption.isFound()) {
-      ArtifactsOutcome artifactsOutcome = (ArtifactsOutcome) artifactsOutcomeOption.getOutcome();
-      if (artifactsOutcome.getPrimary() != null) {
-        return Optional.of(artifactsOutcome.getPrimary());
-      }
-    }
-    return Optional.empty();
   }
 
   public ServerlessArtifactConfig getArtifactoryConfig(ArtifactOutcome artifactOutcome, Ambiance ambiance) {

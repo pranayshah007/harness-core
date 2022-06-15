@@ -10,7 +10,7 @@ variables:
     type: String
     value: value2
 serviceOverrides:
-  - serviceRef: s1
+    serviceRef: s1
     variables:
       - name: var1
         type: String
