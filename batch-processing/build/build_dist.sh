@@ -25,11 +25,11 @@ then
     echo ${PURPOSE} > purpose.txt
 fi
 
-cp ${HOME}/.bazel-dirs/bin/batch-processing/service/module_deploy.jar batchprocessing-service-capsule.jar
+cp ${HOME}/.bazel-dirs/bin/batch-processing/service/module_deploy.jar batch-processing-capsule.jar
 cp ../../batch-processing/config/batch-processing-config.yml .
-cp ../../access-control/build/container/Dockerfile-batch-processing-jenkins-k8-openjdk ./Dockerfile
-cp ../../access-control/build/container/Dockerfile-batch-processing-jenkins-k8-gcr-openjdk ./Dockerfile-gcr
+cp ../../batch-processing/build/container/Dockerfile-batch-processing-jenkins-k8-openjdk ./Dockerfile
+cp ../../batch-processing/build/container/Dockerfile-batch-processing-jenkins-k8-gcr-openjdk ./Dockerfile-gcr
 cp -r ../../batch-processing/build/container/scripts/ .
-java -jar batchprocessing-service-capsule.jar scan-classpath-metadata
+java -jar batch-processing-capsule.jar scan-classpath-metadata
 
 cd ../..
