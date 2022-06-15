@@ -7,6 +7,12 @@
 
 package io.harness.beans.build;
 
+import io.harness.annotation.RecasterAlias;
+
+import org.springframework.data.annotation.TypeAlias;
+
+@TypeAlias("buildUpdateType")
+@RecasterAlias("io.harness.beans.build.BuildUpdateType")
 public enum BuildUpdateType {
   STATUS,
   CHECKS;

@@ -22,6 +22,7 @@ import io.harness.delegate.task.TaskParameters;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 
 import software.wings.beans.command.ExecutionLogCallback;
 import software.wings.delegatetasks.DelegateLogService;
@@ -71,7 +72,7 @@ public class AwsLambdaTask extends AbstractDelegateRunnableTask {
         } catch (Exception ex) {
           return AwsLambdaExecuteFunctionResponse.builder()
               .executionStatus(ExecutionStatus.FAILED)
-              .errorMessage(ExceptionUtils.getMessage(ex))
+              .errorMessage(ExceptionUtils.getMessage(ExceptionMessageSanitizer.sanitizeException(ex)))
               .build();
         }
       }
@@ -85,7 +86,7 @@ public class AwsLambdaTask extends AbstractDelegateRunnableTask {
         } catch (Exception ex) {
           return AwsLambdaExecuteWfResponse.builder()
               .executionStatus(FAILED)
-              .errorMessage(ExceptionUtils.getMessage(ex))
+              .errorMessage(ExceptionUtils.getMessage(ExceptionMessageSanitizer.sanitizeException(ex)))
               .build();
         }
       }
@@ -95,7 +96,7 @@ public class AwsLambdaTask extends AbstractDelegateRunnableTask {
         } catch (Exception ex) {
           return AwsLambdaFunctionResponse.builder()
               .executionStatus(FAILED)
-              .errorMessage(ExceptionUtils.getMessage(ex))
+              .errorMessage(ExceptionUtils.getMessage(ExceptionMessageSanitizer.sanitizeException(ex)))
               .build();
         }
       }
@@ -105,7 +106,7 @@ public class AwsLambdaTask extends AbstractDelegateRunnableTask {
         } catch (Exception ex) {
           return AwsLambdaFunctionResponse.builder()
               .executionStatus(FAILED)
-              .errorMessage(ExceptionUtils.getMessage(ex))
+              .errorMessage(ExceptionUtils.getMessage(ExceptionMessageSanitizer.sanitizeException(ex)))
               .build();
         }
       }

@@ -23,6 +23,7 @@ import io.harness.delegate.task.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.TimeoutException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.logging.LogLevel;
 import io.harness.security.encryption.EncryptedDataDetail;
 
@@ -132,10 +133,11 @@ public class EcsSteadyStateCheckTask extends AbstractDelegateRunnableTask {
           .containerInfoList(containerInfos)
           .build();
     } catch (TimeoutException ex) {
+      Exception sanitiseException = ExceptionMessageSanitizer.sanitizeException(ex);
       String errorMessage = String.format("Timeout Exception: %s while waiting for ECS steady state for activity: %s",
-          ex.getMessage(), params.getActivityId());
+          sanitiseException.getMessage(), params.getActivityId());
       executionLogCallback.saveExecutionLog(errorMessage, LogLevel.ERROR);
-      log.error(errorMessage, ex);
+      log.error(errorMessage, sanitiseException);
       EcsSteadyStateCheckResponse response = EcsSteadyStateCheckResponse.builder()
                                                  .executionStatus(ExecutionStatus.FAILED)
                                                  .errorMessage(errorMessage)
@@ -146,10 +148,11 @@ public class EcsSteadyStateCheckTask extends AbstractDelegateRunnableTask {
 
       return response;
     } catch (Exception ex) {
-      String errorMessage = String.format(
-          "Exception: %s while waiting for ECS steady state for activity: %s", ex.getMessage(), params.getActivityId());
+      Exception sanitiseException = ExceptionMessageSanitizer.sanitizeException(ex);
+      String errorMessage = String.format("Exception: %s while waiting for ECS steady state for activity: %s",
+          sanitiseException.getMessage(), params.getActivityId());
       executionLogCallback.saveExecutionLog(errorMessage, LogLevel.ERROR);
-      log.error(errorMessage, ex);
+      log.error(errorMessage, sanitiseException);
       return EcsSteadyStateCheckResponse.builder()
           .executionStatus(ExecutionStatus.FAILED)
           .errorMessage(errorMessage)

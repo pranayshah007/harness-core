@@ -22,6 +22,7 @@ import io.harness.delegate.beans.executioncapability.CapabilityResponse;
 import io.harness.delegate.beans.executioncapability.CapabilityResponse.CapabilityResponseBuilder;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.task.executioncapability.CapabilityCheck;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.shell.SshSessionConfig;
 
@@ -69,7 +70,8 @@ public class SSHHostValidationCapabilityCheck implements CapabilityCheck {
       performTest(hostConnectionTest);
       capabilityResponseBuilder.validated(true);
     } catch (Exception e) {
-      log.error("Failed to validate host - public dns:" + capability.getValidationInfo().getPublicDns(), e);
+      log.error("Failed to validate host - public dns:" + capability.getValidationInfo().getPublicDns(),
+          ExceptionMessageSanitizer.sanitizeException(e));
       capabilityResponseBuilder.validated(false);
     }
     return capabilityResponseBuilder.build();
@@ -86,6 +88,8 @@ public class SSHHostValidationCapabilityCheck implements CapabilityCheck {
     if (hostConnectionAttributes != null) {
       encryptionService.decrypt(
           (HostConnectionAttributes) hostConnectionAttributes.getValue(), hostConnectionCredential, false);
+      ExceptionMessageSanitizer.storeAllSecretsForSanitizing(
+          (HostConnectionAttributes) hostConnectionAttributes.getValue(), hostConnectionCredential);
       if (hostConnectionAttributes.getValue() instanceof HostConnectionAttributes
           && ((HostConnectionAttributes) hostConnectionAttributes.getValue()).isVaultSSH()) {
         secretManagementDelegateService.signPublicKey(
@@ -95,6 +99,8 @@ public class SSHHostValidationCapabilityCheck implements CapabilityCheck {
     if (bastionConnectionAttributes != null) {
       encryptionService.decrypt(
           (BastionConnectionAttributes) bastionConnectionAttributes.getValue(), bastionConnectionCredential, false);
+      ExceptionMessageSanitizer.storeAllSecretsForSanitizing(
+          (BastionConnectionAttributes) bastionConnectionAttributes.getValue(), bastionConnectionCredential);
     }
   }
 

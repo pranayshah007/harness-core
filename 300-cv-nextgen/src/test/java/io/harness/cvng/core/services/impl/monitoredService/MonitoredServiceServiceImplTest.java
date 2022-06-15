@@ -32,6 +32,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CvNextGenTestBase;
+import io.harness.account.AccountClient;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.CVNGTestConstants;
@@ -123,6 +124,7 @@ import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule.Mo
 import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule.MonitoredServiceHealthScoreCondition;
 import io.harness.cvng.notification.entities.NotificationRule;
 import io.harness.cvng.notification.services.api.NotificationRuleService;
+import io.harness.cvng.notification.utils.NotificationRuleCommonUtils;
 import io.harness.cvng.outbox.CVServiceOutboxEventHandler;
 import io.harness.cvng.servicelevelobjective.beans.ErrorBudgetRisk;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
@@ -139,12 +141,14 @@ import io.harness.outbox.OutboxEvent;
 import io.harness.outbox.api.OutboxService;
 import io.harness.outbox.filter.OutboxEventFilter;
 import io.harness.persistence.HPersistence;
+import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import io.serializer.HObjectMapper;
+import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.time.Clock;
 import java.time.Instant;
@@ -168,8 +172,10 @@ import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.Answers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import retrofit2.Response;
 
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
@@ -195,6 +201,8 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
   @Mock ChangeSourceService changeSourceServiceMock;
   @Mock FakeNotificationClient notificationClient;
   @Mock private PersistentLocker mockedPersistentLocker;
+  @Inject NotificationRuleCommonUtils notificationRuleCommonUtils;
+  @Mock(answer = Answers.RETURNS_DEEP_STUBS) AccountClient accountClient;
 
   private BuilderFactory builderFactory;
   String healthSourceName;
@@ -261,6 +269,8 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     FieldUtils.writeField(heatMapService, "clock", clock, true);
     FieldUtils.writeField(monitoredServiceService, "heatMapService", heatMapService, true);
     FieldUtils.writeField(monitoredServiceService, "notificationClient", notificationClient, true);
+    FieldUtils.writeField(monitoredServiceService, "notificationRuleCommonUtils", notificationRuleCommonUtils, true);
+    FieldUtils.writeField(notificationRuleCommonUtils, "accountClient", accountClient, true);
   }
 
   @Test
@@ -2185,7 +2195,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = KAPIL)
   @Category(UnitTests.class)
-  public void testSendNotification() throws IllegalAccessException {
+  public void testSendNotification() throws IllegalAccessException, IOException {
     NotificationRuleDTO notificationRuleDTO =
         builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.MONITORED_SERVICE).build();
     NotificationRuleResponse notificationRuleResponse =
@@ -2221,6 +2231,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     FieldUtils.writeField(monitoredServiceService, "clock", clock, true);
     when(notificationClient.sendNotificationAsync(any()))
         .thenReturn(NotificationResultWithoutStatus.builder().notificationId("notificationId").build());
+    when(accountClient.getVanityUrl(any()).execute()).thenReturn(Response.success(new RestResponse()));
 
     monitoredServiceService.sendNotification(monitoredService);
     verify(notificationClient, times(1)).sendNotificationAsync(any());

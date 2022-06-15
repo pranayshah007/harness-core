@@ -76,8 +76,9 @@ public class HarnessResourceGroupResourceImpl implements HarnessResourceGroupRes
   }
 
   @NGAccessControlCheck(resourceType = RESOURCE_GROUP, permission = VIEW_RESOURCEGROUP_PERMISSION)
-  public ResponseDTO<PageResponse<ResourceGroupResponse>> list(@AccountIdentifier String accountIdentifier, @OrgIdentifier String orgIdentifier,
-                                                               @ProjectIdentifier String projectIdentifier, String searchTerm, PageRequest pageRequest) {
+  public ResponseDTO<PageResponse<ResourceGroupResponse>> list(@AccountIdentifier String accountIdentifier,
+      @OrgIdentifier String orgIdentifier, @ProjectIdentifier String projectIdentifier, String searchTerm,
+      PageRequest pageRequest) {
     return ResponseDTO.newResponse(getNGPageResponse(resourceGroupService.list(
         Scope.of(accountIdentifier, orgIdentifier, projectIdentifier), pageRequest, searchTerm)));
   }

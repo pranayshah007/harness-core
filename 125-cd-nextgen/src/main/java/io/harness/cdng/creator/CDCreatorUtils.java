@@ -33,6 +33,8 @@ public class CDCreatorUtils {
         StepSpecTypeConstants.HELM_ROLLBACK, StepSpecTypeConstants.CLOUDFORMATION_CREATE_STACK,
         StepSpecTypeConstants.CLOUDFORMATION_DELETE_STACK, StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_DEPLOY,
         StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK, StepSpecTypeConstants.CLOUDFORMATION_ROLLBACK_STACK,
-        StepSpecTypeConstants.COMMAND);
+        StepSpecTypeConstants.COMMAND, StepSpecTypeConstants.AZURE_SLOT_DEPLOYMENT,
+        StepSpecTypeConstants.AZURE_TRAFFIC_SHIFT, StepSpecTypeConstants.AZURE_SWAP_SLOT,
+        StepSpecTypeConstants.AZURE_WEBAPP_ROLLBACK);
   }
 }

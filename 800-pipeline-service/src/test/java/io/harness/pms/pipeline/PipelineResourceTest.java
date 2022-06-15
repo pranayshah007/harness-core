@@ -421,27 +421,12 @@ public class PipelineResourceTest extends CategoryTest {
   public void testImportPipelineFromGit() {
     GitImportInfoDTO gitImportInfoDTO = GitImportInfoDTO.builder().branch("br").build();
     PipelineImportRequestDTO pipelineImportRequestDTO = PipelineImportRequestDTO.builder().build();
-    doReturn(yaml)
+    doReturn(PipelineEntity.builder().identifier(PIPELINE_IDENTIFIER).build())
         .when(pmsPipelineService)
         .importPipelineFromRemote(
             ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, pipelineImportRequestDTO);
-    ResponseDTO<PMSPipelineResponseDTO> importPipelineFromGit = pipelineResource.importPipelineFromGit(
+    ResponseDTO<PipelineSaveResponse> importPipelineFromGit = pipelineResource.importPipelineFromGit(
         ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, gitImportInfoDTO, pipelineImportRequestDTO);
-    assertThat(importPipelineFromGit.getData().getYamlPipeline()).isEqualTo(yaml);
-    assertThat(importPipelineFromGit.getData().getYamlSchemaErrorWrapper()).isNull();
-
-    YamlSchemaErrorWrapperDTO errorWrapper =
-        YamlSchemaErrorWrapperDTO.builder()
-            .schemaErrors(Collections.singletonList(YamlSchemaErrorDTO.builder().fqn("fqn").message("msg").build()))
-            .build();
-    doThrow(new InvalidYamlException("errorMsg", null, errorWrapper, yaml))
-        .when(pmsPipelineService)
-        .importPipelineFromRemote(
-            ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, pipelineImportRequestDTO);
-
-    importPipelineFromGit = pipelineResource.importPipelineFromGit(
-        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, gitImportInfoDTO, pipelineImportRequestDTO);
-    assertThat(importPipelineFromGit.getData().getYamlPipeline()).isEqualTo(yaml);
-    assertThat(importPipelineFromGit.getData().getYamlSchemaErrorWrapper()).isEqualTo(errorWrapper);
+    assertThat(importPipelineFromGit.getData().getIdentifier()).isEqualTo(PIPELINE_IDENTIFIER);
   }
 }

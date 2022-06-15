@@ -377,7 +377,6 @@ public class InfrastructureMapperTest extends CategoryTest {
             .resourceGroup(ParameterField.createValueField("resourceGroup"))
             .appService(ParameterField.createValueField("appService"))
             .deploymentSlot(ParameterField.createValueField("deploymentSlot"))
-            .targetSlot(ParameterField.createValueField("targetSlot"))
             .build();
 
     InfrastructureOutcome infrastructureOutcome =
@@ -389,7 +388,6 @@ public class InfrastructureMapperTest extends CategoryTest {
                                           .resourceGroup("resourceGroup")
                                           .appService("appService")
                                           .deploymentSlot("deploymentSlot")
-                                          .targetSlot("targetSlot")
                                           .environment(environment)
                                           .build(),
             "infrastructureKey");

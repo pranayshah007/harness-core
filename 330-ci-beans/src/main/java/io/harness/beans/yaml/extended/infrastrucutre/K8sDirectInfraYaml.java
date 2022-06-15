@@ -15,6 +15,7 @@ import static io.harness.beans.SwaggerConstants.STRING_MAP_CLASSPATH;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.yaml.extended.infrastrucutre.k8.SecurityContext;
 import io.harness.beans.yaml.extended.infrastrucutre.k8.Toleration;
@@ -43,6 +44,7 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName("KubernetesDirect")
 @TypeAlias("k8sDirectInfraYaml")
 @OwnedBy(CI)
+@RecasterAlias("io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml")
 public class K8sDirectInfraYaml implements Infrastructure {
   @Builder.Default @NotNull private Type type = Type.KUBERNETES_DIRECT;
   @NotNull private K8sDirectInfraYamlSpec spec;

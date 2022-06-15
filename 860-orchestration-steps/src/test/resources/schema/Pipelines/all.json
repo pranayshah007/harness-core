@@ -2709,8 +2709,7 @@
             "shell": {
               "type": "string",
               "enum": [
-                "Bash",
-                "PowerShell"
+                "Bash"
               ]
             },
             "source": {

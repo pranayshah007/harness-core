@@ -7,12 +7,15 @@
 
 package io.harness.beans.yaml.extended.reports;
 
+import io.harness.annotation.RecasterAlias;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
 import org.springframework.data.annotation.TypeAlias;
 
 @TypeAlias("unit_test_report_type")
+@RecasterAlias("io.harness.beans.yaml.extended.reports.UnitTestReportType")
 public enum UnitTestReportType {
   @JsonProperty("JUnit") JUNIT("JUnit");
 

@@ -32,6 +32,7 @@ import io.harness.delegate.task.azure.appservice.webapp.response.AzureWebAppSlot
 import io.harness.delegate.task.azure.request.AzureVMSSSetupTaskParameters;
 import io.harness.delegate.task.azure.request.AzureVMSSTaskParameters;
 import io.harness.encryptors.clients.LocalEncryptor;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.EncryptedRecord;
 import io.harness.security.encryption.SecretDecryptionService;
@@ -59,6 +60,8 @@ public class AzureSecretHelper {
   public AzureConfig decryptAndGetAzureConfig(
       AzureConfigDTO azureConfigDTO, List<EncryptedDataDetail> azureConfigEncryptionDetails) {
     secretDecryptionService.decrypt(azureConfigDTO, azureConfigEncryptionDetails);
+    ExceptionMessageSanitizer.storeAllSecretsForSanitizing(azureConfigDTO, azureConfigEncryptionDetails);
+
     return AzureConfig.builder()
         .clientId(azureConfigDTO.getClientId())
         .tenantId(azureConfigDTO.getTenantId())
@@ -73,6 +76,7 @@ public class AzureSecretHelper {
       AzureVMAuthDTO azureVmAuthDTO = setupTaskParameters.getAzureVmAuthDTO();
       List<EncryptedDataDetail> vmAuthDTOEncryptionDetails = setupTaskParameters.getVmAuthDTOEncryptionDetails();
       secretDecryptionService.decrypt(azureVmAuthDTO, vmAuthDTOEncryptionDetails);
+      ExceptionMessageSanitizer.storeAllSecretsForSanitizing(azureVmAuthDTO, vmAuthDTOEncryptionDetails);
     }
   }
 
@@ -96,6 +100,8 @@ public class AzureSecretHelper {
     ConnectorConfigDTO connectorConfigDTO = azureAppServiceTaskParameters.getConnectorConfigDTO();
     Optional<DecryptableEntity> authCredentialsDTO = azureRegistry.getAuthCredentialsDTO(connectorConfigDTO);
     authCredentialsDTO.ifPresent(credentials -> secretDecryptionService.decrypt(credentials, encryptedDataDetails));
+    authCredentialsDTO.ifPresent(
+        credentials -> ExceptionMessageSanitizer.storeAllSecretsForSanitizing(credentials, encryptedDataDetails));
   }
 
   private void decryptAzureWebAppRollbackParameters(AzureWebAppRollbackParameters azureWebAppRollbackParameters) {

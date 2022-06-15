@@ -17,5 +17,5 @@ import java.util.List;
 
 @OwnedBy(PL)
 public interface ACLDAO {
-  List<Boolean> checkForAccess(Principal principal, List<PermissionCheck> permissionChecks);
+  List<List<ACL>> getMatchingACLs(Principal principal, List<PermissionCheck> permissionChecks);
 }
