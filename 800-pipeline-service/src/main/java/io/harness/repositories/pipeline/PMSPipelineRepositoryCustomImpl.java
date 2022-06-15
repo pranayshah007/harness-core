@@ -253,6 +253,10 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
     PipelineEntity updatedPipelineEntity = transactionHelper.performTransaction(
         () -> updatePipelineEntityInDB(query, updateOperations, pipelineToUpdate, timeOfUpdate));
 
+    if (updatedPipelineEntity == null) {
+      return null;
+    }
+
     updatedPipelineEntity = onboardToInlineIfNullStoreType(updatedPipelineEntity, query);
     if (updatedPipelineEntity == null) {
       return null;

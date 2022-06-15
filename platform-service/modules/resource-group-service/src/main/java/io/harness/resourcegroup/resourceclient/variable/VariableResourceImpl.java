@@ -17,6 +17,7 @@ import io.harness.eventsframework.consumer.Message;
 import io.harness.resourcegroup.beans.ValidatorType;
 import io.harness.resourcegroup.framework.v1.service.Resource;
 import io.harness.resourcegroup.framework.v1.service.ResourceInfo;
+import io.harness.resourcegroup.v2.model.AttributeFilter;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.Collections;
@@ -45,6 +46,11 @@ public class VariableResourceImpl implements Resource {
   @Override
   public ResourceInfo getResourceInfoFromEvent(Message message) {
     return null;
+  }
+
+  @Override
+  public boolean isValidAttributeFilter(AttributeFilter attributeFilter) {
+    return false;
   }
 
   @Override

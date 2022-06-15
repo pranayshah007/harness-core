@@ -43,7 +43,6 @@ import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator.Serv
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator.ServiceLevelIndicatorUpdatableEntity;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective.TimePeriod;
 import io.harness.cvng.servicelevelobjective.services.api.SLIDataProcessorService;
-import io.harness.cvng.servicelevelobjective.services.api.SLIRecordService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.ServiceLevelIndicatorEntityAndDTOTransformer;
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.ServiceLevelIndicatorTransformer;
@@ -93,7 +92,6 @@ public class ServiceLevelIndicatorServiceImpl implements ServiceLevelIndicatorSe
   @Inject private SLIDataProcessorService sliDataProcessorService;
   @Inject private Clock clock;
   @Inject private OrchestrationService orchestrationService;
-  @Inject private SLIRecordService sliRecordService;
   @Inject private SideKickService sideKickService;
 
   @Override

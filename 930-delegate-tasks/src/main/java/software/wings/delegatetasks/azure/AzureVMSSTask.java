@@ -28,6 +28,7 @@ import io.harness.delegate.task.azure.request.AzureVMSSSetupTaskParameters;
 import io.harness.delegate.task.azure.request.AzureVMSSSwitchRouteTaskParameters;
 import io.harness.delegate.task.azure.request.AzureVMSSTaskParameters;
 import io.harness.delegate.task.azure.response.AzureVMSSTaskExecutionResponse;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
 
@@ -121,6 +122,8 @@ public class AzureVMSSTask extends AbstractDelegateRunnableTask {
   private AzureConfig createAzureConfigForDelegateTask(AzureVMSSCommandRequest azureVMSSCommandRequest) {
     AzureConfigDTO azureConfigDTO = azureVMSSCommandRequest.getAzureConfigDTO();
     secretDecryptionService.decrypt(azureConfigDTO, azureVMSSCommandRequest.getAzureConfigEncryptionDetails());
+    ExceptionMessageSanitizer.storeAllSecretsForSanitizing(
+        azureConfigDTO, azureVMSSCommandRequest.getAzureConfigEncryptionDetails());
 
     String clientId = azureConfigDTO.getClientId();
     String tenantId = azureConfigDTO.getTenantId();
@@ -139,6 +142,7 @@ public class AzureVMSSTask extends AbstractDelegateRunnableTask {
       AzureVMAuthDTO azureVmAuthDTO = setupTaskParameters.getAzureVmAuthDTO();
       List<EncryptedDataDetail> vmAuthDTOEncryptionDetails = setupTaskParameters.getVmAuthDTOEncryptionDetails();
       secretDecryptionService.decrypt(azureVmAuthDTO, vmAuthDTOEncryptionDetails);
+      ExceptionMessageSanitizer.storeAllSecretsForSanitizing(azureVmAuthDTO, vmAuthDTOEncryptionDetails);
     }
   }
 

@@ -31,8 +31,6 @@ public abstract class CfCliCommand {
   Options options;
 
   public String getCommand() {
-    String command = CfCliCommandBuilder.buildCommand(this);
-    log.debug("Command generated: {}", command);
-    return command;
+    return CfCliCommandBuilder.buildCommand(this);
   }
 }

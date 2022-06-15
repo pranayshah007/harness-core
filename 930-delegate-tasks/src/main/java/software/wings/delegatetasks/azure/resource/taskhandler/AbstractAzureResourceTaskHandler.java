@@ -18,6 +18,7 @@ import io.harness.delegate.task.azure.resource.AzureResourceTaskParameters;
 import io.harness.delegate.task.azure.resource.AzureResourceTaskResponse;
 import io.harness.delegate.task.azure.resource.operation.AzureResourceOperation;
 import io.harness.delegate.task.azure.resource.operation.AzureResourceOperationResponse;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.logging.CommandExecutionStatus;
 
 import lombok.extern.slf4j.Slf4j;
@@ -36,9 +37,10 @@ public abstract class AbstractAzureResourceTaskHandler {
           .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
           .build();
     } catch (Exception ex) {
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(ex);
       String errorMsg = String.format("Failed to execute operation, operationName: %s, errorMessage: %s",
-          resourceTaskParameters.getResourceOperation().getOperationName(), ex.getMessage());
-      log.error(errorMsg, ex);
+          resourceTaskParameters.getResourceOperation().getOperationName(), sanitizedException.getMessage());
+      log.error(errorMsg, sanitizedException);
       return AzureTaskExecutionResponse.builder()
           .commandExecutionStatus(CommandExecutionStatus.FAILURE)
           .errorMessage(errorMsg)

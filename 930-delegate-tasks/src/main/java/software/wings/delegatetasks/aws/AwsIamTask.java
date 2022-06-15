@@ -21,6 +21,7 @@ import io.harness.delegate.task.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.logging.ExceptionLogger;
 
 import software.wings.service.impl.aws.model.AwsIamListInstanceRolesResponse;
@@ -81,7 +82,8 @@ public class AwsIamTask extends AbstractDelegateRunnableTask {
       ExceptionLogger.logProcessedMessages(exception, DELEGATE, log);
       throw exception;
     } catch (Exception ex) {
-      throw new InvalidRequestException(ex.getMessage(), WingsException.USER);
+      throw new InvalidRequestException(
+          ExceptionMessageSanitizer.sanitizeException(ex).getMessage(), WingsException.USER);
     }
   }
 }

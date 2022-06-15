@@ -27,6 +27,7 @@ import io.harness.cvng.core.beans.monitoredService.MetricDTO;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceResponse;
 import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.PrometheusHealthSourceSpec;
+import io.harness.cvng.core.beans.monitoredService.healthSouceSpec.SplunkMetricHealthSourceSpec;
 import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.services.api.CVConfigService;
@@ -273,6 +274,28 @@ public class MonitoredServiceResourceTest extends CvNextGenTestBase {
     // assertThat(healthSourceMetricDefinition.getIdentifier()).isEqualTo("prometheus_metric123");
     assertThat(healthSourceMetricDefinition.getIdentifier())
         .isEqualTo("PrometheusMetric"); // TODO: remove this after enabling validation.
+  }
+
+  @Test
+  @Owner(developers = KAMAL)
+  @Category(UnitTests.class)
+  public void testSaveMonitoredService_withSplunkMetric() throws IOException {
+    String monitoredServiceYaml = getResource("monitoredservice/monitored-service-splunk-metrics.yaml");
+
+    Response response = RESOURCES.client()
+                            .target("http://localhost:9998/monitored-service/")
+                            .queryParam("accountId", builderFactory.getContext().getAccountId())
+                            .request(MediaType.APPLICATION_JSON_TYPE)
+                            .post(Entity.json(convertToJson(monitoredServiceYaml)));
+    assertThat(response.getStatus()).isEqualTo(200);
+    RestResponse<MonitoredServiceResponse> restResponse =
+        response.readEntity(new GenericType<RestResponse<MonitoredServiceResponse>>() {});
+    MonitoredServiceDTO monitoredServiceDTO = restResponse.getResource().getMonitoredServiceDTO();
+    assertThat(monitoredServiceDTO.getSources().getHealthSources()).hasSize(1);
+    HealthSource healthSource = monitoredServiceDTO.getSources().getHealthSources().iterator().next();
+    HealthSourceMetricDefinition healthSourceMetricDefinition =
+        ((SplunkMetricHealthSourceSpec) healthSource.getSpec()).getMetricDefinitions().get(0);
+    assertThat(healthSourceMetricDefinition.getIdentifier()).isEqualTo("splunk_response_time");
   }
 
   @Test

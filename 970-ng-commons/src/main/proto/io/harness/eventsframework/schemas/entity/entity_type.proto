@@ -91,5 +91,4 @@ enum EntityTypeProtoEnum {
   GITOPS_CREATE_PR = 78;
   COMMAND_STEP = 79;
   STRATEGY_NODE = 80;
-
 }

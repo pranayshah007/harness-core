@@ -303,7 +303,8 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
   public void testFetchConfigFileAndPrepareScriptDir() throws IOException {
     ClassLoader classLoader = TerraformBaseHelperImplTest.class.getClassLoader();
 
-    List<EncryptedDataDetail> encryptedDataDetails = Collections.singletonList(mock(EncryptedDataDetail.class));
+    EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().fieldName("fieldName").build();
+    List<EncryptedDataDetail> encryptedDataDetails = Collections.singletonList(encryptedDataDetail);
     ArtifactoryUsernamePasswordAuthDTO credentials = ArtifactoryUsernamePasswordAuthDTO.builder().build();
     ArtifactoryConnectorDTO artifactoryConnectorDTO =
         ArtifactoryConnectorDTO.builder()
@@ -535,7 +536,8 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
     FileIo.createDirectoryIfDoesNotExist(tfvarDir);
     ClassLoader classLoader = TerraformBaseHelperImplTest.class.getClassLoader();
 
-    List<EncryptedDataDetail> encryptedDataDetails = Collections.singletonList(mock(EncryptedDataDetail.class));
+    EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().fieldName("fieldName").build();
+    List<EncryptedDataDetail> encryptedDataDetails = Collections.singletonList(encryptedDataDetail);
     ArtifactoryUsernamePasswordAuthDTO credentials = ArtifactoryUsernamePasswordAuthDTO.builder().build();
     ArtifactoryConnectorDTO artifactoryConnectorDTO =
         ArtifactoryConnectorDTO.builder()
@@ -579,7 +581,8 @@ public class TerraformBaseHelperImplTest extends CategoryTest {
     FileIo.createDirectoryIfDoesNotExist(tfvarDir);
     ClassLoader classLoader = TerraformBaseHelperImplTest.class.getClassLoader();
 
-    List<EncryptedDataDetail> encryptedDataDetails = Collections.singletonList(mock(EncryptedDataDetail.class));
+    EncryptedDataDetail encryptedDataDetail = EncryptedDataDetail.builder().fieldName("fieldName").build();
+    List<EncryptedDataDetail> encryptedDataDetails = Collections.singletonList(encryptedDataDetail);
     ArtifactoryUsernamePasswordAuthDTO credentials = ArtifactoryUsernamePasswordAuthDTO.builder().build();
     ArtifactoryConnectorDTO artifactoryConnectorDTO =
         ArtifactoryConnectorDTO.builder()

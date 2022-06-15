@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.security.encryption.EncryptedDataDetail;
 
@@ -41,6 +42,7 @@ public class CloudFormationDeleteStackHandler extends CloudFormationCommandTaskH
     CloudFormationCommandExecutionResponseBuilder builder = CloudFormationCommandExecutionResponse.builder();
     AwsConfig awsConfig = cloudFormationDeleteStackRequest.getAwsConfig();
     encryptionService.decrypt(awsConfig, details, false);
+    ExceptionMessageSanitizer.storeAllSecretsForSanitizing(awsConfig, details);
     Optional<Stack> existingStack = getIfStackExists(cloudFormationDeleteStackRequest.getCustomStackName(),
         cloudFormationDeleteStackRequest.getStackNameSuffix(),
         AwsConfigToInternalMapper.toAwsInternalConfig(cloudFormationDeleteStackRequest.getAwsConfig()),
