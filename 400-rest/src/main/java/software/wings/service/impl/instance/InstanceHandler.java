@@ -63,6 +63,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
@@ -286,6 +287,9 @@ public abstract class InstanceHandler {
                 instancesInDb.get(0).getServiceId(), deploymentSummary.getInfraMappingId());
         if (lastSuccessfulWE != null) {
           List<Artifact> lastArtifacts = lastSuccessfulWE.getArtifacts();
+          lastArtifacts = lastArtifacts.stream()
+                              .filter(a -> a.getServiceIds().contains(instancesInDb.get(0).getServiceId()))
+                              .collect(Collectors.toList());
           if (lastArtifacts != null) {
             if (!lastArtifacts.isEmpty()) {
               // Copy Artifact Information for rollback version in previous successful workflow execution
