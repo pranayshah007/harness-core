@@ -10,7 +10,9 @@ package io.harness.serializer;
 import static java.lang.String.format;
 
 import io.harness.reflection.CodeUtils;
+import io.harness.serializer.kryo.KryoPoolConfiguration;
 
+import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.Registration;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
@@ -25,7 +27,10 @@ import java.io.OutputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
+import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.InflaterInputStream;
 import lombok.extern.slf4j.Slf4j;
@@ -54,9 +59,21 @@ public class KryoSerializer {
   private final KryoPool pool;
   private final boolean skipHarnessClassOriginRegistrarCheck;
 
+  /**
+   * Create an instance using injected {@link KryoPoolConfiguration}.
+   */
   @Inject
+  public KryoSerializer(Set<Class<? extends KryoRegistrar>> registrars, KryoPoolConfiguration kpConfig) {
+    this(registrars, kpConfig, false);
+  }
+
+  /**
+   * Create an instance using default {@link KryoPoolConfiguration} values; An unbounded queue is one of them.
+   *
+   * Useful to keep previous behavior.
+   */
   public KryoSerializer(Set<Class<? extends KryoRegistrar>> registrars) {
-    this(registrars, false);
+    this(registrars, KryoPoolConfiguration.builder().queueCapacity(0).build());
   }
 
   /**
@@ -67,8 +84,26 @@ public class KryoSerializer {
    */
   @VisibleForTesting
   public KryoSerializer(Set<Class<? extends KryoRegistrar>> registrars, boolean skipHarnessClassOriginRegistrarCheck) {
-    this.pool = new KryoPool.Builder(() -> kryo(registrars)).softReferences().build();
+    this(registrars, KryoPoolConfiguration.builder().queueCapacity(0).build(), skipHarnessClassOriginRegistrarCheck);
+  }
+
+  private KryoSerializer(Set<Class<? extends KryoRegistrar>> registrars, KryoPoolConfiguration kpConfig,
+      boolean skipHarnessClassOriginRegistrarCheck) {
+    this.pool = new KryoPool.Builder(() -> kryo(registrars)).queue(createQueue(kpConfig)).softReferences().build();
     this.skipHarnessClassOriginRegistrarCheck = skipHarnessClassOriginRegistrarCheck;
+  }
+
+  /**
+   * Create a bounded queue using an {@link ArrayBlockingQueue} when queue capacity is great than zero. Otherwise create
+   * an unbounded of {@link ConcurrentLinkedQueue}
+   */
+  Queue<Kryo> createQueue(KryoPoolConfiguration kpConfig) {
+    log.info("Queue capacity set to {}", kpConfig.getQueueCapacity());
+    if (kpConfig.getQueueCapacity() > 0) {
+      return new ArrayBlockingQueue<>(kpConfig.getQueueCapacity());
+    } else {
+      return new ConcurrentLinkedQueue<>();
+    }
   }
 
   private HKryo kryo(Collection<Class<? extends KryoRegistrar>> registrars) {

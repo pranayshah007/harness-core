@@ -1010,3 +1010,7 @@ fi
 if [[ "" != "$DELEGATE_MTLS_SUBDOMAIN" ]]; then
   yq write -i $CONFIG_FILE delegateMtlsSubdomain "$DELEGATE_MTLS_SUBDOMAIN"
 fi
+
+if [[ "" != "$KRYO_POOL_QUEUE_CAPACITY" ]]; then
+ yq write -i config.yml kryoPool.queueCapacity "$KRYO_POOL_QUEUE_CAPACITY"
+fi

@@ -46,6 +46,7 @@ import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.scheduler.SchedulerConfig;
 import io.harness.secret.ConfigSecret;
 import io.harness.secret.SecretsConfiguration;
+import io.harness.serializer.kryo.KryoPoolConfiguration;
 import io.harness.stream.AtmosphereBroadcaster;
 import io.harness.swagger.SwaggerBundleConfigurationFactory;
 import io.harness.telemetry.segment.SegmentConfiguration;
@@ -228,6 +229,7 @@ public class MainConfiguration extends Configuration implements AssetsBundleConf
   @JsonProperty("eventListenersCountConfig") private EventListenersCountConfig eventListenersCountConfig;
   @JsonProperty(value = "useGlobalKMSAsBaseAlgo", defaultValue = "false") private boolean useGlobalKMSAsBaseAlgo;
   @JsonProperty("totp") private TotpConfig totpConfig;
+  @JsonProperty("kryoPool") private KryoPoolConfiguration kryoPoolConfig;
 
   private int applicationPort;
   private boolean sslEnabled;

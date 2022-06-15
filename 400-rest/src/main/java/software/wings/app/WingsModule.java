@@ -216,6 +216,7 @@ import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.seeddata.SampleDataProviderService;
 import io.harness.seeddata.SampleDataProviderServiceImpl;
 import io.harness.serializer.YamlUtils;
+import io.harness.serializer.kryo.KryoPoolConfiguration;
 import io.harness.service.CgEventHelper;
 import io.harness.service.DelegateServiceDriverModule;
 import io.harness.service.EventConfigService;
@@ -1760,5 +1761,15 @@ public class WingsModule extends AbstractModule implements ServersModule {
   @Singleton
   public ObjectMapper getYamlSchemaObjectMapperWithoutNamed() {
     return Jackson.newObjectMapper();
+  }
+
+  @Provides
+  public KryoPoolConfiguration kryoPoolConfiguration() {
+    KryoPoolConfiguration kpConfig = configuration.getKryoPoolConfig();
+    if (kpConfig == null) {
+      log.warn("Kryo pool configuration not set, switching to default values");
+      kpConfig = KryoPoolConfiguration.builder().build();
+    }
+    return kpConfig;
   }
 }
