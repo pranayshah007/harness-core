@@ -193,6 +193,8 @@ github.com/drone/go-scm v1.23.1 h1:JL27huaUPBodZQosOPQwofeyRnm/DU5d5iVvD9w5k+o=
 github.com/drone/go-scm v1.23.1/go.mod h1:DFIJJjhMj0TSXPz+0ni4nyZ9gtTtC40Vh/TGRugtyWw=
 github.com/drone/go-scm v1.24.0 h1:wE6bP9gnuyyKJStnl6wl0npt/SBQumjE9jilQAcFy6Q=
 github.com/drone/go-scm v1.24.0/go.mod h1:DFIJJjhMj0TSXPz+0ni4nyZ9gtTtC40Vh/TGRugtyWw=
+github.com/drone/go-scm v1.25.0 h1:Ui2Ums/NTZMyK+WV+DVEyS3F2pajuhP6qpRXJNUIqok=
+github.com/drone/go-scm v1.25.0/go.mod h1:DFIJJjhMj0TSXPz+0ni4nyZ9gtTtC40Vh/TGRugtyWw=
 github.com/drone/go-scm-codecommit v0.0.0-20210315104920-2d8b9dc5ed8a h1:0i0YKhLdfnUvtB7UZstfbDslmhh1DXR+z3JsrNSwsG4=
 github.com/drone/go-scm-codecommit v0.0.0-20210315104920-2d8b9dc5ed8a/go.mod h1:NzMbLgUts8cAxLwSxMKRGESCkBON514HiEjxcA8VIgM=
 github.com/dustin/go-humanize v0.0.0-20171111073723-bb3d318650d4/go.mod h1:HtrtbFcZ19U5GC7JDqmcUSB87Iq5E25KnS6fMYU6eOk=
@@ -364,6 +366,7 @@ github.com/grpc-ecosystem/grpc-gateway v1.9.5/go.mod h1:vNeuVxBJEsws4ogUvrchl83t
 github.com/grpc-ecosystem/grpc-gateway v1.16.0/go.mod h1:BDjrQk3hbvj6Nolgz8mAMFbcEtjT1g+wF4CSlocrBnw=
 github.com/h2non/gock v1.0.9 h1:17gCehSo8ZOgEsFKpQgqHiR7VLyjxdAG3lkhVvO9QZU=
 github.com/h2non/gock v1.0.9/go.mod h1:CZMcB0Lg5IWnr9bF79pPMg9WeV6WumxQiUJ1UvdO1iE=
+github.com/harness/harness-core/commons/go/lib v0.0.0-20220222141117-7659b7eca599/go.mod h1:qdIXmYz6NMV8X7IV8Pfn/n/966DeC6N8GIH1x+1MkFk=
 github.com/hashicorp/consul/api v1.3.0/go.mod h1:MmDNSzIMUjNpY/mQ398R4bk2FnqQLoPndWW5VkKPlCE=
 github.com/hashicorp/consul/sdk v0.3.0/go.mod h1:VKf9jXwCTEY1QZP2MOLRhb5i/I/ssyNV1vwHyQBF0x8=
 github.com/hashicorp/errwrap v1.0.0/go.mod h1:YH+1FKiLXxHSkmPseP+kNlulaMuP3n2brvKWEqk/Jc4=
