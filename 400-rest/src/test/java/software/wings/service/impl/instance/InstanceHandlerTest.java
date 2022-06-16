@@ -26,13 +26,11 @@ import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
 import software.wings.beans.InfrastructureMappingType;
-import software.wings.service.intfc.WorkflowExecutionService;
 
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
-import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
@@ -40,8 +38,6 @@ import org.mockito.Spy;
 public class InstanceHandlerTest extends WingsBaseTest {
   @Spy InstanceUtils instanceUtil;
   @InjectMocks InstanceHandler instanceHandler = mock(InstanceHandler.class, Mockito.CALLS_REAL_METHODS);
-  @Mock private WorkflowExecutionService workflowExecutionService;
-
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
