@@ -1688,6 +1688,11 @@
 55318:io.harness.delegate.task.ssh.config.FileDelegateConfig
 55319:io.harness.delegate.beans.storeconfig.HarnessStoreDelegateConfig
 55320:io.harness.delegate.task.ssh.config.ConfigFileParameters
+55321:io.harness.delegate.task.azure.appservice.webapp.ng.request.AzureWebAppSlotDeploymentRequest
+55322:io.harness.delegate.task.azure.appservice.webapp.ng.response.AzureWebAppSlotDeploymentResponse
+55323:io.harness.delegate.task.azure.artifact.AzureArtifactConfig
+55324:io.harness.delegate.task.azure.artifact.AzureArtifactType
+55325:io.harness.delegate.task.azure.artifact.AzureContainerArtifactConfig
 70001:io.harness.accesscontrol.commons.exceptions.AccessDeniedErrorDTO
 70002:io.harness.accesscontrol.acl.api.PermissionCheckDTO
 70003:io.harness.accesscontrol.acl.api.ResourceScope

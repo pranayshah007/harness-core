@@ -23,7 +23,7 @@ public class CDCreatorUtils {
     return Collections.emptySet();
   }
   public Set<String> getSupportedStepsV2() {
-    return Sets.newHashSet(StepSpecTypeConstants.GITOPS_CREATE_PR, StepSpecTypeConstants.K8S_CANARY_DEPLOY,
+    return Sets.newHashSet(StepSpecTypeConstants.GITOPS_CREATE_PR, StepSpecTypeConstants.GITOPS_MERGE_PR, StepSpecTypeConstants.K8S_CANARY_DEPLOY,
         StepSpecTypeConstants.K8S_APPLY, StepSpecTypeConstants.K8S_BLUE_GREEN_DEPLOY,
         StepSpecTypeConstants.K8S_ROLLING_DEPLOY, StepSpecTypeConstants.K8S_ROLLING_ROLLBACK,
         StepSpecTypeConstants.K8S_SCALE, StepSpecTypeConstants.K8S_DELETE, StepSpecTypeConstants.K8S_BG_SWAP_SERVICES,

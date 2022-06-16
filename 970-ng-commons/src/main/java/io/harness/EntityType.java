@@ -33,6 +33,8 @@ public enum EntityType {
   @JsonProperty(EntityTypeConstants.GITOPS_CREATE_PR)
   GITOPS_CREATE_PR(
       ModuleType.CD, EntityTypeConstants.GITOPS_CREATE_PR, IdentifierRef.class, EntityYamlRootNames.GITOPS_CREATE_PR),
+  GITOPS_MERGE_PR(
+      ModuleType.CD, EntityTypeConstants.GITOPS_MERGE_PR, IdentifierRef.class, EntityYamlRootNames.GITOPS_MERGE_PR),
   @JsonProperty(EntityTypeConstants.PROJECTS)
   PROJECTS(ModuleType.CORE, EntityTypeConstants.PROJECTS, IdentifierRef.class, EntityYamlRootNames.PROJECT),
   @JsonProperty(EntityTypeConstants.PIPELINES)

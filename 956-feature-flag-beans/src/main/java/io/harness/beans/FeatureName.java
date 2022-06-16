@@ -376,6 +376,7 @@ public enum FeatureName {
   TI_DOTNET,
   CVNG_SPLUNK_METRICS,
   AUTO_FREE_MODULE_LICENSE,
+  SRM_LICENSE_ENABLED,
   AZURE_WEBAPP_NG;
 
   FeatureName() {

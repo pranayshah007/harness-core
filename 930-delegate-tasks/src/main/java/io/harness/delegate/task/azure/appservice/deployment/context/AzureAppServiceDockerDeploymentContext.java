@@ -24,6 +24,7 @@ import lombok.EqualsAndHashCode;
 public class AzureAppServiceDockerDeploymentContext extends AzureAppServiceDeploymentContext {
   private String imagePathAndTag;
   private Map<String, AzureAppServiceApplicationSetting> dockerSettings;
+  private boolean skipTargetSlotValidation;
 
   @Builder
   public AzureAppServiceDockerDeploymentContext(AzureWebClientContext azureWebClientContext,
@@ -32,11 +33,12 @@ public class AzureAppServiceDockerDeploymentContext extends AzureAppServiceDeplo
       Map<String, AzureAppServiceConnectionString> connSettingsToAdd,
       Map<String, AzureAppServiceConnectionString> connSettingsToRemove,
       Map<String, AzureAppServiceApplicationSetting> dockerSettings, String imagePathAndTag, String slotName,
-      String targetSlotName, String startupCommand, int steadyStateTimeoutInMin) {
+      String targetSlotName, String startupCommand, int steadyStateTimeoutInMin, boolean skipTargetSlotValidation) {
     super(azureWebClientContext, logCallbackProvider, appSettingsToAdd, appSettingsToRemove, connSettingsToAdd,
         connSettingsToRemove, slotName, targetSlotName, startupCommand, steadyStateTimeoutInMin);
     this.dockerSettings = dockerSettings;
     this.imagePathAndTag = imagePathAndTag;
+    this.skipTargetSlotValidation = skipTargetSlotValidation;
   }
 
   @Override

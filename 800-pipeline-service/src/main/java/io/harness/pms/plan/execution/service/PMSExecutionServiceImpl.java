@@ -26,6 +26,7 @@ import io.harness.execution.StagesExecutionMetadata;
 import io.harness.filter.FilterType;
 import io.harness.filter.dto.FilterDTO;
 import io.harness.filter.service.FilterService;
+import io.harness.gitaware.helper.GitAwareEntityHelper;
 import io.harness.gitsync.sdk.EntityGitDetails;
 import io.harness.interrupts.Interrupt;
 import io.harness.ng.core.common.beans.NGTag;
@@ -162,10 +163,14 @@ public class PMSExecutionServiceImpl implements PMSExecutionService {
       Criteria gitCriteriaNew = Criteria
                                     .where(PlanExecutionSummaryKeys.entityGitDetails + "."
                                         + "branch")
-                                    .is(entityGitDetails.getBranch())
-                                    .and(PlanExecutionSummaryKeys.entityGitDetails + "."
-                                        + "repoIdentifier")
-                                    .is(entityGitDetails.getRepoIdentifier());
+                                    .is(entityGitDetails.getBranch());
+      if (entityGitDetails.getRepoIdentifier() != null
+          && !entityGitDetails.getRepoIdentifier().equals(GitAwareEntityHelper.DEFAULT)) {
+        gitCriteriaNew
+            .and(PlanExecutionSummaryKeys.entityGitDetails + "."
+                + "repoIdentifier")
+            .is(entityGitDetails.getRepoIdentifier());
+      }
       gitCriteria.orOperator(gitCriteriaDeprecated, gitCriteriaNew);
     }
 
