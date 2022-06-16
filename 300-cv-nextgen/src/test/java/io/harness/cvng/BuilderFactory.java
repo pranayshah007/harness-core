@@ -99,6 +99,8 @@ import io.harness.cvng.core.entities.PrometheusCVConfig;
 import io.harness.cvng.core.entities.PrometheusCVConfig.PrometheusCVConfigBuilder;
 import io.harness.cvng.core.entities.SplunkCVConfig;
 import io.harness.cvng.core.entities.SplunkCVConfig.SplunkCVConfigBuilder;
+import io.harness.cvng.core.entities.SplunkMetricCVConfig;
+import io.harness.cvng.core.entities.SplunkMetricCVConfig.SplunkMetricCVConfigBuilder;
 import io.harness.cvng.core.entities.StackdriverCVConfig;
 import io.harness.cvng.core.entities.StackdriverCVConfig.StackdriverCVConfigBuilder;
 import io.harness.cvng.core.entities.StackdriverLogCVConfig;
@@ -421,6 +423,17 @@ public class BuilderFactory {
 
   public PrometheusCVConfigBuilder prometheusCVConfigBuilder() {
     return PrometheusCVConfig.builder()
+        .accountId(context.getAccountId())
+        .orgIdentifier(context.getOrgIdentifier())
+        .projectIdentifier(context.getProjectIdentifier())
+        .monitoredServiceIdentifier(context.getMonitoredServiceIdentifier())
+        .connectorIdentifier("connectorRef")
+        .identifier(context.getMonitoredServiceIdentifier() + "/" + generateUuid())
+        .category(CVMonitoringCategory.PERFORMANCE);
+  }
+
+  public SplunkMetricCVConfigBuilder splunkMetricCVConfigBuilder() {
+    return SplunkMetricCVConfig.builder()
         .accountId(context.getAccountId())
         .orgIdentifier(context.getOrgIdentifier())
         .projectIdentifier(context.getProjectIdentifier())

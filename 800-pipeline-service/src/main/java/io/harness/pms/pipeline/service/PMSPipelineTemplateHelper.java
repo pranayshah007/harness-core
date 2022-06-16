@@ -110,7 +110,7 @@ public class PMSPipelineTemplateHelper {
             System.currentTimeMillis() - start, projectId, orgId, accountId);
       }
     }
-    return TemplateMergeResponseDTO.builder().mergedPipelineYaml(yaml).build();
+    return TemplateMergeResponseDTO.builder().mergedPipelineYaml(yaml).mergedPipelineYamlWithTemplateRef(yaml).build();
   }
 
   public List<EntityDetailProtoDTO> getTemplateReferencesForGivenYaml(

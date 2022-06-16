@@ -191,7 +191,7 @@ public class K8InitializeStepUtils {
     }
   }
 
-  private void validateStepType(CIStepInfoType stepType, OSType os) {
+  public void validateStepType(CIStepInfoType stepType, OSType os) {
     if (os != OSType.Windows) {
       return;
     }

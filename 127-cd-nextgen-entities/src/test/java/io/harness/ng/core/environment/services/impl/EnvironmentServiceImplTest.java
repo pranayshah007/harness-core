@@ -10,13 +10,11 @@ package io.harness.ng.core.environment.services.impl;
 import static io.harness.rule.OwnerRule.ARCHIT;
 import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.YOGESH;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -31,7 +29,6 @@ import io.harness.ng.core.environment.dto.EnvironmentResponseDTO;
 import io.harness.ng.core.environment.mappers.EnvironmentMapper;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
-import io.harness.outbox.api.OutboxService;
 import io.harness.repositories.UpsertOptions;
 import io.harness.rule.Owner;
 import io.harness.utils.NGFeatureFlagHelperService;
@@ -49,6 +46,7 @@ import org.joor.Reflect;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -57,17 +55,13 @@ import org.springframework.data.mongodb.core.query.Criteria;
 @OwnedBy(HarnessTeam.CDC)
 public class EnvironmentServiceImplTest extends CDNGEntitiesTestBase {
   @Mock private InfrastructureEntityService infrastructureEntityService;
-  @Mock private OutboxService outboxService;
   @Mock private NGFeatureFlagHelperService featureFlagHelperService;
   @Mock private ClusterService clusterService;
-  @Inject private EnvironmentServiceImpl environmentService;
+  @Inject @InjectMocks private EnvironmentServiceImpl environmentService;
 
   @Before
   public void setUp() throws Exception {
     Reflect.on(environmentService).set("ngFeatureFlagHelperService", featureFlagHelperService);
-    Reflect.on(environmentService).set("outboxService", outboxService);
-    Reflect.on(environmentService).set("infrastructureEntityService", infrastructureEntityService);
-    Reflect.on(environmentService).set("clusterService", clusterService);
   }
 
   @Test
@@ -329,8 +323,6 @@ public class EnvironmentServiceImplTest extends CDNGEntitiesTestBase {
     Optional<Environment> deletedEnvironment =
         environmentService.get("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", "UPDATED_ENV", false);
     assertThat(deletedEnvironment.isPresent()).isFalse();
-
-    verify(outboxService, times(5)).save(any());
   }
 
   @Test
@@ -358,8 +350,6 @@ public class EnvironmentServiceImplTest extends CDNGEntitiesTestBase {
     Environment upsertedEnv = environmentService.upsert(upsertRequest, UpsertOptions.DEFAULT.withNoOutbox());
 
     assertThat(upsertedEnv).isNotNull();
-
-    verify(outboxService, times(1)).save(any());
   }
 
   @Test

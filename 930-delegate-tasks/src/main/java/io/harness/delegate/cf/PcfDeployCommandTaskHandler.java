@@ -38,6 +38,7 @@ import io.harness.delegate.task.pcf.response.CfCommandExecutionResponse;
 import io.harness.delegate.task.pcf.response.CfDeployCommandResponse;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidArgumentsException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.filesystem.FileIo;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
@@ -98,6 +99,7 @@ public class PcfDeployCommandTaskHandler extends PcfCommandTaskHandler {
 
       CfInternalConfig pcfConfig = cfCommandRequest.getPcfConfig();
       secretDecryptionService.decrypt(pcfConfig, encryptedDataDetails, false);
+      ExceptionMessageSanitizer.storeAllSecretsForSanitizing(pcfConfig, encryptedDataDetails);
 
       CfRequestConfig cfRequestConfig = getCfRequestConfig(cfCommandDeployRequest, pcfConfig);
 
@@ -158,8 +160,8 @@ public class PcfDeployCommandTaskHandler extends PcfCommandTaskHandler {
 
     } catch (Exception e) {
       exceptionOccured = true;
-      exception = e;
-      logException(executionLogCallback, cfCommandDeployRequest, exception);
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
+      logException(executionLogCallback, cfCommandDeployRequest, sanitizedException);
     } finally {
       try {
         if (workingDirectory != null) {

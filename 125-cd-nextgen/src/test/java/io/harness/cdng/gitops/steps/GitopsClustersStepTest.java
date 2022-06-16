@@ -122,10 +122,9 @@ public class GitopsClustersStepTest extends CategoryTest {
                           .pageSize(2)
                           .filter(ImmutableMap.of("identifier", ImmutableMap.of("$in", ImmutableSet.of("c1", "c2"))))
                           .build());
-    doReturn(Response.success(PageResponse.builder()
-                                  .content(asList(Cluster.builder().identifier("c1").name("c1-name").build(),
-                                      Cluster.builder().identifier("c2").name("c2-name").build()))
-                                  .build()))
+    doReturn(
+        Response.success(
+            PageResponse.builder().content(asList(new Cluster("c1", "c1-name"), new Cluster("c2", "c2-name"))).build()))
         .when(rmock1)
         .execute();
 
@@ -142,10 +141,9 @@ public class GitopsClustersStepTest extends CategoryTest {
                 .pageSize(3)
                 .filter(ImmutableMap.of("identifier", ImmutableMap.of("$in", ImmutableSet.of("c3", "c4", "c5"))))
                 .build());
-    doReturn(Response.success(PageResponse.builder()
-                                  .content(asList(Cluster.builder().identifier("c3").name("c3-name").build(),
-                                      Cluster.builder().identifier("c4").name("c4-name").build()))
-                                  .build()))
+    doReturn(
+        Response.success(
+            PageResponse.builder().content(asList(new Cluster("c3", "c3-name"), new Cluster("c4", "c4-name"))).build()))
         .when(rmock2)
         .execute();
 
@@ -162,10 +160,8 @@ public class GitopsClustersStepTest extends CategoryTest {
                               "identifier", ImmutableMap.of("$in", ImmutableSet.of("c3", "c4", "c5", "c1", "c2"))))
                           .build());
     doReturn(Response.success(PageResponse.builder()
-                                  .content(asList(Cluster.builder().identifier("c1").name("c1-name").build(),
-                                      Cluster.builder().identifier("c2").name("c2-name").build(),
-                                      Cluster.builder().identifier("c3").name("c3-name").build(),
-                                      Cluster.builder().identifier("c4").name("c4-name").build()))
+                                  .content(asList(new Cluster("c1", "c1-name"), new Cluster("c2", "c2-name"),
+                                      new Cluster("c3", "c3-name"), new Cluster("c4", "c4-name")))
                                   .build()))
         .when(rmock3)
         .execute();
@@ -181,9 +177,7 @@ public class GitopsClustersStepTest extends CategoryTest {
                           .pageSize(1)
                           .filter(ImmutableMap.of("identifier", ImmutableMap.of("$in", ImmutableSet.of("c4"))))
                           .build());
-    doReturn(
-        Response.success(
-            PageResponse.builder().content(asList(Cluster.builder().identifier("c4").name("c4-name").build())).build()))
+    doReturn(Response.success(PageResponse.builder().content(asList(new Cluster("c4", "c4-name"))).build()))
         .when(rmock4)
         .execute();
   }

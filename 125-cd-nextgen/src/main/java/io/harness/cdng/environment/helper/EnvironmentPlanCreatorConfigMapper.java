@@ -10,6 +10,8 @@ package io.harness.cdng.environment.helper;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.envGroup.beans.EnvironmentGroupConfig;
+import io.harness.cdng.envGroup.mappers.EnvironmentGroupMapper;
 import io.harness.cdng.environment.yaml.EnvironmentPlanCreatorConfig;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.gitops.yaml.ClusterYaml;
@@ -49,18 +51,16 @@ public class EnvironmentPlanCreatorConfigMapper {
 
   public EnvironmentPlanCreatorConfig toEnvPlanCreatorConfigWithGitops(
       String mergedEnvYaml, EnvironmentYamlV2 envYaml, NGServiceOverrides serviceOverride) {
-    NGEnvironmentInfoConfig ngEnvironmentInfoConfig =
-        EnvironmentMapper.toNGEnvironmentConfig(mergedEnvYaml).getNgEnvironmentInfoConfig();
+    EnvironmentGroupConfig environmentGroupConfig =
+        EnvironmentGroupMapper.toNGEnvironmentGroupConfig(mergedEnvYaml).getEnvironmentGroupConfig();
     return EnvironmentPlanCreatorConfig.builder()
         .environmentRef(envYaml.getEnvironmentRef())
-        .identifier(ngEnvironmentInfoConfig.getIdentifier())
-        .projectIdentifier(ngEnvironmentInfoConfig.getProjectIdentifier())
-        .orgIdentifier(ngEnvironmentInfoConfig.getOrgIdentifier())
-        .description(ngEnvironmentInfoConfig.getDescription())
-        .name(ngEnvironmentInfoConfig.getName())
-        .tags(ngEnvironmentInfoConfig.getTags())
-        .type(ngEnvironmentInfoConfig.getType())
-        .variables(ngEnvironmentInfoConfig.getVariables())
+        .identifier(environmentGroupConfig.getIdentifier())
+        .projectIdentifier(environmentGroupConfig.getProjectIdentifier())
+        .orgIdentifier(environmentGroupConfig.getOrgIdentifier())
+        .description(environmentGroupConfig.getDescription())
+        .name(environmentGroupConfig.getName())
+        .tags(environmentGroupConfig.getTags())
         .serviceOverrides(serviceOverride)
         .gitOpsClusterRefs(getClusterRefs(envYaml))
         .deployToAll(envYaml.isDeployToAll())

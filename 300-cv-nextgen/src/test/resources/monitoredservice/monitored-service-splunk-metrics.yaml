@@ -1,0 +1,27 @@
+---
+orgIdentifier: cvng_org_gc5qeLWq1W
+projectIdentifier: cvng_proj_fve79nRfOe
+identifier: MSIdentifier
+name: promeTest
+type: Application
+description: ''
+serviceRef: cvng_service_UxrHvd7oNa
+environmentRef: cvng_env_prod_NWceMzD9XM
+tags: {}
+sources:
+  healthSources:
+    - name: test
+      identifier: test
+      type: SplunkMetric
+      spec:
+        connectorRef: splunk
+        feature: Splunk Metric
+        metricDefinitions:
+          - query: index=polakpotrafi-events source=udp:5072 sourcetype=syslog status<400 | bucket _time span=1m | stats avg(response_time) as value by _time | rename _time as time | fields time value
+            identifier: splunk_response_time
+            groupName: splunkMetricGroup
+            metricName: splunk response time
+            sli:
+              enabled: true
+  changeSources: []
+dependencies: []

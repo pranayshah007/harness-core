@@ -72,9 +72,9 @@ public class EnvironmentPlanCreatorConfigMapperTest extends CategoryTest {
   @Owner(developers = OwnerRule.YOGESH)
   @Category(UnitTests.class)
   public void testToEnvPlanCreatorConfigWithGitops() {
-    String envYaml = "environment:\n"
-        + " name: \"env_name\"\n"
-        + " identifier: \"envId\"\n"
+    String envYaml = "environmentGroup:\n"
+        + " name: \"name\"\n"
+        + " identifier: \"envGroupId\"\n"
         + " type: \"Production\"\n"
         + " tags:\n"
         + "   k: \"v\"\n"
@@ -91,14 +91,13 @@ public class EnvironmentPlanCreatorConfigMapperTest extends CategoryTest {
     EnvironmentPlanCreatorConfig config = toEnvPlanCreatorConfigWithGitops(envYaml, envV2, null);
 
     assertThat(config.getEnvironmentRef().getValue()).isEqualTo("envId");
-    assertThat(config.getIdentifier()).isEqualTo("envId");
+    assertThat(config.getIdentifier()).isEqualTo("envGroupId");
     assertThat(config.getProjectIdentifier()).isEqualTo("projId");
     assertThat(config.getOrgIdentifier()).isEqualTo("orgId");
     assertThat(config.getDescription()).isEqualTo(null);
-    assertThat(config.getName()).isEqualTo("env_name");
+    assertThat(config.getName()).isEqualTo("name");
     assertThat(config.getTags()).hasSize(1);
     assertThat(config.getTags().get("k")).isEqualTo("v");
-    assertThat(config.getType()).isEqualTo(EnvironmentType.Production);
     assertThat(config.getInfrastructureDefinitions()).isNull();
     assertThat(config.getGitOpsClusterRefs()).hasSize(1).containsExactly("c1");
     assertThat(config.isDeployToAll()).isFalse();
@@ -108,10 +107,9 @@ public class EnvironmentPlanCreatorConfigMapperTest extends CategoryTest {
   @Owner(developers = OwnerRule.YOGESH)
   @Category(UnitTests.class)
   public void testToEnvPlanCreatorConfigWithGitopsDeployAll() {
-    String envYaml = "environment:\n"
-        + " name: \"env_name\"\n"
-        + " identifier: \"envId\"\n"
-        + " type: \"Production\"\n"
+    String envGroupYaml = "environmentGroup:\n"
+        + " name: \"name\"\n"
+        + " identifier: \"envGroupId\"\n"
         + " tags:\n"
         + "   k: \"v\"\n"
         + " accountId: \"accId\"\n"
@@ -124,17 +122,16 @@ public class EnvironmentPlanCreatorConfigMapperTest extends CategoryTest {
 
     NGServiceOverrides serviceOverride = NGServiceOverrides.builder().serviceRef("ref").build();
 
-    EnvironmentPlanCreatorConfig config = toEnvPlanCreatorConfigWithGitops(envYaml, envV2, serviceOverride);
+    EnvironmentPlanCreatorConfig config = toEnvPlanCreatorConfigWithGitops(envGroupYaml, envV2, serviceOverride);
 
     assertThat(config.getEnvironmentRef().getValue()).isEqualTo("envId");
-    assertThat(config.getIdentifier()).isEqualTo("envId");
+    assertThat(config.getIdentifier()).isEqualTo("envGroupId");
     assertThat(config.getProjectIdentifier()).isEqualTo("projId");
     assertThat(config.getOrgIdentifier()).isEqualTo("orgId");
     assertThat(config.getDescription()).isEqualTo(null);
-    assertThat(config.getName()).isEqualTo("env_name");
+    assertThat(config.getName()).isEqualTo("name");
     assertThat(config.getTags()).hasSize(1);
     assertThat(config.getTags().get("k")).isEqualTo("v");
-    assertThat(config.getType()).isEqualTo(EnvironmentType.Production);
     assertThat(config.getInfrastructureDefinitions()).isNull();
     assertThat(config.getGitOpsClusterRefs()).hasSize(0);
     assertThat(config.isDeployToAll()).isTrue();

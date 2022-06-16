@@ -5429,6 +5429,10 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
         fetchLastSuccessDeployment(workflowExecution, infraMappingList, isInfraBasedArtifact);
     if (lastGoodWorkflowExecution != null && lastGoodWorkflowExecution.getArtifacts() != null) {
       return lastGoodWorkflowExecution.getArtifacts();
+    } else {
+      log.info(
+          "Rollback artifacts could be null, not found last good deployed artifacts [workflowExecution={},infraMapping={}]",
+          workflowExecution, infraMappingList);
     }
     return new ArrayList<>();
   }

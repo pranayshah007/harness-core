@@ -15,6 +15,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.task.spotinst.request.SpotInstListElastigroupInstancesParameters;
 import io.harness.delegate.task.spotinst.response.SpotInstTaskExecutionResponse;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.grpc.utils.AnyUtils;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.managerclient.DelegateAgentManagerClient;
@@ -63,7 +64,7 @@ public class SpotinstAmiInstanceSyncDelegateExecutor implements PerpetualTaskExe
     } catch (Exception ex) {
       log.error(
           "Failed to publish the instance sync collection result to manager for elastigroup id {} and perpetual task {}",
-          taskParams.getElastigroupId(), taskId.getId(), ex);
+          taskParams.getElastigroupId(), taskId.getId(), ExceptionMessageSanitizer.sanitizeException(ex));
     }
 
     return getPerpetualTaskResponse(instanceSyncResponse);
@@ -82,7 +83,9 @@ public class SpotinstAmiInstanceSyncDelegateExecutor implements PerpetualTaskExe
         (List<EncryptedDataDetail>) kryoSerializer.asObject(taskParams.getSpotinstEncryptedData().toByteArray());
 
     encryptionService.decrypt(awsConfig, awsEncryptedDataDetails, true);
+    ExceptionMessageSanitizer.storeAllSecretsForSanitizing(awsConfig, awsEncryptedDataDetails);
     encryptionService.decrypt(spotInstConfig, spotinstEncryptedDataDetails, true);
+    ExceptionMessageSanitizer.storeAllSecretsForSanitizing(spotInstConfig, spotinstEncryptedDataDetails);
 
     SpotInstListElastigroupInstancesParameters params = SpotInstListElastigroupInstancesParameters.builder()
                                                             .elastigroupId(taskParams.getElastigroupId())
@@ -92,10 +95,12 @@ public class SpotinstAmiInstanceSyncDelegateExecutor implements PerpetualTaskExe
     try {
       return taskHandler.executeTask(params, spotInstConfig, awsConfig);
     } catch (Exception ex) {
-      log.error("Failed to execute instance sync task for elastigroup id {}", taskParams.getElastigroupId(), ex);
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(ex);
+      log.error("Failed to execute instance sync task for elastigroup id {}", taskParams.getElastigroupId(),
+          sanitizedException);
       return SpotInstTaskExecutionResponse.builder()
           .commandExecutionStatus(CommandExecutionStatus.FAILURE)
-          .errorMessage(ex.getMessage())
+          .errorMessage(sanitizedException.getMessage())
           .build();
     }
   }

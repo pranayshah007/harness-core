@@ -260,7 +260,7 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
             .build());
   }
 
-  public JSONObject mapToJson(Map<String, String> stringMap) {
+  public JSONObject mapToJson(Map<String, Object> stringMap) {
     JSONObject fieldsToUpdate = new JSONObject(stringMap);
     JSONObject nestedFields = new JSONObject();
 
@@ -317,8 +317,7 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
 
   public void updateFiles(NGGitOpsTaskParams gitOpsTaskParams, FetchFilesResult fetchFilesResult)
       throws ParseException, IOException {
-    Map<String, String> stringMap = new HashMap<>(); // gitOpsTaskParams.getStringMap();
-    stringMap.put("hello", "world");
+    Map<String, Object> stringMap = gitOpsTaskParams.getVariables();
     List<String> fetchedFilesContents = new ArrayList<>();
 
     for (GitFile gitFile : fetchFilesResult.getFiles()) {
@@ -345,7 +344,7 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
     fetchFilesResult.setFiles(updatedGitFiles);
   }
 
-  public List<String> replaceFieldsNew(List<String> fileList, Map<String, String> fieldsToModify)
+  public List<String> replaceFieldsNew(List<String> fileList, Map<String, Object> fieldsToModify)
       throws ParseException, JsonProcessingException {
     JSONObject fieldsToUpdate = mapToJson(fieldsToModify); // get the list of fields to be updated
     List<String> result = new ArrayList<>();

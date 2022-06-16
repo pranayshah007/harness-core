@@ -10,6 +10,7 @@ package io.harness.beans.stages;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
@@ -44,6 +45,7 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @TypeAlias("integrationStage")
+@RecasterAlias("io.harness.beans.stages.IntegrationStageConfigImpl")
 public class IntegrationStageConfigImpl implements IntegrationStageConfig {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })

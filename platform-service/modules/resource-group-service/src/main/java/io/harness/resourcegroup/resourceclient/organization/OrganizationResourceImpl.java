@@ -26,6 +26,7 @@ import io.harness.organization.remote.OrganizationClient;
 import io.harness.resourcegroup.beans.ValidatorType;
 import io.harness.resourcegroup.framework.v1.service.Resource;
 import io.harness.resourcegroup.framework.v1.service.ResourceInfo;
+import io.harness.resourcegroup.v2.model.AttributeFilter;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -104,5 +105,10 @@ public class OrganizationResourceImpl implements Resource {
         .resourceType(getType())
         .resourceIdentifier(stripToNull(organizationEntityChangeDTO.getIdentifier()))
         .build();
+  }
+
+  @Override
+  public boolean isValidAttributeFilter(AttributeFilter attributeFilter) {
+    return false;
   }
 }

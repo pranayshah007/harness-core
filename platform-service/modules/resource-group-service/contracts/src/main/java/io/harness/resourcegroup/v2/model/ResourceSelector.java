@@ -15,6 +15,7 @@ import io.harness.annotations.dev.OwnedBy;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import javax.validation.constraints.NotNull;
@@ -33,4 +34,6 @@ import lombok.experimental.FieldNameConstants;
 public class ResourceSelector {
   @NotNull String resourceType;
   List<String> identifiers;
+
+  @ApiModelProperty(hidden = true) AttributeFilter attributeFilter;
 }

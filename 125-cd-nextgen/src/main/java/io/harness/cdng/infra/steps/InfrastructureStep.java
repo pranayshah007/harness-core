@@ -390,9 +390,9 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
 
       case InfrastructureKind.AZURE_WEB_APP:
         AzureWebAppInfrastructure azureWebAppInfrastructure = (AzureWebAppInfrastructure) infrastructure;
-        validateExpression(azureWebAppInfrastructure.getConnectorRef(), azureWebAppInfrastructure.getAppService(),
-            azureWebAppInfrastructure.getDeploymentSlot(), azureWebAppInfrastructure.getTargetSlot(),
-            azureWebAppInfrastructure.getSubscriptionId(), azureWebAppInfrastructure.getResourceGroup());
+        validateExpression(azureWebAppInfrastructure.getConnectorRef(), azureWebAppInfrastructure.getWebApp(),
+            azureWebAppInfrastructure.getDeploymentSlot(), azureWebAppInfrastructure.getSubscriptionId(),
+            azureWebAppInfrastructure.getResourceGroup());
         break;
       default:
         throw new InvalidArgumentsException(format("Unknown Infrastructure Kind : [%s]", infrastructure.getKind()));

@@ -7,10 +7,15 @@
 
 package io.harness.beans.yaml.extended;
 
+import io.harness.annotation.RecasterAlias;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
+import org.springframework.data.annotation.TypeAlias;
 
+@TypeAlias("ciShellType")
+@RecasterAlias("io.harness.beans.yaml.extended.CIShellType")
 public enum CIShellType {
   @JsonProperty("Sh") SH("Sh"),
   @JsonProperty("Bash") BASH("Bash"),

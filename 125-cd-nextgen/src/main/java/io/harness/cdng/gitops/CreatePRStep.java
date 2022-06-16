@@ -15,10 +15,14 @@ import static io.harness.data.structure.ListUtils.trimStrings;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.steps.StepUtils.prepareCDTaskRequest;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static org.apache.commons.lang3.StringUtils.trim;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.expressions.CDExpressionResolveFunctor;
+import io.harness.cdng.gitops.steps.GitopsClustersOutcome;
+import io.harness.cdng.gitops.steps.GitopsClustersStep;
 import io.harness.cdng.k8s.K8sStepHelper;
 import io.harness.cdng.manifest.ManifestType;
 import io.harness.cdng.manifest.steps.ManifestsOutcome;
@@ -26,6 +30,7 @@ import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorInfoDTO;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
@@ -36,6 +41,7 @@ import io.harness.delegate.task.git.NGGitOpsTaskParams;
 import io.harness.delegate.task.git.TaskStatus;
 import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
+import io.harness.expression.ExpressionEvaluatorUtils;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.plancreator.steps.common.rollback.TaskChainExecutableWithRollbackAndRbac;
@@ -46,7 +52,10 @@ import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.expression.EngineExpressionService;
+import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
+import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
@@ -63,6 +72,7 @@ import software.wings.beans.TaskType;
 import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
@@ -74,6 +84,7 @@ public class CreatePRStep extends TaskChainExecutableWithRollbackAndRbac {
                                                .setStepCategory(StepCategory.STEP)
                                                .build();
 
+  @Inject private EngineExpressionService engineExpressionService;
   @Inject private KryoSerializer kryoSerializer;
   @Inject private CDStepHelper cdStepHelper;
   @Inject private StepHelper stepHelper;
@@ -153,9 +164,13 @@ public class CreatePRStep extends TaskChainExecutableWithRollbackAndRbac {
     TODO:
      2. Handle the case when PR already exists
      Delegate side: (NgGitOpsCommandTask.java)
-     5. Improve logging for commitAndPush, createPR, etc
      */
     CreatePRStepParams gitOpsSpecParams = (CreatePRStepParams) stepParameters.getSpec();
+
+    Map<String, Object> variables = fetchVariablesForUpdate(ambiance);
+    checkArgument(EmptyPredicate.isNotEmpty(variables), "no cluster variables found.");
+    ExpressionEvaluatorUtils.updateExpressions(
+        variables, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
 
     List<GitFetchFilesConfig> gitFetchFilesConfig = new ArrayList<>();
 
@@ -171,6 +186,7 @@ public class CreatePRStep extends TaskChainExecutableWithRollbackAndRbac {
             .accountId(AmbianceUtils.getAccountId(ambiance))
             .connectorInfoDTO(
                 cdStepHelper.getConnector(releaseRepoOutcome.getStore().getConnectorReference().getValue(), ambiance))
+            .variables(variables)
             .build();
 
     final TaskData taskData = TaskData.builder()
@@ -192,8 +208,23 @@ public class CreatePRStep extends TaskChainExecutableWithRollbackAndRbac {
         .taskRequest(taskRequest)
         .passThroughData(CreatePRPassThroughData.builder()
                              .filePaths(gitFetchFilesConfig.get(0).getGitStoreDelegateConfig().getPaths())
+                             .variables(variables)
                              .build())
         .build();
+  }
+
+  private Map<String, Object> fetchVariablesForUpdate(Ambiance ambiance) {
+    OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputService.resolveOptional(
+        ambiance, RefObjectUtils.getOutcomeRefObject(GitopsClustersStep.GITOPS_SWEEPING_OUTPUT));
+    if (optionalSweepingOutput != null && optionalSweepingOutput.isFound()) {
+      GitopsClustersOutcome output = (GitopsClustersOutcome) optionalSweepingOutput.getOutput();
+      // Reading only 1 set of variables for now since all clusters have same variables
+      List<GitopsClustersOutcome.ClusterData> clustersData = output.getClustersData();
+      if (EmptyPredicate.isNotEmpty(clustersData)) {
+        return clustersData.get(0).getVariables();
+      }
+    }
+    return null;
   }
 
   @Override
