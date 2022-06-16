@@ -888,4 +888,36 @@ public class CloudFormationCreateStackStateTest extends WingsBaseTest {
     assertThat(commandsS3withParams.size()).isEqualTo(2);
     assertThat(commandsS3withParams).contains("Fetch Files");
   }
+
+  @Test
+  @Owner(developers = NAVNEET)
+  @Category(UnitTests.class)
+  public void verifyDuplicateKeyErrorHandlingForTextVariables() {
+    CloudFormationInfrastructureProvisioner provisioner = CloudFormationInfrastructureProvisioner.builder()
+                                                              .sourceType(TEMPLATE_URL.name())
+                                                              .templateFilePath(TEMPLATE_FILE_PATH)
+                                                              .build();
+    when(mockInfrastructureProvisionerService.extractTextVariables(any(), any()))
+        .thenThrow(new IllegalStateException("Duplicate key"));
+
+    ExecutionResponse response = state.buildAndQueueDelegateTask(mockContext, provisioner, awsConfig, ACTIVITY_ID);
+    assertThat(response.getExecutionStatus()).isEqualTo(ExecutionStatus.FAILED);
+    assertThat(response.getErrorMessage()).isEqualTo("Duplicate key");
+  }
+
+  @Test
+  @Owner(developers = NAVNEET)
+  @Category(UnitTests.class)
+  public void verifyDuplicateKeyErrorHandlingForEncryptedTextVariables() {
+    CloudFormationInfrastructureProvisioner provisioner = CloudFormationInfrastructureProvisioner.builder()
+                                                              .sourceType(TEMPLATE_URL.name())
+                                                              .templateFilePath(TEMPLATE_FILE_PATH)
+                                                              .build();
+    when(mockInfrastructureProvisionerService.extractEncryptedTextVariables(any(), any(), any()))
+        .thenThrow(new IllegalStateException("Duplicate encrypted key"));
+
+    ExecutionResponse response = state.buildAndQueueDelegateTask(mockContext, provisioner, awsConfig, ACTIVITY_ID);
+    assertThat(response.getExecutionStatus()).isEqualTo(ExecutionStatus.FAILED);
+    assertThat(response.getErrorMessage()).isEqualTo("Duplicate encrypted key");
+  }
 }

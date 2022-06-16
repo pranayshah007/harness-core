@@ -15,6 +15,7 @@ import io.harness.connector.entities.embedded.githubconnector.GithubAuthenticati
 import io.harness.connector.entities.embedded.githubconnector.GithubConnector;
 import io.harness.connector.entities.embedded.githubconnector.GithubHttpAuth;
 import io.harness.connector.entities.embedded.githubconnector.GithubHttpAuthentication;
+import io.harness.connector.entities.embedded.githubconnector.GithubOauth;
 import io.harness.connector.entities.embedded.githubconnector.GithubSshAuthentication;
 import io.harness.connector.entities.embedded.githubconnector.GithubTokenApiAccess;
 import io.harness.connector.entities.embedded.githubconnector.GithubUsernamePassword;
@@ -30,6 +31,7 @@ import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubCredentialsDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubHttpAuthenticationType;
 import io.harness.delegate.beans.connector.scm.github.GithubHttpCredentialsDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubOauthDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubSshCredentialsDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubTokenSpecDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubUsernamePasswordDTO;
@@ -103,6 +105,11 @@ public class GithubDTOToEntity implements ConnectorDTOToEntityMapper<GithubConne
             .username(githubUsernameTokenDTO.getUsername())
             .usernameRef(usernameReference)
             .build();
+      case OAUTH:
+        final GithubOauthDTO githubOauthDTO = (GithubOauthDTO) httpCredentialsDTO.getHttpCredentialsSpec();
+        return GithubOauth.builder()
+            .tokenRef(SecretRefHelper.getSecretConfigString(githubOauthDTO.getTokenRef()))
+            .build();
       default:
         throw new UnknownEnumTypeException("Github Http Auth Type", type == null ? null : type.getDisplayName());
     }
@@ -128,6 +135,11 @@ public class GithubDTOToEntity implements ConnectorDTOToEntityMapper<GithubConne
             .applicationId(githubAppSpecDTO.getApplicationId())
             .installationId(githubAppSpecDTO.getInstallationId())
             .privateKeyRef(SecretRefHelper.getSecretConfigString(githubAppSpecDTO.getPrivateKeyRef()))
+            .build();
+      case OAUTH:
+        final GithubOauthDTO GithubOauthDTO = (GithubOauthDTO) spec;
+        return GithubOauth.builder()
+            .tokenRef(SecretRefHelper.getSecretConfigString(GithubOauthDTO.getTokenRef()))
             .build();
       default:
         throw new UnknownEnumTypeException(

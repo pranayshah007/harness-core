@@ -50,17 +50,22 @@ public class MSTeamChannel extends NotificationChannel {
   public NotificationRequest buildNotificationRequest() {
     NotificationRequest.Builder builder = NotificationRequest.newBuilder();
     String notificationId = generateUuid();
-    return builder.setId(notificationId)
-        .setAccountId(accountId)
-        .setTeam(team)
-        .setMsTeam(builder.getMsTeamBuilder()
-                       .addAllMsTeamKeys(msTeamKeys)
-                       .setTemplateId(templateId)
-                       .putAllTemplateData(templateData)
-                       .addAllUserGroup(CollectionUtils.emptyIfNull(userGroups))
-                       .setOrgIdentifier(orgIdentifier)
-                       .setProjectIdentifier(projectIdentifier)
-                       .setExpressionFunctorToken(expressionFunctorToken))
-        .build();
+    return builder.setId(notificationId).setAccountId(accountId).setTeam(team).setMsTeam(buildMSTeams(builder)).build();
+  }
+
+  private NotificationRequest.MSTeam buildMSTeams(NotificationRequest.Builder builder) {
+    NotificationRequest.MSTeam.Builder msTeamsBuilder = builder.getMsTeamBuilder()
+                                                            .addAllMsTeamKeys(msTeamKeys)
+                                                            .setTemplateId(templateId)
+                                                            .putAllTemplateData(templateData)
+                                                            .addAllUserGroup(CollectionUtils.emptyIfNull(userGroups));
+    if (orgIdentifier != null) {
+      msTeamsBuilder.setOrgIdentifier(orgIdentifier);
+    }
+    if (projectIdentifier != null) {
+      msTeamsBuilder.setProjectIdentifier(projectIdentifier);
+    }
+    msTeamsBuilder.setExpressionFunctorToken(expressionFunctorToken);
+    return msTeamsBuilder.build();
   }
 }

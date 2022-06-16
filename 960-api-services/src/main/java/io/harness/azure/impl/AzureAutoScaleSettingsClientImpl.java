@@ -22,6 +22,7 @@ import io.harness.azure.model.AzureConfig;
 import io.harness.azure.model.AzureConstants;
 import io.harness.azure.utility.AzureResourceUtility;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 
 import com.google.inject.Singleton;
 import com.microsoft.azure.PagedList;
@@ -66,7 +67,7 @@ public class AzureAutoScaleSettingsClientImpl extends AzureClient implements Azu
             format(
                 "Unable to serialize AutoScaleSetting, subscriptionId: %s, resourceGroupName: %s, targetResourceId: %s",
                 subscriptionId, resourceGroupName, targetResourceId),
-            e, USER);
+            ExceptionMessageSanitizer.sanitizeException(e), USER);
       }
     } else {
       return Optional.empty();
@@ -151,7 +152,7 @@ public class AzureAutoScaleSettingsClientImpl extends AzureClient implements Azu
           format("Unable to deserialize AutoScaleSettingResourceInner, subscriptionId: %s, resourceGroupName: %s, "
                   + "targetResourceId: %s, autoScaleSettingResourceInnerJson: %s",
               subscriptionId, resourceGroupName, targetResourceId, autoScaleSettingResourceInnerJson),
-          e, USER);
+          ExceptionMessageSanitizer.sanitizeException(e), USER);
     }
 
     String newCustomAutoScalingSettingsName = getNewCustomAutoScalingSettingsName(targetResourceId);
@@ -283,7 +284,7 @@ public class AzureAutoScaleSettingsClientImpl extends AzureClient implements Azu
                   format("Unable to serialize AutoScaleProfile, subscriptionId: %s, resourceGroupName: %s, "
                           + "targetResourceId: %s",
                       subscriptionId, resourceGroupName, targetResourceId),
-                  e, USER);
+                  ExceptionMessageSanitizer.sanitizeException(e), USER);
             }
           })
           .collect(Collectors.toList());

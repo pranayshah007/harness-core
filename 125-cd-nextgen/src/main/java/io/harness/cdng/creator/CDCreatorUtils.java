@@ -23,7 +23,7 @@ public class CDCreatorUtils {
     return Collections.emptySet();
   }
   public Set<String> getSupportedStepsV2() {
-    return Sets.newHashSet(StepSpecTypeConstants.GITOPS_CREATE_PR, StepSpecTypeConstants.K8S_CANARY_DEPLOY,
+    return Sets.newHashSet(StepSpecTypeConstants.GITOPS_CREATE_PR, StepSpecTypeConstants.GITOPS_MERGE_PR, StepSpecTypeConstants.K8S_CANARY_DEPLOY,
         StepSpecTypeConstants.K8S_APPLY, StepSpecTypeConstants.K8S_BLUE_GREEN_DEPLOY,
         StepSpecTypeConstants.K8S_ROLLING_DEPLOY, StepSpecTypeConstants.K8S_ROLLING_ROLLBACK,
         StepSpecTypeConstants.K8S_SCALE, StepSpecTypeConstants.K8S_DELETE, StepSpecTypeConstants.K8S_BG_SWAP_SERVICES,
@@ -32,6 +32,9 @@ public class CDCreatorUtils {
         StepSpecTypeConstants.TERRAFORM_ROLLBACK, StepSpecTypeConstants.HELM_DEPLOY,
         StepSpecTypeConstants.HELM_ROLLBACK, StepSpecTypeConstants.CLOUDFORMATION_CREATE_STACK,
         StepSpecTypeConstants.CLOUDFORMATION_DELETE_STACK, StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_DEPLOY,
-        StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK, StepSpecTypeConstants.CLOUDFORMATION_ROLLBACK_STACK);
+        StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK, StepSpecTypeConstants.CLOUDFORMATION_ROLLBACK_STACK,
+        StepSpecTypeConstants.COMMAND, StepSpecTypeConstants.AZURE_SLOT_DEPLOYMENT,
+        StepSpecTypeConstants.AZURE_TRAFFIC_SHIFT, StepSpecTypeConstants.AZURE_SWAP_SLOT,
+        StepSpecTypeConstants.AZURE_WEBAPP_ROLLBACK);
   }
 }

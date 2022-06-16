@@ -1,0 +1,28 @@
+# Copyright 2022 Harness Inc. All rights reserved.
+# Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+# that can be found in the licenses directory at the root of this repository, also available at
+# https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+
+# To be used when building in CIE
+
+FROM us.gcr.io/platform-205701/ubi/ubi-java:latest
+USER root
+# Add the capsule JAR and config.yml
+COPY --chown=65534:65534 event-server-capsule.jar /opt/harness/
+COPY --chown=65534:65534 event-service-config.yml /opt/harness/
+COPY --chown=65534:65534 key.pem /opt/harness/
+COPY --chown=65534:65534 cert.pem /opt/harness/
+COPY --chown=65534:65534 protocol.info /opt/harness/
+
+COPY scripts /opt/harness
+
+RUN chmod +x /opt/harness/*.sh && chmod 700 -R /opt/harness/ && chown -R 65534:65534 /opt/harness/ \
+    && GRPC_HEALTH_PROBE_VERSION=v0.3.0 \
+    && curl -Lso /bin/grpc_health_probe https://github.com/grpc-ecosystem/grpc-health-probe/releases/download/${GRPC_HEALTH_PROBE_VERSION}/grpc_health_probe-linux-amd64 \
+    && chmod +x /bin/grpc_health_probe
+
+WORKDIR /opt/harness
+
+CMD [ "./run.sh" ]
+
+USER 65534

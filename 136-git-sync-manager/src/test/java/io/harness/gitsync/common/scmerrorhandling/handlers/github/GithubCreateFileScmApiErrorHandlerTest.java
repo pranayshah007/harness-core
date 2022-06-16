@@ -20,6 +20,7 @@ import io.harness.exception.ScmUnauthorizedException;
 import io.harness.exception.ScmUnexpectedException;
 import io.harness.exception.WingsException;
 import io.harness.gitsync.GitSyncTestBase;
+import io.harness.gitsync.common.scmerrorhandling.dtos.ErrorMetadata;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
@@ -44,7 +45,7 @@ public class GithubCreateFileScmApiErrorHandlerTest extends GitSyncTestBase {
   @Category(UnitTests.class)
   public void testHandleErrorOnUnauthorizedResponse() {
     try {
-      githubCreateFileScmApiErrorHandler.handleError(401, errorMessage);
+      githubCreateFileScmApiErrorHandler.handleError(401, errorMessage, ErrorMetadata.builder().build());
     } catch (Exception ex) {
       WingsException exception = ExceptionUtils.cause(ScmUnauthorizedException.class, ex);
       assertThat(exception).isNotNull();
@@ -57,7 +58,7 @@ public class GithubCreateFileScmApiErrorHandlerTest extends GitSyncTestBase {
   @Category(UnitTests.class)
   public void testHandleErrorOnUnauthenticatedResponse() {
     try {
-      githubCreateFileScmApiErrorHandler.handleError(403, errorMessage);
+      githubCreateFileScmApiErrorHandler.handleError(403, errorMessage, ErrorMetadata.builder().build());
     } catch (Exception ex) {
       WingsException exception = ExceptionUtils.cause(ScmUnauthorizedException.class, ex);
       assertThat(exception).isNotNull();
@@ -70,7 +71,7 @@ public class GithubCreateFileScmApiErrorHandlerTest extends GitSyncTestBase {
   @Category(UnitTests.class)
   public void testHandleErrorOnResourceNotFoundResponse() {
     try {
-      githubCreateFileScmApiErrorHandler.handleError(404, errorMessage);
+      githubCreateFileScmApiErrorHandler.handleError(404, errorMessage, ErrorMetadata.builder().build());
     } catch (Exception ex) {
       WingsException exception = ExceptionUtils.cause(ScmBadRequestException.class, ex);
       assertThat(exception).isNotNull();
@@ -83,7 +84,7 @@ public class GithubCreateFileScmApiErrorHandlerTest extends GitSyncTestBase {
   @Category(UnitTests.class)
   public void testHandleErrorOnResourceConflictResonse() {
     try {
-      githubCreateFileScmApiErrorHandler.handleError(409, errorMessage);
+      githubCreateFileScmApiErrorHandler.handleError(409, errorMessage, ErrorMetadata.builder().build());
     } catch (Exception ex) {
       WingsException exception = ExceptionUtils.cause(ScmBadRequestException.class, ex);
       assertThat(exception).isNotNull();
@@ -96,7 +97,7 @@ public class GithubCreateFileScmApiErrorHandlerTest extends GitSyncTestBase {
   @Category(UnitTests.class)
   public void testHandleErrorOnUnprocessableEntityResponse() {
     try {
-      githubCreateFileScmApiErrorHandler.handleError(422, errorMessage);
+      githubCreateFileScmApiErrorHandler.handleError(422, errorMessage, ErrorMetadata.builder().build());
     } catch (Exception ex) {
       WingsException exception = ExceptionUtils.cause(ScmBadRequestException.class, ex);
       assertThat(exception).isNotNull();
@@ -109,7 +110,7 @@ public class GithubCreateFileScmApiErrorHandlerTest extends GitSyncTestBase {
   @Category(UnitTests.class)
   public void testHandleErrorWhenUnexpectedStatusCode() {
     try {
-      githubCreateFileScmApiErrorHandler.handleError(405, errorMessage);
+      githubCreateFileScmApiErrorHandler.handleError(405, errorMessage, ErrorMetadata.builder().build());
     } catch (Exception ex) {
       WingsException exception = ExceptionUtils.cause(ScmUnexpectedException.class, ex);
       assertThat(exception).isNotNull();

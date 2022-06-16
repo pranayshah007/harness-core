@@ -2002,7 +2002,7 @@ public class AccountServiceImpl implements AccountService {
 
   @Override
   public AuthenticationInfo getAuthenticationInfo(String accountId) {
-    Account account = getFromCacheWithFallback(accountId);
+    Account account = get(accountId);
     if (account == null) {
       throw new InvalidRequestException("Account not found");
     }

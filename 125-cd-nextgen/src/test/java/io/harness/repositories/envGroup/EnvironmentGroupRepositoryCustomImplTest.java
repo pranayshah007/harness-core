@@ -13,12 +13,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.CDNGTestBase;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity.EnvironmentGroupKeys;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.persistance.GitAwarePersistence;
-import io.harness.ng.core.NGCoreTestBase;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.services.impl.EnvironmentServiceImpl;
 import io.harness.outbox.api.OutboxService;
@@ -41,7 +41,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 
-public class EnvironmentGroupRepositoryCustomImplTest extends NGCoreTestBase {
+public class EnvironmentGroupRepositoryCustomImplTest extends CDNGTestBase {
   private String ACC_ID = "accId";
   private String ORG_ID = "orgId";
   private String PRO_ID = "proId";

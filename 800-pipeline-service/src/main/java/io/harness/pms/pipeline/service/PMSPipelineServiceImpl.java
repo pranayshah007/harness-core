@@ -26,7 +26,6 @@ import io.harness.exception.HintException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.InvalidYamlException;
 import io.harness.exception.ScmException;
-import io.harness.exception.UnexpectedException;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorDTO;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorWrapperDTO;
 import io.harness.git.model.ChangeType;
@@ -56,8 +55,6 @@ import io.harness.pms.pipeline.StepPalleteModuleInfo;
 import io.harness.pms.pipeline.mappers.PMSPipelineDtoMapper;
 import io.harness.pms.pipeline.mappers.PMSPipelineFilterHelper;
 import io.harness.pms.sdk.PmsSdkInstanceService;
-import io.harness.pms.yaml.YAMLFieldNameConstants;
-import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.repositories.pipeline.PMSPipelineRepository;
 
@@ -430,56 +427,36 @@ public class PMSPipelineServiceImpl implements PMSPipelineService {
   }
 
   @Override
-  public String importPipelineFromRemote(String accountId, String orgIdentifier, String projectIdentifier,
+  public PipelineEntity importPipelineFromRemote(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, PipelineImportRequestDTO pipelineImportRequest) {
-    String importedPipeline =
-        pmsPipelineRepository.importPipelineFromRemote(accountId, orgIdentifier, projectIdentifier);
-    if (EmptyPredicate.isEmpty(importedPipeline)) {
-      String errorMessage = PipelineCRUDErrorResponse.errorMessageForEmptyYamlOnGit(
-          orgIdentifier, projectIdentifier, pipelineIdentifier, GitAwareContextHelper.getBranchInRequest());
-      throw PMSPipelineServiceHelper.buildInvalidYamlException(errorMessage, importedPipeline);
-    }
-    YamlField pipelineYamlField;
-    try {
-      pipelineYamlField = YamlUtils.readTree(importedPipeline);
-    } catch (IOException e) {
-      String errorMessage = PipelineCRUDErrorResponse.errorMessageForNotAYAMLFile(
-          GitAwareContextHelper.getBranchInRequest(), GitAwareContextHelper.getFilepathInRequest());
-      throw PMSPipelineServiceHelper.buildInvalidYamlException(errorMessage, importedPipeline);
-    }
-    YamlField pipelineInnerField = pipelineYamlField.getNode().getField(YAMLFieldNameConstants.PIPELINE);
-    if (pipelineInnerField == null) {
-      String errorMessage = PipelineCRUDErrorResponse.errorMessageForNotAPipelineYAML(
-          GitAwareContextHelper.getBranchInRequest(), GitAwareContextHelper.getFilepathInRequest());
-      throw PMSPipelineServiceHelper.buildInvalidYamlException(errorMessage, importedPipeline);
-    }
-    String identifierFromGit = pipelineInnerField.getNode().getIdentifier();
-    if (!pipelineIdentifier.equals(identifierFromGit)) {
-      String errorMessage = PipelineCRUDErrorResponse.errorMessageForInvalidField(
-          YAMLFieldNameConstants.IDENTIFIER, identifierFromGit, pipelineIdentifier);
-      throw PMSPipelineServiceHelper.buildInvalidYamlException(errorMessage, importedPipeline);
-    }
+    String importedPipelineYAML =
+        pmsPipelineServiceHelper.importPipelineFromRemote(accountId, orgIdentifier, projectIdentifier);
 
-    String nameFromGit = pipelineInnerField.getNode().getName();
-    if (!pipelineImportRequest.getPipelineName().equals(nameFromGit)) {
-      String errorMessage = PipelineCRUDErrorResponse.errorMessageForInvalidField(
-          YAMLFieldNameConstants.NAME, nameFromGit, pipelineImportRequest.getPipelineName());
-      throw PMSPipelineServiceHelper.buildInvalidYamlException(errorMessage, importedPipeline);
-    }
-    if (EmptyPredicate.isNotEmpty(pipelineImportRequest.getPipelineDescription())) {
-      YamlUtils.setStringValueForField(
-          YAMLFieldNameConstants.DESCRIPTION, pipelineImportRequest.getPipelineDescription(), pipelineInnerField);
-      try {
-        importedPipeline = YamlUtils.writeYamlString(pipelineYamlField).replace("---\n", "");
-      } catch (IOException e) {
-        throw new UnexpectedException("Unexpected error when trying to set description");
-      }
-    }
+    String updatedImportedPipeline = PMSPipelineServiceHelper.updateFieldsInImportedPipeline(
+        orgIdentifier, projectIdentifier, pipelineIdentifier, pipelineImportRequest, importedPipelineYAML);
 
     PipelineEntity pipelineEntity =
-        PMSPipelineDtoMapper.toPipelineEntity(accountId, orgIdentifier, projectIdentifier, importedPipeline);
-    pmsPipelineServiceHelper.validatePipelineFromRemote(pipelineEntity);
-    return importedPipeline;
+        PMSPipelineDtoMapper.toPipelineEntity(accountId, orgIdentifier, projectIdentifier, updatedImportedPipeline);
+    try {
+      PipelineEntity entityWithUpdatedInfo = pmsPipelineServiceHelper.updatePipelineInfo(pipelineEntity);
+      PipelineEntity savedPipelineEntity = pmsPipelineRepository.savePipelineEntityForImportedYAML(
+          entityWithUpdatedInfo, !updatedImportedPipeline.equals(importedPipelineYAML));
+      pmsPipelineServiceHelper.sendPipelineSaveTelemetryEvent(savedPipelineEntity, CREATING_PIPELINE);
+      return savedPipelineEntity;
+    } catch (DuplicateKeyException ex) {
+      log.error(format(DUP_KEY_EXP_FORMAT_STRING, pipelineEntity.getIdentifier(), pipelineEntity.getProjectIdentifier(),
+                    pipelineEntity.getOrgIdentifier()),
+          ex);
+      throw new DuplicateFieldException(format(DUP_KEY_EXP_FORMAT_STRING, pipelineEntity.getIdentifier(),
+                                            pipelineEntity.getProjectIdentifier(), pipelineEntity.getOrgIdentifier()),
+          USER_SRE, ex);
+    } catch (EventsFrameworkDownException ex) {
+      log.error("Events framework is down for Pipeline Service.", ex);
+      throw new InvalidRequestException("Error connecting to systems upstream", ex);
+    } catch (IOException ex) {
+      log.error(format("Invalid yaml in node [%s]", YamlUtils.getErrorNodePartialFQN(ex)), ex);
+      throw new InvalidYamlException(format("Invalid yaml in node [%s]", YamlUtils.getErrorNodePartialFQN(ex)), ex);
+    }
   }
 
   @Override

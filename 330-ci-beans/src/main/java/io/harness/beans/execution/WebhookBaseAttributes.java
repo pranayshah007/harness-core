@@ -7,11 +7,16 @@
 
 package io.harness.beans.execution;
 
+import io.harness.annotation.RecasterAlias;
+
 import lombok.Builder;
 import lombok.Value;
+import org.springframework.data.annotation.TypeAlias;
 
 @Value
 @Builder
+@TypeAlias("webhookBaseAttributes")
+@RecasterAlias("io.harness.beans.execution.WebhookBaseAttributes")
 public class WebhookBaseAttributes {
   private String message;
   private String link;

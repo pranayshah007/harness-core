@@ -66,11 +66,6 @@ public class AzureWebAppInfrastructure implements Infrastructure, Visitable, Wit
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
   @Wither
   ParameterField<String> deploymentSlot;
-  @NotNull
-  @NotEmpty
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
-  @Wither
-  ParameterField<String> targetSlot;
 
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 
@@ -82,7 +77,6 @@ public class AzureWebAppInfrastructure implements Infrastructure, Visitable, Wit
         .resourceGroup(resourceGroup.getValue())
         .appService(appService.getValue())
         .deploymentSlot(deploymentSlot.getValue())
-        .targetSlot(targetSlot.getValue())
         .build();
   }
 
@@ -94,7 +88,7 @@ public class AzureWebAppInfrastructure implements Infrastructure, Visitable, Wit
   @Override
   public String[] getInfrastructureKeyValues() {
     return new String[] {connectorRef.getValue(), subscriptionId.getValue(), resourceGroup.getValue(),
-        appService.getValue(), deploymentSlot.getValue(), targetSlot.getValue()};
+        appService.getValue(), deploymentSlot.getValue()};
   }
 
   @Override
@@ -120,9 +114,6 @@ public class AzureWebAppInfrastructure implements Infrastructure, Visitable, Wit
     }
     if (!ParameterField.isNull(config.getDeploymentSlot())) {
       resultantInfra = resultantInfra.withDeploymentSlot(config.getDeploymentSlot());
-    }
-    if (!ParameterField.isNull(config.getTargetSlot())) {
-      resultantInfra = resultantInfra.withTargetSlot(config.getTargetSlot());
     }
     return resultantInfra;
   }

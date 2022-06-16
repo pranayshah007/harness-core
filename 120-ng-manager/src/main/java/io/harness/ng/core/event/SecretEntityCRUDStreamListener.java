@@ -8,7 +8,6 @@
 package io.harness.ng.core.event;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
-import static io.harness.beans.FeatureName.HARD_DELETE_SECRETS;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.ACTION;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.CREATE_ACTION;
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.DELETE_ACTION;
@@ -30,7 +29,6 @@ import io.harness.eventsframework.entity_crud.project.ProjectEntityChangeDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.logging.AutoLogContext;
 import io.harness.ng.core.api.SecretCrudService;
-import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -45,15 +43,12 @@ import org.jetbrains.annotations.NotNull;
 public class SecretEntityCRUDStreamListener implements MessageListener {
   private final SecretCrudService secretCrudService;
   private final SecretEntityCRUDEventHandler secretEntityCRUDEventHandler;
-  private final NGFeatureFlagHelperService ngFeatureFlagHelperService;
 
   @Inject
-  public SecretEntityCRUDStreamListener(SecretCrudService secretCrudService,
-      SecretEntityCRUDEventHandler secretEntityCRUDEventHandler,
-      NGFeatureFlagHelperService ngFeatureFlagHelperService) {
+  public SecretEntityCRUDStreamListener(
+      SecretCrudService secretCrudService, SecretEntityCRUDEventHandler secretEntityCRUDEventHandler) {
     this.secretCrudService = secretCrudService;
     this.secretEntityCRUDEventHandler = secretEntityCRUDEventHandler;
-    this.ngFeatureFlagHelperService = ngFeatureFlagHelperService;
   }
 
   @Override
@@ -131,10 +126,6 @@ public class SecretEntityCRUDStreamListener implements MessageListener {
   }
 
   private boolean processOrganizationDeleteEvent(OrganizationEntityChangeDTO organizationEntityChangeDTO) {
-    if (!ngFeatureFlagHelperService.isEnabled(
-            organizationEntityChangeDTO.getAccountIdentifier(), HARD_DELETE_SECRETS)) {
-      return true;
-    }
     return secretEntityCRUDEventHandler.deleteAssociatedSecrets(
         organizationEntityChangeDTO.getAccountIdentifier(), organizationEntityChangeDTO.getIdentifier(), null);
   }
@@ -171,9 +162,6 @@ public class SecretEntityCRUDStreamListener implements MessageListener {
   }
 
   private boolean processProjectDeleteEvent(ProjectEntityChangeDTO projectEntityChangeDTO) {
-    if (!ngFeatureFlagHelperService.isEnabled(projectEntityChangeDTO.getAccountIdentifier(), HARD_DELETE_SECRETS)) {
-      return true;
-    }
     return secretEntityCRUDEventHandler.deleteAssociatedSecrets(projectEntityChangeDTO.getAccountIdentifier(),
         projectEntityChangeDTO.getOrgIdentifier(), projectEntityChangeDTO.getIdentifier());
   }

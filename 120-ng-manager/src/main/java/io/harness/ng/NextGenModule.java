@@ -252,6 +252,7 @@ import io.harness.signup.SignupModule;
 import io.harness.subscription.SubscriptionModule;
 import io.harness.telemetry.AbstractTelemetryModule;
 import io.harness.telemetry.TelemetryConfiguration;
+import io.harness.template.TemplateResourceClientModule;
 import io.harness.time.TimeModule;
 import io.harness.timescaledb.JooqModule;
 import io.harness.timescaledb.TimeScaleDBConfig;
@@ -532,6 +533,8 @@ public class NextGenModule extends AbstractModule {
     install(new PipelineRemoteClientModule(
         ServiceHttpClientConfig.builder().baseUrl(appConfig.getPipelineServiceClientConfig().getBaseUrl()).build(),
         appConfig.getNextGenConfig().getPipelineServiceSecret(), NG_MANAGER.toString()));
+    install(new TemplateResourceClientModule(appConfig.getTemplateServiceClientConfig(),
+        appConfig.getNextGenConfig().getTemplateServiceSecret(), NG_MANAGER.toString()));
     install(new ConnectorResourceClientModule(appConfig.getNgManagerClientConfig(),
         appConfig.getNextGenConfig().getNgManagerServiceSecret(), NG_MANAGER.getServiceId(), ClientMode.PRIVILEGED));
     install(new SecretManagementClientModule(this.appConfig.getManagerClientConfig(),

@@ -100,7 +100,7 @@ public class DefaultVariablesHelper {
               break;
             }
           }
-          if (beforeCV != null && !cv.getValue().equals(beforeCV.getValue())) {
+          if (beforeCV != null && cv.getValue()!=null && !cv.getValue().equals(beforeCV.getValue())) {
             varsToUpdate.add(cv);
           }
         }

@@ -17,7 +17,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.filestore.dto.filter.FilesFilterPropertiesDTO;
 import io.harness.ng.core.common.beans.NGTag.NGTagKeys;
-import io.harness.ng.core.filestore.NGFileType;
 import io.harness.ng.core.filestore.dto.FileFilterDTO;
 import io.harness.ng.core.mapper.TagMapper;
 import io.harness.ng.core.utils.URLDecoderUtility;
@@ -46,7 +45,6 @@ public class FileStoreRepositoryCriteriaCreator {
   public static Criteria createFilesFilterCriteria(
       Scope scope, FilesFilterPropertiesDTO filterProperties, String searchTerm, List<String> fileIdentifiers) {
     Criteria criteria = createScopeCriteria(scope);
-    criteria.and(NGFiles.type).is(NGFileType.FILE);
 
     searchTerm = URLDecoderUtility.getDecodedString(searchTerm);
 

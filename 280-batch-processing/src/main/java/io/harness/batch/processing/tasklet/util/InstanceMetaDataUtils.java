@@ -63,6 +63,8 @@ public class InstanceMetaDataUtils {
       nodePoolValue = labelsMap.get(K8sCCMConstants.EKS_NODE_POOL_KEY);
     } else if (null != labelsMap.get(K8sCCMConstants.EKSCTL_NODE_POOL_KEY)) {
       nodePoolValue = labelsMap.get(K8sCCMConstants.EKSCTL_NODE_POOL_KEY);
+    } else if (null != labelsMap.get(K8sCCMConstants.NODE_POOL_NAME_KEY)) {
+      nodePoolValue = labelsMap.get(K8sCCMConstants.NODE_POOL_NAME_KEY);
     }
     if (null != nodePoolValue) {
       metaData.put(InstanceMetaDataConstants.NODE_POOL_NAME, nodePoolValue);

@@ -9,8 +9,10 @@ package io.harness.pms.approval;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.rule.OwnerRule.BRIJESH;
+import static io.harness.rule.OwnerRule.HINGER;
 
 import static junit.framework.TestCase.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
@@ -20,6 +22,7 @@ import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
 import io.harness.category.element.UnitTests;
+import io.harness.common.EntityTypeConstants;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.PlanExecution;
@@ -37,6 +40,7 @@ import io.harness.security.dto.UserPrincipal;
 import io.harness.steps.approval.step.ApprovalInstanceResponseMapper;
 import io.harness.steps.approval.step.ApprovalInstanceService;
 import io.harness.steps.approval.step.beans.ApprovalInstanceResponseDTO;
+import io.harness.steps.approval.step.beans.ApprovalType;
 import io.harness.steps.approval.step.entities.ApprovalInstance;
 import io.harness.steps.approval.step.harness.beans.ApproversDTO;
 import io.harness.steps.approval.step.harness.beans.HarnessApprovalActivity;
@@ -44,6 +48,7 @@ import io.harness.steps.approval.step.harness.beans.HarnessApprovalActivityReque
 import io.harness.steps.approval.step.harness.entities.HarnessApprovalInstance;
 import io.harness.user.remote.UserClient;
 import io.harness.usergroups.UserGroupClient;
+import io.harness.utils.NGFeatureFlagHelperService;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -76,12 +81,14 @@ public class ApprovalResourceServiceImplTest extends CategoryTest {
   @Mock private UserGroupClient userGroupClient;
   @Mock private CurrentUserHelper currentUserHelper;
   @Mock private UserClient userClient;
+  @Mock private NGFeatureFlagHelperService ngFeatureFlagHelperService;
+
   ApprovalResourceServiceImpl approvalResourceService;
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
     approvalResourceService = new ApprovalResourceServiceImpl(approvalInstanceService, approvalInstanceResponseMapper,
-        planExecutionService, userGroupClient, currentUserHelper, userClient);
+        planExecutionService, userGroupClient, currentUserHelper, userClient, ngFeatureFlagHelperService);
   }
 
   @Test
@@ -154,5 +161,16 @@ public class ApprovalResourceServiceImplTest extends CategoryTest {
     assertThatCode(() -> approvalResourceService.addHarnessApprovalActivity(id, harnessApprovalActivityRequestDTO))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("User not authorized to approve/reject");
+  }
+
+  @Test
+  @Owner(developers = HINGER)
+  @Category(UnitTests.class)
+  public void testSnippetWithServiceNowCreateUpdate() throws IOException {
+    MockedStatic<NGRestUtils> aStatic = Mockito.mockStatic(NGRestUtils.class);
+    when(ngFeatureFlagHelperService.isEnabled(any(), any())).thenReturn(true);
+    String yaml = approvalResourceService.getYamlSnippet(ApprovalType.SERVICENOW_APPROVAL, "accountId");
+    assertThat(yaml.contains(EntityTypeConstants.SERVICENOW_CREATE)).isTrue();
+    assertThat(yaml.contains(EntityTypeConstants.SERVICENOW_UPDATE)).isTrue();
   }
 }

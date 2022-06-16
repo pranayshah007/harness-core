@@ -22,6 +22,7 @@ import io.harness.delegate.task.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.spotinst.request.SpotInstTaskParameters;
 import io.harness.delegate.task.spotinst.response.SpotInstTaskExecutionResponse;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 
 import software.wings.delegatetasks.spotinst.taskhandler.SpotInstDeployTaskHandler;
 import software.wings.delegatetasks.spotinst.taskhandler.SpotInstSetupTaskHandler;
@@ -78,10 +79,14 @@ public class SpotInstTask extends AbstractDelegateRunnableTask {
     if (spotInstCommandRequest.getAwsConfig() != null) {
       encryptionService.decrypt(
           spotInstCommandRequest.getAwsConfig(), spotInstCommandRequest.getAwsEncryptionDetails(), false);
+      ExceptionMessageSanitizer.storeAllSecretsForSanitizing(
+          spotInstCommandRequest.getAwsConfig(), spotInstCommandRequest.getAwsEncryptionDetails());
     }
 
     encryptionService.decrypt(
         spotInstCommandRequest.getSpotInstConfig(), spotInstCommandRequest.getSpotinstEncryptionDetails(), false);
+    ExceptionMessageSanitizer.storeAllSecretsForSanitizing(
+        spotInstCommandRequest.getAwsConfig(), spotInstCommandRequest.getAwsEncryptionDetails());
 
     SpotInstTaskHandler handler;
     if (spotInstTaskParameters.isSyncTask()) {

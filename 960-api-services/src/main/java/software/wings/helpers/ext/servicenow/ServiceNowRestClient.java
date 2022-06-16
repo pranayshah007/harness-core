@@ -25,7 +25,7 @@ import retrofit2.http.Query;
 
 @OwnedBy(CDC)
 public interface ServiceNowRestClient {
-  @GET("api/now/table/incident?sysparm_limit=1")
+  @GET("api/now/table/task?sysparm_limit=1")
   Call<JsonNode> validateConnection(@Header("Authorization") String authorization);
 
   @Headers("Content-Type: application/json")

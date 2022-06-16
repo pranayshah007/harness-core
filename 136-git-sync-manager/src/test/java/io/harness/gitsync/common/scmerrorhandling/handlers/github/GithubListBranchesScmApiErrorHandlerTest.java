@@ -16,6 +16,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.HintException;
 import io.harness.gitsync.GitSyncTestBase;
+import io.harness.gitsync.common.scmerrorhandling.dtos.ErrorMetadata;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
@@ -37,7 +38,8 @@ public class GithubListBranchesScmApiErrorHandlerTest extends GitSyncTestBase {
   @Owner(developers = BHAVYA)
   @Category(UnitTests.class)
   public void testHandleError() {
-    assertThatThrownBy(() -> githubListBranchesScmApiErrorHandler.handleError(404, "error"))
+    assertThatThrownBy(
+        () -> githubListBranchesScmApiErrorHandler.handleError(404, "error", ErrorMetadata.builder().build()))
         .isInstanceOf(HintException.class);
   }
 }

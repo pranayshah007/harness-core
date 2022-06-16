@@ -7,12 +7,20 @@
 
 package io.harness.ci.beans.entities;
 
+import io.harness.annotation.RecasterAlias;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import lombok.Builder;
 import lombok.Data;
 import org.hibernate.validator.constraints.NotBlank;
+import org.springframework.data.annotation.TypeAlias;
 
 @Data
 @Builder
+@JsonInclude(Include.NON_NULL)
+@TypeAlias("ciExecutionImages")
+@RecasterAlias("io.harness.ci.beans.entities.CIExecutionImages")
 public class CIExecutionImages {
   @NotBlank String addonTag;
   @NotBlank String liteEngineTag;

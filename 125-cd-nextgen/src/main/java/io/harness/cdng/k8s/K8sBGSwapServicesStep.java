@@ -55,7 +55,8 @@ public class K8sBGSwapServicesStep extends TaskExecutableWithRollbackAndRbac<K8s
   public static final String K8S_BG_SWAP_SERVICES_COMMAND_NAME = "Blue/Green Swap Services";
   public static final String SKIP_BG_SWAP_SERVICES_STEP_EXECUTION =
       "Services were not swapped in the forward phase. Skipping swapping in rollback.";
-  public static final String BG_STEP_MISSING_ERROR = "Stage Deployment (Blue Green Deploy) is not configured";
+  public static final String BG_STEP_MISSING_ERROR =
+      "Stage Deployment (Blue Green Deploy) is not configured. \nHint: Add Stage Deployment in the execution step.";
 
   @Inject private K8sStepHelper k8sStepHelper;
   @Inject private OutcomeService outcomeService;

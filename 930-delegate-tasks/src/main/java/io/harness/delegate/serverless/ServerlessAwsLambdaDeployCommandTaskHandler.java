@@ -59,7 +59,6 @@ import software.wings.beans.LogWeight;
 import com.google.inject.Inject;
 import java.nio.file.Paths;
 import java.util.List;
-import java.util.Optional;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
@@ -78,8 +77,6 @@ public class ServerlessAwsLambdaDeployCommandTaskHandler extends ServerlessComma
   private ServerlessAwsLambdaManifestSchema serverlessManifestSchema;
   private ServerlessAwsLambdaInfraConfig serverlessAwsLambdaInfraConfig;
   private long timeoutInMillis;
-  private String previousDeployTimeStamp;
-  private boolean firstDeployment;
 
   @Override
   protected ServerlessCommandResponse executeTaskInternal(ServerlessCommandRequest serverlessCommandRequest,
@@ -103,7 +100,6 @@ public class ServerlessAwsLambdaDeployCommandTaskHandler extends ServerlessComma
           Pair.of("ServerlessDeployConfig", "Must be instance of ServerlessAwsLambdaDeployConfig"));
     }
 
-    firstDeployment = false;
     timeoutInMillis = serverlessDeployRequest.getTimeoutIntervalInMin() * 60000;
     serverlessAwsLambdaInfraConfig =
         (ServerlessAwsLambdaInfraConfig) serverlessDeployRequest.getServerlessInfraConfig();
@@ -153,17 +149,6 @@ public class ServerlessAwsLambdaDeployCommandTaskHandler extends ServerlessComma
       throw ex;
     }
 
-    LogCallback prepareRollbackLogCallback = serverlessTaskHelperBase.getLogCallback(
-        iLogStreamingTaskClient, ServerlessCommandUnitConstants.rollbackData.toString(), true, commandUnitsProgress);
-    try {
-      prepareRollbackData(serverlessDeployRequest, prepareRollbackLogCallback, serverlessDelegateTaskParams);
-    } catch (Exception ex) {
-      prepareRollbackLogCallback.saveExecutionLog(
-          color(format("%n prepare rollback data failed."), LogColor.Red, LogWeight.Bold), LogLevel.ERROR,
-          CommandExecutionStatus.FAILURE);
-      throw ex;
-    }
-
     LogCallback deployLogCallback = serverlessTaskHelperBase.getLogCallback(
         iLogStreamingTaskClient, ServerlessCommandUnitConstants.deploy.toString(), true, commandUnitsProgress);
     try {
@@ -171,7 +156,7 @@ public class ServerlessAwsLambdaDeployCommandTaskHandler extends ServerlessComma
     } catch (Exception ex) {
       deployLogCallback.saveExecutionLog(color(format("%n Deployment failed."), LogColor.Red, LogWeight.Bold),
           LogLevel.ERROR, CommandExecutionStatus.FAILURE);
-      throw new ServerlessNGException(ex, previousDeployTimeStamp, firstDeployment);
+      throw new ServerlessNGException(ex);
     }
   }
 
@@ -210,46 +195,6 @@ public class ServerlessAwsLambdaDeployCommandTaskHandler extends ServerlessComma
     }
   }
 
-  private void prepareRollbackData(ServerlessDeployRequest serverlessDeployRequest, LogCallback executionLogCallback,
-      ServerlessDelegateTaskParams serverlessDelegateTaskParams) throws Exception {
-    executionLogCallback.saveExecutionLog(format("Preparing Rollback Data..%n%n"));
-    if (!serverlessAwsCommandTaskHelper.cloudFormationStackExists(
-            executionLogCallback, serverlessDeployRequest, serverlessDeployRequest.getManifestContent())) {
-      firstDeployment = true;
-      executionLogCallback.saveExecutionLog(
-          format("Skipping as there are no previous Deployments..%n"), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
-      return;
-    }
-    ServerlessCliResponse response =
-        serverlessAwsCommandTaskHelper.deployList(serverlessClient, serverlessDelegateTaskParams, executionLogCallback,
-            serverlessAwsLambdaInfraConfig, timeoutInMillis, serverlessManifestConfig);
-
-    if (response.getCommandExecutionStatus() == CommandExecutionStatus.SUCCESS) {
-      executionLogCallback.saveExecutionLog(
-          color(format("%nDeploy List command executed successfully..%n"), LogColor.White, LogWeight.Bold), INFO);
-      List<String> timeStamps = serverlessAwsCommandTaskHelper.getDeployListTimeStamps(response.getOutput());
-      Optional<String> previousVersionTimeStamp = serverlessAwsCommandTaskHelper.getPreviousVersionTimeStamp(
-          timeStamps, executionLogCallback, serverlessDeployRequest);
-      previousDeployTimeStamp = previousVersionTimeStamp.orElse(null);
-      if (previousVersionTimeStamp.isPresent()) {
-        executionLogCallback.saveExecutionLog(
-            color(format("Active successful deployment version timestamp:%s %n", previousVersionTimeStamp.get()),
-                LogColor.White, LogWeight.Bold),
-            INFO);
-      } else {
-        executionLogCallback.saveExecutionLog(
-            color(format("Found no active successful deployment version %n", previousVersionTimeStamp), LogColor.White,
-                LogWeight.Bold),
-            INFO);
-      }
-      executionLogCallback.saveExecutionLog(format("Done..%n"), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
-    } else {
-      executionLogCallback.saveExecutionLog(
-          color(format("%nDeploy List command failed..%n"), LogColor.Red, LogWeight.Bold), ERROR);
-      executionLogCallback.saveExecutionLog(format("Done..%n"), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
-    }
-  }
-
   private ServerlessDeployResponse deploy(ServerlessDeployRequest serverlessDeployRequest,
       LogCallback executionLogCallback, ServerlessDelegateTaskParams serverlessDelegateTaskParams) throws Exception {
     executionLogCallback.saveExecutionLog(format("Deploying..%n%n"));
@@ -269,8 +214,6 @@ public class ServerlessAwsLambdaDeployCommandTaskHandler extends ServerlessComma
     serverlessAwsLambdaDeployResultBuilder.service(serverlessManifestSchema.getService());
     serverlessAwsLambdaDeployResultBuilder.region(serverlessAwsLambdaInfraConfig.getRegion());
     serverlessAwsLambdaDeployResultBuilder.stage(serverlessAwsLambdaInfraConfig.getStage());
-    serverlessAwsLambdaDeployResultBuilder.previousVersionTimeStamp(previousDeployTimeStamp);
-    serverlessAwsLambdaDeployResultBuilder.isFirstDeployment(firstDeployment);
     ServerlessDeployResponseBuilder serverlessDeployResponseBuilder = ServerlessDeployResponse.builder();
 
     if (response.getCommandExecutionStatus() == CommandExecutionStatus.SUCCESS) {

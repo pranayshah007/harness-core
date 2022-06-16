@@ -12,6 +12,7 @@ import static io.harness.rule.OwnerRule.NAMAN;
 
 import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
@@ -79,6 +80,31 @@ public class PMSInputSetElementMapperTest extends CategoryTest {
     assertThat(entity.getName()).isEqualTo("this name");
     assertThat(entity.getDescription()).isEqualTo("this has a description too");
     assertThat(entity.getTags()).isEqualTo(tagsList);
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testToInputSetEntityWithEmptyIdentifierAndName() {
+    String emptyID = "inputSet:\n"
+        + "    name: \"\"\n"
+        + "    identifier: \"\"\n"
+        + "    orgIdentifier: default\n"
+        + "    projectIdentifier: Plain_Old_Project\n";
+    assertThatThrownBy(()
+                           -> PMSInputSetElementMapper.toInputSetEntity(
+                               ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, emptyID))
+        .hasMessage("Input Set Identifier cannot be empty or a runtime input");
+
+    String emptyName = "inputSet:\n"
+        + "    name: \"\"\n"
+        + "    identifier: \"id\"\n"
+        + "    orgIdentifier: default\n"
+        + "    projectIdentifier: Plain_Old_Project\n";
+    assertThatThrownBy(()
+                           -> PMSInputSetElementMapper.toInputSetEntity(
+                               ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, emptyName))
+        .hasMessage("Input Set Name cannot be empty or a runtime input");
   }
 
   @Test

@@ -38,6 +38,7 @@ public class CodebaseSweepingOutput implements ExecutionSweepingOutput {
   String prNumber;
   String prTitle;
   String commitSha;
+  String shortCommitSha;
   String baseCommitSha;
   String commitRef;
   String repoUrl;

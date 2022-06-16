@@ -29,6 +29,7 @@ import io.harness.ng.core.environment.dto.EnvironmentResponseDTO;
 import io.harness.ng.core.environment.mappers.EnvironmentMapper;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
+import io.harness.repositories.UpsertOptions;
 import io.harness.utils.PageUtils;
 
 import com.google.inject.Inject;
@@ -125,7 +126,7 @@ public class EnvironmentResource {
       @QueryParam("accountId") String accountId, @NotNull @Valid EnvironmentRequestDTO environmentRequestDTO) {
     Environment requestEnvironment = EnvironmentMapper.toEnvironmentEntity(accountId, environmentRequestDTO);
     requestEnvironment.setVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
-    Environment upsertedEnvironment = environmentService.upsert(requestEnvironment);
+    Environment upsertedEnvironment = environmentService.upsert(requestEnvironment, UpsertOptions.DEFAULT);
     return ResponseDTO.newResponse(
         upsertedEnvironment.getVersion().toString(), EnvironmentMapper.writeDTO(upsertedEnvironment));
   }
