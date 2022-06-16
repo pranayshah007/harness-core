@@ -140,6 +140,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     YamlField specField =
         Preconditions.checkNotNull(ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.SPEC));
     stageParameters.specConfig(getSpecParameters(specField.getNode().getUuid(), ctx, stageNode));
+    //We need to swap the ids if strategy is present
     return PlanNode.builder()
         .uuid(StageStrategyUtils.getSwappedPlanNodeId(ctx, stageNode))
         .name(stageNode.getName())
@@ -190,6 +191,8 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
         throw new InvalidRequestException("Execution section cannot be absent in a pipeline");
       }
       addCDExecutionDependencies(planCreationResponseMap, executionField);
+
+      // Adds the strategy field as dependency in planCreationResponseMap if present else ignores
       addStrategyFieldDependencyIfPresent(ctx, stageNode, planCreationResponseMap, metadataMap);
 
       return planCreationResponseMap;
