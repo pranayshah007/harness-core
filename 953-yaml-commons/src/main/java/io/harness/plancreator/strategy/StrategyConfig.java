@@ -23,7 +23,7 @@ import lombok.experimental.FieldDefaults;
 @Data
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@OneOfField(fields = {"matrix", "for", "parallelism"})
+@OneOfField(fields = {"matrixConfig", "forConfig", "parallelism"})
 @RecasterAlias("io.harness.plancreator.strategy.StrategyConfig")
 public class StrategyConfig {
   @JsonProperty("matrix") MatrixConfigInterface matrixConfig;
