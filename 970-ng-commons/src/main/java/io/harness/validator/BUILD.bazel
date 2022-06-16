@@ -1,0 +1,16 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "validator",
+    srcs = [
+        "NGRegexValidatorConstants.java",
+        "NGVariableName.java",
+        "NGVariableNameValidator.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_apache_commons_commons_lang3",
+    ],
+)

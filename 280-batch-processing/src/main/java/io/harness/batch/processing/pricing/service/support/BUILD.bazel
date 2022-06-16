@@ -1,0 +1,16 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "support",
+    srcs = ["GCPCustomInstanceDetailProvider.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//280-batch-processing/src/main/java/io/harness/batch/processing/pricing",
+        "//480-pricing-service/src/main/java/io/harness/pricing/dto/cloudinfo",
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/beans",
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/beans/billing",
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/constants",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

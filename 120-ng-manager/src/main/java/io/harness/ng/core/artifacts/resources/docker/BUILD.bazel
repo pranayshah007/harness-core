@@ -1,0 +1,17 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "docker",
+    srcs = ["DockerArtifactResource.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//120-ng-manager/src/main/java/io/harness/ng/core/artifacts/resources/util",
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/artifact/resources/docker/dtos",
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/artifact/resources/docker/service",
+        "//888-pms-client/src/main/java/io/harness/pipeline/remote",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:io_swagger_swagger_annotations",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

@@ -1,0 +1,17 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "demo",
+    srcs = [
+        "CVNGDemoDataIndexService.java",
+        "CVNGDemoPerpetualTaskService.java",
+        "ChangeSourceDemoDataGenerator.java",
+        "ChiDemoService.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/core/beans/params",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/core/entities/changeSource",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/core/entities/demo",
+    ],
+)

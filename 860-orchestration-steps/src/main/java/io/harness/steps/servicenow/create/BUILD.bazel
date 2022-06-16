@@ -1,0 +1,31 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "create",
+    srcs = [
+        "ServiceNowCreateSpecParameters.java",
+        "ServiceNowCreateStep.java",
+        "ServiceNowCreateStepInfo.java",
+        "ServiceNowCreateStepNode.java",
+        "ServiceNowCreateStepPlanCreator.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//860-orchestration-steps/src/main/java/io/harness/plancreator/steps/http",
+        "//860-orchestration-steps/src/main/java/io/harness/plancreator/steps/internal",
+        "//860-orchestration-steps/src/main/java/io/harness/steps/servicenow",
+        "//860-orchestration-steps/src/main/java/io/harness/steps/servicenow/beans",
+        "//878-ng-common-utilities/src/main/java/io/harness/plancreator/steps/common/rollback",
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/plan/creation/beans",
+        "//884-pms-commons/src/main/java/io/harness/pms/execution",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/servicenow",
+        "//960-yaml-sdk/src/main/java/io/harness/yaml/schema/beans",
+        "//980-commons/src/main/java/io/harness/supplier",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:com_google_guava_guava",
+        "@maven//:io_swagger_swagger_annotations",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_springframework_data_spring_data_commons",
+    ],
+)

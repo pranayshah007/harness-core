@@ -1,0 +1,16 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "watch",
+    srcs = [
+        "K8WatchPerpetualTaskClientParams.java",
+        "K8sClusterConfigFactory.java",
+        "K8sWatchPerpetualTaskServiceClient.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/io/harness/ccm/cluster/entities",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

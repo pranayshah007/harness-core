@@ -1,0 +1,23 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "cloudProvider",
+    srcs = [
+        "QLAwsCloudProvider.java",
+        "QLAzureCloudProvider.java",
+        "QLCloudProvider.java",
+        "QLCloudProviderBuilder.java",
+        "QLCloudProviderConnection.java",
+        "QLGcpCloudProvider.java",
+        "QLKubernetesClusterCloudProvider.java",
+        "QLPcfCloudProvider.java",
+        "QLPhysicalDataCenterCloudProvider.java",
+        "QLSpotInstCloudProvider.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/io/harness/ccm/health",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

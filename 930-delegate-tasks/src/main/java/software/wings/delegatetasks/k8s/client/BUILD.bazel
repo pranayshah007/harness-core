@@ -1,0 +1,17 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "client",
+    srcs = [
+        "HarnessKubernetesClientFactory.java",
+        "KubernetesClientFactory.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//930-delegate-tasks/src/main/java/software/wings/delegatetasks/k8s/exception",
+        "//930-delegate-tasks/src/main/java/software/wings/helpers/ext/container",
+        "//960-api-services/src/main/java/io/harness/k8s/model",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:io_fabric8_kubernetes_client",
+    ],
+)

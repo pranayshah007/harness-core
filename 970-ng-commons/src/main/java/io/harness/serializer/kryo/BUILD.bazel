@@ -1,0 +1,13 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "kryo",
+    srcs = ["NGCommonsKryoRegistrar.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//970-ng-commons/src/main/java/io/harness/ng/core/common/beans",
+        "//970-ng-commons/src/main/java/io/harness/request",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_esotericsoftware_kryo",
+    ],
+)

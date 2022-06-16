@@ -1,0 +1,27 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "apiclient",
+    srcs = [
+        "ApiClientFactoryImplTest.java",
+        "KubernetesApiCallTest.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//960-api-services/src/main/java/io/harness/k8s/apiclient",
+        "//960-api-services/src/main/java/io/harness/k8s/model",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_squareup_okhttp3_mockwebserver",
+        "@maven//:com_squareup_okio_okio",
+        "@maven//:commons_codec_commons_codec",
+        "@maven//:io_kubernetes_client_java_api",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+    ],
+)

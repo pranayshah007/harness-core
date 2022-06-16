@@ -1,0 +1,21 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "explorergrid",
+    srcs = ["InstanceBillingServiceTest.java"],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//374-ceng-graphql/src/main/java/io/harness/ccm/graphql/core/explorergrid",
+        "//959-psql-database-models/src/main/java/io/harness/queryconverter",
+        "//959-psql-database-models/src/main/java/io/harness/queryconverter/dto",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_jooq_jooq",
+        "@maven//:org_mockito_mockito_core",
+    ],
+)

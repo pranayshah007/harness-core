@@ -1,0 +1,16 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "sumologic",
+    srcs = [
+        "SumoLogicConnectorValidationInfo.java",
+        "SumoLogicUtils.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//948-cv-nextgen-beans/src/main/java/io/harness/delegate/beans/cvng",
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector/sumologic",
+        "@maven//:commons_codec_commons_codec",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

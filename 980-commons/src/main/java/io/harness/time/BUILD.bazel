@@ -1,0 +1,21 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "time",
+    srcs = [
+        "CalendarUtils.java",
+        "ClockTimer.java",
+        "DurationUtils.java",
+        "EpochUtils.java",
+        "TimeModule.java",
+        "Timer.java",
+        "Timestamp.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//980-commons/src/main/java/io/harness/concurrent",
+        "//980-commons/src/main/java/io/harness/threading",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

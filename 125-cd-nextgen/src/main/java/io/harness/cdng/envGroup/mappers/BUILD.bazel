@@ -1,0 +1,21 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "mappers",
+    srcs = [
+        "EnvironmentGroupFilterPropertiesMapper.java",
+        "EnvironmentGroupMapper.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/envGroup/beans",
+        "//955-filters-sdk/src/main/java/io/harness/filter/dto",
+        "//955-filters-sdk/src/main/java/io/harness/filter/entity",
+        "//955-filters-sdk/src/main/java/io/harness/filter/mapper",
+        "//960-ng-core-beans/src/main/java/io/harness/ng/core/environment/dto",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_modelmapper_modelmapper",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

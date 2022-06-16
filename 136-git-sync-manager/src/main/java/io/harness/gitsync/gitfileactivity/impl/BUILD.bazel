@@ -1,0 +1,26 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "impl",
+    srcs = [
+        "GitSyncServiceImpl.java",
+        "LatestErrorInGitFileActivity.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//136-git-sync-manager/src/main/java/io/harness/gitsync/common/helper",
+        "//136-git-sync-manager/src/main/java/io/harness/gitsync/core/beans",
+        "//136-git-sync-manager/src/main/java/io/harness/gitsync/gitfileactivity/beans",
+        "//136-git-sync-manager/src/main/java/io/harness/gitsync/gitfileactivity/service",
+        "//136-git-sync-manager/src/main/java/io/harness/repositories/gitFileActivity",
+        "//136-git-sync-manager/src/main/java/io/harness/repositories/gitFileActivitySummary",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_hibernate_hibernate_validator",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_springframework_data_spring_data_commons",
+        "@maven//:org_springframework_data_spring_data_mongodb",
+    ],
+)

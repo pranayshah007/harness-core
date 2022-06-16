@@ -1,0 +1,23 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "expression",
+    srcs = [
+        "ApplicationExpressionBuilder.java",
+        "EnvironmentExpressionBuilder.java",
+        "ExpressionBuilder.java",
+        "ExpressionBuilderServiceImpl.java",
+        "PipelineExpressionBuilder.java",
+        "ServiceExpressionBuilder.java",
+        "WorkflowExpressionBuilder.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/software/wings/service/intfc/expression",
+        "//970-api-services-beans/src/main/java/io/harness/pcf/model",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/io/harness/govern",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_apache_commons_commons_lang3",
+    ],
+)

@@ -1,0 +1,19 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "recaster",
+    srcs = ["RecastOrchestrationUtils.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//953-yaml-commons/src/main/java/io/harness/serializer/recaster",
+        "//953-yaml-commons/src/main/java/io/harness/serializer/recaster/proto",
+        "//979-recaster/src/main/java/io/harness/core",
+        "//979-recaster/src/main/java/io/harness/exceptions",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/io/harness/packages",
+        "//980-commons/src/main/java/io/harness/reflection",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_json_json",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

@@ -1,0 +1,24 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "git",
+    srcs = [
+        "GitFetchFilesConfig.java",
+        "GitFetchRequest.java",
+        "GitFetchResponse.java",
+        "GitOpsTaskType.java",
+        "NGGitOpsResponse.java",
+        "NGGitOpsTaskParams.java",
+        "TaskStatus.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//950-delegate-tasks-beans/src/main/java/io/harness/delegate/beans/executioncapability",
+        "//950-delegate-tasks-beans/src/main/java/io/harness/delegate/beans/storeconfig",
+        "//950-delegate-tasks-beans/src/main/java/io/harness/delegate/capability",
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector/scm/adapter",
+        "//970-api-services-beans/src/main/java/io/harness/git/model",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

@@ -1,0 +1,34 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "service",
+    srcs = [
+        "DockerPublicRegistryProcessorTest.java",
+        "DockerRegistryServiceImplTest.java",
+        "DockerRegistryUtilsTest.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//960-api-services/src/main/java/io/harness/artifacts/beans",
+        "//960-api-services/src/main/java/io/harness/artifacts/docker",
+        "//960-api-services/src/main/java/io/harness/artifacts/docker/beans",
+        "//960-api-services/src/main/java/io/harness/artifacts/docker/client",
+        "//960-api-services/src/main/java/io/harness/artifacts/docker/service",
+        "//980-commons/src/main/java/io/harness/eraro",
+        "//980-commons/src/main/java/io/harness/exception/runtime",
+        "//980-commons/src/main/java/io/harness/manage",
+        "//980-commons/src/main/java/io/harness/network",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_github_tomakehurst_wiremock_jre8_standalone",
+        "@maven//:com_google_guava_guava",
+        "@maven//:com_squareup_retrofit2_retrofit",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+    ],
+)

@@ -1,0 +1,19 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "mapper",
+    srcs = [
+        "K8sContainerToHelmServiceInstanceInfoMapper.java",
+        "K8sPodToServiceInstanceInfoMapper.java",
+        "ServerlessAwsLambdaFunctionToServerInstanceInfoMapper.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//950-delegate-tasks-beans/src/main/java/io/harness/delegate/beans/instancesync",
+        "//950-delegate-tasks-beans/src/main/java/io/harness/delegate/beans/instancesync/info",
+        "//950-delegate-tasks-beans/src/main/java/io/harness/delegate/beans/serverless",
+        "//970-api-services-beans/src/main/java/io/harness/container",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

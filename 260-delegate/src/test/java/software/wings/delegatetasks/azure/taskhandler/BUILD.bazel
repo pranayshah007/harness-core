@@ -1,0 +1,41 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "taskhandler",
+    srcs = [
+        "AzureAutoScaleHelperTest.java",
+        "AzureRestCallBackTest.java",
+        "AzureVMSSDeployTaskHandlerTest.java",
+        "AzureVMSSSetupTaskHandlerTest.java",
+        "AzureVMSSSwitchRouteTaskHandlerTest.java",
+        "AzureVMSSSyncTaskHandlerTest.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/azure",
+        "//930-delegate-tasks/src/main/java/software/wings/beans/command",
+        "//930-delegate-tasks/src/main/java/software/wings/delegatetasks",
+        "//930-delegate-tasks/src/main/java/software/wings/delegatetasks/azure/taskhandler",
+        "//960-api-services/src/main/java/io/harness/azure",
+        "//960-api-services/src/main/java/io/harness/azure/client",
+        "//960-api-services/src/main/java/io/harness/azure/utility",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:com_microsoft_azure_azure_client_runtime",
+        "@maven//:com_microsoft_azure_azure_mgmt_compute",
+        "@maven//:com_microsoft_azure_azure_mgmt_monitor",
+        "@maven//:com_microsoft_azure_azure_mgmt_network",
+        "@maven//:com_microsoft_azure_azure_mgmt_resources",
+        "@maven//:com_microsoft_rest_client_runtime",
+        "@maven//:com_squareup_retrofit2_retrofit",
+        "@maven//:io_reactivex_rxjava",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+    ],
+)

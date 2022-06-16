@@ -49,7 +49,7 @@ java_library(
     srcs = glob(["src/test/**/*.java"]),
     visibility = ["//visibility:public"],
     deps = [
-        ":module",
+        #":module",
         "//:lombok",
         "//999-annotations:module",
         "@maven//:com_bettercloud_vault_java_driver",

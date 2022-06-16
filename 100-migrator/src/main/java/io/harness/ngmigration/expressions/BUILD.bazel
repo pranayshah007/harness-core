@@ -1,0 +1,14 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "expressions",
+    srcs = [
+        "MigratorExpressionUtils.java",
+        "MigratorResolveFunctor.java",
+        "PipelineVariablesMigratorFunctor.java",
+        "SecretMigratorFunctor.java",
+        "ServiceVariablesMigratorFunctor.java",
+        "WorkflowVariablesMigratorFunctor.java",
+    ],
+    visibility = ["//:__subpackages__"],
+)

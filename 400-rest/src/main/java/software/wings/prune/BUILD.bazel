@@ -1,0 +1,21 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "prune",
+    srcs = [
+        "PruneEntityListener.java",
+        "PruneEvent.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/software/wings/beans/template",
+        "//400-rest/src/main/java/software/wings/dl",
+        "//400-rest/src/main/java/software/wings/service/intfc/template",
+        "//960-persistence/src/main/java/io/harness/queue",
+        "//970-api-services-beans/src/main/java/io/harness/globalcontex",
+        "//980-commons/src/main/java/io/harness/manage",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_mongodb_morphia_morphia",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

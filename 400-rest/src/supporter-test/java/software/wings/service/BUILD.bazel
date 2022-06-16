@@ -1,0 +1,11 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "service",
+    testonly = True,
+    srcs = [
+        "AuditServiceTestHelper.java",
+        "StaticMap.java",
+    ],
+    deps = ["@maven//:org_assertj_assertj_core"],
+)

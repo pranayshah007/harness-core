@@ -1,0 +1,13 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "explorergrid",
+    srcs = ["InstanceBillingService.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//959-psql-database-models/src/generated/java/io/harness/timescaledb/tables/pojos",
+        "//959-psql-database-models/src/main/java/io/harness/queryconverter",
+        "//959-psql-database-models/src/main/java/io/harness/queryconverter/dto",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

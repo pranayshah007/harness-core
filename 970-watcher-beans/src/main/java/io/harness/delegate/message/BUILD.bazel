@@ -1,0 +1,22 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "message",
+    srcs = [
+        "Message.java",
+        "MessageConstants.java",
+        "MessageService.java",
+        "MessageServiceImpl.java",
+        "MessengerType.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//980-commons/src/main/java/io/harness/concurrent",
+        "//980-commons/src/main/java/io/harness/filesystem",
+        "//980-commons/src/main/java/io/harness/threading",
+        "@maven//:com_google_guava_guava",
+        "@maven//:commons_io_commons_io",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

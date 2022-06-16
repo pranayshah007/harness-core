@@ -1,0 +1,28 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "k8s",
+    srcs = [
+        "QLInheritClusterDetails.java",
+        "QLK8sCloudProviderInput.java",
+        "QLManualClusterDetails.java",
+        "QLNone.java",
+        "QLOIDCToken.java",
+        "QLServiceAccountToken.java",
+        "QLUpdateInheritClusterDetails.java",
+        "QLUpdateK8sCloudProviderInput.java",
+        "QLUpdateManualClusterDetails.java",
+        "QLUpdateNone.java",
+        "QLUpdateOIDCToken.java",
+        "QLUpdateServiceAccountToken.java",
+        "QLUpdateUsernameAndPasswordAuthentication.java",
+        "QLUsernameAndPasswordAuthentication.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/software/wings/graphql/schema/type/cloudProvider/k8s",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

@@ -1,0 +1,24 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "cloudprovider",
+    srcs = [
+        "AwsConfigYamlHandler.java",
+        "AzureConfigYamlHandler.java",
+        "CloudProviderYamlHandler.java",
+        "GcpConfigYamlHandler.java",
+        "KubernetesClusterConfigYamlHandler.java",
+        "PcfConfigYamlHandler.java",
+        "PhysicalDataCenterConfigYamlHandler.java",
+        "RancherConfigYamlHandler.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/software/wings/service/impl/yaml/handler/setting",
+        "//950-delegate-tasks-beans/src/main/java/software/wings/yaml/setting",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

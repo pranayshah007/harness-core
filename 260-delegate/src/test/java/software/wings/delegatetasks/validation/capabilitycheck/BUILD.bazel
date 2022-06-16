@@ -1,0 +1,36 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "capabilitycheck",
+    srcs = [
+        "HelmCommandCapabilityCheckTest.java",
+        "HelmInstallationCapabilityCheckTest.java",
+        "SSHHostValidationCapabilityCheckTest.java",
+        "ShellConnectionCapabilityCheckTest.java",
+        "WinrmHostValidationCapabilityCheckTest.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/executioncapability",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/helm",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/winrm",
+        "//930-delegate-tasks/src/main/java/software/wings/beans/delegation",
+        "//930-delegate-tasks/src/main/java/software/wings/delegatetasks/validation/capabilities",
+        "//930-delegate-tasks/src/main/java/software/wings/delegatetasks/validation/capabilitycheck",
+        "//930-delegate-tasks/src/main/java/software/wings/helpers/ext/container",
+        "//930-delegate-tasks/src/main/java/software/wings/helpers/ext/helm",
+        "//930-delegate-tasks/src/main/java/software/wings/helpers/ext/helm/request",
+        "//957-cg-beans/src/main/java/software/wings/beans/infrastructure",
+        "//960-api-services/src/main/java/io/harness/k8s/model",
+        "//960-api-services/src/main/java/io/harness/shell",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+    ],
+)

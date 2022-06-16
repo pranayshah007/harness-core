@@ -1,0 +1,36 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "helpers",
+    srcs = [
+        "GcpHelperService.java",
+        "GkeClusterHelper.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/artifacts/gcr/exceptions",
+        "//960-api-services/src/main/java/io/harness/gcp/helpers",
+        "//960-api-services/src/main/java/io/harness/k8s/model",
+        "//980-commons/src/main/java/io/harness/concurrent",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/io/harness/eraro",
+        "//980-commons/src/main/java/io/harness/manage",
+        "//980-commons/src/main/java/io/harness/network",
+        "//980-commons/src/main/java/io/harness/threading",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_core",
+        "@maven//:com_google_api_client_google_api_client",
+        "@maven//:com_google_apis_google_api_services_compute",
+        "@maven//:com_google_apis_google_api_services_container",
+        "@maven//:com_google_apis_google_api_services_logging",
+        "@maven//:com_google_apis_google_api_services_monitoring",
+        "@maven//:com_google_apis_google_api_services_storage",
+        "@maven//:com_google_guava_guava",
+        "@maven//:com_google_http_client_google_http_client",
+        "@maven//:com_google_http_client_google_http_client_jackson2",
+        "@maven//:com_google_oauth_client_google_oauth_client",
+        "@maven//:commons_io_commons_io",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

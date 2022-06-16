@@ -1,0 +1,26 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "helm",
+    srcs = [
+        "HelmChartAsArtifactFunctionalTest.java",
+        "HelmCustomManifestFunctionalTest.java",
+        "HelmFunctionalTest.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//200-functional-test/src/main/java/io/harness/functional",
+        "//870-cg-orchestration/src/main/java/software/wings/infra",
+        "//930-delegate-tasks/src/main/java/software/wings/beans/infrastructure/instance",
+        "//960-api-services/src/main/java/io/harness/k8s/model",
+        "@maven//:com_google_guava_guava",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

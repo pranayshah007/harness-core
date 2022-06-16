@@ -1,0 +1,26 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "account",
+    srcs = [
+        "AccountChangeHandler.java",
+        "DummySystemUser.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/io/harness/event/handler/impl",
+        "//400-rest/src/main/java/io/harness/event/handler/impl/segment",
+        "//400-rest/src/main/java/software/wings/beans/instance/dashboard",
+        "//400-rest/src/main/java/software/wings/service/impl/event",
+        "//400-rest/src/main/java/software/wings/service/intfc/instance/stats",
+        "//950-events-framework/src/main/java/io/harness/event/handler",
+        "//950-events-framework/src/main/java/io/harness/event/listener",
+        "//960-persistence/src/main/java/io/harness/persistence",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:com_segment_analytics_java_analytics_core",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

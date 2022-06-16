@@ -1,0 +1,26 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "manifest",
+    srcs = ["ManifestPerpetualTaskExecutorTest.java"],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//260-delegate/src/main/java/io/harness/perpetualtask/artifact",
+        "//930-delegate-tasks/src/main/java/software/wings/delegatetasks/manifest",
+        "//930-delegate-tasks/src/main/java/software/wings/helpers/ext/helm/request",
+        "//960-api-services/src/main/java/io/harness/helm",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/io/harness/rest",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_squareup_okio_okio",
+        "@maven//:com_squareup_retrofit2_retrofit",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+    ],
+)

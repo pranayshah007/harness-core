@@ -1,0 +1,29 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "nodes",
+    srcs = [
+        "ArtifactoryUploadNode.java",
+        "BuildAndPushDockerNode.java",
+        "BuildAndPushECRNode.java",
+        "BuildAndPushGCRNode.java",
+        "GCSUploadNode.java",
+        "PluginStepNode.java",
+        "RestoreCacheGCSNode.java",
+        "RestoreCacheS3Node.java",
+        "RunStepNode.java",
+        "RunTestStepNode.java",
+        "S3UploadNode.java",
+        "SaveCacheGCSNode.java",
+        "SaveCacheS3Node.java",
+        "SecurityNode.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//330-ci-beans/src/main/java/io/harness/beans/steps/stepinfo",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_springframework_data_spring_data_commons",
+    ],
+)

@@ -1,0 +1,16 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "preference",
+    srcs = [
+        "AccessControlPreferenceConfiguration.java",
+        "AccessControlPreferenceModule.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "//access-control/service/src/main/java/io/harness/accesscontrol/preference/persistence/daos",
+        "//access-control/service/src/main/java/io/harness/accesscontrol/preference/services",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

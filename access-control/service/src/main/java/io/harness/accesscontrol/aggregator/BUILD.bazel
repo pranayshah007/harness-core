@@ -1,0 +1,15 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "aggregator",
+    srcs = [
+        "AggregatorMetricsContext.java",
+        "AggregatorStackDriverMetricsPublisherImpl.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//970-ng-commons/src/main/java/io/harness/metrics/service/api",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

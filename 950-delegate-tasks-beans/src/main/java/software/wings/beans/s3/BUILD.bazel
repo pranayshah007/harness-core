@@ -1,0 +1,20 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "s3",
+    srcs = [
+        "FetchS3FilesCommandParams.java",
+        "FetchS3FilesExecutionResponse.java",
+        "S3Bucket.java",
+        "S3FetchFileResult.java",
+        "S3File.java",
+        "S3FileRequest.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//950-delegate-tasks-beans/src/main/java/io/harness/delegate/beans/executioncapability",
+        "//980-commons/src/main/java/io/harness/eraro",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

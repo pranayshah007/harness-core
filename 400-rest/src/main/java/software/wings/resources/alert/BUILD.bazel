@@ -1,0 +1,22 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "alert",
+    srcs = [
+        "AlertResource.java",
+        "AlertType.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/io/harness/notifications",
+        "//400-rest/src/main/java/software/wings/alerts",
+        "//400-rest/src/main/java/software/wings/beans/alert",
+        "//400-rest/src/main/java/software/wings/beans/alert/cv",
+        "//980-commons/src/main/java/io/harness/rest",
+        "@maven//:com_google_guava_guava",
+        "@maven//:com_squareup_retrofit2_retrofit",
+        "@maven//:io_dropwizard_metrics_metrics_annotation",
+        "@maven//:io_swagger_swagger_annotations",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

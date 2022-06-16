@@ -1,0 +1,26 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "plan",
+    srcs = [
+        "CreatePartialPlanEventHandler.java",
+        "CreatePartialPlanMessageListener.java",
+        "CreatePartialPlanRedisConsumer.java",
+        "PartialPlanResponseEventPublisher.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//882-pms-sdk-core/src/main/java/io/harness/async",
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/plan/creation",
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/plan/creation/beans",
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/plan/creation/creators",
+        "//884-pms-commons/src/main/java/io/harness/pms/events/base",
+        "//953-events-api/src/main/java/io/harness/eventsframework/api",
+        "//960-persistence/src/main/java/io/harness/queue",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/io/harness/manage",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:javax_cache_cache_api",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

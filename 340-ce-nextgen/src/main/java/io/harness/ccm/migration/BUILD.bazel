@@ -1,0 +1,32 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "migration",
+    srcs = [
+        "CENGCoreMigrationDetails.java",
+        "CENGCoreMigrationProvider.java",
+        "CENGCoreSchema.java",
+        "CENGTimescaleMigrationDetails.java",
+        "CEViewPreferencesMigration.java",
+        "CEViewsFolderMigration.java",
+        "NoopCENGCoreMigration.java",
+        "NoopCENGTimescaleMigration.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//450-ce-views/src/main/java/io/harness/ccm/views/dao",
+        "//450-ce-views/src/main/java/io/harness/ccm/views/entities",
+        "//450-ce-views/src/main/java/io/harness/ccm/views/utils",
+        "//958-migration-sdk/src/main/java/io/harness/migration/beans",
+        "//958-migration-sdk/src/main/java/io/harness/migration/entities",
+        "//960-persistence/src/main/java/io/harness/persistence",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_mongodb_morphia_morphia",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_springframework_data_spring_data_commons",
+        "@maven//:org_springframework_data_spring_data_mongodb",
+        "@maven//:org_springframework_spring_core",
+    ],
+)

@@ -1,0 +1,24 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "k8sLabel",
+    srcs = [
+        "K8sLabelConnectionDataFetcher.java",
+        "K8sLabelHelper.java",
+        "K8sLabelQueryHelper.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/io/harness/ccm/cluster/dao",
+        "//400-rest/src/main/java/software/wings/graphql/datafetcher",
+        "//400-rest/src/main/java/software/wings/graphql/datafetcher/billing",
+        "//400-rest/src/main/java/software/wings/graphql/schema/type/aggregation/billing",
+        "//400-rest/src/main/java/software/wings/graphql/schema/type/aggregation/k8sLabel",
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/entities/k8s",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_graphql_java_graphql_java",
+        "@maven//:org_mongodb_morphia_morphia",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

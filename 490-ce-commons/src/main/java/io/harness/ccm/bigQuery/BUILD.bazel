@@ -1,0 +1,17 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "bigQuery",
+    srcs = [
+        "BigQueryService.java",
+        "BigQueryServiceImpl.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_auth_google_auth_library_oauth2_http",
+        "@maven//:com_google_cloud_google_cloud_bigquery",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

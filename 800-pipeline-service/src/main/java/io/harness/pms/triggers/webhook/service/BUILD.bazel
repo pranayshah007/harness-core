@@ -1,0 +1,14 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "service",
+    srcs = [
+        "TriggerWebhookExecutionService.java",
+        "TriggerWebhookExecutionServiceV2.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//810-ng-triggers/src/main/java/io/harness/ngtriggers/beans/entity",
+        "//960-persistence/src/main/java/io/harness/mongo/iterator",
+    ],
+)

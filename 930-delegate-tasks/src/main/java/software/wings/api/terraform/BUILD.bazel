@@ -1,0 +1,12 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "terraform",
+    srcs = ["TerraformProvisionInheritPlanElement.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//960-api-services/src/main/java/io/harness/security/encryption",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

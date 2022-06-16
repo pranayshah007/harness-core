@@ -1,0 +1,18 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "service",
+    srcs = [
+        "CEInfraSetupHandler.java",
+        "CEInfraSetupHandlerFactory.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/io/harness/ccm/setup",
+        "//400-rest/src/main/java/io/harness/ccm/setup/service/impl",
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/entities/billing",
+        "//950-delegate-tasks-beans/src/main/java/software/wings/beans/ce",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

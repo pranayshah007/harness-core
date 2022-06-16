@@ -1,0 +1,25 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "bugsnag",
+    srcs = [
+        "BugsnagApplication.java",
+        "BugsnagDelegateService.java",
+        "BugsnagDelegateServiceImpl.java",
+        "BugsnagSetupTestData.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//930-delegate-tasks/src/main/java/software/wings/delegatetasks",
+        "//930-delegate-tasks/src/main/java/software/wings/delegatetasks/cv",
+        "//930-delegate-tasks/src/main/java/software/wings/helpers/ext/apm",
+        "//930-delegate-tasks/src/main/java/software/wings/service/impl/analysis",
+        "//960-api-services/src/main/java/io/harness/security/encryption",
+        "//980-commons/src/main/java/io/harness/network",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:com_google_guava_guava",
+        "@maven//:com_squareup_retrofit2_converter_jackson",
+        "@maven//:com_squareup_retrofit2_retrofit",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

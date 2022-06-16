@@ -1,0 +1,34 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "expressions",
+    srcs = [
+        "EngineExpressionServiceImplTest.java",
+        "NodeExecutionsCacheTest.java",
+        "SampleExpressionEvaluator.java",
+        "SampleExpressionEvaluatorProvider.java",
+        "SampleExpressionEvaluatorTest.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//870-orchestration/src/main/java/io/harness/engine/executions/node",
+        "//870-orchestration/src/main/java/io/harness/engine/executions/plan",
+        "//870-orchestration/src/main/java/io/harness/engine/expressions",
+        "//870-orchestration/src/main/java/io/harness/engine/expressions/functors",
+        "//870-orchestration/src/main/java/io/harness/engine/pms/data",
+        "//953-yaml-commons/src/main/java/io/harness/pms/serializer/recaster",
+        "//960-persistence/src/supporter-test/java/io/harness/testlib",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:commons_codec_commons_codec",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_hibernate_hibernate_validator",
+        "@maven//:org_mockito_mockito_core",
+    ],
+)

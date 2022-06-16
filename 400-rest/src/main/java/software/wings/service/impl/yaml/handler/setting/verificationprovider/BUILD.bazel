@@ -1,0 +1,29 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "verificationprovider",
+    srcs = [
+        "APMConfigYamlHandler.java",
+        "AppDynamicsConfigYamlHandler.java",
+        "BugsnagConfigYamlHandler.java",
+        "DatadogConfigYamlHandler.java",
+        "DynaTraceConfigYamlHandler.java",
+        "ElkConfigYamlHandler.java",
+        "InstanaConfigYamlHandler.java",
+        "JenkinsConfigVerificationYamlHandler.java",
+        "LogzConfigYamlHandler.java",
+        "NewRelicConfigYamlHandler.java",
+        "PrometheusConfigYamlHandler.java",
+        "ScalyrConfigYamlHandler.java",
+        "SplunkConfigYamlHandler.java",
+        "SumoConfigYamlHandler.java",
+        "VerificationProviderYamlHandler.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/software/wings/service/impl/yaml/handler/setting",
+        "//950-delegate-tasks-beans/src/main/java/software/wings/yaml/setting",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+    ],
+)

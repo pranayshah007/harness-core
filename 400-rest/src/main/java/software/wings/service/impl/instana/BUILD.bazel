@@ -1,0 +1,13 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "instana",
+    srcs = ["InstanaServiceImpl.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//930-delegate-tasks/src/main/java/software/wings/delegatetasks/cv",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/io/harness/eraro",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

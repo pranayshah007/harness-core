@@ -1,0 +1,14 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "helper",
+    srcs = [
+        "DecryptionHelper.java",
+        "DecryptionHelperViaManager.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//960-api-services/src/main/java/io/harness/security/encryption",
+        "//970-ng-commons/src/main/java/io/harness/remote/client",
+    ],
+)

@@ -1,0 +1,27 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "harness",
+    srcs = [
+        "DelegateServiceComponentTest.java",
+        "DelegateServiceTestBase.java",
+        "QueriesTest.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//960-persistence/src/main/java/io/harness/query",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/io/harness/packages",
+        "//980-commons/src/main/java/io/harness/testing",
+        "@maven//:commons_io_commons_io",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_reflections_reflections",
+    ],
+)

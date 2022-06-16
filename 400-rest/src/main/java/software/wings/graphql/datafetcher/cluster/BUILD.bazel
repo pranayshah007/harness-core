@@ -1,0 +1,20 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "cluster",
+    srcs = [
+        "ClusterConnectionDataFetcher.java",
+        "ClusterController.java",
+        "ClusterDataFetcher.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/io/harness/ccm/cluster/entities",
+        "//400-rest/src/main/java/software/wings/graphql/datafetcher",
+        "//400-rest/src/main/java/software/wings/graphql/schema/type/aggregation/cluster",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_graphql_java_graphql_java",
+        "@maven//:org_mongodb_morphia_morphia",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

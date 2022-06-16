@@ -1,0 +1,19 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "container",
+    srcs = [
+        "IstioConfig.java",
+        "KubernetesBlueGreenConfig.java",
+        "KubernetesPortProtocol.java",
+        "KubernetesServiceSpecification.java",
+        "KubernetesServiceType.java",
+        "Label.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_github_reinert_jjschema",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

@@ -1,0 +1,19 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "client",
+    srcs = [
+        "JenkinsClient.java",
+        "JenkinsCustomServer.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//960-api-services/src/main/java/io/harness/artifacts/jenkins/beans",
+        "//960-api-services/src/main/java/software/wings/helpers/ext/jenkins/model",
+        "//980-commons/src/main/java/io/harness/network",
+        "@maven//:com_offbytwo_jenkins_jenkins_client",
+        "@maven//:org_apache_httpcomponents_httpclient",
+        "@maven//:org_apache_httpcomponents_httpcore",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

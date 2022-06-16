@@ -1,0 +1,17 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "rules",
+    testonly = True,
+    srcs = ["VerificationTestRule.java"],
+    deps = [
+        "//960-persistence/src/main/java/io/harness/lock",
+        "//960-persistence/src/main/java/io/harness/mongo",
+        "//960-persistence/src/main/java/io/harness/redis",
+        "//960-persistence/src/supporter-test/java/io/harness/testlib",
+        "//980-commons/src/main/java/io/harness/govern",
+        "@maven//:com_google_guava_guava",
+        "@maven//:io_dropwizard_dropwizard_core",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

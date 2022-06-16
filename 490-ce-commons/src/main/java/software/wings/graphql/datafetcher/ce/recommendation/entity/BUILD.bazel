@@ -1,0 +1,21 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "entity",
+    srcs = [
+        "ContainerCheckpoint.java",
+        "ContainerRecommendation.java",
+        "Cost.java",
+        "K8sWorkloadRecommendationPreset.java",
+        "PartialHistogramAggragator.java",
+        "RecommenderUtils.java",
+        "ResourceRequirement.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/entities/k8s/recommendation",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/io/harness/histogram",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

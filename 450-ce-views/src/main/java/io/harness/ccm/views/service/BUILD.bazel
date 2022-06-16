@@ -1,0 +1,24 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "service",
+    srcs = [
+        "CEReportScheduleService.java",
+        "CEReportTemplateBuilderService.java",
+        "CEViewFolderService.java",
+        "CEViewService.java",
+        "PerspectiveAnomalyService.java",
+        "ViewCustomFieldService.java",
+        "ViewsBillingService.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//450-ce-views/src/main/java/io/harness/ccm/views/dto",
+        "//450-ce-views/src/main/java/io/harness/ccm/views/entities",
+        "//450-ce-views/src/main/java/io/harness/ccm/views/graphql",
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/entities/anomaly",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_cloud_google_cloud_bigquery",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

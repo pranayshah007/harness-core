@@ -1,0 +1,17 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "switchaccount",
+    srcs = [
+        "LdapIdentificationInfo.java",
+        "OauthIdentificationInfo.java",
+        "RestrictedSwitchAccountInfo.java",
+        "SamlIdentificationInfo.java",
+        "SwitchAccountResponse.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//960-ng-core-beans/src/main/java/io/harness/ng/core/account",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

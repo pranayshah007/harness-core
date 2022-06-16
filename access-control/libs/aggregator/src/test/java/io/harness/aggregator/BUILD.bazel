@@ -1,0 +1,36 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "aggregator",
+    testonly = True,
+    srcs = [
+        "AccessControlAggregatorRule.java",
+        "AggregatorPersistenceTestConfig.java",
+        "AggregatorPersistenceTestModule.java",
+        "AggregatorTestBase.java",
+    ],
+    deps = [
+        "//960-persistence/src/main/java/io/harness/mongo",
+        "//960-persistence/src/main/java/io/harness/persistence",
+        "//960-persistence/src/main/java/io/harness/springdata",
+        "//980-commons/src/main/java/io/harness/govern",
+        "//980-commons/src/main/java/io/harness/threading",
+        "//980-commons/src/main/java/io/harness/time",
+        "//980-commons/src/main/java/io/harness/version",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "//access-control/libs/aggregator/src/main/java/io/harness/aggregator/consumers",
+        "//access-control/libs/core/src/main/java/io/harness/accesscontrol/scopes/core",
+        "@maven//:com_google_guava_guava",
+        "@maven//:com_google_inject_guice",
+        "@maven//:junit_junit",
+        "@maven//:org_mockito_mockito_core",
+        "@maven//:org_mongodb_morphia_morphia",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_springframework_data_spring_data_commons",
+        "@maven//:org_springframework_data_spring_data_mongodb",
+        "@maven//:org_springframework_guice_spring_guice",
+        "@maven//:org_springframework_spring_context",
+        "@maven//:org_springframework_spring_core",
+        "@maven//:org_springframework_spring_tx",
+    ],
+)

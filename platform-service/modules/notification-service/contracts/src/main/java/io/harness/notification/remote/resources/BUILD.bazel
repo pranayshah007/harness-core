@@ -1,0 +1,18 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "resources",
+    srcs = [
+        "ChannelResource.java",
+        "NotificationResource.java",
+        "NotificationSettingsResource.java",
+        "NotificationTemplateResource.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//970-ng-commons/src/main/java/io/harness/ng/beans",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:io_swagger_swagger_annotations",
+        "@maven//:org_glassfish_jersey_media_jersey_media_multipart",
+    ],
+)

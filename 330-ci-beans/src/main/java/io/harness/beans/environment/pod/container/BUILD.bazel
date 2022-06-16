@@ -1,0 +1,19 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "container",
+    srcs = [
+        "ContainerDefinitionInfo.java",
+        "ContainerImageDetails.java",
+        "ContainerSource.java",
+        "ContainerType.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//953-yaml-commons/src/main/java/io/harness/yaml/core/variables",
+        "//960-api-services/src/main/java/io/harness/k8s/model",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_hibernate_hibernate_validator",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

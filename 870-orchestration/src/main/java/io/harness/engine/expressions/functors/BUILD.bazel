@@ -1,0 +1,28 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "functors",
+    srcs = [
+        "ExecutionSweepingOutputFunctor.java",
+        "MatrixFunctor.java",
+        "NodeExecutionAncestorFunctor.java",
+        "NodeExecutionChildFunctor.java",
+        "NodeExecutionEntityType.java",
+        "NodeExecutionMap.java",
+        "NodeExecutionQualifiedFunctor.java",
+        "NodeExecutionValue.java",
+        "OutcomeFunctor.java",
+        "SecretFunctor.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//870-orchestration/src/main/java/io/harness/engine/expressions",
+        "//870-orchestration/src/main/java/io/harness/engine/pms/data",
+        "//876-orchestration-beans/src/main/java/io/harness/plan",
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/resolver",
+        "//953-yaml-commons/src/main/java/io/harness/pms/serializer/recaster",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

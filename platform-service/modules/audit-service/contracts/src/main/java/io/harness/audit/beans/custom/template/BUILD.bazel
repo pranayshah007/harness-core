@@ -1,0 +1,14 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "template",
+    srcs = ["TemplateEventData.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "//platform-service/modules/audit-service/contracts/src/main/java/io/harness/audit/beans/custom",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_springframework_data_spring_data_commons",
+    ],
+)

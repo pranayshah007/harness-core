@@ -1,0 +1,22 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "input",
+    srcs = [
+        "QLAddDelegateScopeInput.java",
+        "QLAttachAllScopesToDelegateInput.java",
+        "QLAttachScopeToDelegateInput.java",
+        "QLDelegateApproveRejectInput.java",
+        "QLDeleteDelegateInput.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//380-cg-graphql/src/main/java/io/harness/app/schema/type/delegate",
+        "//380-cg-graphql/src/main/java/software/wings/graphql/schema/type",
+        "//380-cg-graphql/src/main/java/software/wings/graphql/schema/type/aggregation",
+        "//970-rbac-core/src/main/java/software/wings/security/annotations",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

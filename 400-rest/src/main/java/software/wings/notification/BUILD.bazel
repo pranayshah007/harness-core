@@ -1,0 +1,12 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "notification",
+    srcs = ["EmailNotificationListener.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//930-delegate-tasks/src/main/java/software/wings/helpers/ext/mail",
+        "//960-persistence/src/main/java/io/harness/queue",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+    ],
+)

@@ -1,0 +1,11 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "k8s",
+    srcs = ["K8sManagerHelper.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//970-api-services-beans/src/main/java/io/harness/git/model",
+        "//980-commons/src/main/java/io/harness/data/structure",
+    ],
+)

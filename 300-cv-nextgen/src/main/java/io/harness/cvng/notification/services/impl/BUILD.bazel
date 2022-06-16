@@ -1,0 +1,21 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "impl",
+    srcs = ["NotificationRuleServiceImpl.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/core/beans/params",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/core/services/api/monitoredService",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/notification/beans",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/notification/entities",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/notification/services/api",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/notification/transformer",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/servicelevelobjective/services/api",
+        "//960-persistence/src/main/java/io/harness/persistence",
+        "//970-ng-commons/src/main/java/io/harness/ng/beans",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_mongodb_morphia_morphia",
+    ],
+)

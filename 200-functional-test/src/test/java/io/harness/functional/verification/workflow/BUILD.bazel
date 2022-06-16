@@ -1,0 +1,21 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "workflow",
+    testonly = True,
+    srcs = ["SpotinstDeploymentTypeVerification.java"],
+    deps = [
+        "//200-functional-test/src/main/java/io/harness/functional",
+        "//230-model-test/src/main/java/io/harness/testframework/restutils",
+        "//870-cg-orchestration/src/main/java/software/wings/infra",
+        "//930-delegate-tasks/src/main/java/software/wings/service/impl/analysis",
+        "//930-delegate-tasks/src/main/java/software/wings/service/impl/spotinst",
+        "//930-delegate-tasks/src/main/java/software/wings/sm/states/spotinst",
+        "//960-api-services/src/main/java/io/harness/security/encryption",
+        "//960-persistence/src/main/java/io/harness/persistence",
+        "@maven//:com_amazonaws_aws_java_sdk_ec2",
+        "@maven//:com_google_guava_guava",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+    ],
+)

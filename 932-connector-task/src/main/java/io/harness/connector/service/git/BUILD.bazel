@@ -1,0 +1,19 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "git",
+    srcs = [
+        "NGGitService.java",
+        "NGGitServiceImpl.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector/scm/genericgitconnector",
+        "//960-api-services/src/main/java/io/harness/git",
+        "//960-api-services/src/main/java/io/harness/shell",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_eclipse_jgit_org_eclipse_jgit",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

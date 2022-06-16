@@ -1,0 +1,37 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "scm",
+    srcs = [
+        "ScmDelegateClientImpl.java",
+        "ScmGitFileTask.java",
+        "ScmGitPRTask.java",
+        "ScmGitRefTask.java",
+        "ScmGitWebhookTask.java",
+        "ScmLinuxManager.java",
+        "ScmMacOSManager.java",
+        "ScmPathFilterEvaluationTask.java",
+        "ScmPushTask.java",
+        "ScmUnixManager.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/beans/logstreaming",
+        "//932-connector-task/src/main/java/io/harness/connector/service/scm",
+        "//952-scm-java-client/src/main/java/io/harness/beans/gitsync",
+        "//952-scm-java-client/src/main/java/io/harness/impl",
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector/scm",
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector/scm/bitbucket",
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector/scm/github",
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector/scm/gitlab",
+        "//960-api-services/src/main/java/io/harness/delegate/clienttools",
+        "//960-api-services/src/main/java/io/harness/security/encryption",
+        "//970-ng-commons/src/main/java/io/harness/ngtriggers/conditionchecker",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:io_grpc_grpc_netty",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_zeroturnaround_zt_exec",
+    ],
+)

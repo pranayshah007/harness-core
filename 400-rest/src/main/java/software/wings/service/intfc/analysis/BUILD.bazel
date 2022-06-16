@@ -1,0 +1,23 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "analysis",
+    srcs = [
+        "AnalysisService.java",
+        "ExperimentalAnalysisService.java",
+        "ExperimentalMetricAnalysisRecordService.java",
+        "LogLabelingService.java",
+        "LogVerificationService.java",
+        "LogVerificationServiceImpl.java",
+        "MetricCollectionResponse.java",
+        "TimeSeriesMLAnalysisRecordService.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//930-delegate-tasks/src/main/java/software/wings/service/impl/bugsnag",
+        "//970-api-services-beans/src/main/java/io/harness/deployment",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

@@ -1,0 +1,21 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "morphia",
+    srcs = [
+        "FeedbackMorphiaRegistrars.java",
+        "MockRoleAssignmentMorphiaRegistrar.java",
+        "NGMorphiaRegistrars.java",
+        "ServiceAccountMorphiaRegistrars.java",
+        "WebhookMorphiaRegistrars.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//120-ng-manager/src/main/java/io/harness/ng/accesscontrol/migrations/models",
+        "//120-ng-manager/src/main/java/io/harness/ng/accesscontrol/mockserver",
+        "//120-ng-manager/src/main/java/io/harness/ng/feedback/entities",
+        "//120-ng-manager/src/main/java/io/harness/ng/serviceaccounts/entities",
+        "//120-ng-manager/src/main/java/io/harness/ng/webhook/entities",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+    ],
+)

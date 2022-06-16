@@ -1,0 +1,22 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "pipeline",
+    srcs = [
+        "PipelineSetupStep.java",
+        "PipelineSetupStepParameters.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//860-orchestration-steps/src/main/java/io/harness/plancreator/flowcontrol",
+        "//860-orchestration-steps/src/main/java/io/harness/plancreator/pipeline",
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/plan/creation/beans",
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/steps/executables",
+        "//953-yaml-commons/src/main/java/io/harness/yaml/core/properties",
+        "//953-yaml-commons/src/main/java/io/harness/yaml/core/variables",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_springframework_data_spring_data_commons",
+    ],
+)

@@ -1,0 +1,24 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "utilities",
+    srcs = [
+        "MergeInputSetHelperUtils.java",
+        "VisitorDummyElementUtils.java",
+        "VisitorParentPathUtils.java",
+        "VisitorReflectionUtils.java",
+        "VisitorResponseUtils.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//967-walktree-visitor/src/main/java/io/harness/walktree/beans",
+        "//967-walktree-visitor/src/main/java/io/harness/walktree/registries/visitorfield",
+        "//967-walktree-visitor/src/main/java/io/harness/walktree/visitor",
+        "//967-walktree-visitor/src/main/java/io/harness/walktree/visitor/mergeinputset/beans",
+        "//967-walktree-visitor/src/main/java/io/harness/walktree/visitor/response",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/io/harness/reflection",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

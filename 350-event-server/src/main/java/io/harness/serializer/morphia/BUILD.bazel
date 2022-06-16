@@ -1,0 +1,8 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "morphia",
+    srcs = ["EventServerMorphiaRegistrar.java"],
+    visibility = ["//:__subpackages__"],
+    deps = ["//490-ce-commons/src/main/java/io/harness/ccm/commons/entities/events"],
+)

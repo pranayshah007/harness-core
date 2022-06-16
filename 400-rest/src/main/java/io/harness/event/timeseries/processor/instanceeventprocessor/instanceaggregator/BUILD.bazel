@@ -1,0 +1,18 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "instanceaggregator",
+    srcs = [
+        "DailyAggregator.java",
+        "HourlyAggregator.java",
+        "InstanceAggregator.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/io/harness/event/timeseries/processor",
+        "//400-rest/src/main/java/io/harness/event/timeseries/processor/instanceeventprocessor",
+        "//400-rest/src/main/java/io/harness/event/timeseries/processor/utils",
+        "//400-rest/src/main/java/software/wings/service/impl/event/timeseries",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

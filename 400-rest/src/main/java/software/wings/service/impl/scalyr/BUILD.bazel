@@ -1,0 +1,12 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "scalyr",
+    srcs = ["ScalyrServiceImpl.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/software/wings/service/intfc/scalyr",
+        "//930-delegate-tasks/src/main/java/software/wings/delegatetasks/cv/beans",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+    ],
+)

@@ -1,0 +1,27 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "ccm",
+    srcs = [
+        "CCMConfigYamlHandlerTest.java",
+        "CCMSettingServiceImplTest.java",
+        "CEPerpetualTaskHandlerTest.java",
+        "CEPerpetualTaskManagerTest.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//400-rest/src/main/java/io/harness/ccm/cluster/entities",
+        "//400-rest/src/main/java/software/wings/features",
+        "//400-rest/src/main/java/software/wings/features/api",
+        "//990-commons-test/src/main/java/io/harness/category/element",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+    ],
+)

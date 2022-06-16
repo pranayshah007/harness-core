@@ -1,0 +1,12 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "notifications",
+    srcs = ["CCMNotificationsDao.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/entities/notifications",
+        "//960-persistence/src/main/java/io/harness/persistence",
+        "@maven//:org_mongodb_morphia_morphia",
+    ],
+)

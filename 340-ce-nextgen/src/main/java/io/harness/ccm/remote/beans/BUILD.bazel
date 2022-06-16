@@ -1,0 +1,12 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "beans",
+    srcs = ["K8sClusterSetupRequest.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/beans/config",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

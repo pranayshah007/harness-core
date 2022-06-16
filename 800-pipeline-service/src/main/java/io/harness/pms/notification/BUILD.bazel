@@ -1,0 +1,26 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "notification",
+    srcs = [
+        "NotificationHelper.java",
+        "NotificationInstrumentationHelper.java",
+        "PipelineNotificationConstants.java",
+        "PipelineNotificationUtils.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//800-pipeline-service/src/main/java/io/harness/pms/pipeline/service",
+        "//800-pipeline-service/src/main/java/io/harness/pms/pipeline/yaml",
+        "//860-orchestration-steps/src/main/java/io/harness/notification/bean",
+        "//870-orchestration/src/main/java/io/harness/engine/executions/plan",
+        "//870-orchestration/src/main/java/io/harness/engine/utils",
+        "//953-yaml-commons/src/main/java/io/harness/pms/serializer/recaster",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/io/harness/govern",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "//clients/notification/src/main/java/io/harness/notification/channeldetails",
+        "//clients/notification/src/main/java/io/harness/notification/notificationclient",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

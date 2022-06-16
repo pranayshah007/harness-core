@@ -1,0 +1,12 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "data",
+    srcs = ["PVTypeCloudProviderMap.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//260-delegate/src/main/java/io/harness/perpetualtask/k8s/watch",
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/constants",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

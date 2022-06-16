@@ -1,0 +1,19 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "rule",
+    testonly = True,
+    srcs = ["NotificationServiceRule.java"],
+    deps = [
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/io/harness/govern",
+        "//980-commons/src/main/java/io/harness/testing",
+        "//980-commons/src/main/java/io/harness/threading",
+        "//980-commons/src/test/java/io/harness/oas",
+        "@maven//:com_google_guava_guava",
+        "@maven//:io_grpc_grpc_core",
+        "@maven//:junit_junit",
+        "@maven//:org_mongodb_morphia_morphia",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

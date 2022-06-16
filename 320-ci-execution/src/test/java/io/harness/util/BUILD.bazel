@@ -1,0 +1,32 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "util",
+    srcs = [
+        "GithubApiFunctorTest.java",
+        "GithubApiFunctorTestHelper.java",
+        "GithubApiTokenEvaluatorTest.java",
+        "HarnessImageUtilsTest.java",
+        "InfrastructureUtilsTest.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//320-ci-execution/src/main/java/io/harness/stateutils/buildstate",
+        "//320-ci-execution/src/test/java/io/harness/executionplan",
+        "//330-ci-beans/src/main/java/io/harness/beans/sweepingoutputs",
+        "//330-ci-beans/src/main/java/io/harness/beans/yaml/extended/infrastrucutre",
+        "//330-ci-beans/src/main/java/io/harness/ci/config",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_codehaus_groovy_groovy",
+        "@maven//:org_jooq_joor",
+        "@maven//:org_mockito_mockito_core",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

@@ -1,0 +1,36 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "steps",
+    srcs = [
+        "InfrastructureSectionStepTest.java",
+        "InfrastructureStepTest.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/common/beans",
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/infra/steps",
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/pipeline",
+        "//127-cd-nextgen-entities/src/main/java/io/harness/cdng/stepsdependency/constants",
+        "//127-cd-nextgen-entities/src/main/java/io/harness/ng/core/environment/services",
+        "//440-connector-nextgen/src/main/java/io/harness/connector/services",
+        "//878-ng-common-utilities/src/main/java/io/harness/steps/environment",
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/resolver",
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/resolver/outcome",
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/resolver/outputs",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/k8s",
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector/gcpconnector",
+        "//980-commons/src/main/java/io/harness/reflection",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "//clients/access-control/sdk/src/main/java/io/harness/accesscontrol/clients",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

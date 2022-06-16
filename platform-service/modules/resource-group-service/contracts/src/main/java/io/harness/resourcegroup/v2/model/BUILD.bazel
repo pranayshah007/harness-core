@@ -1,0 +1,19 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "model",
+    srcs = [
+        "ResourceFilter.java",
+        "ResourceSelector.java",
+        "ScopeSelector.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "//platform-service/modules/resource-group-service/contracts/src/main/java/io/harness/resourcegroup/beans",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:io_swagger_core_v3_swagger_annotations",
+        "@maven//:io_swagger_swagger_annotations",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

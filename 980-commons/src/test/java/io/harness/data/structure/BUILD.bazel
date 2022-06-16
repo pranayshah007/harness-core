@@ -1,0 +1,31 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "structure",
+    srcs = [
+        "CollectionUtilsTest.java",
+        "EmptyPredicateTest.java",
+        "HarnessStringUtilsTest.java",
+        "ImplementsCollection.java",
+        "ImplementsMap.java",
+        "MapUtilTest.java",
+        "MongoMapSanitizerTest.java",
+        "SizePredicateTest.java",
+        "UUIDGeneratorTest.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/io/harness/threading",
+        "@maven//:com_google_guava_guava",
+        "@maven//:junit_junit",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

@@ -1,0 +1,24 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "processor",
+    srcs = [
+        "ActivityLogsProcessor.java",
+        "ExportExecutionsProcessor.java",
+        "StateExecutionInstanceProcessor.java",
+        "StateInspectionProcessor.java",
+        "SubCommandsProcessor.java",
+        "UserGroupsProcessor.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/io/harness/execution/export/metadata",
+        "//870-cg-orchestration/src/main/java/io/harness/state/inspection",
+        "//960-persistence/src/main/java/io/harness/persistence",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

@@ -1,0 +1,16 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "spring",
+    srcs = [
+        "ApiKeyRepository.java",
+        "SecretRepository.java",
+        "TokenRepository.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//970-ng-commons/src/main/java/io/harness/ng/core/common/beans",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_springframework_data_spring_data_commons",
+    ],
+)

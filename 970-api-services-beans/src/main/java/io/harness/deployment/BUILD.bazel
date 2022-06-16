@@ -1,0 +1,11 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "deployment",
+    srcs = ["InstanceDetails.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "@maven//:com_amazonaws_aws_java_sdk_ec2",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

@@ -1,0 +1,24 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "handler",
+    srcs = [
+        "FieldPlacementStrategy.java",
+        "PipelineTemplateYamlConversionHandler.java",
+        "TemplateYamlConversionData.java",
+        "TemplateYamlConversionHandler.java",
+        "TemplateYamlConversionHandlerRegistry.java",
+        "TemplateYamlConversionRecord.java",
+        "TemplateYamlParallelConversionRecord.java",
+        "TemplateYamlReplaceConversionRecord.java",
+        "YamlConversionHandler.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//840-template-service/src/main/java/io/harness/template/beans",
+        "//960-ng-core-beans/src/main/java/io/harness/ng/core/template",
+        "//980-commons/src/main/java/io/harness/exception/ngexception",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

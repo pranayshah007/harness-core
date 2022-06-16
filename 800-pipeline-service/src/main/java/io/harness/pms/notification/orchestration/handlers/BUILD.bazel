@@ -1,0 +1,20 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "handlers",
+    srcs = [
+        "NotificationInformHandler.java",
+        "PipelineStartNotificationHandler.java",
+        "StageStartNotificationHandler.java",
+        "StageStatusUpdateNotificationEventHandler.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//800-pipeline-service/src/main/java/io/harness/pms/notification",
+        "//800-pipeline-service/src/main/java/io/harness/pms/notification/orchestration/observers",
+        "//870-orchestration/src/main/java/io/harness/engine/observers",
+        "//870-orchestration/src/main/java/io/harness/engine/observers/beans",
+        "//870-orchestration/src/main/java/io/harness/engine/utils",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+    ],
+)

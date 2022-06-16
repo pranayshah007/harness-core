@@ -1,0 +1,14 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "mapper",
+    srcs = ["PipelineExecutionFilterPropertiesMapper.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//800-pipeline-service/src/main/java/io/harness/pms/plan/execution/entity",
+        "//955-filters-sdk/src/main/java/io/harness/filter/dto",
+        "//955-filters-sdk/src/main/java/io/harness/filter/entity",
+        "//955-filters-sdk/src/main/java/io/harness/filter/mapper",
+        "@maven//:org_modelmapper_modelmapper",
+    ],
+)

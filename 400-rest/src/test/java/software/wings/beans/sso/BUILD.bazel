@@ -1,0 +1,22 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "sso",
+    srcs = [
+        "LdapSettingsKryoDtoTest.java",
+        "LdapUserResponseTest.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//930-delegate-tasks/src/main/java/software/wings/beans/dto",
+        "//990-commons-test/src/main/java/io/harness/category/element",
+        "@maven//:com_esotericsoftware_kryo",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+    ],
+)

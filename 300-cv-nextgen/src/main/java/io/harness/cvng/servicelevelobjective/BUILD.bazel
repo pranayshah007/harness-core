@@ -1,0 +1,12 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "servicelevelobjective",
+    srcs = ["SLORiskCountResponse.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/servicelevelobjective/beans",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

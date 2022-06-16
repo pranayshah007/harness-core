@@ -1,0 +1,20 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "informer",
+    srcs = ["SharedInformerFactoryFactoryTest.java"],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//260-delegate/src/main/java/io/harness/perpetualtask/k8s/informer",
+        "@maven//:io_kubernetes_client_java",
+        "@maven//:io_kubernetes_client_java_api",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+    ],
+)

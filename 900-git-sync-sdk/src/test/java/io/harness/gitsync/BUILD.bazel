@@ -1,0 +1,17 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "gitsync",
+    testonly = True,
+    srcs = [
+        "ChangeSetHelperServiceImpl.java",
+        "SampleBean1EntityGitPersistenceHelperServiceImpl.java",
+        "SampleBeanEntityGitPersistenceHelperServiceImpl.java",
+    ],
+    deps = [
+        "//900-git-sync-sdk/src/main/java/io/harness/gitsync/entityInfo",
+        "//900-git-sync-sdk/src/main/java/io/harness/gitsync/gittoharness",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

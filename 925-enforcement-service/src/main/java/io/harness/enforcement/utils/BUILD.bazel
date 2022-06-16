@@ -1,0 +1,12 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "utils",
+    srcs = ["EnforcementUtils.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//925-enforcement-service/src/main/java/io/harness/enforcement/bases",
+        "//943-enforcement-beans/src/main/java/io/harness/enforcement/constants",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

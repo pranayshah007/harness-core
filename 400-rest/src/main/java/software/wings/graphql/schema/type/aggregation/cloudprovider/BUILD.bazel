@@ -1,0 +1,19 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "cloudprovider",
+    srcs = [
+        "CEHealthStatusDTO.java",
+        "QLCEEnabledFilter.java",
+        "QLCloudProviderAggregation.java",
+        "QLCloudProviderFilter.java",
+        "QLCloudProviderTypeAggregation.java",
+        "QLCloudProviderTypeFilter.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/io/harness/ccm/health",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

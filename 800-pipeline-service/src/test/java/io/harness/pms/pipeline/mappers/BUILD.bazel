@@ -1,0 +1,28 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "mappers",
+    srcs = [
+        "GraphLayoutDtoMapperTest.java",
+        "InterruptConfigDTOMapperTest.java",
+        "ModuleInfoMapperTest.java",
+        "PipelineExecutionSummaryDtoMapperTest.java",
+        "PipelineYamlDtoMapperTest.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//800-pipeline-service/src/main/java/io/harness/pms/pipeline/mappers",
+        "//860-orchestration-steps/src/main/java/io/harness/plancreator/pipeline",
+        "//870-orchestration/src/main/java/io/harness/engine/executions/retry",
+        "//876-orchestration-beans/src/main/java/io/harness/interrupts",
+        "//884-pms-commons/src/main/java/io/harness/pms/execution",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+    ],
+)

@@ -1,0 +1,23 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "changeEvent",
+    srcs = [
+        "ChangeEventEntityAndDTOTransformer.java",
+        "ChangeEventMetaDataTransformer.java",
+        "HarnessCDChangeEventTransformer.java",
+        "HarnessCDCurrentGenChangeEventTransformer.java",
+        "KubernetesClusterChangeEventMetadataTransformer.java",
+        "PagerDutyChangeEventTransformer.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/activity/entities",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/client",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/core/beans/params",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/core/entities",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/core/services/api/monitoredService",
+        "//960-ng-core-beans/src/main/java/io/harness/ng/core/environment/dto",
+        "//960-ng-core-beans/src/main/java/io/harness/ng/core/service/dto",
+    ],
+)

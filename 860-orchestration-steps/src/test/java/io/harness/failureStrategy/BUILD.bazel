@@ -1,0 +1,31 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "failureStrategy",
+    srcs = [
+        "FailureStrategyTest.java",
+        "StageFailureStrategyTest.java",
+        "StepFailureStrategyTest.java",
+        "StepGroupFailureStrategyTest.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//953-yaml-commons/src/main/java/io/harness/yaml/core/failurestrategy",
+        "//953-yaml-commons/src/main/java/io/harness/yaml/core/failurestrategy/abort",
+        "//953-yaml-commons/src/main/java/io/harness/yaml/core/failurestrategy/ignore",
+        "//953-yaml-commons/src/main/java/io/harness/yaml/core/failurestrategy/manualintervention",
+        "//953-yaml-commons/src/main/java/io/harness/yaml/core/failurestrategy/marksuccess",
+        "//953-yaml-commons/src/main/java/io/harness/yaml/core/failurestrategy/retry",
+        "//953-yaml-commons/src/main/java/io/harness/yaml/core/failurestrategy/rollback",
+        "//970-ng-commons/src/main/java/io/harness/yaml/core/timeout",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

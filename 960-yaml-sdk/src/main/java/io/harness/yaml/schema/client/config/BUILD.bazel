@@ -1,0 +1,15 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "config",
+    srcs = [
+        "YamlSchemaClientConfig.java",
+        "YamlSchemaHttpClientConfig.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//970-ng-commons/src/main/java/io/harness/remote/client",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

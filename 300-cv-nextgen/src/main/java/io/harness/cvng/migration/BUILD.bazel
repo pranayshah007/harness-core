@@ -1,0 +1,23 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "migration",
+    srcs = [
+        "CVNGBackgroundMigrationList.java",
+        "CVNGMigration.java",
+        "CVNGSchemaHandler.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/migration/beans",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/migration/list",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/migration/service",
+        "//960-persistence/src/main/java/io/harness/mongo/iterator",
+        "//960-persistence/src/main/java/io/harness/persistence",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_mongodb_morphia_morphia",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

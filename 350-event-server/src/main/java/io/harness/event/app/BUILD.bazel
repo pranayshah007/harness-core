@@ -1,0 +1,45 @@
+load("@rules_java//java:defs.bzl", "java_binary", "java_library")
+
+java_library(
+    name = "app",
+    srcs = [
+        "EventServiceApplication.java",
+        "EventServiceConfig.java",
+        "EventServiceModule.java",
+        "RegistrarsModule.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//350-event-server/src/main/java/io/harness/event/grpc",
+        "//350-event-server/src/main/java/io/harness/event/metrics",
+        "//350-event-server/src/main/java/io/harness/event/metrics/jobs",
+        "//350-event-server/src/main/java/io/harness/event/service/impl",
+        "//350-event-server/src/main/java/io/harness/event/service/intfc",
+        "//800-pipeline-service/src/main/java/io/harness/grpc/server",
+        "//960-persistence/src/main/java/io/harness/mongo",
+        "//960-persistence/src/main/java/io/harness/persistence",
+        "//970-ng-commons/src/main/java/io/harness/metrics/modules",
+        "//970-ng-commons/src/main/java/io/harness/metrics/service/api",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/io/harness/govern",
+        "//980-commons/src/main/java/io/harness/secret",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:com_google_guava_guava",
+        "@maven//:com_google_inject_guice",
+        "@maven//:commons_io_commons_io",
+        "@maven//:org_hibernate_hibernate_validator",
+        "@maven//:org_mongodb_morphia_morphia",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_slf4j_jul_to_slf4j",
+        "@maven//:org_slf4j_log4j_over_slf4j",
+        "@maven//:ru_vyarus_guice_validator",
+    ],
+)
+
+java_binary(
+    name = "EventServiceApplication",
+    main_class = "io.harness.event.app.EventServiceApplication",
+    visibility = ["//visibility:public"],
+    runtime_deps = [":app"],
+)

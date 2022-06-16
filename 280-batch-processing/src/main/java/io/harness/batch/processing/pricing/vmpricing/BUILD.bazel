@@ -1,0 +1,38 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "vmpricing",
+    srcs = [
+        "ComputeInstancePricingStrategy.java",
+        "EcsFargatePricingInfo.java",
+        "VMInstanceBillingData.java",
+        "VMPricingService.java",
+        "VMPricingServiceImpl.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//280-batch-processing/src/main/java/io/harness/batch/processing/pricing",
+        "//280-batch-processing/src/main/java/io/harness/batch/processing/pricing/fargatepricing",
+        "//280-batch-processing/src/main/java/io/harness/batch/processing/pricing/pricingprofile",
+        "//280-batch-processing/src/main/java/io/harness/batch/processing/pricing/service/intfc",
+        "//280-batch-processing/src/main/java/io/harness/batch/processing/pricing/service/support",
+        "//280-batch-processing/src/main/java/io/harness/batch/processing/service/intfc",
+        "//280-batch-processing/src/main/java/io/harness/batch/processing/tasklet/util",
+        "//280-batch-processing/src/main/java/io/harness/batch/processing/writer/constants",
+        "//480-pricing-service/src/main/java/io/harness/pricing/client",
+        "//480-pricing-service/src/main/java/io/harness/pricing/dto/cloudinfo",
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/beans",
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/beans/billing",
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/constants",
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/entities/batch",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:com_github_ben_manes_caffeine_caffeine",
+        "@maven//:com_google_guava_guava",
+        "@maven//:com_squareup_retrofit2_retrofit",
+        "@maven//:commons_codec_commons_codec",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_springframework_spring_beans",
+        "@maven//:org_springframework_spring_context",
+    ],
+)

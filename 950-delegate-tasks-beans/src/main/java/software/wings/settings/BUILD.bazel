@@ -1,0 +1,14 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "settings",
+    srcs = ["SettingValue.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//950-delegate-tasks-beans/src/main/java/io/harness/delegate/beans/executioncapability",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:com_github_reinert_jjschema",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

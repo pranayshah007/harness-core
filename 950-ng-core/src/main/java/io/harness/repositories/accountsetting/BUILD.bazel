@@ -1,0 +1,18 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "accountsetting",
+    srcs = [
+        "AccountSettingCustomRepository.java",
+        "AccountSettingCustomRepositoryImpl.java",
+        "AccountSettingRepository.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//950-ng-core/src/main/java/io/harness/ng/core/accountsetting/dto",
+        "//950-ng-core/src/main/java/io/harness/ng/core/accountsetting/entities",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_springframework_data_spring_data_commons",
+        "@maven//:org_springframework_data_spring_data_mongodb",
+    ],
+)

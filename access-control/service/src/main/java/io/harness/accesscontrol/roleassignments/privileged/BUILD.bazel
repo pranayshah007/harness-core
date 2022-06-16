@@ -1,0 +1,29 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "privileged",
+    srcs = [
+        "PrivilegedAccessCheck.java",
+        "PrivilegedAccessResult.java",
+        "PrivilegedRoleAssignment.java",
+        "PrivilegedRoleAssignmentHandler.java",
+        "PrivilegedRoleAssignmentService.java",
+        "PrivilegedRoleAssignmentServiceImpl.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "//access-control/libs/aggregator/src/main/java/io/harness/aggregator/consumers",
+        "//access-control/libs/core/src/main/java/io/harness/accesscontrol/acl",
+        "//access-control/libs/core/src/main/java/io/harness/accesscontrol/principals/usergroups/persistence",
+        "//access-control/libs/core/src/main/java/io/harness/accesscontrol/roleassignments/persistence",
+        "//access-control/service/src/main/java/io/harness/accesscontrol/roleassignments/privileged/persistence",
+        "//access-control/service/src/main/java/io/harness/accesscontrol/support",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@maven//:com_fasterxml_jackson_dataformat_jackson_dataformat_yaml",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_hibernate_hibernate_validator",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

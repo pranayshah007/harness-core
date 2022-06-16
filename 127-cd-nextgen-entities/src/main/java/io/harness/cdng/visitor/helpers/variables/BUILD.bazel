@@ -1,0 +1,11 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "variables",
+    srcs = ["VariableOverridesVisitorHelper.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//127-cd-nextgen-entities/src/main/java/io/harness/cdng/variables/beans",
+        "//967-walktree-visitor/src/main/java/io/harness/walktree/visitor",
+    ],
+)

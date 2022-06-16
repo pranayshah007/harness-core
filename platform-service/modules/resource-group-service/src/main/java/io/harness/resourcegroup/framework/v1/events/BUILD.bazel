@@ -1,0 +1,19 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "events",
+    srcs = [
+        "ResourceGroupCreateEvent.java",
+        "ResourceGroupDeleteEvent.java",
+        "ResourceGroupUpdateEvent.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "//platform-service/modules/resource-group-service/contracts/src/main/java/io/harness/resourcegroup/v1/remote/dto",
+        "//platform-service/modules/resource-group-service/contracts/src/main/java/io/harness/resourcegroup/v2/remote/dto",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

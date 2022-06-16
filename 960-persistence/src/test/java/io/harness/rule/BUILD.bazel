@@ -1,0 +1,24 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "rule",
+    testonly = True,
+    srcs = ["PersistenceRule.java"],
+    deps = [
+        "//960-persistence/src/main/java/io/harness/lock",
+        "//960-persistence/src/main/java/io/harness/mongo",
+        "//960-persistence/src/main/java/io/harness/mongo/queue",
+        "//960-persistence/src/main/java/io/harness/persistence",
+        "//960-persistence/src/main/java/io/harness/queue",
+        "//960-persistence/src/main/java/io/harness/redis",
+        "//970-ng-commons/src/main/java/io/harness/metrics/modules",
+        "//980-commons/src/main/java/io/harness/govern",
+        "//980-commons/src/main/java/io/harness/testing",
+        "//980-commons/src/main/java/io/harness/threading",
+        "//980-commons/src/main/java/io/harness/time",
+        "@maven//:com_google_guava_guava",
+        "@maven//:junit_junit",
+        "@maven//:org_mongodb_morphia_morphia",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

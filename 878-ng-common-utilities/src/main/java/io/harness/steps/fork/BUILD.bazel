@@ -1,0 +1,16 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "fork",
+    srcs = [
+        "ForkStepParameters.java",
+        "NGForkStep.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//878-ng-common-utilities/src/main/java/io/harness/steps/executable",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_springframework_data_spring_data_commons",
+    ],
+)

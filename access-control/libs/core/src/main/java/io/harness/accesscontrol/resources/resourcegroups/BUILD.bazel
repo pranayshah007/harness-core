@@ -1,0 +1,24 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "resourcegroups",
+    srcs = [
+        "ResourceGroup.java",
+        "ResourceGroupService.java",
+        "ResourceGroupServiceImpl.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//970-ng-commons/src/main/java/io/harness/ng/beans",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "//access-control/libs/core/src/main/java/io/harness/accesscontrol/common/filter",
+        "//access-control/libs/core/src/main/java/io/harness/accesscontrol/resources/resourcegroups/persistence",
+        "//access-control/libs/core/src/main/java/io/harness/accesscontrol/roleassignments",
+        "@maven//:com_google_guava_guava",
+        "@maven//:net_jodah_failsafe",
+        "@maven//:org_hibernate_hibernate_validator",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_springframework_spring_tx",
+    ],
+)

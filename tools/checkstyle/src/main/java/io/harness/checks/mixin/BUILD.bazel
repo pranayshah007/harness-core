@@ -1,0 +1,14 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "mixin",
+    srcs = [
+        "AnnotationMixin.java",
+        "FieldMixin.java",
+        "GeneralMixin.java",
+        "MethodMixin.java",
+        "ModifierMixin.java",
+        "OperationMixin.java",
+    ],
+    visibility = ["//:__subpackages__"],
+)

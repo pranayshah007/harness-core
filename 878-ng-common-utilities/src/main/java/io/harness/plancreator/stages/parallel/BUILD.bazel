@@ -1,0 +1,17 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "parallel",
+    srcs = ["ParallelPlanCreator.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//878-ng-common-utilities/src/main/java/io/harness/advisers/nextstep",
+        "//878-ng-common-utilities/src/main/java/io/harness/steps/fork",
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/plan",
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/plan/creation/beans",
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/plan/creation/creators",
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/plan/creation/yaml",
+        "//884-pms-commons/src/main/java/io/harness/pms/execution",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+    ],
+)

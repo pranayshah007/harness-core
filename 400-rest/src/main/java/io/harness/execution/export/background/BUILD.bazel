@@ -1,0 +1,31 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "background",
+    srcs = [
+        "ExportExecutionsNotificationHelper.java",
+        "ExportExecutionsRequestCleanupHandler.java",
+        "ExportExecutionsRequestHandler.java",
+        "ExportExecutionsService.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/io/harness/execution/export",
+        "//400-rest/src/main/java/io/harness/execution/export/formatter",
+        "//400-rest/src/main/java/io/harness/execution/export/metadata",
+        "//400-rest/src/main/java/io/harness/execution/export/processor",
+        "//400-rest/src/main/java/io/harness/workers/background",
+        "//400-rest/src/main/java/software/wings/dl",
+        "//960-persistence/src/main/java/io/harness/mongo/iterator",
+        "//960-persistence/src/main/java/io/harness/mongo/iterator/filter",
+        "//960-persistence/src/main/java/io/harness/mongo/iterator/provider",
+        "//960-persistence/src/main/java/io/harness/persistence",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_hibernate_hibernate_validator",
+        "@maven//:org_mongodb_morphia_morphia",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

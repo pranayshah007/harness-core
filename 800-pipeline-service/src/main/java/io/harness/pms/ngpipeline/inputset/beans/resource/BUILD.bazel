@@ -1,0 +1,23 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "resource",
+    srcs = [
+        "InputSetListTypePMS.java",
+        "InputSetResponseDTOPMS.java",
+        "InputSetSanitiseResponseDTO.java",
+        "InputSetSummaryResponseDTOPMS.java",
+        "InputSetTemplateRequestDTO.java",
+        "InputSetTemplateResponseDTOPMS.java",
+        "InputSetYamlWithTemplateDTO.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//800-pipeline-service/src/main/java/io/harness/pms/ngpipeline/inputset/beans/entity",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:io_swagger_core_v3_swagger_annotations",
+        "@maven//:io_swagger_swagger_annotations",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

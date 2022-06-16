@@ -1,0 +1,26 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "executable",
+    srcs = [
+        "AsyncExecutableWithRbac.java",
+        "ChildChainExecutableWithRbac.java",
+        "ChildExecutableWithRbac.java",
+        "ChildExecutableWithRollbackAndRbac.java",
+        "ChildrenExecutableWithRbac.java",
+        "ChildrenExecutableWithRollbackAndRbac.java",
+        "SyncExecutableWithRbac.java",
+        "TaskChainExecutableWithRbac.java",
+        "TaskExecutableWithRbac.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//878-ng-common-utilities/src/main/java/io/harness/plancreator/steps/common/rollback",
+        "//878-ng-common-utilities/src/main/java/io/harness/pms/security",
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/resolver/outputs",
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/steps/executables",
+        "//980-commons/src/main/java/io/harness/supplier",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

@@ -1,0 +1,41 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "consumers",
+    srcs = [
+        "ResourceGroupChangeConsumerImplTest.java",
+        "RoleAssignmentChangeConsumerImplTest.java",
+        "RoleChangeConsumerImplTest.java",
+        "UserGroupChangeConsumerImplTest.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//970-ng-commons/src/main/java/io/serializer",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "//access-control/libs/aggregator/src/main/java/io/harness/aggregator/consumers",
+        "//access-control/libs/aggregator/src/main/java/io/harness/aggregator/controllers",
+        "//access-control/libs/core/src/main/java/io/harness/accesscontrol/acl/persistence",
+        "//access-control/libs/core/src/main/java/io/harness/accesscontrol/acl/persistence/repositories",
+        "//access-control/libs/core/src/main/java/io/harness/accesscontrol/common/filter",
+        "//access-control/libs/core/src/main/java/io/harness/accesscontrol/principals/usergroups/persistence",
+        "//access-control/libs/core/src/main/java/io/harness/accesscontrol/resources/resourcegroups/persistence",
+        "//access-control/libs/core/src/main/java/io/harness/accesscontrol/roleassignments",
+        "//access-control/libs/core/src/main/java/io/harness/accesscontrol/roleassignments/persistence",
+        "//access-control/libs/core/src/main/java/io/harness/accesscontrol/roleassignments/persistence/repositories",
+        "//access-control/libs/core/src/main/java/io/harness/accesscontrol/roles/persistence",
+        "//access-control/libs/core/src/main/java/io/harness/accesscontrol/roles/persistence/repositories",
+        "//access-control/libs/core/src/main/java/io/harness/accesscontrol/scopes/core",
+        "//access-control/libs/core/src/test/java/io/harness/accesscontrol/common",
+        "@maven//:junit_junit",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+        "@maven//:org_springframework_data_spring_data_commons",
+        "@maven//:org_springframework_data_spring_data_mongodb",
+    ],
+)

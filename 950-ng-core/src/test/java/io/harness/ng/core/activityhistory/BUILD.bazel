@@ -1,0 +1,24 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "activityhistory",
+    srcs = [
+        "ActivityHistoryTestHelper.java",
+        "NGActivityQueryCriteriaHelperTest.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//950-ng-core/src/main/java/io/harness/ng/core/activityhistory/entity",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_springframework_data_spring_data_mongodb",
+    ],
+)

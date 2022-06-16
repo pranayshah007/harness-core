@@ -1,0 +1,18 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "beans",
+    srcs = [
+        "CastedClass.java",
+        "CastedField.java",
+        "EphemeralCastedField.java",
+        "RecasterMap.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//979-recaster/src/main/java/io/harness/core",
+        "//979-recaster/src/main/java/io/harness/exceptions",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

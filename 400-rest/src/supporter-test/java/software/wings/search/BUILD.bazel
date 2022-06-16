@@ -1,0 +1,15 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "search",
+    testonly = True,
+    srcs = ["SearchRequestHandlerTestUtils.java"],
+    deps = [
+        "//400-rest/src/main/java/software/wings/search/entities/related/audit",
+        "//400-rest/src/main/java/software/wings/search/entities/related/deployment",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "@maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@maven//:org_elasticsearch_elasticsearch",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

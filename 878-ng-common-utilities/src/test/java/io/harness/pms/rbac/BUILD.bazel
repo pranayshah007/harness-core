@@ -1,0 +1,30 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "rbac",
+    srcs = [
+        "InternalReferredEntityExtractorTest.java",
+        "PipelineRbacHelperTest.java",
+        "PipelineReferredEntityPermissionHelperTest.java",
+        "PrincipalTypeProtoToPrincipalTypeMapperTest.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//930-ng-core-clients/src/main/java/io/harness/entitysetupusageclient/remote",
+        "//970-ng-commons/src/main/java/io/harness/ng/core/entitydetail",
+        "//970-ng-commons/src/main/java/io/harness/ng/core/entitysetupusage/dto",
+        "//970-ng-commons/src/main/java/io/harness/remote/client",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "//clients/access-control/sdk/src/main/java/io/harness/accesscontrol/clients",
+        "@maven//:io_fabric8_fabric8_utils",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+        "@maven//:org_powermock_powermock_core",
+    ],
+)

@@ -1,0 +1,12 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "serializers",
+    srcs = ["AccessControlRegistrars.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "//access-control/contracts/api/src/main/java/io/harness/serializers/kryo",
+        "@maven//:com_google_guava_guava",
+    ],
+)

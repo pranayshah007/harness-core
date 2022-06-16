@@ -1,0 +1,21 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "model",
+    srcs = [
+        "InstanceTimeline.java",
+        "ServerlessInstanceTimeline.java",
+        "TimeRange.java",
+        "WeeklyRange.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/software/wings/beans/infrastructure/instance/stats",
+        "//400-rest/src/main/java/software/wings/service/impl/instance/stats/collector",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

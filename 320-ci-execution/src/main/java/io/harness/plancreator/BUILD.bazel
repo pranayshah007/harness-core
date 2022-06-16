@@ -1,0 +1,28 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "plancreator",
+    srcs = [
+        "ArtifactoryUploadStepPlanCreator.java",
+        "BuildAndPushECRStepPlanCreator.java",
+        "BuildAndPushGCRStepPlanCreator.java",
+        "DockerStepPlanCreator.java",
+        "GCSUploadStepPlanCreator.java",
+        "PluginStepPlanCreator.java",
+        "RestoreCacheGCSStepPlanCreator.java",
+        "RestoreCacheS3StepPlanCreator.java",
+        "RunStepPlanCreator.java",
+        "RunTestStepPlanCreator.java",
+        "S3UploadStepPlanCreator.java",
+        "SaveCacheGCSStepPlanCreator.java",
+        "SaveCacheS3StepPlanCreator.java",
+        "SecurityStepPlanCreator.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//320-ci-execution/src/main/java/io/harness/ci/plan/creator/step",
+        "//330-ci-beans/src/main/java/io/harness/beans/steps/nodes",
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/plan/creation/beans",
+        "@maven//:com_google_guava_guava",
+    ],
+)

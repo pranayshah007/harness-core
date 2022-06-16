@@ -1,0 +1,16 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "jackson",
+    srcs = [
+        "HarnessDeserializers.java",
+        "HarnessJacksonModule.java",
+        "HarnessJacksonTypeModifier.java",
+        "RequestFieldDeserializer.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "@maven//:com_fasterxml_jackson_core_jackson_core",
+        "@maven//:com_fasterxml_jackson_core_jackson_databind",
+    ],
+)

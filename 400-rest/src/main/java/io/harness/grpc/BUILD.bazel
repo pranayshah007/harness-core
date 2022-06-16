@@ -1,0 +1,31 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "grpc",
+    srcs = [
+        "DelegateProfileServiceGrpcImpl.java",
+        "DelegateServiceClassicGrpcClientModule.java",
+        "DelegateServiceClassicGrpcImpl.java",
+        "DelegateServiceGrpcImpl.java",
+        "GrpcServiceConfigurationModule.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/io/harness/delegate/authenticator",
+        "//950-delegate-tasks-beans/src/main/java/io/harness/delegate/beans/executioncapability",
+        "//970-grpc/src/main/java/io/harness/grpc/auth",
+        "//970-grpc/src/main/java/io/harness/grpc/exception",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/io/harness/govern",
+        "//980-commons/src/main/java/io/harness/manage",
+        "//980-commons/src/main/java/io/harness/version",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:com_google_inject_guice",
+        "@maven//:com_google_protobuf_protobuf_java_util",
+        "@maven//:io_grpc_grpc_netty_shaded",
+        "@maven//:io_grpc_grpc_stub",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

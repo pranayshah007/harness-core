@@ -1,0 +1,26 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "appender",
+    srcs = ["ChronicleEventAppenderTest.java"],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//970-grpc/src/main/java/io/harness/event/client/impl/appender",
+        "//970-grpc/src/main/java/io/harness/event/client/impl/tailer",
+        "//970-grpc/src/main/java/io/harness/grpc/utils",
+        "//980-commons/src/main/java/io/harness/filesystem",
+        "//980-commons/src/main/java/io/harness/flow",
+        "//980-commons/src/main/java/io/harness/govern",
+        "//990-commons-test/src/main/java/io/harness/category/element",
+        "@maven//:commons_io_commons_io",
+        "@maven//:io_grpc_grpc_core",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_awaitility_awaitility",
+    ],
+)

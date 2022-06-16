@@ -1,0 +1,33 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "filters",
+    srcs = [
+        "ExecutionPMSFilterJsonCreator.java",
+        "GenericStageFilterJsonCreator.java",
+        "GenericStageFilterJsonCreatorV2.java",
+        "GenericStepPMSFilterJsonCreatorV2.java",
+        "ParallelFilterJsonCreator.java",
+        "PipelineFilterJsonCreator.java",
+        "SecretRefExtractorHelper.java",
+        "StagesFilterJsonCreator.java",
+        "StepGroupPmsFilterJsonCreator.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//860-orchestration-steps/src/main/java/io/harness/plancreator/pipeline",
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/filter/creation/beans",
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/pipeline/filters",
+        "//884-pms-commons/src/main/java/io/harness/pms/exception/runtime",
+        "//884-pms-commons/src/main/java/io/harness/pms/pipeline/filter",
+        "//953-yaml-commons/src/main/java/io/harness/plancreator/stages/stage",
+        "//953-yaml-commons/src/main/java/io/harness/yaml/core/variables",
+        "//967-walktree-visitor/src/main/java/io/harness/walktree/visitor",
+        "//967-walktree-visitor/src/main/java/io/harness/walktree/visitor/entityreference",
+        "//967-walktree-visitor/src/main/java/io/harness/walktree/visitor/utilities",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

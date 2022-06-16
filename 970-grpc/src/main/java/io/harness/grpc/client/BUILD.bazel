@@ -1,0 +1,18 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "client",
+    srcs = [
+        "AbstractManagerGrpcClientModule.java",
+        "GrpcClientConfig.java",
+        "ManagerGrpcClientModule.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//970-grpc/src/main/java/io/harness/grpc/auth",
+        "//980-commons/src/main/java/io/harness/govern",
+        "//980-commons/src/main/java/io/harness/version",
+        "@maven//:io_grpc_grpc_netty_shaded",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

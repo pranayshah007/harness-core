@@ -1,0 +1,19 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "matrix",
+    srcs = [
+        "ForLoopStrategyConfigService.java",
+        "MatrixConfigService.java",
+        "StrategyConfigService.java",
+        "StrategyConstants.java",
+        "StrategyMetadata.java",
+        "StrategyStep.java",
+        "StrategyStepParameters.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/steps/executables",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

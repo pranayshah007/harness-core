@@ -1,0 +1,24 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "observers",
+    srcs = [
+        "NodeExecutionStartObserver.java",
+        "NodeStartInfo.java",
+        "NodeStatusUpdateHandler.java",
+        "NodeStatusUpdateObserver.java",
+        "NodeUpdateInfo.java",
+        "NodeUpdateObserver.java",
+        "OrchestrationEndObserver.java",
+        "OrchestrationStartObserver.java",
+        "PlanStatusUpdateObserver.java",
+        "StepDetailsUpdateInfo.java",
+        "StepDetailsUpdateObserver.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//870-orchestration/src/main/java/io/harness/engine/observers/beans",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

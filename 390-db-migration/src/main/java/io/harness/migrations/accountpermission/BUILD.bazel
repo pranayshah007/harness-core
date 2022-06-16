@@ -1,0 +1,37 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "accountpermission",
+    srcs = [
+        "AbstractAccountManagementPermissionMigration.java",
+        "AddManageTagsPermission.java",
+        "AlertNotificationAccountPermissionMigration.java",
+        "CreateCustomDashboardPermissionMigration.java",
+        "ManageAccountDefaultsPermissionMigration.java",
+        "ManageApiKeyPermissionMigration.java",
+        "ManageApplicationsPermissionMigration.java",
+        "ManageAuthenticationSettingsPermissionMigration.java",
+        "ManageCloudProvidersAndConnectorsPermissionMigration.java",
+        "ManageConfigAsCodePermissionMigration.java",
+        "ManageCustomDashboardPermissionMigration.java",
+        "ManageDelegatePermissionMigration.java",
+        "ManageDelegateProfilesPermissionMigration.java",
+        "ManageDeploymentFreezePermissionMigration.java",
+        "ManageIPWhitelistPermissionMigration.java",
+        "ManagePipelineGovernancePermissionMigration.java",
+        "ManageTagsMigration.java",
+        "RemoveDeprecatedApplicationsCreatePermission.java",
+        "RemoveDeprecatedTagManagementPermission.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//960-persistence/src/main/java/io/harness/mongo",
+        "//960-persistence/src/main/java/io/harness/persistence",
+        "//970-rbac-core/src/main/java/software/wings/beans/security",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_mongodb_morphia_morphia",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

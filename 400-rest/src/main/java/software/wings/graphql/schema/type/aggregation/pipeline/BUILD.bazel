@@ -1,0 +1,18 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "pipeline",
+    srcs = [
+        "QLPipelineAggregation.java",
+        "QLPipelineEntityAggregation.java",
+        "QLPipelineFilter.java",
+        "QLPipelineTagAggregation.java",
+        "QLPipelineTagFilter.java",
+        "QLPipelineTagType.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

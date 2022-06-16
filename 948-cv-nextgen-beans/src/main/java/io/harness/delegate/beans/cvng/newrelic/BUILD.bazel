@@ -1,0 +1,15 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "newrelic",
+    srcs = [
+        "NewRelicConnectorValidationInfo.java",
+        "NewRelicUtils.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//948-cv-nextgen-beans/src/main/java/io/harness/delegate/beans/cvng",
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector/newrelic",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

@@ -1,0 +1,28 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "helpers",
+    srcs = [
+        "ConnectorInstrumentationHelperTest.java",
+        "InstrumentationHelperTest.java",
+        "OrganizationInstrumentationHelperTest.java",
+        "ProjectInstrumentationHelperTest.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//120-ng-manager/src/main/java/io/harness/telemetry/helpers",
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector",
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector/k8Connector",
+        "//980-commons/src/main/java/io/harness/security/dto",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:junit_junit",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+    ],
+)

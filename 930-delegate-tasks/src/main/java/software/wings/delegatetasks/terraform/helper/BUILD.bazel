@@ -1,0 +1,17 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "helper",
+    srcs = ["TerraformConfigInspectClientImpl.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//960-api-services/src/main/java/io/harness/delegate/clienttools",
+        "//960-api-services/src/main/java/software/wings/delegatetasks/terraform",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_json_json",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_zeroturnaround_zt_exec",
+    ],
+)

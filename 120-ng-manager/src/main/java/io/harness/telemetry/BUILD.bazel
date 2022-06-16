@@ -1,0 +1,19 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "telemetry",
+    srcs = [
+        "NGTelemetryPublisher.java",
+        "NGTelemetryRecordsJob.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/pipeline/helpers",
+        "//126-instance/src/main/java/io/harness/dtos",
+        "//126-instance/src/main/java/io/harness/service/instance",
+        "//945-account-mgmt/src/main/java/io/harness/account",
+        "//970-ng-commons/src/main/java/io/harness/remote/client",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

@@ -1,0 +1,22 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "resource",
+    srcs = ["FilterResourceTest.java"],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//955-filters-sdk/src/main/java/io/harness/filter/dto",
+        "//955-filters-sdk/src/main/java/io/harness/filter/resource",
+        "//955-filters-sdk/src/main/java/io/harness/filter/service",
+        "//970-ng-commons/src/main/java/io/harness/ng/beans",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+        "@maven//:org_springframework_data_spring_data_commons",
+    ],
+)

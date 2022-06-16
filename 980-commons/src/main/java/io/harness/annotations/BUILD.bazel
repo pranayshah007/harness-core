@@ -1,0 +1,13 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "annotations",
+    srcs = [
+        "ChangeDataCapture.java",
+        "ChangeDataCaptureSink.java",
+        "ChangeDataCaptures.java",
+        "ExposeInternalException.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = ["//999-annotations/src/main/java/io/harness/annotations/dev"],
+)

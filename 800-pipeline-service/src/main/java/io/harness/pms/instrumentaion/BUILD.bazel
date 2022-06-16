@@ -1,0 +1,24 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "instrumentaion",
+    srcs = [
+        "InstrumentationPipelineEndEventHandler.java",
+        "PipelineInstrumentationConstants.java",
+        "PipelineInstrumentationUtils.java",
+        "PipelineTelemetryHelper.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//800-pipeline-service/src/main/java/io/harness/pms/notification",
+        "//800-pipeline-service/src/main/java/io/harness/pms/pipeline/observer",
+        "//860-orchestration-steps/src/main/java/io/harness/notification/bean",
+        "//870-orchestration/src/main/java/io/harness/engine/executions/node",
+        "//870-orchestration/src/main/java/io/harness/engine/observers",
+        "//945-account-mgmt/src/main/java/io/harness/account/services",
+        "//980-commons/src/main/java/io/harness/eraro",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

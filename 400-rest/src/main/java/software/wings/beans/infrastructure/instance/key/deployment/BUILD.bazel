@@ -1,0 +1,24 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "deployment",
+    srcs = [
+        "AwsAmiDeploymentKey.java",
+        "AwsCodeDeployDeploymentKey.java",
+        "AwsLambdaDeploymentKey.java",
+        "AzureVMSSDeploymentKey.java",
+        "AzureWebAppDeploymentKey.java",
+        "ContainerDeploymentKey.java",
+        "CustomDeploymentKey.java",
+        "DeploymentKey.java",
+        "K8sDeploymentKey.java",
+        "PcfDeploymentKey.java",
+        "SpotinstAmiDeploymentKey.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//960-persistence/src/main/java/io/harness/mongo/index",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

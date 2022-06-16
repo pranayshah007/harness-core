@@ -1,0 +1,24 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "persistence",
+    srcs = [
+        "MorphiaPersistenceWrapper.java",
+        "PersistenceWrapper.java",
+        "SpringPersistenceWrapper.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//960-persistence/src/main/java/io/harness/persistence",
+        "//960-persistence/src/main/java/io/harness/springdata",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:net_jodah_failsafe",
+        "@maven//:org_mongodb_morphia_morphia",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_springframework_data_spring_data_commons",
+        "@maven//:org_springframework_data_spring_data_mongodb",
+        "@maven//:org_springframework_spring_tx",
+    ],
+)

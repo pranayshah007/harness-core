@@ -1,0 +1,24 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "scheduled",
+    srcs = ["ScheduledTriggerHandler.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//800-pipeline-service/src/main/java/io/harness/pms/triggers",
+        "//810-ng-triggers/src/main/java/io/harness/ngtriggers/beans/dto",
+        "//810-ng-triggers/src/main/java/io/harness/ngtriggers/beans/entity",
+        "//810-ng-triggers/src/main/java/io/harness/ngtriggers/beans/response",
+        "//810-ng-triggers/src/main/java/io/harness/ngtriggers/beans/source",
+        "//810-ng-triggers/src/main/java/io/harness/ngtriggers/mapper",
+        "//960-persistence/src/main/java/io/harness/iterator",
+        "//960-persistence/src/main/java/io/harness/mongo/iterator",
+        "//960-persistence/src/main/java/io/harness/mongo/iterator/filter",
+        "//960-persistence/src/main/java/io/harness/mongo/iterator/provider",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/io/harness/security/dto",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_springframework_data_spring_data_mongodb",
+    ],
+)

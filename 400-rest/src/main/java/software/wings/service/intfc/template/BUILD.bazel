@@ -1,0 +1,21 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "template",
+    srcs = [
+        "ImportedTemplateService.java",
+        "TemplateFolderService.java",
+        "TemplateGalleryService.java",
+        "TemplateService.java",
+        "TemplateVersionService.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/software/wings/beans/template",
+        "//400-rest/src/main/java/software/wings/beans/template/dto",
+        "//957-cg-beans/src/main/java/software/wings/service/intfc/ownership",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_hibernate_hibernate_validator",
+        "@maven//:ru_vyarus_guice_validator",
+    ],
+)

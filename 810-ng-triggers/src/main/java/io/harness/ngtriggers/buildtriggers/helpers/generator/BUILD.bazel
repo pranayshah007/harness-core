@@ -1,0 +1,28 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "generator",
+    srcs = [
+        "AcrPollingItemGenerator.java",
+        "ArtifactoryRegistryPollingItemGenerator.java",
+        "DockerRegistryPollingItemGenerator.java",
+        "EcrPollingItemGenerator.java",
+        "GCSHelmPollingItemGenerator.java",
+        "GcrPollingItemGenerator.java",
+        "GeneratorFactory.java",
+        "HttpHelmPollingItemGenerator.java",
+        "PollingItemGenerator.java",
+        "S3HelmPollingItemGenerator.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//810-ng-triggers/src/main/java/io/harness/ngtriggers/beans/entity",
+        "//810-ng-triggers/src/main/java/io/harness/ngtriggers/beans/source",
+        "//810-ng-triggers/src/main/java/io/harness/ngtriggers/beans/source/artifact",
+        "//810-ng-triggers/src/main/java/io/harness/ngtriggers/buildtriggers/helpers",
+        "//810-ng-triggers/src/main/java/io/harness/ngtriggers/buildtriggers/helpers/dtos",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_apache_logging_log4j_log4j_api",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

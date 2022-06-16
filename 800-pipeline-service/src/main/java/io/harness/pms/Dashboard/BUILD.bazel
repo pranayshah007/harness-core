@@ -1,0 +1,33 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "Dashboard",
+    srcs = [
+        "DashboardPipelineExecutionInfo.java",
+        "DashboardPipelineHealthInfo.java",
+        "MeanMedianInfo.java",
+        "PMSLandingDashboardResource.java",
+        "PMSLandingDashboardService.java",
+        "PMSLandingDashboardServiceImpl.java",
+        "PipelineCountInfo.java",
+        "PipelineDashboardOverviewResource.java",
+        "PipelineDashboardOverviewResourceV2.java",
+        "PipelineExecutionInfo.java",
+        "PipelineHealthInfo.java",
+        "StatusAndTime.java",
+        "SuccessHealthInfo.java",
+        "TotalHealthInfo.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//800-pipeline-service/src/main/java/io/harness/pms/pipeline/service",
+        "//884-pms-commons/src/main/java/io/harness/pms/annotations",
+        "//970-ng-commons/src/main/java/io/harness/pms/dashboards",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:io_swagger_core_v3_swagger_annotations",
+        "@maven//:io_swagger_swagger_annotations",
+        "@maven//:org_jooq_jooq",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

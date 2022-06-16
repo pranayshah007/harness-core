@@ -1,0 +1,21 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "aggregation",
+    srcs = [
+        "QLExecutionStatusFilter.java",
+        "QLExecutionStatusType.java",
+        "QLIdFilterType.java",
+        "QLNoOpFilterCriteria.java",
+        "QLNumberFilterType.java",
+        "QLRequest.java",
+        "QLStringFilterType.java",
+        "QLTimeDataPoint.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//380-cg-graphql/src/main/java/software/wings/graphql/schema/type",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

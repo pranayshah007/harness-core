@@ -1,0 +1,18 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "helpers",
+    srcs = ["EncryptDecryptHelperImpl.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//890-sm-core/src/main/java/io/harness/encryptors",
+        "//940-secret-manager-client/src/main/java/io/harness/secretmanagerclient",
+        "//960-api-services/src/main/java/io/harness/security/encryption",
+        "//980-commons/src/main/java/io/harness/data/encoding",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/io/harness/eraro",
+        "@maven//:com_google_guava_guava",
+        "@maven//:commons_io_commons_io",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

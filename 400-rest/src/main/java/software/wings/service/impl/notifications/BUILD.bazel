@@ -1,0 +1,36 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "notifications",
+    srcs = [
+        "EmailDispatcher.java",
+        "MicrosoftTeamsMessageDispatcher.java",
+        "NotificationDispatcher.java",
+        "NotificationGroupBasedDispatcher.java",
+        "PagerDutyEventDispatcher.java",
+        "SlackApprovalMessageKeys.java",
+        "SlackMessageDispatcher.java",
+        "UseNotificationGroup.java",
+        "UseUserGroup.java",
+        "UserGroupBasedDispatcher.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/software/wings/dl",
+        "//400-rest/src/main/java/software/wings/features",
+        "//400-rest/src/main/java/software/wings/features/api",
+        "//400-rest/src/main/java/software/wings/processingcontrollers",
+        "//400-rest/src/main/java/software/wings/service/intfc/pagerduty",
+        "//930-delegate-tasks/src/main/java/software/wings/helpers/ext/mail",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:com_google_http_client_google_http_client",
+        "@maven//:commons_validator_commons_validator",
+        "@maven//:org_apache_commons_commons_collections4",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_apache_commons_commons_text",
+        "@maven//:org_mongodb_morphia_morphia",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

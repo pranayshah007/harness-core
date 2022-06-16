@@ -1,0 +1,17 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "cloudprovider",
+    srcs = [
+        "CloudProviderTimeScaleEntity.java",
+        "CloudProviderTimescaleChangeHandler.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/software/wings/search/framework",
+        "//400-rest/src/main/java/software/wings/timescale/migrations",
+        "//960-persistence/src/main/java/io/harness/mongo/changestreams",
+        "//960-persistence/src/main/java/io/harness/persistence",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

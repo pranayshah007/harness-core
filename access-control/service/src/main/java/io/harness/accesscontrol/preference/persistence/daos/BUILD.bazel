@@ -1,0 +1,17 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "daos",
+    srcs = [
+        "AccessControlPreferenceDAO.java",
+        "AccessControlPreferenceDAOImpl.java",
+        "NoOpAccessControlPreferenceDAOImpl.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "//access-control/service/src/main/java/io/harness/accesscontrol/preference/persistence/models",
+        "//access-control/service/src/main/java/io/harness/accesscontrol/preference/persistence/repositories",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

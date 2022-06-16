@@ -1,0 +1,17 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "sweepingoutput",
+    srcs = [
+        "SweepingOutputInquiry.java",
+        "SweepingOutputInquiryController.java",
+        "SweepingOutputService.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//970-api-services-beans/src/main/java/io/harness/deployment",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_mongodb_morphia_morphia",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

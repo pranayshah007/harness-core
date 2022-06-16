@@ -1,0 +1,34 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "scm",
+    srcs = [
+        "GitFileTaskResponseData.java",
+        "GitFileTaskType.java",
+        "GitPRTaskType.java",
+        "GitRefType.java",
+        "GitWebhookTaskType.java",
+        "PushTaskType.java",
+        "ScmGitFileTaskParams.java",
+        "ScmGitRefTaskParams.java",
+        "ScmGitRefTaskResponseData.java",
+        "ScmGitWebhookTaskParams.java",
+        "ScmGitWebhookTaskResponseData.java",
+        "ScmPRTaskParams.java",
+        "ScmPRTaskResponseData.java",
+        "ScmPathFilterEvaluationTaskParams.java",
+        "ScmPathFilterEvaluationTaskResponse.java",
+        "ScmPushTaskParams.java",
+        "ScmPushTaskResponseData.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//950-delegate-tasks-beans/src/main/java/io/harness/delegate/beans/executioncapability",
+        "//952-scm-java-client/src/main/java/io/harness/beans/gitsync",
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector/scm/adapter",
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector/scm/genericgitconnector",
+        "//970-api-services-beans/src/main/java/io/harness/git/model",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

@@ -1,0 +1,24 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "impl",
+    srcs = [
+        "CVNGMetricsPublisher.java",
+        "MetricContextBuilder.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/analysis/entities",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/cdng/entities",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/core/entities",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/metrics/beans",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/statemachine/beans",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/statemachine/entities",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/verificationjob/entities",
+        "//960-persistence/src/main/java/io/harness/persistence",
+        "//970-ng-commons/src/main/java/io/harness/metrics/service/api",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_mongodb_morphia_morphia",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

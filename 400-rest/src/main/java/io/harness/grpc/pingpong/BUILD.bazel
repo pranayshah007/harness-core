@@ -1,0 +1,14 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "pingpong",
+    srcs = ["PingPongService.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//970-grpc/src/main/java/io/harness/grpc/auth",
+        "//970-grpc/src/main/java/io/harness/grpc/utils",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:io_grpc_grpc_stub",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

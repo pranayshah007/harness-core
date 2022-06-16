@@ -1,0 +1,24 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "capabilities",
+    srcs = [
+        "BasicValidationInfo.java",
+        "ClusterMasterUrlValidationCapability.java",
+        "GitConnectionCapability.java",
+        "HelmCommandCapability.java",
+        "SSHHostValidationCapability.java",
+        "ShellConnectionCapability.java",
+        "WinrmHostValidationCapability.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/winrm",
+        "//930-delegate-tasks/src/main/java/software/wings/beans/delegation",
+        "//930-delegate-tasks/src/main/java/software/wings/helpers/ext/helm/request",
+        "//960-api-services/src/main/java/io/harness/security/encryption",
+        "//960-api-services/src/main/java/io/harness/shell",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

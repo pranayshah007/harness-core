@@ -1,0 +1,11 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "task",
+    srcs = [
+        "ConnectorValidationHandler.java",
+        "NotSupportedValidationHandler.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = ["//954-connector-beans/src/main/java/io/harness/delegate/beans/connector"],
+)

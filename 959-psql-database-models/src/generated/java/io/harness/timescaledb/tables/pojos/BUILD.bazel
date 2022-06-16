@@ -1,0 +1,23 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "pojos",
+    srcs = [
+        "Anomalies.java",
+        "BillingData.java",
+        "CeRecommendations.java",
+        "Environments.java",
+        "KubernetesUtilizationData.java",
+        "NgInstanceStats.java",
+        "NodeInfo.java",
+        "NodePoolAggregated.java",
+        "PipelineExecutionSummaryCd.java",
+        "PipelineExecutionSummaryCi.java",
+        "Pipelines.java",
+        "PodInfo.java",
+        "ServiceInfraInfo.java",
+        "Services.java",
+        "WorkloadInfo.java",
+    ],
+    visibility = ["//:__subpackages__"],
+)

@@ -1,0 +1,32 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "scim",
+    srcs = [
+        "AddOperation.java",
+        "Member.java",
+        "OktaAddOperation.java",
+        "OktaRemoveOperation.java",
+        "OktaReplaceOperation.java",
+        "PatchOperation.java",
+        "PatchRequest.java",
+        "RemoveOperation.java",
+        "ReplaceOperation.java",
+        "ScimBaseResource.java",
+        "ScimError.java",
+        "ScimGroup.java",
+        "ScimListResponse.java",
+        "ScimMultiValuedObject.java",
+        "ScimResource.java",
+        "ScimUser.java",
+        "ScimUserValuedObject.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:com_fasterxml_jackson_core_jackson_core",
+        "@maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

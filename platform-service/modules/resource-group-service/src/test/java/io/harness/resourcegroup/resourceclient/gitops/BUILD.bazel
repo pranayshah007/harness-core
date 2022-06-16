@@ -1,0 +1,28 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "gitops",
+    srcs = [
+        "AgentResourceImplTest.java",
+        "AppResourceClientImplTest.java",
+        "ClusterResourceImplTest.java",
+        "RepoResourceImplTest.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//930-ng-core-clients/src/main/java/io/harness/gitops/models",
+        "//930-ng-core-clients/src/main/java/io/harness/gitops/remote",
+        "//953-events-api/src/main/java/io/harness/eventsframework",
+        "//970-ng-commons/src/main/java/io/harness/ng/beans",
+        "//platform-service/modules/resource-group-service/src/main/java/io/harness/resourcegroup/resourceclient/gitops",
+        "@maven//:com_squareup_retrofit2_retrofit",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+    ],
+)

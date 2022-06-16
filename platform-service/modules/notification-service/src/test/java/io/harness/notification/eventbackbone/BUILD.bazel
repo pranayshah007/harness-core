@@ -1,0 +1,24 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "eventbackbone",
+    srcs = ["MongoMessageConsumerTest.java"],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//960-persistence/src/main/java/io/harness/queue",
+        "//980-commons/src/main/java/io/harness/manage",
+        "//platform-service/modules/notification-service/src/main/java/io/harness/notification/eventbackbone",
+        "//platform-service/modules/notification-service/src/main/java/io/harness/notification/service/api",
+        "//platform-service/modules/notification-service/src/test/java/io/harness/notification/utils",
+        "@maven//:ch_qos_logback_logback_classic",
+        "@maven//:ch_qos_logback_logback_core",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+    ],
+)

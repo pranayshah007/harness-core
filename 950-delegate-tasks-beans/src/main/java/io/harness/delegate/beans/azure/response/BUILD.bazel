@@ -1,0 +1,23 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "response",
+    srcs = [
+        "AzureAcrTokenTaskResponse.java",
+        "AzureClustersResponse.java",
+        "AzureDelegateTaskResponse.java",
+        "AzureDeploymentSlotResponse.java",
+        "AzureDeploymentSlotsResponse.java",
+        "AzureRegistriesResponse.java",
+        "AzureRepositoriesResponse.java",
+        "AzureResourceGroupsResponse.java",
+        "AzureSubscriptionsResponse.java",
+        "AzureValidateTaskResponse.java",
+        "AzureWebAppNamesResponse.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

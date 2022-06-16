@@ -1,0 +1,12 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "customhealthlog",
+    srcs = ["CustomHealthLogInfo.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//948-cv-nextgen-beans/src/main/java/io/harness/cvng/beans/customhealth",
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector/customhealthconnector",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

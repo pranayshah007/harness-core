@@ -1,0 +1,20 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "beans",
+    srcs = [
+        "AccountMetricContext.java",
+        "AnalysisStateMachineContext.java",
+        "ApiCallLogMetricContext.java",
+        "CVNGMetricAnalysisContext.java",
+        "DataCollectionTaskMetricContext.java",
+        "LETaskMetricContext.java",
+        "VerificationTaskMetricContext.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/core/entities",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/statemachine/beans",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

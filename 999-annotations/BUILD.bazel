@@ -5,8 +5,11 @@ HarnessTeam = "PT"
 
 java_library(
     name = "module",
-    srcs = glob(["src/main/**/*.java"]),
     visibility = ["//visibility:public"],
+    runtime_deps = [
+        "//999-annotations/src/main/java/io/harness/agent/sdk",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+    ],
 )
 
 run_analysis()

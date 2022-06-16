@@ -1,0 +1,16 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "impl",
+    srcs = ["AccountServiceImpl.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//945-account-mgmt/src/main/java/io/harness/account",
+        "//945-account-mgmt/src/main/java/io/harness/account/services",
+        "//950-ng-signup-beans/src/main/java/io/harness/signup/dto",
+        "//960-ng-core-beans/src/main/java/io/harness/ng/core/account",
+        "//970-ng-commons/src/main/java/io/harness/remote/client",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

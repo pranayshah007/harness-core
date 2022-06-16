@@ -1,0 +1,19 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "local",
+    srcs = [
+        "CDLocalClient.java",
+        "CELocalClient.java",
+        "CFLocalClient.java",
+        "CILocalClient.java",
+        "STOLocalClient.java",
+        "UnsupportedClient.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//930-ng-license-manager/src/main/java/io/harness/licensing/interfaces",
+        "//930-ng-license-manager/src/main/java/io/harness/licensing/interfaces/clients",
+        "//960-ng-license-beans/src/main/java/io/harness/licensing/beans/modules",
+    ],
+)

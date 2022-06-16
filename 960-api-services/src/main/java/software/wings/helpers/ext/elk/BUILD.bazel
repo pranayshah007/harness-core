@@ -1,0 +1,14 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "elk",
+    srcs = [
+        "ElkRestClient.java",
+        "KibanaRestClient.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_squareup_retrofit2_retrofit",
+    ],
+)

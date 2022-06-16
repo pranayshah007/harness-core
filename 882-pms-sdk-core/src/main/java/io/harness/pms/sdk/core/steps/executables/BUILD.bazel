@@ -1,0 +1,27 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "executables",
+    srcs = [
+        "Abortable.java",
+        "AsyncExecutable.java",
+        "ChildChainExecutable.java",
+        "ChildExecutable.java",
+        "ChildrenExecutable.java",
+        "Failable.java",
+        "Progressable.java",
+        "StepDetailsInfo.java",
+        "SyncExecutable.java",
+        "TaskChainExecutable.java",
+        "TaskChainResponse.java",
+        "TaskExecutable.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/steps",
+        "//953-yaml-commons/src/main/java/io/harness/pms/serializer/recaster",
+        "//980-commons/src/main/java/io/harness/supplier",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

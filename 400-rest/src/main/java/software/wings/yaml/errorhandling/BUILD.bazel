@@ -1,0 +1,19 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "errorhandling",
+    srcs = [
+        "GitProcessingError.java",
+        "GitSyncError.java",
+        "GitSyncErrorDetails.java",
+        "GitToHarnessErrorDetails.java",
+        "HarnessToGitErrorDetails.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//960-persistence/src/main/java/io/harness/mongo/index",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_mongodb_morphia_morphia",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

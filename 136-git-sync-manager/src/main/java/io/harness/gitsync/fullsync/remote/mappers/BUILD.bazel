@@ -1,0 +1,13 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "mappers",
+    srcs = ["GitFullSyncConfigMapper.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//136-git-sync-manager/src/main/java/io/harness/gitsync/core/beans",
+        "//136-git-sync-manager/src/main/java/io/harness/gitsync/fullsync/dtos",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

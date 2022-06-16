@@ -1,0 +1,15 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "morphia",
+    srcs = ["GitSyncMorphiaClassesRegistrar.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//136-git-sync-manager/src/main/java/io/harness/gitsync/common/beans",
+        "//136-git-sync-manager/src/main/java/io/harness/gitsync/core/beans",
+        "//136-git-sync-manager/src/main/java/io/harness/gitsync/core/fullsync/entity",
+        "//136-git-sync-manager/src/main/java/io/harness/gitsync/gitfileactivity/beans",
+        "//136-git-sync-manager/src/main/java/io/harness/gitsync/gitsyncerror/beans",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+    ],
+)

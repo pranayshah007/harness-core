@@ -1,0 +1,15 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "advise",
+    srcs = ["NodeAdviseEventHandler.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/registries",
+        "//884-pms-commons/src/main/java/io/harness/pms/events/base",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

@@ -1,0 +1,25 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "utility",
+    srcs = [
+        "AzureLogParser.java",
+        "AzureResourceUtility.java",
+        "AzureUtils.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//960-api-services/src/main/java/io/harness/azure",
+        "//960-api-services/src/main/java/io/harness/azure/model/blueprint",
+        "//960-api-services/src/main/java/io/harness/azure/model/blueprint/assignment",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@maven//:com_microsoft_azure_azure_client_runtime",
+        "@maven//:com_microsoft_azure_azure_mgmt_resources",
+        "@maven//:commons_codec_commons_codec",
+        "@maven//:joda_time_joda_time",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

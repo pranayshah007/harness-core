@@ -1,0 +1,27 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "resources",
+    srcs = [
+        "DashboardResource.java",
+        "NGDashboardAggregatorHealthResource.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//290-dashboard-service/src/main/java/io/harness/overviewdashboard/dashboardaggregateservice/service",
+        "//290-dashboard-service/src/main/java/io/harness/overviewdashboard/dtos",
+        "//295-cdng-contracts/src/main/java/io/harness/dashboards",
+        "//945-account-mgmt/src/main/java/io/harness/account/accesscontrol",
+        "//970-ng-commons/src/main/java/io/harness/pms/dashboards",
+        "//980-commons/src/main/java/io/harness/annotations",
+        "//980-commons/src/main/java/io/harness/eraro",
+        "//980-commons/src/main/java/io/harness/health",
+        "//980-commons/src/main/java/io/harness/maintenance",
+        "//980-commons/src/main/java/io/harness/security/dto",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:io_dropwizard_metrics_metrics_annotation",
+        "@maven//:io_dropwizard_metrics_metrics_healthchecks",
+        "@maven//:io_swagger_swagger_annotations",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

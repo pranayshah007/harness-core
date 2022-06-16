@@ -1,0 +1,34 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "outbox",
+    srcs = [
+        "RoleAssignmentEventHandlerTest.java",
+        "RoleEventHandlerTest.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//930-ng-core-clients/src/main/java/io/harness/serviceaccount/remote",
+        "//930-ng-core-clients/src/main/java/io/harness/usermembership/remote",
+        "//955-outbox-sdk/src/main/java/io/harness/outbox",
+        "//970-ng-commons/src/main/java/io/serializer",
+        "//980-commons/src/main/java/io/harness/rest",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "//access-control/service/src/main/java/io/harness/accesscontrol/commons/outbox",
+        "//access-control/service/src/main/java/io/harness/accesscontrol/roleassignments/events",
+        "//access-control/service/src/main/java/io/harness/accesscontrol/roles/events",
+        "//clients/audit/src/main/java/io/harness/audit/client/api",
+        "@maven//:com_fasterxml_jackson_core_jackson_core",
+        "@maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@maven//:com_google_guava_guava",
+        "@maven//:com_squareup_retrofit2_retrofit",
+        "@maven//:junit_junit",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_mockito_mockito_core",
+    ],
+)

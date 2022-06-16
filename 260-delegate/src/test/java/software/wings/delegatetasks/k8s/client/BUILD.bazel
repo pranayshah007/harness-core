@@ -1,0 +1,34 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "client",
+    srcs = [
+        "HarnessKubernetesClientFactoryTest.java",
+        "KubernetesApiClientFactoryModuleTest.java",
+        "KubernetesClientFactoryModuleTest.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/k8s/apiclient",
+        "//930-delegate-tasks/src/main/java/software/wings/cloudprovider/gke",
+        "//930-delegate-tasks/src/main/java/software/wings/delegatetasks/k8s/exception",
+        "//930-delegate-tasks/src/main/java/software/wings/helpers/ext/container",
+        "//960-api-services/src/main/java/io/harness/k8s/apiclient",
+        "//960-api-services/src/main/java/io/harness/k8s/model",
+        "//960-api-services/src/main/java/io/harness/security/encryption",
+        "//980-commons/src/main/java/io/harness/govern",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:io_fabric8_kubernetes_client",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+        "@maven//:org_powermock_powermock_api_mockito2",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

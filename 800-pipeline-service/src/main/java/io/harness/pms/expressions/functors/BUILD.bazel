@@ -1,0 +1,27 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "functors",
+    srcs = [
+        "AccountFunctor.java",
+        "ExecutionInputExpressionFunctor.java",
+        "OrgFunctor.java",
+        "PipelineExecutionFunctor.java",
+        "ProjectFunctor.java",
+        "RemoteExpressionFunctor.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//870-orchestration/src/main/java/io/harness/engine/execution",
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/execution/expression",
+        "//884-pms-commons/src/main/java/io/harness/pms/utils",
+        "//930-ng-core-clients/src/main/java/io/harness/organization/remote",
+        "//930-ng-core-clients/src/main/java/io/harness/project/remote",
+        "//945-account-mgmt/src/main/java/io/harness/account",
+        "//953-yaml-commons/src/main/java/io/harness/pms/serializer/recaster",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/io/harness/network",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

@@ -1,0 +1,30 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "yaml",
+    srcs = [
+        "GitIntegrationTestUtils.java",
+        "YamlIntegrationTest.java",
+        "YamlIntegrationTestConstants.java",
+        "YamlIntegrationTestEnvironmentConstants.java",
+        "YamlIntegrationTestHelper.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//400-rest/src/main/java/software/wings/dl",
+        "//400-rest/src/supporter-test/java/software/wings/integration",
+        "//980-commons/src/main/java/io/harness/eraro",
+        "//980-commons/src/main/java/io/harness/govern",
+        "//990-commons-test/src/main/java/io/harness/category/element",
+        "//990-commons-test/src/main/java/io/harness/scm",
+        "@maven//:junit_junit",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

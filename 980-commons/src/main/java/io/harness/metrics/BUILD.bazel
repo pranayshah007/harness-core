@@ -1,0 +1,18 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "metrics",
+    srcs = [
+        "CustomDropWizardExports.java",
+        "CustomGauge.java",
+        "HarnessMetricRegistry.java",
+        "MetricRegistryModule.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "@maven//:com_google_guava_guava",
+        "@maven//:io_dropwizard_metrics_metrics_core",
+        "@maven//:io_prometheus_simpleclient",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

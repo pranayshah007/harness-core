@@ -1,0 +1,12 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "handler",
+    testonly = True,
+    srcs = ["YamlHandlerTestBase.java"],
+    deps = [
+        "@maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@maven//:com_fasterxml_jackson_dataformat_jackson_dataformat_yaml",
+        "@maven//:junit_junit",
+    ],
+)

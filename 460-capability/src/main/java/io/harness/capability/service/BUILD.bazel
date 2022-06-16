@@ -1,0 +1,19 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "service",
+    srcs = [
+        "CapabilityService.java",
+        "CapabilityServiceImpl.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//460-capability/src/main/java/io/harness/capability/internal",
+        "//950-delegate-tasks-beans/src/main/java/io/harness/delegate/beans/executioncapability",
+        "//960-persistence/src/main/java/io/harness/persistence",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "@maven//:commons_codec_commons_codec",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

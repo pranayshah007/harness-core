@@ -1,0 +1,33 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "services",
+    srcs = ["SignupServiceImplTest.java"],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//920-ng-signup/src/main/java/io/harness/signup/entities",
+        "//920-ng-signup/src/main/java/io/harness/signup/notification",
+        "//920-ng-signup/src/main/java/io/harness/signup/services",
+        "//920-ng-signup/src/main/java/io/harness/signup/services/impl",
+        "//920-ng-signup/src/main/java/io/harness/signup/validator",
+        "//930-ng-core-clients/src/main/java/io/harness/user/remote",
+        "//930-ng-license-manager/src/main/java/io/harness/licensing/services",
+        "//945-account-mgmt/src/main/java/io/harness/account/services",
+        "//950-ng-authentication-service/src/main/java/io/harness/authenticationservice/recaptcha",
+        "//950-ng-signup-beans/src/main/java/io/harness/signup/dto",
+        "//980-commons/src/main/java/io/harness/rest",
+        "//980-commons/src/main/java/io/harness/version",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "//clients/access-control/sdk/src/main/java/io/harness/accesscontrol/clients",
+        "@maven//:com_squareup_retrofit2_retrofit",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+        "@maven//:org_powermock_powermock_core",
+    ],
+)

@@ -1,0 +1,25 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "chartmuseum",
+    srcs = [
+        "AbstractChartmuseumClient.java",
+        "ChartMuseumClientHelper.java",
+        "ChartmuseumClient.java",
+        "ChartmuseumClientFactory.java",
+        "ChartmuseumGcsClient.java",
+        "ChartmuseumS3Client.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//960-api-services/src/main/java/io/harness/exception/sanitizer",
+        "//960-api-services/src/main/java/io/harness/k8s/kubectl",
+        "//960-api-services/src/main/java/io/harness/shell",
+        "//980-commons/src/main/java/io/harness/filesystem",
+        "//980-commons/src/main/java/io/harness/threading",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_zeroturnaround_zt_exec",
+    ],
+)

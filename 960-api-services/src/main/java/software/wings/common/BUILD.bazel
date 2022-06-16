@@ -1,0 +1,15 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "common",
+    srcs = [
+        "AlphanumComparator.java",
+        "BuildDetailsComparator.java",
+        "BuildDetailsComparatorAscending.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//980-commons/src/main/java/io/harness/artifact",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+    ],
+)

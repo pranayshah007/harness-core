@@ -1,0 +1,24 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "aws",
+    srcs = [
+        "QLAwsCloudProviderInput.java",
+        "QLAwsCrossAccountAttributes.java",
+        "QLAwsManualCredentials.java",
+        "QLEc2IamCredentials.java",
+        "QLIrsaCredentials.java",
+        "QLUpdateAwsCloudProviderInput.java",
+        "QLUpdateAwsCrossAccountAttributes.java",
+        "QLUpdateAwsManualCredentials.java",
+        "QLUpdateEc2IamCredentials.java",
+        "QLUpdateIrsaCredentials.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/software/wings/graphql/schema/type/cloudProvider/aws",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

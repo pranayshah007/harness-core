@@ -1,0 +1,27 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "secretManager",
+    srcs = [
+        "QLCreateSecretManagerInput.java",
+        "QLCustomSecretManagerInput.java",
+        "QLDeleteSecretManagerInput.java",
+        "QLDeleteSecretManagerPayload.java",
+        "QLEncryptedDataParams.java",
+        "QLHashicorpVaultAuthDetails.java",
+        "QLHashicorpVaultSecretManagerInput.java",
+        "QLSecretManagerInput.java",
+        "QLUpdateCustomSecretManagerInput.java",
+        "QLUpdateHashicorpVaultInput.java",
+        "QLUpdateSecretManagerInput.java",
+        "QLUpsertSecretManagerPayload.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/software/wings/graphql/schema/mutation",
+        "//400-rest/src/main/java/software/wings/graphql/schema/type/secretManagers",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

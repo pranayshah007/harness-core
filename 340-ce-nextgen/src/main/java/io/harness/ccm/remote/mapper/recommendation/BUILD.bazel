@@ -1,0 +1,19 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "recommendation",
+    srcs = [
+        "CCMRecommendationFilterPropertiesMapper.java",
+        "K8sRecommendationFilterPropertiesMapper.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//340-ce-nextgen/src/main/java/io/harness/ccm/remote/beans/recommendation",
+        "//955-filters-sdk/src/main/java/io/harness/filter/dto",
+        "//955-filters-sdk/src/main/java/io/harness/filter/entity",
+        "//955-filters-sdk/src/main/java/io/harness/filter/mapper",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_modelmapper_modelmapper",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

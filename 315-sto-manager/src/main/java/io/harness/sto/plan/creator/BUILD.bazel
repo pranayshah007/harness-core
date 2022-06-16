@@ -1,0 +1,24 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "creator",
+    srcs = [
+        "STOCreatorUtils.java",
+        "STOPipelineServiceInfoProvider.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//315-sto-manager/src/main/java/io/harness/sto/plan/creator/filter",
+        "//315-sto-manager/src/main/java/io/harness/sto/plan/creator/stage",
+        "//315-sto-manager/src/main/java/io/harness/sto/plan/creator/step",
+        "//320-ci-execution/src/main/java/io/harness/ci/creator/variables",
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/pipeline/filters",
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/plan/creation/creators",
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/variables",
+        "//884-pms-commons/src/main/java/io/harness/pms/utils",
+        "//943-enforcement-beans/src/main/java/io/harness/enforcement/constants",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

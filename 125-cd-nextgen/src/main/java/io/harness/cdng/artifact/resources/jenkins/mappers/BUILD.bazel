@@ -1,0 +1,11 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "mappers",
+    srcs = ["JenkinsResourceMapper.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/artifact/resources/jenkins/dtos",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

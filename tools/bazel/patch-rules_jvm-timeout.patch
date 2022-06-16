@@ -1,0 +1,13 @@
+diff --git a/java/gazelle/private/javaparser/cmd/javaparser-wrapper/main.go b/java/gazelle/private/javaparser/cmd/javaparser-wrapper/main.go
+index 109d8c8..52d091f 100644
+--- a/java/gazelle/private/javaparser/cmd/javaparser-wrapper/main.go
++++ b/java/gazelle/private/javaparser/cmd/javaparser-wrapper/main.go
+@@ -21,7 +21,7 @@ import (
+ )
+ 
+ // runnerTimout is the time after which the runner will die.
+-const runnerTimout = 30 * time.Second
++const runnerTimout = 300 * time.Second
+ 
+ type arrayFlags []string
+ 

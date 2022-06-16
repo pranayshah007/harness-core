@@ -1,0 +1,14 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "users",
+    srcs = ["UserResourceImpl.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "//platform-service/modules/resource-group-service/contracts/src/main/java/io/harness/resourcegroup/beans",
+        "//platform-service/modules/resource-group-service/src/main/java/io/harness/resourcegroup/framework/v1/service",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

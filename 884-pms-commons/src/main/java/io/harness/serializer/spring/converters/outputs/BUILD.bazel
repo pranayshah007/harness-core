@@ -1,0 +1,16 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "outputs",
+    srcs = [
+        "PmsSweepingOutputReadConverter.java",
+        "PmsSweepingOutputWriteConverter.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//884-pms-commons/src/main/java/io/harness/pms/data/output",
+        "//884-pms-commons/src/main/java/io/harness/serializer/spring/converters/orchestrationMap",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_springframework_data_spring_data_commons",
+    ],
+)

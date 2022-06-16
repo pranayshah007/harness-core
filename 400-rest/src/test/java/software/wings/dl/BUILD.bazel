@@ -1,0 +1,30 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "dl",
+    srcs = [
+        "PageRequestTest.java",
+        "PageResponseTest.java",
+        "WingsPersistenceTest.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//400-rest/src/main/java/software/wings/dl",
+        "//960-persistence/src/main/java/io/harness/mongo",
+        "//960-persistence/src/main/java/io/harness/persistence",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//990-commons-test/src/main/java/io/harness/category/element",
+        "@maven//:com_google_guava_guava",
+        "@maven//:junit_junit",
+        "@maven//:net_javacrumbs_json_unit_json_unit_fluent",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+        "@maven//:org_mongodb_morphia_morphia",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

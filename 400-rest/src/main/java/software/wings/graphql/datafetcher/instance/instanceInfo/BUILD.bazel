@@ -1,0 +1,22 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "instanceInfo",
+    srcs = [
+        "AutoScalingGroupInstanceController.java",
+        "CodeDeployInstanceController.java",
+        "Ec2InstanceController.java",
+        "EcsContainerController.java",
+        "InstanceController.java",
+        "K8SPodController.java",
+        "KubernetesContainerController.java",
+        "PcfInstanceController.java",
+        "PhysicalHostInstanceController.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/software/wings/graphql/datafetcher/instance",
+        "//400-rest/src/main/java/software/wings/graphql/schema/type/instance",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+    ],
+)

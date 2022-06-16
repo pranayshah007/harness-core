@@ -1,0 +1,32 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "impl",
+    srcs = [
+        "AWSCEConfigValidationServiceImpl.java",
+        "AWSOrganizationHelperServiceImpl.java",
+        "AwsEKSHelperServiceImpl.java",
+        "AzureCEConfigValidationServiceImpl.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/io/harness/ccm/setup/service/support",
+        "//400-rest/src/main/java/io/harness/ccm/setup/service/support/impl/pojo",
+        "//400-rest/src/main/java/io/harness/ccm/setup/service/support/intfc",
+        "//950-delegate-tasks-beans/src/main/java/software/wings/beans/ce",
+        "//970-api-services-beans/src/main/java/software/wings/service/impl/aws/client",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_amazonaws_aws_java_sdk_costandusagereport",
+        "@maven//:com_amazonaws_aws_java_sdk_eks",
+        "@maven//:com_amazonaws_aws_java_sdk_organizations",
+        "@maven//:com_amazonaws_aws_java_sdk_s3",
+        "@maven//:com_amazonaws_aws_java_sdk_sts",
+        "@maven//:com_azure_azure_identity",
+        "@maven//:com_azure_azure_storage_blob",
+        "@maven//:com_google_code_gson_gson",
+        "@maven//:com_google_guava_guava",
+        "@maven//:com_microsoft_azure_msal4j",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

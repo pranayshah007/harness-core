@@ -1,0 +1,34 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "beans",
+    srcs = [
+        "AzureWebAppInfraMapping.java",
+        "InfraMapping.java",
+        "InfraUseFromStage.java",
+        "K8sAzureInfraMapping.java",
+        "K8sDirectInfraMapping.java",
+        "K8sGcpInfraMapping.java",
+        "PdcInfraMapping.java",
+        "ProvisionerType.java",
+        "ServerlessAwsLambdaInfraMapping.java",
+        "SshWinRmAzureInfraMapping.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/infra",
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/pipeline",
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/visitor/helpers/pipelineinfrastructure",
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/data",
+        "//960-persistence/src/main/java/io/harness/persistence",
+        "//967-walktree-visitor/src/main/java/io/harness/walktree/beans",
+        "//967-walktree-visitor/src/main/java/io/harness/walktree/visitor",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:com_google_guava_guava",
+        "@maven//:io_swagger_swagger_annotations",
+        "@maven//:org_mongodb_morphia_morphia",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_springframework_data_spring_data_commons",
+    ],
+)

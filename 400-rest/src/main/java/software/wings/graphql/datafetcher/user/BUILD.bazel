@@ -1,0 +1,28 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "user",
+    srcs = [
+        "CreateUserDataFetcher.java",
+        "DeleteUserDataFetcher.java",
+        "UpdateUserDataFetcher.java",
+        "UserConnectionDataFetcher.java",
+        "UserController.java",
+        "UserDataFetcher.java",
+        "UserQueryHelper.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/software/wings/graphql/datafetcher",
+        "//400-rest/src/main/java/software/wings/graphql/datafetcher/userGroup",
+        "//400-rest/src/main/java/software/wings/graphql/schema/type/aggregation/user",
+        "//400-rest/src/main/java/software/wings/graphql/schema/type/user",
+        "//960-persistence/src/main/java/io/harness/persistence",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_graphql_java_graphql_java",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_mongodb_morphia_morphia",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

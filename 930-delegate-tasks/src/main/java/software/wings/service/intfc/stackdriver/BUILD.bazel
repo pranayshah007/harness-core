@@ -1,0 +1,13 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "stackdriver",
+    srcs = ["StackDriverDelegateService.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//930-delegate-tasks/src/main/java/software/wings/delegatetasks",
+        "//930-delegate-tasks/src/main/java/software/wings/service/impl/analysis",
+        "//930-delegate-tasks/src/main/java/software/wings/service/impl/stackdriver",
+        "@maven//:com_google_apis_google_api_services_logging",
+    ],
+)

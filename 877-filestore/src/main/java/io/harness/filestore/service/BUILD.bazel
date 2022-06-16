@@ -1,0 +1,22 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "service",
+    srcs = [
+        "FileActivityService.java",
+        "FileFailsafeService.java",
+        "FileReferenceService.java",
+        "FileStoreService.java",
+        "FileStructureService.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//877-filestore/src/main/java/io/harness/filestore/dto/filter",
+        "//877-filestore/src/main/java/io/harness/filestore/dto/node",
+        "//877-filestore/src/main/java/io/harness/filestore/entities",
+        "//960-ng-core-beans/src/main/java/io/harness/ng/core/filestore/dto",
+        "//970-ng-commons/src/main/java/io/harness/ng/core/entitysetupusage/dto",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_springframework_data_spring_data_commons",
+    ],
+)

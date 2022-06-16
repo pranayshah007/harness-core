@@ -1,0 +1,17 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "resourcetypes",
+    srcs = [
+        "ResourceType.java",
+        "ResourceTypeService.java",
+        "ResourceTypeServiceImpl.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "//access-control/libs/core/src/main/java/io/harness/accesscontrol/resources/resourcetypes/persistence",
+        "@maven//:org_hibernate_hibernate_validator",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

@@ -1,0 +1,12 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "intfc",
+    srcs = ["LogService.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//957-cg-beans/src/main/java/software/wings/service/intfc/ownership",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_hibernate_hibernate_validator",
+    ],
+)

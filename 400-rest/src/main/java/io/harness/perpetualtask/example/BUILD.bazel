@@ -1,0 +1,17 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "example",
+    srcs = [
+        "SamplePTaskService.java",
+        "SamplePTaskServiceImpl.java",
+        "SamplePerpetualTaskClientParams.java",
+        "SamplePerpetualTaskServiceClient.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//950-delegate-tasks-beans/src/main/java/io/harness/delegate/task/http",
+        "@maven//:com_google_protobuf_protobuf_java_util",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

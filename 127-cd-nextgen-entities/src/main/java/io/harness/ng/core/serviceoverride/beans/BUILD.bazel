@@ -1,0 +1,24 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "beans",
+    srcs = [
+        "NGServiceOverridesEntity.java",
+        "ServiceOverrideRequestDTO.java",
+        "ServiceOverrideResponseDTO.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//960-persistence/src/main/java/io/harness/mongo/index",
+        "//960-persistence/src/main/java/io/harness/persistence",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:com_google_guava_guava",
+        "@maven//:io_swagger_core_v3_swagger_annotations",
+        "@maven//:org_hibernate_hibernate_validator",
+        "@maven//:org_mongodb_morphia_morphia",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_springframework_data_spring_data_commons",
+        "@maven//:org_springframework_data_spring_data_mongodb",
+    ],
+)

@@ -1,0 +1,26 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "failurestrategy",
+    srcs = [
+        "FailureStrategyActionConfig.java",
+        "FailureStrategyConfig.java",
+        "NGFailureActionType.java",
+        "NGFailureActionTypeConstants.java",
+        "NGFailureType.java",
+        "NGFailureTypeConstants.java",
+        "OnFailureConfig.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//953-yaml-commons/src/main/java/io/harness/yaml/core/failurestrategy/abort",
+        "//953-yaml-commons/src/main/java/io/harness/yaml/core/failurestrategy/ignore",
+        "//953-yaml-commons/src/main/java/io/harness/yaml/core/failurestrategy/manualintervention",
+        "//953-yaml-commons/src/main/java/io/harness/yaml/core/failurestrategy/marksuccess",
+        "//953-yaml-commons/src/main/java/io/harness/yaml/core/failurestrategy/retry",
+        "//953-yaml-commons/src/main/java/io/harness/yaml/core/failurestrategy/rollback",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

@@ -1,0 +1,23 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "amazons3",
+    srcs = ["AmazonS3ServiceTest.java"],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//930-delegate-tasks/src/main/java/software/wings/helpers/ext/amazons3",
+        "//930-delegate-tasks/src/main/java/software/wings/service/intfc/aws/delegate",
+        "//990-commons-test/src/main/java/io/harness/category/element",
+        "@maven//:com_amazonaws_aws_java_sdk_s3",
+        "@maven//:com_google_guava_guava",
+        "@maven//:junit_junit",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+    ],
+)

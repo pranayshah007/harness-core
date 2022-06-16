@@ -1,0 +1,8 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "apm",
+    srcs = ["APMRestClient.java"],
+    visibility = ["//:__subpackages__"],
+    deps = ["@maven//:com_squareup_retrofit2_retrofit"],
+)

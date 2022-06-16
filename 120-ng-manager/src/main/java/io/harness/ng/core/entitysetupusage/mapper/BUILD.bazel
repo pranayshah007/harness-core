@@ -1,0 +1,19 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "mapper",
+    srcs = [
+        "EntitySetupUsageEventDTOMapper.java",
+        "SetupUsageDetailProtoToRestMapper.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//120-ng-manager/src/main/java/io/harness/ng/core/entitysetupusage/helper",
+        "//955-setup-usage-sdk/src/main/java/io/harness/ng/core/entitysetupusage/entity",
+        "//970-ng-commons/src/main/java/io/harness/ng/core/entitydetail",
+        "//970-ng-commons/src/main/java/io/harness/ng/core/entitysetupusage/dto",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

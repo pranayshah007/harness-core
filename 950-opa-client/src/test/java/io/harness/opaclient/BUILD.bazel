@@ -1,0 +1,8 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "opaclient",
+    testonly = True,
+    srcs = ["Dummy.java"],
+    deps = ["//999-annotations/src/main/java/io/harness/annotations/dev"],
+)

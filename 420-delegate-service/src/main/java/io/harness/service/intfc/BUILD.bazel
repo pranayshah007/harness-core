@@ -1,0 +1,27 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "intfc",
+    srcs = [
+        "DelegateCache.java",
+        "DelegateCallbackRegistry.java",
+        "DelegateCallbackService.java",
+        "DelegateInsightsService.java",
+        "DelegateMtlsEndpointService.java",
+        "DelegateProfileObserver.java",
+        "DelegateSetupService.java",
+        "DelegateTaskResultsProvider.java",
+        "DelegateTaskRetryObserver.java",
+        "DelegateTaskSelectorMapService.java",
+        "DelegateTaskService.java",
+        "DelegateTokenService.java",
+        "PerpetualTaskStateObserver.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//420-delegate-service/src/main/java/io/harness/delegate/filter",
+        "//420-delegate-service/src/main/java/io/harness/service/dto",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_mongodb_morphia_morphia",
+    ],
+)

@@ -1,0 +1,21 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "connector",
+    srcs = [
+        "ConnectorHearbeatPublisher.java",
+        "ConnectorHeartbeatPerpetualTaskClient.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//950-delegate-tasks-beans/src/main/java/io/harness/delegate/beans/executioncapability",
+        "//953-events-api/src/main/java/io/harness/eventsframework",
+        "//953-events-api/src/main/java/io/harness/eventsframework/api",
+        "//953-events-api/src/main/java/io/harness/eventsframework/protohelper",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

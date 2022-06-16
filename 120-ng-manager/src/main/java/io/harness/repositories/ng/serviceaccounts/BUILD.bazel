@@ -1,0 +1,18 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "serviceaccounts",
+    srcs = [
+        "ServiceAccountCustomRepository.java",
+        "ServiceAccountCustomRepositoryImpl.java",
+        "ServiceAccountRepository.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//120-ng-manager/src/main/java/io/harness/ng/serviceaccounts/entities",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_springframework_data_spring_data_commons",
+        "@maven//:org_springframework_data_spring_data_mongodb",
+    ],
+)

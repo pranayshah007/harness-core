@@ -1,0 +1,32 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "gittoharness",
+    srcs = [
+        "ChangeSetHelperServiceImpl.java",
+        "ChangeSetInterceptorService.java",
+        "ChangeSetSortComparator.java",
+        "GitSdkInterface.java",
+        "GitToHarnessGrpcService.java",
+        "GitToHarnessSdkProcessor.java",
+        "GitToHarnessSdkProcessorImpl.java",
+        "NoOpChangeSetInterceptorServiceImpl.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//136-git-sync-manager/src/main/java/io/harness/gitsync/common",
+        "//900-git-sync-sdk/src/main/java/io/harness/gitsync/dao",
+        "//900-git-sync-sdk/src/main/java/io/harness/gitsync/entityInfo",
+        "//900-git-sync-sdk/src/main/java/io/harness/gitsync/persistance",
+        "//960-persistence/src/main/java/io/harness/lock",
+        "//970-ng-commons/src/main/java/io/harness/ng/core/entitydetail",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/io/harness/manage",
+        "//980-commons/src/main/java/io/harness/security/dto",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@maven//:com_google_guava_guava",
+        "@maven//:io_grpc_grpc_stub",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

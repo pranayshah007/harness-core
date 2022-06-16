@@ -1,0 +1,26 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "totp",
+    srcs = [
+        "RateLimitProtectionImMemRepository.java",
+        "RateLimitedTotpCheckerTest.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//950-ng-authentication-service/src/main/java/software/wings/security/authentication",
+        "//950-ng-authentication-service/src/main/java/software/wings/security/authentication/totp",
+        "//980-commons/src/main/java/io/harness/limits/impl/model",
+        "//980-commons/src/main/java/io/harness/time",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

@@ -1,0 +1,20 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "beans",
+    srcs = [
+        "EntityWithCount.java",
+        "FileProcessStatus.java",
+        "FileProcessingResponseDTO.java",
+        "FileProcessingStatus.java",
+        "FileStatus.java",
+        "GitOperation.java",
+        "GitToHarnessProcessingResponseDTO.java",
+        "MsvcProcessingFailureStage.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

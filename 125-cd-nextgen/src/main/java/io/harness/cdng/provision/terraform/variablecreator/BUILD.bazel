@@ -1,0 +1,17 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "variablecreator",
+    srcs = [
+        "TerraformApplyStepVariableCreator.java",
+        "TerraformDestroyStepVariableCreator.java",
+        "TerraformPlanStepVariableCreator.java",
+        "TerraformRollbackStepVariableCreator.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/provision/terraform",
+        "//127-cd-nextgen-entities/src/main/java/io/harness/executions/steps",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+    ],
+)

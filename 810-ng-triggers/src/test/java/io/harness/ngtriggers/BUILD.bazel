@@ -1,0 +1,15 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "ngtriggers",
+    testonly = True,
+    srcs = ["NgTriggersTestHelper.java"],
+    deps = [
+        "//810-ng-triggers/src/main/java/io/harness/ngtriggers/beans/dto",
+        "//810-ng-triggers/src/main/java/io/harness/ngtriggers/beans/entity",
+        "//810-ng-triggers/src/main/java/io/harness/ngtriggers/beans/entity/metadata",
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector/scm/awscodecommit",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

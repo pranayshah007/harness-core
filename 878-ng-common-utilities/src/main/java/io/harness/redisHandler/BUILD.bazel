@@ -1,0 +1,12 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "redisHandler",
+    srcs = ["RedisAbstractHandler.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//970-ng-commons/src/main/java/io/serializer",
+        "@maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

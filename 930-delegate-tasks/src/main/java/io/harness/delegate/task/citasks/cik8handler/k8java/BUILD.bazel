@@ -1,0 +1,22 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "k8java",
+    srcs = ["CIK8JavaClientHandler.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/citasks/cik8handler",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/citasks/cik8handler/params",
+        "//960-api-services/src/main/java/io/harness/k8s/apiclient",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/io/harness/threading",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:io_kubernetes_client_java",
+        "@maven//:io_kubernetes_client_java_api",
+        "@maven//:net_jodah_failsafe",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_json_json",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

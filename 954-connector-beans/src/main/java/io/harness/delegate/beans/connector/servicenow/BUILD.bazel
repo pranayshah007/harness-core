@@ -1,0 +1,16 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "servicenow",
+    srcs = ["ServiceNowConnectorDTO.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:io_swagger_core_v3_swagger_annotations",
+        "@maven//:io_swagger_swagger_annotations",
+        "@maven//:org_hibernate_hibernate_validator",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

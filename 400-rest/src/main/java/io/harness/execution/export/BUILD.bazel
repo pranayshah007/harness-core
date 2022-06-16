@@ -1,0 +1,23 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "export",
+    srcs = [
+        "ExportExecutionsFileService.java",
+        "ExportExecutionsRequestLogContext.java",
+        "ExportExecutionsResourceService.java",
+        "ExportExecutionsUtils.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/io/harness/execution/export/formatter",
+        "//400-rest/src/main/java/io/harness/limits/configuration",
+        "//960-persistence/src/main/java/io/harness/persistence",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/io/harness/limits/impl/model",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_mongodb_morphia_morphia",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

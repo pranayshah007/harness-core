@@ -1,0 +1,30 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "serializers",
+    srcs = [
+        "AdviserObtainmentKryoSerializer.java",
+        "AdviserResponseKryoSerializer.java",
+        "AmbianceKryoSerializer.java",
+        "ConsumerConfigKryoSerializer.java",
+        "ErrorResponseKryoSerializer.java",
+        "ExecutableResponseSerializer.java",
+        "FailureDataKryoSerializer.java",
+        "FailureInfoKryoSerializer.java",
+        "InterruptConfigKryoSerializer.java",
+        "InterruptEffectKryoSerializer.java",
+        "JsonExpansionInfoKryoSerializer.java",
+        "LevelKryoSerializer.java",
+        "NodeRunInfoKryoSerializer.java",
+        "PartialPlanResponseKryoSerializer.java",
+        "PlanCreationBlobResponseKryoSerializer.java",
+        "RefTypeKryoSerializer.java",
+        "SdkModuleInfoKryoSerializer.java",
+        "SdkStepKryoSerializer.java",
+        "SkipInfoKryoSerializer.java",
+        "StepOutcomeRefKryoSerializer.java",
+        "StepTypeKryoSerializer.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = ["//999-annotations/src/main/java/io/harness/annotations/dev"],
+)

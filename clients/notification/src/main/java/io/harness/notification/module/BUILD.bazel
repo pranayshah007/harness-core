@@ -1,0 +1,25 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "module",
+    srcs = [
+        "NotificationClientApplicationModule.java",
+        "NotificationClientModule.java",
+        "NotificationClientPersistenceModule.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//960-persistence/src/main/java/io/harness/mongo",
+        "//960-persistence/src/main/java/io/harness/mongo/queue",
+        "//960-persistence/src/main/java/io/harness/persistence",
+        "//960-persistence/src/main/java/io/harness/queue",
+        "//960-persistence/src/main/java/io/harness/springdata",
+        "//970-ng-commons/src/main/java/io/harness/remote/client",
+        "//980-commons/src/main/java/io/harness/govern",
+        "//clients/notification/src/main/java/io/harness/notification/messageclient",
+        "//clients/notification/src/main/java/io/harness/notification/notificationclient",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_mongodb_morphia_morphia",
+        "@maven//:org_springframework_data_spring_data_mongodb",
+    ],
+)

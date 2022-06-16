@@ -1,0 +1,24 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "envGroup",
+    srcs = [
+        "EnvironmentGroupRepository.java",
+        "EnvironmentGroupRepositoryCustom.java",
+        "EnvironmentGroupRepositoryCustomImpl.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/envGroup/beans",
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/events",
+        "//127-cd-nextgen-entities/src/main/java/io/harness/ng/core/environment/services",
+        "//900-git-sync-sdk/src/main/java/io/harness/gitsync/persistance",
+        "//955-outbox-sdk/src/main/java/io/harness/outbox",
+        "//955-outbox-sdk/src/main/java/io/harness/outbox/api",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_springframework_data_spring_data_commons",
+        "@maven//:org_springframework_data_spring_data_mongodb",
+        "@maven//:org_springframework_spring_tx",
+    ],
+)

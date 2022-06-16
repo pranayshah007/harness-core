@@ -1,0 +1,16 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "ProvidersImpl",
+    srcs = [
+        "Bitbucket.java",
+        "Gitlab.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//950-ng-authentication-service/src/main/java/software/wings/security/authentication/oauth",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_github_scribejava_scribejava_apis",
+        "@maven//:com_github_scribejava_scribejava_core",
+    ],
+)

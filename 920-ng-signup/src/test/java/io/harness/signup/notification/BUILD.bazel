@@ -1,0 +1,26 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "notification",
+    srcs = [
+        "SaasSignupNotificationHelperTest.java",
+        "SignupNotificationTemplateLoaderTest.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//920-ng-signup/src/main/java/io/harness/signup/notification",
+        "//920-ng-signup/src/main/java/io/harness/templates/google",
+        "//clients/notification/src/main/java/io/harness/notification/channeldetails",
+        "//clients/notification/src/main/java/io/harness/notification/notificationclient",
+        "@maven//:com_google_guava_guava",
+        "@maven//:com_squareup_retrofit2_retrofit",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+    ],
+)

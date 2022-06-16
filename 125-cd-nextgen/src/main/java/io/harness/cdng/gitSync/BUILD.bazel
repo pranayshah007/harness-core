@@ -1,0 +1,12 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "gitSync",
+    srcs = ["EnvironmentGroupEntityGitSyncHelper.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/envGroup/beans",
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/envGroup/mappers",
+        "//900-git-sync-sdk/src/main/java/io/harness/gitsync/entityInfo",
+    ],
+)

@@ -1,0 +1,18 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "morphia",
+    srcs = [
+        "InvitesMorphiaRegistrar.java",
+        "NgUserGroupMorphiaRegistrar.java",
+        "NgUserMorphiaRegistrar.java",
+        "NgUserProfileMorphiaRegistrars.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//123-ng-core-user/src/main/java/io/harness/ng/core/invites/entities",
+        "//123-ng-core-user/src/main/java/io/harness/ng/core/user/entities",
+        "//123-ng-core-user/src/main/java/io/harness/ng/userprofile/entities",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+    ],
+)

@@ -1,0 +1,29 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "persistence",
+    srcs = [
+        "SupportMorphiaRegistrar.java",
+        "SupportPersistenceConfig.java",
+        "SupportPreferenceDBO.java",
+        "SupportPreferenceDBOMapper.java",
+        "SupportPreferenceDao.java",
+        "SupportPreferenceDaoImpl.java",
+        "SupportPreferenceRepository.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//960-persistence/src/main/java/io/harness/iterator",
+        "//960-persistence/src/main/java/io/harness/mongo",
+        "//960-persistence/src/main/java/io/harness/mongo/index",
+        "//960-persistence/src/main/java/io/harness/springdata",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "//access-control/service/src/main/java/io/harness/accesscontrol/support",
+        "@maven//:org_hibernate_hibernate_validator",
+        "@maven//:org_mongodb_morphia_morphia",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_springframework_data_spring_data_commons",
+        "@maven//:org_springframework_data_spring_data_mongodb",
+        "@maven//:org_springframework_spring_context",
+    ],
+)

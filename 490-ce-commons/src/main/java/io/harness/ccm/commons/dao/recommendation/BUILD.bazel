@@ -1,0 +1,33 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "recommendation",
+    srcs = [
+        "ECSRecommendationDAO.java",
+        "K8sRecommendationDAO.java",
+        "RecommendationCrudService.java",
+        "RecommendationCrudServiceImpl.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/beans",
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/beans/billing",
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/beans/recommendation",
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/beans/recommendation/models",
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/constants",
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/dao",
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/entities/batch",
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/entities/ecs/recommendation",
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/entities/k8s/recommendation",
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/utils",
+        "//490-ce-commons/src/main/java/software/wings/graphql/datafetcher/ce/recommendation/entity",
+        "//959-psql-database-models/src/generated/java/io/harness/timescaledb/tables/pojos",
+        "//960-persistence/src/main/java/io/harness/persistence",
+        "//980-commons/src/main/java/io/harness/annotations/retry",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_jooq_jooq",
+        "@maven//:org_mongodb_morphia_morphia",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

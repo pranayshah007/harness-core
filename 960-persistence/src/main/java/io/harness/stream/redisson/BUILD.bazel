@@ -1,0 +1,18 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "redisson",
+    srcs = [
+        "RedissonBroadcaster.java",
+        "RedissonFactory.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//960-persistence/src/main/java/io/harness/redis",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_atmosphere_atmosphere_runtime",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_redisson_redisson",
+    ],
+)

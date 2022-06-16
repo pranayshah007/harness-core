@@ -1,0 +1,42 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "impl",
+    srcs = [
+        "AzureAutoScaleSettingsClientImplTest.java",
+        "AzureComputeClientImplTest.java",
+        "AzureManagementClientImplTest.java",
+        "AzureMonitorClientImplTest.java",
+        "AzureNetworkClientImplTest.java",
+        "AzureWebClientImplTest.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//960-api-services/src/main/java/io/harness/azure",
+        "//960-api-services/src/main/java/io/harness/azure/impl",
+        "//980-commons/src/main/java/io/harness/network",
+        "@maven//:com_google_guava_guava",
+        "@maven//:com_microsoft_azure_azure",
+        "@maven//:com_microsoft_azure_azure_client_runtime",
+        "@maven//:com_microsoft_azure_azure_mgmt_appservice",
+        "@maven//:com_microsoft_azure_azure_mgmt_compute",
+        "@maven//:com_microsoft_azure_azure_mgmt_monitor",
+        "@maven//:com_microsoft_azure_azure_mgmt_network",
+        "@maven//:com_microsoft_azure_azure_mgmt_resources",
+        "@maven//:com_microsoft_rest_client_runtime",
+        "@maven//:io_reactivex_rxjava",
+        "@maven//:joda_time_joda_time",
+        "@maven//:junit_junit",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+        "@maven//:org_powermock_powermock_api_mockito2",
+        "@maven//:org_powermock_powermock_core",
+        "@maven//:org_powermock_powermock_module_junit4",
+    ],
+)

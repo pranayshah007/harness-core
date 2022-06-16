@@ -1,0 +1,14 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "params",
+    srcs = [
+        "MonitoredServiceParams.java",
+        "PageParams.java",
+        "ProjectParams.java",
+        "ServiceEnvironmentParams.java",
+        "TimeRangeParams.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = ["@maven//:org_projectlombok_lombok"],
+)

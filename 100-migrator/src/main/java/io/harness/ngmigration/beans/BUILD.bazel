@@ -1,0 +1,35 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "beans",
+    srcs = [
+        "BaseEntityInput.java",
+        "BaseInputDefinition.java",
+        "BaseProvidedInput.java",
+        "DiscoverEntityInput.java",
+        "DiscoveryInput.java",
+        "DummyNode.java",
+        "EntitySpec.java",
+        "ExistingPossibleValue.java",
+        "InputDefaults.java",
+        "ManifestProvidedEntitySpec.java",
+        "MigrationInputDTO.java",
+        "MigrationInputResult.java",
+        "MigratorInputType.java",
+        "NGYamlFile.java",
+        "NgEntityDetail.java",
+        "NgInputEntity.java",
+        "PossibleValue.java",
+        "ProvidedEntitySpec.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//100-migrator/src/main/java/io/harness/ngmigration/serializer",
+        "//957-cg-beans/src/main/java/software/wings/ngmigration",
+        "//970-rbac-core/src/main/java/software/wings/security/annotations",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

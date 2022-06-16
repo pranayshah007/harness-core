@@ -1,0 +1,21 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "service",
+    srcs = [
+        "NGTriggerService.java",
+        "NGTriggerWebhookRegistrationService.java",
+        "NGTriggerYamlSchemaService.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//810-ng-triggers/src/main/java/io/harness/ngtriggers/beans/dto",
+        "//810-ng-triggers/src/main/java/io/harness/ngtriggers/beans/entity",
+        "//810-ng-triggers/src/main/java/io/harness/ngtriggers/beans/entity/metadata",
+        "//810-ng-triggers/src/main/java/io/harness/ngtriggers/validations",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@maven//:org_springframework_data_spring_data_commons",
+        "@maven//:org_springframework_data_spring_data_mongodb",
+    ],
+)

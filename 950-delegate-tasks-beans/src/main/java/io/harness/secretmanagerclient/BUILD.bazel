@@ -1,0 +1,14 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "secretmanagerclient",
+    srcs = [
+        "EncryptDecryptHelper.java",
+        "SSHAuthScheme.java",
+        "SecretType.java",
+        "ValueType.java",
+        "WinRmAuthScheme.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = ["//999-annotations/src/main/java/io/harness/annotations/dev"],
+)

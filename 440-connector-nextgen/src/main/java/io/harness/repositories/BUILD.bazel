@@ -1,0 +1,22 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "repositories",
+    srcs = [
+        "ConnectorBaseRepository.java",
+        "ConnectorCustomRepository.java",
+        "ConnectorCustomRepositoryImpl.java",
+        "ConnectorRepository.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//136-git-sync-manager/src/main/java/io/harness/gitsync/common/helper",
+        "//440-connector-nextgen/src/main/java/io/harness/connector/entities",
+        "//900-git-sync-sdk/src/main/java/io/harness/gitsync/persistance",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_springframework_data_spring_data_commons",
+        "@maven//:org_springframework_data_spring_data_mongodb",
+        "@maven//:org_springframework_spring_tx",
+    ],
+)

@@ -1,0 +1,21 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "impl",
+    srcs = [
+        "ClusterRecordServiceImpl.java",
+        "EntityMetadataServiceImpl.java",
+        "InstanceDataServiceImpl.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/constants",
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/dao",
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/entities",
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/entities/batch",
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/entities/billing",
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/service/intf",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

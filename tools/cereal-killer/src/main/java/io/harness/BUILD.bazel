@@ -1,0 +1,21 @@
+load("@rules_java//java:defs.bzl", "java_binary", "java_library")
+
+java_library(
+    name = "harness",
+    srcs = ["Main.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//tools/cereal-killer/src/main/java/io/harness/checks/buildpulse/client",
+        "@maven//:com_squareup_retrofit2_converter_gson",
+        "@maven//:com_squareup_retrofit2_retrofit",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:xml_apis_xml_apis",
+    ],
+)
+
+java_binary(
+    name = "Main",
+    main_class = "io.harness.Main",
+    visibility = ["//visibility:public"],
+    runtime_deps = [":harness"],
+)

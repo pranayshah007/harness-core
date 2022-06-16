@@ -1,0 +1,28 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "intfc",
+    srcs = [
+        "ApiKeyServiceTest.java",
+        "ResourceLookupServiceTest.java",
+        "UserGroupServiceTest.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//960-persistence/src/main/java/io/harness/persistence",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//990-commons-test/src/main/java/io/harness/category/element",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:javax_cache_cache_api",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+        "@maven//:org_powermock_powermock_api_mockito2",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

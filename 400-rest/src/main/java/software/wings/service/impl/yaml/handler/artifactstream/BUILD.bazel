@@ -1,0 +1,36 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "artifactstream",
+    srcs = [
+        "AcrArtifactStreamYamlHandler.java",
+        "AmazonS3ArtifactStreamYamlHandler.java",
+        "AmiArtifactStreamYamlHandler.java",
+        "ArtifactStreamYamlHandler.java",
+        "ArtifactoryArtifactStreamYamlHandler.java",
+        "AzureArtifactsArtifactStreamYamlHandler.java",
+        "AzureMachineImageArtifactStreamYamlHandler.java",
+        "BambooArtifactStreamYamlHandler.java",
+        "CustomArtifactStreamYamlHandler.java",
+        "DockerArtifactStreamYamlHandler.java",
+        "EcrArtifactStreamYamlHandler.java",
+        "GcrArtifactStreamYamlHandler.java",
+        "GcsArtifactStreamYamlHandler.java",
+        "JenkinsArtifactStreamYamlHandler.java",
+        "NexusArtifactStreamYamlHandler.java",
+        "SftpArtifactStreamYamlHandler.java",
+        "SmbArtifactStreamYamlHandler.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/software/wings/beans/template",
+        "//400-rest/src/main/java/software/wings/service/impl/artifact",
+        "//400-rest/src/main/java/software/wings/service/impl/yaml/handler",
+        "//400-rest/src/main/java/software/wings/service/impl/yaml/service",
+        "//400-rest/src/main/java/software/wings/service/intfc/template",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

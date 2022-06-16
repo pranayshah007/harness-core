@@ -1,0 +1,37 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "remote",
+    srcs = [
+        "HealthResourceTest.java",
+        "HostValidationResourceTest.java",
+        "NGSecretResourceV2Test.java",
+        "OrganizationResourceTest.java",
+        "ProjectResourceTest.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//950-ng-core/src/main/java/io/harness/ng/validator/dto",
+        "//950-ng-core/src/main/java/io/harness/ng/validator/service/api",
+        "//950-ng-project-n-orgs/src/main/java/io/harness/ng/core/services",
+        "//970-ng-commons/src/main/java/io/harness/ng/beans",
+        "//980-commons/src/main/java/io/harness/health",
+        "//980-commons/src/main/java/io/harness/maintenance",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "//clients/access-control/sdk/src/main/java/io/harness/accesscontrol/clients",
+        "@maven//:io_dropwizard_metrics_metrics_healthchecks",
+        "@maven//:junit_junit",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+        "@maven//:org_powermock_powermock_api_mockito2",
+        "@maven//:org_powermock_powermock_core",
+        "@maven//:org_powermock_powermock_module_junit4",
+        "@maven//:org_springframework_data_spring_data_commons",
+    ],
+)

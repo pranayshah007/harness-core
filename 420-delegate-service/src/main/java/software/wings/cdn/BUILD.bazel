@@ -1,0 +1,11 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "cdn",
+    srcs = ["CdnConfig.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//980-commons/src/main/java/io/harness/secret",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

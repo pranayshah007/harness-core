@@ -1,0 +1,8 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "event",
+    srcs = ["MessageProcessorType.java"],
+    visibility = ["//:__subpackages__"],
+    deps = ["//350-event-server/src/main/java/io/harness/event/grpc"],
+)

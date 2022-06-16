@@ -1,0 +1,12 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "budget",
+    srcs = ["BudgetSummary.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//490-ce-commons/src/main/java/io/harness/ccm/budget",
+        "@maven//:io_leangen_graphql_spqr",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

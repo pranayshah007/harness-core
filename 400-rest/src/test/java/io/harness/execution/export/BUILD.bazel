@@ -1,0 +1,28 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "export",
+    srcs = [
+        "ExportExecutionsFileServiceTest.java",
+        "ExportExecutionsResourceServiceTest.java",
+        "ExportExecutionsUtilsTest.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//400-rest/src/main/java/io/harness/execution/export",
+        "//400-rest/src/main/java/io/harness/limits/configuration",
+        "//980-commons/src/main/java/io/harness/limits/impl/model",
+        "//990-commons-test/src/main/java/io/harness/category/element",
+        "@maven//:com_fasterxml_jackson_core_jackson_core",
+        "@maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+        "@maven//:org_mongodb_morphia_morphia",
+    ],
+)

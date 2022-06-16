@@ -1,0 +1,24 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "events",
+    srcs = [
+        "EnvironmentCreateEvent.java",
+        "EnvironmentDeleteEvent.java",
+        "EnvironmentUpdatedEvent.java",
+        "EnvironmentUpsertEvent.java",
+        "OutboxEventConstants.java",
+        "ServiceCreateEvent.java",
+        "ServiceDeleteEvent.java",
+        "ServiceOutboxEvents.java",
+        "ServiceUpdateEvent.java",
+        "ServiceUpsertEvent.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//127-cd-nextgen-entities/src/main/java/io/harness/ng/core/service/entity",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

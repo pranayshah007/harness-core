@@ -1,0 +1,17 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "cv",
+    srcs = [
+        "ContinuousVerificationAlertData.java",
+        "ContinuousVerificationDataCollectionAlert.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/software/wings/alerts",
+        "//400-rest/src/main/java/software/wings/verification/log",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

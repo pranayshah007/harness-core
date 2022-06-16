@@ -1,0 +1,25 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "plan",
+    srcs = [
+        "IdentityPlanNode.java",
+        "Node.java",
+        "NodeEntity.java",
+        "NodeType.java",
+        "Plan.java",
+        "PlanNode.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//884-pms-commons/src/main/java/io/harness/pms/data",
+        "//960-persistence/src/main/java/io/harness/mongo/index",
+        "//960-persistence/src/main/java/io/harness/persistence",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_mongodb_morphia_morphia",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_springframework_data_spring_data_commons",
+        "@maven//:org_springframework_data_spring_data_mongodb",
+    ],
+)

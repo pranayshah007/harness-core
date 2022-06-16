@@ -1,0 +1,26 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "ngexception",
+    srcs = [
+        "CILiteEngineException.java",
+        "CIStageExecutionException.java",
+        "CIStageExecutionUserException.java",
+        "ConnectorValidationException.java",
+        "ErrorMetadataDTO.java",
+        "InvalidCIStageException.java",
+        "NGPipelineNotFoundException.java",
+        "NGTemplateException.java",
+        "UnresolvedRunTimeInputSetException.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//980-commons/src/main/java/io/harness/eraro",
+        "//980-commons/src/main/java/io/harness/exception/ngexception/beans",
+        "//980-commons/src/main/java/io/harness/exception/ngexception/beans/templateservice",
+        "//980-commons/src/main/java/io/harness/exception/ngexception/beans/yamlschema",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:io_swagger_core_v3_swagger_annotations",
+    ],
+)

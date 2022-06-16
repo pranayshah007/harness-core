@@ -1,0 +1,21 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "model",
+    srcs = [
+        "GcpAccessTokenSupplier.java",
+        "KubernetesConfig.java",
+        "KubernetesListObject.java",
+        "KubernetesObject.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_api_client_google_api_client",
+        "@maven//:com_google_http_client_google_http_client",
+        "@maven//:com_google_oauth_client_google_oauth_client",
+        "@maven//:io_kubernetes_client_java_api",
+        "@maven//:org_hibernate_hibernate_validator",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

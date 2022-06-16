@@ -1,0 +1,22 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "graphql",
+    srcs = [
+        "AnomaliesFilter.java",
+        "AnomaliesIdFilter.java",
+        "AnomaliesTimeFilter.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/io/harness/ccm/anomaly/entities",
+        "//400-rest/src/main/java/io/harness/ccm/billing/graphql",
+        "//400-rest/src/main/java/io/harness/ccm/billing/preaggregated",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_cloud_google_cloud_core",
+        "@maven//:com_hazelcast_hazelcast",
+        "@maven//:com_healthmarketscience_sqlbuilder_sqlbuilder",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

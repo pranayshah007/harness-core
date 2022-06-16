@@ -1,0 +1,11 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "service",
+    srcs = ["GcpResourceService.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/k8s/resources/gcp",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+    ],
+)

@@ -1,0 +1,12 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "security",
+    srcs = ["AsymmetricDecryptor.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//990-commons-test/src/main/java/io/harness/scm",
+        "@maven//:com_google_guava_guava",
+        "@maven//:com_google_inject_guice",
+    ],
+)

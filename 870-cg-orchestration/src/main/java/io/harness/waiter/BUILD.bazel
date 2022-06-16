@@ -1,0 +1,12 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "waiter",
+    srcs = ["OrchestrationNotifyEventListener.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//960-persistence/src/main/java/io/harness/mongo/queue",
+        "//980-commons/src/main/java/io/harness/config",
+        "//980-commons/src/main/java/io/harness/version",
+    ],
+)

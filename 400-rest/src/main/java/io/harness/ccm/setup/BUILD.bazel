@@ -1,0 +1,23 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "setup",
+    srcs = [
+        "CECloudAccountDao.java",
+        "CEClusterDao.java",
+        "CESetupServiceModule.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/io/harness/ccm/billing",
+        "//400-rest/src/main/java/io/harness/ccm/billing/bigquery",
+        "//400-rest/src/main/java/io/harness/ccm/setup/service/impl",
+        "//400-rest/src/main/java/io/harness/ccm/setup/service/intfc",
+        "//400-rest/src/main/java/io/harness/ccm/setup/service/support/impl",
+        "//400-rest/src/main/java/io/harness/ccm/setup/service/support/intfc",
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/entities/billing",
+        "//960-persistence/src/main/java/io/harness/persistence",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_mongodb_morphia_morphia",
+    ],
+)

@@ -1,0 +1,21 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "strategy",
+    srcs = [
+        "AxisConfig.java",
+        "ExcludeConfig.java",
+        "HarnessForConfig.java",
+        "MatrixConfig.java",
+        "StrategyConfig.java",
+        "StrategyType.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//960-yaml-sdk/src/main/java/io/harness/yaml/schema/beans",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:io_swagger_swagger_annotations",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

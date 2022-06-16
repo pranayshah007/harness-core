@@ -1,0 +1,31 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "users",
+    srcs = [
+        "NewTrialSignupTestBase.java",
+        "TwoFactorAuthenticationTest.java",
+        "UserTest.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//200-functional-test/src/main/java/io/harness/functional",
+        "//230-model-test/src/main/java/io/harness/testframework/framework",
+        "//230-model-test/src/main/java/io/harness/testframework/framework/constants",
+        "//230-model-test/src/main/java/io/harness/testframework/framework/email/mailinator",
+        "//230-model-test/src/main/java/io/harness/testframework/framework/utils",
+        "//230-model-test/src/main/java/io/harness/testframework/restutils",
+        "//950-ng-authentication-service/src/main/java/software/wings/security/authentication",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "@maven//:junit_junit",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_apache_httpcomponents_httpcore",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

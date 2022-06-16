@@ -1,0 +1,32 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "deployment",
+    srcs = [
+        "AzureAppServiceDeploymentServiceTest.java",
+        "SlotSteadyStateCheckerTest.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/beans/logstreaming",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/azure/appservice/deployment",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/azure/appservice/deployment/context",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/azure/appservice/deployment/verifier",
+        "//960-api-services/src/main/java/io/harness/azure",
+        "//960-api-services/src/main/java/io/harness/azure/client",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:com_microsoft_azure_azure_mgmt_appservice",
+        "@maven//:com_microsoft_azure_azure_mgmt_monitor",
+        "@maven//:io_reactivex_rxjava",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_jooq_joor",
+        "@maven//:org_mockito_mockito_core",
+    ],
+)

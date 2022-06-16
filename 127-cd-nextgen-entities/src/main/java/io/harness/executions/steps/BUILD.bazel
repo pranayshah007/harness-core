@@ -1,0 +1,15 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "steps",
+    srcs = [
+        "ExecutionNodeType.java",
+        "StepConstants.java",
+        "StepSpecTypeConstants.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//127-cd-nextgen-entities/src/main/java/io/harness/cdng/visitor",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+    ],
+)

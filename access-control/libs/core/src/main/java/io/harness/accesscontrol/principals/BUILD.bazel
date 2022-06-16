@@ -1,0 +1,23 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "principals",
+    srcs = [
+        "Principal.java",
+        "PrincipalModule.java",
+        "PrincipalValidator.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "//access-control/libs/core/src/main/java/io/harness/accesscontrol/common/validation",
+        "//access-control/libs/core/src/main/java/io/harness/accesscontrol/principals/serviceaccounts/persistence",
+        "//access-control/libs/core/src/main/java/io/harness/accesscontrol/principals/usergroups/persistence",
+        "//access-control/libs/core/src/main/java/io/harness/accesscontrol/principals/users/persistence",
+        "//access-control/libs/core/src/main/java/io/harness/accesscontrol/roleassignments",
+        "@maven//:com_google_inject_guice",
+        "@maven//:org_hibernate_hibernate_validator",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_springframework_spring_tx",
+    ],
+)

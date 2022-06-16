@@ -1,0 +1,17 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "harness",
+    srcs = [
+        "AccessControlClientConfiguration.java",
+        "AccessControlClientModule.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//970-ng-commons/src/main/java/io/harness/remote/client",
+        "//980-commons/src/main/java/io/harness/secret",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "//clients/access-control/sdk/src/main/java/io/harness/accesscontrol/clients",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

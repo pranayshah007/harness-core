@@ -1,0 +1,11 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "collection",
+    srcs = ["ServiceGuardDataCollectionJob.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//960-persistence/src/main/java/io/harness/mongo/iterator",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

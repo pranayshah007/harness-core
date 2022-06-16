@@ -1,0 +1,16 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "webhook",
+    srcs = ["GitSyncEventConsumerService.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//136-git-sync-manager/src/main/java/io/harness/gitsync/core/webhook/createbranchevent",
+        "//136-git-sync-manager/src/main/java/io/harness/gitsync/core/webhook/pushevent",
+        "//953-events-api/src/main/java/io/harness/eventsframework",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:io_dropwizard_dropwizard_lifecycle",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

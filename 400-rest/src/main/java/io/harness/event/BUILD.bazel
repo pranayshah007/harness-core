@@ -1,0 +1,22 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "event",
+    srcs = ["EventsModule.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/io/harness/event/handler/impl",
+        "//400-rest/src/main/java/io/harness/event/handler/impl/account",
+        "//400-rest/src/main/java/io/harness/event/handler/impl/notifications",
+        "//400-rest/src/main/java/io/harness/event/handler/impl/segment",
+        "//400-rest/src/main/java/io/harness/event/timeseries",
+        "//400-rest/src/main/java/software/wings/service/impl/event",
+        "//950-events-framework/src/main/java/io/harness/event/handler",
+        "//950-events-framework/src/main/java/io/harness/event/handler/marketo",
+        "//950-events-framework/src/main/java/io/harness/event/handler/segment",
+        "//950-events-framework/src/main/java/io/harness/event/listener",
+        "//950-events-framework/src/main/java/io/harness/event/publisher",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_inject_guice",
+    ],
+)

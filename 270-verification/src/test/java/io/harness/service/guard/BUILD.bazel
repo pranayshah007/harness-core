@@ -1,0 +1,25 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "guard",
+    srcs = ["ServiceGuardAlertTest.java"],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//930-delegate-tasks/src/main/java/software/wings/service/impl/analysis",
+        "//930-delegate-tasks/src/main/java/software/wings/service/impl/newrelic",
+        "//930-delegate-tasks/src/main/java/software/wings/service/impl/splunk",
+        "//930-delegate-tasks/src/main/java/software/wings/service/intfc/analysis",
+        "//957-cg-beans/src/main/java/software/wings/verification",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/io/harness/rest",
+        "//980-commons/src/main/java/io/harness/threading",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

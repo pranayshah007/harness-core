@@ -1,0 +1,21 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "migrations",
+    srcs = [
+        "InstanceMigrationProvider.java",
+        "InstanceStatsTimeScaleMigrationDetails.java",
+        "NGInstanceSchema.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//126-instance/src/main/java/io/harness/migrations/timescale",
+        "//958-migration-sdk/src/main/java/io/harness/migration/beans",
+        "//958-migration-sdk/src/main/java/io/harness/migration/entities",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_springframework_data_spring_data_commons",
+        "@maven//:org_springframework_data_spring_data_mongodb",
+    ],
+)

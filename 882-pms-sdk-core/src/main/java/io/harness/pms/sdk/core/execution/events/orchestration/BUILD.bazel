@@ -1,0 +1,17 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "orchestration",
+    srcs = ["SdkOrchestrationEventHandler.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/events",
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/registries",
+        "//884-pms-commons/src/main/java/io/harness/pms/events/base",
+        "//953-yaml-commons/src/main/java/io/harness/pms/serializer/recaster",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

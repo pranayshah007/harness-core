@@ -1,0 +1,15 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "dynatracemapper",
+    srcs = [
+        "DynatraceDTOToEntity.java",
+        "DynatraceEntityToDTO.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//440-connector-nextgen/src/main/java/io/harness/connector/entities/embedded/dynatraceconnector",
+        "//440-connector-nextgen/src/main/java/io/harness/connector/mappers",
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector/dynatrace",
+    ],
+)

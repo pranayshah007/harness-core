@@ -1,0 +1,28 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "recommendation",
+    srcs = [
+        "RESTWrapperRecommendationDetailsTest.java",
+        "RESTWrapperRecommendationOverviewTest.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//340-ce-nextgen/src/main/java/io/harness/ccm/remote/beans/recommendation",
+        "//340-ce-nextgen/src/main/java/io/harness/ccm/remote/resources/recommendation",
+        "//374-ceng-graphql/src/main/java/io/harness/ccm/graphql/dto/recommendation",
+        "//374-ceng-graphql/src/main/java/io/harness/ccm/graphql/query/recommendation",
+        "//374-ceng-graphql/src/main/java/io/harness/ccm/graphql/utils",
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/beans/recommendation",
+        "@maven//:io_leangen_graphql_spqr",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+        "@maven//:org_powermock_powermock_api_mockito2",
+    ],
+)

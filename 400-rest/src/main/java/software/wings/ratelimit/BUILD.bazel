@@ -1,0 +1,22 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "ratelimit",
+    srcs = [
+        "DelegateRequestRateLimiter.java",
+        "LoginRequestRateLimiter.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/io/harness/limits/configuration",
+        "//420-delegate-service/src/main/java/io/harness/metrics/intfc",
+        "//980-commons/src/main/java/io/harness/configuration",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/io/harness/limits/lib",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_github_ben_manes_caffeine_caffeine",
+        "@maven//:es_moki_ratelimitj_ratelimitj_core",
+        "@maven//:es_moki_ratelimitj_ratelimitj_inmemory",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

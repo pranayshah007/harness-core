@@ -1,0 +1,19 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "monitoring",
+    srcs = [
+        "FailedTestData.java",
+        "GoogleCloudMonitoring.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "@maven//:com_google_api_gax",
+        "@maven//:com_google_api_grpc_proto_google_cloud_monitoring_v3",
+        "@maven//:com_google_api_grpc_proto_google_common_protos",
+        "@maven//:com_google_auth_google_auth_library_oauth2_http",
+        "@maven//:com_google_cloud_google_cloud_monitoring",
+        "@maven//:com_google_protobuf_protobuf_java_util",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

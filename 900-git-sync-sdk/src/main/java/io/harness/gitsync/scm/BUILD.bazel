@@ -1,0 +1,32 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "scm",
+    srcs = [
+        "EntityObjectIdUtils.java",
+        "EntityToYamlStringUtils.java",
+        "SCMGitSyncHelper.java",
+        "ScmGitUtils.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//136-git-sync-manager/src/main/java/io/harness/gitsync/common/beans",
+        "//136-git-sync-manager/src/main/java/io/harness/gitsync/common/helper",
+        "//900-git-sync-sdk/src/main/java/io/harness/gitsync/entityInfo",
+        "//900-git-sync-sdk/src/main/java/io/harness/gitsync/exceptions",
+        "//900-git-sync-sdk/src/main/java/io/harness/gitsync/persistance",
+        "//900-git-sync-sdk/src/main/java/io/harness/gitsync/scm/beans",
+        "//900-git-sync-sdk/src/main/java/io/harness/gitsync/scm/errorhandling",
+        "//952-scm-java-client/src/main/java/io/harness/impl",
+        "//970-ng-commons/src/main/java/io/harness/ng/core/entitydetail",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/io/harness/eraro",
+        "//980-commons/src/main/java/io/harness/exception/ngexception/beans",
+        "//980-commons/src/main/java/io/harness/manage",
+        "//980-commons/src/main/java/io/harness/security/dto",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

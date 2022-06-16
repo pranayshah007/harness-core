@@ -1,0 +1,18 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "outbox",
+    srcs = [
+        "UserEventHandler.java",
+        "WingsOutboxEventHandler.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/software/wings/core/events",
+        "//955-outbox-sdk/src/main/java/io/harness/outbox",
+        "//955-outbox-sdk/src/main/java/io/harness/outbox/api",
+        "//980-commons/src/main/java/io/harness/security/dto",
+        "//clients/audit/src/main/java/io/harness/audit/client/api",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

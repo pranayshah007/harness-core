@@ -1,0 +1,15 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "resources",
+    srcs = ["KubernetesActivityResource.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/activity/source/services/api",
+        "//948-cv-nextgen-beans/src/main/java/io/harness/cvng/core/services",
+        "//970-ng-commons/src/main/java/io/harness/ng/beans",
+        "//980-commons/src/main/java/io/harness/annotations",
+        "@maven//:io_dropwizard_metrics_metrics_annotation",
+        "@maven//:io_swagger_swagger_annotations",
+    ],
+)

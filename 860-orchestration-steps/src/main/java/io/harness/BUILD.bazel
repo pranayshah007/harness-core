@@ -1,0 +1,20 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "harness",
+    srcs = [
+        "OrchestrationStepConfig.java",
+        "OrchestrationStepsModule.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//860-orchestration-steps/src/main/java/io/harness/steps/approval/step",
+        "//860-orchestration-steps/src/main/java/io/harness/steps/barriers/service",
+        "//860-orchestration-steps/src/main/java/io/harness/steps/resourcerestraint/service",
+        "//960-continuous-features/src/generated/java/io/harness/cf/openapi",
+        "//960-continuous-features/src/main/java/io/harness/cf",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

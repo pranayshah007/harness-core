@@ -1,0 +1,15 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "aws",
+    srcs = [
+        "AwsElbListener.java",
+        "AwsElbListenerRuleData.java",
+        "AwsLoadBalancerDetails.java",
+        "LbDetailsForAlbTrafficShift.java",
+        "LoadBalancerDetailsForBGDeployment.java",
+        "LoadBalancerType.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = ["@maven//:org_projectlombok_lombok"],
+)

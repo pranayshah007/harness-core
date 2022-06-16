@@ -1,0 +1,25 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "azure",
+    srcs = [
+        "AcrBuildDetailsDTO.java",
+        "AcrResponseDTO.java",
+        "AzureConfigDTO.java",
+        "AzureMachineImageArtifactDTO.java",
+        "AzureVMAuthDTO.java",
+        "AzureVMAuthType.java",
+        "GalleryImageDefinitionDTO.java",
+        "ManagementGroupData.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//950-delegate-tasks-beans/src/main/java/io/harness/delegate/beans/executioncapability",
+        "//950-delegate-tasks-beans/src/main/java/io/harness/delegate/task/mixin",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:io_swagger_core_v3_swagger_annotations",
+        "@maven//:io_swagger_swagger_annotations",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

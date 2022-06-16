@@ -1,0 +1,17 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "beans",
+    srcs = [
+        "ApiKeyType.java",
+        "Generation.java",
+        "KeyValuePair.java",
+        "NGTag.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:io_swagger_core_v3_swagger_annotations",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

@@ -1,0 +1,39 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "taskhandler",
+    srcs = [
+        "AzureAppServiceConfigurationDTOMapperTest.java",
+        "AzureWebAppRollbackTaskHandlerTest.java",
+        "AzureWebAppSlotSetupTaskHandlerTest.java",
+        "AzureWebAppSlotShiftTrafficTaskHandlerTest.java",
+        "AzureWebAppSlotSwapTaskHandlerTest.java",
+        "AzureWebAppSyncTaskHandlerTest.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//260-delegate/src/main/java/software/wings/delegatetasks/azure/appservice/webapp/taskhandler",
+        "//260-delegate/src/main/java/software/wings/delegatetasks/azure/common",
+        "//260-delegate/src/main/java/software/wings/delegatetasks/azure/common/context",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/beans/logstreaming",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/azure",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/azure/appservice/deployment",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/azure/appservice/deployment/context",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/azure/common",
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector/artifactoryconnector",
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector/azureconnector",
+        "//960-api-services/src/main/java/io/harness/azure/client",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_cronutils_cron_utils",
+        "@maven//:com_microsoft_azure_azure_mgmt_appservice",
+        "@maven//:com_microsoft_azure_azure_mgmt_containerregistry",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+    ],
+)

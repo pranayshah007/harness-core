@@ -1,0 +1,17 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "tasks",
+    srcs = [
+        "NgDelegate2TaskExecutor.java",
+        "TaskExecutor.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//884-pms-commons/src/main/java/io/harness/pms/utils",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_protobuf_protobuf_java_util",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

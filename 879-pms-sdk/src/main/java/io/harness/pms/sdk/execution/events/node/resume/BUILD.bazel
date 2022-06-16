@@ -1,0 +1,18 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "resume",
+    srcs = [
+        "NodeResumeEventMessageListener.java",
+        "NodeResumeEventRedisConsumer.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//884-pms-commons/src/main/java/io/harness/pms/events/base",
+        "//953-events-api/src/main/java/io/harness/eventsframework/api",
+        "//960-persistence/src/main/java/io/harness/queue",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:javax_cache_cache_api",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

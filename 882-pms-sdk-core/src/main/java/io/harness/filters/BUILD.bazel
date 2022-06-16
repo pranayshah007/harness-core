@@ -1,0 +1,23 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "filters",
+    srcs = [
+        "FilterCreatorHelper.java",
+        "GenericStepPMSFilterJsonCreator.java",
+        "WithConnectorRef.java",
+        "WithFileRef.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/filter/creation/beans",
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/pipeline/filters",
+        "//884-pms-commons/src/main/java/io/harness/pms/exception/runtime",
+        "//967-walktree-visitor/src/main/java/io/harness/walktree/visitor/utilities",
+        "//970-ng-commons/src/main/java/io/harness/preflight",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

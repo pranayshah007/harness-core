@@ -1,0 +1,13 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "listener",
+    srcs = ["LoggingStepSkipListener.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/entities/events",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_springframework_batch_spring_batch_core",
+        "@maven//:org_springframework_spring_context",
+    ],
+)

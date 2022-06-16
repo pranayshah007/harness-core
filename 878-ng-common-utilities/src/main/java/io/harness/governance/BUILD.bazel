@@ -1,0 +1,18 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "governance",
+    srcs = [
+        "ConnectorRefExpandedValue.java",
+        "DefaultConnectorRefExpansionHandler.java",
+        "ExpansionKeysConstants.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/governance",
+        "//970-ng-commons/src/main/java/io/harness/remote/client",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

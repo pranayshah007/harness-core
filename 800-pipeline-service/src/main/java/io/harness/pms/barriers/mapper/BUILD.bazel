@@ -1,0 +1,18 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "mapper",
+    srcs = [
+        "BarrierExecutionInfoDTOMapper.java",
+        "BarrierInfoDTOMapper.java",
+        "BarrierSetupInfoDTOMapper.java",
+        "StageDetailDTOMapper.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//800-pipeline-service/src/main/java/io/harness/pms/barriers/beans",
+        "//800-pipeline-service/src/main/java/io/harness/pms/barriers/response",
+        "//860-orchestration-steps/src/main/java/io/harness/steps/barriers/beans",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

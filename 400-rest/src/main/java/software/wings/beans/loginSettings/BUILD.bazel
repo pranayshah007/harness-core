@@ -1,0 +1,33 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "loginSettings",
+    srcs = [
+        "LoginSettings.java",
+        "LoginSettingsService.java",
+        "LoginSettingsServiceImpl.java",
+        "PasswordStrengthChecks.java",
+        "PasswordStrengthPolicy.java",
+        "PasswordStrengthViolation.java",
+        "PasswordStrengthViolations.java",
+        "UserLockoutInfo.java",
+        "UserLockoutPolicy.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/software/wings/dl",
+        "//400-rest/src/main/java/software/wings/service/impl/notifications",
+        "//957-cg-beans/src/main/java/software/wings/service/intfc/ownership",
+        "//960-persistence/src/main/java/io/harness/mongo",
+        "//960-persistence/src/main/java/io/harness/mongo/index",
+        "//960-persistence/src/main/java/io/harness/persistence",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_github_reinert_jjschema",
+        "@maven//:com_google_guava_guava",
+        "@maven//:io_swagger_core_v3_swagger_annotations",
+        "@maven//:org_mongodb_morphia_morphia",
+        "@maven//:org_passay_passay",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

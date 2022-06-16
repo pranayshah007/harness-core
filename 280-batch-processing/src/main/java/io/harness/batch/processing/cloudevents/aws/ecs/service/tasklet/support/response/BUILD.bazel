@@ -1,0 +1,16 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "response",
+    srcs = [
+        "AwsCloudWatchMetricDataResponse.java",
+        "EcsUtilizationData.java",
+        "MetricValue.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//930-delegate-tasks/src/main/java/software/wings/service/impl/aws/model",
+        "@maven//:com_amazonaws_aws_java_sdk_cloudwatch",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

@@ -1,0 +1,17 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "notification",
+    srcs = [
+        "EmailConfigDTO.java",
+        "MicrosoftTeamsConfigDTO.java",
+        "NotificationSettingConfigDTO.java",
+        "PagerDutyConfigDTO.java",
+        "SlackConfigDTO.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

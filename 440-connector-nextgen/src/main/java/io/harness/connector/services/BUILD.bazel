@@ -1,0 +1,32 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "services",
+    srcs = [
+        "ConnectorActivityService.java",
+        "ConnectorCrudService.java",
+        "ConnectorFilterService.java",
+        "ConnectorHeartbeatService.java",
+        "ConnectorService.java",
+        "ConnectorValidationService.java",
+        "GitRepoConnectorService.java",
+        "NGConnectorSecretManagerService.java",
+        "NGHostService.java",
+        "NGVaultService.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//440-connector-nextgen/src/main/java/io/harness/connector/entities/embedded/vaultconnector",
+        "//930-delegate-tasks/src/main/java/io/harness/helpers/ext/vault",
+        "//940-secret-manager-client/src/main/java/io/harness/secretmanagerclient/dto",
+        "//954-connector-beans/src/main/java/io/harness/connector/stats",
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector",
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector/pdcconnector",
+        "//955-filters-sdk/src/main/java/io/harness/filter/dto",
+        "//970-ng-commons/src/main/java/io/harness/ng/beans",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_springframework_data_spring_data_commons",
+        "@maven//:org_springframework_data_spring_data_mongodb",
+    ],
+)

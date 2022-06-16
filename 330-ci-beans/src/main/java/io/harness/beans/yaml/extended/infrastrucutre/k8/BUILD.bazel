@@ -1,0 +1,17 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "k8",
+    srcs = [
+        "Capabilities.java",
+        "SecurityContext.java",
+        "Toleration.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//960-yaml-sdk/src/main/java/io/harness/yaml/schema/beans",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:io_swagger_swagger_annotations",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

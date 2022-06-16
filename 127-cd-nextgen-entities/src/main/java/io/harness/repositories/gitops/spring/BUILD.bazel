@@ -1,0 +1,12 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "spring",
+    srcs = ["ClusterRepository.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//127-cd-nextgen-entities/src/main/java/io/harness/cdng/gitops/entity",
+        "//127-cd-nextgen-entities/src/main/java/io/harness/repositories/gitops/custom",
+        "@maven//:org_springframework_data_spring_data_commons",
+    ],
+)

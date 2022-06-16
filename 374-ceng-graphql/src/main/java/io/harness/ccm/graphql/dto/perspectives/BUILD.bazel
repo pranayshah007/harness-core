@@ -1,0 +1,24 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "perspectives",
+    srcs = [
+        "CostDetailsQueryParamsDTO.java",
+        "PerspectiveData.java",
+        "PerspectiveEntityStatsData.java",
+        "PerspectiveFieldsData.java",
+        "PerspectiveFilterData.java",
+        "PerspectiveOverviewStatsData.java",
+        "PerspectiveTimeSeriesData.java",
+        "PerspectiveTrendStats.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//374-ceng-graphql/src/main/java/io/harness/ccm/graphql/dto/common",
+        "//450-ce-views/src/main/java/io/harness/ccm/views/graphql",
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/entities",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:io_swagger_core_v3_swagger_annotations",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

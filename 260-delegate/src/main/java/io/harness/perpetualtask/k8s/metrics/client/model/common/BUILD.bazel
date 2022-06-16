@@ -1,0 +1,18 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "common",
+    srcs = [
+        "CustomResource.java",
+        "CustomResourceList.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//960-api-services/src/main/java/io/harness/k8s/model",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@maven//:com_google_code_gson_gson",
+        "@maven//:io_kubernetes_client_java_api",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

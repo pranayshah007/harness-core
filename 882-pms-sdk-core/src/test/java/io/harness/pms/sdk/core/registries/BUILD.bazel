@@ -1,0 +1,28 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "registries",
+    srcs = [
+        "FunctorRegistryTest.java",
+        "JsonExpansionHandlerRegistryTest.java",
+        "StepRegistryTest.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/execution/expression",
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/governance",
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/registries",
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/steps",
+        "//980-commons/src/main/java/io/harness/registries/exceptions",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

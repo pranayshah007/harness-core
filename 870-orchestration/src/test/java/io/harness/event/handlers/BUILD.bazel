@@ -1,0 +1,37 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "handlers",
+    srcs = [
+        "AddExecutableResponseRequestProcessorTest.java",
+        "AdviserResponseRequestProcessorTest.java",
+        "ErrorEventRequestProcessorTest.java",
+        "FacilitateResponseRequestProcessorTest.java",
+        "HandleStepResponseRequestProcessorTest.java",
+        "QueueTaskRequestProcessorTest.java",
+        "SpawnChildRequestProcessorTest.java",
+        "SpawnChildrenRequestProcessorTest.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//870-orchestration/src/main/java/io/harness/engine",
+        "//870-orchestration/src/main/java/io/harness/engine/executions/node",
+        "//870-orchestration/src/main/java/io/harness/engine/pms/resume",
+        "//870-orchestration/src/main/java/io/harness/engine/pms/tasks",
+        "//870-orchestration/src/main/java/io/harness/engine/progress",
+        "//870-orchestration/src/main/java/io/harness/event/handlers",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:junit_junit",
+        "@maven//:org_apache_commons_commons_collections4",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_jooq_joor",
+        "@maven//:org_mockito_mockito_core",
+        "@maven//:org_springframework_data_spring_data_mongodb",
+    ],
+)

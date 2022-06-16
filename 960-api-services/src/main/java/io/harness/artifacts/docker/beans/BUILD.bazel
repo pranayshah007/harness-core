@@ -1,0 +1,18 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "beans",
+    srcs = [
+        "DockerImageManifestResponse.java",
+        "DockerInternalConfig.java",
+        "DockerPublicImageTagResponse.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:com_squareup_retrofit2_retrofit",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

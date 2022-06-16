@@ -1,0 +1,23 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "users",
+    srcs = [
+        "HarnessUserService.java",
+        "HarnessUserServiceImpl.java",
+        "UserClientConfiguration.java",
+        "UserValidator.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//930-ng-core-clients/src/main/java/io/harness/usermembership/remote",
+        "//970-ng-commons/src/main/java/io/harness/remote/client",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "//access-control/libs/core/src/main/java/io/harness/accesscontrol/common/validation",
+        "//access-control/libs/core/src/main/java/io/harness/accesscontrol/scopes/core",
+        "@maven//:com_google_guava_guava",
+        "@maven//:net_jodah_failsafe",
+        "@maven//:org_hibernate_hibernate_validator",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

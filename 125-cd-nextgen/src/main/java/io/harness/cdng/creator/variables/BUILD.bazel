@@ -1,0 +1,38 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "variables",
+    srcs = [
+        "DeploymentStageVariableCreator.java",
+        "GitOpsCreatePRStepVariableCreator.java",
+        "HelmDeployStepVariableCreator.java",
+        "HelmRollbackStepVariableCreator.java",
+        "InfraVariableCreator.java",
+        "K8sApplyStepVariableCreator.java",
+        "K8sBGSwapServicesVariableCreator.java",
+        "K8sBlueGreenStepVariableCreator.java",
+        "K8sCanaryDeleteStepVariableCreator.java",
+        "K8sCanaryStepVariableCreator.java",
+        "K8sDeleteStepVariableCreator.java",
+        "K8sRollingRollbackStepVariableCreator.java",
+        "K8sRollingStepVariableCreator.java",
+        "K8sScaleStepVariableCreator.java",
+        "ServerlessAwsLambdaDeployStepVariableCreator.java",
+        "ServerlessAwsLambdaRollbackStepVariableCreator.java",
+        "ServiceVariableCreator.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/creator/plan/stage",
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/gitops",
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/helm",
+        "//127-cd-nextgen-entities/src/main/java/io/harness/cdng/visitor",
+        "//127-cd-nextgen-entities/src/main/java/io/harness/executions/steps",
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/variables",
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/variables/beans",
+        "//960-ng-core-beans/src/main/java/io/harness/ng/core/infrastructure",
+        "//960-ng-core-beans/src/main/java/io/harness/ng/core/k8s",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

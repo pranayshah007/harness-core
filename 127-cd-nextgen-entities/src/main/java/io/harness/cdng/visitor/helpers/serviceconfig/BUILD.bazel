@@ -1,0 +1,27 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "serviceconfig",
+    srcs = [
+        "KubernetesServiceSpecVisitorHelper.java",
+        "NativeHelmServiceSpecVisitorHelper.java",
+        "ServerlessAwsLambdaServiceSpecVisitorHelper.java",
+        "ServiceConfigVisitorHelper.java",
+        "ServiceDefinitionVisitorHelper.java",
+        "ServiceEntityVisitorHelper.java",
+        "ServiceUseFromOverridesVisitorHelper.java",
+        "ServiceUseFromStageVisitorHelper.java",
+        "SshServiceSpecVisitorHelper.java",
+        "StageOverridesVisitorHelper.java",
+        "WinRmServiceSpecVisitorHelper.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//127-cd-nextgen-entities/src/main/java/io/harness/cdng/visitor",
+        "//967-walktree-visitor/src/main/java/io/harness/walktree/visitor/entityreference",
+        "//967-walktree-visitor/src/main/java/io/harness/walktree/visitor/utilities",
+        "//967-walktree-visitor/src/main/java/io/harness/walktree/visitor/validation",
+        "//970-ng-commons/src/main/java/io/harness/preflight",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+    ],
+)

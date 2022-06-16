@@ -1,0 +1,30 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "service",
+    srcs = [
+        "MSTeamsServiceImplTest.java",
+        "MailServiceImplTest.java",
+        "PagerDutyServiceImplTest.java",
+        "SlackSenderImplTest.java",
+        "SlackServiceImplTest.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//930-delegate-tasks/src/main/java/io/harness/notification/senders",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "//platform-service/modules/notification-service/contracts/src/main/java/io/harness/notification/exception",
+        "//platform-service/modules/notification-service/src/main/java/io/harness/notification/service",
+        "//platform-service/modules/notification-service/src/main/java/io/harness/notification/service/api",
+        "@maven//:com_fasterxml_jackson_core_jackson_core",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

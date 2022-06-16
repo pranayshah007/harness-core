@@ -1,0 +1,31 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "sidekickexecutors",
+    srcs = [
+        "DemoActivitySideKickExecutor.java",
+        "RetryChangeSourceHandleDeleteSideKickExecutor.java",
+        "VerificationTaskCleanupSideKickExecutor.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/activity/entities",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/activity/services/api",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/analysis/entities",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/core/beans/dependency",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/core/beans/monitoredService",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/core/beans/params",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/core/beans/sidekick",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/core/entities",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/core/entities/changeSource",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/core/entities/demo",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/core/services/api/monitoredService",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/core/services/impl/demo/changesource",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/servicelevelobjective/entities",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/statemachine/entities",
+        "//960-persistence/src/main/java/io/harness/persistence",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

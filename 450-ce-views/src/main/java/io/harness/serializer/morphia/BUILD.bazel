@@ -1,0 +1,11 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "morphia",
+    srcs = ["ViewsMorphiaRegistrar.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//450-ce-views/src/main/java/io/harness/ccm/views/businessMapping/entities",
+        "//450-ce-views/src/main/java/io/harness/ccm/views/entities",
+    ],
+)

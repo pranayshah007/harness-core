@@ -1,0 +1,24 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "accesscontrol",
+    srcs = [
+        "AccountIdentifier.java",
+        "NGAccessControlCheck.java",
+        "NGAccessControlCheckHandler.java",
+        "NGAccessDeniedException.java",
+        "NGAccessDeniedExceptionMapper.java",
+        "OrgIdentifier.java",
+        "ProjectIdentifier.java",
+        "ResourceIdentifier.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//980-commons/src/main/java/io/harness/eraro",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "//access-control/contracts/api/src/main/java/io/harness/accesscontrol/commons/exceptions",
+        "//clients/access-control/sdk/src/main/java/io/harness/accesscontrol/clients",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

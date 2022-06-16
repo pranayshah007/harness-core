@@ -1,0 +1,16 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "remote",
+    srcs = [
+        "GroupPayloadDTO.java",
+        "IdentifyPayloadDTO.java",
+        "TelemetryDataDTO.java",
+        "TrackPayloadDTO.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

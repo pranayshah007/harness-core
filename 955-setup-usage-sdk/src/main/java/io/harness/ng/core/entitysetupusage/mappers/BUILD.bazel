@@ -1,0 +1,15 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "mappers",
+    srcs = [
+        "EntitySetupUsageDTOtoEntity.java",
+        "EntitySetupUsageEntityToDTO.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//955-setup-usage-sdk/src/main/java/io/harness/ng/core/entitysetupusage/entity",
+        "//970-ng-commons/src/main/java/io/harness/ng/core/entitysetupusage/dto",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+    ],
+)

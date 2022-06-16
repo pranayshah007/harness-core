@@ -1,0 +1,31 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "git",
+    srcs = [
+        "Constants.java",
+        "ExceptionSanitizer.java",
+        "GitClientHelper.java",
+        "GitClientV2.java",
+        "GitClientV2Impl.java",
+        "UsernamePasswordCredentialsProviderWithSkipSslVerify.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/io/harness/eraro",
+        "//980-commons/src/main/java/io/harness/exception/runtime",
+        "//980-commons/src/main/java/io/harness/filesystem",
+        "//980-commons/src/main/java/io/harness/govern",
+        "//980-commons/src/main/java/io/harness/secret",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:commons_codec_commons_codec",
+        "@maven//:commons_io_commons_io",
+        "@maven//:net_jodah_failsafe",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_eclipse_jgit_org_eclipse_jgit",
+        "@maven//:org_eclipse_jgit_org_eclipse_jgit_http_apache",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

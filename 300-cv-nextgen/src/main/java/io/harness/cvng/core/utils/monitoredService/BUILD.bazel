@@ -1,0 +1,30 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "monitoredService",
+    srcs = [
+        "AppDynamicsHealthSourceSpecTransformer.java",
+        "CVConfigToHealthSourceTransformer.java",
+        "CustomHealthSourceSpecLogTransformer.java",
+        "CustomHealthSourceSpecMetricTransformer.java",
+        "DatadogLogHealthSourceSpecTransformer.java",
+        "DatadogMetricHealthSourceSpecTransformer.java",
+        "DynatraceHealthSourceSpecTransformer.java",
+        "ErrorTrackingHealthSourceSpecTransformer.java",
+        "NewRelicHealthSourceSpecTransformer.java",
+        "PrometheusHealthSourceSpecTransformer.java",
+        "SplunkHealthSourceSpecTransformer.java",
+        "StackdriverLogHealthSourceSpecTransformer.java",
+        "StackdriverMetricHealthSourceSpecTransformer.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/core/beans",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/core/beans/monitoredService",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/core/beans/monitoredService/healthSouceSpec",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/core/entities",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_apache_commons_commons_collections4",
+    ],
+)

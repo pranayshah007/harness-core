@@ -1,0 +1,24 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "intfc",
+    srcs = [
+        "AccountShardMappingDao.java",
+        "BatchJobIntervalDao.java",
+        "BatchJobScheduledDataDao.java",
+        "BillingDataPipelineRecordDao.java",
+        "ECSServiceDao.java",
+        "InstanceDataDao.java",
+        "PublishedMessageDao.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//280-batch-processing/src/main/java/io/harness/batch/processing/ccm",
+        "//280-batch-processing/src/main/java/io/harness/batch/processing/entities",
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/beans",
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/entities/batch",
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/entities/billing",
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/entities/ecs",
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/entities/events",
+    ],
+)

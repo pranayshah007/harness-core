@@ -1,0 +1,36 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "outbox",
+    srcs = [
+        "AccessControlOutboxEventHandler.java",
+        "OutboxPersistenceConfig.java",
+        "RoleAssignmentEventHandler.java",
+        "RoleEventHandler.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//930-ng-core-clients/src/main/java/io/harness/serviceaccount/remote",
+        "//930-ng-core-clients/src/main/java/io/harness/usermembership/remote",
+        "//955-outbox-sdk/src/main/java/io/harness/outbox",
+        "//955-outbox-sdk/src/main/java/io/harness/outbox/api",
+        "//955-outbox-sdk/src/main/java/io/harness/repositories/outbox",
+        "//960-persistence/src/main/java/io/harness/mongo",
+        "//960-persistence/src/main/java/io/harness/springdata",
+        "//970-ng-commons/src/main/java/io/harness/remote/client",
+        "//970-ng-commons/src/main/java/io/serializer",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/io/harness/reflection",
+        "//980-commons/src/main/java/io/harness/security/dto",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "//access-control/service/src/main/java/io/harness/accesscontrol/roleassignments/events",
+        "//access-control/service/src/main/java/io/harness/accesscontrol/roles/events",
+        "//clients/audit/src/main/java/io/harness/audit/client/api",
+        "@maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_springframework_data_spring_data_commons",
+        "@maven//:org_springframework_data_spring_data_mongodb",
+        "@maven//:org_springframework_spring_context",
+    ],
+)

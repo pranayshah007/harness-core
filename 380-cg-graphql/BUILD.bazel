@@ -1,4 +1,4 @@
-load("@rules_java//java:defs.bzl", "java_binary")
+load("@rules_java//java:defs.bzl", "java_library")
 load("//:tools/bazel/GenTestRules.bzl", "run_package_tests")
 load("//:tools/bazel/GenTestRules.bzl", "run_tests")
 load("//:tools/bazel/macros.bzl", "run_analysis")

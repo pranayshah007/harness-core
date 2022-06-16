@@ -1,0 +1,17 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "spotinst",
+    srcs = [
+        "SpotInstSetupContextElement.java",
+        "SpotinstTrafficShiftAlbSetupElement.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/aws",
+        "//930-delegate-tasks/src/main/java/software/wings/service/impl/spotinst",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

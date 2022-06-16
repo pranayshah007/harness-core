@@ -1,0 +1,11 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "yaml",
+    srcs = ["GitClient.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//930-delegate-tasks/src/main/java/software/wings/beans/yaml",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+    ],
+)

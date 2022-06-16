@@ -1,0 +1,20 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "dms",
+    srcs = [
+        "DmsEventConsumerService.java",
+        "DmsObserverEventProducer.java",
+        "DmsRemoteObserverEventConsumer.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//952-remote-observers/src/main/java/io/harness/observer/consumer",
+        "//953-events-api/src/main/java/io/harness/eventsframework",
+        "//953-events-api/src/main/java/io/harness/eventsframework/api",
+        "//960-persistence/src/main/java/io/harness/queue",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:io_dropwizard_dropwizard_lifecycle",
+    ],
+)

@@ -1,0 +1,19 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "cache",
+    srcs = [
+        "PartialSchemaDTOValue.java",
+        "PartialSchemaDTOWrapperValue.java",
+        "SchemaCacheUtils.java",
+        "YamlSchemaDetailsValue.java",
+        "YamlSchemaDetailsWrapperValue.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//960-yaml-sdk/src/main/java/io/harness/yaml/schema/beans",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

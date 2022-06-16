@@ -1,0 +1,31 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "utils",
+    srcs = [
+        "FieldWithPlainTextOrSecretValueHelper.java",
+        "FullyQualifiedIdentifierHelper.java",
+        "IdentifierRefHelper.java",
+        "IdentifierRefProtoUtils.java",
+        "ScopeUtils.java",
+        "TimeLogger.java",
+        "TimeoutUtils.java",
+        "YamlPipelineUtils.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//970-ng-commons/src/main/java/io/harness/yaml/core/timeout",
+        "//970-ng-commons/src/main/java/io/serializer/jackson",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:com_fasterxml_jackson_core_jackson_core",
+        "@maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@maven//:com_fasterxml_jackson_dataformat_jackson_dataformat_yaml",
+        "@maven//:com_fasterxml_jackson_datatype_jackson_datatype_guava",
+        "@maven//:com_fasterxml_jackson_datatype_jackson_datatype_jdk8",
+        "@maven//:com_fasterxml_jackson_datatype_jackson_datatype_jsr310",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

@@ -1,0 +1,15 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "azure",
+    srcs = ["AzureResource.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/k8s/resources/azure/dtos",
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/k8s/resources/azure/service",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:io_swagger_swagger_annotations",
+        "@maven//:org_hibernate_hibernate_validator",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

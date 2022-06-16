@@ -1,0 +1,31 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "redis",
+    srcs = [
+        "GitAwareRedisProducer.java",
+        "RedisAbstractConsumer.java",
+        "RedisConsumer.java",
+        "RedisProducer.java",
+        "RedisProducerFactory.java",
+        "RedisSerialConsumer.java",
+        "RedisUtils.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//953-events-api/src/main/java/io/harness/eventsframework/api",
+        "//953-events-api/src/main/java/io/harness/eventsframework/impl/redis/monitoring/dto",
+        "//953-events-api/src/main/java/io/harness/eventsframework/impl/redis/monitoring/publisher",
+        "//960-persistence/src/main/java/io/harness/redis",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/io/harness/manage",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_protobuf_protobuf_java_util",
+        "@maven//:io_github_resilience4j_resilience4j_core",
+        "@maven//:io_github_resilience4j_resilience4j_retry",
+        "@maven//:io_vavr_vavr",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_redisson_redisson",
+    ],
+)

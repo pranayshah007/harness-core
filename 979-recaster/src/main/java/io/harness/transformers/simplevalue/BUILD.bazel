@@ -1,0 +1,36 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "simplevalue",
+    srcs = [
+        "BooleanRecastTransformer.java",
+        "ByteRecastTransformer.java",
+        "CharacterArrayRecastTransformer.java",
+        "CharacterRecastTransformer.java",
+        "ClassRecastTransformer.java",
+        "CustomValueTransformer.java",
+        "DateRecastTransformer.java",
+        "DoubleRecastTransformer.java",
+        "EnumRecastTransformer.java",
+        "FloatRecastTransformer.java",
+        "InstantRecastTransformer.java",
+        "IntegerRecastTransformer.java",
+        "IterableRecastTransformer.java",
+        "LocalDateRecastTransformer.java",
+        "LocalDateTimeRecastTransformer.java",
+        "LocalTimeRecastTransformer.java",
+        "LongRecastTransformer.java",
+        "MapRecastTransformer.java",
+        "SimpleValueTransformer.java",
+        "StringRecastTransformer.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//979-recaster/src/main/java/io/harness/core",
+        "//979-recaster/src/main/java/io/harness/exceptions",
+        "//979-recaster/src/main/java/io/harness/transformers",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

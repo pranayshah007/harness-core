@@ -1,0 +1,21 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "events",
+    srcs = [
+        "AbstractMonitoredServiceConfigurationEvent.java",
+        "MonitoredServiceCreateEvent.java",
+        "MonitoredServiceDeleteEvent.java",
+        "MonitoredServiceToggleEvent.java",
+        "MonitoredServiceUpdateEvent.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/core/beans/monitoredService",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/core/resources",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

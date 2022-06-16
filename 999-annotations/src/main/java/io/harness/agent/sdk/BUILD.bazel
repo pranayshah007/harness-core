@@ -1,0 +1,11 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "sdk",
+    srcs = [
+        "HarnessAlwaysRun.java",
+        "HarnessHierarchy.java",
+        "HarnessTrace.java",
+    ],
+    visibility = ["//visibility:public"],
+)

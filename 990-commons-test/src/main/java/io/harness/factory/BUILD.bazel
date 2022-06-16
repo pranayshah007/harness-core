@@ -1,0 +1,18 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+# gazelle:resolve java org.slf4j @maven//:org_slf4j_slf4j_api _c=maven-resolver
+# gazelle:resolve java lombok.extern.slf4j //:lombok _c=maven-resolver
+# gazelle:resolve java com.google.inject @maven//:com_google_inject_guice _c=maven-resolver
+
+java_library(
+    name = "factory",
+    srcs = [
+        "ClosingFactory.java",
+        "ClosingFactoryModule.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//:lombok",
+        "@maven//:com_google_inject_guice",
+    ],
+)

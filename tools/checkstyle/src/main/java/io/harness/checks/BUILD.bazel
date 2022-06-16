@@ -1,0 +1,22 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "checks",
+    srcs = [
+        "AnnotationOrderCheck.java",
+        "AnnotationParametersCheck.java",
+        "ExclusiveStaticImportCheck.java",
+        "ForEachCheck.java",
+        "LoggerCheck.java",
+        "RepetitiveNameCheck.java",
+        "StringLiteralsCheck.java",
+        "TestAnnotationsCheck.java",
+        "UseIsEmptyCheck.java",
+        "WingsExceptionCheck.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//tools/checkstyle/src/main/java/io/harness/checks/mixin",
+        "@maven//:com_google_guava_guava",
+    ],
+)

@@ -1,0 +1,26 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "tailer",
+    srcs = [
+        "Batch.java",
+        "ChronicleEventTailer.java",
+        "DelegateTailerModule.java",
+        "FileDeletionManager.java",
+        "QueueUtils.java",
+        "Sampler.java",
+        "TailerModule.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//970-grpc/src/main/java/io/harness/event/client/impl",
+        "//970-grpc/src/main/java/io/harness/grpc/auth",
+        "//980-commons/src/main/java/io/harness/flow",
+        "//980-commons/src/main/java/io/harness/govern",
+        "@maven//:com_google_guava_guava",
+        "@maven//:io_grpc_grpc_netty_shaded",
+        "@maven//:net_openhft_chronicle_queue",
+        "@maven//:net_openhft_chronicle_wire",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

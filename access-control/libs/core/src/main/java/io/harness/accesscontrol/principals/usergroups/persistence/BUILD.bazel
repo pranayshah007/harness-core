@@ -1,0 +1,31 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "persistence",
+    srcs = [
+        "UserGroupDBO.java",
+        "UserGroupDBOMapper.java",
+        "UserGroupDao.java",
+        "UserGroupDaoImpl.java",
+        "UserGroupMorphiaRegistrar.java",
+        "UserGroupPersistenceConfig.java",
+        "UserGroupRepository.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//960-persistence/src/main/java/io/harness/iterator",
+        "//960-persistence/src/main/java/io/harness/mongo",
+        "//960-persistence/src/main/java/io/harness/mongo/index",
+        "//960-persistence/src/main/java/io/harness/springdata",
+        "//970-ng-commons/src/main/java/io/harness/ng/beans",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_hibernate_hibernate_validator",
+        "@maven//:org_mongodb_morphia_morphia",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_springframework_data_spring_data_commons",
+        "@maven//:org_springframework_data_spring_data_mongodb",
+        "@maven//:org_springframework_spring_context",
+    ],
+)

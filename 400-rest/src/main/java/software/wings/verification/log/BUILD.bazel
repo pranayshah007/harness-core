@@ -1,0 +1,22 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "log",
+    srcs = [
+        "BugsnagCVConfiguration.java",
+        "BugsnagCVConfigurationYaml.java",
+        "CustomLogCVServiceConfiguration.java",
+        "ElkCVConfiguration.java",
+        "LogsCVConfiguration.java",
+        "SplunkCVConfiguration.java",
+        "StackdriverCVConfiguration.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:com_github_reinert_jjschema",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

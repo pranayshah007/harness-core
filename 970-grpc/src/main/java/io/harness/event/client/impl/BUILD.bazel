@@ -1,0 +1,11 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "impl",
+    srcs = ["EventPublisherConstants.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "@maven//:net_openhft_chronicle_queue",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

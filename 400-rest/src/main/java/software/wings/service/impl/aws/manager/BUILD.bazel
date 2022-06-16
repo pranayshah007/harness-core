@@ -1,0 +1,33 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "manager",
+    srcs = [
+        "AwsAsgHelperServiceManagerImpl.java",
+        "AwsCFHelperServiceManagerImpl.java",
+        "AwsCodeDeployHelperServiceManagerImpl.java",
+        "AwsEc2HelperServiceManagerImpl.java",
+        "AwsEcrHelperServiceManagerImpl.java",
+        "AwsEcsHelperServiceManagerImpl.java",
+        "AwsElbHelperServiceManagerImpl.java",
+        "AwsHelperServiceManager.java",
+        "AwsIamHelperServiceManagerImpl.java",
+        "AwsLambdaHelperServiceManagerImpl.java",
+        "AwsRoute53HelperServiceManagerImpl.java",
+        "AwsS3HelperServiceManagerImpl.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/software/wings/service/intfc/aws/manager",
+        "//930-delegate-tasks/src/main/java/software/wings/service/impl/aws/model/request",
+        "//930-delegate-tasks/src/main/java/software/wings/service/impl/aws/model/response",
+        "//950-delegate-tasks-beans/src/main/java/software/wings/service/impl/aws/model/embed",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/io/harness/eraro",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_amazonaws_aws_java_sdk_ec2",
+        "@maven//:com_amazonaws_aws_java_sdk_ecs",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

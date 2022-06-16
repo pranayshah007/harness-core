@@ -1,0 +1,22 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "intf",
+    srcs = [
+        "AnomalyService.java",
+        "AwsEntityChangeEventService.java",
+        "CCMConnectorDetailsService.java",
+        "CCMNotificationService.java",
+        "CEYamlService.java",
+        "GCPEntityChangeEventService.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//340-ce-nextgen/src/main/java/io/harness/ccm/remote/beans",
+        "//450-ce-views/src/main/java/io/harness/ccm/views/dto",
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/entities",
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/entities/anomaly",
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/entities/notifications",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

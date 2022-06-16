@@ -1,0 +1,24 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "repositories",
+    srcs = [
+        "NGTemplateRepository.java",
+        "NGTemplateRepositoryCustom.java",
+        "NGTemplateRepositoryCustomImpl.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//136-git-sync-manager/src/main/java/io/harness/gitsync/common/helper",
+        "//840-template-service/src/main/java/io/harness/template/entity",
+        "//840-template-service/src/main/java/io/harness/template/events",
+        "//900-git-sync-sdk/src/main/java/io/harness/gitsync/persistance",
+        "//955-outbox-sdk/src/main/java/io/harness/outbox",
+        "//955-outbox-sdk/src/main/java/io/harness/outbox/api",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_springframework_data_spring_data_commons",
+        "@maven//:org_springframework_data_spring_data_mongodb",
+        "@maven//:org_springframework_spring_tx",
+    ],
+)

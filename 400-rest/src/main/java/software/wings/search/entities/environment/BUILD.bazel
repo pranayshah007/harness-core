@@ -1,0 +1,34 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "environment",
+    srcs = [
+        "EnvironmentChangeHandler.java",
+        "EnvironmentElasticsearchRequestHandler.java",
+        "EnvironmentSearchEntity.java",
+        "EnvironmentSearchResult.java",
+        "EnvironmentTimeScaleEntity.java",
+        "EnvironmentTimescaleChangeHandler.java",
+        "EnvironmentView.java",
+        "EnvironmentViewBuilder.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/software/wings/dl",
+        "//400-rest/src/main/java/software/wings/features",
+        "//400-rest/src/main/java/software/wings/features/api",
+        "//400-rest/src/main/java/software/wings/search/entities/related/audit",
+        "//400-rest/src/main/java/software/wings/search/entities/related/deployment",
+        "//400-rest/src/main/java/software/wings/search/framework",
+        "//400-rest/src/main/java/software/wings/timescale/migrations",
+        "//960-persistence/src/main/java/io/harness/mongo/changestreams",
+        "//960-persistence/src/main/java/io/harness/persistence",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_elasticsearch_elasticsearch",
+        "@maven//:org_mongodb_morphia_morphia",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

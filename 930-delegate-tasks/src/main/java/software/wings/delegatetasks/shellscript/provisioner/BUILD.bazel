@@ -1,0 +1,20 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "provisioner",
+    srcs = ["ShellScriptProvisionTask.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/beans/logstreaming",
+        "//930-delegate-tasks/src/main/java/software/wings/api/shellscript/provision",
+        "//930-delegate-tasks/src/main/java/software/wings/core/local/executors",
+        "//930-delegate-tasks/src/main/java/software/wings/delegatetasks",
+        "//960-api-services/src/main/java/io/harness/security/encryption",
+        "//960-api-services/src/main/java/io/harness/shell",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:commons_io_commons_io",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

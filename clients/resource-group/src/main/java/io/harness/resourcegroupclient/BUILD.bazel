@@ -1,0 +1,11 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "resourcegroupclient",
+    srcs = ["ResourceGroupClientModule.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//970-ng-commons/src/main/java/io/harness/remote/client",
+        "//clients/resource-group/src/main/java/io/harness/resourcegroupclient/remote",
+    ],
+)

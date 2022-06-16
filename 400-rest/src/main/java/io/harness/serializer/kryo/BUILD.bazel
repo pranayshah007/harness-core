@@ -1,0 +1,33 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "kryo",
+    srcs = [
+        "DelegateAgentKryoRegister.java",
+        "ManagerKryoRegistrar.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/io/harness/ccm/cluster/entities",
+        "//400-rest/src/main/java/io/harness/cvng/state",
+        "//400-rest/src/main/java/io/harness/dashboard",
+        "//400-rest/src/main/java/software/wings/api/arm",
+        "//400-rest/src/main/java/software/wings/api/customdeployment",
+        "//400-rest/src/main/java/software/wings/api/instancedetails",
+        "//400-rest/src/main/java/software/wings/api/pcf",
+        "//400-rest/src/main/java/software/wings/beans/security/access",
+        "//400-rest/src/main/java/software/wings/beans/template",
+        "//400-rest/src/main/java/software/wings/beans/template/dto",
+        "//400-rest/src/main/java/software/wings/beans/utm",
+        "//400-rest/src/main/java/software/wings/collect",
+        "//400-rest/src/main/java/software/wings/delegatetasks/event",
+        "//400-rest/src/main/java/software/wings/helpers/ext/cloudformation",
+        "//400-rest/src/main/java/software/wings/service/impl/email",
+        "//400-rest/src/main/java/software/wings/service/impl/yaml/gitdiff/gitaudit",
+        "//400-rest/src/main/java/software/wings/sm/states/k8s",
+        "//400-rest/src/main/java/software/wings/sm/states/rancher",
+        "//400-rest/src/main/java/software/wings/sm/status",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_esotericsoftware_kryo",
+    ],
+)

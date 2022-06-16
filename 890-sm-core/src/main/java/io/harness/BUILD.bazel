@@ -1,0 +1,17 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "harness",
+    srcs = ["SecretManagementCoreModule.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//890-sm-core/src/main/java/io/harness/secretmanagers",
+        "//890-sm-core/src/main/java/io/harness/secrets/validation",
+        "//890-sm-core/src/main/java/io/harness/secrets/validation/validators",
+        "//890-sm-core/src/main/java/io/harness/secrets/yamlhandlers",
+        "//960-persistence/src/main/java/io/harness/mongo/queue",
+        "//960-persistence/src/main/java/io/harness/persistence",
+        "//960-persistence/src/main/java/io/harness/queue",
+        "//980-commons/src/main/java/io/harness/config",
+    ],
+)

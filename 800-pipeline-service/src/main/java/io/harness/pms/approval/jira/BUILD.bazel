@@ -1,0 +1,29 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "jira",
+    srcs = [
+        "JiraApprovalCallback.java",
+        "JiraApprovalHelperServiceImpl.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//800-pipeline-service/src/main/java/io/harness/pms/approval",
+        "//860-orchestration-steps/src/main/java/io/harness/steps/approval/step/beans",
+        "//860-orchestration-steps/src/main/java/io/harness/steps/approval/step/entities",
+        "//860-orchestration-steps/src/main/java/io/harness/steps/approval/step/evaluation",
+        "//860-orchestration-steps/src/main/java/io/harness/steps/approval/step/jira",
+        "//860-orchestration-steps/src/main/java/io/harness/steps/approval/step/jira/entities",
+        "//860-orchestration-steps/src/main/java/io/harness/steps/jira",
+        "//870-orchestration/src/main/java/io/harness/engine/pms/tasks",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/jira",
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector",
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector/jira",
+        "//960-api-services/src/main/java/io/harness/jira",
+        "//960-api-services/src/main/java/io/harness/security/encryption",
+        "//970-ng-commons/src/main/java/io/harness/remote/client",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

@@ -1,0 +1,24 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "instancesyncperpetualtask",
+    srcs = [
+        "InstanceSyncPerpetualTaskService.java",
+        "InstanceSyncPerpetualTaskServiceImpl.java",
+        "InstanceSyncPerpetualTaskServiceRegister.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//126-instance/src/main/java/io/harness/dtos",
+        "//126-instance/src/main/java/io/harness/dtos/deploymentinfo",
+        "//126-instance/src/main/java/io/harness/models/constants",
+        "//126-instance/src/main/java/io/harness/service/instancesynchandler",
+        "//126-instance/src/main/java/io/harness/service/instancesyncperpetualtask/instancesyncperpetualtaskhandler",
+        "//126-instance/src/main/java/io/harness/service/instancesyncperpetualtask/instancesyncperpetualtaskhandler/helm",
+        "//126-instance/src/main/java/io/harness/service/instancesyncperpetualtask/instancesyncperpetualtaskhandler/k8s",
+        "//126-instance/src/main/java/io/harness/service/instancesyncperpetualtask/instancesyncperpetualtaskhandler/serverless",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_protobuf_protobuf_java_util",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

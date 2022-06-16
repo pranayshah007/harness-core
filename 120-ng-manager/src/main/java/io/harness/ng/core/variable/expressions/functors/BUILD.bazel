@@ -1,0 +1,13 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "functors",
+    srcs = ["VariableFunctor.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/execution/expression",
+        "//950-ng-core/src/main/java/io/harness/ng/core/variable/services",
+        "//960-ng-core-beans/src/main/java/io/harness/ng/core/variable/dto",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

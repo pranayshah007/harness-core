@@ -1,0 +1,15 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "cf",
+    srcs = [
+        "DeployStackRequest.java",
+        "DeployStackResult.java",
+        "Status.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "@maven//:com_amazonaws_aws_java_sdk_cloudformation",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

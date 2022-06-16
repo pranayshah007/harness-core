@@ -1,0 +1,19 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "beans",
+    srcs = ["CVNGMetricAnalysisContextTest.java"],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/metrics",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/metrics/beans",
+        "@maven//:junit_junit",
+        "@maven//:org_apache_logging_log4j_log4j_api",
+        "@maven//:org_assertj_assertj_core",
+    ],
+)

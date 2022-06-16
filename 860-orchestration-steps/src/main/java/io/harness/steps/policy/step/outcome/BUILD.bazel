@@ -1,0 +1,18 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "outcome",
+    srcs = [
+        "PolicyOutcome.java",
+        "PolicySetOutcome.java",
+        "PolicyStepOutcome.java",
+        "PolicyStepOutcomeMapper.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/data",
+        "//950-opa-client/src/main/java/io/harness/opaclient/model",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

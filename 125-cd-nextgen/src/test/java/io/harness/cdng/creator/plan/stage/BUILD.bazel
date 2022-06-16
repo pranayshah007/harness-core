@@ -1,0 +1,22 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "stage",
+    srcs = ["DeploymentStagePMSPlanCreatorV2Test.java"],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//125-cd-nextgen/src/main/java/io/harness/cdng",
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/creator/plan/environment",
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/creator/plan/stage",
+        "//127-cd-nextgen-entities/src/main/java/io/harness/cdng/visitor",
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/plan/creation/beans",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+    ],
+)

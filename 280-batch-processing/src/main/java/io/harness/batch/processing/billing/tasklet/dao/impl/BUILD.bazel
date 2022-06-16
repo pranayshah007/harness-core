@@ -1,0 +1,16 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "impl",
+    srcs = ["DataGeneratedNotificationDaoImpl.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//280-batch-processing/src/main/java/io/harness/batch/processing/billing/tasklet/dao/intfc",
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/entities/batch",
+        "//960-persistence/src/main/java/io/harness/persistence",
+        "@maven//:org_mongodb_morphia_morphia",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_springframework_spring_beans",
+        "@maven//:org_springframework_spring_context",
+    ],
+)

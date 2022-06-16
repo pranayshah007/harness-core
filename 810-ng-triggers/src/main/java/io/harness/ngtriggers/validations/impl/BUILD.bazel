@@ -1,0 +1,29 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "impl",
+    srcs = [
+        "ArtifactTriggerValidator.java",
+        "ManifestTriggerValidator.java",
+        "PipelineRefValidator.java",
+        "TriggerIdentifierRefValidator.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//810-ng-triggers/src/main/java/io/harness/ngtriggers/beans/dto",
+        "//810-ng-triggers/src/main/java/io/harness/ngtriggers/beans/entity",
+        "//810-ng-triggers/src/main/java/io/harness/ngtriggers/beans/source",
+        "//810-ng-triggers/src/main/java/io/harness/ngtriggers/beans/source/artifact",
+        "//810-ng-triggers/src/main/java/io/harness/ngtriggers/buildtriggers/helpers",
+        "//810-ng-triggers/src/main/java/io/harness/ngtriggers/buildtriggers/helpers/dtos",
+        "//810-ng-triggers/src/main/java/io/harness/ngtriggers/buildtriggers/helpers/generator",
+        "//810-ng-triggers/src/main/java/io/harness/ngtriggers/helpers",
+        "//810-ng-triggers/src/main/java/io/harness/ngtriggers/validations",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

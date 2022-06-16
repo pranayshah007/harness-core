@@ -1,0 +1,12 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "registries",
+    srcs = ["VisitorRegistryModule.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//967-walktree-visitor/src/main/java/io/harness/walktree/registries/registrars",
+        "//967-walktree-visitor/src/main/java/io/harness/walktree/registries/visitorfield",
+        "@maven//:org_apache_commons_commons_lang3",
+    ],
+)

@@ -1,0 +1,14 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "configs",
+    srcs = [
+        "ClientInfo.java",
+        "FeatureRestrictionConfig.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//925-enforcement-service/src/main/java/io/harness/enforcement/bases",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

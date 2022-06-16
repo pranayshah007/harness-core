@@ -1,0 +1,25 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "exceptionhandler",
+    srcs = [
+        "CCMConnectorExceptionHandler.java",
+        "CILiteEngineExceptionHandler.java",
+        "DocumentLinksConstants.java",
+        "ExceptionHandler.java",
+        "ExceptionMetadataKeys.java",
+        "GeneralExceptionHandler.java",
+        "JGitExceptionHandler.java",
+        "JexlRuntimeExceptionHandler.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/io/harness/exception/ngexception",
+        "//980-commons/src/main/java/io/harness/exception/runtime",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_eclipse_jgit_org_eclipse_jgit",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

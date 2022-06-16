@@ -1,0 +1,14 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "pcf",
+    testonly = True,
+    srcs = ["PcfStateTestHelper.java"],
+    deps = [
+        "//400-rest/src/main/java/software/wings/api/pcf",
+        "//950-delegate-tasks-beans/src/main/java/io/harness/delegate/beans/pcf",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+    ],
+)

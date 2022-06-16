@@ -1,0 +1,32 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "service",
+    srcs = [
+        "ServiceChangeHandlerTest.java",
+        "ServiceElasticsearchRequestHandlerTest.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//400-rest/src/main/java/software/wings/features",
+        "//400-rest/src/main/java/software/wings/features/api",
+        "//400-rest/src/main/java/software/wings/search/entities/related/audit",
+        "//400-rest/src/main/java/software/wings/search/entities/related/deployment",
+        "//400-rest/src/main/java/software/wings/search/framework",
+        "//400-rest/src/supporter-test/java/software/wings/search/entities/related",
+        "//960-persistence/src/main/java/io/harness/mongo/changestreams",
+        "//960-persistence/src/main/java/io/harness/persistence",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//990-commons-test/src/main/java/io/harness/category/element",
+        "@maven//:com_google_guava_guava",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_elasticsearch_elasticsearch",
+        "@maven//:org_mockito_mockito_core",
+    ],
+)

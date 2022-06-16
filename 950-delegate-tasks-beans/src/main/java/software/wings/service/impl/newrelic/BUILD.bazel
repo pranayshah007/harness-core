@@ -1,0 +1,21 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "newrelic",
+    srcs = [
+        "NewRelicApdex.java",
+        "NewRelicApplication.java",
+        "NewRelicApplicationInstance.java",
+        "NewRelicApplicationInstancesResponse.java",
+        "NewRelicApplicationsResponse.java",
+        "NewRelicErrors.java",
+        "NewRelicMetric.java",
+        "NewRelicMetricData.java",
+        "NewRelicMetricResponse.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

@@ -1,0 +1,20 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "evaluators",
+    srcs = [
+        "OnPipeline.java",
+        "OnWorkflow.java",
+        "PipelineStatusEvaluator.java",
+        "WorkflowStatusEvaluator.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/io/harness/governance/pipeline/enforce",
+        "//400-rest/src/main/java/io/harness/governance/pipeline/service",
+        "//400-rest/src/main/java/io/harness/governance/pipeline/service/model",
+        "//400-rest/src/main/java/software/wings/features/api",
+        "//980-commons/src/main/java/io/harness/govern",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+    ],
+)

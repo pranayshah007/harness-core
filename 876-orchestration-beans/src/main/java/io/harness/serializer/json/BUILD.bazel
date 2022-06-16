@@ -1,0 +1,36 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "json",
+    srcs = [
+        "ExecutableResponseSerializer.java",
+        "ExecutionErrorInfoSerializer.java",
+        "ExecutionMetadataSerializer.java",
+        "ExecutionPrincipalInfoSerializer.java",
+        "ExecutionTriggerInfoSerializer.java",
+        "FailureInfoDeserializer.java",
+        "FailureInfoSerializer.java",
+        "GovernanceMetadataSerializer.java",
+        "InterruptConfigSerializer.java",
+        "InterruptEffectJsonSerializer.java",
+        "LayoutNodeInfoSerializer.java",
+        "NodeRunInfoSerializer.java",
+        "PolicyMetadataSerializer.java",
+        "PolicySetMetadataSerializer.java",
+        "ProtoJsonDeserializer.java",
+        "SkipInfoSerializer.java",
+        "StepTypeDeserializer.java",
+        "StepTypeSerializer.java",
+        "TriggeredBySerializer.java",
+        "UnitProgressDeserializer.java",
+        "UnitProgressSerializer.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_core",
+        "@maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@maven//:com_google_protobuf_protobuf_java_util",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

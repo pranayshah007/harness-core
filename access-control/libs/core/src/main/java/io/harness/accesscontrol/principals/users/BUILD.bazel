@@ -1,0 +1,22 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "users",
+    srcs = [
+        "User.java",
+        "UserService.java",
+        "UserServiceImpl.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//970-ng-commons/src/main/java/io/harness/ng/beans",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "//access-control/libs/core/src/main/java/io/harness/accesscontrol/principals/users/persistence",
+        "//access-control/libs/core/src/main/java/io/harness/accesscontrol/roleassignments",
+        "@maven//:com_google_guava_guava",
+        "@maven//:net_jodah_failsafe",
+        "@maven//:org_hibernate_hibernate_validator",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_springframework_spring_tx",
+    ],
+)

@@ -1,0 +1,24 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "recommendation",
+    srcs = [
+        "K8sServiceProvider.java",
+        "NodePoolId.java",
+        "RecommendationOverviewStats.java",
+        "RecommendationTelemetryStats.java",
+        "RecommendationUtils.java",
+        "ResourceId.java",
+        "ResourceType.java",
+        "TotalResourceUsage.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/beans/billing",
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/beans/recommendation/models",
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/constants",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:io_leangen_graphql_spqr",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

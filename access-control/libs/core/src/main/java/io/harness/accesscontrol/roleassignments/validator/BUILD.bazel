@@ -1,0 +1,22 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "validator",
+    srcs = [
+        "RoleAssignmentFilterValidator.java",
+        "RoleAssignmentValidationRequest.java",
+        "RoleAssignmentValidationResult.java",
+        "RoleAssignmentValidator.java",
+        "RoleAssignmentValidatorImpl.java",
+        "ValidRoleAssignmentFilter.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "//access-control/libs/core/src/main/java/io/harness/accesscontrol/common/filter",
+        "//access-control/libs/core/src/main/java/io/harness/accesscontrol/common/validation",
+        "//access-control/libs/core/src/main/java/io/harness/accesscontrol/roleassignments",
+        "//access-control/libs/core/src/main/java/io/harness/accesscontrol/scopes/core",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

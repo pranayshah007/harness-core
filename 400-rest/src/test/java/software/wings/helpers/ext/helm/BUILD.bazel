@@ -1,0 +1,37 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "helm",
+    srcs = [
+        "HelmCommandDataMapperTest.java",
+        "HelmDeployServiceImplTest.java",
+        "HelmHelperTest.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//930-delegate-tasks/src/main/java/software/wings/beans/dto",
+        "//930-delegate-tasks/src/main/java/software/wings/delegatetasks/helm",
+        "//930-delegate-tasks/src/main/java/software/wings/helpers/ext/helm/request",
+        "//960-api-services/src/main/java/io/harness/k8s/kubectl",
+        "//970-api-services-beans/src/main/java/io/harness/container",
+        "//970-api-services-beans/src/main/java/io/harness/git/model",
+        "//970-api-services-beans/src/main/java/io/harness/k8s/manifest",
+        "//980-commons/src/main/java/io/harness/filesystem",
+        "//990-commons-test/src/main/java/io/harness/category/element",
+        "//990-commons-test/src/main/java/io/harness/concurent",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_github_tomakehurst_wiremock_jre8_standalone",
+        "@maven//:com_google_guava_guava",
+        "@maven//:junit_junit",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_jooq_joor",
+        "@maven//:org_mockito_mockito_core",
+        "@maven//:org_powermock_powermock_api_mockito2",
+    ],
+)

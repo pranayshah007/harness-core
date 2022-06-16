@@ -1,0 +1,24 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "io.harness.checks",
+    srcs = [
+        "AnnotationOrderCheckTest.java",
+        "AnnotationParametersCheckTest.java",
+        "ExclusiveStaticImportCheckTest.java",
+        "ForEachCheckTest.java",
+        "LoggerCheckTest.java",
+        "RepetitiveNameCheckTest.java",
+        "StringLiteralsCheckTest.java",
+        "TestAnnotationsCheckTest.java",
+        "UseIsEmptyCheckTest.java",
+        "WingsExceptionCheckTest.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = ["@maven//:junit_junit"],
+)

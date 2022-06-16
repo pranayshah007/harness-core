@@ -1,0 +1,37 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "graphql",
+    srcs = [
+        "GraphQLQuery.java",
+        "GraphQLRateLimiter.java",
+        "GraphQLResource.java",
+        "GraphQLUtils.java",
+        "TriggeredByType.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/io/harness/limits/configuration",
+        "//400-rest/src/main/java/io/harness/limits/defaults/service",
+        "//400-rest/src/main/java/software/wings/features",
+        "//400-rest/src/main/java/software/wings/features/api",
+        "//400-rest/src/main/java/software/wings/graphql/datafetcher",
+        "//400-rest/src/main/java/software/wings/graphql/provider",
+        "//400-rest/src/main/java/software/wings/graphql/utils",
+        "//890-sm-core/src/main/java/io/harness/secrets/validation",
+        "//980-commons/src/main/java/io/harness/configuration",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/io/harness/limits/lib",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_core",
+        "@maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@maven//:com_github_ben_manes_caffeine_caffeine",
+        "@maven//:com_google_guava_guava",
+        "@maven//:com_graphql_java_graphql_java",
+        "@maven//:es_moki_ratelimitj_ratelimitj_core",
+        "@maven//:es_moki_ratelimitj_ratelimitj_inmemory",
+        "@maven//:io_swagger_swagger_annotations",
+        "@maven//:org_glassfish_jersey_media_jersey_media_multipart",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

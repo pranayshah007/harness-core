@@ -1,0 +1,30 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "delegateservice",
+    srcs = [
+        "DelegateProfileApiFunctionalTest.java",
+        "DelegateServicePerpetualTaskApiFunctionalTest.java",
+        "DelegateServiceTaskApiFunctionalTest.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//200-functional-test/src/main/java/io/harness/functional",
+        "//230-model-test/src/main/java/io/harness/testframework/framework",
+        "//260-delegate/src/main/java/io/harness/perpetualtask/example",
+        "//980-commons/src/main/java/io/harness/data/algorithm",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/io/harness/rest",
+        "//980-commons/src/main/java/io/harness/threading",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_protobuf_protobuf_java_util",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

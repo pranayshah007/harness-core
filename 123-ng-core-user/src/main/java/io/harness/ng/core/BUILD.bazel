@@ -1,0 +1,15 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "core",
+    srcs = ["AccountOrgProjectHelper.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//945-account-mgmt/src/main/java/io/harness/account",
+        "//950-ng-project-n-orgs/src/main/java/io/harness/ng/core/services",
+        "//970-ng-commons/src/main/java/io/harness/remote/client",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

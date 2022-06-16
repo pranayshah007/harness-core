@@ -1,0 +1,28 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "entities",
+    srcs = [
+        "BusinessMappingTest.java",
+        "CostTargetTest.java",
+        "SharedCostSplitTest.java",
+        "SharedCostTest.java",
+        "SharingStrategyTest.java",
+        "UnallocatedCostStrategyTest.java",
+        "UnallocatedCostTest.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//450-ce-views/src/main/java/io/harness/ccm/views/businessMapping/entities",
+        "//450-ce-views/src/main/java/io/harness/ccm/views/entities",
+        "//450-ce-views/src/test/test/io/harness/ccm/views/businessMapping/helper",
+        "@maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+    ],
+)

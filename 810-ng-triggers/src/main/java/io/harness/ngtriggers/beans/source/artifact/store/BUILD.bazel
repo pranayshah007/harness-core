@@ -1,0 +1,18 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "store",
+    srcs = [
+        "BuildStore.java",
+        "GcsBuildStoreTypeSpec.java",
+        "HttpBuildStoreTypeSpec.java",
+        "S3BuildStoreTypeSpec.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//810-ng-triggers/src/main/java/io/harness/ngtriggers/beans/source/artifact",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

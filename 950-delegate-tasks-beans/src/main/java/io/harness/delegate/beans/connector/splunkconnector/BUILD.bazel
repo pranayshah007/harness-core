@@ -1,0 +1,16 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "splunkconnector",
+    srcs = [
+        "SplunkCapabilityHelper.java",
+        "SplunkConnectionTaskParams.java",
+        "SplunkConnectionTaskResponse.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//950-delegate-tasks-beans/src/main/java/io/harness/delegate/beans/executioncapability",
+        "//950-delegate-tasks-beans/src/main/java/io/harness/delegate/task/mixin",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

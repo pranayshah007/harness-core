@@ -1,3 +1,4 @@
+load("@rules_java//java:defs.bzl", "java_binary")
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 
 exports_files([

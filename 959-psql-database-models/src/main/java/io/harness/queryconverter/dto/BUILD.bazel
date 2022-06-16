@@ -1,0 +1,17 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "dto",
+    srcs = [
+        "AggregationOperation.java",
+        "FieldAggregation.java",
+        "FieldFilter.java",
+        "FilterOperator.java",
+        "GraphQLFilter.java",
+        "GridRequest.java",
+        "SortCriteria.java",
+        "SortOrder.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = ["@maven//:org_projectlombok_lombok"],
+)

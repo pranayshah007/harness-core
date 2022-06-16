@@ -1,0 +1,16 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "harness",
+    testonly = True,
+    srcs = ["AccessControlClientRule.java"],
+    deps = [
+        "//980-commons/src/main/java/io/harness/govern",
+        "//980-commons/src/main/java/io/harness/threading",
+        "//980-commons/src/main/java/io/harness/time",
+        "//980-commons/src/main/java/io/harness/version",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:junit_junit",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

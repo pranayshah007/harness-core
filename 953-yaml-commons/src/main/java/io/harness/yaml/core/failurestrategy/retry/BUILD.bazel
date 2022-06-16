@@ -1,0 +1,19 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "retry",
+    srcs = [
+        "OnRetryFailureConfig.java",
+        "RetryFailureActionConfig.java",
+        "RetryFailureSpecConfig.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//953-yaml-commons/src/main/java/io/harness/yaml/core/failurestrategy",
+        "//970-ng-commons/src/main/java/io/harness/yaml/core/timeout",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:io_swagger_swagger_annotations",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

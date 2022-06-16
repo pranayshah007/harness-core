@@ -1,0 +1,13 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "jira",
+    srcs = ["JiraExecutionData.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//960-api-services/src/main/java/io/harness/jira",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:net_sf_json_lib_json_lib",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

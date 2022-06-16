@@ -1,0 +1,30 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "step",
+    srcs = [
+        "PolicyStepHelperTest.java",
+        "PolicyStepTest.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//860-orchestration-steps/src/main/java/io/harness/steps/policy",
+        "//860-orchestration-steps/src/main/java/io/harness/steps/policy/custom",
+        "//860-orchestration-steps/src/main/java/io/harness/steps/policy/step",
+        "//860-orchestration-steps/src/main/java/io/harness/steps/policy/step/outcome",
+        "//950-opa-client/src/main/java/io/harness/opaclient/model",
+        "//980-commons/src/main/java/io/harness/eraro",
+        "//980-commons/src/main/java/io/harness/network",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@maven//:com_squareup_retrofit2_retrofit",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+    ],
+)

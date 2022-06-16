@@ -1,0 +1,20 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "impl",
+    srcs = [
+        "AuditClientServiceImpl.java",
+        "NoopAuditClientServiceImpl.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//970-ng-commons/src/main/java/io/harness/remote/client",
+        "//970-ng-commons/src/main/java/io/harness/request",
+        "//980-commons/src/main/java/io/harness/security/dto",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "//clients/audit/src/main/java/io/harness/audit/client/api",
+        "//clients/audit/src/main/java/io/harness/audit/client/remote",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

@@ -1,0 +1,21 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "beans",
+    srcs = [
+        "DelegateConnectionHeartbeat.java",
+        "DelegateParams.java",
+        "DelegateProfileParams.java",
+        "DelegateRegisterResponse.java",
+        "DelegateTaskAbortEvent.java",
+        "DelegateTaskEvent.java",
+        "DelegateUnregisterRequest.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

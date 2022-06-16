@@ -1,0 +1,35 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "dtos",
+    srcs = [
+        "AccountInfo.java",
+        "ActiveServiceInfo.java",
+        "ChangeDetails.java",
+        "CountChangeAndCountChangeRateInfo.java",
+        "CountChangeDetails.java",
+        "CountInfo.java",
+        "CountOverview.java",
+        "CountWithSuccessFailureDetails.java",
+        "DeploymentsOverview.java",
+        "DeploymentsStatsOverview.java",
+        "DeploymentsStatsSummary.java",
+        "ExecutionResponse.java",
+        "ExecutionStatus.java",
+        "MostActiveServicesList.java",
+        "OrgInfo.java",
+        "PipelineExecutionInfo.java",
+        "PipelineInfo.java",
+        "ProjectInfo.java",
+        "RateAndRateChangeInfo.java",
+        "ServiceInfo.java",
+        "TimeBasedStats.java",
+        "TopProjectsDashboardInfo.java",
+        "TopProjectsPanel.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

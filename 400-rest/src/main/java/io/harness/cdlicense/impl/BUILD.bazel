@@ -1,0 +1,18 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "impl",
+    srcs = [
+        "CgCdLicenseUsageQueryHelper.java",
+        "CgCdLicenseUsageService.java",
+        "CgCdLicenseUsageServiceImpl.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/io/harness/cdlicense/bean",
+        "//400-rest/src/main/java/io/harness/cdlicense/exception",
+        "//400-rest/src/main/java/software/wings/dl",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

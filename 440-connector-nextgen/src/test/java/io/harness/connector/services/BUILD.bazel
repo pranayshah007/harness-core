@@ -1,0 +1,27 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "services",
+    srcs = [
+        "ConnectorActivityServiceTest.java",
+        "ConnectorHeartbeatServiceImplTest.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//440-connector-nextgen/src/main/java/io/harness/connector/impl",
+        "//440-connector-nextgen/src/main/java/io/harness/connector/services",
+        "//950-ng-core/src/main/java/io/harness/ng/core/activityhistory/service",
+        "//953-events-api/src/main/java/io/harness/eventsframework/api",
+        "//953-events-api/src/main/java/io/harness/eventsframework/protohelper",
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

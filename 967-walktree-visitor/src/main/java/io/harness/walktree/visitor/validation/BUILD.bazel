@@ -1,0 +1,22 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "validation",
+    srcs = [
+        "ConfigValidator.java",
+        "ValidationVisitor.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//967-walktree-visitor/src/main/java/io/harness/walktree/beans",
+        "//967-walktree-visitor/src/main/java/io/harness/walktree/registries/visitorfield",
+        "//967-walktree-visitor/src/main/java/io/harness/walktree/visitor",
+        "//967-walktree-visitor/src/main/java/io/harness/walktree/visitor/response",
+        "//967-walktree-visitor/src/main/java/io/harness/walktree/visitor/utilities",
+        "//967-walktree-visitor/src/main/java/io/harness/walktree/visitor/validation/modes",
+        "//980-commons/src/main/java/io/harness/reflection",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

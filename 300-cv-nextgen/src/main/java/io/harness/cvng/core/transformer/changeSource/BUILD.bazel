@@ -1,0 +1,21 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "changeSource",
+    srcs = [
+        "ChangeSourceEntityAndDTOTransformer.java",
+        "ChangeSourceSpecTransformer.java",
+        "HarnessCDChangeSourceSpecTransformer.java",
+        "HarnessCDCurrentGenChangeSourceSpecTransformer.java",
+        "KubernetesChangeSourceSpecTransformer.java",
+        "PagerDutyChangeSourceSpecTransformer.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/core/beans/monitoredService",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/core/beans/monitoredService/changeSourceSpec",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/core/beans/params",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/core/entities/changeSource",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+    ],
+)

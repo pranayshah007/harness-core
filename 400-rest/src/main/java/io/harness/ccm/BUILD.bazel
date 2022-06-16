@@ -1,0 +1,24 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "ccm",
+    srcs = [
+        "CEPerpetualTaskHandler.java",
+        "CEPerpetualTaskManager.java",
+        "KubernetesClusterHandler.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/io/harness/ccm/cluster/entities",
+        "//400-rest/src/main/java/io/harness/event/handler/impl/segment",
+        "//400-rest/src/main/java/software/wings/features",
+        "//400-rest/src/main/java/software/wings/features/api",
+        "//400-rest/src/main/java/software/wings/service/intfc/account",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:com_google_protobuf_protobuf_java_util",
+        "@maven//:com_segment_analytics_java_analytics_core",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

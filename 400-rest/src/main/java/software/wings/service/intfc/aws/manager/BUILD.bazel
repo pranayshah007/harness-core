@@ -1,0 +1,26 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "manager",
+    srcs = [
+        "AwsAsgHelperServiceManager.java",
+        "AwsCFHelperServiceManager.java",
+        "AwsCodeDeployHelperServiceManager.java",
+        "AwsEc2HelperServiceManager.java",
+        "AwsEcrHelperServiceManager.java",
+        "AwsEcsHelperServiceManager.java",
+        "AwsElbHelperServiceManager.java",
+        "AwsIamHelperServiceManager.java",
+        "AwsLambdaHelperServiceManager.java",
+        "AwsRoute53HelperServiceManager.java",
+        "AwsS3HelperServiceManager.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//930-delegate-tasks/src/main/java/software/wings/service/impl/aws/model/request",
+        "//950-delegate-tasks-beans/src/main/java/software/wings/service/impl/aws/model/embed",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_amazonaws_aws_java_sdk_ec2",
+        "@maven//:com_amazonaws_aws_java_sdk_ecs",
+    ],
+)

@@ -1,0 +1,19 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "request",
+    srcs = [
+        "TerraformApplyCommandRequest.java",
+        "TerraformDestroyCommandRequest.java",
+        "TerraformExecuteStepRequest.java",
+        "TerraformInitCommandRequest.java",
+        "TerraformPlanCommandRequest.java",
+        "TerraformRefreshCommandRequest.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_hibernate_hibernate_validator",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

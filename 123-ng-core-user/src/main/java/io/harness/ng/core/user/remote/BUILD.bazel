@@ -1,0 +1,30 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "remote",
+    srcs = ["UserResource.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//123-ng-core-user/src/main/java/io/harness/ng/accesscontrol",
+        "//123-ng-core-user/src/main/java/io/harness/ng/accesscontrol/user",
+        "//123-ng-core-user/src/main/java/io/harness/ng/core/invites/mapper",
+        "//123-ng-core-user/src/main/java/io/harness/ng/core/user/remote/mapper",
+        "//123-ng-core-user/src/main/java/io/harness/ng/core/user/service",
+        "//942-enforcement-sdk/src/main/java/io/harness/enforcement/client/annotation",
+        "//943-enforcement-beans/src/main/java/io/harness/enforcement/constants",
+        "//950-ng-project-n-orgs/src/main/java/io/harness/ng/core/services",
+        "//970-ng-commons/src/main/java/io/harness/ng/beans",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/io/harness/eraro",
+        "//980-commons/src/main/java/io/harness/security/dto",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "//clients/access-control/sdk/src/main/java/io/harness/accesscontrol/clients",
+        "@maven//:com_squareup_retrofit2_retrofit",
+        "@maven//:io_swagger_core_v3_swagger_annotations",
+        "@maven//:io_swagger_swagger_annotations",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_hibernate_hibernate_validator",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_springframework_data_spring_data_commons",
+    ],
+)

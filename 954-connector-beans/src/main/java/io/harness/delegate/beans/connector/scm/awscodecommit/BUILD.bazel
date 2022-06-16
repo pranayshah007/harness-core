@@ -1,0 +1,29 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "awscodecommit",
+    srcs = [
+        "AwsCodeCommitAuthType.java",
+        "AwsCodeCommitAuthenticationDTO.java",
+        "AwsCodeCommitConnectorConstants.java",
+        "AwsCodeCommitConnectorDTO.java",
+        "AwsCodeCommitCredentialsDTO.java",
+        "AwsCodeCommitHttpsAuthType.java",
+        "AwsCodeCommitHttpsCredentialsDTO.java",
+        "AwsCodeCommitHttpsCredentialsSpecDTO.java",
+        "AwsCodeCommitSecretKeyAccessKeyDTO.java",
+        "AwsCodeCommitUrlType.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector",
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector/scm",
+        "//960-api-services/src/main/java/io/harness/git",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:io_swagger_core_v3_swagger_annotations",
+        "@maven//:io_swagger_swagger_annotations",
+        "@maven//:org_hibernate_hibernate_validator",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

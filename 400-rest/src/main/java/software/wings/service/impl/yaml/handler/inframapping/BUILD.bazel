@@ -1,0 +1,33 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "inframapping",
+    srcs = [
+        "AwsAmiInfraMappingYamlHandler.java",
+        "AwsInfraMappingYamlHandler.java",
+        "AwsLambdaInfraMappingYamlHandler.java",
+        "AzureInfraMappingYamlHandler.java",
+        "AzureKubernetesInfraMappingYamlHandler.java",
+        "CodeDeployInfraMappingYamlHandler.java",
+        "DirectKubernetesInfraMappingYamlHandler.java",
+        "EcsInfraMappingYamlHandler.java",
+        "GcpKubernetesInfraMappingYamlHandler.java",
+        "InfraMappingYamlHandler.java",
+        "InfraMappingYamlWithComputeProviderHandler.java",
+        "PcfInfraMappingYamlHandler.java",
+        "PhysicalInfraMappingBaseYamlHandler.java",
+        "PhysicalInfraMappingWinRmYamlHandler.java",
+        "PhysicalInfraMappingYamlHandler.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/software/wings/service/impl/yaml/handler",
+        "//400-rest/src/main/java/software/wings/service/impl/yaml/service",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_amazonaws_aws_java_sdk_ecs",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_mongodb_morphia_morphia",
+    ],
+)

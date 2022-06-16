@@ -1,1 +1,15 @@
 import bazelrc.local
+
+build --disk_cache=~/.bazel-dirs/cache
+
+# To see what all flags are getting passed to your bazel build command and to add timestamps to
+#  the bazel console logs. 
+build --announce_rc
+build --show_timestamps
+
+# To restrict bazel into using defined machine resources. 
+startup --host_jvm_args=-Xmx5g
+build --jvmopt="-server -Xmx2g"
+
+# To enable Bazel plugin in intellij picks the same “env“ variables including “PATH“ variable. 
+build --incompatible_strict_action_env

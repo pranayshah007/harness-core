@@ -1,0 +1,17 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "analysisinfo",
+    srcs = [
+        "AnalysisInfoUtility.java",
+        "DevelopmentVerificationTransformer.java",
+        "LiveMonitoringTransformer.java",
+        "SLIMetricTransformer.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/core/beans",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/core/entities",
+        "@maven//:org_apache_commons_commons_collections4",
+    ],
+)

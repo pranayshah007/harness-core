@@ -1,0 +1,22 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "deploymentfreezewindow",
+    srcs = [
+        "QLDeploymentFreezeWindow.java",
+        "QLDeploymentFreezeWindowConnection.java",
+        "QLDeploymentFreezeWindowConnectionQueryParameters.java",
+        "QLDeploymentFreezeWindowQueryParameters.java",
+        "QLFreezeWindow.java",
+        "QLSetup.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//380-cg-graphql/src/main/java/software/wings/graphql/schema/mutation/deploymentfreezewindow/input",
+        "//380-cg-graphql/src/main/java/software/wings/graphql/schema/type",
+        "//970-rbac-core/src/main/java/software/wings/security/annotations",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

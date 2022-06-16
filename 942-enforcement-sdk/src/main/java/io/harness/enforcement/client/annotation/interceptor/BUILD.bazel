@@ -1,0 +1,13 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "interceptor",
+    srcs = ["FeatureRestrictionCheckInterceptor.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//942-enforcement-sdk/src/main/java/io/harness/enforcement/client/annotation",
+        "//942-enforcement-sdk/src/main/java/io/harness/enforcement/client/services",
+        "//943-enforcement-beans/src/main/java/io/harness/enforcement/constants",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

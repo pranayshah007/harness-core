@@ -1,0 +1,28 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "sumo",
+    srcs = [
+        "SumoDataCollectionInfo.java",
+        "SumoDelegateServiceImpl.java",
+        "SumoLogicSetupTestNodedata.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//930-delegate-tasks/src/main/java/software/wings/delegatetasks",
+        "//930-delegate-tasks/src/main/java/software/wings/delegatetasks/cv",
+        "//930-delegate-tasks/src/main/java/software/wings/delegatetasks/utils",
+        "//930-delegate-tasks/src/main/java/software/wings/service/impl/analysis",
+        "//930-delegate-tasks/src/main/java/software/wings/service/intfc/sumo",
+        "//960-api-services/src/main/java/io/harness/security/encryption",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/io/harness/network",
+        "//980-commons/src/main/java/io/harness/threading",
+        "//980-commons/src/main/java/io/harness/time",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:com_google_guava_guava",
+        "@maven//:com_sumologic_api_client_sumo_java_client",
+        "@maven//:org_apache_httpcomponents_httpcore",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

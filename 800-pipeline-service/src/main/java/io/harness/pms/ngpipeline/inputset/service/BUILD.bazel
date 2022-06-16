@@ -1,0 +1,28 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "service",
+    srcs = [
+        "InputSetFullGitSyncHandler.java",
+        "PMSInputSetService.java",
+        "PMSInputSetServiceImpl.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//136-git-sync-manager/src/main/java/io/harness/gitsync/common",
+        "//800-pipeline-service/src/main/java/io/harness/pms/inputset/gitsync",
+        "//800-pipeline-service/src/main/java/io/harness/pms/ngpipeline/inputset/beans/entity",
+        "//800-pipeline-service/src/main/java/io/harness/pms/ngpipeline/inputset/beans/resource",
+        "//800-pipeline-service/src/main/java/io/harness/pms/ngpipeline/inputset/mappers",
+        "//800-pipeline-service/src/main/java/io/harness/repositories/inputset",
+        "//900-git-sync-sdk/src/main/java/io/harness/gitsync/helpers",
+        "//900-git-sync-sdk/src/main/java/io/harness/gitsync/persistance",
+        "//900-git-sync-sdk/src/main/java/io/harness/gitsync/scm",
+        "//970-ng-commons/src/main/java/io/harness/ng/core/entitydetail",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_springframework_data_spring_data_commons",
+        "@maven//:org_springframework_data_spring_data_mongodb",
+        "@maven//:org_springframework_spring_tx",
+    ],
+)

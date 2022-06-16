@@ -1,0 +1,17 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "execution",
+    srcs = [
+        "CIExecutionConfigService.java",
+        "DeprecatedImageInfo.java",
+        "ImageInfo.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//330-ci-beans/src/main/java/io/harness/ci/beans/entities",
+        "//330-ci-beans/src/main/java/io/harness/ci/config",
+        "@maven//:de_skuzzle_semantic_version",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

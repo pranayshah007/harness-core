@@ -1,0 +1,32 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "user",
+    srcs = [
+        "AddUserResponse.java",
+        "AddUsersDTO.java",
+        "AddUsersResponse.java",
+        "NGRemoveUserFilter.java",
+        "PasswordChangeDTO.java",
+        "PasswordChangeResponse.java",
+        "SignupAction.java",
+        "TwoFactorAdminOverrideSettings.java",
+        "TwoFactorAuthMechanismInfo.java",
+        "TwoFactorAuthSettingsInfo.java",
+        "UserInfo.java",
+        "UserMembershipUpdateMechanism.java",
+        "UserMetadata.java",
+        "UserRequestDTO.java",
+        "UtmInfo.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//960-ng-core-beans/src/main/java/io/harness/ng/core/invites/dto",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:io_swagger_core_v3_swagger_annotations",
+        "@maven//:io_swagger_swagger_annotations",
+        "@maven//:org_hibernate_hibernate_validator",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

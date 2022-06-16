@@ -1,0 +1,18 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "governancemetadata",
+    srcs = [
+        "GovernanceMetadataReadConverter.java",
+        "GovernanceMetadataWriteConverter.java",
+        "PolicyMetadataReadConverter.java",
+        "PolicyMetadataWriteConverter.java",
+        "PolicySetMetadataReadConverter.java",
+        "PolicySetMetadataWriteConverter.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//960-persistence/src/main/java/io/harness/serializer/spring",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+    ],
+)

@@ -1,0 +1,19 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "entitysetupusage",
+    srcs = [
+        "EntitySetupUsageCustomRepository.java",
+        "EntitySetupUsageCustomRepositoryImpl.java",
+        "EntitySetupUsageRepository.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//955-setup-usage-sdk/src/main/java/io/harness/ng/core/entitysetupusage/entity",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_springframework_data_spring_data_commons",
+        "@maven//:org_springframework_data_spring_data_mongodb",
+        "@maven//:org_springframework_spring_tx",
+    ],
+)

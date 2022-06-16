@@ -1,0 +1,22 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "resourcegroup",
+    srcs = ["ResourceGroupServiceSetupTest.java"],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//platform-service/service/src/main/java/io/harness/platform/remote",
+        "//platform-service/service/src/main/java/io/harness/platform/resourcegroup",
+        "@maven//:io_dropwizard_dropwizard_core",
+        "@maven//:io_dropwizard_dropwizard_jersey",
+        "@maven//:junit_junit",
+        "@maven//:org_mockito_mockito_core",
+        "@maven//:org_powermock_powermock_api_mockito2",
+        "@maven//:org_powermock_powermock_reflect",
+    ],
+)

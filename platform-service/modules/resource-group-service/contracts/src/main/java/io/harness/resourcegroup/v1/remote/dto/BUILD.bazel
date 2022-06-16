@@ -1,0 +1,26 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "dto",
+    srcs = [
+        "ManagedFilter.java",
+        "ResourceGroupDTO.java",
+        "ResourceGroupFilterDTO.java",
+        "ResourceGroupRequest.java",
+        "ResourceGroupResponse.java",
+        "ResourceSelectorFilter.java",
+        "ResourceTypeDTO.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "//platform-service/modules/resource-group-service/contracts/src/main/java/io/harness/resourcegroup/beans",
+        "//platform-service/modules/resource-group-service/contracts/src/main/java/io/harness/resourcegroup/model",
+        "//platform-service/modules/resource-group-service/contracts/src/main/java/io/harness/resourcegroup/validator",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:io_swagger_core_v3_swagger_annotations",
+        "@maven//:io_swagger_swagger_annotations",
+        "@maven//:org_hibernate_hibernate_validator",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

@@ -1,0 +1,14 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "services",
+    srcs = [
+        "SignupService.java",
+        "SignupType.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//950-ng-signup-beans/src/main/java/io/harness/signup/dto",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+    ],
+)

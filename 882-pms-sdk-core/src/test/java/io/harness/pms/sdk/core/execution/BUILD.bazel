@@ -1,0 +1,39 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "execution",
+    srcs = [
+        "AsyncSdkProgressCallbackTest.java",
+        "AsyncSdkResumeCallbackTest.java",
+        "AsyncSdkSingleCallbackTest.java",
+        "EngineObtainmentHelperTest.java",
+        "NodeProjectionUtilsTest.java",
+        "SdkGraphVisualizationDataServiceImplTest.java",
+        "SdkNodeExecutionServiceImplTest.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/data",
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/execution/invokers",
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/resolver/outcome",
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/resolver/outputs",
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/response/publishers",
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/steps/executables",
+        "//884-pms-commons/src/main/java/io/harness/pms/data",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/beans/logstreaming",
+        "//953-yaml-commons/src/main/java/io/harness/pms/serializer/recaster",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:io_fabric8_fabric8_utils",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

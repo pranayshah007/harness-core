@@ -1,0 +1,67 @@
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
+load("@rules_java//java:defs.bzl", "java_library", "java_proto_library")
+
+proto_library(
+    name = "io_harness_pms_contracts_execution_proto",
+    srcs = [
+        "executable_response.proto",
+        "execution_error_info.proto",
+        "execution_mode.proto",
+        "node_execution_proto.proto",
+        "status.proto",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//io/harness/pms/contracts/advisers:advisers_proto",
+        "//io/harness/pms/contracts/ambiance:ambiance_proto",
+        "//io/harness/pms/contracts/data:data_proto",
+        "//io/harness/pms/contracts/execution:execution_proto",
+        "//io/harness/pms/contracts/execution/failure:failure_proto",
+        "//io/harness/pms/contracts/execution/skip:skip_proto",
+        "//io/harness/pms/contracts/execution/tasks:tasks_proto",
+        "//io/harness/pms/contracts/interrupts:interrupts_proto",
+        "//io/harness/pms/contracts/plan:plan_proto",
+        "@com_google_protobuf//:duration_proto",
+        "@com_google_protobuf//:timestamp_proto",
+    ],
+)
+
+go_proto_library(
+    name = "io_harness_pms_contracts_execution_go_proto",
+    importpath = "github.com/harness/harness-core/954-pms-contracts/src/main/proto/io/harness/pms/contracts/execution",
+    proto = ":io_harness_pms_contracts_execution_proto",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//io/harness/pms/contracts/advisers:advise_proto",
+        "//io/harness/pms/contracts/ambiance:ambiance_proto",
+        "//io/harness/pms/contracts/data:step_outcome_ref_proto",
+        "//io/harness/pms/contracts/execution:executable_response_proto",
+        "//io/harness/pms/contracts/execution:execution_mode_proto",
+        "//io/harness/pms/contracts/execution:status_proto",
+        "//io/harness/pms/contracts/execution/failure:failure_info_proto",
+        "//io/harness/pms/contracts/execution/skip:skip_info_proto",
+        "//io/harness/pms/contracts/execution/tasks:task_request_proto",
+        "//io/harness/pms/contracts/interrupts:interrupt_effect_proto_proto",
+        "//io/harness/pms/contracts/plan:plan_node_proto_proto",
+    ],
+)
+
+go_library(
+    name = "execution",
+    embed = [":io_harness_pms_contracts_execution_go_proto"],
+    importpath = "github.com/harness/harness-core/954-pms-contracts/src/main/proto/io/harness/pms/contracts/execution",
+    visibility = ["//visibility:public"],
+)
+
+java_proto_library(
+    name = "io_harness_pms_contracts_execution_java_proto",
+    deps = [":io_harness_pms_contracts_execution_proto"],
+)
+
+java_library(
+    name = "io_harness_pms_contracts_execution_java_library",
+    visibility = ["//:__subpackages__"],
+    exports = [":io_harness_pms_contracts_execution_java_proto"],
+)

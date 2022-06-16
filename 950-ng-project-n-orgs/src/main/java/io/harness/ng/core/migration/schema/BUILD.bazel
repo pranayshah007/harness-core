@@ -1,0 +1,17 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "schema",
+    srcs = [
+        "NGBeansSchema.java",
+        "ProjectSchema.java",
+        "ProjectTimeScaleSchema.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//958-migration-sdk/src/main/java/io/harness/migration/beans",
+        "//958-migration-sdk/src/main/java/io/harness/migration/entities",
+        "@maven//:org_springframework_data_spring_data_commons",
+        "@maven//:org_springframework_data_spring_data_mongodb",
+    ],
+)

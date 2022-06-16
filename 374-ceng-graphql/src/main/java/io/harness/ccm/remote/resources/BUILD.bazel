@@ -1,0 +1,22 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "resources",
+    srcs = ["GraphQLController.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//374-ceng-graphql/src/main/java/io/harness/ccm/graphql/dto",
+        "//374-ceng-graphql/src/main/java/io/harness/ccm/graphql/utils/annotations",
+        "//970-ng-commons/src/main/java/io/serializer",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@maven//:com_graphql_java_graphql_java",
+        "@maven//:com_graphql_java_java_dataloader",
+        "@maven//:io_leangen_graphql_spqr",
+        "@maven//:io_swagger_swagger_annotations",
+        "@maven//:org_hibernate_hibernate_validator",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_reflections_reflections",
+        "@maven//:org_springframework_spring_context",
+    ],
+)

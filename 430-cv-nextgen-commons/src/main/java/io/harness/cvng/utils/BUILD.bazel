@@ -1,0 +1,13 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "utils",
+    srcs = ["CVNextGenCache.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//959-common-entities/src/main/java/io/harness/entity",
+        "//960-persistence/src/main/java/io/harness/persistence",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

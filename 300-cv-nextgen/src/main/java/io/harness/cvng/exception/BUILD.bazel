@@ -1,0 +1,23 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "exception",
+    srcs = [
+        "BadRequestExceptionMapper.java",
+        "CVWebhookException.java",
+        "ConstraintViolationExceptionMapper.java",
+        "GenericExceptionMapper.java",
+        "NotFoundExceptionMapper.java",
+        "OnboardingException.java",
+        "ValidationError.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//980-commons/src/main/java/io/harness/annotations",
+        "//980-commons/src/main/java/io/harness/eraro",
+        "//980-commons/src/main/java/io/harness/rest",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

@@ -1,0 +1,25 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "artifact",
+    srcs = [
+        "AcrArtifactInfo.java",
+        "ArtifactInfo.java",
+        "ArtifactPolledResponse.java",
+        "ArtifactoryRegistryArtifactInfo.java",
+        "DockerHubArtifactInfo.java",
+        "EcrArtifactInfo.java",
+        "GcrArtifactInfo.java",
+        "NexusRegistryArtifactInfo.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//125-cd-nextgen/src/main/java/io/harness/polling/bean",
+        "//127-cd-nextgen-entities/src/main/java/io/harness/cdng/artifact/bean",
+        "//127-cd-nextgen-entities/src/main/java/io/harness/cdng/artifact/bean/yaml",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/artifacts",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

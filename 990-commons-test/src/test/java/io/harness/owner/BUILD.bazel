@@ -1,0 +1,15 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+load("//:tools/bazel/GenTestRules.bzl", "run_tests")
+
+java_test_suite(
+    name = "owner",
+    srcs = ["OwnerMetadataTest.java"],
+    runner = "junit4",
+    deps = [
+        "//990-commons-test/src/main/java/io/harness",
+        "//990-commons-test/src/main/java/io/harness/category/element",
+        "//990-commons-test/src/main/java/io/harness/rule",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+    ],
+)

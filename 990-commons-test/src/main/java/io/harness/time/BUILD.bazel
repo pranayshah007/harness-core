@@ -1,0 +1,9 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "time",
+    testonly = True,
+    srcs = ["FakeClock.java"],
+    visibility = ["//:__subpackages__"],
+    deps = ["//:lombok"],
+)

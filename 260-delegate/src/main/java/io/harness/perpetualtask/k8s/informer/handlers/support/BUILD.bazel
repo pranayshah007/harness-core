@@ -1,0 +1,13 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "support",
+    srcs = ["WorkloadSpecUtils.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//260-delegate/src/main/java/io/harness/perpetualtask/k8s/watch",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:io_kubernetes_client_java_api",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

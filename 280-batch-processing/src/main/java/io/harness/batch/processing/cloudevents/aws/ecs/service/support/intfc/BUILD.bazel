@@ -1,0 +1,20 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "intfc",
+    srcs = [
+        "AWSOrganizationHelperService.java",
+        "AwsCloudWatchHelperService.java",
+        "AwsEC2HelperService.java",
+        "AwsECSHelperService.java",
+        "AwsHelperResourceService.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//280-batch-processing/src/main/java/io/harness/batch/processing/cloudevents/aws/ecs/service/tasklet/support/request",
+        "//280-batch-processing/src/main/java/io/harness/batch/processing/cloudevents/aws/ecs/service/tasklet/support/response",
+        "@maven//:com_amazonaws_aws_java_sdk_ec2",
+        "@maven//:com_amazonaws_aws_java_sdk_ecs",
+        "@maven//:com_amazonaws_aws_java_sdk_organizations",
+    ],
+)

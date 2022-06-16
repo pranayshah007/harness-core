@@ -1,0 +1,22 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "entityreference",
+    srcs = ["EntityReferenceExtractorVisitorTest.java"],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//125-cd-nextgen/src/main/java/io/harness/cdng",
+        "//953-yaml-commons/src/main/java/io/harness/plancreator/stages/stage",
+        "//967-walktree-visitor/src/main/java/io/harness/walktree/visitor",
+        "//967-walktree-visitor/src/main/java/io/harness/walktree/visitor/entityreference",
+        "@maven//:com_google_guava_guava",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

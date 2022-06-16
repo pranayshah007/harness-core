@@ -1,0 +1,26 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "info",
+    srcs = [
+        "AbstractEc2InstanceInfo.java",
+        "AutoScalingGroupInstanceInfo.java",
+        "AwsLambdaInstanceInfo.java",
+        "AzureVMSSInstanceInfo.java",
+        "AzureWebAppInstanceInfo.java",
+        "CodeDeployInstanceInfo.java",
+        "Ec2InstanceInfo.java",
+        "HostInstanceInfo.java",
+        "PcfInstanceInfo.java",
+        "PhysicalHostInstanceInfo.java",
+        "ServerlessInstanceInfo.java",
+        "SpotinstAmiInstanceInfo.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_amazonaws_aws_java_sdk_ec2",
+        "@maven//:org_apache_commons_commons_collections4",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

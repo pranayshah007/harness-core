@@ -1,0 +1,32 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "bamboo",
+    srcs = [
+        "Artifact.java",
+        "BambooRestClient.java",
+        "BambooService.java",
+        "BambooServiceImpl.java",
+        "Result.java",
+        "Status.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//930-delegate-tasks/src/main/java/software/wings/delegatetasks/collect/artifacts",
+        "//960-api-services/src/main/java/io/harness/delegate/beans/artifact",
+        "//960-api-services/src/main/java/io/harness/security/encryption",
+        "//980-commons/src/main/java/io/harness/concurrent",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/io/harness/eraro",
+        "//980-commons/src/main/java/io/harness/network",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@maven//:com_google_guava_guava",
+        "@maven//:com_squareup_retrofit2_converter_jackson",
+        "@maven//:com_squareup_retrofit2_retrofit",
+        "@maven//:commons_io_commons_io",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

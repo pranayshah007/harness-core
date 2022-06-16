@@ -1,0 +1,17 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "analysis",
+    srcs = [
+        "ElkConnector.java",
+        "ElkValidationType.java",
+        "TimeSeries.java",
+        "TimeSeriesMlAnalysisType.java",
+        "VerificationNodeDataSetupResponse.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

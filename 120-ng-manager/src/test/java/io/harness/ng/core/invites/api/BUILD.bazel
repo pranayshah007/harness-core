@@ -1,0 +1,38 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "api",
+    srcs = ["InviteServiceImplTest.java"],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//120-ng-manager/src/main/java/io/harness/ng/core/invites/api/impl",
+        "//120-ng-manager/src/main/java/io/harness/repositories/invites/spring",
+        "//123-ng-core-user/src/main/java/io/harness/ng/core/invites/api",
+        "//123-ng-core-user/src/main/java/io/harness/ng/core/invites/entities",
+        "//123-ng-core-user/src/main/java/io/harness/ng/core/user/service",
+        "//930-ng-core-clients/src/main/java/io/harness/invites/remote",
+        "//930-ng-core-clients/src/main/java/io/harness/user/remote",
+        "//945-account-mgmt/src/main/java/io/harness/account",
+        "//955-outbox-sdk/src/main/java/io/harness/outbox/api",
+        "//960-ng-core-beans/src/main/java/io/harness/ng/core/invites/dto",
+        "//960-persistence/src/main/java/io/harness/mongo",
+        "//980-commons/src/main/java/io/harness/rest",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "//clients/access-control/sdk/src/main/java/io/harness/accesscontrol/clients",
+        "//clients/notification/src/main/java/io/harness/notification/notificationclient",
+        "@maven//:com_auth0_java_jwt",
+        "@maven//:com_squareup_retrofit2_retrofit",
+        "@maven//:junit_junit",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+        "@maven//:org_powermock_powermock_api_mockito2",
+        "@maven//:org_springframework_data_spring_data_mongodb",
+        "@maven//:org_springframework_spring_tx",
+    ],
+)

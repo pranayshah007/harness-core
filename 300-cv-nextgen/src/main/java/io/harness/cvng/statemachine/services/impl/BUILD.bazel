@@ -1,0 +1,37 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "impl",
+    srcs = [
+        "AnalysisStateMachineServiceImpl.java",
+        "OrchestrationServiceImpl.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/analysis/beans",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/analysis/entities",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/core/beans",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/core/entities",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/core/jobs",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/metrics",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/metrics/services/impl",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/servicelevelobjective/entities",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/servicelevelobjective/services/api",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/statemachine/beans",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/statemachine/entities",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/statemachine/exception",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/statemachine/services/api",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/verificationjob/entities",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/verificationjob/services/api",
+        "//430-cv-nextgen-commons/src/main/java/io/harness/cvng/beans/job",
+        "//948-cv-nextgen-beans/src/main/java/io/harness/cvng/models",
+        "//953-events-api/src/main/java/io/harness/eventsframework",
+        "//960-persistence/src/main/java/io/harness/lock",
+        "//960-persistence/src/main/java/io/harness/persistence",
+        "//970-ng-commons/src/main/java/io/harness/metrics/service/api",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_mongodb_morphia_morphia",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

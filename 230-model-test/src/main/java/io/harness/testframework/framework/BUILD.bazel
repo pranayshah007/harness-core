@@ -1,0 +1,70 @@
+load("@rules_java//java:defs.bzl", "java_binary", "java_library")
+
+java_library(
+    name = "framework",
+    srcs = [
+        "BatchProcessingExecutor.java",
+        "CIManagerExecutor.java",
+        "CommandLibraryServiceExecutor.java",
+        "DelegateExecutor.java",
+        "EventServerExecutor.java",
+        "GlobalSettingsDataStorage.java",
+        "ManagerExecutor.java",
+        "MockServerExecutor.java",
+        "Registration.java",
+        "RequestSpecProvider.java",
+        "Retry.java",
+        "Setup.java",
+        "SshDelegateExecutor.java",
+        "WatcherExecutor.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//230-model-test/src/main/java/io/harness/mock/server",
+        "//230-model-test/src/main/java/io/harness/testframework/framework/matchers",
+        "//230-model-test/src/main/java/io/harness/testframework/framework/utils",
+        "//930-ng-core-clients/src/main/java/io/harness/project",
+        "//940-primary-version-manager/src/main/java/io/harness/resource",
+        "//960-persistence/src/main/java/io/harness/mongo",
+        "//980-commons/src/main/java/io/harness/filesystem",
+        "//980-commons/src/main/java/io/harness/govern",
+        "//980-commons/src/main/java/io/harness/rest",
+        "//980-commons/src/main/java/io/harness/threading",
+        "//980-commons/src/main/java/io/harness/version",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_code_gson_gson",
+        "@maven//:com_spotify_docker_client",
+        "@maven//:commons_codec_commons_codec",
+        "@maven//:commons_io_commons_io",
+        "@maven//:io_fabric8_fabric8_utils",
+        "@maven//:io_grpc_grpc_netty_shaded",
+        "@maven//:io_grpc_grpc_services",
+        "@maven//:io_rest_assured_rest_assured",
+        "@maven//:org_apache_httpcomponents_httpcore",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mongodb_morphia_morphia",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_zeroturnaround_zt_exec",
+    ],
+)
+
+java_binary(
+    name = "BatchProcessingExecutor",
+    main_class = "io.harness.testframework.framework.BatchProcessingExecutor",
+    visibility = ["//visibility:public"],
+    runtime_deps = [":framework"],
+)
+
+java_binary(
+    name = "ManagerExecutor",
+    main_class = "io.harness.testframework.framework.ManagerExecutor",
+    visibility = ["//visibility:public"],
+    runtime_deps = [":framework"],
+)
+
+java_binary(
+    name = "WatcherExecutor",
+    main_class = "io.harness.testframework.framework.WatcherExecutor",
+    visibility = ["//visibility:public"],
+    runtime_deps = [":framework"],
+)

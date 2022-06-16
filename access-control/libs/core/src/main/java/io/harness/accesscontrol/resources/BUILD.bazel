@@ -1,0 +1,16 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "resources",
+    srcs = ["ResourceModule.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "//access-control/libs/core/src/main/java/io/harness/accesscontrol/resources/resourcegroups/persistence",
+        "//access-control/libs/core/src/main/java/io/harness/accesscontrol/resources/resourcetypes/persistence",
+        "//access-control/libs/core/src/main/java/io/harness/accesscontrol/roleassignments",
+        "//access-control/libs/core/src/main/java/io/harness/accesscontrol/scopes/core",
+        "@maven//:com_google_inject_guice",
+        "@maven//:org_springframework_spring_tx",
+    ],
+)

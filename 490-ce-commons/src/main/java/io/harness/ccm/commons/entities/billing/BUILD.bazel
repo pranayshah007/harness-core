@@ -1,0 +1,27 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "billing",
+    srcs = [
+        "BillingDataPipelineRecord.java",
+        "Budget.java",
+        "CECloudAccount.java",
+        "CECluster.java",
+        "CEGcpServiceAccount.java",
+        "CloudBillingTransferRun.java",
+        "TransferJobRunState.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//490-ce-commons/src/main/java/io/harness/ccm/budget",
+        "//960-persistence/src/main/java/io/harness/mongo/index",
+        "//960-persistence/src/main/java/io/harness/persistence",
+        "//980-commons/src/main/java/io/harness/annotations",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:io_swagger_core_v3_swagger_annotations",
+        "@maven//:org_hibernate_hibernate_validator",
+        "@maven//:org_mongodb_morphia_morphia",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

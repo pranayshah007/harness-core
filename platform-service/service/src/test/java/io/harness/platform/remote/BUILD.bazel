@@ -1,0 +1,26 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "remote",
+    srcs = [
+        "AuditOpenApiResourceTest.java",
+        "ResourceGroupOpenApiResourceTest.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//platform-service/service/src/main/java/io/harness/platform",
+        "//platform-service/service/src/main/java/io/harness/platform/remote",
+        "@maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@maven//:io_swagger_core_v3_swagger_annotations",
+        "@maven//:io_swagger_core_v3_swagger_integration",
+        "@maven//:junit_junit",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+    ],
+)

@@ -1,0 +1,24 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "api",
+    srcs = [
+        "CVNGStepService.java",
+        "CVNGStepTaskService.java",
+        "VerifyStepDemoService.java",
+        "VerifyStepMonitoredServiceResolutionService.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/activity/beans",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/analysis/beans",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/cdng/beans",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/cdng/entities",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/core/beans/monitoredService/healthSouceSpec",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/core/beans/params",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/core/beans/params/filterParams",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/core/beans/params/logsFilterParams",
+        "//957-cg-beans/src/main/java/io/harness/cvng/beans/cvnglog",
+        "//970-ng-commons/src/main/java/io/harness/ng/beans",
+    ],
+)

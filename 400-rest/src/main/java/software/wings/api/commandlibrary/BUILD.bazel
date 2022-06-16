@@ -1,0 +1,16 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "commandlibrary",
+    srcs = [
+        "CommandLibraryConfigurationDTO.java",
+        "EnrichedCommandVersionDTO.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/software/wings/beans/template",
+        "//950-command-library-common/src/main/java/io/harness/commandlibrary/api/dto",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

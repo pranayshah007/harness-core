@@ -1,0 +1,16 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "validation",
+    srcs = [
+        "HarnessActionValidator.java",
+        "ValidationResultMapper.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "//access-control/contracts/api/src/main/java/io/harness/accesscontrol/commons",
+        "//access-control/libs/core/src/main/java/io/harness/accesscontrol/common/validation",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

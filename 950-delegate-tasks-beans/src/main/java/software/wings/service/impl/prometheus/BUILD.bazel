@@ -1,0 +1,11 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "prometheus",
+    srcs = ["PrometheusDataCollectionInfo.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//950-delegate-tasks-beans/src/main/java/io/harness/delegate/beans/executioncapability",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

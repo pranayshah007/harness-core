@@ -1,0 +1,16 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "entitysetupusageclient",
+    srcs = [
+        "EntitySetupUsageClientModule.java",
+        "EntitySetupUsageHelper.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//930-ng-core-clients/src/main/java/io/harness/entitysetupusageclient/remote",
+        "//970-ng-commons/src/main/java/io/harness/ng/core/entitysetupusage/dto",
+        "//970-ng-commons/src/main/java/io/harness/remote/client",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+    ],
+)

@@ -1,0 +1,24 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "server",
+    srcs = [
+        "Connector.java",
+        "GrpcInProcessServer.java",
+        "GrpcServer.java",
+        "GrpcServerConfig.java",
+        "GrpcServerExceptionHandler.java",
+        "GrpcServerModule.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//970-grpc/src/main/java/io/harness/grpc/auth",
+        "//970-grpc/src/main/java/io/harness/grpc/exception",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:com_google_guava_guava",
+        "@maven//:com_google_inject_guice",
+        "@maven//:io_grpc_grpc_core",
+        "@maven//:io_grpc_grpc_services",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

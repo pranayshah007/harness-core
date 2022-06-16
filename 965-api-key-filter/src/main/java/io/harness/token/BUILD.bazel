@@ -1,0 +1,12 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "token",
+    srcs = ["TokenClientModule.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//965-api-key-filter/src/main/java/io/harness/token/remote",
+        "//970-ng-commons/src/main/java/io/harness/remote/client",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+    ],
+)

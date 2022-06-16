@@ -1,0 +1,11 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "outcome",
+    srcs = ["OutcomeServiceGrpcServerImpl.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//870-orchestration/src/main/java/io/harness/engine/pms/data",
+        "@maven//:io_grpc_grpc_stub",
+    ],
+)

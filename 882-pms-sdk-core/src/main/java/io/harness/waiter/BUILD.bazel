@@ -1,0 +1,11 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "waiter",
+    srcs = ["AsyncWaitEngineImpl.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/waiter",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+    ],
+)

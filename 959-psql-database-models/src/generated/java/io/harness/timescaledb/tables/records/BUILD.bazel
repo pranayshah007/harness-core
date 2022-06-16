@@ -1,0 +1,27 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "records",
+    srcs = [
+        "AnomaliesRecord.java",
+        "BillingDataRecord.java",
+        "CeRecommendationsRecord.java",
+        "EnvironmentsRecord.java",
+        "KubernetesUtilizationDataRecord.java",
+        "NgInstanceStatsRecord.java",
+        "NodeInfoRecord.java",
+        "NodePoolAggregatedRecord.java",
+        "PipelineExecutionSummaryCdRecord.java",
+        "PipelineExecutionSummaryCiRecord.java",
+        "PipelinesRecord.java",
+        "PodInfoRecord.java",
+        "ServiceInfraInfoRecord.java",
+        "ServicesRecord.java",
+        "WorkloadInfoRecord.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//959-psql-database-models/src/generated/java/io/harness/timescaledb/tables",
+        "@maven//:org_jooq_jooq",
+    ],
+)

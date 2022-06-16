@@ -1,0 +1,15 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "command",
+    srcs = [
+        "CodeDeployCommandExecutionData.java",
+        "ResizeCommandUnitExecutionData.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//970-api-services-beans/src/main/java/io/harness/container",
+        "@maven//:com_amazonaws_aws_java_sdk_ec2",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

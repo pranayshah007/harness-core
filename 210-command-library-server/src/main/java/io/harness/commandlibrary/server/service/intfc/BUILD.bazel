@@ -1,0 +1,16 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "intfc",
+    srcs = [
+        "CommandArchiveHandler.java",
+        "CommandService.java",
+        "CommandStoreService.java",
+        "CommandVersionService.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//210-command-library-server/src/main/java/io/harness/commandlibrary/server/beans",
+        "//950-command-library-common/src/main/java/io/harness/commandlibrary/api/dto",
+    ],
+)

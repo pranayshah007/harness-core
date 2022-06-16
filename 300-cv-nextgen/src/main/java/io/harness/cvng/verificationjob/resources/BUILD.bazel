@@ -1,0 +1,22 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "resources",
+    srcs = [
+        "DeploymentTimeSeriesAnalysisResource.java",
+        "VerificationJobInstanceResource.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/analysis/beans",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/analysis/services/api",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/core/beans/params",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/core/beans/params/filterParams",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/verificationjob/beans",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/verificationjob/services/api",
+        "//980-commons/src/main/java/io/harness/annotations",
+        "//980-commons/src/main/java/io/harness/rest",
+        "@maven//:io_dropwizard_metrics_metrics_annotation",
+        "@maven//:io_swagger_swagger_annotations",
+    ],
+)

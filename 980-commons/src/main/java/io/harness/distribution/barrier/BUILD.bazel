@@ -1,0 +1,22 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "barrier",
+    srcs = [
+        "Barrier.java",
+        "BarrierId.java",
+        "BarrierRegistry.java",
+        "ForceProctor.java",
+        "Forcer.java",
+        "ForcerId.java",
+        "InprocBarrierRegistry.java",
+        "UnableToLoadBarrierException.java",
+        "UnableToSaveBarrierException.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/io/harness/govern",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

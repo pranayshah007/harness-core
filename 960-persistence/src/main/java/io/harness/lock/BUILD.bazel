@@ -1,0 +1,23 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "lock",
+    srcs = [
+        "AcquiredLock.java",
+        "DistributedLockImplementation.java",
+        "PersistentLockModule.java",
+        "PersistentLocker.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//960-persistence/src/main/java/io/harness/lock/mongo",
+        "//960-persistence/src/main/java/io/harness/lock/noop",
+        "//960-persistence/src/main/java/io/harness/lock/redis",
+        "//960-persistence/src/main/java/io/harness/persistence",
+        "//980-commons/src/main/java/io/harness/govern",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_deftlabs_mongo_java_distributed_lock",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

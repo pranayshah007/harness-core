@@ -1,0 +1,20 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "client",
+    srcs = ["ManagerGrpcClientModuleTest.java"],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//970-grpc/src/main/java/io/harness/grpc/client",
+        "//980-commons/src/main/java/io/harness/version",
+        "//990-commons-test/src/main/java/io/harness/category/element",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+    ],
+)

@@ -1,0 +1,17 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "instancesyncperpetualtaskinfo",
+    srcs = [
+        "InstanceSyncPerpetualTaskInfoService.java",
+        "InstanceSyncPerpetualTaskInfoServiceImpl.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//126-instance/src/main/java/io/harness/dtos/instancesyncperpetualtaskinfo",
+        "//126-instance/src/main/java/io/harness/entities/instancesyncperpetualtaskinfo",
+        "//126-instance/src/main/java/io/harness/repositories/instancesyncperpetualtaskinfo",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_springframework_data_spring_data_mongodb",
+    ],
+)

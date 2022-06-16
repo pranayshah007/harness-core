@@ -1,0 +1,30 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "rule",
+    testonly = True,
+    srcs = [
+        "WaitEngineRule.java",
+        "WaitEngineTestRegistrar.java",
+    ],
+    deps = [
+        "//960-persistence/src/main/java/io/harness/mongo",
+        "//960-persistence/src/main/java/io/harness/mongo/queue",
+        "//960-persistence/src/main/java/io/harness/persistence",
+        "//960-persistence/src/main/java/io/harness/queue",
+        "//960-persistence/src/main/java/io/harness/springdata",
+        "//980-commons/src/main/java/io/harness/govern",
+        "//980-commons/src/main/java/io/harness/version",
+        "//990-commons-test/src/main/java/io/harness/factory",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_esotericsoftware_kryo",
+        "@maven//:com_google_guava_guava",
+        "@maven//:io_dropwizard_metrics_metrics_core",
+        "@maven//:junit_junit",
+        "@maven//:org_mongodb_morphia_morphia",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_springframework_data_spring_data_mongodb",
+        "@maven//:org_springframework_spring_core",
+        "@maven//:org_springframework_spring_tx",
+    ],
+)

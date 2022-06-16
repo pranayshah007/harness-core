@@ -1,0 +1,34 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "cf",
+    srcs = [
+        "PcfApplicationDetailsCommandTaskHandler.java",
+        "PcfCommandTaskBaseHelper.java",
+        "PcfCommandTaskHandler.java",
+        "PcfCreatePcfResourceCommandTaskHandler.java",
+        "PcfDataFetchCommandTaskHandler.java",
+        "PcfDeployCommandTaskHandler.java",
+        "PcfRollbackCommandTaskHandler.java",
+        "PcfRouteUpdateCommandTaskHandler.java",
+        "PcfRunPluginCommandTaskHandler.java",
+        "PcfValidationCommandTaskHandler.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/beans/logstreaming",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/cf/apprenaming",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/pcf",
+        "//960-api-services/src/main/java/io/harness/pcf",
+        "//960-api-services/src/main/java/io/harness/security/encryption",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/io/harness/eraro",
+        "//980-commons/src/main/java/io/harness/filesystem",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:commons_io_commons_io",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_cloudfoundry_cloudfoundry_operations",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

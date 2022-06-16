@@ -1,0 +1,19 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "serializer",
+    srcs = ["CDNGRegistrars.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/creator/plan/stage",
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/gitops",
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/helm",
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/pipeline",
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/provision/cloudformation",
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/provision/terraform",
+        "//960-yaml-sdk/src/main/java/io/harness/yaml/schema/beans",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

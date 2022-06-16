@@ -1,0 +1,38 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "dto",
+    srcs = [
+        "QLCEAggregation.java",
+        "QLCEAggregationFunction.java",
+        "QLCECost.java",
+        "QLCEData.java",
+        "QLCEDataEntry.java",
+        "QLCEEcsEntity.java",
+        "QLCEEntityGroupBy.java",
+        "QLCEFilter.java",
+        "QLCEFilterType.java",
+        "QLCEGroupBy.java",
+        "QLCEHarnessEntity.java",
+        "QLCEK8sEntity.java",
+        "QLCEK8sEntityDetails.java",
+        "QLCEK8sLabels.java",
+        "QLCELabelAggregation.java",
+        "QLCELabelFilter.java",
+        "QLCESelect.java",
+        "QLCESort.java",
+        "QLCESortType.java",
+        "QLCETagAggregation.java",
+        "QLCETagFilter.java",
+        "QLCETagType.java",
+        "QLCETimeAggregation.java",
+        "QLCEUtilization.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/software/wings/graphql/datafetcher/ce/exportData",
+        "//400-rest/src/main/java/software/wings/graphql/schema/type/aggregation/billing",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

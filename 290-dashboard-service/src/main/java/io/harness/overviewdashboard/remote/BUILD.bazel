@@ -1,0 +1,15 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "remote",
+    srcs = ["ParallelRestCallExecutor.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//290-dashboard-service/src/main/java/io/harness/overviewdashboard/bean",
+        "//970-ng-commons/src/main/java/io/harness/remote/client",
+        "//980-commons/src/main/java/io/harness/manage",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_codehaus_groovy_groovy",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

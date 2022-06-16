@@ -1,0 +1,17 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "custom",
+    srcs = [
+        "ResourceGroupRepositoryCustom.java",
+        "ResourceGroupRepositoryCustomImpl.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "//platform-service/modules/resource-group-service/src/main/java/io/harness/resourcegroup/v1/model",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_springframework_data_spring_data_commons",
+        "@maven//:org_springframework_data_spring_data_mongodb",
+    ],
+)

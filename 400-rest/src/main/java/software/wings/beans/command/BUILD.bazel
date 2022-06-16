@@ -1,0 +1,32 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "command",
+    srcs = [
+        "Command.java",
+        "CommandMapper.java",
+        "CommandUnitDescriptor.java",
+        "CommandUnitDetails.java",
+        "CommandUnitStencil.java",
+        "OverridingCommandUnitDescriptor.java",
+        "ServiceCommand.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/software/wings/beans/template",
+        "//400-rest/src/main/java/software/wings/beans/template/dto",
+        "//400-rest/src/main/java/software/wings/sm/states/customdeployment",
+        "//930-delegate-tasks/src/main/java/software/wings/beans/dto",
+        "//960-persistence/src/main/java/io/harness/mongo/index",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@maven//:com_github_reinert_jjschema",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_hibernate_hibernate_validator",
+        "@maven//:org_jooq_joor",
+        "@maven//:org_mongodb_morphia_morphia",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

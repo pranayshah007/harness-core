@@ -1,0 +1,19 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "iterators",
+    srcs = ["ScopeReconciliationIterator.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//960-persistence/src/main/java/io/harness/iterator",
+        "//960-persistence/src/main/java/io/harness/mongo/iterator",
+        "//960-persistence/src/main/java/io/harness/mongo/iterator/filter",
+        "//960-persistence/src/main/java/io/harness/mongo/iterator/provider",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "//access-control/libs/core/src/main/java/io/harness/accesscontrol/scopes/core",
+        "//access-control/libs/core/src/main/java/io/harness/accesscontrol/scopes/core/persistence",
+        "//access-control/service/src/main/java/io/harness/accesscontrol/commons/iterators",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_springframework_data_spring_data_mongodb",
+    ],
+)

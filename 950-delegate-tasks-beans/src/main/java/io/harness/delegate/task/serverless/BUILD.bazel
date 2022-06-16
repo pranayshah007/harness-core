@@ -1,0 +1,29 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "serverless",
+    srcs = [
+        "ServerlessArtifactConfig.java",
+        "ServerlessArtifactType.java",
+        "ServerlessArtifactoryArtifactConfig.java",
+        "ServerlessAwsLambdaDeployConfig.java",
+        "ServerlessAwsLambdaInfraConfig.java",
+        "ServerlessAwsLambdaManifestConfig.java",
+        "ServerlessAwsLambdaRollbackConfig.java",
+        "ServerlessCliVersion.java",
+        "ServerlessCommandType.java",
+        "ServerlessDeployConfig.java",
+        "ServerlessGitFetchFileConfig.java",
+        "ServerlessInfraConfig.java",
+        "ServerlessInfraType.java",
+        "ServerlessManifestConfig.java",
+        "ServerlessManifestType.java",
+        "ServerlessRollbackConfig.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//950-delegate-tasks-beans/src/main/java/io/harness/delegate/beans/storeconfig",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

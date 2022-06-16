@@ -1,0 +1,19 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "logsFilterParams",
+    srcs = [
+        "DeploymentLogsFilter.java",
+        "LiveMonitoringLogsFilter.java",
+        "LogsFilter.java",
+        "SLILogsFilter.java",
+        "TimeRangeLogsFilter.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//957-cg-beans/src/main/java/io/harness/cvng/beans/cvnglog",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "@maven//:io_swagger_swagger_annotations",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

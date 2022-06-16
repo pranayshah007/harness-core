@@ -1,0 +1,30 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "grpc",
+    srcs = [
+        "EventPublisherServerImplTest.java",
+        "ExceptionMessageProcessorTest.java",
+        "PublishedMessageTest.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//350-event-server/src/main/java/io/harness/event/grpc",
+        "//350-event-server/src/main/java/io/harness/event/service/intfc",
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/entities/events",
+        "//960-persistence/src/main/java/io/harness/persistence",
+        "//970-ng-commons/src/main/java/io/harness/metrics/service/api",
+        "@maven//:com_google_guava_guava",
+        "@maven//:com_google_protobuf_protobuf_java_util",
+        "@maven//:io_grpc_grpc_stub",
+        "@maven//:junit_junit",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+    ],
+)

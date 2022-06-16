@@ -1,0 +1,18 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "comm",
+    srcs = [
+        "CollaborationHandler.java",
+        "CollaborationProviderRequest.java",
+        "CollaborationProviderResponse.java",
+        "EmailRequest.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//930-delegate-tasks/src/main/java/software/wings/helpers/ext/mail",
+        "//960-api-services/src/main/java/io/harness/security/encryption",
+        "@maven//:org_hibernate_hibernate_validator",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

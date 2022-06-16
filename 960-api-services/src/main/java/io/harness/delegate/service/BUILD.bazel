@@ -1,0 +1,20 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "service",
+    srcs = [
+        "ExecutionConfigOverrideFromFileOnDelegate.java",
+        "K8sGlobalConfigServiceImpl.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//960-api-services/src/main/java/io/harness/delegate/clienttools",
+        "//960-api-services/src/main/java/io/harness/k8s/model",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_code_gson_gson",
+        "@maven//:com_google_guava_guava",
+        "@maven//:commons_io_commons_io",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

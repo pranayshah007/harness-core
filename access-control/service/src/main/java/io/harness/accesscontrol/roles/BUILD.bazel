@@ -1,0 +1,25 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "roles",
+    srcs = [
+        "HarnessRoleConstants.java",
+        "PrivilegedRole.java",
+        "PrivilegedRolesConfig.java",
+        "RolesConfig.java",
+        "RolesManagementJob.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//970-ng-commons/src/main/java/io/harness/ng/beans",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "//access-control/libs/core/src/main/java/io/harness/accesscontrol/common/filter",
+        "//access-control/libs/core/src/main/java/io/harness/accesscontrol/roles/filter",
+        "//access-control/service/src/main/java/io/harness/accesscontrol/commons/bootstrap",
+        "@maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@maven//:com_fasterxml_jackson_dataformat_jackson_dataformat_yaml",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_hibernate_hibernate_validator",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

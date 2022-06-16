@@ -1,0 +1,20 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "events",
+    srcs = [
+        "FullSyncMessageListener.java",
+        "GitSyncProjectCleanup.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//136-git-sync-manager/src/main/java/io/harness/gitsync/common/eventhandlers",
+        "//136-git-sync-manager/src/main/java/io/harness/gitsync/core/fullsync",
+        "//136-git-sync-manager/src/main/java/io/harness/gitsync/fullsync/utils",
+        "//945-account-mgmt/src/main/java/io/harness/account",
+        "//953-events-api/src/main/java/io/harness/eventsframework",
+        "//970-ng-commons/src/main/java/io/harness/remote/client",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

@@ -1,0 +1,23 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "data",
+    srcs = [
+        "InstanceBillingData.java",
+        "InstanceLifecycleInfo.java",
+        "InstanceUtilizationData.java",
+        "K8sGranularUtilizationData.java",
+        "NodePodId.java",
+        "PodActivityInfo.java",
+        "PodCountData.java",
+        "PrunedInstanceData.java",
+        "UsageTimeInfo.java",
+        "WeeklyReportEntityData.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/beans",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

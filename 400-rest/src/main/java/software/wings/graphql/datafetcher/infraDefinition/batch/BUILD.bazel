@@ -1,0 +1,18 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "batch",
+    srcs = [
+        "InfrastructureDefinitionBatchDataFetcher.java",
+        "InfrastructureDefinitionBatchDataLoader.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/software/wings/dl",
+        "//400-rest/src/main/java/software/wings/graphql/datafetcher",
+        "//960-persistence/src/main/java/io/harness/persistence",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "@maven//:com_graphql_java_java_dataloader",
+        "@maven//:org_apache_commons_commons_collections4",
+    ],
+)

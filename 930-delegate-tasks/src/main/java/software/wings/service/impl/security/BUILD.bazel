@@ -1,0 +1,30 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "security",
+    srcs = [
+        "DelegateDecryptionServiceImpl.java",
+        "EncryptionServiceImpl.java",
+        "SecretDecryptionServiceImpl.java",
+        "SecretManagementDelegateServiceImpl.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//890-sm-core/src/main/java/io/harness/encryptors",
+        "//930-delegate-tasks/src/main/java/io/harness/helpers/ext/vault",
+        "//930-delegate-tasks/src/main/java/software/wings/helpers/ext/cyberark",
+        "//930-delegate-tasks/src/main/java/software/wings/helpers/ext/vault",
+        "//957-cg-beans/src/main/java/software/wings/annotation",
+        "//960-api-services/src/main/java/io/harness/security/encryption",
+        "//980-commons/src/main/java/io/harness/data/encoding",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/io/harness/eraro",
+        "//980-commons/src/main/java/io/harness/reflection",
+        "//980-commons/src/main/java/io/harness/threading",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:com_squareup_retrofit2_retrofit",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

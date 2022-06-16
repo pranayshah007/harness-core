@@ -1,0 +1,20 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "cd",
+    srcs = [
+        "CDDashboardServiceHelper.java",
+        "NgServiceInfraInfoUtils.java",
+        "TimeScaleDAL.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//884-pms-commons/src/main/java/io/harness/pms/execution",
+        "//959-common-entities/src/main/java/io/harness/aggregates",
+        "//959-psql-database-models/src/generated/java/io/harness/timescaledb/tables/pojos",
+        "//970-ng-commons/src/main/java/io/harness/pms/dashboards",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_jooq_jooq",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

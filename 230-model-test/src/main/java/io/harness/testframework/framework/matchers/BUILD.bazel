@@ -1,0 +1,24 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "matchers",
+    srcs = [
+        "ArtifactMatcher.java",
+        "BooleanMatcher.java",
+        "EmailMatcher.java",
+        "GitResponseMatcher.java",
+        "LoginMatcher.java",
+        "MailinatorEmailMatcher.java",
+        "Matcher.java",
+        "NotNullMatcher.java",
+        "SettingsAttributeMatcher.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//230-model-test/src/main/java/io/harness/testframework/framework/email",
+        "//230-model-test/src/main/java/io/harness/testframework/framework/email/mailinator",
+        "//230-model-test/src/main/java/io/harness/testframework/framework/git",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_assertj_assertj_core",
+    ],
+)

@@ -1,0 +1,25 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "changestreamsframework",
+    srcs = [
+        "ChangeEvent.java",
+        "ChangeEventFactory.java",
+        "ChangeStreamSubscriber.java",
+        "ChangeSubscriber.java",
+        "ChangeTracker.java",
+        "ChangeTrackingInfo.java",
+        "ChangeTrackingTask.java",
+        "ChangeType.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//960-persistence/src/main/java/io/harness/mongo",
+        "//960-persistence/src/main/java/io/harness/persistence",
+        "//980-commons/src/main/java/io/harness/annotations",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_mongodb_morphia_morphia",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

@@ -1,0 +1,15 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "opa",
+    srcs = ["OpaResource.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//800-pipeline-service/src/main/java/io/harness/pms/opa/service",
+        "//884-pms-commons/src/main/java/io/harness/pms/annotations",
+        "//950-opa-client/src/main/java/io/harness/opaclient/model",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:io_swagger_swagger_annotations",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

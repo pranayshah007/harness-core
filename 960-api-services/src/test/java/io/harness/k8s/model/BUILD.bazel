@@ -1,0 +1,28 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "model",
+    srcs = [
+        "FakeGoogleClock.java",
+        "FakeJavaClock.java",
+        "GcpAccessTokenSupplierTest.java",
+        "KubernetesConfigTest.java",
+        "MockTransport.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//960-api-services/src/main/java/io/harness/k8s/model",
+        "@maven//:com_google_api_client_google_api_client",
+        "@maven//:com_google_http_client_google_http_client",
+        "@maven//:com_google_http_client_google_http_client_jackson2",
+        "@maven//:com_google_oauth_client_google_oauth_client",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+    ],
+)

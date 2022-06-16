@@ -1,0 +1,26 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "dashboard",
+    srcs = ["CustomDashboardResource.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/io/harness/dashboard",
+        "//400-rest/src/main/java/io/harness/event/reconciliation/deployment",
+        "//400-rest/src/main/java/io/harness/event/reconciliation/service",
+        "//400-rest/src/main/java/io/harness/event/timeseries/processor",
+        "//400-rest/src/main/java/io/harness/event/timeseries/processor/instanceeventprocessor",
+        "//400-rest/src/main/java/io/harness/event/timeseries/processor/instanceeventprocessor/instancereconservice",
+        "//400-rest/src/main/java/software/wings/features/api",
+        "//400-rest/src/main/java/software/wings/service/impl/security/auth",
+        "//980-commons/src/main/java/io/harness/configuration",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/io/harness/eraro",
+        "//980-commons/src/main/java/io/harness/rest",
+        "@maven//:com_google_guava_guava",
+        "@maven//:io_dropwizard_metrics_metrics_annotation",
+        "@maven//:io_swagger_swagger_annotations",
+        "@maven//:org_hibernate_hibernate_validator",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

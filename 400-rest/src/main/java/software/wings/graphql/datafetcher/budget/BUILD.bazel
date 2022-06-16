@@ -1,0 +1,31 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "budget",
+    srcs = [
+        "BudgetAlertsQueryMetadata.java",
+        "BudgetAlertsTableSchema.java",
+        "BudgetDataFetcher.java",
+        "BudgetDefaultKeys.java",
+        "BudgetListDataFetcher.java",
+        "BudgetNotificationsDataFetcher.java",
+        "BudgetTimescaleQueryHelper.java",
+        "BudgetTrendStatsDataFetcher.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/io/harness/ccm/budget/entities",
+        "//400-rest/src/main/java/software/wings/graphql/datafetcher",
+        "//400-rest/src/main/java/software/wings/graphql/datafetcher/billing",
+        "//400-rest/src/main/java/software/wings/graphql/schema/type/aggregation/billing",
+        "//400-rest/src/main/java/software/wings/graphql/schema/type/aggregation/budget",
+        "//400-rest/src/main/java/software/wings/service/intfc/ce",
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/entities/billing",
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/utils",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_graphql_java_graphql_java",
+        "@maven//:com_healthmarketscience_sqlbuilder_sqlbuilder",
+        "@maven//:io_fabric8_fabric8_utils",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

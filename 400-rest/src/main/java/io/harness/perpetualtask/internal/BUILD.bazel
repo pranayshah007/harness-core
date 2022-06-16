@@ -1,0 +1,19 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "internal",
+    srcs = ["PerpetualTaskRecordHandler.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/io/harness/workers/background",
+        "//420-delegate-service/src/main/java/software/wings/service/intfc/perpetualtask",
+        "//950-delegate-tasks-beans/src/main/java/io/harness/delegate/beans/executioncapability",
+        "//960-persistence/src/main/java/io/harness/mongo/iterator",
+        "//960-persistence/src/main/java/io/harness/mongo/iterator/filter",
+        "//960-persistence/src/main/java/io/harness/mongo/iterator/provider",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/io/harness/govern",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

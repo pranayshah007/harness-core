@@ -1,0 +1,17 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "pingpong",
+    srcs = [
+        "DelegateServicePingPongClient.java",
+        "DelegateServicePingPongModule.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//980-commons/src/main/java/io/harness/govern",
+        "//980-commons/src/main/java/io/harness/version",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_apache_logging_log4j_log4j_api",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

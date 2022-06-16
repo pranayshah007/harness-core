@@ -1,0 +1,25 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "intfc",
+    srcs = ["PollingServiceTest.java"],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//125-cd-nextgen/src/main/java/io/harness/polling/bean",
+        "//125-cd-nextgen/src/main/java/io/harness/polling/bean/artifact",
+        "//125-cd-nextgen/src/main/java/io/harness/polling/bean/manifest",
+        "//125-cd-nextgen/src/main/java/io/harness/polling/mapper",
+        "//125-cd-nextgen/src/main/java/io/harness/polling/service/impl",
+        "//125-cd-nextgen/src/main/java/io/harness/polling/service/intfc",
+        "//125-cd-nextgen/src/main/java/io/harness/repositories/polling",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+    ],
+)

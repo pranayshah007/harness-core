@@ -1,0 +1,26 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "ff",
+    srcs = [
+        "CfMigrationService.java",
+        "FeatureFlagModule.java",
+        "FeatureFlagService.java",
+        "FeatureFlagServiceImpl.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//960-continuous-features/src/main/java/io/harness/cf",
+        "//960-persistence/src/main/java/io/harness/lock",
+        "//960-persistence/src/main/java/io/harness/persistence",
+        "//980-commons/src/main/java/io/harness/configuration",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:io_harness_ff_java_server_sdk",
+        "@maven//:joda_time_joda_time",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_mongodb_morphia_morphia",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

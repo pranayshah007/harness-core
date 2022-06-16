@@ -1,0 +1,17 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "ceazure",
+    srcs = [
+        "CEAzureDTOToEntity.java",
+        "CEAzureEntityToDTO.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//440-connector-nextgen/src/main/java/io/harness/connector/entities/embedded/ceazure",
+        "//440-connector-nextgen/src/main/java/io/harness/connector/mappers",
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector",
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector/ceazure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+    ],
+)

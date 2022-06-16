@@ -1,0 +1,32 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "infrastructure",
+    srcs = [
+        "InfraRollbackPMSPlanCreator.java",
+        "InfrastructurePmsPlanCreator.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/advisers",
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/creator/plan",
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/infra/steps",
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/pipeline",
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/pipeline/beans",
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/pipeline/steps",
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/rollback/steps",
+        "//127-cd-nextgen-entities/src/main/java/io/harness/cdng/stepsdependency/constants",
+        "//127-cd-nextgen-entities/src/main/java/io/harness/cdng/visitor",
+        "//878-ng-common-utilities/src/main/java/io/harness/steps/common",
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/adviser/success",
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/plan",
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/plan/creation/beans",
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/utilities",
+        "//884-pms-commons/src/main/java/io/harness/pms/execution",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

@@ -1,0 +1,21 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "request",
+    srcs = [
+        "AzureWebAppListWebAppDeploymentSlotsParameters.java",
+        "AzureWebAppListWebAppInstancesParameters.java",
+        "AzureWebAppListWebAppNamesParameters.java",
+        "AzureWebAppRollbackParameters.java",
+        "AzureWebAppSlotSetupParameters.java",
+        "AzureWebAppSlotShiftTrafficParameters.java",
+        "AzureWebAppSwapSlotsParameters.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//950-delegate-tasks-beans/src/main/java/io/harness/delegate/beans/azure/registry",
+        "//950-delegate-tasks-beans/src/main/java/io/harness/delegate/task/azure/appservice",
+        "//970-api-services-beans/src/main/java/io/harness/azure/model",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

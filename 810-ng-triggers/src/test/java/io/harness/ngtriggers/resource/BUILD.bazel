@@ -1,0 +1,32 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "resource",
+    srcs = ["NGTriggerResourceTest.java"],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//810-ng-triggers/src/main/java/io/harness/ngtriggers/beans/config",
+        "//810-ng-triggers/src/main/java/io/harness/ngtriggers/beans/dto",
+        "//810-ng-triggers/src/main/java/io/harness/ngtriggers/beans/entity",
+        "//810-ng-triggers/src/main/java/io/harness/ngtriggers/beans/entity/metadata",
+        "//810-ng-triggers/src/main/java/io/harness/ngtriggers/beans/source",
+        "//810-ng-triggers/src/main/java/io/harness/ngtriggers/beans/source/scheduled",
+        "//810-ng-triggers/src/main/java/io/harness/ngtriggers/beans/source/webhook/v2",
+        "//810-ng-triggers/src/main/java/io/harness/ngtriggers/beans/target",
+        "//810-ng-triggers/src/main/java/io/harness/ngtriggers/mapper",
+        "//810-ng-triggers/src/main/java/io/harness/ngtriggers/resource",
+        "//810-ng-triggers/src/main/java/io/harness/ngtriggers/service",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+        "@maven//:org_springframework_data_spring_data_commons",
+        "@maven//:org_springframework_data_spring_data_mongodb",
+    ],
+)

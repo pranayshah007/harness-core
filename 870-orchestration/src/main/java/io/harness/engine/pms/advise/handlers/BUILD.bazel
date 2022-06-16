@@ -1,0 +1,32 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "handlers",
+    srcs = [
+        "EndPlanAdviserResponseHandler.java",
+        "IgnoreFailureAdviseHandler.java",
+        "InterventionWaitAdviserResponseHandler.java",
+        "MarkSuccessAdviseHandler.java",
+        "NextStepHandler.java",
+        "RetryAdviserResponseHandler.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//870-orchestration/src/main/java/io/harness/engine",
+        "//870-orchestration/src/main/java/io/harness/engine/events",
+        "//870-orchestration/src/main/java/io/harness/engine/executions",
+        "//870-orchestration/src/main/java/io/harness/engine/executions/node",
+        "//870-orchestration/src/main/java/io/harness/engine/executions/plan",
+        "//870-orchestration/src/main/java/io/harness/engine/interrupts",
+        "//870-orchestration/src/main/java/io/harness/engine/pms/advise",
+        "//870-orchestration/src/main/java/io/harness/engine/pms/resume",
+        "//870-orchestration/src/main/java/io/harness/engine/utils",
+        "//874-orchestration-delay/src/main/java/io/harness/delay",
+        "//876-orchestration-beans/src/main/java/io/harness/plan",
+        "//876-orchestration-beans/src/main/java/io/harness/timeout",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

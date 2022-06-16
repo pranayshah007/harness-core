@@ -1,0 +1,34 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "capabilitycheck",
+    srcs = [
+        "ClusterMasterUrlCapabilityCheck.java",
+        "GitConnectionCapabilityCheck.java",
+        "HelmCommandCapabilityCheck.java",
+        "SSHHostValidationCapabilityCheck.java",
+        "ShellConnectionCapabilityCheck.java",
+        "WinrmHostValidationCapabilityCheck.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/executioncapability",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/helm",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/winrm",
+        "//930-delegate-tasks/src/main/java/software/wings/beans/delegation",
+        "//930-delegate-tasks/src/main/java/software/wings/delegatetasks/validation",
+        "//930-delegate-tasks/src/main/java/software/wings/delegatetasks/validation/capabilities",
+        "//930-delegate-tasks/src/main/java/software/wings/helpers/ext/container",
+        "//930-delegate-tasks/src/main/java/software/wings/helpers/ext/helm",
+        "//930-delegate-tasks/src/main/java/software/wings/helpers/ext/helm/request",
+        "//930-delegate-tasks/src/main/java/software/wings/service/intfc/yaml",
+        "//960-api-services/src/main/java/io/harness/security/encryption",
+        "//960-api-services/src/main/java/io/harness/shell",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/io/harness/network",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

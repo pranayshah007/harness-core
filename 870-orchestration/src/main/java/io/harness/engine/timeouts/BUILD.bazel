@@ -1,0 +1,16 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "timeouts",
+    srcs = ["TimeoutInstanceRemover.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//870-orchestration/src/main/java/io/harness/engine/executions/node",
+        "//870-orchestration/src/main/java/io/harness/engine/observers",
+        "//876-orchestration-beans/src/main/java/io/harness/timeout",
+        "//960-persistence/src/main/java/io/harness/springdata",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

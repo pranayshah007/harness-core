@@ -1,0 +1,17 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "mapper",
+    srcs = [
+        "ApiKeyDTOMapper.java",
+        "NgSmtpDTOMapper.java",
+        "TokenDTOMapper.java",
+        "ValidationResultDTOMapper.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//930-delegate-tasks/src/main/java/software/wings/helpers/ext/mail",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

@@ -1,0 +1,33 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "resourcerestraint",
+    srcs = [
+        "ResourceRestraintFacilitatorTest.java",
+        "ResourceRestraintInitializerTest.java",
+        "ResourceRestraintObserverTest.java",
+        "ResourceRestraintStepTest.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//860-orchestration-steps/src/main/java/io/harness/steps/resourcerestraint",
+        "//860-orchestration-steps/src/main/java/io/harness/steps/resourcerestraint/beans",
+        "//860-orchestration-steps/src/main/java/io/harness/steps/resourcerestraint/service",
+        "//870-orchestration/src/main/java/io/harness/engine/observers/beans",
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/execution/events/node/facilitate",
+        "//884-pms-commons/src/main/java/io/harness/pms/execution/facilitator",
+        "//884-pms-commons/src/main/java/io/harness/pms/utils",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/io/harness/distribution/constraint",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+    ],
+)

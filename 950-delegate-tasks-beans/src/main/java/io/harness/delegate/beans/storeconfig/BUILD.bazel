@@ -1,0 +1,24 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "storeconfig",
+    srcs = [
+        "ArtifactoryStoreDelegateConfig.java",
+        "FetchType.java",
+        "GcsHelmStoreDelegateConfig.java",
+        "GitStoreDelegateConfig.java",
+        "HttpHelmStoreDelegateConfig.java",
+        "S3HelmStoreDelegateConfig.java",
+        "StoreDelegateConfig.java",
+        "StoreDelegateConfigType.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//950-delegate-tasks-beans/src/main/java/io/harness/delegate/task/filestore",
+        "//950-delegate-tasks-beans/src/main/java/io/harness/ng/core/dto/secrets",
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector/gcpconnector",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

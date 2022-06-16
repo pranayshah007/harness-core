@@ -1,0 +1,20 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "artifact",
+    srcs = [
+        "AcrArtifactInfoBuilder.java",
+        "ArtifactoryRegistryArtifactInfoBuilder.java",
+        "DockerHubArtifactInfoBuilder.java",
+        "EcrArtifactInfoBuilder.java",
+        "GcrArtifactInfoBuilder.java",
+        "NexusRegistryArtifactInfoBuilder.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//125-cd-nextgen/src/main/java/io/harness/polling/bean",
+        "//125-cd-nextgen/src/main/java/io/harness/polling/bean/artifact",
+        "//125-cd-nextgen/src/main/java/io/harness/polling/mapper",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+    ],
+)

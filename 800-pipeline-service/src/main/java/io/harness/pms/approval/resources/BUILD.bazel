@@ -1,0 +1,17 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "resources",
+    srcs = ["ApprovalResource.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//800-pipeline-service/src/main/java/io/harness/pms/approval",
+        "//860-orchestration-steps/src/main/java/io/harness/steps/approval/step/beans",
+        "//860-orchestration-steps/src/main/java/io/harness/steps/approval/step/harness/beans",
+        "//884-pms-commons/src/main/java/io/harness/pms/annotations",
+        "@maven//:io_swagger_core_v3_swagger_annotations",
+        "@maven//:io_swagger_swagger_annotations",
+        "@maven//:org_hibernate_hibernate_validator",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

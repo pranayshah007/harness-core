@@ -1,0 +1,11 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "testing",
+    srcs = [
+        "ComponentTestsModule.java",
+        "TestExecution.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = ["@maven//:com_google_inject_guice"],
+)

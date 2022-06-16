@@ -1,0 +1,33 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "service",
+    srcs = [
+        "ResourceRestraintInstanceService.java",
+        "ResourceRestraintInstanceServiceImpl.java",
+        "ResourceRestraintPersistenceMonitor.java",
+        "ResourceRestraintRegistry.java",
+        "ResourceRestraintRegistryImpl.java",
+        "ResourceRestraintService.java",
+        "ResourceRestraintServiceImpl.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//860-orchestration-steps/src/main/java/io/harness/steps/resourcerestraint/beans",
+        "//870-orchestration/src/main/java/io/harness/engine/executions/node",
+        "//870-orchestration/src/main/java/io/harness/engine/executions/plan",
+        "//884-pms-commons/src/main/java/io/harness/pms/utils",
+        "//960-persistence/src/main/java/io/harness/iterator",
+        "//960-persistence/src/main/java/io/harness/mongo/iterator",
+        "//960-persistence/src/main/java/io/harness/mongo/iterator/filter",
+        "//960-persistence/src/main/java/io/harness/mongo/iterator/provider",
+        "//960-persistence/src/main/java/io/harness/persistence",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/io/harness/distribution/constraint",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_springframework_data_spring_data_mongodb",
+        "@maven//:org_springframework_spring_tx",
+    ],
+)

@@ -1,0 +1,31 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "eventframework",
+    srcs = [
+        "CENGEventConsumerService.java",
+        "ConnectorEntityCRUDStreamListener.java",
+        "EntityCRUDStreamConsumer.java",
+        "EntityChangeHandler.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//340-ce-nextgen/src/main/java/io/harness/ccm/cluster",
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/dao",
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/entities",
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/entities/batch",
+        "//930-ng-core-clients/src/main/java/io/harness/ccm/perpetualtask",
+        "//953-events-api/src/main/java/io/harness/eventsframework",
+        "//953-events-api/src/main/java/io/harness/eventsframework/api",
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector",
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector/cek8s",
+        "//960-persistence/src/main/java/io/harness/queue",
+        "//970-ng-commons/src/main/java/io/harness/remote/client",
+        "//980-commons/src/main/java/io/harness/security/dto",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:com_squareup_retrofit2_retrofit",
+        "@maven//:io_dropwizard_dropwizard_lifecycle",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

@@ -1,0 +1,16 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "artifact",
+    srcs = [
+        "ArtifactCleanUpPayload.java",
+        "ArtifactCleanupInput.java",
+        "QLSetArtifactCollectionEnabledInput.java",
+        "QLSetArtifactCollectionEnabledPayload.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//970-rbac-core/src/main/java/software/wings/security/annotations",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

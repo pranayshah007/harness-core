@@ -1,0 +1,19 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "refresh",
+    srcs = [
+        "ErrorNodeSummary.java",
+        "NodeInfo.java",
+        "TemplateInfo.java",
+        "ValidateTemplateInputsResponseDTO.java",
+        "YamlDiffResponseDTO.java",
+        "YamlFullRefreshResponseDTO.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//960-ng-core-beans/src/main/java/io/harness/ng/core/template",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

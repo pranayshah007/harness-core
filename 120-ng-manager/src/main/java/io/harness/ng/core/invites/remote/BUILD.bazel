@@ -1,0 +1,28 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "remote",
+    srcs = ["InviteResource.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//123-ng-core-user/src/main/java/io/harness/ng/accesscontrol",
+        "//123-ng-core-user/src/main/java/io/harness/ng/accesscontrol/user",
+        "//123-ng-core-user/src/main/java/io/harness/ng/core/invites/api",
+        "//123-ng-core-user/src/main/java/io/harness/ng/core/invites/entities",
+        "//123-ng-core-user/src/main/java/io/harness/ng/core/invites/mapper",
+        "//123-ng-core-user/src/main/java/io/harness/ng/core/user/service",
+        "//930-ng-core-clients/src/main/java/io/harness/invites/remote",
+        "//960-ng-core-beans/src/main/java/io/harness/ng/core/invites/dto",
+        "//970-ng-commons/src/main/java/io/harness/ng/beans",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/io/harness/eraro",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "//clients/access-control/sdk/src/main/java/io/harness/accesscontrol/clients",
+        "@maven//:com_google_guava_guava",
+        "@maven//:io_swagger_core_v3_swagger_annotations",
+        "@maven//:io_swagger_swagger_annotations",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_springframework_data_spring_data_mongodb",
+    ],
+)

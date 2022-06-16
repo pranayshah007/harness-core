@@ -1,0 +1,15 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "impl",
+    srcs = ["LastReceivedPublishedMessageRepositoryImpl.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//350-event-server/src/main/java/io/harness/event/service/intfc",
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/constants",
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/entities/batch",
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/entities/events",
+        "@maven//:com_github_ben_manes_caffeine_caffeine",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

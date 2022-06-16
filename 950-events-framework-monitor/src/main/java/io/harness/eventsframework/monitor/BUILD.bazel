@@ -1,0 +1,42 @@
+load("@rules_java//java:defs.bzl", "java_binary", "java_library")
+
+java_library(
+    name = "monitor",
+    srcs = [
+        "EventsFrameworkMonitorApplication.java",
+        "EventsFrameworkMonitorConfiguration.java",
+        "EventsFrameworkMonitorConstants.java",
+        "EventsFrameworkMonitorModule.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//950-events-framework-monitor/src/main/java/io/harness/eventsframework/monitor/publisher",
+        "//950-events-framework-monitor/src/main/java/service",
+        "//953-events-api/src/main/java/io/harness/eventsframework",
+        "//953-events-api/src/main/java/io/harness/eventsframework/impl/redis",
+        "//960-persistence/src/main/java/io/harness/queue",
+        "//960-persistence/src/main/java/io/harness/redis",
+        "//970-ng-commons/src/main/java/io/harness/metrics/jobs",
+        "//970-ng-commons/src/main/java/io/harness/metrics/modules",
+        "//970-ng-commons/src/main/java/io/harness/metrics/service/api",
+        "//970-ng-commons/src/main/java/io/serializer",
+        "//980-commons/src/main/java/io/harness/maintenance",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@maven//:io_dropwizard_dropwizard_configuration",
+        "@maven//:io_dropwizard_dropwizard_core",
+        "@maven//:io_dropwizard_metrics_metrics_core",
+        "@maven//:org_glassfish_jersey_media_jersey_media_multipart",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_redisson_redisson",
+        "@maven//:org_reflections_reflections",
+    ],
+)
+
+java_binary(
+    name = "EventsFrameworkMonitorApplication",
+    main_class = "io.harness.eventsframework.monitor.EventsFrameworkMonitorApplication",
+    visibility = ["//visibility:public"],
+    runtime_deps = [":monitor"],
+)

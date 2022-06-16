@@ -1,0 +1,14 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "demo",
+    srcs = [
+        "DemoMetricParams.java",
+        "DemoTemplate.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/core/entities",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

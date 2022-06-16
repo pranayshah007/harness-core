@@ -1,0 +1,34 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "impl",
+    srcs = [
+        "ResourceGroupServiceImpl.java",
+        "ResourceGroupValidatorImpl.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//955-outbox-sdk/src/main/java/io/harness/outbox",
+        "//955-outbox-sdk/src/main/java/io/harness/outbox/api",
+        "//960-persistence/src/main/java/io/harness/springdata",
+        "//970-ng-commons/src/main/java/io/harness/ng/beans",
+        "//970-ng-commons/src/main/java/io/harness/ng/core/common/beans",
+        "//970-ng-commons/src/main/java/io/serializer",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "//platform-service/modules/resource-group-service/contracts/src/main/java/io/harness/resourcegroup/beans",
+        "//platform-service/modules/resource-group-service/contracts/src/main/java/io/harness/resourcegroup/v1/remote/dto",
+        "//platform-service/modules/resource-group-service/contracts/src/main/java/io/harness/resourcegroup/v2/remote/dto",
+        "//platform-service/modules/resource-group-service/src/main/java/io/harness/resourcegroup/framework/v1/events",
+        "//platform-service/modules/resource-group-service/src/main/java/io/harness/resourcegroup/framework/v1/service",
+        "//platform-service/modules/resource-group-service/src/main/java/io/harness/resourcegroup/framework/v2/remote/mapper",
+        "//platform-service/modules/resource-group-service/src/main/java/io/harness/resourcegroup/framework/v2/repositories/spring",
+        "//platform-service/modules/resource-group-service/src/main/java/io/harness/resourcegroup/framework/v2/service",
+        "@maven//:com_google_guava_guava",
+        "@maven//:net_jodah_failsafe",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_springframework_data_spring_data_commons",
+        "@maven//:org_springframework_data_spring_data_mongodb",
+        "@maven//:org_springframework_spring_tx",
+    ],
+)

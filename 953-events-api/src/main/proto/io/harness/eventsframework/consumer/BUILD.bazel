@@ -1,3 +1,4 @@
+load("@rules_java//java:defs.bzl", "java_library", "java_proto_library")
 load("@rules_proto//proto:defs.bzl", "proto_library")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
@@ -25,4 +26,15 @@ go_library(
     embed = [":953_events_api_go_proto"],
     importpath = "github.com/harness/harness-core/953-events-api/src/main/proto/io/harness/eventsframework/consumer",
     visibility = ["//visibility:public"],
+)
+
+java_proto_library(
+    name = "953_events_api_java_proto",
+    deps = [":953_events_api_proto"],
+)
+
+java_library(
+    name = "953_events_api_java_library",
+    visibility = ["//:__subpackages__"],
+    exports = [":953_events_api_java_proto"],
 )

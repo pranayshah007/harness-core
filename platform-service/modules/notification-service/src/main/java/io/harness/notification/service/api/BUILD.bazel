@@ -1,0 +1,22 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "api",
+    srcs = [
+        "ChannelService.java",
+        "MSTeamsService.java",
+        "MailService.java",
+        "NotificationService.java",
+        "NotificationSettingsService.java",
+        "NotificationTemplateService.java",
+        "PagerDutyService.java",
+        "SeedDataPopulaterService.java",
+        "SlackService.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//970-ng-commons/src/main/java/io/harness/ng/beans",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_springframework_data_spring_data_commons",
+    ],
+)

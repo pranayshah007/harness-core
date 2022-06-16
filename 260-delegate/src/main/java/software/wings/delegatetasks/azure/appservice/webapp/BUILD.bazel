@@ -1,0 +1,16 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "webapp",
+    srcs = ["AbstractAzureWebAppTaskHandler.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//260-delegate/src/main/java/software/wings/delegatetasks/azure/common",
+        "//260-delegate/src/main/java/software/wings/delegatetasks/azure/common/context",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/beans/logstreaming",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/azure/appservice/deployment",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/azure/common",
+        "//930-delegate-tasks/src/main/java/software/wings/delegatetasks/azure/appservice",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+    ],
+)

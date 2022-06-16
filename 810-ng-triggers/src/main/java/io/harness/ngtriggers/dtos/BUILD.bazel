@@ -1,0 +1,17 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "dtos",
+    srcs = [
+        "NGPipelineErrorDTO.java",
+        "NGPipelineErrorResponseDTO.java",
+        "NGPipelineErrorWrapperDTO.java",
+        "NGPipelineExecutionResponseDTO.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:io_swagger_swagger_annotations",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

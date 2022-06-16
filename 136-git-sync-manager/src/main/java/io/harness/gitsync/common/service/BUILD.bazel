@@ -1,0 +1,32 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "service",
+    srcs = [
+        "FullSyncTriggerService.java",
+        "GitBranchService.java",
+        "GitBranchSyncService.java",
+        "GitEntityService.java",
+        "GitSyncSettingsService.java",
+        "GitToHarnessProgressService.java",
+        "HarnessToGitHelperService.java",
+        "ScmClientFacilitatorService.java",
+        "ScmFacilitatorService.java",
+        "ScmOrchestratorService.java",
+        "YamlGitConfigService.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//136-git-sync-manager/src/main/java/io/harness/gitsync/common/beans",
+        "//136-git-sync-manager/src/main/java/io/harness/gitsync/common/dtos",
+        "//136-git-sync-manager/src/main/java/io/harness/gitsync/core/dtos",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/scm",
+        "//952-scm-java-client/src/main/java/io/harness/beans/gitsync",
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector/scm",
+        "//970-ng-commons/src/main/java/io/harness/ng/beans",
+        "//980-commons/src/main/java/io/harness/security/dto",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_springframework_data_spring_data_mongodb",
+        "@maven//:ru_vyarus_guice_validator",
+    ],
+)

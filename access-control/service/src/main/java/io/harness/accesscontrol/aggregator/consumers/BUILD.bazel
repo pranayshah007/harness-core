@@ -1,0 +1,16 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "consumers",
+    srcs = ["AccessControlChangeEventFailureHandler.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "//access-control/libs/aggregator/src/main/java/io/harness/aggregator/consumers",
+        "//access-control/service/src/main/java/io/harness/accesscontrol/commons/notifications",
+        "@maven//:com_google_guava_guava",
+        "@maven//:io_debezium_debezium_api",
+        "@maven//:org_apache_commons_commons_text",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

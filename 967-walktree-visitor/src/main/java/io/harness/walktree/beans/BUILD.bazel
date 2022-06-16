@@ -1,0 +1,19 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "beans",
+    srcs = [
+        "DummyVisitorField.java",
+        "DummyVisitorFieldProcessor.java",
+        "VisitElementResult.java",
+        "VisitableChild.java",
+        "VisitableChildren.java",
+        "VisitorChildren.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//967-walktree-visitor/src/main/java/io/harness/walktree/registries/visitorfield",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

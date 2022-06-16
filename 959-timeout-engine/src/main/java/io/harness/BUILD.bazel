@@ -1,0 +1,11 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "harness",
+    srcs = ["TimeoutEngineModule.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//959-timeout-engine/src/main/java/io/harness/registries/registrar",
+        "@maven//:com_google_inject_guice",
+    ],
+)

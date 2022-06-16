@@ -1,0 +1,11 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "client",
+    srcs = ["BuildPulseClient.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//tools/cereal-killer/src/main/java/io/harness/checks/buildpulse/dto",
+        "@maven//:com_squareup_retrofit2_retrofit",
+    ],
+)

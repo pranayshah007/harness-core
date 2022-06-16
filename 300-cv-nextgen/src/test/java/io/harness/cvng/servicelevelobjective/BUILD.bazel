@@ -1,0 +1,39 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "servicelevelobjective",
+    srcs = [
+        "SLIAnalyserServiceImplTest.java",
+        "ServiceLevelIndicatorServiceImplTest.java",
+        "UserJourneyServiceImplTest.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/core/beans",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/core/beans/params",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/core/beans/sli",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/core/entities",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/core/services/api/monitoredService",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/servicelevelobjective",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/servicelevelobjective/beans",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/servicelevelobjective/beans/slimetricspec",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/servicelevelobjective/entities",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/servicelevelobjective/services/api",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/servicelevelobjective/services/impl",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/servicelevelobjective/transformer/servicelevelindicator",
+        "//960-persistence/src/main/java/io/harness/persistence",
+        "//970-ng-commons/src/main/java/io/harness/ng/beans",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "@maven//:com_google_guava_guava",
+        "@maven//:junit_junit",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

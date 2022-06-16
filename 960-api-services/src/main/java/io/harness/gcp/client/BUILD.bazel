@@ -1,0 +1,8 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "client",
+    srcs = ["GcpClient.java"],
+    visibility = ["//:__subpackages__"],
+    deps = ["@maven//:com_google_apis_google_api_services_container"],
+)

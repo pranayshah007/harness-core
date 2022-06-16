@@ -1,0 +1,16 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "winrm",
+    srcs = [
+        "WinRmChecker.java",
+        "WinRmHelperUtils.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//980-commons/src/main/java/io/harness/eraro",
+        "@maven//:io_cloudsoft_windows_winrm4j_client",
+        "@maven//:org_apache_cxf_cxf_rt_transports_http",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

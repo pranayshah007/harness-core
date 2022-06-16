@@ -1,0 +1,34 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "nexus",
+    srcs = [
+        "CGNexusHelper.java",
+        "NexusService.java",
+        "NexusServiceImpl.java",
+        "NexusThreeServiceImpl.java",
+        "NexusTwoServiceImpl.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//930-delegate-tasks/src/main/java/software/wings/delegatetasks/collect/artifacts",
+        "//960-api-services/src/main/java/io/harness/delegate/beans/artifact",
+        "//960-api-services/src/main/java/io/harness/nexus",
+        "//960-api-services/src/main/java/io/harness/nexus/model",
+        "//980-commons/src/main/java/io/harness/artifact",
+        "//980-commons/src/main/java/io/harness/concurrent",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/io/harness/network",
+        "//980-commons/src/main/java/io/harness/threading",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@maven//:com_google_guava_guava",
+        "@maven//:com_squareup_retrofit2_converter_jackson",
+        "@maven//:com_squareup_retrofit2_converter_simplexml",
+        "@maven//:com_squareup_retrofit2_retrofit",
+        "@maven//:io_harness_cv_data_collection_dsl",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_sonatype_nexus_plugins_nexus_restlet1x_model",
+    ],
+)

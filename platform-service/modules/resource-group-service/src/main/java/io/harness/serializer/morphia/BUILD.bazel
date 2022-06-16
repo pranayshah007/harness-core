@@ -1,0 +1,18 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "morphia",
+    srcs = [
+        "ResourceGroupMorphiaRegistrar.java",
+        "ResourceGroupSerializer.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//900-git-sync-sdk/src/main/java/io/harness/gitsync/serializer",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "//platform-service/modules/resource-group-service/src/main/java/io/harness/resourcegroup/commons/bootstrap",
+        "//platform-service/modules/resource-group-service/src/main/java/io/harness/resourcegroup/v1/model",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

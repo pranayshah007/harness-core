@@ -1,0 +1,13 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "util",
+    srcs = ["ExpressionServiceConfigurationUtils.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//960-expression-service/src/main/java/io/harness/expression/app",
+        "@maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@maven//:com_fasterxml_jackson_dataformat_jackson_dataformat_yaml",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

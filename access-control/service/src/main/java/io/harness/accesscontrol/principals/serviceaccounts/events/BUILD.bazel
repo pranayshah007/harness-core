@@ -1,0 +1,19 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "events",
+    srcs = [
+        "ServiceAccountEventConsumer.java",
+        "ServiceAccountEventFilter.java",
+        "ServiceAccountEventHandler.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//953-events-api/src/main/java/io/harness/eventsframework",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "//access-control/libs/core/src/main/java/io/harness/accesscontrol/scopes/core",
+        "//access-control/service/src/main/java/io/harness/accesscontrol/commons/events",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

@@ -1,0 +1,36 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "taskhandler",
+    srcs = [
+        "K8sApplyTaskHandler.java",
+        "K8sBlueGreenDeployTaskHandler.java",
+        "K8sDeleteTaskHandler.java",
+        "K8sInstanceSyncTaskHandler.java",
+        "K8sRollingDeployRollbackTaskHandler.java",
+        "K8sRollingDeployTaskHandler.java",
+        "K8sTrafficSplitTaskHandler.java",
+        "K8sVersionTaskHandler.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//260-delegate/src/main/java/software/wings/delegatetasks/k8s/logging",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/k8s",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/k8s/beans",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/helm",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/k8s",
+        "//930-delegate-tasks/src/main/java/software/wings/beans/command",
+        "//930-delegate-tasks/src/main/java/software/wings/helpers/ext/container",
+        "//930-delegate-tasks/src/main/java/software/wings/helpers/ext/k8s/response",
+        "//960-api-services/src/main/java/io/harness/k8s/apiclient",
+        "//960-api-services/src/main/java/io/harness/k8s/kubectl",
+        "//960-api-services/src/main/java/io/harness/k8s/model",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:io_fabric8_istio_model_v1alpha3",
+        "@maven//:io_kubernetes_client_java_api",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

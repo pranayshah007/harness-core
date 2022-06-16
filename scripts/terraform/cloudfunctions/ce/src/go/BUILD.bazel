@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go",
+    srcs = ["awsdata_manifest_main.go"],
+    importpath = "github.com/harness/harness-core/scripts/terraform/cloudfunctions/ce/src/go",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@com_google_cloud_go//scheduler/apiv1",
+        "@com_google_cloud_go_bigquery//:bigquery",
+        "@com_google_cloud_go_storage//:storage",
+        "@go_googleapis//google/cloud/scheduler/v1:scheduler_go_proto",
+        "@org_golang_google_api//iterator",
+    ],
+)

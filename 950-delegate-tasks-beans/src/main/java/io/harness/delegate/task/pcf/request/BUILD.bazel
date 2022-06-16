@@ -1,0 +1,24 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "request",
+    srcs = [
+        "CfCommandDeployRequest.java",
+        "CfCommandRollbackRequest.java",
+        "CfCommandRouteUpdateRequest.java",
+        "CfCommandTaskParameters.java",
+        "CfInfraMappingDataRequest.java",
+        "CfInstanceSyncRequest.java",
+        "CfRunPluginCommandRequest.java",
+        "CfRunPluginScriptRequestData.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//950-delegate-tasks-beans/src/main/java/io/harness/delegate/beans/executioncapability",
+        "//950-delegate-tasks-beans/src/main/java/io/harness/delegate/beans/pcf",
+        "//950-delegate-tasks-beans/src/main/java/io/harness/delegate/capability",
+        "//970-api-services-beans/src/main/java/io/harness/pcf/model",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

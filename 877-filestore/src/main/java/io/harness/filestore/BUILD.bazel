@@ -1,0 +1,22 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "filestore",
+    srcs = [
+        "FileStoreConfiguration.java",
+        "NgFileStoreModule.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//877-filestore/src/main/java/io/harness/filestore/dto/mapper",
+        "//877-filestore/src/main/java/io/harness/filestore/service",
+        "//877-filestore/src/main/java/io/harness/filestore/service/impl",
+        "//955-filters-sdk/src/main/java/io/harness/filter/mapper",
+        "//960-persistence/src/main/java/io/harness/persistence",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:com_google_inject_guice",
+        "@maven//:io_dropwizard_dropwizard_core",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

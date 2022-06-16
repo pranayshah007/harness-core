@@ -1,0 +1,35 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "writer",
+    srcs = [
+        "InstanceBillingAggregationDataTasklet.java",
+        "InstanceBillingDataTasklet.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//280-batch-processing/src/main/java/io/harness/batch/processing/billing/reader",
+        "//280-batch-processing/src/main/java/io/harness/batch/processing/billing/service",
+        "//280-batch-processing/src/main/java/io/harness/batch/processing/billing/timeseries/data",
+        "//280-batch-processing/src/main/java/io/harness/batch/processing/billing/timeseries/service/impl",
+        "//280-batch-processing/src/main/java/io/harness/batch/processing/billing/writer/support",
+        "//280-batch-processing/src/main/java/io/harness/batch/processing/ccm",
+        "//280-batch-processing/src/main/java/io/harness/batch/processing/config",
+        "//280-batch-processing/src/main/java/io/harness/batch/processing/dao/intfc",
+        "//280-batch-processing/src/main/java/io/harness/batch/processing/pricing/service/intfc",
+        "//280-batch-processing/src/main/java/io/harness/batch/processing/service/intfc",
+        "//280-batch-processing/src/main/java/io/harness/batch/processing/tasklet/util",
+        "//280-batch-processing/src/main/java/io/harness/batch/processing/writer/constants",
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/beans",
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/constants",
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/entities/batch",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_springframework_batch_spring_batch_core",
+        "@maven//:org_springframework_batch_spring_batch_infrastructure",
+        "@maven//:org_springframework_spring_beans",
+    ],
+)

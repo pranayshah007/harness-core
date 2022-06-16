@@ -1,0 +1,17 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "jobs",
+    srcs = [
+        "MonitoredServiceNotificationHandler.java",
+        "SLONotificationHandler.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/core/entities",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/core/services/api/monitoredService",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/servicelevelobjective/entities",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/servicelevelobjective/services/api",
+        "//960-persistence/src/main/java/io/harness/mongo/iterator",
+    ],
+)

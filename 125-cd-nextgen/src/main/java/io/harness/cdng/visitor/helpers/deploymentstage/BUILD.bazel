@@ -1,0 +1,12 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "deploymentstage",
+    srcs = ["DeploymentStageVisitorHelper.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/creator/plan/stage",
+        "//967-walktree-visitor/src/main/java/io/harness/walktree/visitor/validation",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+    ],
+)

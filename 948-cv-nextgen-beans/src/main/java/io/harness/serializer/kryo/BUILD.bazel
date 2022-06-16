@@ -1,0 +1,20 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "kryo",
+    srcs = ["CvNextGenBeansKryoRegistrar.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//948-cv-nextgen-beans/src/main/java/io/harness/cvng/beans/activity",
+        "//948-cv-nextgen-beans/src/main/java/io/harness/cvng/beans/customhealth",
+        "//948-cv-nextgen-beans/src/main/java/io/harness/cvng/beans/customhealthlog",
+        "//948-cv-nextgen-beans/src/main/java/io/harness/cvng/beans/datadog",
+        "//948-cv-nextgen-beans/src/main/java/io/harness/cvng/beans/dynatrace",
+        "//948-cv-nextgen-beans/src/main/java/io/harness/cvng/beans/prometheus",
+        "//948-cv-nextgen-beans/src/main/java/io/harness/cvng/beans/splunk",
+        "//948-cv-nextgen-beans/src/main/java/io/harness/cvng/beans/stackdriver",
+        "//948-cv-nextgen-beans/src/main/java/io/harness/cvng/models",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_esotericsoftware_kryo",
+    ],
+)

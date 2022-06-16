@@ -1,0 +1,38 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "verification",
+    srcs = [
+        "CV24x7DashboardServiceImpl.java",
+        "CVActivityLogServiceImpl.java",
+        "CVConfigurationServiceImpl.java",
+        "CvValidationService.java",
+        "CvValidationServiceImpl.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/software/wings/beans/alert",
+        "//400-rest/src/main/java/software/wings/beans/alert/cv",
+        "//400-rest/src/main/java/software/wings/dl",
+        "//400-rest/src/main/java/software/wings/service/impl/datadog",
+        "//400-rest/src/main/java/software/wings/service/intfc/datadog",
+        "//400-rest/src/main/java/software/wings/verification/apm",
+        "//400-rest/src/main/java/software/wings/verification/appdynamics",
+        "//400-rest/src/main/java/software/wings/verification/cloudwatch",
+        "//400-rest/src/main/java/software/wings/verification/dashboard",
+        "//400-rest/src/main/java/software/wings/verification/datadog",
+        "//400-rest/src/main/java/software/wings/verification/dynatrace",
+        "//400-rest/src/main/java/software/wings/verification/instana",
+        "//400-rest/src/main/java/software/wings/verification/log",
+        "//400-rest/src/main/java/software/wings/verification/newrelic",
+        "//400-rest/src/main/java/software/wings/verification/prometheus",
+        "//930-delegate-tasks/src/main/java/software/wings/delegatetasks/cv",
+        "//960-persistence/src/main/java/io/harness/persistence",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/io/harness/eraro",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_mongodb_morphia_morphia",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

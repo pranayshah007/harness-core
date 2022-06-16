@@ -1,0 +1,23 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "instancesynchandler",
+    srcs = [
+        "AbstractInstanceSyncHandler.java",
+        "IInstanceSyncHandler.java",
+        "K8sInstanceSyncHandler.java",
+        "NativeHelmInstanceSyncHandler.java",
+        "ServerlessAwsLambdaInstanceSyncHandler.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//126-instance/src/main/java/io/harness/dtos",
+        "//126-instance/src/main/java/io/harness/dtos/deploymentinfo",
+        "//126-instance/src/main/java/io/harness/dtos/instanceinfo",
+        "//126-instance/src/main/java/io/harness/models/infrastructuredetails",
+        "//960-ng-core-beans/src/main/java/io/harness/ng/core/infrastructure",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_apache_commons_commons_lang3",
+    ],
+)

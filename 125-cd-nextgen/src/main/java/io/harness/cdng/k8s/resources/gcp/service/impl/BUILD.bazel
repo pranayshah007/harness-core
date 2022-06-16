@@ -1,0 +1,16 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "impl",
+    srcs = ["GcpResourceServiceImpl.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/gcp",
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/k8s/resources/gcp",
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/k8s/resources/gcp/service",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/gcp",
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector/gcpconnector",
+        "//960-api-services/src/main/java/io/harness/security/encryption",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+    ],
+)

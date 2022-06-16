@@ -1,0 +1,29 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "stages",
+    srcs = [
+        "AbstractPmsStagePlanCreator.java",
+        "PmsAbstractStageNode.java",
+        "StagesConfig.java",
+        "StagesPlanCreator.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//878-ng-common-utilities/src/main/java/io/harness/steps/common",
+        "//878-ng-common-utilities/src/main/java/io/harness/when/utils",
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/plan",
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/plan/creation/beans",
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/plan/creation/creators",
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/plan/creation/yaml",
+        "//884-pms-commons/src/main/java/io/harness/pms/execution",
+        "//953-yaml-commons/src/main/java/io/harness/plancreator/stages/stage",
+        "//953-yaml-commons/src/main/java/io/harness/yaml/core/failurestrategy",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_springframework_data_spring_data_commons",
+    ],
+)

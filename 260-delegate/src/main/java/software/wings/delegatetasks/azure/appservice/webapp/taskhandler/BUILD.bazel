@@ -1,0 +1,29 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "taskhandler",
+    srcs = [
+        "AzureWebAppListWebAppDeploymentSlotNamesTaskHandler.java",
+        "AzureWebAppListWebAppInstancesTaskHandler.java",
+        "AzureWebAppListWebAppNamesTaskHandler.java",
+        "AzureWebAppRollbackTaskHandler.java",
+        "AzureWebAppSlotSetupTaskHandler.java",
+        "AzureWebAppSlotShiftTrafficTaskHandler.java",
+        "AzureWebAppSlotSwapTaskHandler.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//260-delegate/src/main/java/software/wings/delegatetasks/azure/appservice/webapp",
+        "//260-delegate/src/main/java/software/wings/delegatetasks/azure/common",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/beans/logstreaming",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/azure/appservice/deployment/context",
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector",
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector/azureconnector",
+        "//960-api-services/src/main/java/io/harness/azure/client",
+        "//960-api-services/src/main/java/io/harness/azure/utility",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_microsoft_azure_azure_mgmt_appservice",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

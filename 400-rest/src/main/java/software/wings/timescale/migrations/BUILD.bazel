@@ -1,0 +1,23 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "migrations",
+    srcs = [
+        "MigrateApplicationsToTimeScaleDB.java",
+        "MigrateCloudProvidersToTimescaleDB.java",
+        "MigrateEnvironmentsToTimeScaleDB.java",
+        "MigratePipelinesToTimeScaleDB.java",
+        "MigrateServicesToTimeScaleDB.java",
+        "MigrateTagLinksToTImeScaleDB.java",
+        "MigrateUsersToTimeScaleDB.java",
+        "MigrateWorkflowsToTimeScaleDB.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/software/wings/dl",
+        "//960-persistence/src/main/java/io/harness/persistence",
+        "@maven//:io_fabric8_fabric8_utils",
+        "@maven//:org_mongodb_morphia_morphia",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

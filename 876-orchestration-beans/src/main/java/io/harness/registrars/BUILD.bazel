@@ -1,0 +1,13 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "registrars",
+    srcs = ["OrchestrationBeansTimeoutRegistrar.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//876-orchestration-beans/src/main/java/io/harness/timeout",
+        "//876-orchestration-beans/src/main/java/io/harness/timeout/trackers/active",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_apache_commons_commons_lang3",
+    ],
+)

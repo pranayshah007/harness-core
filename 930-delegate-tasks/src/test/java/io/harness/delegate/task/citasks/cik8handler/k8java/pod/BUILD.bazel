@@ -1,0 +1,26 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "pod",
+    srcs = [
+        "PodSpecBuilderTest.java",
+        "PodSpecBuilderTestHelper.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/citasks/cik8handler/k8java/container",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/citasks/cik8handler/k8java/pod",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/citasks/cik8handler/params",
+        "//960-api-services/src/main/java/io/harness/k8s/model",
+        "//960-api-services/src/main/java/io/harness/security/encryption",
+        "@maven//:io_kubernetes_client_java_api",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+    ],
+)

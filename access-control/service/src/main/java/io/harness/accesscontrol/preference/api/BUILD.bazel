@@ -1,0 +1,12 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "api",
+    srcs = ["AccessControlPreferenceResourceImpl.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "//access-control/service/src/main/java/io/harness/accesscontrol/preference/services",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

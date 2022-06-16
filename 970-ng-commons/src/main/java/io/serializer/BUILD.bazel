@@ -1,0 +1,19 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "serializer",
+    srcs = ["HObjectMapper.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//970-ng-commons/src/main/java/io/serializer/jackson",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/software/wings/jersey",
+        "@maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@maven//:com_fasterxml_jackson_datatype_jackson_datatype_guava",
+        "@maven//:com_fasterxml_jackson_datatype_jackson_datatype_jdk8",
+        "@maven//:com_fasterxml_jackson_datatype_jackson_datatype_jsr310",
+        "@maven//:com_hubspot_jackson_jackson_datatype_protobuf",
+        "@maven//:io_dropwizard_dropwizard_jackson",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

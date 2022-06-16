@@ -1,0 +1,18 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "servicenow",
+    srcs = [
+        "ServiceNowFieldType.java",
+        "ServiceNowMetaDTO.java",
+        "ServiceNowTaskParameters.java",
+        "ServiceNowTicketType.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//930-delegate-tasks/src/main/java/software/wings/delegatetasks/servicenow",
+        "//960-api-services/src/main/java/io/harness/security/encryption",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

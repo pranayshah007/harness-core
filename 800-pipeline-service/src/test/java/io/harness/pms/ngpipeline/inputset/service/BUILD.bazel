@@ -1,0 +1,33 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "service",
+    srcs = [
+        "InputSetFullGitSyncHandlerTest.java",
+        "PMSInputSetServiceImplTest.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//800-pipeline-service/src/main/java/io/harness/pms/inputset/gitsync",
+        "//800-pipeline-service/src/main/java/io/harness/pms/ngpipeline/inputset/beans/entity",
+        "//800-pipeline-service/src/main/java/io/harness/pms/ngpipeline/inputset/beans/resource",
+        "//800-pipeline-service/src/main/java/io/harness/pms/ngpipeline/inputset/mappers",
+        "//800-pipeline-service/src/main/java/io/harness/pms/ngpipeline/inputset/service",
+        "//800-pipeline-service/src/main/java/io/harness/repositories/inputset",
+        "//900-git-sync-sdk/src/main/java/io/harness/gitsync/persistance",
+        "//970-ng-commons/src/main/java/io/harness/ng/core/entitydetail",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_jooq_joor",
+        "@maven//:org_mockito_mockito_core",
+        "@maven//:org_springframework_data_spring_data_commons",
+        "@maven//:org_springframework_data_spring_data_mongodb",
+    ],
+)

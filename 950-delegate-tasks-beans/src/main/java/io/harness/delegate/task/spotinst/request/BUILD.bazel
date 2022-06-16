@@ -1,0 +1,24 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "request",
+    srcs = [
+        "SpotInstDeployTaskParameters.java",
+        "SpotInstGetElastigroupJsonParameters.java",
+        "SpotInstListElastigroupInstancesParameters.java",
+        "SpotInstListElastigroupNamesParameters.java",
+        "SpotInstSetupTaskParameters.java",
+        "SpotInstSwapRoutesTaskParameters.java",
+        "SpotInstTaskParameters.java",
+        "SpotinstTrafficShiftAlbDeployParameters.java",
+        "SpotinstTrafficShiftAlbSetupParameters.java",
+        "SpotinstTrafficShiftAlbSwapRoutesParameters.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//970-api-services-beans/src/main/java/io/harness/spotinst/model",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_hibernate_hibernate_validator",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

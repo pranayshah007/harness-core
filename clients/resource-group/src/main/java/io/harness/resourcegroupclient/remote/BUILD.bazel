@@ -1,0 +1,22 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "remote",
+    srcs = [
+        "ResourceGroupClient.java",
+        "ResourceGroupClientConfig.java",
+        "ResourceGroupHttpClientFactory.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//970-ng-commons/src/main/java/io/harness/ng/beans",
+        "//970-ng-commons/src/main/java/io/harness/remote/client",
+        "//980-commons/src/main/java/io/harness/secret",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "//platform-service/modules/resource-group-service/contracts/src/main/java/io/harness/resourcegroup/v1/remote/dto",
+        "//platform-service/modules/resource-group-service/contracts/src/main/java/io/harness/resourcegroup/v2/remote/dto",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:com_squareup_retrofit2_retrofit",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

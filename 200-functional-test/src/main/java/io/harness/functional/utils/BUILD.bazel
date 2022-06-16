@@ -1,0 +1,14 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "utils",
+    srcs = ["K8SUtils.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//230-model-test/src/main/java/io/harness/testframework/restutils",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_awaitility_awaitility",
+    ],
+)

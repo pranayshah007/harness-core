@@ -1,0 +1,19 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "monitoredService",
+    srcs = [
+        "BaseMonitoredServiceHandler.java",
+        "MonitoredServiceSLIMetricUpdateHandler.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/core/beans",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/core/beans/monitoredService",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/core/beans/monitoredService/healthSouceSpec",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/core/beans/params",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/servicelevelobjective/services/api",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_apache_commons_commons_collections4",
+    ],
+)

@@ -1,0 +1,26 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "persistence",
+    srcs = [
+        "MorphiaPersistenceWrapperTest.java",
+        "SpringPersistenceWrapperTest.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//950-wait-engine/src/main/java/io/harness/waiter/persistence",
+        "//960-persistence/src/main/java/io/harness/persistence",
+        "//960-persistence/src/supporter-test/java/io/harness/testlib",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//990-commons-test/src/main/java/io/harness/category/element",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_springframework_data_spring_data_mongodb",
+    ],
+)

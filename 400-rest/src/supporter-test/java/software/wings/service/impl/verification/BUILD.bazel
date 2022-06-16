@@ -1,0 +1,13 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "verification",
+    testonly = True,
+    srcs = ["CVConfigurationServiceImplTestBase.java"],
+    deps = [
+        "//400-rest/src/main/java/software/wings/verification/log",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "@maven//:org_apache_cxf_cxf_core",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

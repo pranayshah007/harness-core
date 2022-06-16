@@ -1,0 +1,27 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "helper",
+    srcs = [
+        "AwsAccountFieldHelper.java",
+        "InstanceDetailsHelper.java",
+        "PerspectiveToAnomalyQueryHelper.java",
+        "ViewFilterBuilderHelper.java",
+        "ViewTimeRangeHelper.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//450-ce-views/src/main/java/io/harness/ccm/views/dto",
+        "//450-ce-views/src/main/java/io/harness/ccm/views/entities",
+        "//450-ce-views/src/main/java/io/harness/ccm/views/graphql",
+        "//450-ce-views/src/main/java/io/harness/ccm/views/utils",
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/constants",
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/entities",
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/entities/batch",
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/service/intf",
+        "//980-commons/src/main/java/io/harness/govern",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

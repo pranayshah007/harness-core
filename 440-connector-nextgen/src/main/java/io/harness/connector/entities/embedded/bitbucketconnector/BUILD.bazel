@@ -1,0 +1,23 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "bitbucketconnector",
+    srcs = [
+        "BitbucketAuthentication.java",
+        "BitbucketConnector.java",
+        "BitbucketHttpAuth.java",
+        "BitbucketHttpAuthentication.java",
+        "BitbucketSshAuthentication.java",
+        "BitbucketUsernamePassword.java",
+        "BitbucketUsernamePasswordApiAccess.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//440-connector-nextgen/src/main/java/io/harness/connector/entities",
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector/scm",
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector/scm/bitbucket",
+        "@maven//:org_mongodb_morphia_morphia",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_springframework_data_spring_data_commons",
+    ],
+)

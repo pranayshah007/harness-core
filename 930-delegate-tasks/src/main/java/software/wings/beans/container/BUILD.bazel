@@ -1,0 +1,34 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "container",
+    srcs = [
+        "ContainerTaskCommons.java",
+        "EcsContainerTaskUtils.java",
+        "EcsSteadyStateCheckParams.java",
+        "EcsSteadyStateCheckResponse.java",
+        "KubernetesContainerTaskUtils.java",
+        "KubernetesSteadyStateCheckParams.java",
+        "KubernetesSwapServiceSelectorsParams.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//960-api-services/src/main/java/io/harness/security/encryption",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/io/harness/eraro",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_amazonaws_aws_java_sdk_core",
+        "@maven//:com_amazonaws_aws_java_sdk_ecs",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:com_fasterxml_jackson_core_jackson_core",
+        "@maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@maven//:com_fasterxml_jackson_datatype_jackson_datatype_guava",
+        "@maven//:com_fasterxml_jackson_datatype_jackson_datatype_jdk8",
+        "@maven//:com_fasterxml_jackson_datatype_jackson_datatype_jsr310",
+        "@maven//:com_google_guava_guava",
+        "@maven//:io_fabric8_kubernetes_model_core",
+        "@maven//:io_fabric8_kubernetes_model_extensions",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

@@ -1,0 +1,34 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "sso",
+    srcs = [
+        "LdapSettings.java",
+        "LdapSettingsMapper.java",
+        "OauthSettings.java",
+        "SAMLProviderType.java",
+        "SSOSettings.java",
+        "SSOType.java",
+        "SamlLinkGroupRequest.java",
+        "SamlSettings.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//930-delegate-tasks/src/main/java/software/wings/beans/dto",
+        "//950-delegate-tasks-beans/src/main/java/io/harness/delegate/beans/executioncapability",
+        "//950-delegate-tasks-beans/src/main/java/io/harness/delegate/task/mixin",
+        "//950-delegate-tasks-beans/src/main/java/software/wings/helpers/ext/ldap",
+        "//960-ng-core-beans/src/main/java/io/harness/ng/core/account",
+        "//960-persistence/src/main/java/io/harness/mongo/index",
+        "//960-persistence/src/main/java/io/harness/persistence",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/software/wings/jersey",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:com_github_reinert_jjschema",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_hibernate_hibernate_validator",
+        "@maven//:org_mongodb_morphia_morphia",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

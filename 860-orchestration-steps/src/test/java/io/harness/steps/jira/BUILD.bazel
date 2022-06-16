@@ -1,0 +1,26 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "jira",
+    srcs = [
+        "JiraCreateStepVariableCreatorTest.java",
+        "JiraStepUtilsTest.java",
+        "JiraUpdateStepVariableCreatorTest.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//860-orchestration-steps/src/main/java/io/harness/steps/jira",
+        "//860-orchestration-steps/src/main/java/io/harness/steps/jira/create",
+        "//860-orchestration-steps/src/main/java/io/harness/steps/jira/update",
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/variables/beans",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+    ],
+)

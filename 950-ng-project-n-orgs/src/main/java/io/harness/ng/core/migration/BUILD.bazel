@@ -1,0 +1,21 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "migration",
+    srcs = [
+        "NGBeanMigrationProvider.java",
+        "NGBeansTimeScaleMigrationDetails.java",
+        "ProjectMigrationDetails.java",
+        "ProjectMigrationProvider.java",
+        "ProjectTimeScaleMigrationDetails.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//950-ng-project-n-orgs/src/main/java/io/harness/ng/core/migration/schema",
+        "//950-ng-project-n-orgs/src/main/java/io/harness/ng/core/migration/tasks",
+        "//958-migration-sdk/src/main/java/io/harness/migration/beans",
+        "//958-migration-sdk/src/main/java/io/harness/migration/entities",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_apache_commons_commons_lang3",
+    ],
+)

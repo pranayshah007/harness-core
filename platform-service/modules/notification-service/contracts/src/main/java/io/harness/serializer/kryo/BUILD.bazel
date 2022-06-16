@@ -1,0 +1,11 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "kryo",
+    srcs = ["NotificationBeansKryoRegistrar.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//platform-service/modules/notification-service/contracts/src/main/java/software/wings/beans/notification",
+        "@maven//:com_esotericsoftware_kryo",
+    ],
+)

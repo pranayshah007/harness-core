@@ -1,0 +1,18 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "cd",
+    srcs = [
+        "CDLicenseUsageConstants.java",
+        "CDLicenseUsageDTO.java",
+        "ServiceInstanceUsageDTO.java",
+        "ServiceUsageDTO.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//960-ng-license-usage-beans/src/main/java/io/harness/licensing/usage/beans",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

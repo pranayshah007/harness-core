@@ -1,0 +1,43 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "serverless",
+    srcs = [
+        "AbstractServerlessStepExecutorTestBase.java",
+        "ServerlessAwsLambdaDeployStepTest.java",
+        "ServerlessAwsLambdaRollbackStepTest.java",
+        "ServerlessAwsLambdaStepHelperTest.java",
+        "ServerlessStepCommonHelperTest.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//125-cd-nextgen/src/main/java/io/harness/cdng",
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/common/beans",
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/manifest/steps",
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/serverless/beans",
+        "//127-cd-nextgen-entities/src/main/java/io/harness/cdng/artifact/outcome",
+        "//127-cd-nextgen-entities/src/main/java/io/harness/cdng/manifest/yaml/storeConfig",
+        "//127-cd-nextgen-entities/src/main/java/io/harness/cdng/stepsdependency/constants",
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/data",
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/resolver",
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/resolver/outcome",
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/resolver/outputs",
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/steps/executables",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/beans/logstreaming",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/git",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/serverless",
+        "//945-account-mgmt/src/main/java/io/harness/account/services",
+        "//980-commons/src/main/java/io/harness/eraro",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:junit_junit",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

@@ -1,0 +1,22 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "change",
+    srcs = [
+        "ChangeCategory.java",
+        "ChangeEventDTO.java",
+        "ChangeEventMetadata.java",
+        "ChangeSourceType.java",
+        "HarnessCDCurrentGenEventMetadata.java",
+        "HarnessCDEventMetadata.java",
+        "KubernetesChangeEventMetadata.java",
+        "PagerDutyEventMetaData.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//948-cv-nextgen-beans/src/main/java/io/harness/cvng/beans/activity",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:org_apache_commons_commons_collections4",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

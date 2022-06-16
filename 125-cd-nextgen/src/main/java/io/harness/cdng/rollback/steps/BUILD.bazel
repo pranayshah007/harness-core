@@ -1,0 +1,17 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "steps",
+    srcs = [
+        "InfrastructureDefinitionStep.java",
+        "InfrastructureProvisionerStep.java",
+        "RollbackStepsStep.java",
+        "StepGroupRollbackStep.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//127-cd-nextgen-entities/src/main/java/io/harness/executions/steps",
+        "//878-ng-common-utilities/src/main/java/io/harness/steps/common",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+    ],
+)

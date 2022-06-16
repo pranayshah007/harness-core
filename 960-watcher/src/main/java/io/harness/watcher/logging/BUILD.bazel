@@ -1,0 +1,16 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "logging",
+    srcs = ["WatcherStackdriverLogAppender.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//960-watcher/src/main/java/io/harness/watcher/app",
+        "//980-commons/src/main/java/io/harness/concurrent",
+        "//980-commons/src/main/java/io/harness/network",
+        "//980-commons/src/main/java/io/harness/rest",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

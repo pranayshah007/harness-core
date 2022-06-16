@@ -1,0 +1,26 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "mapper",
+    srcs = [
+        "AuditEventMapper.java",
+        "AuditFilterPropertiesMapper.java",
+        "AuditSettingsMapper.java",
+        "AuthenticationInfoMapper.java",
+        "ResourceMapper.java",
+        "ResourceScopeMapper.java",
+        "YamlDiffRecordMapper.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//955-filters-sdk/src/main/java/io/harness/filter/dto",
+        "//955-filters-sdk/src/main/java/io/harness/filter/entity",
+        "//955-filters-sdk/src/main/java/io/harness/filter/mapper",
+        "//970-ng-commons/src/main/java/io/harness/ng/core/common/beans",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "//platform-service/modules/audit-service/src/main/java/io/harness/audit/entities",
+        "@maven//:org_modelmapper_modelmapper",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

@@ -1,0 +1,26 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "response",
+    srcs = [
+        "AzureVMInstanceData.java",
+        "AzureVMSSDeployTaskResponse.java",
+        "AzureVMSSGetVirtualMachineScaleSetResponse.java",
+        "AzureVMSSListLoadBalancerBackendPoolsNamesResponse.java",
+        "AzureVMSSListLoadBalancersNamesResponse.java",
+        "AzureVMSSListResourceGroupsNamesResponse.java",
+        "AzureVMSSListSubscriptionsResponse.java",
+        "AzureVMSSListVMDataResponse.java",
+        "AzureVMSSListVirtualMachineScaleSetsResponse.java",
+        "AzureVMSSSetupTaskResponse.java",
+        "AzureVMSSSwitchRoutesResponse.java",
+        "AzureVMSSTaskExecutionResponse.java",
+        "AzureVMSSTaskResponse.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//970-api-services-beans/src/main/java/io/harness/azure/model",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

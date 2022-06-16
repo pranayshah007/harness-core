@@ -1,0 +1,20 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "artifact",
+    srcs = [
+        "ArtifactCollectionPTaskClientParams.java",
+        "ArtifactCollectionPTaskServiceClient.java",
+        "ArtifactCollectionResponseHandler.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//260-delegate/src/main/java/io/harness/perpetualtask/artifact",
+        "//400-rest/src/main/java/software/wings/beans/alert",
+        "//400-rest/src/main/java/software/wings/service/impl/artifact",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

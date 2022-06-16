@@ -1,0 +1,17 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "service",
+    srcs = [
+        "ArtifactoryRegistryService.java",
+        "ArtifactoryRegistryServiceImpl.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//960-api-services/src/main/java/io/harness/artifactory",
+        "//960-api-services/src/main/java/io/harness/artifacts/beans",
+        "//960-api-services/src/main/java/io/harness/artifacts/comparator",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

@@ -1,0 +1,38 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "entities",
+    srcs = [
+        "BuildActiveInfo.java",
+        "BuildCount.java",
+        "BuildExecutionInfo.java",
+        "BuildFailureInfo.java",
+        "BuildHealth.java",
+        "BuildInfo.java",
+        "BuildRepositoryCount.java",
+        "CIBuildAuthor.java",
+        "CIBuildBranchHook.java",
+        "CIBuildCommit.java",
+        "CIBuildPRHook.java",
+        "CIBuildPipeline.java",
+        "CIUsageResult.java",
+        "DashboardBuildExecutionInfo.java",
+        "DashboardBuildRepositoryInfo.java",
+        "DashboardBuildsActiveAndFailedInfo.java",
+        "DashboardBuildsHealthInfo.java",
+        "LastRepositoryInfo.java",
+        "RepositoryBuildInfo.java",
+        "RepositoryInfo.java",
+        "RepositoryInformation.java",
+        "StatusAndTime.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//960-ng-core-beans/src/main/java/io/harness/ng/core/dashboard",
+        "//960-ng-license-usage-beans/src/main/java/io/harness/licensing/usage/beans",
+        "//970-ng-commons/src/main/java/io/harness/ng/core/common/beans",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

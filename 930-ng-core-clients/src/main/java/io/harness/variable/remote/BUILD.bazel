@@ -1,0 +1,17 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "remote",
+    srcs = [
+        "VariableClient.java",
+        "VariableHttpClientFactory.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//960-ng-core-beans/src/main/java/io/harness/ng/core/variable/dto",
+        "//970-ng-commons/src/main/java/io/harness/remote/client",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_squareup_retrofit2_retrofit",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

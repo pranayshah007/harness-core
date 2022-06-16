@@ -1,0 +1,16 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "service",
+    srcs = [
+        "PipelineRefreshService.java",
+        "PipelineRefreshServiceImpl.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//800-pipeline-service/src/main/java/io/harness/pms/pipeline/service",
+        "//960-ng-core-beans/src/main/java/io/harness/ng/core/template",
+        "//960-ng-core-beans/src/main/java/io/harness/template/beans/refresh",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+    ],
+)

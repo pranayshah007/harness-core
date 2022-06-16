@@ -1,0 +1,26 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "bigquery",
+    srcs = [
+        "AliasExpression.java",
+        "BigQuerySQL.java",
+        "BigQueryService.java",
+        "BigQueryServiceImpl.java",
+        "ConstExpression.java",
+        "TruncExpression.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/io/harness/ccm/billing",
+        "//490-ce-commons/src/main/java/io/harness/ccm/bigQuery",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_auth_google_auth_library_credentials",
+        "@maven//:com_google_auth_google_auth_library_oauth2_http",
+        "@maven//:com_google_cloud_google_cloud_bigquery",
+        "@maven//:com_hazelcast_hazelcast",
+        "@maven//:com_healthmarketscience_sqlbuilder_sqlbuilder",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

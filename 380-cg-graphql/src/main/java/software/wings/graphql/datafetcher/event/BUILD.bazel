@@ -1,0 +1,24 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "event",
+    srcs = [
+        "CreateEventsConfigDataFetcher.java",
+        "DeleteEventsConfigDataFetcher.java",
+        "EventsConfigConnectionDataFetcher.java",
+        "EventsConfigDataFetcher.java",
+        "UpdateEventsConfigDataFetcher.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//380-cg-graphql/src/main/java/software/wings/graphql/schema/mutation/event",
+        "//380-cg-graphql/src/main/java/software/wings/graphql/schema/mutation/event/input",
+        "//380-cg-graphql/src/main/java/software/wings/graphql/schema/mutation/event/payload",
+        "//380-cg-graphql/src/main/java/software/wings/graphql/schema/query",
+        "//380-cg-graphql/src/main/java/software/wings/graphql/schema/type/event",
+        "//970-rbac-core/src/main/java/software/wings/security/annotations",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

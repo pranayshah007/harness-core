@@ -1,0 +1,34 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "artifact",
+    srcs = [
+        "ArtifactPlanCreatorTest.java",
+        "SideCarListPlanCreatorTest.java",
+        "SideCarPlanCreatorTest.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//125-cd-nextgen/src/main/java/io/harness/cdng",
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/artifact/steps",
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/creator/plan",
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/creator/plan/artifact",
+        "//127-cd-nextgen-entities/src/main/java/io/harness/cdng/artifact/bean/yaml",
+        "//127-cd-nextgen-entities/src/main/java/io/harness/cdng/visitor",
+        "//878-ng-common-utilities/src/main/java/io/harness/steps/fork",
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/plan",
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/plan/creation/beans",
+        "//884-pms-commons/src/main/java/io/harness/pms/execution",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/artifacts",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+    ],
+)

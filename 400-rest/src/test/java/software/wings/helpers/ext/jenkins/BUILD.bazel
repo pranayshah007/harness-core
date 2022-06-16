@@ -1,0 +1,34 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "jenkins",
+    srcs = [
+        "CustomJenkinsHttpClientTest.java",
+        "JenkinsTest.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//960-api-services/src/main/java/software/wings/helpers/ext/jenkins/model",
+        "//990-commons-test/src/main/java/io/harness/category/element",
+        "//990-commons-test/src/main/java/io/harness/scm",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_github_tomakehurst_wiremock_jre8_standalone",
+        "@maven//:com_google_guava_guava",
+        "@maven//:com_offbytwo_jenkins_jenkins_client",
+        "@maven//:junit_junit",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_apache_httpcomponents_httpclient",
+        "@maven//:org_apache_httpcomponents_httpcore",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_jooq_joor",
+        "@maven//:org_mockito_mockito_core",
+        "@maven//:org_powermock_powermock_api_mockito2",
+        "@maven//:org_powermock_powermock_core",
+        "@maven//:org_powermock_powermock_module_junit4",
+    ],
+)

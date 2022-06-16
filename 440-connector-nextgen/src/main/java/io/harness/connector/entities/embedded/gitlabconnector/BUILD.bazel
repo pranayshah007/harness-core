@@ -1,0 +1,25 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "gitlabconnector",
+    srcs = [
+        "GitlabAuthentication.java",
+        "GitlabConnector.java",
+        "GitlabHttpAuth.java",
+        "GitlabHttpAuthentication.java",
+        "GitlabKerberos.java",
+        "GitlabSshAuthentication.java",
+        "GitlabTokenApiAccess.java",
+        "GitlabUsernamePassword.java",
+        "GitlabUsernameToken.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//440-connector-nextgen/src/main/java/io/harness/connector/entities",
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector/scm",
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector/scm/gitlab",
+        "@maven//:org_mongodb_morphia_morphia",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_springframework_data_spring_data_commons",
+    ],
+)

@@ -1,0 +1,15 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "verification",
+    srcs = [
+        "CV24x7DashboardService.java",
+        "CVActivityLogService.java",
+        "CVConfigurationService.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/software/wings/verification/log",
+        "//957-cg-beans/src/main/java/software/wings/service/intfc/ownership",
+    ],
+)

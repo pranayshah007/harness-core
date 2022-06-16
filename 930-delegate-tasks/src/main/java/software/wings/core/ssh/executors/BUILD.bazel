@@ -1,0 +1,27 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "executors",
+    srcs = [
+        "FileBasedAbstractScriptExecutor.java",
+        "FileBasedProcessScriptExecutor.java",
+        "FileBasedScriptExecutor.java",
+        "FileBasedSshScriptExecutor.java",
+        "FileBasedWinRmExecutor.java",
+        "SshExecutorFactory.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/shell",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/winrm",
+        "//930-delegate-tasks/src/main/java/software/wings/beans/command",
+        "//930-delegate-tasks/src/main/java/software/wings/delegatetasks",
+        "//960-api-services/src/main/java/io/harness/shell",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/io/harness/eraro",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:commons_io_commons_io",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

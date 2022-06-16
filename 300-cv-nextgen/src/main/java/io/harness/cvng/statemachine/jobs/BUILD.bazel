@@ -1,0 +1,13 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "jobs",
+    srcs = ["AnalysisOrchestrationJob.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/statemachine/entities",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/statemachine/services/api",
+        "//960-persistence/src/main/java/io/harness/mongo/iterator",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

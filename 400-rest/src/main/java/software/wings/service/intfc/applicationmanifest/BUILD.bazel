@@ -1,0 +1,14 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "applicationmanifest",
+    srcs = [
+        "ApplicationManifestServiceObserver.java",
+        "HelmChartService.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//957-cg-beans/src/main/java/software/wings/service/intfc/ownership",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+    ],
+)

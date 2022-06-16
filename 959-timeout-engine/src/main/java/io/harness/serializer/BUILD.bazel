@@ -1,0 +1,12 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "serializer",
+    srcs = ["TimeoutEngineRegistrars.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_springframework_spring_core",
+    ],
+)

@@ -1,0 +1,22 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "retry",
+    srcs = [
+        "ExecutionInfo.java",
+        "RetryExecutionMetadata.java",
+        "RetryExecutionParameters.java",
+        "RetryGroup.java",
+        "RetryHistoryResponseDto.java",
+        "RetryInfo.java",
+        "RetryLatestExecutionResponseDto.java",
+        "RetryStageInfo.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//884-pms-commons/src/main/java/io/harness/pms/execution",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:io_swagger_core_v3_swagger_annotations",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

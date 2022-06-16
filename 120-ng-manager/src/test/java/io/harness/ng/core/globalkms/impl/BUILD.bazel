@@ -1,0 +1,39 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "impl",
+    srcs = [
+        "NgConnectorManagerClientServiceImplTest.java",
+        "NgGlobalKmsServiceImplTest.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//120-ng-manager/src/main/java/io/harness/ng/core/globalkms/client",
+        "//120-ng-manager/src/main/java/io/harness/ng/core/globalkms/dto",
+        "//120-ng-manager/src/main/java/io/harness/ng/core/globalkms/impl",
+        "//120-ng-manager/src/main/java/io/harness/ng/core/globalkms/services",
+        "//440-connector-nextgen/src/main/java/io/harness/connector/services",
+        "//940-secret-manager-client/src/main/java/io/harness/secretmanagerclient/dto",
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector",
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector/gcpkmsconnector",
+        "//970-ng-commons/src/main/java/io/harness/request",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/io/harness/manage",
+        "//980-commons/src/main/java/io/harness/rest",
+        "//980-commons/src/main/java/io/harness/security/dto",
+        "@maven//:com_squareup_retrofit2_retrofit",
+        "@maven//:junit_junit",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+        "@maven//:org_powermock_powermock_api_mockito2",
+        "@maven//:org_powermock_powermock_core",
+        "@maven//:org_powermock_powermock_module_junit4",
+        "@maven//:org_powermock_powermock_reflect",
+    ],
+)

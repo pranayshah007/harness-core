@@ -1,0 +1,24 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "event",
+    srcs = [
+        "AccountEntityEvent.java",
+        "AlertEvent.java",
+        "DeploymentTimeSeriesEventListener.java",
+        "GenericEventListener.java",
+        "GenericEventPublisher.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/io/harness/event/timeseries/processor",
+        "//400-rest/src/main/java/software/wings/beans/alert",
+        "//950-events-framework/src/main/java/io/harness/event/handler",
+        "//950-events-framework/src/main/java/io/harness/event/listener",
+        "//950-events-framework/src/main/java/io/harness/event/publisher",
+        "//960-persistence/src/main/java/io/harness/queue",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

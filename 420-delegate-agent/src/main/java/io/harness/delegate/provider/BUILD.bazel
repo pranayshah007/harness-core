@@ -1,0 +1,14 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "provider",
+    srcs = [
+        "DelegateConfigurationServiceProviderImpl.java",
+        "DelegatePropertiesServiceProviderImpl.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//960-api-services/src/main/java/io/harness/delegate/configuration",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

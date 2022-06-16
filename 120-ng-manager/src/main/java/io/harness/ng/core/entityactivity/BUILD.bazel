@@ -1,0 +1,8 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "entityactivity",
+    srcs = ["EntityActivityEventHandler.java"],
+    visibility = ["//:__subpackages__"],
+    deps = ["//120-ng-manager/src/main/java/io/harness/ng/core/entityactivity/connector"],
+)

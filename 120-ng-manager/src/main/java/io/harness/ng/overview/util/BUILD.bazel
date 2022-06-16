@@ -1,0 +1,14 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "util",
+    srcs = ["GrowthTrendEvaluator.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//120-ng-manager/src/main/java/io/harness/ng/overview/dto",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

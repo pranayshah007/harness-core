@@ -1,0 +1,30 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "api",
+    srcs = [
+        "SLIAnalyserService.java",
+        "SLIDataProcessorService.java",
+        "SLIRecordService.java",
+        "SLODashboardService.java",
+        "SLOErrorBudgetResetService.java",
+        "SLOHealthIndicatorService.java",
+        "ServiceLevelIndicatorService.java",
+        "ServiceLevelObjectiveService.java",
+        "UserJourneyService.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/core/beans/params",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/core/beans/params/logsFilterParams",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/core/beans/sli",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/core/entities",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/notification/beans",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/servicelevelobjective",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/servicelevelobjective/beans",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/servicelevelobjective/beans/slimetricspec",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/servicelevelobjective/entities",
+        "//957-cg-beans/src/main/java/io/harness/cvng/beans/cvnglog",
+        "//970-ng-commons/src/main/java/io/harness/ng/beans",
+    ],
+)

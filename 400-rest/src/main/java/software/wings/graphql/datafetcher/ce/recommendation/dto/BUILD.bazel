@@ -1,0 +1,24 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "dto",
+    srcs = [
+        "QLContainerHistogramData.java",
+        "QLContainerRecommendation.java",
+        "QLHistogramExp.java",
+        "QLK8SWorkloadHistogramData.java",
+        "QLK8SWorkloadRecommendationConnection.java",
+        "QLK8sWorkloadFilter.java",
+        "QLK8sWorkloadParameters.java",
+        "QLK8sWorkloadRecommendation.java",
+        "QLK8sWorkloadRecommendationPreset.java",
+        "QLLastDayCost.java",
+        "QLResourceEntry.java",
+        "QLResourceRequirement.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

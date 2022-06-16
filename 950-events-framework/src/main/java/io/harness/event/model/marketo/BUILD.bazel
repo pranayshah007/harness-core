@@ -1,0 +1,21 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "marketo",
+    srcs = [
+        "Campaign.java",
+        "Error.java",
+        "GetLeadResponse.java",
+        "Id.java",
+        "Lead.java",
+        "LeadRequestWithEmail.java",
+        "LeadRequestWithId.java",
+        "LoginResponse.java",
+        "Response.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

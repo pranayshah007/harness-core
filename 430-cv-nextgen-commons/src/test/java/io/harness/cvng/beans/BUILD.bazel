@@ -1,0 +1,31 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "beans",
+    srcs = [
+        "DataCollectionRequestTypeTest.java",
+        "DynatraceDataCollectionInfoTest.java",
+        "MetricPackDTOTest.java",
+        "NewRelicDataCollectionInfoTest.java",
+        "SplunkDataCollectionInfoTest.java",
+        "StackdriverMetricDefinitionTest.java",
+        "TimeSeriesThresholdCriteriaTest.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//948-cv-nextgen-beans/src/main/java/io/harness/cvng/beans/stackdriver",
+        "//948-cv-nextgen-beans/src/main/java/io/harness/cvng/core/services",
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector/dynatrace",
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector/splunkconnector",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:com_google_guava_guava",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_reflections_reflections",
+    ],
+)

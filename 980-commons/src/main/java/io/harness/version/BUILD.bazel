@@ -1,0 +1,20 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "version",
+    srcs = [
+        "RuntimeInfo.java",
+        "ServiceApiVersion.java",
+        "VersionConstants.java",
+        "VersionInfo.java",
+        "VersionInfoManager.java",
+        "VersionModule.java",
+        "VersionPackage.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:commons_io_commons_io",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

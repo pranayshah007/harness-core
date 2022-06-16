@@ -1,0 +1,32 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "deployment",
+    srcs = [
+        "AzureAppServiceDeploymentService.java",
+        "SlotSteadyStateChecker.java",
+        "StreamPackageDeploymentLogsTask.java",
+        "SwapSlotTask.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/beans/logstreaming",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/azure/appservice/deployment/context",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/azure/appservice/deployment/verifier",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/azure/common/validator",
+        "//930-delegate-tasks/src/main/java/software/wings/delegatetasks/azure",
+        "//960-api-services/src/main/java/io/harness/azure",
+        "//960-api-services/src/main/java/io/harness/azure/client",
+        "//960-api-services/src/main/java/io/harness/azure/deployment",
+        "//960-api-services/src/main/java/io/harness/azure/utility",
+        "//980-commons/src/main/java/io/harness/concurrent",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/io/harness/threading",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:com_microsoft_azure_azure_client_runtime",
+        "@maven//:io_reactivex_rxjava",
+        "@maven//:joda_time_joda_time",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

@@ -1,0 +1,17 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "stackdriver",
+    srcs = [
+        "StackdriverDashboardDTO.java",
+        "StackdriverDashboardDetail.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//948-cv-nextgen-beans/src/main/java/io/harness/cvng/beans/stackdriver",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:com_google_code_gson_gson",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

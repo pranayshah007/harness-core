@@ -1,0 +1,15 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "exception",
+    srcs = [
+        "CategoryConfigException.java",
+        "ConcurrentException.java",
+        "CyclicBarrierException.java",
+        "ImpossibleException.java",
+        "LoadResourceException.java",
+        "LoadSourceCodeException.java",
+        "ScmSecretException.java",
+    ],
+    visibility = ["//:__subpackages__"],
+)

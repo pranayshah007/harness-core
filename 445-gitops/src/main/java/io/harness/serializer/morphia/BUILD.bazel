@@ -1,0 +1,11 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "morphia",
+    srcs = ["GitOpsMorphiaClassesRegistrar.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//445-gitops/src/main/java/io/harness/gitopsprovider/entity",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+    ],
+)

@@ -1,0 +1,27 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "pipeline",
+    srcs = [
+        "PipelineConnectionDataFetcher.java",
+        "PipelineController.java",
+        "PipelineDataFetcher.java",
+        "PipelineQueryHelper.java",
+        "PipelineStatsDataFetcher.java",
+        "PipelineVariableConnectionDataFetcher.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/software/wings/graphql/datafetcher",
+        "//400-rest/src/main/java/software/wings/graphql/datafetcher/tag",
+        "//400-rest/src/main/java/software/wings/graphql/datafetcher/user",
+        "//400-rest/src/main/java/software/wings/graphql/schema/type/aggregation/pipeline",
+        "//400-rest/src/main/java/software/wings/graphql/utils/nameservice",
+        "//960-persistence/src/main/java/io/harness/persistence",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_graphql_java_graphql_java",
+        "@maven//:org_mongodb_morphia_morphia",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

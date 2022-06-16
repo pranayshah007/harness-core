@@ -1,0 +1,21 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "CIDashboard",
+    srcs = ["CIDashboardsApisTest.java"],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//310-ci-manager/src/main/java/io/harness/app/beans/entities",
+        "//884-pms-commons/src/main/java/io/harness/pms/execution",
+        "//960-ng-core-beans/src/main/java/io/harness/ng/core/dashboard",
+        "//960-ng-license-usage-beans/src/main/java/io/harness/licensing/usage/beans",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+    ],
+)

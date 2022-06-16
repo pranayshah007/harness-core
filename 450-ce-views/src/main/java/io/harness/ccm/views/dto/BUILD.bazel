@@ -1,0 +1,19 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "dto",
+    srcs = [
+        "CreatePerspectiveFolderDTO.java",
+        "DefaultViewIdDto.java",
+        "MovePerspectiveDTO.java",
+        "PerspectiveQueryDTO.java",
+        "ViewTimeRangeDto.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//450-ce-views/src/main/java/io/harness/ccm/views/entities",
+        "//450-ce-views/src/main/java/io/harness/ccm/views/graphql",
+        "@maven//:io_swagger_core_v3_swagger_annotations",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

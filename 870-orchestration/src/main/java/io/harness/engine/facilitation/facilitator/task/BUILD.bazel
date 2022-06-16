@@ -1,0 +1,13 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "task",
+    srcs = ["TaskFacilitator.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//870-orchestration/src/main/java/io/harness/engine/facilitation/facilitator",
+        "//884-pms-commons/src/main/java/io/harness/pms/execution",
+        "//884-pms-commons/src/main/java/io/harness/pms/execution/facilitator",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+    ],
+)

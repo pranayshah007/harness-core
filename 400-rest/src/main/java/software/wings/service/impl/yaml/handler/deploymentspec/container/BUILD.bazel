@@ -1,0 +1,28 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "container",
+    srcs = [
+        "ContainerDefinitionYamlHandler.java",
+        "ContainerTaskYamlHandler.java",
+        "EcsContainerTaskYamlHandler.java",
+        "EcsServiceSpecificationYamlHandler.java",
+        "HelmChartSpecificationYamlHandler.java",
+        "KubernetesContainerTaskYamlHandler.java",
+        "LogConfigurationYamlHandler.java",
+        "PcfServiceSpecificationYamlHandler.java",
+        "PortMappingYamlHandler.java",
+        "StorageConfigurationYamlHandler.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/software/wings/service/impl/yaml/handler",
+        "//400-rest/src/main/java/software/wings/service/impl/yaml/handler/deploymentspec",
+        "//400-rest/src/main/java/software/wings/service/impl/yaml/service",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/io/harness/eraro",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_apache_commons_commons_lang3",
+    ],
+)

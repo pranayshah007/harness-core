@@ -1,0 +1,30 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "permissions",
+    srcs = [
+        "Permission.java",
+        "PermissionFilter.java",
+        "PermissionService.java",
+        "PermissionServiceImpl.java",
+        "PermissionsModule.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "//access-control/libs/core/src/main/java/io/harness/accesscontrol/common/filter",
+        "//access-control/libs/core/src/main/java/io/harness/accesscontrol/permissions/persistence",
+        "//access-control/libs/core/src/main/java/io/harness/accesscontrol/permissions/validator",
+        "//access-control/libs/core/src/main/java/io/harness/accesscontrol/roles/filter",
+        "//access-control/libs/core/src/main/java/io/harness/accesscontrol/scopes/core",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:com_google_guava_guava",
+        "@maven//:com_google_inject_guice",
+        "@maven//:io_swagger_swagger_annotations",
+        "@maven//:net_jodah_failsafe",
+        "@maven//:org_hibernate_hibernate_validator",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_springframework_data_spring_data_mongodb",
+        "@maven//:org_springframework_spring_tx",
+    ],
+)

@@ -1,0 +1,16 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "status",
+    srcs = [
+        "StateStatusUpdateInfo.java",
+        "WorkflowStatusPropagator.java",
+        "WorkflowStatusPropagatorFactory.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/software/wings/sm/status/handlers",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

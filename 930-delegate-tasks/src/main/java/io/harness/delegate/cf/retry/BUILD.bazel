@@ -1,0 +1,16 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "retry",
+    srcs = [
+        "RetryAbleTask.java",
+        "RetryAbleTaskExecutor.java",
+        "RetryPolicy.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//960-api-services/src/main/java/io/harness/pcf",
+        "//980-commons/src/main/java/io/harness/threading",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

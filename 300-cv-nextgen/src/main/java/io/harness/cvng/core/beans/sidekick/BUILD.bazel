@@ -1,0 +1,16 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "sidekick",
+    srcs = [
+        "DemoActivitySideKickData.java",
+        "RetryChangeSourceHandleDeleteSideKickData.java",
+        "VerificationTaskCleanupSideKickData.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/core/entities",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/core/entities/changeSource",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

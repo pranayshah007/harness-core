@@ -1,0 +1,12 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "deployment",
+    testonly = True,
+    srcs = ["DeploymentEntityTestUtils.java"],
+    deps = [
+        "//960-persistence/src/main/java/io/harness/mongo/changestreams",
+        "//960-persistence/src/main/java/io/harness/persistence",
+        "//980-commons/src/main/java/io/harness/data/structure",
+    ],
+)

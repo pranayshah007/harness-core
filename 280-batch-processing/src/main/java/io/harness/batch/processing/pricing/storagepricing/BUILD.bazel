@@ -1,0 +1,25 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "storagepricing",
+    srcs = [
+        "GoogleStoragePricingData.java",
+        "StorageCustomPricingProvider.java",
+        "StoragePricingData.java",
+        "StoragePricingStrategy.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//260-delegate/src/main/java/io/harness/perpetualtask/k8s/watch",
+        "//280-batch-processing/src/main/java/io/harness/batch/processing/pricing",
+        "//280-batch-processing/src/main/java/io/harness/batch/processing/pricing/appspot",
+        "//280-batch-processing/src/main/java/io/harness/batch/processing/tasklet/util",
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/constants",
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/entities/batch",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:joda_time_joda_time",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_springframework_spring_context",
+    ],
+)

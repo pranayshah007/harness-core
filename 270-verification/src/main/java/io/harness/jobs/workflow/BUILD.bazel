@@ -1,0 +1,11 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "workflow",
+    srcs = ["WorkflowCVTaskCreationHandler.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//930-delegate-tasks/src/main/java/software/wings/service/impl/analysis",
+        "//960-persistence/src/main/java/io/harness/mongo/iterator",
+    ],
+)

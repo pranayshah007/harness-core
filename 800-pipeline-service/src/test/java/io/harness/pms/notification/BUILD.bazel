@@ -1,0 +1,32 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "notification",
+    srcs = [
+        "NotificationHelperTest.java",
+        "NotificationInstrumentationHelperTest.java",
+        "PipelineNotificationUtilsTest.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//800-pipeline-service/src/main/java/io/harness/pms/notification",
+        "//800-pipeline-service/src/main/java/io/harness/pms/pipeline/service",
+        "//860-orchestration-steps/src/main/java/io/harness/notification/bean",
+        "//870-orchestration/src/main/java/io/harness/engine/executions/plan",
+        "//870-orchestration/src/main/java/io/harness/engine/utils",
+        "//876-orchestration-beans/src/main/java/io/harness/plan",
+        "//953-yaml-commons/src/main/java/io/harness/pms/serializer/recaster",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "//clients/notification/src/main/java/io/harness/notification/channeldetails",
+        "//clients/notification/src/main/java/io/harness/notification/notificationclient",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+    ],
+)

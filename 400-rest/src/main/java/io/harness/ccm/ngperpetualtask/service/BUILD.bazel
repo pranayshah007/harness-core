@@ -1,0 +1,21 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "service",
+    srcs = [
+        "K8sWatchTaskService.java",
+        "K8sWatchTaskServiceImpl.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//940-secret-manager-client/src/main/java/io/harness/secretmanagerclient/services/api",
+        "//950-delegate-tasks-beans/src/main/java/io/harness/delegate/beans/ccm",
+        "//950-delegate-tasks-beans/src/main/java/io/harness/delegate/beans/executioncapability",
+        "//950-delegate-tasks-beans/src/main/java/io/harness/delegate/capability",
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector/cek8s",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_http_client_google_http_client",
+        "@maven//:com_google_protobuf_protobuf_java_util",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

@@ -1,0 +1,21 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "azureartifacts",
+    srcs = [
+        "AzureArtifactsConfig.java",
+        "AzureArtifactsPATConfig.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//957-cg-beans/src/main/java/software/wings/annotation",
+        "//957-cg-beans/src/main/java/software/wings/audit",
+        "//980-commons/src/main/java/software/wings/jersey",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:com_github_reinert_jjschema",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_hibernate_hibernate_validator",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

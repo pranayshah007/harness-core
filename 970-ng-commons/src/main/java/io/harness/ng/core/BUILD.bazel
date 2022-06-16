@@ -1,0 +1,34 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "core",
+    srcs = [
+        "AccountScope.java",
+        "BaseNGAccess.java",
+        "CorrelationContext.java",
+        "CorrelationFilter.java",
+        "EntityDetail.java",
+        "NGAccess.java",
+        "NGAccountAccess.java",
+        "NGOrgAccess.java",
+        "NGProjectAccess.java",
+        "OrgProjectIdentifier.java",
+        "OrgScope.java",
+        "ProjectScope.java",
+        "Resource.java",
+        "ResourceConstants.java",
+        "ResourceScope.java",
+        "Status.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//970-ng-commons/src/main/java/io/harness/ng/core/deserializer",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_hibernate_hibernate_validator",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_springframework_data_spring_data_commons",
+    ],
+)

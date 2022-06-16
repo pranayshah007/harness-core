@@ -1,0 +1,25 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "impl",
+    srcs = ["BudgetAlertsServiceImplTest.java"],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//280-batch-processing/src/main/java/io/harness/batch/processing/budgets/service/impl",
+        "//280-batch-processing/src/main/java/io/harness/batch/processing/config",
+        "//280-batch-processing/src/main/java/io/harness/batch/processing/mail",
+        "//280-batch-processing/src/main/java/io/harness/batch/processing/shard",
+        "//280-batch-processing/src/main/java/io/harness/batch/processing/slackNotification",
+        "//490-ce-commons/src/main/java/io/harness/ccm/budget",
+        "//490-ce-commons/src/main/java/io/harness/ccm/budget/dao",
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/entities/billing",
+        "//970-rbac-core/src/main/java/software/wings/beans/security",
+        "@maven//:junit_junit",
+        "@maven//:org_mockito_mockito_core",
+    ],
+)

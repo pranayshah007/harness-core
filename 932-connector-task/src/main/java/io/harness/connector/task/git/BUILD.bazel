@@ -1,0 +1,36 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "git",
+    srcs = [
+        "GitCommandTaskHandler.java",
+        "GitDecryptionHelper.java",
+        "GitValidationHandler.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//932-connector-task/src/main/java/io/harness/connector/service/git",
+        "//932-connector-task/src/main/java/io/harness/connector/service/scm",
+        "//932-connector-task/src/main/java/io/harness/connector/task",
+        "//932-connector-task/src/main/java/io/harness/connector/task/shell",
+        "//952-scm-java-client/src/main/java/io/harness/impl",
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector",
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector/scm",
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector/scm/adapter",
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector/scm/azurerepo",
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector/scm/genericgitconnector",
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector/scm/github",
+        "//960-api-services/src/main/java/io/harness/cistatus/service",
+        "//960-api-services/src/main/java/io/harness/git",
+        "//960-api-services/src/main/java/io/harness/security/encryption",
+        "//960-api-services/src/main/java/io/harness/shell",
+        "//970-ng-commons/src/main/java/io/harness/errorhandling",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/io/harness/eraro",
+        "//980-commons/src/main/java/io/harness/exception/exceptionmanager",
+        "//980-commons/src/main/java/io/harness/exception/runtime",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

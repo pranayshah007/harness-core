@@ -1,0 +1,23 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "governance",
+    srcs = [
+        "ExpandedValue.java",
+        "ExpansionResponse.java",
+        "JsonExpansionHandler.java",
+        "JsonExpansionHandlerInfo.java",
+        "JsonExpansionService.java",
+        "NoOpExpansionHandler.java",
+        "StringExpandedValue.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/registries",
+        "//980-commons/src/main/java/io/harness/exception/exceptionmanager",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@maven//:io_grpc_grpc_stub",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

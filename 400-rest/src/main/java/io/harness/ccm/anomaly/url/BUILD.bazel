@@ -1,0 +1,19 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "url",
+    srcs = [
+        "HarnessUrl.java",
+        "UrlGroupBys.java",
+        "UrlParams.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/io/harness/ccm/anomaly/entities",
+        "//400-rest/src/main/java/io/harness/ccm/anomaly/utility",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_apache_httpcomponents_httpclient",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

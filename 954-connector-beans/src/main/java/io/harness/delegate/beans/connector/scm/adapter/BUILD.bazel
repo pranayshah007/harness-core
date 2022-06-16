@@ -1,0 +1,24 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "adapter",
+    srcs = [
+        "AzureRepoToGitMapper.java",
+        "BitbucketToGitMapper.java",
+        "GitConfigCreater.java",
+        "GithubToGitMapper.java",
+        "GitlabToGitMapper.java",
+        "ScmConnectorMapper.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector/scm",
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector/scm/azurerepo",
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector/scm/bitbucket",
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector/scm/genericgitconnector",
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector/scm/github",
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector/scm/gitlab",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

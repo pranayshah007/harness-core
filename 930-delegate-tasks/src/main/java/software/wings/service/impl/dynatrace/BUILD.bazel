@@ -1,0 +1,31 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "dynatrace",
+    srcs = [
+        "DynaTraceApplication.java",
+        "DynaTraceDataCollectionInfo.java",
+        "DynaTraceDelegateServiceImpl.java",
+        "DynaTraceMetricDataRequest.java",
+        "DynaTraceMetricDataResponse.java",
+        "DynaTraceSetupTestNodeData.java",
+        "DynaTraceTimeSeries.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//930-delegate-tasks/src/main/java/software/wings/delegatetasks",
+        "//930-delegate-tasks/src/main/java/software/wings/delegatetasks/cv",
+        "//930-delegate-tasks/src/main/java/software/wings/delegatetasks/utils",
+        "//930-delegate-tasks/src/main/java/software/wings/helpers/ext/dynatrace",
+        "//930-delegate-tasks/src/main/java/software/wings/service/impl/analysis",
+        "//930-delegate-tasks/src/main/java/software/wings/service/impl/newrelic",
+        "//930-delegate-tasks/src/main/java/software/wings/service/intfc/dynatrace",
+        "//957-cg-beans/src/main/java/software/wings/metrics",
+        "//960-api-services/src/main/java/io/harness/security/encryption",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:com_google_guava_guava",
+        "@maven//:com_squareup_retrofit2_converter_jackson",
+        "@maven//:com_squareup_retrofit2_retrofit",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

@@ -1,0 +1,42 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "integration",
+    srcs = [
+        "DataDogIntegrationTest.java",
+        "ExperimentalLogAnalysisResourceIntegrationTest.java",
+        "LogMLIntegrationTest.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//270-verification/src/main/java/io/harness/jobs",
+        "//270-verification/src/main/java/io/harness/jobs/workflow/logs",
+        "//270-verification/src/main/java/io/harness/jobs/workflow/timeseries",
+        "//270-verification/src/main/java/io/harness/resources/intfc",
+        "//930-delegate-tasks/src/main/java/software/wings/delegatetasks",
+        "//930-delegate-tasks/src/main/java/software/wings/service/impl/analysis",
+        "//930-delegate-tasks/src/main/java/software/wings/service/impl/newrelic",
+        "//930-delegate-tasks/src/main/java/software/wings/service/impl/splunk",
+        "//930-delegate-tasks/src/main/java/software/wings/service/intfc/analysis",
+        "//930-delegate-tasks/src/main/java/software/wings/service/intfc/yaml",
+        "//957-cg-beans/src/main/java/software/wings/verification",
+        "//960-persistence/src/main/java/io/harness/persistence",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/io/harness/rest",
+        "@maven//:com_google_code_gson_gson",
+        "@maven//:com_google_guava_guava",
+        "@maven//:commons_codec_commons_codec",
+        "@maven//:junit_junit",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_apache_httpcomponents_httpcore",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_quartz_scheduler_quartz",
+    ],
+)

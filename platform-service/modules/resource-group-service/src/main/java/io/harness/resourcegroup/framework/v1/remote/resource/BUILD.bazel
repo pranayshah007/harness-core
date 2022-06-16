@@ -1,0 +1,26 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "resource",
+    srcs = [
+        "HarnessResourceGroupResourceImpl.java",
+        "HarnessResourceTypeResourceImpl.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//942-enforcement-sdk/src/main/java/io/harness/enforcement/client/annotation",
+        "//943-enforcement-beans/src/main/java/io/harness/enforcement/constants",
+        "//970-ng-commons/src/main/java/io/harness/ng/beans",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "//clients/access-control/sdk/src/main/java/io/harness/accesscontrol/clients",
+        "//platform-service/modules/resource-group-service/contracts/src/main/java/io/harness/resourcegroup/model",
+        "//platform-service/modules/resource-group-service/contracts/src/main/java/io/harness/resourcegroup/v1/remote/dto",
+        "//platform-service/modules/resource-group-service/contracts/src/main/java/io/harness/resourcegroup/v1/remote/resource",
+        "//platform-service/modules/resource-group-service/src/main/java/io/harness/resourcegroup/framework/v1/service",
+        "//platform-service/modules/resource-group-service/src/main/java/io/harness/resourcegroup/framework/v2/remote/mapper",
+        "//platform-service/modules/resource-group-service/src/main/java/io/harness/resourcegroup/framework/v2/service",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

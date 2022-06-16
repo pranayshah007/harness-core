@@ -1,0 +1,35 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "connector",
+    srcs = [
+        "ConnectorConnectionDataFetcherTest.java",
+        "ConnectorDataFetcherTest.java",
+        "ConnectorsControllerTest.java",
+        "CreateConnectorDataFetcherTest.java",
+        "DeleteConnectorDataFetcherTest.java",
+        "UpdateConnectorDataFetcherTest.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//380-cg-graphql/src/main/java/software/wings/graphql/datafetcher/secrets",
+        "//380-cg-graphql/src/main/java/software/wings/graphql/schema/query",
+        "//380-cg-graphql/src/main/java/software/wings/graphql/schema/type",
+        "//380-cg-graphql/src/main/java/software/wings/graphql/schema/type/aggregation",
+        "//380-cg-graphql/src/main/java/software/wings/graphql/schema/type/secrets",
+        "//380-cg-graphql/src/test/java/software/wings/graphql/datafetcher/connector/utils",
+        "//920-delegate-agent-beans/src/main/java/software/wings/helpers/ext/url",
+        "//930-delegate-tasks/src/main/java/software/wings/beans/config",
+        "//930-delegate-tasks/src/main/java/software/wings/beans/settings/helm",
+        "//970-rbac-core/src/main/java/software/wings/security/annotations",
+        "@maven//:com_graphql_java_graphql_java",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+    ],
+)

@@ -1,0 +1,20 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "security",
+    srcs = ["CommandLibraryServerAuthenticationFilterTest.java"],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//210-command-library-server/src/main/java/io/harness/commandlibrary/server/app",
+        "//210-command-library-server/src/main/java/io/harness/commandlibrary/server/beans",
+        "//210-command-library-server/src/main/java/io/harness/commandlibrary/server/security",
+        "@maven//:junit_junit",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_mockito_mockito_core",
+    ],
+)

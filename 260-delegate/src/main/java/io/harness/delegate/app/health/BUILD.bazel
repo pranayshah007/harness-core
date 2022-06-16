@@ -1,0 +1,12 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "health",
+    srcs = ["DelegateHealthMonitor.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//960-api-services/src/main/java/io/harness/delegate/configuration",
+        "//980-commons/src/main/java/io/harness/health",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

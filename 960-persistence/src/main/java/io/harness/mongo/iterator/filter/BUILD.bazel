@@ -1,0 +1,15 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "filter",
+    srcs = [
+        "FilterExpander.java",
+        "MorphiaFilterExpander.java",
+        "SpringFilterExpander.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "@maven//:org_mongodb_morphia_morphia",
+        "@maven//:org_springframework_data_spring_data_mongodb",
+    ],
+)

@@ -1,0 +1,29 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "customdeployment",
+    srcs = ["CustomDeploymentFunctionalTest.java"],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//200-functional-test/src/main/java/io/harness/functional",
+        "//230-model-test/src/main/java/io/harness/testframework/restutils",
+        "//870-cg-orchestration/src/main/java/software/wings/infra",
+        "//930-delegate-tasks/src/main/java/software/wings/beans/yaml",
+        "//957-cg-beans/src/main/java/software/wings/service/impl/workflow",
+        "//960-api-services/src/main/java/io/harness/shell",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/software/wings/exception",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:commons_io_commons_io",
+        "@maven//:junit_junit",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

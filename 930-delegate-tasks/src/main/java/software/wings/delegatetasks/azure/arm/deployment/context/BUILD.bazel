@@ -1,0 +1,17 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "context",
+    srcs = [
+        "DeploymentBlueprintContext.java",
+        "DeploymentContext.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/beans/logstreaming",
+        "//960-api-services/src/main/java/io/harness/azure/model/blueprint",
+        "//960-api-services/src/main/java/io/harness/azure/model/blueprint/assignment",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

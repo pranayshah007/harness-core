@@ -1,0 +1,15 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "swagger",
+    srcs = ["SwaggerBundleConfigurationFactory.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:com_smoketurner_dropwizard_swagger",
+        "@maven//:io_swagger_swagger_jaxrs",
+        "@maven//:io_swagger_swagger_models",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_reflections_reflections",
+    ],
+)

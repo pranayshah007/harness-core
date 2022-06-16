@@ -1,0 +1,25 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "utils",
+    srcs = ["ArtifactStepHelper.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/artifact/mappers",
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/artifact/steps",
+        "//127-cd-nextgen-entities/src/main/java/io/harness/cdng/artifact/bean",
+        "//127-cd-nextgen-entities/src/main/java/io/harness/cdng/artifact/bean/yaml",
+        "//440-connector-nextgen/src/main/java/io/harness/connector/services",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/artifacts",
+        "//940-secret-manager-client/src/main/java/io/harness/secretmanagerclient/services/api",
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector/artifactoryconnector",
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector/awsconnector",
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector/azureconnector",
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector/docker",
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector/gcpconnector",
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector/nexusconnector",
+        "//960-api-services/src/main/java/io/harness/security/encryption",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+    ],
+)

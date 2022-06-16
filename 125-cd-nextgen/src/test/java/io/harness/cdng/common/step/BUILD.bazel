@@ -1,0 +1,24 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "step",
+    srcs = ["StepHelperTest.java"],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//878-ng-common-utilities/src/main/java/io/harness/steps/environment",
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/data",
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/plan/creation/yaml",
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/resolver/outputs",
+        "//884-pms-commons/src/main/java/io/harness/pms/data",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:joda_time_joda_time",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+    ],
+)

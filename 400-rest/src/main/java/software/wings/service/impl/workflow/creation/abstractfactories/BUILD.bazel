@@ -1,0 +1,17 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "abstractfactories",
+    srcs = [
+        "AbstractWorkflowFactory.java",
+        "GeneralWorkflowFactory.java",
+        "K8sV2WorkflowFactory.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/software/wings/service/impl/workflow/creation",
+        "//400-rest/src/main/java/software/wings/service/intfc/workflow/creation",
+        "//980-commons/src/main/java/io/harness/govern",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+    ],
+)

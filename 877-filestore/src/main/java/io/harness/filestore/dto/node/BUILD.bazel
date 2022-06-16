@@ -1,0 +1,19 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "node",
+    srcs = [
+        "FileNodeDTO.java",
+        "FileStoreNodeDTO.java",
+        "FolderNodeDTO.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//960-ng-core-beans/src/main/java/io/harness/ng/core/filestore",
+        "//970-ng-commons/src/main/java/io/harness/ng/core/common/beans",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:io_swagger_core_v3_swagger_annotations",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

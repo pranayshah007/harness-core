@@ -1,0 +1,8 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "dto",
+    srcs = ["HarnessTags.java"],
+    visibility = ["//:__subpackages__"],
+    deps = ["@maven//:org_projectlombok_lombok"],
+)

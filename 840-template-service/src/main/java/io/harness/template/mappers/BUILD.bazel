@@ -1,0 +1,24 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "mappers",
+    srcs = [
+        "NGTemplateDtoMapper.java",
+        "TemplateFilterPropertiesMapper.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//840-template-service/src/main/java/io/harness/template/beans",
+        "//840-template-service/src/main/java/io/harness/template/beans/yaml",
+        "//840-template-service/src/main/java/io/harness/template/entity",
+        "//955-filters-sdk/src/main/java/io/harness/filter/dto",
+        "//955-filters-sdk/src/main/java/io/harness/filter/entity",
+        "//955-filters-sdk/src/main/java/io/harness/filter/mapper",
+        "//960-ng-core-beans/src/main/java/io/harness/ng/core/template",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/io/harness/jackson",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_modelmapper_modelmapper",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

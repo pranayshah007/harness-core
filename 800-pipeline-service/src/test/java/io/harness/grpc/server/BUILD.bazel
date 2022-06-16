@@ -1,0 +1,27 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "server",
+    srcs = ["PipelineServiceGrpcModuleTest.java"],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//800-pipeline-service/src/main/java/io/harness/grpc/server",
+        "//800-pipeline-service/src/main/java/io/harness/pms/plan/execution/data/service/expressions",
+        "//800-pipeline-service/src/main/java/io/harness/pms/plan/execution/data/service/outcome",
+        "//800-pipeline-service/src/main/java/io/harness/pms/plan/execution/data/service/outputs",
+        "//800-pipeline-service/src/main/java/io/harness/pms/sdk/service/execution",
+        "//800-pipeline-service/src/main/java/io/harness/pms/template",
+        "//870-orchestration/src/main/java/io/harness/engine/interrupts",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:io_grpc_grpc_services",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+    ],
+)

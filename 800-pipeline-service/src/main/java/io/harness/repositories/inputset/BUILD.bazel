@@ -1,0 +1,29 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "inputset",
+    srcs = [
+        "PMSInputSetRepository.java",
+        "PMSInputSetRepositoryCustom.java",
+        "PMSInputSetRepositoryCustomImpl.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//800-pipeline-service/src/main/java/io/harness/pms/inputset/gitsync",
+        "//800-pipeline-service/src/main/java/io/harness/pms/ngpipeline/inputset/beans/entity",
+        "//800-pipeline-service/src/main/java/io/harness/pms/ngpipeline/inputset/mappers",
+        "//878-ng-common-utilities/src/main/java/io/harness/gitaware/dto",
+        "//878-ng-common-utilities/src/main/java/io/harness/gitaware/helper",
+        "//900-git-sync-sdk/src/main/java/io/harness/gitsync/helpers",
+        "//900-git-sync-sdk/src/main/java/io/harness/gitsync/persistance",
+        "//955-outbox-sdk/src/main/java/io/harness/outbox",
+        "//955-outbox-sdk/src/main/java/io/harness/outbox/api",
+        "//960-persistence/src/main/java/io/harness/springdata",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:net_jodah_failsafe",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_springframework_data_spring_data_commons",
+        "@maven//:org_springframework_data_spring_data_mongodb",
+        "@maven//:org_springframework_spring_tx",
+    ],
+)

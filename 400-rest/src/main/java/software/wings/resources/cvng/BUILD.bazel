@@ -1,0 +1,24 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "cvng",
+    srcs = [
+        "CDChangeSourceResource.java",
+        "CVDataCollectionTaskResource.java",
+        "KubernetesResource.java",
+        "SplunkResource.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/io/harness/cvng/perpetualtask",
+        "//948-cv-nextgen-beans/src/main/java/io/harness/cvng/core/services",
+        "//980-commons/src/main/java/io/harness/annotations",
+        "//980-commons/src/main/java/io/harness/rest",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_squareup_retrofit2_retrofit",
+        "@maven//:io_dropwizard_metrics_metrics_annotation",
+        "@maven//:io_kubernetes_client_java_api",
+        "@maven//:io_swagger_swagger_annotations",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

@@ -1,0 +1,16 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "api",
+    srcs = [
+        "OutboxDao.java",
+        "OutboxEventHandler.java",
+        "OutboxService.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//955-outbox-sdk/src/main/java/io/harness/outbox",
+        "//955-outbox-sdk/src/main/java/io/harness/outbox/filter",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+    ],
+)

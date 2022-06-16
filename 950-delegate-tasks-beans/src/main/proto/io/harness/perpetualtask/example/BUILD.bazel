@@ -1,0 +1,35 @@
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
+load("@rules_java//java:defs.bzl", "java_library", "java_proto_library")
+
+proto_library(
+    name = "io_harness_perpetualtask_example_proto",
+    srcs = ["sample_task.proto"],
+    visibility = ["//visibility:public"],
+)
+
+go_proto_library(
+    name = "io_harness_perpetualtask_example_go_proto",
+    importpath = "github.com/harness/harness-core/950-delegate-tasks-beans/src/main/proto/io/harness/perpetualtask/example",
+    proto = ":io_harness_perpetualtask_example_proto",
+    visibility = ["//visibility:public"],
+)
+
+go_library(
+    name = "example",
+    embed = [":io_harness_perpetualtask_example_go_proto"],
+    importpath = "github.com/harness/harness-core/950-delegate-tasks-beans/src/main/proto/io/harness/perpetualtask/example",
+    visibility = ["//visibility:public"],
+)
+
+java_proto_library(
+    name = "io_harness_perpetualtask_example_java_proto",
+    deps = [":io_harness_perpetualtask_example_proto"],
+)
+
+java_library(
+    name = "io_harness_perpetualtask_example_java_library",
+    visibility = ["//:__subpackages__"],
+    exports = [":io_harness_perpetualtask_example_java_proto"],
+)

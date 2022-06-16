@@ -1,0 +1,18 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "active",
+    srcs = [
+        "ActiveTimeoutParameters.java",
+        "ActiveTimeoutTracker.java",
+        "ActiveTimeoutTrackerFactory.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//876-orchestration-beans/src/main/java/io/harness/timeout",
+        "//876-orchestration-beans/src/main/java/io/harness/timeout/trackers/events",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_springframework_data_spring_data_commons",
+    ],
+)

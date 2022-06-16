@@ -1,0 +1,22 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "approval",
+    srcs = [
+        "ApprovalDetailsDataFetcher.java",
+        "ApproveOrRejectApprovalsDataFetcher.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//380-cg-graphql/src/main/java/software/wings/graphql/schema/mutation/approval/input",
+        "//380-cg-graphql/src/main/java/software/wings/graphql/schema/mutation/approval/payload",
+        "//380-cg-graphql/src/main/java/software/wings/graphql/schema/query",
+        "//380-cg-graphql/src/main/java/software/wings/graphql/schema/type/approval",
+        "//970-rbac-core/src/main/java/software/wings/beans/security",
+        "//970-rbac-core/src/main/java/software/wings/security/annotations",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_graphql_java_graphql_java",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

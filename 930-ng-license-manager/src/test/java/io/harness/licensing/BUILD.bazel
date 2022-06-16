@@ -1,0 +1,26 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "licensing",
+    testonly = True,
+    srcs = [
+        "LicenseTestBase.java",
+        "LicenseTestConstant.java",
+        "LicenseTestRule.java",
+    ],
+    deps = [
+        "//930-ng-license-manager/src/main/java/io/harness/licensing/entities/modules",
+        "//945-account-mgmt/src/main/java/io/harness/account",
+        "//950-telemetry/src/main/java/io/harness/telemetry/segment",
+        "//960-ng-license-beans/src/main/java/io/harness/licensing/beans/modules",
+        "//960-persistence/src/main/java/io/harness/springdata",
+        "//970-ng-commons/src/main/java/io/harness/remote/client",
+        "//980-commons/src/main/java/io/harness/govern",
+        "//980-commons/src/main/java/io/harness/threading",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:junit_junit",
+        "@maven//:org_mockito_mockito_core",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

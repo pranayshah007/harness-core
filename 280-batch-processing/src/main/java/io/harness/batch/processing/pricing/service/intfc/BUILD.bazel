@@ -1,0 +1,15 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "intfc",
+    srcs = [
+        "AwsCustomBillingService.java",
+        "AzureCustomBillingService.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//280-batch-processing/src/main/java/io/harness/batch/processing/pricing/vmpricing",
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/entities/batch",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+    ],
+)

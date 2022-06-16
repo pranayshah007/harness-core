@@ -1,0 +1,14 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "artifact",
+    srcs = [
+        "ServiceArtifactElement.java",
+        "ServiceArtifactVariableElement.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

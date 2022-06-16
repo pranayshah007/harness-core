@@ -1,0 +1,31 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "governance",
+    srcs = [
+        "AllAppFilter.java",
+        "AllEnvFilter.java",
+        "AllNonProdEnvFilter.java",
+        "AllProdEnvFilter.java",
+        "AllUserGroupFilter.java",
+        "ApplicationFilter.java",
+        "ApplicationFilterYaml.java",
+        "BlackoutWindowFilter.java",
+        "BlackoutWindowFilterType.java",
+        "CustomAppFilter.java",
+        "CustomEnvFilter.java",
+        "CustomUserGroupFilter.java",
+        "DeploymentFreezeInfo.java",
+        "EnvironmentFilter.java",
+        "EnvironmentFilterYaml.java",
+        "ServiceFilter.java",
+        "UserGroupFilter.java",
+        "UserGroupFilterYaml.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

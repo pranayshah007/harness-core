@@ -1,0 +1,13 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "concurent",
+    testonly = True,
+    srcs = ["HTimeLimiterMocker.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//:lombok",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_mockito_mockito_core",
+    ],
+)

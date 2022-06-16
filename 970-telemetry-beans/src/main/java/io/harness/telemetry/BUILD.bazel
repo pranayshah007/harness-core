@@ -1,0 +1,19 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "telemetry",
+    srcs = [
+        "Category.java",
+        "Destination.java",
+        "SegmentEventType.java",
+        "TelemetryConfiguration.java",
+        "TelemetryOption.java",
+        "TelemetryReporter.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

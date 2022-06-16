@@ -1,0 +1,30 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "dto",
+    srcs = [
+        "BuildDetails.java",
+        "LastTriggerExecutionDetails.java",
+        "NGTriggerDetailsResponseDTO.java",
+        "NGTriggerResponseDTO.java",
+        "PollingConfig.java",
+        "TriggerDetails.java",
+        "TriggerMappingRequestData.java",
+        "WebhookDetails.java",
+        "WebhookEventHeaderData.java",
+        "WebhookEventProcessingDetails.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//810-ng-triggers/src/main/java/io/harness/ngtriggers/beans/config",
+        "//810-ng-triggers/src/main/java/io/harness/ngtriggers/beans/entity",
+        "//810-ng-triggers/src/main/java/io/harness/ngtriggers/beans/entity/metadata",
+        "//810-ng-triggers/src/main/java/io/harness/ngtriggers/beans/entity/metadata/status",
+        "//810-ng-triggers/src/main/java/io/harness/ngtriggers/beans/source",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:io_swagger_core_v3_swagger_annotations",
+        "@maven//:io_swagger_swagger_annotations",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

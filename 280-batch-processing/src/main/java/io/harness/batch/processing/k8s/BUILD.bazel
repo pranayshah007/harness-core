@@ -1,0 +1,18 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "k8s",
+    srcs = [
+        "EstimatedCostDiff.java",
+        "WatchEventCostEstimator.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//260-delegate/src/main/java/io/harness/perpetualtask/k8s/watch",
+        "//280-batch-processing/src/main/java/io/harness/batch/processing/ccm",
+        "//280-batch-processing/src/main/java/io/harness/batch/processing/k8s/rcd",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_springframework_spring_beans",
+        "@maven//:org_springframework_spring_context",
+    ],
+)

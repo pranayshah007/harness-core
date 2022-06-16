@@ -1,0 +1,24 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "apprenaming",
+    srcs = [
+        "AppNamingStrategy.java",
+        "AppRenamingData.java",
+        "AppRenamingOperator.java",
+        "AppRenamingRollbackOperator.java",
+        "AppType.java",
+        "NonVersionToNonVersionOperator.java",
+        "NonVersionToVersionOperator.java",
+        "VersionToNonVersionOperator.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/cf",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/cf/retry",
+        "//960-api-services/src/main/java/io/harness/pcf",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "@maven//:org_cloudfoundry_cloudfoundry_operations",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

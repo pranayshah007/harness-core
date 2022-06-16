@@ -1,0 +1,14 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "publisher",
+    srcs = ["RedisEventMetricPublisher.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//953-events-api/src/main/java/io/harness/eventsframework/impl/redis/monitoring/context",
+        "//953-events-api/src/main/java/io/harness/eventsframework/impl/redis/monitoring/dto",
+        "//970-ng-commons/src/main/java/io/harness/metrics/service/api",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

@@ -1,0 +1,28 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "service",
+    srcs = [
+        "GcrApiService.java",
+        "GcrApiServiceImpl.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//960-api-services/src/main/java/io/harness/artifacts/beans",
+        "//960-api-services/src/main/java/io/harness/artifacts/comparator",
+        "//960-api-services/src/main/java/io/harness/artifacts/gcr",
+        "//960-api-services/src/main/java/io/harness/artifacts/gcr/beans",
+        "//980-commons/src/main/java/io/harness/artifact",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/io/harness/eraro",
+        "//980-commons/src/main/java/io/harness/exception/exceptionmanager/exceptionhandler",
+        "//980-commons/src/main/java/io/harness/exception/runtime",
+        "//980-commons/src/main/java/io/harness/govern",
+        "//980-commons/src/main/java/io/harness/manage",
+        "//980-commons/src/main/java/io/harness/network",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_squareup_retrofit2_converter_jackson",
+        "@maven//:com_squareup_retrofit2_retrofit",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

@@ -1,0 +1,14 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "handler",
+    testonly = True,
+    srcs = [
+        "DummyParallelYamlConversionHandler.java",
+        "DummyReplaceYamlConversionHandler.java",
+    ],
+    deps = [
+        "//840-template-service/src/main/java/io/harness/template/beans",
+        "//960-ng-core-beans/src/main/java/io/harness/ng/core/template",
+    ],
+)

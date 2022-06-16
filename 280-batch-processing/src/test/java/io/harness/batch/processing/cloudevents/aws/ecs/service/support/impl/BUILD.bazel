@@ -1,0 +1,29 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "impl",
+    srcs = [
+        "AwsCloudWatchHelperServiceImplTest.java",
+        "AwsEC2HelperServiceImplTest.java",
+        "AwsECSHelperServiceImplTest.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//280-batch-processing/src/main/java/io/harness/batch/processing/cloudevents/aws/ecs/service/support/impl",
+        "//280-batch-processing/src/main/java/io/harness/batch/processing/cloudevents/aws/ecs/service/tasklet/support/request",
+        "//280-batch-processing/src/main/java/io/harness/batch/processing/cloudevents/aws/ecs/service/tasklet/support/response",
+        "@maven//:com_amazonaws_aws_java_sdk_cloudwatch",
+        "@maven//:com_amazonaws_aws_java_sdk_core",
+        "@maven//:com_amazonaws_aws_java_sdk_ec2",
+        "@maven//:com_amazonaws_aws_java_sdk_ecs",
+        "@maven//:com_google_guava_guava",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+    ],
+)

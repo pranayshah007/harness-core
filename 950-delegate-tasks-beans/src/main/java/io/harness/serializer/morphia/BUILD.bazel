@@ -1,0 +1,20 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "morphia",
+    srcs = ["DelegateTasksBeansMorphiaRegistrar.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//950-delegate-tasks-beans/src/main/java/io/harness/delegate/beans/executioncapability",
+        "//950-delegate-tasks-beans/src/main/java/io/harness/delegate/command",
+        "//950-delegate-tasks-beans/src/main/java/io/harness/delegate/task/artifacts/request",
+        "//950-delegate-tasks-beans/src/main/java/io/harness/delegate/task/artifacts/response",
+        "//950-delegate-tasks-beans/src/main/java/io/harness/delegate/task/gcp/request",
+        "//950-delegate-tasks-beans/src/main/java/io/harness/delegate/task/gcp/response",
+        "//950-delegate-tasks-beans/src/main/java/io/harness/delegate/task/spotinst/request",
+        "//950-delegate-tasks-beans/src/main/java/io/harness/ng/core/models",
+        "//950-delegate-tasks-beans/src/main/java/software/wings/beans/ce",
+        "//950-delegate-tasks-beans/src/main/java/software/wings/helpers/ext/cloudformation/response",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+    ],
+)

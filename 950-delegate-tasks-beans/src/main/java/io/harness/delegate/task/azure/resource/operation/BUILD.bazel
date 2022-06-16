@@ -1,0 +1,19 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "operation",
+    srcs = [
+        "AzureOperationName.java",
+        "AzureResourceOperation.java",
+        "AzureResourceOperationResponse.java",
+        "AzureResourceProvider.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//950-delegate-tasks-beans/src/main/java/io/harness/delegate/task/azure/resource/operation/acr",
+        "//950-delegate-tasks-beans/src/main/java/io/harness/delegate/task/azure/resource/operation/k8s",
+        "//960-api-services/src/main/java/io/harness/azure/client",
+        "//970-api-services-beans/src/main/java/io/harness/azure/model",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+    ],
+)

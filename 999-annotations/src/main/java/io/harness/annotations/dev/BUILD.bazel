@@ -1,0 +1,15 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "dev",
+    srcs = [
+        "BreakDependenciesOn.java",
+        "BreakDependencyOn.java",
+        "HarnessModule.java",
+        "HarnessTeam.java",
+        "OwnedBy.java",
+        "TargetModule.java",
+        "ToBeDeleted.java",
+    ],
+    visibility = ["//visibility:public"],
+)

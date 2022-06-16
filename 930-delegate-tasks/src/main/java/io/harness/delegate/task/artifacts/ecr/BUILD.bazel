@@ -1,0 +1,31 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "ecr",
+    srcs = [
+        "EcrArtifactTaskHandler.java",
+        "EcrArtifactTaskHelper.java",
+        "EcrArtifactTaskNG.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/beans/logstreaming",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/artifacts",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/artifacts/mappers",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/aws",
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector/awsconnector",
+        "//960-api-services/src/main/java/io/harness/artifacts/beans",
+        "//960-api-services/src/main/java/io/harness/artifacts/comparator",
+        "//960-api-services/src/main/java/io/harness/aws/beans",
+        "//960-api-services/src/main/java/io/harness/security/encryption",
+        "//960-api-services/src/main/java/software/wings/service/impl/delegate",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/io/harness/eraro",
+        "//980-commons/src/main/java/io/harness/exception/exceptionmanager/exceptionhandler",
+        "//980-commons/src/main/java/io/harness/manage",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_amazonaws_aws_java_sdk_core",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

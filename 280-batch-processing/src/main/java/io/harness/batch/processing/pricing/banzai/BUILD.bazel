@@ -1,0 +1,11 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "banzai",
+    srcs = ["BanzaiRecommenderClient.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/beans/recommendation/models",
+        "@maven//:com_squareup_retrofit2_retrofit",
+    ],
+)

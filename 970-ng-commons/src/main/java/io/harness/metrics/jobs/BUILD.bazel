@@ -1,0 +1,12 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "jobs",
+    srcs = ["RecordMetricsJob.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//970-ng-commons/src/main/java/io/harness/metrics/service/api",
+        "//980-commons/src/main/java/io/harness/reflection",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

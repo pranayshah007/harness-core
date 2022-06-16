@@ -1,0 +1,14 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "usagemetrics",
+    testonly = True,
+    srcs = ["UsageMetricsTestUtils.java"],
+    deps = [
+        "//400-rest/src/main/java/io/harness/event/timeseries/processor",
+        "//400-rest/src/main/java/software/wings/service/impl/event/timeseries",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

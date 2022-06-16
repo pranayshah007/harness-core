@@ -1,0 +1,21 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "stoserviceclient",
+    srcs = [
+        "STOServiceClient.java",
+        "STOServiceClientFactory.java",
+        "STOServiceClientModule.java",
+        "STOServiceUtils.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//325-sto-beans/src/main/java/io/harness/sto/beans/entities",
+        "//980-commons/src/main/java/io/harness/network",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_code_gson_gson",
+        "@maven//:com_squareup_retrofit2_converter_gson",
+        "@maven//:com_squareup_retrofit2_retrofit",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

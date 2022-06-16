@@ -1,0 +1,26 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "steps",
+    srcs = [
+        "CIAbstractStepNode.java",
+        "CIStepInfo.java",
+        "CIStepInfoType.java",
+        "CiStepParametersUtils.java",
+        "NonYamlInfo.java",
+        "StepMetadata.java",
+        "StepSpecTypeConstants.java",
+        "TypeInfo.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//330-ci-beans/src/main/java/io/harness/beans/steps/stepinfo",
+        "//878-ng-common-utilities/src/main/java/io/harness/advisers/rollback",
+        "//953-yaml-commons/src/main/java/io/harness/yaml/core/failurestrategy",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:io_swagger_swagger_annotations",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_springframework_data_spring_data_commons",
+    ],
+)

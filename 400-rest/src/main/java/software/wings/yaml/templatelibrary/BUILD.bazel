@@ -1,0 +1,24 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "templatelibrary",
+    srcs = [
+        "ArtifactSourceTemplateYaml.java",
+        "CommandTemplateYaml.java",
+        "CustomArtifactSourceTemplateYaml.java",
+        "CustomDeploymentTypeTemplateYaml.java",
+        "HttpTemplateYaml.java",
+        "PcfCommandTemplateYaml.java",
+        "ShellScriptTemplateYaml.java",
+        "TemplateLibraryYaml.java",
+        "TemplateYamlConfig.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/software/wings/beans/template/artifactsource",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

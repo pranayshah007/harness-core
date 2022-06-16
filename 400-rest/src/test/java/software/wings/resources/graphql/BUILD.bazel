@@ -1,0 +1,38 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "graphql",
+    srcs = [
+        "GraphQLRateLimiterTest.java",
+        "GraphQLResourceTest.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//400-rest/src/main/java/io/harness/limits/configuration",
+        "//400-rest/src/main/java/io/harness/limits/defaults/service",
+        "//400-rest/src/main/java/software/wings/features",
+        "//400-rest/src/main/java/software/wings/features/api",
+        "//400-rest/src/main/java/software/wings/graphql/datafetcher",
+        "//400-rest/src/main/java/software/wings/graphql/provider",
+        "//400-rest/src/main/java/software/wings/resources/graphql",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/io/harness/limits/impl/model",
+        "//980-commons/src/main/java/io/harness/limits/lib",
+        "//990-commons-test/src/main/java/io/harness/category/element",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_graphql_java_graphql_java",
+        "@maven//:com_graphql_java_java_dataloader",
+        "@maven//:es_moki_ratelimitj_ratelimitj_core",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_glassfish_hk2_hk2_api",
+        "@maven//:org_glassfish_jersey_media_jersey_media_multipart",
+        "@maven//:org_mockito_mockito_core",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

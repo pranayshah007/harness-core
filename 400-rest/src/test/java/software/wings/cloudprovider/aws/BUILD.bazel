@@ -1,0 +1,37 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "aws",
+    srcs = [
+        "AwsClusterServiceImplTest.java",
+        "AwsCodeDeployServiceTest.java",
+        "EcsContainerServiceImplTest.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//930-delegate-tasks/src/main/java/software/wings/cloudprovider",
+        "//930-delegate-tasks/src/main/java/software/wings/cloudprovider/aws",
+        "//970-api-services-beans/src/main/java/io/harness/container",
+        "//970-api-services-beans/src/main/java/io/harness/ecs",
+        "//980-commons/src/main/java/io/harness/eraro",
+        "//990-commons-test/src/main/java/io/harness/category/element",
+        "//990-commons-test/src/main/java/io/harness/concurent",
+        "//990-commons-test/src/main/java/io/harness/scm",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_amazonaws_aws_java_sdk_autoscaling",
+        "@maven//:com_amazonaws_aws_java_sdk_codedeploy",
+        "@maven//:com_amazonaws_aws_java_sdk_core",
+        "@maven//:com_amazonaws_aws_java_sdk_ec2",
+        "@maven//:com_amazonaws_aws_java_sdk_ecs",
+        "@maven//:com_google_guava_guava",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

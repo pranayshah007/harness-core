@@ -1,0 +1,19 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "helper",
+    srcs = ["EnvironmentPlanCreatorConfigMapperTest.java"],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//127-cd-nextgen-entities/src/main/java/io/harness/cdng/gitops/yaml",
+        "//127-cd-nextgen-entities/src/main/java/io/harness/ng/core/infrastructure/entity",
+        "//953-yaml-commons/src/main/java/io/harness/yaml/core/variables",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+    ],
+)

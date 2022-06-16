@@ -1,0 +1,22 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "service",
+    srcs = [
+        "GithubAppConfig.java",
+        "GithubRestClient.java",
+        "GithubService.java",
+        "GithubServiceImpl.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//980-commons/src/main/java/io/harness/network",
+        "@maven//:com_auth0_java_jwt",
+        "@maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@maven//:com_google_guava_guava",
+        "@maven//:com_squareup_retrofit2_converter_jackson",
+        "@maven//:com_squareup_retrofit2_retrofit",
+        "@maven//:commons_codec_commons_codec",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

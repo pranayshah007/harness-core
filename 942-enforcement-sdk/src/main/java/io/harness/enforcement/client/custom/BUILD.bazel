@@ -1,0 +1,8 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "custom",
+    srcs = ["CustomRestrictionInterface.java"],
+    visibility = ["//:__subpackages__"],
+    deps = ["//943-enforcement-beans/src/main/java/io/harness/enforcement/beans"],
+)

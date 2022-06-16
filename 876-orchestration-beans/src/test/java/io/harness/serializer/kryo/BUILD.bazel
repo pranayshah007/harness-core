@@ -1,0 +1,8 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "kryo",
+    testonly = True,
+    srcs = ["OrchestrationBeansTestKryoRegistrar.java"],
+    deps = ["@maven//:com_esotericsoftware_kryo"],
+)

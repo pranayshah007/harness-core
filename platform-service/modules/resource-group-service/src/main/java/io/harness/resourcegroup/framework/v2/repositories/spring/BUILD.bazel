@@ -1,0 +1,12 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "spring",
+    srcs = ["ResourceGroupV2Repository.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "//platform-service/modules/resource-group-service/src/main/java/io/harness/resourcegroup/framework/v2/repositories/custom",
+        "@maven//:org_springframework_data_spring_data_commons",
+    ],
+)

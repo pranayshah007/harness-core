@@ -1,0 +1,21 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "vm",
+    srcs = [
+        "CIVmCleanupTaskParams.java",
+        "CIVmExecuteStepTaskParams.java",
+        "CIVmInitializeTaskParams.java",
+        "VmServiceStatus.java",
+        "VmTaskExecutionResponse.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//950-delegate-tasks-beans/src/main/java/io/harness/delegate/beans/ci",
+        "//950-delegate-tasks-beans/src/main/java/io/harness/delegate/beans/ci/pod",
+        "//950-delegate-tasks-beans/src/main/java/io/harness/delegate/beans/ci/vm/steps",
+        "//950-delegate-tasks-beans/src/main/java/io/harness/delegate/beans/executioncapability",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

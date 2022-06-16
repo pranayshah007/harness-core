@@ -1,0 +1,33 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "harness",
+    srcs = [
+        "ConnectorConstants.java",
+        "EntitySubtype.java",
+        "EntityType.java",
+        "FileStoreConstants.java",
+        "Microservice.java",
+        "ModuleType.java",
+        "NGCommonEntityConstants.java",
+        "NGConstants.java",
+        "NGDateUtils.java",
+        "NGResourceFilterConstants.java",
+        "NgAutoLogContext.java",
+        "NgIteratorConfig.java",
+        "NgIteratorsConfig.java",
+        "OrganizationConstants.java",
+        "ProjectConstants.java",
+        "SchemaCacheKey.java",
+        "SecretConstants.java",
+        "SecretManagerDescriptionConstants.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

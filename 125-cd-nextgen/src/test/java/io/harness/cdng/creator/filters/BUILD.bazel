@@ -1,0 +1,31 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "filters",
+    srcs = [
+        "CDNGFilterCreationResponseMergerTest.java",
+        "DeploymentStageFilterJsonCreatorV2Test.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/creator/filters",
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/creator/plan/stage",
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/infra",
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/pipeline",
+        "//125-cd-nextgen/src/main/java/io/harness/pms/cdng/sample/cd/creator/filters",
+        "//127-cd-nextgen-entities/src/main/java/io/harness/ng/core/environment/services",
+        "//127-cd-nextgen-entities/src/main/java/io/harness/ng/core/service/entity",
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/filter/creation/beans",
+        "//884-pms-commons/src/main/java/io/harness/pms/pipeline/filter",
+        "//960-ng-core-beans/src/main/java/io/harness/ng/core/infrastructure",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+        "@maven//:pl_pragmatists_JUnitParams",
+    ],
+)

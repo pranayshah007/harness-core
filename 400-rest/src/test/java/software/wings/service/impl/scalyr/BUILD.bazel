@@ -1,0 +1,21 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "scalyr",
+    srcs = ["ScalyrServiceImplTest.java"],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//400-rest/src/main/java/software/wings/service/impl/scalyr",
+        "//400-rest/src/main/java/software/wings/service/intfc/scalyr",
+        "//930-delegate-tasks/src/main/java/software/wings/delegatetasks/cv/beans",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//990-commons-test/src/main/java/io/harness/category/element",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+    ],
+)

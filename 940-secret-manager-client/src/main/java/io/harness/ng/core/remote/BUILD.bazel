@@ -1,0 +1,16 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "remote",
+    srcs = [
+        "SecretValidationMetaData.java",
+        "SecretValidationResultDTO.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//940-secret-manager-client/src/main/java/io/harness/secretmanagerclient",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:io_swagger_core_v3_swagger_annotations",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

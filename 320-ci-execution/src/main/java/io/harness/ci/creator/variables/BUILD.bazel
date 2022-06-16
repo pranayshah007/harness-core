@@ -1,0 +1,35 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "variables",
+    srcs = [
+        "ArtifactoryUploadStepVariableCreator.java",
+        "BuildAndPushECRStepVariableCreator.java",
+        "BuildAndPushGCRStepVariableCreator.java",
+        "CIStageVariableCreator.java",
+        "CIStepVariableCreator.java",
+        "DockerStepVariableCreator.java",
+        "GCSUploadStepVariableCreator.java",
+        "PluginStepVariableCreator.java",
+        "RestoreCacheGCSStepVariableCreator.java",
+        "RestoreCacheS3StepVariableCreator.java",
+        "RunStepVariableCreator.java",
+        "RunTestStepVariableCreator.java",
+        "S3UploadStepVariableCreator.java",
+        "STOStageVariableCreator.java",
+        "STOStepVariableCreator.java",
+        "SaveCacheGCSStepVariableCreator.java",
+        "SaveCacheS3StepVariableCreator.java",
+        "SecurityStepVariableCreator.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//330-ci-beans/src/main/java/io/harness/beans/steps/nodes",
+        "//330-ci-beans/src/main/java/io/harness/beans/steps/outcome",
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/variables",
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/variables/beans",
+        "//953-yaml-commons/src/main/java/io/harness/yaml/core/variables",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+    ],
+)

@@ -1,0 +1,19 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "manifest",
+    srcs = [
+        "HelmChartManifestInfo.java",
+        "ManifestInfo.java",
+        "ManifestPolledResponse.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//125-cd-nextgen/src/main/java/io/harness/polling/bean",
+        "//127-cd-nextgen-entities/src/main/java/io/harness/cdng/manifest/yaml/storeConfig",
+        "//960-api-services/src/main/java/io/harness/k8s/model",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

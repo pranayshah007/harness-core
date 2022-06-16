@@ -1,0 +1,48 @@
+load("@rules_java//java:defs.bzl", "java_binary", "java_library")
+
+java_library(
+    name = "notification",
+    srcs = [
+        "MongoBackendConfiguration.java",
+        "NotificationChannelPersistenceConfig.java",
+        "NotificationClientApplication.java",
+        "NotificationClientApplicationConfiguration.java",
+        "NotificationClientBackendConfiguration.java",
+        "NotificationClientConfiguration.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//960-persistence/src/main/java/io/harness/mongo",
+        "//960-persistence/src/main/java/io/harness/queue",
+        "//960-persistence/src/main/java/io/harness/springdata",
+        "//970-ng-commons/src/main/java/io/harness/remote",
+        "//970-ng-commons/src/main/java/io/harness/remote/client",
+        "//970-ng-commons/src/main/java/io/serializer",
+        "//980-commons/src/main/java/io/harness/maintenance",
+        "//980-commons/src/main/java/io/harness/secret",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "//clients/notification/src/main/java/io/harness/notification/module",
+        "//clients/notification/src/main/java/io/harness/notification/notificationclient",
+        "//clients/notification/src/main/java/io/harness/notification/templates",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@maven//:com_google_guava_guava",
+        "@maven//:io_dropwizard_dropwizard_configuration",
+        "@maven//:io_dropwizard_dropwizard_core",
+        "@maven//:io_dropwizard_metrics_metrics_core",
+        "@maven//:org_eclipse_jetty_jetty_servlets",
+        "@maven//:org_glassfish_jersey_media_jersey_media_multipart",
+        "@maven//:org_hibernate_hibernate_validator",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_reflections_reflections",
+        "@maven//:org_springframework_data_spring_data_mongodb",
+        "@maven//:org_springframework_spring_context",
+    ],
+)
+
+java_binary(
+    name = "NotificationClientApplication",
+    main_class = "io.harness.notification.NotificationClientApplication",
+    visibility = ["//visibility:public"],
+    runtime_deps = [":notification"],
+)

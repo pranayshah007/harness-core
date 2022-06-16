@@ -1,0 +1,25 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "dashboards",
+    srcs = [
+        "DashboardHelper.java",
+        "DeploymentStatsSummary.java",
+        "EnvCount.java",
+        "LandingDashboardRequestCD.java",
+        "PipelineExecutionDashboardInfo.java",
+        "PipelinesExecutionDashboardInfo.java",
+        "ProjectDashBoardInfo.java",
+        "ProjectsDashboardInfo.java",
+        "ServiceDashboardInfo.java",
+        "ServicesCount.java",
+        "ServicesDashboardInfo.java",
+        "SortBy.java",
+        "TimeBasedDeploymentInfo.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

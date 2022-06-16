@@ -1,0 +1,17 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "interrupt",
+    srcs = [
+        "InterruptConfigReadConverter.java",
+        "InterruptConfigWriteConverter.java",
+        "InterruptEffectReadConverter.java",
+        "InterruptEffectWriteConverter.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//960-persistence/src/main/java/io/harness/serializer/spring",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_springframework_data_spring_data_commons",
+    ],
+)

@@ -1,0 +1,21 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "interfaces",
+    srcs = ["ModuleLicenseInterfaceImplTest.java"],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//930-ng-license-manager/src/main/java/io/harness/licensing/interfaces",
+        "//930-ng-license-manager/src/main/java/io/harness/licensing/interfaces/clients",
+        "//930-ng-license-manager/src/main/java/io/harness/licensing/interfaces/clients/local",
+        "//960-ng-license-beans/src/main/java/io/harness/licensing/beans/modules",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+    ],
+)

@@ -1,0 +1,23 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "creation",
+    srcs = [
+        "BuildWorkflowCreator.java",
+        "CustomWorkflowCreator.java",
+        "K8V2BlueGreenWorkflowCreator.java",
+        "K8V2CanaryWorkflowCreator.java",
+        "K8V2RollingWorkflowCreator.java",
+        "MultiPhaseWorkflowCreator.java",
+        "SinglePhaseWorkflowCreator.java",
+        "WorkflowCreator.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/software/wings/service/impl/workflow/creation/helpers",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

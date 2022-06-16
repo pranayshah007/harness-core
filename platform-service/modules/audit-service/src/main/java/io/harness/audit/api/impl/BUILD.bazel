@@ -1,0 +1,30 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "impl",
+    srcs = [
+        "AuditFilterPropertiesValidator.java",
+        "AuditPermissionValidator.java",
+        "AuditServiceImpl.java",
+        "AuditSettingsServiceImpl.java",
+        "AuditYamlServiceImpl.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//960-persistence/src/main/java/io/harness/springdata",
+        "//970-ng-commons/src/main/java/io/harness/ng/beans",
+        "//970-ng-commons/src/main/java/io/harness/ng/core/common/beans",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "//clients/access-control/sdk/src/main/java/io/harness/accesscontrol/clients",
+        "//platform-service/modules/audit-service/src/main/java/io/harness/audit/api",
+        "//platform-service/modules/audit-service/src/main/java/io/harness/audit/entities",
+        "//platform-service/modules/audit-service/src/main/java/io/harness/audit/mapper",
+        "//platform-service/modules/audit-service/src/main/java/io/harness/audit/repositories",
+        "@maven//:net_jodah_failsafe",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_springframework_data_spring_data_commons",
+        "@maven//:org_springframework_data_spring_data_mongodb",
+        "@maven//:org_springframework_spring_tx",
+    ],
+)

@@ -1,0 +1,11 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "helpers",
+    srcs = ["ClusterVisitorHelper.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//127-cd-nextgen-entities/src/main/java/io/harness/cdng/gitops/yaml",
+        "//967-walktree-visitor/src/main/java/io/harness/walktree/visitor/validation",
+    ],
+)

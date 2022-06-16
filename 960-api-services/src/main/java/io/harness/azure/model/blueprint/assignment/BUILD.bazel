@@ -1,0 +1,21 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "assignment",
+    srcs = [
+        "Assignment.java",
+        "AssignmentLockMode.java",
+        "AssignmentLockSettings.java",
+        "AssignmentProvisioningState.java",
+        "AssignmentStatus.java",
+        "ResourceGroupValue.java",
+        "WhoIsBlueprintContract.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//960-api-services/src/main/java/io/harness/azure/model/blueprint",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:com_microsoft_azure_azure_mgmt_network",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

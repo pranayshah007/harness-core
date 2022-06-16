@@ -1,0 +1,18 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "scopes",
+    srcs = [
+        "ScopeNameDTO.java",
+        "ScopeNameMapper.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//950-ng-project-n-orgs/src/main/java/io/harness/ng/core/services",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:io_swagger_core_v3_swagger_annotations",
+        "@maven//:io_swagger_swagger_annotations",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

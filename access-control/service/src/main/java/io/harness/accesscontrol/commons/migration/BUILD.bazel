@@ -1,0 +1,24 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "migration",
+    srcs = [
+        "AccessControlMigrationProvider.java",
+        "AccessControlMigrationSchema.java",
+        "AccessControlMongoBackgroundMigrationDetails.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//958-migration-sdk/src/main/java/io/harness/migration/beans",
+        "//958-migration-sdk/src/main/java/io/harness/migration/entities",
+        "//958-migration-sdk/src/main/java/io/harness/migration/utils",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "//access-control/service/src/main/java/io/harness/accesscontrol/resources/resourcegroups/migration",
+        "//access-control/service/src/main/java/io/harness/accesscontrol/roleassignments/migration",
+        "//access-control/service/src/main/java/io/harness/accesscontrol/scopes/harness/migration",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_springframework_data_spring_data_commons",
+        "@maven//:org_springframework_data_spring_data_mongodb",
+    ],
+)

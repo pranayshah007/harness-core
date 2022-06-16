@@ -1,0 +1,19 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "alerts",
+    srcs = [
+        "AlertInfo.java",
+        "AlertMetadata.java",
+        "CollScanAlertInfo.java",
+        "ManyEntriesExaminedAlertInfo.java",
+        "SlowQueryAlertInfo.java",
+        "SortStageAlertInfo.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//935-analyser-service/src/main/java/io/harness/beans/query",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

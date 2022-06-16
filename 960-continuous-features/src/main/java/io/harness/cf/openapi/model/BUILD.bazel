@@ -1,0 +1,11 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "model",
+    srcs = [
+        "PatchInstruction.java",
+        "PatchOperation.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = ["@maven//:org_projectlombok_lombok"],
+)

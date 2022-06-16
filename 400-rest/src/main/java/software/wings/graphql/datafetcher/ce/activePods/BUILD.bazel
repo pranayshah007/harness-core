@@ -1,0 +1,20 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "activePods",
+    srcs = [
+        "CeActivePodCountDataFetcher.java",
+        "CeActivePodCountQueryMetadata.java",
+        "CeActivePodCountTableSchema.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/software/wings/graphql/datafetcher",
+        "//400-rest/src/main/java/software/wings/graphql/datafetcher/billing",
+        "//400-rest/src/main/java/software/wings/graphql/schema/type/aggregation/billing",
+        "//400-rest/src/main/java/software/wings/service/intfc/ce",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_healthmarketscience_sqlbuilder_sqlbuilder",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

@@ -1,0 +1,18 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "k8s",
+    srcs = [
+        "AzureKubernetesClusterDTO.java",
+        "AzureListKubernetesClustersOperation.java",
+        "AzureListKubernetesClustersOperationResponse.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//950-delegate-tasks-beans/src/main/java/io/harness/delegate/task/azure/resource/operation",
+        "//960-api-services/src/main/java/io/harness/azure/client",
+        "//970-api-services-beans/src/main/java/io/harness/azure/model",
+        "@maven//:com_microsoft_azure_azure_mgmt_containerservice",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

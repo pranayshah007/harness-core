@@ -1,0 +1,30 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "api",
+    srcs = [
+        "RoleAssignmentAggregateResponseDTO.java",
+        "RoleAssignmentCreateRequestDTO.java",
+        "RoleAssignmentDTO.java",
+        "RoleAssignmentFilterDTO.java",
+        "RoleAssignmentRequest.java",
+        "RoleAssignmentResource.java",
+        "RoleAssignmentResponseDTO.java",
+        "RoleAssignmentValidationRequestDTO.java",
+        "RoleAssignmentValidationResponseDTO.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//970-ng-commons/src/main/java/io/harness/ng/beans",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "//access-control/contracts/api/src/main/java/io/harness/accesscontrol/commons",
+        "//access-control/contracts/api/src/main/java/io/harness/accesscontrol/commons/exceptions",
+        "//access-control/contracts/api/src/main/java/io/harness/accesscontrol/resourcegroups/api",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:com_squareup_retrofit2_retrofit",
+        "@maven//:io_swagger_core_v3_swagger_annotations",
+        "@maven//:io_swagger_swagger_annotations",
+        "@maven//:org_hibernate_hibernate_validator",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

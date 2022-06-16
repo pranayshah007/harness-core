@@ -1,0 +1,21 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "yaml",
+    srcs = ["CIPmsPipelineYamlTest.java"],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//860-orchestration-steps/src/main/java/io/harness/plancreator/pipeline",
+        "//953-yaml-commons/src/main/java/io/harness/plancreator/stages/stage",
+        "//953-yaml-commons/src/main/java/io/harness/yaml/core/properties",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

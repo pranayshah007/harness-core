@@ -1,0 +1,14 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "beans",
+    srcs = [
+        "FullSyncFilesGroupedByMsvc.java",
+        "GitFullSyncEntityProcessingResponse.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//136-git-sync-manager/src/main/java/io/harness/gitsync/core/beans",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

@@ -1,0 +1,11 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "service",
+    srcs = [
+        "CVNGMigrationService.java",
+        "MigrationChecklist.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = ["//300-cv-nextgen/src/main/java/io/harness/cvng/migration/beans"],
+)

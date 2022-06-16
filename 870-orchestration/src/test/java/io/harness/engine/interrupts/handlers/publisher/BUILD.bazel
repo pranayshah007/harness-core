@@ -1,0 +1,27 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "publisher",
+    srcs = ["RedisInterruptEventPublisherTest.java"],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//870-orchestration/src/main/java/io/harness/engine/executions/node",
+        "//870-orchestration/src/main/java/io/harness/engine/interrupts/handlers/publisher",
+        "//870-orchestration/src/main/java/io/harness/engine/pms/commons/events",
+        "//870-orchestration/src/main/java/io/harness/engine/utils",
+        "//876-orchestration-beans/src/main/java/io/harness/interrupts",
+        "//876-orchestration-beans/src/main/java/io/harness/plan",
+        "//884-pms-commons/src/main/java/io/harness/pms/events/base",
+        "//953-yaml-commons/src/main/java/io/harness/pms/serializer/recaster",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+    ],
+)

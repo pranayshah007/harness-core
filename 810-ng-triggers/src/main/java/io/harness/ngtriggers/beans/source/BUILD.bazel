@@ -1,0 +1,25 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "source",
+    srcs = [
+        "ManifestType.java",
+        "NGTriggerSource.java",
+        "NGTriggerSourceV2.java",
+        "NGTriggerSpec.java",
+        "NGTriggerSpecV2.java",
+        "NGTriggerType.java",
+        "WebhookTriggerType.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//810-ng-triggers/src/main/java/io/harness/ngtriggers/beans/source/artifact",
+        "//810-ng-triggers/src/main/java/io/harness/ngtriggers/beans/source/scheduled",
+        "//810-ng-triggers/src/main/java/io/harness/ngtriggers/beans/source/webhook",
+        "//810-ng-triggers/src/main/java/io/harness/ngtriggers/beans/source/webhook/v2",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_springframework_data_spring_data_commons",
+    ],
+)

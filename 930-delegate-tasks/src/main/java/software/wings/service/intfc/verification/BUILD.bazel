@@ -1,0 +1,8 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "verification",
+    srcs = ["CVActivityLogger.java"],
+    visibility = ["//:__subpackages__"],
+    deps = ["//957-cg-beans/src/main/java/software/wings/verification"],
+)

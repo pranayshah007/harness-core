@@ -1,0 +1,34 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "yamlschema",
+    srcs = [
+        "LocalSchemaGetter.java",
+        "PmsYamlSchemaHelper.java",
+        "RemoteSchemaGetter.java",
+        "SchemaFetcher.java",
+        "SchemaGetter.java",
+        "SchemaGetterFactory.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//800-pipeline-service/src/main/java/io/harness/pms/pipeline/service/yamlschema/approval",
+        "//800-pipeline-service/src/main/java/io/harness/pms/pipeline/service/yamlschema/cache",
+        "//800-pipeline-service/src/main/java/io/harness/pms/pipeline/service/yamlschema/customstage",
+        "//800-pipeline-service/src/main/java/io/harness/pms/pipeline/service/yamlschema/exception",
+        "//800-pipeline-service/src/main/java/io/harness/pms/pipeline/service/yamlschema/featureflag",
+        "//953-yaml-commons/src/main/java/io/harness/plancreator/stages/stage",
+        "//960-yaml-sdk/src/main/java/io/harness/yaml/schema/beans",
+        "//960-yaml-sdk/src/main/java/io/harness/yaml/schema/client",
+        "//980-commons/src/main/java/io/harness/jackson",
+        "//980-commons/src/main/java/io/harness/network",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@maven//:com_google_guava_guava",
+        "@maven//:com_squareup_retrofit2_retrofit",
+        "@maven//:javax_cache_cache_api",
+        "@maven//:net_jodah_failsafe",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

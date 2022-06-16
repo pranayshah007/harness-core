@@ -1,0 +1,26 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "client",
+    srcs = ["CommandLibraryServiceHttpClientFactoryTest.java"],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//400-rest/src/main/java/io/harness/commandlibrary",
+        "//400-rest/src/main/java/io/harness/commandlibrary/client",
+        "//950-command-library-common/src/main/java/io/harness/commandlibrary/api/dto",
+        "//980-commons/src/main/java/io/harness/rest",
+        "//990-commons-test/src/main/java/io/harness/category/element",
+        "@maven//:com_fasterxml_jackson_core_jackson_core",
+        "@maven//:com_google_guava_guava",
+        "@maven//:com_squareup_okhttp3_mockwebserver",
+        "@maven//:junit_junit",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+    ],
+)

@@ -1,0 +1,27 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "core",
+    srcs = [
+        "AliasRegistry.java",
+        "CustomTransformer.java",
+        "DefaultTransformer.java",
+        "Recast.java",
+        "RecastObjectCreator.java",
+        "RecastObjectFactory.java",
+        "Recaster.java",
+        "RecasterOptions.java",
+        "Transformer.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//979-recaster/src/main/java/io/harness/exceptions",
+        "//979-recaster/src/main/java/io/harness/fieldrecaster",
+        "//979-recaster/src/main/java/io/harness/transformers",
+        "//979-recaster/src/main/java/io/harness/transformers/simplevalue",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_modelmapper_modelmapper",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_reflections_reflections",
+    ],
+)

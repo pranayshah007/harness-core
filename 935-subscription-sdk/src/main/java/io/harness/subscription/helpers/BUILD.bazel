@@ -1,0 +1,11 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "helpers",
+    srcs = ["StripeHelper.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//935-subscription-sdk/src/main/java/io/harness/subscription/dto",
+        "//935-subscription-sdk/src/main/java/io/harness/subscription/params",
+    ],
+)

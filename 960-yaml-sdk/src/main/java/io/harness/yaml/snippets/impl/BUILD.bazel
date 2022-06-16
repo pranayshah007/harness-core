@@ -1,0 +1,20 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "impl",
+    srcs = ["YamlSnippetProvider.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//960-yaml-sdk/src/main/java/io/harness/yaml/snippets/bean",
+        "//960-yaml-sdk/src/main/java/io/harness/yaml/snippets/dto",
+        "//960-yaml-sdk/src/main/java/io/harness/yaml/snippets/helper",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/io/harness/jackson",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@maven//:com_fasterxml_jackson_dataformat_jackson_dataformat_yaml",
+        "@maven//:com_google_guava_guava",
+        "@maven//:commons_io_commons_io",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

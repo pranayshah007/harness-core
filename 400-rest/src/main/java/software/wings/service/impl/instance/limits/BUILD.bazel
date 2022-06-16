@@ -1,0 +1,19 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "limits",
+    srcs = [
+        "ApproachingLimitsMessage.java",
+        "LimitVicinityHandlerImpl.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/io/harness/limits/checker",
+        "//400-rest/src/main/java/io/harness/limits/configuration",
+        "//400-rest/src/main/java/software/wings/beans/alert",
+        "//400-rest/src/main/java/software/wings/dl",
+        "//400-rest/src/main/java/software/wings/service/intfc/limits",
+        "//980-commons/src/main/java/io/harness/limits/lib",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

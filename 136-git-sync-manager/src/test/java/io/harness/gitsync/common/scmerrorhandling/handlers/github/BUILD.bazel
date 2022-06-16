@@ -1,0 +1,28 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "github",
+    srcs = [
+        "GithubCreateBranchScmApiErrorHandlerTest.java",
+        "GithubCreateFileScmApiErrorHandlerTest.java",
+        "GithubCreatePullRequestScmApiErrorHandlerTest.java",
+        "GithubGetDefaultBranchScmApiErrorHandlerTest.java",
+        "GithubGetFileScmApiErrorHandlerTest.java",
+        "GithubListBranchesScmApiErrorHandlerTest.java",
+        "GithubListRepoScmApiErrorHandlerTest.java",
+        "GithubUpdateFileScmApiErrorHandlerTest.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//136-git-sync-manager/src/main/java/io/harness/gitsync/common/scmerrorhandling/handlers/github",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+    ],
+)

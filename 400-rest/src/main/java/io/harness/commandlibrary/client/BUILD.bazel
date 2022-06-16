@@ -1,0 +1,30 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "client",
+    srcs = [
+        "CommandLibraryServiceClientModule.java",
+        "CommandLibraryServiceClientUtils.java",
+        "CommandLibraryServiceHttpClient.java",
+        "CommandLibraryServiceHttpClientFactory.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/io/harness/commandlibrary",
+        "//400-rest/src/main/java/io/harness/commandlibrary/common",
+        "//400-rest/src/main/java/software/wings/api/commandlibrary",
+        "//950-command-library-common/src/main/java/io/harness/commandlibrary/api/dto",
+        "//970-ng-commons/src/main/java/io/harness/request",
+        "//980-commons/src/main/java/io/harness/rest",
+        "//980-commons/src/main/java/software/wings/jersey",
+        "@maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@maven//:com_fasterxml_jackson_datatype_jackson_datatype_guava",
+        "@maven//:com_fasterxml_jackson_datatype_jackson_datatype_jdk8",
+        "@maven//:com_fasterxml_jackson_datatype_jackson_datatype_jsr310",
+        "@maven//:com_google_guava_guava",
+        "@maven//:com_squareup_retrofit2_converter_jackson",
+        "@maven//:com_squareup_retrofit2_retrofit",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

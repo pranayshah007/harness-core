@@ -1,0 +1,27 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "executions",
+    srcs = [
+        "CDAccountExecutionMetadata.java",
+        "CDPipelineEndEventHandler.java",
+        "CdngOrchestrationExecutionEventHandlerRegistrar.java",
+        "CdngPipelineExecutionUpdateEventHandler.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/pipeline/helpers",
+        "//126-instance/src/main/java/io/harness/dtos",
+        "//127-cd-nextgen-entities/src/main/java/io/harness/executions/steps",
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/events",
+        "//945-account-mgmt/src/main/java/io/harness/account/services",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_mongodb_morphia_morphia",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_springframework_data_spring_data_commons",
+        "@maven//:org_springframework_data_spring_data_mongodb",
+    ],
+)

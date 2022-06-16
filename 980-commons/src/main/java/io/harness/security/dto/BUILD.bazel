@@ -1,0 +1,22 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "dto",
+    srcs = [
+        "ApiKeyPrincipal.java",
+        "Principal.java",
+        "PrincipalType.java",
+        "ServiceAccountPrincipal.java",
+        "ServicePrincipal.java",
+        "UserPrincipal.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_auth0_java_jwt",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:org_hibernate_hibernate_validator",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_springframework_data_spring_data_commons",
+    ],
+)

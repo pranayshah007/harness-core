@@ -1,0 +1,19 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "pushevent",
+    srcs = [
+        "GitPushEventStreamConsumer.java",
+        "GitPushEventStreamListener.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//136-git-sync-manager/src/main/java/io/harness/gitsync/common",
+        "//136-git-sync-manager/src/main/java/io/harness/gitsync/core/service/webhookevent",
+        "//953-events-api/src/main/java/io/harness/eventsframework",
+        "//953-events-api/src/main/java/io/harness/eventsframework/api",
+        "//980-commons/src/main/java/io/harness/security/dto",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

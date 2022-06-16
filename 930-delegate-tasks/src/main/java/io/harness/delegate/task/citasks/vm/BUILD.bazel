@@ -1,0 +1,24 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "vm",
+    srcs = [
+        "CIVMExecuteStepTaskHandler.java",
+        "CIVmCleanupTaskHandler.java",
+        "CIVmInitializeTaskHandler.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/beans/logstreaming",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/citasks",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/citasks/cik8handler",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/citasks/cik8handler/helper",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/citasks/vm/helper",
+        "//980-commons/src/main/java/io/harness/data/encoding",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_squareup_retrofit2_retrofit",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

@@ -1,0 +1,29 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "query",
+    srcs = [
+        "QLApplicationsQueryParameters.java",
+        "QLApprovalDetailsInput.java",
+        "QLArtifactQueryParameters.java",
+        "QLCloudProvidersQueryParameters.java",
+        "QLClustersQueryParameters.java",
+        "QLConnectorsQueryParameters.java",
+        "QLEnvironmentsQueryParameters.java",
+        "QLEventsConfigQueryParameters.java",
+        "QLEventsConfigsQueryParameters.java",
+        "QLExecutionsQueryParameters.java",
+        "QLK8sLabelQueryParameters.java",
+        "QLPipelinesQueryParameters.java",
+        "QLServicesQueryParameters.java",
+        "QLTriggersQueryParameters.java",
+        "QLWorkflowsQueryParameters.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//380-cg-graphql/src/main/java/software/wings/graphql/schema/type",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_graphql_java_graphql_java",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

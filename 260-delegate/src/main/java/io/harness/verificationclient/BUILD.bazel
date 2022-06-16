@@ -1,0 +1,23 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "verificationclient",
+    srcs = [
+        "CVNextGenServiceClient.java",
+        "CVNextGenServiceClientFactory.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//948-cv-nextgen-beans/src/main/java/io/harness/cvng/beans/activity",
+        "//948-cv-nextgen-beans/src/main/java/io/harness/cvng/core/services",
+        "//957-cg-beans/src/main/java/io/harness/cvng/beans/cvnglog",
+        "//970-ng-commons/src/main/java/io/serializer",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/io/harness/network",
+        "//980-commons/src/main/java/io/harness/rest",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:com_squareup_retrofit2_converter_jackson",
+        "@maven//:com_squareup_retrofit2_retrofit",
+    ],
+)

@@ -1,0 +1,23 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "manifests",
+    srcs = [
+        "CustomManifestFetchTask.java",
+        "CustomManifestValuesFetchTask.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/beans/logstreaming",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/helm",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/k8s",
+        "//960-api-services/src/main/java/io/harness/manifest",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/software/wings/exception",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:commons_io_commons_io",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

@@ -1,0 +1,14 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "impl",
+    srcs = ["BusinessMappingServiceImpl.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//450-ce-views/src/main/java/io/harness/ccm/views/businessMapping/dao",
+        "//450-ce-views/src/main/java/io/harness/ccm/views/businessMapping/entities",
+        "//450-ce-views/src/main/java/io/harness/ccm/views/businessMapping/service/intf",
+        "//450-ce-views/src/main/java/io/harness/ccm/views/entities",
+        "//450-ce-views/src/main/java/io/harness/ccm/views/helper",
+    ],
+)

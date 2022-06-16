@@ -1,0 +1,28 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "terraform",
+    srcs = [
+        "TerraformClientImplTest.java",
+        "TerraformHelperUtilsTest.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//960-api-services/src/main/java/io/harness/cli",
+        "//960-api-services/src/main/java/io/harness/terraform",
+        "//980-commons/src/main/java/io/harness/exception/runtime",
+        "//980-commons/src/main/java/io/harness/filesystem",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:commons_io_commons_io",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+        "@maven//:org_powermock_powermock_api_mockito2",
+        "@maven//:org_zeroturnaround_zt_exec",
+    ],
+)

@@ -1,0 +1,34 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "templatelibrary",
+    srcs = [
+        "ArtifactSourceTemplateYamlHandler.java",
+        "CommandTemplateRefYamlHandler.java",
+        "CommandTemplateYamlHandler.java",
+        "CommandTemplateYamlHelper.java",
+        "CustomArtifactSourceYamlHandler.java",
+        "CustomDeploymentTypeTemplateYamlHandler.java",
+        "HttpTemplateYamlHandler.java",
+        "PcfCommandTemplateYamlHandler.java",
+        "ShellScriptTemplateYamlHandler.java",
+        "TemplateLibraryYamlHandler.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/software/wings/beans/template",
+        "//400-rest/src/main/java/software/wings/beans/template/artifactsource",
+        "//400-rest/src/main/java/software/wings/beans/template/command",
+        "//400-rest/src/main/java/software/wings/beans/template/deploymenttype",
+        "//400-rest/src/main/java/software/wings/service/impl/yaml/handler",
+        "//400-rest/src/main/java/software/wings/service/impl/yaml/handler/command",
+        "//400-rest/src/main/java/software/wings/service/impl/yaml/service",
+        "//400-rest/src/main/java/software/wings/service/intfc/template",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/io/harness/eraro",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_apache_commons_commons_collections4",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

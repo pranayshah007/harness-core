@@ -1,0 +1,32 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "module",
+    srcs = [
+        "FakeMongoCreator.java",
+        "MongoRuleMixin.java",
+        "RealMongoCreator.java",
+        "TestMongoModule.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//960-persistence/src/main/java/io/harness/mongo",
+        "//960-persistence/src/main/java/io/harness/mongo/index/migrator",
+        "//960-persistence/src/main/java/io/harness/persistence",
+        "//960-persistence/src/supporter-test/java/io/harness/testlib",
+        "//980-commons/src/main/java/io/harness/govern",
+        "//980-commons/src/main/java/io/harness/threading",
+        "@maven//:com_google_guava_guava",
+        "@maven//:com_google_inject_guice",
+        "@maven//:de_bwaldvogel_mongo_java_server_memory_backend",
+        "@maven//:de_flapdoodle_embed_de_flapdoodle_embed_mongo",
+        "@maven//:de_flapdoodle_embed_de_flapdoodle_embed_process",
+        "@maven//:org_mongodb_morphia_morphia",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

@@ -1,0 +1,14 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "services",
+    srcs = ["InfrastructureEntityService.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//127-cd-nextgen-entities/src/main/java/io/harness/ng/core/infrastructure/entity",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_hibernate_hibernate_validator",
+        "@maven//:org_springframework_data_spring_data_commons",
+        "@maven//:org_springframework_data_spring_data_mongodb",
+    ],
+)

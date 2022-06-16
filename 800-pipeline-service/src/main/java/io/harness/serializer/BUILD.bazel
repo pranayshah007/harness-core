@@ -1,0 +1,17 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "serializer",
+    srcs = ["PipelineServiceModuleRegistrars.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//900-git-sync-sdk/src/main/java/io/harness/gitsync/serializer",
+        "//955-filters-sdk/src/main/java/io/harness/filter/serializer/morphia",
+        "//960-yaml-sdk/src/main/java/io/harness/yaml/schema/beans",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_mongodb_morphia_morphia",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_springframework_spring_core",
+    ],
+)

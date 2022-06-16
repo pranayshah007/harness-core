@@ -1,0 +1,28 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "tracing",
+    srcs = [
+        "AbstractPersistenceTracerModule.java",
+        "MongoRedisTracer.java",
+        "PersistenceTracerConstants.java",
+        "PersistenceTracerModule.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//937-persistence-tracer/src/main/java/io/harness/tracing/shapedetector",
+        "//953-events-api/src/main/java/io/harness/eventsframework",
+        "//953-events-api/src/main/java/io/harness/eventsframework/api",
+        "//953-events-api/src/main/java/io/harness/eventsframework/impl/noop",
+        "//953-events-api/src/main/java/io/harness/eventsframework/impl/redis",
+        "//960-persistence/src/main/java/io/harness/mongo/tracing",
+        "//960-persistence/src/main/java/io/harness/persistence",
+        "//960-persistence/src/main/java/io/harness/redis",
+        "//980-commons/src/main/java/io/harness/threading",
+        "//980-commons/src/main/java/io/harness/version",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_springframework_data_spring_data_mongodb",
+    ],
+)

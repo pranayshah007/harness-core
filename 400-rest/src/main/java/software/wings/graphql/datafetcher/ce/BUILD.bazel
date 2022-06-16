@@ -1,0 +1,15 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "ce",
+    srcs = ["CeHealthStatusDataFetcher.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/io/harness/ccm/health",
+        "//400-rest/src/main/java/software/wings/graphql/schema/type/aggregation/cloudprovider",
+        "//400-rest/src/main/java/software/wings/graphql/schema/type/cloudProvider",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_graphql_java_graphql_java",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

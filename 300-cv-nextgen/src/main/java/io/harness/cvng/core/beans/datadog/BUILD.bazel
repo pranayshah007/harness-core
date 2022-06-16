@@ -1,0 +1,15 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "datadog",
+    srcs = [
+        "DatadogDashboardDTO.java",
+        "DatadogDashboardDetail.java",
+        "MetricTagResponseDTO.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "@maven//:com_google_code_gson_gson",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

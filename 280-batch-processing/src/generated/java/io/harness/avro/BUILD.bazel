@@ -1,0 +1,11 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "avro",
+    srcs = [
+        "ClusterBillingData.java",
+        "Label.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = ["@maven//:org_apache_avro_avro"],
+)

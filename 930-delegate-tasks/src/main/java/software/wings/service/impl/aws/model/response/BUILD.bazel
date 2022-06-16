@@ -1,0 +1,21 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "response",
+    srcs = [
+        "AwsCloudWatchMetricDataResponse.java",
+        "AwsCloudWatchStatisticsResponse.java",
+        "AwsLambdaDetailsMetricsResponse.java",
+        "AwsLambdaDetailsResponse.java",
+        "HostReachabilityResponse.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//930-delegate-tasks/src/main/java/software/wings/beans/infrastructure/instance",
+        "//930-delegate-tasks/src/main/java/software/wings/service/impl/aws/model",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_amazonaws_aws_java_sdk_cloudwatch",
+        "@maven//:com_amazonaws_aws_java_sdk_lambda",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

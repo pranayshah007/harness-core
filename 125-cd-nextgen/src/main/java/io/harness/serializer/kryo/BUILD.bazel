@@ -1,0 +1,29 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "kryo",
+    srcs = ["NGKryoRegistrar.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/advisers",
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/artifact/bean/artifactsource",
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/artifact/steps",
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/configfile/steps",
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/gitops",
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/helm",
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/helm/rollback",
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/infra",
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/infra/steps",
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/k8s/beans",
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/manifest/steps",
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/pipeline",
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/pipeline/beans",
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/pipeline/executions",
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/provision/cloudformation",
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/provision/terraform",
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/serverless/beans",
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/tasks/manifestFetch/step",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_esotericsoftware_kryo",
+    ],
+)

@@ -1,0 +1,14 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "services",
+    srcs = [
+        "BuildNumberService.java",
+        "BuildNumberServiceImpl.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//330-ci-beans/src/main/java/io/harness/ci/beans/entities",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

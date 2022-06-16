@@ -1,0 +1,17 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "awscodecommit",
+    srcs = [
+        "AwsCodeCommitDTOToEntity.java",
+        "AwsCodeCommitEntityToDTO.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//440-connector-nextgen/src/main/java/io/harness/connector/entities/embedded/awscodecommitconnector",
+        "//440-connector-nextgen/src/main/java/io/harness/connector/mappers",
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector/scm/awscodecommit",
+        "//980-commons/src/main/java/io/harness/govern",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+    ],
+)

@@ -6,6 +6,35 @@ load("//tools/bazel/pmd:dependencies.bzl", "rules_pmd_dependencies")
 
 rules_pmd_dependencies()
 
+
+local_repository(
+    name = "contrib_rules_jvm",
+    path = "/Users/gauravnanda/source-code/rules_jvm",
+)
+
+#http_archive(
+#    name = "contrib_rules_jvm",
+#    patches = ["//:tools/bazel/patch-rules_jvm-timeout.patch"],
+#    patch_args = ["-p1"],
+#    sha256 = "e8edde2bf68aa3d706915f255259690be9dd5681348afa54f16280815030afdf",
+#    strip_prefix = "rules_jvm-ed3619f54e7fb19948928fe8516617aecd88a58c",
+#    url = "https://github.com/bazel-contrib/rules_jvm/archive/ed3619f54e7fb19948928fe8516617aecd88a58c.zip",
+#)
+
+load("@contrib_rules_jvm//:repositories.bzl", "contrib_rules_jvm_deps", "contrib_rules_jvm_gazelle_deps")
+
+contrib_rules_jvm_deps()
+
+contrib_rules_jvm_gazelle_deps()
+
+load("@contrib_rules_jvm//:setup.bzl", "contrib_rules_jvm_setup")
+
+contrib_rules_jvm_setup()
+
+load("@contrib_rules_jvm//:gazelle_setup.bzl", "contib_rules_jvm_gazelle_setup")
+
+contib_rules_jvm_gazelle_setup()
+
 http_archive(
     name = "com_github_bazelbuild_buildtools",
     sha256 = "932160d5694e688cb7a05ac38efba4b9a90470c75f39716d85fb1d2f95eec96d",

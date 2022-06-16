@@ -1,0 +1,25 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "helm",
+    srcs = [
+        "HelmAuthenticationDTODeserializer.java",
+        "HelmConstants.java",
+        "HttpHelmAuthCredentialsDTO.java",
+        "HttpHelmAuthType.java",
+        "HttpHelmAuthenticationDTO.java",
+        "HttpHelmConnectorDTO.java",
+        "HttpHelmUsernamePasswordDTO.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:com_fasterxml_jackson_core_jackson_core",
+        "@maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@maven//:io_swagger_core_v3_swagger_annotations",
+        "@maven//:io_swagger_swagger_annotations",
+        "@maven//:org_hibernate_hibernate_validator",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

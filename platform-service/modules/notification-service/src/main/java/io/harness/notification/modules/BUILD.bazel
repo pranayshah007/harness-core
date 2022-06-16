@@ -1,0 +1,8 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "modules",
+    srcs = ["SmtpConfigClientModule.java"],
+    visibility = ["//:__subpackages__"],
+    deps = ["//970-ng-commons/src/main/java/io/harness/remote/client"],
+)

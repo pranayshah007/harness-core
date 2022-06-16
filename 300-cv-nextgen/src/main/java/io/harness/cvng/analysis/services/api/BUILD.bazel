@@ -1,0 +1,31 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "api",
+    srcs = [
+        "DeploymentLogAnalysisService.java",
+        "DeploymentTimeSeriesAnalysisService.java",
+        "HealthVerificationService.java",
+        "LearningEngineDevService.java",
+        "LearningEngineTaskService.java",
+        "LogAnalysisService.java",
+        "LogClusterService.java",
+        "TimeSeriesAnalysisService.java",
+        "TimeSeriesAnomalousPatternsService.java",
+        "TrendAnalysisService.java",
+        "VerificationJobInstanceAnalysisService.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/activity/beans",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/analysis/beans",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/analysis/entities",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/core/beans",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/core/beans/params",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/core/beans/params/filterParams",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/core/entities",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/statemachine/beans",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/verificationjob/entities",
+        "//970-ng-commons/src/main/java/io/harness/ng/beans",
+    ],
+)

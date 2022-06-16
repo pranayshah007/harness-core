@@ -1,0 +1,13 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "impl",
+    srcs = ["ArtifactSourceServiceImpl.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/artifact/bean/artifactsource",
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/artifact/service",
+        "//125-cd-nextgen/src/main/java/io/harness/repositories/artifact",
+        "@maven//:ru_vyarus_guice_validator",
+    ],
+)

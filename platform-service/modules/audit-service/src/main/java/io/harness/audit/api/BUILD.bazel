@@ -1,0 +1,17 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "api",
+    srcs = [
+        "AuditService.java",
+        "AuditSettingsService.java",
+        "AuditYamlService.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//970-ng-commons/src/main/java/io/harness/ng/beans",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "//platform-service/modules/audit-service/src/main/java/io/harness/audit/entities",
+        "@maven//:org_springframework_data_spring_data_commons",
+    ],
+)

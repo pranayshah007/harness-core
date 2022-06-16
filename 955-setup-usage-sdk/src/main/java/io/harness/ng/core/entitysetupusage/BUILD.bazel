@@ -1,0 +1,20 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "entitysetupusage",
+    srcs = [
+        "EntitySetupUsageModule.java",
+        "EntitySetupUsageQueryFilterHelper.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//955-setup-usage-sdk/src/main/java/io/harness/ng/core/entitysetupusage/entity",
+        "//955-setup-usage-sdk/src/main/java/io/harness/ng/core/entitysetupusage/impl",
+        "//955-setup-usage-sdk/src/main/java/io/harness/ng/core/entitysetupusage/service",
+        "//960-persistence/src/main/java/io/harness/persistence",
+        "//980-commons/src/main/java/io/harness/manage",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_springframework_data_spring_data_mongodb",
+    ],
+)

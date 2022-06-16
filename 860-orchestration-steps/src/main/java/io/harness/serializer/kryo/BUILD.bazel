@@ -1,0 +1,24 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "kryo",
+    srcs = ["OrchestrationStepsKryoRegistrar.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//860-orchestration-steps/src/main/java/io/harness/plancreator/steps/http",
+        "//860-orchestration-steps/src/main/java/io/harness/steps/approval/step/harness",
+        "//860-orchestration-steps/src/main/java/io/harness/steps/approval/step/jira",
+        "//860-orchestration-steps/src/main/java/io/harness/steps/approval/step/jira/beans",
+        "//860-orchestration-steps/src/main/java/io/harness/steps/approval/step/servicenow/beans",
+        "//860-orchestration-steps/src/main/java/io/harness/steps/barriers",
+        "//860-orchestration-steps/src/main/java/io/harness/steps/barriers/beans",
+        "//860-orchestration-steps/src/main/java/io/harness/steps/cf",
+        "//860-orchestration-steps/src/main/java/io/harness/steps/http",
+        "//860-orchestration-steps/src/main/java/io/harness/steps/jira",
+        "//860-orchestration-steps/src/main/java/io/harness/steps/resourcerestraint",
+        "//860-orchestration-steps/src/main/java/io/harness/steps/resourcerestraint/beans",
+        "//860-orchestration-steps/src/main/java/io/harness/steps/shellscript",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_esotericsoftware_kryo",
+    ],
+)

@@ -1,0 +1,18 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "alerts",
+    srcs = [
+        "AlertCategory.java",
+        "AlertModule.java",
+        "AlertSeverity.java",
+        "AlertStatus.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/software/wings/beans/alert",
+        "//400-rest/src/main/java/software/wings/beans/alert/cv",
+        "//920-delegate-service-beans/src/main/java/io/harness/delegate/beans/alert",
+        "@maven//:com_google_inject_guice",
+    ],
+)

@@ -1,0 +1,36 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "resources",
+    srcs = [
+        "CIDashboardOverviewResource.java",
+        "CIExecutionConfigResource.java",
+        "CIStageExecutionResponse.java",
+        "CIYamlSchemaResource.java",
+        "HealthResource.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//310-ci-manager/src/main/java/io/harness/app/beans/entities",
+        "//320-ci-execution/src/main/java/io/harness/ci/plan/creator/execution",
+        "//330-ci-beans/src/main/java/io/harness/ci/beans/entities",
+        "//945-account-mgmt/src/main/java/io/harness/account/accesscontrol",
+        "//953-yaml-commons/src/main/java/io/harness/plancreator/stages/stage",
+        "//960-yaml-sdk/src/main/java/io/harness/yaml/schema/beans",
+        "//980-commons/src/main/java/io/harness/annotations",
+        "//980-commons/src/main/java/io/harness/eraro",
+        "//980-commons/src/main/java/io/harness/health",
+        "//980-commons/src/main/java/io/harness/maintenance",
+        "//980-commons/src/main/java/io/harness/rest",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "//access-control/contracts/api/src/main/java/io/harness/accesscontrol/commons/exceptions",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@maven//:com_squareup_retrofit2_retrofit",
+        "@maven//:io_dropwizard_metrics_metrics_annotation",
+        "@maven//:io_dropwizard_metrics_metrics_healthchecks",
+        "@maven//:io_swagger_core_v3_swagger_annotations",
+        "@maven//:io_swagger_swagger_annotations",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

@@ -1,0 +1,34 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "procurement",
+    srcs = [
+        "CDProductHandler.java",
+        "GcpMarketplaceMessageReceiver.java",
+        "GcpProcurementService.java",
+        "GcpProductHandler.java",
+        "GcpProductsRegistry.java",
+        "ProcurementAPIClientBuilder.java",
+        "ProcurementEventType.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/io/harness/event/handler/impl/segment",
+        "//400-rest/src/main/java/io/harness/marketplace/gcp",
+        "//400-rest/src/main/java/io/harness/marketplace/gcp/procurement/pubsub",
+        "//400-rest/src/main/java/software/wings/beans/marketplace/gcp",
+        "//400-rest/src/main/java/software/wings/dl",
+        "//400-rest/src/main/java/software/wings/licensing",
+        "//400-rest/src/main/java/software/wings/service/intfc/marketplace/gcp",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_api_client_google_api_client",
+        "@maven//:com_google_api_grpc_proto_google_cloud_pubsub_v1",
+        "@maven//:com_google_apis_google_api_services_cloudcommerceprocurement",
+        "@maven//:com_google_cloud_google_cloud_pubsub",
+        "@maven//:com_google_code_gson_gson",
+        "@maven//:com_google_guava_guava",
+        "@maven//:com_google_http_client_google_http_client",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

@@ -1,0 +1,17 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "ci",
+    srcs = [
+        "CIServiceAuthSecretKey.java",
+        "CIServiceAuthSecretKeyImpl.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/software/wings/dl",
+        "//948-cv-nextgen-beans/src/main/java/io/harness/cvng/core/services",
+        "//959-common-entities/src/main/java/io/harness/entity",
+        "//960-persistence/src/main/java/io/harness/persistence",
+        "//980-commons/src/main/java/io/harness/data/structure",
+    ],
+)

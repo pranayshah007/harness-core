@@ -1,0 +1,26 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "context",
+    srcs = [
+        "AzureAppServiceDeploymentContext.java",
+        "AzureAppServiceDockerDeploymentContext.java",
+        "AzureAppServicePackageDeploymentContext.java",
+        "SlotContainerDeploymentVerifierContext.java",
+        "SlotDeploymentVerifierContext.java",
+        "SlotStatusVerifierContext.java",
+        "StatusVerifierContext.java",
+        "SwapSlotStatusVerifierContext.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/beans/logstreaming",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/azure/appservice/deployment",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/azure/common/validator",
+        "//960-api-services/src/main/java/io/harness/azure",
+        "//960-api-services/src/main/java/io/harness/azure/client",
+        "//960-api-services/src/main/java/io/harness/azure/deployment",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

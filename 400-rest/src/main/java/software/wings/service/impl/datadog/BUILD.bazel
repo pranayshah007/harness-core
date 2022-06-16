@@ -1,0 +1,17 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "datadog",
+    srcs = [
+        "DataDogSetupTestNodeData.java",
+        "DatadogServiceImpl.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/software/wings/service/intfc/datadog",
+        "//970-api-services-beans/src/main/java/io/harness/k8s/manifest",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

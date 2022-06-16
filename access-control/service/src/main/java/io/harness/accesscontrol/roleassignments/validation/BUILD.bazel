@@ -1,0 +1,17 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "validation",
+    srcs = ["RoleAssignmentActionValidator.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//970-ng-commons/src/main/java/io/harness/ng/beans",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "//access-control/libs/core/src/main/java/io/harness/accesscontrol/common/validation",
+        "//access-control/libs/core/src/main/java/io/harness/accesscontrol/roleassignments",
+        "//access-control/libs/core/src/main/java/io/harness/accesscontrol/scopes/core",
+        "//access-control/service/src/main/java/io/harness/accesscontrol/commons/validation",
+        "@maven//:com_google_guava_guava",
+    ],
+)

@@ -1,0 +1,33 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "impl",
+    srcs = [
+        "Constants.java",
+        "EventPublishHelper.java",
+        "MarketoHandler.java",
+        "MarketoHelper.java",
+        "Utils.java",
+        "VerificationEventHandler.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/software/wings/beans/security/access",
+        "//400-rest/src/main/java/software/wings/beans/utm",
+        "//950-events-framework/src/main/java/io/harness/event/handler",
+        "//950-events-framework/src/main/java/io/harness/event/handler/marketo",
+        "//950-events-framework/src/main/java/io/harness/event/handler/segment",
+        "//950-events-framework/src/main/java/io/harness/event/listener",
+        "//950-events-framework/src/main/java/io/harness/event/model/marketo",
+        "//950-events-framework/src/main/java/io/harness/event/publisher",
+        "//960-persistence/src/main/java/io/harness/lock",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:com_hazelcast_hazelcast",
+        "@maven//:com_squareup_retrofit2_converter_jackson",
+        "@maven//:com_squareup_retrofit2_retrofit",
+        "@maven//:io_fabric8_fabric8_utils",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

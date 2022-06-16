@@ -1,0 +1,12 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "embedded",
+    srcs = ["EmbeddedEngineChangeEvent.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:io_debezium_debezium_api",
+        "@maven//:org_apache_kafka_connect_api",
+    ],
+)

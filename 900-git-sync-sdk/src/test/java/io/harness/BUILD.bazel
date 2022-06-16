@@ -1,0 +1,56 @@
+load("@rules_java//java:defs.bzl", "java_binary")
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "harness",
+    srcs = [
+        "GitSdkTestBase.java",
+        "GitSdkTestRule.java",
+        "GitSyncTestApplication.java",
+        "GitSyncTestConfiguration.java",
+        "GitSyncTestModule.java",
+        "Tester.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//800-pipeline-service/src/main/java/io/harness/grpc/server",
+        "//900-git-sync-sdk/src/main/java/io/harness/gitsync/entityInfo",
+        "//900-git-sync-sdk/src/main/java/io/harness/gitsync/persistance",
+        "//960-persistence/src/main/java/io/harness/mongo",
+        "//960-persistence/src/main/java/io/harness/persistence",
+        "//960-persistence/src/main/java/io/harness/queue",
+        "//960-persistence/src/main/java/io/harness/redis",
+        "//960-persistence/src/main/java/io/harness/springdata",
+        "//970-ng-commons/src/main/java/io/serializer/registrars",
+        "//980-commons/src/main/java/io/harness/govern",
+        "//980-commons/src/main/java/io/harness/maintenance",
+        "//980-commons/src/main/java/io/harness/packages",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:com_google_guava_guava",
+        "@maven//:io_dropwizard_dropwizard_configuration",
+        "@maven//:io_dropwizard_dropwizard_core",
+        "@maven//:io_dropwizard_dropwizard_jersey",
+        "@maven//:io_dropwizard_dropwizard_jetty",
+        "@maven//:junit_junit",
+        "@maven//:org_glassfish_jersey_core_jersey_server",
+        "@maven//:org_glassfish_jersey_media_jersey_media_multipart",
+        "@maven//:org_mockito_mockito_core",
+        "@maven//:org_mongodb_morphia_morphia",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_reflections_reflections",
+        "@maven//:org_springframework_spring_core",
+    ],
+)
+
+java_binary(
+    name = "GitSyncTestApplication",
+    main_class = "io.harness.GitSyncTestApplication",
+    visibility = ["//visibility:public"],
+    runtime_deps = [":harness"],
+)

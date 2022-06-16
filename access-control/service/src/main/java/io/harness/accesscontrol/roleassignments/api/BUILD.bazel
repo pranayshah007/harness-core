@@ -1,0 +1,35 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "api",
+    srcs = [
+        "RoleAssignmentAggregateResponseDTOMapper.java",
+        "RoleAssignmentDTOMapper.java",
+        "RoleAssignmentResourceImpl.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//955-outbox-sdk/src/main/java/io/harness/outbox",
+        "//955-outbox-sdk/src/main/java/io/harness/outbox/api",
+        "//960-persistence/src/main/java/io/harness/springdata",
+        "//970-ng-commons/src/main/java/io/harness/ng/beans",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/io/harness/eraro",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "//access-control/contracts/api/src/main/java/io/harness/accesscontrol/resourcegroups/api",
+        "//access-control/libs/core/src/main/java/io/harness/accesscontrol/common/filter",
+        "//access-control/libs/core/src/main/java/io/harness/accesscontrol/common/validation",
+        "//access-control/libs/core/src/main/java/io/harness/accesscontrol/roleassignments",
+        "//access-control/libs/core/src/main/java/io/harness/accesscontrol/roleassignments/validator",
+        "//access-control/libs/core/src/main/java/io/harness/accesscontrol/roles/filter",
+        "//access-control/libs/core/src/main/java/io/harness/accesscontrol/scopes/core",
+        "//access-control/service/src/main/java/io/harness/accesscontrol/commons/validation",
+        "//access-control/service/src/main/java/io/harness/accesscontrol/resources/resourcegroups/api",
+        "//access-control/service/src/main/java/io/harness/accesscontrol/roleassignments/events",
+        "//clients/access-control/sdk/src/main/java/io/harness/accesscontrol/clients",
+        "@maven//:com_google_guava_guava",
+        "@maven//:net_jodah_failsafe",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_springframework_spring_tx",
+    ],
+)

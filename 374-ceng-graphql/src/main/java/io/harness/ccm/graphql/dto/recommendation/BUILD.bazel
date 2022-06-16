@@ -1,0 +1,27 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "recommendation",
+    srcs = [
+        "ContainerHistogramDTO.java",
+        "ECSRecommendationDTO.java",
+        "FilterStatsDTO.java",
+        "K8sRecommendationFilterDTO.java",
+        "NodeRecommendationDTO.java",
+        "RecommendationDetailsDTO.java",
+        "RecommendationItemDTO.java",
+        "RecommendationsDTO.java",
+        "WorkloadRecommendationDTO.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//450-ce-views/src/main/java/io/harness/ccm/views/graphql",
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/beans/recommendation",
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/beans/recommendation/models",
+        "//490-ce-commons/src/main/java/software/wings/graphql/datafetcher/ce/recommendation/entity",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:io_leangen_graphql_spqr",
+        "@maven//:io_swagger_core_v3_swagger_annotations",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

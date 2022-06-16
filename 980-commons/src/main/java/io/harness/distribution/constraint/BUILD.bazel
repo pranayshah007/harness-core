@@ -1,0 +1,28 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "constraint",
+    srcs = [
+        "Constraint.java",
+        "ConstraintException.java",
+        "ConstraintId.java",
+        "ConstraintRegistry.java",
+        "ConstraintUnit.java",
+        "Consumer.java",
+        "ConsumerId.java",
+        "InprocConstraintRegistry.java",
+        "InvalidPermitsException.java",
+        "PermanentlyBlockedConsumerException.java",
+        "RunnableConsumers.java",
+        "UnableToLoadConstraintException.java",
+        "UnableToRegisterConsumerException.java",
+        "UnableToSaveConstraintException.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//980-commons/src/main/java/io/harness/govern",
+        "//980-commons/src/main/java/io/harness/threading",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

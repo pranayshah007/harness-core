@@ -1,0 +1,16 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "remote",
+    srcs = ["AuthSettingsManagerClient.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//950-ng-authentication-service/src/main/java/software/wings/beans/loginSettings",
+        "//950-ng-authentication-service/src/main/java/software/wings/security/authentication",
+        "//960-ng-core-beans/src/main/java/io/harness/ng/core/account",
+        "//980-commons/src/main/java/io/harness/rest",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_squareup_retrofit2_retrofit",
+        "@maven//:org_hibernate_hibernate_validator",
+    ],
+)

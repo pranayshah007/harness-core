@@ -1,0 +1,21 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "opa",
+    srcs = [
+        "OpaEvaluationContext.java",
+        "OpaService.java",
+        "OpaServiceImpl.java",
+        "UserOpaEvaluationContext.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//950-opa-client/src/main/java/io/harness/opaclient/model",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/io/harness/network",
+        "//980-commons/src/main/java/io/harness/security/dto",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

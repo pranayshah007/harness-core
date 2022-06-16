@@ -1,0 +1,17 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "account",
+    srcs = ["AccountResourceImpl.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//945-account-mgmt/src/main/java/io/harness/account",
+        "//953-events-api/src/main/java/io/harness/eventsframework",
+        "//970-ng-commons/src/main/java/io/harness/remote/client",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "//platform-service/modules/resource-group-service/contracts/src/main/java/io/harness/resourcegroup/beans",
+        "//platform-service/modules/resource-group-service/src/main/java/io/harness/resourcegroup/framework/v1/service",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

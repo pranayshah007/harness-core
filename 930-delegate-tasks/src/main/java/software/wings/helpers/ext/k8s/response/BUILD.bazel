@@ -1,0 +1,29 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "response",
+    srcs = [
+        "CiK8sTaskResponse.java",
+        "K8sApplyResponse.java",
+        "K8sBlueGreenDeployResponse.java",
+        "K8sCanaryDeployResponse.java",
+        "K8sDeleteResponse.java",
+        "K8sInstanceSyncResponse.java",
+        "K8sRollingDeployResponse.java",
+        "K8sRollingDeployRollbackResponse.java",
+        "K8sScaleResponse.java",
+        "K8sTaskExecutionResponse.java",
+        "K8sTaskResponse.java",
+        "K8sTrafficSplitResponse.java",
+        "K8sVersionResponse.java",
+        "PodStatus.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/helm",
+        "//960-api-services/src/main/java/io/harness/k8s/model",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

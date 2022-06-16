@@ -1,0 +1,23 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "transformer",
+    srcs = [
+        "EmailNotificationMethodTransformer.java",
+        "MSTeamsNotificationMethodTransformer.java",
+        "MonitoredServiceNotificationRuleConditionTransformer.java",
+        "NotificationMethodTransformer.java",
+        "NotificationRuleConditionTransformer.java",
+        "PagerDutyNotificationMethodTransformer.java",
+        "SLONotificationRuleConditionTransformer.java",
+        "SlackNotificationMethodTransformer.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/core/beans/params",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/notification/beans",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/notification/channelDetails",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/notification/entities",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/notification/utils",
+    ],
+)

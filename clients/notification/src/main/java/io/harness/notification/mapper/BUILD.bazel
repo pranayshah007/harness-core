@@ -1,0 +1,13 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "mapper",
+    srcs = ["NotificationUserGroupMapper.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "//clients/notification/src/main/java/io/harness/notification/dtos",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

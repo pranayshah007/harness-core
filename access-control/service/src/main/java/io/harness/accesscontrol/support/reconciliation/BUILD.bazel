@@ -1,0 +1,29 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "reconciliation",
+    srcs = [
+        "SupportPreferenceReconciliationIterator.java",
+        "SupportRoleAssignmentsReconciliationJob.java",
+        "SupportRoleAssignmentsReconciliationService.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//960-persistence/src/main/java/io/harness/iterator",
+        "//960-persistence/src/main/java/io/harness/lock",
+        "//960-persistence/src/main/java/io/harness/mongo/iterator",
+        "//960-persistence/src/main/java/io/harness/mongo/iterator/filter",
+        "//960-persistence/src/main/java/io/harness/mongo/iterator/provider",
+        "//960-persistence/src/main/java/io/harness/queue",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "//access-control/service/src/main/java/io/harness/accesscontrol/commons/iterators",
+        "//access-control/service/src/main/java/io/harness/accesscontrol/roleassignments/privileged",
+        "//access-control/service/src/main/java/io/harness/accesscontrol/support",
+        "//access-control/service/src/main/java/io/harness/accesscontrol/support/persistence",
+        "@maven//:com_google_guava_guava",
+        "@maven//:io_dropwizard_dropwizard_lifecycle",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_redisson_redisson",
+        "@maven//:org_springframework_data_spring_data_mongodb",
+    ],
+)

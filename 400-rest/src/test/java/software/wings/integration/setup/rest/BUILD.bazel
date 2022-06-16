@@ -1,0 +1,23 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "rest",
+    testonly = True,
+    srcs = [
+        "AccountResourceRestClient.java",
+        "AppResourceRestClient.java",
+        "EnvResourceRestClient.java",
+        "ServiceResourceRestClient.java",
+        "SettingsResourceRestClient.java",
+        "UserGroupResourceRestClient.java",
+        "WorkflowResourceRestClient.java",
+    ],
+    deps = [
+        "//400-rest/src/supporter-test/java/software/wings/integration",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/io/harness/rest",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

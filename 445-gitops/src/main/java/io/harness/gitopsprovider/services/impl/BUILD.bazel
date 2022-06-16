@@ -1,0 +1,17 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "impl",
+    srcs = ["GitOpsProviderServiceImpl.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//445-gitops/src/main/java/io/harness/gitopsprovider/entity",
+        "//445-gitops/src/main/java/io/harness/gitopsprovider/mappers",
+        "//445-gitops/src/main/java/io/harness/gitopsprovider/services",
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector",
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector/gitops",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_springframework_data_spring_data_commons",
+    ],
+)

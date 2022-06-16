@@ -1,0 +1,24 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "events",
+    srcs = [
+        "PmsEventSender.java",
+        "ProducerCacheKey.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//878-ng-common-utilities/src/main/java/io/harness/events",
+        "//884-pms-commons/src/main/java/io/harness/pms/events/base",
+        "//953-events-api/src/main/java/io/harness/eventsframework",
+        "//953-events-api/src/main/java/io/harness/eventsframework/api",
+        "//953-events-api/src/main/java/io/harness/eventsframework/impl/noop",
+        "//953-events-api/src/main/java/io/harness/eventsframework/impl/redis",
+        "//960-persistence/src/main/java/io/harness/redis",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:net_jodah_failsafe",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_springframework_data_spring_data_mongodb",
+    ],
+)

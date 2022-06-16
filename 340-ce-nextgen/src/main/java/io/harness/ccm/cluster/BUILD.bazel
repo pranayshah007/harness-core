@@ -1,0 +1,11 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "cluster",
+    srcs = ["NGClusterRecordHandler.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/entities",
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/service/intf",
+    ],
+)

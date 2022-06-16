@@ -1,0 +1,16 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "connector",
+    srcs = ["ConnectorHeartbeatPerpetualTaskExecutor.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//932-connector-task/src/main/java/io/harness/connector/task",
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/io/harness/network",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_eclipse_jetty_jetty_server",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

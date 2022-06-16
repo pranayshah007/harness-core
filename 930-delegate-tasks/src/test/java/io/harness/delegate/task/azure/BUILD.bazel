@@ -1,0 +1,37 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "azure",
+    srcs = [
+        "AzureAsyncTaskHelperTest.java",
+        "AzureTaskTest.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/azure",
+        "//930-delegate-tasks/src/main/java/software/wings/delegatetasks/azure",
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector/azureconnector",
+        "//960-api-services/src/main/java/io/harness/artifacts/beans",
+        "//960-api-services/src/main/java/io/harness/azure",
+        "//960-api-services/src/main/java/io/harness/azure/client",
+        "//960-api-services/src/main/java/io/harness/k8s/model",
+        "//960-api-services/src/main/java/io/harness/security/encryption",
+        "//970-ng-commons/src/main/java/io/harness/errorhandling",
+        "//980-commons/src/main/java/io/harness/artifact",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:com_microsoft_azure_azure_mgmt_appservice",
+        "@maven//:com_microsoft_azure_azure_mgmt_containerregistry",
+        "@maven//:com_microsoft_azure_azure_mgmt_containerservice",
+        "@maven//:com_microsoft_azure_azure_mgmt_resources",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+    ],
+)

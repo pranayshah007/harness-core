@@ -1,0 +1,14 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "activityhistory",
+    srcs = [
+        "NGActivityConstants.java",
+        "NGActivityQueryCriteriaHelper.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//950-ng-core/src/main/java/io/harness/ng/core/activityhistory/entity",
+        "@maven//:org_springframework_data_spring_data_mongodb",
+    ],
+)

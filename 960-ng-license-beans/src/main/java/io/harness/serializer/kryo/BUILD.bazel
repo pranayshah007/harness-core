@@ -1,0 +1,11 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "kryo",
+    srcs = ["LicenseBeanKryoClassesRegistrar.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//960-ng-license-beans/src/main/java/io/harness/licensing/beans/modules",
+        "@maven//:com_esotericsoftware_kryo",
+    ],
+)

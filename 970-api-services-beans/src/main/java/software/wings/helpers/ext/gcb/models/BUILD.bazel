@@ -1,0 +1,34 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "models",
+    srcs = [
+        "BuildOptions.java",
+        "BuiltImage.java",
+        "GcbArtifactObjects.java",
+        "GcbArtifacts.java",
+        "GcbBuildSource.java",
+        "GcbBuildTriggers.java",
+        "GcbResult.java",
+        "GcbTrigger.java",
+        "HashType.java",
+        "LogStreamingOption.java",
+        "LoggingMode.java",
+        "MachineType.java",
+        "OperationError.java",
+        "RepoSource.java",
+        "Secret.java",
+        "SourceProvenance.java",
+        "StorageSource.java",
+        "SubstitutionOption.java",
+        "TimeSpan.java",
+        "VerifyOption.java",
+        "Volume.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

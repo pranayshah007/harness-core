@@ -1,0 +1,12 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "response",
+    srcs = [
+        "VisitorErrorResponse.java",
+        "VisitorErrorResponseWrapper.java",
+        "VisitorResponse.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = ["@maven//:org_projectlombok_lombok"],
+)

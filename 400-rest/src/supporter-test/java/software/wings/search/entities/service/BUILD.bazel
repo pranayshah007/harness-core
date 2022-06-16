@@ -1,0 +1,8 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "service",
+    testonly = True,
+    srcs = ["ServiceEntityTestUtils.java"],
+    deps = ["//960-persistence/src/main/java/io/harness/mongo/changestreams"],
+)

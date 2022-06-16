@@ -1,0 +1,17 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "spring",
+    srcs = [
+        "UserMembershipRepository.java",
+        "UserMetadataRepository.java",
+        "UserProjectMapRepository.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//123-ng-core-user/src/main/java/io/harness/ng/core/user/entities",
+        "//123-ng-core-user/src/main/java/io/harness/repositories/user/custom",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_springframework_data_spring_data_commons",
+    ],
+)

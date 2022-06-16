@@ -1,0 +1,17 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "timeout",
+    srcs = [
+        "AbsoluteSdkTimeoutTrackerParameters.java",
+        "SdkTimeoutObtainment.java",
+        "SdkTimeoutTrackerParameters.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//876-orchestration-beans/src/main/java/io/harness/timeout",
+        "//970-ng-commons/src/main/java/io/harness/yaml/core/timeout",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

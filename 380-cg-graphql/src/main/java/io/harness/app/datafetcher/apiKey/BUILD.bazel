@@ -1,0 +1,17 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "apiKey",
+    srcs = [
+        "CreateApiKeyDataFetcher.java",
+        "DeleteApiKeyDataFetcher.java",
+        "UpdateApiKeyDataFetcher.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//380-cg-graphql/src/main/java/io/harness/app/schema/mutation/apiKey/input",
+        "//380-cg-graphql/src/main/java/io/harness/app/schema/mutation/apiKey/payload",
+        "//970-rbac-core/src/main/java/software/wings/security/annotations",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+    ],
+)

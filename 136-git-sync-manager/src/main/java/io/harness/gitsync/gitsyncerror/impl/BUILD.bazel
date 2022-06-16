@@ -1,0 +1,25 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "impl",
+    srcs = ["GitSyncErrorServiceImpl.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//136-git-sync-manager/src/main/java/io/harness/gitsync/common/dtos",
+        "//136-git-sync-manager/src/main/java/io/harness/gitsync/common/service",
+        "//136-git-sync-manager/src/main/java/io/harness/gitsync/gitsyncerror",
+        "//136-git-sync-manager/src/main/java/io/harness/gitsync/gitsyncerror/beans",
+        "//136-git-sync-manager/src/main/java/io/harness/gitsync/gitsyncerror/dtos",
+        "//136-git-sync-manager/src/main/java/io/harness/gitsync/gitsyncerror/remote",
+        "//136-git-sync-manager/src/main/java/io/harness/gitsync/gitsyncerror/service",
+        "//136-git-sync-manager/src/main/java/io/harness/repositories/gitSyncError",
+        "//970-ng-commons/src/main/java/io/harness/ng/beans",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_springframework_data_spring_data_commons",
+        "@maven//:org_springframework_data_spring_data_mongodb",
+        "@maven//:org_springframework_spring_tx",
+    ],
+)

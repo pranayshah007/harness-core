@@ -1,0 +1,13 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "annotations",
+    srcs = [
+        "DelegateAuth.java",
+        "DelegateAuth2.java",
+        "HarnessApiKeyAuth.java",
+        "LearningEngineAuth.java",
+        "PublicApiWithWhitelist.java",
+    ],
+    visibility = ["//:__subpackages__"],
+)

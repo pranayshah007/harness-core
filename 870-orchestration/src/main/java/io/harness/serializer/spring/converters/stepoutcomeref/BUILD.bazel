@@ -1,0 +1,11 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "stepoutcomeref",
+    srcs = [
+        "StepOutcomeRefReadConverter.java",
+        "StepOutcomeRefWriteConverter.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = ["//960-persistence/src/main/java/io/harness/serializer/spring"],
+)

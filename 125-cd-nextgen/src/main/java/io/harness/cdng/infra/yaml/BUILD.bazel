@@ -1,0 +1,32 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "yaml",
+    srcs = [
+        "AzureWebAppInfrastructure.java",
+        "Infrastructure.java",
+        "InfrastructureConfig.java",
+        "InfrastructureDefinitionConfig.java",
+        "InfrastructurePlanCreatorConfig.java",
+        "K8SDirectInfrastructure.java",
+        "K8sAzureInfrastructure.java",
+        "K8sGcpInfrastructure.java",
+        "PdcInfrastructure.java",
+        "ServerlessAwsLambdaInfrastructure.java",
+        "SshWinRmAzureInfrastructure.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//953-yaml-commons/src/main/java/io/harness/yaml/core/intfc",
+        "//960-ng-core-beans/src/main/java/io/harness/ng/core/infrastructure",
+        "//960-yaml-sdk/src/main/java/io/harness/yaml/schema/beans",
+        "//967-walktree-visitor/src/main/java/io/harness/walktree/visitor",
+        "//970-ng-commons/src/main/java/io/harness/validator",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:io_swagger_swagger_annotations",
+        "@maven//:org_hibernate_hibernate_validator",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_springframework_data_spring_data_commons",
+    ],
+)

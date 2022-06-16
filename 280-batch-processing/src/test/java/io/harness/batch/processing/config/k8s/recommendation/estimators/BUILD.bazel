@@ -1,0 +1,29 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "estimators",
+    srcs = [
+        "ConfidenceMultiplierEstimatorTest.java",
+        "ConstEstimatorTest.java",
+        "MarginEstimatorTest.java",
+        "MinResourceEstimatorTest.java",
+        "OmitResourceEstimatorTest.java",
+        "PercentileEstimatorTest.java",
+        "ResourceAmountUtilsTest.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//280-batch-processing/src/main/java/io/harness/batch/processing/config/k8s/recommendation",
+        "//280-batch-processing/src/main/java/io/harness/batch/processing/config/k8s/recommendation/estimators",
+        "//490-ce-commons/src/main/java/software/wings/graphql/datafetcher/ce/recommendation/entity",
+        "//980-commons/src/main/java/io/harness/histogram",
+        "@maven//:com_google_guava_guava",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+    ],
+)

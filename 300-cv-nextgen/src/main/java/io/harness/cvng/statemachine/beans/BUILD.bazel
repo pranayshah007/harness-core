@@ -1,0 +1,18 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "beans",
+    srcs = [
+        "AnalysisInput.java",
+        "AnalysisOrchestratorStatus.java",
+        "AnalysisState.java",
+        "AnalysisStatus.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/analysis",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/core/beans",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/verificationjob/entities",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

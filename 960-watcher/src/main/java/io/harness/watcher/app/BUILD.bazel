@@ -1,0 +1,31 @@
+load("@rules_java//java:defs.bzl", "java_binary", "java_library")
+
+java_library(
+    name = "app",
+    srcs = [
+        "WatcherApplication.java",
+        "WatcherConfiguration.java",
+        "WatcherModule.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//960-watcher/src/main/java/io/harness/watcher/service",
+        "//970-watcher-beans/src/main/java/io/harness/delegate/message",
+        "//980-commons/src/main/java/io/harness/configuration",
+        "//980-commons/src/main/java/io/harness/threading",
+        "//980-commons/src/main/java/io/harness/time",
+        "@maven//:com_google_guava_guava",
+        "@maven//:commons_io_commons_io",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_slf4j_jul_to_slf4j",
+        "@maven//:org_slf4j_log4j_over_slf4j",
+    ],
+)
+
+java_binary(
+    name = "WatcherApplication",
+    main_class = "io.harness.watcher.app.WatcherApplication",
+    visibility = ["//visibility:public"],
+    runtime_deps = [":app"],
+)

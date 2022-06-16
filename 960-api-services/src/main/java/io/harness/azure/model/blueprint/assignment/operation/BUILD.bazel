@@ -1,0 +1,17 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "operation",
+    srcs = [
+        "AssignmentDeploymentJob.java",
+        "AssignmentDeploymentJobResult.java",
+        "AssignmentJobCreatedResource.java",
+        "AssignmentOperation.java",
+        "AzureResourceManagerError.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

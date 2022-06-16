@@ -1,0 +1,8 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "morphia",
+    srcs = ["CIExecutionMorphiaRegistrar.java"],
+    visibility = ["//:__subpackages__"],
+    deps = ["//320-ci-execution/src/main/java/ci/pipeline/execution"],
+)

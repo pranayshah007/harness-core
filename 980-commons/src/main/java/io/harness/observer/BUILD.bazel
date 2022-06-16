@@ -1,0 +1,13 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "observer",
+    srcs = [
+        "AsyncInformObserver.java",
+        "Observer.java",
+        "Rejection.java",
+        "Subject.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = ["@maven//:org_projectlombok_lombok"],
+)

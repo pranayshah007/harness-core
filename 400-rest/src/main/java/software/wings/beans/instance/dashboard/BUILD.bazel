@@ -1,0 +1,26 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "dashboard",
+    srcs = [
+        "AbstractEntitySummary.java",
+        "ArtifactSummary.java",
+        "EntitySummary.java",
+        "EntitySummaryStats.java",
+        "EnvironmentSummary.java",
+        "InstanceStats.java",
+        "InstanceStatsByArtifact.java",
+        "InstanceStatsByEntity.java",
+        "InstanceStatsByEnvironment.java",
+        "InstanceStatsByService.java",
+        "InstanceStatsUtils.java",
+        "InstanceSummaryStats.java",
+        "InstanceSummaryStatsByService.java",
+        "ServiceSummary.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/software/wings/service/intfc/instance/stats",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

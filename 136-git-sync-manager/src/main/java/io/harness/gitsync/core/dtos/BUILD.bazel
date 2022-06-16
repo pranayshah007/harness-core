@@ -1,0 +1,23 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "dtos",
+    srcs = [
+        "GitCommitDTO.java",
+        "GitFileResult.java",
+        "GitProcessingResult.java",
+        "HarnessToGitResponse.java",
+        "YamlChangeSetDTO.java",
+        "YamlChangeSetSaveDTO.java",
+        "YamlFilterResult.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//136-git-sync-manager/src/main/java/io/harness/gitsync/common/beans",
+        "//136-git-sync-manager/src/main/java/io/harness/gitsync/core/beans",
+        "//136-git-sync-manager/src/main/java/io/harness/gitsync/gitfileactivity/beans",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_hibernate_hibernate_validator",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

@@ -1,0 +1,24 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "yaml",
+    srcs = [
+        "YamlSchemaTypes.java",
+        "YamlSdkConfiguration.java",
+        "YamlSdkInitConstants.java",
+        "YamlSdkInitHelper.java",
+        "YamlSdkModule.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//960-yaml-sdk/src/main/java/io/harness/yaml/schema/beans",
+        "//960-yaml-sdk/src/main/java/io/harness/yaml/snippets/helper",
+        "//960-yaml-sdk/src/main/java/io/harness/yaml/validator",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/io/harness/testing",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@maven//:com_google_inject_guice",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

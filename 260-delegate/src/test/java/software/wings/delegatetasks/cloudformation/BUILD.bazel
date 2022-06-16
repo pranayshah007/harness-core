@@ -1,0 +1,20 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "cloudformation",
+    srcs = ["CloudFormationCommandTaskTest.java"],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//930-delegate-tasks/src/main/java/software/wings/delegatetasks/cloudformation",
+        "//930-delegate-tasks/src/main/java/software/wings/delegatetasks/cloudformation/cloudformationtaskhandler",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:junit_junit",
+        "@maven//:org_jooq_joor",
+        "@maven//:org_mockito_mockito_core",
+    ],
+)

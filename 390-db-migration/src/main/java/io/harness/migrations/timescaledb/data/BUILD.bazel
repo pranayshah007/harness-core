@@ -1,0 +1,27 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "data",
+    srcs = [
+        "AddAccountNameInAccountTable.java",
+        "AddActualInstanceIdToK8sUtilizationData.java",
+        "CreateAnomaliesDataV2.java",
+        "CreatePodCountTable.java",
+        "MigrateWorkflowsToTimeScaleDB.java",
+        "OptimizeNodeRecommendationQuery.java",
+        "PodInfoPartialIndexForSyncQuery.java",
+        "SetInstancesDeployedInDeployment.java",
+        "SetRollbackDurationInDeployment.java",
+        "TimeScaleDBMigrationException.java",
+        "UpdateEnvSvcCPInDeployment.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//390-db-migration/src/main/java/io/harness/migrations/timescaledb",
+        "//960-persistence/src/main/java/io/harness/persistence",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:io_fabric8_fabric8_utils",
+        "@maven//:org_mongodb_morphia_morphia",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

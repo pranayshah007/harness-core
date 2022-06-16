@@ -1,0 +1,17 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "loginSettings",
+    srcs = [
+        "AllowedCharactersPasswordData.java",
+        "PasswordExpirationPolicy.java",
+        "PasswordSource.java",
+        "SpecialCharactersPasswordData.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_passay_passay",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

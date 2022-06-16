@@ -1,0 +1,14 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "harness",
+    srcs = ["CgOrchestrationModule.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//870-cg-orchestration/src/main/java/io/harness/state/inspection",
+        "//874-orchestration-delay/src/main/java/io/harness/delay",
+        "//960-persistence/src/main/java/io/harness/queue",
+        "//980-commons/src/main/java/io/harness/govern",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+    ],
+)

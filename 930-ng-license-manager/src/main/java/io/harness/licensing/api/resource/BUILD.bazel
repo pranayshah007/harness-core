@@ -1,0 +1,21 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "resource",
+    srcs = [
+        "AdminLicenseResource.java",
+        "LicenseResource.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//930-ng-license-manager/src/main/java/io/harness/licensing/accesscontrol",
+        "//930-ng-license-manager/src/main/java/io/harness/licensing/services",
+        "//960-ng-license-beans/src/main/java/io/harness/licensing/beans",
+        "//960-ng-license-beans/src/main/java/io/harness/licensing/beans/modules",
+        "//960-ng-license-beans/src/main/java/io/harness/licensing/beans/response",
+        "//960-ng-license-beans/src/main/java/io/harness/licensing/beans/summary",
+        "@maven//:com_squareup_retrofit2_retrofit",
+        "@maven//:io_swagger_core_v3_swagger_annotations",
+        "@maven//:io_swagger_swagger_annotations",
+    ],
+)

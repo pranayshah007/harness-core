@@ -1,0 +1,25 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "support",
+    srcs = ["EcsMetricClientTest.java"],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//260-delegate/src/main/java/io/harness/perpetualtask/ecs",
+        "//260-delegate/src/main/java/io/harness/perpetualtask/ecs/support",
+        "//930-delegate-tasks/src/main/java/software/wings/service/impl/aws/model/request",
+        "//930-delegate-tasks/src/main/java/software/wings/service/impl/aws/model/response",
+        "//930-delegate-tasks/src/main/java/software/wings/service/intfc/aws/delegate",
+        "//960-api-services/src/main/java/io/harness/security/encryption",
+        "@maven//:com_amazonaws_aws_java_sdk_cloudwatch",
+        "@maven//:com_amazonaws_aws_java_sdk_ecs",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+    ],
+)

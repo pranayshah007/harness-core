@@ -1,0 +1,29 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "reconciliation",
+    srcs = ["ResourceGroupSyncConciliationJobTest.java"],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//953-events-api/src/main/java/io/harness/eventsframework",
+        "//953-events-api/src/main/java/io/harness/eventsframework/api",
+        "//970-ng-commons/src/main/java/io/harness/ng/beans",
+        "//970-ng-commons/src/main/java/io/serializer",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "//platform-service/modules/resource-group-service/contracts/src/main/java/io/harness/resourcegroup/v1/remote/dto",
+        "//platform-service/modules/resource-group-service/contracts/src/main/java/io/harness/resourcegroup/v2/remote/dto",
+        "//platform-service/modules/resource-group-service/src/main/java/io/harness/resourcegroup/framework/v1/service",
+        "//platform-service/modules/resource-group-service/src/main/java/io/harness/resourcegroup/framework/v2/remote/mapper",
+        "//platform-service/modules/resource-group-service/src/main/java/io/harness/resourcegroup/framework/v2/service",
+        "//platform-service/modules/resource-group-service/src/main/java/io/harness/resourcegroup/reconciliation",
+        "@maven//:com_google_guava_guava",
+        "@maven//:junit_junit",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_mockito_mockito_core",
+    ],
+)

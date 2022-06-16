@@ -1,0 +1,26 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "manager",
+    srcs = [
+        "AzureARMManagerImpl.java",
+        "AzureAppServiceManagerImpl.java",
+        "AzureVMSSAllPhaseRollbackData.java",
+        "AzureVMSSHelperServiceManagerImpl.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/software/wings/service/intfc/azure/manager",
+        "//950-delegate-tasks-beans/src/main/java/io/harness/delegate/beans/azure",
+        "//950-delegate-tasks-beans/src/main/java/io/harness/delegate/task/azure/appservice",
+        "//950-delegate-tasks-beans/src/main/java/io/harness/delegate/task/azure/appservice/webapp/request",
+        "//950-delegate-tasks-beans/src/main/java/io/harness/delegate/task/azure/appservice/webapp/response",
+        "//950-delegate-tasks-beans/src/main/java/io/harness/delegate/task/azure/arm",
+        "//950-delegate-tasks-beans/src/main/java/io/harness/delegate/task/azure/request",
+        "//950-delegate-tasks-beans/src/main/java/io/harness/delegate/task/azure/response",
+        "//970-api-services-beans/src/main/java/io/harness/azure/model",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

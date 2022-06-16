@@ -1,0 +1,18 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "expression",
+    srcs = [
+        "DelegateExpressionEvaluator.java",
+        "SecretDelegateFunctor.java",
+        "TerraformPlanDelegateFunctor.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//960-api-services/src/main/java/io/harness/terraform/expression",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:commons_io_commons_io",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

@@ -1,0 +1,14 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "resources",
+    srcs = ["NgCoreYamlSnippetResource.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//960-yaml-sdk/src/main/java/io/harness/yaml/snippets/dto",
+        "//960-yaml-sdk/src/main/java/io/harness/yaml/snippets/impl",
+        "@maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@maven//:io_swagger_swagger_annotations",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

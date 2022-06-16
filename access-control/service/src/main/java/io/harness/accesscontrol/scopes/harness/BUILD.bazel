@@ -1,0 +1,29 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "harness",
+    srcs = [
+        "AccountClientConfiguration.java",
+        "HarnessScopeLevel.java",
+        "HarnessScopeService.java",
+        "HarnessScopeServiceImpl.java",
+        "OrganizationClientConfiguration.java",
+        "ProjectClientConfiguration.java",
+        "ScopeMapper.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//930-ng-core-clients/src/main/java/io/harness/organization/remote",
+        "//930-ng-core-clients/src/main/java/io/harness/project/remote",
+        "//945-account-mgmt/src/main/java/io/harness/account",
+        "//953-events-api/src/main/java/io/harness/eventsframework",
+        "//970-ng-commons/src/main/java/io/harness/remote/client",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "//access-control/libs/core/src/main/java/io/harness/accesscontrol/common/filter",
+        "//access-control/libs/core/src/main/java/io/harness/accesscontrol/roleassignments",
+        "//access-control/libs/core/src/main/java/io/harness/accesscontrol/roles/filter",
+        "//access-control/libs/core/src/main/java/io/harness/accesscontrol/scopes/core",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

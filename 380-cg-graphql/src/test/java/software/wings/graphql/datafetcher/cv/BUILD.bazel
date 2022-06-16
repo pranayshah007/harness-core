@@ -1,0 +1,23 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "cv",
+    srcs = ["VerificationResultConnectionDataFetcherTest.java"],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//380-cg-graphql/src/main/java/software/wings/graphql/schema/query",
+        "//380-cg-graphql/src/main/java/software/wings/graphql/schema/type/aggregation",
+        "//425-verification-commons/src/main/java/io/harness/cv/api",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "@maven//:com_google_guava_guava",
+        "@maven//:com_graphql_java_graphql_java",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+    ],
+)

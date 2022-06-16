@@ -1,0 +1,18 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "resource",
+    srcs = ["HarnessResourceGroupResource.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//942-enforcement-sdk/src/main/java/io/harness/enforcement/client/annotation",
+        "//943-enforcement-beans/src/main/java/io/harness/enforcement/constants",
+        "//970-ng-commons/src/main/java/io/harness/ng/beans",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "//access-control/contracts/api/src/main/java/io/harness/accesscontrol/commons/exceptions",
+        "//platform-service/modules/resource-group-service/contracts/src/main/java/io/harness/resourcegroup/v1/remote/dto",
+        "//platform-service/modules/resource-group-service/contracts/src/main/java/io/harness/resourcegroup/v2/remote/dto",
+        "@maven//:io_swagger_core_v3_swagger_annotations",
+        "@maven//:io_swagger_swagger_annotations",
+    ],
+)

@@ -1,0 +1,37 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "environment",
+    srcs = [
+        "EnvironmentMapperTest.java",
+        "EnvironmentPlanCreatorHelperTest.java",
+        "EnvironmentPlanCreatorV2Test.java",
+        "EnvironmentStepV2Test.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//125-cd-nextgen/src/main/java/io/harness/cdng",
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/creator/plan",
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/creator/plan/environment",
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/creator/plan/environment/steps",
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/environment/steps",
+        "//127-cd-nextgen-entities/src/main/java/io/harness/cdng/visitor",
+        "//127-cd-nextgen-entities/src/main/java/io/harness/ng/core/environment/services",
+        "//878-ng-common-utilities/src/main/java/io/harness/steps/environment",
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/plan",
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/plan/creation/beans",
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/resolver/outputs",
+        "//953-yaml-commons/src/main/java/io/harness/yaml/core/variables",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "//clients/access-control/sdk/src/main/java/io/harness/accesscontrol/clients",
+        "@maven//:com_google_guava_guava",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+    ],
+)

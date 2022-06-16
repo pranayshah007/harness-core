@@ -1,0 +1,18 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "expression",
+    testonly = True,
+    srcs = [
+        "ExpressionServiceRule.java",
+        "ExpressionServiceTestBase.java",
+    ],
+    deps = [
+        "//960-expression-service/src/main/java/io/harness/expression/app",
+        "//980-commons/src/main/java/io/harness/govern",
+        "//980-commons/src/main/java/io/harness/threading",
+        "@maven//:junit_junit",
+        "@maven//:org_mockito_mockito_core",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

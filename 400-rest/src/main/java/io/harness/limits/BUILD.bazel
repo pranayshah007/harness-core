@@ -1,0 +1,30 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "limits",
+    srcs = [
+        "ConfiguredLimit.java",
+        "Counter.java",
+        "LimitCheckerFactory.java",
+        "LimitCheckerFactoryImpl.java",
+        "LimitEnforcementUtils.java",
+        "LimitsMorphiaClasses.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/io/harness/limits/checker",
+        "//400-rest/src/main/java/io/harness/limits/checker/rate",
+        "//400-rest/src/main/java/io/harness/limits/configuration",
+        "//400-rest/src/main/java/software/wings/dl",
+        "//960-persistence/src/main/java/io/harness/mongo/index",
+        "//960-persistence/src/main/java/io/harness/persistence",
+        "//980-commons/src/main/java/io/harness/eraro",
+        "//980-commons/src/main/java/io/harness/limits/impl/model",
+        "//980-commons/src/main/java/io/harness/limits/lib",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_github_reinert_jjschema",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_mongodb_morphia_morphia",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

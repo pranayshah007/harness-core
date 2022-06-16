@@ -1,0 +1,16 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "api",
+    srcs = ["InviteService.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//123-ng-core-user/src/main/java/io/harness/ng/accesscontrol/user",
+        "//123-ng-core-user/src/main/java/io/harness/ng/core/invites/entities",
+        "//930-ng-core-clients/src/main/java/io/harness/invites/remote",
+        "//960-ng-core-beans/src/main/java/io/harness/ng/core/invites/dto",
+        "//970-ng-commons/src/main/java/io/harness/ng/beans",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_springframework_data_spring_data_mongodb",
+    ],
+)

@@ -1,0 +1,15 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "instancestats",
+    srcs = [
+        "InstanceStatsService.java",
+        "InstanceStatsServiceImpl.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//126-instance/src/main/java/io/harness/models",
+        "//126-instance/src/main/java/io/harness/repositories/instancestats",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

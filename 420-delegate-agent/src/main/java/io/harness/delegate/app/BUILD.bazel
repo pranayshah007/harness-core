@@ -1,0 +1,15 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "app",
+    srcs = ["DelegateGrpcServiceModule.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//800-pipeline-service/src/main/java/io/harness/grpc/server",
+        "//910-delegate-task-grpc-service/src/main/java/io/harness/task/service/impl",
+        "//960-expression-service/src/main/java/io/harness/expression/app",
+        "//960-expression-service/src/main/java/io/harness/expression/service",
+        "@maven//:com_google_guava_guava",
+        "@maven//:com_google_inject_guice",
+    ],
+)

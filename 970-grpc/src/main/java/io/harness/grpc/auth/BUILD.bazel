@@ -1,0 +1,21 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "auth",
+    srcs = [
+        "DelegateAuthCallCredentials.java",
+        "DelegateAuthServerInterceptor.java",
+        "ServiceAuthCallCredentials.java",
+        "ServiceAuthServerInterceptor.java",
+        "ServiceInfo.java",
+        "ValidateAuthServerInterceptor.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//970-grpc/src/main/java/io/harness/grpc/utils",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

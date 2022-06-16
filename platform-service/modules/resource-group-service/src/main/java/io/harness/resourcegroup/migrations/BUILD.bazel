@@ -1,0 +1,29 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "migrations",
+    srcs = [
+        "MigrationOfV1ToV2.java",
+        "MultipleManagedResourceGroupDeletionMigration.java",
+        "ResourceGroupAllowedScopeLevelsMigration.java",
+        "ResourceGroupBackgroundMigrationDetails.java",
+        "ResourceGroupMigrationProvider.java",
+        "ResourceGroupMigrationSchema.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//958-migration-sdk/src/main/java/io/harness/migration/beans",
+        "//958-migration-sdk/src/main/java/io/harness/migration/entities",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "//platform-service/modules/resource-group-service/src/main/java/io/harness/resourcegroup/framework/v1/repositories/spring",
+        "//platform-service/modules/resource-group-service/src/main/java/io/harness/resourcegroup/framework/v2/remote/mapper",
+        "//platform-service/modules/resource-group-service/src/main/java/io/harness/resourcegroup/framework/v2/repositories/spring",
+        "//platform-service/modules/resource-group-service/src/main/java/io/harness/resourcegroup/framework/v2/service",
+        "//platform-service/modules/resource-group-service/src/main/java/io/harness/resourcegroup/v1/model",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_springframework_data_spring_data_commons",
+        "@maven//:org_springframework_data_spring_data_mongodb",
+    ],
+)

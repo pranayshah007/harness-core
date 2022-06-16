@@ -1,0 +1,11 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "morphia",
+    srcs = ["PmsCommonsMorphiaRegistrar.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//884-pms-commons/src/main/java/io/harness/pms/execution/facilitator",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+    ],
+)

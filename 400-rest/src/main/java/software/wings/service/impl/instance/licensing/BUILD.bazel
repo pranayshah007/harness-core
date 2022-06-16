@@ -1,0 +1,18 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "licensing",
+    srcs = [
+        "InstanceLimitProviderImpl.java",
+        "InstanceUsageLimitCheckerImpl.java",
+        "InstanceUsageLimitExcessHandlerImpl.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/io/harness/limits/counter/service",
+        "//400-rest/src/main/java/software/wings/beans/alert",
+        "//400-rest/src/main/java/software/wings/service/intfc/instance/licensing",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

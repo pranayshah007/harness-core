@@ -1,0 +1,33 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "servicenow",
+    srcs = [
+        "ServiceNowActionNG.java",
+        "ServiceNowFieldAllowedValueDeserializer.java",
+        "ServiceNowFieldAllowedValueNG.java",
+        "ServiceNowFieldNG.java",
+        "ServiceNowFieldSchemaNG.java",
+        "ServiceNowFieldTypeNG.java",
+        "ServiceNowFieldValueNG.java",
+        "ServiceNowTemplate.java",
+        "ServiceNowTicketKeyNG.java",
+        "ServiceNowTicketNG.java",
+        "ServiceNowTicketTypeDTO.java",
+        "ServiceNowTicketTypeNG.java",
+        "ServiceNowUtils.java",
+        "TicketNG.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//970-api-services-beans/src/main/java/io/harness/servicenow/deserializer",
+        "//980-commons/src/main/java/io/harness/eraro",
+        "//980-commons/src/main/java/io/harness/jackson",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:com_fasterxml_jackson_core_jackson_core",
+        "@maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@maven//:org_hibernate_hibernate_validator",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

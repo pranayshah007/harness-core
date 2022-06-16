@@ -1,0 +1,19 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "connector",
+    srcs = [
+        "ConnectorResourceClient.java",
+        "ConnectorResourceClientModule.java",
+        "ConnectorResourceHttpClientFactory.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector",
+        "//970-ng-commons/src/main/java/io/harness/ng/beans",
+        "//970-ng-commons/src/main/java/io/harness/remote/client",
+        "@maven//:com_squareup_retrofit2_retrofit",
+        "@maven//:org_hibernate_hibernate_validator",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

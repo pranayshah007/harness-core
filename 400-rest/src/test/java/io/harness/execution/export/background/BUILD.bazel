@@ -1,0 +1,31 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "background",
+    srcs = [
+        "ExportExecutionsNotificationHelperTest.java",
+        "ExportExecutionsRequestCleanupHandlerTest.java",
+        "ExportExecutionsRequestHandlerTest.java",
+        "ExportExecutionsServiceTest.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//400-rest/src/main/java/io/harness/execution/export",
+        "//400-rest/src/main/java/io/harness/execution/export/background",
+        "//400-rest/src/main/java/io/harness/execution/export/metadata",
+        "//400-rest/src/main/java/io/harness/execution/export/processor",
+        "//960-persistence/src/main/java/io/harness/mongo/iterator",
+        "//990-commons-test/src/main/java/io/harness/category/element",
+        "@maven//:com_google_guava_guava",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+        "@maven//:org_powermock_powermock_core",
+        "@maven//:org_powermock_powermock_module_junit4",
+    ],
+)

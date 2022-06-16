@@ -1,0 +1,28 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "yaml",
+    srcs = [
+        "GitClientHelper.java",
+        "GitClientImpl.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//930-delegate-tasks/src/main/java/software/wings/beans/yaml",
+        "//930-delegate-tasks/src/main/java/software/wings/service/intfc/yaml",
+        "//960-api-services/src/main/java/io/harness/git",
+        "//960-api-services/src/main/java/io/harness/shell",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/io/harness/eraro",
+        "//980-commons/src/main/java/io/harness/filesystem",
+        "//980-commons/src/main/java/io/harness/govern",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:commons_codec_commons_codec",
+        "@maven//:commons_io_commons_io",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_eclipse_jgit_org_eclipse_jgit",
+        "@maven//:org_eclipse_jgit_org_eclipse_jgit_http_apache",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

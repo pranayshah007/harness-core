@@ -1,0 +1,23 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "ceawsmapper",
+    srcs = [
+        "CEAwsDTOToEntity.java",
+        "CEAwsEntityToDTO.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//440-connector-nextgen/src/main/java/io/harness/connector/entities/embedded/ceawsconnector",
+        "//440-connector-nextgen/src/main/java/io/harness/connector/mappers",
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector",
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector/awsconnector",
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector/ceawsconnector",
+        "//960-api-services/src/main/java/io/harness/aws",
+        "//970-ng-commons/src/main/java/io/harness/remote",
+        "@maven//:com_amazonaws_aws_java_sdk_core",
+        "@maven//:com_amazonaws_aws_java_sdk_costandusagereport",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

@@ -1,0 +1,25 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "commandlibrary",
+    srcs = [
+        "CommandLibraryResource.java",
+        "CommandLibraryServiceResource.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/io/harness/commandlibrary/client",
+        "//400-rest/src/main/java/software/wings/api/commandlibrary",
+        "//400-rest/src/main/java/software/wings/beans/commandlibrary",
+        "//400-rest/src/main/java/software/wings/beans/template",
+        "//400-rest/src/main/java/software/wings/beans/template/dto",
+        "//400-rest/src/main/java/software/wings/service/intfc/template",
+        "//980-commons/src/main/java/io/harness/configuration",
+        "//980-commons/src/main/java/io/harness/rest",
+        "@maven//:com_squareup_retrofit2_retrofit",
+        "@maven//:commons_io_commons_io",
+        "@maven//:io_dropwizard_metrics_metrics_annotation",
+        "@maven//:io_swagger_swagger_annotations",
+        "@maven//:org_glassfish_jersey_media_jersey_media_multipart",
+    ],
+)

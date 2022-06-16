@@ -1,0 +1,12 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "mappers",
+    srcs = ["EcrResourceMapper.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/artifact/resources/ecr/dtos",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/artifacts/ecr",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

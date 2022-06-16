@@ -1,0 +1,11 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "constants",
+    srcs = [
+        "AccountManagementConstants.java",
+        "FrameworkConstants.java",
+        "UserConstants.java",
+    ],
+    visibility = ["//:__subpackages__"],
+)

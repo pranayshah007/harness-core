@@ -1,0 +1,24 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "exception",
+    srcs = [
+        "KubernetesApiClientRuntimeExceptionHandler.java",
+        "KubernetesApiExceptionHandler.java",
+        "KubernetesCliRuntimeExceptionHandler.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/io/harness/exception/exceptionmanager/exceptionhandler",
+        "//980-commons/src/main/java/io/harness/exception/runtime",
+        "//980-commons/src/main/java/io/harness/reflection",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:io_kubernetes_client_java_api",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_json_json",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_zeroturnaround_zt_exec",
+    ],
+)

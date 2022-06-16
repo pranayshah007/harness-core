@@ -1,0 +1,16 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "k8s",
+    srcs = ["K8SInstanceSyncPerpetualTaskHandler.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//126-instance/src/main/java/io/harness/dtos",
+        "//126-instance/src/main/java/io/harness/dtos/deploymentinfo",
+        "//126-instance/src/main/java/io/harness/service/instancesyncperpetualtask/instancesyncperpetualtaskhandler",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/k8s",
+        "//960-ng-core-beans/src/main/java/io/harness/ng/core/infrastructure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

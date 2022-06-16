@@ -1,0 +1,20 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "tasks",
+    srcs = [
+        "CreateOrganizationTimeScaleTable.java",
+        "CreateProjectTimeScaleTable.java",
+        "CreateTagsTimeScaleTable.java",
+        "ProjectModulesMigration.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//958-migration-sdk/src/main/java/io/harness/migration/timescale",
+        "//960-persistence/src/main/java/io/harness/persistence",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_mongodb_morphia_morphia",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_springframework_data_spring_data_mongodb",
+    ],
+)

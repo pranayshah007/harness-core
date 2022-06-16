@@ -1,0 +1,19 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "stream",
+    srcs = [
+        "AtmosphereBroadcaster.java",
+        "GuiceObjectFactory.java",
+        "StreamModule.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//960-persistence/src/main/java/io/harness/redis",
+        "//960-persistence/src/main/java/io/harness/stream/redisson",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_atmosphere_atmosphere_runtime",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

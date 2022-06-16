@@ -1,0 +1,20 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "timescaledb",
+    srcs = [
+        "DefaultCatalog.java",
+        "Indexes.java",
+        "Keys.java",
+        "Public.java",
+        "Routines.java",
+        "Tables.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//959-psql-database-models/src/generated/java/io/harness/timescaledb/routines",
+        "//959-psql-database-models/src/generated/java/io/harness/timescaledb/tables",
+        "//959-psql-database-models/src/generated/java/io/harness/timescaledb/tables/records",
+        "@maven//:org_jooq_jooq",
+    ],
+)

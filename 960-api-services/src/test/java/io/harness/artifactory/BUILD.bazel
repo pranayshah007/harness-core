@@ -1,0 +1,25 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "artifactory",
+    srcs = [
+        "ArtifactoryClientImplTest.java",
+        "ArtifactoryNgServiceImplTest.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//960-api-services/src/main/java/io/harness/artifactory",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_github_tomakehurst_wiremock_jre8_standalone",
+        "@maven//:com_google_guava_guava",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_jfrog_artifactory_client_artifactory_java_client_services",
+        "@maven//:org_mockito_mockito_core",
+    ],
+)

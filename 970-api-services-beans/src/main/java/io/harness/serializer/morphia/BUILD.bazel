@@ -1,0 +1,11 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "morphia",
+    srcs = ["ApiServiceBeansMorphiaRegistrar.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//970-api-services-beans/src/main/java/io/harness/deployment",
+        "//970-api-services-beans/src/main/java/io/harness/globalcontex",
+    ],
+)

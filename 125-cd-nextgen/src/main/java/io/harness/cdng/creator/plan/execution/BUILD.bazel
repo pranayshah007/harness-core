@@ -1,0 +1,19 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "execution",
+    srcs = ["CDExecutionPMSPlanCreator.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/creator/plan/rollback",
+        "//878-ng-common-utilities/src/main/java/io/harness/steps/common",
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/plan",
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/plan/creation/beans",
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/plan/creation/creators",
+        "//882-pms-sdk-core/src/main/java/io/harness/pms/sdk/core/plan/creation/yaml",
+        "//884-pms-commons/src/main/java/io/harness/pms/execution",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+    ],
+)

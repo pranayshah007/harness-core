@@ -1,0 +1,15 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "resource",
+    srcs = [
+        "Loader.java",
+        "Project.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//990-commons-test/src/main/java/io/harness/exception",
+        "//:lombok",
+        "@maven//:com_google_guava_guava",
+    ],
+)

@@ -1,0 +1,25 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "costdetails",
+    srcs = ["RESTWrapperCostDetails.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//340-ce-nextgen/src/main/java/io/harness/ccm/remote/utils",
+        "//340-ce-nextgen/src/main/java/io/harness/ccm/utils",
+        "//374-ceng-graphql/src/main/java/io/harness/ccm/graphql/dto/common",
+        "//374-ceng-graphql/src/main/java/io/harness/ccm/graphql/dto/perspectives",
+        "//374-ceng-graphql/src/main/java/io/harness/ccm/graphql/query/perspectives",
+        "//374-ceng-graphql/src/main/java/io/harness/ccm/graphql/utils",
+        "//450-ce-views/src/main/java/io/harness/ccm/views/graphql",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:io_dropwizard_metrics_metrics_annotation",
+        "@maven//:io_leangen_graphql_spqr",
+        "@maven//:io_swagger_core_v3_swagger_annotations",
+        "@maven//:io_swagger_swagger_annotations",
+        "@maven//:joda_time_joda_time",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_springframework_spring_context",
+    ],
+)

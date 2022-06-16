@@ -1,0 +1,24 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "artifact",
+    srcs = [
+        "AcrArtifactSummary.java",
+        "ArtifactSummary.java",
+        "ArtifactoryArtifactSummary.java",
+        "ArtifactoryGenericArtifactSummary.java",
+        "CustomArtifactSummary.java",
+        "DockerArtifactSummary.java",
+        "EcrArtifactSummary.java",
+        "GcrArtifactSummary.java",
+        "NexusArtifactSummary.java",
+        "WithArtifactSummary.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/artifacts",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

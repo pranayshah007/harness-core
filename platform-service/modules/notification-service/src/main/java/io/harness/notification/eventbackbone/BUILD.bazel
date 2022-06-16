@@ -1,0 +1,16 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "eventbackbone",
+    srcs = [
+        "MessageConsumer.java",
+        "MongoMessageConsumer.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//960-persistence/src/main/java/io/harness/queue",
+        "//980-commons/src/main/java/io/harness/security/dto",
+        "//platform-service/modules/notification-service/src/main/java/io/harness/notification/service/api",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

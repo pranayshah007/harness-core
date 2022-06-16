@@ -1,0 +1,26 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "remote",
+    srcs = [
+        "AuditFilterResourceImpl.java",
+        "AuditResourceImpl.java",
+        "AuditSettingsResourceImpl.java",
+        "AuditYamlResourceImpl.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//955-filters-sdk/src/main/java/io/harness/filter/dto",
+        "//955-filters-sdk/src/main/java/io/harness/filter/service",
+        "//970-ng-commons/src/main/java/io/harness/ng/beans",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "//platform-service/modules/audit-service/src/main/java/io/harness/audit/api",
+        "//platform-service/modules/audit-service/src/main/java/io/harness/audit/api/impl",
+        "//platform-service/modules/audit-service/src/main/java/io/harness/audit/entities",
+        "//platform-service/modules/audit-service/src/main/java/io/harness/audit/mapper",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_springframework_data_spring_data_commons",
+    ],
+)

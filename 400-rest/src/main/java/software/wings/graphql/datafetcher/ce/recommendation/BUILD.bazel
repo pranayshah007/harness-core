@@ -1,0 +1,29 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "recommendation",
+    srcs = [
+        "K8sWorkloadHistogramDataFetcher.java",
+        "K8sWorkloadRecommendationsDataFetcher.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/io/harness/ccm/cluster/dao",
+        "//400-rest/src/main/java/io/harness/ccm/cluster/entities",
+        "//400-rest/src/main/java/software/wings/graphql/datafetcher",
+        "//400-rest/src/main/java/software/wings/graphql/datafetcher/ce/recommendation/dto",
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/entities/k8s/recommendation",
+        "//490-ce-commons/src/main/java/io/harness/ccm/commons/utils",
+        "//490-ce-commons/src/main/java/software/wings/graphql/datafetcher/ce/recommendation/entity",
+        "//960-persistence/src/main/java/io/harness/persistence",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/io/harness/histogram",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_github_ben_manes_caffeine_caffeine",
+        "@maven//:com_graphql_java_graphql_java",
+        "@maven//:io_kubernetes_client_java_api",
+        "@maven//:org_mongodb_morphia_morphia",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_yaml_snakeyaml",
+    ],
+)

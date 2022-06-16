@@ -1,0 +1,13 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "scopes",
+    srcs = ["ScopeModule.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "//access-control/libs/core/src/main/java/io/harness/accesscontrol/scopes/core",
+        "//access-control/libs/core/src/main/java/io/harness/accesscontrol/scopes/core/persistence",
+        "@maven//:com_google_inject_guice",
+    ],
+)

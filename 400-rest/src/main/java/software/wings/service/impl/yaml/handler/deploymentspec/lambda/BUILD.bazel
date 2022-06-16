@@ -1,0 +1,19 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "lambda",
+    srcs = [
+        "DefaultSpecificationYamlHandler.java",
+        "FunctionSpecificationYamlHandler.java",
+        "LambdaSpecificationYamlHandler.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/software/wings/service/impl/yaml/handler",
+        "//400-rest/src/main/java/software/wings/service/impl/yaml/handler/deploymentspec",
+        "//400-rest/src/main/java/software/wings/service/impl/yaml/service",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/io/harness/eraro",
+        "@maven//:com_google_guava_guava",
+    ],
+)

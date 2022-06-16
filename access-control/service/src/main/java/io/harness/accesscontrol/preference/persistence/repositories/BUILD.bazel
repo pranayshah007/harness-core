@@ -1,0 +1,12 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "repositories",
+    srcs = ["AccessControlPreferenceRepository.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "//access-control/service/src/main/java/io/harness/accesscontrol/preference/persistence/models",
+        "@maven//:org_springframework_data_spring_data_commons",
+    ],
+)

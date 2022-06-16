@@ -1,0 +1,26 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "visitor",
+    srcs = [
+        "DummyVisitableElement.java",
+        "SimpleVisitor.java",
+        "SimpleVisitorFactory.java",
+        "SimpleVisitorHelper.java",
+        "Visitable.java",
+        "Visitor.java",
+        "WithMetadata.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//967-walktree-visitor/src/main/java/io/harness/walktree/beans",
+        "//967-walktree-visitor/src/main/java/io/harness/walktree/visitor/entityreference",
+        "//967-walktree-visitor/src/main/java/io/harness/walktree/visitor/inputset",
+        "//967-walktree-visitor/src/main/java/io/harness/walktree/visitor/mergeinputset",
+        "//967-walktree-visitor/src/main/java/io/harness/walktree/visitor/mergeinputset/beans",
+        "//967-walktree-visitor/src/main/java/io/harness/walktree/visitor/utilities",
+        "//967-walktree-visitor/src/main/java/io/harness/walktree/visitor/validation",
+        "@maven//:com_fasterxml_jackson_core_jackson_annotations",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

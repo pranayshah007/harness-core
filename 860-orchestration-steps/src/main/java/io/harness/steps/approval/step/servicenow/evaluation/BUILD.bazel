@@ -1,0 +1,18 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "evaluation",
+    srcs = [
+        "ServiceNowCriteriaEvaluator.java",
+        "ServiceNowExpressionEvaluator.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//860-orchestration-steps/src/main/java/io/harness/steps/approval/step/beans",
+        "//860-orchestration-steps/src/main/java/io/harness/steps/approval/step/evaluation",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

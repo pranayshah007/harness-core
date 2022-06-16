@@ -1,0 +1,18 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "impl",
+    srcs = [
+        "DefaultLicenseComplianceResolver.java",
+        "EnterpriseChecker.java",
+        "FreeChecker.java",
+        "TeamChecker.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//930-ng-license-manager/src/main/java/io/harness/licensing/checks",
+        "//930-ng-license-manager/src/main/java/io/harness/licensing/entities/modules",
+        "//930-ng-license-manager/src/main/java/io/harness/licensing/helpers",
+        "//980-commons/src/main/java/io/harness/configuration",
+    ],
+)

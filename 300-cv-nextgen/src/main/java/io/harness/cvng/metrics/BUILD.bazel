@@ -1,0 +1,12 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "metrics",
+    srcs = ["CVNGMetricsUtils.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/analysis/entities",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/verificationjob/entities",
+        "//948-cv-nextgen-beans/src/main/java/io/harness/cvng/beans/activity",
+    ],
+)

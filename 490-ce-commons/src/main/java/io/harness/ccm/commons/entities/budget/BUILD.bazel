@@ -1,0 +1,15 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "budget",
+    srcs = [
+        "BudgetCostData.java",
+        "BudgetData.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "@maven//:io_leangen_graphql_spqr",
+        "@maven//:io_swagger_core_v3_swagger_annotations",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

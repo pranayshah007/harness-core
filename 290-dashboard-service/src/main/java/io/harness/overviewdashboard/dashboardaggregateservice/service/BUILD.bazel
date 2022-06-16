@@ -1,0 +1,13 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "service",
+    srcs = ["OverviewDashboardService.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//290-dashboard-service/src/main/java/io/harness/overviewdashboard/dtos",
+        "//295-cdng-contracts/src/main/java/io/harness/dashboards",
+        "//970-ng-commons/src/main/java/io/harness/pms/dashboards",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+    ],
+)

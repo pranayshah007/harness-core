@@ -1,0 +1,21 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "resources",
+    srcs = ["VariableResource.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//950-ng-core/src/main/java/io/harness/ng/core/variable/entity",
+        "//950-ng-core/src/main/java/io/harness/ng/core/variable/mappers",
+        "//950-ng-core/src/main/java/io/harness/ng/core/variable/services",
+        "//960-ng-core-beans/src/main/java/io/harness/ng/core/variable/dto",
+        "//970-ng-commons/src/main/java/io/harness/ng/beans",
+        "//970-ng-commons/src/main/java/io/harness/ng/core/variable",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "//clients/access-control/sdk/src/main/java/io/harness/accesscontrol/clients",
+        "@maven//:io_swagger_core_v3_swagger_annotations",
+        "@maven//:io_swagger_swagger_annotations",
+        "@maven//:org_hibernate_hibernate_validator",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

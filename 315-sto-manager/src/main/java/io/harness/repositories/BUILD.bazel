@@ -1,0 +1,22 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "repositories",
+    srcs = [
+        "BuildDao.java",
+        "CIBuildInfoRepository.java",
+        "CIBuildInfoRepositoryCustom.java",
+        "CIBuildInfoRepositoryCustomImpl.java",
+        "CIBuildNumberRepository.java",
+        "CIBuildNumberRepositoryCustom.java",
+        "CIBuildNumberRepositoryCustomImpl.java",
+        "CustomBuildNumberDao.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//330-ci-beans/src/main/java/io/harness/ci/beans/entities",
+        "@maven//:org_projectlombok_lombok",
+        "@maven//:org_springframework_data_spring_data_commons",
+        "@maven//:org_springframework_data_spring_data_mongodb",
+    ],
+)

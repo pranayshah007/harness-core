@@ -1,0 +1,34 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "deploy",
+    srcs = [
+        "EcsDeployCommandHandlerTest.java",
+        "EcsDeployCommandTaskHelperTest.java",
+        "EcsDeployRollbackDataFetchCommandHandlerTest.java",
+        "EcsRunTaskDeployCommandHandlerTest.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//930-delegate-tasks/src/main/java/software/wings/beans/command",
+        "//930-delegate-tasks/src/main/java/software/wings/cloudprovider/aws",
+        "//930-delegate-tasks/src/main/java/software/wings/delegatetasks",
+        "//930-delegate-tasks/src/main/java/software/wings/delegatetasks/aws/ecs/ecstaskhandler/deploy",
+        "//930-delegate-tasks/src/main/java/software/wings/helpers/ext/ecs/request",
+        "//930-delegate-tasks/src/main/java/software/wings/helpers/ext/ecs/response",
+        "//930-delegate-tasks/src/main/java/software/wings/service/intfc/aws/delegate",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_amazonaws_aws_java_sdk_applicationautoscaling",
+        "@maven//:com_amazonaws_aws_java_sdk_ecs",
+        "@maven//:com_github_tomakehurst_wiremock_jre8_standalone",
+        "@maven//:junit_junit",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+    ],
+)

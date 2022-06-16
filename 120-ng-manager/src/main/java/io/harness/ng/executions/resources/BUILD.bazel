@@ -1,0 +1,16 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "resources",
+    srcs = ["CDNGExecutionResource.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/pipeline/executions/beans",
+        "//860-orchestration-steps/src/main/java/io/harness/plancreator/pipeline",
+        "//884-pms-commons/src/main/java/io/harness/pms/execution",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:io_dropwizard_metrics_metrics_annotation",
+        "@maven//:io_swagger_swagger_annotations",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

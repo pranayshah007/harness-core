@@ -1,0 +1,16 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "rbac",
+    srcs = ["TimelineRbacFilters.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/software/wings/beans/infrastructure/instance/stats",
+        "//400-rest/src/main/java/software/wings/resources/stats/model",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_apache_commons_commons_collections4",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

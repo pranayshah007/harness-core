@@ -1,0 +1,24 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "cdstepinfo",
+    srcs = [
+        "CreatePRStepVisitorHelper.java",
+        "HelmDeployStepInfoVisitorHelper.java",
+        "K8sApplyStepInfoVisitorHelper.java",
+        "K8sBlueGreenStepInfoVisitorHelper.java",
+        "K8sCanaryStepInfoVisitorHelper.java",
+        "K8sRollingRollbackStepInfoVisitorHelper.java",
+        "K8sRollingStepInfoVisitorHelper.java",
+        "K8sScaleStepInfoVisitorHelper.java",
+        "ServerlessAwsLambdaDeployStepInfoVisitorHelper.java",
+        "ServerlessAwsLambdaRollbackStepInfoVisitorHelper.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/gitops",
+        "//125-cd-nextgen/src/main/java/io/harness/cdng/helm",
+        "//967-walktree-visitor/src/main/java/io/harness/walktree/visitor/validation",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+    ],
+)

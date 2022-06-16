@@ -1,0 +1,16 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "impl",
+    srcs = ["TaskServiceImpl.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//910-delegate-task-grpc-service/src/main/java/io/harness/task/converters",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/stepstatus",
+        "//980-commons/src/main/java/io/harness/govern",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:io_grpc_grpc_stub",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

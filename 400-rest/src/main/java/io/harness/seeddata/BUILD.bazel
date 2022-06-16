@@ -1,0 +1,27 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "seeddata",
+    srcs = [
+        "ApplicationSampleDataProvider.java",
+        "ArtifactStreamSampleDataProvider.java",
+        "CloudProviderSampleDataProvider.java",
+        "ConnectorSampleDataProvider.java",
+        "EnvironmentSampleDataProvider.java",
+        "InfraDefinitionSampleDataProvider.java",
+        "InfraMappingSampleDataProvider.java",
+        "PipelineSampleDataProvider.java",
+        "SampleDataProviderConstants.java",
+        "SampleDataProviderService.java",
+        "SampleDataProviderServiceImpl.java",
+        "ServiceSampleDataProvider.java",
+        "WorkflowSampleDataProvider.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/software/wings/service/impl/artifact",
+        "//980-commons/src/main/java/io/harness/eraro",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

@@ -1,0 +1,17 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "limits",
+    srcs = ["LimitConfigurationResource.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/io/harness/limits/configuration",
+        "//980-commons/src/main/java/io/harness/limits/impl/model",
+        "//980-commons/src/main/java/io/harness/limits/lib",
+        "//980-commons/src/main/java/io/harness/rest",
+        "@maven//:com_squareup_retrofit2_retrofit",
+        "@maven//:io_dropwizard_metrics_metrics_annotation",
+        "@maven//:io_swagger_swagger_annotations",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

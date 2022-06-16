@@ -1,0 +1,15 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "executions",
+    srcs = ["InterventionWaitTimeoutCallback.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//870-orchestration/src/main/java/io/harness/engine/executions/node",
+        "//870-orchestration/src/main/java/io/harness/engine/interrupts",
+        "//876-orchestration-beans/src/main/java/io/harness/timeout",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_springframework_data_spring_data_commons",
+    ],
+)

@@ -1,0 +1,14 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "morphia",
+    srcs = ["PMSPipelineMorphiaRegistrar.java"],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//800-pipeline-service/src/main/java/io/harness/pms/approval/jira",
+        "//800-pipeline-service/src/main/java/io/harness/pms/approval/servicenow",
+        "//800-pipeline-service/src/main/java/io/harness/pms/ngpipeline/inputset/beans/entity",
+        "//800-pipeline-service/src/main/java/io/harness/pms/preflight/entity",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+    ],
+)

@@ -1,0 +1,32 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "serializer",
+    srcs = [
+        "PluginCompatibleStepSerializer.java",
+        "PluginStepProtobufSerializer.java",
+        "ProtobufStepSerializer.java",
+        "RunStepProtobufSerializer.java",
+        "RunTestsStepProtobufSerializer.java",
+        "SerializerUtils.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//320-ci-execution/src/main/java/io/harness/stateutils/buildstate",
+        "//330-ci-beans/src/main/java/io/harness/beans/plugin/compatible",
+        "//330-ci-beans/src/main/java/io/harness/beans/serializer",
+        "//330-ci-beans/src/main/java/io/harness/beans/steps/stepinfo",
+        "//330-ci-beans/src/main/java/io/harness/beans/sweepingoutputs",
+        "//330-ci-beans/src/main/java/io/harness/beans/yaml/extended",
+        "//330-ci-beans/src/main/java/io/harness/beans/yaml/extended/infrastrucutre",
+        "//330-ci-beans/src/main/java/io/harness/beans/yaml/extended/reports",
+        "//953-yaml-commons/src/main/java/io/harness/yaml/core/variables",
+        "//970-ng-commons/src/main/java/io/harness/yaml/core/timeout",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//980-commons/src/main/java/io/harness/exception/ngexception",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@maven//:org_apache_commons_commons_lang3",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

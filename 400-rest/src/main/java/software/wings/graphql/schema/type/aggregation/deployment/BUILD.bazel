@@ -1,0 +1,25 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "deployment",
+    srcs = [
+        "QLDeploymentAggregation.java",
+        "QLDeploymentEntityAggregation.java",
+        "QLDeploymentFilter.java",
+        "QLDeploymentFilterType.java",
+        "QLDeploymentSortCriteria.java",
+        "QLDeploymentSortType.java",
+        "QLDeploymentTag.java",
+        "QLDeploymentTagAggregation.java",
+        "QLDeploymentTagFilter.java",
+        "QLDeploymentTagType.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//400-rest/src/main/java/software/wings/graphql/schema/type/aggregation/environment",
+        "//400-rest/src/main/java/software/wings/graphql/schema/type/aggregation/service",
+        "//400-rest/src/main/java/software/wings/graphql/schema/type/aggregation/workflow",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

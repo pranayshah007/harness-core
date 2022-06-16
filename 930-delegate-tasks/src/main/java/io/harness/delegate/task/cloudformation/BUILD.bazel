@@ -1,0 +1,29 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "cloudformation",
+    srcs = [
+        "CloudformationBaseHelper.java",
+        "CloudformationBaseHelperImpl.java",
+        "CloudformationExceptionConstants.java",
+        "CloudformationTaskNG.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/beans/logstreaming",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/aws",
+        "//930-delegate-tasks/src/main/java/io/harness/delegate/task/cloudformation/handlers",
+        "//930-delegate-tasks/src/main/java/software/wings/service/intfc/aws/delegate",
+        "//954-connector-beans/src/main/java/io/harness/delegate/beans/connector/awsconnector",
+        "//960-api-services/src/main/java/io/harness/aws",
+        "//960-api-services/src/main/java/io/harness/aws/beans",
+        "//960-api-services/src/main/java/io/harness/exception/sanitizer",
+        "//960-api-services/src/main/java/io/harness/security/encryption",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:com_amazonaws_aws_java_sdk_cloudformation",
+        "@maven//:com_fasterxml_jackson_core_jackson_databind",
+        "@maven//:org_bitbucket_b_c_jose4j",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

@@ -1,0 +1,22 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "resource",
+    srcs = [
+        "CDDashboardOverviewResource.java",
+        "CDLandingDashboardResource.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//120-ng-manager/src/main/java/io/harness/ng/overview/dto",
+        "//120-ng-manager/src/main/java/io/harness/ng/overview/service",
+        "//123-ng-core-user/src/main/java/io/harness/ng/accesscontrol",
+        "//126-instance/src/main/java/io/harness/models/dashboard",
+        "//295-cdng-contracts/src/main/java/io/harness/dashboards",
+        "//960-ng-core-beans/src/main/java/io/harness/ng/core/dashboard",
+        "//970-ng-commons/src/main/java/io/harness/pms/dashboards",
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:io_swagger_swagger_annotations",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

@@ -1,0 +1,21 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "filterParams",
+    srcs = [
+        "AnalysisFilter.java",
+        "DeploymentLogAnalysisFilter.java",
+        "DeploymentTimeSeriesAnalysisFilter.java",
+        "LiveMonitoringLogAnalysisFilter.java",
+        "LogAnalysisFilter.java",
+        "MonitoredServiceLogAnalysisFilter.java",
+        "TimeSeriesAnalysisFilter.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/analysis/beans",
+        "//300-cv-nextgen/src/main/java/io/harness/cvng/analysis/entities",
+        "//980-commons/src/main/java/io/harness/data/structure",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)

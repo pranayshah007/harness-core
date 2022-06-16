@@ -1,0 +1,26 @@
+load("@contrib_rules_jvm//java:defs.bzl", "java_test_suite")
+
+java_test_suite(
+    name = "defaults",
+    srcs = [
+        "AccountDefaultVarYamlHandlerTest.java",
+        "AppDefaultVarYamlHandlerTest.java",
+    ],
+    runner = "junit5",
+    runtime_deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@maven//:org_junit_platform_junit_platform_reporting",
+    ],
+    deps = [
+        "//400-rest/src/main/java/software/wings/beans/defaults",
+        "//400-rest/src/main/java/software/wings/service/impl/yaml/handler/defaults",
+        "//400-rest/src/main/java/software/wings/service/impl/yaml/service",
+        "//400-rest/src/supporter-test/java/software/wings/rules",
+        "//400-rest/src/supporter-test/java/software/wings/yaml/handler",
+        "//990-commons-test/src/main/java/io/harness/category/element",
+        "@maven//:junit_junit",
+        "@maven//:org_assertj_assertj_core",
+        "@maven//:org_mockito_mockito_core",
+    ],
+)

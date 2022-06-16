@@ -1,0 +1,33 @@
+load("@rules_java//java:defs.bzl", "java_library")
+
+java_library(
+    name = "permissions",
+    srcs = [
+        "QLAccountPermissionType.java",
+        "QLAccountPermissions.java",
+        "QLActions.java",
+        "QLAppPermission.java",
+        "QLDeploymentFilterType.java",
+        "QLDeploymentPermissions.java",
+        "QLEnvPermissions.java",
+        "QLExecutableElementFilterInput.java",
+        "QLExecutableElementFilterType.java",
+        "QLExecutableElementType.java",
+        "QLGroupPermissions.java",
+        "QLPermissionType.java",
+        "QLPermissionsFilterType.java",
+        "QLPipelineFilterType.java",
+        "QLPipelinePermissions.java",
+        "QLProivionerPermissions.java",
+        "QLServicePermissions.java",
+        "QLTemplatePermissions.java",
+        "QLUserGroupPermissions.java",
+        "QLWorkflowFilterType.java",
+        "QLWorkflowPermissions.java",
+    ],
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//999-annotations/src/main/java/io/harness/annotations/dev",
+        "@maven//:org_projectlombok_lombok",
+    ],
+)
