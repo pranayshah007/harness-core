@@ -34,6 +34,7 @@ public interface StripeHelper {
   SubscriptionDetailDTO retrieveSubscription(SubscriptionParams subscriptionParams);
   InvoiceDetailDTO getUpcomingInvoice(String invoiceParams);
   InvoiceDetailDTO previewInvoice(SubscriptionParams subscriptionParams);
+  void emailInvoice(String invoiceId);
 
   PaymentMethodCollectionDTO listPaymentMethods(String customerId);
 }

@@ -262,6 +262,16 @@ public class StripeHelperImpl implements StripeHelper {
 
     return toInvoiceDetailDTO(invoice);
   }
+
+  @Override
+  public void emailInvoice(String invoiceId) {
+    if (Strings.isNullOrEmpty(invoiceId)) {
+      throw new InvalidArgumentsException("Invoice ID Required to send an invoice.");
+    }
+
+    stripeHandler.sendInvoice(invoiceId);
+  }
+
   @Override
   public InvoiceDetailDTO previewInvoice(SubscriptionParams subscriptionParams) {
     InvoiceUpcomingParams.Builder upcomingParamBuilder = InvoiceUpcomingParams.builder();

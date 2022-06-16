@@ -54,6 +54,7 @@ public class InvoicePaymentSucceedHandler implements StripeEventHandler {
 
     syncLicense(invoice);
     updatePaymentIntentForFirstPayment(invoice);
+    stripeHelper.emailInvoice(invoice.getId());
   }
 
   private void syncLicense(Invoice invoice) {

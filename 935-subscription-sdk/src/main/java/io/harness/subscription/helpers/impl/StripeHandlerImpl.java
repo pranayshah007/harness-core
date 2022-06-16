@@ -9,6 +9,16 @@ package io.harness.subscription.helpers.impl;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import com.stripe.param.CustomerCreateParams;
+import com.stripe.param.CustomerRetrieveParams;
+import com.stripe.param.CustomerUpdateParams;
+import com.stripe.param.InvoiceSendInvoiceParams;
+import com.stripe.param.InvoiceUpcomingParams;
+import com.stripe.param.PaymentMethodListParams;
+import com.stripe.param.PriceListParams;
+import com.stripe.param.SubscriptionCreateParams;
+import com.stripe.param.SubscriptionRetrieveParams;
+import com.stripe.param.SubscriptionUpdateParams;
 import io.harness.exception.InvalidRequestException;
 
 import com.stripe.exception.StripeException;
@@ -20,15 +30,7 @@ import com.stripe.model.PaymentMethodCollection;
 import com.stripe.model.Price;
 import com.stripe.model.PriceCollection;
 import com.stripe.model.Subscription;
-import com.stripe.param.CustomerCreateParams;
-import com.stripe.param.CustomerRetrieveParams;
-import com.stripe.param.CustomerUpdateParams;
-import com.stripe.param.InvoiceUpcomingParams;
-import com.stripe.param.PaymentMethodListParams;
-import com.stripe.param.PriceListParams;
-import com.stripe.param.SubscriptionCreateParams;
-import com.stripe.param.SubscriptionRetrieveParams;
-import com.stripe.param.SubscriptionUpdateParams;
+
 import java.util.List;
 import java.util.Map;
 
@@ -122,6 +124,17 @@ public class StripeHandlerImpl {
   Invoice retrieveUpcomingInvoice(Map<String, Object> params) {
     try {
       return Invoice.upcoming(params);
+    } catch (StripeException e) {
+      throw new InvalidRequestException("Unable to retrieve invoice", e);
+    }
+  }
+
+  public void sendInvoice(String invoiceId) {
+    try {
+      Invoice resource = Invoice.retrieve(invoiceId);
+      InvoiceSendInvoiceParams params = InvoiceSendInvoiceParams.builder().build();
+
+      Invoice invoice = resource.sendInvoice(params);
     } catch (StripeException e) {
       throw new InvalidRequestException("Unable to retrieve invoice", e);
     }
