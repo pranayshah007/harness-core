@@ -118,8 +118,15 @@ public class InstanceBillingDataTasklet implements Tasklet {
             ECS_TASK_FARGATE, ECS_TASK_EC2, ECS_CONTAINER_INSTANCE, K8S_POD, K8S_POD_FARGATE, K8S_NODE, K8S_PVC),
         startTime, endTime, batchSize);
 
+    int incerCounter = 0;
     do {
+      incerCounter += 1;
       instanceDataLists = instanceDataReader.getNext();
+      if (incerCounter > 15 && accountId.equals("SFDfOzL_Qq-SH3AuAN4yWQ")
+          && startTime.equals(Instant.ofEpochMilli(1655384400000l))) {
+        log.info("breaking the loop");
+        break;
+      }
       if (accountId.equals("SFDfOzL_Qq-SH3AuAN4yWQ")) {
         log.info("Instance data calculation in progress");
       }

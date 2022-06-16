@@ -38,8 +38,15 @@ public class InstanceDataReader {
   public List<InstanceData> getNext() {
     List<InstanceData> instanceDataLists = instanceDataDao.getInstanceDataListsOfTypes(
         accountId, batchSize, activeInstanceIterator, endTime, instanceTypes);
+    if (accountId.equals("SFDfOzL_Qq-SH3AuAN4yWQ")) {
+      log.info("Instance details reader {} : {} : {}", batchSize, activeInstanceIterator, endTime);
+    }
     if (!instanceDataLists.isEmpty()) {
       activeInstanceIterator = instanceDataLists.get(instanceDataLists.size() - 1).getActiveInstanceIterator();
+      if (accountId.equals("SFDfOzL_Qq-SH3AuAN4yWQ")) {
+        log.info("Instance details reader {} : {} : {}", batchSize, activeInstanceIterator,
+            instanceDataLists.get(0).getActiveInstanceIterator());
+      }
       if (instanceDataLists.get(0).getActiveInstanceIterator().equals(activeInstanceIterator)) {
         log.info("Incrementing lastActiveInstanceIterator by 1ms {} {} {} {}", instanceDataLists.size(),
             activeInstanceIterator, endTime, accountId);
