@@ -57,6 +57,7 @@ public class MaxConcurrentChildCallback implements OldNotifyCallback {
       }
       ConcurrentChildInstance childInstance = nodeExecutionInfoService.incrementCursor(parentNodeExecutionId);
       if (childInstance == null) {
+        log.error("[MaxConcurrentCallback]: ChildInstance found null for parentId: " + parentNodeExecutionId);
         nodeExecutionService.errorOutActiveNodes(ambiance.getPlanExecutionId());
         return;
       }
