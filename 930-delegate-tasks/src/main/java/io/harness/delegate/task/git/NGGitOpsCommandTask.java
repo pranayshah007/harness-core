@@ -318,16 +318,12 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
 
   public void updateFiles(Map<String, Map<String, Object>> filesToVariablesMap, FetchFilesResult fetchFilesResult)
       throws ParseException, IOException {
-    // Map<String, Object> stringMap = gitOpsTaskParams.getVariables();
 
     List<String> fetchedFilesContents = new ArrayList<>();
 
     for (GitFile gitFile : fetchFilesResult.getFiles()) {
-      if ((gitFile.getFilePath().contains(".yaml") || gitFile.getFilePath().contains(".yml"))
-          && filesToVariablesMap.containsKey(gitFile)) {
+      if (gitFile.getFilePath().contains(".yaml") || gitFile.getFilePath().contains(".yml")) {
         fetchedFilesContents.add(convertYamlToJson(gitFile.getFileContent()));
-      } else {
-        fetchedFilesContents.add(gitFile.getFileContent());
       }
     }
 
@@ -350,32 +346,18 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
   public List<String> replaceFieldsNew(List<String> fileList, Map<String, Map<String, Object>> filesToVariablesMap)
       throws ParseException, JsonProcessingException {
     List<String> result = new ArrayList<>();
-    for (String file : filesToVariablesMap.keySet()) {
-      if (fileList.contains(file)) {
-        JSONObject fieldsToUpdate = mapToJson(filesToVariablesMap.get(file));
-        JSONParser parser = new JSONParser();
-        JSONObject json = (JSONObject) parser.parse(file);
 
-        // change the required fields by merging
-        json.putAll(fieldsToUpdate);
+    for (String file : fileList) {
+      JSONObject fieldsToUpdate = mapToJson(filesToVariablesMap.get(file));
+      JSONParser parser = new JSONParser();
+      JSONObject json = (JSONObject) parser.parse(file);
 
-        result.add(convertToPrettyJson(json.toString()));
-      }
+      // change the required fields by merging
+      json.putAll(fieldsToUpdate);
+
+      result.add(convertToPrettyJson(json.toString()));
     }
     return result;
-
-    //    JSONObject fieldsToUpdate = mapToJson(fieldsToModify); // get the list of fields to be updated
-    //    List<String> result = new ArrayList<>();
-    //    for (String str : fileList) {
-    //      JSONParser parser = new JSONParser();
-    //      JSONObject json = (JSONObject) parser.parse(str);
-    //
-    //      // change the required fields by merging
-    //      json.putAll(fieldsToUpdate);
-    //
-    //      result.add(convertToPrettyJson(json.toString()));
-    //    }
-    //    return result;
   }
 
   public String convertToPrettyJson(String uglyJson) throws JsonProcessingException {
