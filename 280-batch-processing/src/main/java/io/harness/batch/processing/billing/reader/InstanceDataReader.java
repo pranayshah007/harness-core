@@ -44,8 +44,14 @@ public class InstanceDataReader {
     if (!instanceDataLists.isEmpty()) {
       activeInstanceIterator = instanceDataLists.get(instanceDataLists.size() - 1).getActiveInstanceIterator();
       if (accountId.equals("SFDfOzL_Qq-SH3AuAN4yWQ")) {
-        log.info("Instance details reader {} : {} : {}", batchSize, activeInstanceIterator,
-            instanceDataLists.get(0).getActiveInstanceIterator());
+        Instant batchStartTime = instanceDataLists.get(0).getActiveInstanceIterator();
+        log.info("Instance details reader sec {} : {} : {}", batchSize, activeInstanceIterator, batchStartTime);
+        int value = batchStartTime.compareTo(activeInstanceIterator);
+        if (value > 0) {
+          activeInstanceIterator = batchStartTime.plus(1, ChronoUnit.MILLIS);
+          log.info(
+              "Instance details reader val is greater {} : {} : {}", batchSize, activeInstanceIterator, batchStartTime);
+        }
       }
       if (instanceDataLists.get(0).getActiveInstanceIterator().equals(activeInstanceIterator)) {
         log.info("Incrementing lastActiveInstanceIterator by 1ms {} {} {} {}", instanceDataLists.size(),
