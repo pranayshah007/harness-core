@@ -129,7 +129,8 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
 
       logCallback = new NGDelegateLogCallback(getLogStreamingTaskClient(), FetchFiles, true, commandUnitsProgress);
 
-      FetchFilesResult fetchFilesResult = getFetchFilesResult(gitOpsTaskParams);
+      FetchFilesResult fetchFilesResult =
+          getFetchFilesResult(gitOpsTaskParams.getGitFetchFilesConfig(), gitOpsTaskParams.getAccountId());
 
       logCallback = markDoneAndStartNew(logCallback, UpdateFiles, commandUnitsProgress);
 
@@ -140,7 +141,7 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
           gitOpsTaskParams.getGitFetchFilesConfig().getGitStoreDelegateConfig().getGitConfigDTO();
 
       createNewBranch(scmConnector, newBranch, baseBranch);
-      updateFiles(gitOpsTaskParams, fetchFilesResult);
+      updateFiles(gitOpsTaskParams.getFilesToVariablesMap(), fetchFilesResult);
 
       logCallback = markDoneAndStartNew(logCallback, CommitAndPush, commandUnitsProgress);
 
@@ -177,11 +178,11 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
     }
   }
 
-  private FetchFilesResult getFetchFilesResult(NGGitOpsTaskParams gitOpsTaskParams) throws IOException {
+  private FetchFilesResult getFetchFilesResult(GitFetchFilesConfig gitFetchFilesConfig, String accountId)
+      throws IOException {
     logCallback.saveExecutionLog(color(format("%nStarting Git Fetch Files"), LogColor.White, LogWeight.Bold));
 
-    FetchFilesResult fetchFilesResult =
-        fetchFilesFromRepo(gitOpsTaskParams.getGitFetchFilesConfig(), logCallback, gitOpsTaskParams.getAccountId());
+    FetchFilesResult fetchFilesResult = fetchFilesFromRepo(gitFetchFilesConfig, logCallback, accountId);
 
     logCallback.saveExecutionLog(
         color(format("%nGit Fetch Files completed successfully."), LogColor.White, LogWeight.Bold), INFO);
@@ -315,20 +316,22 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
     return fieldsToUpdate;
   }
 
-  public void updateFiles(NGGitOpsTaskParams gitOpsTaskParams, FetchFilesResult fetchFilesResult)
+  public void updateFiles(Map<String, Map<String, Object>> filesToVariablesMap, FetchFilesResult fetchFilesResult)
       throws ParseException, IOException {
-    Map<String, Object> stringMap = gitOpsTaskParams.getVariables();
+    // Map<String, Object> stringMap = gitOpsTaskParams.getVariables();
+
     List<String> fetchedFilesContents = new ArrayList<>();
 
     for (GitFile gitFile : fetchFilesResult.getFiles()) {
-      if (gitFile.getFilePath().contains(".yaml") || gitFile.getFilePath().contains(".yml")) {
+      if ((gitFile.getFilePath().contains(".yaml") || gitFile.getFilePath().contains(".yml"))
+          && filesToVariablesMap.containsKey(gitFile)) {
         fetchedFilesContents.add(convertYamlToJson(gitFile.getFileContent()));
       } else {
         fetchedFilesContents.add(gitFile.getFileContent());
       }
     }
 
-    List<String> updatedFiles = replaceFieldsNew(fetchedFilesContents, stringMap);
+    List<String> updatedFiles = replaceFieldsNew(fetchedFilesContents, filesToVariablesMap);
     List<GitFile> updatedGitFiles = new ArrayList<>();
 
     for (int i = 0; i < updatedFiles.size(); i++) {
@@ -344,20 +347,35 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
     fetchFilesResult.setFiles(updatedGitFiles);
   }
 
-  public List<String> replaceFieldsNew(List<String> fileList, Map<String, Object> fieldsToModify)
+  public List<String> replaceFieldsNew(List<String> fileList, Map<String, Map<String, Object>> filesToVariablesMap)
       throws ParseException, JsonProcessingException {
-    JSONObject fieldsToUpdate = mapToJson(fieldsToModify); // get the list of fields to be updated
     List<String> result = new ArrayList<>();
-    for (String str : fileList) {
-      JSONParser parser = new JSONParser();
-      JSONObject json = (JSONObject) parser.parse(str);
+    for (String file : filesToVariablesMap.keySet()) {
+      if (fileList.contains(file)) {
+        JSONObject fieldsToUpdate = mapToJson(filesToVariablesMap.get(file));
+        JSONParser parser = new JSONParser();
+        JSONObject json = (JSONObject) parser.parse(file);
 
-      // change the required fields by merging
-      json.putAll(fieldsToUpdate);
+        // change the required fields by merging
+        json.putAll(fieldsToUpdate);
 
-      result.add(convertToPrettyJson(json.toString()));
+        result.add(convertToPrettyJson(json.toString()));
+      }
     }
     return result;
+
+    //    JSONObject fieldsToUpdate = mapToJson(fieldsToModify); // get the list of fields to be updated
+    //    List<String> result = new ArrayList<>();
+    //    for (String str : fileList) {
+    //      JSONParser parser = new JSONParser();
+    //      JSONObject json = (JSONObject) parser.parse(str);
+    //
+    //      // change the required fields by merging
+    //      json.putAll(fieldsToUpdate);
+    //
+    //      result.add(convertToPrettyJson(json.toString()));
+    //    }
+    //    return result;
   }
 
   public String convertToPrettyJson(String uglyJson) throws JsonProcessingException {

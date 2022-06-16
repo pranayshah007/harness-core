@@ -67,10 +67,12 @@ import io.harness.steps.StepHelper;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
 
+import joptsimple.internal.Strings;
 import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -167,15 +169,18 @@ public class CreatePRStep extends TaskChainExecutableWithRollbackAndRbac {
      */
     CreatePRStepParams gitOpsSpecParams = (CreatePRStepParams) stepParameters.getSpec();
 
-    Map<String, Object> variables = fetchVariablesForUpdate(ambiance);
-    checkArgument(EmptyPredicate.isNotEmpty(variables), "no cluster variables found.");
-    ExpressionEvaluatorUtils.updateExpressions(
-        variables, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
+    //Map<String, Object> variables = fetchVariablesForUpdate(ambiance);
+    //checkArgument(EmptyPredicate.isNotEmpty(variables), "no cluster variables found.");
+//    ExpressionEvaluatorUtils.updateExpressions(
+//        variables, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
 
     List<GitFetchFilesConfig> gitFetchFilesConfig = new ArrayList<>();
 
     ManifestOutcome releaseRepoOutcome = getReleaseRepoOutcome(ambiance);
     gitFetchFilesConfig.add(getGitFetchFilesConfig(ambiance, releaseRepoOutcome));
+
+    // Fetch files from releaseRepoOutcome and replace expressions if present with cluster name and environment
+    Map<String, Map<String, Object>> filesToVariablesMap = resolveFilePaths(releaseRepoOutcome, ambiance);
 
     NGGitOpsTaskParams ngGitOpsTaskParams =
         NGGitOpsTaskParams.builder()
@@ -186,7 +191,8 @@ public class CreatePRStep extends TaskChainExecutableWithRollbackAndRbac {
             .accountId(AmbianceUtils.getAccountId(ambiance))
             .connectorInfoDTO(
                 cdStepHelper.getConnector(releaseRepoOutcome.getStore().getConnectorReference().getValue(), ambiance))
-            .variables(variables)
+            //.variables(variables)
+            .filesToVariablesMap(filesToVariablesMap)
             .build();
 
     final TaskData taskData = TaskData.builder()
@@ -208,9 +214,45 @@ public class CreatePRStep extends TaskChainExecutableWithRollbackAndRbac {
         .taskRequest(taskRequest)
         .passThroughData(CreatePRPassThroughData.builder()
                              .filePaths(gitFetchFilesConfig.get(0).getGitStoreDelegateConfig().getPaths())
-                             .variables(variables)
+                             //.variables(variables)
                              .build())
         .build();
+  }
+
+  private Map<String, Map<String, Object>> resolveFilePaths(ManifestOutcome releaseRepoOutcome, Ambiance ambiance) {
+    GitStoreConfig gitStoreConfig = (GitStoreConfig) releaseRepoOutcome.getStore();
+    String filePath = gitStoreConfig.getPaths().getValue().get(0);
+
+    OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputService.resolveOptional(
+            ambiance, RefObjectUtils.getOutcomeRefObject(GitopsClustersStep.GITOPS_SWEEPING_OUTPUT));
+    Map<String, Map<String, Object>> filePathsToVariables = null;
+    if (optionalSweepingOutput != null && optionalSweepingOutput.isFound()) {
+      GitopsClustersOutcome output = (GitopsClustersOutcome) optionalSweepingOutput.getOutput();
+      List<GitopsClustersOutcome.ClusterData> clustersData = output.getClustersData();
+
+      filePathsToVariables = new HashMap<>();
+
+      String file = Strings.EMPTY;
+
+      if (EmptyPredicate.isNotEmpty(clustersData)) {
+        for (GitopsClustersOutcome.ClusterData cluster : clustersData) {
+          if (filePath.contains("<+cluster.name>")) {
+            file = filePath.replaceAll("<+cluster.name>", cluster.getClusterName());
+          }
+          if (filePath.contains("<+env.name>")) {
+            file = file.replaceAll("<+env.name>", cluster.getEnv());
+          }
+          // Resolve any other expressions in the filepaths. eg. service variables
+          ExpressionEvaluatorUtils.updateExpressions(
+                  file, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
+          Map<String, Object> variables = cluster.getVariables();
+          ExpressionEvaluatorUtils.updateExpressions(
+                  cluster.getVariables(), new CDExpressionResolveFunctor(engineExpressionService, ambiance));
+          filePathsToVariables.put(file, variables);
+        }
+      }
+    }
+    return filePathsToVariables;
   }
 
   private Map<String, Object> fetchVariablesForUpdate(Ambiance ambiance) {
