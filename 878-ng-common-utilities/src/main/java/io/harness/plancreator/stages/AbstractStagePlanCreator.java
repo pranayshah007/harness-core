@@ -15,7 +15,6 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.plancreator.stages.stage.AbstractStageNode;
-import io.harness.plancreator.stages.stage.StageElementConfig;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.plancreator.strategy.StageStrategyUtils;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
