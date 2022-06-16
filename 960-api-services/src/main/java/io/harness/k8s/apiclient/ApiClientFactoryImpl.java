@@ -73,7 +73,11 @@ public class ApiClientFactoryImpl implements ApiClientFactory {
           decodeIfRequired(kubernetesConfig.getClientCert()), decodeIfRequired(kubernetesConfig.getClientKey())));
     } else if (tokenRetriever != null && KubernetesClusterAuthType.OIDC == kubernetesConfig.getAuthType()) {
       clientBuilder.setAuthentication(new AccessTokenAuthentication(tokenRetriever.getOidcIdToken(kubernetesConfig)));
+    } else if (kubernetesConfig.getAzureConfig() != null && kubernetesConfig.getAzureConfig().getAadIdToken() != null) {
+//      clientBuilder.setAuthentication(new AzureTokenAuthentication(kubernetesConfig.getAzureConfig().getAadIdToken()));
+      clientBuilder.setAuthentication(new AccessTokenAuthentication(kubernetesConfig.getAzureConfig().getAadIdToken()));
     }
+
     ApiClient apiClient = clientBuilder.build();
     // don't timeout on client-side
     OkHttpClient httpClient = apiClient.getHttpClient()
