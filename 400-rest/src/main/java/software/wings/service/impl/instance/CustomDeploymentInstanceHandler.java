@@ -12,6 +12,8 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static software.wings.service.impl.instance.InstanceSyncFlow.MANUAL;
 
+import static java.util.Objects.isNull;
+
 import io.harness.beans.ExecutionStatus;
 import io.harness.beans.FeatureName;
 import io.harness.delegate.beans.DelegateResponseData;
@@ -113,18 +115,24 @@ public class CustomDeploymentInstanceHandler extends InstanceHandler implements 
     if (isNotEmpty(instancesInDb)) {
       instanceService.delete(instancesInDb.stream().map(Instance::getUuid).collect(Collectors.toSet()));
     }
-    final DeploymentSummary deploymentSummary;
     if (isNotEmpty(latestHostInfos) && isNotEmpty(newDeploymentSummaries)) {
-      deploymentSummary =
-          getDeploymentSummaryForInstanceCreation(instancesInDb, newDeploymentSummaries.get(0), rollback);
-      if (deploymentSummary.getArtifactId() != null) {
+      if (isValidDeploymentSummary(newDeploymentSummaries.get(0), rollback)) {
         latestHostInfos.stream()
-            .map(hostInstanceInfo -> buildInstanceFromHostInfo(infraMapping, hostInstanceInfo, deploymentSummary))
+            .map(hostInstanceInfo
+                -> buildInstanceFromHostInfo(infraMapping, hostInstanceInfo, newDeploymentSummaries.get(0), rollback))
             .forEach(instanceService::save);
-      } else {
-        log.warn("Couldn't find a old successful workflow execution, so no new instances will be created.");
       }
     }
+  }
+
+  private boolean isValidDeploymentSummary(DeploymentSummary newDeploymentSummary, boolean rollback) {
+    if (rollback) {
+      if (isNull(newDeploymentSummary.getRollbackArtifactId())) {
+        log.info("Couldn't find a rollback artifact, so no new instances will be created.");
+        return false;
+      }
+    }
+    return true;
   }
 
   private void incrementalUpdate(List<Instance> instancesInDb, List<PhysicalHostInstanceInfo> latestHostInfos,
@@ -165,20 +173,21 @@ public class CustomDeploymentInstanceHandler extends InstanceHandler implements 
         deploymentSummary = generateDeploymentSummaryFromInstance(
             instanceWithExecutionInfoOptional.get(), deploymentSummaryFromPrevious);
       } else {
-        deploymentSummary =
-            getDeploymentSummaryForInstanceCreation(instancesInDb, newDeploymentSummaries.get(0), rollback);
+        deploymentSummary = newDeploymentSummaries.get(0);
       }
-
-      instancesToBeAdded.stream()
-          .map(latestHostInfoMap::get)
-          .map(hostInstanceInfo -> buildInstanceFromHostInfo(infraMapping, hostInstanceInfo, deploymentSummary))
-          .forEach(instanceService::save);
+      if (isValidDeploymentSummary(deploymentSummary, rollback)) {
+        instancesToBeAdded.stream()
+            .map(latestHostInfoMap::get)
+            .map(hostInstanceInfo
+                -> buildInstanceFromHostInfo(infraMapping, hostInstanceInfo, deploymentSummary, rollback))
+            .forEach(instanceService::save);
+      }
     }
   }
 
   private Instance buildInstanceFromHostInfo(InfrastructureMapping infraMapping,
-      PhysicalHostInstanceInfo hostInstanceInfo, DeploymentSummary deploymentSummary) {
-    InstanceBuilder builder = buildInstanceBase(null, infraMapping, deploymentSummary);
+      PhysicalHostInstanceInfo hostInstanceInfo, DeploymentSummary deploymentSummary, boolean rollback) {
+    InstanceBuilder builder = buildInstanceBase(null, infraMapping, deploymentSummary, rollback);
     builder.hostInstanceKey(HostInstanceKey.builder()
                                 .hostName(hostInstanceInfo.getHostName())
                                 .infraMappingId(infraMapping.getUuid())

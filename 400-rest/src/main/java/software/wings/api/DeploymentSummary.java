@@ -120,6 +120,11 @@ public class DeploymentSummary extends Base {
   private String artifactSourceName;
   private String artifactStreamId;
   private String artifactBuildNum;
+  private String rollbackArtifactId;
+  private String rollbackArtifactName;
+  private String rollbackArtifactSourceName;
+  private String rollbackArtifactStreamId;
+  private String rollbackArtifactBuildNum;
   private String deployedById;
   private String deployedByName;
   private long deployedAt;
@@ -140,13 +145,14 @@ public class DeploymentSummary extends Base {
       EmbeddedUser lastUpdatedBy, long lastUpdatedAt, String entityYamlPath, String accountId, String infraMappingId,
       String workflowId, String workflowExecutionId, String workflowExecutionName, String pipelineExecutionId,
       String pipelineExecutionName, String stateExecutionInstanceId, String artifactId, String artifactName,
-      String artifactSourceName, String artifactStreamId, String artifactBuildNum, String deployedById,
-      String deployedByName, long deployedAt, DeploymentInfo deploymentInfo, PcfDeploymentKey pcfDeploymentKey,
-      AwsAmiDeploymentKey awsAmiDeploymentKey, AwsCodeDeployDeploymentKey awsCodeDeployDeploymentKey,
-      ContainerDeploymentKey containerDeploymentKey, SpotinstAmiDeploymentKey spotinstAmiDeploymentKey,
-      AwsLambdaDeploymentKey awsLambdaDeploymentKey, K8sDeploymentKey k8sDeploymentKey,
-      CustomDeploymentKey customDeploymentKey, AzureVMSSDeploymentKey azureVMSSDeploymentKey,
-      AzureWebAppDeploymentKey azureWebAppDeploymentKey) {
+      String artifactSourceName, String artifactStreamId, String artifactBuildNum, String rollbackArtifactId,
+      String rollbackArtifactName, String rollbackArtifactSourceName, String rollbackArtifactStreamId,
+      String rollbackArtifactBuildNum, String deployedById, String deployedByName, long deployedAt,
+      DeploymentInfo deploymentInfo, PcfDeploymentKey pcfDeploymentKey, AwsAmiDeploymentKey awsAmiDeploymentKey,
+      AwsCodeDeployDeploymentKey awsCodeDeployDeploymentKey, ContainerDeploymentKey containerDeploymentKey,
+      SpotinstAmiDeploymentKey spotinstAmiDeploymentKey, AwsLambdaDeploymentKey awsLambdaDeploymentKey,
+      K8sDeploymentKey k8sDeploymentKey, CustomDeploymentKey customDeploymentKey,
+      AzureVMSSDeploymentKey azureVMSSDeploymentKey, AzureWebAppDeploymentKey azureWebAppDeploymentKey) {
     super(uuid, appId, createdBy, createdAt, lastUpdatedBy, lastUpdatedAt, entityYamlPath);
     this.accountId = accountId;
     this.infraMappingId = infraMappingId;
@@ -161,6 +167,11 @@ public class DeploymentSummary extends Base {
     this.artifactSourceName = artifactSourceName;
     this.artifactStreamId = artifactStreamId;
     this.artifactBuildNum = artifactBuildNum;
+    this.rollbackArtifactId = rollbackArtifactId;
+    this.rollbackArtifactName = rollbackArtifactName;
+    this.rollbackArtifactSourceName = rollbackArtifactSourceName;
+    this.rollbackArtifactStreamId = rollbackArtifactStreamId;
+    this.rollbackArtifactBuildNum = rollbackArtifactBuildNum;
     this.deployedById = deployedById;
     this.deployedByName = deployedByName;
     this.deployedAt = deployedAt;

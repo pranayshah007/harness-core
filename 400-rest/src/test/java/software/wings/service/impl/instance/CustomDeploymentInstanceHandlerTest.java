@@ -8,6 +8,7 @@
 package software.wings.service.impl.instance;
 
 import static io.harness.beans.EnvironmentType.NON_PROD;
+import static io.harness.rule.OwnerRule.RISHABH;
 import static io.harness.rule.OwnerRule.YOGESH;
 
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
@@ -46,6 +47,7 @@ import software.wings.beans.Environment;
 import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.InfrastructureMappingType;
 import software.wings.beans.Service;
+import software.wings.beans.artifact.Artifact;
 import software.wings.beans.infrastructure.instance.Instance;
 import software.wings.beans.infrastructure.instance.InstanceType;
 import software.wings.beans.infrastructure.instance.info.PhysicalHostInstanceInfo;
@@ -129,6 +131,20 @@ public class CustomDeploymentInstanceHandlerTest extends WingsBaseTest {
     savedInstances.forEach(this::nullUuid);
     expectedInstances.forEach(this::nullUuid);
     assertThat(savedInstances).containsExactlyElementsOf(expectedInstances);
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void shouldNotAddInstancesOnRollbackInFirstDeployment() {
+    List<Instance> instancesInDb = buildSampleInstances(null, null, 1, 2, 3);
+    instancesInDb.forEach(setExecutionId());
+    doReturn(instancesInDb).when(instanceService).getInstancesForAppAndInframapping(anyString(), anyString());
+
+    handler.handleNewDeployment(singletonList(buildDeploymentSummary(buildSampleInstancesJson(1, 2, 3))), true, null);
+
+    verify(instanceService, times(0)).save(captor.capture());
+    verify(instanceService, times(1)).delete(anySet());
   }
 
   @Test
@@ -339,6 +355,79 @@ public class CustomDeploymentInstanceHandlerTest extends WingsBaseTest {
     assertThat(deploymentKey.getInstanceFetchScriptHash()).isEqualTo("echo hello".hashCode());
     assertThat(deploymentKey.getTags()).containsExactly("tag1", "tag2");
   }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void shouldNotUseRollbackArtifactInDeployPhase() {
+    final String lastArtifactId = "last-success-artifact-id";
+    final String lastArtifactName = "hello-last-success-artifact";
+    final String newArtifactId = "new-artifact-id";
+    final String newArtifactName = "hello-new-artifact";
+
+    List<Instance> instancesInDb = buildSampleInstances(newArtifactId, newArtifactName, 1, 2, 3);
+    instancesInDb.forEach(setExecutionId());
+    doReturn(instancesInDb).when(instanceService).getInstancesForAppAndInframapping(anyString(), anyString());
+
+    List<DeploymentSummary> deploymentSummary = singletonList(buildDeploymentSummary(
+        buildSampleInstancesJson(1, 2, 3), newArtifactId, newArtifactName, lastArtifactId, lastArtifactName));
+    Artifact artifact = Artifact.Builder.anArtifact()
+                            .withAppId(APP_ID)
+                            .withUuid(lastArtifactId)
+                            .withDisplayName(lastArtifactName)
+                            .build();
+    List<Artifact> artifacts = new ArrayList<>();
+    artifacts.add(artifact);
+
+    handler.handleNewDeployment(deploymentSummary, false, null);
+
+    verify(instanceService, times(3)).save(captor.capture());
+    verify(instanceService, times(1)).delete(anySet());
+
+    final List<Instance> savedInstances = captor.getAllValues();
+
+    List<Instance> expectedInstances = buildSampleInstances(newArtifactId, newArtifactName, 1, 2, 3);
+    savedInstances.forEach(this::nullUuid);
+    expectedInstances.forEach(this::nullUuid);
+    assertThat(savedInstances).containsExactlyElementsOf(expectedInstances);
+  }
+
+  @Test
+  @Owner(developers = RISHABH)
+  @Category(UnitTests.class)
+  public void shouldUseRollbackArtifactInRollbackPhase() {
+    final String lastArtifactId = "last-success-artifact-id";
+    final String lastArtifactName = "hello-last-success-artifact";
+    final String newArtifactId = "new-artifact-id";
+    final String newArtifactName = "hello-new-artifact";
+
+    List<Instance> instancesInDb = buildSampleInstances(newArtifactId, newArtifactName, 1, 2, 3);
+    instancesInDb.forEach(setExecutionId());
+    doReturn(instancesInDb).when(instanceService).getInstancesForAppAndInframapping(anyString(), anyString());
+
+    List<DeploymentSummary> deploymentSummary = singletonList(buildDeploymentSummary(
+        buildSampleInstancesJson(1, 2, 3), newArtifactId, newArtifactName, lastArtifactId, lastArtifactName));
+    Artifact artifact = Artifact.Builder.anArtifact()
+                            .withAppId(APP_ID)
+                            .withUuid(lastArtifactId)
+                            .withDisplayName(lastArtifactName)
+                            .build();
+    List<Artifact> artifacts = new ArrayList<>();
+    artifacts.add(artifact);
+
+    handler.handleNewDeployment(deploymentSummary, true, null);
+
+    verify(instanceService, times(3)).save(captor.capture());
+    verify(instanceService, times(1)).delete(anySet());
+
+    final List<Instance> savedInstances = captor.getAllValues();
+
+    List<Instance> expectedInstances = buildSampleInstances(lastArtifactId, lastArtifactName, 1, 2, 3);
+    savedInstances.forEach(this::nullUuid);
+    expectedInstances.forEach(this::nullUuid);
+    assertThat(savedInstances).containsExactlyElementsOf(expectedInstances);
+  }
+
   private List<Instance> buildSampleInstances(String artifactId, String artifactName, int... indexes) {
     List<Instance> instances = new ArrayList<>();
     for (int n : indexes) {
@@ -418,6 +507,20 @@ public class CustomDeploymentInstanceHandlerTest extends WingsBaseTest {
         .infraMappingId(INFRA_MAPPING_ID)
         .artifactId(artifactId)
         .artifactName(artifactName)
+        .deploymentInfo(CustomDeploymentTypeInfo.builder().scriptOutput(scriptOutput).build())
+        .build();
+  }
+
+  private DeploymentSummary buildDeploymentSummary(String scriptOutput, String artifactId, String artifactName,
+      String rollbackArtifactId, String rollbackArtifactName) {
+    return DeploymentSummary.builder()
+        .appId(APP_ID)
+        .accountId(ACCOUNT_ID)
+        .infraMappingId(INFRA_MAPPING_ID)
+        .artifactId(artifactId)
+        .artifactName(artifactName)
+        .rollbackArtifactId(rollbackArtifactId)
+        .rollbackArtifactName(rollbackArtifactName)
         .deploymentInfo(CustomDeploymentTypeInfo.builder().scriptOutput(scriptOutput).build())
         .build();
   }

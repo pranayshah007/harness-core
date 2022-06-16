@@ -252,9 +252,17 @@ public class InstanceHelper {
             return;
           }
         }
+
+        Artifact rollbackArtifact = workflowStandardParamsExtensionService.getRollbackArtifactForService(
+            workflowStandardParams, phaseExecutionData.getServiceId());
+        if (rollbackArtifact == null) {
+          log.info("rollbackArtifact is null for stateExecutionInstance:" + stateExecutionInstanceId);
+        }
+
         InstanceHandler instanceHandler = instanceHandlerOptional.get();
-        List<DeploymentSummary> deploymentSummaries = instanceHandler.getDeploymentSummariesForEvent(phaseExecutionData,
-            phaseStepExecutionData, workflowExecution, infrastructureMapping, stateExecutionInstanceId, artifact);
+        List<DeploymentSummary> deploymentSummaries =
+            instanceHandler.getDeploymentSummariesForEvent(phaseExecutionData, phaseStepExecutionData,
+                workflowExecution, infrastructureMapping, stateExecutionInstanceId, artifact, rollbackArtifact);
 
         if (isNotEmpty(deploymentSummaries)) {
           deploymentEventQueue.send(

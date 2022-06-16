@@ -123,7 +123,8 @@ public abstract class InstanceHandler {
 
   public List<DeploymentSummary> getDeploymentSummariesForEvent(PhaseExecutionData phaseExecutionData,
       PhaseStepExecutionData phaseStepExecutionData, WorkflowExecution workflowExecution,
-      InfrastructureMapping infrastructureMapping, String stateExecutionInstanceId, Artifact artifact) {
+      InfrastructureMapping infrastructureMapping, String stateExecutionInstanceId, Artifact artifact,
+      Artifact rollbackArtifact) {
     Optional<List<DeploymentInfo>> deploymentInfoOptional = getDeploymentInfo(phaseExecutionData,
         phaseStepExecutionData, workflowExecution, infrastructureMapping, stateExecutionInstanceId, artifact);
 
@@ -132,7 +133,8 @@ public abstract class InstanceHandler {
     if (deploymentInfoOptional.isPresent()) {
       for (DeploymentInfo deploymentInfo : deploymentInfoOptional.get()) {
         DeploymentSummary deploymentSummary = setValuesToDeploymentSummary(stateExecutionInstanceId, workflowExecution,
-            phaseExecutionData, infrastructureMapping, artifact, deploymentInfo, generateDeploymentKey(deploymentInfo));
+            phaseExecutionData, infrastructureMapping, artifact, rollbackArtifact, deploymentInfo,
+            generateDeploymentKey(deploymentInfo));
 
         deploymentSummaries.add(deploymentSummary);
       }
@@ -143,8 +145,8 @@ public abstract class InstanceHandler {
 
   private DeploymentSummary setValuesToDeploymentSummary(String stateExecutionInstanceId,
       WorkflowExecution workflowExecution, PhaseExecutionData phaseExecutionData,
-      InfrastructureMapping infrastructureMapping, Artifact artifact, DeploymentInfo deploymentInfo,
-      DeploymentKey deploymentKey) {
+      InfrastructureMapping infrastructureMapping, Artifact artifact, Artifact rollbackArtifact,
+      DeploymentInfo deploymentInfo, DeploymentKey deploymentKey) {
     PipelineSummary pipelineSummary = workflowExecution.getPipelineSummary();
     Application application = appService.get(workflowExecution.getAppId());
     notNullCheck("Application", application);
@@ -172,6 +174,14 @@ public abstract class InstanceHandler {
       deploymentSummary.setArtifactStreamId(artifact.getArtifactStreamId());
       deploymentSummary.setArtifactSourceName(artifact.getArtifactSourceName());
       deploymentSummary.setArtifactBuildNum(artifact.getBuildNo());
+    }
+
+    if (rollbackArtifact != null) {
+      deploymentSummary.setRollbackArtifactId(rollbackArtifact.getUuid());
+      deploymentSummary.setRollbackArtifactName(rollbackArtifact.getDisplayName());
+      deploymentSummary.setRollbackArtifactStreamId(rollbackArtifact.getArtifactStreamId());
+      deploymentSummary.setRollbackArtifactSourceName(rollbackArtifact.getArtifactSourceName());
+      deploymentSummary.setRollbackArtifactBuildNum(rollbackArtifact.getBuildNo());
     }
 
     if (pipelineSummary != null) {
@@ -243,24 +253,6 @@ public abstract class InstanceHandler {
     return deploymentSummary;
   }
 
-  /**
-   * This updates the deployment summary from the last workflow execution in case of rollbacks.
-   * @param instancesInDb instances from a previous deployment
-   * @param newDeploymentSummary deployment summary to be updated.
-   * @param rollback rollback
-   * @return
-   */
-  protected DeploymentSummary getDeploymentSummaryForInstanceCreation(
-      List<Instance> instancesInDb, DeploymentSummary newDeploymentSummary, boolean rollback) {
-    DeploymentSummary deploymentSummary;
-    if (rollback) {
-      deploymentSummary = getDeploymentSummaryForRollback(instancesInDb, newDeploymentSummary);
-    } else {
-      deploymentSummary = newDeploymentSummary;
-    }
-    return deploymentSummary;
-  }
-
   protected DeploymentSummary getDeploymentSummaryForRollback(DeploymentSummary deploymentSummary) {
     Optional<DeploymentSummary> summaryOptional = deploymentService.get(deploymentSummary);
     if (summaryOptional != null && summaryOptional.isPresent()) {
@@ -277,48 +269,8 @@ public abstract class InstanceHandler {
     return deploymentSummary;
   }
 
-  protected DeploymentSummary getDeploymentSummaryForRollback(
-      List<Instance> instancesInDb, DeploymentSummary deploymentSummary) {
-    boolean artifactUpdated = false;
-    try {
-      if (EmptyPredicate.isNotEmpty(instancesInDb)) {
-        WorkflowExecution lastSuccessfulWE =
-            workflowExecutionService.getLastSuccessfulWorkflowExecution(deploymentSummary.getAccountId(),
-                deploymentSummary.getAppId(), deploymentSummary.getWorkflowId(), instancesInDb.get(0).getEnvId(),
-                instancesInDb.get(0).getServiceId(), deploymentSummary.getInfraMappingId());
-        if (lastSuccessfulWE != null) {
-          Artifact lastArtifact = lastSuccessfulWE.getArtifacts()
-                                      .stream()
-                                      .filter(a -> a.getServiceIds().contains(instancesInDb.get(0).getServiceId()))
-                                      .findFirst()
-                                      .orElse(null);
-          if (lastArtifact != null) {
-            // Copy Artifact Information for rollback version in previous successful workflow execution
-            artifactUpdated = true;
-            deploymentSummary.setArtifactBuildNum(lastArtifact.getBuildNo());
-            deploymentSummary.setArtifactName(lastArtifact.getDisplayName());
-            deploymentSummary.setArtifactId(lastArtifact.getUuid());
-            deploymentSummary.setArtifactSourceName(lastArtifact.getArtifactSourceName());
-            deploymentSummary.setArtifactStreamId(lastArtifact.getArtifactStreamId());
-          }
-        }
-      }
-    } catch (Exception e) {
-      log.error("Unable to fetch the last artifact from the workflow execution", e);
-    } finally {
-      if (!artifactUpdated) {
-        deploymentSummary.setArtifactId(null);
-        deploymentSummary.setArtifactBuildNum(null);
-        deploymentSummary.setArtifactName(null);
-        deploymentSummary.setArtifactSourceName(null);
-        deploymentSummary.setArtifactStreamId(null);
-      }
-    }
-    return deploymentSummary;
-  }
-
   protected InstanceBuilder buildInstanceBase(
-      String instanceId, InfrastructureMapping infraMapping, DeploymentSummary deploymentSummary) {
+      String instanceId, InfrastructureMapping infraMapping, DeploymentSummary deploymentSummary, boolean rollback) {
     InstanceBuilder builder = this.buildInstanceBase(instanceId, infraMapping);
     if (deploymentSummary != null) {
       builder.lastDeployedAt(deploymentSummary.getDeployedAt())
@@ -326,13 +278,22 @@ public abstract class InstanceHandler {
           .lastDeployedByName(deploymentSummary.getDeployedByName())
           .lastWorkflowExecutionId(deploymentSummary.getWorkflowExecutionId())
           .lastWorkflowExecutionName(deploymentSummary.getWorkflowExecutionName())
-          .lastArtifactId(deploymentSummary.getArtifactId())
-          .lastArtifactName(deploymentSummary.getArtifactName())
-          .lastArtifactStreamId(deploymentSummary.getArtifactStreamId())
-          .lastArtifactSourceName(deploymentSummary.getArtifactSourceName())
-          .lastArtifactBuildNum(deploymentSummary.getArtifactBuildNum())
           .lastPipelineExecutionId(deploymentSummary.getPipelineExecutionId())
           .lastPipelineExecutionName(deploymentSummary.getPipelineExecutionName());
+
+      if (rollback) {
+        builder.lastArtifactId(deploymentSummary.getRollbackArtifactId())
+            .lastArtifactName(deploymentSummary.getRollbackArtifactName())
+            .lastArtifactStreamId(deploymentSummary.getRollbackArtifactStreamId())
+            .lastArtifactSourceName(deploymentSummary.getRollbackArtifactSourceName())
+            .lastArtifactBuildNum(deploymentSummary.getRollbackArtifactBuildNum());
+      } else {
+        builder.lastArtifactId(deploymentSummary.getArtifactId())
+            .lastArtifactName(deploymentSummary.getArtifactName())
+            .lastArtifactStreamId(deploymentSummary.getArtifactStreamId())
+            .lastArtifactSourceName(deploymentSummary.getArtifactSourceName())
+            .lastArtifactBuildNum(deploymentSummary.getArtifactBuildNum());
+      }
     }
 
     return builder;

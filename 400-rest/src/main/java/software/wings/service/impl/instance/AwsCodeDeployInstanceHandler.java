@@ -226,7 +226,7 @@ public class AwsCodeDeployInstanceHandler extends AwsInstanceHandler implements 
   private Instance buildInstanceUsingEc2Instance(String instanceUuid,
       com.amazonaws.services.ec2.model.Instance ec2Instance, InfrastructureMapping infraMapping,
       DeploymentSummary deploymentSummary) {
-    InstanceBuilder builder = buildInstanceBase(instanceUuid, infraMapping, deploymentSummary);
+    InstanceBuilder builder = buildInstanceBase(instanceUuid, infraMapping, deploymentSummary, false);
     instanceHelper.setInstanceInfoAndKey(builder, ec2Instance, infraMapping.getUuid());
     return builder.build();
   }

@@ -228,7 +228,7 @@ public class AzureVMSSInstanceHandler extends InstanceHandler implements Instanc
       }
       vmIdsToBeAdded.forEach(vmId -> {
         AzureVMData azureVMData = latestVMIdToVMDataMap.get(vmId);
-        InstanceBuilder instanceBuilder = buildInstanceBase(null, infrastructureMapping, finalDeploymentSummary);
+        InstanceBuilder instanceBuilder = buildInstanceBase(null, infrastructureMapping, finalDeploymentSummary, false);
         InstanceInfo instanceInfo = toAzureVMSSInstanceInfo(vmssId, azureVMData);
         instanceBuilder.instanceInfo(instanceInfo);
         Instance instance = instanceBuilder.build();
