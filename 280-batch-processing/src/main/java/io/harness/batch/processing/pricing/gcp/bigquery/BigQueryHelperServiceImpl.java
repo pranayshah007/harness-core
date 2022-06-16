@@ -76,7 +76,7 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
     String resourceIds = String.join("','", resourceId);
     String projectTableName = getAwsProjectTableName(startTime, dataSetId);
     String formattedQuery = format(query, projectTableName, resourceIds, startTime, endTime);
-    return query(formattedQuery, "AWS");
+    return query(dataSetId, formattedQuery, "AWS");
   }
 
   @Override
@@ -142,13 +142,18 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
     return String.join(" OR ", resourceIdConditions);
   }
 
-  private Map<String, VMInstanceBillingData> query(String formattedQuery, String cloudProviderType) {
-    log.debug("Formatted query for {} : {}", cloudProviderType, formattedQuery);
+  private Map<String, VMInstanceBillingData> query(String datasetId, String formattedQuery, String cloudProviderType) {
+    if (datasetId.equals("BillingReport_sfdfozl_qq_sh3auan4ywq")) {
+      log.info("Formatted query for {} : {}", cloudProviderType, formattedQuery);
+    }
     BigQuery bigQueryService = getBigQueryService();
     QueryJobConfiguration queryConfig = QueryJobConfiguration.newBuilder(formattedQuery).build();
     TableResult result = null;
     try {
       result = bigQueryService.query(queryConfig);
+      if (datasetId.equals("BillingReport_sfdfozl_qq_sh3auan4ywq")) {
+        log.info("Result set completed {} : {}");
+      }
       switch (cloudProviderType) {
         case "AWS":
           return convertToAwsInstanceBillingData(result);
@@ -270,7 +275,7 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
     String query = BQConst.AWS_BILLING_DATA;
     String projectTableName = getAwsProjectTableName(startTime, dataSetId);
     String formattedQuery = format(query, projectTableName, startTime, endTime);
-    return query(formattedQuery, "AWS");
+    return query(dataSetId, formattedQuery, "AWS");
   }
 
   @Override
@@ -313,7 +318,7 @@ public class BigQueryHelperServiceImpl implements BigQueryHelperService {
     String resourceId = String.join("','", resourceIds);
     String projectTableName = getAzureProjectTableName(dataSetId);
     String formattedQuery = format(query, projectTableName, resourceId, startTime, endTime);
-    return query(formattedQuery, "AZURE");
+    return query(dataSetId, formattedQuery, "AZURE");
   }
 
   public FieldList getFieldList(TableResult result) {

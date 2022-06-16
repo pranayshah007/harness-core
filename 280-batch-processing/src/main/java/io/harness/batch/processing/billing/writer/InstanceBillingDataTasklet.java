@@ -108,6 +108,9 @@ public class InstanceBillingDataTasklet implements Tasklet {
             -> e.getNamespace() + CLAIM_REF_SEPARATOR + e.getWorkloadName(),
             e -> e, (e1, e2) -> e1.getStartTimestamp() > e2.getStartTimestamp() ? e1 : e2));
 
+    if (accountId.equals("SFDfOzL_Qq-SH3AuAN4yWQ")) {
+      log.info("PV data calculation completed");
+    }
     Map<String, MutableInt> pvcClaimCount = getPvcClaimCount(accountId, startTime, endTime);
     List<InstanceData> instanceDataLists;
     InstanceDataReader instanceDataReader = new InstanceDataReader(instanceDataDao, accountId,
@@ -117,6 +120,9 @@ public class InstanceBillingDataTasklet implements Tasklet {
 
     do {
       instanceDataLists = instanceDataReader.getNext();
+      if (accountId.equals("SFDfOzL_Qq-SH3AuAN4yWQ")) {
+        log.info("Instance data calculation in progress");
+      }
       try {
         createBillingData(accountId, startTime, endTime, batchJobType, instanceDataLists,
             claimRefToPVInstanceBillingData, pvcClaimCount);
@@ -159,6 +165,9 @@ public class InstanceBillingDataTasklet implements Tasklet {
     do {
       instanceDataLists = instanceDataReader.getNext();
       try {
+        if (accountId.equals("SFDfOzL_Qq-SH3AuAN4yWQ")) {
+          log.info("PV data calculation batch in progress");
+        }
         instanceBillingDataList.addAll(createBillingData(
             accountId, startTime, endTime, batchJobType, instanceDataLists, ImmutableMap.of(), ImmutableMap.of()));
       } catch (Exception ex) {
@@ -214,8 +223,14 @@ public class InstanceBillingDataTasklet implements Tasklet {
         }
       });
       if (isNotEmpty(resourceIds)) {
+        if (accountId.equals("SFDfOzL_Qq-SH3AuAN4yWQ")) {
+          log.info("Updating ec2 cache");
+        }
         awsCustomBillingService.updateAwsEC2BillingDataCache(
             new ArrayList<>(resourceIds), startTime, endTime, awsDataSetId);
+        if (accountId.equals("SFDfOzL_Qq-SH3AuAN4yWQ")) {
+          log.info("Done Updating ec2 cache");
+        }
       }
 
       if (isNotEmpty(eksFargateResourceIds)) {
@@ -252,10 +267,20 @@ public class InstanceBillingDataTasklet implements Tasklet {
           instanceDataList, startTime.toString(), endTime.toString(), firstInstanceData.getAccountId(),
           firstInstanceData.getSettingId(), firstInstanceData.getClusterId());
 
+      if (accountId.equals("SFDfOzL_Qq-SH3AuAN4yWQ")) {
+        log.info("Got util data for instances");
+      }
+
       List<InstanceData> parentInstanceDataList = instanceDataDao.fetchInstanceData(parentInstanceIds);
+      if (accountId.equals("SFDfOzL_Qq-SH3AuAN4yWQ")) {
+        log.info("Got parentInstanceDataList");
+      }
       Map<String, Double> parentInstanceActiveSecondMap =
           billingCalculationService.getInstanceActiveSeconds(parentInstanceDataList, startTime, endTime);
 
+      if (accountId.equals("SFDfOzL_Qq-SH3AuAN4yWQ")) {
+        log.info("Got parentInstanceActiveSecondMap {}", instanceDataList.size());
+      }
       for (InstanceData instanceData : instanceDataList) {
         if (instanceData.getInstanceType() != null
             && billingDataGenerationValidator.shouldGenerateBillingData(
@@ -271,8 +296,14 @@ public class InstanceBillingDataTasklet implements Tasklet {
           instanceBillingDataList.add(instanceBillingData);
         }
       }
+      if (accountId.equals("SFDfOzL_Qq-SH3AuAN4yWQ")) {
+        log.info("Got After foor loop");
+      }
     });
 
+    if (accountId.equals("SFDfOzL_Qq-SH3AuAN4yWQ")) {
+      log.info("Instance billing data calculations done !!");
+    }
     billingDataService.create(instanceBillingDataList, batchJobType);
     return instanceBillingDataList;
   }
