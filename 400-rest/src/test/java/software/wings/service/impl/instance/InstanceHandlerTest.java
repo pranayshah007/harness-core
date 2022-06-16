@@ -38,6 +38,7 @@ import org.mockito.Spy;
 public class InstanceHandlerTest extends WingsBaseTest {
   @Spy InstanceUtils instanceUtil;
   @InjectMocks InstanceHandler instanceHandler = mock(InstanceHandler.class, Mockito.CALLS_REAL_METHODS);
+
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);

@@ -1217,7 +1217,7 @@ public class ContainerInstanceHandler extends InstanceHandler implements Instanc
 
   private Instance buildInstanceFromContainerInfo(
       InfrastructureMapping infraMapping, ContainerInfo containerInfo, DeploymentSummary deploymentSummary) {
-    InstanceBuilder builder = buildInstanceBase(null, infraMapping, deploymentSummary, false);
+    InstanceBuilder builder = buildInstanceBase(null, infraMapping, deploymentSummary);
     builder.containerInstanceKey(generateInstanceKeyForContainer(containerInfo));
     builder.instanceInfo(containerInfo);
 
@@ -1226,7 +1226,7 @@ public class ContainerInstanceHandler extends InstanceHandler implements Instanc
 
   private Instance buildInstanceFromPodInfo(
       InfrastructureMapping infraMapping, K8sPod pod, DeploymentSummary deploymentSummary) {
-    InstanceBuilder builder = buildInstanceBase(null, infraMapping, deploymentSummary, false);
+    InstanceBuilder builder = buildInstanceBase(null, infraMapping, deploymentSummary);
     builder.podInstanceKey(PodInstanceKey.builder().podName(pod.getName()).namespace(pod.getNamespace()).build());
     builder.instanceInfo(K8sPodInfo.builder()
                              .releaseName(pod.getReleaseName())

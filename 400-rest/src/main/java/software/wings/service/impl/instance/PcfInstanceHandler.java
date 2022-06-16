@@ -274,7 +274,7 @@ public class PcfInstanceHandler extends InstanceHandler implements InstanceSyncB
 
   private Instance buildInstanceFromPCFInfo(InfrastructureMapping infrastructureMapping,
       PcfInstanceInfo pcfInstanceInfo, DeploymentSummary deploymentSummary) {
-    InstanceBuilder builder = buildInstanceBase(null, infrastructureMapping, deploymentSummary, false);
+    InstanceBuilder builder = buildInstanceBase(null, infrastructureMapping, deploymentSummary);
     builder.pcfInstanceKey(PcfInstanceKey.builder().id(pcfInstanceInfo.getId()).build());
     builder.instanceInfo(pcfInstanceInfo);
 

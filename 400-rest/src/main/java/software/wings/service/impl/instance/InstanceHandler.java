@@ -270,7 +270,7 @@ public abstract class InstanceHandler {
   }
 
   protected InstanceBuilder buildInstanceBase(
-      String instanceId, InfrastructureMapping infraMapping, DeploymentSummary deploymentSummary, boolean rollback) {
+      String instanceId, InfrastructureMapping infraMapping, DeploymentSummary deploymentSummary) {
     InstanceBuilder builder = this.buildInstanceBase(instanceId, infraMapping);
     if (deploymentSummary != null) {
       builder.lastDeployedAt(deploymentSummary.getDeployedAt())
@@ -278,22 +278,13 @@ public abstract class InstanceHandler {
           .lastDeployedByName(deploymentSummary.getDeployedByName())
           .lastWorkflowExecutionId(deploymentSummary.getWorkflowExecutionId())
           .lastWorkflowExecutionName(deploymentSummary.getWorkflowExecutionName())
+          .lastArtifactId(deploymentSummary.getArtifactId())
+          .lastArtifactName(deploymentSummary.getArtifactName())
+          .lastArtifactStreamId(deploymentSummary.getArtifactStreamId())
+          .lastArtifactSourceName(deploymentSummary.getArtifactSourceName())
+          .lastArtifactBuildNum(deploymentSummary.getArtifactBuildNum())
           .lastPipelineExecutionId(deploymentSummary.getPipelineExecutionId())
           .lastPipelineExecutionName(deploymentSummary.getPipelineExecutionName());
-
-      if (rollback) {
-        builder.lastArtifactId(deploymentSummary.getRollbackArtifactId())
-            .lastArtifactName(deploymentSummary.getRollbackArtifactName())
-            .lastArtifactStreamId(deploymentSummary.getRollbackArtifactStreamId())
-            .lastArtifactSourceName(deploymentSummary.getRollbackArtifactSourceName())
-            .lastArtifactBuildNum(deploymentSummary.getRollbackArtifactBuildNum());
-      } else {
-        builder.lastArtifactId(deploymentSummary.getArtifactId())
-            .lastArtifactName(deploymentSummary.getArtifactName())
-            .lastArtifactStreamId(deploymentSummary.getArtifactStreamId())
-            .lastArtifactSourceName(deploymentSummary.getArtifactSourceName())
-            .lastArtifactBuildNum(deploymentSummary.getArtifactBuildNum());
-      }
     }
 
     return builder;

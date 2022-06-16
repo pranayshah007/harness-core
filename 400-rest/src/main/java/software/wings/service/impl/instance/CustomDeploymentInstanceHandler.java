@@ -187,7 +187,14 @@ public class CustomDeploymentInstanceHandler extends InstanceHandler implements 
 
   private Instance buildInstanceFromHostInfo(InfrastructureMapping infraMapping,
       PhysicalHostInstanceInfo hostInstanceInfo, DeploymentSummary deploymentSummary, boolean rollback) {
-    InstanceBuilder builder = buildInstanceBase(null, infraMapping, deploymentSummary, rollback);
+    InstanceBuilder builder = buildInstanceBase(null, infraMapping, deploymentSummary);
+    if (rollback) {
+      builder.lastArtifactId(deploymentSummary.getRollbackArtifactId())
+          .lastArtifactName(deploymentSummary.getRollbackArtifactName())
+          .lastArtifactStreamId(deploymentSummary.getRollbackArtifactStreamId())
+          .lastArtifactSourceName(deploymentSummary.getRollbackArtifactSourceName())
+          .lastArtifactBuildNum(deploymentSummary.getRollbackArtifactBuildNum());
+    }
     builder.hostInstanceKey(HostInstanceKey.builder()
                                 .hostName(hostInstanceInfo.getHostName())
                                 .infraMappingId(infraMapping.getUuid())

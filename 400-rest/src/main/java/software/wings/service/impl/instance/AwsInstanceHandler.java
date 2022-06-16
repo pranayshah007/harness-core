@@ -326,7 +326,7 @@ public class AwsInstanceHandler extends InstanceHandler implements InstanceSyncB
   protected Instance buildInstanceUsingEc2InstanceAndASG(String instanceId,
       com.amazonaws.services.ec2.model.Instance ec2Instance, InfrastructureMapping infraMapping,
       String autoScalingGroupName, DeploymentSummary newDeploymentSummary) {
-    InstanceBuilder builder = buildInstanceBase(instanceId, infraMapping, newDeploymentSummary, false);
+    InstanceBuilder builder = buildInstanceBase(instanceId, infraMapping, newDeploymentSummary);
     setASGInstanceInfoAndKey(builder, ec2Instance, infraMapping.getUuid(), autoScalingGroupName);
     return builder.build();
   }

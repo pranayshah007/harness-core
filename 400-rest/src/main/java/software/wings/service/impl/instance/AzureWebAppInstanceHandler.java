@@ -390,7 +390,7 @@ public class AzureWebAppInstanceHandler extends InstanceHandler implements Insta
 
   private Instance getInstance(AzureWebAppInfrastructureMapping infrastructureMapping,
       DeploymentSummary finalDeploymentSummary, AzureAppDeploymentData webAppInstance) {
-    InstanceBuilder instanceBuilder = buildInstanceBase(null, infrastructureMapping, finalDeploymentSummary, false);
+    InstanceBuilder instanceBuilder = buildInstanceBase(null, infrastructureMapping, finalDeploymentSummary);
     InstanceInfo instanceInfo = toAzureWebAppInstanceInfo(webAppInstance);
     instanceBuilder.instanceInfo(instanceInfo);
     return instanceBuilder.build();

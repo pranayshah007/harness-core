@@ -234,7 +234,7 @@ public class SpotinstAmiInstanceHandler extends InstanceHandler implements Insta
 
       ec2InstanceIdsToBeAdded.forEach(ec2InstanceId -> {
         com.amazonaws.services.ec2.model.Instance ec2Instance = latestEc2InstanceIdToEc2InstanceMap.get(ec2InstanceId);
-        InstanceBuilder instanceBuilder = buildInstanceBase(null, infrastructureMapping, finalDeploymentSummary, false);
+        InstanceBuilder instanceBuilder = buildInstanceBase(null, infrastructureMapping, finalDeploymentSummary);
         String privateDnsName = buildHostInstanceKey(ec2Instance, infrastructureMapping.getUuid(), instanceBuilder);
         InstanceInfo instanceInfo = SpotinstAmiInstanceInfo.builder()
                                         .ec2Instance(ec2Instance)
