@@ -14,7 +14,7 @@ import retrofit2.http.Query;
 
 @OwnedBy(HarnessTeam.CE)
 public interface NotificationResourceClient {
-  String BASE_API = "notification";
+  String BASE_API = "ccm/api/notification";
 
   @POST(BASE_API)
   Call<ResponseDTO<NotificationResult>> sendNotification(

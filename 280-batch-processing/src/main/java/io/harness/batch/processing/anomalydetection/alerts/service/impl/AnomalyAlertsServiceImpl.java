@@ -37,6 +37,7 @@ import io.harness.notification.channeldetails.MSTeamChannel;
 import io.harness.notification.channeldetails.MSTeamChannel.MSTeamChannelBuilder;
 import io.harness.notification.channeldetails.SlackChannel;
 import io.harness.notification.channeldetails.SlackChannel.SlackChannelBuilder;
+import io.harness.notification.notificationclient.NotificationResult;
 import io.harness.notifications.NotificationResourceClient;
 
 import com.google.inject.Inject;
@@ -157,8 +158,9 @@ public class AnomalyAlertsServiceImpl implements AnomalyAlertsService {
 
     // Sending email alerts
     emailChannelBuilder.templateData(templateData);
-    RestCallToCENGClientUtils.execute(
+    NotificationResult result = RestCallToCENGClientUtils.execute(
         notificationResourceClient.sendNotification("zEaak-FLS425IEO7OLzMUg", emailChannelBuilder.build()));
+    log.info("Notification call result: {}", result);
     log.info("done");
   }
 
