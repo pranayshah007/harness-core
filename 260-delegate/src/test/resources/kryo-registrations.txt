@@ -1604,6 +1604,10 @@
 29306:io.harness.delegate.beans.connector.helm.OciHelmConnectivityTaskParams
 29307:io.harness.delegate.beans.connector.helm.OciHelmConnectivityTaskResponse
 29308:io.harness.delegate.beans.storeconfig.OciHelmStoreDelegateConfig
+29309:io.harness.delegate.task.serverless.request.ServerlessPrepareRollbackDataRequest
+29310:io.harness.delegate.task.serverless.response.ServerlessPrepareRollbackDataResponse
+29311:io.harness.delegate.beans.serverless.ServerlessPrepareRollbackDataResult
+29312:io.harness.delegate.beans.serverless.ServerlessAwsLambdaPrepareRollbackDataResult
 31010:java.lang.StackTraceElement[]
 31011:java.lang.StackTraceElement
 31012:io.harness.exception.DelegateErrorHandlerException
@@ -2200,3 +2204,5 @@
 980028:io.harness.exception.AzureAKSException
 980029:io.harness.exception.runtime.SshCommandExecutionException
 9800001:io.harness.beans.RecasterMap
+
+

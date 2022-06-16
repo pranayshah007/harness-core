@@ -229,7 +229,7 @@ public class ServerlessAwsLambdaRollbackStepTest {
     doReturn(taskChainResponse)
         .when(serverlessStepCommonHelper)
         .queueServerlessTask(stepElementParameters, serverlessRollbackRequest, ambiance,
-            ServerlessExecutionPassThroughData.builder().infrastructure(infrastructureOutcome).build());
+            ServerlessExecutionPassThroughData.builder().infrastructure(infrastructureOutcome).build(), true);
     TaskRequest taskRequest =
         serverlessAwsLambdaRollbackStep.obtainTaskAfterRbac(ambiance, stepElementParameters, stepInputPackage);
     assertThat(taskRequest).isEqualTo(expectedTaskRequest);

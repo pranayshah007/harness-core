@@ -293,6 +293,7 @@ public class MonitoredServiceResourceTest extends CvNextGenTestBase {
     MonitoredServiceDTO monitoredServiceDTO = restResponse.getResource().getMonitoredServiceDTO();
     assertThat(monitoredServiceDTO.getSources().getHealthSources()).hasSize(1);
     HealthSource healthSource = monitoredServiceDTO.getSources().getHealthSources().iterator().next();
+    assertThat(((SplunkMetricHealthSourceSpec) healthSource.getSpec()).getFeature()).isEqualTo("Splunk Metric");
     HealthSourceMetricDefinition healthSourceMetricDefinition =
         ((SplunkMetricHealthSourceSpec) healthSource.getSpec()).getMetricDefinitions().get(0);
     assertThat(healthSourceMetricDefinition.getIdentifier()).isEqualTo("splunk_response_time");
