@@ -117,9 +117,13 @@ public class CustomDeploymentInstanceHandler extends InstanceHandler implements 
     if (isNotEmpty(latestHostInfos) && isNotEmpty(newDeploymentSummaries)) {
       deploymentSummary =
           getDeploymentSummaryForInstanceCreation(instancesInDb, newDeploymentSummaries.get(0), rollback);
-      latestHostInfos.stream()
-          .map(hostInstanceInfo -> buildInstanceFromHostInfo(infraMapping, hostInstanceInfo, deploymentSummary))
-          .forEach(instanceService::save);
+      if (deploymentSummary.getArtifactId() != null) {
+        latestHostInfos.stream()
+            .map(hostInstanceInfo -> buildInstanceFromHostInfo(infraMapping, hostInstanceInfo, deploymentSummary))
+            .forEach(instanceService::save);
+      } else {
+        log.warn("Couldn't find a old successful workflow execution, so no new instances will be created.");
+      }
     }
   }
 

@@ -279,6 +279,7 @@ public abstract class InstanceHandler {
 
   protected DeploymentSummary getDeploymentSummaryForRollback(
       List<Instance> instancesInDb, DeploymentSummary deploymentSummary) {
+    boolean artifactUpdated = false;
     try {
       if (EmptyPredicate.isNotEmpty(instancesInDb)) {
         WorkflowExecution lastSuccessfulWE =
@@ -293,6 +294,7 @@ public abstract class InstanceHandler {
                                       .orElse(null);
           if (lastArtifact != null) {
             // Copy Artifact Information for rollback version in previous successful workflow execution
+            artifactUpdated = true;
             deploymentSummary.setArtifactBuildNum(lastArtifact.getBuildNo());
             deploymentSummary.setArtifactName(lastArtifact.getDisplayName());
             deploymentSummary.setArtifactId(lastArtifact.getUuid());
@@ -303,6 +305,14 @@ public abstract class InstanceHandler {
       }
     } catch (Exception e) {
       log.error("Unable to fetch the last artifact from the workflow execution", e);
+    } finally {
+      if (!artifactUpdated) {
+        deploymentSummary.setArtifactId(null);
+        deploymentSummary.setArtifactBuildNum(null);
+        deploymentSummary.setArtifactName(null);
+        deploymentSummary.setArtifactSourceName(null);
+        deploymentSummary.setArtifactStreamId(null);
+      }
     }
     return deploymentSummary;
   }

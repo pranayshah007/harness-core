@@ -115,10 +115,11 @@ public class InstanceHandlerTest extends WingsBaseTest {
     final String artifactName = "hello-artifact";
     List<DeploymentSummary> deploymentSummary =
         singletonList(buildDeploymentSummary(buildSampleInstancesJson(1, 2, 3), artifactId, artifactName));
+    DeploymentSummary wantedDeploymentSummary = buildDeploymentSummary(buildSampleInstancesJson(1, 2, 3), null, null);
     List<Instance> instancesInDb = new ArrayList<>();
     DeploymentSummary newDeploymentSummary =
         instanceHandler.getDeploymentSummaryForInstanceCreation(instancesInDb, deploymentSummary.get(0), true);
-    assertThat(newDeploymentSummary).isEqualTo(deploymentSummary.get(0));
+    assertThat(newDeploymentSummary).isEqualTo(wantedDeploymentSummary);
     verify(workflowExecutionService, times(0))
         .getLastSuccessfulWorkflowExecution(any(), any(), any(), any(), any(), any());
   }
