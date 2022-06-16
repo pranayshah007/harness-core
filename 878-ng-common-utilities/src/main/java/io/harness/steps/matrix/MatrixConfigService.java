@@ -16,6 +16,7 @@ import io.harness.plancreator.strategy.StrategyConfig;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
 import io.harness.pms.contracts.execution.MatrixMetadata;
 import io.harness.pms.contracts.execution.StrategyMetadata;
+import io.harness.pms.yaml.ParameterField;
 
 import com.google.inject.Singleton;
 import java.util.ArrayList;
@@ -33,8 +34,9 @@ public class MatrixConfigService implements StrategyConfigService {
     List<List<Integer>> matrixMetadata = new ArrayList<>();
     List<String> keys = new LinkedList<>(matrixConfig.getAxes().keySet());
 
-    fetchCombinations(new LinkedHashMap<>(), matrixConfig.getAxes(), combinations, matrixConfig.getExclude(),
-        matrixMetadata, keys, 0, new LinkedList<>());
+    fetchCombinations(new LinkedHashMap<>(), matrixConfig.getAxes(), combinations,
+        ParameterField.isBlank(matrixConfig.getExclude()) ? null : matrixConfig.getExclude().getValue(), matrixMetadata,
+        keys, 0, new LinkedList<>());
     List<ChildrenExecutableResponse.Child> children = new ArrayList<>();
     int currentIteration = 0;
     int totalCount = combinations.size();

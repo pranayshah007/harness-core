@@ -21,6 +21,7 @@ import io.harness.pms.contracts.plan.GraphLayoutNode;
 import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.serializer.KryoSerializer;
@@ -145,6 +146,15 @@ public class StageStrategyUtils {
       Map<String, AxisConfig> axisConfig = ((MatrixConfig) config.getMatrixConfig()).getAxes();
       if (axisConfig.size() == 0) {
         throw new InvalidYamlException("No Axes defined in matrix. Please define at least one axis");
+      }
+      if (!ParameterField.isBlank(((MatrixConfig) config.getMatrixConfig()).getExclude())) {
+        List<ExcludeConfig> excludeConfigs = ((MatrixConfig) config.getMatrixConfig()).getExclude().getValue();
+        for (ExcludeConfig excludeConfig : excludeConfigs) {
+          if (!excludeConfig.getExclude().keySet().equals(axisConfig.keySet())) {
+            throw new InvalidYamlException(
+                "Values defined in the exclude are not correct. Please make sure exclude contains all the axis values and no extra value.");
+          }
+        }
       }
     }
   }

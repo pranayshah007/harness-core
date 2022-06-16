@@ -9,12 +9,15 @@ package io.harness.plancreator.strategy;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.beans.SwaggerConstants.INTEGER_CLASSPATH;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.list;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidYamlException;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
+import io.harness.yaml.YamlSchemaTypes;
 
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -41,7 +44,7 @@ public class MatrixConfig implements MatrixConfigInterface {
   private static String BATCH_SIZE = "batchSize";
 
   @ApiModelProperty(hidden = true) @Builder.Default Map<String, AxisConfig> axes = new LinkedHashMap<>();
-  List<ExcludeConfig> exclude;
+  @YamlSchemaTypes(value = {runtime, list}) ParameterField<List<ExcludeConfig>> exclude;
 
   @ApiModelProperty(dataType = INTEGER_CLASSPATH)
   @JsonProperty("maxConcurrency")
