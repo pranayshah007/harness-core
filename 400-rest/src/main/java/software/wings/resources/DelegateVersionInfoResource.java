@@ -50,9 +50,9 @@ public class DelegateVersionInfoResource {
   @ExceptionMetered
   @DelegateAuth2
   public RestResponse<String> getWatcherVersion(@QueryParam("accountId") @NotEmpty String accountId) {
-    List<String> watcherVersion = accountService.getWatcherVersion(accountId);
+    final String watcherVersion = accountService.getWatcherVersion(accountId);
     if (isNotEmpty(watcherVersion)) {
-      return new RestResponse<>(watcherVersion.get(0));
+      return new RestResponse<>(watcherVersion);
     }
     throw new InvalidRequestException("Unable to get watcher version from ring");
   }

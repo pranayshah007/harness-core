@@ -43,5 +43,5 @@ public class DelegateRing implements PersistentEntity {
 
   // TODO: Convert this List to a String, as soon we start support to bring down older delegate version instantly.
   private List<String> delegateVersions;
-  private List<String> watcherVersions;
+  private String watcherVersions;
 }

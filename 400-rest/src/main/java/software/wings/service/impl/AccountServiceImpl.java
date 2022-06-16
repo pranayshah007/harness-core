@@ -1019,7 +1019,7 @@ public class AccountServiceImpl implements AccountService {
   }
 
   @Override
-  public List<String> getWatcherVersion(String accountId) {
+  public String getWatcherVersion(String accountId) {
     return delegateVersionService.getWatcherJarVersions(accountId);
   }
 

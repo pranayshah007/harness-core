@@ -39,7 +39,7 @@ public class DelegateRingServiceImpl implements DelegateRingService {
   }
 
   @Override
-  public List<String> getWatcherVersions(final String accountId) {
+  public String getWatcherVersions(final String accountId) {
     return getDelegateRing(accountId).getWatcherVersions();
   }
 

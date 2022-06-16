@@ -26,13 +26,11 @@ import io.harness.ff.FeatureFlagService;
 import io.harness.persistence.HPersistence;
 
 import software.wings.app.MainConfiguration;
-import software.wings.service.intfc.DelegateService;
 
 import com.google.inject.Inject;
 import java.util.Collections;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 
 @RequiredArgsConstructor(onConstructor_ = @Inject)
@@ -43,7 +41,6 @@ public class DelegateVersionService {
   private final FeatureFlagService featureFlagService;
   private final MainConfiguration mainConfiguration;
   private final HPersistence persistence;
-  private final DelegateService delegateService;
 
   public String getDelegateImageTag(final String accountId, final String delegateType) {
     final VersionOverride versionOverride = getVersionOverride(accountId, DELEGATE_IMAGE_TAG);
@@ -94,23 +91,12 @@ public class DelegateVersionService {
     return Collections.emptyList();
   }
 
-  public List<String> getWatcherJarVersions(final String accountId) {
-    // TODO: use getWatcherJarVersionFromRing() once watcher is ready to enable from delegate Ring.
-    return singletonList(delegateService.getLatestWatcherVersion(accountId));
-  }
-
-  public List<String> getWatcherJarVersionFromRing(final String accountId) {
+  public String getWatcherJarVersions(final String accountId) {
     final VersionOverride versionOverride = getVersionOverride(accountId, WATCHER_JAR);
     if (versionOverride != null && isNotBlank(versionOverride.getVersion())) {
-      return singletonList(versionOverride.getVersion());
+      return versionOverride.getVersion();
     }
-
-    final List<String> ringVersion = delegateRingService.getWatcherVersions(accountId);
-    if (!CollectionUtils.isEmpty(ringVersion)) {
-      return ringVersion;
-    }
-
-    return Collections.emptyList();
+    return delegateRingService.getWatcherVersions(accountId);
   }
 
   private VersionOverride getVersionOverride(final String accountId, final VersionOverrideType overrideType) {
