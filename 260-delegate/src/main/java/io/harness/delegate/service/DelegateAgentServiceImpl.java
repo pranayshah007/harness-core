@@ -566,7 +566,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
                                              : emptyList())
               .sampleDelegate(isSample)
               .location(Paths.get("").toAbsolutePath().toString())
-              .sendAsDelegateHeartBeat(true)
+              .responseSentAt(true)
               .ceEnabled(Boolean.parseBoolean(System.getenv("ENABLE_CE")));
 
       delegateId = registerDelegate(builder);
@@ -889,9 +889,6 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       DelegateHeartbeatResponse delegateHeartbeatResponse =
           JsonUtils.asObject(message, DelegateHeartbeatResponse.class);
       healthMonitorExecutor.submit(() -> processHeartbeat(delegateHeartbeatResponse));
-    } else if (StringUtils.startsWith(message, "[X]")) {
-      healthMonitorExecutor.submit(() -> processHeartbeat(message));
-      return;
     }
 
     // Handle other messages in task executor thread-pool.
@@ -1652,29 +1649,6 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     return doRestart;
   }
 
-  private void processHeartbeat(String message) {
-    String receivedId;
-    if (isEcsDelegate()) {
-      int indexForToken = message.lastIndexOf(TOKEN);
-      receivedId = message.substring(3, indexForToken); // Remove the "[X]
-    } else {
-      receivedId = message.substring(3);
-    }
-    if (delegateId.equals(receivedId)) {
-      long now = clock.millis();
-      if ((now - lastHeartbeatSentAt.get()) > TimeUnit.MINUTES.toMillis(3)) {
-        log.warn("Delegate {} received heartbeat response {} after sending. {} since last response.", receivedId,
-            getDurationString(lastHeartbeatSentAt.get(), now), getDurationString(lastHeartbeatReceivedAt.get(), now));
-      } else {
-        log.info("Delegate {} received heartbeat response {} after sending. {} since last response.", receivedId,
-            getDurationString(lastHeartbeatSentAt.get(), now), getDurationString(lastHeartbeatReceivedAt.get(), now));
-      }
-      handleEcsDelegateSpecificMessage(message);
-      lastHeartbeatReceivedAt.set(now);
-    } else {
-      log.info("Heartbeat response for another delegate received: {}", receivedId);
-    }
-  }
   private void processHeartbeat(DelegateHeartbeatResponse delegateHeartbeatResponse) {
     String receivedId = delegateHeartbeatResponse.getDelegateId();
     if (delegateId.equals(receivedId)) {
@@ -1684,7 +1658,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
             "Delegate {} received heartbeat response {} after sending. {} since last recorded heartbeat response. Harness sent response at {} before",
             receivedId, getDurationString(lastHeartbeatSentAt.get(), now),
             getDurationString(lastHeartbeatReceivedAt.get(), now),
-            getDurationString(delegateHeartbeatResponse.getRequestStartedAt(), now));
+            getDurationString(delegateHeartbeatResponse.getResponseSentAt(), now));
       } else {
         log.info("Delegate {} received heartbeat response {} after sending. {} since last response.", receivedId,
             getDurationString(lastHeartbeatSentAt.get(), now), getDurationString(lastHeartbeatReceivedAt.get(), now));

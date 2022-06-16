@@ -23,5 +23,5 @@ public class DelegateHeartbeatResponse {
   String jreVersion;
   String delegateRandomToken;
   String sequenceNumber;
-  long requestStartedAt;
+  long responseSentAt;
 }

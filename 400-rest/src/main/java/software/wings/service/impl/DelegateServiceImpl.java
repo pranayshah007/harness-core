@@ -2537,7 +2537,7 @@ public class DelegateServiceImpl implements DelegateService {
                                   .currentlyExecutingDelegateTasks(delegateParams.getCurrentlyExecutingDelegateTasks())
                                   .ceEnabled(delegateParams.isCeEnabled())
                                   .delegateTokenName(delegateTokenName.orElse(null))
-                                  .sendAsDelegateHeartBeat(delegateParams.isSendAsDelegateHeartBeat())
+                                  .sendAsDelegateHeartBeat(delegateParams.isResponseSentAt())
                                   .build();
 
     if (ECS.equals(delegateParams.getDelegateType())) {
@@ -2670,7 +2670,7 @@ public class DelegateServiceImpl implements DelegateService {
           .sequenceNumber(sequenceConfig.getSequenceNum().toString());
     }
     long now = clock.millis();
-    builder.requestStartedAt(now);
+    builder.responseSentAt(now);
     DelegateHeartbeatResponse response = builder.build();
     broadcasterFactory.lookup(STREAM_DELEGATE + delegate.getAccountId(), true).broadcast(response);
   }
