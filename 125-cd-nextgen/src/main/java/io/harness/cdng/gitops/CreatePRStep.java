@@ -15,7 +15,6 @@ import static io.harness.data.structure.ListUtils.trimStrings;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.steps.StepUtils.prepareCDTaskRequest;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static org.apache.commons.lang3.StringUtils.trim;
 
 import io.harness.annotations.dev.OwnedBy;
@@ -30,7 +29,6 @@ import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorInfoDTO;
-import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
@@ -62,6 +60,7 @@ import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
 import io.harness.supplier.ThrowingSupplier;
@@ -170,18 +169,11 @@ public class CreatePRStep extends TaskChainExecutableWithRollbackAndRbac {
      */
     CreatePRStepParams gitOpsSpecParams = (CreatePRStepParams) stepParameters.getSpec();
 
-    // Map<String, Object> variables = fetchVariablesForUpdate(ambiance);
-    // checkArgument(EmptyPredicate.isNotEmpty(variables), "no cluster variables found.");
-    //    ExpressionEvaluatorUtils.updateExpressions(
-    //        variables, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
+    ManifestOutcome releaseRepoOutcome = getReleaseRepoOutcome(ambiance);
+    // Fetch files from releaseRepoOutcome and replace expressions if present with cluster name and environment
+    Map<String, Map<String, String>> filesToVariablesMap = buildFilePathsToVariablesMap(releaseRepoOutcome, ambiance);
 
     List<GitFetchFilesConfig> gitFetchFilesConfig = new ArrayList<>();
-
-    ManifestOutcome releaseRepoOutcome = getReleaseRepoOutcome(ambiance);
-
-    // Fetch files from releaseRepoOutcome and replace expressions if present with cluster name and environment
-    Map<String, Map<String, Object>> filesToVariablesMap = buildFilePathsToVariablesMap(releaseRepoOutcome, ambiance);
-
     gitFetchFilesConfig.add(getGitFetchFilesConfig(ambiance, releaseRepoOutcome, filesToVariablesMap.keySet()));
 
     NGGitOpsTaskParams ngGitOpsTaskParams =
@@ -193,7 +185,6 @@ public class CreatePRStep extends TaskChainExecutableWithRollbackAndRbac {
             .accountId(AmbianceUtils.getAccountId(ambiance))
             .connectorInfoDTO(
                 cdStepHelper.getConnector(releaseRepoOutcome.getStore().getConnectorReference().getValue(), ambiance))
-            //.variables(variables)
             .filesToVariablesMap(filesToVariablesMap)
             .build();
 
@@ -216,22 +207,21 @@ public class CreatePRStep extends TaskChainExecutableWithRollbackAndRbac {
         .taskRequest(taskRequest)
         .passThroughData(CreatePRPassThroughData.builder()
                              .filePaths(gitFetchFilesConfig.get(0).getGitStoreDelegateConfig().getPaths())
-                             //.variables(variables)
                              .build())
         .build();
   }
 
-  private Map<String, Map<String, Object>> buildFilePathsToVariablesMap(
+  private Map<String, Map<String, String>> buildFilePathsToVariablesMap(
       ManifestOutcome releaseRepoOutcome, Ambiance ambiance) {
     // Get FilePath from release repo
     GitStoreConfig gitStoreConfig = (GitStoreConfig) releaseRepoOutcome.getStore();
     String filePath = gitStoreConfig.getPaths().getValue().get(0);
 
-    // Read environment outcome and iterate over clusterdata to replace the cluster and env name
+    // Read environment outcome and iterate over clusterData to replace the cluster and env name
     OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputService.resolveOptional(
         ambiance, RefObjectUtils.getOutcomeRefObject(GitopsClustersStep.GITOPS_SWEEPING_OUTPUT));
 
-    Map<String, Map<String, Object>> filePathsToVariables = null;
+    Map<String, Map<String, String>> filePathsToVariables = null;
 
     if (optionalSweepingOutput != null && optionalSweepingOutput.isFound()) {
       GitopsClustersOutcome output = (GitopsClustersOutcome) optionalSweepingOutput.getOutput();
@@ -243,38 +233,28 @@ public class CreatePRStep extends TaskChainExecutableWithRollbackAndRbac {
 
       for (GitopsClustersOutcome.ClusterData cluster : clustersData) {
         if (filePath.contains("<+cluster.name>")) {
-          file = filePath.replaceAll("<+cluster.name>", cluster.getClusterName());
+          file = filePath.replaceAll("<\\+cluster.name>", cluster.getClusterName());
         }
         if (filePath.contains("<+env.name>")) {
-          file = file.replaceAll("<+env.name>", cluster.getEnv());
+          file = file.replaceAll("<\\+env.name>", cluster.getEnv());
         }
         // Resolve any other expressions in the filepaths. eg. service variables
         ExpressionEvaluatorUtils.updateExpressions(
             file, new CDExpressionResolveFunctor(engineExpressionService, ambiance));
 
-        Map<String, Object> variables = cluster.getVariables();
-
         ExpressionEvaluatorUtils.updateExpressions(
             cluster.getVariables(), new CDExpressionResolveFunctor(engineExpressionService, ambiance));
 
-        filePathsToVariables.put(file, variables);
+        Map<String, String> flattennedVariables = new HashMap<>();
+        // Convert variables map from Map<String, Object> to Map<String, String>
+        for (String val : cluster.getVariables().keySet()) {
+          ParameterField<Object> p = (ParameterField) cluster.getVariables().get(val);
+          flattennedVariables.put(val, p.getValue().toString());
+        }
+        filePathsToVariables.put(file, flattennedVariables);
       }
     }
     return filePathsToVariables;
-  }
-
-  private Map<String, Object> fetchVariablesForUpdate(Ambiance ambiance) {
-    OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputService.resolveOptional(
-        ambiance, RefObjectUtils.getOutcomeRefObject(GitopsClustersStep.GITOPS_SWEEPING_OUTPUT));
-    if (optionalSweepingOutput != null && optionalSweepingOutput.isFound()) {
-      GitopsClustersOutcome output = (GitopsClustersOutcome) optionalSweepingOutput.getOutput();
-      // Reading only 1 set of variables for now since all clusters have same variables
-      List<GitopsClustersOutcome.ClusterData> clustersData = output.getClustersData();
-      if (EmptyPredicate.isNotEmpty(clustersData)) {
-        return clustersData.get(0).getVariables();
-      }
-    }
-    return null;
   }
 
   @Override
@@ -290,6 +270,7 @@ public class CreatePRStep extends TaskChainExecutableWithRollbackAndRbac {
 
     List<String> gitFilePaths = new ArrayList<>();
     gitFilePaths.addAll(resolvedFilePaths);
+
     GitStoreDelegateConfig gitStoreDelegateConfig =
         cdStepHelper.getGitStoreDelegateConfig(gitStoreConfig, connectorDTO, manifestOutcome, gitFilePaths, ambiance);
 
