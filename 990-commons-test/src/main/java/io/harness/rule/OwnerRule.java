@@ -276,7 +276,6 @@ public class OwnerRule implements TestRule {
   public static final String RAGHAV_GUPTA = "raghav.gupta";
   public static final String SOUMYAJIT = "soumyajit.das";
   public static final String vivekveman = "vivek.karnati";
-  public static final String ERSHAD_MOHAMMAD = "ershad.ali";
   public static final String TARUN_UBA = "tarun.uba";
   public static final String NAVEEN = "naveen.shukla";
   public static final String ERSHAD_MOHAMMAD = "ershad.ali";

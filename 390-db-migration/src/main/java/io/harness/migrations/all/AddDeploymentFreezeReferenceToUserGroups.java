@@ -9,7 +9,6 @@ package io.harness.migrations.all;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
-import static software.wings.beans.governance.GovernanceConfig.GovernanceConfigKeys;
 import static software.wings.service.impl.compliance.GovernanceConfigServiceImpl.GOVERNANCE_CONFIG;
 
 import io.harness.migrations.Migration;
@@ -17,6 +16,7 @@ import io.harness.persistence.HIterator;
 
 import software.wings.beans.Account;
 import software.wings.beans.governance.GovernanceConfig;
+import software.wings.beans.governance.GovernanceConfig.GovernanceConfigKeys;
 import software.wings.dl.WingsPersistence;
 import software.wings.service.intfc.UserGroupService;
 import software.wings.service.intfc.compliance.GovernanceConfigService;

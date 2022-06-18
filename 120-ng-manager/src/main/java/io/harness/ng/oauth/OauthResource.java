@@ -1,30 +1,29 @@
 package io.harness.ng.oauth;
 
-import com.google.inject.Inject;
+import static io.harness.annotations.dev.HarnessTeam.CI;
+
+import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.rest.RestResponse;
+
+import com.google.inject.Inject;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.v3.oas.annotations.Parameter;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.hibernate.validator.constraints.NotBlank;
-import retrofit.http.Body;
-
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-
-import static io.harness.NGCommonEntityConstants.ACCOUNT_KEY;
-import static io.harness.NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE;
-import static io.harness.annotations.dev.HarnessTeam.CI;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.hibernate.validator.constraints.NotBlank;
+import retrofit.http.Body;
 
 @OwnedBy(CI)
 @Api("oauth")
@@ -45,8 +44,8 @@ public class OauthResource {
   @Path("create-access-token-secret")
   @ApiOperation(value = "Setup secret for oauth tokens", nickname = "configureOauth")
   public RestResponse<OauthAccessTokenResponseDTO> provisionCIResources(
-      @Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotBlank @QueryParam(
-          ACCOUNT_KEY) String accountIdentifier,
+      @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE, required = true) @NotBlank @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @Parameter(description = "scm provider", required = true) @NotBlank @QueryParam("provider") String scmProvider,
       @Parameter(description = "access token secret request", required = true) @Body OauthAccessTokenDTO accessToken) {
     return new RestResponse<>(oauthSecretService.createSecrets(accountIdentifier, scmProvider, accessToken));

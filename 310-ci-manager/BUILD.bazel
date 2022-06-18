@@ -363,7 +363,7 @@ shared_dependencies = [
     "@maven//:org_glassfish_jersey_media_jersey_media_jaxb",
     "@maven//:org_glassfish_jersey_media_jersey_media_multipart",
     "@maven//:org_hamcrest_hamcrest_core",
-    "@maven//:org_hibernate_hibernate_validator",
+    "@maven//:org_hibernate_validator_hibernate_validator",
     "@maven//:org_javassist_javassist",
     "@maven//:org_jboss_logging_jboss_logging",
     "@maven//:org_jboss_marshalling_jboss_marshalling",
