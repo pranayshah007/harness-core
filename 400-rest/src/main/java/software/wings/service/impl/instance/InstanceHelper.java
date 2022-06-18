@@ -253,10 +253,13 @@ public class InstanceHelper {
           }
         }
 
-        Artifact rollbackArtifact = workflowStandardParamsExtensionService.getRollbackArtifactForService(
-            workflowStandardParams, phaseExecutionData.getServiceId());
-        if (rollbackArtifact == null) {
-          log.info("rollbackArtifact is null for stateExecutionInstance:" + stateExecutionInstanceId);
+        Artifact rollbackArtifact = null;
+        if (phaseStepSubWorkflow.isRollback()) {
+          rollbackArtifact = workflowStandardParamsExtensionService.getRollbackArtifactForService(
+              workflowStandardParams, phaseExecutionData.getServiceId());
+          if (rollbackArtifact == null) {
+            log.info("rollbackArtifact is null for stateExecutionInstance:" + stateExecutionInstanceId);
+          }
         }
 
         InstanceHandler instanceHandler = instanceHandlerOptional.get();

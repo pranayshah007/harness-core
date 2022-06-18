@@ -128,7 +128,7 @@ public class CustomDeploymentInstanceHandler extends InstanceHandler implements 
   private boolean isValidDeploymentSummary(DeploymentSummary newDeploymentSummary, boolean rollback) {
     if (rollback) {
       if (isNull(newDeploymentSummary.getRollbackArtifactId())) {
-        log.info("Couldn't find a rollback artifact, so no new instances will be created.");
+        log.warn("Couldn't find a rollback artifact, so no new instances will be created.");
         return false;
       }
     }
