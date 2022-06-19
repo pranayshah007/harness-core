@@ -7,7 +7,7 @@
 
 package io.harness.cdng.environment.helper;
 
-import static io.harness.cdng.environment.helper.EnvironmentPlanCreatorConfigMapper.toEnvPlanCreatorConfigWithGitops;
+import static io.harness.cdng.envGroup.mappers.EnvironmentGroupMapper.toNGEnvironmentGroupConfig;
 import static io.harness.cdng.environment.helper.EnvironmentPlanCreatorConfigMapper.toEnvironmentPlanCreatorConfig;
 
 import static java.util.Arrays.asList;
@@ -72,7 +72,7 @@ public class EnvironmentPlanCreatorConfigMapperTest extends CategoryTest {
   @Owner(developers = OwnerRule.YOGESH)
   @Category(UnitTests.class)
   public void testToEnvPlanCreatorConfigWithGitops() {
-    String envYaml = "environmentGroup:\n"
+    String yaml = "environmentGroup:\n"
         + " name: \"name\"\n"
         + " identifier: \"envGroupId\"\n"
         + " type: \"Production\"\n"
@@ -81,6 +81,7 @@ public class EnvironmentPlanCreatorConfigMapperTest extends CategoryTest {
         + " accountId: \"accId\"\n"
         + " orgIdentifier: \"orgId\"\n"
         + " projectIdentifier: \"projId\"\n";
+
     EnvironmentYamlV2 envV2 =
         EnvironmentYamlV2.builder()
             .environmentRef(ParameterField.<String>builder().value("envId").build())
@@ -88,7 +89,8 @@ public class EnvironmentPlanCreatorConfigMapperTest extends CategoryTest {
             .gitOpsClusters(
                 asList(ClusterYaml.builder().ref(ParameterField.<String>builder().value("c1").build()).build()))
             .build();
-    EnvironmentPlanCreatorConfig config = toEnvPlanCreatorConfigWithGitops(envYaml, envV2, null);
+    EnvironmentPlanCreatorConfig config = EnvironmentPlanCreatorConfigMapper.toEnvPlanCreatorConfigWithGitops(
+        toNGEnvironmentGroupConfig(yaml).getEnvironmentGroupConfig(), envV2, null);
 
     assertThat(config.getEnvironmentRef().getValue()).isEqualTo("envId");
     assertThat(config.getIdentifier()).isEqualTo("envGroupId");
@@ -107,7 +109,7 @@ public class EnvironmentPlanCreatorConfigMapperTest extends CategoryTest {
   @Owner(developers = OwnerRule.YOGESH)
   @Category(UnitTests.class)
   public void testToEnvPlanCreatorConfigWithGitopsDeployAll() {
-    String envGroupYaml = "environmentGroup:\n"
+    String yaml = "environmentGroup:\n"
         + " name: \"name\"\n"
         + " identifier: \"envGroupId\"\n"
         + " tags:\n"
@@ -122,7 +124,8 @@ public class EnvironmentPlanCreatorConfigMapperTest extends CategoryTest {
 
     NGServiceOverrides serviceOverride = NGServiceOverrides.builder().serviceRef("ref").build();
 
-    EnvironmentPlanCreatorConfig config = toEnvPlanCreatorConfigWithGitops(envGroupYaml, envV2, serviceOverride);
+    EnvironmentPlanCreatorConfig config = EnvironmentPlanCreatorConfigMapper.toEnvPlanCreatorConfigWithGitops(
+        toNGEnvironmentGroupConfig(yaml).getEnvironmentGroupConfig(), envV2, serviceOverride);
 
     assertThat(config.getEnvironmentRef().getValue()).isEqualTo("envId");
     assertThat(config.getIdentifier()).isEqualTo("envGroupId");

@@ -125,6 +125,8 @@ public class Account extends Base implements PersistentRegularIterable {
 
   @Getter @Setter boolean createdFromNG;
 
+  @Getter @Setter private boolean accountActivelyUsed;
+
   /**
    * If this flag is set, all encryption/decryption activities will go through LOCAL security manager.
    * No VAULT/KMS secret manager can be configured. This helps for accounts whose delegate can't access
@@ -162,7 +164,6 @@ public class Account extends Base implements PersistentRegularIterable {
 
   @Getter private boolean cloudCostEnabled;
   @Getter @Setter private boolean ceAutoCollectK8sEvents;
-
   @Getter @Setter private TrialSignupOptions trialSignupOptions;
 
   @Getter @Setter private Long serviceGuardLimit = SERVICE_GUAARD_LIMIT;
@@ -584,6 +585,7 @@ public class Account extends Base implements PersistentRegularIterable {
     private AccountPreferences accountPreferences;
     private DefaultExperience defaultExperience;
     private boolean createdFromNG;
+    private boolean accountActivelyUsed;
     private ServiceAccountConfig serviceAccountConfig;
 
     private Builder() {}
@@ -614,6 +616,11 @@ public class Account extends Base implements PersistentRegularIterable {
 
     public Builder withCreatedFromNG(boolean createdFromNG) {
       this.createdFromNG = createdFromNG;
+      return this;
+    }
+
+    public Builder withAccountActivelyUsed(boolean accountActivelyUsed) {
+      this.accountActivelyUsed = accountActivelyUsed;
       return this;
     }
 
@@ -774,6 +781,7 @@ public class Account extends Base implements PersistentRegularIterable {
           .withBackgroundJobsDisabled(backgroundJobsDisabled)
           .withDefaultExperience(defaultExperience)
           .withCreatedFromNG(createdFromNG)
+          .withAccountActivelyUsed(accountActivelyUsed)
           .withAccountPreferences(accountPreferences)
           .withServiceAccountConfig(serviceAccountConfig);
     }
@@ -808,6 +816,7 @@ public class Account extends Base implements PersistentRegularIterable {
       account.setBackgroundJobsDisabled(backgroundJobsDisabled);
       account.setDefaultExperience(defaultExperience);
       account.setCreatedFromNG(createdFromNG);
+      account.setAccountActivelyUsed(accountActivelyUsed);
       account.setAccountPreferences(accountPreferences);
       account.setNextGenEnabled(nextGenEnabled);
       account.setServiceAccountConfig(serviceAccountConfig);

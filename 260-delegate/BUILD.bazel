@@ -650,7 +650,7 @@ java_library(
         "@maven//:org_glassfish_jersey_test_framework_providers_jersey_test_framework_provider_inmemory",
         "@maven//:org_hamcrest_hamcrest_core",
         "@maven//:org_hdrhistogram_HdrHistogram",
-        "@maven//:org_hibernate_hibernate_validator",
+        "@maven//:org_hibernate_validator_hibernate_validator",
         "@maven//:org_jacoco_org_jacoco_agent",
         "@maven//:org_javassist_javassist",
         "@maven//:org_jboss_logging_jboss_logging",

@@ -109,7 +109,7 @@ public class NotificationRuleResourceTest extends CvNextGenTestBase {
                             .request(MediaType.APPLICATION_JSON_TYPE)
                             .post(Entity.json(convertToJson(notificationYaml)));
     assertThat(response.getStatus()).isEqualTo(400);
-    assertThat(response.readEntity(String.class)).contains("\"field\":\"conditions\",\"message\":\"may not be null\"");
+    assertThat(response.readEntity(String.class)).contains("\"field\":\"conditions\",\"message\":\"must not be null\"");
   }
 
   @Test
@@ -124,7 +124,7 @@ public class NotificationRuleResourceTest extends CvNextGenTestBase {
                             .post(Entity.json(convertToJson(notificationYaml)));
     assertThat(response.getStatus()).isEqualTo(400);
     assertThat(response.readEntity(String.class))
-        .contains("\"field\":\"notificationMethod\",\"message\":\"may not be null\"");
+        .contains("\"field\":\"notificationMethod\",\"message\":\"must not be null\"");
   }
 
   @Test
