@@ -28,7 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Api("/agent/delegates/perpetual-task")
 @Path("/agent/delegates/perpetual-task")
-@Produces("application/json")
+@Produces("application/x-protobuf")
 @Slf4j
 @OwnedBy(DEL)
 public class PerpetualTaskResource {
