@@ -62,6 +62,7 @@ import io.harness.cvng.core.entities.MonitoredService.MonitoredServiceKeys;
 import io.harness.cvng.core.handler.monitoredService.BaseMonitoredServiceHandler;
 import io.harness.cvng.core.services.api.CVConfigService;
 import io.harness.cvng.core.services.api.CVNGLogService;
+import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.api.SetupUsageEventService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.core.services.api.monitoredService.ChangeSourceService;
@@ -187,6 +188,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
   @Inject private OutboxService outboxService;
   @Inject private EnforcementClientService enforcementClientService;
   @Inject private NotificationRuleCommonUtils notificationRuleCommonUtils;
+  @Inject private FeatureFlagService featureFlagService;
 
   private static final String templateIdentifierName = "monitoredServiceName";
 
@@ -1164,7 +1166,8 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
   public HealthMonitoringFlagResponse setHealthMonitoringFlag(
       ProjectParams projectParams, String identifier, boolean enable) {
     MonitoredService monitoredService = getMonitoredService(projectParams, identifier);
-    if (enable == true) {
+    if (enable == true
+        && featureFlagService.isFeatureFlagEnabled(projectParams.getAccountIdentifier(), "CVNG_LICENSE_ENFORCEMENT")) {
       long increment = 0;
       if (!isUniqueService(projectParams, monitoredService)) {
         increment = 1;
@@ -1613,6 +1616,10 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
 
   @Override
   public long countUniqueEnabledServices(String accountId) {
+    if (!featureFlagService.isFeatureFlagEnabled(accountId, "CVNG_LICENSE_ENFORCEMENT")) {
+      return 0;
+    }
+
     List<MonitoredService> enabledMonitoredServices = getEnabledMonitoredServices(accountId);
 
     return getDistictServicesFromMonitoredServices(enabledMonitoredServices).size();
