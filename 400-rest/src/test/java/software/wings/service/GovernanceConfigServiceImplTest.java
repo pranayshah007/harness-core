@@ -10,6 +10,7 @@ package software.wings.service;
 import static io.harness.rule.OwnerRule.AGORODETKI;
 import static io.harness.rule.OwnerRule.PRABU;
 import static io.harness.rule.OwnerRule.SHIVAM;
+import static io.harness.rule.OwnerRule.YUVRAJ;
 
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 import static software.wings.utils.WingsTestConstants.APP_ID;
@@ -26,6 +27,7 @@ import static org.mockito.Matchers.anySet;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -46,11 +48,13 @@ import io.harness.governance.BlackoutWindowFilterType;
 import io.harness.governance.CustomAppFilter;
 import io.harness.governance.CustomEnvFilter;
 import io.harness.governance.DeploymentFreezeInfo;
+import io.harness.governance.EnvironmentFilter;
 import io.harness.governance.EnvironmentFilter.EnvironmentFilterType;
 import io.harness.governance.GovernanceFreezeConfig;
 import io.harness.governance.ServiceFilter;
 import io.harness.governance.ServiceFilter.ServiceFilterType;
 import io.harness.governance.TimeRangeBasedFreezeConfig;
+import io.harness.governance.TimeRangeOccurrence;
 import io.harness.rule.Owner;
 
 import software.wings.WingsBaseTest;
@@ -68,6 +72,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -78,6 +83,7 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 
@@ -90,6 +96,7 @@ public class GovernanceConfigServiceImplTest extends WingsBaseTest {
   @Mock AppService appService;
   @Mock UserGroupService userGroupService;
   @Mock DeploymentFreezeUtils deploymentFreezeUtils;
+
   @Inject @InjectMocks private GovernanceConfigService governanceConfigService;
 
   @Before
@@ -495,6 +502,85 @@ public class GovernanceConfigServiceImplTest extends WingsBaseTest {
     Map<String, Set<String>> deploymentFreezeInfo =
         governanceConfigService.getFrozenEnvIdsForApp(ACCOUNT_ID, APP_ID, governanceConfigService.get(ACCOUNT_ID));
     assertThat(deploymentFreezeInfo).isEmpty();
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void test_updateUserGroupReference() {
+    UserGroup userGroup = UserGroup.builder().uuid("testgrp").accountId(ACCOUNT_ID).name("user123").build();
+    String userGroupId = userGroup.getUuid();
+
+    EnvironmentFilter environmentFilter = new AllEnvFilter(EnvironmentFilterType.ALL);
+
+    ServiceFilter serviceFilter = new ServiceFilter(ServiceFilterType.ALL, null);
+
+    ApplicationFilter applicationFilter =
+        new AllAppFilter(BlackoutWindowFilterType.ALL, environmentFilter, serviceFilter);
+
+    TimeRange timeRange = new TimeRange(System.currentTimeMillis(), System.currentTimeMillis() + 3600000,
+        "Asia/Calcutta", true, 3600000L, System.currentTimeMillis() + 3600000, TimeRangeOccurrence.ANNUAL, false);
+
+    TimeRangeBasedFreezeConfig timeRangeBasedFreezeConfig = TimeRangeBasedFreezeConfig.builder()
+                                                                .uuid("uuid")
+                                                                .name("test_window")
+                                                                .description("freeze description")
+                                                                .userGroups(Arrays.asList(userGroupId))
+                                                                .appSelections(Arrays.asList(applicationFilter))
+                                                                .timeRange(timeRange)
+                                                                .build();
+
+    GovernanceConfig governanceConfig =
+        GovernanceConfig.builder()
+            .accountId(ACCOUNT_ID)
+            .timeRangeBasedFreezeConfigs(Collections.singletonList(timeRangeBasedFreezeConfig))
+            .build();
+
+    GovernanceConfig savedGovernanceConfig =
+        governanceConfigService.upsert(governanceConfig.getAccountId(), governanceConfig);
+    assertThat(governanceConfig.getAccountId()).isEqualTo(savedGovernanceConfig.getAccountId());
+
+    GovernanceConfig inputConfig = GovernanceConfig.builder().accountId(ACCOUNT_ID).build();
+    savedGovernanceConfig = governanceConfigService.upsert(inputConfig.getAccountId(), inputConfig);
+    assertThat(inputConfig.getAccountId()).isEqualTo(savedGovernanceConfig.getAccountId());
+
+    savedGovernanceConfig = governanceConfigService.upsert(ACCOUNT_ID, governanceConfig);
+    assertThat(governanceConfig.getAccountId()).isEqualTo(savedGovernanceConfig.getAccountId());
+
+    TimeRangeBasedFreezeConfig newTimeRangeBasedFreezeConfig = TimeRangeBasedFreezeConfig.builder()
+                                                                   .uuid("uuid")
+                                                                   .name("test_window")
+                                                                   .description("freeze description")
+                                                                   .userGroups(Arrays.asList("testgrp1", "testgrp2"))
+                                                                   .appSelections(Arrays.asList(applicationFilter))
+                                                                   .timeRange(timeRange)
+                                                                   .build();
+
+    GovernanceConfig newGovernanceConfig =
+        GovernanceConfig.builder()
+            .accountId(ACCOUNT_ID)
+            .timeRangeBasedFreezeConfigs(Collections.singletonList(newTimeRangeBasedFreezeConfig))
+            .build();
+
+    savedGovernanceConfig = governanceConfigService.upsert(ACCOUNT_ID, newGovernanceConfig);
+    assertThat(newGovernanceConfig.getAccountId()).isEqualTo(savedGovernanceConfig.getAccountId());
+
+    ArgumentCaptor<String> newRemoveUserGroupIdCaptor = ArgumentCaptor.forClass(String.class);
+    ArgumentCaptor<String> newRemoveEntityNameCaptor = ArgumentCaptor.forClass(String.class);
+
+    verify(userGroupService, times(2))
+        .removeParentsReference(
+            newRemoveUserGroupIdCaptor.capture(), any(), any(), any(), newRemoveEntityNameCaptor.capture());
+    assertThat(newRemoveUserGroupIdCaptor.getAllValues()).isEqualTo(Arrays.asList("testgrp", "testgrp"));
+
+    ArgumentCaptor<String> newAddUserGroupIdCaptor = ArgumentCaptor.forClass(String.class);
+    ArgumentCaptor<String> newAddEntityNameCaptor = ArgumentCaptor.forClass(String.class);
+
+    assertThat(newGovernanceConfig.getAccountId()).isEqualTo(savedGovernanceConfig.getAccountId());
+    verify(userGroupService, times(4))
+        .addParentsReference(newAddUserGroupIdCaptor.capture(), any(), any(), any(), newAddEntityNameCaptor.capture());
+    assertThat(newAddUserGroupIdCaptor.getAllValues())
+        .isEqualTo(Arrays.asList("testgrp", "testgrp", "testgrp1", "testgrp2"));
   }
 
   @Test

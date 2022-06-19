@@ -19,4 +19,8 @@ public interface ServerlessStepExecutor {
   TaskChainResponse executeServerlessTask(ManifestOutcome serverlessManifestOutcome, Ambiance ambiance,
       StepElementParameters stepParameters, ServerlessExecutionPassThroughData executionPassThroughData,
       UnitProgressData unitProgressData, ServerlessStepExecutorParams serverlessStepExecutorParams);
+
+  TaskChainResponse executeServerlessPrepareRollbackTask(ManifestOutcome serverlessManifestOutcome, Ambiance ambiance,
+      StepElementParameters stepParameters, ServerlessStepPassThroughData serverlessStepPassThroughData,
+      UnitProgressData unitProgressData, ServerlessStepExecutorParams serverlessStepExecutorParams);
 }

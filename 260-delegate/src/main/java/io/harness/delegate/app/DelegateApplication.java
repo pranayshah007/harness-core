@@ -29,7 +29,6 @@ import io.harness.delegate.configuration.DelegateConfiguration;
 import io.harness.delegate.message.MessageService;
 import io.harness.delegate.service.DelegateAgentService;
 import io.harness.event.client.EventPublisher;
-import io.harness.grpc.pingpong.PingPongClient;
 import io.harness.serializer.YamlUtils;
 import io.harness.threading.ExecutorModule;
 import io.harness.threading.ThreadPool;
@@ -130,8 +129,6 @@ public class DelegateApplication {
       messageService.putAllData(WATCHER_DATA, watcherData);
     }
 
-    injector.getInstance(PingPongClient.class).startAsync();
-
     DelegateAgentService delegateService = injector.getInstance(DelegateAgentService.class);
     delegateService.run(watched, false);
 
@@ -152,7 +149,6 @@ public class DelegateApplication {
         messageService.closeData(DELEGATE_DASH + processId);
         log.info("Message service has been closed.");
 
-        injector.getInstance(PingPongClient.class).stopAsync();
         if (!isOnPrem(DEPLOY_MODE)) {
           injector.getInstance(EventPublisher.class).shutdown();
         }

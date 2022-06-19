@@ -13,7 +13,11 @@ import static io.harness.rule.OwnerRule.INDER;
 import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import io.harness.TemplateServiceTestBase;
@@ -312,6 +316,31 @@ public class TemplateMergeHelperTest extends TemplateServiceTestBase {
     String resFile = "pipeline-with-stage-template-replaced.yaml";
     String resPipeline = readFile(resFile);
     assertThat(finalPipelineYaml).isEqualTo(resPipeline);
+  }
+
+  @Test
+  @Owner(developers = UTKARSH_CHOUBEY)
+  @Category(UnitTests.class)
+  public void testmergeTemplateInputsInObjectWithInfiniteRecursion() {
+    String filename = "stage-temp-inf-rec.yaml";
+    String yaml = readFile(filename);
+
+    TemplateEntity templateEntity1 = TemplateEntity.builder()
+                                         .accountId(ACCOUNT_ID)
+                                         .orgIdentifier(ORG_ID)
+                                         .projectIdentifier(PROJECT_ID)
+                                         .yaml(yaml)
+                                         .build();
+    when(templateService.getOrThrowExceptionIfInvalid(anyString(), anyString(), anyString(), any(), any(), eq(false)))
+        .thenReturn(Optional.of(templateEntity1));
+
+    String pipelineYamlFile = "pipeline-temp-inf-rec.yaml";
+    String pipelineYaml = readFile(pipelineYamlFile);
+
+    assertThatThrownBy(
+        () -> templateMergeHelper.applyTemplatesToYaml(ACCOUNT_ID, ORG_ID, PROJECT_ID, pipelineYaml, false))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Exponentially growing template nesting. Aborting");
   }
 
   @Test

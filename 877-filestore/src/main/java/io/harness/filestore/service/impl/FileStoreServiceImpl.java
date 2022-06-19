@@ -14,6 +14,8 @@ import static io.harness.EntityType.SERVICE;
 import static io.harness.EntityType.TEMPLATE;
 import static io.harness.FileStoreConstants.ROOT_FOLDER_IDENTIFIER;
 import static io.harness.FileStoreConstants.ROOT_FOLDER_NAME;
+import static io.harness.FileStoreConstants.ROOT_FOLDER_PARENT_IDENTIFIER;
+import static io.harness.FileStoreConstants.ROOT_FOLDER_PATH;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -111,7 +113,7 @@ public class FileStoreServiceImpl implements FileStoreService {
     log.info("Creating {}: {}", fileDto.getType().name().toLowerCase(), fileDto);
 
     validateCreationFileDto(fileDto);
-    updateFileDtoPath(fileDto);
+    fileDto.setPath(createPath(fileDto));
 
     NGFile ngFile = FileDTOMapper.getNGFileFromDTO(fileDto);
 
@@ -131,9 +133,9 @@ public class FileStoreServiceImpl implements FileStoreService {
 
     validateUpdateFileDto(fileDto, identifier);
 
-    updateFileDtoPath(fileDto);
+    fileDto.setPath(createPath(fileDto));
     if (NGFileType.FOLDER.equals(oldNGFile.getType())) {
-      updateChildrenPaths(oldNGFile, fileDto);
+      updateChildrenPathsIfFolderRenamed(oldNGFile, fileDto);
     }
 
     NGFile updatedNGFile = FileDTOMapper.updateNGFile(fileDto, oldNGFile);
@@ -145,7 +147,7 @@ public class FileStoreServiceImpl implements FileStoreService {
     return fileFailsafeService.updateAndPublish(oldNGFileClone, updatedNGFile);
   }
 
-  private void updateChildrenPaths(NGFile oldNGFile, FileDTO fileDto) {
+  private void updateChildrenPathsIfFolderRenamed(NGFile oldNGFile, FileDTO fileDto) {
     if (parentChanged(oldNGFile, fileDto) || nameChanged(oldNGFile, fileDto)) {
       List<NGFile> ngFiles = fileStructureService.listFolderChildrenByPath(oldNGFile);
       String oldParentPath = oldNGFile.getPath();
@@ -234,7 +236,9 @@ public class FileStoreServiceImpl implements FileStoreService {
   @Override
   public FolderNodeDTO listFolderNodes(@NotNull String accountIdentifier, String orgIdentifier,
       String projectIdentifier, @NotNull FolderNodeDTO folderNodeDTO) {
-    return populateFolderNode(folderNodeDTO, accountIdentifier, orgIdentifier, projectIdentifier);
+    FolderNodeDTO updatedFolderNode =
+        updateFolderNode(accountIdentifier, orgIdentifier, projectIdentifier, folderNodeDTO);
+    return populateFolderNode(updatedFolderNode, accountIdentifier, orgIdentifier, projectIdentifier);
   }
 
   @Override
@@ -335,14 +339,13 @@ public class FileStoreServiceImpl implements FileStoreService {
   }
 
   private String getDuplicateEntityIdentifierMessage(@NotNull FileDTO fileDto) {
-    return format("Try creating another %s, %s with identifier [%s] already exists.",
-        fileDto.getType().name().toLowerCase(), fileDto.getType().name().toLowerCase(), fileDto.getIdentifier());
+    return format("Try another identifier, %s with identifier [%s] already exists.",
+        fileDto.getType().name().toLowerCase(), fileDto.getIdentifier());
   }
 
   private String getDuplicateEntityNameMessage(@NotNull FileDTO fileDto) {
-    return format("Try creating another %s, %s with name [%s] already exists in the parent folder [%s].",
-        fileDto.getType().name().toLowerCase(), fileDto.getType().name().toLowerCase(), fileDto.getName(),
-        fileDto.getParentIdentifier());
+    return format("Try another name, %s with name [%s] already exists in the parent folder [%s].",
+        fileDto.getType().name().toLowerCase(), fileDto.getName(), fileDto.getParentIdentifier());
   }
 
   private boolean shouldStoreFileContent(InputStream content, NGFile ngFile) {
@@ -403,6 +406,24 @@ public class FileStoreServiceImpl implements FileStoreService {
         createSortByLastModifiedAtDesc());
   }
 
+  private FolderNodeDTO updateFolderNode(final String accountIdentifier, final String orgIdentifier,
+      final String projectIdentifier, FolderNodeDTO folderNodeDTO) {
+    final String folderIdentifier = folderNodeDTO.getIdentifier();
+    final String folderName = folderNodeDTO.getName();
+    if (ROOT_FOLDER_IDENTIFIER.equals(folderIdentifier) || ROOT_FOLDER_NAME.equals(folderName)) {
+      return FileStoreNodeDTOMapper.getFolderNodeDTO(folderNodeDTO, ROOT_FOLDER_PARENT_IDENTIFIER, ROOT_FOLDER_PATH);
+    }
+
+    NGFile ngFile = fetchFileOrThrow(accountIdentifier, orgIdentifier, projectIdentifier, folderIdentifier);
+    if (ngFile.isFile()) {
+      throw new InvalidArgumentsException(format(
+          "Required folder, found file with identifier [%s], accountIdentifier [%s], orgIdentifier [%s] and projectIdentifier [%s]",
+          folderIdentifier, accountIdentifier, orgIdentifier, projectIdentifier));
+    }
+
+    return FileStoreNodeDTOMapper.getFolderNodeDTO(ngFile);
+  }
+
   private boolean deleteFileOrFolder(NGFile fileOrFolder) {
     if (NGFileType.FOLDER.equals(fileOrFolder.getType())) {
       return deleteFolder(fileOrFolder);
@@ -437,12 +458,12 @@ public class FileStoreServiceImpl implements FileStoreService {
   }
 
   private void validateCreationFileDto(FileDTO fileDto) {
-    if (ROOT_FOLDER_IDENTIFIER.equals(fileDto.getIdentifier()) || isFileExistsByIdentifier(fileDto)) {
-      throw new DuplicateFieldException(getDuplicateEntityIdentifierMessage(fileDto));
-    }
-
     if (isFileExistByName(fileDto)) {
       throw new DuplicateFieldException(getDuplicateEntityNameMessage(fileDto));
+    }
+
+    if (ROOT_FOLDER_IDENTIFIER.equals(fileDto.getIdentifier()) || isFileExistsByIdentifier(fileDto)) {
+      throw new DuplicateFieldException(getDuplicateEntityIdentifierMessage(fileDto));
     }
 
     if (isEmpty(fileDto.getParentIdentifier())) {
@@ -459,14 +480,16 @@ public class FileStoreServiceImpl implements FileStoreService {
     if (isEmpty(identifier)) {
       throw new InvalidArgumentsException("File or folder identifier cannot be empty");
     }
+
+    if (identifier.equals(fileDto.getParentIdentifier())) {
+      throw new InvalidArgumentsException(
+          format("File or folder identifier [%s] cannot be the same as parent folder identifier [%s]", identifier,
+              fileDto.getParentIdentifier()));
+    }
+
     if (!parentFolderExists(fileDto)) {
       throw new InvalidArgumentsException(
           format("Parent folder with identifier [%s] does not exist", fileDto.getParentIdentifier()));
-    }
-    if (identifier.equals(fileDto.getParentIdentifier())) {
-      throw new InvalidArgumentsException(
-          format("File or folder identifier [%s] cannot be its parent folder identifier [%s]", identifier,
-              fileDto.getParentIdentifier()));
     }
   }
 
@@ -479,10 +502,6 @@ public class FileStoreServiceImpl implements FileStoreService {
             fileDto.getOrgIdentifier(), fileDto.getProjectIdentifier(), fileDto.getParentIdentifier())
         .filter(NGFile::isFolder)
         .isPresent();
-  }
-
-  private void updateFileDtoPath(FileDTO fileDto) {
-    fileDto.setPath(createPath(fileDto));
   }
 
   private String createPath(FileDTO fileDto) {

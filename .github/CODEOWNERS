@@ -14,7 +14,7 @@ bazel* diptiman.adak@harness.io udham.singh@harness.io
 /860-orchestration-visualization/src/test/resources/recaster/alias/alias.txt prashant.pal@harness.io sahil.hindwani@harness.io archit.singla@harness.io
 /870-orchestration/src/test/resources/recaster/alias/alias.txt prashant.pal@harness.io sahil.hindwani@harness.io archit.singla@harness.io
 /260-delegate/module-dependency.hash bojan.micovic@harness.io raghu@harness.io abhinav.singh@harness.io jenny.james@harness.io ankit.singhal@harness.io anil.chowdhury@harness.io deepak.puthraya@harness.io
-/260-delegate/ johannes@harness.io raghu@harness.io abhinav.singh@harness.io jenny.james@harness.io marko.milic@harness.io arpit.tiwari@harness.io gaurav.jain@harness.io
+/260-delegate/ johannes@harness.io raghu@harness.io abhinav.singh@harness.io jenny.james@harness.io marko.milic@harness.io arpit.tiwari@harness.io gaurav.jain@harness.io anil.chowdhury@harness.io  deepak.puthraya@harness.io
 /270-delegate-service-app/module-dependency.hash bojan.micovic@harness.io raghu@harness.io abhinav.singh@harness.io jenny.james@harness.io ankit.singhal@harness.io anil.chowdhury@harness.io deepak.puthraya@harness.io
 /400-rest/src/main/resources/delegatetemplates/ raghu@harness.io abhinav.singh@harness.io jenny.james@harness.io marko.milic@harness.io arpit.tiwari@harness.io gaurav.jain@harness.io
 /125-cd-nextgen/src/main/java/io/harness/cdng/creator/CDNGPlanCreatorProvider.java prashant.sharma@harness.io vaibhav.si@harness.io archit.singla@harness.io

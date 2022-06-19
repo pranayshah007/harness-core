@@ -10,7 +10,9 @@ package io.harness.cdng.creator.plan.envGroup;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.envGroup.beans.EnvironmentGroupConfig;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
+import io.harness.cdng.envGroup.mappers.EnvironmentGroupMapper;
 import io.harness.cdng.envGroup.services.EnvironmentGroupService;
 import io.harness.cdng.envGroup.yaml.EnvGroupPlanCreatorConfig;
 import io.harness.cdng.envgroup.yaml.EnvironmentGroupYaml;
@@ -66,10 +68,12 @@ public class EnvGroupPlanCreatorHelper {
 
     List<EnvironmentPlanCreatorConfig> envConfigs = new ArrayList<>();
     if (!envGroupYaml.isDeployToAll()) {
-      String mergedYaml = entity.get().getYaml();
+      EnvironmentGroupConfig envGroupConfig =
+          EnvironmentGroupMapper.toNGEnvironmentGroupConfig(entity.get().getYaml()).getEnvironmentGroupConfig();
       List<EnvironmentYamlV2> envV2Yamls = envGroupYaml.getEnvGroupConfig();
       for (EnvironmentYamlV2 envYaml : envV2Yamls) {
-        envConfigs.add(EnvironmentPlanCreatorConfigMapper.toEnvPlanCreatorConfigWithGitops(mergedYaml, envYaml, null));
+        envConfigs.add(
+            EnvironmentPlanCreatorConfigMapper.toEnvPlanCreatorConfigWithGitops(envGroupConfig, envYaml, null));
       }
     }
 

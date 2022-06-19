@@ -35,6 +35,5 @@ public class ResourceSelector {
   @NotNull String resourceType;
   List<String> identifiers;
 
-  @ApiModelProperty(hidden = true)
-  AttributeFilter attributeFilter;
+  @ApiModelProperty(hidden = true) AttributeFilter attributeFilter;
 }

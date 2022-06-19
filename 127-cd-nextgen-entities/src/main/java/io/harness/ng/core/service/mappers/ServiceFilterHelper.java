@@ -40,7 +40,9 @@ public class ServiceFilterHelper {
     }
 
     if (type != null) {
-      criteria.andOperator(where(ServiceEntityKeys.type).is(type));
+      final Criteria typeCriteria =
+          new Criteria().orOperator(where(ServiceEntityKeys.type).is(type), where(ServiceEntityKeys.type).is(null));
+      criteria.andOperator(typeCriteria);
     }
 
     return criteria;

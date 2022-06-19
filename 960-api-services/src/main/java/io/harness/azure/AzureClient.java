@@ -16,6 +16,7 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.azure.client.AzureBlueprintRestClient;
 import io.harness.azure.client.AzureContainerRegistryRestClient;
+import io.harness.azure.client.AzureKubernetesRestClient;
 import io.harness.azure.client.AzureManagementRestClient;
 import io.harness.azure.context.AzureClientContext;
 import io.harness.azure.model.AzureConfig;
@@ -113,6 +114,11 @@ public class AzureClient {
   protected AzureManagementRestClient getAzureManagementRestClient(AzureEnvironmentType azureEnvironmentType) {
     String url = AzureUtils.getAzureEnvironment(azureEnvironmentType).resourceManagerEndpoint();
     return getAzureRestClient(url, AzureManagementRestClient.class);
+  }
+
+  protected AzureKubernetesRestClient getAzureKubernetesRestClient(AzureEnvironmentType azureEnvironmentType) {
+    String url = AzureUtils.getAzureEnvironment(azureEnvironmentType).resourceManagerEndpoint();
+    return getAzureRestClient(url, AzureKubernetesRestClient.class);
   }
 
   protected AzureBlueprintRestClient getAzureBlueprintRestClient(AzureEnvironmentType azureEnvironmentType) {

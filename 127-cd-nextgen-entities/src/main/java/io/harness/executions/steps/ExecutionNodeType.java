@@ -14,6 +14,7 @@ import io.harness.cdng.visitor.YamlTypes;
 @OwnedBy(HarnessTeam.CDP)
 public enum ExecutionNodeType {
   GITOPS_CREATE_PR("GITOPS_CREATE_PR", StepSpecTypeConstants.GITOPS_CREATE_PR),
+  GITOPS_MERGE_PR("GITOPS_MERGE_PR", StepSpecTypeConstants.GITOPS_MERGE_PR),
   SERVICE("SERVICE", YamlTypes.SERVICE_ENTITY),
   SERVICE_V2("SERVICE_V2", YamlTypes.SERVICE_ENTITY),
   ENVIRONMENT("ENVIRONMENT", YamlTypes.ENVIRONMENT_YAML),

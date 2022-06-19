@@ -5,7 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package software.wings.delegatetasks.azure.common;
+package io.harness.delegate.task.azure.common;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.azure.model.AzureConstants.ACR_ACCESS_KEYS_BLANK_VALIDATION_MSG;
@@ -16,9 +16,7 @@ import static io.harness.azure.model.AzureConstants.DOCKER_REGISTRY_SERVER_USERN
 import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
-import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.annotations.dev.TargetModule;
 import io.harness.azure.client.AzureContainerRegistryClient;
 import io.harness.azure.context.AzureContainerRegistryClientContext;
 import io.harness.azure.model.AzureAppServiceApplicationSetting;
@@ -41,7 +39,6 @@ import org.jetbrains.annotations.NotNull;
 @Singleton
 @NoArgsConstructor
 @Slf4j
-@TargetModule(HarnessModule._930_DELEGATE_TASKS)
 @OwnedBy(CDP)
 public class AzureContainerRegistryService {
   @Inject private AzureContainerRegistryClient azureContainerRegistryClient;

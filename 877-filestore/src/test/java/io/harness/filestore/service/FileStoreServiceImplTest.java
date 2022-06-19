@@ -11,8 +11,9 @@ import static io.harness.filestore.FileStoreTestConstants.ACCOUNT_IDENTIFIER;
 import static io.harness.filestore.FileStoreTestConstants.ADMIN_USER_EMAIL;
 import static io.harness.filestore.FileStoreTestConstants.ADMIN_USER_NAME;
 import static io.harness.filestore.FileStoreTestConstants.FILE_IDENTIFIER;
-import static io.harness.filestore.FileStoreTestConstants.FILE_NAME;
 import static io.harness.filestore.FileStoreTestConstants.FILE_UUID;
+import static io.harness.filestore.FileStoreTestConstants.FOLDER_IDENTIFIER;
+import static io.harness.filestore.FileStoreTestConstants.FOLDER_NAME;
 import static io.harness.filestore.FileStoreTestConstants.IDENTIFIER;
 import static io.harness.filestore.FileStoreTestConstants.ORG_IDENTIFIER;
 import static io.harness.filestore.FileStoreTestConstants.PARENT_IDENTIFIER;
@@ -337,8 +338,8 @@ public class FileStoreServiceImplTest extends CategoryTest {
 
     assertThatThrownBy(() -> fileStoreService.create(folderDto, null))
         .isInstanceOf(DuplicateFieldException.class)
-        .hasMessageContaining("Try creating another folder, folder with identifier [identifier] already exists.",
-            folderDto.getIdentifier());
+        .hasMessageContaining(
+            "Try another identifier, folder with identifier [identifier] already exists.", folderDto.getIdentifier());
   }
 
   @Test
@@ -352,7 +353,7 @@ public class FileStoreServiceImplTest extends CategoryTest {
 
     assertThatThrownBy(() -> fileStoreService.create(fileDTO, getStreamWithDummyContent()))
         .isInstanceOf(DuplicateFieldException.class)
-        .hasMessageContaining("Try creating another file, file with identifier [identifier] already exists.");
+        .hasMessageContaining("Try another identifier, file with identifier [identifier] already exists.");
   }
 
   @Test
@@ -370,7 +371,7 @@ public class FileStoreServiceImplTest extends CategoryTest {
     assertThatThrownBy(() -> fileStoreService.create(fileDTO, getStreamWithDummyContent()))
         .isInstanceOf(DuplicateFieldException.class)
         .hasMessageContaining(
-            "Try creating another file, file with name [file-name] already exists in the parent folder [parent-identifier].",
+            "Try another name, file with name [file-name] already exists in the parent folder [parent-identifier].",
             fileDTO.getIdentifier());
   }
 
@@ -576,10 +577,13 @@ public class FileStoreServiceImplTest extends CategoryTest {
   @Owner(developers = IVAN)
   @Category(UnitTests.class)
   public void testListFolderNodes() {
-    FolderNodeDTO folderNodeDTO = FolderNodeDTO.builder().identifier(FILE_IDENTIFIER).name(FILE_NAME).build();
+    FolderNodeDTO folderNodeDTO = FolderNodeDTO.builder().identifier(FOLDER_IDENTIFIER).name(FOLDER_NAME).build();
+    when(fileStoreRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifier(
+             ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, FOLDER_IDENTIFIER))
+        .thenReturn(Optional.of(createNgFileTypeFolder()));
     when(fileStoreRepository.findAllAndSort(
              createCriteriaByScopeAndParentIdentifier(
-                 Scope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER), FILE_IDENTIFIER),
+                 Scope.of(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER), FOLDER_IDENTIFIER),
              createSortByLastModifiedAtDesc()))
         .thenReturn(getNgFiles());
 
@@ -587,8 +591,8 @@ public class FileStoreServiceImplTest extends CategoryTest {
         fileStoreService.listFolderNodes(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, folderNodeDTO);
 
     assertThat(populatedFolderNodeDTO).isNotNull();
-    assertThat(populatedFolderNodeDTO.getName()).isEqualTo(FILE_NAME);
-    assertThat(populatedFolderNodeDTO.getIdentifier()).isEqualTo(FILE_IDENTIFIER);
+    assertThat(populatedFolderNodeDTO.getName()).isEqualTo(FOLDER_NAME);
+    assertThat(populatedFolderNodeDTO.getIdentifier()).isEqualTo(FOLDER_IDENTIFIER);
     assertThat(populatedFolderNodeDTO.getChildren().size()).isEqualTo(3);
     assertThat(populatedFolderNodeDTO.getChildren())
         .contains(FileNodeDTO.builder().name("fileName").identifier("fileIdentifier").build(),
@@ -771,8 +775,8 @@ public class FileStoreServiceImplTest extends CategoryTest {
 
     FolderNodeDTO folderNodeDTO = (FolderNodeDTO) storeNodeDTO;
 
-    assertThat(folderNodeDTO.getName()).isEqualTo("folderName");
-    assertThat(folderNodeDTO.getIdentifier()).isEqualTo("identifier");
+    assertThat(folderNodeDTO.getName()).isEqualTo(FOLDER_NAME);
+    assertThat(folderNodeDTO.getIdentifier()).isEqualTo(FOLDER_IDENTIFIER);
     assertThat(folderNodeDTO.getParentIdentifier()).isEqualTo(PARENT_IDENTIFIER);
     assertThat(folderNodeDTO.getLastModifiedBy()).isEqualTo(getEmbeddedUserDetailsDTO());
     assertThat(folderNodeDTO.getLastModifiedAt()).isEqualTo(1L);
@@ -790,7 +794,7 @@ public class FileStoreServiceImplTest extends CategoryTest {
     // When
     assertThatThrownBy(() -> fileStoreService.create(fileDto, getStreamWithDummyContent()))
         .isInstanceOf(DuplicateFieldException.class)
-        .hasMessageContaining("Try creating another file, file with identifier ["
+        .hasMessageContaining("Try another identifier, file with identifier ["
                 + FileStoreConstants.ROOT_FOLDER_IDENTIFIER + "] already exists.",
             fileDto.getIdentifier());
   }
@@ -807,14 +811,14 @@ public class FileStoreServiceImplTest extends CategoryTest {
     // When
     assertThatThrownBy(() -> fileStoreService.create(fileDto, null))
         .isInstanceOf(DuplicateFieldException.class)
-        .hasMessageContaining("Try creating another folder, folder with identifier ["
+        .hasMessageContaining("Try another identifier, folder with identifier ["
                 + FileStoreConstants.ROOT_FOLDER_IDENTIFIER + "] already exists.",
             fileDto.getIdentifier());
   }
 
   private static FileDTO aFileDto() {
     return FileDTO.builder()
-        .identifier("identifier")
+        .identifier(FOLDER_IDENTIFIER)
         .accountIdentifier("account-ident")
         .description("some description")
         .name("file-name")
@@ -826,7 +830,7 @@ public class FileStoreServiceImplTest extends CategoryTest {
 
   private static FileDTO aFolderDto() {
     return FileDTO.builder()
-        .identifier("identifier")
+        .identifier(FOLDER_IDENTIFIER)
         .accountIdentifier("account-ident")
         .description("some description")
         .name("folder-name")
@@ -887,8 +891,8 @@ public class FileStoreServiceImplTest extends CategoryTest {
   private NGFile createNgFileTypeFolder() {
     return builder()
         .type(NGFileType.FOLDER)
-        .name("folderName")
-        .identifier("identifier")
+        .name(FOLDER_NAME)
+        .identifier(FOLDER_IDENTIFIER)
         .parentIdentifier(PARENT_IDENTIFIER)
         .lastUpdatedBy(EmbeddedUser.builder().name(ADMIN_USER_NAME).email(ADMIN_USER_EMAIL).build())
         .lastModifiedAt(1L)

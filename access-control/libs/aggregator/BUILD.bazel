@@ -36,7 +36,7 @@ java_library(
         "@maven//:org_apache_kafka_connect_api",
         "@maven//:org_apache_kafka_connect_runtime",
         "@maven//:org_apache_kafka_kafka_clients",
-        "@maven//:org_hibernate_hibernate_validator",
+        "@maven//:org_hibernate_validator_hibernate_validator",
         "@maven//:org_mongodb_mongo_java_driver",
         "@maven//:org_mongodb_morphia_morphia",
         "@maven//:org_redisson_redisson",
