@@ -28,6 +28,7 @@ import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.scm.EntityObjectIdUtils;
 import io.harness.grpc.utils.StringValueUtils;
 import io.harness.pms.gitsync.PmsGitSyncBranchContextGuard;
+import io.harness.pms.inputset.InputSetImportRequestDTO;
 import io.harness.pms.inputset.gitsync.InputSetYamlDTOMapper;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity.InputSetEntityKeys;
@@ -329,5 +330,11 @@ public class PMSInputSetServiceImpl implements PMSInputSetService {
       String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier) {
     return inputSetRepository.existsByAccountIdAndOrgIdentifierAndProjectIdentifierAndPipelineIdentifierAndDeletedNot(
         accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, true);
+  }
+
+  @Override
+  public InputSetEntity importInputSetFromRemote(String accountId, String orgIdentifier, String projectIdentifier,
+      String inputSetIdentifier, InputSetImportRequestDTO inputSetImportRequestDTO) {
+    return null;
   }
 }
