@@ -32,6 +32,7 @@ import io.harness.stream.BoundedInputStream;
 import software.wings.app.MainConfiguration;
 import software.wings.beans.loginSettings.LoginSettings;
 import software.wings.beans.loginSettings.PasswordStrengthPolicy;
+import software.wings.beans.sso.LdapGroupResponse;
 import software.wings.security.authentication.LoginTypeResponse;
 import software.wings.security.authentication.SSOConfig;
 
@@ -47,6 +48,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.InputStream;
+import java.util.Collection;
 import java.util.Set;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -66,6 +68,7 @@ import okhttp3.MultipartBody;
 import okhttp3.RequestBody;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataParam;
+import org.hibernate.validator.constraints.NotBlank;
 import org.hibernate.validator.constraints.NotEmpty;
 import retrofit2.http.Multipart;
 
@@ -367,6 +370,24 @@ public class AuthenticationSettingsResource {
         ResourceScope.of(accountId, null, null), Resource.of(AUTHSETTING, null), VIEW_AUTHSETTING_PERMISSION);
     LoginTypeResponse response = authenticationSettingsService.getSAMLLoginTest(accountId);
     return new RestResponse<>(response);
+  }
+
+  @GET
+  @Path("ldap/{ldapId}/search/group")
+  @ApiOperation(value = "Search Ldap groups with matching name", nickname = "searchLdapGroups")
+  @Operation(operationId = "searchLdapGroups", summary = "Return Ldap groups matching name",
+      description = "Returns all userGroups for the configured Ldap in the account matching a given name.",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns ldap groups matching a given name")
+      })
+  public RestResponse<Collection<LdapGroupResponse>>
+  searchLdapGroups(@PathParam("ldapId") String ldapId, @QueryParam("accountId") @NotBlank String accountId,
+      @QueryParam("name") @NotBlank String name) {
+    Collection<LdapGroupResponse> groups =
+        authenticationSettingsService.searchLdapGroupsByName(accountId, ldapId, name);
+    return new RestResponse<>(groups);
   }
 
   @PUT

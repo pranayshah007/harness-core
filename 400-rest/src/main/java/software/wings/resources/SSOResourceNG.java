@@ -20,6 +20,7 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.EncryptedData;
 import io.harness.beans.SecretManagerConfig;
 import io.harness.beans.SecretText;
+import io.harness.delegate.beans.ldap.LdapSettingsWithEncryptedDataDetail;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
@@ -177,6 +178,16 @@ public class SSOResourceNG {
     } catch (Exception e) {
       throw new WingsException(ErrorCode.INVALID_SAML_CONFIGURATION);
     }
+  }
+
+  @GET
+  @Path("ldap/setting-with-encrypted-details")
+  @Timed
+  @ExceptionMetered
+  @Produces("application/x-kryo")
+  @Consumes("application/x-kryo")
+  public RestResponse<LdapSettingsWithEncryptedDataDetail> getLdapSetting(@QueryParam("accountId") String accountId) {
+    return new RestResponse<>(ssoService.getLdapSettingWithEncryptedDataDetail(accountId));
   }
 
   @VisibleForTesting

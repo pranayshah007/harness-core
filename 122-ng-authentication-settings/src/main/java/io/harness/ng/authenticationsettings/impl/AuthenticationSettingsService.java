@@ -16,12 +16,15 @@ import io.harness.ng.core.user.TwoFactorAdminOverrideSettings;
 
 import software.wings.beans.loginSettings.LoginSettings;
 import software.wings.beans.loginSettings.PasswordStrengthPolicy;
+import software.wings.beans.sso.LdapGroupResponse;
 import software.wings.security.authentication.LoginTypeResponse;
 import software.wings.security.authentication.SSOConfig;
 
+import java.util.Collection;
 import java.util.Set;
 import javax.validation.constraints.NotNull;
 import okhttp3.MultipartBody;
+import org.hibernate.validator.constraints.NotBlank;
 
 @OwnedBy(HarnessTeam.PL)
 public interface AuthenticationSettingsService {
@@ -39,6 +42,8 @@ public interface AuthenticationSettingsService {
       String samlProviderType, String clientId, String clientSecret);
   SSOConfig deleteSAMLMetadata(@NotNull String accountIdentifier);
   LoginTypeResponse getSAMLLoginTest(@NotNull String accountIdentifier);
+  Collection<LdapGroupResponse> searchLdapGroupsByName(
+      @NotBlank String accountIdentifier, @NotBlank String ldapId, @NotBlank String name);
   boolean setTwoFactorAuthAtAccountLevel(
       String accountIdentifier, TwoFactorAdminOverrideSettings twoFactorAdminOverrideSettings);
   PasswordStrengthPolicy getPasswordStrengthSettings(String accountIdentifier);

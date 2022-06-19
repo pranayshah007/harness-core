@@ -16,6 +16,7 @@ import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.delegate.beans.ldap.LdapSettingsWithEncryptedDataDetail;
 import io.harness.enforcement.client.annotation.FeatureRestrictionCheck;
 import io.harness.enforcement.client.services.EnforcementClientService;
 import io.harness.enforcement.constants.FeatureRestrictionName;
@@ -31,9 +32,11 @@ import io.harness.ng.authenticationsettings.remote.AuthSettingsManagerClient;
 import io.harness.ng.core.account.AuthenticationMechanism;
 import io.harness.ng.core.api.UserGroupService;
 import io.harness.ng.core.user.TwoFactorAdminOverrideSettings;
+import io.harness.ng.ldap.search.NGLdapGroupSearch;
 
 import software.wings.beans.loginSettings.LoginSettings;
 import software.wings.beans.loginSettings.PasswordStrengthPolicy;
+import software.wings.beans.sso.LdapGroupResponse;
 import software.wings.beans.sso.LdapSettings;
 import software.wings.beans.sso.OauthSettings;
 import software.wings.beans.sso.SAMLProviderType;
@@ -46,6 +49,7 @@ import software.wings.security.authentication.SSOConfig;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import javax.validation.constraints.NotNull;
@@ -53,6 +57,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.MultipartBody;
 import okhttp3.RequestBody;
+import org.hibernate.validator.constraints.NotBlank;
 
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Singleton
@@ -62,6 +67,7 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
   private final AuthSettingsManagerClient managerClient;
   private final EnforcementClientService enforcementClientService;
   private final UserGroupService userGroupService;
+  private final NGLdapGroupSearch ngLdapGroupSearchService;
 
   @Override
   public AuthenticationSettingsResponse getAuthenticationSettings(String accountIdentifier) {
@@ -268,5 +274,15 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
   @Override
   public PasswordStrengthPolicy getPasswordStrengthSettings(String accountIdentifier) {
     return getResponse(managerClient.getPasswordStrengthSettings(accountIdentifier));
+  }
+
+  @Override
+  public Collection<LdapGroupResponse> searchLdapGroupsByName(
+      @NotBlank String accountIdentifier, @NotBlank String ldapId, @NotBlank String name) {
+    LdapSettingsWithEncryptedDataDetail settingsWithEncryptedDataDetail =
+        getResponse(managerClient.getLdapSettingsWithEncryptedDataDetails(accountIdentifier));
+
+    return ngLdapGroupSearchService.searchGroupsByName(settingsWithEncryptedDataDetail.getLdapSettings(),
+        settingsWithEncryptedDataDetail.getEncryptedDataDetail(), name);
   }
 }
