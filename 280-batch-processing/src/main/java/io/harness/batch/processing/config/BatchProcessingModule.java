@@ -8,6 +8,7 @@
 package io.harness.batch.processing.config;
 
 import static io.harness.AuthorizationServiceHeader.BATCH_PROCESSING;
+import static io.harness.AuthorizationServiceHeader.CE_NEXT_GEN;
 import static io.harness.AuthorizationServiceHeader.MANAGER;
 
 import io.harness.annotations.retry.MethodExecutionHelper;
@@ -145,7 +146,7 @@ public class BatchProcessingModule extends AbstractModule {
     install(NgLicenseHttpClientModule.getInstance(batchMainConfig.getNgManagerServiceHttpClientConfig(),
         batchMainConfig.getNgManagerServiceSecret(), MANAGER.getServiceId()));
     install(new NotificationResourceClientModule(batchMainConfig.getCeNgServiceHttpClientConfig(),
-        batchMainConfig.getCeNgServiceSecret(), BATCH_PROCESSING.getServiceId(), ClientMode.PRIVILEGED));
+        batchMainConfig.getCeNgServiceSecret(), CE_NEXT_GEN.getServiceId(), ClientMode.PRIVILEGED));
     install(new AbstractTelemetryModule() {
       @Override
       public TelemetryConfiguration telemetryConfiguration() {
