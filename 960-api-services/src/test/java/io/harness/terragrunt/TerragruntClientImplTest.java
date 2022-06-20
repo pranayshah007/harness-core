@@ -26,6 +26,8 @@ import io.harness.cli.CliResponse;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
+import io.harness.terraform.TerraformClient;
+import io.harness.terraform.beans.TerraformVersion;
 
 import java.io.File;
 import java.io.IOException;
@@ -47,6 +49,7 @@ import org.zeroturnaround.exec.stream.LogOutputStream;
 public class TerragruntClientImplTest extends CategoryTest {
   @Mock private LogOutputStream mockedLogOutputStream;
   @Mock private LogCallback logCallback;
+  @Mock private TerraformClient terraformClient;
 
   @InjectMocks private TerragruntClientImpl terragruntClient = Mockito.spy(TerragruntClientImpl.class);
 
@@ -149,10 +152,26 @@ public class TerragruntClientImplTest extends CategoryTest {
   @Test
   @Owner(developers = TATHAGAT)
   @Category(UnitTests.class)
-  public void testDestroy() throws Exception {
+  public void testDestroyForce() throws Exception {
+    terragruntCliCommandRequestParams.setAutoApproveArgument("-force");
     terragruntClient.destroy(terragruntCliCommandRequestParams, TARGET_ARGS, VAR_PARAMS, UI_LOGS, logCallback);
     assertThat(getTerraguntCommandPassedToExecutor())
         .isEqualTo("terragrunt destroy -force --terragrunt-non-interactive targetArgs varParams");
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testDestroyForceAutoApprove() throws Exception {
+    terragruntCliCommandRequestParams.setAutoApproveArgument("-auto-approve");
+    doReturn(TerraformVersion.create(0, 16, 3)).when(terraformClient).version(anyLong(), anyString());
+    terragruntClient.destroy(terragruntCliCommandRequestParams, TARGET_ARGS, VAR_PARAMS, UI_LOGS, logCallback);
+    assertThat(getTerraguntCommandPassedToExecutor())
+        .isEqualTo("terragrunt destroy -auto-approve --terragrunt-non-interactive targetArgs varParams");
+
+    doReturn(TerraformVersion.create(0, 0, 1)).when(terraformClient).version(anyLong(), anyString());
+    assertThat(getTerraguntCommandPassedToExecutor())
+        .isEqualTo("terragrunt destroy -auto-approve --terragrunt-non-interactive targetArgs varParams");
   }
 
   @Test
@@ -208,10 +227,21 @@ public class TerragruntClientImplTest extends CategoryTest {
   @Test
   @Owner(developers = TATHAGAT)
   @Category(UnitTests.class)
-  public void testRunAllDestroy() throws Exception {
+  public void testRunAllDestroyForce() throws Exception {
+    terragruntCliCommandRequestParams.setAutoApproveArgument("-force");
     terragruntClient.runAllDestroy(terragruntCliCommandRequestParams, TARGET_ARGS, VAR_PARAMS, UI_LOGS, logCallback);
     assertThat(getTerraguntCommandPassedToExecutor())
         .isEqualTo("terragrunt run-all destroy -force --terragrunt-non-interactive targetArgs varParams");
+  }
+
+  @Test
+  @Owner(developers = TATHAGAT)
+  @Category(UnitTests.class)
+  public void testRunAllDestroyAutoApprove() throws Exception {
+    terragruntCliCommandRequestParams.setAutoApproveArgument("-auto-approve");
+    terragruntClient.runAllDestroy(terragruntCliCommandRequestParams, TARGET_ARGS, VAR_PARAMS, UI_LOGS, logCallback);
+    assertThat(getTerraguntCommandPassedToExecutor())
+        .isEqualTo("terragrunt run-all destroy -auto-approve --terragrunt-non-interactive targetArgs varParams");
   }
 
   @Test

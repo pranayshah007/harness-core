@@ -72,7 +72,7 @@ public interface DelegateService extends OwnedByAccount {
 
   List<String> getAvailableVersions(String accountId);
 
-  Double getConnectedRatioWithPrimary(String targetVersion, String accountId);
+  Double getConnectedRatioWithPrimary(String targetVersion, String accountId, String ringName);
 
   Double getConnectedDelegatesRatio(String version, String accountId);
 

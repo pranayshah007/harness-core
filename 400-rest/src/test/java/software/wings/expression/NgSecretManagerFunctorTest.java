@@ -49,7 +49,7 @@ import org.mockito.Mock;
 public class NgSecretManagerFunctorTest extends WingsBaseTest {
   @Mock private SecretManagerClientService ngSecretService;
   @Inject private SecretManager secretManager;
-
+  @Mock private javax.cache.Cache<String, EncryptedDataDetails> secretsCache;
   private static String ORG_ID = "orgId";
   private static String PROJECT_ID = "projectId";
 
@@ -59,6 +59,7 @@ public class NgSecretManagerFunctorTest extends WingsBaseTest {
         .accountId(ACCOUNT_ID)
         .orgId(ORG_ID)
         .projectId(PROJECT_ID)
+        .secretsCache(secretsCache)
         .expressionFunctorToken(token)
         .ngSecretService(ngSecretService)
         .build();

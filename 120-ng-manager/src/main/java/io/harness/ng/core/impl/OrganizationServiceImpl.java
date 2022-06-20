@@ -15,8 +15,6 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.enforcement.constants.FeatureRestrictionName.MULTIPLE_ORGANIZATIONS;
 import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.ng.accesscontrol.PlatformPermissions.INVITE_PERMISSION_IDENTIFIER;
-import static io.harness.ng.accesscontrol.PlatformPermissions.VIEW_ORGANIZATION_PERMISSION;
-import static io.harness.ng.accesscontrol.PlatformResourceTypes.ORGANIZATION;
 import static io.harness.ng.core.remote.OrganizationMapper.toOrganization;
 import static io.harness.ng.core.user.UserMembershipUpdateSource.SYSTEM;
 import static io.harness.ng.core.utils.NGUtils.validate;
@@ -30,9 +28,6 @@ import static java.util.Collections.singletonList;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.accesscontrol.AccountIdentifier;
-import io.harness.accesscontrol.acl.api.AccessCheckResponseDTO;
-import io.harness.accesscontrol.acl.api.AccessControlDTO;
-import io.harness.accesscontrol.acl.api.PermissionCheckDTO;
 import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
@@ -381,33 +376,20 @@ public class OrganizationServiceImpl implements OrganizationService {
 
   @Override
   public Set<String> getPermittedOrganizations(@NotNull String accountIdentifier, String orgIdentifier) {
-    Set<String> orgIdentifiers;
+    List<Scope> organizations;
     if (isEmpty(orgIdentifier)) {
       Criteria orgCriteria = Criteria.where(OrganizationKeys.accountIdentifier)
                                  .is(accountIdentifier)
                                  .and(OrganizationKeys.deleted)
                                  .ne(Boolean.TRUE);
-      List<Organization> organizations = list(orgCriteria);
-      orgIdentifiers = organizations.stream().map(Organization::getIdentifier).collect(Collectors.toSet());
+      organizations = organizationRepository.findAllOrgs(orgCriteria);
     } else {
-      orgIdentifiers = Collections.singleton(orgIdentifier);
+      organizations = Collections.singletonList(
+          Scope.builder().accountIdentifier(accountIdentifier).orgIdentifier(orgIdentifier).build());
     }
-
-    ResourceScope resourceScope = ResourceScope.builder().accountIdentifier(accountIdentifier).build();
-    List<PermissionCheckDTO> permissionChecks = orgIdentifiers.stream()
-                                                    .map(oi
-                                                        -> PermissionCheckDTO.builder()
-                                                               .permission(VIEW_ORGANIZATION_PERMISSION)
-                                                               .resourceIdentifier(oi)
-                                                               .resourceScope(resourceScope)
-                                                               .resourceType(ORGANIZATION)
-                                                               .build())
-                                                    .collect(Collectors.toList());
-    AccessCheckResponseDTO accessCheckResponse = accessControlClient.checkForAccess(permissionChecks);
-    return accessCheckResponse.getAccessControlList()
+    return scopeAccessHelper.getPermittedScopes(organizations)
         .stream()
-        .filter(AccessControlDTO::isPermitted)
-        .map(AccessControlDTO::getResourceIdentifier)
+        .map(Scope::getOrgIdentifier)
         .collect(Collectors.toSet());
   }
 

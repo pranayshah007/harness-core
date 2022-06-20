@@ -31,7 +31,7 @@ import lombok.Data;
 @Builder
 public class NGGitOpsTaskParams implements TaskParameters, ExecutionCapabilityDemander {
   private GitFetchFilesConfig gitFetchFilesConfig; // will have ScmConnector
-  private Map<String, Object> variables;
+  private Map<String, Map<String, String>> filesToVariablesMap;
   private boolean overrideConfig;
   private String accountId;
   private String activityId;

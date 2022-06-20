@@ -39,6 +39,14 @@ public class DelegateRingServiceImpl implements DelegateRingService {
   }
 
   @Override
+  public List<String> getDelegateVersionsForRing(String ringName) {
+    return persistence.createQuery(DelegateRing.class)
+        .filter(DelegateRingKeys.ringName, ringName)
+        .get()
+        .getDelegateVersions();
+  }
+
+  @Override
   public List<String> getWatcherVersions(final String accountId) {
     return getDelegateRing(accountId).getWatcherVersions();
   }

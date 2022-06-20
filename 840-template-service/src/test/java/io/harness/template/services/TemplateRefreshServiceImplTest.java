@@ -19,6 +19,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.TemplateServiceTestBase;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
@@ -59,6 +60,7 @@ public class TemplateRefreshServiceImplTest extends TemplateServiceTestBase {
   @Mock NGTemplateService templateService;
   @Mock TemplateInputsRefreshHelper templateInputsRefreshHelper;
   @Mock TemplateInputsValidator templateInputsValidator;
+  @Mock AccessControlClient accessControlClient;
 
   private String readFile(String filename) {
     ClassLoader classLoader = getClass().getClassLoader();
