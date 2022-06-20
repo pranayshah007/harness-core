@@ -1373,8 +1373,10 @@ public class DelegateServiceImpl implements DelegateService {
                   String.valueOf(featureFlagService.isEnabled(
                       DELEGATE_ENABLE_DYNAMIC_HANDLING_OF_REQUEST, templateParameters.getAccountId())));
 
-      if (useCDN) {
-        final String watcherVersion = getLatestWatcherVersion(templateParameters.getAccountId());
+      final boolean isOnPrem = DeployMode.isOnPrem(mainConfiguration.getDeployMode().name());
+      params.put("isOnPrem", String.valueOf(isOnPrem));
+      if (isOnPrem) {
+        final String watcherVersion = getLatestWatcherVersion(templateParameters.getAccountId()).split("\\.")[2];
         params.put("watcherJarVersion", watcherVersion);
       }
 

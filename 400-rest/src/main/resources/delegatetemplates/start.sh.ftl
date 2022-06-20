@@ -129,7 +129,7 @@ fi
 
 export DEPLOY_MODE=${deployMode}
 
-<#if useCdn == "true">
+<#if isOnPrem == "false">
 REMOTE_WATCHER_VERSION=${watcherJarVersion}
 REMOTE_WATCHER_URL=${remoteWatcherUrlCdn}/openjdk-8u242/${watcherJarVersion}/watcher.jar
 <#else>
