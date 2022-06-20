@@ -363,12 +363,14 @@ public class PMSPipelineServiceHelper {
   public String importPipelineFromRemote(String accountId, String orgIdentifier, String projectIdentifier) {
     GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
     Scope scope = Scope.of(accountId, orgIdentifier, projectIdentifier);
-    GitContextRequestParams gitContextRequestParams = GitContextRequestParams.builder()
-                                                          .branchName(gitEntityInfo.getBranch())
-                                                          .connectorRef(gitEntityInfo.getConnectorRef())
-                                                          .filePath(gitEntityInfo.getFilePath())
-                                                          .repoName(gitEntityInfo.getRepoName())
-                                                          .build();
+    GitContextRequestParams gitContextRequestParams =
+        GitContextRequestParams.builder()
+            .branchName(gitEntityInfo.getBranch())
+            .connectorRef(gitEntityInfo.getConnectorRef())
+            .filePath(gitEntityInfo.getFilePath())
+            .repoName(gitEntityInfo.getRepoName())
+            .gitConnectivityParams(gitEntityInfo.getGitConnectivityParams())
+            .build();
     return gitAwareEntityHelper.fetchYAMLFromRemote(scope, gitContextRequestParams, Collections.emptyMap());
   }
 

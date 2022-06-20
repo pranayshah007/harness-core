@@ -16,6 +16,7 @@ import io.harness.git.model.ChangeType;
 import io.harness.gitaware.dto.GitContextRequestParams;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitaware.helper.GitAwareEntityHelper;
+import io.harness.gitsync.beans.GitConnectivityParams;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
@@ -171,6 +172,7 @@ public class PMSInputSetRepositoryCustomImpl implements PMSInputSetRepositoryCus
               .connectorRef(savedEntity.getConnectorRef())
               .filePath(savedEntity.getFilePath())
               .repoName(savedEntity.getRepo())
+              .gitConnectivityParams(gitEntityInfo.getGitConnectivityParams())
               .build(),
           Collections.emptyMap());
     }

@@ -35,6 +35,7 @@ public class GitSyncApiConstants {
   public static final String STORE_TYPE = "storeType";
   public static final String REPO_NAME = "repoName";
   public static final String LAST_COMMIT_ID = "lastCommitId";
+  public static final String GIT_PROJECT_NAME = "gitProjectName";
 
   public static final String BRANCH_PARAM_MESSAGE = "Name of the branch.";
   public static final String FILEPATH_PARAM_MESSAGE = "File Path of the Entity.";
@@ -57,4 +58,6 @@ public class GitSyncApiConstants {
   public static final String STORE_TYPE_RESPONSE_PARAM_MESSAGE = "Tells whether the Entity is saved on Git or not";
   public static final String GIT_CONNECTIVITY_PARAM_MESSAGE =
       "Contains details of extra parameters to connect to git providers.";
+  public static final String GIT_PROJECT_PARAM_MESSAGE =
+      "In case of Azure Repo account type Connector, provide project name of the selected repository.";
 }

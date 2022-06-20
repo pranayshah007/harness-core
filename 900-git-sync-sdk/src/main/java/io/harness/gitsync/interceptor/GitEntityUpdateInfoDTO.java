@@ -70,4 +70,7 @@ public class GitEntityUpdateInfoDTO {
   @Hidden
   @QueryParam(GitSyncApiConstants.LAST_COMMIT_ID)
   String lastCommitId; // used for bitbucket update use-case
+  @Parameter(description = GitSyncApiConstants.GIT_PROJECT_PARAM_MESSAGE)
+  @QueryParam(GitSyncApiConstants.GIT_PROJECT_NAME)
+  String gitProjectName; // used for Azure account type connector
 }

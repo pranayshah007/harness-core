@@ -41,4 +41,7 @@ public class GitImportInfoDTO {
   @Parameter(description = GitSyncApiConstants.FILEPATH_PARAM_MESSAGE)
   @QueryParam(GitSyncApiConstants.FILE_PATH_KEY)
   String filePath;
+  @Parameter(description = GitSyncApiConstants.GIT_PROJECT_PARAM_MESSAGE)
+  @QueryParam(GitSyncApiConstants.GIT_PROJECT_NAME)
+  String gitProjectName; // used for Azure account type connector
 }

@@ -9,6 +9,7 @@ package io.harness.gitsync.scm.beans;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.gitsync.beans.GitConnectivityParams;
 
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -28,4 +29,5 @@ public class ScmCreateFileGitRequest {
   boolean isCommitToNewBranch;
   String commitMessage;
   String baseBranch;
+  GitConnectivityParams gitConnectivityParams;
 }

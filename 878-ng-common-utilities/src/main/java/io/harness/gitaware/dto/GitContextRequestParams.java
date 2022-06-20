@@ -9,6 +9,7 @@ package io.harness.gitaware.dto;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.gitsync.beans.GitConnectivityParams;
 
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -27,4 +28,5 @@ public class GitContextRequestParams {
   String connectorRef;
   boolean isNewBranch;
   String newBranchName;
+  GitConnectivityParams gitConnectivityParams;
 }

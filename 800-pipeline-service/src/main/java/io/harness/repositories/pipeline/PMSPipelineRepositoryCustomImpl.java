@@ -207,6 +207,7 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
               .connectorRef(savedEntity.getConnectorRef())
               .filePath(savedEntity.getFilePath())
               .repoName(savedEntity.getRepo())
+              .gitConnectivityParams(gitEntityInfo.getGitConnectivityParams())
               .build(),
           Collections.emptyMap());
     }

@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.gitsync.beans.GitConnectivityParams;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.sdk.EntityGitDetails;
 
@@ -43,6 +44,7 @@ public class GitEntityInfo {
   @Setter StoreType storeType;
   String connectorRef;
   @Setter String repoName;
+  @Setter GitConnectivityParams gitConnectivityParams;
   @Wither String lastCommitId;
 
   public boolean isNull() {

@@ -9,6 +9,7 @@ package io.harness.gitsync.scm.beans;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.gitsync.beans.GitConnectivityParams;
 
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -30,4 +31,5 @@ public class ScmUpdateFileGitRequest {
   String oldFileSha;
   String oldCommitId;
   String baseBranch;
+  GitConnectivityParams gitConnectivityParams;
 }

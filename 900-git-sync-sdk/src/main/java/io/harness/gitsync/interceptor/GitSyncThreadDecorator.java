@@ -14,6 +14,7 @@ import static javax.ws.rs.Priorities.HEADER_DECORATOR;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.context.GlobalContext;
+import io.harness.gitsync.beans.GitConnectivityParams;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.sdk.GitSyncApiConstants;
 import io.harness.manage.GlobalContextManager;
@@ -67,22 +68,26 @@ public class GitSyncThreadDecorator implements ContainerRequestFilter, Container
     final String repoName = getRequestParamFromContext(GitSyncApiConstants.REPO_NAME, pathParameters, queryParameters);
     final String lastCommitId =
         getRequestParamFromContext(GitSyncApiConstants.LAST_COMMIT_ID, pathParameters, queryParameters);
-    final GitEntityInfo branchInfo = GitEntityInfo.builder()
-                                         .branch(branchName)
-                                         .filePath(filePath)
-                                         .yamlGitConfigId(yamlGitConfigId)
-                                         .commitMsg(commitMsg)
-                                         .lastObjectId(lastObjectId)
-                                         .folderPath(folderPath)
-                                         .isNewBranch(Boolean.parseBoolean(isNewBranch))
-                                         .findDefaultFromOtherRepos(Boolean.parseBoolean(findDefaultFromOtherBranches))
-                                         .baseBranch(baseBranch)
-                                         .resolvedConflictCommitId(resolvedConflictCommitId)
-                                         .connectorRef(connectorRef)
-                                         .storeType(StoreType.getFromStringOrNull(storeType))
-                                         .repoName(repoName)
-                                         .lastCommitId(lastCommitId)
-                                         .build();
+    final String gitProjectName =
+        getRequestParamFromContext(GitSyncApiConstants.GIT_PROJECT_NAME, pathParameters, queryParameters);
+    final GitEntityInfo branchInfo =
+        GitEntityInfo.builder()
+            .branch(branchName)
+            .filePath(filePath)
+            .yamlGitConfigId(yamlGitConfigId)
+            .commitMsg(commitMsg)
+            .lastObjectId(lastObjectId)
+            .folderPath(folderPath)
+            .isNewBranch(Boolean.parseBoolean(isNewBranch))
+            .findDefaultFromOtherRepos(Boolean.parseBoolean(findDefaultFromOtherBranches))
+            .baseBranch(baseBranch)
+            .resolvedConflictCommitId(resolvedConflictCommitId)
+            .connectorRef(connectorRef)
+            .storeType(StoreType.getFromStringOrNull(storeType))
+            .repoName(repoName)
+            .lastCommitId(lastCommitId)
+            .gitConnectivityParams(GitConnectivityParams.builder().gitProjectName(gitProjectName).build())
+            .build();
     if (!GlobalContextManager.isAvailable()) {
       GlobalContextManager.set(new GlobalContext());
     }
