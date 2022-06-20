@@ -12,6 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.pcf.PcfUtils.logCliCommand;
+import static io.harness.pcf.PcfUtils.logCliCommandFailure;
 import static io.harness.pcf.model.PcfConstants.CF_DOCKER_CREDENTIALS;
 import static io.harness.pcf.model.PcfConstants.CF_HOME;
 import static io.harness.pcf.model.PcfConstants.CF_PASSWORD;
@@ -156,7 +157,15 @@ public class CfCliClientImpl implements CfCliClient {
         createProcessExecutorForCfTask(timeOutInMins, command, environmentMapForPcfExecutor, logCallback);
     ProcessResult processResult = processExecutor.execute();
     Instant end = Instant.now();
-    logCliCommand(command, Duration.between(start, end).toMillis());
+    if (processResult != null) {
+      if (processResult.getExitValue() == 0) {
+        logCliCommand(command, Duration.between(start, end).toMillis());
+      } else {
+        logCliCommandFailure(
+            command, Duration.between(start, end).toMillis(), processResult.getExitValue(), processResult.outputUTF8());
+      }
+    }
+
     return processResult;
   }
 
@@ -214,7 +223,6 @@ public class CfCliClientImpl implements CfCliClient {
     } catch (Exception e) {
       exceptionForAutoscalingConfigureFailure(appAutoscalarRequestData.getApplicationName(), e);
     }
-
 
     if (exitCode != 0) {
       throw new PivotalClientApiException(format("Exception occurred while Configuring autoscalar for Application: %s, "
@@ -473,7 +481,6 @@ public class CfCliClientImpl implements CfCliClient {
         pcfRequestConfig.setLoggedin(true);
       }
 
-
       List<Domain> allDomainsForSpace = cfSdkClient.getAllDomainsForSpace(pcfRequestConfig);
       Set<String> domainNames = allDomainsForSpace.stream().map(Domain::getName).collect(toSet());
       logCallback.saveExecutionLog(format("Found domain names: [%s]", join(", ", domainNames)));
@@ -647,7 +654,6 @@ public class CfCliClientImpl implements CfCliClient {
         logCallback.saveExecutionLog(color(errorMessage, Red, Bold));
         throw new InvalidRequestException(errorMessage);
       }
-
 
       if (isNotEmpty(varNames)) {
         int exitcode;

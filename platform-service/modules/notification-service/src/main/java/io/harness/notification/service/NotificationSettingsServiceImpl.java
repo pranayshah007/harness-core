@@ -9,9 +9,12 @@ package io.harness.notification.service;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.expression.EngineExpressionEvaluator.EXPR_END;
+import static io.harness.expression.EngineExpressionEvaluator.EXPR_START;
 import static io.harness.remote.client.NGRestUtils.getResponse;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.UserGroupDTO;
 import io.harness.ng.core.dto.UserGroupFilterDTO;
 import io.harness.ng.core.notification.NotificationSettingConfigDTO;
@@ -20,6 +23,7 @@ import io.harness.notification.NotificationChannelType;
 import io.harness.notification.NotificationRequest;
 import io.harness.notification.SmtpConfig;
 import io.harness.notification.entities.NotificationSetting;
+import io.harness.notification.evaluator.SecretExpressionEvaluator;
 import io.harness.notification.remote.SmtpConfigClient;
 import io.harness.notification.remote.SmtpConfigResponse;
 import io.harness.notification.repositories.NotificationSettingRepository;
@@ -29,6 +33,7 @@ import io.harness.user.remote.UserClient;
 import io.harness.user.remote.UserFilterNG;
 import io.harness.usergroups.UserGroupClient;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -38,6 +43,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -50,6 +56,9 @@ public class NotificationSettingsServiceImpl implements NotificationSettingsServ
   private final UserClient userClient;
   private final NotificationSettingRepository notificationSettingRepository;
   private final SmtpConfigClient smtpConfigClient;
+  private static final Pattern VALID_EXPRESSION_PATTERN =
+      Pattern.compile("\\<\\+secrets.getValue\\((\\\"|\\')\\w*(\\\"|\\')\\)>");
+  private static final String INVALID_EXPRESSION_EXCEPTION = "Expression provided is not valid";
 
   private List<UserGroupDTO> getUserGroups(List<String> userGroupIds) {
     if (isEmpty(userGroupIds)) {
@@ -113,9 +122,10 @@ public class NotificationSettingsServiceImpl implements NotificationSettingsServ
 
   @Override
   public List<String> getNotificationRequestForUserGroups(List<NotificationRequest.UserGroup> notificationUserGroups,
-      NotificationChannelType notificationChannelType, String accountId) {
+      NotificationChannelType notificationChannelType, String accountId, long expressionFunctorToken) {
     List<UserGroupDTO> userGroups = getUserGroups(notificationUserGroups, accountId);
-    return getNotificationSettings(notificationChannelType, userGroups, accountId);
+    List<String> notificationSetting = getNotificationSettings(notificationChannelType, userGroups, accountId);
+    return resolveUserGroups(notificationChannelType, notificationSetting, expressionFunctorToken);
   }
 
   @Override
@@ -138,6 +148,26 @@ public class NotificationSettingsServiceImpl implements NotificationSettingsServ
       }
     }
     return Lists.newArrayList(notificationSettings);
+  }
+
+  @VisibleForTesting
+  List<String> resolveUserGroups(
+      NotificationChannelType notificationChannelType, List<String> notificationSetting, long expressionFunctorToken) {
+    if (!notificationChannelType.equals(NotificationChannelType.EMAIL) && !notificationSetting.isEmpty()) {
+      if (notificationSetting.get(0).startsWith(EXPR_START) && notificationSetting.get(0).endsWith(EXPR_END)) {
+        if (!VALID_EXPRESSION_PATTERN.matcher(notificationSetting.get(0)).matches()) {
+          throw new InvalidRequestException(INVALID_EXPRESSION_EXCEPTION);
+        }
+        log.info("Resolving UserGroup secrets expression");
+        SecretExpressionEvaluator evaluator = new SecretExpressionEvaluator(expressionFunctorToken);
+        Object resolvedExpressions = evaluator.resolve(notificationSetting, true);
+        if (resolvedExpressions == null) {
+          throw new InvalidRequestException(INVALID_EXPRESSION_EXCEPTION);
+        }
+        return (List<String>) resolvedExpressions;
+      }
+    }
+    return notificationSetting;
   }
 
   @Override

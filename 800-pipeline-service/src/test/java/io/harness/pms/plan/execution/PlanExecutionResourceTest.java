@@ -13,8 +13,6 @@ import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 import static io.harness.rule.OwnerRule.UTKARSH_CHOUBEY;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -22,13 +20,11 @@ import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.FeatureName;
 import io.harness.category.element.UnitTests;
 import io.harness.engine.executions.retry.RetryExecutionMetadata;
 import io.harness.execution.PlanExecution;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
-import io.harness.pms.helpers.PmsFeatureFlagHelper;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
 import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
@@ -55,7 +51,6 @@ public class PlanExecutionResourceTest extends CategoryTest {
   @Mock PipelineExecutor pipelineExecutor;
   @Mock PMSExecutionService pmsExecutionService;
   @Mock RetryExecutionHelper retryExecutionHelper;
-  @Mock PmsFeatureFlagHelper featureFlagService;
   @Mock PMSPipelineTemplateHelper pipelineTemplateHelper;
 
   private final String ACCOUNT_ID = "account_id";
@@ -96,7 +91,6 @@ public class PlanExecutionResourceTest extends CategoryTest {
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
   public void testGetStagesExecutionList() {
-    when(featureFlagService.isEnabled(anyString(), eq(FeatureName.NG_PIPELINE_TEMPLATE))).thenReturn(false);
     doReturn(Optional.of(entity))
         .when(pmsPipelineService)
         .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, false);
@@ -119,7 +113,6 @@ public class PlanExecutionResourceTest extends CategoryTest {
   @Owner(developers = UTKARSH_CHOUBEY)
   @Category(UnitTests.class)
   public void testGetStagesExecutionListWhenFfIsOn() {
-    when(featureFlagService.isEnabled(anyString(), eq(FeatureName.NG_PIPELINE_TEMPLATE))).thenReturn(true);
     doReturn(Optional.of(entity))
         .when(pmsPipelineService)
         .get(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, false);

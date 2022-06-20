@@ -74,7 +74,7 @@ java_library(
         "@maven//:org_apache_commons_commons_lang3",
         "@maven//:org_assertj_assertj_core",
         "@maven//:org_awaitility_awaitility",
-        "@maven//:org_hibernate_hibernate_validator",
+        "@maven//:org_hibernate_validator_hibernate_validator",
         "@maven//:org_jooq_joor",
         "@maven//:org_mockito_mockito_core",
         "@maven//:org_mongodb_mongo_java_driver",

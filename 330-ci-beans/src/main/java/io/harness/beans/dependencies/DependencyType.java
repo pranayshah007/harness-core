@@ -7,10 +7,15 @@
 
 package io.harness.beans.dependencies;
 
+import io.harness.annotation.RecasterAlias;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
+import org.springframework.data.annotation.TypeAlias;
 
+@TypeAlias("dependencyType")
+@RecasterAlias("io.harness.beans.dependencies.DependencyType")
 public enum DependencyType {
   @JsonProperty(DependencyConstants.SERVICE_TYPE) SERVICE(DependencyConstants.SERVICE_TYPE);
 
