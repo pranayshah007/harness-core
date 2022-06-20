@@ -119,7 +119,7 @@ public class TemplateVerifyStepMonitoredServiceResolutionServiceImpl
   private String getTemplateYaml(TemplateMonitoredServiceSpec templateMonitoredServiceSpec) {
     String monitoredServiceTemplateRef = templateMonitoredServiceSpec.getMonitoredServiceTemplateRef().getValue();
     String versionLabel = templateMonitoredServiceSpec.getVersionLabel();
-    JsonNode templateInputsNode = templateMonitoredServiceSpec.getTemplateInputs();
+    JsonNode templateInputsNode = templateMonitoredServiceSpec.getTemplateInputs().getValue();
     Map<String, JsonNode> templateMap = new HashMap<>();
     templateMap.put(VerifyStepConstants.TEMPLATE_YAML_KEYS_TEMPLATE_REF, new TextNode(monitoredServiceTemplateRef));
     templateMap.put(VerifyStepConstants.TEMPLATE_YAML_KEYS_VERSION_LABEL, new TextNode(versionLabel));

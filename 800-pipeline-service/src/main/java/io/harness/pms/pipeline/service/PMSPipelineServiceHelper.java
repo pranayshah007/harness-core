@@ -17,16 +17,21 @@ import io.harness.ModuleType;
 import io.harness.NGResourceFilterConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
+import io.harness.beans.Scope;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.HarnessStringUtils;
 import io.harness.engine.GovernanceService;
 import io.harness.engine.governance.PolicyEvaluationFailureException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.UnexpectedException;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorDTO;
 import io.harness.exception.ngexception.beans.yamlschema.YamlSchemaErrorWrapperDTO;
 import io.harness.filter.FilterType;
 import io.harness.filter.dto.FilterDTO;
 import io.harness.filter.service.FilterService;
+import io.harness.gitaware.dto.GitContextRequestParams;
+import io.harness.gitaware.helper.GitAwareContextHelper;
+import io.harness.gitaware.helper.GitAwareEntityHelper;
 import io.harness.gitsync.helpers.GitContextHelper;
 import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.interceptor.GitSyncBranchContext;
@@ -52,6 +57,10 @@ import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
 import io.harness.pms.pipeline.PipelineEntityUtils;
 import io.harness.pms.pipeline.PipelineFilterPropertiesDto;
+import io.harness.pms.pipeline.PipelineImportRequestDTO;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
+import io.harness.pms.yaml.YamlField;
+import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.JsonUtils;
 import io.harness.telemetry.TelemetryReporter;
 import io.harness.yaml.validator.InvalidYamlException;
@@ -89,6 +98,7 @@ public class PMSPipelineServiceHelper {
   @Inject private final PmsFeatureFlagService pmsFeatureFlagService;
   @Inject private final PmsGitSyncHelper gitSyncHelper;
   @Inject private final TelemetryReporter telemetryReporter;
+  @Inject private final GitAwareEntityHelper gitAwareEntityHelper;
 
   public static String PIPELINE_SAVE = "pipeline_save";
   public static String PIPELINE_SAVE_ACTION_TYPE = "action";
@@ -295,7 +305,7 @@ public class PMSPipelineServiceHelper {
       Criteria approvalStageCriteria =
           Criteria
               .where(String.format("%s.%s.stageTypes", PipelineEntityKeys.filters, ModuleType.PMS.name().toLowerCase()))
-              .in("Approval");
+              .exists(true);
       for (ModuleType moduleType : ModuleType.values()) {
         if (moduleType.isInternal()) {
           continue;
@@ -348,5 +358,86 @@ public class PMSPipelineServiceHelper {
     InvalidYamlException invalidYamlException = new InvalidYamlException(errorMessage, errorWrapperDTO);
     invalidYamlException.setYaml(pipelineYaml);
     return invalidYamlException;
+  }
+
+  public String importPipelineFromRemote(String accountId, String orgIdentifier, String projectIdentifier) {
+    GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
+    Scope scope = Scope.of(accountId, orgIdentifier, projectIdentifier);
+    GitContextRequestParams gitContextRequestParams = GitContextRequestParams.builder()
+                                                          .branchName(gitEntityInfo.getBranch())
+                                                          .connectorRef(gitEntityInfo.getConnectorRef())
+                                                          .filePath(gitEntityInfo.getFilePath())
+                                                          .repoName(gitEntityInfo.getRepoName())
+                                                          .build();
+    return gitAwareEntityHelper.fetchYAMLFromRemote(scope, gitContextRequestParams, Collections.emptyMap());
+  }
+
+  public static String updateFieldsInImportedPipeline(String orgIdentifier, String projectIdentifier,
+      String pipelineIdentifier, PipelineImportRequestDTO pipelineImportRequest, String importedPipeline) {
+    if (EmptyPredicate.isEmpty(importedPipeline)) {
+      String errorMessage = PipelineCRUDErrorResponse.errorMessageForEmptyYamlOnGit(
+          orgIdentifier, projectIdentifier, pipelineIdentifier, GitAwareContextHelper.getBranchInRequest());
+      throw PMSPipelineServiceHelper.buildInvalidYamlException(errorMessage, importedPipeline);
+    }
+    YamlField pipelineYamlField;
+    try {
+      pipelineYamlField = YamlUtils.readTree(importedPipeline);
+    } catch (IOException e) {
+      String errorMessage = PipelineCRUDErrorResponse.errorMessageForNotAYAMLFile(
+          GitAwareContextHelper.getBranchInRequest(), GitAwareContextHelper.getFilepathInRequest());
+      throw PMSPipelineServiceHelper.buildInvalidYamlException(errorMessage, importedPipeline);
+    }
+    YamlField pipelineInnerField = pipelineYamlField.getNode().getField(YAMLFieldNameConstants.PIPELINE);
+    if (pipelineInnerField == null) {
+      String errorMessage = PipelineCRUDErrorResponse.errorMessageForNotAPipelineYAML(
+          GitAwareContextHelper.getBranchInRequest(), GitAwareContextHelper.getFilepathInRequest());
+      throw PMSPipelineServiceHelper.buildInvalidYamlException(errorMessage, importedPipeline);
+    }
+
+    boolean hasMetadataChanged = false;
+    String identifierFromGit = pipelineInnerField.getNode().getIdentifier();
+    if (!pipelineIdentifier.equals(identifierFromGit)) {
+      YamlUtils.setStringValueForField(YAMLFieldNameConstants.IDENTIFIER, pipelineIdentifier, pipelineInnerField);
+      hasMetadataChanged = true;
+    }
+
+    String nameFromGit = pipelineInnerField.getNode().getName();
+    if (!pipelineImportRequest.getPipelineName().equals(nameFromGit)) {
+      YamlUtils.setStringValueForField(
+          YAMLFieldNameConstants.NAME, pipelineImportRequest.getPipelineName(), pipelineInnerField);
+      hasMetadataChanged = true;
+    }
+
+    String orgIdentifierFromGit = pipelineInnerField.getNode().getStringValue(YAMLFieldNameConstants.ORG_IDENTIFIER);
+    if (!orgIdentifier.equals(orgIdentifierFromGit)) {
+      YamlUtils.setStringValueForField(YAMLFieldNameConstants.ORG_IDENTIFIER, orgIdentifier, pipelineInnerField);
+      hasMetadataChanged = true;
+    }
+
+    String projectIdentifierFromGit =
+        pipelineInnerField.getNode().getStringValue(YAMLFieldNameConstants.PROJECT_IDENTIFIER);
+    if (!projectIdentifier.equals(projectIdentifierFromGit)) {
+      YamlUtils.setStringValueForField(
+          YAMLFieldNameConstants.PROJECT_IDENTIFIER, projectIdentifier, pipelineInnerField);
+      hasMetadataChanged = true;
+    }
+
+    String descriptionFromGit = pipelineInnerField.getNode().getStringValue(YAMLFieldNameConstants.DESCRIPTION);
+    if (pipelineImportRequest.getPipelineDescription() != null
+        && !pipelineImportRequest.getPipelineDescription().equals(descriptionFromGit)) {
+      YamlUtils.setStringValueForField(
+          YAMLFieldNameConstants.DESCRIPTION, pipelineImportRequest.getPipelineDescription(), pipelineInnerField);
+      hasMetadataChanged = true;
+    }
+
+    if (hasMetadataChanged) {
+      try {
+        importedPipeline = YamlUtils.writeYamlString(pipelineYamlField).replace("---\n", "");
+      } catch (IOException e) {
+        log.error("Unexpected error when trying to set description", e);
+        throw new UnexpectedException("Unexpected error when trying to set Pipeline Metadata. Please try again.", e);
+      }
+    }
+    return importedPipeline;
   }
 }

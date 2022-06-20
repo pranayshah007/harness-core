@@ -63,6 +63,12 @@ if [[ "${ENABLE_OVEROPS}" == "true" ]] ; then
     echo "Using Overops Java Agent"
 fi
 
+if [[ "${ENABLE_MONITORING}" == "true" ]] ; then
+    echo "Monitoring  is enabled"
+    JAVA_OPTS="$JAVA_OPTS ${MONITORING_FLAGS}"
+    echo "Using inspectIT Java Agent"
+fi
+
 if [[ "${DISABLE_NEW_RELIC}" != "true" ]]; then
     JAVA_OPTS=$JAVA_OPTS" -Dnewrelic.environment=$NEWRELIC_ENV"
     echo "Using new relic env " $NEWRELIC_ENV

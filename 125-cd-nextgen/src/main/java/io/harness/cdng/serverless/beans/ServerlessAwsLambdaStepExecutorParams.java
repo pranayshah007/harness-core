@@ -20,4 +20,5 @@ import org.apache.commons.lang3.tuple.Pair;
 public class ServerlessAwsLambdaStepExecutorParams implements ServerlessStepExecutorParams {
   Pair<String, String> manifestFilePathContent;
   boolean shouldOpenFetchFilesLogStream;
+  String manifestFileOverrideContent;
 }

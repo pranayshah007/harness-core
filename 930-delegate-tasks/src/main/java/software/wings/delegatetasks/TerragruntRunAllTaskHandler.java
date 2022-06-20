@@ -19,11 +19,13 @@ import static io.harness.provision.TerraformConstants.TERRAFORM_DESTROY_PLAN_FIL
 import static io.harness.provision.TerraformConstants.TERRAFORM_PLAN_FILE_OUTPUT_NAME;
 import static io.harness.provision.TerragruntConstants.DESTROY;
 import static io.harness.provision.TerragruntConstants.DESTROY_PLAN;
+import static io.harness.provision.TerragruntConstants.FORCE_FLAG;
 import static io.harness.provision.TerragruntConstants.INIT;
 import static io.harness.provision.TerragruntConstants.PLAN;
 
 import static software.wings.beans.delegation.TerragruntProvisionParameters.TerragruntCommand.APPLY;
 import static software.wings.delegatetasks.TerragruntProvisionTaskHelper.getExecutionLogCallback;
+import static software.wings.delegatetasks.TerragruntProvisionTaskHelper.getTfBinaryPath;
 
 import static java.lang.String.format;
 
@@ -63,7 +65,8 @@ public class TerragruntRunAllTaskHandler {
     String uiLogs = cliCommandRequestParams.getUiLogs();
 
     CliResponse terragruntCliResponse = null;
-
+    CliResponse tgInfoResponse;
+    String tfAutoApproveArgument = FORCE_FLAG;
     terragruntCliResponse = executeRunAllInitTaskInternal(
         provisionParameters, cliCommandRequestParams, targetArgs, varParams, uiLogs, delegateLogService);
 
@@ -81,6 +84,14 @@ public class TerragruntRunAllTaskHandler {
         break;
       }
       case DESTROY: {
+        if (cliCommandRequestParams.isUseAutoApproveFlag()) {
+          LogCallback initLogCallback = getLogCallback(delegateLogService, provisionParameters, INIT);
+          tgInfoResponse = terragruntClient.terragruntInfo(cliCommandRequestParams, initLogCallback);
+          String tfBinaryPath = getTfBinaryPath(tgInfoResponse);
+          tfAutoApproveArgument = provisionTaskHelper.getTfAutoApproveArgument(cliCommandRequestParams, tfBinaryPath);
+        }
+        cliCommandRequestParams.setAutoApproveArgument(tfAutoApproveArgument);
+
         if (terragruntCliResponse.getCommandExecutionStatus() == SUCCESS) {
           if (provisionParameters.isRunPlanOnly()) {
             terragruntCliResponse = executeRunAllPDestroyPlanTaskInternal(provisionParameters, cliCommandRequestParams,

@@ -112,6 +112,10 @@ public class AzureWebAppRequestHandlerTest extends CategoryTest {
   }
 
   private class Test1AzureWebAppRequest extends AbstractWebAppTaskRequest {
+    Test1AzureWebAppRequest() {
+      super(null, null);
+    }
+
     @Override
     public AzureWebAppInfraDelegateConfig getInfrastructure() {
       return infraDelegateConfig;
@@ -124,6 +128,10 @@ public class AzureWebAppRequestHandlerTest extends CategoryTest {
   }
 
   private class Test2AzureWebAppRequest extends AbstractWebAppTaskRequest {
+    Test2AzureWebAppRequest() {
+      super(null, null);
+    }
+
     @Override
     public AzureWebAppInfraDelegateConfig getInfrastructure() {
       return infraDelegateConfig;

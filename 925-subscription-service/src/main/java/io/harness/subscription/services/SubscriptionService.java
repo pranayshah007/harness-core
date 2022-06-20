@@ -20,7 +20,7 @@ import io.harness.subscription.dto.SubscriptionDetailDTO;
 import java.util.List;
 
 public interface SubscriptionService {
-  PriceCollectionDTO listPrices(String accountIdentifier, String module);
+  PriceCollectionDTO listPrices(String accountIdentifier, ModuleType moduleType);
   InvoiceDetailDTO previewInvoice(String accountIdentifier, SubscriptionDTO subscriptionDTO);
 
   SubscriptionDetailDTO createSubscription(String accountIdentifier, SubscriptionDTO subscriptionDTO);
@@ -35,7 +35,6 @@ public interface SubscriptionService {
   CustomerDetailDTO createStripeCustomer(String accountIdentifier, CustomerDTO customerDTO);
   CustomerDetailDTO updateStripeCustomer(String accountIdentifier, String customerId, CustomerDTO customerDTO);
   CustomerDetailDTO getStripeCustomer(String accountIdentifier, String customerId);
-  //  List<CustomerDetailDTO> listStripeCustomers(String accountIdentifier);
 
   PaymentMethodCollectionDTO listPaymentMethods(String accountIdentifier, String customerId);
 

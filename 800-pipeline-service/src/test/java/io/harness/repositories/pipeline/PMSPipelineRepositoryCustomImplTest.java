@@ -319,6 +319,26 @@ public class PMSPipelineRepositoryCustomImplTest extends CategoryTest {
   @Test
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
+  public void testUpdateNonExistentPipeline() {
+    String newYaml = "pipeline: new yaml";
+    PipelineEntity pipelineToUpdate = PipelineEntity.builder()
+                                          .accountId(accountIdentifier)
+                                          .orgIdentifier(orgIdentifier)
+                                          .projectIdentifier(projectIdentifier)
+                                          .identifier(pipelineId)
+                                          .name("new name")
+                                          .description("new desc")
+                                          .yaml(newYaml)
+                                          .storeType(StoreType.REMOTE)
+                                          .build();
+    doReturn(null).when(transactionHelper).performTransaction(any());
+    PipelineEntity updatedEntity = pipelineRepository.updatePipelineYaml(pipelineToUpdate);
+    assertThat(updatedEntity).isNull();
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
   public void testUpdatePipelineEntityInDB() {
     Query query = new Query();
     Update update = new Update();

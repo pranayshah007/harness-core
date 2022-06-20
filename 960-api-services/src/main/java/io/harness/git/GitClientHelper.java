@@ -83,12 +83,12 @@ import org.jetbrains.annotations.NotNull;
 @Slf4j
 public class GitClientHelper {
   private static final String GIT_URL_REGEX =
-      "(http|https|git|ssh)(:\\/\\/|@)([^\\/:]+(:\\d+)?)[\\/:]([^\\/:]+)\\/(.+)?(.git)?";
+      "(http|https|git|ssh)(:\\/\\/|@)([^\\/:]+(:\\d+)?)[\\/:](v\\d\\/)?([^\\/:]+)\\/(.+)?(.git)?";
   private static final String GIT_URL_REGEX_NO_OWNER = "(http|https|git|ssh)(:\\/\\/|@)([^\\/:]+(:\\d+)?)";
   private static final Pattern GIT_URL = Pattern.compile(GIT_URL_REGEX);
   private static final Pattern GIT_URL_NO_OWNER = Pattern.compile(GIT_URL_REGEX_NO_OWNER);
-  private static final Integer OWNER_GROUP = 5;
-  private static final Integer REPO_GROUP = 6;
+  private static final Integer OWNER_GROUP = 6;
+  private static final Integer REPO_GROUP = 7;
   private static final Integer SCM_GROUP = 3;
   private static final Integer PROTOCOL_GROUP = 1;
 
@@ -199,15 +199,27 @@ public class GitClientHelper {
       return "https://api.github.com/";
     } else {
       String domain = GitClientHelper.getGitSCM(url);
-      return "https://" + domain + "/api/v3/";
+      return getHttpProtocolPrefix(url) + domain + "/api/v3/";
     }
   }
+
+  private static boolean isUrlHTTP(String url) {
+    return url.startsWith("http") && !url.startsWith("https");
+  }
+
+  private static String getHttpProtocolPrefix(String url) {
+    if (isUrlHTTP(url)) {
+      return "http://";
+    }
+    return "https://";
+  }
+
   public static String getGitlabApiURL(String url) {
     if (GitClientHelper.isGitlabSAAS(url)) {
       return "https://gitlab.com/";
     } else {
       String domain = GitClientHelper.getGitSCM(url);
-      return "https://" + domain + "/";
+      return getHttpProtocolPrefix(url) + domain + "/";
     }
   }
 
@@ -216,7 +228,7 @@ public class GitClientHelper {
       return "https://api.bitbucket.org/";
     } else {
       String domain = GitClientHelper.getGitSCM(url);
-      return "https://" + domain + "/";
+      return getHttpProtocolPrefix(url) + domain + "/";
     }
   }
 
@@ -225,13 +237,13 @@ public class GitClientHelper {
       return "https://dev.azure.com/";
     } else {
       String domain = GitClientHelper.getGitSCM(url);
-      return "https://" + domain + "/";
+      return getHttpProtocolPrefix(url) + domain + "/";
     }
   }
 
   public static String getAzureRepoOrgAndProjectHTTP(String url) {
     String temp = StringUtils.substringBeforeLast(url, "/_git/");
-    return StringUtils.substringAfter(temp, "dev.azure.com/");
+    return StringUtils.substringAfter(temp, "azure.com/");
   }
 
   public static String getAzureRepoOrg(String orgAndProject) {

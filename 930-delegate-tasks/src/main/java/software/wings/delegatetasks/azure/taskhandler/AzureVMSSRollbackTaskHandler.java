@@ -25,6 +25,7 @@ import io.harness.delegate.task.azure.request.AzureVMSSDeployTaskParameters;
 import io.harness.delegate.task.azure.request.AzureVMSSTaskParameters;
 import io.harness.delegate.task.azure.response.AzureVMSSTaskExecutionResponse;
 import io.harness.exception.ExceptionUtils;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 
 import software.wings.beans.command.ExecutionLogCallback;
 
@@ -49,7 +50,7 @@ public class AzureVMSSRollbackTaskHandler extends AzureVMSSDeployTaskHandler {
       deleteNewScaleSet(azureConfig, deployTaskParameters, response);
       return response;
     } catch (Exception ex) {
-      return rollBackFailureResponse(deployTaskParameters, ex);
+      return rollBackFailureResponse(deployTaskParameters, ExceptionMessageSanitizer.sanitizeException(ex));
     }
   }
 

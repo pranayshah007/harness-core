@@ -26,6 +26,7 @@ import io.harness.delegate.task.azure.arm.AzureARMTaskParameters;
 import io.harness.delegate.task.azure.arm.AzureARMTaskResponse;
 import io.harness.delegate.task.azure.arm.request.AzureARMDeploymentParameters;
 import io.harness.delegate.task.azure.arm.response.AzureARMDeploymentResponse;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 
 import software.wings.delegatetasks.azure.arm.AbstractAzureARMTaskHandler;
 import software.wings.delegatetasks.azure.arm.deployment.AzureARMDeploymentService;
@@ -90,10 +91,11 @@ public class AzureARMDeploymentTaskHandler extends AbstractAzureARMTaskHandler {
           .preDeploymentData(preDeploymentDataBuilder.build())
           .build();
     } catch (Exception ex) {
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(ex);
       printDefaultFailureMsgForARMDeploymentUnits(
-          ex, context.getLogStreamingTaskClient(), context.getRunningCommandUnit());
+          sanitizedException, context.getLogStreamingTaskClient(), context.getRunningCommandUnit());
       return AzureARMDeploymentResponse.builder()
-          .errorMsg(ex.getMessage())
+          .errorMsg(sanitizedException.getMessage())
           .preDeploymentData(preDeploymentDataBuilder.build())
           .build();
     }
@@ -131,8 +133,9 @@ public class AzureARMDeploymentTaskHandler extends AbstractAzureARMTaskHandler {
       String outputs = azureARMDeploymentService.deployAtSubscriptionScope(context);
       return populateDeploymentResponse(outputs);
     } catch (Exception ex) {
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(ex);
       printDefaultFailureMsgForARMDeploymentUnits(
-          ex, context.getLogStreamingTaskClient(), context.getRunningCommandUnit());
+          sanitizedException, context.getLogStreamingTaskClient(), context.getRunningCommandUnit());
       throw ex;
     }
   }
@@ -161,8 +164,9 @@ public class AzureARMDeploymentTaskHandler extends AbstractAzureARMTaskHandler {
       String outputs = azureARMDeploymentService.deployAtManagementGroupScope(context);
       return populateDeploymentResponse(outputs);
     } catch (Exception ex) {
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(ex);
       printDefaultFailureMsgForARMDeploymentUnits(
-          ex, context.getLogStreamingTaskClient(), context.getRunningCommandUnit());
+          sanitizedException, context.getLogStreamingTaskClient(), context.getRunningCommandUnit());
       throw ex;
     }
   }
@@ -191,8 +195,9 @@ public class AzureARMDeploymentTaskHandler extends AbstractAzureARMTaskHandler {
       String outputs = azureARMDeploymentService.deployAtTenantScope(context);
       return populateDeploymentResponse(outputs);
     } catch (Exception ex) {
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(ex);
       printDefaultFailureMsgForARMDeploymentUnits(
-          ex, context.getLogStreamingTaskClient(), context.getRunningCommandUnit());
+          sanitizedException, context.getLogStreamingTaskClient(), context.getRunningCommandUnit());
       throw ex;
     }
   }

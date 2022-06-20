@@ -6,7 +6,9 @@
 # To be used when building in CIE
 
 FROM us.gcr.io/platform-205701/ubi/ubi-java:latest
+
 USER root
+
 # Add the capsule JAR and config.yml
 COPY --chown=65534:65534 ng-manager-capsule.jar /opt/harness/
 COPY --chown=65534:65534 keystore.jks /opt/harness/
@@ -18,8 +20,6 @@ COPY --chown=65534:65534 protocol.info /opt/harness/
 COPY --chown=65534:65534 scripts /opt/harness
 
 RUN chmod +x /opt/harness/*.sh && chmod 700 -R /opt/harness/ && chown -R 65534:65534 /opt/harness/
-
-WORKDIR /opt/harness
 
 CMD [ "./run.sh" ]
 

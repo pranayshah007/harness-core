@@ -7,7 +7,9 @@
 
 package io.harness.delegate.beans.connector.scm.azurerepo;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.utils.FilePathUtils.removeStartingAndEndingSlash;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -18,8 +20,12 @@ import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
+import io.harness.exception.InvalidRequestException;
 import io.harness.git.GitClientHelper;
 import io.harness.gitsync.beans.GitRepositoryDTO;
+import io.harness.utils.FilePathUtils;
+import io.harness.delegate.beans.connector.scm.utils.ScmConnectorHelper;
+import io.harness.gitsync.beans.GitRepositoryDTO.GitRepositoryDTOBuilder;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -37,6 +43,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.apache.commons.lang3.StringUtils;
 import org.hibernate.validator.constraints.NotBlank;
 
 @Data
@@ -66,6 +73,7 @@ public class AzureRepoConnectorDTO extends ConnectorConfigDTO implements ScmConn
   AzureRepoApiAccessDTO apiAccess;
   @Schema(description = "Selected Connectivity Modes") Set<String> delegateSelectors;
   @Schema(description = "Connection URL for connecting Azure Repo") String gitConnectionUrl;
+  private static final String AZURE_REPO_NAME_SEPARATOR = "/_git/";
 
   @Builder
   public AzureRepoConnectorDTO(GitConnectionType connectionType, String url, String validationProject,
@@ -116,18 +124,50 @@ public class AzureRepoConnectorDTO extends ConnectorConfigDTO implements ScmConn
   }
 
   @Override
-  public String getGitConnectionUrl(String repoName) {
-    return "";
+  public String getGitConnectionUrl(GitRepositoryDTO gitRepositoryDTO) {
+    if (connectionType == GitConnectionType.REPO) {
+      String linkedRepo = getGitRepositoryDetails().getName();
+      if (!linkedRepo.equals(gitRepositoryDTO.getName())) {
+        throw new InvalidRequestException(
+            String.format("Provided repoName [%s] does not match with the repoName [%s] provided in connector.",
+                gitRepositoryDTO.getName(), linkedRepo));
+      }
+      return getUrl();
+    } else if(isEmpty(gitRepositoryDTO.getName())) {
+      //this is for project level connection url. In case RepoName is empty for Account Type Connector, Project level connection url is returned.
+      return FilePathUtils.addEndingSlashIfMissing(getUrl()) + gitRepositoryDTO.getProjectName();
+    }
+    return FilePathUtils.addEndingSlashIfMissing(getUrl()) + gitRepositoryDTO.getProjectName()
+            + AZURE_REPO_NAME_SEPARATOR + gitRepositoryDTO.getName();
   }
 
   @Override
   public GitRepositoryDTO getGitRepositoryDetails() {
-    return GitRepositoryDTO.builder().build();
+    String orgAndProject;
+    if (authentication.getAuthType() == GitAuthType.HTTP) {
+      orgAndProject = GitClientHelper.getAzureRepoOrgAndProjectHTTP(url);
+    } else {
+      orgAndProject = GitClientHelper.getAzureRepoOrgAndProjectSSH(url);
+    }
+    GitRepositoryDTOBuilder gitRepositoryDTOBuilder = GitRepositoryDTO.builder()
+            .org(GitClientHelper.getAzureRepoOrg(orgAndProject))
+            .projectName(GitClientHelper.getAzureRepoProject(orgAndProject));
+
+    if (GitConnectionType.REPO.equals(connectionType)) {
+      String repoName = GitClientHelper.getGitRepo(url);
+      repoName = StringUtils.substringAfterLast(repoName, "/");
+      return gitRepositoryDTOBuilder.name(repoName).build();
+    }
+    return gitRepositoryDTOBuilder.build();
   }
 
   @Override
-  public String getFileUrl(String branchName, String filePath, String repoName) {
-    return "";
+  public String getFileUrl(String branchName, String filePath, GitRepositoryDTO gitRepositoryDTO) {
+    final String FILE_URL_FORMAT = "%s?path=%s&version=GB%s";
+    ScmConnectorHelper.validateGetFileUrlParams(branchName, filePath);
+    String repoUrl = removeStartingAndEndingSlash(getGitConnectionUrl(gitRepositoryDTO));
+    filePath = removeStartingAndEndingSlash(filePath);
+    return String.format(FILE_URL_FORMAT, repoUrl, filePath, branchName);
   }
 
   @Override

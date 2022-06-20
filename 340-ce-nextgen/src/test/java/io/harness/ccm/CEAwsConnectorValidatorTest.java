@@ -66,8 +66,7 @@ public class CEAwsConnectorValidatorTest extends CategoryTest {
   private static final String MESSAGE = "message";
   private static final String CUSTOMER_BILLING_DATA_DEV = "customer-billing-data-dev";
   private static final EvaluationResult DENY_EVALUATION_RESULT = new EvaluationResult();
-  private static final String MESSAGE_SUGGESTION =
-      "Check organization service control policy in your AWS account. Review AWS access permissions as per the documentation.";
+  private static final String MESSAGE_SUGGESTION = "Review AWS access permissions as per the documentation.";
   private static final String awsConnectorValidation = "2022-05-05T00:00:00.00Z";
 
   private CEAwsConnectorDTO ceAwsConnectorDTO;

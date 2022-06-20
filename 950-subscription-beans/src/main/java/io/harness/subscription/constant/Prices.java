@@ -8,14 +8,16 @@
 package io.harness.subscription.constant;
 
 public class Prices {
-  public static final String[] CD_PRICES = new String[] {"CD_ENTERPRISE_SERVICE_MONTHLY",
-      "CD_ENTERPRISE_SERVICE_YEARLY", "CD_ENTERPRISE_PREMIUM_SUPPORT_MONTHLY", "CD_ENTERPRISE_PREMIUM_SUPPORT_YEARLY"};
-  public static final String[] CI_PRICES = new String[] {"CI_ENTERPRISE_DEVELOPERS_MONTHLY",
-      "CI_ENTERPRISE_DEVELOPERS_YEARLY", "CI_TEAM_DEVELOPERS_MONTHLY", "CI_TEAM_DEVELOPERS_YEARLY"};
-  public static final String[] FF_PRICES = new String[] {"FF_ENTERPRISE_DEVELOPERS_MONTHLY",
-      "FF_ENTERPRISE_DEVELOPERS_YEARLY", "FF_TEAM_DEVELOPERS_MONTHLY", "FF_TEAM_DEVELOPERS_YEARLY",
-      "FF_ENTERPRISE_MAU_MONTHLY", "FF_ENTERPRISE_MAU_YEARLY", "FF_TEAM_MAU_MONTHLY", "FF_TEAM_MAU_YEARLY"};
   public static final String PREMIUM_SUPPORT = "PREMIUM_SUPPORT";
+  public static final String[] CD_PRICES =
+      new String[] {"CD_ENTERPRISE_SERVICE_MONTHLY", "CD_ENTERPRISE_SERVICE_YEARLY",
+          "CD_ENTERPRISE_PREMIUM_SUPPORT_MONTHLY", "CD_ENTERPRISE_PREMIUM_SUPPORT_YEARLY", PREMIUM_SUPPORT};
+  public static final String[] CI_PRICES = new String[] {"CI_ENTERPRISE_DEVELOPERS_MONTHLY",
+      "CI_ENTERPRISE_DEVELOPERS_YEARLY", "CI_TEAM_DEVELOPERS_MONTHLY", "CI_TEAM_DEVELOPERS_YEARLY", PREMIUM_SUPPORT};
+  public static final String[] FF_PRICES =
+      new String[] {"FF_ENTERPRISE_DEVELOPERS_MONTHLY", "FF_ENTERPRISE_DEVELOPERS_YEARLY", "FF_TEAM_DEVELOPERS_MONTHLY",
+          "FF_TEAM_DEVELOPERS_YEARLY", "FF_ENTERPRISE_MAU_MONTHLY", "FF_ENTERPRISE_MAU_YEARLY", "FF_TEAM_MAU_MONTHLY",
+          "FF_TEAM_MAU_YEARLY", PREMIUM_SUPPORT};
   public static String getLookupKey(String module, String edition, String product, String paymentFrequency) {
     return module.toUpperCase().trim() + "_" + edition.toUpperCase().trim() + "_" + product.toUpperCase().trim() + "_"
         + paymentFrequency.toUpperCase().trim();

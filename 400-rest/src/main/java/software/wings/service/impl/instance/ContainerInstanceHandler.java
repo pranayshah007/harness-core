@@ -618,29 +618,39 @@ public class ContainerInstanceHandler extends InstanceHandler implements Instanc
     for (String podName : instancesToBeAdded) {
       if (deploymentSummary == null) {
         deploymentSummary = DeploymentSummary.builder().build();
+        InstanceInfo info = null;
         if (!instancesInDB.isEmpty()) {
           generateDeploymentSummaryFromInstance(instancesInDB.stream().findFirst().get(), deploymentSummary);
-          InstanceInfo info = instancesInDB.stream()
-                                  .sorted(Comparator.comparingLong(Instance::getLastDeployedAt).reversed())
-                                  .findFirst()
-                                  .get()
-                                  .getInstanceInfo();
-          if (info instanceof K8sPodInfo) {
-            K8sPodInfo instanceInfo = (K8sPodInfo) info;
-            if (Objects.isNull(deploymentSummary.getDeploymentInfo())) {
-              deploymentSummary.setDeploymentInfo(K8sDeploymentInfo.builder()
-                                                      .clusterName(instanceInfo.getClusterName())
-                                                      .releaseName(instanceInfo.getReleaseName())
-                                                      .namespace(instanceInfo.getNamespace())
-                                                      .blueGreenStageColor(instanceInfo.getBlueGreenColor())
-                                                      .helmChartInfo(instanceInfo.getHelmChartInfo())
-                                                      .build());
-            }
-          }
+          info = instancesInDB.stream()
+                     .sorted(Comparator.comparingLong(Instance::getLastDeployedAt).reversed())
+                     .findFirst()
+                     .get()
+                     .getInstanceInfo();
         } else {
-          deploymentSummary.setDeployedByName(AUTO_SCALE);
-          deploymentSummary.setDeployedById(AUTO_SCALE);
-          deploymentSummary.setDeployedAt(System.currentTimeMillis());
+          Instance lastDiscoveredInstance = instanceService.getLastDiscoveredInstance(
+              containerInfraMapping.getAppId(), containerInfraMapping.getUuid());
+
+          if (Objects.nonNull(lastDiscoveredInstance)) {
+            generateDeploymentSummaryFromInstance(lastDiscoveredInstance, deploymentSummary);
+            info = lastDiscoveredInstance.getInstanceInfo();
+          } else {
+            deploymentSummary.setDeployedByName(AUTO_SCALE);
+            deploymentSummary.setDeployedById(AUTO_SCALE);
+            deploymentSummary.setDeployedAt(System.currentTimeMillis());
+          }
+        }
+
+        if (Objects.nonNull(info) && info instanceof K8sPodInfo) {
+          K8sPodInfo instanceInfo = (K8sPodInfo) info;
+          if (Objects.isNull(deploymentSummary.getDeploymentInfo())) {
+            deploymentSummary.setDeploymentInfo(K8sDeploymentInfo.builder()
+                                                    .clusterName(instanceInfo.getClusterName())
+                                                    .releaseName(instanceInfo.getReleaseName())
+                                                    .namespace(instanceInfo.getNamespace())
+                                                    .blueGreenStageColor(instanceInfo.getBlueGreenColor())
+                                                    .helmChartInfo(instanceInfo.getHelmChartInfo())
+                                                    .build());
+          }
         }
       }
       HelmChartInfo helmChartInfo =

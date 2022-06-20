@@ -7,10 +7,13 @@
 
 package io.harness.azure.model.kube;
 
+import static io.harness.azure.model.AzureConstants.KUBECFG_CURRENT_CONTEXT;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -21,5 +24,11 @@ import lombok.NoArgsConstructor;
 @OwnedBy(HarnessTeam.CDP)
 public class AzureKubeConfig {
   private List<ClustersConfig> clusters;
+  private List<ContextsConfig> contexts;
+  @JsonProperty(KUBECFG_CURRENT_CONTEXT) private String currentContext;
+  private String kind;
   private List<UsersConfig> users;
+
+  // harness custom field
+  private String aadToken;
 }

@@ -19,6 +19,7 @@ import io.harness.exception.ScmBadRequestException;
 import io.harness.exception.ScmUnauthorizedException;
 import io.harness.exception.WingsException;
 import io.harness.gitsync.GitSyncTestBase;
+import io.harness.gitsync.common.scmerrorhandling.dtos.ErrorMetadata;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
@@ -42,7 +43,7 @@ public class BitbucketServerGetDefaultBranchScmApiErrorHandlerTest extends GitSy
   @Category(UnitTests.class)
   public void testHandleErrorOnUnauthorizedResponse() {
     try {
-      bitbucketServerGetDefaultBranchScmApiErrorHandler.handleError(401, errorMessage);
+      bitbucketServerGetDefaultBranchScmApiErrorHandler.handleError(401, errorMessage, ErrorMetadata.builder().build());
     } catch (Exception ex) {
       WingsException exception = ExceptionUtils.cause(ScmUnauthorizedException.class, ex);
       assertThat(exception).isNotNull();
@@ -55,7 +56,7 @@ public class BitbucketServerGetDefaultBranchScmApiErrorHandlerTest extends GitSy
   @Category(UnitTests.class)
   public void testHandleErrorOnUnauthenticatedResponse() {
     try {
-      bitbucketServerGetDefaultBranchScmApiErrorHandler.handleError(403, errorMessage);
+      bitbucketServerGetDefaultBranchScmApiErrorHandler.handleError(403, errorMessage, ErrorMetadata.builder().build());
     } catch (Exception ex) {
       WingsException exception = ExceptionUtils.cause(ScmUnauthorizedException.class, ex);
       assertThat(exception).isNotNull();
@@ -68,7 +69,7 @@ public class BitbucketServerGetDefaultBranchScmApiErrorHandlerTest extends GitSy
   @Category(UnitTests.class)
   public void testHandleErrorOnResourceNotFoundResponse() {
     try {
-      bitbucketServerGetDefaultBranchScmApiErrorHandler.handleError(404, errorMessage);
+      bitbucketServerGetDefaultBranchScmApiErrorHandler.handleError(404, errorMessage, ErrorMetadata.builder().build());
     } catch (Exception ex) {
       WingsException exception = ExceptionUtils.cause(ScmBadRequestException.class, ex);
       assertThat(exception).isNotNull();

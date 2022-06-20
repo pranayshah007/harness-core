@@ -175,7 +175,7 @@ public class ResourceTestRule implements TestRule {
      * @param resourceTestRule the resource test rule
      */
     public ResourceTestResourceConfig(String ruleId, ResourceTestRule resourceTestRule) {
-      super(true, new MetricRegistry());
+      super(new MetricRegistry());
       RULE_ID_TO_RULE.put(ruleId, resourceTestRule);
       configure(resourceTestRule);
     }

@@ -7,12 +7,15 @@
 
 package io.harness.cdng.creator.plan.manifest;
 
+import static io.harness.cdng.manifest.ManifestType.HELM_SUPPORTED_MANIFEST_TYPES;
+import static io.harness.cdng.manifest.ManifestType.K8S_SUPPORTED_MANIFEST_TYPES;
 import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -25,9 +28,12 @@ import io.harness.cdng.manifest.steps.ManifestStepParameters;
 import io.harness.cdng.manifest.steps.ManifestsStep;
 import io.harness.cdng.manifest.yaml.ManifestConfig;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
+import io.harness.cdng.service.ServiceSpec;
 import io.harness.cdng.service.beans.KubernetesServiceSpec;
+import io.harness.cdng.service.beans.NativeHelmServiceSpec;
 import io.harness.cdng.service.beans.ServiceConfig;
 import io.harness.cdng.service.beans.ServiceDefinition;
+import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.cdng.service.beans.StageOverridesConfig;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.UUIDGenerator;
@@ -258,5 +264,67 @@ public class ManifestPlanCreatorTest extends CDNGTestBase {
     planCreationResponse1 = planCreationResponseMap.get(nodeUuid);
     assertThat(planCreationResponse1.getDependencies().getDependenciesMap().get(nodeUuid)).isEqualTo("[0]/manifest");
     assertThat(planCreationResponse1.getYamlUpdates()).isNull();
+  }
+
+  @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void testCreatePlanForChildrenNodesDuplicateK8sManifests() throws IOException {
+    ServiceSpec serviceSpec = KubernetesServiceSpec.builder()
+                                  .manifests(Arrays.asList(manifestWith("manifest1", ManifestConfigType.K8_MANIFEST),
+                                      manifestWith("manifest2", ManifestConfigType.KUSTOMIZE),
+                                      manifestWith("manifest3", ManifestConfigType.OPEN_SHIFT_TEMPLATE),
+                                      manifestWith("manifest4", ManifestConfigType.HELM_CHART),
+                                      manifestWith("manifest5", ManifestConfigType.K8_MANIFEST)))
+                                  .build();
+
+    testCreatePlanForChildrenNodesDuplicateDeploymentsManifests(
+        ServiceDefinitionType.KUBERNETES, serviceSpec, K8S_SUPPORTED_MANIFEST_TYPES);
+  }
+
+  @Test
+  @Owner(developers = ABOSII)
+  @Category(UnitTests.class)
+  public void testCreatePlanForChildrenNodesDuplicateNativeHelmManifests() throws IOException {
+    ServiceSpec serviceSpec = NativeHelmServiceSpec.builder()
+                                  .manifests(Arrays.asList(manifestWith("manifest1", ManifestConfigType.HELM_CHART),
+                                      manifestWith("manifest2", ManifestConfigType.HELM_CHART)))
+                                  .build();
+
+    testCreatePlanForChildrenNodesDuplicateDeploymentsManifests(
+        ServiceDefinitionType.NATIVE_HELM, serviceSpec, HELM_SUPPORTED_MANIFEST_TYPES);
+  }
+
+  private void testCreatePlanForChildrenNodesDuplicateDeploymentsManifests(
+      ServiceDefinitionType type, ServiceSpec serviceSpec, Set<String> expectedSupport) throws IOException {
+    ServiceConfig serviceConfig =
+        ServiceConfig.builder()
+            .serviceDefinition(ServiceDefinition.builder().type(type).serviceSpec(serviceSpec).build())
+            .build();
+
+    Map<String, ByteString> metadataDependency = new HashMap<>();
+    metadataDependency.put(
+        YamlTypes.SERVICE_CONFIG, ByteString.copyFrom(kryoSerializer.asDeflatedBytes(serviceConfig)));
+
+    Dependency dependency = Dependency.newBuilder().putAllMetadata(metadataDependency).build();
+    YamlField manifestsYamlField = getYamlFieldFromGivenFileName("cdng/plan/manifests/manifests.yml");
+
+    PlanCreationContext ctx =
+        PlanCreationContext.builder().currentField(manifestsYamlField).dependency(dependency).build();
+    assertThatThrownBy(() -> manifestsPlanCreator.createPlanForChildrenNodes(ctx, null))
+        .isInstanceOf(InvalidRequestException.class)
+        .matches(exception -> {
+          String message = exception.getMessage();
+          String expectedMessage =
+              String.format("%s deployment support only one manifest of one of types: %s. Remove all unused manifests",
+                  type.getYamlName(), String.join(", ", expectedSupport));
+          assertThat(message).endsWith(expectedMessage);
+          serviceSpec.getManifests()
+              .stream()
+              .map(manifest
+                  -> manifest.getManifest().getIdentifier() + " : " + manifest.getManifest().getType().getDisplayName())
+              .forEach(manifestIdAndType -> assertThat(message).contains(manifestIdAndType));
+          return true;
+        });
   }
 }

@@ -8,6 +8,7 @@
 package io.harness.ci.plan.creator.codebase;
 
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
+import static io.harness.rule.OwnerRule.RUTVIJ_MEHTA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
@@ -16,18 +17,22 @@ import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.sweepingoutputs.CodebaseSweepingOutput;
 import io.harness.category.element.UnitTests;
 import io.harness.ci.pipeline.executions.beans.CIBuildCommit;
 import io.harness.ci.plan.creator.CIModuleInfoProvider;
 import io.harness.ci.plan.creator.execution.CIPipelineModuleInfo;
+import io.harness.executionplan.CIExecutionPlanTestHelper;
 import io.harness.executionplan.CIExecutionTestBase;
+import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.events.OrchestrationEvent;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.rule.Owner;
+import io.harness.stateutils.buildstate.ConnectorUtils;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
@@ -43,6 +48,7 @@ import org.mockito.Mock;
 @Slf4j
 @OwnedBy(HarnessTeam.CI)
 public class CIModuleInfoProviderTest extends CIExecutionTestBase {
+  private CIExecutionPlanTestHelper ciExecutionPlanTestHelper = new CIExecutionPlanTestHelper();
   private final Ambiance ambiance = Ambiance.newBuilder()
                                         .putAllSetupAbstractions(Maps.of("accountId", "accountId", "projectIdentifier",
                                             "projectIdentifier", "orgIdentifier", "orgIdentifier"))
@@ -50,10 +56,12 @@ public class CIModuleInfoProviderTest extends CIExecutionTestBase {
 
   @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private CIModuleInfoProvider ciModuleInfoProvider;
+  @Mock private ConnectorUtils connectorUtils;
 
   @Before
   public void setUp() {
     on(ciModuleInfoProvider).set("executionSweepingOutputService", executionSweepingOutputService);
+    on(ciModuleInfoProvider).set("connectorUtils", connectorUtils);
   }
 
   @Test
@@ -82,6 +90,38 @@ public class CIModuleInfoProviderTest extends CIExecutionTestBase {
     assertThat(ciPipelineModuleInfo.getTag()).isEqualTo("tag");
     assertThat(ciPipelineModuleInfo.getCiExecutionInfoDTO().getPullRequest().getSourceBranch()).isEqualTo("test");
     assertThat(ciPipelineModuleInfo.getCiExecutionInfoDTO().getPullRequest().getTargetBranch()).isEqualTo("main");
+
+    assertThat(ciPipelineModuleInfo.getScmDetailsList().size()).isEqualTo(0);
+    assertThat(ciPipelineModuleInfo.getInfraDetailsList().size()).isEqualTo(0);
+    assertThat(ciPipelineModuleInfo.getImageDetailsList().size()).isEqualTo(0);
+    assertThat(ciPipelineModuleInfo.getTiBuildDetailsList().size()).isEqualTo(0);
+  }
+
+  @Test
+  @Owner(developers = RUTVIJ_MEHTA)
+  @Category(UnitTests.class)
+  public void testGetPipelineLevelModuleInfoWithResolvedParameters() {
+    InitializeStepInfo initializeStepInfo = InitializeStepInfo.builder()
+            .infrastructure(ciExecutionPlanTestHelper.getInfrastructureWithVolume())
+            .executionElementConfig(ciExecutionPlanTestHelper.getExecutionElementConfig())
+            .ciCodebase(ciExecutionPlanTestHelper.getCICodebaseWithRepoName())
+            .build();
+
+    OrchestrationEvent event =
+            OrchestrationEvent.builder().ambiance(ambiance).serviceName("ci").status(Status.RUNNING)
+                    .resolvedStepParameters(StepElementParameters.builder().spec(initializeStepInfo).build())
+                    .build();
+
+    when(executionSweepingOutputService.resolveOptional(any(), any()))
+            .thenReturn(OptionalSweepingOutput.builder().build());
+    when(connectorUtils.getConnectorDetails(any(), any())).thenReturn(ciExecutionPlanTestHelper.getGitConnector());
+    CIPipelineModuleInfo ciPipelineModuleInfo =
+            (CIPipelineModuleInfo) ciModuleInfoProvider.getPipelineLevelModuleInfo(event);
+
+    assertThat(ciPipelineModuleInfo.getScmDetailsList().size()).isEqualTo(1);
+    assertThat(ciPipelineModuleInfo.getInfraDetailsList().size()).isEqualTo(1);
+    assertThat(ciPipelineModuleInfo.getImageDetailsList().size()).isEqualTo(4);
+    assertThat(ciPipelineModuleInfo.getTiBuildDetailsList().size()).isEqualTo(1);
   }
 
   @Test

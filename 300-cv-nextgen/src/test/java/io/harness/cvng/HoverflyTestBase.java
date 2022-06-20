@@ -37,7 +37,7 @@ public abstract class HoverflyTestBase extends CategoryTest {
   and "--strategy=TestRunner=local" to bazel flags for run time to not run it in sandbox mode
    */
   private static HoverflyMode hoverflyMode = HoverflyMode.SIMULATE;
-  private static String projectBaseFolder = "/Users/abhijith/Code/portal/";
+  private static String projectBaseFolder = "/Users/kamal/workspace/portal/";
   protected String accessToken;
   static {
     try {

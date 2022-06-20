@@ -24,6 +24,7 @@ import io.harness.ng.core.dto.AccountDTO;
 import io.harness.resourcegroup.beans.ValidatorType;
 import io.harness.resourcegroup.framework.v1.service.Resource;
 import io.harness.resourcegroup.framework.v1.service.ResourceInfo;
+import io.harness.resourcegroup.v2.model.AttributeFilter;
 
 import com.google.inject.Inject;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -93,5 +94,10 @@ public class AccountResourceImpl implements Resource {
         .resourceType(getType())
         .resourceIdentifier(stripToNull(accountEntityChangeDTO.getAccountId()))
         .build();
+  }
+
+  @Override
+  public boolean isValidAttributeFilter(AttributeFilter attributeFilter) {
+    return false;
   }
 }
