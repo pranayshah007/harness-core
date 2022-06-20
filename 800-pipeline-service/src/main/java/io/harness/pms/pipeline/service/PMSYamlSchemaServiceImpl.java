@@ -265,7 +265,6 @@ public class PMSYamlSchemaServiceImpl implements PMSYamlSchemaService {
     return moduleYamlSchemaDetails;
   }
 
-  // TODO: get enabled modules for the account and filter on it
   @SuppressWarnings("unchecked")
   private List<ModuleType> obtainEnabledModules(String accountIdentifier) {
     List<ModuleType> modules = new ArrayList<>();
