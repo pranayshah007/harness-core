@@ -23,5 +23,4 @@ public class StrategyMetadata {
   List<AdviserObtainment> adviserObtainments;
   String strategyNodeName;
   String strategyNodeIdentifier;
-  StepWhenCondition when;
 }
