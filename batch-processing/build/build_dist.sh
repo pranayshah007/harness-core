@@ -30,6 +30,5 @@ cp ../../batch-processing/config/batch-processing-config.yml .
 cp ../../batch-processing/build/container/Dockerfile-batch-processing-jenkins-k8-openjdk ./Dockerfile
 cp ../../batch-processing/build/container/Dockerfile-batch-processing-jenkins-k8-gcr-openjdk ./Dockerfile-gcr
 cp -r ../../batch-processing/build/container/scripts/ .
-java -jar batch-processing-capsule.jar scan-classpath-metadata
 
 cd ../..
