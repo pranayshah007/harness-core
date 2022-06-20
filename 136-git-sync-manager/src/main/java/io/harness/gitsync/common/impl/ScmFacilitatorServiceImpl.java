@@ -82,7 +82,7 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
         gitSyncConnectorHelper.getScmConnector(accountIdentifier, orgIdentifier, projectIdentifier, connectorRef);
     if (gitConnectivityParams != null) {
       scmConnector.setGitConnectionUrl(scmConnector.getGitConnectionUrl(
-          GitRepositoryDTO.builder().projectName(gitConnectivityParams.getRepositoryProjectName()).build()));
+          GitRepositoryDTO.builder().projectName(gitConnectivityParams.getGitProjectName()).build()));
     }
     GetUserReposResponse response = scmOrchestratorService.processScmRequestUsingConnectorSettings(
         scmClientFacilitatorService
@@ -365,7 +365,8 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
     GitRepositoryDTO gitRepository = scmConnector.getGitRepositoryDetails();
     if (isNotEmpty(gitRepository.getName())) {
       return Collections.singletonList(GitRepositoryResponseDTO.builder().name(gitRepository.getName()).build());
-    } else if (isNotEmpty(gitRepository.getOrg())) {
+    } else if (isNotEmpty(gitRepository.getOrg()) && isNotEmpty(response.getReposList())
+        && isNotEmpty(response.getRepos(0).getNamespace())) {
       return emptyIfNull(response.getReposList())
           .stream()
           .filter(repository -> repository.getNamespace().equals(gitRepository.getOrg()))
@@ -409,7 +410,7 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
   private GitRepositoryDTO getGitRepositoryDetails(String repoName, GitConnectivityParams gitConnectivityParams) {
     GitRepositoryDTOBuilder gitRepositoryDTOBuilder = GitRepositoryDTO.builder().name(repoName);
     if (gitConnectivityParams != null) {
-      gitRepositoryDTOBuilder.projectName(gitConnectivityParams.getRepositoryProjectName());
+      gitRepositoryDTOBuilder.projectName(gitConnectivityParams.getGitProjectName());
     }
     return gitRepositoryDTOBuilder.build();
   }

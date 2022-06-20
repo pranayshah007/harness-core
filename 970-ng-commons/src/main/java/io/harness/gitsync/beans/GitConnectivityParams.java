@@ -12,6 +12,5 @@ import lombok.Value;
 @Builder
 @OwnedBy(PL)
 public class GitConnectivityParams {
-  @Parameter(description = "Provide repository's project name in case of Azure repo Connector.")
-  String repositoryProjectName;
+  @Parameter(description = "Provide repository's project name in case of Azure repo Connector.") String gitProjectName;
 }

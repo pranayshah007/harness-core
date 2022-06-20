@@ -550,7 +550,7 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
       GetFileRequest getFileRequest, ScmGetFileResponseDTO scmGetFileResponseDTO, Scope scope) {
     GitRepositoryDTOBuilder gitRepositoryDTOBuilder = GitRepositoryDTO.builder().name(getFileRequest.getRepoName());
     if (getFileRequest.getGitConnectivityParams() != null) {
-      gitRepositoryDTOBuilder.projectName(getFileRequest.getGitConnectivityParams().getRepositoryProjectName());
+      gitRepositoryDTOBuilder.projectName(getFileRequest.getGitConnectivityParams().getGitProjectName());
     }
     return GetFileResponse.newBuilder()
         .setStatusCode(HTTP_200)
@@ -572,7 +572,7 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
       CreateFileRequest createFileRequest, ScmCommitFileResponseDTO scmCommitFileResponseDTO, Scope scope) {
     GitRepositoryDTOBuilder gitRepositoryDTOBuilder = GitRepositoryDTO.builder().name(createFileRequest.getRepoName());
     if (createFileRequest.getGitConnectivityParams() != null) {
-      gitRepositoryDTOBuilder.projectName(createFileRequest.getGitConnectivityParams().getRepositoryProjectName());
+      gitRepositoryDTOBuilder.projectName(createFileRequest.getGitConnectivityParams().getGitProjectName());
     }
     return io.harness.gitsync.CreateFileResponse.newBuilder()
         .setStatusCode(HTTP_200)
@@ -593,7 +593,7 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
       UpdateFileRequest updateFileRequest, ScmCommitFileResponseDTO scmCommitFileResponseDTO, Scope scope) {
     GitRepositoryDTOBuilder gitRepositoryDTOBuilder = GitRepositoryDTO.builder().name(updateFileRequest.getRepoName());
     if (updateFileRequest.getGitConnectivityParams() != null) {
-      gitRepositoryDTOBuilder.projectName(updateFileRequest.getGitConnectivityParams().getRepositoryProjectName());
+      gitRepositoryDTOBuilder.projectName(updateFileRequest.getGitConnectivityParams().getGitProjectName());
     }
     return io.harness.gitsync.UpdateFileResponse.newBuilder()
         .setStatusCode(HTTP_200)
@@ -634,9 +634,7 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
   private GitConnectivityParams getGitConnectivityParamsFromProtoRequest(
       io.harness.gitsync.GitConnectivityParams gitConnectivityParams) {
     if (gitConnectivityParams != null) {
-      return GitConnectivityParams.builder()
-          .repositoryProjectName(gitConnectivityParams.getRepositoryProjectName())
-          .build();
+      return GitConnectivityParams.builder().gitProjectName(gitConnectivityParams.getGitProjectName()).build();
     }
     return GitConnectivityParams.builder().build();
   }

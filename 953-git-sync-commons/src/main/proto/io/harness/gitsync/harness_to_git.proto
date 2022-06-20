@@ -194,5 +194,5 @@ message ErrorDetails {
 }
 
 message GitConnectivityParams {
-  string repositoryProjectName = 1;
+  string gitProjectName = 1;
 }
