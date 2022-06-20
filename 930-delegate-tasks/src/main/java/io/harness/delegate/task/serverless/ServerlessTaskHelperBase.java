@@ -238,16 +238,26 @@ public class ServerlessTaskHelperBase {
     FileIo.writeUtf8StringToFile(manifestFilePath, manifestContent);
   }
 
-  public void fetchArtifact(ServerlessArtifactConfig serverlessArtifactConfig, LogCallback logCallback,
+  public void fetchArtifact(ServerlessArtifactsConfig serverlessArtifactsConfig, LogCallback logCallback,
       String workingDirectory) throws IOException {
-    if (serverlessArtifactConfig instanceof ServerlessArtifactoryArtifactConfig) {
+    ServerlessArtifactConfig primaryServerlessArtifactConfig = serverlessArtifactsConfig.getPrimary();
+    fetchArtifactBasedOnType(primaryServerlessArtifactConfig, logCallback, workingDirectory);
+
+    for (Map.Entry<String, ServerlessArtifactConfig> entry : serverlessArtifactsConfig.getSidecars().entrySet()) {
+      fetchArtifactBasedOnType(entry.getValue(), logCallback, workingDirectory);
+    }
+  }
+
+  private void fetchArtifactBasedOnType(ServerlessArtifactConfig serverlessArtifactConfig, LogCallback logCallback,
+                                        String workingDirectory) throws IOException {
+    if (serverlessArtifactConfig != null && serverlessArtifactConfig instanceof ServerlessArtifactoryArtifactConfig) {
       ServerlessArtifactoryArtifactConfig serverlessArtifactoryArtifactConfig =
-          (ServerlessArtifactoryArtifactConfig) serverlessArtifactConfig;
+              (ServerlessArtifactoryArtifactConfig) serverlessArtifactConfig;
       String artifactoryDirectory = Paths.get(workingDirectory, ARTIFACT_DIR_NAME).toString();
       createDirectoryIfDoesNotExist(artifactoryDirectory);
       waitForDirectoryToBeAccessibleOutOfProcess(artifactoryDirectory, 10);
       fetchArtifactoryArtifact(serverlessArtifactoryArtifactConfig, logCallback, artifactoryDirectory);
-    } else if (serverlessArtifactConfig instanceof ServerlessEcrArtifactConfig) {
+    } else if (serverlessArtifactConfig != null && serverlessArtifactConfig instanceof ServerlessEcrArtifactConfig) {
       logCallback.saveExecutionLog(color("Skipping downloading artifact step as it is not needed..", White, Bold));
     }
   }
