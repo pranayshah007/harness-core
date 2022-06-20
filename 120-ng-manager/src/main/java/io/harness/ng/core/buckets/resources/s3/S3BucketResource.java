@@ -63,4 +63,18 @@ public class S3BucketResource {
         s3ResourceService.getBuckets(connectorRef, region, orgIdentifier, projectIdentifier);
     return ResponseDTO.newResponse(s3Buckets);
   }
+
+  @GET
+  @Path("getFilePaths")
+  @ApiOperation(value = "Gets filePaths for s3 buckets", nickname = "getFilePaths")
+  public ResponseDTO<Map<String, String>> getFilePaths(
+      @NotNull @QueryParam("connectorRef") String awsConnectorIdentifier,
+      @NotNull @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
+      @QueryParam(NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier) {
+    IdentifierRef connectorRef =
+        IdentifierRefHelper.getIdentifierRef(awsConnectorIdentifier, accountId, orgIdentifier, projectIdentifier);
+
+    return null;
+  }
 }
