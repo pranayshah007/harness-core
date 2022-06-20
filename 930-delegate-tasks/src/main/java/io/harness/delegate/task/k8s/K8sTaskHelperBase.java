@@ -48,7 +48,6 @@ import static software.wings.beans.LogHelper.color;
 import static software.wings.beans.LogWeight.Bold;
 import static software.wings.beans.LogWeight.Normal;
 import static software.wings.delegatetasks.helm.HelmTaskHelper.copyManifestFilesToWorkingDir;
-import static software.wings.delegatetasks.helm.HelmTaskHelper.handleIncorrectConfiguration;
 
 import static com.google.common.base.MoreObjects.firstNonNull;
 import static java.lang.Boolean.FALSE;
@@ -168,7 +167,6 @@ import io.harness.shell.SshSessionConfig;
 import io.harness.yaml.BooleanPatchedRepresenter;
 
 import software.wings.beans.command.ExecutionLogCallback;
-import software.wings.helpers.ext.k8s.request.K8sDelegateManifestConfig;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
