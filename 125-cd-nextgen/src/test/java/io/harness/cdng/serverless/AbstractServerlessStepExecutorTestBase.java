@@ -64,10 +64,13 @@ public abstract class AbstractServerlessStepExecutorTestBase extends CategoryTes
   protected final ServerlessDeployConfig serverlessDeployConfig = ServerlessAwsLambdaDeployConfig.builder().build();
   protected final ServerlessManifestConfig serverlessManifestConfig =
       ServerlessAwsLambdaManifestConfig.builder().build();
+  protected final String manifestFileOverrideContent = "adsf";
   protected final ServerlessInfraConfig serverlessInfraConfig = ServerlessAwsLambdaInfraConfig.builder().build();
   protected final ServerlessStepExecutorParams serverlessStepExecutorParams =
-      ServerlessAwsLambdaStepExecutorParams.builder().manifestFilePathContent(Pair.of("a", "b")).build();
-  protected final String manifestFileOverrideContent = "adsf";
+      ServerlessAwsLambdaStepExecutorParams.builder()
+          .manifestFilePathContent(Pair.of("a", "b"))
+          .manifestFileOverrideContent(manifestFileOverrideContent)
+          .build();
   protected final String SERVERLESS_AWS_LAMBDA_DEPLOY_COMMAND_NAME = "ServerlessAwsLambdaDeploy";
 
   @Before
@@ -90,7 +93,6 @@ public abstract class AbstractServerlessStepExecutorTestBase extends CategoryTes
     ServerlessExecutionPassThroughData passThroughData =
         ServerlessExecutionPassThroughData.builder().infrastructure(infrastructureOutcome).build();
 
-    doReturn(manifestFileOverrideContent).when(serverlessStepHelper).renderManifestContent(ambiance, "b");
     doReturn(serverlessDeployConfig)
         .when(serverlessStepHelper)
         .getServerlessDeployConfig(
@@ -109,7 +111,8 @@ public abstract class AbstractServerlessStepExecutorTestBase extends CategoryTes
         passThroughData, unitProgressData, serverlessStepExecutorParams);
     ArgumentCaptor<T> requestCaptor = ArgumentCaptor.forClass(requestType);
     verify(serverlessStepHelper, times(1))
-        .queueServerlessTask(eq(stepElementParameters), requestCaptor.capture(), eq(ambiance), eq(passThroughData));
+        .queueServerlessTask(
+            eq(stepElementParameters), requestCaptor.capture(), eq(ambiance), eq(passThroughData), eq(true));
     return requestCaptor.getValue();
   }
 

@@ -7,12 +7,8 @@
 
 package io.harness.cdng.serverless;
 
-import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
-import static io.harness.data.structure.EmptyPredicate.isEmpty;
-import static io.harness.exception.WingsException.USER;
-
-import static java.lang.String.format;
-
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.manifest.ManifestStoreType;
@@ -30,23 +26,25 @@ import io.harness.delegate.task.serverless.ServerlessAwsLambdaDeployConfig;
 import io.harness.delegate.task.serverless.ServerlessAwsLambdaManifestConfig;
 import io.harness.delegate.task.serverless.ServerlessDeployConfig;
 import io.harness.delegate.task.serverless.ServerlessManifestConfig;
-import io.harness.delegate.task.serverless.response.ServerlessDeployResponse;
 import io.harness.exception.InvalidRequestException;
 import io.harness.git.model.FetchFilesResult;
 import io.harness.git.model.GitFile;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
+import org.hibernate.validator.constraints.NotEmpty;
 
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
-import org.hibernate.validator.constraints.NotEmpty;
+
+import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.exception.WingsException.USER;
+import static java.lang.String.format;
 
 @OwnedBy(HarnessTeam.CDP)
 @Singleton
@@ -151,17 +149,5 @@ public class ServerlessAwsLambdaStepHelper implements ServerlessStepHelper {
     }
     throw new UnsupportedOperationException(
         format("Unsupported serverless manifest type: [%s]", manifestOutcome.getType()));
-  }
-
-  public String getPreviousVersion(ServerlessDeployResponse serverlessDeployResponse) {
-    ServerlessAwsLambdaDeployResult serverlessAwsLambdaDeployResult =
-        (ServerlessAwsLambdaDeployResult) serverlessDeployResponse.getServerlessDeployResult();
-    return serverlessAwsLambdaDeployResult.getPreviousVersionTimeStamp();
-  }
-
-  public boolean getIsFirstDeployment(ServerlessDeployResponse serverlessDeployResponse) {
-    ServerlessAwsLambdaDeployResult serverlessAwsLambdaDeployResult =
-        (ServerlessAwsLambdaDeployResult) serverlessDeployResponse.getServerlessDeployResult();
-    return serverlessAwsLambdaDeployResult.isFirstDeployment();
   }
 }

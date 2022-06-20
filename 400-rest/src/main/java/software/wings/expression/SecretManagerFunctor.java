@@ -147,6 +147,12 @@ public class SecretManagerFunctor implements ExpressionFunctor, SecretManagerFun
 
     EncryptedData encryptedData = secretManager.getSecretMappedToAppByName(accountId, appId, envId, secretName);
     if (encryptedData == null) {
+      encryptedData = secretManager.getSecretByName(accountId,secretName);
+
+      //check if secret exists in account to throw appropriate error message
+      if(encryptedData != null){
+        throw new InvalidRequestException("Secret with name [" + secretName + "] is not scoped to this application or environment", USER);
+      }
       throw new InvalidRequestException("No secret found with name + [" + secretName + "]", USER);
     }
     ServiceVariable serviceVariable = ServiceVariable.builder()

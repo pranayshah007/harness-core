@@ -127,6 +127,7 @@ public class SplunkMetricHealthSourceSpec extends MetricHealthSourceSpec {
                                                       .connectorIdentifier(connectorRef)
                                                       .monitoredServiceIdentifier(monitoredServiceIdentifier)
                                                       .monitoringSourceName(name)
+                                                      .productName(feature)
                                                       .build();
       splunkMetricCVConfig.populateFromMetricDefinitions(metricDefinitionGroup, CVMonitoringCategory.ERRORS);
       splunkMetricCVConfigs.put(key, splunkMetricCVConfig);

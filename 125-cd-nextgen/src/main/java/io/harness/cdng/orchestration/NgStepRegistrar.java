@@ -23,6 +23,7 @@ import io.harness.cdng.configfile.steps.IndividualConfigFileStep;
 import io.harness.cdng.creator.plan.environment.steps.EnvironmentStepV2;
 import io.harness.cdng.gitops.CreatePRStep;
 import io.harness.cdng.gitops.steps.GitopsClustersStep;
+import io.harness.cdng.gitops.MergePRStep;
 import io.harness.cdng.helm.HelmDeployStep;
 import io.harness.cdng.helm.HelmRollbackStep;
 import io.harness.cdng.infra.steps.EnvironmentStep;
@@ -79,6 +80,7 @@ public class NgStepRegistrar {
 
     // Add CDNG steps here
     engineSteps.put(CreatePRStep.STEP_TYPE, CreatePRStep.class);
+    engineSteps.put(MergePRStep.STEP_TYPE, MergePRStep.class);
     engineSteps.put(RollbackOptionalChildChainStep.STEP_TYPE, RollbackOptionalChildChainStep.class);
     engineSteps.put(RollbackOptionalChildrenStep.STEP_TYPE, RollbackOptionalChildrenStep.class);
     engineSteps.put(NGSectionStep.STEP_TYPE, NGSectionStep.class);

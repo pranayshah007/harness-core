@@ -55,10 +55,12 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.failure.FailureType;
+import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.data.OptionalOutcome;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
+import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
@@ -98,6 +100,7 @@ public class ServerlessStepCommonHelperTest extends CategoryTest {
   @Mock private ServerlessAwsLambdaDeployStep serverlessAwsLambdaDeployStep;
   @Mock private ServerlessEntityHelper serverlessEntityHelper;
   @Mock private ServerlessStepHelper serverlessStepHelper;
+  @Mock private ExecutionSweepingOutputService executionSweepingOutputService;
 
   @Spy @InjectMocks private ServerlessStepCommonHelper serverlessStepCommonHelper;
 
@@ -239,16 +242,19 @@ public class ServerlessStepCommonHelperTest extends CategoryTest {
             .build();
     ServerlessExecutionPassThroughData serverlessExecutionPassThroughData =
         ServerlessExecutionPassThroughData.builder().build();
-    TaskChainResponse expectedTaskChainResponse =
-        TaskChainResponse.builder().chainEnd(true).passThroughData(serverlessExecutionPassThroughData).build();
+    TaskChainResponse expectedTaskChainResponse = TaskChainResponse.builder()
+                                                      .chainEnd(false)
+                                                      .passThroughData(serverlessExecutionPassThroughData)
+                                                      .taskRequest(TaskRequest.newBuilder().build())
+                                                      .build();
     Optional<Pair<String, String>> manifestFilePathContent = Optional.of(Pair.of("a", "b"));
     doReturn(manifestFilePathContent).when(serverlessStepHelper).getManifestFileContent(any(), any());
     doReturn(expectedTaskChainResponse)
         .when(serverlessAwsLambdaDeployStep)
-        .executeServerlessTask(any(), any(), any(), any(), any(), any());
+        .executeServerlessPrepareRollbackTask(any(), any(), any(), any(), any(), any());
     TaskChainResponse taskChainResponse = serverlessStepCommonHelper.executeNextLink(serverlessAwsLambdaDeployStep,
         ambiance, stepElementParameters, passThroughData, () -> responseData, serverlessStepHelper);
-    assertThat(taskChainResponse.isChainEnd()).isTrue();
+    assertThat(taskChainResponse.isChainEnd()).isFalse();
     assertThat(taskChainResponse).isEqualTo(expectedTaskChainResponse);
   }
 

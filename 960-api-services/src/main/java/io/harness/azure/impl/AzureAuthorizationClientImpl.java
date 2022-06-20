@@ -95,14 +95,15 @@ public class AzureAuthorizationClientImpl extends AzureClient implements AzureAu
       return HTimeLimiter.callInterruptible21(timeLimiter, Duration.ofSeconds(90L), () -> {
         Azure azure = getAzureClientWithDefaultSubscription(azureConfig);
         AzureAuthenticationType azureCredentialType = azureConfig.getAzureAuthenticationType();
-        StringBuffer message = new StringBuffer("Azure connection validation for ");
+        StringBuffer message = new StringBuffer(128);
+        message.append("Azure connection validation for ");
         if (azureCredentialType == AzureAuthenticationType.SERVICE_PRINCIPAL_CERT
             || azureCredentialType == AzureAuthenticationType.SERVICE_PRINCIPAL_SECRET) {
-          message.append(format("clientId %s", message, azureConfig.getClientId()));
+          message.append(format("clientId %s", azureConfig.getClientId()));
         } else if (azureCredentialType == AzureAuthenticationType.MANAGED_IDENTITY_USER_ASSIGNED) {
-          message.append(format("User Assigned Managed Identity %s", message, azureConfig.getClientId()));
+          message.append(format("User Assigned Managed Identity %s", azureConfig.getClientId()));
         } else if (azureCredentialType == AzureAuthenticationType.MANAGED_IDENTITY_SYSTEM_ASSIGNED) {
-          message.append(format("System Assigned Managed Identity", message));
+          message.append("System Assigned Managed Identity");
         }
 
         boolean result = azure != null;
@@ -126,34 +127,52 @@ public class AzureAuthorizationClientImpl extends AzureClient implements AzureAu
   }
 
   @Override
-  public AzureIdentityAccessTokenResponse getUserAccessToken(AzureConfig azureConfig) {
+  public AzureIdentityAccessTokenResponse getUserAccessToken(AzureConfig azureConfig, String scope) {
     try {
+      log.info(format("Fetching user access token for scope: %s", scope));
+
       AzureAuthenticationType azureCredentialType = azureConfig.getAzureAuthenticationType();
+
+      if (azureCredentialType == AzureAuthenticationType.MANAGED_IDENTITY_USER_ASSIGNED
+          || azureCredentialType == AzureAuthenticationType.MANAGED_IDENTITY_SYSTEM_ASSIGNED) {
+        String token = getAuthenticationTokenCredentials(azureConfig).getToken(scope);
+
+        log.trace(format("%s user access token: %s", azureCredentialType.name(), token));
+
+        return AzureIdentityAccessTokenResponse.builder().accessToken(token).build();
+      }
+
       AzureAuthorizationRestClient azureAuthorizationRestClient =
           getAzureRestClient(AzureUtils.AUTH_URL, AzureAuthorizationRestClient.class);
       Response<AzureIdentityAccessTokenResponse> response = null;
       if (azureCredentialType == AzureAuthenticationType.SERVICE_PRINCIPAL_CERT) {
         String clientAssertion = createClientAssertion(azureConfig);
-        response = azureAuthorizationRestClient
-                       .servicePrincipalAccessToken(azureConfig.getTenantId(),
-                           AzureConstants.CLIENT_CREDENTIALS_GRANT_TYPE, azureConfig.getClientId(),
-                           AzureUtils.AUTH_SCOPE, AzureConstants.JWT_BEARER_CLIENT_ASSERTION_TYPE, clientAssertion)
-                       .execute();
+        response =
+            azureAuthorizationRestClient
+                .servicePrincipalAccessToken(azureConfig.getTenantId(), AzureConstants.CLIENT_CREDENTIALS_GRANT_TYPE,
+                    azureConfig.getClientId(), scope, AzureConstants.JWT_BEARER_CLIENT_ASSERTION_TYPE, clientAssertion)
+                .execute();
 
       } else if (azureCredentialType == AzureAuthenticationType.SERVICE_PRINCIPAL_SECRET) {
         response =
             azureAuthorizationRestClient
                 .servicePrincipalAccessToken(azureConfig.getTenantId(), AzureConstants.CLIENT_CREDENTIALS_GRANT_TYPE,
-                    azureConfig.getClientId(), AzureUtils.AUTH_SCOPE, String.valueOf(azureConfig.getKey()))
+                    azureConfig.getClientId(), scope, String.valueOf(azureConfig.getKey()))
                 .execute();
       }
 
       if (response != null) {
         if (response.isSuccessful()) {
-          return response.body();
+          AzureIdentityAccessTokenResponse azureIdentityAccessTokenResponse = response.body();
+
+          log.trace(format("%s user access token: %s", azureCredentialType.name(),
+              azureIdentityAccessTokenResponse.getAccessToken()));
+
+          return azureIdentityAccessTokenResponse;
         }
         String errorBody = response.errorBody().string();
-        throw NestedExceptionUtils.hintWithExplanationException("Fetching access token for azure user has failed.",
+        throw NestedExceptionUtils.hintWithExplanationException(
+            format("Fetching user access token for %s has failed.", azureCredentialType.name()),
             "Please check your connector configuration",
             new AzureAuthenticationException("Response Code: " + response.code()
                 + ", Response Message: " + response.message() + ", Error Body: " + errorBody));

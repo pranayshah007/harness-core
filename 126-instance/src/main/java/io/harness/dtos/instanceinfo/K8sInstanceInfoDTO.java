@@ -52,4 +52,9 @@ public class K8sInstanceInfoDTO extends InstanceInfoDTO {
   private String getImageInStringFormat() {
     return emptyIfNull(containerList).stream().map(K8sContainer::getImage).collect(Collectors.joining());
   }
+
+  @Override
+  public String getType() {
+    return "K8s";
+  }
 }
