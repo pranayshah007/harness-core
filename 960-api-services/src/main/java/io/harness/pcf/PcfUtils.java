@@ -42,8 +42,18 @@ public class PcfUtils {
     log.debug("{}: CLI, {}, timeInMillis: {}", CF_CALL, command, timeInMillis);
   }
 
+  public static void logCliCommandFailure(String command, long timeInMillis, int exitCode, String message) {
+    log.debug("{}: Failure from CLI, {}, timeInMillis: {}, exitCode: {}, message: {}", CF_CALL, command, timeInMillis,
+        exitCode, message);
+  }
+
   public static void logSdkCommand(String API, Object request, long timeInMillis) {
     log.debug("{}: SDK, {}, request: {}, timeInMillis: {}", CF_CALL, API, request, timeInMillis);
+  }
+
+  public static void logSdkCommandFailure(String API, Object request, long timeInMillis, String message) {
+    log.debug("{}: Failure from SDK, {}, request: {}, timeInMillis: {}, message: {}", CF_CALL, API, request,
+        timeInMillis, message);
   }
 
   public static boolean checkIfAppAutoscalarInstalled(final String cfCliPath, CfCliVersion cfCliVersion)

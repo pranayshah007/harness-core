@@ -74,6 +74,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -89,6 +90,7 @@ import org.apache.http.client.utils.URIBuilder;
 
 @Slf4j
 public class TrendAnalysisServiceImpl implements TrendAnalysisService {
+  private static final int MAX_FREQUENCY_TREND_SIZE = (int) Duration.ofDays(30).toMinutes();
   @Inject private HPersistence hPersistence;
   @Inject private LearningEngineTaskService learningEngineTaskService;
   @Inject private VerificationTaskService verificationTaskService;
@@ -333,6 +335,16 @@ public class TrendAnalysisServiceImpl implements TrendAnalysisService {
       } else {
         if (analysisDataDTO.getRisk().isGreaterThanEq(Risk.OBSERVE)) {
           unexpectedClustersWithRiskScore.put(cluster.getLabel(), analysisDataDTO.getScore());
+        }
+        /*
+         This is just a performance fix to avoid saving too many frequency trend records.
+         We should not have these many records in the first place but it is happening because of a bug in the annalysis.
+         This is a short term fix to avoid performance issues.
+        */
+        if (cluster.getFrequencyTrend().size() > MAX_FREQUENCY_TREND_SIZE) {
+          int freqListSize = cluster.getFrequencyTrend().size();
+          cluster.setFrequencyTrend(
+              cluster.getFrequencyTrend().subList(freqListSize - MAX_FREQUENCY_TREND_SIZE, freqListSize));
         }
         int index = cluster.getFrequencyTrend().size() - 1;
         while (index >= 0) {

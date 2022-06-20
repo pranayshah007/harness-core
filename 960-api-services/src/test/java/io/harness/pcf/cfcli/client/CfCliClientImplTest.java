@@ -134,7 +134,7 @@ public class CfCliClientImplTest extends CategoryTest {
     ProcessExecutor processExecutor = mock(ProcessExecutor.class);
     ProcessResult processResult = mock(ProcessResult.class);
     doReturn(processResult).when(processExecutor).execute();
-    doReturn(0).doReturn(1).when(processResult).getExitValue();
+    doReturn(0).doReturn(0).doReturn(1).doReturn(1).when(processResult).getExitValue();
 
     doReturn(processExecutor).when(cfCliClient).createProcessExecutorForCfTask(anyLong(), anyString(), anyMap(), any());
     cfCliClient.performConfigureAutoscaler(
@@ -208,7 +208,7 @@ public class CfCliClientImplTest extends CategoryTest {
     ProcessExecutor processExecutor = mock(ProcessExecutor.class);
     ProcessResult processResult = mock(ProcessResult.class);
     doReturn(processResult).when(processExecutor).execute();
-    doReturn(0).doReturn(1).when(processResult).getExitValue();
+    doReturn(0).doReturn(0).doReturn(1).doReturn(1).when(processResult).getExitValue();
 
     CfAppAutoscalarRequestData cfAppAutoscalarRequestData = CfAppAutoscalarRequestData.builder()
                                                                 .applicationName(APP_NAME)

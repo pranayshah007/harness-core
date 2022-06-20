@@ -271,7 +271,8 @@ public class CodebaseUtils {
       case HTTP:
         GitlabHttpCredentialsDTO gitAuth = (GitlabHttpCredentialsDTO) gitConfigDTO.getAuthentication().getCredentials();
         if (gitAuth.getType() != GitlabHttpAuthenticationType.USERNAME_AND_PASSWORD
-            && gitAuth.getType() != GitlabHttpAuthenticationType.USERNAME_AND_TOKEN) {
+            && gitAuth.getType() != GitlabHttpAuthenticationType.USERNAME_AND_TOKEN
+            && gitAuth.getType() != GitlabHttpAuthenticationType.OAUTH) {
           throw new CIStageExecutionException("Unsupported gitlab connector auth type" + gitAuth.getType());
         }
         break;

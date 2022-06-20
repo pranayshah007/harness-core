@@ -182,15 +182,12 @@ public class ServerlessAwsLambdaDeployCommandTaskHandlerTest extends CategoryTes
         .when(serverlessAwsCommandTaskHelper)
         .fetchFunctionOutputFromCloudFormationTemplate(any());
 
-    ServerlessAwsLambdaDeployResult serverlessAwsLambdaDeployResult =
-        ServerlessAwsLambdaDeployResult.builder()
-            .service(service)
-            .region(region)
-            .stage(stage)
-            .previousVersionTimeStamp(previousVersionTimeStamp)
-            .isFirstDeployment(false)
-            .functions(serverlessAwsLambdaFunctionsList)
-            .build();
+    ServerlessAwsLambdaDeployResult serverlessAwsLambdaDeployResult = ServerlessAwsLambdaDeployResult.builder()
+                                                                          .service(service)
+                                                                          .region(region)
+                                                                          .stage(stage)
+                                                                          .functions(serverlessAwsLambdaFunctionsList)
+                                                                          .build();
 
     ServerlessDeployResponse serverlessDeployResponse =
         (ServerlessDeployResponse) serverlessAwsLambdaDeployCommandTaskHandler.executeTaskInternal(
@@ -278,8 +275,6 @@ public class ServerlessAwsLambdaDeployCommandTaskHandlerTest extends CategoryTes
                                                                           .service(service)
                                                                           .region(region)
                                                                           .stage(stage)
-                                                                          .previousVersionTimeStamp(null)
-                                                                          .isFirstDeployment(true)
                                                                           .functions(serverlessAwsLambdaFunctionsList)
                                                                           .build();
 

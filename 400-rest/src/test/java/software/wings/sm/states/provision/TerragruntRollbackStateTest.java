@@ -43,6 +43,7 @@ import io.harness.beans.DelegateTask;
 import io.harness.beans.SweepingOutputInstance;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.FileBucket;
+import io.harness.ff.FeatureFlagService;
 import io.harness.persistence.HIterator;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
@@ -109,6 +110,8 @@ public class TerragruntRollbackStateTest extends WingsBaseTest {
   @Mock private GitConfigHelperService gitConfigHelperService;
   @Mock private StateExecutionService stateExecutionService;
   @Mock private TerragruntStateHelper terragruntStateHelper;
+  @Mock private FeatureFlagService featureFlagService;
+
   @InjectMocks
   TerragruntRollbackState terragruntRollbackState = new TerragruntRollbackState("Rollback Terragrunt Test");
 

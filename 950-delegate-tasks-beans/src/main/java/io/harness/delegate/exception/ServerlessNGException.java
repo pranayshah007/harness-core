@@ -18,11 +18,7 @@ import lombok.Value;
 @Value
 @EqualsAndHashCode(callSuper = false)
 public class ServerlessNGException extends DataException {
-  String previousVersionTimeStamp;
-  boolean isFirstDeployment;
-  public ServerlessNGException(Throwable cause, String previousVersionTimeStamp, Boolean isFirstDeployment) {
+  public ServerlessNGException(Throwable cause) {
     super(cause);
-    this.previousVersionTimeStamp = previousVersionTimeStamp;
-    this.isFirstDeployment = isFirstDeployment;
   }
 }

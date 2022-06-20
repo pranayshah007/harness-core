@@ -55,7 +55,7 @@ public class CommandLibraryServerApplicationTest extends CommandLibraryServerTes
   }
 
   @BeforeClass
-  public static void beforeClass() {
+  public static void beforeClass() throws Exception{
     MONGO_SERVER = startMongoServer();
     SUPPORT = new DropwizardTestSupport<CommandLibraryServerConfig>(CommandLibraryServerApplication.class,
         String.valueOf(

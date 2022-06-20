@@ -575,7 +575,7 @@ public class PipelineResource implements YamlSchemaResource {
     return ResponseDTO.newResponse(pipelineSummary);
   }
 
-  @GET
+  @POST
   @Path("/import/{pipelineIdentifier}")
   @Hidden
   @ApiOperation(value = "Get Pipeline YAML from Git Repository", nickname = "importPipeline")
@@ -586,7 +586,7 @@ public class PipelineResource implements YamlSchemaResource {
             description = "Returns Pipeline YAML fetched from Git Repository. No Pipeline is saved")
       })
   @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
-  public ResponseDTO<PMSPipelineResponseDTO>
+  public ResponseDTO<PipelineSaveResponse>
   importPipelineFromGit(@NotNull @Parameter(description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE) @QueryParam(
                             NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
       @NotNull @Parameter(description = PipelineResourceConstants.ORG_PARAM_MESSAGE) @QueryParam(
@@ -596,16 +596,10 @@ public class PipelineResource implements YamlSchemaResource {
       @PathParam(NGCommonEntityConstants.PIPELINE_KEY) @ResourceIdentifier @Parameter(
           description = PipelineResourceConstants.PIPELINE_ID_PARAM_MESSAGE) String pipelineId,
       @BeanParam GitImportInfoDTO gitImportInfoDTO, PipelineImportRequestDTO pipelineImportRequestDTO) {
-    try {
-      String importedPipeline = pmsPipelineService.importPipelineFromRemote(
-          accountId, orgId, projectId, pipelineId, pipelineImportRequestDTO);
-      return ResponseDTO.newResponse(PMSPipelineResponseDTO.builder().yamlPipeline(importedPipeline).build());
-    } catch (InvalidYamlException e) {
-      return ResponseDTO.newResponse(PMSPipelineResponseDTO.builder()
-                                         .yamlPipeline(e.getYaml())
-                                         .yamlSchemaErrorWrapper((YamlSchemaErrorWrapperDTO) e.getMetadata())
-                                         .build());
-    }
+    PipelineEntity savedPipelineEntity =
+        pmsPipelineService.importPipelineFromRemote(accountId, orgId, projectId, pipelineId, pipelineImportRequestDTO);
+    return ResponseDTO.newResponse(
+        PipelineSaveResponse.builder().identifier(savedPipelineEntity.getIdentifier()).build());
   }
 
   @GET

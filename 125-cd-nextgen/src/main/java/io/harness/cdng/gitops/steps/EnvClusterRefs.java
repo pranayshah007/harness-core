@@ -20,6 +20,7 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.cdng.gitops.steps.EnvClusterRefs")
 public class EnvClusterRefs {
   private String envRef;
+  private String envName;
   private Set<String> clusterRefs;
   boolean deployToAll;
 }

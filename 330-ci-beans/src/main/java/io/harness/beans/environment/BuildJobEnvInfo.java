@@ -7,8 +7,10 @@
 
 package io.harness.beans.environment;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.annotation.JsonValue;
 
 /**
  * Stores information for setting up environment for running  CI job
@@ -20,7 +22,19 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
   , @JsonSubTypes.Type(value = VmBuildJobInfo.class, name = "VM")
 })
 public interface BuildJobEnvInfo {
-  enum Type { K8, VM }
+  enum Type {
+    @JsonProperty("K8") K8("K8"),
+    @JsonProperty("VM") VM("VM");
+
+    private final String yamlName;
+    Type(String yamlName) {
+      this.yamlName = yamlName;
+    }
+
+    @JsonValue
+    public String getYamlName() {
+      return yamlName;
+    }}
 
   Type getType();
 }

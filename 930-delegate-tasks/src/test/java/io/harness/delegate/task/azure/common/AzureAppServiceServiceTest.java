@@ -127,7 +127,7 @@ public class AzureAppServiceServiceTest extends CategoryTest {
 
     AzureAppServicePreDeploymentData azureAppServicePreDeploymentData =
         azureAppServiceService.getAzureAppServicePreDeploymentDataAndLog(azureWebClientContext, SLOT_NAME,
-            TARGET_SLOT_NAME, userAddedAppSettings, userAddedConnSettings, true, logCallbackProvider);
+            TARGET_SLOT_NAME, userAddedAppSettings, userAddedConnSettings, true, logCallbackProvider, false);
 
     Assertions.assertThat(azureAppServicePreDeploymentData.getAppSettingsToRemove().get("appSetting2")).isNotNull();
     Assertions.assertThat(azureAppServicePreDeploymentData.getAppSettingsToAdd().get("appSetting1")).isNotNull();
@@ -145,14 +145,14 @@ public class AzureAppServiceServiceTest extends CategoryTest {
     assertThatThrownBy(
         ()
             -> azureAppServiceService.getAzureAppServicePreDeploymentDataAndLog(azureWebClientContext, "",
-                TARGET_SLOT_NAME, userAddedAppSettings, userAddedConnSettings, true, logCallbackProvider))
+                TARGET_SLOT_NAME, userAddedAppSettings, userAddedConnSettings, true, logCallbackProvider, false))
         .isInstanceOf(Exception.class);
 
     doReturn("STOPPED").when(mockAzureWebClient).getSlotState(any(), eq(TARGET_SLOT_NAME));
     assertThatThrownBy(
         ()
             -> azureAppServiceService.getAzureAppServicePreDeploymentDataAndLog(azureWebClientContext, SLOT_NAME,
-                TARGET_SLOT_NAME, userAddedAppSettings, userAddedConnSettings, true, logCallbackProvider))
+                TARGET_SLOT_NAME, userAddedAppSettings, userAddedConnSettings, true, logCallbackProvider, false))
         .isInstanceOf(Exception.class);
   }
 
