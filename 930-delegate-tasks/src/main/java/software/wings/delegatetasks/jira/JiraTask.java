@@ -30,6 +30,7 @@ import io.harness.jira.JiraCustomFieldValue;
 import io.harness.jira.JiraField;
 import io.harness.jira.JiraInternalConfig;
 import io.harness.jira.JiraIssueNG;
+import io.harness.jira.JiraIssueResolution;
 import io.harness.jira.JiraUserData;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.network.Http;
@@ -413,6 +414,12 @@ public class JiraTask extends AbstractDelegateRunnableTask {
     }
 
     Map<String, String> fieldsMap = extractFieldsFromCGParameters(parameters, userTypeFields);
+    String resolutionId = fieldsMap.remove("resolution");
+    String resolutionName = null;
+    if (EmptyPredicate.isNotEmpty(resolutionId)) {
+      JiraIssueResolution resolution = jiraNGClient.getResolution(resolutionId);
+      resolutionName = resolution.getName();
+    }
 
     for (String issueId : parameters.getUpdateIssueIds()) {
       try {
@@ -436,7 +443,7 @@ public class JiraTask extends AbstractDelegateRunnableTask {
               .build();
         }
 
-        jiraNGClient.updateIssue(issue.getKey(), parameters.getStatus(), null, fieldsMap);
+        jiraNGClient.updateIssue(issue.getKey(), parameters.getStatus(), resolutionName, fieldsMap);
 
         log.info("Successfully updated ticket : " + issueId);
         issueKeys.add(issue.getKey());

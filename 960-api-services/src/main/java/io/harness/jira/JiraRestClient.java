@@ -22,6 +22,9 @@ import retrofit2.http.Query;
 
 @OwnedBy(CDC)
 public interface JiraRestClient {
+  @GET("resolution/{resolutionId}")
+  Call<JiraIssueResolution> getResolution(@Path("resolutionId") String resolutionId);
+
   @GET("user/search")
   Call<List<JiraUserData>> getUsers(@Query("query") String userQuery, @Query("accountId") String accountId,
       @Query("maxResults") String maxResults, @Query("startAt") String startAt);
