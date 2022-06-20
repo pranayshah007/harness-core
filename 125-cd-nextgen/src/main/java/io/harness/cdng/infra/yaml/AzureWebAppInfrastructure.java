@@ -60,17 +60,12 @@ public class AzureWebAppInfrastructure implements Infrastructure, Visitable, Wit
   @NotEmpty
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
   @Wither
-  ParameterField<String> appService;
+  ParameterField<String> webApp;
   @NotNull
   @NotEmpty
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
   @Wither
   ParameterField<String> deploymentSlot;
-  @NotNull
-  @NotEmpty
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
-  @Wither
-  ParameterField<String> targetSlot;
 
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 
@@ -80,9 +75,8 @@ public class AzureWebAppInfrastructure implements Infrastructure, Visitable, Wit
         .azureConnector(connectorRef.getValue())
         .subscription(subscriptionId.getValue())
         .resourceGroup(resourceGroup.getValue())
-        .appService(appService.getValue())
+        .webApp(webApp.getValue())
         .deploymentSlot(deploymentSlot.getValue())
-        .targetSlot(targetSlot.getValue())
         .build();
   }
 
@@ -94,7 +88,7 @@ public class AzureWebAppInfrastructure implements Infrastructure, Visitable, Wit
   @Override
   public String[] getInfrastructureKeyValues() {
     return new String[] {connectorRef.getValue(), subscriptionId.getValue(), resourceGroup.getValue(),
-        appService.getValue(), deploymentSlot.getValue(), targetSlot.getValue()};
+        webApp.getValue(), deploymentSlot.getValue()};
   }
 
   @Override
@@ -115,14 +109,11 @@ public class AzureWebAppInfrastructure implements Infrastructure, Visitable, Wit
     if (!ParameterField.isNull(config.getResourceGroup())) {
       resultantInfra = resultantInfra.withResourceGroup(config.getResourceGroup());
     }
-    if (!ParameterField.isNull(config.getAppService())) {
-      resultantInfra = resultantInfra.withAppService(config.getAppService());
+    if (!ParameterField.isNull(config.getWebApp())) {
+      resultantInfra = resultantInfra.withWebApp(config.getWebApp());
     }
     if (!ParameterField.isNull(config.getDeploymentSlot())) {
       resultantInfra = resultantInfra.withDeploymentSlot(config.getDeploymentSlot());
-    }
-    if (!ParameterField.isNull(config.getTargetSlot())) {
-      resultantInfra = resultantInfra.withTargetSlot(config.getTargetSlot());
     }
     return resultantInfra;
   }

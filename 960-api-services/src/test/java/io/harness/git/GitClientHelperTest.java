@@ -24,6 +24,7 @@ import static io.harness.rule.OwnerRule.DEV_MITTAL;
 import static io.harness.rule.OwnerRule.HARSH;
 import static io.harness.rule.OwnerRule.JAMIE;
 import static io.harness.rule.OwnerRule.JELENA;
+import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 import static io.harness.rule.OwnerRule.SOUMYAJIT;
 import static io.harness.rule.OwnerRule.YOGESH;
 
@@ -455,6 +456,8 @@ public class GitClientHelperTest extends CategoryTest {
         .isEqualTo("https://api.github.com/");
     assertThat(GitClientHelper.getGithubApiURL("git@www.github.com:harness/harness-core.git"))
         .isEqualTo("https://api.github.com/");
+    assertThat(GitClientHelper.getGithubApiURL("http://10.67.0.1/devkimittal/harness-core"))
+            .isEqualTo("http://10.67.0.1/api/v3/");
   }
 
   @Test
@@ -475,6 +478,8 @@ public class GitClientHelperTest extends CategoryTest {
         .isEqualTo("https://gitlab.com/");
     assertThat(GitClientHelper.getGitlabApiURL("git@www.gitlab.com:devki.mittal/test.git"))
         .isEqualTo("https://gitlab.com/");
+    assertThat(GitClientHelper.getGitlabApiURL("http://10.67.0.1/devkimittal/harness-core"))
+            .isEqualTo("http://10.67.0.1/");
   }
 
   @Test
@@ -496,6 +501,8 @@ public class GitClientHelperTest extends CategoryTest {
         .isEqualTo("https://api.bitbucket.org/");
     assertThat(GitClientHelper.getBitBucketApiURL("git@www.bitbucket.org:devmittalciv16/ci_3446.git"))
         .isEqualTo("https://api.bitbucket.org/");
+    assertThat(GitClientHelper.getBitBucketApiURL("http://10.67.0.1/devkimittal/harness-core"))
+            .isEqualTo("http://10.67.0.1/");
   }
 
   @Test
@@ -523,5 +530,117 @@ public class GitClientHelperTest extends CategoryTest {
         .doesNotThrowAnyException();
     assertThatCode(() -> GitClientHelper.validateURL("https://github.com/smjt-h/goHelloWorldServer.git"))
         .doesNotThrowAnyException();
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testRepoAndOwnerForGithubOnPrem() {
+    assertThat(GitClientHelper.getGitOwner("https://github.kdc.capitalone.com/wings-software/portal.git", false))
+        .isEqualTo("wings-software");
+    assertThat(GitClientHelper.getGitRepo("https://github.kdc.capitalone.com/wings-software/portal.git"))
+        .isEqualTo("portal");
+    assertThat(GitClientHelper.getGitOwner("git@github.harness.com:wings-software/portal.git", false))
+        .isEqualTo("wings-software");
+    assertThat(GitClientHelper.getGitRepo("git@github.harness.com:wings-software/portal.git"))
+        .isEqualTo("portal");
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testRepoAndOwnerForGithubSAAS() {
+    assertThat(GitClientHelper.getGitOwner("https://github.com/wings-software/portal.git", false))
+        .isEqualTo("wings-software");
+    assertThat(GitClientHelper.getGitRepo("https://github.com/wings-software/portal.git"))
+        .isEqualTo("portal");
+    assertThat(GitClientHelper.getGitOwner("git@github.com:wings-software/portal.git", false))
+        .isEqualTo("wings-software");
+    assertThat(GitClientHelper.getGitRepo("git@github.com:wings-software/portal.git"))
+        .isEqualTo("portal");
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testRepoAndOwnerForGitlabSAAS() {
+    assertThat(GitClientHelper.getGitOwner("https://gitlab.com/wings-software/portal.git", false))
+        .isEqualTo("wings-software");
+    assertThat(GitClientHelper.getGitRepo("https://gitlab.com/wings-software/portal.git"))
+        .isEqualTo("portal");
+    assertThat(GitClientHelper.getGitOwner("git@gitlab.com:wings-software/portal.git", false))
+        .isEqualTo("wings-software");
+    assertThat(GitClientHelper.getGitRepo("git@gitlab.com:wings-software/portal.git"))
+        .isEqualTo("portal");
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testRepoAndOwnerForGitlabOnPrem() {
+    assertThat(GitClientHelper.getGitOwner("https://gitlab.harness.com/wings-software/portal.git", false))
+        .isEqualTo("wings-software");
+    assertThat(GitClientHelper.getGitRepo("https://gitlab.harness.com/wings-software/portal.git"))
+        .isEqualTo("portal");
+    assertThat(GitClientHelper.getGitOwner("git@gitlab.harness.com:wings-software/portal.git", false))
+        .isEqualTo("wings-software");
+    assertThat(GitClientHelper.getGitRepo("git@gitlab.harness.com:wings-software/portal.git"))
+        .isEqualTo("portal");
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testRepoAndOwnerForBitbucketSAAS() {
+    assertThat(GitClientHelper.getGitOwner("https://harness@bitbucket.org/wings-software/portal.git", false))
+        .isEqualTo("wings-software");
+    assertThat(GitClientHelper.getGitRepo("https://harness@bitbucket.org/wings-software/portal.git"))
+        .isEqualTo("portal");
+    assertThat(GitClientHelper.getGitOwner("git@bitbucket.org:wings-software/portal.git", false))
+        .isEqualTo("wings-software");
+    assertThat(GitClientHelper.getGitRepo("git@bitbucket.org:wings-software/portal.git"))
+        .isEqualTo("portal");
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testRepoAndOwnerForBitbucketOnPrem() {
+    assertThat(GitClientHelper.getGitOwner("https://harness@bitbucket.harness.org/wings-software/portal.git", false))
+        .isEqualTo("wings-software");
+    assertThat(GitClientHelper.getGitRepo("https://harness@bitbucket.harness.org/wings-software/portal.git"))
+        .isEqualTo("portal");
+    assertThat(GitClientHelper.getGitOwner("git@bitbucket.harness.org:wings-software/portal.git", false))
+        .isEqualTo("wings-software");
+    assertThat(GitClientHelper.getGitRepo("git@bitbucket.harness.org:wings-software/portal.git"))
+        .isEqualTo("portal");
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testRepoAndOwnerForAzureRepoSAAS() {
+    assertThat(GitClientHelper.getGitOwner("https://dev.azure.com/wings-software/project/_git/portal", false))
+        .isEqualTo("wings-software");
+    assertThat(GitClientHelper.getGitRepo("https://dev.azure.com/wings-software/project/_git/portal"))
+        .isEqualTo("project/_git/portal");
+    assertThat(GitClientHelper.getGitOwner("git@ssh.dev.azure.com:v3/wings-software/project/portal", false))
+        .isEqualTo("wings-software");
+    assertThat(GitClientHelper.getGitRepo("git@ssh.dev.azure.com:v3/wings-software/project/portal"))
+        .isEqualTo("project/portal");
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testRepoAndOwnerForAzureRepoOnPrem() {
+    assertThat(GitClientHelper.getGitOwner("https://harness.azure.com/wings-software/project/_git/portal", false))
+        .isEqualTo("wings-software");
+    assertThat(GitClientHelper.getGitRepo("https://harness.azure.com/wings-software/project/_git/portal"))
+        .isEqualTo("project/_git/portal");
+    assertThat(GitClientHelper.getGitOwner("git@ssh.harness.azure.com:v3/wings-software/project/portal", false))
+        .isEqualTo("wings-software");
+    assertThat(GitClientHelper.getGitRepo("git@ssh.harness.azure.com:v3/wings-software/project/portal"))
+        .isEqualTo("project/portal");
   }
 }

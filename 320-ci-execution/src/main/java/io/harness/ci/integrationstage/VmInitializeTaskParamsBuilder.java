@@ -84,6 +84,7 @@ public class VmInitializeTaskParamsBuilder {
   @Inject CIVmSecretEvaluator ciVmSecretEvaluator;
   @Inject private CIFeatureFlagService featureFlagService;
   @Inject private VmInitializeUtils vmInitializeUtils;
+  @Inject ValidationUtils validationUtils;
 
   private final Duration RETRY_SLEEP_DURATION = Duration.ofSeconds(2);
   private final int MAX_ATTEMPTS = 3;
@@ -210,7 +211,7 @@ public class VmInitializeTaskParamsBuilder {
     if (integrationStageConfig.getServiceDependencies() != null
         && integrationStageConfig.getServiceDependencies().getValue() != null) {
       dependencyElements = integrationStageConfig.getServiceDependencies().getValue();
-      ValidationUtils.validateVmInfraDependencies(dependencyElements);
+      validationUtils.validateVmInfraDependencies(dependencyElements);
     }
     if (isEmpty(dependencyElements)) {
       return serviceDependencies;

@@ -51,6 +51,7 @@ public class MonitoredServiceDTO {
   @Valid Set<ServiceDependencyDTO> dependencies;
   List<NotificationRuleRefDTO> notificationRuleRefs;
   @Valid TemplateDTO template;
+  boolean enabled;
 
   public List<String> getEnvironmentRefList() {
     // For migration. Remove once envRefList is populated from UI.

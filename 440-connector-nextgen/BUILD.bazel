@@ -105,7 +105,7 @@ java_library(
         "@maven//:junit_junit",
         "@maven//:org_apache_commons_commons_lang3",
         "@maven//:org_assertj_assertj_core",
-        "@maven//:org_hibernate_hibernate_validator",
+        "@maven//:org_hibernate_validator_hibernate_validator",
         "@maven//:org_mockito_mockito_core",
         "@maven//:org_modelmapper_modelmapper",
         "@maven//:org_mongodb_mongo_java_driver",

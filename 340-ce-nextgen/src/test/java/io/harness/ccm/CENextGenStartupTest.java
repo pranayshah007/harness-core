@@ -57,7 +57,7 @@ public class CENextGenStartupTest extends CategoryTest {
   }
 
   @BeforeClass
-  public static void beforeClass() {
+  public static void beforeClass() throws Exception{
     MONGO_SERVER = startMongoServer();
     SUPPORT = new DropwizardTestSupport<>(CENextGenApplication.class,
         String.valueOf(new File("340-ce-nextgen/src/test/resources/test-config.yml")),

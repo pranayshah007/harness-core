@@ -10,6 +10,9 @@ package io.harness.ci.integrationstage;
 import static io.harness.beans.execution.WebhookEvent.Type.BRANCH;
 import static io.harness.beans.execution.WebhookEvent.Type.PR;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveOSType;
+import static io.harness.beans.yaml.extended.infrastrucutre.Infrastructure.Type.KUBERNETES_DIRECT;
+import static io.harness.beans.yaml.extended.infrastrucutre.Infrastructure.Type.KUBERNETES_HOSTED;
+import static io.harness.beans.yaml.extended.infrastrucutre.Infrastructure.Type.VM;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParameter;
 import static io.harness.common.CIExecutionConstants.AZURE_REPO_BASE_URL;
 import static io.harness.common.CIExecutionConstants.GIT_URL_SUFFIX;
@@ -42,12 +45,17 @@ import io.harness.beans.plugin.compatible.PluginCompatibleStep;
 import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.stages.IntegrationStageConfig;
 import io.harness.beans.steps.CIStepInfo;
+import io.harness.beans.steps.stepinfo.InitializeStepInfo;
 import io.harness.beans.steps.stepinfo.PluginStepInfo;
 import io.harness.beans.steps.stepinfo.RunStepInfo;
 import io.harness.beans.steps.stepinfo.RunTestsStepInfo;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
+import io.harness.ci.pipeline.executions.beans.CIImageDetails;
+import io.harness.ci.pipeline.executions.beans.CIInfraDetails;
+import io.harness.ci.pipeline.executions.beans.CIScmDetails;
+import io.harness.ci.pipeline.executions.beans.TIBuildDetails;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.docker.DockerConnectorDTO;
@@ -77,6 +85,8 @@ import io.harness.pms.contracts.triggers.TriggerPayload;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.states.RunStep;
+import io.harness.states.RunTestsStep;
 import io.harness.stateutils.buildstate.CodebaseUtils;
 import io.harness.stateutils.buildstate.ConnectorUtils;
 import io.harness.util.WebhookTriggerProcessorUtils;
@@ -102,6 +112,9 @@ public class IntegrationStageUtils {
   private static final String TAG_EXPRESSION = "<+trigger.tag>";
   private static final String BRANCH_EXPRESSION = "<+trigger.branch>";
   public static final String PR_EXPRESSION = "<+trigger.prNumber>";
+
+  private static final String HARNESS_HOSTED = "Harness Hosted";
+  private static final String SELF_HOSTED = "Self Hosted";
 
   public IntegrationStageConfig getIntegrationStageConfig(StageElementConfig stageElementConfig) {
     return (IntegrationStageConfig) stageElementConfig.getStageType();
@@ -363,6 +376,75 @@ public class IntegrationStageUtils {
     return null;
   }
 
+  public static List<StepElementConfig> getAllSteps(List<ExecutionWrapperConfig> executionWrapperConfigs) {
+    List<StepElementConfig> stepElementConfigs = new ArrayList<>();
+
+    if (executionWrapperConfigs == null) {
+      return stepElementConfigs;
+    }
+
+    for (ExecutionWrapperConfig executionWrapper : executionWrapperConfigs) {
+      if (executionWrapper == null) {
+        continue;
+      }
+
+      if (executionWrapper.getStep() != null) {
+        stepElementConfigs.add(getStepElementConfig(executionWrapper));
+      } else if (executionWrapper.getParallel() != null) {
+        ParallelStepElementConfig parallelStepElementConfig = getParallelStepElementConfig(executionWrapper);
+        List<StepElementConfig> fromParallel = getAllSteps(parallelStepElementConfig.getSections());
+        stepElementConfigs.addAll(fromParallel);
+      }
+    }
+    return stepElementConfigs;
+  }
+
+  public static List<TIBuildDetails> getTiBuildDetails(InitializeStepInfo initializeStepInfo) {
+    List<TIBuildDetails> tiBuildDetailsList = new ArrayList<>();
+    List<StepElementConfig> stepElementConfigs = getAllSteps(initializeStepInfo.getExecutionElementConfig().getSteps());
+
+    for (StepElementConfig stepElementConfig : stepElementConfigs) {
+      if (!(stepElementConfig.getStepSpecType() instanceof CIStepInfo)) {
+        continue;
+      }
+      CIStepInfo ciStepInfo = (CIStepInfo) stepElementConfig.getStepSpecType();
+      if(ciStepInfo.getStepType() == RunTestsStep.STEP_TYPE) {
+        RunTestsStepInfo runTestsStepInfo = (RunTestsStepInfo) ciStepInfo;
+        TIBuildDetails tiBuildDetails = TIBuildDetails.builder()
+                .buildTool(runTestsStepInfo.getBuildTool().getValue().getYamlName())
+                .language(runTestsStepInfo.getLanguage().getValue().getYamlName())
+                .build();
+        tiBuildDetailsList.add(tiBuildDetails);
+      }
+    }
+    return tiBuildDetailsList;
+  }
+
+  public static List<CIImageDetails> getCiImageDetails(InitializeStepInfo initializeStepInfo) {
+    List<CIImageDetails> imageDetailsList = new ArrayList<>();
+    List<StepElementConfig> stepElementConfigs = getAllSteps(initializeStepInfo.getExecutionElementConfig().getSteps());
+
+    for (StepElementConfig stepElementConfig : stepElementConfigs) {
+      if (!(stepElementConfig.getStepSpecType() instanceof CIStepInfo)) {
+        continue;
+      }
+      CIStepInfo ciStepInfo = (CIStepInfo) stepElementConfig.getStepSpecType();
+      if(ciStepInfo.getStepType() == RunStep.STEP_TYPE) {
+        imageDetailsList.add(getCiImageDetails(((RunStepInfo) ciStepInfo).getImage().getValue()));
+      } else if (ciStepInfo.getStepType() == RunTestsStep.STEP_TYPE) {
+        imageDetailsList.add(getCiImageDetails(((RunTestsStepInfo) ciStepInfo).getImage().getValue()));
+      } else if (ciStepInfo.getStepType() == PluginStepInfo.STEP_TYPE) {
+        imageDetailsList.add(getCiImageDetails(((PluginStepInfo) ciStepInfo).getImage().getValue()));
+      }
+    }
+    return imageDetailsList;
+  }
+
+  public CIImageDetails getCiImageDetails(String image) {
+    ImageDetails imagedetails = getImageInfo(image);
+    return CIImageDetails.builder().imageName(imagedetails.getName()).imageTag(imagedetails.getTag()).build();
+  }
+
   public ImageDetails getImageInfo(String image) {
     String tag = "";
     String name = image;
@@ -553,5 +635,36 @@ public class IntegrationStageUtils {
       }
     }
     return null;
+  }
+
+  public static CIInfraDetails getCiInfraDetails(Infrastructure infrastructure) {
+    String infraType = infrastructure.getType().getYamlName();
+    String infraOSType = null;
+    String infraHostType = null;
+
+    if (infrastructure.getType() == KUBERNETES_DIRECT) {
+      infraOSType = getK8OS(infrastructure).toString();
+      infraHostType = SELF_HOSTED;
+    } else if (infrastructure.getType() == VM) {
+      infraOSType = VmInitializeStepUtils.getVmOS(infrastructure).toString();
+      infraHostType = SELF_HOSTED;
+    } else if (infrastructure.getType() == KUBERNETES_HOSTED) {
+      infraOSType = getK8OS(infrastructure).toString();
+      infraHostType = HARNESS_HOSTED;
+    }
+
+    return CIInfraDetails.builder()
+            .infraType(infraType)
+            .infraOSType(infraOSType)
+            .infraHostType(infraHostType)
+            .build();
+  }
+
+  public static CIScmDetails getCiScmDetails(ConnectorUtils connectorUtils, ConnectorDetails connectorDetails) {
+    return CIScmDetails.builder()
+            .scmProvider(connectorDetails.getConnectorType().getDisplayName())
+            .scmAuthType(connectorUtils.getScmAuthType(connectorDetails))
+            .scmHostType(connectorUtils.getScmHostType(connectorDetails))
+            .build();
   }
 }

@@ -663,8 +663,10 @@ public class UserGroupServiceImpl implements UserGroupService {
       String userGroupId, String accountId, String appId, String entityId, String entityType) {
     UserGroup userGroup = Optional.ofNullable(mongoPersistence.get(UserGroup.class, userGroupId)).orElse(null);
     if (userGroup == null) {
-      // log statement for userGroups which are deleted but are being referenced in a pipeline
-      log.error("UserGroup does not exist but pipeline with id {} and appId {} is referencing it", entityId, appId);
+      // log statement for userGroups which are deleted but are being referenced in a pipeline of deployment freeze
+      // window
+      log.error(
+          "UserGroup does not exist but {} with id {} and appId {} is referencing it", entityType, entityId, appId);
       return;
     }
     userGroup.addParent(UserGroupEntityReference.builder()
@@ -682,8 +684,10 @@ public class UserGroupServiceImpl implements UserGroupService {
       String userGroupId, String accountId, String appId, String entityId, String entityType) {
     UserGroup userGroup = Optional.ofNullable(mongoPersistence.get(UserGroup.class, userGroupId)).orElse(null);
     if (userGroup == null) {
-      // log statement for userGroups which are deleted but are being referenced in a pipeline
-      log.error("UserGroup does not exist but pipeline with id {} and appId {} is referencing it", entityId, appId);
+      // log statement for userGroups which are deleted but are being referenced in a pipeline or in a deployment freeze
+      // window
+      log.error(
+          "UserGroup does not exist but {} with id {} and appId {} is referencing it", entityType, entityId, appId);
       return;
     }
     userGroup.removeParent(UserGroupEntityReference.builder()
@@ -798,7 +802,7 @@ public class UserGroupServiceImpl implements UserGroupService {
     notNullCheck("userGroup", userGroup);
     if (!(userGroup.getParents().isEmpty())) {
       throw new InvalidRequestException(
-          "This userGroup is being referenced in either approval step/stage or notification strategy. Please make sure to remove the references to delete this userGroup.");
+          "This userGroup is being referenced in either approval step/stage or notification strategy or in a deployment freeze window. Please make sure to remove the references to delete this userGroup.");
     }
     if (!forceDelete && UserGroupUtils.isAdminUserGroup(userGroup)) {
       return false;

@@ -7,4 +7,4 @@
 
 package io.harness.delegate.task.ci;
 
-public enum GitSCMType { GITHUB, GITLAB, BITBUCKET }
+public enum GitSCMType { GITHUB, GITLAB, BITBUCKET, AZURE_REPO }

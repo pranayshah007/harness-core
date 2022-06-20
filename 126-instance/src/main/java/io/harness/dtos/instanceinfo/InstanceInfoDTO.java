@@ -31,4 +31,6 @@ public abstract class InstanceInfoDTO {
 
   // Get name of instance on the server as per the deployment type
   public abstract String getPodName();
+
+  public abstract String getType();
 }
