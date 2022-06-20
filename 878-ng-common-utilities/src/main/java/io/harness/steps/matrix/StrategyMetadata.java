@@ -10,6 +10,8 @@ package io.harness.steps.matrix;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 
 import java.util.List;
+
+import io.harness.when.beans.StepWhenCondition;
 import lombok.Builder;
 import lombok.Data;
 
@@ -21,4 +23,5 @@ public class StrategyMetadata {
   List<AdviserObtainment> adviserObtainments;
   String strategyNodeName;
   String strategyNodeIdentifier;
+  StepWhenCondition when;
 }

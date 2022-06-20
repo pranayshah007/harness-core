@@ -123,7 +123,9 @@ public abstract class GenericStagePlanCreator extends ChildrenPlanCreator<StageE
                                                  .adviserObtainments(StageStrategyUtils.getAdviserObtainments(
                                                      ctx.getCurrentField(), kryoSerializer, false))
                                                  .childNodeId(strategyField.getNode().getUuid())
-                                                 .build())));
+                      .strategyNodeName(field.getName())
+                      .strategyNodeIdentifier(field.getIdentifier())
+                      .build())));
       planCreationResponseMap.put(field.getUuid(),
           PlanCreationResponse.builder()
               .dependencies(DependenciesUtils.toDependenciesProto(ImmutableMap.of(field.getUuid(), strategyField))
