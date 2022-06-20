@@ -8,8 +8,10 @@
 package io.harness.ng.scim;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static java.util.Collections.emptyList;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.beans.Scope;
 import io.harness.ng.core.api.UserGroupService;
 import io.harness.ng.core.invites.InviteType;
@@ -39,6 +41,8 @@ import java.util.Map;
 import java.util.Optional;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.core.Response;
+
+import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -55,6 +59,7 @@ public class NGScimUserServiceImpl implements ScimUserService {
   private final NgUserService ngUserService;
   private final InviteService inviteService;
   private final UserGroupService userGroupService;
+  private final NGFeatureFlagHelperService nGFeatureFlagHelperService;
 
   @Override
   public Response createUser(ScimUser userQuery, String accountId) {
@@ -90,16 +95,21 @@ public class NGScimUserServiceImpl implements ScimUserService {
       return Response.status(Response.Status.CREATED).entity(getUser(user.getUuid(), accountId)).build();
     } else {
       String userName = getName(userQuery);
-      Invite invite = Invite.builder()
-                          .accountIdentifier(accountId)
-                          .approved(true)
-                          .email(primaryEmail)
-                          .name(userName)
-                          .roleBindings(Collections.singletonList(
-                              RoleBinding.builder().roleIdentifier(ACCOUNT_VIEWER_ROLE).build()))
-                          .inviteType(InviteType.SCIM_INITIATED_INVITE)
-                          .build();
+      Invite invite =  Invite.builder()
+              .accountIdentifier(accountId)
+              .approved(true)
+              .email(primaryEmail)
+              .name(userName)
+              .inviteType(InviteType.SCIM_INITIATED_INVITE)
+              .build();
 
+      if (nGFeatureFlagHelperService.isEnabled(accountId, FeatureName.ACCOUNT_BASIC_ROLE_ONLY)) {
+        invite.setRoleBindings(emptyList());
+      }
+      else {
+        invite.setRoleBindings(Collections.singletonList(
+                RoleBinding.builder().roleIdentifier(ACCOUNT_VIEWER_ROLE).build()));
+      }
       inviteService.create(invite, true);
 
       userOptional = ngUserService.getUserByEmail(primaryEmail, true);

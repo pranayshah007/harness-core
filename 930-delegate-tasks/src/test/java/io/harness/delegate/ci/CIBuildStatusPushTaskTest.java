@@ -8,6 +8,7 @@
 package io.harness.delegate.ci;
 
 import static io.harness.rule.OwnerRule.HARSH;
+import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
@@ -25,6 +26,8 @@ import io.harness.cistatus.GithubAppTokenCreationResponse;
 import io.harness.cistatus.StatusCreationResponse;
 import io.harness.cistatus.service.GithubRestClient;
 import io.harness.cistatus.service.GithubServiceImpl;
+import io.harness.cistatus.service.azurerepo.AzureRepoRestClient;
+import io.harness.cistatus.service.azurerepo.AzureRepoServiceImpl;
 import io.harness.cistatus.service.bitbucket.BitbucketRestClient;
 import io.harness.cistatus.service.bitbucket.BitbucketServiceImpl;
 import io.harness.cistatus.service.gitlab.GitlabRestClient;
@@ -56,10 +59,12 @@ public class CIBuildStatusPushTaskTest extends CategoryTest {
   private GithubRestClient githubRestClient;
   private GitlabRestClient gitlabRestClient;
   private BitbucketRestClient bitbucketRestClient;
+  private AzureRepoRestClient azureRepoRestClient;
 
   private GithubServiceImpl githubServiceImpl;
   private GitlabServiceImpl gitlabServiceImpl;
   private BitbucketServiceImpl bitbucketServiceImpl;
+  private AzureRepoServiceImpl azureRepoServiceImpl;
 
   private final String APP_ID = "APP_ID";
   private final String DESC = "desc";
@@ -75,6 +80,7 @@ public class CIBuildStatusPushTaskTest extends CategoryTest {
   private final String INSTALL_ID = "123";
   private final String TARGET_URL = "https://app.harness.io";
   private final String KEY = "dummyKey";
+  private final String AZURE_REPO = "project/_git/repo";
 
   @InjectMocks
   private CIBuildStatusPushTask ciBuildStatusPushTask = new CIBuildStatusPushTask(
@@ -85,15 +91,19 @@ public class CIBuildStatusPushTaskTest extends CategoryTest {
     githubRestClient = Mockito.mock(GithubRestClient.class);
     gitlabRestClient = Mockito.mock(GitlabRestClient.class);
     bitbucketRestClient = Mockito.mock(BitbucketRestClient.class);
+    azureRepoRestClient = Mockito.mock(AzureRepoRestClient.class);
+    azureRepoServiceImpl = spy(new AzureRepoServiceImpl());
     githubServiceImpl = spy(new GithubServiceImpl());
     gitlabServiceImpl = spy(new GitlabServiceImpl());
     bitbucketServiceImpl = spy(new BitbucketServiceImpl());
     doReturn(githubRestClient).when(githubServiceImpl).getGithubClient(any());
     doReturn(gitlabRestClient).when(gitlabServiceImpl).getGitlabRestClient(any(), any());
     doReturn(bitbucketRestClient).when(bitbucketServiceImpl).getBitbucketClient(any(), any());
+    doReturn(azureRepoRestClient).when(azureRepoServiceImpl).getAzureRepoRestClient(any());
     on(ciBuildStatusPushTask).set("githubService", githubServiceImpl);
     on(ciBuildStatusPushTask).set("gitlabService", gitlabServiceImpl);
     on(ciBuildStatusPushTask).set("bitbucketService", bitbucketServiceImpl);
+    on(ciBuildStatusPushTask).set("azureRepoService", azureRepoServiceImpl);
   }
 
   @Test
@@ -133,6 +143,80 @@ public class CIBuildStatusPushTaskTest extends CategoryTest {
                                                                 .build());
 
     assertThat(buildStatusPushResponse.getStatus()).isEqualTo(Status.SUCCESS);
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  @Ignore("Recreate test object after pms integration")
+  public void testDelegatePushStatusForAzureRepo() throws IOException {
+    StatusCreationResponse statusCreationResponse = StatusCreationResponse.builder().build();
+    Call<StatusCreationResponse> statusCreationResponseCall = mock(Call.class);
+    when(statusCreationResponseCall.execute()).thenReturn(Response.success(statusCreationResponse));
+
+    when(azureRepoRestClient.createStatus(anyString(), anyString(), anyString(), anyString(), anyString(), anyMap()))
+        .thenReturn(statusCreationResponseCall);
+
+    BuildStatusPushResponse buildStatusPushResponse =
+        (BuildStatusPushResponse) ciBuildStatusPushTask.run(CIBuildStatusPushParameters.builder()
+                                                                .appId(APP_ID)
+                                                                .sha(SHA)
+                                                                .key(KEY)
+                                                                .identifier(IDENTIFIER)
+                                                                .buildNumber(BUILD_NUMBER)
+                                                                .installId(INSTALL_ID)
+                                                                .owner(OWNER)
+                                                                .userName(USERNAME)
+                                                                .gitSCMType(GitSCMType.AZURE_REPO)
+                                                                .token(TOKEN)
+                                                                .repo(AZURE_REPO)
+                                                                .state(STATE)
+                                                                .title(TITLE)
+                                                                .target_url(TARGET_URL)
+                                                                .desc(DESC)
+                                                                .build());
+
+    assertThat(buildStatusPushResponse.getStatus()).isEqualTo(Status.SUCCESS);
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testErrorStatePushStatusForAzureRepo() throws IOException {
+    Call<StatusCreationResponse> statusCreationResponseCall = mock(Call.class);
+    when(statusCreationResponseCall.execute())
+        .thenReturn(Response.error(ResponseBody.create(MediaType.parse("text/plain"), "MSG"),
+            new okhttp3.Response
+                .Builder()
+                .code(401)
+                .protocol(Protocol.HTTP_1_1)
+                .request(new Request.Builder().url("http://localhost/").build())
+                .message("err")
+                .build()));
+
+    when(azureRepoRestClient.createStatus(anyString(), anyString(), anyString(), anyString(), anyString(), anyMap()))
+        .thenReturn(statusCreationResponseCall);
+
+    BuildStatusPushResponse buildStatusPushResponse =
+        (BuildStatusPushResponse) ciBuildStatusPushTask.run(CIBuildStatusPushParameters.builder()
+                                                                .appId(APP_ID)
+                                                                .sha(SHA)
+                                                                .key(KEY)
+                                                                .identifier(IDENTIFIER)
+                                                                .buildNumber(BUILD_NUMBER)
+                                                                .installId(INSTALL_ID)
+                                                                .owner(OWNER)
+                                                                .userName(USERNAME)
+                                                                .gitSCMType(GitSCMType.AZURE_REPO)
+                                                                .token(TOKEN)
+                                                                .repo(AZURE_REPO)
+                                                                .state(STATE)
+                                                                .title(TITLE)
+                                                                .target_url(TARGET_URL)
+                                                                .desc(DESC)
+                                                                .build());
+
+    assertThat(buildStatusPushResponse.getStatus()).isEqualTo(Status.ERROR);
   }
 
   @Test

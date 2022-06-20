@@ -7,7 +7,6 @@
 
 package io.harness.ccm.migration;
 
-import com.google.inject.Inject;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.views.dao.CEViewFolderDao;
@@ -15,10 +14,11 @@ import io.harness.ccm.views.entities.CEViewFolder;
 import io.harness.ccm.views.entities.ViewType;
 import io.harness.migration.NGMigration;
 import io.harness.persistence.HPersistence;
+
+import com.google.inject.Inject;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.StringUtils;
-
-import java.util.List;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CE)

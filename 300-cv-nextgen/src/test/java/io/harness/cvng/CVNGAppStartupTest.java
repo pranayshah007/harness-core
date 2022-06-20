@@ -52,7 +52,7 @@ public class CVNGAppStartupTest extends CvNextGenTestBase {
   }
 
   @BeforeClass
-  public static void beforeClass() {
+  public static void beforeClass() throws Exception{
     MONGO_SERVER = startMongoServer();
     SUPPORT = new DropwizardTestSupport<>(VerificationApplication.class, getResourceFilePath("test-config.yml"),
         ConfigOverride.config("mongo.uri", getMongoUri()));

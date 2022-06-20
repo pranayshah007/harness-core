@@ -93,7 +93,6 @@ java_binary(
         "@maven//:io_swagger_swagger_annotations",
         "@maven//:javax_servlet_javax_servlet_api",
         "@maven//:javax_validation_validation_api",
-        "@maven//:javax_ws_rs_jsr311_api",
         "@maven//:net_jodah_failsafe",
         "@maven//:org_eclipse_jetty_jetty_servlets",
         "@maven//:org_glassfish_jersey_core_jersey_server",

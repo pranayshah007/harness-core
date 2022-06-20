@@ -26,6 +26,7 @@ import io.harness.ng.core.entities.Project.ProjectKeys;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.service.services.ServiceEntityService;
+import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.services.ProjectService;
 
 import com.google.inject.Inject;
@@ -45,15 +46,17 @@ public class ProjectEntityCRUDStreamListener implements MessageListener {
   private final ProjectService projectService;
   private final EnvironmentService environmentService;
   private final ServiceEntityService serviceEntityService;
+  private final ServiceOverrideService serviceOverrideService;
   private final InfrastructureEntityService infraService;
   private final ClusterService clusterService;
 
   @Inject
   public ProjectEntityCRUDStreamListener(ProjectService projectService, EnvironmentService environmentService,
-      InfrastructureEntityService infraService, ServiceEntityService serviceEntityService,
-      ClusterService clusterService) {
+      ServiceOverrideService serviceOverrideService, InfrastructureEntityService infraService,
+      ServiceEntityService serviceEntityService, ClusterService clusterService) {
     this.projectService = projectService;
     this.environmentService = environmentService;
+    this.serviceOverrideService = serviceOverrideService;
     this.serviceEntityService = serviceEntityService;
     this.infraService = infraService;
     this.clusterService = clusterService;
@@ -119,18 +122,20 @@ public class ProjectEntityCRUDStreamListener implements MessageListener {
   private boolean processProjectDeleteEvent(ProjectEntityChangeDTO projectEntityChangeDTO) {
     final String accountIdentifier = projectEntityChangeDTO.getAccountIdentifier();
     final String orgIdentifier = projectEntityChangeDTO.getOrgIdentifier();
-    final String identifier = projectEntityChangeDTO.getIdentifier();
+    final String projIdentifier = projectEntityChangeDTO.getIdentifier();
 
-    boolean envDeleted =
-        processQuietly(() -> environmentService.forceDeleteAllInProject(accountIdentifier, orgIdentifier, identifier));
+    boolean envDeleted = processQuietly(
+        () -> environmentService.forceDeleteAllInProject(accountIdentifier, orgIdentifier, projIdentifier));
     boolean infraDeleted =
-        processQuietly(() -> infraService.forceDeleteAllInProject(accountIdentifier, orgIdentifier, identifier));
+        processQuietly(() -> infraService.forceDeleteAllInProject(accountIdentifier, orgIdentifier, projIdentifier));
     boolean clustersDeleted =
-        processQuietly(() -> clusterService.deleteAllFromProj(accountIdentifier, orgIdentifier, identifier));
+        processQuietly(() -> clusterService.deleteAllFromProj(accountIdentifier, orgIdentifier, projIdentifier));
     boolean serviceDeleted = processQuietly(
-        () -> serviceEntityService.forceDeleteAllInProject(accountIdentifier, orgIdentifier, identifier));
+        () -> serviceEntityService.forceDeleteAllInProject(accountIdentifier, orgIdentifier, projIdentifier));
+    boolean serviceOverridesDeleted = processQuietly(
+        () -> serviceOverrideService.deleteAllInProject(accountIdentifier, orgIdentifier, projIdentifier));
 
-    return envDeleted && infraDeleted && serviceDeleted && clustersDeleted;
+    return envDeleted && infraDeleted && serviceDeleted && clustersDeleted && serviceOverridesDeleted;
   }
 
   boolean processQuietly(BooleanSupplier b) {

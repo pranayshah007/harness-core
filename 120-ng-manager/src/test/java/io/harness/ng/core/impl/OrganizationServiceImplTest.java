@@ -10,6 +10,7 @@ package io.harness.ng.core.impl;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.ng.core.remote.OrganizationMapper.toOrganization;
 import static io.harness.rule.OwnerRule.KARAN;
+import static io.harness.rule.OwnerRule.VIKAS_M;
 import static io.harness.utils.PageTestUtils.getPage;
 
 import static java.util.Collections.emptyList;
@@ -46,6 +47,7 @@ import io.harness.rule.Owner;
 import io.harness.security.SourcePrincipalContextData;
 import io.harness.security.dto.UserPrincipal;
 import io.harness.telemetry.helpers.OrganizationInstrumentationHelper;
+import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
 import io.dropwizard.jersey.validation.JerseyViolationException;
 import java.util.Collections;
@@ -60,6 +62,8 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.transaction.support.SimpleTransactionStatus;
+import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
 
 @OwnedBy(PL)
@@ -72,12 +76,13 @@ public class OrganizationServiceImplTest extends CategoryTest {
   @Mock private ScopeAccessHelper scopeAccessHelper;
   @Mock private OrganizationInstrumentationHelper instrumentationHelper;
   private OrganizationServiceImpl organizationService;
+  @Mock private NGFeatureFlagHelperService ngFeatureFlagHelperService;
 
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
     organizationService = spy(new OrganizationServiceImpl(organizationRepository, outboxService, transactionTemplate,
-        ngUserService, accessControlClient, scopeAccessHelper, instrumentationHelper));
+        ngUserService, accessControlClient, scopeAccessHelper, instrumentationHelper, ngFeatureFlagHelperService));
     when(scopeAccessHelper.getPermittedScopes(any())).then(returnsFirstArg());
   }
 
@@ -189,5 +194,62 @@ public class OrganizationServiceImplTest extends CategoryTest {
     assertTrue(criteriaObject.containsKey(OrganizationKeys.deleted));
 
     assertEquals(0, organizationPage.getTotalElements());
+  }
+
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void testDelete() {
+    String accountIdentifier = randomAlphabetic(10);
+    String identifier = randomAlphabetic(10);
+    Long version = 0L;
+    OrganizationDTO organizationDTO = createOrganizationDTO(identifier);
+    Organization organization = toOrganization(organizationDTO);
+    organization.setAccountIdentifier(accountIdentifier);
+    organization.setIdentifier(identifier);
+    ArgumentCaptor<String> argumentCaptor = ArgumentCaptor.forClass(String.class);
+
+    when(organizationRepository.delete(any(), any(), any())).thenReturn(organization);
+    when(ngFeatureFlagHelperService.isEnabled(any(), any())).thenReturn(false);
+    when(transactionTemplate.execute(any()))
+        .thenAnswer(invocationOnMock
+            -> invocationOnMock.getArgument(0, TransactionCallback.class)
+                   .doInTransaction(new SimpleTransactionStatus()));
+
+    organizationService.delete(accountIdentifier, identifier, version);
+    verify(organizationRepository, times(1)).delete(any(), argumentCaptor.capture(), any());
+    assertEquals(identifier, argumentCaptor.getValue());
+    verify(transactionTemplate, times(1)).execute(any());
+    verify(outboxService, times(1)).save(any());
+  }
+
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void testHardDelete() {
+    String accountIdentifier = randomAlphabetic(10);
+    String identifier = randomAlphabetic(10);
+    Long version = 0L;
+    OrganizationDTO organizationDTO = createOrganizationDTO(identifier);
+    Organization organization = toOrganization(organizationDTO);
+    organization.setAccountIdentifier(accountIdentifier);
+    organization.setIdentifier(identifier);
+    ArgumentCaptor<String> argumentCaptor = ArgumentCaptor.forClass(String.class);
+
+    when(organizationRepository.delete(any(), any(), any())).thenReturn(organization);
+    when(ngFeatureFlagHelperService.isEnabled(any(), any())).thenReturn(true);
+    when(transactionTemplate.execute(any()))
+        .thenAnswer(invocationOnMock
+            -> invocationOnMock.getArgument(0, TransactionCallback.class)
+                   .doInTransaction(new SimpleTransactionStatus()));
+    when(organizationRepository.hardDelete(any(), any(), any())).thenReturn(true);
+
+    organizationService.delete(accountIdentifier, identifier, version);
+    verify(organizationRepository, times(1)).hardDelete(any(), argumentCaptor.capture(), any());
+    assertEquals(identifier, argumentCaptor.getValue());
+    verify(organizationRepository, times(1)).delete(any(), argumentCaptor.capture(), any());
+    assertEquals(identifier, argumentCaptor.getValue());
+    verify(transactionTemplate, times(1)).execute(any());
+    verify(outboxService, times(1)).save(any());
   }
 }
