@@ -13,7 +13,8 @@ import org.springframework.data.annotation.TypeAlias;
 
 @Value
 @Builder
-@TypeAlias("io.harness.connector.entities.embedded.gitlabconnector.GitlabTokenApiAccess")
-public class GitlabTokenApiAccess implements GitlabApiAccess {
+@TypeAlias("io.harness.connector.entities.embedded.gitlabconnector.GitlabOauth")
+public class GitlabOauth implements GitlabHttpAuth, GitlabApiAccess {
   String tokenRef;
+  String refreshTokenRef;
 }

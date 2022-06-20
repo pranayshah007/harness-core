@@ -591,14 +591,19 @@ public class DelegateServiceImpl implements DelegateService {
   }
 
   @Override
-  public Double getConnectedRatioWithPrimary(String targetVersion, String accountId) {
+  public Double getConnectedRatioWithPrimary(String targetVersion, String accountId, String ringName) {
     targetVersion = Arrays.stream(targetVersion.split("-")).findFirst().get();
 
-    String primaryDelegateForAccount = StringUtils.isEmpty(accountId) ? Account.GLOBAL_ACCOUNT_ID : accountId;
+    List<String> delegateVersions;
+    if (isNotEmpty(ringName)) {
+      delegateVersions = delegateVersionService.getDelegateJarVersions(ringName, accountId);
+    } else {
+      String primaryDelegateForAccount = StringUtils.isEmpty(accountId) ? Account.GLOBAL_ACCOUNT_ID : accountId;
+      DelegateConfiguration delegateConfiguration = accountService.getDelegateConfiguration(primaryDelegateForAccount);
+      delegateVersions = delegateConfiguration.getDelegateVersions();
+    }
 
-    DelegateConfiguration delegateConfiguration = accountService.getDelegateConfiguration(primaryDelegateForAccount);
-
-    String primaryVersion = delegateConfiguration.getDelegateVersions().get(0).split("-")[0];
+    String primaryVersion = delegateVersions.get(0).split("-")[0];
     long primary = delegateConnectionDao.numberOfActiveDelegateConnectionsPerVersion(primaryVersion, accountId);
 
     // If we do not have any delegates in the primary version, lets unblock the deployment,
