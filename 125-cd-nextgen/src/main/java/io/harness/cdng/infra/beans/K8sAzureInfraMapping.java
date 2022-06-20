@@ -31,4 +31,5 @@ public class K8sAzureInfraMapping implements InfraMapping {
   private String cluster;
   private String subscription;
   private String resourceGroup;
+  private Boolean useClusterAdminCredentials;
 }

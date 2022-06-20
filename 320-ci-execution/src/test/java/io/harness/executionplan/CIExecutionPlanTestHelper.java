@@ -111,6 +111,11 @@ import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoHttpAuthenticationType;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoHttpCredentialsDTO;
 import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoUsernameTokenDTO;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketAuthenticationDTO;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketHttpAuthenticationType;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketHttpCredentialsDTO;
+import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketUsernamePasswordDTO;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitHTTPAuthenticationDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubAuthenticationDTO;
@@ -118,6 +123,11 @@ import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubHttpAuthenticationType;
 import io.harness.delegate.beans.connector.scm.github.GithubHttpCredentialsDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubUsernamePasswordDTO;
+import io.harness.delegate.beans.connector.scm.gitlab.GitlabAuthenticationDTO;
+import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
+import io.harness.delegate.beans.connector.scm.gitlab.GitlabHttpAuthenticationType;
+import io.harness.delegate.beans.connector.scm.gitlab.GitlabHttpCredentialsDTO;
+import io.harness.delegate.beans.connector.scm.gitlab.GitlabUsernamePasswordDTO;
 import io.harness.encryption.Scope;
 import io.harness.encryption.SecretRefData;
 import io.harness.k8s.model.ImageDetails;
@@ -167,6 +177,11 @@ public class CIExecutionPlanTestHelper {
   private static final String PLUGIN_STEP_IMAGE = "plugins/git";
   private static final String PLUGIN_STEP_ID = "step-3";
   private static final String PLUGIN_STEP_NAME = "plugin step";
+
+  private static final String RUN_TESTS_STEP_IMAGE = "maven:3.6.3-jdk-8";
+  private static final String RUN_TESTS_STEP_CONNECTOR = "runTestsCon";
+  private static final String RUN_TESTS_STEP_ID = "step-4";
+  private static final String RUN_TESTS_STEP_NAME = "run test with intelligence";
 
   private static final Integer PLUGIN_STEP_LIMIT_MEM = 50;
   private static final Integer PLUGIN_STEP_LIMIT_CPU = 100;
@@ -236,6 +251,11 @@ public class CIExecutionPlanTestHelper {
     return buildConnector(connectorInfo);
   }
 
+  public ConnectorDetails getGithubConnector() {
+    ConnectorInfoDTO connectorInfo = getGitHubConnectorDTO().getConnectorInfo();
+    return buildConnector(connectorInfo);
+  }
+
   public ConnectorDetails getGitLabConnector() {
     ConnectorInfoDTO connectorInfo = getGitLabConnectorDTO().getConnectorInfo();
     return buildConnector(connectorInfo);
@@ -243,6 +263,11 @@ public class CIExecutionPlanTestHelper {
 
   public ConnectorDetails getBitBucketConnector() {
     ConnectorInfoDTO connectorInfo = getBitbucketConnectorDTO().getConnectorInfo();
+    return buildConnector(connectorInfo);
+  }
+
+  public ConnectorDetails getCodeCommitConnector() {
+    ConnectorInfoDTO connectorInfo = getAwsCodeCommitConnectorDTO().getConnectorInfo();
     return buildConnector(connectorInfo);
   }
 
@@ -499,7 +524,8 @@ public class CIExecutionPlanTestHelper {
 
   public List<ExecutionWrapperConfig> getExecutionWrapperConfigList() {
     return newArrayList(ExecutionWrapperConfig.builder().step(getGitCloneStepElementConfigAsJsonNode()).build(),
-        ExecutionWrapperConfig.builder().parallel(getRunAndPluginStepsInParallelAsJsonNode()).build());
+        ExecutionWrapperConfig.builder().parallel(getRunAndPluginStepsInParallelAsJsonNode()).build(),
+        ExecutionWrapperConfig.builder().step(getRunTestsStepElementConfigAsJsonNode()).build());
   }
 
   private DependencyElement getServiceDependencyElement() {
@@ -789,6 +815,27 @@ public class CIExecutionPlanTestHelper {
     return stepElementConfig;
   }
 
+  private JsonNode getRunTestsStepElementConfigAsJsonNode() {
+    ObjectMapper mapper = new ObjectMapper();
+    ObjectNode stepElementConfig = mapper.createObjectNode();
+    stepElementConfig.put("identifier", RUN_TESTS_STEP_ID);
+
+    stepElementConfig.put("type", "RunTests");
+    stepElementConfig.put("name", RUN_TESTS_STEP_IMAGE);
+
+    ObjectNode stepSpecType = mapper.createObjectNode();
+    stepSpecType.put("identifier", RUN_TESTS_STEP_ID);
+    stepSpecType.put("name", RUN_TESTS_STEP_NAME);
+    stepSpecType.put("command", "--bazelrc=bazelrc.remote test");
+    stepSpecType.put("image", RUN_TESTS_STEP_IMAGE);
+    stepSpecType.put("connectorRef", RUN_TESTS_STEP_CONNECTOR);
+    stepSpecType.put("language", "Java");
+    stepSpecType.put("buildTool", "Maven");
+
+    stepElementConfig.set("spec", stepSpecType);
+    return stepElementConfig;
+  }
+
   private JsonNode getPluginStepElementConfigAsJsonNode() {
     ObjectMapper mapper = new ObjectMapper();
     ObjectNode stepElementConfig = mapper.createObjectNode();
@@ -1060,20 +1107,20 @@ public class CIExecutionPlanTestHelper {
         .connectorInfo(ConnectorInfoDTO.builder()
                            .name("gitLabConnector")
                            .identifier("gitLabConnector")
-                           .connectorType(ConnectorType.GIT)
-                           .connectorConfig(GitConfigDTO.builder()
-                                                .url("https://gitlab.com/harshjain123/springboot.git")
-                                                .branchName("master")
-                                                .gitAuthType(GitAuthType.HTTP)
-                                                .gitAuth(GitHTTPAuthenticationDTO.builder()
-                                                             .username("username")
-                                                             .passwordRef(SecretRefData.builder()
-                                                                              .identifier("gitPassword")
-                                                                              .scope(Scope.ACCOUNT)
-                                                                              .decryptedValue("password".toCharArray())
-                                                                              .build())
-                                                             .build())
-                                                .build())
+                           .connectorType(ConnectorType.GITLAB)
+                           .connectorConfig(GitlabConnectorDTO.builder()
+                                   .connectionType(GitConnectionType.REPO)
+                                   .authentication(
+                                           GitlabAuthenticationDTO.builder()
+                                                   .authType(GitAuthType.HTTP)
+                                                   .credentials(GitlabHttpCredentialsDTO.builder()
+                                                           .type(GitlabHttpAuthenticationType.USERNAME_AND_PASSWORD)
+                                                           .httpCredentialsSpec(GitlabUsernamePasswordDTO.builder()
+                                                                   .build())
+                                                           .build())
+                                                   .build()
+                                   )
+                                   .build())
                            .build())
         .build();
   }
@@ -1083,20 +1130,20 @@ public class CIExecutionPlanTestHelper {
         .connectorInfo(ConnectorInfoDTO.builder()
                            .name("bitBucketConnector")
                            .identifier("bitBucketConnector")
-                           .connectorType(ConnectorType.GIT)
-                           .connectorConfig(GitConfigDTO.builder()
-                                                .url("https://harshjain12@bitbucket.org/harshjain12/springboot.git")
-                                                .branchName("master")
-                                                .gitAuthType(GitAuthType.HTTP)
-                                                .gitAuth(GitHTTPAuthenticationDTO.builder()
-                                                             .username("username")
-                                                             .passwordRef(SecretRefData.builder()
-                                                                              .identifier("gitPassword")
-                                                                              .scope(Scope.ACCOUNT)
-                                                                              .decryptedValue("password".toCharArray())
-                                                                              .build())
-                                                             .build())
-                                                .build())
+                           .connectorType(ConnectorType.BITBUCKET)
+                           .connectorConfig(BitbucketConnectorDTO.builder()
+                                   .connectionType(GitConnectionType.REPO)
+                                   .authentication(
+                                           BitbucketAuthenticationDTO.builder()
+                                                   .authType(GitAuthType.HTTP)
+                                                   .credentials(BitbucketHttpCredentialsDTO.builder()
+                                                           .type(BitbucketHttpAuthenticationType.USERNAME_AND_PASSWORD)
+                                                           .httpCredentialsSpec(BitbucketUsernamePasswordDTO.builder()
+                                                                   .build())
+                                                           .build())
+                                                   .build()
+                                   )
+                                   .build())
                            .build())
         .build();
   }

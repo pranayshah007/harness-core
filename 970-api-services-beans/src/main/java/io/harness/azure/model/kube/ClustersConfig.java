@@ -20,4 +20,5 @@ import lombok.NoArgsConstructor;
 @OwnedBy(HarnessTeam.CDP)
 public class ClustersConfig {
   private ClusterConfig cluster;
+  private String name;
 }

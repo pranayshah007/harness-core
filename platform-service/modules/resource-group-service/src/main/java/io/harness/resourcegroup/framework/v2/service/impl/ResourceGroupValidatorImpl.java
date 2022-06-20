@@ -156,7 +156,8 @@ public class ResourceGroupValidatorImpl implements ResourceGroupValidator {
             throw new InvalidRequestException("Cannot provide specific resources when you include attribute filter");
           }
 
-          boolean isValidAttributeFilter = resourceMap.get(resourceSelector.getResourceType()).isValidAttributeFilter(resourceSelector.getAttributeFilter());
+          boolean isValidAttributeFilter = resourceMap.get(resourceSelector.getResourceType())
+                                               .isValidAttributeFilter(resourceSelector.getAttributeFilter());
           if (!isValidAttributeFilter) {
             throw new InvalidRequestException("Invalid attribute filter");
           }

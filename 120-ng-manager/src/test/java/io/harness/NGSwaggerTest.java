@@ -74,7 +74,7 @@ public class NGSwaggerTest extends CategoryTest {
   }
 
   @BeforeClass
-  public static void beforeClass() {
+  public static void beforeClass() throws Exception{
     if (!Objects.equals("true", System.getProperty(CONDITIONAL_ON_ENV))) {
       return;
     }

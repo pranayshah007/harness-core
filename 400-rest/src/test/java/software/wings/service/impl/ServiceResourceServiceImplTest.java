@@ -21,16 +21,22 @@ import static io.harness.rule.OwnerRule.MILOS;
 import static io.harness.rule.OwnerRule.POOJA;
 import static io.harness.rule.OwnerRule.RAMA;
 import static io.harness.rule.OwnerRule.ROHITKARELIA;
+import static io.harness.rule.OwnerRule.TARUN_UBA;
 import static io.harness.rule.OwnerRule.TATHAGAT;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
 import static io.harness.rule.OwnerRule.YOGESH;
 
+import static software.wings.api.DeploymentType.AMI;
 import static software.wings.api.DeploymentType.AWS_CODEDEPLOY;
+import static software.wings.api.DeploymentType.AWS_LAMBDA;
+import static software.wings.api.DeploymentType.AZURE_VMSS;
 import static software.wings.api.DeploymentType.CUSTOM;
+import static software.wings.api.DeploymentType.ECS;
 import static software.wings.api.DeploymentType.HELM;
 import static software.wings.api.DeploymentType.KUBERNETES;
 import static software.wings.api.DeploymentType.PCF;
 import static software.wings.api.DeploymentType.SSH;
+import static software.wings.api.DeploymentType.WINRM;
 import static software.wings.beans.HelmCommandFlagConstants.HelmSubCommand.DELETE;
 import static software.wings.beans.HelmCommandFlagConstants.HelmSubCommand.FETCH;
 import static software.wings.beans.HelmCommandFlagConstants.HelmSubCommand.HISTORY;
@@ -55,6 +61,7 @@ import static software.wings.utils.WingsTestConstants.TEMPLATE_ID;
 import static java.util.Arrays.asList;
 import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
@@ -130,6 +137,7 @@ import java.util.stream.Collectors;
 import javax.ws.rs.core.AbstractMultivaluedMap;
 import javax.ws.rs.core.UriInfo;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -1135,5 +1143,91 @@ public class ServiceResourceServiceImplTest extends WingsBaseTest {
     k8sService.setDeploymentType(KUBERNETES);
     spyServiceResourceService.checkAndSetServiceAsK8sV2(k8sService);
     assertThat(k8sService.isK8sV2()).isTrue();
+  }
+
+  @Test
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
+  public void testSaveForArtifactTypeValidation() {
+    when(appService.getAccountIdByAppId(APP_ID)).thenReturn(ACCOUNT_ID);
+    when(featureFlagService.isEnabled(FeatureName.HARNESS_TAGS, ACCOUNT_ID)).thenReturn(true);
+    when(limitCheckerFactory.getInstance(new Action(anyString(), ActionType.CREATE_SERVICE)))
+        .thenReturn(new MockChecker(true, ActionType.CREATE_SERVICE));
+    when(applicationManifestService.create(any()))
+        .thenReturn(ApplicationManifest.builder().storeType(StoreType.Local).build());
+
+    doNothing().when(auditServiceHelper).addEntityOperationIdentifierDataToAuditContext(any());
+    doNothing().when(notificationService).sendNotificationAsync(any());
+
+    List<Service> services = generateTestServicesData();
+    services.forEach(service -> assertThatCode(() -> serviceResourceService.save(service)).doesNotThrowAnyException());
+  }
+
+  @Test
+  @Owner(developers = TARUN_UBA)
+  @Category(UnitTests.class)
+  public void testSaveForArtifactTypevalidationFail() {
+    when(appService.getAccountIdByAppId(APP_ID)).thenReturn(ACCOUNT_ID);
+    when(featureFlagService.isEnabled(FeatureName.HARNESS_TAGS, ACCOUNT_ID)).thenReturn(true);
+    when(limitCheckerFactory.getInstance(new Action(anyString(), ActionType.CREATE_SERVICE)))
+        .thenReturn(new MockChecker(true, ActionType.CREATE_SERVICE));
+    when(applicationManifestService.create(any()))
+        .thenReturn(ApplicationManifest.builder().storeType(StoreType.Local).build());
+
+    doNothing().when(auditServiceHelper).addEntityOperationIdentifierDataToAuditContext(any());
+    doNothing().when(notificationService).sendNotificationAsync(any());
+
+    final Map<Service, String> servicesData = getTestInvalidServicesData();
+    servicesData.forEach((service, message)
+                             -> assertThatThrownBy(() -> serviceResourceService.save(service))
+                                    .isInstanceOf(InvalidRequestException.class)
+                                    .hasMessageContaining(message));
+  }
+
+  @NotNull
+  private List<Service> generateTestServicesData() {
+    List<Service> services = new ArrayList<>();
+    services.add(buildService(KUBERNETES, ArtifactType.DOCKER));
+    services.add(buildService(HELM, ArtifactType.DOCKER));
+    services.add(buildService(ECS, ArtifactType.DOCKER));
+    services.add(buildService(AWS_CODEDEPLOY, ArtifactType.AWS_CODEDEPLOY));
+    services.add(buildService(AWS_LAMBDA, ArtifactType.AWS_LAMBDA));
+    services.add(buildService(AMI, ArtifactType.AMI));
+    services.add(buildService(PCF, ArtifactType.PCF));
+    services.add(buildService(SSH, ArtifactType.NUGET));
+    services.add(buildService(WINRM, ArtifactType.NUGET));
+    services.add(buildService(AZURE_VMSS, ArtifactType.AZURE_MACHINE_IMAGE));
+    services.add(buildService(CUSTOM, ArtifactType.OTHER));
+    return services;
+  }
+
+  @NotNull
+  private Map<Service, String> getTestInvalidServicesData() {
+    Map<Service, String> services = new HashMap<>();
+    services.put(buildService(KUBERNETES, ArtifactType.NUGET),
+        "Only DOCKER artifactType allowed for KUBERNETES Deployment Type");
+    services.put(buildService(HELM, ArtifactType.AMI), "Only DOCKER artifactType allowed for HELM Deployment Type");
+    services.put(buildService(ECS, ArtifactType.AMI),
+        "Only DOCKER artifactType allowed for Amazon EC2 Container Services (ECS) Deployment Type");
+    services.put(buildService(AWS_CODEDEPLOY, ArtifactType.AWS_LAMBDA),
+        "Only AWS_CODEDEPLOY artifactType allowed for AWS CODEDEPLOY Deployment Type");
+    services.put(buildService(AWS_LAMBDA, ArtifactType.AMI),
+        "Only AWS_LAMBDA artifactType allowed for AWS Lambda Deployment Type");
+    services.put(buildService(AMI, ArtifactType.DOCKER), "Only AMI artifactType allowed for AMI Deployment Type");
+    services.put(buildService(PCF, ArtifactType.OTHER),
+        "Only PCF artifactType allowed for Tanzu Application Services Deployment Type");
+    services.put(buildService(AZURE_VMSS, ArtifactType.OTHER),
+        "Only AZURE_MACHINE_IMAGE artifactType allowed for Azure Virtual Machine Scale Set Deployment Type");
+    return services;
+  }
+
+  private Service buildService(DeploymentType deploymentType, ArtifactType artifactType) {
+    return Service.builder()
+        .appId(APP_ID)
+        .name(SERVICE_NAME)
+        .accountId(ACCOUNT_ID)
+        .deploymentType(deploymentType)
+        .artifactType(artifactType)
+        .build();
   }
 }

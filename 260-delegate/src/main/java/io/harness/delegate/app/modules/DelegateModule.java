@@ -53,6 +53,8 @@ import io.harness.cdng.secrets.tasks.SSHConfigValidationDelegateTask;
 import io.harness.cdng.secrets.tasks.WinRmConfigValidationDelegateTask;
 import io.harness.cistatus.service.GithubService;
 import io.harness.cistatus.service.GithubServiceImpl;
+import io.harness.cistatus.service.azurerepo.AzureRepoService;
+import io.harness.cistatus.service.azurerepo.AzureRepoServiceImpl;
 import io.harness.cistatus.service.bitbucket.BitbucketService;
 import io.harness.cistatus.service.bitbucket.BitbucketServiceImpl;
 import io.harness.cistatus.service.gitlab.GitlabService;
@@ -1166,6 +1168,7 @@ public class DelegateModule extends AbstractModule {
     bind(GithubService.class).to(GithubServiceImpl.class);
     bind(GitlabService.class).to(GitlabServiceImpl.class);
     bind(BitbucketService.class).to(BitbucketServiceImpl.class);
+    bind(AzureRepoService.class).to(AzureRepoServiceImpl.class);
     bind(DockerRestClientFactory.class).to(DockerRestClientFactoryImpl.class);
 
     MapBinder<Class<? extends ArtifactSourceDelegateRequest>, Class<? extends DelegateArtifactTaskHandler>>

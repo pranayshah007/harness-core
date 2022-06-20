@@ -94,6 +94,10 @@ io.harness.plancreator.steps.barrier.BarrierStepNode
 io.harness.steps.shellscript.ShellScriptStepNode
 io.harness.steps.template.TemplateStepNode
 io.harness.steps.template.stage.TemplateStageNode
+io.harness.ci.pipeline.executions.beans.CIImageDetails
+io.harness.ci.pipeline.executions.beans.CIInfraDetails
+io.harness.ci.pipeline.executions.beans.CIScmDetails
+io.harness.ci.pipeline.executions.beans.TIBuildDetails
 io.harness.ci.stdvars.BuildStandardVariables
 io.harness.steps.jira.JiraIssueOutcome
 io.harness.steps.jira.create.JiraCreateSpecParameters

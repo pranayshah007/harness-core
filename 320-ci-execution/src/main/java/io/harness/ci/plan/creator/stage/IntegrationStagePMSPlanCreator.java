@@ -247,6 +247,7 @@ public class IntegrationStagePMSPlanCreator extends GenericStagePlanCreator {
       return BuildStatusUpdateParameter.builder()
           .sha(sha)
           .connectorIdentifier(codeBase.getConnectorRef().getValue())
+          .projectName(codeBase.getProjectName().getValue())
           .repoName(codeBase.getRepoName().getValue())
           .name(stageElementConfig.getName())
           .identifier(stageElementConfig.getIdentifier())
@@ -254,6 +255,7 @@ public class IntegrationStagePMSPlanCreator extends GenericStagePlanCreator {
     } else {
       return BuildStatusUpdateParameter.builder()
           .connectorIdentifier(codeBase.getConnectorRef().getValue())
+          .projectName(codeBase.getProjectName().getValue())
           .repoName(codeBase.getRepoName().getValue())
           .name(stageElementConfig.getName())
           .identifier(stageElementConfig.getIdentifier())
