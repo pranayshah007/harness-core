@@ -16,7 +16,9 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.PageRequestDTO;
 import io.harness.beans.Scope;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
+import io.harness.gitsync.beans.GitConnectivityParams;
 import io.harness.gitsync.beans.GitRepositoryDTO;
+import io.harness.gitsync.beans.GitRepositoryDTO.GitRepositoryDTOBuilder;
 import io.harness.gitsync.common.beans.ScmApis;
 import io.harness.gitsync.common.dtos.CreateGitFileRequestDTO;
 import io.harness.gitsync.common.dtos.GitBranchDetailsDTO;
@@ -74,10 +76,14 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
 
   @Override
   public List<GitRepositoryResponseDTO> listReposByRefConnector(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, String connectorRef, PageRequest pageRequest, String searchTerm) {
+      String projectIdentifier, String connectorRef, PageRequest pageRequest, String searchTerm,
+      GitConnectivityParams gitConnectivityParams) {
     ScmConnector scmConnector =
         gitSyncConnectorHelper.getScmConnector(accountIdentifier, orgIdentifier, projectIdentifier, connectorRef);
-
+    if (gitConnectivityParams != null) {
+      scmConnector.setGitConnectionUrl(scmConnector.getGitConnectionUrl(
+          GitRepositoryDTO.builder().projectName(gitConnectivityParams.getRepositoryProjectName()).build()));
+    }
     GetUserReposResponse response = scmOrchestratorService.processScmRequestUsingConnectorSettings(
         scmClientFacilitatorService
         -> scmClientFacilitatorService.listUserRepos(accountIdentifier, orgIdentifier, projectIdentifier, scmConnector,
@@ -113,9 +119,14 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
 
   @Override
   public GitBranchesResponseDTO listBranchesV2(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      String connectorRef, String repoName, PageRequest pageRequest, String searchTerm) {
+      String connectorRef, String repoName, PageRequest pageRequest, String searchTerm,
+      GitConnectivityParams gitConnectivityParams) {
+    GitRepositoryDTOBuilder gitRepositoryDTOBuilder = GitRepositoryDTO.builder().name(repoName);
+    if (gitConnectivityParams != null) {
+      gitRepositoryDTOBuilder.projectName(gitConnectivityParams.getRepositoryProjectName());
+    }
     final ScmConnector scmConnector = gitSyncConnectorHelper.getScmConnectorForGivenRepo(
-        accountIdentifier, orgIdentifier, projectIdentifier, connectorRef, repoName);
+        accountIdentifier, orgIdentifier, projectIdentifier, connectorRef, gitRepositoryDTOBuilder.build());
     ListBranchesWithDefaultResponse listBranchesWithDefaultResponse =
         scmOrchestratorService.processScmRequestUsingConnectorSettings(scmClientFacilitatorService
             -> scmClientFacilitatorService.listBranches(accountIdentifier, orgIdentifier, projectIdentifier,
@@ -149,17 +160,25 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
     Scope scope = scmGetFileByBranchRequestDTO.getScope();
     String branchName = isEmpty(scmGetFileByBranchRequestDTO.getBranchName())
         ? getDefaultBranch(scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(),
-            scmGetFileByBranchRequestDTO.getConnectorRef(), scmGetFileByBranchRequestDTO.getRepoName())
+            scmGetFileByBranchRequestDTO.getConnectorRef(), scmGetFileByBranchRequestDTO.getRepoName(),
+            scmGetFileByBranchRequestDTO.getGitConnectivityParams())
         : scmGetFileByBranchRequestDTO.getBranchName();
+
+    GitRepositoryDTOBuilder gitRepositoryDTOBuilder =
+        GitRepositoryDTO.builder().name(scmGetFileByBranchRequestDTO.getRepoName());
+    if (scmGetFileByBranchRequestDTO.getGitConnectivityParams() != null) {
+      gitRepositoryDTOBuilder.projectName(
+          scmGetFileByBranchRequestDTO.getGitConnectivityParams().getRepositoryProjectName());
+    }
 
     ScmConnector scmConnector = gitSyncConnectorHelper.getScmConnectorForGivenRepo(scope.getAccountIdentifier(),
         scope.getOrgIdentifier(), scope.getProjectIdentifier(), scmGetFileByBranchRequestDTO.getConnectorRef(),
-        scmGetFileByBranchRequestDTO.getRepoName());
+        gitRepositoryDTOBuilder.build());
 
     FileContent fileContent = scmOrchestratorService.processScmRequestUsingConnectorSettings(scmClientFacilitatorService
         -> scmClientFacilitatorService.getFile(scope.getAccountIdentifier(), scope.getOrgIdentifier(),
-            scope.getProjectIdentifier(), scmGetFileByBranchRequestDTO.getConnectorRef(),
-            scmGetFileByBranchRequestDTO.getRepoName(), branchName, scmGetFileByBranchRequestDTO.getFilePath(), null),
+            scope.getProjectIdentifier(), scmConnector, scmGetFileByBranchRequestDTO.getRepoName(), branchName,
+            scmGetFileByBranchRequestDTO.getFilePath(), null),
         scmConnector);
 
     if (isFailureResponse(fileContent.getStatus())) {
@@ -185,9 +204,15 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
   public ScmCommitFileResponseDTO createFile(ScmCreateFileRequestDTO scmCreateFileRequestDTO) {
     Scope scope = scmCreateFileRequestDTO.getScope();
     // TODO Put validations over request here
-    ScmConnector scmConnector = gitSyncConnectorHelper.getScmConnectorForGivenRepo(scope.getAccountIdentifier(),
-        scope.getOrgIdentifier(), scope.getProjectIdentifier(), scmCreateFileRequestDTO.getConnectorRef(),
-        scmCreateFileRequestDTO.getRepoName());
+    GitRepositoryDTOBuilder gitRepositoryDTOBuilder =
+        GitRepositoryDTO.builder().name(scmCreateFileRequestDTO.getRepoName());
+    if (scmCreateFileRequestDTO.getGitConnectivityParams() != null) {
+      gitRepositoryDTOBuilder.projectName(
+          scmCreateFileRequestDTO.getGitConnectivityParams().getRepositoryProjectName());
+    }
+    ScmConnector scmConnector =
+        gitSyncConnectorHelper.getScmConnectorForGivenRepo(scope.getAccountIdentifier(), scope.getOrgIdentifier(),
+            scope.getProjectIdentifier(), scmCreateFileRequestDTO.getConnectorRef(), gitRepositoryDTOBuilder.build());
 
     if (scmCreateFileRequestDTO.isCommitToNewBranch()) {
       createNewBranch(
@@ -226,10 +251,16 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
   @Override
   public ScmCommitFileResponseDTO updateFile(ScmUpdateFileRequestDTO scmUpdateFileRequestDTO) {
     Scope scope = scmUpdateFileRequestDTO.getScope();
+    GitRepositoryDTOBuilder gitRepositoryDTOBuilder =
+        GitRepositoryDTO.builder().name(scmUpdateFileRequestDTO.getRepoName());
+    if (scmUpdateFileRequestDTO.getGitConnectivityParams() != null) {
+      gitRepositoryDTOBuilder.projectName(
+          scmUpdateFileRequestDTO.getGitConnectivityParams().getRepositoryProjectName());
+    }
     // TODO Put validations over request here
-    ScmConnector scmConnector = gitSyncConnectorHelper.getScmConnectorForGivenRepo(scope.getAccountIdentifier(),
-        scope.getOrgIdentifier(), scope.getProjectIdentifier(), scmUpdateFileRequestDTO.getConnectorRef(),
-        scmUpdateFileRequestDTO.getRepoName());
+    ScmConnector scmConnector =
+        gitSyncConnectorHelper.getScmConnectorForGivenRepo(scope.getAccountIdentifier(), scope.getOrgIdentifier(),
+            scope.getProjectIdentifier(), scmUpdateFileRequestDTO.getConnectorRef(), gitRepositoryDTOBuilder.build());
 
     if (scmUpdateFileRequestDTO.isCommitToNewBranch()) {
       createNewBranch(
@@ -270,15 +301,20 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
   @Override
   public ScmCreatePRResponseDTO createPR(ScmCreatePRRequestDTO scmCreatePRRequestDTO) {
     Scope scope = scmCreatePRRequestDTO.getScope();
+    GitRepositoryDTOBuilder gitRepositoryDTOBuilder =
+        GitRepositoryDTO.builder().name(scmCreatePRRequestDTO.getRepoName());
+    if (scmCreatePRRequestDTO.getGitConnectivityParams() != null) {
+      gitRepositoryDTOBuilder.projectName(scmCreatePRRequestDTO.getGitConnectivityParams().getRepositoryProjectName());
+    }
     ScmConnector scmConnector =
         gitSyncConnectorHelper.getScmConnectorForGivenRepo(scope.getAccountIdentifier(), scope.getOrgIdentifier(),
-            scope.getProjectIdentifier(), scmCreatePRRequestDTO.getConnectorRef(), scmCreatePRRequestDTO.getRepoName());
+            scope.getProjectIdentifier(), scmCreatePRRequestDTO.getConnectorRef(), gitRepositoryDTOBuilder.build());
 
     CreatePRResponse createPRResponse =
         scmOrchestratorService.processScmRequestUsingConnectorSettings(scmClientFacilitatorService
-            -> scmClientFacilitatorService.createPullRequest(scope, scmCreatePRRequestDTO.getConnectorRef(),
-                scmCreatePRRequestDTO.getRepoName(), scmCreatePRRequestDTO.getSourceBranch(),
-                scmCreatePRRequestDTO.getTargetBranch(), scmCreatePRRequestDTO.getTitle()),
+            -> scmClientFacilitatorService.createPullRequest(scope, scmConnector, scmCreatePRRequestDTO.getRepoName(),
+                scmCreatePRRequestDTO.getSourceBranch(), scmCreatePRRequestDTO.getTargetBranch(),
+                scmCreatePRRequestDTO.getTitle()),
             scmConnector);
 
     if (isFailureResponse(createPRResponse.getStatus())) {
@@ -298,16 +334,21 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
   @Override
   public ScmGetFileResponseDTO getFileByCommitId(ScmGetFileByCommitIdRequestDTO scmGetFileByCommitIdRequestDTO) {
     Scope scope = scmGetFileByCommitIdRequestDTO.getScope();
+    GitRepositoryDTOBuilder gitRepositoryDTOBuilder =
+        GitRepositoryDTO.builder().name(scmGetFileByCommitIdRequestDTO.getRepoName());
+    if (scmGetFileByCommitIdRequestDTO.getGitConnectivityParams() != null) {
+      gitRepositoryDTOBuilder.projectName(
+          scmGetFileByCommitIdRequestDTO.getGitConnectivityParams().getRepositoryProjectName());
+    }
 
     ScmConnector scmConnector = gitSyncConnectorHelper.getScmConnectorForGivenRepo(scope.getAccountIdentifier(),
         scope.getOrgIdentifier(), scope.getProjectIdentifier(), scmGetFileByCommitIdRequestDTO.getConnectorRef(),
-        scmGetFileByCommitIdRequestDTO.getRepoName());
+        gitRepositoryDTOBuilder.build());
 
     FileContent fileContent = scmOrchestratorService.processScmRequestUsingConnectorSettings(scmClientFacilitatorService
         -> scmClientFacilitatorService.getFile(scope.getAccountIdentifier(), scope.getOrgIdentifier(),
-            scope.getProjectIdentifier(), scmGetFileByCommitIdRequestDTO.getConnectorRef(),
-            scmGetFileByCommitIdRequestDTO.getRepoName(), null, scmGetFileByCommitIdRequestDTO.getFilePath(),
-            scmGetFileByCommitIdRequestDTO.getCommitId()),
+            scope.getProjectIdentifier(), scmConnector, scmGetFileByCommitIdRequestDTO.getRepoName(), null,
+            scmGetFileByCommitIdRequestDTO.getFilePath(), scmGetFileByCommitIdRequestDTO.getCommitId()),
         scmConnector);
 
     if (isFailureResponse(fileContent.getStatus())) {
@@ -328,10 +369,14 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
   }
 
   @Override
-  public String getDefaultBranch(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorRef, String repoName) {
+  public String getDefaultBranch(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      String connectorRef, String repoName, GitConnectivityParams gitConnectivityParams) {
+    GitRepositoryDTOBuilder gitRepositoryDTOBuilder = GitRepositoryDTO.builder().name(repoName);
+    if (gitConnectivityParams != null) {
+      gitRepositoryDTOBuilder.projectName(gitConnectivityParams.getRepositoryProjectName());
+    }
     final ScmConnector scmConnector = gitSyncConnectorHelper.getScmConnectorForGivenRepo(
-        accountIdentifier, orgIdentifier, projectIdentifier, connectorRef, repoName);
+        accountIdentifier, orgIdentifier, projectIdentifier, connectorRef, gitRepositoryDTOBuilder.build());
     GetUserRepoResponse getUserRepoResponse =
         scmOrchestratorService.processScmRequestUsingConnectorSettings(scmClientFacilitatorService
             -> scmClientFacilitatorService.getRepoDetails(

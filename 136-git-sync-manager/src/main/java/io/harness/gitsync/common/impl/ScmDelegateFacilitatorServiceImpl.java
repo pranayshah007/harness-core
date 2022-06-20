@@ -179,9 +179,7 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
 
   @Override
   public FileContent getFile(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      String connectorRef, String repoName, String branchName, String filePath, String commitId) {
-    ScmConnector connector = gitSyncConnectorHelper.getScmConnectorForGivenRepo(
-        accountIdentifier, orgIdentifier, projectIdentifier, connectorRef, repoName);
+      ScmConnector connector, String repoName, String branchName, String filePath, String commitId) {
     final List<EncryptedDataDetail> encryptionDetails =
         getEncryptedDataDetails(accountIdentifier, orgIdentifier, projectIdentifier, connector);
     final GitFilePathDetails gitFilePathDetails = getGitFilePathDetails(filePath, branchName, commitId);
@@ -200,10 +198,8 @@ public class ScmDelegateFacilitatorServiceImpl extends AbstractScmClientFacilita
   }
 
   @Override
-  public CreatePRResponse createPullRequest(
-      Scope scope, String connectorRef, String repoName, String sourceBranch, String targetBranch, String title) {
-    final ScmConnector decryptedConnector = gitSyncConnectorHelper.getScmConnectorForGivenRepo(
-        scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), connectorRef, repoName);
+  public CreatePRResponse createPullRequest(Scope scope, ScmConnector decryptedConnector, String repoName,
+      String sourceBranch, String targetBranch, String title) {
     final List<EncryptedDataDetail> encryptionDetails = getEncryptedDataDetails(
         scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), decryptedConnector);
     ScmPRTaskParams scmPRTaskParams = ScmPRTaskParams.builder()

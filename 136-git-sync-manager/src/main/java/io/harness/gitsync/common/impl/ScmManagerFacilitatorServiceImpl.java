@@ -44,19 +44,7 @@ import io.harness.gitsync.common.service.YamlGitConfigService;
 import io.harness.impl.ScmResponseStatusUtils;
 import io.harness.ng.userprofile.commons.SCMType;
 import io.harness.ng.webhook.UpsertWebhookRequestDTO;
-import io.harness.product.ci.scm.proto.Commit;
-import io.harness.product.ci.scm.proto.CompareCommitsResponse;
-import io.harness.product.ci.scm.proto.CreateBranchResponse;
-import io.harness.product.ci.scm.proto.CreateFileResponse;
-import io.harness.product.ci.scm.proto.CreatePRResponse;
-import io.harness.product.ci.scm.proto.CreateWebhookResponse;
-import io.harness.product.ci.scm.proto.DeleteFileResponse;
-import io.harness.product.ci.scm.proto.FileContent;
-import io.harness.product.ci.scm.proto.GetLatestCommitResponse;
-import io.harness.product.ci.scm.proto.GetUserRepoResponse;
-import io.harness.product.ci.scm.proto.GetUserReposResponse;
-import io.harness.product.ci.scm.proto.ListBranchesWithDefaultResponse;
-import io.harness.product.ci.scm.proto.UpdateFileResponse;
+import io.harness.product.ci.scm.proto.*;
 import io.harness.service.ScmClient;
 import io.harness.tasks.DecryptGitApiAccessHelper;
 
@@ -113,18 +101,18 @@ public class ScmManagerFacilitatorServiceImpl extends AbstractScmClientFacilitat
 
   @Override
   public FileContent getFile(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      String connectorRef, String repoName, String branchName, String filePath, String commitId) {
-    ScmConnector connector = gitSyncConnectorHelper.getDecryptedConnectorForGivenRepo(
-        accountIdentifier, orgIdentifier, projectIdentifier, connectorRef, repoName);
+      ScmConnector scmConnector, String repoName, String branchName, String filePath, String commitId) {
+    ScmConnector connector =
+        gitSyncConnectorHelper.getDecryptedConnector(accountIdentifier, orgIdentifier, projectIdentifier, scmConnector);
     final GitFilePathDetails gitFilePathDetails = getGitFilePathDetails(filePath, branchName, commitId);
     return scmClient.getFileContent(connector, gitFilePathDetails);
   }
 
   @Override
   public CreatePRResponse createPullRequest(
-      Scope scope, String connectorRef, String repoName, String sourceBranch, String targetBranch, String title) {
-    ScmConnector decryptedConnector = gitSyncConnectorHelper.getDecryptedConnectorForGivenRepo(
-        scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), connectorRef, repoName);
+      Scope scope, ScmConnector scmConnector, String repoName, String sourceBranch, String targetBranch, String title) {
+    final ScmConnector decryptedConnector = gitSyncConnectorHelper.getDecryptedConnector(
+        scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), scmConnector);
     return scmClient.createPullRequestV2(decryptedConnector, sourceBranch, targetBranch, title);
   }
 

@@ -10,6 +10,7 @@ package io.harness.gitsync.common.dtos;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
+import io.harness.gitsync.beans.GitConnectivityParams;
 
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -26,4 +27,5 @@ public class ScmGetFileByCommitIdRequestDTO {
   String commitId;
   String filePath;
   String connectorRef;
+  GitConnectivityParams gitConnectivityParams;
 }

@@ -103,6 +103,6 @@ public class ScmOrchestratorServiceImpl implements ScmOrchestratorService {
         return scmRequest.apply(scmClientManagerService);
       }
     }
-    return scmRequest.apply(scmClientDelegateService);
+    return scmRequest.apply(scmClientManagerService);
   }
 }
