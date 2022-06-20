@@ -180,6 +180,8 @@ public class K8sEntityHelper {
             .resourceGroup(k8sAzureInfrastructure.getResourceGroup())
             .azureConnectorDTO((AzureConnectorDTO) connectorDTO.getConnectorConfig())
             .encryptionDataDetails(getEncryptionDataDetails(connectorDTO, ngAccess))
+            .useClusterAdminCredentials(k8sAzureInfrastructure.getUseClusterAdminCredentials() != null
+                && k8sAzureInfrastructure.getUseClusterAdminCredentials())
             .build();
 
       default:

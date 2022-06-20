@@ -9,7 +9,10 @@ package io.harness.ng.scim;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
+import static java.util.Collections.emptyList;
+
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.beans.Scope;
 import io.harness.ng.core.api.UserGroupService;
 import io.harness.ng.core.invites.InviteType;
@@ -29,6 +32,7 @@ import io.harness.scim.ScimUser;
 import io.harness.scim.ScimUserValuedObject;
 import io.harness.scim.service.ScimUserService;
 import io.harness.serializer.JsonUtils;
+import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.inject.Inject;
@@ -55,6 +59,7 @@ public class NGScimUserServiceImpl implements ScimUserService {
   private final NgUserService ngUserService;
   private final InviteService inviteService;
   private final UserGroupService userGroupService;
+  private final NGFeatureFlagHelperService nGFeatureFlagHelperService;
 
   @Override
   public Response createUser(ScimUser userQuery, String accountId) {
@@ -95,11 +100,15 @@ public class NGScimUserServiceImpl implements ScimUserService {
                           .approved(true)
                           .email(primaryEmail)
                           .name(userName)
-                          .roleBindings(Collections.singletonList(
-                              RoleBinding.builder().roleIdentifier(ACCOUNT_VIEWER_ROLE).build()))
                           .inviteType(InviteType.SCIM_INITIATED_INVITE)
                           .build();
 
+      if (nGFeatureFlagHelperService.isEnabled(accountId, FeatureName.ACCOUNT_BASIC_ROLE_ONLY)) {
+        invite.setRoleBindings(emptyList());
+      } else {
+        invite.setRoleBindings(
+            Collections.singletonList(RoleBinding.builder().roleIdentifier(ACCOUNT_VIEWER_ROLE).build()));
+      }
       inviteService.create(invite, true);
 
       userOptional = ngUserService.getUserByEmail(primaryEmail, true);

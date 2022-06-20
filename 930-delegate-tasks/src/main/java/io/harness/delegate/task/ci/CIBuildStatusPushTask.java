@@ -14,6 +14,9 @@ import static java.lang.String.format;
 
 import io.harness.cistatus.service.GithubAppConfig;
 import io.harness.cistatus.service.GithubService;
+import io.harness.cistatus.service.azurerepo.AzureRepoConfig;
+import io.harness.cistatus.service.azurerepo.AzureRepoContext;
+import io.harness.cistatus.service.azurerepo.AzureRepoService;
 import io.harness.cistatus.service.bitbucket.BitbucketConfig;
 import io.harness.cistatus.service.bitbucket.BitbucketService;
 import io.harness.cistatus.service.gitlab.GitlabConfig;
@@ -26,6 +29,11 @@ import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.ci.status.BuildStatusPushResponse;
 import io.harness.delegate.beans.ci.status.BuildStatusPushResponse.Status;
+import io.harness.delegate.beans.connector.scm.GitAuthType;
+import io.harness.delegate.beans.connector.scm.GitConnectionType;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoApiAccessType;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoTokenSpecDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketApiAccessType;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketUsernameTokenApiAccessDTO;
@@ -51,6 +59,7 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.NotImplementedException;
+import org.apache.commons.lang3.StringUtils;
 
 @Slf4j
 public class CIBuildStatusPushTask extends AbstractDelegateRunnableTask {
@@ -58,6 +67,7 @@ public class CIBuildStatusPushTask extends AbstractDelegateRunnableTask {
   @Inject private GithubService githubService;
   @Inject private BitbucketService bitbucketService;
   @Inject private GitlabService gitlabService;
+  @Inject private AzureRepoService azureRepoService;
   @Inject private SecretDecryptionService secretDecryptionService;
 
   private static final String DESC = "description";
@@ -70,7 +80,10 @@ public class CIBuildStatusPushTask extends AbstractDelegateRunnableTask {
   private static final String GITHUB_API_URL = "https://api.github.com/";
   private static final String BITBUCKET_API_URL = "https://api.bitbucket.org/";
   private static final String GITLAB_API_URL = "https://gitlab.com/api/";
+  private static final String AZURE_REPO_API_URL = "https://dev.azure.com/";
+  private static final String AZURE_REPO_GENRE = "HarnessCI";
   private static final String APP_URL = "https://app.harness.io";
+  private static final String PATH_SEPARATOR = "/";
 
   public CIBuildStatusPushTask(DelegateTaskPackage delegateTaskPackage, ILogStreamingTaskClient logStreamingTaskClient,
       Consumer<DelegateTaskResponse> consumer, BooleanSupplier preExecute) {
@@ -80,8 +93,10 @@ public class CIBuildStatusPushTask extends AbstractDelegateRunnableTask {
   @Override
   public DelegateResponseData run(TaskParameters parameters) {
     if (((CIBuildPushParameters) parameters).commandType == CIBuildPushTaskType.STATUS) {
+      String sha = "";
       try {
         CIBuildStatusPushParameters ciBuildStatusPushParameters = (CIBuildStatusPushParameters) parameters;
+        sha = ciBuildStatusPushParameters.getSha();
         boolean statusSent = false;
         if (ciBuildStatusPushParameters.getGitSCMType() == GitSCMType.GITHUB) {
           statusSent = sendBuildStatusToGitHub(ciBuildStatusPushParameters);
@@ -89,6 +104,8 @@ public class CIBuildStatusPushTask extends AbstractDelegateRunnableTask {
           statusSent = sendBuildStatusToBitbucket(ciBuildStatusPushParameters);
         } else if (ciBuildStatusPushParameters.getGitSCMType() == GitSCMType.GITLAB) {
           statusSent = sendBuildStatusToGitLab(ciBuildStatusPushParameters);
+        } else if (ciBuildStatusPushParameters.getGitSCMType() == GitSCMType.AZURE_REPO) {
+          statusSent = sendBuildStatusToAzureRepo(ciBuildStatusPushParameters);
         } else {
           throw new UnsupportedOperationException("Not supported");
         }
@@ -101,7 +118,7 @@ public class CIBuildStatusPushTask extends AbstractDelegateRunnableTask {
           return BuildStatusPushResponse.builder().status(Status.ERROR).build();
         }
       } catch (Exception ex) {
-        log.error("failed to send status", ex);
+        log.error(String.format("failed to send status for sha %s", sha), ex);
         return BuildStatusPushResponse.builder().status(Status.ERROR).build();
       }
     }
@@ -209,6 +226,16 @@ public class CIBuildStatusPushTask extends AbstractDelegateRunnableTask {
       return "https://" + domain + "/api/";
     }
   }
+
+  private String getAzureRepoApiURL(String url) {
+    if (url.contains("azure.com")) {
+      return AZURE_REPO_API_URL;
+    } else {
+      String domain = GitClientHelper.getGitSCM(url);
+      return "https://" + domain + PATH_SEPARATOR;
+    }
+  }
+
   private boolean sendBuildStatusToBitbucket(CIBuildStatusPushParameters ciBuildStatusPushParameters) {
     Map<String, Object> bodyObjectMap = new HashMap<>();
     bodyObjectMap.put(DESC, ciBuildStatusPushParameters.getDesc());
@@ -256,6 +283,49 @@ public class CIBuildStatusPushTask extends AbstractDelegateRunnableTask {
     }
   }
 
+  private boolean sendBuildStatusToAzureRepo(CIBuildStatusPushParameters ciBuildStatusPushParameters) {
+    Map<String, Object> bodyObjectMap = new HashMap<>();
+    bodyObjectMap.put(GitlabServiceImpl.DESC, ciBuildStatusPushParameters.getDesc());
+    bodyObjectMap.put(GitlabServiceImpl.CONTEXT,
+        AzureRepoContext.builder().genre(AZURE_REPO_GENRE).name(ciBuildStatusPushParameters.getIdentifier()).build());
+    bodyObjectMap.put(GitlabServiceImpl.STATE, ciBuildStatusPushParameters.getState());
+    bodyObjectMap.put(GitlabServiceImpl.TARGET_URL, ciBuildStatusPushParameters.getDetailsUrl());
+
+    String token = retrieveAuthToken(
+        ciBuildStatusPushParameters.getGitSCMType(), ciBuildStatusPushParameters.getConnectorDetails());
+
+    AzureRepoConnectorDTO gitConfigDTO =
+        (AzureRepoConnectorDTO) ciBuildStatusPushParameters.getConnectorDetails().getConnectorConfig();
+
+    if (isNotEmpty(token)) {
+      String completeUrl = gitConfigDTO.getUrl();
+
+      if (gitConfigDTO.getConnectionType() == GitConnectionType.ACCOUNT) {
+        completeUrl = StringUtils.join(
+            StringUtils.stripEnd(completeUrl, PATH_SEPARATOR), PATH_SEPARATOR, ciBuildStatusPushParameters.getRepo());
+      }
+
+      String orgAndProject;
+
+      if (gitConfigDTO.getAuthentication().getAuthType() == GitAuthType.HTTP) {
+        orgAndProject = GitClientHelper.getAzureRepoOrgAndProjectHTTP(completeUrl);
+      } else {
+        orgAndProject = GitClientHelper.getAzureRepoOrgAndProjectSSH(completeUrl);
+      }
+
+      String project = GitClientHelper.getAzureRepoProject(orgAndProject);
+      String repo = StringUtils.substringAfterLast(completeUrl, PATH_SEPARATOR);
+
+      return azureRepoService.sendStatus(
+          AzureRepoConfig.builder().azureRepoUrl(getAzureRepoApiURL(gitConfigDTO.getUrl())).build(),
+          ciBuildStatusPushParameters.getUserName(), token, ciBuildStatusPushParameters.getSha(),
+          ciBuildStatusPushParameters.getOwner(), project, repo, bodyObjectMap);
+    } else {
+      log.error("Not sending status because token is empty sha {}", ciBuildStatusPushParameters.getSha());
+      return false;
+    }
+  }
+
   private String retrieveAuthToken(GitSCMType gitSCMType, ConnectorDetails gitConnector) {
     switch (gitSCMType) {
       case GITHUB:
@@ -289,7 +359,21 @@ public class CIBuildStatusPushTask extends AbstractDelegateRunnableTask {
           throw new CIStageExecutionException(
               format("Unsupported access type %s for gitlab status", bitbucketConnectorDTO.getApiAccess().getType()));
         }
-
+      case AZURE_REPO:
+        AzureRepoConnectorDTO azureRepoConnectorDTO = (AzureRepoConnectorDTO) gitConnector.getConnectorConfig();
+        if (azureRepoConnectorDTO.getApiAccess() == null) {
+          throw new CIStageExecutionException(
+              format("Failed to retrieve token info for Azure repo connector: %s", gitConnector.getIdentifier()));
+        }
+        if (azureRepoConnectorDTO.getApiAccess().getType() == AzureRepoApiAccessType.TOKEN) {
+          AzureRepoTokenSpecDTO azureRepoTokenSpecDTO =
+              (AzureRepoTokenSpecDTO) azureRepoConnectorDTO.getApiAccess().getSpec();
+          secretDecryptionService.decrypt(azureRepoTokenSpecDTO, gitConnector.getEncryptedDataDetails());
+          return new String(azureRepoTokenSpecDTO.getTokenRef().getDecryptedValue());
+        } else {
+          throw new CIStageExecutionException(format(
+              "Unsupported access type %s for Azure repo status", azureRepoConnectorDTO.getApiAccess().getType()));
+        }
       default:
         throw new CIStageExecutionException(format("Unsupported scm type %s for git status", gitSCMType));
     }

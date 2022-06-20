@@ -10,6 +10,7 @@ package io.harness.cdng.environment.helper;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.envGroup.beans.EnvironmentGroupConfig;
 import io.harness.cdng.environment.yaml.EnvironmentPlanCreatorConfig;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.gitops.yaml.ClusterYaml;
@@ -49,18 +50,34 @@ public class EnvironmentPlanCreatorConfigMapper {
 
   public EnvironmentPlanCreatorConfig toEnvPlanCreatorConfigWithGitops(
       String mergedEnvYaml, EnvironmentYamlV2 envYaml, NGServiceOverrides serviceOverride) {
-    NGEnvironmentInfoConfig ngEnvironmentInfoConfig =
+    NGEnvironmentInfoConfig config =
         EnvironmentMapper.toNGEnvironmentConfig(mergedEnvYaml).getNgEnvironmentInfoConfig();
     return EnvironmentPlanCreatorConfig.builder()
         .environmentRef(envYaml.getEnvironmentRef())
-        .identifier(ngEnvironmentInfoConfig.getIdentifier())
-        .projectIdentifier(ngEnvironmentInfoConfig.getProjectIdentifier())
-        .orgIdentifier(ngEnvironmentInfoConfig.getOrgIdentifier())
-        .description(ngEnvironmentInfoConfig.getDescription())
-        .name(ngEnvironmentInfoConfig.getName())
-        .tags(ngEnvironmentInfoConfig.getTags())
-        .type(ngEnvironmentInfoConfig.getType())
-        .variables(ngEnvironmentInfoConfig.getVariables())
+        .identifier(config.getIdentifier())
+        .projectIdentifier(config.getProjectIdentifier())
+        .orgIdentifier(config.getOrgIdentifier())
+        .description(config.getDescription())
+        .name(config.getName())
+        .tags(config.getTags())
+        .type(config.getType())
+        .variables(config.getVariables())
+        .serviceOverrides(serviceOverride)
+        .gitOpsClusterRefs(getClusterRefs(envYaml))
+        .deployToAll(envYaml.isDeployToAll())
+        .build();
+  }
+
+  public EnvironmentPlanCreatorConfig toEnvPlanCreatorConfigWithGitops(
+      EnvironmentGroupConfig environmentGroupConfig, EnvironmentYamlV2 envYaml, NGServiceOverrides serviceOverride) {
+    return EnvironmentPlanCreatorConfig.builder()
+        .environmentRef(envYaml.getEnvironmentRef())
+        .identifier(environmentGroupConfig.getIdentifier())
+        .projectIdentifier(environmentGroupConfig.getProjectIdentifier())
+        .orgIdentifier(environmentGroupConfig.getOrgIdentifier())
+        .description(environmentGroupConfig.getDescription())
+        .name(environmentGroupConfig.getName())
+        .tags(environmentGroupConfig.getTags())
         .serviceOverrides(serviceOverride)
         .gitOpsClusterRefs(getClusterRefs(envYaml))
         .deployToAll(envYaml.isDeployToAll())

@@ -207,7 +207,8 @@ public class MSTeamsServiceImpl implements ChannelService {
     List<String> recipients = new ArrayList<>(msTeamDetails.getMsTeamKeysList());
     if (isNotEmpty(msTeamDetails.getUserGroupList())) {
       List<String> resolvedRecipients = notificationSettingsService.getNotificationRequestForUserGroups(
-          msTeamDetails.getUserGroupList(), NotificationChannelType.MSTEAMS, notificationRequest.getAccountId());
+          msTeamDetails.getUserGroupList(), NotificationChannelType.MSTEAMS, notificationRequest.getAccountId(),
+          notificationRequest.getMsTeam().getExpressionFunctorToken());
       recipients.addAll(resolvedRecipients);
     }
     return recipients.stream().distinct().collect(Collectors.toList());

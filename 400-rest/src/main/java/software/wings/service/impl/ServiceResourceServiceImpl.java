@@ -509,6 +509,8 @@ public class ServiceResourceServiceImpl implements ServiceResourceService, DataP
           "Artifact from Manifest flag can be set to true only for kubernetes and helm deployment types");
     }
 
+    validateArtifactType(service);
+
     // TODO: ASR: IMP: update the block below for artifact variables as service variable
     if (createdFromYaml) {
       if (featureFlagService.isEnabled(FeatureName.ARTIFACT_STREAM_REFACTOR, accountId)) {
@@ -3299,5 +3301,58 @@ public class ServiceResourceServiceImpl implements ServiceResourceService, DataP
     }
 
     return services.stream().map(Base::getUuid).collect(Collectors.toList());
+  }
+
+  private void validateArtifactType(Service service) {
+    if (service.getDeploymentType() != null && service.getArtifactType() != null) {
+      switch (service.getDeploymentType()) {
+        case KUBERNETES:
+          if (service.getArtifactType() != ArtifactType.DOCKER) {
+            throw new InvalidRequestException("Only DOCKER artifactType allowed for KUBERNETES Deployment Type");
+          }
+          break;
+        case HELM:
+          if (service.getArtifactType() != ArtifactType.DOCKER) {
+            throw new InvalidRequestException("Only DOCKER artifactType allowed for HELM Deployment Type");
+          }
+          break;
+        case ECS:
+          if (service.getArtifactType() != ArtifactType.DOCKER) {
+            throw new InvalidRequestException(
+                "Only DOCKER artifactType allowed for Amazon EC2 Container Services (ECS) Deployment Type");
+          }
+          break;
+        case AWS_CODEDEPLOY:
+          if (service.getArtifactType() != ArtifactType.AWS_CODEDEPLOY) {
+            throw new InvalidRequestException(
+                "Only AWS_CODEDEPLOY artifactType allowed for AWS CODEDEPLOY Deployment Type");
+          }
+          break;
+        case AWS_LAMBDA:
+          if (service.getArtifactType() != ArtifactType.AWS_LAMBDA) {
+            throw new InvalidRequestException("Only AWS_LAMBDA artifactType allowed for AWS Lambda Deployment Type");
+          }
+          break;
+        case AMI:
+          if (service.getArtifactType() != ArtifactType.AMI) {
+            throw new InvalidRequestException("Only AMI artifactType allowed for AMI Deployment Type");
+          }
+          break;
+        case PCF:
+          if (service.getArtifactType() != ArtifactType.PCF) {
+            throw new InvalidRequestException(
+                "Only PCF artifactType allowed for Tanzu Application Services Deployment Type");
+          }
+          break;
+        case AZURE_VMSS:
+          if (service.getArtifactType() != ArtifactType.AZURE_MACHINE_IMAGE) {
+            throw new InvalidRequestException(
+                "Only AZURE_MACHINE_IMAGE artifactType allowed for Azure Virtual Machine Scale Set Deployment Type");
+          }
+          break;
+        default:
+          break;
+      }
+    }
   }
 }

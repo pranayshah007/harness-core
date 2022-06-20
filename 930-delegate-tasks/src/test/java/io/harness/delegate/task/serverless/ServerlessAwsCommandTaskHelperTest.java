@@ -25,7 +25,7 @@ import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.serverless.ServerlessAwsLambdaManifestSchema;
 import io.harness.delegate.task.aws.AwsNgConfigMapper;
 import io.harness.delegate.task.serverless.request.ServerlessCommandRequest;
-import io.harness.delegate.task.serverless.request.ServerlessDeployRequest;
+import io.harness.delegate.task.serverless.request.ServerlessPrepareRollbackDataRequest;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.rule.Owner;
@@ -95,17 +95,19 @@ public class ServerlessAwsCommandTaskHelperTest extends CategoryTest {
                                                                         .awsConnectorDTO(awsConnectorDTO)
                                                                         .build();
     String serverlessManifest = "service: ABC";
-    ServerlessDeployRequest serverlessDeployRequest = ServerlessDeployRequest.builder()
-                                                          .manifestContent(serverlessManifest)
-                                                          .serverlessInfraConfig(serverlessAwsLambdaInfraConfig)
-                                                          .build();
+    ServerlessPrepareRollbackDataRequest serverlessPrepareRollbackDataRequest =
+        ServerlessPrepareRollbackDataRequest.builder()
+            .manifestContent(serverlessManifest)
+            .serverlessInfraConfig(serverlessAwsLambdaInfraConfig)
+            .build();
 
     List<String> timeStamps = serverlessAwsCommandTaskHelper.getDeployListTimeStamps(output);
     assertThat(timeStamps).contains("1646988531400", "1646989096845");
     doReturn("abc1646988531400xyz").when(awsCFHelperServiceDelegate).getStackBody(any(), any(), any());
     doReturn(AwsInternalConfig.builder().build()).when(awsNgConfigMapper).createAwsInternalConfig(any());
 
-    assertThat(serverlessAwsCommandTaskHelper.getPreviousVersionTimeStamp(timeStamps, null, serverlessDeployRequest))
+    assertThat(serverlessAwsCommandTaskHelper.getPreviousVersionTimeStamp(
+                   timeStamps, null, serverlessPrepareRollbackDataRequest))
         .isEqualTo(Optional.of("1646988531400"));
   }
 

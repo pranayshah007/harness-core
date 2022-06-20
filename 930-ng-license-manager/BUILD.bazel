@@ -25,7 +25,7 @@ java_library(
         "@maven//:io_swagger_core_v3_swagger_annotations",
         "@maven//:javax_validation_validation_api",
         "@maven//:javax_ws_rs_javax_ws_rs_api",
-        "@maven//:org_hibernate_hibernate_validator",
+        "@maven//:org_hibernate_validator_hibernate_validator",
         "@maven//:org_modelmapper_modelmapper",
         "@maven//:org_mongodb_morphia_morphia",
     ],
