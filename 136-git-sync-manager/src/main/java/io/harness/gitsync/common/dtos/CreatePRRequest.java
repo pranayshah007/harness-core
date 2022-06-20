@@ -7,8 +7,6 @@
 
 package io.harness.gitsync.common.dtos;
 
-import static io.harness.NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE;
-
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.gitsync.beans.GitConnectivityParams;
