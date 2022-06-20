@@ -27,6 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -94,6 +95,7 @@ import io.harness.cvng.core.entities.PrometheusCVConfig.MetricInfo;
 import io.harness.cvng.core.entities.changeSource.PagerDutyChangeSource;
 import io.harness.cvng.core.services.api.CVConfigService;
 import io.harness.cvng.core.services.api.CVNGLogService;
+import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.services.api.SetupUsageEventService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
@@ -203,6 +205,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
   @Mock FakeNotificationClient notificationClient;
   @Mock private PersistentLocker mockedPersistentLocker;
   @Mock private EnforcementClientService enforcementClientService;
+  @Mock private FeatureFlagService featureFlagService;
   @Inject NotificationRuleCommonUtils notificationRuleCommonUtils;
   @Mock(answer = Answers.RETURNS_DEEP_STUBS) AccountClient accountClient;
 
@@ -273,6 +276,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     FieldUtils.writeField(monitoredServiceService, "notificationClient", notificationClient, true);
     FieldUtils.writeField(monitoredServiceService, "notificationRuleCommonUtils", notificationRuleCommonUtils, true);
     FieldUtils.writeField(notificationRuleCommonUtils, "accountClient", accountClient, true);
+    FieldUtils.writeField(monitoredServiceService, "featureFlagService", featureFlagService, true);
   }
 
   @Test
@@ -288,6 +292,8 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
 
     monitoredServiceService.setHealthMonitoringFlag(builderFactory.getProjectParams(), "ms1", true);
     monitoredServiceService.setHealthMonitoringFlag(builderFactory.getProjectParams(), "ms2", true);
+
+    doReturn(true).when(featureFlagService).isFeatureFlagEnabled(any(), any());
 
     long count = monitoredServiceService.countUniqueEnabledServices(builderFactory.getContext().getAccountId());
     assertThat(count).isEqualTo(2);
@@ -309,6 +315,8 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     monitoredServiceService.setHealthMonitoringFlag(builderFactory.getProjectParams(), "ms1", true);
     monitoredServiceService.setHealthMonitoringFlag(builderFactory.getProjectParams(), "ms2", true);
     monitoredServiceService.setHealthMonitoringFlag(builderFactory.getProjectParams(), "ms4", true);
+
+    doReturn(true).when(featureFlagService).isFeatureFlagEnabled(any(), any());
 
     long count = monitoredServiceService.countUniqueEnabledServices(builderFactory.getContext().getAccountId());
     assertThat(count).isEqualTo(2);
