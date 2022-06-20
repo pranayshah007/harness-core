@@ -384,7 +384,8 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
               .connectorRef(getFileRequest.getConnectorRef())
               .filePath(getFileRequest.getFilePath())
               .repoName(getFileRequest.getRepoName())
-              .gitConnectivityParams(convertGitConnectivityParamsProtoToRest(getFileRequest.getGitConnectivityParams()))
+              .gitConnectivityParams(
+                  getGitConnectivityParamsFromProtoRequest(getFileRequest.getGitConnectivityParams()))
               .scope(scope)
               .build());
       return prepareGetFileResponse(getFileRequest, scmGetFileResponseDTO, scope);
@@ -420,7 +421,7 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
               .isCommitToNewBranch(createFileRequest.getIsCommitToNewBranch())
               .scope(scope)
               .gitConnectivityParams(
-                  convertGitConnectivityParamsProtoToRest(createFileRequest.getGitConnectivityParams()))
+                  getGitConnectivityParamsFromProtoRequest(createFileRequest.getGitConnectivityParams()))
               .build());
       return prepareCreateFileResponse(createFileRequest, scmCommitFileResponseDTO, scope);
     } catch (WingsException ex) {
@@ -456,7 +457,7 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
               .oldFileSha(updateFileRequest.getOldFileSha())
               .isCommitToNewBranch(updateFileRequest.getIsCommitToNewBranch())
               .gitConnectivityParams(
-                  convertGitConnectivityParamsProtoToRest(updateFileRequest.getGitConnectivityParams()))
+                  getGitConnectivityParamsFromProtoRequest(updateFileRequest.getGitConnectivityParams()))
               .scope(scope)
               .build());
       return prepareUpdateFileResponse(updateFileRequest, scmCommitFileResponseDTO, scope);
@@ -630,7 +631,7 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
     return RestClientUtils.getResponse(accountClient.isFeatureFlagEnabled(featureName.name(), accountId));
   }
 
-  private GitConnectivityParams convertGitConnectivityParamsProtoToRest(
+  private GitConnectivityParams getGitConnectivityParamsFromProtoRequest(
       io.harness.gitsync.GitConnectivityParams gitConnectivityParams) {
     if (gitConnectivityParams != null) {
       return GitConnectivityParams.builder()
