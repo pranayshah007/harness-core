@@ -148,19 +148,20 @@ public class AnomalyAlertsServiceImpl implements AnomalyAlertsService {
                                                   .accountId("zEaak-FLS425IEO7OLzMUg")
                                                   .recipients(Collections.singletonList("shubhanshu.verma@harness.io"))
                                                   .team(Team.PL)
-                                                  .templateId("email_ccm_anomaly_alert")
+                                                  .templateId("email_invite")
                                                   .userGroups(Collections.emptyList());
 
     Map<String, String> templateData = new HashMap<>();
-    templateData.put("perspective_name", "dawdad");
-    templateData.put("anomalies", "wwddeaew");
-    templateData.put("perspective_url", "perspective_url");
+    templateData.put("name", "dawda");
+    templateData.put("projectname", "wwddeaew");
+    templateData.put("organizationname", "perspective_url");
+    templateData.put("accountname", "dawdad");
+    templateData.put("url", "dawdad");
 
     // Sending email alerts
     emailChannelBuilder.templateData(templateData);
-    NotificationResult result = RestCallToCENGClientUtils.execute(
+    RestCallToCENGClientUtils.execute(
         notificationResourceClient.sendNotification("zEaak-FLS425IEO7OLzMUg", emailChannelBuilder.build()));
-    log.info("Notification call result: {}", result);
     log.info("done");
   }
 
