@@ -7,6 +7,7 @@
 
 package io.harness.cvng.migration.list;
 
+import io.harness.cvng.core.entities.MonitoredService;
 import io.harness.cvng.migration.CVNGMigration;
 import io.harness.cvng.migration.beans.ChecklistItem;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
@@ -19,7 +20,6 @@ import io.harness.persistence.HPersistence;
 import com.google.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.UpdateResults;
 
 @Slf4j
 public class AddEnabledFlagToSLISLOMigration implements CVNGMigration {
@@ -28,28 +28,33 @@ public class AddEnabledFlagToSLISLOMigration implements CVNGMigration {
   @Override
   public void migrate() {
     log.info("Begin migration for updating SLI with enabled flag");
-    Query<ServiceLevelIndicator> serviceLevelIndicatorQuery = hPersistence.createQuery(ServiceLevelIndicator.class);
-    try (HIterator<ServiceLevelIndicator> sliIterator = new HIterator<>(serviceLevelIndicatorQuery.fetch())) {
-      while (sliIterator.hasNext()) {
-        ServiceLevelIndicator serviceLevelIndicator = sliIterator.next();
-        UpdateResults updateResults = hPersistence.update(serviceLevelIndicator,
-            hPersistence.createUpdateOperations(ServiceLevelIndicator.class)
-                .set(ServiceLevelIndicatorKeys.enabled, true));
-        log.info("Updated for SLI {}, {}, Update Result {}", serviceLevelIndicator.getProjectIdentifier(),
-            serviceLevelIndicator.getIdentifier(), updateResults);
-      }
-    }
+    Query<MonitoredService> monitoredServiceQuery = hPersistence.createQuery(MonitoredService.class);
+    try (HIterator<MonitoredService> iterator = new HIterator<>(monitoredServiceQuery.fetch())) {
+      while (iterator.hasNext()) {
+        MonitoredService monitoredService = iterator.next();
+        Query<ServiceLevelObjective> serviceLevelObjectiveQuery =
+            hPersistence.createQuery(ServiceLevelObjective.class)
+                .filter(ServiceLevelObjectiveKeys.accountId, monitoredService.getAccountId())
+                .filter(ServiceLevelObjectiveKeys.projectIdentifier, monitoredService.getProjectIdentifier())
+                .filter(ServiceLevelObjectiveKeys.orgIdentifier, monitoredService.getOrgIdentifier())
+                .filter(ServiceLevelObjectiveKeys.monitoredServiceIdentifier, monitoredService.getIdentifier());
 
-    log.info("Begin migration for updating SL0 with enabled flag");
-    Query<ServiceLevelObjective> serviceLevelObjectiveQuery = hPersistence.createQuery(ServiceLevelObjective.class);
-    try (HIterator<ServiceLevelObjective> sloIterator = new HIterator<>(serviceLevelObjectiveQuery.fetch())) {
-      while (sloIterator.hasNext()) {
-        ServiceLevelObjective serviceLevelObjective = sloIterator.next();
-        UpdateResults updateResults = hPersistence.update(serviceLevelObjective,
+        Query<ServiceLevelIndicator> serviceLevelIndicatorQuery =
+            hPersistence.createQuery(ServiceLevelIndicator.class)
+                .filter(ServiceLevelIndicatorKeys.accountId, monitoredService.getAccountId())
+                .filter(ServiceLevelIndicatorKeys.projectIdentifier, monitoredService.getProjectIdentifier())
+                .filter(ServiceLevelIndicatorKeys.orgIdentifier, monitoredService.getOrgIdentifier())
+                .filter(ServiceLevelIndicatorKeys.monitoredServiceIdentifier, monitoredService.getIdentifier());
+
+        hPersistence.update(serviceLevelObjectiveQuery,
             hPersistence.createUpdateOperations(ServiceLevelObjective.class)
-                .set(ServiceLevelObjectiveKeys.enabled, true));
-        log.info("Updated for SLO {}, {}, Update Result {}", serviceLevelObjective.getProjectIdentifier(),
-            serviceLevelObjective.getIdentifier(), updateResults);
+                .set(ServiceLevelObjectiveKeys.enabled, monitoredService.isEnabled()));
+
+        hPersistence.update(serviceLevelIndicatorQuery,
+            hPersistence.createUpdateOperations(ServiceLevelIndicator.class)
+                .set(ServiceLevelIndicatorKeys.enabled, monitoredService.isEnabled()));
+        log.info("Updated for monitored service {}, {}", monitoredService.getProjectIdentifier(),
+            monitoredService.getIdentifier());
       }
     }
   }
