@@ -80,7 +80,7 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
       GitConnectivityParams gitConnectivityParams) {
     ScmConnector scmConnector =
         gitSyncConnectorHelper.getScmConnector(accountIdentifier, orgIdentifier, projectIdentifier, connectorRef);
-    if (gitConnectivityParams != null) {
+    if (gitConnectivityParams != null && isNotEmpty(gitConnectivityParams.getGitProjectName())) {
       scmConnector.setGitConnectionUrl(scmConnector.getGitConnectionUrl(
           GitRepositoryDTO.builder().projectName(gitConnectivityParams.getGitProjectName()).build()));
     }
