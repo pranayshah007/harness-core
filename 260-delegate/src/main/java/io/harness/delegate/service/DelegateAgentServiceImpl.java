@@ -566,7 +566,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
                                              : emptyList())
               .sampleDelegate(isSample)
               .location(Paths.get("").toAbsolutePath().toString())
-              .responseSentAt(true)
+              .heartbeatAsObject(true)
               .ceEnabled(Boolean.parseBoolean(System.getenv("ENABLE_CE")));
 
       delegateId = registerDelegate(builder);
@@ -1042,6 +1042,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
                                             //.proxy(set to true if there is a system proxy)
                                             .pollingModeEnabled(delegateConfiguration.isPollForTasks())
                                             .ceEnabled(Boolean.parseBoolean(System.getenv("ENABLE_CE")))
+                                            .heartbeatAsObject(true)
                                             .build();
         restResponse = executeRestCall(delegateAgentManagerClient.registerDelegate(accountId, delegateParams));
       } catch (Exception e) {
@@ -1687,6 +1688,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
               .toBuilder()
               .lastHeartBeat(clock.millis())
               .pollingModeEnabled(delegateConfiguration.isPollForTasks())
+              .heartbeatAsObject(true)
               .currentlyExecutingDelegateTasks(currentlyExecutingTasks.values()
                                                    .stream()
                                                    .map(DelegateTaskPackage::getDelegateTaskId)
@@ -1743,6 +1745,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
               .toBuilder()
               .keepAlivePacket(false)
               .pollingModeEnabled(true)
+              .heartbeatAsObject(true)
               .currentlyExecutingDelegateTasks(currentlyExecutingTasks.values()
                                                    .stream()
                                                    .map(DelegateTaskPackage::getDelegateTaskId)

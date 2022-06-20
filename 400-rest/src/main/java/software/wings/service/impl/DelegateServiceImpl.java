@@ -934,6 +934,7 @@ public class DelegateServiceImpl implements DelegateService {
     if (delegate.getDelegateTokenName() != null) {
       setUnset(updateOperations, DelegateKeys.delegateTokenName, delegate.getDelegateTokenName());
     }
+    setUnset(updateOperations, DelegateKeys.heartbeatAsObject, delegate.isHeartbeatAsObject());
     return updateOperations;
   }
 
@@ -2538,7 +2539,7 @@ public class DelegateServiceImpl implements DelegateService {
                                   .currentlyExecutingDelegateTasks(delegateParams.getCurrentlyExecutingDelegateTasks())
                                   .ceEnabled(delegateParams.isCeEnabled())
                                   .delegateTokenName(delegateTokenName.orElse(null))
-                                  .sendAsDelegateHeartBeat(delegateParams.isResponseSentAt())
+                                  .heartbeatAsObject(delegateParams.isHeartbeatAsObject())
                                   .build();
 
     if (ECS.equals(delegateParams.getDelegateType())) {
@@ -2642,7 +2643,7 @@ public class DelegateServiceImpl implements DelegateService {
 
     // Not needed to be done when polling is enabled for delegate
     if (isDelegateWithoutPollingEnabled(delegate)) {
-      if (delegate.isSendAsDelegateHeartBeat()) {
+      if (delegate.isHeartbeatAsObject()) {
         broadcastDelegateHeartBeatResponse(delegate, registeredDelegate);
       } else {
         // Broadcast Message containing, DelegateId and SeqNum (if applicable)
