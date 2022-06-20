@@ -99,7 +99,8 @@ public class SubscriptionResource {
   public ResponseDTO<PriceCollectionDTO>
   retrieveProductPrices(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
                             NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountIdentifier,
-      @Parameter(required = true, description = "Module Type") @NotNull @QueryParam("moduleType") String moduleType) {
+      @Parameter(required = true, description = "Module Type") @NotNull @QueryParam(
+          "moduleType") ModuleType moduleType) {
     return ResponseDTO.newResponse(subscriptionService.listPrices(accountIdentifier, moduleType));
   }
 

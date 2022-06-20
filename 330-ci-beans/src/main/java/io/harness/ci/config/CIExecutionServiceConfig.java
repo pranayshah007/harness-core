@@ -7,11 +7,16 @@
 
 package io.harness.ci.config;
 
+import io.harness.annotation.RecasterAlias;
+
 import lombok.Builder;
 import lombok.Data;
+import org.springframework.data.annotation.TypeAlias;
 
 @Data
 @Builder
+@TypeAlias("ciExecutionServiceConfig")
+@RecasterAlias("io.harness.ci.config.CIExecutionServiceConfig")
 public class CIExecutionServiceConfig {
   String addonImageTag; // Deprecated
   String liteEngineImageTag; // Deprecated

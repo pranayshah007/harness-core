@@ -31,6 +31,7 @@ import io.harness.cdng.infra.yaml.K8sAzureInfrastructure;
 import io.harness.cdng.infra.yaml.K8sGcpInfrastructure;
 import io.harness.cdng.infra.yaml.PdcInfrastructure;
 import io.harness.cdng.infra.yaml.ServerlessAwsLambdaInfrastructure;
+import io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAzureInfrastructure;
 import io.harness.cdng.k8s.K8sStepHelper;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
@@ -381,12 +382,17 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
         validateExpression(pdcInfrastructure.getCredentialsRef());
         requireOne(pdcInfrastructure.getHosts(), pdcInfrastructure.getConnectorRef());
         break;
+      case InfrastructureKind.SSH_WINRM_AWS:
+        SshWinRmAwsInfrastructure sshWinRmAwsInfrastructure = (SshWinRmAwsInfrastructure) infrastructure;
+        validateExpression(sshWinRmAwsInfrastructure.getConnectorRef(), sshWinRmAwsInfrastructure.getCredentialsRef(),
+            sshWinRmAwsInfrastructure.getRegion());
+        break;
 
       case InfrastructureKind.AZURE_WEB_APP:
         AzureWebAppInfrastructure azureWebAppInfrastructure = (AzureWebAppInfrastructure) infrastructure;
-        validateExpression(azureWebAppInfrastructure.getConnectorRef(), azureWebAppInfrastructure.getAppService(),
-            azureWebAppInfrastructure.getDeploymentSlot(), azureWebAppInfrastructure.getTargetSlot(),
-            azureWebAppInfrastructure.getSubscriptionId(), azureWebAppInfrastructure.getResourceGroup());
+        validateExpression(azureWebAppInfrastructure.getConnectorRef(), azureWebAppInfrastructure.getWebApp(),
+            azureWebAppInfrastructure.getDeploymentSlot(), azureWebAppInfrastructure.getSubscriptionId(),
+            azureWebAppInfrastructure.getResourceGroup());
         break;
       default:
         throw new InvalidArgumentsException(format("Unknown Infrastructure Kind : [%s]", infrastructure.getKind()));

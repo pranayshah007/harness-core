@@ -37,6 +37,7 @@ import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InterruptedRuntimeException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.logging.LogCallback;
 import io.harness.security.encryption.EncryptedDataDetail;
 
@@ -141,6 +142,7 @@ public class AwsAsgHelperServiceDelegateImpl
   public List<String> listAutoScalingGroupInstanceIds(AwsConfig awsConfig, List<EncryptedDataDetail> encryptionDetails,
       String region, String autoScalingGroupName, boolean isInstanceSync) {
     encryptionService.decrypt(awsConfig, encryptionDetails, isInstanceSync);
+    ExceptionMessageSanitizer.storeAllSecretsForSanitizing(awsConfig, encryptionDetails);
     try (CloseableAmazonWebServiceClient<AmazonAutoScalingClient> closeableAmazonAutoScalingClient =
              new CloseableAmazonWebServiceClient(getAmazonAutoScalingClient(Regions.fromName(region), awsConfig))) {
       DescribeAutoScalingGroupsRequest describeAutoScalingGroupsRequest =
@@ -161,8 +163,9 @@ public class AwsAsgHelperServiceDelegateImpl
     } catch (AmazonClientException amazonClientException) {
       handleAmazonClientException(amazonClientException);
     } catch (Exception e) {
-      log.error("Exception listAutoScalingGroupInstanceIds", e);
-      throw new InvalidRequestException(ExceptionUtils.getMessage(e), e);
+      Exception sanitizeException = ExceptionMessageSanitizer.sanitizeException(e);
+      log.error("Exception listAutoScalingGroupInstanceIds", sanitizeException);
+      throw new InvalidRequestException(ExceptionUtils.getMessage(sanitizeException), sanitizeException);
     }
     return emptyList();
   }
@@ -172,6 +175,7 @@ public class AwsAsgHelperServiceDelegateImpl
       List<EncryptedDataDetail> encryptionDetails, String region, String autoScalingGroupName, boolean isInstanceSync) {
     try {
       encryptionService.decrypt(awsConfig, encryptionDetails, isInstanceSync);
+      ExceptionMessageSanitizer.storeAllSecretsForSanitizing(awsConfig, encryptionDetails);
       DescribeAutoScalingGroupsRequest describeAutoScalingGroupsRequest =
           new DescribeAutoScalingGroupsRequest().withAutoScalingGroupNames(autoScalingGroupName);
       AmazonAutoScalingClient amazonAutoScalingClient = getAmazonAutoScalingClient(Regions.fromName(region), awsConfig);
@@ -204,6 +208,7 @@ public class AwsAsgHelperServiceDelegateImpl
   public AutoScalingGroup getAutoScalingGroup(
       AwsConfig awsConfig, List<EncryptedDataDetail> encryptionDetails, String region, String autoScalingGroupName) {
     encryptionService.decrypt(awsConfig, encryptionDetails, false);
+    ExceptionMessageSanitizer.storeAllSecretsForSanitizing(awsConfig, encryptionDetails);
     try (CloseableAmazonWebServiceClient<AmazonAutoScalingClient> closeableAmazonAutoScalingClient =
              new CloseableAmazonWebServiceClient(getAmazonAutoScalingClient(Regions.fromName(region), awsConfig))) {
       DescribeAutoScalingGroupsRequest describeAutoScalingGroupsRequest =
@@ -219,8 +224,9 @@ public class AwsAsgHelperServiceDelegateImpl
     } catch (AmazonClientException amazonClientException) {
       handleAmazonClientException(amazonClientException);
     } catch (Exception e) {
-      log.error("Exception getAutoScalingGroup", e);
-      throw new InvalidRequestException(ExceptionUtils.getMessage(e), e);
+      Exception sanitizeException = ExceptionMessageSanitizer.sanitizeException(e);
+      log.error("Exception getAutoScalingGroup", sanitizeException);
+      throw new InvalidRequestException(ExceptionUtils.getMessage(sanitizeException), sanitizeException);
     }
     return null;
   }
@@ -229,6 +235,7 @@ public class AwsAsgHelperServiceDelegateImpl
   public LaunchConfiguration getLaunchConfiguration(
       AwsConfig awsConfig, List<EncryptedDataDetail> encryptionDetails, String region, String launchConfigName) {
     encryptionService.decrypt(awsConfig, encryptionDetails, false);
+    ExceptionMessageSanitizer.storeAllSecretsForSanitizing(awsConfig, encryptionDetails);
     try (CloseableAmazonWebServiceClient<AmazonAutoScalingClient> closeableAmazonAutoScalingClient =
              new CloseableAmazonWebServiceClient(getAmazonAutoScalingClient(Regions.fromName(region), awsConfig))) {
       tracker.trackASGCall("Describe Launch Configuration");
@@ -244,8 +251,9 @@ public class AwsAsgHelperServiceDelegateImpl
     } catch (AmazonClientException amazonClientException) {
       handleAmazonClientException(amazonClientException);
     } catch (Exception e) {
-      log.error("Exception getLaunchConfiguration", e);
-      throw new InvalidRequestException(ExceptionUtils.getMessage(e), e);
+      Exception sanitizeException = ExceptionMessageSanitizer.sanitizeException(e);
+      log.error("Exception getLaunchConfiguration", sanitizeException);
+      throw new InvalidRequestException(ExceptionUtils.getMessage(sanitizeException), sanitizeException);
     }
     return null;
   }
@@ -254,6 +262,7 @@ public class AwsAsgHelperServiceDelegateImpl
   public List<AutoScalingGroup> listAllAsgs(
       AwsConfig awsConfig, List<EncryptedDataDetail> encryptionDetails, String region) {
     encryptionService.decrypt(awsConfig, encryptionDetails, false);
+    ExceptionMessageSanitizer.storeAllSecretsForSanitizing(awsConfig, encryptionDetails);
     try (CloseableAmazonWebServiceClient<AmazonAutoScalingClient> closeableAmazonAutoScalingClient =
              new CloseableAmazonWebServiceClient(getAmazonAutoScalingClient(Regions.fromName(region), awsConfig))) {
       DescribeAutoScalingGroupsRequest describeAutoScalingGroupsRequest;
@@ -275,8 +284,9 @@ public class AwsAsgHelperServiceDelegateImpl
     } catch (AmazonClientException amazonClientException) {
       handleAmazonClientException(amazonClientException);
     } catch (Exception e) {
-      log.error("Exception listAllAsgs", e);
-      throw new InvalidRequestException(ExceptionUtils.getMessage(e), e);
+      Exception sanitizeException = ExceptionMessageSanitizer.sanitizeException(e);
+      log.error("Exception listAllAsgs", sanitizeException);
+      throw new InvalidRequestException(ExceptionUtils.getMessage(sanitizeException), sanitizeException);
     }
     return emptyList();
   }
@@ -285,6 +295,7 @@ public class AwsAsgHelperServiceDelegateImpl
   public void deleteLaunchConfig(
       AwsConfig awsConfig, List<EncryptedDataDetail> encryptionDetails, String region, String autoScalingGroupName) {
     encryptionService.decrypt(awsConfig, encryptionDetails, false);
+    ExceptionMessageSanitizer.storeAllSecretsForSanitizing(awsConfig, encryptionDetails);
     try (CloseableAmazonWebServiceClient<AmazonAutoScalingClient> closeableAmazonAutoScalingClient =
              new CloseableAmazonWebServiceClient(getAmazonAutoScalingClient(Regions.fromName(region), awsConfig))) {
       tracker.trackASGCall("Delete Launch Config");
@@ -295,8 +306,9 @@ public class AwsAsgHelperServiceDelegateImpl
     } catch (AmazonClientException amazonClientException) {
       handleAmazonClientException(amazonClientException);
     } catch (Exception e) {
-      log.error("Exception deleteLaunchConfig", e);
-      throw new InvalidRequestException(ExceptionUtils.getMessage(e), e);
+      Exception sanitizeException = ExceptionMessageSanitizer.sanitizeException(e);
+      log.error("Exception deleteLaunchConfig", sanitizeException);
+      throw new InvalidRequestException(ExceptionUtils.getMessage(sanitizeException), sanitizeException);
     }
   }
 
@@ -305,6 +317,7 @@ public class AwsAsgHelperServiceDelegateImpl
       List<EncryptedDataDetail> encryptionDetails, String region,
       CreateLaunchConfigurationRequest createLaunchConfigurationRequest) {
     encryptionService.decrypt(awsConfig, encryptionDetails, false);
+    ExceptionMessageSanitizer.storeAllSecretsForSanitizing(awsConfig, encryptionDetails);
     try (CloseableAmazonWebServiceClient<AmazonAutoScalingClient> closeableAmazonAutoScalingClient =
              new CloseableAmazonWebServiceClient(getAmazonAutoScalingClient(Regions.fromName(region), awsConfig))) {
       tracker.trackASGCall("Create Launch Config");
@@ -314,8 +327,9 @@ public class AwsAsgHelperServiceDelegateImpl
     } catch (AmazonClientException amazonClientException) {
       handleAmazonClientException(amazonClientException);
     } catch (Exception e) {
-      log.error("Exception createLaunchConfiguration", e);
-      throw new InvalidRequestException(ExceptionUtils.getMessage(e), e);
+      Exception sanitizeException = ExceptionMessageSanitizer.sanitizeException(e);
+      log.error("Exception createLaunchConfiguration", sanitizeException);
+      throw new InvalidRequestException(ExceptionUtils.getMessage(sanitizeException), sanitizeException);
     }
     return new CreateLaunchConfigurationResult();
   }
@@ -326,6 +340,7 @@ public class AwsAsgHelperServiceDelegateImpl
       CreateAutoScalingGroupRequest createAutoScalingGroupRequest, LogCallback logCallback) {
     AmazonAutoScalingClient amazonAutoScalingClient = null;
     encryptionService.decrypt(awsConfig, encryptionDetails, false);
+    ExceptionMessageSanitizer.storeAllSecretsForSanitizing(awsConfig, encryptionDetails);
     try (CloseableAmazonWebServiceClient<AmazonAutoScalingClient> closeableAmazonAutoScalingClient =
              new CloseableAmazonWebServiceClient(getAmazonAutoScalingClient(Regions.fromName(region), awsConfig))) {
       amazonAutoScalingClient = closeableAmazonAutoScalingClient.getClient();
@@ -340,8 +355,9 @@ public class AwsAsgHelperServiceDelegateImpl
     } catch (AmazonClientException amazonClientException) {
       handleAmazonClientException(amazonClientException);
     } catch (Exception e) {
-      log.error("Exception createAutoScalingGroup", e);
-      throw new InvalidRequestException(ExceptionUtils.getMessage(e), e);
+      Exception sanitizeException = ExceptionMessageSanitizer.sanitizeException(e);
+      log.error("Exception createAutoScalingGroup", sanitizeException);
+      throw new InvalidRequestException(ExceptionUtils.getMessage(sanitizeException), sanitizeException);
     }
     return new CreateAutoScalingGroupResult();
   }
@@ -351,6 +367,7 @@ public class AwsAsgHelperServiceDelegateImpl
       List<AutoScalingGroup> autoScalingGroups, LogCallback callback) {
     AmazonAutoScalingClient amazonAutoScalingClient = null;
     encryptionService.decrypt(awsConfig, encryptionDetails, false);
+    ExceptionMessageSanitizer.storeAllSecretsForSanitizing(awsConfig, encryptionDetails);
     try (CloseableAmazonWebServiceClient<AmazonAutoScalingClient> closeableAmazonAutoScalingClient =
              new CloseableAmazonWebServiceClient(getAmazonAutoScalingClient(Regions.fromName(region), awsConfig))) {
       amazonAutoScalingClient = closeableAmazonAutoScalingClient.getClient();
@@ -384,8 +401,9 @@ public class AwsAsgHelperServiceDelegateImpl
     } catch (AmazonClientException amazonClientException) {
       handleAmazonClientException(amazonClientException);
     } catch (Exception e) {
-      log.error("Exception deleteAutoScalingGroups", e);
-      throw new InvalidRequestException(ExceptionUtils.getMessage(e), e);
+      Exception sanitizeException = ExceptionMessageSanitizer.sanitizeException(e);
+      log.error("Exception deleteAutoScalingGroups", sanitizeException);
+      throw new InvalidRequestException(ExceptionUtils.getMessage(sanitizeException), sanitizeException);
     }
   }
 
@@ -393,6 +411,7 @@ public class AwsAsgHelperServiceDelegateImpl
   public Map<String, Integer> getDesiredCapacitiesOfAsgs(
       AwsConfig awsConfig, List<EncryptedDataDetail> encryptionDetails, String region, List<String> asgs) {
     encryptionService.decrypt(awsConfig, encryptionDetails, false);
+    ExceptionMessageSanitizer.storeAllSecretsForSanitizing(awsConfig, encryptionDetails);
     try (CloseableAmazonWebServiceClient<AmazonAutoScalingClient> closeableAmazonAutoScalingClient =
              new CloseableAmazonWebServiceClient(getAmazonAutoScalingClient(Regions.fromName(region), awsConfig))) {
       Map<String, Integer> capacities = new HashMap<>();
@@ -413,8 +432,9 @@ public class AwsAsgHelperServiceDelegateImpl
     } catch (AmazonClientException amazonClientException) {
       handleAmazonClientException(amazonClientException);
     } catch (Exception e) {
-      log.error("Exception getDesiredCapacitiesOfAsgs", e);
-      throw new InvalidRequestException(ExceptionUtils.getMessage(e), e);
+      Exception sanitizeException = ExceptionMessageSanitizer.sanitizeException(e);
+      log.error("Exception getDesiredCapacitiesOfAsgs", sanitizeException);
+      throw new InvalidRequestException(ExceptionUtils.getMessage(sanitizeException), sanitizeException);
     }
     return emptyMap();
   }
@@ -425,6 +445,7 @@ public class AwsAsgHelperServiceDelegateImpl
       ExecutionLogCallback logCallback, Integer autoScalingSteadyStateTimeout,
       boolean amiInServiceHealthyStateFFEnabled) {
     encryptionService.decrypt(awsConfig, encryptionDetails, false);
+    ExceptionMessageSanitizer.storeAllSecretsForSanitizing(awsConfig, encryptionDetails);
     AmazonAutoScalingClient amazonAutoScalingClient = null;
     try (CloseableAmazonWebServiceClient<AmazonAutoScalingClient> closeableAmazonAutoScalingClient =
              new CloseableAmazonWebServiceClient(getAmazonAutoScalingClient(Regions.fromName(region), awsConfig))) {
@@ -450,8 +471,9 @@ public class AwsAsgHelperServiceDelegateImpl
     } catch (AmazonClientException amazonClientException) {
       handleAmazonClientException(amazonClientException);
     } catch (Exception e) {
-      log.error("Exception setAutoScalingGroupCapacityAndWaitForInstancesReadyState", e);
-      throw new InvalidRequestException(ExceptionUtils.getMessage(e), e);
+      Exception sanitizeException = ExceptionMessageSanitizer.sanitizeException(e);
+      log.error("Exception setAutoScalingGroupCapacityAndWaitForInstancesReadyState", sanitizeException);
+      throw new InvalidRequestException(ExceptionUtils.getMessage(sanitizeException), sanitizeException);
     }
   }
 
@@ -459,6 +481,7 @@ public class AwsAsgHelperServiceDelegateImpl
   public void setMinInstancesForAsg(AwsConfig awsConfig, List<EncryptedDataDetail> encryptionDetails, String region,
       String autoScalingGroupName, int minCapacity, ExecutionLogCallback logCallback) {
     encryptionService.decrypt(awsConfig, encryptionDetails, false);
+    ExceptionMessageSanitizer.storeAllSecretsForSanitizing(awsConfig, encryptionDetails);
     try (CloseableAmazonWebServiceClient<AmazonAutoScalingClient> closeableAmazonAutoScalingClient =
              new CloseableAmazonWebServiceClient(getAmazonAutoScalingClient(Regions.fromName(region), awsConfig))) {
       if (isEmpty(autoScalingGroupName)) {
@@ -486,8 +509,9 @@ public class AwsAsgHelperServiceDelegateImpl
     } catch (AmazonClientException amazonClientException) {
       handleAmazonClientException(amazonClientException);
     } catch (Exception e) {
-      log.error("Exception setMinInstancesForAsg", e);
-      throw new InvalidRequestException(ExceptionUtils.getMessage(e), e);
+      Exception sanitizeException = ExceptionMessageSanitizer.sanitizeException(e);
+      log.error("Exception setMinInstancesForAsg", sanitizeException);
+      throw new InvalidRequestException(ExceptionUtils.getMessage(sanitizeException), sanitizeException);
     }
   }
 
@@ -495,6 +519,7 @@ public class AwsAsgHelperServiceDelegateImpl
   public void setAutoScalingGroupLimits(AwsConfig awsConfig, List<EncryptedDataDetail> encryptionDetails, String region,
       String autoScalingGroupName, Integer desiredCapacity, ExecutionLogCallback logCallback) {
     encryptionService.decrypt(awsConfig, encryptionDetails, false);
+    ExceptionMessageSanitizer.storeAllSecretsForSanitizing(awsConfig, encryptionDetails);
     try (CloseableAmazonWebServiceClient<AmazonAutoScalingClient> closeableAmazonAutoScalingClient =
              new CloseableAmazonWebServiceClient(getAmazonAutoScalingClient(Regions.fromName(region), awsConfig))) {
       DescribeAutoScalingGroupsRequest request =
@@ -535,8 +560,9 @@ public class AwsAsgHelperServiceDelegateImpl
     } catch (AmazonClientException amazonClientException) {
       handleAmazonClientException(amazonClientException);
     } catch (Exception e) {
-      log.error("Exception setAutoScalingGroupLimits", e);
-      throw new InvalidRequestException(ExceptionUtils.getMessage(e), e);
+      Exception sanitizeException = ExceptionMessageSanitizer.sanitizeException(e);
+      log.error("Exception setAutoScalingGroupLimits", sanitizeException);
+      throw new InvalidRequestException(ExceptionUtils.getMessage(sanitizeException), sanitizeException);
     }
   }
 
@@ -562,9 +588,10 @@ public class AwsAsgHelperServiceDelegateImpl
       throw new WingsException(INIT_TIMEOUT)
           .addParam("message", "Timed out waiting for autoscaling group to be deleted");
     } catch (WingsException e) {
-      throw e;
+      throw(WingsException) ExceptionMessageSanitizer.sanitizeException(e);
     } catch (Exception e) {
-      throw new InvalidRequestException("Error while waiting for autoscaling group to be deleted", e);
+      throw new InvalidRequestException(
+          "Error while waiting for autoscaling group to be deleted", ExceptionMessageSanitizer.sanitizeException(e));
     }
   }
 
@@ -603,7 +630,8 @@ public class AwsAsgHelperServiceDelegateImpl
             });
       }
     } catch (Exception e) {
-      log.warn("Failed to describe autoScalingGroup for [%s] %s", autoScalingGroupName, e);
+      log.warn("Failed to describe autoScalingGroup for [%s] %s", autoScalingGroupName,
+          ExceptionMessageSanitizer.sanitizeException(e));
     }
   }
 
@@ -631,9 +659,10 @@ public class AwsAsgHelperServiceDelegateImpl
       throw new WingsException(INIT_TIMEOUT)
           .addParam("message", "Timed out waiting for all instances to be in running state");
     } catch (WingsException e) {
-      throw e;
+      throw(WingsException) ExceptionMessageSanitizer.sanitizeException(e);
     } catch (Exception e) {
-      throw new InvalidRequestException("Error while waiting for all instances to be in running state", e);
+      throw new InvalidRequestException("Error while waiting for all instances to be in running state",
+          ExceptionMessageSanitizer.sanitizeException(e));
     }
     logCallback.saveExecutionLog("AutoScaling group reached steady state");
   }
@@ -663,10 +692,10 @@ public class AwsAsgHelperServiceDelegateImpl
       throw new WingsException(INIT_TIMEOUT)
           .addParam("message", "Timed out waiting for Auto Scaling Group to be in InService and Healthy state");
     } catch (WingsException e) {
-      throw e;
+      throw(WingsException) ExceptionMessageSanitizer.sanitizeException(e);
     } catch (Exception e) {
-      throw new InvalidRequestException(
-          "Error while waiting for all instances to be in InService and Healthy state", e);
+      throw new InvalidRequestException("Error while waiting for all instances to be in InService and Healthy state",
+          ExceptionMessageSanitizer.sanitizeException(e));
     }
     logCallback.saveExecutionLog("Auto Scaling Group reached steady state");
   }
@@ -749,8 +778,9 @@ public class AwsAsgHelperServiceDelegateImpl
     } catch (AmazonClientException amazonClientException) {
       handleAmazonClientException(amazonClientException);
     } catch (Exception e) {
-      log.error("Exception registerAsgWithTargetGroups", e);
-      throw new InvalidRequestException(ExceptionUtils.getMessage(e), e);
+      Exception sanitizeException = ExceptionMessageSanitizer.sanitizeException(e);
+      log.error("Exception registerAsgWithTargetGroups", sanitizeException);
+      throw new InvalidRequestException(ExceptionUtils.getMessage(sanitizeException), sanitizeException);
     }
   }
 
@@ -772,8 +802,9 @@ public class AwsAsgHelperServiceDelegateImpl
     } catch (AmazonClientException amazonClientException) {
       handleAmazonClientException(amazonClientException);
     } catch (Exception e) {
-      log.error("Exception registerAsgWithClassicLBs", e);
-      throw new InvalidRequestException(ExceptionUtils.getMessage(e), e);
+      Exception sanitizeException = ExceptionMessageSanitizer.sanitizeException(e);
+      log.error("Exception registerAsgWithClassicLBs", sanitizeException);
+      throw new InvalidRequestException(ExceptionUtils.getMessage(sanitizeException), sanitizeException);
     }
   }
 
@@ -796,8 +827,9 @@ public class AwsAsgHelperServiceDelegateImpl
     } catch (AmazonClientException amazonClientException) {
       handleAmazonClientException(amazonClientException);
     } catch (Exception e) {
-      log.error("Exception deRegisterAsgWithTargetGroups", e);
-      throw new InvalidRequestException(ExceptionUtils.getMessage(e), e);
+      Exception sanitizeException = ExceptionMessageSanitizer.sanitizeException(e);
+      log.error("Exception deRegisterAsgWithTargetGroups", sanitizeException);
+      throw new InvalidRequestException(ExceptionUtils.getMessage(sanitizeException), sanitizeException);
     }
   }
 
@@ -819,8 +851,9 @@ public class AwsAsgHelperServiceDelegateImpl
     } catch (AmazonClientException amazonClientException) {
       handleAmazonClientException(amazonClientException);
     } catch (Exception e) {
-      log.error("Exception deRegisterAsgWithClassicLBs", e);
-      throw new InvalidRequestException(ExceptionUtils.getMessage(e), e);
+      Exception sanitizeException = ExceptionMessageSanitizer.sanitizeException(e);
+      log.error("Exception deRegisterAsgWithClassicLBs", sanitizeException);
+      throw new InvalidRequestException(ExceptionUtils.getMessage(sanitizeException), sanitizeException);
     }
   }
 
@@ -871,9 +904,10 @@ public class AwsAsgHelperServiceDelegateImpl
     try {
       return mapper.writeValueAsString(scalingPolicy);
     } catch (Exception ex) {
+      Exception sanitizeException = ExceptionMessageSanitizer.sanitizeException(ex);
       String errorMessage = format("Exception: [%s] while extracting policy JSON for scaling policy: [%s]. Ignored.",
-          ex.getMessage(), scalingPolicy.getPolicyARN());
-      log.error(errorMessage, ex);
+          sanitizeException.getMessage(), scalingPolicy.getPolicyARN());
+      log.error(errorMessage, sanitizeException);
       logCallback.saveExecutionLog(errorMessage);
       return EMPTY;
     }
@@ -888,9 +922,10 @@ public class AwsAsgHelperServiceDelegateImpl
     try {
       return mapper.writeValueAsString(scheduledAction);
     } catch (Exception ex) {
+      Exception sanitizeException = ExceptionMessageSanitizer.sanitizeException(ex);
       String errorMessage = format("Exception: [%s] while extracting JSON for scheduled action: [%s]. Ignored.",
-          ex.getMessage(), scheduledAction.getScheduledActionARN());
-      log.error(errorMessage, ex);
+          sanitizeException.getMessage(), scheduledAction.getScheduledActionARN());
+      log.error(errorMessage, sanitizeException);
       logCallback.saveExecutionLog(errorMessage);
       return EMPTY;
     }
@@ -918,6 +953,7 @@ public class AwsAsgHelperServiceDelegateImpl
   public List<String> getScalingPolicyJSONs(AwsConfig awsConfig, List<EncryptedDataDetail> encryptionDetails,
       String region, String asgName, ExecutionLogCallback logCallback) {
     encryptionService.decrypt(awsConfig, encryptionDetails, false);
+    ExceptionMessageSanitizer.storeAllSecretsForSanitizing(awsConfig, encryptionDetails);
     try (CloseableAmazonWebServiceClient<AmazonAutoScalingClient> closeableAmazonAutoScalingClient =
              new CloseableAmazonWebServiceClient(getAmazonAutoScalingClient(Regions.fromName(region), awsConfig))) {
       logCallback.saveExecutionLog(format("Extracting scaling policy JSONs from: [%s]", asgName));
@@ -938,8 +974,9 @@ public class AwsAsgHelperServiceDelegateImpl
     } catch (AmazonClientException amazonClientException) {
       handleAmazonClientException(amazonClientException);
     } catch (Exception e) {
-      log.error("Exception getScalingPolicyJSONs", e);
-      throw new InvalidRequestException(ExceptionUtils.getMessage(e), e);
+      Exception sanitizeException = ExceptionMessageSanitizer.sanitizeException(e);
+      log.error("Exception getScalingPolicyJSONs", sanitizeException);
+      throw new InvalidRequestException(ExceptionUtils.getMessage(sanitizeException), sanitizeException);
     }
     return emptyList();
   }
@@ -948,6 +985,7 @@ public class AwsAsgHelperServiceDelegateImpl
   public void clearAllScalingPoliciesForAsg(AwsConfig awsConfig, List<EncryptedDataDetail> encryptionDetails,
       String region, String asgName, ExecutionLogCallback logCallback) {
     encryptionService.decrypt(awsConfig, encryptionDetails, false);
+    ExceptionMessageSanitizer.storeAllSecretsForSanitizing(awsConfig, encryptionDetails);
     try (CloseableAmazonWebServiceClient<AmazonAutoScalingClient> closeableAmazonAutoScalingClient =
              new CloseableAmazonWebServiceClient(getAmazonAutoScalingClient(Regions.fromName(region), awsConfig))) {
       logCallback.saveExecutionLog(format("Clearing away all scaling policies for Asg: [%s]", asgName));
@@ -969,8 +1007,9 @@ public class AwsAsgHelperServiceDelegateImpl
     } catch (AmazonClientException amazonClientException) {
       handleAmazonClientException(amazonClientException);
     } catch (Exception e) {
-      log.error("Exception clearAllScalingPoliciesForAsg", e);
-      throw new InvalidRequestException(ExceptionUtils.getMessage(e), e);
+      Exception sanitizeException = ExceptionMessageSanitizer.sanitizeException(e);
+      log.error("Exception clearAllScalingPoliciesForAsg", sanitizeException);
+      throw new InvalidRequestException(ExceptionUtils.getMessage(sanitizeException), sanitizeException);
     }
   }
 
@@ -979,9 +1018,10 @@ public class AwsAsgHelperServiceDelegateImpl
     try {
       return mapper.readValue(json, ScalingPolicy.class);
     } catch (Exception ex) {
-      String errorMessage = format("Exception: [%s] while deserializing cached JSON", ex.getMessage());
+      Exception sanitizeException = ExceptionMessageSanitizer.sanitizeException(ex);
+      String errorMessage = format("Exception: [%s] while deserializing cached JSON", sanitizeException.getMessage());
       logCallback.saveExecutionLog(errorMessage);
-      log.error(errorMessage, ex);
+      log.error(errorMessage, sanitizeException);
       return null;
     }
   }
@@ -991,9 +1031,10 @@ public class AwsAsgHelperServiceDelegateImpl
     try {
       return mapper.readValue(json, ScheduledUpdateGroupAction.class);
     } catch (Exception ex) {
-      String errorMessage = format("Exception: [%s] while deserializing cached JSON", ex.getMessage());
+      Exception sanitizeException = ExceptionMessageSanitizer.sanitizeException(ex);
+      String errorMessage = format("Exception: [%s] while deserializing cached JSON", sanitizeException.getMessage());
       logCallback.saveExecutionLog(errorMessage);
-      log.error(errorMessage, ex);
+      log.error(errorMessage, sanitizeException);
       return null;
     }
   }
@@ -1002,6 +1043,7 @@ public class AwsAsgHelperServiceDelegateImpl
   public void addUpdateTagAutoScalingGroup(AwsConfig awsConfig, List<EncryptedDataDetail> encryptedDataDetails,
       String asgName, String region, String tagKey, String tagValue, ExecutionLogCallback executionLogCallback) {
     encryptionService.decrypt(awsConfig, encryptedDataDetails, false);
+    ExceptionMessageSanitizer.storeAllSecretsForSanitizing(awsConfig, encryptedDataDetails);
     try (CloseableAmazonWebServiceClient<AmazonAutoScalingClient> closeableAmazonAutoScalingClient =
              new CloseableAmazonWebServiceClient(getAmazonAutoScalingClient(Regions.fromName(region), awsConfig))) {
       executionLogCallback.saveExecutionLog(
@@ -1021,8 +1063,9 @@ public class AwsAsgHelperServiceDelegateImpl
     } catch (AmazonClientException amazonClientException) {
       handleAmazonClientException(amazonClientException);
     } catch (Exception e) {
-      log.error("Exception addUpdateTagAutoScalingGroup", e);
-      throw new InvalidRequestException(ExceptionUtils.getMessage(e), e);
+      Exception sanitizeException = ExceptionMessageSanitizer.sanitizeException(e);
+      log.error("Exception addUpdateTagAutoScalingGroup", sanitizeException);
+      throw new InvalidRequestException(ExceptionUtils.getMessage(sanitizeException), sanitizeException);
     }
   }
 
@@ -1030,6 +1073,7 @@ public class AwsAsgHelperServiceDelegateImpl
   public void attachScalingPoliciesToAsg(AwsConfig awsConfig, List<EncryptedDataDetail> encryptionDetails,
       String region, String asgName, List<String> scalingPolicyJSONs, ExecutionLogCallback logCallback) {
     encryptionService.decrypt(awsConfig, encryptionDetails, false);
+    ExceptionMessageSanitizer.storeAllSecretsForSanitizing(awsConfig, encryptionDetails);
     try (CloseableAmazonWebServiceClient<AmazonAutoScalingClient> closeableAmazonAutoScalingClient =
              new CloseableAmazonWebServiceClient(getAmazonAutoScalingClient(Regions.fromName(region), awsConfig))) {
       logCallback.saveExecutionLog(format("Attaching scaling policies to Asg: [%s]", asgName));
@@ -1070,14 +1114,16 @@ public class AwsAsgHelperServiceDelegateImpl
     } catch (AmazonClientException amazonClientException) {
       handleAmazonClientException(amazonClientException);
     } catch (Exception e) {
-      log.error("Exception attachScalingPoliciesToAsg", e);
-      throw new InvalidRequestException(ExceptionUtils.getMessage(e), e);
+      Exception sanitizeException = ExceptionMessageSanitizer.sanitizeException(e);
+      log.error("Exception attachScalingPoliciesToAsg", sanitizeException);
+      throw new InvalidRequestException(ExceptionUtils.getMessage(sanitizeException), sanitizeException);
     }
   }
 
   public void attachScheduledActionsToAsg(AwsConfig awsConfig, List<EncryptedDataDetail> encryptionDetails,
       String region, String asgName, List<String> scheduledActionJSONs, ExecutionLogCallback logCallback) {
     encryptionService.decrypt(awsConfig, encryptionDetails, false);
+    ExceptionMessageSanitizer.storeAllSecretsForSanitizing(awsConfig, encryptionDetails);
     try (CloseableAmazonWebServiceClient<AmazonAutoScalingClient> closeableAmazonAutoScalingClient =
              new CloseableAmazonWebServiceClient(getAmazonAutoScalingClient(Regions.fromName(region), awsConfig))) {
       logCallback.saveExecutionLog(format("Attaching scheduled actions to Asg: [%s]", asgName));
@@ -1113,8 +1159,9 @@ public class AwsAsgHelperServiceDelegateImpl
     } catch (AmazonClientException amazonClientException) {
       handleAmazonClientException(amazonClientException);
     } catch (Exception e) {
-      log.error("Exception attachScheduledActionsToAsg", e);
-      throw new InvalidRequestException(ExceptionUtils.getMessage(e), e);
+      Exception sanitizeException = ExceptionMessageSanitizer.sanitizeException(e);
+      log.error("Exception attachScheduledActionsToAsg", sanitizeException);
+      throw new InvalidRequestException(ExceptionUtils.getMessage(sanitizeException), sanitizeException);
     }
   }
 
@@ -1122,6 +1169,7 @@ public class AwsAsgHelperServiceDelegateImpl
   public List<String> getScheduledActionJSONs(AwsConfig awsConfig, List<EncryptedDataDetail> encryptionDetails,
       String region, String asgName, ExecutionLogCallback logCallback) {
     encryptionService.decrypt(awsConfig, encryptionDetails, false);
+    ExceptionMessageSanitizer.storeAllSecretsForSanitizing(awsConfig, encryptionDetails);
     List<ScheduledUpdateGroupAction> scheduledUpdateGroupActionList = new ArrayList<>();
     List<String> scheduledUpdateGroupActionJSONList = new ArrayList<>();
     logCallback.saveExecutionLog(format("Extracting scheduled actions from: [%s]", asgName));
@@ -1144,8 +1192,9 @@ public class AwsAsgHelperServiceDelegateImpl
     } catch (AmazonClientException amazonClientException) {
       handleAmazonClientException(amazonClientException);
     } catch (Exception e) {
-      log.error("Exception getScheduledActionJSONs", e);
-      throw new InvalidRequestException(ExceptionUtils.getMessage(e), e);
+      Exception sanitizeException = ExceptionMessageSanitizer.sanitizeException(e);
+      log.error("Exception getScheduledActionJSONs", sanitizeException);
+      throw new InvalidRequestException(ExceptionUtils.getMessage(sanitizeException), sanitizeException);
     }
 
     return scheduledUpdateGroupActionJSONList;
@@ -1174,6 +1223,7 @@ public class AwsAsgHelperServiceDelegateImpl
   public void clearAllScheduledActionsForAsg(AwsConfig awsConfig, List<EncryptedDataDetail> encryptionDetails,
       String region, String asgName, ExecutionLogCallback logCallback) {
     encryptionService.decrypt(awsConfig, encryptionDetails, false);
+    ExceptionMessageSanitizer.storeAllSecretsForSanitizing(awsConfig, encryptionDetails);
     try (CloseableAmazonWebServiceClient<AmazonAutoScalingClient> closeableAmazonAutoScalingClient =
              new CloseableAmazonWebServiceClient(getAmazonAutoScalingClient(Regions.fromName(region), awsConfig))) {
       logCallback.saveExecutionLog(format("Clearing away all scheduled actions for Asg: [%s]", asgName));
@@ -1199,8 +1249,9 @@ public class AwsAsgHelperServiceDelegateImpl
     } catch (AmazonClientException amazonClientException) {
       handleAmazonClientException(amazonClientException);
     } catch (Exception e) {
-      log.error("Exception clearAllScheduledActionsForAsg", e);
-      throw new InvalidRequestException(ExceptionUtils.getMessage(e), e);
+      Exception sanitizeException = ExceptionMessageSanitizer.sanitizeException(e);
+      log.error("Exception clearAllScheduledActionsForAsg", sanitizeException);
+      throw new InvalidRequestException(ExceptionUtils.getMessage(sanitizeException), sanitizeException);
     }
   }
 }

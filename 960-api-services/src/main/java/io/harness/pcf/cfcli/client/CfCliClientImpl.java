@@ -12,7 +12,7 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.pcf.PcfUtils.logCliCommand;
-import static io.harness.pcf.PcfUtils.logStatus;
+import static io.harness.pcf.PcfUtils.logCliCommandFailure;
 import static io.harness.pcf.model.PcfConstants.CF_DOCKER_CREDENTIALS;
 import static io.harness.pcf.model.PcfConstants.CF_HOME;
 import static io.harness.pcf.model.PcfConstants.CF_PASSWORD;
@@ -66,6 +66,8 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -136,18 +138,35 @@ public class CfCliClientImpl implements CfCliClient {
     logCallback.saveExecutionLog("# Performing \"cf push\"");
     Map<String, String> environmentMapForPcfExecutor = getEnvironmentMapForCfPush(requestData);
     String command = constructCfPushCommand(requestData, finalFilePath);
-    logStatus(true, "Cf push");
-    ProcessExecutor processExecutor = createProcessExecutorForCfTask(
-        pcfRequestConfig.getTimeOutIntervalInMins(), command, environmentMapForPcfExecutor, logCallback);
-    ProcessResult processResult = processExecutor.execute();
+    ProcessResult processResult = getProcessResult(
+        command, environmentMapForPcfExecutor, pcfRequestConfig.getTimeOutIntervalInMins(), logCallback);
     int result = processResult.getExitValue();
     if (result != 0) {
       logCallback.saveExecutionLog(format(processResult.outputUTF8(), Bold, Red), ERROR);
     } else {
       logCallback.saveExecutionLog(format(SUCCESS, Bold, Green));
     }
-    logStatus(false, "Cf push");
     return result;
+  }
+
+  @VisibleForTesting
+  ProcessResult getProcessResult(String command, Map<String, String> environmentMapForPcfExecutor, int timeOutInMins,
+      LogCallback logCallback) throws IOException, InterruptedException, TimeoutException {
+    Instant start = Instant.now();
+    ProcessExecutor processExecutor =
+        createProcessExecutorForCfTask(timeOutInMins, command, environmentMapForPcfExecutor, logCallback);
+    ProcessResult processResult = processExecutor.execute();
+    Instant end = Instant.now();
+    if (processResult != null) {
+      if (processResult.getExitValue() == 0) {
+        logCliCommand(command, Duration.between(start, end).toMillis());
+      } else {
+        logCliCommandFailure(
+            command, Duration.between(start, end).toMillis(), processResult.getExitValue(), processResult.outputUTF8());
+      }
+    }
+
+    return processResult;
   }
 
   private String constructCfPushCommand(CfCreateApplicationRequestData requestData, String finalFilePath) {
@@ -195,18 +214,15 @@ public class CfCliClientImpl implements CfCliClient {
 
       if (loginSuccessful) {
         logManifestFile(appAutoscalarRequestData.getAutoscalarFilePath(), logCallback);
-        logStatus(true, "performConfigureAutoscaler");
         // perform configure-autoscalar command
-        ProcessExecutor processExecutor = createProcessExecutorForCfTask(appAutoscalarRequestData.getTimeoutInMins(),
-            getConfigureAutosaclarCfCliCommand(appAutoscalarRequestData),
-            getAppAutoscalerEnvMapForCustomPlugin(appAutoscalarRequestData), logCallback);
-        exitCode = processExecutor.execute().getExitValue();
+        ProcessResult processResult = getProcessResult(getConfigureAutosaclarCfCliCommand(appAutoscalarRequestData),
+            getAppAutoscalerEnvMapForCustomPlugin(appAutoscalarRequestData),
+            appAutoscalarRequestData.getTimeoutInMins(), logCallback);
+        exitCode = processResult.getExitValue();
       }
     } catch (Exception e) {
       exceptionForAutoscalingConfigureFailure(appAutoscalarRequestData.getApplicationName(), e);
     }
-
-    logStatus(false, "performConfigureAutoscaler");
 
     if (exitCode != 0) {
       throw new PivotalClientApiException(format("Exception occurred while Configuring autoscalar for Application: %s, "
@@ -244,14 +260,13 @@ public class CfCliClientImpl implements CfCliClient {
       boolean loginSuccessful = logInForAppAutoscalarCliCommand(appAutoscalarRequestData, logCallback);
 
       if (loginSuccessful) {
-        logStatus(true, "changeAutoscalerState");
         // perform enable/disable autoscalar
         String completeCommand = generateChangeAutoscalerStateCommand(appAutoscalarRequestData, enable);
 
-        ProcessExecutor processExecutor = createProcessExecutorForCfTask(appAutoscalarRequestData.getTimeoutInMins(),
-            completeCommand, getAppAutoscalerEnvMapForCustomPlugin(appAutoscalarRequestData), logCallback);
-        exitCode = processExecutor.execute().getExitValue();
-        logStatus(false, "changeAutoscalerState");
+        ProcessResult processResult =
+            getProcessResult(completeCommand, getAppAutoscalerEnvMapForCustomPlugin(appAutoscalarRequestData),
+                appAutoscalarRequestData.getTimeoutInMins(), logCallback);
+        exitCode = processResult.getExitValue();
       }
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
@@ -287,15 +302,12 @@ public class CfCliClientImpl implements CfCliClient {
       CfRequestConfig pcfRequestConfig = appAutoscalarRequestData.getCfRequestConfig();
       boolean loginSuccessful = logInForAppAutoscalarCliCommand(appAutoscalarRequestData, logCallback);
       if (loginSuccessful) {
-        logStatus(true, "checkIfAppHasAutoscalerAttached");
-        ProcessExecutor processExecutor = createProcessExecutorForCfTask(pcfRequestConfig.getTimeOutIntervalInMins(),
-            CfCliCommandResolver.getAutoscalingAppsCliCommandWithGrep(pcfRequestConfig.getCfCliPath(),
-                pcfRequestConfig.getCfCliVersion(), appAutoscalarRequestData.getApplicationGuid()),
-            getAppAutoscalerEnvMapForCustomPlugin(appAutoscalarRequestData), logCallback);
-
-        ProcessResult processResult = processExecutor.execute();
+        ProcessResult processResult =
+            getProcessResult(CfCliCommandResolver.getAutoscalingAppsCliCommandWithGrep(pcfRequestConfig.getCfCliPath(),
+                                 pcfRequestConfig.getCfCliVersion(), appAutoscalarRequestData.getApplicationGuid()),
+                getAppAutoscalerEnvMapForCustomPlugin(appAutoscalarRequestData),
+                pcfRequestConfig.getTimeOutIntervalInMins(), logCallback);
         appAutoscalarInstalled = isNotEmpty(processResult.outputUTF8());
-        logStatus(false, "checkIfAppHasAutoscalerAttached");
       }
     } catch (Exception e) {
       throw new PivotalClientApiException("check for AppAutoscalar Binding failed", e);
@@ -315,13 +327,11 @@ public class CfCliClientImpl implements CfCliClient {
     try {
       boolean loginSuccessful = logInForAppAutoscalarCliCommand(appAutoscalarRequestData, logCallback);
       if (loginSuccessful) {
-        logStatus(true, "checkIfAppHasAutoscalerWithExpectedState");
-        ProcessExecutor executor = createProcessExecutorForCfTask(pcfRequestConfig.getTimeOutIntervalInMins(),
-            CfCliCommandResolver.getAutoscalingAppsCliCommandWithGrep(pcfRequestConfig.getCfCliPath(),
-                pcfRequestConfig.getCfCliVersion(), appAutoscalarRequestData.getApplicationGuid()),
-            getAppAutoscalerEnvMapForCustomPlugin(appAutoscalarRequestData), logCallback);
-
-        ProcessResult processResult = executor.execute();
+        ProcessResult processResult =
+            getProcessResult(CfCliCommandResolver.getAutoscalingAppsCliCommandWithGrep(pcfRequestConfig.getCfCliPath(),
+                                 pcfRequestConfig.getCfCliVersion(), appAutoscalarRequestData.getApplicationGuid()),
+                getAppAutoscalerEnvMapForCustomPlugin(appAutoscalarRequestData),
+                pcfRequestConfig.getTimeOutIntervalInMins(), logCallback);
         String output = processResult.outputUTF8();
         if (isEmpty(output)) {
           logCallback.saveExecutionLog("\n# No App Autoscalar Bound to App");
@@ -332,7 +342,6 @@ public class CfCliClientImpl implements CfCliClient {
             appAutoscalarInExpectedState = true;
           }
         }
-        logStatus(false, "checkIfAppHasAutoscalerWithExpectedState");
       }
     } catch (Exception e) {
       throw new PivotalClientApiException("check for AppAutoscalar Binding failed", e);
@@ -356,7 +365,6 @@ public class CfCliClientImpl implements CfCliClient {
   @VisibleForTesting
   ProcessExecutor createProcessExecutorForCfTask(
       long timeout, String command, Map<String, String> env, LogCallback logCallback) {
-    logCliCommand(command);
     return new ProcessExecutor()
         .timeout(timeout, TimeUnit.MINUTES)
         .command(BIN_BASH, "-c", command)
@@ -473,8 +481,6 @@ public class CfCliClientImpl implements CfCliClient {
         pcfRequestConfig.setLoggedin(true);
       }
 
-      logStatus(true, "executeRoutesOperationForApplicationUsingCli");
-
       List<Domain> allDomainsForSpace = cfSdkClient.getAllDomainsForSpace(pcfRequestConfig);
       Set<String> domainNames = allDomainsForSpace.stream().map(Domain::getName).collect(toSet());
       logCallback.saveExecutionLog(format("Found domain names: [%s]", join(", ", domainNames)));
@@ -501,7 +507,6 @@ public class CfCliClientImpl implements CfCliClient {
         }
       }
 
-      logStatus(false, "executeRoutesOperationForApplicationUsingCli");
     } catch (InterruptedException ex) {
       Thread.currentThread().interrupt();
       throw new PivotalClientApiException(PIVOTAL_CLOUD_FOUNDRY_CLIENT_EXCEPTION + "Failed mapping routes", ex);
@@ -545,7 +550,6 @@ public class CfCliClientImpl implements CfCliClient {
     CfRequestConfig pcfRequestConfig = cfRunPluginScriptRequestData.getCfRequestConfig();
     int exitCode = -1;
     try {
-      logStatus(true, "runPcfPluginScript");
       logCallback.saveExecutionLog("# Final Script to execute :");
       logCallback.saveExecutionLog("# ------------------------------------------ \n");
       logCallback.saveExecutionLog(cfRunPluginScriptRequestData.getFinalScriptString());
@@ -557,12 +561,11 @@ public class CfCliClientImpl implements CfCliClient {
           doLogin(pcfRequestConfig, logCallback, cfRunPluginScriptRequestData.getWorkingDirectory());
       if (loginSuccessful) {
         logCallback.saveExecutionLog("# Executing pcf plugin script :");
-        ProcessExecutor processExecutor = createProcessExecutorForCfTask(pcfRequestConfig.getTimeOutIntervalInMins(),
-            cfRunPluginScriptRequestData.getFinalScriptString(),
+
+        ProcessResult processResult = getProcessResult(cfRunPluginScriptRequestData.getFinalScriptString(),
             getEnvironmentMapForPluginScript(pcfRequestConfig.getEndpointUrl(),
                 cfRunPluginScriptRequestData.getWorkingDirectory(), pcfPluginHome, pcfRequestConfig.getCfCliPath()),
-            logCallback);
-        ProcessResult processResult = runProcessExecutor(processExecutor);
+            pcfRequestConfig.getTimeOutIntervalInMins(), logCallback);
         exitCode = processResult.getExitValue();
         if (exitCode == 0) {
           logCallback.saveExecutionLog(format(SUCCESS, Bold, Green));
@@ -570,7 +573,6 @@ public class CfCliClientImpl implements CfCliClient {
           logCallback.saveExecutionLog(format(processResult.outputUTF8(), Bold, Red), ERROR);
         }
       }
-      logStatus(false, "runPcfPluginScript");
     } catch (Exception e) {
       throw new PivotalClientApiException("Exception occurred while running pcf plugin script", e);
     }
@@ -578,12 +580,6 @@ public class CfCliClientImpl implements CfCliClient {
       throw new PivotalClientApiException("Exception occurred while running pcf plugin script"
           + ", Error: Plugin Script process ExitCode:  " + exitCode);
     }
-  }
-
-  @VisibleForTesting
-  ProcessResult runProcessExecutor(ProcessExecutor processExecutor)
-      throws InterruptedException, TimeoutException, IOException {
-    return processExecutor.execute();
   }
 
   @Override
@@ -600,7 +596,6 @@ public class CfCliClientImpl implements CfCliClient {
         logCallback.saveExecutionLog(color(errorMessage, Red, Bold));
         throw new InvalidRequestException(errorMessage);
       }
-      logStatus(true, "setEnvVariablesForApplication");
       if (isNotEmpty(envVars)) {
         int exitcode;
         String command;
@@ -624,7 +619,6 @@ public class CfCliClientImpl implements CfCliClient {
           }
         }
       }
-      logStatus(false, "setEnvVariablesForApplication");
     } catch (InterruptedException ex) {
       Thread.currentThread().interrupt();
       throw new PivotalClientApiException(PIVOTAL_CLOUD_FOUNDRY_CLIENT_EXCEPTION + SET_ENV_VARIABLE_ERROR_MSG, ex);
@@ -636,9 +630,7 @@ public class CfCliClientImpl implements CfCliClient {
   int executeCommand(String command, Map<String, String> env, LogCallback logCallback, CfRequestConfig pcfRequestConfig)
       throws IOException, InterruptedException, TimeoutException {
     logCallback.saveExecutionLog(format("Executing command: [%s]", command));
-    ProcessExecutor executor =
-        createProcessExecutorForCfTask(pcfRequestConfig.getTimeOutIntervalInMins(), command, env, logCallback);
-    ProcessResult result = executor.execute();
+    ProcessResult result = getProcessResult(command, env, pcfRequestConfig.getTimeOutIntervalInMins(), logCallback);
     int resultCode = result.getExitValue();
     if (resultCode != 0) {
       logCallback.saveExecutionLog(format(result.outputUTF8(), Bold, Red), ERROR);
@@ -663,8 +655,6 @@ public class CfCliClientImpl implements CfCliClient {
         throw new InvalidRequestException(errorMessage);
       }
 
-      logStatus(true, "unsetEnvVariablesForApplication");
-
       if (isNotEmpty(varNames)) {
         int exitcode;
         String command;
@@ -688,7 +678,6 @@ public class CfCliClientImpl implements CfCliClient {
         }
       }
 
-      logStatus(false, "unsetEnvVariablesForApplication");
     } catch (InterruptedException ex) {
       Thread.currentThread().interrupt();
       throw new PivotalClientApiException(PIVOTAL_CLOUD_FOUNDRY_CLIENT_EXCEPTION + SET_ENV_VARIABLE_ERROR_MSG, ex);
@@ -710,11 +699,7 @@ public class CfCliClientImpl implements CfCliClient {
         throw new PivotalClientApiException("Failed to login");
       }
 
-      logStatus(true, "tailLogsForPcf");
-
       ProcessExecutor processExecutor = getProcessExecutorForLogTailing(pcfRequestConfig, logCallback);
-
-      logStatus(false, "tailLogsForPcf");
       return processExecutor.start();
     } catch (Exception e) {
       throw new PivotalClientApiException(PIVOTAL_CLOUD_FOUNDRY_CLIENT_EXCEPTION + "Failed while tailing logs", e);
@@ -724,7 +709,6 @@ public class CfCliClientImpl implements CfCliClient {
   boolean doLogin(CfRequestConfig pcfRequestConfig, LogCallback logCallback, String configPathVar)
       throws IOException, InterruptedException, TimeoutException {
     logCallback.saveExecutionLog("# Performing \"login\"");
-    logStatus(true, "Login");
     String command;
     int exitValue;
     Map<String, String> env = getEnvironmentMapForCfExecutor(pcfRequestConfig.getEndpointUrl(), configPathVar);
@@ -750,7 +734,6 @@ public class CfCliClientImpl implements CfCliClient {
     }
 
     logCallback.saveExecutionLog(exitValue == 0 ? "# Login Successful" : "# Login Failed");
-    logStatus(true, "Login");
     return exitValue == 0;
   }
 
@@ -758,7 +741,6 @@ public class CfCliClientImpl implements CfCliClient {
   ProcessExecutor getProcessExecutorForLogTailing(CfRequestConfig pcfRequestConfig, LogCallback logCallback) {
     String logsCommand = CfCliCommandResolver.getLogsCommand(
         pcfRequestConfig.getCfCliPath(), pcfRequestConfig.getCfCliVersion(), pcfRequestConfig.getApplicationName());
-    logCliCommand(logsCommand);
     return new ProcessExecutor()
         .timeout(pcfRequestConfig.getTimeOutIntervalInMins(), TimeUnit.MINUTES)
         .command(BIN_BASH, "-c", logsCommand)

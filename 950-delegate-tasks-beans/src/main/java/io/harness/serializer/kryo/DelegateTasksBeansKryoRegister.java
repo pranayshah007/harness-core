@@ -150,6 +150,14 @@ import io.harness.delegate.beans.connector.awsconnector.AwsCFTaskParamsRequest;
 import io.harness.delegate.beans.connector.awsconnector.AwsCFTaskResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsDelegateTaskResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsIAMRolesResponse;
+import io.harness.delegate.beans.connector.awsconnector.AwsListASGInstancesTaskParamsRequest;
+import io.harness.delegate.beans.connector.awsconnector.AwsListASGNamesTaskResponse;
+import io.harness.delegate.beans.connector.awsconnector.AwsListEC2InstancesTaskParamsRequest;
+import io.harness.delegate.beans.connector.awsconnector.AwsListEC2InstancesTaskResponse;
+import io.harness.delegate.beans.connector.awsconnector.AwsListLoadBalancersTaskResponse;
+import io.harness.delegate.beans.connector.awsconnector.AwsListTagsTaskParamsRequest;
+import io.harness.delegate.beans.connector.awsconnector.AwsListTagsTaskResponse;
+import io.harness.delegate.beans.connector.awsconnector.AwsListVpcTaskResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsS3BucketResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsTaskParams;
 import io.harness.delegate.beans.connector.awsconnector.AwsTaskType;
@@ -176,6 +184,7 @@ import io.harness.delegate.beans.connector.helm.HttpHelmConnectivityTaskResponse
 import io.harness.delegate.beans.connector.helm.HttpHelmValidationParams;
 import io.harness.delegate.beans.connector.helm.OciHelmConnectivityTaskParams;
 import io.harness.delegate.beans.connector.helm.OciHelmConnectivityTaskResponse;
+import io.harness.delegate.beans.connector.helm.OciHelmValidationParams;
 import io.harness.delegate.beans.connector.jenkins.JenkinsCapabilityHelper;
 import io.harness.delegate.beans.connector.jenkins.JenkinsTestConnectionTaskParams;
 import io.harness.delegate.beans.connector.jenkins.JenkinsTestConnectionTaskResponse;
@@ -259,8 +268,10 @@ import io.harness.delegate.beans.secrets.SSHConfigValidationTaskResponse;
 import io.harness.delegate.beans.secrets.WinRmConfigValidationTaskResponse;
 import io.harness.delegate.beans.serverless.ServerlessAwsLambdaDeployResult;
 import io.harness.delegate.beans.serverless.ServerlessAwsLambdaFunction;
+import io.harness.delegate.beans.serverless.ServerlessAwsLambdaPrepareRollbackDataResult;
 import io.harness.delegate.beans.serverless.ServerlessAwsLambdaRollbackResult;
 import io.harness.delegate.beans.serverless.ServerlessDeployResult;
+import io.harness.delegate.beans.serverless.ServerlessPrepareRollbackDataResult;
 import io.harness.delegate.beans.serverless.ServerlessRollbackResult;
 import io.harness.delegate.beans.storeconfig.ArtifactoryStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.FetchType;
@@ -317,7 +328,9 @@ import io.harness.delegate.task.azure.appservice.AzureAppServiceTaskParameters.A
 import io.harness.delegate.task.azure.appservice.AzureAppServiceTaskResponse;
 import io.harness.delegate.task.azure.appservice.webapp.ng.AzureWebAppInfraDelegateConfig;
 import io.harness.delegate.task.azure.appservice.webapp.ng.AzureWebAppRequestType;
+import io.harness.delegate.task.azure.appservice.webapp.ng.request.AzureWebAppSlotDeploymentRequest;
 import io.harness.delegate.task.azure.appservice.webapp.ng.request.AzureWebAppTaskRequest;
+import io.harness.delegate.task.azure.appservice.webapp.ng.response.AzureWebAppSlotDeploymentResponse;
 import io.harness.delegate.task.azure.appservice.webapp.ng.response.AzureWebAppTaskResponse;
 import io.harness.delegate.task.azure.appservice.webapp.request.AzureWebAppListWebAppDeploymentSlotsParameters;
 import io.harness.delegate.task.azure.appservice.webapp.request.AzureWebAppListWebAppInstancesParameters;
@@ -347,6 +360,9 @@ import io.harness.delegate.task.azure.arm.response.AzureARMListManagementGroupRe
 import io.harness.delegate.task.azure.arm.response.AzureARMListSubscriptionLocationsResponse;
 import io.harness.delegate.task.azure.arm.response.AzureARMRollbackResponse;
 import io.harness.delegate.task.azure.arm.response.AzureBlueprintDeploymentResponse;
+import io.harness.delegate.task.azure.artifact.AzureArtifactConfig;
+import io.harness.delegate.task.azure.artifact.AzureArtifactType;
+import io.harness.delegate.task.azure.artifact.AzureContainerArtifactConfig;
 import io.harness.delegate.task.azure.request.AzureLoadBalancerDetailForBGDeployment;
 import io.harness.delegate.task.azure.request.AzureVMSSDeployTaskParameters;
 import io.harness.delegate.task.azure.request.AzureVMSSGetVirtualMachineScaleSetParameters;
@@ -511,10 +527,12 @@ import io.harness.delegate.task.serverless.ServerlessRollbackConfig;
 import io.harness.delegate.task.serverless.request.ServerlessCommandRequest;
 import io.harness.delegate.task.serverless.request.ServerlessDeployRequest;
 import io.harness.delegate.task.serverless.request.ServerlessGitFetchRequest;
+import io.harness.delegate.task.serverless.request.ServerlessPrepareRollbackDataRequest;
 import io.harness.delegate.task.serverless.request.ServerlessRollbackRequest;
 import io.harness.delegate.task.serverless.response.ServerlessCommandResponse;
 import io.harness.delegate.task.serverless.response.ServerlessDeployResponse;
 import io.harness.delegate.task.serverless.response.ServerlessGitFetchResponse;
+import io.harness.delegate.task.serverless.response.ServerlessPrepareRollbackDataResponse;
 import io.harness.delegate.task.serverless.response.ServerlessRollbackResponse;
 import io.harness.delegate.task.servicenow.ServiceNowTaskNGParameters;
 import io.harness.delegate.task.servicenow.ServiceNowTaskNGResponse;
@@ -706,6 +724,7 @@ import software.wings.service.impl.aws.model.AwsAmiPreDeploymentData;
 import software.wings.service.impl.aws.model.AwsAsgGetRunningCountData;
 import software.wings.service.impl.aws.model.AwsCFTemplateParamsData;
 import software.wings.service.impl.aws.model.AwsCodeDeployS3LocationData;
+import software.wings.service.impl.aws.model.AwsEC2Instance;
 import software.wings.service.impl.aws.model.AwsLambdaFunctionParams;
 import software.wings.service.impl.aws.model.AwsLambdaVpcConfig;
 import software.wings.service.impl.aws.model.AwsSecurityGroup;
@@ -1098,6 +1117,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(HttpHelmValidationParams.class, 19549);
     kryo.register(ConnectorValidationParameterResponse.class, 19551);
 
+    kryo.register(OciHelmValidationParams.class, 19630);
     kryo.register(HttpHelmConnectivityTaskParams.class, 19640);
     kryo.register(HttpHelmConnectivityTaskResponse.class, 19641);
     kryo.register(HttpHelmStoreDelegateConfig.class, 19642);
@@ -1430,6 +1450,16 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(EcsContainerInfo.class, 5166);
     kryo.register(KubernetesContainerInfo.class, 5165);
     kryo.register(S3FileRequest.class, 8067);
+    kryo.register(AwsListEC2InstancesTaskParamsRequest.class, 83071);
+    kryo.register(AwsListEC2InstancesTaskResponse.class, 83072);
+    kryo.register(AwsEC2Instance.class, 83073);
+    kryo.register(AwsListASGInstancesTaskParamsRequest.class, 83074);
+    kryo.register(AwsListVpcTaskResponse.class, 83075);
+    kryo.register(AwsListTagsTaskParamsRequest.class, 83076);
+    kryo.register(AwsListTagsTaskResponse.class, 83077);
+    kryo.register(AwsListLoadBalancersTaskResponse.class, 83078);
+    kryo.register(AwsListASGNamesTaskResponse.class, 83079);
+
     // WinRm
     kryo.register(WinRmCredentialsSpecDTO.class, 600001);
     kryo.register(WinRmAuthScheme.class, 600002);
@@ -1528,5 +1558,14 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(FileDelegateConfig.class, 55318);
     kryo.register(HarnessStoreDelegateConfig.class, 55319);
     kryo.register(ConfigFileParameters.class, 55320);
+    kryo.register(ServerlessPrepareRollbackDataRequest.class, 29309);
+    kryo.register(ServerlessPrepareRollbackDataResponse.class, 29310);
+    kryo.register(ServerlessPrepareRollbackDataResult.class, 29311);
+    kryo.register(ServerlessAwsLambdaPrepareRollbackDataResult.class, 29312);
+    kryo.register(AzureWebAppSlotDeploymentRequest.class, 55321);
+    kryo.register(AzureWebAppSlotDeploymentResponse.class, 55322);
+    kryo.register(AzureArtifactConfig.class, 55323);
+    kryo.register(AzureArtifactType.class, 55324);
+    kryo.register(AzureContainerArtifactConfig.class, 55325);
   }
 }

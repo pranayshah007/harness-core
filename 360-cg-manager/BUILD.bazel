@@ -77,7 +77,7 @@ java_binary(
         "@maven//:org_eclipse_jetty_jetty_servlets",
         "@maven//:org_glassfish_jersey_core_jersey_server",
         "@maven//:org_glassfish_jersey_media_jersey_media_multipart",
-        "@maven//:org_hibernate_hibernate_validator",
+        "@maven//:org_hibernate_validator_hibernate_validator",
         "@maven//:org_mongodb_morphia_morphia",
         "@maven//:org_reflections_reflections",
         "@maven//:org_slf4j_slf4j_api",

@@ -38,6 +38,7 @@ cp ../../270-delegate-service-app/delegate-service-config.yml .
 cp ../../270-delegate-service-app/src/main/resources/redisson-jcache.yaml .
 
 cp ../../dockerization/delegate-service-app/Dockerfile-delegate-service-app-jenkins-k8-openjdk ./Dockerfile
+cp ../../dockerization/delegate-service-app/Dockerfile-delegate-service-app-jenkins-k8-gcr-openjdk ./Dockerfile-gcr
 cp ../../dockerization/delegate-service-app/Dockerfile-delegate-service-app-cie-jdk ./Dockerfile-cie-jdk
 cp -r ../../dockerization/delegate-service-app/scripts/ .
 
@@ -61,6 +62,7 @@ cp ../../300-cv-nextgen/src/main/resources/redisson-jcache.yaml .
 
 
 cp ../../dockerization/cv-nextgen/Dockerfile-verification-jenkins-k8-openjdk ./Dockerfile
+cp ../../dockerization/cv-nextgen/Dockerfile-verification-jenkins-k8-gcr-openjdk ./Dockerfile-gcr
 cp ../../dockerization/cv-nextgen/Dockerfile-cv-nextgen-cie-jdk ./Dockerfile-cie-jdk
 cp -R ../../dockerization/cv-nextgen/scripts/ .
 
@@ -82,6 +84,7 @@ cp ../../270-verification/keystore.jks .
 cp ../../270-verification/verification-config.yml .
 
 cp ../../dockerization/verification/Dockerfile-verification-jenkins-k8-openjdk ./Dockerfile
+cp ../../dockerization/verification/Dockerfile-verification-jenkins-k8-gcr-openjdk ./Dockerfile-gcr
 cp ../../dockerization/verification/Dockerfile-verification-cie-jdk ./Dockerfile-cie-jdk
 cp -R ../../dockerization/verification/scripts/ .
 
@@ -103,6 +106,7 @@ cp ../../210-command-library-server/keystore.jks .
 cp ../../210-command-library-server/command-library-server-config.yml .
 
 cp ../../dockerization/command-library-server/Dockerfile-command-library-server-jenkins-k8-openjdk ./Dockerfile
+cp ../../dockerization/command-library-server/Dockerfile-command-library-server-jenkins-k8-gcr-openjdk ./Dockerfile-gcr
 cp ../../dockerization/command-library-server/Dockerfile-command-library-server-cie-jdk ./Dockerfile-cie-jdk
 cp -R ../../dockerization/command-library-server/scripts/ .
 
@@ -184,6 +188,8 @@ cp ../../310-ci-manager/cert.pem .
 cp ../../310-ci-manager/src/main/resources/redisson-jcache.yaml .
 
 cp ../../dockerization/ci-manager/Dockerfile-ci-manager-jenkins-k8-openjdk ./Dockerfile
+cp ../../dockerization/ci-manager/Dockerfile-ci-manager-jenkins-k8-gcr-openjdk ./Dockerfile-gcr
+cp ../../dockerization/ci-manager/Dockerfile-ci-manager-jenkins-k8-gcr-openjdk-ubi ./Dockerfile-gcr-ubi
 cp ../../dockerization/ci-manager/Dockerfile-ci-manager-cie-jdk ./Dockerfile-cie-jdk
 cp -r ../../dockerization/ci-manager/scripts/ .
 
@@ -207,6 +213,7 @@ cp ../../platform-service/config/keystore.jks .
 cp ../../platform-service/config/key.pem .
 cp ../../platform-service/config/cert.pem .
 cp ../../dockerization/platform-service/Dockerfile-platform-service-jenkins-k8-openjdk ./Dockerfile
+cp ../../dockerization/platform-service/Dockerfile-platform-service-jenkins-k8-gcr-openjdk ./Dockerfile-gcr
 cp ../../dockerization/platform-service/Dockerfile-platform-service-cie-jdk ./Dockerfile-cie-jdk
 cp -r ../../dockerization/platform-service/scripts .
 cp ../../protocol.info .
@@ -231,6 +238,7 @@ cp ../../800-pipeline-service/cert.pem .
 cp ../../800-pipeline-service/src/main/resources/redisson-jcache.yaml .
 
 cp ../../dockerization/pipeline-service/Dockerfile-pipeline-service-jenkins-k8-openjdk ./Dockerfile
+cp ../../dockerization/pipeline-service/Dockerfile-pipeline-service-jenkins-k8-gcr-openjdk ./Dockerfile-gcr
 cp ../../dockerization/pipeline-service/Dockerfile-pipeline-service-cie-jdk ./Dockerfile-cie-jdk
 cp -r ../../dockerization/pipeline-service/scripts/ .
 cp ../../pipeline-service-protocol.info .
@@ -275,6 +283,7 @@ cp ../../840-template-service/cert.pem .
 cp ../../840-template-service/src/main/resources/redisson-jcache.yaml .
 
 cp ../../dockerization/template-service/Dockerfile-template-service-jenkins-k8-openjdk ./Dockerfile
+cp ../../dockerization/template-service/Dockerfile-template-service-jenkins-k8-gcr-openjdk ./Dockerfile-gcr
 cp ../../dockerization/template-service/Dockerfile-template-service-cie-jdk ./Dockerfile-cie-jdk
 cp -r ../../dockerization/template-service/scripts/ .
 cp ../../protocol.info .
@@ -294,6 +303,7 @@ cp ${HOME}/.bazel-dirs/bin/950-events-framework-monitor/module_deploy.jar events
 cp ../../950-events-framework-monitor/config.yml .
 cp ../../950-events-framework-monitor/redis/* .
 cp ../../dockerization/eventsapi-monitor/Dockerfile-eventsapi-monitor-jenkins-k8-openjdk ./Dockerfile
+cp ../../dockerization/eventsapi-monitor/Dockerfile-eventsapi-monitor-jenkins-k8-gcr-openjdk ./Dockerfile-gcr
 cp ../../dockerization/eventsapi-monitor/Dockerfile-eventsapi-monitor-cie-jdk ./Dockerfile-cie-jdk
 cp -r ../../dockerization/eventsapi-monitor/scripts/ .
 cp ../../protocol.info .

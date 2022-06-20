@@ -246,20 +246,20 @@ public class CEAWSConnectorValidator extends io.harness.ccm.connectors.AbstractC
       for (EvaluationResult result : evaluationResults) {
         if (result.getOrganizationsDecisionDetail() != null
             && !result.getOrganizationsDecisionDetail().isAllowedByOrganizations()) {
-          reason = "Action: " + result.getEvalActionName() + " not allowed (" + result.getEvalDecision()
-              + ") on Resource: " + result.getEvalResourceName();
+          // Just log the error and continue
+          log.info("Action: " + result.getEvalActionName() + " not allowed (" + result.getEvalDecision()
+              + ") on Resource: " + result.getEvalResourceName());
+          continue;
         } else {
           reason =
               "Action: " + result.getEvalActionName() + " not allowed on Resource: " + result.getEvalResourceName();
         }
 
-        errorList.add(
-            ErrorDetail.builder()
-                .message(
-                    "Check organization service control policy in your AWS account. Review AWS access permissions as per the documentation.")
-                .reason(reason)
-                .code(403)
-                .build());
+        errorList.add(ErrorDetail.builder()
+                          .message("Review AWS access permissions as per the documentation.")
+                          .reason(reason)
+                          .code(403)
+                          .build());
       }
     }
     if (errorSize == errorList.size()) {

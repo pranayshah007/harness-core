@@ -547,6 +547,8 @@ roles:
         - core_file_view
         - core_file_access
         - core_variable_view
+        - core_template_view
+        - core_template_access
       allowedScopeLevels:
         - project
       managed: true

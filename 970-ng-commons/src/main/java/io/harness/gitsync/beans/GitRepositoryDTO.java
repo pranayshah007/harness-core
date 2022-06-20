@@ -20,4 +20,5 @@ import lombok.Value;
 public class GitRepositoryDTO {
   String name;
   String org;
+  String projectName; // required for ADO
 }

@@ -1110,6 +1110,9 @@
 9107:io.harness.delegate.task.git.NGGitOpsTaskParams
 9108:io.harness.delegate.task.git.NGGitOpsResponse
 9109:io.harness.delegate.task.git.GitOpsTaskType
+9110:io.harness.cvng.beans.SplunkMetricDataCollectionInfo
+9111:io.harness.cvng.beans.SplunkMetricDataCollectionInfo.MetricInfo
+9112:io.harness.cvng.beans.splunk.SplunkMetricSampleDataCollectionRequest
 9501:io.harness.timeout.trackers.absolute.AbsoluteTimeoutParameters
 9701:io.harness.logging.UnitProgress
 9702:io.harness.logging.UnitStatus
@@ -1485,6 +1488,7 @@
 19550:io.harness.delegate.beans.executioncapability.GitInstallationCapability
 19551:io.harness.delegate.beans.connector.ConnectorValidationParameterResponse
 19552:io.harness.delegate.beans.connector.scm.github.GithubOauthDTO
+19630:io.harness.delegate.beans.connector.helm.OciHelmValidationParams
 19640:io.harness.delegate.beans.connector.helm.HttpHelmConnectivityTaskParams
 19641:io.harness.delegate.beans.connector.helm.HttpHelmConnectivityTaskResponse
 19642:io.harness.delegate.beans.storeconfig.HttpHelmStoreDelegateConfig
@@ -1600,6 +1604,10 @@
 29306:io.harness.delegate.beans.connector.helm.OciHelmConnectivityTaskParams
 29307:io.harness.delegate.beans.connector.helm.OciHelmConnectivityTaskResponse
 29308:io.harness.delegate.beans.storeconfig.OciHelmStoreDelegateConfig
+29309:io.harness.delegate.task.serverless.request.ServerlessPrepareRollbackDataRequest
+29310:io.harness.delegate.task.serverless.response.ServerlessPrepareRollbackDataResponse
+29311:io.harness.delegate.beans.serverless.ServerlessPrepareRollbackDataResult
+29312:io.harness.delegate.beans.serverless.ServerlessAwsLambdaPrepareRollbackDataResult
 31010:java.lang.StackTraceElement[]
 31011:java.lang.StackTraceElement
 31012:io.harness.exception.DelegateErrorHandlerException
@@ -1684,6 +1692,11 @@
 55318:io.harness.delegate.task.ssh.config.FileDelegateConfig
 55319:io.harness.delegate.beans.storeconfig.HarnessStoreDelegateConfig
 55320:io.harness.delegate.task.ssh.config.ConfigFileParameters
+55321:io.harness.delegate.task.azure.appservice.webapp.ng.request.AzureWebAppSlotDeploymentRequest
+55322:io.harness.delegate.task.azure.appservice.webapp.ng.response.AzureWebAppSlotDeploymentResponse
+55323:io.harness.delegate.task.azure.artifact.AzureArtifactConfig
+55324:io.harness.delegate.task.azure.artifact.AzureArtifactType
+55325:io.harness.delegate.task.azure.artifact.AzureContainerArtifactConfig
 70001:io.harness.accesscontrol.commons.exceptions.AccessDeniedErrorDTO
 70002:io.harness.accesscontrol.acl.api.PermissionCheckDTO
 70003:io.harness.accesscontrol.acl.api.ResourceScope
@@ -1705,6 +1718,15 @@
 73985:io.harness.delegate.beans.DelegateEntityOwner
 73986:io.harness.delegate.beans.DelegateSizeDetails
 73987:io.harness.delegate.beans.DelegateSize
+83071:io.harness.delegate.beans.connector.awsconnector.AwsListEC2InstancesTaskParamsRequest
+83072:io.harness.delegate.beans.connector.awsconnector.AwsListEC2InstancesTaskResponse
+83073:software.wings.service.impl.aws.model.AwsEC2Instance
+83074:io.harness.delegate.beans.connector.awsconnector.AwsListASGInstancesTaskParamsRequest
+83075:io.harness.delegate.beans.connector.awsconnector.AwsListVpcTaskResponse
+83076:io.harness.delegate.beans.connector.awsconnector.AwsListTagsTaskParamsRequest
+83077:io.harness.delegate.beans.connector.awsconnector.AwsListTagsTaskResponse
+83078:io.harness.delegate.beans.connector.awsconnector.AwsListLoadBalancersTaskResponse
+83079:io.harness.delegate.beans.connector.awsconnector.AwsListASGNamesTaskResponse
 95001:io.harness.delegate.beans.logstreaming.UnitProgressData
 95002:io.harness.waiter.WaitInstanceTimeoutCallback
 96001:io.harness.springdata.exceptions.WingsTransactionFailureException
@@ -2182,3 +2204,5 @@
 980028:io.harness.exception.AzureAKSException
 980029:io.harness.exception.runtime.SshCommandExecutionException
 9800001:io.harness.beans.RecasterMap
+
+

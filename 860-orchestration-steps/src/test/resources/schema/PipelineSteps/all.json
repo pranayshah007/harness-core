@@ -493,13 +493,13 @@
         {
           "type": "object",
           "required": [
-            "approvalMessage",
             "approvers",
             "includePipelineExecutionHistory"
           ],
           "properties": {
             "approvalMessage": {
-              "type": "string"
+              "type": "string",
+              "minLength": 1
             },
             "approverInputs": {
               "type": "array",
@@ -1589,8 +1589,7 @@
             "shell": {
               "type": "string",
               "enum": [
-                "Bash",
-                "PowerShell"
+                "Bash"
               ]
             },
             "source": {

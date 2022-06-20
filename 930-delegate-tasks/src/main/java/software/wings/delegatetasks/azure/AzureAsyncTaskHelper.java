@@ -11,6 +11,7 @@ import static io.harness.azure.model.AzureConstants.DEPLOYMENT_SLOT_FULL_NAME_PA
 import static io.harness.azure.model.AzureConstants.DEPLOYMENT_SLOT_NON_PRODUCTION_TYPE;
 import static io.harness.azure.model.AzureConstants.DEPLOYMENT_SLOT_PRODUCTION_TYPE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.lang.String.format;
 
@@ -25,11 +26,14 @@ import io.harness.azure.client.AzureComputeClient;
 import io.harness.azure.client.AzureContainerRegistryClient;
 import io.harness.azure.client.AzureKubernetesClient;
 import io.harness.azure.client.AzureManagementClient;
+import io.harness.azure.model.AzureAuthenticationType;
 import io.harness.azure.model.AzureConfig;
 import io.harness.azure.model.kube.AzureKubeConfig;
 import io.harness.azure.model.tag.TagDetails;
+import io.harness.azure.utility.AzureUtils;
 import io.harness.connector.ConnectivityStatus;
 import io.harness.connector.ConnectorValidationResult;
+import io.harness.data.encoding.EncodingUtils;
 import io.harness.delegate.beans.azure.response.AzureAcrTokenTaskResponse;
 import io.harness.delegate.beans.azure.response.AzureClustersResponse;
 import io.harness.delegate.beans.azure.response.AzureDeploymentSlotResponse;
@@ -48,18 +52,22 @@ import io.harness.exception.AzureContainerRegistryException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.WingsException;
 import io.harness.expression.RegexFunctor;
+import io.harness.k8s.model.KubernetesAzureConfig;
+import io.harness.k8s.model.KubernetesClusterAuthType;
 import io.harness.k8s.model.KubernetesConfig;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
 
+import software.wings.helpers.ext.azure.AzureIdentityAccessTokenResponse;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.microsoft.azure.management.appservice.DeploymentSlot;
 import com.microsoft.azure.management.containerregistry.Registry;
-import com.microsoft.azure.management.containerservice.KubernetesCluster;
 import com.microsoft.azure.management.resources.Subscription;
 import com.microsoft.azure.management.resources.fluentcore.arm.models.HasName;
 import java.util.HashMap;
@@ -68,9 +76,11 @@ import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
 @OwnedBy(HarnessTeam.CDP)
+@Slf4j
 @Singleton
 public class AzureAsyncTaskHelper {
   @Inject private SecretDecryptionService secretDecryptionService;
@@ -81,6 +91,8 @@ public class AzureAsyncTaskHelper {
   @Inject private AzureManagementClient azureManagementClient;
 
   private final String TAG_LABEL = "Tag#";
+  private final int ITEM_LOG_LIMIT = 30;
+  private final String SCOPE_DEFAULT_SUFFIX = "/.default";
 
   public ConnectorValidationResult getConnectorValidationResult(
       List<EncryptedDataDetail> encryptedDataDetails, AzureConnectorDTO connectorDTO) {
@@ -105,6 +117,10 @@ public class AzureAsyncTaskHelper {
 
   public AzureSubscriptionsResponse listSubscriptions(
       List<EncryptedDataDetail> encryptionDetails, AzureConnectorDTO azureConnector) {
+    log.info(format("Fetching Azure subscriptions for %s user type",
+        azureConnector.getCredential().getAzureCredentialType().getDisplayName()));
+    log.trace(format("User: \n%s", azureConnector.toString()));
+
     AzureConfig azureConfig = AcrRequestResponseMapper.toAzureInternalConfig(azureConnector.getCredential(),
         encryptionDetails, azureConnector.getCredential().getAzureCredentialType(),
         azureConnector.getAzureEnvironmentType(), secretDecryptionService);
@@ -117,11 +133,21 @@ public class AzureAsyncTaskHelper {
                                .collect(Collectors.toMap(Subscription::subscriptionId, Subscription::displayName)))
             .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
             .build();
+
+    log.info(format("Retrieved %d subscriptions (listing first %d only): %s", response.getSubscriptions().size(),
+        ITEM_LOG_LIMIT,
+        response.getSubscriptions().keySet().stream().limit(ITEM_LOG_LIMIT).collect(Collectors.toList()).toString()));
+
     return response;
   }
 
   public AzureResourceGroupsResponse listResourceGroups(
       List<EncryptedDataDetail> encryptionDetails, AzureConnectorDTO azureConnector, String subscriptionId) {
+    log.info(format("Fetching Azure resource groups for subscription %s for %s user type", subscriptionId,
+        azureConnector.getCredential().getAzureCredentialType().getDisplayName()));
+
+    log.trace(format("User: \n%s", azureConnector.toString()));
+
     AzureConfig azureConfig = AcrRequestResponseMapper.toAzureInternalConfig(azureConnector.getCredential(),
         encryptionDetails, azureConnector.getCredential().getAzureCredentialType(),
         azureConnector.getAzureEnvironmentType(), secretDecryptionService);
@@ -131,6 +157,11 @@ public class AzureAsyncTaskHelper {
             .resourceGroups(azureComputeClient.listResourceGroupsNamesBySubscriptionId(azureConfig, subscriptionId))
             .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
             .build();
+
+    log.info(format("Retrieved %d resource groups (listing first %d only): %s", response.getResourceGroups().size(),
+        ITEM_LOG_LIMIT,
+        response.getResourceGroups().stream().limit(ITEM_LOG_LIMIT).collect(Collectors.toList()).toString()));
+
     return response;
   }
 
@@ -189,6 +220,11 @@ public class AzureAsyncTaskHelper {
 
   public AzureRegistriesResponse listContainerRegistries(
       List<EncryptedDataDetail> encryptionDetails, AzureConnectorDTO azureConnector, String subscriptionId) {
+    log.info(format("Fetching Azure Container Registries for subscription %s for %s user type", subscriptionId,
+        azureConnector.getCredential().getAzureCredentialType().getDisplayName()));
+
+    log.trace(format("User: \n%s", azureConnector.toString()));
+
     AzureConfig azureConfig = AcrRequestResponseMapper.toAzureInternalConfig(azureConnector.getCredential(),
         encryptionDetails, azureConnector.getCredential().getAzureCredentialType(),
         azureConnector.getAzureEnvironmentType(), secretDecryptionService);
@@ -202,11 +238,21 @@ public class AzureAsyncTaskHelper {
                                      .collect(Collectors.toList()))
             .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
             .build();
+
+    log.info(format("Retrieved %d container registries (listing first %d only): %s",
+        response.getContainerRegistries().size(), ITEM_LOG_LIMIT,
+        response.getContainerRegistries().stream().limit(ITEM_LOG_LIMIT).collect(Collectors.toList()).toString()));
+
     return response;
   }
 
   public AzureClustersResponse listClusters(List<EncryptedDataDetail> encryptionDetails,
       AzureConnectorDTO azureConnector, String subscriptionId, String resourceGroup) {
+    log.info(format("Fetching Azure Kubernetes Clusters for subscription %s, for resource group %s, for %s user type",
+        subscriptionId, resourceGroup, azureConnector.getCredential().getAzureCredentialType().getDisplayName()));
+
+    log.trace(format("User: \n%s", azureConnector.toString()));
+
     AzureConfig azureConfig = AcrRequestResponseMapper.toAzureInternalConfig(azureConnector.getCredential(),
         encryptionDetails, azureConnector.getCredential().getAzureCredentialType(),
         azureConnector.getAzureEnvironmentType(), secretDecryptionService);
@@ -222,6 +268,10 @@ public class AzureAsyncTaskHelper {
                     .collect(Collectors.toList()))
             .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
             .build();
+
+    log.info(format("Retrieved %d kubernetes clusters (listing first %d only): %s", response.getClusters().size(),
+        ITEM_LOG_LIMIT, response.getClusters().stream().limit(ITEM_LOG_LIMIT).collect(Collectors.toList()).toString()));
+
     return response;
   }
 
@@ -241,28 +291,24 @@ public class AzureAsyncTaskHelper {
   }
 
   public KubernetesConfig getClusterConfig(AzureConnectorDTO azureConnector, String subscriptionId,
-      String resourceGroup, String cluster, String namespace, List<EncryptedDataDetail> encryptedDataDetails) {
+      String resourceGroup, String cluster, String namespace, List<EncryptedDataDetail> encryptedDataDetails,
+      boolean useClusterAdminCredentials) {
     AzureConfig azureConfig = AcrRequestResponseMapper.toAzureInternalConfig(azureConnector.getCredential(),
         encryptedDataDetails, azureConnector.getCredential().getAzureCredentialType(),
         azureConnector.getAzureEnvironmentType(), secretDecryptionService);
 
-    KubernetesCluster k8sCluster =
-        azureKubernetesClient.listKubernetesClusters(azureConfig, subscriptionId)
-            .stream()
-            .filter(kubernetesCluster
-                -> kubernetesCluster.resourceGroupName().equalsIgnoreCase(resourceGroup)
-                    && kubernetesCluster.name().equalsIgnoreCase(cluster))
-            .findFirst()
-            .orElseThrow(()
-                             -> new AzureAKSException(String.format(
-                                 "AKS Cluster %s has not been found for subscription %s and resourceGroup %s ", cluster,
-                                 subscriptionId, resourceGroup)));
-
-    return getKubernetesConfigK8sCluster(namespace, k8sCluster);
+    return getKubernetesConfigK8sCluster(
+        azureConfig, subscriptionId, resourceGroup, cluster, namespace, useClusterAdminCredentials);
   }
 
   public AzureRepositoriesResponse listRepositories(List<EncryptedDataDetail> encryptionDetails,
       AzureConnectorDTO azureConnector, String subscriptionId, String containerRegistry) {
+    log.info(format(
+        "Fetching Azure Container Registry repositories for subscription %s, for registry %s, for %s user type",
+        subscriptionId, containerRegistry, azureConnector.getCredential().getAzureCredentialType().getDisplayName()));
+
+    log.trace(format("User: \n%s", azureConnector.toString()));
+
     AzureConfig azureConfig = AcrRequestResponseMapper.toAzureInternalConfig(azureConnector.getCredential(),
         encryptionDetails, azureConnector.getCredential().getAzureCredentialType(),
         azureConnector.getAzureEnvironmentType(), secretDecryptionService);
@@ -284,11 +330,19 @@ public class AzureAsyncTaskHelper {
                        azureConfig, subscriptionId, registry.loginServerUrl()))
                    .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                    .build();
+
+    log.info(format("Retrieved %d repositories (listing first %d only): %s", response.getRepositories().size(),
+        ITEM_LOG_LIMIT,
+        response.getRepositories().stream().limit(ITEM_LOG_LIMIT).collect(Collectors.toList()).toString()));
+
     return response;
   }
 
   public List<BuildDetailsInternal> getImageTags(
       AzureConfig azureConfig, String subscriptionId, String containerRegistry, String repository) {
+    log.info(format(
+        "Fetching Azure Container Registry Repository tags for subscription %s, for registry %s, for repository %s, for %s user type",
+        subscriptionId, containerRegistry, repository, azureConfig.getAzureAuthenticationType().name()));
     Registry registry =
         azureContainerRegistryClient
             .findFirstContainerRegistryByNameOnSubscription(azureConfig, subscriptionId, containerRegistry)
@@ -303,6 +357,11 @@ public class AzureAsyncTaskHelper {
     String registryUrl = registry.loginServerUrl().toLowerCase();
     String imageUrl = registryUrl + "/" + ArtifactUtilities.trimSlashforwardChars(repository);
     List<String> tags = azureContainerRegistryClient.listRepositoryTags(azureConfig, registryUrl, repository);
+
+    log.info(
+        format("Registry URL: [%s]. Image URL: [%s]. Found %d tags (listing first %d only): %s", registryUrl, imageUrl,
+            tags.size(), ITEM_LOG_LIMIT, tags.stream().limit(ITEM_LOG_LIMIT).collect(Collectors.toList()).toString()));
+
     return tags.stream()
         .map(tag -> {
           Map<String, String> metadata = new HashMap<>();
@@ -321,6 +380,8 @@ public class AzureAsyncTaskHelper {
 
   public BuildDetailsInternal getLastSuccessfulBuildFromRegex(
       AzureConfig azureConfig, String subscription, String registry, String repository, String tagRegex) {
+    log.info(format("Fetching image tag from subscription %s registry %s and repository %s based on regex %s",
+        subscription, registry, repository, tagRegex));
     try {
       Pattern.compile(tagRegex);
     } catch (PatternSyntaxException e) {
@@ -350,6 +411,8 @@ public class AzureAsyncTaskHelper {
 
   public BuildDetailsInternal verifyBuildNumber(
       AzureConfig azureConfig, String subscription, String registry, String repository, String tag) {
+    log.info(format("Fetching image tag from subscription %s registry %s and repository %s based on tag %s",
+        subscription, registry, repository, tag));
     List<BuildDetailsInternal> builds = getImageTags(azureConfig, subscription, registry, repository);
     builds = builds.stream().filter(build -> build.getNumber().equals(tag)).collect(Collectors.toList());
 
@@ -373,27 +436,68 @@ public class AzureAsyncTaskHelper {
             String.format("Found multiple artifact tags '%s', but expected only one.", tag)));
   }
 
-  private KubernetesConfig getKubernetesConfigK8sCluster(String namespace, KubernetesCluster k8sCluster) {
+  private KubernetesConfig getKubernetesConfigK8sCluster(AzureConfig azureConfig, String subscriptionId,
+      String resourceGroup, String cluster, String namespace, boolean shouldGetAdminCredentials) {
     try {
-      AzureKubeConfig azureKubeConfig =
-          new ObjectMapper(new YAMLFactory())
-              .readValue(new String(k8sCluster.adminKubeConfigContent()), AzureKubeConfig.class);
+      log.info(format(
+          "Getting AKS kube config [subscription: %s] [resourceGroup: %s] [cluster: %s] [namespace: %s] [credentials: %s]",
+          subscriptionId, resourceGroup, cluster, namespace, shouldGetAdminCredentials ? "admin" : "user"));
+
+      String kubeConfigContent =
+          getKubeConfigContent(azureConfig, subscriptionId, resourceGroup, cluster, shouldGetAdminCredentials);
+
+      log.trace(format("Cluster credentials: \n %s", kubeConfigContent));
+
+      AzureKubeConfig azureKubeConfig = getAzureKubeConfig(kubeConfigContent);
 
       verifyAzureKubeConfig(azureKubeConfig);
 
-      return KubernetesConfig.builder()
-          .namespace(namespace)
-          .masterUrl(azureKubeConfig.getClusters().get(0).getCluster().getServer())
-          .caCert(azureKubeConfig.getClusters().get(0).getCluster().getCertificateAuthorityData().toCharArray())
-          .username(azureKubeConfig.getUsers().get(0).getName().toCharArray())
-          .clientCert(azureKubeConfig.getUsers().get(0).getUser().getClientCertificateData().toCharArray())
-          .clientKey(azureKubeConfig.getUsers().get(0).getUser().getClientKeyData().toCharArray())
-          .build();
+      if (azureKubeConfig.getUsers().get(0).getUser().getAuthProvider() != null) {
+        azureKubeConfig.setAadToken(fetchAksAADToken(azureConfig, azureKubeConfig));
+      }
+
+      return getKubernetesConfig(azureKubeConfig, namespace);
+
     } catch (Exception e) {
-      throw NestedExceptionUtils.hintWithExplanationException(
-          format("Kube Config could not be read from cluster %s ", k8sCluster.name()),
+      throw NestedExceptionUtils.hintWithExplanationException(format("Kube Config could not be read from cluster"),
           "Please check your Azure permissions", new AzureAKSException(e.getMessage(), WingsException.USER, e));
     }
+  }
+
+  private String fetchAksAADToken(AzureConfig azureConfig, AzureKubeConfig azureKubeConfig) {
+    StringBuilder scope =
+        new StringBuilder(azureKubeConfig.getUsers().get(0).getUser().getAuthProvider().getConfig().getApiServerId());
+
+    if (azureConfig.getAzureAuthenticationType() == AzureAuthenticationType.SERVICE_PRINCIPAL_SECRET
+        || azureConfig.getAzureAuthenticationType() == AzureAuthenticationType.SERVICE_PRINCIPAL_CERT) {
+      scope.append(SCOPE_DEFAULT_SUFFIX);
+    }
+
+    AzureIdentityAccessTokenResponse azureIdentityAccessTokenResponse =
+        azureAuthorizationClient.getUserAccessToken(azureConfig, scope.toString());
+    return azureIdentityAccessTokenResponse.getAccessToken();
+  }
+
+  private AzureKubeConfig getAzureKubeConfig(String kubeConfigContent) throws JsonProcessingException {
+    return new ObjectMapper(new YAMLFactory()).readValue(kubeConfigContent, AzureKubeConfig.class);
+  }
+
+  private String getKubeConfigContent(AzureConfig azureConfig, String subscription, String resourceGroup,
+      String clusterName, boolean shouldGetAdminCredentials) {
+    String aksClusterCredentialsBase64 = azureKubernetesClient.getClusterCredentials(azureConfig,
+        format("Bearer %s", fetchAzureUserAccessToken(azureConfig)), subscription, resourceGroup, clusterName,
+        shouldGetAdminCredentials);
+    return new String(EncodingUtils.decodeBase64(aksClusterCredentialsBase64));
+  }
+
+  private String fetchAzureUserAccessToken(AzureConfig azureConfig) {
+    String scope =
+        null; // for ManagedIdentity we leave scope null as it is then defaulted to what the Azure SDK has defined
+    if (azureConfig.getAzureAuthenticationType() == AzureAuthenticationType.SERVICE_PRINCIPAL_SECRET
+        || azureConfig.getAzureAuthenticationType() == AzureAuthenticationType.SERVICE_PRINCIPAL_CERT) {
+      scope = AzureUtils.AUTH_SCOPE;
+    }
+    return azureAuthorizationClient.getUserAccessToken(azureConfig, scope).getAccessToken();
   }
 
   private void verifyAzureKubeConfig(AzureKubeConfig azureKubeConfig) {
@@ -405,26 +509,106 @@ public class AzureAsyncTaskHelper {
       throw new AzureAKSException("CertificateAuthorityData was not found in the kube config content!!!");
     }
 
-    if (isEmpty(azureKubeConfig.getUsers().get(0).getUser().getClientCertificateData())) {
-      throw new AzureAKSException("ClientCertificateData was not found in the kube config content!!!");
-    }
-
     if (isEmpty(azureKubeConfig.getUsers().get(0).getName())) {
       throw new AzureAKSException("Cluster user name was not found in the kube config content!!!");
     }
 
-    if (isEmpty(azureKubeConfig.getUsers().get(0).getUser().getClientKeyData())) {
-      throw new AzureAKSException("ClientKeyData was not found in the kube config content!!!");
+    if (azureKubeConfig.getUsers().get(0).getUser().getAuthProvider() != null) {
+      if (isEmpty(azureKubeConfig.getClusters().get(0).getName())) {
+        throw new AzureAKSException("Cluster name was not found in the kube config content!!!");
+      }
+
+      if (isEmpty(azureKubeConfig.getCurrentContext())) {
+        throw new AzureAKSException("Current context was not found in the kube config content!!!");
+      }
+
+      if (azureKubeConfig.getUsers().get(0).getUser().getAuthProvider().getConfig() == null) {
+        throw new AzureAKSException("AuthProvider was not found in the kube config content!!!");
+      }
+
+      if (isEmpty(azureKubeConfig.getUsers().get(0).getUser().getAuthProvider().getConfig().getApiServerId())) {
+        throw new AzureAKSException("ApiServerId was not found in the kube config content!!!");
+      }
+
+      if (isEmpty(azureKubeConfig.getUsers().get(0).getUser().getAuthProvider().getConfig().getClientId())) {
+        throw new AzureAKSException("ClientId was not found in the kube config content!!!");
+      }
+
+      if (isEmpty(azureKubeConfig.getUsers().get(0).getUser().getAuthProvider().getConfig().getConfigMode())) {
+        throw new AzureAKSException("ConfigMode was not found in the kube config content!!!");
+      }
+
+      if (isEmpty(azureKubeConfig.getUsers().get(0).getUser().getAuthProvider().getConfig().getTenantId())) {
+        throw new AzureAKSException("TenantId was not found in the kube config content!!!");
+      }
+
+      if (isEmpty(azureKubeConfig.getUsers().get(0).getUser().getAuthProvider().getConfig().getEnvironment())) {
+        throw new AzureAKSException("Environment was not found in the kube config content!!!");
+      }
+    } else {
+      if (isEmpty(azureKubeConfig.getUsers().get(0).getUser().getClientCertificateData())) {
+        throw new AzureAKSException("ClientCertificateData was not found in the kube config content!!!");
+      }
+
+      if (isEmpty(azureKubeConfig.getUsers().get(0).getUser().getClientKeyData())) {
+        throw new AzureAKSException("ClientKeyData was not found in the kube config content!!!");
+      }
+    }
+
+    log.info("Azure Kube Config is valid.");
+  }
+
+  private KubernetesConfig getKubernetesConfig(AzureKubeConfig azureKubeConfig, String namespace) {
+    if (isNotEmpty(azureKubeConfig.getAadToken())) {
+      KubernetesAzureConfig kubernetesAzureConfig =
+          KubernetesAzureConfig.builder()
+              .clusterName(azureKubeConfig.getClusters().get(0).getName())
+              .clusterUser(azureKubeConfig.getUsers().get(0).getName())
+              .currentContext(azureKubeConfig.getCurrentContext())
+              .apiServerId(azureKubeConfig.getUsers().get(0).getUser().getAuthProvider().getConfig().getApiServerId())
+              .clientId(azureKubeConfig.getUsers().get(0).getUser().getAuthProvider().getConfig().getClientId())
+              .configMode(azureKubeConfig.getUsers().get(0).getUser().getAuthProvider().getConfig().getConfigMode())
+              .tenantId(azureKubeConfig.getUsers().get(0).getUser().getAuthProvider().getConfig().getTenantId())
+              .environment(azureKubeConfig.getUsers().get(0).getUser().getAuthProvider().getConfig().getEnvironment())
+              .aadIdToken(azureKubeConfig.getAadToken())
+              .build();
+      return KubernetesConfig.builder()
+          .namespace(namespace)
+          .masterUrl(azureKubeConfig.getClusters().get(0).getCluster().getServer())
+          .caCert(azureKubeConfig.getClusters().get(0).getCluster().getCertificateAuthorityData().toCharArray())
+          .username(azureKubeConfig.getUsers().get(0).getName().toCharArray())
+          .azureConfig(kubernetesAzureConfig)
+          .authType(KubernetesClusterAuthType.AZURE_OAUTH)
+          .build();
+    } else {
+      return KubernetesConfig.builder()
+          .namespace(namespace)
+          .masterUrl(azureKubeConfig.getClusters().get(0).getCluster().getServer())
+          .caCert(azureKubeConfig.getClusters().get(0).getCluster().getCertificateAuthorityData().toCharArray())
+          .username(azureKubeConfig.getUsers().get(0).getName().toCharArray())
+          .clientCert(azureKubeConfig.getUsers().get(0).getUser().getClientCertificateData().toCharArray())
+          .clientKey(azureKubeConfig.getUsers().get(0).getUser().getClientKeyData().toCharArray())
+          .build();
     }
   }
 
-  public AzureAcrTokenTaskResponse getServicePrincipalCertificateAcrLoginToken(
+  public AzureAcrTokenTaskResponse getAcrLoginToken(
       String registry, List<EncryptedDataDetail> encryptionDetails, AzureConnectorDTO azureConnector) {
+    log.info(format("Fetching ACR login token for registry %s", registry));
+
     AzureConfig azureConfig = AcrRequestResponseMapper.toAzureInternalConfig(azureConnector.getCredential(),
         encryptionDetails, azureConnector.getCredential().getAzureCredentialType(),
         azureConnector.getAzureEnvironmentType(), secretDecryptionService);
 
-    String azureAccessToken = azureAuthorizationClient.getUserAccessToken(azureConfig).getAccessToken();
+    String azureAccessToken;
+    if (azureConfig.getAzureAuthenticationType() == AzureAuthenticationType.SERVICE_PRINCIPAL_CERT) {
+      azureAccessToken =
+          azureAuthorizationClient.getUserAccessToken(azureConfig, AzureUtils.AUTH_SCOPE).getAccessToken();
+    } else {
+      // only MSI connection will/should reach here
+      azureAccessToken = azureAuthorizationClient.getUserAccessToken(azureConfig, null).getAccessToken();
+    }
+
     String refreshToken = azureContainerRegistryClient.getAcrRefreshToken(registry, azureAccessToken);
 
     return AzureAcrTokenTaskResponse.builder()

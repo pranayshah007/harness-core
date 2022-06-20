@@ -7,6 +7,11 @@
 
 package io.harness.ng.core.environment.yaml;
 
+import static io.harness.data.structure.CollectionUtils.emptyIfNull;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+
+import static java.util.stream.Collectors.groupingBy;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
@@ -21,7 +26,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import javax.validation.Valid;
+import javax.validation.constraints.AssertTrue;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import lombok.AccessLevel;
@@ -55,4 +63,22 @@ public class NGEnvironmentInfoConfig {
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) String description;
   @ApiModelProperty(required = true) EnvironmentType type;
   @Valid List<NGVariable> variables;
+
+  @AssertTrue(message = "duplicate variables are present. Please remove them and retry")
+  private boolean isValid() {
+    try {
+      Set<String> duplicateVariables = emptyIfNull(variables)
+                                           .stream()
+                                           .collect(groupingBy(NGVariable::getName, Collectors.counting()))
+                                           .entrySet()
+                                           .stream()
+                                           .filter(entry -> entry.getValue() > 1)
+                                           .map(Map.Entry::getKey)
+                                           .collect(Collectors.toSet());
+      return isEmpty(duplicateVariables);
+    } catch (Exception ex) {
+      //
+    }
+    return true;
+  }
 }

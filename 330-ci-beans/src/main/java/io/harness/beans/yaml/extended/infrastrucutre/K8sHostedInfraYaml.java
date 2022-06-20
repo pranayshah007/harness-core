@@ -9,6 +9,7 @@ package io.harness.beans.yaml.extended.infrastrucutre;
 
 import static io.harness.annotations.dev.HarnessTeam.CI;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.yaml.YamlNode;
 
@@ -30,6 +31,7 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName("KubernetesHosted")
 @TypeAlias("k8sHostedInfraYaml")
 @OwnedBy(CI)
+@RecasterAlias("io.harness.beans.yaml.extended.infrastrucutre.K8sHostedInfraYaml")
 public class K8sHostedInfraYaml implements Infrastructure {
   @Builder.Default @NotNull private Type type = Type.KUBERNETES_HOSTED;
   @NotNull private K8sHostedInfraYamlSpec spec;

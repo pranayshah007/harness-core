@@ -93,14 +93,17 @@ public class CEViewFolderServiceImpl implements CEViewFolderService {
   public boolean delete(String accountId, String uuid) {
     List<CEView> perspectives = ceViewDao.findByAccountIdAndFolderId(accountId, uuid, null);
     List<String> perspectiveIds = perspectives.stream().map(CEView::getUuid).collect(Collectors.toList());
-    CEViewFolder folder = ceViewFolderDao.getDefaultFolder(accountId);
-    String folderId;
-    if (folder == null) {
-      folderId = ceViewFolderDao.createDefaultOrSampleFolder(accountId, ViewType.DEFAULT);
+    CEViewFolder defaultFolder = ceViewFolderDao.getDefaultFolder(accountId);
+    String defaultFolderId;
+    if (defaultFolder == null) {
+      defaultFolderId = ceViewFolderDao.createDefaultOrSampleFolder(accountId, ViewType.DEFAULT);
     } else {
-      folderId = folder.getUuid();
+      defaultFolderId = defaultFolder.getUuid();
     }
-    ceViewDao.moveMultiplePerspectiveFolder(accountId, perspectiveIds, folderId);
+    if (defaultFolderId.equals(uuid)) {
+      throw new InvalidRequestException("Default Folder can't be deleted");
+    }
+    ceViewDao.moveMultiplePerspectiveFolder(accountId, perspectiveIds, defaultFolderId);
     return ceViewFolderDao.delete(accountId, uuid);
   }
 }

@@ -39,6 +39,7 @@ function copy_cg_manager_jars(){
 
 	cp ../../dockerization/manager/Dockerfile-manager-jenkins-k8-openjdk ./Dockerfile
 	cp ../../dockerization/manager/Dockerfile-manager-cie-jdk ./Dockerfile-cie-jdk
+	cp ../../dockerization/manager/Dockerfile-manager-jenkins-k8-gcr-openjdk ./Dockerfile-gcr
 	cp -r ../../dockerization/manager/scripts/ .
 	mv scripts/start_process_bazel.sh scripts/start_process.sh
 
@@ -59,6 +60,7 @@ function copy_event_server_jars(){
 	cp ../../350-event-server/event-service-config.yml .
 	cp ../../dockerization/event-server/Dockerfile-event-server-jenkins-k8-openjdk Dockerfile
 	cp ../../dockerization/event-server/Dockerfile-event-server-cie-jdk Dockerfile-cie-jdk
+	cp ../../dockerization/event-server/Dockerfile-event-server-jenkins-k8-gcr-openjdk Dockerfile-gcr
 	cp -r ../../dockerization/event-server/scripts/ .
 	
 	copy_common_files
@@ -79,6 +81,7 @@ function copy_ng_manager_jars(){
 
 	cp ../../dockerization/ng-manager/Dockerfile-ng-manager-jenkins-k8-openjdk ./Dockerfile
 	cp ../../dockerization/ng-manager/Dockerfile-ng-manager-cie-jdk ./Dockerfile-cie-jdk
+	cp ../../dockerization/ng-manager/Dockerfile-ng-manager-jenkins-k8-gcr-openjdk ./Dockerfile-gcr
 	cp -r ../../dockerization/ng-manager/scripts/ .
 
 	copy_common_files
@@ -99,6 +102,7 @@ function copy_ce_nextgen_jars(){
 	cp ../../${MODULE_NAME}/config.yml .
 	cp ../../dockerization/${FOLDER_NAME}/Dockerfile-ce-nextgen-cie-jdk Dockerfile-cie-jdk
 	cp ../../dockerization/${FOLDER_NAME}/Dockerfile-ce-nextgen-jenkins-k8-openjdk Dockerfile
+	cp ../../dockerization/${FOLDER_NAME}/Dockerfile-ce-nextgen-jenkins-k8-gcr-openjdk Dockerfile-gcr
 	cp -r ../../dockerization/${FOLDER_NAME}/scripts/ .
 	
 	copy_common_files
@@ -114,6 +118,7 @@ function copy_batch_processing_jars(){
 	cp ../../280-batch-processing/batch-processing-config.yml .
 	cp ../../dockerization/batch-processing/Dockerfile-batch-processing-jenkins-k8-openjdk Dockerfile
 	cp ../../dockerization/batch-processing/Dockerfile-batch-processing-cie-jdk Dockerfile-cie-jdk
+	cp ../../dockerization/batch-processing/Dockerfile-batch-processing-jenkins-k8-gcr-openjdk Dockerfile-gcr
 	cp -r ../../dockerization/batch-processing/scripts/ .
 	
 	copy_common_files
@@ -129,6 +134,7 @@ function copy_change_data_capture_jars(){
 	cp ../../110-change-data-capture/config.yml .
 	cp ../../dockerization/change-data-capture/Dockerfile-change-data-capture-jenkins-k8-openjdk Dockerfile
 	cp ../../dockerization/change-data-capture/Dockerfile-change-data-capture-cie-jdk Dockerfile-cie-jdk
+	cp ../../dockerization/change-data-capture/Dockerfile-change-data-capture-jenkins-k8-gcr-openjdk Dockerfile-gcr
 	cp -r ../../dockerization/change-data-capture/scripts/ .
 	
 	copy_common_files
@@ -152,6 +158,7 @@ function copy_ng_dashboard_jars(){
 	if [ -e ../../dockerization/ng-dashboard-service/Dockerfile-ng-dashboard-k8-gcr-openjdk ]
 	then
 	  cp ../../dockerization/ng-dashboard-service/Dockerfile-ng-dashboard-cie-jdk Dockerfile-cie-jdk
+	  cp ../../dockerization/ng-dashboard-service/Dockerfile-ng-dashboard-k8-gcr-openjdk Dockerfile-gcr
 	fi
 	  echo "Docker file for ng dashboard for gcr not found"
 	cp -r ../../dockerization/ng-dashboard-service/scripts/ .

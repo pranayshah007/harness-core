@@ -7,9 +7,6 @@
 
 package io.harness.cvng.analysis.entities;
 
-import static io.harness.data.encoding.EncodingUtils.deCompressString;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-
 import io.harness.annotation.HarnessEntity;
 import io.harness.annotation.StoreIn;
 import io.harness.mongo.index.CompoundMongoIndex;
@@ -21,11 +18,9 @@ import io.harness.persistence.CreatedAtAware;
 import io.harness.persistence.PersistentEntity;
 import io.harness.persistence.UpdatedAtAware;
 import io.harness.persistence.UuidAware;
-import io.harness.serializer.JsonUtils;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.github.reinert.jjschema.SchemaIgnore;
 import com.google.common.collect.ImmutableList;
 import java.time.Instant;
@@ -33,7 +28,6 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Objects;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -83,20 +77,6 @@ public final class LogAnalysisCluster implements PersistentEntity, UuidAware, Cr
   private long firstSeenTime;
   private double x;
   private double y;
-  @Deprecated private byte[] compressedText;
-
-  @Deprecated
-  public String getText() {
-    if (Objects.isNull(text) && isNotEmpty(compressedText)) {
-      try {
-        String decompressedText = deCompressString(compressedText);
-        return JsonUtils.asObject(decompressedText, new TypeReference<String>() {});
-      } catch (Exception ex) {
-        throw new IllegalStateException(ex);
-      }
-    }
-    return text;
-  }
 
   public List<Frequency> getFrequencyTrend() {
     if (frequencyTrend == null) {

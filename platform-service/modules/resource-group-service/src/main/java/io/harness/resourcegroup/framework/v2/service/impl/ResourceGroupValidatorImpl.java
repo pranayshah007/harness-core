@@ -145,10 +145,22 @@ public class ResourceGroupValidatorImpl implements ResourceGroupValidator {
       throw new InvalidRequestException("Cannot provide specific resources when you include all resources");
     }
     if (!isEmpty(resourceFilter.getResources())) {
-      resourceFilter.getResources().forEach(filter -> {
-        if (!includeStaticResources && !isEmpty(filter.getIdentifiers())) {
+      resourceFilter.getResources().forEach(resourceSelector -> {
+        if (!includeStaticResources && !isEmpty(resourceSelector.getIdentifiers())) {
           throw new InvalidRequestException(
               "Cannot provide specific identifiers in resource filter for a dynamic scope");
+        }
+
+        if (resourceSelector.getAttributeFilter() != null) {
+          if (!isEmpty(resourceSelector.getIdentifiers())) {
+            throw new InvalidRequestException("Cannot provide specific resources when you include attribute filter");
+          }
+
+          boolean isValidAttributeFilter = resourceMap.get(resourceSelector.getResourceType())
+                                               .isValidAttributeFilter(resourceSelector.getAttributeFilter());
+          if (!isValidAttributeFilter) {
+            throw new InvalidRequestException("Invalid attribute filter");
+          }
         }
       });
     }

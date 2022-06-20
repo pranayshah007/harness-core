@@ -11,7 +11,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.creator.plan.PlanCreatorConstants;
 import io.harness.cdng.creator.plan.environment.steps.EnvironmentStepV2;
-import io.harness.cdng.creator.plan.gitops.ClusterPlanCreatorUtils;
 import io.harness.cdng.creator.plan.infrastructure.InfrastructurePmsPlanCreator;
 import io.harness.cdng.environment.steps.EnvironmentStepParameters;
 import io.harness.cdng.environment.yaml.EnvironmentPlanCreatorConfig;
@@ -96,7 +95,10 @@ public class EnvironmentPlanCreatorV2 extends ChildrenPlanCreator<EnvironmentPla
       planCreationResponseMap.putAll(InfrastructurePmsPlanCreator.createPlanForInfraSectionV2(infraField.getNode(),
           infraDefPlanNode.getUuid(), infrastructureDefinitionConfig, kryoSerializer, infraSectionUuid));
     } else {
-      PlanNode gitopsNode = ClusterPlanCreatorUtils.getGitopsClustersStepPlanNode(config);
+      String infraSectionUuid = (String) kryoSerializer.asInflatedObject(
+          ctx.getDependency().getMetadataMap().get(YamlTypes.INFRA_SECTION_UUID).toByteArray());
+      PlanNode gitopsNode = InfrastructurePmsPlanCreator.createPlanForGitopsClusters(
+          ctx.getCurrentField(), infraSectionUuid, config, kryoSerializer);
       planCreationResponseMap.put(gitopsNode.getUuid(), PlanCreationResponse.builder().planNode(gitopsNode).build());
     }
     return planCreationResponseMap;
