@@ -388,9 +388,13 @@ func (r *runTestsTask) execute(ctx context.Context, retryCount int32) (map[strin
 	defer cancel()
 
 	// Install agent artifacts if not present
-	agentPath, err := installAgentFn(ctx, r.tmpFilePath, r.language, r.buildTool, r.frameworkVersion, r.buildEnvironment, r.log, r.fs)
-	if err != nil {
-		return nil, err
+	var agentPath = ""
+	var err error
+	if r.language == "csharp" {
+		agentPath, err = installAgentFn(ctx, r.tmpFilePath, r.language, r.buildTool, r.frameworkVersion, r.buildEnvironment, r.log, r.fs)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	outputFile := filepath.Join(r.tmpFilePath, fmt.Sprintf("%s%s", r.id, outputEnvSuffix))
