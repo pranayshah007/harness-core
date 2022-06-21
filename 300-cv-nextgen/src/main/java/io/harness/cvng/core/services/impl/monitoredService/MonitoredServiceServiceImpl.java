@@ -69,6 +69,7 @@ import io.harness.cvng.core.services.api.monitoredService.ChangeSourceService;
 import io.harness.cvng.core.services.api.monitoredService.HealthSourceService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.core.services.api.monitoredService.ServiceDependencyService;
+import io.harness.cvng.core.utils.FeatureFlagNames;
 import io.harness.cvng.core.utils.template.MonitoredServiceYamlExpressionEvaluator;
 import io.harness.cvng.core.utils.template.TemplateFacade;
 import io.harness.cvng.dashboard.services.api.HeatMapService;
@@ -1170,7 +1171,8 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
       ProjectParams projectParams, String identifier, boolean enable) {
     MonitoredService monitoredService = getMonitoredService(projectParams, identifier);
     if (enable == true
-        && featureFlagService.isFeatureFlagEnabled(projectParams.getAccountIdentifier(), "CVNG_LICENSE_ENFORCEMENT")) {
+        && featureFlagService.isFeatureFlagEnabled(
+            projectParams.getAccountIdentifier(), FeatureFlagNames.CVNG_LICENSE_ENFORCEMENT)) {
       long increment = 0;
       if (!isUniqueService(projectParams, monitoredService)) {
         increment = 1;
@@ -1641,7 +1643,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
 
   @Override
   public long countUniqueEnabledServices(String accountId) {
-    if (!featureFlagService.isFeatureFlagEnabled(accountId, "CVNG_LICENSE_ENFORCEMENT")) {
+    if (!featureFlagService.isFeatureFlagEnabled(accountId, FeatureFlagNames.CVNG_LICENSE_ENFORCEMENT)) {
       return 0;
     }
 
