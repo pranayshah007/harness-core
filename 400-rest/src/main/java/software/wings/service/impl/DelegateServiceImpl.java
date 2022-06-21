@@ -1281,8 +1281,9 @@ public class DelegateServiceImpl implements DelegateService {
   public String getLatestWatcherVersion(String accountId) {
     final String watcherMetadataUrl = infraDownloadService.getCdnWatcherMetaDataFileUrl();
     try {
-      String watcherMetadata = Http.getResponseStringFromUrl(watcherMetadataUrl, 10, 10);
-      return watcherMetadata;
+      final String watcherMetadata = Http.getResponseStringFromUrl(watcherMetadataUrl, 10, 10);
+      final String latestVersion = substringBefore(watcherMetadata, " ").trim();
+      return latestVersion;
     } catch (Exception ex) {
       throw new IllegalStateException("Unable to fetch watcher version");
     }

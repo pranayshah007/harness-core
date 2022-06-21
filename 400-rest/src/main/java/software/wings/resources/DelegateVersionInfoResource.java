@@ -51,6 +51,7 @@ public class DelegateVersionInfoResource {
   @DelegateAuth2
   public RestResponse<String> getWatcherVersion(@QueryParam("accountId") @NotEmpty String accountId) {
     final String watcherVersion = accountService.getWatcherVersion(accountId);
+    log.info("returning watcher version {}", watcherVersion);
     if (isNotEmpty(watcherVersion)) {
       return new RestResponse<>(watcherVersion);
     }
