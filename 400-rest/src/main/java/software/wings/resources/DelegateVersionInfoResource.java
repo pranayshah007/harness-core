@@ -31,6 +31,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 @Api("version")
 @Path("/version")
 @Produces(MediaType.APPLICATION_JSON)
+@lombok.extern.slf4j.Slf4j
 @RequiredArgsConstructor(onConstructor_ = @Inject)
 public class DelegateVersionInfoResource {
   private final AccountService accountService;
