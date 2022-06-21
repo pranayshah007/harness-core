@@ -30,7 +30,6 @@ import io.harness.exception.FunctorException;
 import io.harness.ff.FeatureFlagService;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.security.encryption.EncryptedRecordData;
 import io.harness.security.encryption.EncryptionType;
 
 import software.wings.WingsBaseTest;
@@ -52,7 +51,7 @@ public class SecretManagerFunctorTest extends WingsBaseTest {
   @Inject private FeatureFlagService featureFlagService;
   @Mock private ManagerDecryptionService managerDecryptionService;
   @Mock private SecretManager secretManager;
-  @Mock private Cache<String, EncryptedRecordData> secretsCache;
+  @Mock private Cache<String, EncryptedDataDetails> secretsCache;
   private static final String ACCOUNT_ID = "ACCOUNT_ID";
   private static final String APP_ID = "APP_ID";
   private static final String WORKFLOW_EXECUTION_ID = "WORKFLOW_EXECUTION_ID";
