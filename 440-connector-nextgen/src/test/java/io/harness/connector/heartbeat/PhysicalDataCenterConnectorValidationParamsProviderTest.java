@@ -32,10 +32,10 @@ import io.harness.delegate.task.utils.PhysicalDataCenterUtils;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 
+import com.google.common.collect.Sets;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import jersey.repackaged.com.google.common.collect.Sets;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;

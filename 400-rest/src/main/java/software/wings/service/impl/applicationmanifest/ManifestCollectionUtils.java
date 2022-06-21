@@ -203,6 +203,8 @@ public class ManifestCollectionUtils {
                 FeatureName.USE_LATEST_CHARTMUSEUM_VERSION, helmChartCollectionParams.getAccountId()))
             .useOCIHelmRepo(
                 featureFlagService.isEnabled(FeatureName.HELM_OCI_SUPPORT, helmChartCollectionParams.getAccountId()))
+            .useNewHelmBinary(
+                featureFlagService.isEnabled(FeatureName.HELM_VERSION_3_8_0, helmChartCollectionParams.getAccountId()))
             .connectorEncryptedDataDetails(
                 helmChartCollectionParams.getHelmChartConfigParams().getConnectorEncryptedDataDetails())
             .build();

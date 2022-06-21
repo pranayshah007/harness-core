@@ -46,9 +46,10 @@ import io.harness.steps.environment.EnvironmentOutcome;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Singleton
@@ -147,14 +148,14 @@ public class CDNGModuleInfoProvider implements ExecutionSummaryModuleInfoProvide
         GitopsClustersOutcome gitopsOutcome = (GitopsClustersOutcome) optionalOutcome.getOutcome();
         gitopsOutcome.getClustersData()
             .stream()
-            .map(GitopsClustersOutcome.ClusterData::getEnv)
+            .map(GitopsClustersOutcome.ClusterData::getEnvId)
             .filter(EmptyPredicate::isNotEmpty)
             .collect(Collectors.toSet())
             .forEach(cdPipelineModuleInfoBuilder::envIdentifier);
 
         gitopsOutcome.getClustersData()
             .stream()
-            .map(GitopsClustersOutcome.ClusterData::getEnvGroup)
+            .map(GitopsClustersOutcome.ClusterData::getEnvGroupId)
             .filter(EmptyPredicate::isNotEmpty)
             .collect(Collectors.toSet())
             .forEach(cdPipelineModuleInfoBuilder::envGroupIdentifier);
@@ -190,14 +191,15 @@ public class CDNGModuleInfoProvider implements ExecutionSummaryModuleInfoProvide
           event.getAmbiance(), RefObjectUtils.getOutcomeRefObject(GitopsClustersStep.GITOPS_SWEEPING_OUTPUT));
       if (optionalOutcome != null && optionalOutcome.isFound()) {
         GitopsClustersOutcome gitopsOutcome = (GitopsClustersOutcome) optionalOutcome.getOutcome();
-        Set<String> envs = gitopsOutcome.getClustersData()
-                               .stream()
-                               .map(GitopsClustersOutcome.ClusterData::getEnv)
-                               .collect(Collectors.toSet());
+        // envId -> ClusterData
+        Map<String, GitopsClustersOutcome.ClusterData> envs = gitopsOutcome.getClustersData().stream().collect(
+            Collectors.toMap(GitopsClustersOutcome.ClusterData::getEnvId, Function.identity(), (k1, k2) -> k1));
         if (envs.size() == 1) {
-          String envIdentifier = envs.iterator().next();
-          cdStageModuleInfoBuilder.infraExecutionSummary(
-              InfraExecutionSummary.builder().identifier(envIdentifier).build());
+          String envIdentifier = envs.keySet().iterator().next();
+          cdStageModuleInfoBuilder.infraExecutionSummary(InfraExecutionSummary.builder()
+                                                             .identifier(envIdentifier)
+                                                             .name(envs.get(envIdentifier).getEnvName())
+                                                             .build());
         }
       }
     }

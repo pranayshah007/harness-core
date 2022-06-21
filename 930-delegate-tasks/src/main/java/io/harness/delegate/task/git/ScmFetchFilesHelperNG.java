@@ -226,14 +226,12 @@ public class ScmFetchFilesHelperNG {
 
   public CreateBranchResponse createNewBranch(ScmConnector scmConnector, String branch, String baseBranch) {
     CreateBranchResponse createBranchResponse = scmDelegateClient.processScmRequest(
-            c -> scmServiceClient.createNewBranch(scmConnector, branch, baseBranch, SCMGrpc.newBlockingStub(c)));
+        c -> scmServiceClient.createNewBranch(scmConnector, branch, baseBranch, SCMGrpc.newBlockingStub(c)));
     try {
       ScmResponseStatusUtils.checkScmResponseStatusAndThrowException(
-              createBranchResponse.getStatus(), createBranchResponse.getError());
+          createBranchResponse.getStatus(), createBranchResponse.getError());
     } catch (WingsException e) {
-      throw new ExplanationException(String.format("Could not create a new branch %s from %s",
-              branch, baseBranch),
-              e);
+      throw new ExplanationException(String.format("Could not create a new branch %s from %s", branch, baseBranch), e);
     }
     return createBranchResponse;
   }

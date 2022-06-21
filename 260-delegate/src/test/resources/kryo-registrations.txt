@@ -1488,6 +1488,7 @@
 19550:io.harness.delegate.beans.executioncapability.GitInstallationCapability
 19551:io.harness.delegate.beans.connector.ConnectorValidationParameterResponse
 19552:io.harness.delegate.beans.connector.scm.github.GithubOauthDTO
+19553:io.harness.delegate.beans.connector.scm.gitlab.GitlabOauthDTO
 19630:io.harness.delegate.beans.connector.helm.OciHelmValidationParams
 19640:io.harness.delegate.beans.connector.helm.HttpHelmConnectivityTaskParams
 19641:io.harness.delegate.beans.connector.helm.HttpHelmConnectivityTaskResponse
@@ -1697,6 +1698,8 @@
 55323:io.harness.delegate.task.azure.artifact.AzureArtifactConfig
 55324:io.harness.delegate.task.azure.artifact.AzureArtifactType
 55325:io.harness.delegate.task.azure.artifact.AzureContainerArtifactConfig
+55326:io.harness.delegate.task.azure.appservice.webapp.ng.request.AzureWebAppRollbackRequest
+55327:io.harness.delegate.task.azure.appservice.webapp.ng.response.AzureWebAppNGRollbackResponse
 70001:io.harness.accesscontrol.commons.exceptions.AccessDeniedErrorDTO
 70002:io.harness.accesscontrol.acl.api.PermissionCheckDTO
 70003:io.harness.accesscontrol.acl.api.ResourceScope

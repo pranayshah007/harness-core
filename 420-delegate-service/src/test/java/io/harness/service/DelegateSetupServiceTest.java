@@ -59,6 +59,7 @@ import software.wings.beans.SelectorType;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import io.fabric8.utils.Lists;
 import java.time.Duration;
@@ -68,7 +69,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import jersey.repackaged.com.google.common.collect.Sets;
 import org.apache.groovy.util.Maps;
 import org.junit.Before;
 import org.junit.Test;

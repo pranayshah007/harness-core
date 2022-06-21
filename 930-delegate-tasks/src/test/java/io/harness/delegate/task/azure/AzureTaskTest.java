@@ -431,7 +431,7 @@ public class AzureTaskTest {
 
     AzureAcrTokenTaskResponse result = AzureAcrTokenTaskResponse.builder().token("token").build();
 
-    doReturn(result).when(azureAsyncTaskHelper).getServicePrincipalCertificateAcrLoginToken(any(), any(), any());
+    doReturn(result).when(azureAsyncTaskHelper).getAcrLoginToken(any(), any(), any());
 
     DelegateResponseData delegateResponseData = task.run(taskParameters);
 

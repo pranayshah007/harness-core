@@ -13,6 +13,7 @@ import static com.google.common.collect.ImmutableMap.of;
 import static java.util.stream.Collectors.toSet;
 
 import io.harness.AccessControlClientConfiguration;
+import io.harness.ScmConnectionConfig;
 import io.harness.cache.CacheConfig;
 import io.harness.ci.beans.entities.LogServiceConfig;
 import io.harness.ci.beans.entities.TIServiceConfig;

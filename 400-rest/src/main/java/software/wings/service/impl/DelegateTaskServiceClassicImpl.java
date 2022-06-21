@@ -108,7 +108,6 @@ import io.harness.observer.Subject;
 import io.harness.persistence.HPersistence;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.security.encryption.EncryptedRecordData;
 import io.harness.security.encryption.EncryptionConfig;
 import io.harness.selection.log.DelegateSelectionLogTaskMetadata;
 import io.harness.serializer.KryoSerializer;
@@ -136,6 +135,7 @@ import software.wings.core.managerConfiguration.ConfigurationController;
 import software.wings.delegatetasks.cv.RateLimitExceededException;
 import software.wings.delegatetasks.delegatecapability.CapabilityHelper;
 import software.wings.delegatetasks.validation.DelegateConnectionResult;
+import software.wings.expression.EncryptedDataDetails;
 import software.wings.expression.ManagerPreExecutionExpressionEvaluator;
 import software.wings.expression.ManagerPreviewExpressionEvaluator;
 import software.wings.expression.NgSecretManagerFunctor;
@@ -259,7 +259,7 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
   @Inject private DelegateSetupService delegateSetupService;
   @Inject private AuditHelper auditHelper;
   @Inject private DelegateMetricsService delegateMetricsService;
-  @Inject @Named(SECRET_TOKEN_CACHE) Cache<String, EncryptedRecordData> secretsCache;
+  @Inject @Named(SECRET_TOKEN_CACHE) Cache<String, EncryptedDataDetails> secretsCache;
   @Inject @Getter private Subject<DelegateObserver> subject = new Subject<>();
 
   private static final SecureRandom random = new SecureRandom();

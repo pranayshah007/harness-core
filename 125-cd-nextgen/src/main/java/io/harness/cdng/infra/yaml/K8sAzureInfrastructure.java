@@ -24,6 +24,7 @@ import io.harness.walktree.visitor.Visitable;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
+import io.swagger.annotations.ApiParam;
 import java.util.HashMap;
 import java.util.Map;
 import javax.validation.constraints.NotNull;
@@ -73,6 +74,10 @@ public class K8sAzureInfrastructure implements Infrastructure, Visitable, WithCo
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
   @Wither
   ParameterField<String> resourceGroup;
+  @ApiParam(defaultValue = "false")
+  @ApiModelProperty(dataType = SwaggerConstants.BOOLEAN_CLASSPATH)
+  @Wither
+  ParameterField<Boolean> useClusterAdminCredentials;
 
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 
@@ -84,6 +89,7 @@ public class K8sAzureInfrastructure implements Infrastructure, Visitable, WithCo
         .cluster(cluster.getValue())
         .subscription(subscriptionId.getValue())
         .resourceGroup(resourceGroup.getValue())
+        .useClusterAdminCredentials(useClusterAdminCredentials.getValue())
         .build();
   }
 
@@ -124,6 +130,9 @@ public class K8sAzureInfrastructure implements Infrastructure, Visitable, WithCo
     }
     if (!ParameterField.isNull(config.getResourceGroup())) {
       resultantInfra = resultantInfra.withResourceGroup(config.getResourceGroup());
+    }
+    if (!ParameterField.isNull(config.getUseClusterAdminCredentials())) {
+      resultantInfra = resultantInfra.withUseClusterAdminCredentials(config.getUseClusterAdminCredentials());
     }
     return resultantInfra;
   }

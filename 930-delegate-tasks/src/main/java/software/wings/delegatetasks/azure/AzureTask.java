@@ -111,7 +111,7 @@ public class AzureTask extends AbstractDelegateRunnableTask {
       case GET_ACR_TOKEN: {
         msg = "Could not retrieve any container registries because of invalid parameter(s)";
         validateAzureResourceExist(azureTaskParams, msg, AzureAdditionalParams.CONTAINER_REGISTRY);
-        return azureAsyncTaskHelper.getServicePrincipalCertificateAcrLoginToken(
+        return azureAsyncTaskHelper.getAcrLoginToken(
             azureTaskParams.getAdditionalParams().get(AzureAdditionalParams.CONTAINER_REGISTRY),
             azureTaskParams.getEncryptionDetails(), azureTaskParams.getAzureConnector());
       }
