@@ -143,6 +143,11 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
   }
 
 
+  /**
+   * Modifies the identifier and name of the dummy node we are copying.
+   * @param graphLayoutNodeDTO
+   * @param nodeExecution
+   */
   private void modifyGraphLayoutNode(GraphLayoutNodeDTO graphLayoutNodeDTO, NodeExecution nodeExecution) {
     graphLayoutNodeDTO.setNodeIdentifier(nodeExecution.getIdentifier());
     graphLayoutNodeDTO.setName(nodeExecution.getName());

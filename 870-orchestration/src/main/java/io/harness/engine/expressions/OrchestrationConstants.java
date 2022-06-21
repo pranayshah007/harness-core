@@ -20,4 +20,6 @@ public interface OrchestrationConstants {
   String ALWAYS = "Always";
   String CURRENT_STATUS = "currentStatus";
   String MATRIX = "matrix";
+  String PARALLELISM = "parallelism";
+
 }
