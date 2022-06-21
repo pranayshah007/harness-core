@@ -49,7 +49,6 @@ public abstract class AbstractExecutable implements Executable {
     if (index != -1) {
       return command.substring(index);
     }
-
     return command.substring(command.indexOf("oc --kubeconfig"));
   }
 

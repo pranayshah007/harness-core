@@ -88,15 +88,17 @@ public class InfrastructureMapper {
         K8sAzureInfrastructure k8sAzureInfrastructure = (K8sAzureInfrastructure) infrastructure;
         validateK8sAzureInfrastructure(k8sAzureInfrastructure);
         return K8sAzureInfrastructureOutcome.builder()
-            .connectorRef(k8sAzureInfrastructure.getConnectorRef().getValue())
-            .namespace(k8sAzureInfrastructure.getNamespace().getValue())
-            .cluster(k8sAzureInfrastructure.getCluster().getValue())
+            .connectorRef(ParameterFieldHelper.getParameterFieldValue(k8sAzureInfrastructure.getConnectorRef()))
+            .namespace(ParameterFieldHelper.getParameterFieldValue(k8sAzureInfrastructure.getNamespace()))
+            .cluster(ParameterFieldHelper.getParameterFieldValue(k8sAzureInfrastructure.getCluster()))
             .releaseName(getValueOrExpression(k8sAzureInfrastructure.getReleaseName()))
             .environment(environmentOutcome)
             .infrastructureKey(InfrastructureKey.generate(
                 service, environmentOutcome, k8sAzureInfrastructure.getInfrastructureKeyValues()))
-            .subscription(k8sAzureInfrastructure.getSubscriptionId().getValue())
-            .resourceGroup(k8sAzureInfrastructure.getResourceGroup().getValue())
+            .subscription(ParameterFieldHelper.getParameterFieldValue(k8sAzureInfrastructure.getSubscriptionId()))
+            .resourceGroup(ParameterFieldHelper.getParameterFieldValue(k8sAzureInfrastructure.getResourceGroup()))
+            .useClusterAdminCredentials(ParameterFieldHelper.getBooleanParameterFieldValue(
+                k8sAzureInfrastructure.getUseClusterAdminCredentials()))
             .build();
 
       case InfrastructureKind.PDC:

@@ -5,28 +5,29 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package software.wings.helpers.ext.azure;
+package io.harness.azure.model.kube;
+
+import static io.harness.azure.model.AzureConstants.KUBECFG_API_SERVER_ID;
+import static io.harness.azure.model.AzureConstants.KUBECFG_CLIENT_ID;
+import static io.harness.azure.model.AzureConstants.KUBECFG_CONFIG_MODE;
+import static io.harness.azure.model.AzureConstants.KUBECFG_TENANT_ID;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.azure.model.AzureConstants;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
-@Builder
 @NoArgsConstructor
-@AllArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
 @OwnedBy(HarnessTeam.CDP)
-public class AzureIdentityAccessTokenResponse {
-  @JsonProperty(AzureConstants.TOKEN_TYPE) private String tokenType;
-  @JsonProperty(AzureConstants.TOKEN_EXPIRES_IN) private Integer expiresIn;
-  @JsonProperty(AzureConstants.TOKEN_EXT_EXPIRES_IN) private Integer extExpiresIn;
-  @JsonProperty(AzureConstants.ACCESS_TOKEN) private String accessToken;
+public class AuthProviderConfig {
+  @JsonProperty(KUBECFG_API_SERVER_ID) private String apiServerId;
+  @JsonProperty(KUBECFG_CLIENT_ID) private String clientId;
+  @JsonProperty(KUBECFG_CONFIG_MODE) private String configMode;
+  private String environment;
+  @JsonProperty(KUBECFG_TENANT_ID) private String tenantId;
 }

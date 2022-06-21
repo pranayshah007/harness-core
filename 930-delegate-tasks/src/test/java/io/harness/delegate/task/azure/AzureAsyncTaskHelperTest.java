@@ -15,6 +15,7 @@ import static io.harness.rule.OwnerRule.VLICA;
 import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
@@ -37,6 +38,7 @@ import io.harness.azure.client.AzureManagementClient;
 import io.harness.azure.model.AzureAuthenticationType;
 import io.harness.azure.model.AzureConfig;
 import io.harness.azure.model.tag.TagDetails;
+import io.harness.azure.utility.AzureUtils;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectivityStatus;
 import io.harness.connector.ConnectorValidationResult;
@@ -106,10 +108,10 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
   @Mock private SecretDecryptionService secretDecryptionService;
   @Mock private NGErrorHelper ngErrorHelper;
   @Mock private AzureAuthorizationClient azureAuthorizationClient;
+  @Mock private AzureManagementClient azureManagementClient;
   @Mock private AzureComputeClient azureComputeClient;
   @Mock private AzureContainerRegistryClient azureContainerRegistryClient;
   @Mock private AzureKubernetesClient azureKubernetesClient;
-  @Mock private AzureManagementClient azureManagementClient;
   private static String CLIENT_ID = "clientId";
   private static String BAD_CLIENT_ID = "badclientId";
   private static String TENANT_ID = "tenantId";
@@ -415,28 +417,32 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
   @Owner(developers = {BUHA, MLUKIC})
   @Category(UnitTests.class)
   public void testClusterConfigUsingServicePrincipalWithSecret() {
-    testClusterConfig(getAzureConnectorDTOWithSecretType(AzureSecretType.SECRET_KEY), getAzureConfigSecret());
+    testAdminClusterConfig(getAzureConnectorDTOWithSecretType(AzureSecretType.SECRET_KEY), getAzureConfigSecret());
+    testUserClusterConfig(getAzureConnectorDTOWithSecretType(AzureSecretType.SECRET_KEY), getAzureConfigSecret());
   }
 
   @Test
   @Owner(developers = MLUKIC)
   @Category(UnitTests.class)
   public void testClusterConfigUsingServicePrincipalWithCertificate() {
-    testClusterConfig(getAzureConnectorDTOWithSecretType(AzureSecretType.KEY_CERT), getAzureConfigCert());
+    testAdminClusterConfig(getAzureConnectorDTOWithSecretType(AzureSecretType.KEY_CERT), getAzureConfigCert());
+    testUserClusterConfig(getAzureConnectorDTOWithSecretType(AzureSecretType.KEY_CERT), getAzureConfigCert());
   }
 
   @Test
   @Owner(developers = MLUKIC)
   @Category(UnitTests.class)
   public void testClusterConfigUsingUserAssignedManagedIdentity() {
-    testClusterConfig(getAzureConnectorDTOWithMSI(CLIENT_ID), getAzureConfigUserAssignedMSI());
+    testAdminClusterConfig(getAzureConnectorDTOWithMSI(CLIENT_ID), getAzureConfigUserAssignedMSI());
+    testUserClusterConfig(getAzureConnectorDTOWithMSI(CLIENT_ID), getAzureConfigUserAssignedMSI());
   }
 
   @Test
   @Owner(developers = MLUKIC)
   @Category(UnitTests.class)
   public void testClusterConfigUsingSystemAssignedManagedIdentity() {
-    testClusterConfig(getAzureConnectorDTOWithMSI(null), getAzureConfigSystemAssignedMSI());
+    testAdminClusterConfig(getAzureConnectorDTOWithMSI(null), getAzureConfigSystemAssignedMSI());
+    testUserClusterConfig(getAzureConnectorDTOWithMSI(null), getAzureConfigSystemAssignedMSI());
   }
 
   @Test
@@ -499,13 +505,12 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
     AzureIdentityAccessTokenResponse azureIdentityAccessTokenResponse = new AzureIdentityAccessTokenResponse();
     azureIdentityAccessTokenResponse.setAccessToken(azureAccessToken);
 
-    when(azureAuthorizationClient.getUserAccessToken(any())).thenReturn(azureIdentityAccessTokenResponse);
+    when(azureAuthorizationClient.getUserAccessToken(any(), any())).thenReturn(azureIdentityAccessTokenResponse);
     when(azureContainerRegistryClient.getAcrRefreshToken(REGISTRY, azureIdentityAccessTokenResponse.getAccessToken()))
         .thenReturn(acrRefreshToken);
 
-    AzureAcrTokenTaskResponse azureAcrTokenTaskResponse =
-        azureAsyncTaskHelper.getServicePrincipalCertificateAcrLoginToken(
-            REGISTRY, Lists.emptyList(), getAzureConnectorDTOWithSecretType(AzureSecretType.KEY_CERT));
+    AzureAcrTokenTaskResponse azureAcrTokenTaskResponse = azureAsyncTaskHelper.getAcrLoginToken(
+        REGISTRY, Lists.emptyList(), getAzureConnectorDTOWithSecretType(AzureSecretType.KEY_CERT));
 
     assertThat(azureAcrTokenTaskResponse).isNotNull();
     assertThat(azureAcrTokenTaskResponse.getToken()).isNotNull();
@@ -670,25 +675,85 @@ public class AzureAsyncTaskHelperTest extends CategoryTest {
     assertThat(azureRepositoriesResponse.getRepositories().get(0)).isEqualTo("repository");
   }
 
-  private void testClusterConfig(AzureConnectorDTO azureConnectorDTO, AzureConfig azureConfig) {
-    KubernetesCluster cluster = mock(KubernetesCluster.class);
+  private void testAdminClusterConfig(AzureConnectorDTO azureConnectorDTO, AzureConfig azureConfig) {
+    String accessToken = "1234567890987654321";
 
-    when(azureKubernetesClient.listKubernetesClusters(any(), any())).thenReturn(Collections.singletonList(cluster));
-    when(cluster.name()).thenReturn(CLUSTER);
-    when(cluster.resourceGroupName()).thenReturn(RESOURCE_GROUP);
-    when(cluster.adminKubeConfigContent())
-        .thenReturn(readResourceFileContent("azure/kubeConfigContent.yaml").getBytes());
+    AzureIdentityAccessTokenResponse azureIdentityAccessTokenResponse =
+        AzureIdentityAccessTokenResponse.builder().accessToken(accessToken).build();
+    if (azureConnectorDTO.getCredential().getAzureCredentialType() == AzureCredentialType.MANUAL_CREDENTIALS) {
+      when(azureAuthorizationClient.getUserAccessToken(azureConfig, AzureUtils.AUTH_SCOPE))
+          .thenReturn(azureIdentityAccessTokenResponse);
+    } else if (azureConnectorDTO.getCredential().getAzureCredentialType()
+        == AzureCredentialType.INHERIT_FROM_DELEGATE) {
+      when(azureAuthorizationClient.getUserAccessToken(azureConfig, null)).thenReturn(azureIdentityAccessTokenResponse);
+    }
+
+    when(azureKubernetesClient.getClusterCredentials(any(), any(), any(), any(), any(), anyBoolean()))
+        .thenReturn(readResourceFileContent("azure/adminKubeConfigContent.yaml"));
 
     KubernetesConfig clusterConfig = azureAsyncTaskHelper.getClusterConfig(
-        azureConnectorDTO, SUBSCRIPTION_ID, RESOURCE_GROUP, CLUSTER, "default", null);
+        azureConnectorDTO, SUBSCRIPTION_ID, RESOURCE_GROUP, CLUSTER, "default", null, true);
 
-    verify(azureKubernetesClient).listKubernetesClusters(azureConfig, SUBSCRIPTION_ID);
-    assertThat(clusterConfig.getMasterUrl()).isEqualTo("https://dummy.hcp.eastus.azmk8s.io:443");
+    assertThat(clusterConfig.getMasterUrl())
+        .isEqualTo("https://cdp-test-a-cdp-test-rg-20d6a9-19a8a771.hcp.eastus.azmk8s.io:443");
     assertThat(clusterConfig.getNamespace()).isEqualTo("default");
-    assertThat(clusterConfig.getCaCert()).isEqualTo("dummycertificateauthoritydata".toCharArray());
+    assertThat(clusterConfig.getCaCert())
+        .isEqualTo(
+            "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUU2RENDQXRDZ0F3SUJBZ0lRVXU5YmZmK2dPZjZmUjZZY3RkRTE5VEFOQmdrcWhraUc5dzBCQVFzRkFEQU4KTVFzd0NRWURWUVFERXdKallUQWdGdzB5TWpBek1URXdPREUwTXpSYUdBOHlNRFV5TURNeE1UQTRNalF6TkZvdwpEVEVMTUFrR0ExVUVBeE1DWTJFd2dnSWlNQTBHQ1NxR1NJYjNEUUVCQVFVQUE0SUNEd0F3Z2dJS0FvSUNBUUM3CktrVmI5MjFOanFNaXYxKzdjRFV4VEgzNm5QV05ieWRvY3ltQTVXUkx5SkU3SVJ3SzBQQWFkaHNEcHNiKzl5aCsKeU41cE11SktoQ09HQnFIbUQwQlBRSnhmck9CcDMrYUpiN1gyOUxrd3l6dzZhQy9BT1FxalhjK05yVjcvTElPcQpxcGFVTlpWMnB0T3FWVXE2cld5eE1GZnprbGFUeTRWMTBhNWFSMFZKcDg1Mjd3SzBLUTJPQXRwMVhIaE9vUzlTCkhvRUE2TjVFSEd0SVdzMEFBMjVsbTMraDNxM2xaZkQrMXdWQnR1bHRHL2VqS285d3VaZllpVGZSVjRrdDNUd0IKK21iU0t6cFp0c1FQcVZhRy8vcXdJbllkQ1pmUmp0dnA3VnM1bk5IQkpybTlDN3VTQzVJbnNKZk1Vd0w3Vjc4WApOS0JmZko0bGlyMXhEUFZNWHhsWW1udTZmQXFXM1lYOEk3bG9LVGQ4cDlvYkV1citYVzk3Mm1PRFpzQ3RoSURlClNPL0xheWNjU0YvUSt1SHZ2YjJOME85THowcjZsd0JSQk5zdFRvcXZseDdnRFd5dDdwQjloRThUaUNrU3FDaUcKMG5vanhtTFBYUlMxd2lEcURUUDRkcXlhRDV1aTYrOGduTWFaQjhTUTlHMk1hcCtWSWQ1cmdyRjZVbGRzOXFmUApuS3NhVWRPTTBDMlVSejFnZXBmdjM0Ym4xSC83WVJuUk5GSEZGQUU2amh1amIvM091NGpUSEdZeitSRkc4bW5CCjdYYkk0aW5GeFZjRXQ2MC96TEZpcU5MNWtBMDI3R1lMdjNtV1JNQkxKOTJ2UmYrVlZxTVN3d1NCZGVzWVVQcTkKcnF0dFIyOXpvT3ZhRWJMK1JNc2x5TVZaMmZyMkFFVWFnbHFKTEtodVNRSURBUUFCbzBJd1FEQU9CZ05WSFE4QgpBZjhFQkFNQ0FxUXdEd1lEVlIwVEFRSC9CQVV3QXdFQi96QWRCZ05WSFE0RUZnUVUwdllXVkpaazRRYzdVWi9BCjhHTXAwUWpXVDJvd0RRWUpLb1pJaHZjTkFRRUxCUUFEZ2dJQkFCbG9YOExqalROdW5wUlhnam1ERlgyb2F4RGEKajdXaUl1NDc5aXo2eHUwVXNWbVNaQXYwQ05BMTE1c0lKSDJ6aVZTdlpCM1hTL05EN2dGa0NWaXFmVDNOdDRFLwpHdEJ3SXluN2g4dGFnanRzZlEyc0FpUFpJb2QxM2dZK2czSEdzU0FMMGxJc0d6QWVPKzBmanNmVTluSmdFanIvClJiamdSQUpkUTFDL0piTXJhQzJtT1VTc281dmhrOTg5bzg2WkpyZi85WUV4MW1XYlFpT0VTQW1McUZnL205YzcKWkw0N012bWFiYzc2Y0VPVURBeGgzYmlsTFU4anFkZEFCUmFXdzltTGRTdmFSTWNVT0NxeWFZT3Q0NVBRMzlxMQpPNFJMZFhqZmI2b0R5U2FtRUxNMW1zMUFPNGh4c1B5aWZIVFd4TlB2QWVVRGJtc0h3elFobVlCWHJTNjA4ekJRCm41eTkvTEsvT3VtWHpPYW4zdzlKWmxqeFBWbkI2aWRReXFpYWVaRnMvRXdWcXRBK2lOYzdzdDdTZ0ZSZ1hQck8KMElGeUd6My9HMVdCMTFJazVMVU9ZVTFONk00bzU1MURRMW5IeWdkV1gvRG9lSmZ3dklTWk9hMVh0RjQ3TG1KNgpUZnFDTEMzMlBhbTl3V2VxbG1jeTMrRFgyWitQUFRuN1luT2NYeVZEUk9SVFhSYUl2NGlmMW1zMVdwTno2d0hmCkNWQy94YnVmenFjWS9RV1dBSWdGNHJnRG1wQzVJclRnT3pSTU1nSmpJaytEeXdNTkZOaGdsbGZoLy9BRlBlWlQKWUJOUlltdXQveG1RdGZ6TGNrbHpiYXR3cXVSemRQMDc2SFJydTRNTFA3a0RUK01oNENlbHVCaW9BMzI2cXI1cQpSOEM5Z2FSK3lwTktsd2NyCi0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0F"
+                .toCharArray());
     assertThat(clusterConfig.getUsername()).isEqualTo("clusterAdmin_cdp-test-rg_cdp-test-aks".toCharArray());
-    assertThat(clusterConfig.getClientCert()).isEqualTo("dummycertificatedata".toCharArray());
-    assertThat(clusterConfig.getClientKey()).isEqualTo("dummyclientkeydata".toCharArray());
+    assertThat(clusterConfig.getClientCert())
+        .isEqualTo(
+            "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUZIVENDQXdXZ0F3SUJBZ0lRRUZUTlBybFpONWxSV2V6RzlUQ2NiVEFOQmdrcWhraUc5dzBCQVFzRkFEQU4KTVFzd0NRWURWUVFERXdKallUQWVGdzB5TWpBek1URXdPREUwTXpSYUZ3MHlOREF6TVRFd09ESTBNelJhTURBeApGekFWQmdOVkJBb1REbk41YzNSbGJUcHRZWE4wWlhKek1SVXdFd1lEVlFRREV3eHRZWE4wWlhKamJHbGxiblF3CmdnSWlNQTBHQ1NxR1NJYjNEUUVCQVFVQUE0SUNEd0F3Z2dJS0FvSUNBUURnYWxwb0FjZzcyTnVSZGJzTXJvTUYKZGhDMys1N1VhZlUyLzRsV0ZCenh1eVQwQzRpWjVjYWdTK3RKcFZZLytyYkpvVGZFNy92dm8ydmZYYnVBR05TdwpTMndCWXdwN0NkRmNkYnQyRnF1MXdYV09NcmhWTnlWVWRtbFJOa3hkUHcveGRuS1FvWFJ6QThOVldZcXk0RDlkCno2dTU0eGRnbTVweG4vYUZkR2RDcXdOY2IyOHM4VnFwbmlrTllKb3V5d0lCUk5HUWtxNlg1cHlsOFM5MGRxeEIKQnhJaktOSk9XN2xEeDFXS3Y3bkF2RU9aNFRCdkR6OTMwK2ZuckYzQzZsYXJtODMvWWRkbTVPVTRVVk56YzFFLwpRTFFVSWlFRFlMWHlOM0E2bEV0V0VuUktEWHV4YmM3S3dnMWRJSldRUGNpam9vaG1sRlJ1ZEZSQ3FRQ1poYk5LClYyZjRuVmJ1WkxLVkZnYXBxMUhUKzhSUGxPbUhoY2swMSt6QVJ0UDExMVNkeC9ZcWdwcElhQVlFVHJLUWRPejUKUXNWYTBsZ3dOTlAvSThnNEFmcTZtdWtmV2trSUg3Zkd1TTFTNTRiOFpETGVyc0xkVzhZcnBmOHREUGNCcVdDTwowOXlNVm1XajlUWUxVT1RodHhxTXN6ay9TNTRJWldFT2VzTHJlbERFS3VMRDBRWDZLbk5tZkNiQmNkbDFRclZ1Ck44S1hoaVh3MFVuaWhYZUdYN0tUR1FQOGl0MXo1Q1BSZ2tTOFhaaVI5c0hkb2tNU0p1UXBsOEhLVWpBQkR4NXcKbEtYTXR3dHEzS0h1RkE3UHhqeVduSmc1aTlONldzQkdZQzVETk1HQXplZm9obWVrSzVFSUs1cm1mbWc3azFOYgpNNXdQb0hjc05JaEsyYmRRR1VHbkh3SURBUUFCbzFZd1ZEQU9CZ05WSFE4QkFmOEVCQU1DQmFBd0V3WURWUjBsCkJBd3dDZ1lJS3dZQkJRVUhBd0l3REFZRFZSMFRBUUgvQkFJd0FEQWZCZ05WSFNNRUdEQVdnQlRTOWhaVWxtVGgKQnp0Um44RHdZeW5SQ05aUGFqQU5CZ2txaGtpRzl3MEJBUXNGQUFPQ0FnRUFnU0JKOUNlMUh0N2orbG5JLzYwWgpNYjRPaG5zZUE5UGxUZ1NtS043aVBGUU9KOVFReUlEYjBUdWRTVldzZnRKTEhYOXNNZkt6NkRlUHlhV0cvYm9NClBPYUZ1NGVwU1dkeWhNZm9nZXJJS2g4dFRhbW1tTHptOG1BZVR3bXdKSTI5aHZSVENud3FYZU9jNHppcno2bUQKWmJhbWJsN1pzVXNpZ2paenFzYUFPcHhIWGJRR0FKVkJDc2hDejNPeGU0S0tnbHZUWGVlNEl4dnFwK1lFeU5TawpsOFZUMTVjcTZHUEt5VW0zampoZXJCbnNBbXNqV3VZY1l6RVZNcU0wV2VyVzArZjlhVGZrbEhwUkVyRUNtS3d2Cm90Tkw0RUk2V1pkNURMU1pQV0JVUGx3czh2TFB6L2tsVVJ1NzdUb3l0bmpIdVlabm4zYmZPZjRxUXQ1emlSbHoKRDk5TDdGbU9QU1Qza21wMGFEbTNybTlYajQ2RnhKc1FFMkJwNUZGbHlvRmZnWkt0M05McGtMMkRraXRTa3Mrbwpnc1JKcjJNcHg3NlJVUVU5QVpYdVEya3ZjOERzV0d4Ym5wQ001QURKWDIvczM5YWVYTk5zOFFnVlZ5NVU2VktvCmhmZFdJYTU0SVFtekNUTGYxbE9oeXNvZDNLbStCeHhjZFdGYUc3Q25IV2VQTCsvRUFKZkFHdFQ1dEFTQWhoNTYKc0ttYzYzcTlqZ3ZXdUhmRzRpZzd1UllvMGJOdVh2S1lZMFR4c0lBTlNZR0ZlbjVJUFRsamF6aGl2SW0vTlVMRQp1d3ZpSW83aG1UNVdoeTg1bmk3VEd3Y0VvWkFLcy9DbVZHTlp5UzU0N2NlQmhwTlFEemx1Y0dPaUV4ZWc5ampyCkhMcmtjM0RINllnNWxEblY2V3FEL3pjPQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCF=="
+                .toCharArray());
+    assertThat(clusterConfig.getClientKey())
+        .isEqualTo(
+            "LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlKS3dJQkFBS0NBZ0VBNEdwYWFBSElPOWpia1hXN0RLNkRCWFlRdC91ZTFHbjFOditKVmhRYzhic2s5QXVJCm1lWEdvRXZyU2FWV1AvcTJ5YUUzeE8vNzc2TnIzMTI3Z0JqVXNFdHNBV01LZXduUlhIVzdkaGFydGNGMWpqSzQKVlRjbFZIWnBVVFpNWFQ4UDhYWnlrS0YwY3dQRFZWbUtzdUEvWGMrcnVlTVhZSnVhY1ovMmhYUm5RcXNEWEc5dgpMUEZhcVo0cERXQ2FMc3NDQVVUUmtKS3VsK2FjcGZFdmRIYXNRUWNTSXlqU1RsdTVROGRWaXIrNXdMeERtZUV3CmJ3OC9kOVBuNTZ4ZHd1cFdxNXZOLzJIWFp1VGxPRkZUYzNOUlAwQzBGQ0loQTJDMThqZHdPcFJMVmhKMFNnMTcKc1czT3lzSU5YU0NWa0QzSW82S0lacFJVYm5SVVFxa0FtWVd6U2xkbitKMVc3bVN5bFJZR3FhdFIwL3ZFVDVUcApoNFhKTk5mc3dFYlQ5ZGRVbmNmMktvS2FTR2dHQkU2eWtIVHMrVUxGV3RKWU1EVFQveVBJT0FINnVwcnBIMXBKCkNCKzN4cmpOVXVlRy9HUXkzcTdDM1Z2R0s2WC9MUXozQWFsZ2p0UGNqRlpsby9VMkMxRGs0YmNhakxNNVAwdWUKQ0dWaERuckM2M3BReENyaXc5RUYraXB6Wm53bXdYSFpkVUsxYmpmQ2w0WWw4TkZKNG9WM2hsK3lreGtEL0lyZApjK1FqMFlKRXZGMllrZmJCM2FKREVpYmtLWmZCeWxJd0FROGVjSlNsekxjTGF0eWg3aFFPejhZOGxweVlPWXZUCmVsckFSbUF1UXpUQmdNM242SVpucEN1UkNDdWE1bjVvTzVOVFd6T2NENkIzTERTSVN0bTNVQmxCcHg4Q0F3RUEKQVFLQ0FnRUFyOVhsSEZVNUpOdFh2dk4yS2d1YWtXN2V6cW1TMjNCaU9FT2t3aE5rVW11R0dzbm1zRjcvY0ozTApyNXFpcCtLejBleEdIRUxGTGhEbjlzNGttY3ZhNm45T0V4QWRLQ2FiS2t6OUl4dkVVdGRRV3FpWEVmM3hlK3FECnZxUkMxVlVTRXVueC9pempaekx0bkRSYW5xbGlQUWo0enQrR2M2VzRMNHRjeDFoYmlEc2ltUXlmR2FIS25kaFUKNWl4bzRuMGlCd2g3QTBKTEZxNFUwMWpWQy9Yb0pkTjZmSjRCbW0vNEM0bG1GeDcrVm11c3RDZGpvY0ZhdzNMLwo0K0NFWHJMcVVlLzBTa1BKV00vRVlvb21UdkZ1R1plREFidDBEb2Q2U0Z6enpKSmhMUUdzcUZGRU45T0lFZ3BXCkdqL3JzR2NZakU1UGZjQi9IMFI2dVBoZWhldmllOGVzdWhPWkEvaTVvOUxqRU9lZW9rY2NOdlFMelpSNTE5bzMKa2FERWNzekd2MThwQVYvYUNQZncvNngrdGxzazJYSFVXcVdxZjk2R2ttcFB0V0Q1bFIweU1EQmk1MDNGQVltSgpQNjdUVVJOWklFUkpRRFBuU1JJVWx2T0kyNzg2N3kwNXZhdzFKd2ZWWWhCOTVLaFl6b1VjTVBVeUhnbkJXTDB6CnF5VFRUbDNIOWRXVHduUUtIeUViTUNGQ2cwZS9aR1F5VmlZdDBXL2gyNWdiS1hGL3VZR09WZjE5QlJwOHdlTjYKWWlLc0d5L29qVmlLUjVocGg3dFh0Wk9WMW83NDk2VkVreFUvcXVORUlqT0M5RUJ3ZmJRMjE4OHZPTHVTaXJqSwowbk1PUmlkaFBRVVd6WGNNRXNlQ1hybW9yV1JPdjZjdDZkU2JqQW9EUENybDE2UTJMVUVDZ2dFQkFQU2JRaHZhCmpFVUo3KzN5RU5xRDRYMXZWaU1ORHExdHY0Q2ZLN3ZDVm5hMHNVazQyc1JiUG1LUjZYLzBuZ3FUYmZ6SHAvUTYKbGxaWEVFL05zem85UzVDanlBYVJIZXIveW9JRCtpRC8zU2dSR3NHeUxiZXB6b1l1bnh4MFBQRGlORERqSU1FSAp0S2tEc29mbTZTSEdPWUZzcEE4YTl2YnczT3FCaHRMbVBiNzVZMVFOK2RxV0lFbFdudVFzZnExZWxzU0dteGVxCjV0N2NSTDJ0d3FncjZRVGI0U2lpd015aVhRTVZHYkRTcDQwRkVsRDlqT0dwVDhMaUVxQVRZSkdUbndDQW9BSysKNlZWcDBFWEJSUEk0Tk9vVDk1UWpaN0V4UW5nT0hQenVsSUlyQStGL05iZW9MVjFDN0RvNUJoaXBxQ0pHWXZLbwpFK1Q5NEpab0Q4L2RCYThDZ2dFQkFPcmVWU0VraGRtcy9Wc0VTN1ZIQmVYZHU4RVRTeFo2Wi9Nd2NrV2ZOYjJrCittOUlhOWkyTDV4OXY1WmRmc2p2eCt3ZGhlakV5Smpaam81QWt6SFFmTXZCNjFJUldya1J4QUdIVXZqZGg0UWMKS2VaMCt0WENCZ2hZV2ZpYnFMdHpsV1RJSzRnSUtPeUQwWkptOTdtQmp1Rk5NSGpqeE1SQ2lPOU9FSGZYM21pSApwN1k1R2JCSit0cGo5emZZQ01ucGJuTW1vd3AydTc5aG1xamxGak95U0JSV1FRakd2SUczR0pXOUY4dm1sS2Q2ClY3WHdRbnVPR3pTbFoxL2xSMEg5TmQrcHNkTStrM3NlbXBVRDFGWDdqb2hPdS8vMzV5TEpnSi9yWGlLRjBCbWwKekg1SU1DcC9PWnhCTVhSYk5HcldxdjNpUWZMekU0bHgxaEVCdy9OZ1FaRUNnZ0VCQUxTcThIdE9Rd2pEUERvTgo3ekRXOC9nSUFpRkZoYS9IUGdrc2g4clkwYkEvNmlwaEdnU3FPRHZwOWdPU2xDRFBvQTl6RUxTdGlWa2dXV1g0ClV3Y1RPdnNNWGJPci8rTVJKMnc4cjhVcjl4ZWUrcHBTbHIzdmFDRm4waEhjTVI3aWxSWCt6TFNHa29PN3ZXUHYKeEFZME9VbEZDekExQkhDRW0wZUNnQ2pKOHBWWjhtbWxJUVM0bWdSUlBHN2dCbmpiUXBUSnIwZ2Q3UVJ5d1RzdwpXblNJYWtZeWVlM2Z1SFB0QUxKRUpZT2JOREpPcXFhemdCazFTenB3YkwxYlVwcHo1SjhrWWd0bEkwYjVMdUkyCnpFdjBBL0ZZNmlhNnQ5NEN1a3VlY1A3STRWdjdsWlE2dDF4OWxYUXE5L3hSSGhXZFNoaDIwS0xXVGt0MjBTbUcKbHhjNjh2VUNnZ0VCQUxXNW1YeXZXYkYzSEFFVWJjK3hTR3IzQ1pMMmJwN1J6eVJuVThOeTBJNFAzSVhHTDB2YQppelEyUjhyOFJHRU14azkyK0dtRitQL3JOVlh6dVBCT05JRWpaZ1IxMFJCcElwTmNOV0xCWlYxZXZUekhQbDJ1ClppU0cxL1ozMmpKUDJFUEdiWWd2YUJxNFU2dEhhRjFzVlRVV0dHOHhMTW4rQVIzSDlRNEZSTnowT1Z2UkNvTlEKZW53SDVQeWNkeEJqUVVadm1xODU5MEs1TG9XSDI0bmNZOUQ0ZkJGaVUvQzV6cGZ0VzBBMUJNZ2c3VVNreFl2OApCQ2pUNGd4Y3hxblVWWjdkR2U0cytNZkdnaXpTYmJTcGt6cjhVSkpaS2NuTXgyejFIRHp4OUhZanh2bmV1UVhvCnNwYW9DcS9ROGRuSWh6MHhsMzEzZnFKV0poKzZrZmI1ZjBFQ2dnRUJBSjZTN3hUaGExU0dJdndMWDBTVlh1SEQKOCt6anpkbVQ4OWZ6MnMvNmpGRnRneW1DSlZvOFpVWG5FUWxLU0d3aDlDUU9nY29wM0VoYkQxVHJWTlFIOXpUMQpZa2RUZWFoUHZEcURsTHNFRUYzRDBrSTY3QnYxU1FhYVQ1TTJEMEdTSFI1MHptTCswT2ptQTBsNmQzMFJzY3RECkdiSDRQTUlTdWdxS05oZ082WU5adnFMWU5Ma2xQYkpGUTFRR0U1UjZyM1BrYWliTWRPL1NRNWY3Wmh3U0x2T2wKMkxtQkJxYWZ1bmc0VUhJSWRIZERUYjUveUVEYlJva1Q5T3RGQmpucTJvSzZWNWZzZkIram5qMHkxZTRHRk9rcQpWb04vbHJhdTYrTTlwWDRiTGo1WGFWTEloMjVOYy90N0lPdm02WVNqbzJkNVBrV21KaW5UazRXOU1nQVFZRFE9Ci0tLS0tRU5EIFJTQSBQUklWQVRFIEtFWS0tLS0tCF=="
+                .toCharArray());
+    assertThat(clusterConfig.getAzureConfig()).isNull();
+  }
+
+  private void testUserClusterConfig(AzureConnectorDTO azureConnectorDTO, AzureConfig azureConfig) {
+    String accessToken = "1234567890987654321";
+    String aadToken = "poiuytrewqwertyuiop";
+
+    AzureIdentityAccessTokenResponse azureIdentityAccessTokenResponse =
+        AzureIdentityAccessTokenResponse.builder().accessToken(accessToken).build();
+
+    AzureIdentityAccessTokenResponse azureIdentityAccessTokenResponseAADToken =
+        AzureIdentityAccessTokenResponse.builder().accessToken(aadToken).build();
+
+    if (azureConnectorDTO.getCredential().getAzureCredentialType() == AzureCredentialType.MANUAL_CREDENTIALS) {
+      when(azureAuthorizationClient.getUserAccessToken(azureConfig, AzureUtils.AUTH_SCOPE))
+          .thenReturn(azureIdentityAccessTokenResponse);
+    } else if (azureConnectorDTO.getCredential().getAzureCredentialType()
+        == AzureCredentialType.INHERIT_FROM_DELEGATE) {
+      when(azureAuthorizationClient.getUserAccessToken(azureConfig, null)).thenReturn(azureIdentityAccessTokenResponse);
+    }
+
+    when(azureKubernetesClient.getClusterCredentials(any(), any(), any(), any(), any(), anyBoolean()))
+        .thenReturn(readResourceFileContent("azure/userKubeConfigContent.yaml"));
+
+    String scope = "6dae42f8-4368-4678-94ff-3960e28e3630";
+    if (azureConfig.getAzureAuthenticationType() == AzureAuthenticationType.SERVICE_PRINCIPAL_CERT
+        || azureConfig.getAzureAuthenticationType() == AzureAuthenticationType.SERVICE_PRINCIPAL_SECRET) {
+      scope += "/.default";
+    }
+    when(azureAuthorizationClient.getUserAccessToken(azureConfig, scope))
+        .thenReturn(azureIdentityAccessTokenResponseAADToken);
+
+    KubernetesConfig clusterConfig = azureAsyncTaskHelper.getClusterConfig(
+        azureConnectorDTO, SUBSCRIPTION_ID, RESOURCE_GROUP, CLUSTER, "default", null, false);
+
+    assertThat(clusterConfig.getMasterUrl())
+        .isEqualTo("https://cdp-azure-test-aks-dns-baa4bbdc.hcp.eastus.azmk8s.io:443");
+    assertThat(clusterConfig.getNamespace()).isEqualTo("default");
+    assertThat(clusterConfig.getCaCert())
+        .isEqualTo(
+            "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUU2RENDQXRDZ0F3SUJBZ0lRUU45cldqaGVpTFJReXpWRVFYUS9jakFOQmdrcWhraUc5dzBCQVFzRkFEQU4KTVFzd0NRWURWUVFERXdKallUQWdGdzB5TWpBMU1UZ3hOVEU0TURCYUdBOHlNRFV5TURVeE9ERTFNamd3TUZvdwpEVEVMTUFrR0ExVUVBeE1DWTJFd2dnSWlNQTBHQ1NxR1NJYjNEUUVCQVFVQUE0SUNEd0F3Z2dJS0FvSUNBUUNrCmdKSFhQYlV1M1pZS1Jjdi93cWVsUGordm9FY2I4MTE0M1pnWExSemZXM1FkVEVVTENBbDEwb29DTytZaTJRKy8KQjVTN3p1NG9OSjFRbVRGdEtBdW0xUHJpNWc5L003alZwYTVLdk1hZ2pMdUdxVG9QanZkQzZSZFF0UVpiamI0WAoxZC9KNEtkYXU2Zk51b2NmV0ZKMExUMnJocXpVZVk4ODhXeXZFeTI5OGRwZDFTKzRLMGNBUTdvWVhGd2dob1h6CjFKenQvaU5rMFRmRVNFTzZqNmtCZkh3SHlOQnBNK0R1UXZGamd0bmZWV2FYZk9wVVVCZDM4WGoyOTA4Z2tnQUYKL1FxeWozWHRXV0ExWFQ4S2VjZFBmN0hFK2RQMXlHeXJJOWlsdjJFVTZMbEtWOFRqd0FzQ3hvTU1aNWtQKzJhUApFcUlZbVdBZWhKVjRtb1FXeWdkZGJ6N1cyZVNxUmpoSklENUNxRjMrbzA2M1R3V2xUVzFBdXBVR0JJSHVWa2tOCkdubkJUTmNBMmk5VFpiY1VEenMzQnpMN3NEamZ3bDFOS1hUL2craTQzYkFnRkswd3JoTmYzb0phbVdVSU9uVWcKNjd5NE9iNm11K0pnb0Q2bUNFR3FCTXVjakpPaVd5SGZBMDBmZW5hODFWK2Z4cGw2RWNVSW9NZmM2MmY2S1JBawpiRG9qK29ycEF5Wm1SdmRRVzRPNDVVc3VrNWs1dytTTGNBQnI3bkFtc2JOYU85WERueGZWaEhTU2JXeTVGU1U2CnpQakJIRXRSVEkxVEZYYnp6MVZja1FJUHd1ZHJTLzF4N1I0ZGd1MG5OODlwcVd4VHJBRnpDRFQydGpWd2J3OGYKQWozZ1dJTS9wbnRPbS93cUdQMExWTXM2d21jUmF3TklkbXI3dldrVEJRSURBUUFCbzBJd1FEQU9CZ05WSFE4QgpBZjhFQkFNQ0FxUXdEd1lEVlIwVEFRSC9CQVV3QXdFQi96QWRCZ05WSFE0RUZnUVVFVFI1eFdqVjI4akZCYVY0CjZNWmxpRG9PeUU0d0RRWUpLb1pJaHZjTkFRRUxCUUFEZ2dJQkFIVGZRV0w2MUFUVkNTM0Z5a2hFYklEaVkyY2UKS2MzbHdlYmVObW9PR1NYREFqcXV3ZzRlU3BtYy9OQkJqWEh1cGZvMjczbk5NZ2RlaGEyMkNKb1JwbXpQNmNJbgpQRVoxcUsycnhjZFRuVWhZenA3eEhRU3hFYW1aS2traVZLVG5aRHl5Z1REMVpPTi9va2tYbEE4NHQyVGFGTkVpClpMdGczM2RQb0QvaUM4Z2liWDhvOVMyRzJzODRzME94N3pqMDZKSHVOZW5wdWZldGRPSEd2OWYvREVXQ3BQMDcKMzZHaCtSQUZ3TE40ZU1ZMy9JWXJDNFJvUTlCdTlReEVuZlJndmNJS0Q5bHAvOERTVVR2Z1hYYjBTZFV4aUxpcgpYTW9VTGZiZ3dBNmZNL1kvLzFRRytUeERrTjY4VVlBRVE4cGUwZjU5OEU4Q0MyZWh5NU5MRnZHTG5MckhtVUVoCjVtTlF0QmVaNWRjbFFNYktUenVOUUpZWXV6WUtsTnFCSGIwRzdpVzdsdkxoMHlHNXpyVXRBalJGcVFWQllicTcKdHJVTDRuNjFmNzNvYlBqdDMzWm1NR0RDQ1pyT1ZJb3l4aC9WcERmWURZZU1tTGw4a2RWc0hqMGhzVERoOXVpOAp0dmswV0gxYkNBOTlzeXZSdGpvY3c4NUVMTE9RMG83ZCtoSE9FQ3dkVEhVV0loZk1zSUVENzVOUXhSamJ3Nmp2Cnd5UHJxM1R6SnJYVVVpbXJBSUh5N3BrYzMrVlpnMCtscHFiTCtEOXRxQ2dWcWZNeUFWekx0Tm94Nm9aS2w1L2IKQVQydFVURk14cmk4bTFKSXNlVDcveVZ1WVJCWHhrRTFibU5NOCtkL0grTHdjUXhnMVplcEhEVmM5dGRUeHhvRAozWllsOVYrc3YyZWwwdmVjCi0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0F"
+                .toCharArray());
+    assertThat(clusterConfig.getUsername()).isEqualTo("clusterUser_cdp-test-rg_cdp-azure-test-aks".toCharArray());
+    assertThat(clusterConfig.getAzureConfig().getAadIdToken()).isEqualTo(aadToken);
   }
 
   private void testGetImageTags(AzureConfig azureConfig) {
