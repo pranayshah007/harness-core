@@ -319,15 +319,19 @@ public class NGTemplateServiceImpl implements NGTemplateService {
         stableTemplate = templateEntity;
       }
     }
+
     if (templateToDelete == null) {
-      throw new InvalidRequestException(format("Template with identifier [%s] and versionLabel [%s] %s does not exist.",
-          templateIdentifier, deleteVersionLabel, getMessageHelper(accountId, orgIdentifier, projectIdentifier)));
+      throw new InvalidRequestException(format(
+          "Template with identifier [%s] and versionLabel [%s] under Project[%s], Organization [%s], Account [%s] does not exist.",
+          templateIdentifier, deleteVersionLabel, projectIdentifier, orgIdentifier, accountId));
     }
     if (stableTemplate != null && stableTemplate.getVersionLabel().equals(deleteVersionLabel)
         && templateEntities.size() != 1) {
-      throw new InvalidRequestException(
-          "You cannot delete the stable version of the template. Please update another version as the stable version before deleting this version");
+      throw new InvalidRequestException(format(
+          "Template with identifier [%s] and versionLabel [%s] under Project[%s], Organization [%s], Account [%s] cannot delete the stable template",
+          templateIdentifier, deleteVersionLabel, projectIdentifier, orgIdentifier, accountId));
     }
+
     return deleteMultipleTemplatesHelper(accountId, orgIdentifier, projectIdentifier,
         Collections.singletonList(templateToDelete), version, comments, templateEntities.size() == 1, stableTemplate);
   }
@@ -349,25 +353,16 @@ public class NGTemplateServiceImpl implements NGTemplateService {
         stableTemplate = templateEntity;
       }
     }
+
     if (stableTemplate != null && deleteTemplateVersions.contains(stableTemplate.getVersionLabel())
         && !canDeleteStableTemplate) {
-      throw new InvalidRequestException(
-          "You cannot delete the stable version of the template. Please update another version as the stable version before deleting this version");
+      throw new InvalidRequestException(format(
+          "Template with identifier [%s] and versionLabel [%s] under Project[%s], Organization [%s], Account [%s] cannot delete the stable template",
+          templateIdentifier, stableTemplate.getVersionLabel(), projectIdentifier, orgIdentifier, accountId));
     }
+
     return deleteMultipleTemplatesHelper(accountId, orgIdentifier, projectIdentifier, templateToDeleteList, null,
         comments, canDeleteStableTemplate, stableTemplate);
-  }
-
-  private String getMessageHelper(String accountId, String orgIdentifier, String projectIdentifier) {
-    if (EmptyPredicate.isNotEmpty(projectIdentifier)) {
-      return format("under Project[%s], Organization [%s], Account [%s]", projectIdentifier, orgIdentifier, accountId);
-    } else if (EmptyPredicate.isNotEmpty(orgIdentifier)) {
-      return format("under Organization [%s], Account [%s]", orgIdentifier, accountId);
-    } else if (EmptyPredicate.isNotEmpty(accountId)) {
-      return format("under Account [%s]", accountId);
-    } else {
-      return "";
-    }
   }
 
   private boolean deleteMultipleTemplatesHelper(String accountId, String orgIdentifier, String projectIdentifier,

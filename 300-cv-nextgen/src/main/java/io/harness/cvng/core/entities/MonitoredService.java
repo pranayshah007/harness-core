@@ -76,6 +76,7 @@ public final class MonitoredService
   String orgIdentifier;
   String projectIdentifier;
   String serviceIdentifier;
+  @Deprecated String environmentIdentifier;
   List<String> environmentIdentifierList;
   MonitoredServiceType type;
   List<String> healthSourceIdentifiers;
@@ -89,11 +90,7 @@ public final class MonitoredService
   String templateVersionLabel;
 
   @NotNull @Singular @Size(max = 128) List<NGTag> tags;
-  // usage of this should be replaced with environmentIdentifierList. A better type based api is needed.
-  @Deprecated
-  public String getEnvironmentIdentifier() {
-    return environmentIdentifierList.get(0);
-  }
+
   public List<String> getHealthSourceIdentifiers() {
     if (healthSourceIdentifiers == null) {
       return new ArrayList<>();

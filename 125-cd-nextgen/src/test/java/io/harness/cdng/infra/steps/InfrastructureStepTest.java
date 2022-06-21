@@ -599,7 +599,6 @@ public class InfrastructureStepTest extends CategoryTest {
                                             .subscriptionId(ParameterField.createValueField(subscriptionId))
                                             .resourceGroup(ParameterField.createValueField(resourceGroup))
                                             .cluster(ParameterField.createValueField(cluster))
-                                            .useClusterAdminCredentials(ParameterField.createValueField(true))
                                             .build();
 
     InfraMapping expectedInfraMapping = K8sAzureInfraMapping.builder()
@@ -608,50 +607,10 @@ public class InfrastructureStepTest extends CategoryTest {
                                             .subscription(subscriptionId)
                                             .resourceGroup(resourceGroup)
                                             .cluster(cluster)
-                                            .useClusterAdminCredentials(true)
                                             .build();
 
-    assertThat(infrastructureStep.createInfraMappingObject(infrastructureSpec)).isEqualTo(expectedInfraMapping);
-
-    infrastructureSpec = K8sAzureInfrastructure.builder()
-                             .connectorRef(ParameterField.createValueField(connector))
-                             .namespace(ParameterField.createValueField(namespace))
-                             .subscriptionId(ParameterField.createValueField(subscriptionId))
-                             .resourceGroup(ParameterField.createValueField(resourceGroup))
-                             .cluster(ParameterField.createValueField(cluster))
-                             .useClusterAdminCredentials(ParameterField.createValueField(null))
-                             .build();
-
-    expectedInfraMapping = K8sAzureInfraMapping.builder()
-                               .azureConnector(connector)
-                               .namespace(namespace)
-                               .subscription(subscriptionId)
-                               .resourceGroup(resourceGroup)
-                               .cluster(cluster)
-                               .useClusterAdminCredentials(null)
-                               .build();
-
-    assertThat(infrastructureStep.createInfraMappingObject(infrastructureSpec)).isEqualTo(expectedInfraMapping);
-
-    infrastructureSpec = K8sAzureInfrastructure.builder()
-                             .connectorRef(ParameterField.createValueField(connector))
-                             .namespace(ParameterField.createValueField(namespace))
-                             .subscriptionId(ParameterField.createValueField(subscriptionId))
-                             .resourceGroup(ParameterField.createValueField(resourceGroup))
-                             .cluster(ParameterField.createValueField(cluster))
-                             .useClusterAdminCredentials(ParameterField.createValueField(false))
-                             .build();
-
-    expectedInfraMapping = K8sAzureInfraMapping.builder()
-                               .azureConnector(connector)
-                               .namespace(namespace)
-                               .subscription(subscriptionId)
-                               .resourceGroup(resourceGroup)
-                               .cluster(cluster)
-                               .useClusterAdminCredentials(false)
-                               .build();
-
-    assertThat(infrastructureStep.createInfraMappingObject(infrastructureSpec)).isEqualTo(expectedInfraMapping);
+    InfraMapping infraMapping = infrastructureStep.createInfraMappingObject(infrastructureSpec);
+    assertThat(infraMapping).isEqualTo(expectedInfraMapping);
   }
 
   @Test
@@ -687,7 +646,7 @@ public class InfrastructureStepTest extends CategoryTest {
                                                    .connectorRef(ParameterField.createValueField("connector-ref"))
                                                    .subscriptionId(ParameterField.createValueField("subscription-id"))
                                                    .resourceGroup(ParameterField.createValueField("resource-group"))
-                                                   .webApp(ParameterField.createValueField("webApp"))
+                                                   .appService(ParameterField.createValueField("appService"))
                                                    .deploymentSlot(ParameterField.createValueField("deployment-slot"))
                                                    .build();
 

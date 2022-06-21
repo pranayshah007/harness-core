@@ -14,8 +14,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.CDNGEntitiesTestBase;
+import io.harness.cdng.gitops.ClusterServiceImpl;
 import io.harness.cdng.gitops.entity.Cluster;
 import io.harness.data.structure.UUIDGenerator;
+import io.harness.repositories.gitops.spring.ClusterRepository;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
@@ -23,6 +25,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.joor.Reflect;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.springframework.data.domain.Page;
@@ -33,7 +37,13 @@ public class ClusterServiceTest extends CDNGEntitiesTestBase {
   private static final String PROJECT_ID = "PROJECT_ID";
   private static final String ENV_ID = "ENV_ID";
 
-  @Inject private ClusterService clusterService;
+  @Inject private ClusterRepository clusterRepository;
+  private ClusterService clusterService = new ClusterServiceImpl(null);
+
+  @Before
+  public void setUp() throws Exception {
+    Reflect.on(clusterService).set("clusterRepository", clusterRepository);
+  }
 
   @Test
   @Owner(developers = YOGESH)

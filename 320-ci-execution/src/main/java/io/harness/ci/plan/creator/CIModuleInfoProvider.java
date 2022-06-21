@@ -29,11 +29,7 @@ import io.harness.ci.pipeline.executions.beans.CIBuildAuthor;
 import io.harness.ci.pipeline.executions.beans.CIBuildBranchHook;
 import io.harness.ci.pipeline.executions.beans.CIBuildCommit;
 import io.harness.ci.pipeline.executions.beans.CIBuildPRHook;
-import io.harness.ci.pipeline.executions.beans.CIImageDetails;
-import io.harness.ci.pipeline.executions.beans.CIInfraDetails;
-import io.harness.ci.pipeline.executions.beans.CIScmDetails;
 import io.harness.ci.pipeline.executions.beans.CIWebhookInfoDTO;
-import io.harness.ci.pipeline.executions.beans.TIBuildDetails;
 import io.harness.ci.plan.creator.execution.CIPipelineModuleInfo;
 import io.harness.ci.plan.creator.execution.CIStageModuleInfo;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
@@ -99,12 +95,6 @@ public class CIModuleInfoProvider implements ExecutionSummaryModuleInfoProvider 
     String buildType = null;
     String triggerRepoName = null;
     String url = null;
-
-    List<CIScmDetails> scmDetailsList = new ArrayList<>();
-    List<CIInfraDetails> infraDetailsList = new ArrayList<>();
-    List<CIImageDetails> imageDetailsList = new ArrayList<>();
-    List<TIBuildDetails> tiBuildDetailsList = new ArrayList<>();
-
     CIBuildAuthor author = null;
     Boolean isPrivateRepo = false;
     List<CIBuildCommit> triggerCommits = null;
@@ -141,18 +131,12 @@ public class CIModuleInfoProvider implements ExecutionSummaryModuleInfoProvider 
               if (isEmpty(repoName) || repoName.equals(NULL_STR)) {
                 repoName = getGitRepo(url);
               }
-              CIScmDetails scmDetails = IntegrationStageUtils.getCiScmDetails(connectorUtils, connectorDetails);
-              scmDetails.setScmUrl(url);
-              scmDetailsList.add(scmDetails);
+
             } catch (Exception exception) {
               log.warn("Failed to retrieve repo");
             }
           }
         }
-        infraDetailsList.add(IntegrationStageUtils.getCiInfraDetails(initializeStepInfo.getInfrastructure()));
-        imageDetailsList = IntegrationStageUtils.getCiImageDetails(initializeStepInfo);
-        tiBuildDetailsList = IntegrationStageUtils.getTiBuildDetails(initializeStepInfo);
-
         isPrivateRepo = isPrivateRepo(url);
         Build build = RunTimeInputHandler.resolveBuild(buildParameterField);
         if (build != null) {
@@ -212,10 +196,6 @@ public class CIModuleInfoProvider implements ExecutionSummaryModuleInfoProvider 
             .repoName(repoName)
             .ciExecutionInfoDTO(ciWebhookInfoDTO)
             .isPrivateRepo(isPrivateRepo)
-            .scmDetailsList(scmDetailsList)
-            .infraDetailsList(infraDetailsList)
-            .imageDetailsList(imageDetailsList)
-            .tiBuildDetailsList(tiBuildDetailsList)
             .build();
       }
     }
@@ -256,10 +236,6 @@ public class CIModuleInfoProvider implements ExecutionSummaryModuleInfoProvider 
         .repoName(repoName)
         .ciExecutionInfoDTO(getCiExecutionInfoDTO(codebaseSweepingOutput, author, prNumber, triggerCommits))
         .isPrivateRepo(isPrivateRepo)
-        .scmDetailsList(scmDetailsList)
-        .infraDetailsList(infraDetailsList)
-        .imageDetailsList(imageDetailsList)
-        .tiBuildDetailsList(tiBuildDetailsList)
         .build();
   }
 

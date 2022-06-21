@@ -14,13 +14,10 @@ import io.harness.azure.AzureEnvironmentType;
 import io.harness.azure.model.AzureAuthenticationType;
 import io.harness.azure.model.AzureConfig;
 import io.harness.delegate.beans.azure.registry.AzureRegistryType;
-import io.harness.delegate.task.azure.appservice.AzureAppServicePreDeploymentData;
-import io.harness.delegate.task.azure.appservice.webapp.AppServiceDeploymentProgress;
 import io.harness.delegate.task.azure.appservice.webapp.ng.AzureWebAppInfraDelegateConfig;
 import io.harness.delegate.task.azure.artifact.AzureArtifactConfig;
 import io.harness.delegate.task.azure.artifact.AzureContainerArtifactConfig;
 
-import java.util.Collections;
 import lombok.experimental.UtilityClass;
 
 @OwnedBy(CDP)
@@ -30,8 +27,6 @@ public class AzureTestUtils {
   public static final String SUBSCRIPTION_ID = "subscription-id";
   public static final String RESOURCE_GROUP = "resource-group";
   public static final String DEPLOYMENT_SLOT = "deployment-slot";
-  public static final String ROLLBACK = "rollback";
-  public static final double TRAFFIC_WEIGHT = 20.0;
   public static final String TEST_IMAGE = "test-image";
   public static final String TEST_IMAGE_TAG = "tag-image";
   public static final String TENANT_ID = "tenant-id";
@@ -62,21 +57,6 @@ public class AzureTestUtils {
         .cert(CERT)
         .tenantId(TENANT_ID)
         .clientId(CLIENT_ID)
-        .build();
-  }
-
-  public AzureAppServicePreDeploymentData buildTestPreDeploymentData(AppServiceDeploymentProgress deploymentProgress) {
-    return AzureAppServicePreDeploymentData.builder()
-        .trafficWeight(TRAFFIC_WEIGHT)
-        .appSettingsToAdd(Collections.emptyMap())
-        .appSettingsToRemove(Collections.emptyMap())
-        .connStringsToAdd(Collections.emptyMap())
-        .connStringsToRemove(Collections.emptyMap())
-        .dockerSettingsToAdd(Collections.emptyMap())
-        .appName(APP_NAME)
-        .slotName(DEPLOYMENT_SLOT)
-        .imageNameAndTag("imageNameAndTag")
-        .deploymentProgressMarker(deploymentProgress.name())
         .build();
   }
 }

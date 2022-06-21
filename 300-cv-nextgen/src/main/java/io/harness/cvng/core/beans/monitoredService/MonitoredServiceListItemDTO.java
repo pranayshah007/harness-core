@@ -10,7 +10,6 @@ package io.harness.cvng.core.beans.monitoredService;
 import io.harness.cvng.beans.MonitoredServiceType;
 import io.harness.cvng.core.beans.change.ChangeSummaryDTO;
 import io.harness.cvng.servicelevelobjective.beans.ErrorBudgetRisk;
-import io.harness.gitsync.beans.YamlDTO;
 
 import java.util.List;
 import java.util.Map;
@@ -23,7 +22,7 @@ import lombok.experimental.FieldDefaults;
 @Value
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
-public class MonitoredServiceListItemDTO implements YamlDTO {
+public class MonitoredServiceListItemDTO {
   String name;
   String identifier;
   String serviceRef;

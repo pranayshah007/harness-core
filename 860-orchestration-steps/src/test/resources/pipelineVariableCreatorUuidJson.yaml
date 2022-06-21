@@ -56,11 +56,6 @@
                   "stepGroup": {
                     "name": "sg1",
                     "identifier": "sg1",
-                    "when": {
-                      "stageStatus": "All",
-                      "condition": "archit",
-                      "__uuid": "jc31C2vrTyG9CNRkrBQu7g123"
-                    },
                     "steps": [
                       {
                         "step": {

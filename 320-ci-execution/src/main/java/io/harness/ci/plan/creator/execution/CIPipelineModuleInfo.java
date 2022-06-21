@@ -9,14 +9,9 @@ package io.harness.ci.plan.creator.execution;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.ci.pipeline.executions.beans.CIImageDetails;
-import io.harness.ci.pipeline.executions.beans.CIInfraDetails;
-import io.harness.ci.pipeline.executions.beans.CIScmDetails;
 import io.harness.ci.pipeline.executions.beans.CIWebhookInfoDTO;
-import io.harness.ci.pipeline.executions.beans.TIBuildDetails;
 import io.harness.pms.sdk.execution.beans.PipelineModuleInfo;
 
-import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 
@@ -32,8 +27,4 @@ public class CIPipelineModuleInfo implements PipelineModuleInfo {
   private String prNumber;
   private String buildType;
   private Boolean isPrivateRepo;
-  private List<CIScmDetails> scmDetailsList;
-  private List<CIInfraDetails> infraDetailsList;
-  private List<CIImageDetails> imageDetailsList;
-  private List<TIBuildDetails> tiBuildDetailsList;
 }

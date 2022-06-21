@@ -8,7 +8,6 @@
 package io.harness.ngtriggers.beans.source.webhook.v2.gitlab.event;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-import static io.harness.ngtriggers.Constants.ISSUE_COMMENT_EVENT_TYPE;
 import static io.harness.ngtriggers.Constants.MERGE_REQUEST_EVENT_TYPE;
 import static io.harness.ngtriggers.Constants.PUSH_EVENT_TYPE;
 
@@ -20,8 +19,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @OwnedBy(PIPELINE)
 public enum GitlabTriggerEvent implements GitEvent {
   @JsonProperty(MERGE_REQUEST_EVENT_TYPE) MERGE_REQUEST(MERGE_REQUEST_EVENT_TYPE),
-  @JsonProperty(PUSH_EVENT_TYPE) PUSH(PUSH_EVENT_TYPE),
-  @JsonProperty(ISSUE_COMMENT_EVENT_TYPE) ISSUE_COMMENT(ISSUE_COMMENT_EVENT_TYPE);
+  @JsonProperty(PUSH_EVENT_TYPE) PUSH(PUSH_EVENT_TYPE);
 
   private String value;
 

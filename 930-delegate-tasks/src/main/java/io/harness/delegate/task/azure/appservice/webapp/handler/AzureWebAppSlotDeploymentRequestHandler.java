@@ -98,6 +98,14 @@ public class AzureWebAppSlotDeploymentRequestHandler
     String imagePathAndTag =
         AzureResourceUtility.getDockerImageFullNameAndTag(artifactConfig.getImage(), artifactConfig.getTag());
 
+    int timeoutIntervalInMin;
+    if (taskRequest.getTimeoutIntervalInMin() != null) {
+      timeoutIntervalInMin = taskRequest.getTimeoutIntervalInMin();
+    } else {
+      log.warn("Missing timeout interval. Setting timeout interval to default 10 min");
+      timeoutIntervalInMin = 10;
+    }
+
     return AzureAppServiceDockerDeploymentContext.builder()
         .logCallbackProvider(logCallbackProvider)
         .startupCommand(taskRequest.getStartupCommand())
@@ -107,8 +115,7 @@ public class AzureWebAppSlotDeploymentRequestHandler
         .connSettingsToAdd(connSettingsToAdd)
         .dockerSettings(dockerSettings)
         .imagePathAndTag(imagePathAndTag)
-        .steadyStateTimeoutInMin(
-            azureAppServiceResourceUtilities.getTimeoutIntervalInMin(taskRequest.getTimeoutIntervalInMin()))
+        .steadyStateTimeoutInMin(timeoutIntervalInMin)
         .skipTargetSlotValidation(true)
         .build();
   }

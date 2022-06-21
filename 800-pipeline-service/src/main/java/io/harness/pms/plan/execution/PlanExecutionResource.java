@@ -7,6 +7,8 @@
 
 package io.harness.pms.plan.execution;
 
+import static io.harness.beans.FeatureName.NG_PIPELINE_TEMPLATE;
+
 import static java.lang.String.format;
 
 import io.harness.NGCommonEntityConstants;
@@ -30,6 +32,7 @@ import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.pms.annotations.PipelineServiceAuth;
+import io.harness.pms.helpers.PmsFeatureFlagHelper;
 import io.harness.pms.inputset.MergeInputSetRequestDTOPMS;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineResourceConstants;
@@ -116,6 +119,7 @@ public class PlanExecutionResource {
   @Inject private final PreflightService preflightService;
   @Inject private final PMSPipelineService pmsPipelineService;
   @Inject private final RetryExecutionHelper retryExecutionHelper;
+  @Inject private final PmsFeatureFlagHelper featureFlagService;
   @Inject private final PMSPipelineTemplateHelper pipelineTemplateHelper;
 
   @POST
@@ -619,7 +623,8 @@ public class PlanExecutionResource {
     }
     PipelineEntity pipelineEntity = optionalPipelineEntity.get();
     String yaml = pipelineEntity.getYaml();
-    if (Boolean.TRUE.equals(optionalPipelineEntity.get().getTemplateReference())) {
+    if (featureFlagService.isEnabled(accountId, NG_PIPELINE_TEMPLATE)
+        && Boolean.TRUE.equals(optionalPipelineEntity.get().getTemplateReference())) {
       yaml = pipelineTemplateHelper
                  .resolveTemplateRefsInPipeline(accountId, orgIdentifier, projectIdentifier, pipelineEntity.getYaml())
                  .getMergedPipelineYaml();

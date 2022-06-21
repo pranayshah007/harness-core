@@ -29,7 +29,6 @@ import io.harness.ngtriggers.eventmapper.filters.impl.EventActionTriggerFilter;
 import io.harness.ngtriggers.eventmapper.filters.impl.FilepathTriggerFilter;
 import io.harness.ngtriggers.eventmapper.filters.impl.GitWebhookTriggerRepoFilter;
 import io.harness.ngtriggers.eventmapper.filters.impl.GithubIssueCommentTriggerFilter;
-import io.harness.ngtriggers.eventmapper.filters.impl.GitlabIssueCommentTriggerFilter;
 import io.harness.ngtriggers.eventmapper.filters.impl.HeaderTriggerFilter;
 import io.harness.ngtriggers.eventmapper.filters.impl.JexlConditionsTriggerFilter;
 import io.harness.ngtriggers.eventmapper.filters.impl.PayloadConditionsTriggerFilter;
@@ -62,7 +61,6 @@ public class TriggerFilterHelperTest extends CategoryTest {
   @Mock EventActionTriggerFilter eventActionTriggerFilter;
   @Mock PayloadConditionsTriggerFilter payloadConditionsTriggerFilter;
   @Mock GithubIssueCommentTriggerFilter githubIssueCommentTriggerFilter;
-  @Mock GitlabIssueCommentTriggerFilter gitlabIssueCommentTriggerFilter;
   @Mock HeaderTriggerFilter headerTriggerFilter;
   @Mock JexlConditionsTriggerFilter jexlConditionsTriggerFilter;
   @Inject @InjectMocks TriggerFilterStore triggerFilterStore;
@@ -126,22 +124,6 @@ public class TriggerFilterHelperTest extends CategoryTest {
     assertThat(webhookTriggerFilters)
         .containsExactlyInAnyOrder(accountTriggerFilter, sourceRepoTypeTriggerFilter, eventActionTriggerFilter,
             gitWebhookTriggerRepoFilter, headerTriggerFilter, githubIssueCommentTriggerFilter, filepathTriggerFilter);
-
-    webhookTriggerFilters = triggerFilterStore.getWebhookTriggerFilters(
-        webhookPayloadDataBuilder
-            .parseWebhookResponse(
-                ParseWebhookResponse.newBuilder()
-                    .setComment(
-                        IssueCommentHook.newBuilder()
-                            .setIssue(Issue.newBuilder().setPr(PullRequest.newBuilder().setNumber(1).build()).build())
-                            .build())
-                    .build())
-            .originalEvent(originalEventBuilder.sourceRepoType("GITLAB").build())
-            .build());
-    assertThat(webhookTriggerFilters).isNotNull();
-    assertThat(webhookTriggerFilters)
-        .containsExactlyInAnyOrder(accountTriggerFilter, sourceRepoTypeTriggerFilter, eventActionTriggerFilter,
-            gitWebhookTriggerRepoFilter, headerTriggerFilter, gitlabIssueCommentTriggerFilter, filepathTriggerFilter);
   }
 
   @Test

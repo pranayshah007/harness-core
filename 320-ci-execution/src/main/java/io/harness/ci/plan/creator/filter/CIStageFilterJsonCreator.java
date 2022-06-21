@@ -21,9 +21,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.stages.IntegrationStageConfig;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
-import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
-import io.harness.ci.integrationstage.K8InitializeTaskUtils;
 import io.harness.ci.plan.creator.filter.CIFilter.CIFilterBuilder;
 import io.harness.ci.utils.ValidationUtils;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
@@ -59,8 +57,6 @@ import lombok.extern.slf4j.Slf4j;
 public class CIStageFilterJsonCreator extends GenericStageFilterJsonCreator {
   @Inject ConnectorUtils connectorUtils;
   @Inject private SimpleVisitorFactory simpleVisitorFactory;
-  @Inject K8InitializeTaskUtils k8InitializeTaskUtils;
-  @Inject ValidationUtils validationUtils;
 
   @Override
   public Set<String> getSupportedStageTypes() {
@@ -126,11 +122,7 @@ public class CIStageFilterJsonCreator extends GenericStageFilterJsonCreator {
       throw new CIStageExecutionException("Infrastructure is mandatory for execution");
     }
     if (infrastructure.getType() == Infrastructure.Type.VM) {
-      validationUtils.validateVmInfraDependencies(integrationStageConfig.getServiceDependencies().getValue());
-    }
-    if (infrastructure.getType() == KUBERNETES_DIRECT
-        && k8InitializeTaskUtils.getOS(infrastructure) == OSType.Windows) {
-      validationUtils.validateWindowsK8Stage(integrationStageConfig.getExecution());
+      ValidationUtils.validateVmInfraDependencies(integrationStageConfig.getServiceDependencies().getValue());
     }
   }
 

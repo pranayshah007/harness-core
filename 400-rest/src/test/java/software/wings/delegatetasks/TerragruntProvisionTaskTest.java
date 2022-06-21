@@ -24,7 +24,6 @@ import static software.wings.utils.WingsTestConstants.SOURCE_REPO_SETTINGS_ID;
 import static software.wings.utils.WingsTestConstants.WORKSPACE;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyLong;
@@ -86,7 +85,6 @@ import java.util.concurrent.TimeoutException;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -117,12 +115,6 @@ public class TerragruntProvisionTaskTest extends CategoryTest {
   private static final String GIT_REPO_DIRECTORY = "repository/terragruntTest";
   private static final String WORKSPACE_COMMAND_OUTPUT = "* w1\n w2\n w3";
   private static final String PATH_TO_MODULE = "scriptPath";
-  private static final String RUN_PLAN_ONLY = "runPlanOnly";
-  private static final String EXPORT_PLAN_TO_APPLY_STEP = "exportPlanToApplyStep";
-  private static final String SAVE_TERRAGRUNT_JSON = "saveTerragruntJson";
-  private static final String SKIP_REFRESH = "skipRefresh";
-  private static final String RUN_ALL = "runAll";
-  private static final String USE_AUTO_APPROVED_FLAG = "useAutoApproveFlag";
 
   private GitConfig gitConfig;
   private Map<String, EncryptedDataDetail> encryptedBackendConfigs;
@@ -201,15 +193,8 @@ public class TerragruntProvisionTaskTest extends CategoryTest {
   public void testRunAllApply() throws IOException, TimeoutException, InterruptedException {
     setupForApply();
     // regular run-all apply
-    Map<String, Boolean> featuresMap = new HashMap<>();
-    featuresMap.put(RUN_PLAN_ONLY, false);
-    featuresMap.put(EXPORT_PLAN_TO_APPLY_STEP, false);
-    featuresMap.put(SAVE_TERRAGRUNT_JSON, false);
-    featuresMap.put(SKIP_REFRESH, false);
-    featuresMap.put(RUN_ALL, true);
-    featuresMap.put(USE_AUTO_APPROVED_FLAG, false);
     TerragruntProvisionParameters terragruntProvisionParameters =
-        createTerragruntProvisionParameters(null, Apply, APPLY, featuresMap);
+        createTerragruntProvisionParameters(false, false, null, Apply, APPLY, false, false, true);
     doReturn(TerragruntDelegateTaskOutput.builder()
                  .cliResponse(cliResponseSuccess)
                  .planJsonLogOutputStream(new PlanJsonLogOutputStream())
@@ -306,33 +291,16 @@ public class TerragruntProvisionTaskTest extends CategoryTest {
   public void testRunDestroyNoPlanExported() throws IOException, TimeoutException, InterruptedException {
     setupForDestroyTests();
 
-    Map<String, Boolean> featuresMap = new HashMap<>();
-    featuresMap.put(RUN_PLAN_ONLY, false);
-    featuresMap.put(EXPORT_PLAN_TO_APPLY_STEP, false);
-    featuresMap.put(SAVE_TERRAGRUNT_JSON, false);
-    featuresMap.put(SKIP_REFRESH, false);
-    featuresMap.put(RUN_ALL, false);
-    featuresMap.put(USE_AUTO_APPROVED_FLAG, true);
     // regular destroy with no plan exported
     TerragruntProvisionParameters terragruntProvisionParameters =
-        createTerragruntProvisionParameters(null, Destroy, DESTROY, featuresMap);
-    ArgumentCaptor<TerragruntCliCommandRequestParams> cliParams =
-        ArgumentCaptor.forClass(TerragruntCliCommandRequestParams.class);
-    doReturn("-auto_approve")
-        .when(terragruntProvisionTaskHelper)
-        .getTfAutoApproveArgument(any(TerragruntCliCommandRequestParams.class), anyString());
+        createTerragruntProvisionParameters(false, false, null, Destroy, DESTROY, false, false, false);
 
     TerragruntExecutionData terragruntExecutionData = terragruntProvisionTask.run(terragruntProvisionParameters);
-
     verify(terragruntExecutionData, DESTROY, false);
-    Mockito.verify(terragruntProvisionTaskHelper, times(1))
-        .getTfAutoApproveArgument(any(TerragruntCliCommandRequestParams.class), eq("terraform"));
 
     Mockito.verify(terragruntApplyDestroyTaskHandler, times(1))
-        .executeDestroyTask(any(TerragruntProvisionParameters.class), cliParams.capture(),
+        .executeDestroyTask(any(TerragruntProvisionParameters.class), any(TerragruntCliCommandRequestParams.class),
             any(DelegateLogService.class), anyString(), anyString());
-
-    assertThat(cliParams.getValue().getAutoApproveArgument()).isEqualTo("-auto_approve");
 
     FileIo.deleteDirectoryAndItsContentIfExists(GIT_REPO_DIRECTORY);
     FileIo.deleteDirectoryAndItsContentIfExists("./terraform-working-dir");
@@ -416,46 +384,6 @@ public class TerragruntProvisionTaskTest extends CategoryTest {
         .secretManagerConfig(KmsConfig.builder().name("config").uuid("uuid").build())
         .runAll(runAll)
         .pathToModule(PATH_TO_MODULE)
-        .build();
-  }
-
-  private TerragruntProvisionParameters createTerragruntProvisionParameters(EncryptedRecordData encryptedTfPlan,
-      TerragruntCommandUnit commandUnit, TerragruntCommand command, Map<String, Boolean> featuresMap) {
-    Map<String, String> backendConfigs = new HashMap<>();
-    backendConfigs.put("var1", "value1");
-
-    Map<String, String> variables = new HashMap<>();
-    variables.put("var3", "val3");
-
-    Map<String, String> environmentVariables = new HashMap<>();
-    environmentVariables.put("TF_LOG", "TRACE");
-
-    List<String> tfVarFiles = Arrays.asList("tfVarFile");
-
-    return TerragruntProvisionParameters.builder()
-        .sourceRepo(gitConfig)
-        .sourceRepoSettingId(SOURCE_REPO_SETTINGS_ID)
-        .sourceRepoEncryptionDetails(sourceRepoEncryptionDetails)
-        .command(command)
-        .commandUnit(commandUnit)
-        .accountId(ACCOUNT_ID)
-        .workspace(WORKSPACE)
-        .entityId(ENTITY_ID)
-        .backendConfigs(backendConfigs)
-        .encryptedBackendConfigs(encryptedBackendConfigs)
-        .encryptedTfPlan(encryptedTfPlan)
-        .runPlanOnly(featuresMap.get(RUN_PLAN_ONLY))
-        .exportPlanToApplyStep(featuresMap.get(EXPORT_PLAN_TO_APPLY_STEP))
-        .variables(variables)
-        .environmentVariables(environmentVariables)
-        .encryptedEnvironmentVariables(encryptedEnvironmentVariables)
-        .tfVarFiles(tfVarFiles)
-        .saveTerragruntJson(featuresMap.get(SAVE_TERRAGRUNT_JSON))
-        .skipRefreshBeforeApplyingPlan(featuresMap.get(SKIP_REFRESH))
-        .secretManagerConfig(KmsConfig.builder().name("config").uuid("uuid").build())
-        .runAll(featuresMap.get(RUN_ALL))
-        .pathToModule(PATH_TO_MODULE)
-        .useAutoApproveFlag(featuresMap.get(USE_AUTO_APPROVED_FLAG))
         .build();
   }
 

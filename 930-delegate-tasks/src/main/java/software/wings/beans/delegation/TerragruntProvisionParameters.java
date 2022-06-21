@@ -105,7 +105,6 @@ public class TerragruntProvisionParameters implements TaskParameters, ActivityAc
    * terraform plan
    */
   private boolean skipRefreshBeforeApplyingPlan;
-  private boolean useAutoApproveFlag;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

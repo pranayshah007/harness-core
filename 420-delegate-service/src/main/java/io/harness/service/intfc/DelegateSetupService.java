@@ -10,7 +10,6 @@ package io.harness.service.intfc;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.Delegate;
-import io.harness.delegate.beans.DelegateEntityOwner;
 import io.harness.delegate.beans.DelegateGroup;
 import io.harness.delegate.beans.DelegateGroupDTO;
 import io.harness.delegate.beans.DelegateGroupDetails;
@@ -73,6 +72,4 @@ public interface DelegateSetupService {
       String projectIdentifier, String groupIdentifier, DelegateGroupTags delegateGroupTags);
 
   DelegateGroup getDelegateGroup(String accountId, String delegateGroupId);
-
-  void deleteDelegateGroupsOnDeletingOwner(String accountId, DelegateEntityOwner owner);
 }

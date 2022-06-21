@@ -10,7 +10,6 @@ package io.harness.ngtriggers.helpers;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.ngtriggers.beans.source.webhook.WebhookSourceRepo.CUSTOM;
 import static io.harness.ngtriggers.beans.source.webhook.WebhookSourceRepo.GITHUB;
-import static io.harness.ngtriggers.beans.source.webhook.WebhookSourceRepo.GITLAB;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ngtriggers.beans.scm.WebhookPayloadData;
@@ -21,7 +20,6 @@ import io.harness.ngtriggers.eventmapper.filters.impl.EventActionTriggerFilter;
 import io.harness.ngtriggers.eventmapper.filters.impl.FilepathTriggerFilter;
 import io.harness.ngtriggers.eventmapper.filters.impl.GitWebhookTriggerRepoFilter;
 import io.harness.ngtriggers.eventmapper.filters.impl.GithubIssueCommentTriggerFilter;
-import io.harness.ngtriggers.eventmapper.filters.impl.GitlabIssueCommentTriggerFilter;
 import io.harness.ngtriggers.eventmapper.filters.impl.HeaderTriggerFilter;
 import io.harness.ngtriggers.eventmapper.filters.impl.JexlConditionsTriggerFilter;
 import io.harness.ngtriggers.eventmapper.filters.impl.PayloadConditionsTriggerFilter;
@@ -49,7 +47,6 @@ public class TriggerFilterStore {
   private final EventActionTriggerFilter eventActionTriggerFilter;
   private final PayloadConditionsTriggerFilter payloadConditionsTriggerFilter;
   private final GithubIssueCommentTriggerFilter githubIssueCommentTriggerFilter;
-  private final GitlabIssueCommentTriggerFilter gitlabIssueCommentTriggerFilter;
   private final HeaderTriggerFilter headerTriggerFilter;
   private final JexlConditionsTriggerFilter jexlConditionsTriggerFilter;
   private final FilepathTriggerFilter filepathTriggerFilter;
@@ -68,14 +65,11 @@ public class TriggerFilterStore {
     // when its comment on the issue
     if (webhookPayloadData.getParseWebhookResponse().hasComment()
         && webhookPayloadData.getParseWebhookResponse().getComment().getIssue() != null
-        && webhookPayloadData.getParseWebhookResponse().getComment().getIssue().getPr() != null) {
-      if (GITHUB.name().equals(webhookPayloadData.getOriginalEvent().getSourceRepoType())) {
-        return getTriggerFiltersGithubIssueCommentList();
-      }
-      if (GITLAB.name().equals(webhookPayloadData.getOriginalEvent().getSourceRepoType())) {
-        return getTriggerFiltersGitlabIssueCommentList();
-      }
+        && webhookPayloadData.getParseWebhookResponse().getComment().getIssue().getPr() != null
+        && GITHUB.name().equals(webhookPayloadData.getOriginalEvent().getSourceRepoType())) {
+      return getTriggerFiltersGithubIssueCommentList();
     }
+
     return getWebhookGitTriggerFiltersDefaultList();
   }
 
@@ -92,10 +86,5 @@ public class TriggerFilterStore {
   List<TriggerFilter> getTriggerFiltersGithubIssueCommentList() {
     return Arrays.asList(accountTriggerFilter, sourceRepoTypeTriggerFilter, eventActionTriggerFilter,
         headerTriggerFilter, gitWebhookTriggerRepoFilter, githubIssueCommentTriggerFilter, filepathTriggerFilter);
-  }
-
-  List<TriggerFilter> getTriggerFiltersGitlabIssueCommentList() {
-    return Arrays.asList(accountTriggerFilter, sourceRepoTypeTriggerFilter, eventActionTriggerFilter,
-        headerTriggerFilter, gitWebhookTriggerRepoFilter, gitlabIssueCommentTriggerFilter, filepathTriggerFilter);
   }
 }

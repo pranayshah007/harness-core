@@ -12,13 +12,10 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.HookEventType;
 import io.harness.beans.gitsync.GitWebhookDetails;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
-import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
 import io.harness.git.GitClientHelper;
-import io.harness.product.ci.scm.proto.AzureWebhookEvent;
-import io.harness.product.ci.scm.proto.AzureWebhookEvents;
 import io.harness.product.ci.scm.proto.BitbucketCloudWebhookEvent;
 import io.harness.product.ci.scm.proto.BitbucketCloudWebhookEvents;
 import io.harness.product.ci.scm.proto.BitbucketServerWebhookEvent;
@@ -31,11 +28,8 @@ import io.harness.product.ci.scm.proto.GitlabWebhookEvents;
 import io.harness.product.ci.scm.proto.NativeEvents;
 import io.harness.product.ci.scm.proto.WebhookResponse;
 
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import lombok.experimental.UtilityClass;
 import org.apache.commons.collections.ListUtils;
 import org.apache.commons.lang3.NotImplementedException;
@@ -43,8 +37,8 @@ import org.apache.commons.lang3.NotImplementedException;
 @UtilityClass
 @OwnedBy(HarnessTeam.DX)
 public class ScmGitWebhookHelper {
-  public static boolean isIdenticalEvents(WebhookResponse webhookResponse, HookEventType hookEventType,
-      ScmConnector scmConnector, List<NativeEvents> allNativeEventsList) {
+  public static boolean isIdenticalEvents(
+      WebhookResponse webhookResponse, HookEventType hookEventType, ScmConnector scmConnector) {
     if (scmConnector instanceof GithubConnectorDTO) {
       return compareEvents(
           webhookResponse.getNativeEvents().getGithub().getEventsList(), hookEventType.githubWebhookEvents);
@@ -59,11 +53,6 @@ public class ScmGitWebhookHelper {
         && !GitClientHelper.isBitBucketSAAS(scmConnector.getUrl())) {
       return compareEvents(webhookResponse.getNativeEvents().getBitbucketServer().getEventsList(),
           hookEventType.bitbucketServerWebhookEvents);
-    } else if (scmConnector instanceof AzureRepoConnectorDTO) {
-      // create list of events
-      List<AzureWebhookEvent> azureWebhookEvents = new ArrayList<>();
-      allNativeEventsList.forEach(nativeEvents -> azureWebhookEvents.addAll(nativeEvents.getAzure().getEventsList()));
-      return compareEvents(azureWebhookEvents, hookEventType.azureWebhookEvents);
     } else {
       throw new NotImplementedException(
           String.format("The scm apis for the provider type %s is not supported", scmConnector.getClass()));
@@ -75,8 +64,7 @@ public class ScmGitWebhookHelper {
   }
 
   public static CreateWebhookRequest getCreateWebhookRequest(CreateWebhookRequest.Builder createWebhookRequestBuilder,
-      GitWebhookDetails gitWebhookDetails, ScmConnector scmConnector, WebhookResponse existingWebhook,
-      List<NativeEvents> existingNativeEventsList) {
+      GitWebhookDetails gitWebhookDetails, ScmConnector scmConnector, WebhookResponse existingWebhook) {
     if (scmConnector instanceof GithubConnectorDTO) {
       final List<GithubWebhookEvent> githubWebhookEvents = (existingWebhook != null)
           ? existingWebhook.getNativeEvents().getGithub().getEventsList()
@@ -117,18 +105,6 @@ public class ScmGitWebhookHelper {
                                              bitbucketCloudWebhookEvents))
                                          .build())
                   .build())
-          .build();
-    } else if (scmConnector instanceof AzureRepoConnectorDTO) {
-      Set<AzureWebhookEvent> azureWebhookEvent = new HashSet<>();
-      if (existingNativeEventsList != null) {
-        existingNativeEventsList.forEach(
-            nativeEvents -> azureWebhookEvent.addAll(nativeEvents.getAzure().getEventsList()));
-      }
-      azureWebhookEvent.addAll(gitWebhookDetails.getHookEventType().azureWebhookEvents);
-      return createWebhookRequestBuilder.setName("HarnessWebhook")
-          .setNativeEvents(NativeEvents.newBuilder()
-                               .setAzure(AzureWebhookEvents.newBuilder().addAllEvents(azureWebhookEvent).build())
-                               .build())
           .build();
     } else if (scmConnector instanceof BitbucketConnectorDTO
         && !GitClientHelper.isBitBucketSAAS(scmConnector.getUrl())) {

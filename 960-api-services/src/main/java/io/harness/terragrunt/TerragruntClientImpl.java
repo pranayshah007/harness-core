@@ -31,12 +31,10 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.cli.CliResponse;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
-import io.harness.terraform.TerraformClient;
 
 import software.wings.beans.LogColor;
 import software.wings.beans.LogWeight;
 
-import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.File;
 import java.io.IOException;
@@ -54,10 +52,6 @@ import org.zeroturnaround.exec.stream.LogOutputStream;
 @OwnedBy(CDP)
 @Singleton
 public class TerragruntClientImpl implements TerragruntClient {
-  @Inject TerraformClient terraformClient;
-
-  private static final String FORCE_FLAG = "-force";
-
   @Nonnull
   @Override
   public CliResponse init(TerragruntCliCommandRequestParams cliCommandRequestParams, @Nonnull LogCallback logCallback)
@@ -159,9 +153,8 @@ public class TerragruntClientImpl implements TerragruntClient {
   public CliResponse destroy(TerragruntCliCommandRequestParams cliCommandRequestParams, String targetArgs,
       String varParams, String uiLogs, @Nonnull LogCallback logCallback)
       throws InterruptedException, TimeoutException, IOException {
-    String command = getDestoryCommand(cliCommandRequestParams.getAutoApproveArgument(), targetArgs, varParams);
-    String commandToLog =
-        format(TERRAGRUNT_DESTROY_COMMAND_FORMAT, cliCommandRequestParams.getAutoApproveArgument(), targetArgs, uiLogs);
+    String command = getDestoryCommand(targetArgs, varParams);
+    String commandToLog = format(TERRAGRUNT_DESTROY_COMMAND_FORMAT, targetArgs, uiLogs);
     logCallback.saveExecutionLog(
         color(commandToLog, LogColor.White, LogWeight.Bold), INFO, CommandExecutionStatus.RUNNING);
 
@@ -271,9 +264,8 @@ public class TerragruntClientImpl implements TerragruntClient {
   public CliResponse runAllDestroy(TerragruntCliCommandRequestParams cliCommandRequestParams, String targetArgs,
       String varParams, String uiLogs, @Nonnull LogCallback logCallback)
       throws InterruptedException, TimeoutException, IOException {
-    String command = getRunAllDestroyCommand(targetArgs, varParams, cliCommandRequestParams.getAutoApproveArgument());
-    String commandToLog = format(TERRAGRUNT_RUN_ALL_DESTROY_COMMAND_FORMAT,
-        cliCommandRequestParams.getAutoApproveArgument(), targetArgs, uiLogs);
+    String command = getRunAllDestroyCommand(targetArgs, varParams);
+    String commandToLog = format(TERRAGRUNT_RUN_ALL_DESTROY_COMMAND_FORMAT, targetArgs, uiLogs);
     logCallback.saveExecutionLog(
         color(commandToLog, LogColor.White, LogWeight.Bold), INFO, CommandExecutionStatus.RUNNING);
 
@@ -442,8 +434,8 @@ public class TerragruntClientImpl implements TerragruntClient {
     return format(TERRAGRUNT_PLAN_DESTROY_COMMAND_FORMAT, targetArgs, varParams);
   }
 
-  private String getDestoryCommand(String autoApproveArgument, String targetArgs, String varParams) {
-    return format(TERRAGRUNT_DESTROY_COMMAND_FORMAT, autoApproveArgument, targetArgs, varParams);
+  private String getDestoryCommand(String targetArgs, String varParams) {
+    return format(TERRAGRUNT_DESTROY_COMMAND_FORMAT, targetArgs, varParams);
   }
 
   private String getRunAllPlanCommand(String targetArgs, String varParams) {
@@ -458,8 +450,8 @@ public class TerragruntClientImpl implements TerragruntClient {
     return format(TERRAGRUNT_RUN_ALL_PLAN_DESTROY_COMMAND_FORMAT, targetArgs, varParams);
   }
 
-  private String getRunAllDestroyCommand(String targetArgs, String varParams, String autoApproveArgument) {
-    return format(TERRAGRUNT_RUN_ALL_DESTROY_COMMAND_FORMAT, autoApproveArgument, targetArgs, varParams);
+  private String getRunAllDestroyCommand(String targetArgs, String varParams) {
+    return format(TERRAGRUNT_RUN_ALL_DESTROY_COMMAND_FORMAT, targetArgs, varParams);
   }
 
   private String getShowJsonCommand(String planName) {

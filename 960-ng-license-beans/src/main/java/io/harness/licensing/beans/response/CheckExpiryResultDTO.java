@@ -24,5 +24,4 @@ import lombok.experimental.FieldDefaults;
 public class CheckExpiryResultDTO {
   boolean shouldDelete;
   long expiryTime;
-  boolean ngAccountActive;
 }

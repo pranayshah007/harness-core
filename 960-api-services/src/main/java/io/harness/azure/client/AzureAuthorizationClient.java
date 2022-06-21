@@ -49,7 +49,6 @@ public interface AzureAuthorizationClient {
   /**
    * Authenticate within Azure and get access token in return
    * @param azureConfig all information required for Azure connection
-   * @param scope scope on which to fetch the token
    */
-  AzureIdentityAccessTokenResponse getUserAccessToken(AzureConfig azureConfig, String scope);
+  AzureIdentityAccessTokenResponse getUserAccessToken(AzureConfig azureConfig);
 }

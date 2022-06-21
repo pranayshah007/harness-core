@@ -49,7 +49,6 @@ import io.harness.delegate.beans.connector.azureconnector.AzureCredentialDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureCredentialType;
 import io.harness.delegate.beans.connector.azureconnector.AzureInheritFromDelegateDetailsDTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureMSIAuthDTO;
-import io.harness.delegate.beans.connector.azureconnector.AzureMSIAuthSADTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureMSIAuthUADTO;
 import io.harness.delegate.beans.connector.azureconnector.AzureManagedIdentityType;
 import io.harness.delegate.beans.connector.azureconnector.AzureManualDetailsDTO;
@@ -368,7 +367,7 @@ public class ImagePullSecretUtilsTest extends CategoryTest {
         .thenThrow(new RuntimeException("some unexpected exception"));
 
     assertThatThrownBy(() -> imagePullSecretUtils.getImagePullSecret(artifactOutcome, ambiance))
-        .isInstanceOf(RuntimeException.class);
+        .isInstanceOf(InvalidRequestException.class);
   }
 
   @Test
@@ -377,21 +376,11 @@ public class ImagePullSecretUtilsTest extends CategoryTest {
   public void testAcrImagePullSecretUsingUserAssignedMSI() {
     ArtifactOutcome artifactOutcome = getAcrArtifactOutcome();
     Ambiance ambiance = getAmbiance();
-    BaseNGAccess baseNGAccess = getBaseNGAccess(ACCOUNT_ID_VALUE, ORG_ID_VALUE, PROJECT_ID_VALUE);
     AzureCredentialDTO azureCredentialDTO = getAzureCredentialsForUserAssignedMSI();
     Optional<ConnectorResponseDTO> connectorResponseDTO = getAzureConnector(azureCredentialDTO);
 
     when(connectorService.get(any(), any(), any(), any())).thenReturn(connectorResponseDTO);
-    when(azureHelperService.getBaseNGAccess(ACCOUNT_ID_VALUE, ORG_ID_VALUE, PROJECT_ID_VALUE)).thenReturn(baseNGAccess);
-    when(azureHelperService.getEncryptionDetails(any(), any())).thenReturn(null);
-
-    String jwtAcrToken = "ejyaoisncoanidoaiwjndoqiwjndocqijwdoqw9cjoq93jcq0owi9f0qc9i3jc93";
-    AzureAcrTokenTaskResponse azureAcrTokenTaskResponse =
-        AzureAcrTokenTaskResponse.builder().token(jwtAcrToken).build();
-
-    when(azureHelperService.executeSyncTask(any(), any(), any(), anyString())).thenReturn(azureAcrTokenTaskResponse);
-    assertEquals(imagePullSecretUtils.getImagePullSecret(artifactOutcome, ambiance),
-        format("${imageSecret.create(\"%s\", \"%s\", \"%s\")}", ACR_REGISTRY, ACR_DUMMY_USERNAME, jwtAcrToken));
+    assertThat(imagePullSecretUtils.getImagePullSecret(artifactOutcome, ambiance)).isBlank();
   }
 
   @Test
@@ -400,21 +389,11 @@ public class ImagePullSecretUtilsTest extends CategoryTest {
   public void testAcrImagePullSecretUsingSystemAssignedMSI() {
     ArtifactOutcome artifactOutcome = getAcrArtifactOutcome();
     Ambiance ambiance = getAmbiance();
-    BaseNGAccess baseNGAccess = getBaseNGAccess(ACCOUNT_ID_VALUE, ORG_ID_VALUE, PROJECT_ID_VALUE);
     AzureCredentialDTO azureCredentialDTO = getAzureCredentialsForSystemAssignedMSI();
     Optional<ConnectorResponseDTO> connectorResponseDTO = getAzureConnector(azureCredentialDTO);
 
     when(connectorService.get(any(), any(), any(), any())).thenReturn(connectorResponseDTO);
-    when(azureHelperService.getBaseNGAccess(ACCOUNT_ID_VALUE, ORG_ID_VALUE, PROJECT_ID_VALUE)).thenReturn(baseNGAccess);
-    when(azureHelperService.getEncryptionDetails(any(), any())).thenReturn(null);
-
-    String jwtAcrToken = "ejyaoisncoanidoaiwjndoqiwjndocqijwdoqw9cjoq93jcq0owi9f0qc9i3jc93";
-    AzureAcrTokenTaskResponse azureAcrTokenTaskResponse =
-        AzureAcrTokenTaskResponse.builder().token(jwtAcrToken).build();
-
-    when(azureHelperService.executeSyncTask(any(), any(), any(), anyString())).thenReturn(azureAcrTokenTaskResponse);
-    assertEquals(imagePullSecretUtils.getImagePullSecret(artifactOutcome, ambiance),
-        format("${imageSecret.create(\"%s\", \"%s\", \"%s\")}", ACR_REGISTRY, ACR_DUMMY_USERNAME, jwtAcrToken));
+    assertThat(imagePullSecretUtils.getImagePullSecret(artifactOutcome, ambiance)).isBlank();
   }
 
   private ArtifactOutcome getAcrArtifactOutcome() {
@@ -486,7 +465,7 @@ public class ImagePullSecretUtilsTest extends CategoryTest {
 
   private AzureCredentialDTO getAzureCredentialsForSystemAssignedMSI() {
     AzureMSIAuthDTO azureMSIAuthDTO =
-        AzureMSIAuthSADTO.builder()
+        AzureMSIAuthUADTO.builder()
             .azureManagedIdentityType(AzureManagedIdentityType.SYSTEM_ASSIGNED_MANAGED_IDENTITY)
             .build();
 

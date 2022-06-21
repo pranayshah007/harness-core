@@ -12,7 +12,6 @@ import static io.harness.rule.OwnerRule.RAJ;
 import static io.harness.rule.OwnerRule.XIN;
 
 import static junit.framework.TestCase.assertEquals;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
@@ -24,7 +23,6 @@ import io.harness.authenticationservice.beans.AuthenticationInfo;
 import io.harness.cache.HarnessCacheManager;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.DelegateConfiguration;
-import io.harness.delegate.service.DelegateVersionService;
 import io.harness.ff.FeatureFlagService;
 import io.harness.ng.core.account.AuthenticationMechanism;
 import io.harness.ng.core.account.OauthProviderType;
@@ -45,7 +43,6 @@ import software.wings.service.intfc.AuthService;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import org.junit.Before;
@@ -66,7 +63,6 @@ public class AccountServiceImplTest extends WingsBaseTest {
   @Mock private GenericDbCache dbCache;
   @Mock private SSOSettingServiceImpl ssoSettingService;
   @Mock private SamlClientService samlClientService;
-  @Mock private DelegateVersionService delegateVersionService;
 
   @Mock Query<Account> accountQuery1;
   @Mock Query<Account> accountQuery2;
@@ -82,7 +78,6 @@ public class AccountServiceImplTest extends WingsBaseTest {
   @Before
   public void setup() throws Exception {
     initMocks(this);
-    when(delegateVersionService.getDelegateJarVersions(anyString())).thenReturn(Collections.emptyList());
   }
 
   @Test

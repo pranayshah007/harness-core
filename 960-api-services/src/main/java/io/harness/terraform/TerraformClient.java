@@ -74,8 +74,4 @@ public interface TerraformClient {
   @Nonnull
   TerraformVersion version(long timeoutInMillis, String scriptDirectory)
       throws InterruptedException, TimeoutException, IOException;
-
-  @Nonnull
-  TerraformVersion version(String tfBinaryPath, long timeoutInMillis, String scriptDirectory)
-      throws InterruptedException, TimeoutException, IOException;
 }

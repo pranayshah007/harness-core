@@ -23,7 +23,6 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
 import io.harness.common.NGExpressionUtils;
-import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.NGTemplateException;
 import io.harness.exception.ngexception.beans.templateservice.TemplateInputsErrorDTO;
 import io.harness.exception.ngexception.beans.templateservice.TemplateInputsErrorMetadataDTO;
@@ -68,7 +67,6 @@ import lombok.extern.slf4j.Slf4j;
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
 @Slf4j
 public class TemplateMergeHelper {
-  private static final int MAX_DEPTH = 10;
   private NGTemplateService templateService;
   private TemplateMergeServiceHelper templateMergeServiceHelper;
 
@@ -173,10 +171,10 @@ public class TemplateMergeHelper {
     Map<String, Object> resMap;
     MergeTemplateInputsInObject mergeTemplateInputsInObject = null;
     if (!getMergedYamlWithTemplateField) {
-      resMap = mergeTemplateInputsInObject(accountId, orgId, projectId, yamlNode, templateCacheMap, 0);
+      resMap = mergeTemplateInputsInObject(accountId, orgId, projectId, yamlNode, templateCacheMap);
     } else {
       mergeTemplateInputsInObject =
-          mergeTemplateInputsInObjectAlongWithOpaPolicy(accountId, orgId, projectId, yamlNode, templateCacheMap, 0);
+          mergeTemplateInputsInObjectAlongWithOpaPolicy(accountId, orgId, projectId, yamlNode, templateCacheMap);
       resMap = mergeTemplateInputsInObject.getResMap();
     }
 
@@ -249,7 +247,7 @@ public class TemplateMergeHelper {
    * replaceTemplateOccurrenceWithTemplateSpecYaml() to get the actual template.spec in template yaml.
    */
   private Map<String, Object> mergeTemplateInputsInObject(String accountId, String orgId, String projectId,
-      YamlNode yamlNode, Map<String, TemplateEntity> templateCacheMap, int depth) {
+      YamlNode yamlNode, Map<String, TemplateEntity> templateCacheMap) {
     Map<String, Object> resMap = new LinkedHashMap<>();
     for (YamlField childYamlField : yamlNode.fields()) {
       String fieldName = childYamlField.getName();
@@ -262,23 +260,17 @@ public class TemplateMergeHelper {
         resMap.put(fieldName, value);
       } else if (value.isArray()) {
         resMap.put(fieldName,
-            mergeTemplateInputsInArray(accountId, orgId, projectId, childYamlField.getNode(), templateCacheMap, depth));
+            mergeTemplateInputsInArray(accountId, orgId, projectId, childYamlField.getNode(), templateCacheMap));
       } else {
         // If it was template key in yaml, we have replace it with the fields in template.spec in template yaml.
         // Hence, we directly put all the keys returned in map, after iterating over them.
         if (isTemplatePresent) {
-          depth++;
-          if (depth >= MAX_DEPTH) {
-            throw new InvalidRequestException("Exponentially growing template nesting. Aborting");
-          }
           Map<String, Object> temp = mergeTemplateInputsInObject(accountId, orgId, projectId,
-              new YamlNode(fieldName, value, childYamlField.getNode().getParentNode()), templateCacheMap, depth);
+              new YamlNode(fieldName, value, childYamlField.getNode().getParentNode()), templateCacheMap);
           resMap.putAll(temp);
-          depth--;
         } else {
           resMap.put(fieldName,
-              mergeTemplateInputsInObject(
-                  accountId, orgId, projectId, childYamlField.getNode(), templateCacheMap, depth));
+              mergeTemplateInputsInObject(accountId, orgId, projectId, childYamlField.getNode(), templateCacheMap));
         }
       }
     }
@@ -286,15 +278,15 @@ public class TemplateMergeHelper {
   }
 
   private List<Object> mergeTemplateInputsInArray(String accountId, String orgId, String projectId, YamlNode yamlNode,
-      Map<String, TemplateEntity> templateCacheMap, int depth) {
+      Map<String, TemplateEntity> templateCacheMap) {
     List<Object> arrayList = new ArrayList<>();
     for (YamlNode arrayElement : yamlNode.asArray()) {
       if (yamlNode.getCurrJsonNode().isValueNode()) {
         arrayList.add(arrayElement);
       } else if (arrayElement.isArray()) {
-        arrayList.add(mergeTemplateInputsInArray(accountId, orgId, projectId, arrayElement, templateCacheMap, depth));
+        arrayList.add(mergeTemplateInputsInArray(accountId, orgId, projectId, arrayElement, templateCacheMap));
       } else {
-        arrayList.add(mergeTemplateInputsInObject(accountId, orgId, projectId, arrayElement, templateCacheMap, depth));
+        arrayList.add(mergeTemplateInputsInObject(accountId, orgId, projectId, arrayElement, templateCacheMap));
       }
     }
     return arrayList;
@@ -304,7 +296,7 @@ public class TemplateMergeHelper {
    * This method Provides all the information from mergeTemplateInputsInObject method along with template references.
    */
   private MergeTemplateInputsInObject mergeTemplateInputsInObjectAlongWithOpaPolicy(String accountId, String orgId,
-      String projectId, YamlNode yamlNode, Map<String, TemplateEntity> templateCacheMap, int depth) {
+      String projectId, YamlNode yamlNode, Map<String, TemplateEntity> templateCacheMap) {
     Map<String, Object> resMap = new LinkedHashMap<>();
     Map<String, Object> resMapWithTemplateRef = new LinkedHashMap<>();
     for (YamlField childYamlField : yamlNode.fields()) {
@@ -321,25 +313,20 @@ public class TemplateMergeHelper {
         resMapWithTemplateRef.put(fieldName, value);
       } else if (value.isArray()) {
         ArrayListForMergedTemplateRef arrayLists = mergeTemplateInputsInArrayWithOpaPolicy(
-            accountId, orgId, projectId, childYamlField.getNode(), templateCacheMap, depth);
+            accountId, orgId, projectId, childYamlField.getNode(), templateCacheMap);
         resMap.put(fieldName, arrayLists.getArrayList());
         resMapWithTemplateRef.put(fieldName, arrayLists.getArrayListWithTemplateRef());
       } else {
         // If it was template key in yaml, we have replace it with the fields in template.spec in template yaml.
         // Hence, we directly put all the keys returned in map, after iterating over them.
         if (isTemplatePresent) {
-          depth++;
-          if (depth >= MAX_DEPTH) {
-            throw new InvalidRequestException("Exponentially growing template nesting. Aborting");
-          }
           MergeTemplateInputsInObject temp = mergeTemplateInputsInObjectAlongWithOpaPolicy(accountId, orgId, projectId,
-              new YamlNode(fieldName, value, childYamlField.getNode().getParentNode()), templateCacheMap, depth);
+              new YamlNode(fieldName, value, childYamlField.getNode().getParentNode()), templateCacheMap);
           resMap.putAll(temp.getResMap());
           resMapWithTemplateRef.putAll(temp.getResMapWithOpaResponse());
-          depth--;
         } else {
           MergeTemplateInputsInObject temp = mergeTemplateInputsInObjectAlongWithOpaPolicy(
-              accountId, orgId, projectId, childYamlField.getNode(), templateCacheMap, depth);
+              accountId, orgId, projectId, childYamlField.getNode(), templateCacheMap);
           resMap.put(fieldName, temp.getResMap());
           resMapWithTemplateRef.put(fieldName, temp.getResMapWithOpaResponse());
         }
@@ -349,7 +336,7 @@ public class TemplateMergeHelper {
   }
 
   private ArrayListForMergedTemplateRef mergeTemplateInputsInArrayWithOpaPolicy(String accountId, String orgId,
-      String projectId, YamlNode yamlNode, Map<String, TemplateEntity> templateCacheMap, int depth) {
+      String projectId, YamlNode yamlNode, Map<String, TemplateEntity> templateCacheMap) {
     List<Object> arrayList = new ArrayList<>();
     List<Object> arrayListWithTemplateRef = new ArrayList<>();
     for (YamlNode arrayElement : yamlNode.asArray()) {
@@ -358,12 +345,12 @@ public class TemplateMergeHelper {
         arrayListWithTemplateRef.add(arrayElement);
       } else if (arrayElement.isArray()) {
         ArrayListForMergedTemplateRef arrayListForMergedTemplateRef =
-            mergeTemplateInputsInArrayWithOpaPolicy(accountId, orgId, projectId, arrayElement, templateCacheMap, depth);
+            mergeTemplateInputsInArrayWithOpaPolicy(accountId, orgId, projectId, arrayElement, templateCacheMap);
         arrayList.add(arrayListForMergedTemplateRef.getArrayList());
         arrayListWithTemplateRef.add(arrayListForMergedTemplateRef.getArrayListWithTemplateRef());
       } else {
-        MergeTemplateInputsInObject temp = mergeTemplateInputsInObjectAlongWithOpaPolicy(
-            accountId, orgId, projectId, arrayElement, templateCacheMap, depth);
+        MergeTemplateInputsInObject temp =
+            mergeTemplateInputsInObjectAlongWithOpaPolicy(accountId, orgId, projectId, arrayElement, templateCacheMap);
         arrayList.add(temp.getResMap());
         arrayListWithTemplateRef.add(temp.getResMapWithOpaResponse());
       }

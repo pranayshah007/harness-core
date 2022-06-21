@@ -9,7 +9,6 @@ package io.harness.ngtriggers.helpers;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.ngtriggers.beans.source.WebhookTriggerType.AWS_CODECOMMIT;
-import static io.harness.ngtriggers.beans.source.WebhookTriggerType.AZURE;
 import static io.harness.ngtriggers.beans.source.WebhookTriggerType.BITBUCKET;
 import static io.harness.ngtriggers.beans.source.WebhookTriggerType.GITHUB;
 import static io.harness.ngtriggers.beans.source.WebhookTriggerType.GITLAB;
@@ -25,8 +24,6 @@ import io.harness.ngtriggers.beans.source.webhook.WebhookSourceRepo;
 import io.harness.ngtriggers.beans.source.webhook.v2.TriggerEventDataCondition;
 import io.harness.ngtriggers.beans.source.webhook.v2.WebhookTriggerConfigV2;
 import io.harness.ngtriggers.beans.source.webhook.v2.awscodecommit.event.AwsCodeCommitTriggerEvent;
-import io.harness.ngtriggers.beans.source.webhook.v2.azurerepo.action.AzureRepoPRAction;
-import io.harness.ngtriggers.beans.source.webhook.v2.azurerepo.event.AzureRepoTriggerEvent;
 import io.harness.ngtriggers.beans.source.webhook.v2.bitbucket.action.BitbucketPRAction;
 import io.harness.ngtriggers.beans.source.webhook.v2.bitbucket.event.BitbucketTriggerEvent;
 import io.harness.ngtriggers.beans.source.webhook.v2.git.GitAction;
@@ -108,12 +105,7 @@ public class WebhookConfigHelper {
 
   public boolean isGitSpec(WebhookTriggerConfigV2 webhookTriggerConfig) {
     return webhookTriggerConfig.getType() == GITHUB || webhookTriggerConfig.getType() == GITLAB
-        || webhookTriggerConfig.getType() == BITBUCKET || webhookTriggerConfig.getType() == AWS_CODECOMMIT
-        || webhookTriggerConfig.getType() == AZURE;
-  }
-
-  public static List<AzureRepoPRAction> getAzureRepoPRAction() {
-    return Arrays.asList(AzureRepoPRAction.values());
+        || webhookTriggerConfig.getType() == BITBUCKET || webhookTriggerConfig.getType() == AWS_CODECOMMIT;
   }
 
   public static List<GithubPRAction> getGithubPRAction() {
@@ -138,12 +130,6 @@ public class WebhookConfigHelper {
 
   public static Map<String, Map<String, List<String>>> getGitTriggerEventDetails() {
     Map<String, Map<String, List<String>>> resposeMap = new HashMap<>();
-
-    Map azureRepoMap = new HashMap<GitEvent, List<GitAction>>();
-    resposeMap.put(AZURE.getValue(), azureRepoMap);
-    azureRepoMap.put(AzureRepoTriggerEvent.PUSH.getValue(), emptyList());
-    azureRepoMap.put(AzureRepoTriggerEvent.PULL_REQUEST.getValue(),
-        getAzureRepoPRAction().stream().map(azureRepoPRAction -> azureRepoPRAction.getValue()).collect(toList()));
 
     Map githubMap = new HashMap<GitEvent, List<GitAction>>();
     resposeMap.put(GITHUB.getValue(), githubMap);

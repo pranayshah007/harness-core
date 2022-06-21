@@ -31,8 +31,6 @@ public interface OrganizationRepositoryCustom {
 
   Organization delete(String accountIdentifier, String identifier, Long version);
 
-  boolean hardDelete(String accountIdentifier, String identifier, Long version);
-
   List<Organization> findAll(Criteria criteria);
 
   Organization restore(String accountIdentifier, String identifier);

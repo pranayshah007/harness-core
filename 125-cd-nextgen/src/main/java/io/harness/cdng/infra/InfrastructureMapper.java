@@ -92,17 +92,15 @@ public class InfrastructureMapper {
         K8sAzureInfrastructure k8sAzureInfrastructure = (K8sAzureInfrastructure) infrastructure;
         validateK8sAzureInfrastructure(k8sAzureInfrastructure);
         return K8sAzureInfrastructureOutcome.builder()
-            .connectorRef(ParameterFieldHelper.getParameterFieldValue(k8sAzureInfrastructure.getConnectorRef()))
-            .namespace(ParameterFieldHelper.getParameterFieldValue(k8sAzureInfrastructure.getNamespace()))
-            .cluster(ParameterFieldHelper.getParameterFieldValue(k8sAzureInfrastructure.getCluster()))
+            .connectorRef(k8sAzureInfrastructure.getConnectorRef().getValue())
+            .namespace(k8sAzureInfrastructure.getNamespace().getValue())
+            .cluster(k8sAzureInfrastructure.getCluster().getValue())
             .releaseName(getValueOrExpression(k8sAzureInfrastructure.getReleaseName()))
             .environment(environmentOutcome)
             .infrastructureKey(InfrastructureKey.generate(
                 service, environmentOutcome, k8sAzureInfrastructure.getInfrastructureKeyValues()))
-            .subscription(ParameterFieldHelper.getParameterFieldValue(k8sAzureInfrastructure.getSubscriptionId()))
-            .resourceGroup(ParameterFieldHelper.getParameterFieldValue(k8sAzureInfrastructure.getResourceGroup()))
-            .useClusterAdminCredentials(ParameterFieldHelper.getBooleanParameterFieldValue(
-                k8sAzureInfrastructure.getUseClusterAdminCredentials()))
+            .subscription(k8sAzureInfrastructure.getSubscriptionId().getValue())
+            .resourceGroup(k8sAzureInfrastructure.getResourceGroup().getValue())
             .build();
 
       case InfrastructureKind.PDC:
@@ -173,7 +171,7 @@ public class InfrastructureMapper {
         validateAzureWebAppInfrastructure(azureWebAppInfrastructure);
         return AzureWebAppInfrastructureOutcome.builder()
             .connectorRef(azureWebAppInfrastructure.getConnectorRef().getValue())
-            .webApp(azureWebAppInfrastructure.getWebApp().getValue())
+            .appService(azureWebAppInfrastructure.getAppService().getValue())
             .deploymentSlot(azureWebAppInfrastructure.getDeploymentSlot().getValue())
             .environment(environmentOutcome)
             .infrastructureKey(InfrastructureKey.generate(
@@ -251,8 +249,8 @@ public class InfrastructureMapper {
       throw new InvalidArgumentsException(Pair.of("deploymentSlot", "cannot be empty"));
     }
 
-    if (ParameterField.isNull(infrastructure.getWebApp())
-        || isEmpty(ParameterFieldHelper.getParameterFieldValue(infrastructure.getWebApp()))) {
+    if (ParameterField.isNull(infrastructure.getAppService())
+        || isEmpty(ParameterFieldHelper.getParameterFieldValue(infrastructure.getAppService()))) {
       throw new InvalidArgumentsException(Pair.of("appService", "cannot be empty"));
     }
 

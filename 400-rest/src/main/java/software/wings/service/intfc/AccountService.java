@@ -181,8 +181,6 @@ public interface AccountService {
 
   boolean updateCompanyName(String accountId, String companyName);
 
-  boolean updateAccountActivelyUsed(String accountId, boolean accountActivelyUsed);
-
   boolean updateRingName(String accountId, String ringName);
 
   Boolean updateCloudCostEnabled(String accountId, boolean cloudCostEnabled);
@@ -254,6 +252,4 @@ public interface AccountService {
   Void setDefaultExperience(String accountId, DefaultExperience defaultExperience);
 
   AuthenticationInfo getAuthenticationInfo(String accountId);
-
-  boolean isAccountActivelyUsed(String accountId);
 }

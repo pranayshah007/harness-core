@@ -64,7 +64,6 @@ import org.apache.commons.lang3.StringUtils;
 @Deprecated
 public class VmInitializeStepUtils {
   @Inject CIFeatureFlagService featureFlagService;
-  @Inject ValidationUtils validationUtils;
 
   public BuildJobEnvInfo getInitializeStepInfoBuilder(StageElementConfig stageElementConfig,
       Infrastructure infrastructure, CIExecutionArgs ciExecutionArgs, List<ExecutionWrapperConfig> steps,
@@ -103,10 +102,10 @@ public class VmInitializeStepUtils {
     if (integrationStageConfig.getServiceDependencies() != null
         && integrationStageConfig.getServiceDependencies().getValue() != null) {
       serviceDependencies = integrationStageConfig.getServiceDependencies().getValue();
-      validationUtils.validateVmInfraDependencies(serviceDependencies);
+      ValidationUtils.validateVmInfraDependencies(serviceDependencies);
     }
 
-    OSType os = getVmOS(infrastructure);
+    OSType os = getOS(infrastructure);
     Map<String, String> volumeToMountPath = getVolumeToMountPath(integrationStageConfig.getSharedPaths(), os);
     return VmBuildJobInfo.builder()
         .ciExecutionArgs(ciExecutionArgs)
@@ -125,7 +124,7 @@ public class VmInitializeStepUtils {
     return STEP_MOUNT_PATH;
   }
 
-  public static OSType getVmOS(Infrastructure infrastructure) {
+  private OSType getOS(Infrastructure infrastructure) {
     if (infrastructure.getType() != Infrastructure.Type.VM) {
       throw new CIStageExecutionException(format("Invalid infrastructure type: %s", infrastructure.getType()));
     }

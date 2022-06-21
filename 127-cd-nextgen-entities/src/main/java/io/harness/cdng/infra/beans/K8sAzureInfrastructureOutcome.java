@@ -33,7 +33,6 @@ public class K8sAzureInfrastructureOutcome implements InfrastructureOutcome {
   String infrastructureKey;
   String subscription;
   String resourceGroup;
-  Boolean useClusterAdminCredentials;
 
   @Override
   public String getKind() {

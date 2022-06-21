@@ -18,8 +18,7 @@ import java.util.Collections;
 import java.util.Set;
 
 @OwnedBy(CDP)
-public class AzureWebAppSlotDeploymentStepVariableCreator
-    extends GenericStepVariableCreator<AzureWebAppSlotDeploymentStepNode> {
+public class AzureWebAppSlotDeploymentStepVariableCreator extends GenericStepVariableCreator<AzureWebAppSlotDeploymentStepNode> {
   @Override
   public Set<String> getSupportedStepTypes() {
     return Collections.singleton(StepSpecTypeConstants.AZURE_SLOT_DEPLOYMENT);

@@ -23,6 +23,7 @@ import io.harness.event.client.impl.appender.AppenderModule;
 import io.harness.event.client.impl.appender.AppenderModule.Config;
 import io.harness.event.client.impl.tailer.DelegateTailerModule;
 import io.harness.grpc.delegateservice.DelegateServiceGrpcAgentClientModule;
+import io.harness.grpc.pingpong.PingPongModule;
 import io.harness.logstreaming.LogStreamingModule;
 import io.harness.managerclient.DelegateManagerClientModule;
 import io.harness.metrics.MetricRegistryModule;
@@ -59,6 +60,7 @@ public class DelegateAgentModule extends AbstractModule {
 
     configureCcmEventPublishing();
     install(new PerpetualTaskWorkerModule());
+    install(new PingPongModule());
 
     install(KubernetesClientFactoryModule.getInstance());
     install(KubernetesApiClientFactoryModule.getInstance());

@@ -29,6 +29,6 @@ public class AzureWebAppInfraMapping implements InfraMapping {
   private String azureConnector;
   private String subscription;
   private String resourceGroup;
-  private String webApp;
+  private String appService;
   private String deploymentSlot;
 }

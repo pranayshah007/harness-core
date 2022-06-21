@@ -27,5 +27,4 @@ public class AzureK8sInfraDelegateConfig implements K8sInfraDelegateConfig {
   String resourceGroup;
   AzureConnectorDTO azureConnectorDTO;
   List<EncryptedDataDetail> encryptionDataDetails;
-  boolean useClusterAdminCredentials;
 }

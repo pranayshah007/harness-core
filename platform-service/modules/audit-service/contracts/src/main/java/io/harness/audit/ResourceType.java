@@ -40,8 +40,7 @@ public enum ResourceType {
   CHAOS_HUB(ResourceTypeConstants.CHAOS_HUB),
   MONITORED_SERVICE(ResourceTypeConstants.MONITORED_SERVICE),
   CHAOS_AGENT(ResourceTypeConstants.CHAOS_AGENT),
-  CHAOS_WORKFLOW(ResourceTypeConstants.CHAOS_WORKFLOW),
-  SERVICE_LEVEL_OBJECTIVE(ResourceTypeConstants.SERVICE_LEVEL_OBJECTIVE);
+  CHAOS_WORKFLOW(ResourceTypeConstants.CHAOS_WORKFLOW);
 
   ResourceType(String resourceType) {
     if (!this.name().equals(resourceType)) {

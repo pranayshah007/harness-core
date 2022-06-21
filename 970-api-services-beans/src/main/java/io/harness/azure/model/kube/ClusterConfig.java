@@ -7,8 +7,6 @@
 
 package io.harness.azure.model.kube;
 
-import static io.harness.azure.model.AzureConstants.KUBECFG_CERTIFICATE_AUTHORITY_DATA;
-
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
@@ -22,6 +20,6 @@ import lombok.NoArgsConstructor;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @OwnedBy(HarnessTeam.CDP)
 public class ClusterConfig {
-  @JsonProperty(KUBECFG_CERTIFICATE_AUTHORITY_DATA) private String certificateAuthorityData;
+  @JsonProperty("certificate-authority-data") private String certificateAuthorityData;
   private String server;
 }

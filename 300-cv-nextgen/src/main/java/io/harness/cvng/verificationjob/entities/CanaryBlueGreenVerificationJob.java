@@ -78,6 +78,11 @@ public abstract class CanaryBlueGreenVerificationJob extends VerificationJob {
         sensitivity == null ? null : RuntimeParameter.builder().isRuntimeParam(false).value(sensitivity.name()).build();
   }
 
+  @Override
+  public boolean shouldDoDataCollection() {
+    return true;
+  }
+
   public abstract VerificationJobDTO getVerificationJobDTO();
 
   @Override

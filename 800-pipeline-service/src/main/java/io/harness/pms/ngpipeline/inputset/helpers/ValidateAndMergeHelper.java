@@ -8,6 +8,7 @@
 package io.harness.pms.ngpipeline.inputset.helpers;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.beans.FeatureName.NG_PIPELINE_TEMPLATE;
 import static io.harness.pms.merger.helpers.InputSetMergeHelper.mergeInputSetIntoPipelineForGivenStages;
 import static io.harness.pms.merger.helpers.InputSetMergeHelper.mergeInputSets;
 import static io.harness.pms.merger.helpers.InputSetMergeHelper.mergeInputSetsForGivenStages;
@@ -199,6 +200,7 @@ public class ValidateAndMergeHelper {
       if (EmptyPredicate.isEmpty(stageIdentifiers)) {
         template = createTemplateFromPipeline(pipelineYaml);
       } else {
+        // Depending on NG_PIPELINE_TEMPLATE FF we are using either using resolved yaml or pipeline yaml
         String yaml = getYaml(accountId, orgIdentifier, projectIdentifier, pipelineYaml, optionalPipelineEntity);
         StagesExecutionHelper.throwErrorIfAllStagesAreDeleted(yaml, stageIdentifiers);
         replacedExpressions = new ArrayList<>(StagesExpressionExtractor.getNonLocalExpressions(yaml, stageIdentifiers));
@@ -222,7 +224,7 @@ public class ValidateAndMergeHelper {
 
   private String getYaml(String accountId, String orgIdentifier, String projectIdentifier, String pipelineYaml,
       Optional<PipelineEntity> optionalPipelineEntity) {
-    if (optionalPipelineEntity.isPresent()
+    if (featureFlagService.isEnabled(accountId, NG_PIPELINE_TEMPLATE) && optionalPipelineEntity.isPresent()
         && Boolean.TRUE.equals(optionalPipelineEntity.get().getTemplateReference())) {
       // returning resolved yaml
       return pipelineTemplateHelper

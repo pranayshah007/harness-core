@@ -15,7 +15,6 @@ import io.harness.ng.core.entities.Organization;
 import io.harness.ng.core.entities.Organization.OrganizationKeys;
 
 import com.google.inject.Inject;
-import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -103,20 +102,6 @@ public class OrganizationRepositoryCustomImpl implements OrganizationRepositoryC
     Query query = new Query(criteria);
     Update update = new Update().set(OrganizationKeys.deleted, Boolean.TRUE);
     return mongoTemplate.findAndModify(query, update, Organization.class);
-  }
-
-  @Override
-  public boolean hardDelete(String accountIdentifier, String identifier, Long version) {
-    Criteria criteria = Criteria.where(OrganizationKeys.accountIdentifier)
-                            .is(accountIdentifier)
-                            .and(OrganizationKeys.identifier)
-                            .is(identifier);
-    if (version != null) {
-      criteria.and(OrganizationKeys.version).is(version);
-    }
-    Query query = new Query(criteria);
-    DeleteResult removeResult = mongoTemplate.remove(query, Organization.class);
-    return removeResult.wasAcknowledged();
   }
 
   @Override

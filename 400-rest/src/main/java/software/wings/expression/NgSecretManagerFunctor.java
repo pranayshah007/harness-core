@@ -14,6 +14,7 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.reflection.ReflectionUtils.getFieldByName;
 import static io.harness.security.SimpleEncryption.CHARSET;
+import static io.harness.security.encryption.EncryptionType.LOCAL;
 
 import static java.lang.String.format;
 
@@ -35,6 +36,7 @@ import io.harness.ng.core.BaseNGAccess;
 import io.harness.secretmanagerclient.services.api.SecretManagerClientService;
 import io.harness.security.SimpleEncryption;
 import io.harness.security.encryption.EncryptedDataDetail;
+import io.harness.security.encryption.EncryptedRecordData;
 import io.harness.security.encryption.EncryptionConfig;
 import io.harness.security.encryption.EncryptionType;
 import io.harness.utils.IdentifierRefHelper;
@@ -61,7 +63,7 @@ public class NgSecretManagerFunctor implements ExpressionFunctor, NgSecretManage
   private final String orgId;
   private final String projectId;
   private final SecretManager secretManager;
-  private final Cache<String, EncryptedDataDetails> secretsCache;
+  private final Cache<String, EncryptedRecordData> secretsCache;
   private final SecretManagerClientService ngSecretService;
   private SecretManagerMode mode;
 
@@ -118,27 +120,25 @@ public class NgSecretManagerFunctor implements ExpressionFunctor, NgSecretManage
                       .build()
                       .hashCode();
 
-    List<EncryptedDataDetail> encryptedDataDetails = null;
     if (secretsCache != null) {
-      // Cache hit.
-      EncryptedDataDetails cachedValue = secretsCache.get(String.valueOf(keyHash));
-      if (cachedValue != null) {
-        encryptedDataDetails = cachedValue.getEncryptedDataDetailList();
+      EncryptedRecordData locallyEncryptedData = secretsCache.get(String.valueOf(keyHash));
+      if (locallyEncryptedData != null) {
+        // Cache hit. Decrypt the value locally with previously saved encryption key.
+        if (locallyEncryptedData.getName().equals(secretIdentifier)) {
+          // Verify the name of secretIdentifier before returning cached value, there can be conflict in keyHash.
+          return new String(new SimpleEncryption(locallyEncryptedData.getEncryptionKey())
+                                .decryptChars(locallyEncryptedData.getEncryptedValue()));
+        }
       }
     }
 
-    if (isEmpty(encryptedDataDetails)) {
-      // Cache miss.
-      encryptedDataDetails = ngSecretService.getEncryptionDetails(
-          BaseNGAccess.builder().accountIdentifier(accountId).orgIdentifier(orgId).projectIdentifier(projectId).build(),
-          secretVariableDTO);
+    // Cache miss.
+    List<EncryptedDataDetail> encryptedDataDetails = ngSecretService.getEncryptionDetails(
+        BaseNGAccess.builder().accountIdentifier(accountId).orgIdentifier(orgId).projectIdentifier(projectId).build(),
+        secretVariableDTO);
 
-      if (EmptyPredicate.isEmpty(encryptedDataDetails)) {
-        throw new InvalidRequestException("No secret found with identifier + [" + secretIdentifier + "]", USER);
-      }
-      EncryptedDataDetails objectToCache =
-          EncryptedDataDetails.builder().encryptedDataDetailList(encryptedDataDetails).build();
-      secretsCache.put(String.valueOf(keyHash), objectToCache);
+    if (EmptyPredicate.isEmpty(encryptedDataDetails)) {
+      throw new InvalidRequestException("No secret found with identifier + [" + secretIdentifier + "]", USER);
     }
 
     List<EncryptedDataDetail> localEncryptedDetails =
@@ -151,6 +151,20 @@ public class NgSecretManagerFunctor implements ExpressionFunctor, NgSecretManage
       // ToDo Vikas said that we can have decrypt here for now. Later on it will be moved to proper service.
       decryptLocal(secretVariableDTO, localEncryptedDetails);
       final String secretValue = new String(secretVariableDTO.getSecret().getDecryptedValue());
+      final String localEncryptionKey = generateUuid();
+
+      char[] reEncryptedValue =
+          new SimpleEncryption(localEncryptionKey).encryptChars(secretVariableDTO.getSecret().getDecryptedValue());
+      EncryptedRecordData locallyEncryptedData =
+          EncryptedRecordData.builder()
+              .uuid(localEncryptedDetails.get(0).getEncryptedData().getUuid())
+              .name(secretVariableDTO.getName())
+              .encryptionType(LOCAL)
+              .encryptionKey(localEncryptionKey)
+              .encryptedValue(reEncryptedValue)
+              .base64Encoded(localEncryptedDetails.get(0).getEncryptedData().isBase64Encoded())
+              .build();
+      secretsCache.put(String.valueOf(keyHash), locallyEncryptedData);
       evaluatedSecrets.put(secretIdentifier, secretValue);
       return returnValue(secretIdentifier, secretValue);
     }

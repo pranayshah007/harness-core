@@ -16,8 +16,6 @@ import static org.mockito.Mockito.mock;
 import io.harness.CIExecutionServiceModule;
 import io.harness.CIExecutionTestModule;
 import io.harness.ModuleType;
-import io.harness.SCMGrpcClientModule;
-import io.harness.ScmConnectionConfig;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -40,7 +38,6 @@ import io.harness.ff.CIFeatureFlagNoopServiceImpl;
 import io.harness.ff.CIFeatureFlagService;
 import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
-import io.harness.impl.scm.ScmServiceClientImpl;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.lock.PersistentLockModule;
 import io.harness.mongo.MongoPersistence;
@@ -55,7 +52,6 @@ import io.harness.registrars.ExecutionRegistrar;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.rule.Cache;
 import io.harness.rule.InjectorRuleMixin;
-import io.harness.service.ScmServiceClient;
 import io.harness.springdata.SpringPersistenceTestModule;
 import io.harness.testlib.module.MongoRuleMixin;
 import io.harness.testlib.module.TestMongoModule;
@@ -122,14 +118,6 @@ public class CIExecutionRule implements MethodRule, InjectorRuleMixin, MongoRule
         bind(CIFeatureFlagService.class).to(CIFeatureFlagNoopServiceImpl.class);
       }
     });
-
-    modules.add(new AbstractModule() {
-      @Override
-      protected void configure() {
-        bind(ScmServiceClient.class).to(ScmServiceClientImpl.class);
-      }
-    });
-
     CacheConfigBuilder cacheConfigBuilder =
         CacheConfig.builder().disabledCaches(new HashSet<>()).cacheNamespace("harness-cache");
     if (annotations.stream().anyMatch(annotation -> annotation instanceof Cache)) {
@@ -210,7 +198,6 @@ public class CIExecutionRule implements MethodRule, InjectorRuleMixin, MongoRule
         return mock(AccessControlClient.class);
       }
     });
-    modules.add(new SCMGrpcClientModule(ScmConnectionConfig.builder().url("dummyurl").build()));
 
     modules.add(TimeModule.getInstance());
     modules.add(new ProviderModule() {

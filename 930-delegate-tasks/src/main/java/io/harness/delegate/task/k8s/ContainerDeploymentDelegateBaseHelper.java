@@ -131,8 +131,7 @@ public class ContainerDeploymentDelegateBaseHelper {
       return azureAsyncTaskHelper.getClusterConfig(azureK8sInfraDelegateConfig.getAzureConnectorDTO(),
           azureK8sInfraDelegateConfig.getSubscription(), azureK8sInfraDelegateConfig.getResourceGroup(),
           azureK8sInfraDelegateConfig.getCluster(), azureK8sInfraDelegateConfig.getNamespace(),
-          azureK8sInfraDelegateConfig.getEncryptionDataDetails(),
-          azureK8sInfraDelegateConfig.isUseClusterAdminCredentials());
+          azureK8sInfraDelegateConfig.getEncryptionDataDetails());
     } else {
       throw new InvalidRequestException("Unhandled K8sInfraDelegateConfig " + clusterConfigDTO.getClass());
     }

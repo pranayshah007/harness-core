@@ -318,12 +318,8 @@ public class DefaultLicenseServiceImpl implements LicenseService {
     List<ModuleLicense> licenses = moduleLicenseRepository.findByAccountIdentifier(accountIdentifier);
     long currentTime = Instant.now().toEpochMilli();
     long maxExpiryTime = 0;
-    boolean atLeastOneLicenseActive = false;
     boolean isPaidOrFree = false;
     for (ModuleLicense moduleLicense : licenses) {
-      if (moduleLicense.isActive() == true) {
-        atLeastOneLicenseActive = true;
-      }
       if (Edition.FREE.equals(moduleLicense.getEdition())) {
         isPaidOrFree = true;
         continue;
@@ -354,7 +350,6 @@ public class DefaultLicenseServiceImpl implements LicenseService {
     return CheckExpiryResultDTO.builder()
         .shouldDelete(!isPaidOrFree && (maxExpiryTime <= currentTime))
         .expiryTime(maxExpiryTime)
-        .ngAccountActive(atLeastOneLicenseActive)
         .build();
   }
 

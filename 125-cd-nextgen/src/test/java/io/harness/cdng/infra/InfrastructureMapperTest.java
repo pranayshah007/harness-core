@@ -347,7 +347,6 @@ public class InfrastructureMapperTest extends CategoryTest {
             .subscriptionId(ParameterField.createValueField("subscriptionId"))
             .resourceGroup(ParameterField.createValueField("resourceGroup"))
             .cluster(ParameterField.createValueField("cluster"))
-            .useClusterAdminCredentials(ParameterField.createValueField(true))
             .build();
 
     K8sAzureInfrastructureOutcome k8sAzureInfrastructureOutcome =
@@ -360,36 +359,11 @@ public class InfrastructureMapperTest extends CategoryTest {
             .cluster("cluster")
             .environment(environment)
             .infrastructureKey("8f62fc4abbc11a8400589ccac4b76f32ba0f7df2")
-            .useClusterAdminCredentials(true)
             .build();
 
-    assertThat(InfrastructureMapper.toOutcome(k8SAzureInfrastructure, environment, serviceOutcome))
-        .isEqualTo(k8sAzureInfrastructureOutcome);
-
-    k8SAzureInfrastructure = K8sAzureInfrastructure.builder()
-                                 .connectorRef(ParameterField.createValueField("connectorId"))
-                                 .namespace(ParameterField.createValueField("namespace"))
-                                 .releaseName(ParameterField.createValueField("release"))
-                                 .subscriptionId(ParameterField.createValueField("subscriptionId"))
-                                 .resourceGroup(ParameterField.createValueField("resourceGroup"))
-                                 .cluster(ParameterField.createValueField("cluster"))
-                                 .useClusterAdminCredentials(ParameterField.createValueField(false))
-                                 .build();
-
-    k8sAzureInfrastructureOutcome = K8sAzureInfrastructureOutcome.builder()
-                                        .connectorRef("connectorId")
-                                        .namespace("namespace")
-                                        .releaseName("release")
-                                        .subscription("subscriptionId")
-                                        .resourceGroup("resourceGroup")
-                                        .cluster("cluster")
-                                        .environment(environment)
-                                        .infrastructureKey("8f62fc4abbc11a8400589ccac4b76f32ba0f7df2")
-                                        .useClusterAdminCredentials(false)
-                                        .build();
-
-    assertThat(InfrastructureMapper.toOutcome(k8SAzureInfrastructure, environment, serviceOutcome))
-        .isEqualTo(k8sAzureInfrastructureOutcome);
+    InfrastructureOutcome infrastructureOutcome =
+        InfrastructureMapper.toOutcome(k8SAzureInfrastructure, environment, serviceOutcome);
+    assertThat(infrastructureOutcome).isEqualTo(k8sAzureInfrastructureOutcome);
   }
 
   @Test
@@ -401,7 +375,7 @@ public class InfrastructureMapperTest extends CategoryTest {
             .connectorRef(ParameterField.createValueField("connectorId"))
             .subscriptionId(ParameterField.createValueField("subscriptionId"))
             .resourceGroup(ParameterField.createValueField("resourceGroup"))
-            .webApp(ParameterField.createValueField("webApp"))
+            .appService(ParameterField.createValueField("appService"))
             .deploymentSlot(ParameterField.createValueField("deploymentSlot"))
             .build();
 
@@ -412,7 +386,7 @@ public class InfrastructureMapperTest extends CategoryTest {
                                           .connectorRef("connectorId")
                                           .subscription("subscriptionId")
                                           .resourceGroup("resourceGroup")
-                                          .webApp("webApp")
+                                          .appService("appService")
                                           .deploymentSlot("deploymentSlot")
                                           .environment(environment)
                                           .build(),

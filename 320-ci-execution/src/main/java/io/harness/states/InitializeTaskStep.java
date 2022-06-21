@@ -10,6 +10,7 @@ package io.harness.states;
 import static io.harness.annotations.dev.HarnessTeam.CI;
 import static io.harness.beans.outcomes.LiteEnginePodDetailsOutcome.POD_DETAILS_OUTCOME;
 import static io.harness.beans.outcomes.VmDetailsOutcome.VM_DETAILS_OUTCOME;
+import static io.harness.beans.steps.stepinfo.InitializeStepInfo.LOG_KEYS;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -25,6 +26,7 @@ import io.harness.beans.outcomes.LiteEnginePodDetailsOutcome;
 import io.harness.beans.outcomes.VmDetailsOutcome;
 import io.harness.beans.outcomes.VmDetailsOutcome.VmDetailsOutcomeBuilder;
 import io.harness.beans.steps.stepinfo.InitializeStepInfo;
+import io.harness.beans.sweepingoutputs.StepLogKeyDetails;
 import io.harness.beans.yaml.extended.infrastrucutre.Infrastructure;
 import io.harness.beans.yaml.extended.infrastrucutre.K8sDirectInfraYaml;
 import io.harness.ci.integrationstage.BuildJobEnvInfoBuilder;
@@ -39,10 +41,14 @@ import io.harness.delegate.beans.ci.k8s.CiK8sTaskResponse;
 import io.harness.delegate.beans.ci.k8s.K8sTaskExecutionResponse;
 import io.harness.delegate.beans.ci.vm.VmServiceStatus;
 import io.harness.delegate.beans.ci.vm.VmTaskExecutionResponse;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logstreaming.LogStreamingHelper;
 import io.harness.ng.core.EntityDetail;
+import io.harness.plancreator.execution.ExecutionWrapperConfig;
+import io.harness.plancreator.steps.ParallelStepElementConfig;
+import io.harness.plancreator.steps.StepElementConfig;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
@@ -52,7 +58,9 @@ import io.harness.pms.contracts.plan.ExecutionPrincipalInfo;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.rbac.PipelineRbacHelper;
+import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
+import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
@@ -85,7 +93,6 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
   public static final String TASK_TYPE_INITIALIZATION_PHASE = "INITIALIZATION_PHASE";
   public static final String LE_STATUS_TASK_TYPE = "CI_LE_STATUS";
   public static final Long TASK_BUFFER_TIMEOUT_MILLIS = 30 * 1000L;
-  public static final Long VM_INIT_TIMEOUT_MILLIS = 900 * 1000L;
 
   @Inject private BuildSetupUtils buildSetupUtils;
   @Inject private K8InitializeServiceUtils k8InitializeServiceUtils;
@@ -128,15 +135,16 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
       Ambiance ambiance, StepElementParameters stepElementParameters, StepInputPackage inputPackage) {
     InitializeStepInfo initializeStepInfo = (InitializeStepInfo) stepElementParameters.getSpec();
 
+    Map<String, String> taskIds = new HashMap<>();
     String logPrefix = getLogPrefix(ambiance);
+    Map<String, String> stepLogKeys = getStepLogKeys(initializeStepInfo, ambiance, logPrefix);
 
     CIInitializeTaskParams buildSetupTaskParams =
         buildSetupUtils.getBuildSetupTaskParams(initializeStepInfo, ambiance, logPrefix);
     log.info("Created params for build task: {}", buildSetupTaskParams);
 
-    return StepUtils.prepareTaskRequest(ambiance,
-        getTaskData(stepElementParameters, buildSetupTaskParams, initializeStepInfo.getInfrastructure().getType()),
-        kryoSerializer);
+    return StepUtils.prepareTaskRequest(
+        ambiance, getTaskData(stepElementParameters, buildSetupTaskParams), kryoSerializer);
   }
 
   @Override
@@ -154,17 +162,12 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
     }
   }
 
-  public TaskData getTaskData(StepElementParameters stepElementParameters, CIInitializeTaskParams buildSetupTaskParams,
-      Infrastructure.Type infraType) {
-    long timeout =
-        Timeout.fromString((String) stepElementParameters.getTimeout().fetchFinalValue()).getTimeoutInMillis();
-    if (infraType == Infrastructure.Type.VM) {
-      timeout = VM_INIT_TIMEOUT_MILLIS;
-    }
-
+  public TaskData getTaskData(
+      StepElementParameters stepElementParameters, CIInitializeTaskParams buildSetupTaskParams) {
     return TaskData.builder()
         .async(true)
-        .timeout(timeout + TASK_BUFFER_TIMEOUT_MILLIS)
+        .timeout(Timeout.fromString((String) stepElementParameters.getTimeout().fetchFinalValue()).getTimeoutInMillis()
+            + TASK_BUFFER_TIMEOUT_MILLIS)
         .taskType(TASK_TYPE_INITIALIZATION_PHASE)
         .parameters(new Object[] {buildSetupTaskParams})
         .build();
@@ -334,6 +337,46 @@ public class InitializeTaskStep implements TaskExecutableWithRbac<StepElementPar
                                     .build());
     }
     return DependencyOutcome.builder().serviceDependencyList(serviceDependencyList).build();
+  }
+
+  private Map<String, String> getStepLogKeys(
+      InitializeStepInfo initializeStepInfo, Ambiance ambiance, String logPrefix) {
+    Map<String, String> logKeyByStepId = new HashMap<>();
+    initializeStepInfo.getExecutionElementConfig().getSteps().forEach(
+        executionWrapper -> addLogKey(executionWrapper, logPrefix, logKeyByStepId));
+
+    Map<String, List<String>> logKeys = new HashMap<>();
+    logKeyByStepId.forEach((stepId, logKey) -> logKeys.put(stepId, Collections.singletonList(logKey)));
+
+    OptionalSweepingOutput optionalSweepingOutput =
+        executionSweepingOutputService.resolveOptional(ambiance, RefObjectUtils.getSweepingOutputRefObject(LOG_KEYS));
+    if (!optionalSweepingOutput.isFound()) {
+      executionSweepingOutputResolver.consume(
+          ambiance, LOG_KEYS, StepLogKeyDetails.builder().logKeys(logKeys).build(), StepOutcomeGroup.STAGE.name());
+    }
+
+    return logKeyByStepId;
+  }
+
+  private void addLogKey(
+      ExecutionWrapperConfig executionWrapper, String logPrefix, Map<String, String> logKeyByStepId) {
+    if (executionWrapper != null) {
+      if (executionWrapper.getStep() != null && !executionWrapper.getStep().isNull()) {
+        StepElementConfig stepElementConfig = IntegrationStageUtils.getStepElementConfig(executionWrapper);
+
+        logKeyByStepId.put(stepElementConfig.getIdentifier(), getStepLogKey(stepElementConfig, logPrefix));
+      } else if (executionWrapper.getParallel() != null && !executionWrapper.getParallel().isNull()) {
+        ParallelStepElementConfig parallelStepElementConfig =
+            IntegrationStageUtils.getParallelStepElementConfig(executionWrapper);
+        parallelStepElementConfig.getSections().forEach(section -> addLogKey(section, logPrefix, logKeyByStepId));
+      } else {
+        throw new InvalidRequestException("Only Parallel or StepElement is supported");
+      }
+    }
+  }
+
+  private String getStepLogKey(StepElementConfig stepElement, String logPrefix) {
+    return format("%s/stepId:%s", logPrefix, stepElement.getIdentifier());
   }
 
   private String getLogPrefix(Ambiance ambiance) {

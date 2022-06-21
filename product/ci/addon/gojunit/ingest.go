@@ -72,7 +72,6 @@ func ingestTestcase(root xmlNode) Test {
 	test := Test{
 		Name:       root.Attr("name"),
 		Classname:  root.Attr("classname"),
-		Filename:   root.Attr("file"),
 		DurationMs: duration(root.Attr("time")).Milliseconds(),
 		Result:     types.Result{Status: types.StatusPassed},
 		Properties: root.Attrs,

@@ -192,7 +192,6 @@ import software.wings.common.RancherK8sClusterProcessor;
 import software.wings.delegatetasks.buildsource.BuildSourceCallback;
 import software.wings.delegatetasks.buildsource.BuildSourceCleanupCallback;
 import software.wings.delegatetasks.event.EventsDeliveryCallback;
-import software.wings.expression.EncryptedDataDetails;
 import software.wings.expression.ShellScriptEnvironmentVariables;
 import software.wings.helpers.ext.cloudformation.CloudFormationCompletionFlag;
 import software.wings.helpers.ext.ecs.request.EcsListenerUpdateRequestConfigData;
@@ -589,6 +588,5 @@ public class ManagerKryoRegistrar implements KryoRegistrar {
     kryo.register(RancherKubernetesInfrastructure.class, 50007);
     kryo.register(RancherStateExecutionData.class, 50009);
     kryo.register(UserGroupEntityReference.class, 50010);
-    kryo.register(EncryptedDataDetails.class, 50013);
   }
 }

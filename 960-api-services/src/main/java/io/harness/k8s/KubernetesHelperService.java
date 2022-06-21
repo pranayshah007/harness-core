@@ -246,14 +246,8 @@ public class KubernetesHelperService {
     }
 
     Config config = configBuilder.build();
-
     if (KubernetesClusterAuthType.OIDC == kubernetesConfig.getAuthType()) {
       config.setOauthToken(oidcTokenRetriever.getOidcIdToken(kubernetesConfig));
-    }
-
-    if (KubernetesClusterAuthType.AZURE_OAUTH == kubernetesConfig.getAuthType()
-        && kubernetesConfig.getAzureConfig() != null) {
-      config.setOauthToken(kubernetesConfig.getAzureConfig().getAadIdToken());
     }
 
     return config;
