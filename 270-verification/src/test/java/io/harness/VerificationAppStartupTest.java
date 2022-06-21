@@ -54,7 +54,7 @@ public class VerificationAppStartupTest extends CategoryTest {
   }
 
   @BeforeClass
-  public static void beforeClass() {
+  public static void beforeClass() throws Exception{
     MONGO_SERVER = startMongoServer();
     SUPPORT = new DropwizardTestSupport<>(VerificationServiceApplication.class,
         String.valueOf(new File("270-verification/src/test/resources/test-config.yml")),

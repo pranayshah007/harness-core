@@ -46,6 +46,7 @@ enum SourceRepoType {
   GITLAB = 1;
   BITBUCKET = 2;
   AWS_CODECOMMIT = 3;
+  AZURE = 4;
 }
 
 message GitDetails {

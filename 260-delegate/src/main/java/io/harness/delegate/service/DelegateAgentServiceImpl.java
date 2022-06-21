@@ -226,6 +226,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
 import javax.net.ssl.SSLException;
@@ -2105,7 +2106,10 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
             .logStreamingClient(logStreamingClient)
             .accountId(delegateTaskPackage.getAccountId())
             .token(delegateTaskPackage.getLogStreamingToken())
-            .logStreamingSanitizer(LogStreamingSanitizer.builder().secrets(activitySecrets.getRight()).build())
+            .logStreamingSanitizer(
+                LogStreamingSanitizer.builder()
+                    .secrets(activitySecrets.getRight().stream().map(String::trim).collect(Collectors.toSet()))
+                    .build())
             .baseLogKey(logBaseKey)
             .logService(delegateLogService)
             .taskProgressExecutor(taskProgressExecutor)

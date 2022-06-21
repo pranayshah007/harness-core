@@ -9,6 +9,7 @@ package io.harness.beans.execution;
 
 import static io.harness.beans.execution.ExecutionSource.Type.MANUAL;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
@@ -21,6 +22,7 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @JsonTypeName("Manual")
 @TypeAlias("MANUAL")
+@RecasterAlias("io.harness.beans.execution.ManualExecutionSource")
 @OwnedBy(HarnessTeam.CI)
 public class ManualExecutionSource implements ExecutionSource {
   private String branch;

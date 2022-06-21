@@ -142,17 +142,9 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
     }
     if (gitSyncSdkService.isGitSimplificationEnabled(pipelineToSave.getAccountIdentifier(),
             pipelineToSave.getOrgIdentifier(), pipelineToSave.getProjectIdentifier())) {
-      Scope scope = Scope.builder()
-                        .accountIdentifier(pipelineToSave.getAccountIdentifier())
-                        .orgIdentifier(pipelineToSave.getOrgIdentifier())
-                        .projectIdentifier(pipelineToSave.getProjectIdentifier())
-                        .build();
+      Scope scope = buildScope(pipelineToSave);
       String yamlToPush = pipelineToSave.getYaml();
-      pipelineToSave.setYaml("");
-      pipelineToSave.setStoreType(StoreType.REMOTE);
-      pipelineToSave.setConnectorRef(gitEntityInfo.getConnectorRef());
-      pipelineToSave.setRepo(gitEntityInfo.getRepoName());
-      pipelineToSave.setFilePath(gitEntityInfo.getFilePath());
+      addGitParamsToPipelineEntity(pipelineToSave, gitEntityInfo);
 
       gitAwareEntityHelper.createEntityOnGit(pipelineToSave, yamlToPush, scope);
     } else {
@@ -209,11 +201,7 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
       // fetch yaml from git
       GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
       savedEntity = (PipelineEntity) gitAwareEntityHelper.fetchEntityFromRemote(savedEntity,
-          Scope.builder()
-              .accountIdentifier(accountId)
-              .orgIdentifier(orgIdentifier)
-              .projectIdentifier(projectIdentifier)
-              .build(),
+          Scope.of(accountId, orgIdentifier, projectIdentifier),
           GitContextRequestParams.builder()
               .branchName(gitEntityInfo.getBranch())
               .connectorRef(savedEntity.getConnectorRef())
@@ -265,11 +253,7 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
     if (updatedPipelineEntity.getStoreType() == StoreType.REMOTE
         && gitSyncSdkService.isGitSimplificationEnabled(pipelineToUpdate.getAccountIdentifier(),
             pipelineToUpdate.getOrgIdentifier(), pipelineToUpdate.getProjectIdentifier())) {
-      Scope scope = Scope.builder()
-                        .accountIdentifier(updatedPipelineEntity.getAccountIdentifier())
-                        .orgIdentifier(updatedPipelineEntity.getOrgIdentifier())
-                        .projectIdentifier(updatedPipelineEntity.getProjectIdentifier())
-                        .build();
+      Scope scope = buildScope(updatedPipelineEntity);
       gitAwareEntityHelper.updateEntityOnGit(updatedPipelineEntity, pipelineToUpdate.getYaml(), scope);
     }
     return updatedPipelineEntity;
@@ -366,19 +350,36 @@ public class PMSPipelineRepositoryCustomImpl implements PMSPipelineRepositoryCus
   }
 
   @Override
-  public String importPipelineFromRemote(String accountId, String orgIdentifier, String projectIdentifier) {
+  public PipelineEntity savePipelineEntityForImportedYAML(PipelineEntity pipelineToSave, boolean pushToGit) {
+    String accountIdentifier = pipelineToSave.getAccountIdentifier();
+    String orgIdentifier = pipelineToSave.getOrgIdentifier();
+    String projectIdentifier = pipelineToSave.getProjectIdentifier();
     GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
-    Scope scope = Scope.builder()
-                      .accountIdentifier(accountId)
-                      .orgIdentifier(orgIdentifier)
-                      .projectIdentifier(projectIdentifier)
-                      .build();
-    GitContextRequestParams gitContextRequestParams = GitContextRequestParams.builder()
-                                                          .branchName(gitEntityInfo.getBranch())
-                                                          .connectorRef(gitEntityInfo.getConnectorRef())
-                                                          .filePath(gitEntityInfo.getFilePath())
-                                                          .repoName(gitEntityInfo.getRepoName())
-                                                          .build();
-    return gitAwareEntityHelper.fetchYAMLFromRemote(scope, gitContextRequestParams, Collections.emptyMap());
+    String yamlToPush = pipelineToSave.getYaml();
+    addGitParamsToPipelineEntity(pipelineToSave, gitEntityInfo);
+    return transactionHelper.performTransaction(() -> {
+      if (pushToGit) {
+        Scope scope = buildScope(pipelineToSave);
+        gitAwareEntityHelper.updateFileImportedFromGit(pipelineToSave, yamlToPush, scope);
+      }
+      PipelineEntity savedPipelineEntity = mongoTemplate.save(pipelineToSave);
+      checkForMetadataAndSaveIfAbsent(savedPipelineEntity);
+      outboxService.save(
+          new PipelineCreateEvent(accountIdentifier, orgIdentifier, projectIdentifier, savedPipelineEntity));
+      return savedPipelineEntity;
+    });
+  }
+
+  Scope buildScope(PipelineEntity pipelineEntity) {
+    return Scope.of(pipelineEntity.getAccountIdentifier(), pipelineEntity.getOrgIdentifier(),
+        pipelineEntity.getProjectIdentifier());
+  }
+
+  void addGitParamsToPipelineEntity(PipelineEntity pipelineToSave, GitEntityInfo gitEntityInfo) {
+    pipelineToSave.setYaml("");
+    pipelineToSave.setStoreType(StoreType.REMOTE);
+    pipelineToSave.setConnectorRef(gitEntityInfo.getConnectorRef());
+    pipelineToSave.setRepo(gitEntityInfo.getRepoName());
+    pipelineToSave.setFilePath(gitEntityInfo.getFilePath());
   }
 }

@@ -25,7 +25,6 @@ import static io.harness.NGResourceFilterConstants.PAGE_KEY;
 import static io.harness.NGResourceFilterConstants.SEARCH_TERM_KEY;
 import static io.harness.NGResourceFilterConstants.SIZE_KEY;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.filestore.FilePermissionConstants.FILE_ACCESS_PERMISSION;
 import static io.harness.filestore.FilePermissionConstants.FILE_DELETE_PERMISSION;
 import static io.harness.filestore.FilePermissionConstants.FILE_EDIT_PERMISSION;
 import static io.harness.filestore.FilePermissionConstants.FILE_VIEW_PERMISSION;
@@ -345,7 +344,7 @@ public class FileStoreResource {
       String identifier, @Parameter(description = "Entity type") @QueryParam(ENTITY_TYPE) EntityType entityType,
       @QueryParam(SEARCH_TERM_KEY) String searchTerm) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
-        Resource.of(FILE, identifier), FILE_ACCESS_PERMISSION);
+        Resource.of(FILE, identifier), FILE_VIEW_PERMISSION);
 
     return ResponseDTO.newResponse(fileStoreService.listReferencedBy(
         SearchPageParams.builder().page(page).size(size).searchTerm(searchTerm).build(), accountIdentifier,

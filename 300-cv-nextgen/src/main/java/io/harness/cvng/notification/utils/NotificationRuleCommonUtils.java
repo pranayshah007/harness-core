@@ -77,7 +77,7 @@ public class NotificationRuleCommonUtils {
     String startDate = new Date(startTime * 1000).toString();
     Long endTime = currentInstant.plus(2, ChronoUnit.HOURS).toEpochMilli();
     String vanityUrl = getVanityUrl(serviceLevelObjective.getAccountId());
-    String baseUrl = getBaseUrl(portalUrl.concat("#"), vanityUrl);
+    String baseUrl = getBaseUrl(getPortalUrl(), vanityUrl);
     String moduleName = "cv";
     String url = String.format("%s/account/%s/%s/orgs/%s/projects/%s/slos/%s?endTime=%s&duration=FOUR_HOURS", baseUrl,
         serviceLevelObjective.getAccountId(), moduleName, serviceLevelObjective.getOrgIdentifier(),
@@ -105,7 +105,7 @@ public class NotificationRuleCommonUtils {
     String startDate = new Date(startTime * 1000).toString();
     Long endTime = currentInstant.plus(2, ChronoUnit.HOURS).toEpochMilli();
     String vanityUrl = getVanityUrl(monitoredService.getAccountId());
-    String baseUrl = getBaseUrl(portalUrl.concat("#"), vanityUrl);
+    String baseUrl = getBaseUrl(getPortalUrl(), vanityUrl);
     String moduleName = "cv";
     String url = String.format(
         "%s/account/%s/%s/orgs/%s/projects/%s/monitoringservices/edit/%s?tab=ServiceHealth&endTime=%s&duration=FOUR_HOURS",
@@ -127,6 +127,10 @@ public class NotificationRuleCommonUtils {
         put("URL", url);
       }
     };
+  }
+
+  private String getPortalUrl() {
+    return portalUrl.concat("ng/#");
   }
 
   private String getVanityUrl(String accountIdentifier) {

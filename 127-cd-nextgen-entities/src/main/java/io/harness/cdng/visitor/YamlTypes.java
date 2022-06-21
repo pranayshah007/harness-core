@@ -18,6 +18,7 @@ import io.harness.walktree.visitor.utilities.VisitorParentPathUtils;
 @OwnedBy(CDC)
 public interface YamlTypes {
   String GITOPS_CREATE_PR = StepSpecTypeConstants.GITOPS_CREATE_PR;
+  String GITOPS_MERGE_PR = StepSpecTypeConstants.GITOPS_MERGE_PR;
 
   String PRIMARY_ARTIFACT = "primary";
   String ARTIFACT_LIST_CONFIG = "artifacts";
@@ -48,6 +49,11 @@ public interface YamlTypes {
   String SERVERLESS_AWS_LAMBDA_DEPLOY = StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_DEPLOY;
   String SERVERLESS_AWS_LAMBDA_ROLLBACK = StepSpecTypeConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK;
   String COMMAND = StepSpecTypeConstants.COMMAND;
+
+  String AZURE_SLOT_DEPLOYMENT = StepSpecTypeConstants.AZURE_SLOT_DEPLOYMENT;
+  String AZURE_TRAFFIC_SHIFT = StepSpecTypeConstants.AZURE_TRAFFIC_SHIFT;
+  String AZURE_SWAP_SLOT = StepSpecTypeConstants.AZURE_SWAP_SLOT;
+  String AZURE_WEBAPP_ROLLBACK = StepSpecTypeConstants.AZURE_WEBAPP_ROLLBACK;
 
   String MANIFEST_LIST_CONFIG = "manifests";
   String MANIFEST_CONFIG = "manifest";
@@ -110,7 +116,6 @@ public interface YamlTypes {
 
   String APP_SERVICE = "appService";
   String DEPLOYMENT_SLOT = "deploymentSlot";
-  String TARGET_SLOT = "targetSlot";
 
   String ENVIRONMENT_INPUTS = "environmentInputs";
   String SERVICE_OVERRIDE_INPUTS = "serviceOverrideInputs";

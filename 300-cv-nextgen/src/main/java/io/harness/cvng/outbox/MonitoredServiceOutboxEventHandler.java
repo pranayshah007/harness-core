@@ -102,6 +102,7 @@ public class MonitoredServiceOutboxEventHandler implements OutboxEventHandler {
     AuditEntry auditEntry = AuditEntry.builder()
                                 .action(Action.UPDATE)
                                 .module(ModuleType.CV)
+                                .oldYaml(getYamlString(monitoredServiceToggleEvent.getOldMonitoredServiceYamlDTO()))
                                 .newYaml(getYamlString(monitoredServiceToggleEvent.getNewMonitoredServiceYamlDTO()))
                                 .timestamp(outboxEvent.getCreatedAt())
                                 .resource(ResourceDTO.fromResource(outboxEvent.getResource()))

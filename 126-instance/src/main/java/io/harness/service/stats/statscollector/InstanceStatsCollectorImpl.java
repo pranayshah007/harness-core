@@ -31,8 +31,9 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 @OwnedBy(HarnessTeam.DX)
 public class InstanceStatsCollectorImpl implements StatsCollector {
-  private static final int SYNC_INTERVAL_MINUTES = 10;
+  private static final int SYNC_INTERVAL_MINUTES = 30;
   private static final long SYNC_INTERVAL = TimeUnit.MINUTES.toMinutes(SYNC_INTERVAL_MINUTES);
+  private static final long RELAXED_SYNC_INTERVAL_IN_MILLIS = 15 * 60 * 1000L;
 
   private InstanceStatsService instanceStatsService;
   private InstanceService instanceService;
@@ -77,14 +78,23 @@ public class InstanceStatsCollectorImpl implements StatsCollector {
   private boolean createStats(String accountId, Instant instant) {
     List<InstanceDTO> instances = null;
     try {
-      instances = instanceService.getActiveInstancesByAccount(accountId, instant.toEpochMilli());
-      log.info("Fetched instances. Count: {}, Account: {}, Time: {}", instances.size(), accountId, instant);
+      if (isRecentCollection(instant)) {
+        instances = instanceService.getActiveInstancesByAccount(accountId, -1);
+        usageMetricsEventPublisher.publishInstanceStatsTimeSeries(accountId, Instant.now().toEpochMilli(), instances);
+      } else {
+        instances = instanceService.getActiveInstancesByAccount(accountId, instant.toEpochMilli());
+        usageMetricsEventPublisher.publishInstanceStatsTimeSeries(accountId, instant.toEpochMilli(), instances);
+      }
 
-      usageMetricsEventPublisher.publishInstanceStatsTimeSeries(accountId, instant.toEpochMilli(), instances);
+      log.info("Fetched instances. Count: {}, Account: {}, Time: {}", instances.size(), accountId, instant);
       return true;
     } catch (Exception e) {
       log.error("Unable to publish instance stats for Account [{}] with exception {}", accountId, e);
       return false;
     }
+  }
+
+  private boolean isRecentCollection(Instant instant) {
+    return Instant.now().toEpochMilli() - instant.toEpochMilli() < RELAXED_SYNC_INTERVAL_IN_MILLIS;
   }
 }

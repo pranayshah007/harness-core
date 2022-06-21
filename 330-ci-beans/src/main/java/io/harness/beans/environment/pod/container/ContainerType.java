@@ -7,14 +7,19 @@
 
 package io.harness.beans.environment.pod.container;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+
+import org.springframework.data.annotation.TypeAlias;
 
 /**
  * Type of each container inside the pod for running CI job
  */
 
 @OwnedBy(HarnessTeam.CI)
+@TypeAlias("containerType")
+@RecasterAlias("io.harness.beans.environment.pod.container.ContainerType")
 public enum ContainerType {
   STEP_EXECUTOR(ContainerSource.BUILD_JOB);
   ContainerSource containerSource;

@@ -217,6 +217,9 @@ public class HelmTaskHelperBase {
     if (isEmpty(cacheDir)) {
       addRepoInternal(repoName, repoDisplayName, chartRepoUrl, username, password, chartDirectory, helmVersion,
           timeoutInMillis, EMPTY);
+      if (HelmVersion.V380.equals(helmVersion)) {
+        updateRepo(repoName, chartDirectory, helmVersion, timeoutInMillis, EMPTY);
+      }
       return;
     }
 

@@ -16,6 +16,7 @@ public interface Constants {
   String PR = "PR";
   String PUSH = "PUSH";
 
+  String AZURE_REPO = "AzureRepo";
   String GITHUB_REPO = "Github";
   String GITLAB_REPO = "Gitlab";
   String BITBUCKET_REPO = "Bitbucket";
