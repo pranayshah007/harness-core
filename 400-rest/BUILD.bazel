@@ -394,6 +394,8 @@ java_library(
         "@maven//:io_kubernetes_client_java_api",
         "@maven//:io_kubernetes_client_java_extended",
         "@maven//:io_kubernetes_client_java_proto",
+        "@maven//:io_opentelemetry_opentelemetry_sdk",
+         "@maven//:io_opentelemetry_opentelemetry_sdk_trace",
         "@maven//:io_netty_netty_all",
         "@maven//:io_netty_netty_buffer",
         "@maven//:io_netty_netty_codec",

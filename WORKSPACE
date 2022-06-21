@@ -4687,6 +4687,8 @@ plain_artifacts = [
     "io.opencensus:opencensus-exporter-stats-stackdriver:0.28.0",
     "io.opencensus:opencensus-exporter-stats-prometheus:0.28.0",
     "io.opencensus:opencensus-impl:0.28.0",
+    "io.opentelemetry:opentelemetry-sdk:1.15.0",
+    "io.opentelemetry:opentelemetry-sdk-trace:1.15.0",
     "io.perfmark:perfmark-api:0.19.0",
     "io.projectreactor.netty:reactor-netty:0.9.10.RELEASE",
     "io.projectreactor:reactor-core:3.3.8.RELEASE",
