@@ -7,6 +7,8 @@
 
 package io.harness.beans;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import lombok.Builder;
@@ -16,6 +18,7 @@ import lombok.Value;
 @Builder
 @JsonTypeName("DelegateHeartbeatResponse")
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "eventType", include = JsonTypeInfo.As.PROPERTY)
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class DelegateHeartbeatResponse {
   String delegateId;
   String status;
