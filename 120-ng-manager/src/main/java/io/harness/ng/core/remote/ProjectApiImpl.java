@@ -17,7 +17,10 @@ import static io.harness.ng.core.remote.ProjectApiMapper.getPageRequest;
 import static io.harness.ng.core.remote.ProjectApiMapper.getProjectDto;
 import static io.harness.ng.core.remote.ProjectApiMapper.getProjectResponse;
 
+import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.NGAccessControlCheck;
+import io.harness.accesscontrol.OrgIdentifier;
+import io.harness.accesscontrol.ResourceIdentifier;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ng.core.dto.ProjectFilterDTO;
 import io.harness.ng.core.entities.Project;
@@ -46,14 +49,16 @@ public class ProjectApiImpl implements ProjectsApi {
 
   @NGAccessControlCheck(resourceType = PROJECT, permission = CREATE_PROJECT_PERMISSION)
   @Override
-  public ProjectResponse createProject(String account, String org, CreateProjectRequest project) {
+  public ProjectResponse createProject(
+      @AccountIdentifier String account, @OrgIdentifier String org, CreateProjectRequest project) {
     Project createdProject = projectService.create(account, org, getProjectDto(org, project));
     return getProjectResponse(createdProject);
   }
 
   @NGAccessControlCheck(resourceType = PROJECT, permission = VIEW_PROJECT_PERMISSION)
   @Override
-  public ProjectResponse getProject(String id, String account, String org) {
+  public ProjectResponse getProject(
+      @ResourceIdentifier String id, @AccountIdentifier String account, @OrgIdentifier String org) {
     Optional<Project> projectOptional = projectService.get(account, org, id);
     if (!projectOptional.isPresent()) {
       throw new NotFoundException(
@@ -62,7 +67,6 @@ public class ProjectApiImpl implements ProjectsApi {
     return getProjectResponse(projectOptional.get());
   }
 
-  @NGAccessControlCheck(resourceType = PROJECT, permission = VIEW_PROJECT_PERMISSION)
   @Override
   public List<ProjectResponse> getProjects(String account, List org, List project, Boolean hasModule, String moduleType,
       String searchTerm, Integer page, Integer limit) {
@@ -84,15 +88,16 @@ public class ProjectApiImpl implements ProjectsApi {
 
   @NGAccessControlCheck(resourceType = PROJECT, permission = EDIT_PROJECT_PERMISSION)
   @Override
-  public ProjectResponse updateProject(
-      String account, String org, String id, UpdateProjectRequest updateProjectRequest) {
+  public ProjectResponse updateProject(@AccountIdentifier String account, @OrgIdentifier String org,
+      @ResourceIdentifier String id, UpdateProjectRequest updateProjectRequest) {
     Project updatedProject = projectService.update(account, org, id, getProjectDto(org, id, updateProjectRequest));
     return getProjectResponse(updatedProject);
   }
 
   @NGAccessControlCheck(resourceType = PROJECT, permission = DELETE_PROJECT_PERMISSION)
   @Override
-  public ProjectResponse deleteProject(String id, String account, String org) {
+  public ProjectResponse deleteProject(
+      @ResourceIdentifier String id, @AccountIdentifier String account, @OrgIdentifier String org) {
     Optional<Project> projectOptional = projectService.get(account, org, id);
     if (!projectOptional.isPresent()) {
       throw new NotFoundException(
