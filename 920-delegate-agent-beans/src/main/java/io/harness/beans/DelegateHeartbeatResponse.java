@@ -16,7 +16,7 @@ import lombok.Value;
 @Value
 @Builder
 @JsonTypeName("DelegateHeartbeatResponse")
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "eventType", include = JsonTypeInfo.As.PROPERTY)
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "eventType", include = JsonTypeInfo.As.EXISTING_PROPERTY, visible = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class DelegateHeartbeatResponse {
   String delegateId;
