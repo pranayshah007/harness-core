@@ -88,7 +88,6 @@ public class ServerlessAwsLambdaDeployStepTest extends AbstractServerlessStepExe
                                         .service("aws")
                                         .region("us-east-01")
                                         .stage("stg")
-                                        .previousVersionTimeStamp("31242341")
                                         .functions(Arrays.asList())
                                         .build())
             .unitProgressData(UnitProgressData.builder().unitProgresses(Arrays.asList()).build())
@@ -131,12 +130,8 @@ public class ServerlessAwsLambdaDeployStepTest extends AbstractServerlessStepExe
 
     ServerlessDeployResponse serverlessDeployResponse =
         ServerlessDeployResponse.builder()
-            .serverlessDeployResult(ServerlessAwsLambdaDeployResult.builder()
-                                        .service("aws")
-                                        .region("us-east-01")
-                                        .stage("stg")
-                                        .previousVersionTimeStamp("31242341")
-                                        .build())
+            .serverlessDeployResult(
+                ServerlessAwsLambdaDeployResult.builder().service("aws").region("us-east-01").stage("stg").build())
             .unitProgressData(UnitProgressData.builder().unitProgresses(Arrays.asList()).build())
             .commandExecutionStatus(SUCCESS)
             .build();
@@ -165,12 +160,8 @@ public class ServerlessAwsLambdaDeployStepTest extends AbstractServerlessStepExe
 
     ServerlessDeployResponse serverlessDeployResponse =
         ServerlessDeployResponse.builder()
-            .serverlessDeployResult(ServerlessAwsLambdaDeployResult.builder()
-                                        .service("aws")
-                                        .region("us-east-01")
-                                        .stage("stg")
-                                        .previousVersionTimeStamp("31242341")
-                                        .build())
+            .serverlessDeployResult(
+                ServerlessAwsLambdaDeployResult.builder().service("aws").region("us-east-01").stage("stg").build())
             .unitProgressData(UnitProgressData.builder().unitProgresses(Arrays.asList()).build())
             .commandExecutionStatus(SUCCESS)
             .build();
@@ -223,7 +214,7 @@ public class ServerlessAwsLambdaDeployStepTest extends AbstractServerlessStepExe
     StepResponse stepResponse = StepResponse.builder().status(Status.FAILED).build();
     PassThroughData passThroughData = ServerlessExecutionPassThroughData.builder().build();
 
-    Exception e = new ServerlessNGException(new Exception(), "234", false);
+    Exception e = new ServerlessNGException(new Exception());
 
     doReturn(stepResponse)
         .when(serverlessStepHelper)

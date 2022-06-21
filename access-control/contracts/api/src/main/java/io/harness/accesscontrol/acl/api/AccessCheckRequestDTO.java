@@ -31,7 +31,7 @@ import lombok.experimental.FieldDefaults;
 @OwnedBy(HarnessTeam.PL)
 public class AccessCheckRequestDTO {
   @Schema(description = "List of permission checks to perform", required = true)
-  @Size(max = 1000)
+  @Size(max = 1000, message = "The number of permission checks '${validatedValue.size()}' must be less than {max}")
   @Valid
   List<PermissionCheckDTO> permissions;
   @Schema(description = "Principal (user/service account) to check the access for", required = true)

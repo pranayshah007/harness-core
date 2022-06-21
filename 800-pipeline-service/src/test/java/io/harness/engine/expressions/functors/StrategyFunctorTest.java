@@ -61,8 +61,8 @@ public class StrategyFunctorTest extends PipelineServiceTestBase {
   @Category(UnitTests.class)
   public void testMatrixFunctorWithoutStrategyMetadata() {
     Ambiance ambiance = buildAmbiance(false);
-    Map<String, String> expected = new HashMap<>();
-    assertThat(new StrategyFunctor(ambiance).bind()).isEqualTo(expected);
+    Map<String, Object> expected = new HashMap<>();
+    assertThat((( Map<String, Object>)new StrategyFunctor(ambiance).bind()).keySet().contains("matrix")).isTrue();
   }
 
   private Ambiance buildAmbiance(boolean addStrategyMetadata) {

@@ -8,16 +8,16 @@ spec:
   execution:
     steps:
       - step:
-          name: "Serverless Aws Lambda Deploy"
-          identifier: ServerlessAwsLambdaDeploy
+          name: "Serverless Lambda Deploy"
+          identifier: ServerlessLambdaDeploy
           type: ServerlessAwsLambdaDeploy
           timeout: 10m
           spec:
             commandOptions: ""
     rollbackSteps:
       - step:
-          name: "Serverless Aws Lambda Rollback"
-          identifier: ServerlessAwsLambdaRollback
+          name: "Serverless Lambda Rollback"
+          identifier: ServerlessLambdaRollback
           type: ServerlessAwsLambdaRollback
           timeout: 10m
           spec: {}

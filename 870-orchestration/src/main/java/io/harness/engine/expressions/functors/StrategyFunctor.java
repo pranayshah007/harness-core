@@ -8,7 +8,7 @@
 package io.harness.engine.expressions.functors;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-import static io.harness.engine.expressions.OrchestrationConstants.MATRIX;
+import static io.harness.plancreator.strategy.StrategyConstants.MATRIX;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.expression.LateBindingValue;

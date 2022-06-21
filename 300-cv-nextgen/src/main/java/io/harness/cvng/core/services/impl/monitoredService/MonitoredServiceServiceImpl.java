@@ -558,6 +558,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
                 monitoredServiceEntity.getIdentifier()))
             .notificationRuleRefs(
                 notificationRuleService.getNotificationRuleRefDTOs(monitoredServiceEntity.getNotificationRuleRefs()))
+            .enabled(monitoredServiceEntity.isEnabled())
             .build();
     return MonitoredServiceResponse.builder()
         .monitoredService(monitoredServiceDTO)
@@ -634,6 +635,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
                               .build())
                       .dependencies(serviceDependencyService.getDependentServicesForMonitoredService(
                           projectParams, monitoredServiceEntity.getIdentifier()))
+                      .enabled(monitoredServiceEntity.isEnabled())
                       .build();
               return MonitoredServiceResponse.builder()
                   .monitoredService(monitoredServiceDTO)
@@ -836,7 +838,8 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
             .serviceIdentifier(monitoredServiceDTO.getServiceRef())
             .identifier(monitoredServiceDTO.getIdentifier())
             .type(monitoredServiceDTO.getType())
-            .enabled(getMonitoredServiceEnableStatus())
+            // SRM-10798: enabled should come from monitoredServiceDTO
+            .enabled(monitoredServiceDTO.isEnabled())
             .tags(TagMapper.convertToList(monitoredServiceDTO.getTags()))
             .notificationRuleRefs(notificationRuleService.getNotificationRuleRefs(projectParams,
                 monitoredServiceDTO.getNotificationRuleRefs(), NotificationRuleType.MONITORED_SERVICE,
@@ -1162,15 +1165,37 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
       ProjectParams projectParams, String identifier, boolean enable) {
     MonitoredService monitoredService = getMonitoredService(projectParams, identifier);
     Preconditions.checkNotNull(monitoredService, "Monitored service with identifier %s does not exists", identifier);
+
+    MonitoredServiceParams monitoredServiceParams = MonitoredServiceParams.builder()
+                                                        .accountIdentifier(projectParams.getAccountIdentifier())
+                                                        .orgIdentifier(projectParams.getOrgIdentifier())
+                                                        .projectIdentifier(projectParams.getProjectIdentifier())
+                                                        .monitoredServiceIdentifier(identifier)
+                                                        .build();
+    MonitoredServiceDTO currentMonitoredServiceDTO = getMonitoredServiceDTO(monitoredServiceParams);
+    currentMonitoredServiceDTO.setEnabled(monitoredService.isEnabled());
+    MonitoredServiceYamlDTO oldMonitoredServiceYamlDTO =
+        MonitoredServiceYamlDTO.builder().monitoredServiceDTO(currentMonitoredServiceDTO).build();
+
     healthSourceService.setHealthMonitoringFlag(projectParams.getAccountIdentifier(), projectParams.getOrgIdentifier(),
         projectParams.getProjectIdentifier(), monitoredService.getIdentifier(),
         monitoredService.getHealthSourceIdentifiers(), enable);
+
     hPersistence.update(
         hPersistence.createQuery(MonitoredService.class).filter(MonitoredServiceKeys.uuid, monitoredService.getUuid()),
         hPersistence.createUpdateOperations(MonitoredService.class).set(MonitoredServiceKeys.enabled, enable));
+
+    MonitoredServiceDTO newMonitoredServiceDTO = getMonitoredServiceDTO(monitoredServiceParams);
+    MonitoredService newMonitoredService = getMonitoredService(projectParams, identifier);
+    newMonitoredServiceDTO.setEnabled(newMonitoredService.isEnabled());
+    MonitoredServiceYamlDTO newMonitoredServiceYamlDTO =
+        MonitoredServiceYamlDTO.builder().monitoredServiceDTO(newMonitoredServiceDTO).build();
+
     outboxService.save(MonitoredServiceToggleEvent.builder()
                            .resourceName(monitoredService.getName())
                            .accountIdentifier(monitoredService.getAccountId())
+                           .oldMonitoredServiceYamlDTO(oldMonitoredServiceYamlDTO)
+                           .newMonitoredServiceYamlDTO(newMonitoredServiceYamlDTO)
                            .monitoredServiceIdentifier(monitoredService.getIdentifier())
                            .orgIdentifier(monitoredService.getOrgIdentifier())
                            .projectIdentifier(monitoredService.getProjectIdentifier())

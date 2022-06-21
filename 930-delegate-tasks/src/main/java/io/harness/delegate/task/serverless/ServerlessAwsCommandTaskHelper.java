@@ -29,7 +29,7 @@ import io.harness.delegate.beans.serverless.ServerlessAwsLambdaFunction.Serverle
 import io.harness.delegate.beans.serverless.ServerlessAwsLambdaManifestSchema;
 import io.harness.delegate.task.aws.AwsNgConfigMapper;
 import io.harness.delegate.task.serverless.request.ServerlessCommandRequest;
-import io.harness.delegate.task.serverless.request.ServerlessDeployRequest;
+import io.harness.delegate.task.serverless.request.ServerlessPrepareRollbackDataRequest;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.runtime.serverless.ServerlessAwsLambdaRuntimeException;
@@ -140,11 +140,11 @@ public class ServerlessAwsCommandTaskHelper {
   }
 
   public String getCurrentCloudFormationTemplate(
-      LogCallback executionLogCallback, ServerlessDeployRequest serverlessDeployRequest) {
+      LogCallback executionLogCallback, ServerlessPrepareRollbackDataRequest serverlessPrepareRollbackDataRequest) {
     ServerlessAwsLambdaManifestSchema serverlessManifestSchema =
-        parseServerlessManifest(executionLogCallback, serverlessDeployRequest.getManifestContent());
+        parseServerlessManifest(executionLogCallback, serverlessPrepareRollbackDataRequest.getManifestContent());
     ServerlessAwsLambdaInfraConfig serverlessAwsLambdaInfraConfig =
-        (ServerlessAwsLambdaInfraConfig) serverlessDeployRequest.getServerlessInfraConfig();
+        (ServerlessAwsLambdaInfraConfig) serverlessPrepareRollbackDataRequest.getServerlessInfraConfig();
     String cloudFormationStackName =
         serverlessManifestSchema.getService() + "-" + serverlessAwsLambdaInfraConfig.getStage();
     String region = serverlessAwsLambdaInfraConfig.getRegion();
@@ -327,11 +327,11 @@ public class ServerlessAwsCommandTaskHelper {
     return timeStamps;
   }
 
-  public Optional<String> getPreviousVersionTimeStamp(
-      List<String> timeStamps, LogCallback executionLogCallback, ServerlessDeployRequest serverlessDeployRequest) {
+  public Optional<String> getPreviousVersionTimeStamp(List<String> timeStamps, LogCallback executionLogCallback,
+      ServerlessPrepareRollbackDataRequest serverlessPrepareRollbackDataRequest) {
     if (!CollectionUtils.isEmpty(timeStamps)) {
       String currentCloudFormationTemplate =
-          getCurrentCloudFormationTemplate(executionLogCallback, serverlessDeployRequest);
+          getCurrentCloudFormationTemplate(executionLogCallback, serverlessPrepareRollbackDataRequest);
 
       int timeStampsCount = timeStamps.size();
       for (int index = timeStampsCount - 1; index >= 0; index--) {

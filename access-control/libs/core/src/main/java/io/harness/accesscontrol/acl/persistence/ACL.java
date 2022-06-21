@@ -73,7 +73,9 @@ public class ACL implements PersistentEntity {
     return Boolean.TRUE.equals(enabled);
   }
 
-  public boolean isConditional() { return Boolean.TRUE.equals(conditional); }
+  public boolean isConditional() {
+    return Boolean.TRUE.equals(conditional);
+  }
 
   public static String getAclQueryString(String scopeIdentifier, String resourceSelector, String principalType,
       String principalIdentifier, String permissionIdentifier) {

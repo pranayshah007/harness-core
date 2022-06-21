@@ -51,7 +51,7 @@ public class AzureWebAppTrafficShiftStepInfo
   // For Visitor Framework Impl
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH) ParameterField<String> traffic;
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH) ParameterField<String> traffic;
 
   @Builder(builderMethodName = "infoBuilder")
   public AzureWebAppTrafficShiftStepInfo(ParameterField<List<TaskSelectorYaml>> delegateSelectors) {

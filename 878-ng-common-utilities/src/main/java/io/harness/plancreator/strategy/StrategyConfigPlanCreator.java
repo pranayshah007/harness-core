@@ -67,9 +67,9 @@ public class StrategyConfigPlanCreator extends ChildrenPlanCreator<StrategyConfi
       maxConcurrency = config.getForConfig().getMaxConcurrency();
     }
     StrategyType strategyType = StrategyType.FOR;
-    if (ctx.getCurrentField().getNode().getField("matrix") != null) {
+    if (ctx.getCurrentField().getNode().getField(io.harness.plancreator.strategy.StrategyConstants.MATRIX) != null) {
       strategyType = StrategyType.MATRIX;
-    } else if (ctx.getCurrentField().getNode().getField("parallelism") != null) {
+    } else if (ctx.getCurrentField().getNode().getField(io.harness.plancreator.strategy.StrategyConstants.PARALLELISM) != null) {
       strategyType = StrategyType.PARALLELISM;
     }
     StageStrategyUtils.validateStrategyNode(config);

@@ -10,29 +10,21 @@ package io.harness.plancreator.steps;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP;
 
-import io.harness.advisers.nextstep.NextStepAdviserParameters;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.pms.contracts.advisers.AdviserObtainment;
-import io.harness.pms.contracts.advisers.AdviserType;
-import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
+import io.harness.plancreator.strategy.StageStrategyUtils;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.creators.PartialPlanCreator;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
-import io.harness.pms.yaml.YamlNode;
-import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.KryoSerializer;
 import io.harness.steps.matrix.StrategyConstants;
 import io.harness.steps.matrix.StrategyMetadata;
 
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -64,7 +56,7 @@ public abstract class AbstractStepPlanCreator<T extends AbstractStepNode> implem
           ByteString.copyFrom(kryoSerializer.asDeflatedBytes(
               StrategyMetadata.builder()
                   .strategyNodeId(field.getUuid())
-                  .adviserObtainments(getAdviserObtainmentFromMetaDataForStrategy(ctx.getCurrentField()))
+                  .adviserObtainments(StageStrategyUtils.getAdviserObtainmentFromMetaDataForStep(kryoSerializer, ctx.getCurrentField()))
                   .childNodeId(strategyField.getNode().getUuid())
                   .strategyNodeIdentifier(field.getIdentifier())
                   .strategyNodeName(field.getName())
@@ -74,33 +66,4 @@ public abstract class AbstractStepPlanCreator<T extends AbstractStepNode> implem
 
   @Override public abstract PlanCreationResponse createPlanForField(PlanCreationContext ctx, T stepElement);
 
-  private List<AdviserObtainment> getAdviserObtainmentFromMetaDataForStrategy(YamlField currentField) {
-    List<AdviserObtainment> adviserObtainments = new ArrayList<>();
-    if (currentField != null && currentField.getNode() != null) {
-      YamlField siblingField = currentField.getNode().nextSiblingFromParentArray(currentField.getName(),
-          Arrays.asList(YAMLFieldNameConstants.STAGE, YAMLFieldNameConstants.STEP, YAMLFieldNameConstants.STEP_GROUP,
-              YAMLFieldNameConstants.PARALLEL));
-      if (siblingField != null && siblingField.getNode().getUuid() != null) {
-        AdviserObtainment adviserObtainment;
-        YamlNode parallelNodeInStage = YamlUtils.findParentNode(currentField.getNode(), YAMLFieldNameConstants.STAGE);
-        if (parallelNodeInStage != null) {
-          adviserObtainment =
-              AdviserObtainment.newBuilder()
-                  .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.NEXT_STEP.name()).build())
-                  .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
-                      NextStepAdviserParameters.builder().nextNodeId(siblingField.getNode().getUuid()).build())))
-                  .build();
-        } else {
-          adviserObtainment =
-              AdviserObtainment.newBuilder()
-                  .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.NEXT_STAGE.name()).build())
-                  .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
-                      NextStepAdviserParameters.builder().nextNodeId(siblingField.getNode().getUuid()).build())))
-                  .build();
-        }
-        adviserObtainments.add(adviserObtainment);
-      }
-    }
-    return adviserObtainments;
-  }
 }

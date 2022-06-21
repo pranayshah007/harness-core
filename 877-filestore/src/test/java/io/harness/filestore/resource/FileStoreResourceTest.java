@@ -13,8 +13,8 @@ import static io.harness.EntityType.SECRETS;
 import static io.harness.EntityType.SERVICE;
 import static io.harness.EntityType.TEMPLATE;
 import static io.harness.exception.WingsException.USER;
-import static io.harness.filestore.FilePermissionConstants.FILE_ACCESS_PERMISSION;
 import static io.harness.filestore.FilePermissionConstants.FILE_DELETE_PERMISSION;
+import static io.harness.filestore.FilePermissionConstants.FILE_EDIT_PERMISSION;
 import static io.harness.filestore.FilePermissionConstants.FILE_VIEW_PERMISSION;
 import static io.harness.rule.OwnerRule.BOJAN;
 import static io.harness.rule.OwnerRule.IVAN;
@@ -197,7 +197,7 @@ public class FileStoreResourceTest extends CategoryTest {
     SearchPageParams pageParams = SearchPageParams.builder().page(page).size(size).build();
     final Page<EntitySetupUsageDTO> entityServiceUsageList =
         new PageImpl<>(Collections.singletonList(entitySetupUsage));
-    doNothing().when(accessControlClient).checkForAccessOrThrow(any(), any(), eq(FILE_ACCESS_PERMISSION));
+    doNothing().when(accessControlClient).checkForAccessOrThrow(any(), any(), eq(FILE_EDIT_PERMISSION));
     when(fileStoreService.listReferencedBy(pageParams, ACCOUNT, ORG, PROJECT, IDENTIFIER, EntityType.PIPELINES))
         .thenReturn(entityServiceUsageList);
     ResponseDTO<Page<EntitySetupUsageDTO>> response =
@@ -216,7 +216,7 @@ public class FileStoreResourceTest extends CategoryTest {
     int size = 10;
     doThrow(new NGAccessDeniedException("Principal doesn't have file access permission", USER, null))
         .when(accessControlClient)
-        .checkForAccessOrThrow(any(), any(), eq(FILE_ACCESS_PERMISSION));
+        .checkForAccessOrThrow(any(), any(), eq(FILE_VIEW_PERMISSION));
     assertThatThrownBy(()
                            -> fileStoreResource.getReferencedBy(
                                page, size, ACCOUNT, ORG, PROJECT, IDENTIFIER, EntityType.PIPELINES, null))

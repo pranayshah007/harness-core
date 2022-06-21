@@ -65,6 +65,7 @@ import software.wings.service.intfc.compliance.GovernanceConfigService;
 import software.wings.service.intfc.yaml.YamlPushService;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.segment.analytics.messages.TrackMessage;
@@ -100,6 +101,7 @@ import org.mongodb.morphia.query.UpdateOperations;
 public class GovernanceConfigServiceImpl implements GovernanceConfigService {
   private static final long MIN_FREEZE_WINDOW_TIME = 1800000L;
   private static final long MAX_FREEZE_WINDOW_TIME = 31536000000L;
+  public static final String GOVERNANCE_CONFIG = "GOVERNANCE_CONFIG";
 
   @Inject private WingsPersistence wingsPersistence;
   @Inject private AccountService accountService;
@@ -209,6 +211,7 @@ public class GovernanceConfigServiceImpl implements GovernanceConfigService {
 
       GovernanceConfig updatedSetting =
           wingsPersistence.findAndModify(query, updateOperations, WingsPersistence.upsertReturnNewOptions);
+      executorService.submit(() -> updateUserGroupReference(updatedSetting, oldSetting, accountId));
 
       // push service also adds audit trail, in case of no yaml we add the entry explicitly
       if (newDeploymentFreezeEnabled) {
@@ -234,6 +237,51 @@ public class GovernanceConfigServiceImpl implements GovernanceConfigService {
       toggleExpiredWindows(updatedSetting, accountId);
       populateWindowsStatus(updatedSetting, accountId);
       return updatedSetting;
+    }
+  }
+
+  private void updateUserGroupReference(
+      GovernanceConfig updatedSetting, GovernanceConfig oldSetting, String accountId) {
+    try {
+      List<TimeRangeBasedFreezeConfig> oldTimeRangeBasedFreezeConfigs = oldSetting.getTimeRangeBasedFreezeConfigs();
+      List<TimeRangeBasedFreezeConfig> newTimeRangeBasedFreezeConfigs = updatedSetting.getTimeRangeBasedFreezeConfigs();
+      Set<String> currentReferencedUserGroups = getReferencedUserGroupIds(oldTimeRangeBasedFreezeConfigs);
+      Set<String> updatedReferencedUserGroups = getReferencedUserGroupIds(newTimeRangeBasedFreezeConfigs);
+      updateFreezeWindowReferenceInUserGroup(currentReferencedUserGroups, updatedReferencedUserGroups, accountId,
+          oldSetting.getAppId(), oldSetting.getUuid());
+    } catch (Exception e) {
+      log.error(
+          "error while fetching the timeRangeBasedFreezeConfig in account with id {} in Governance Config with id {}",
+          accountId, updatedSetting.getUuid());
+    }
+  }
+  @Override
+  public Set<String> getReferencedUserGroupIds(List<TimeRangeBasedFreezeConfig> timeRangeBasedFreezeConfig) {
+    Set<String> referencedUserGroups = new HashSet<>();
+    for (TimeRangeBasedFreezeConfig entry : timeRangeBasedFreezeConfig) {
+      List<String> userGroups = new ArrayList<>();
+      if (entry.getUserGroupSelection() == null) {
+        userGroups = entry.getUserGroups();
+      } else if (entry.getUserGroupSelection() instanceof CustomUserGroupFilter) {
+        userGroups = ((CustomUserGroupFilter) entry.getUserGroupSelection()).getUserGroups();
+      }
+      for (String id : userGroups) {
+        referencedUserGroups.add(id);
+      }
+    }
+    return referencedUserGroups;
+  }
+
+  private void updateFreezeWindowReferenceInUserGroup(
+      Set<String> previousUserGroups, Set<String> currentUserGroups, String accountId, String appId, String entityId) {
+    Set<String> parentsToRemove = Sets.difference(previousUserGroups, currentUserGroups);
+    Set<String> parentsToAdd = Sets.difference(currentUserGroups, previousUserGroups);
+
+    for (String id : parentsToRemove) {
+      userGroupService.removeParentsReference(id, accountId, appId, entityId, GOVERNANCE_CONFIG);
+    }
+    for (String id : parentsToAdd) {
+      userGroupService.addParentsReference(id, accountId, appId, entityId, GOVERNANCE_CONFIG);
     }
   }
 
