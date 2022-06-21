@@ -11,12 +11,13 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import lombok.Builder;
-import lombok.Value;
+import lombok.Data;
 
-@Value
+@Data
 @Builder
 @JsonTypeName("DelegateHeartbeatResponse")
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "eventType", include = JsonTypeInfo.As.EXISTING_PROPERTY, visible = true)
+@JsonTypeInfo(
+    use = JsonTypeInfo.Id.NAME, property = "eventType", include = JsonTypeInfo.As.EXISTING_PROPERTY, visible = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class DelegateHeartbeatResponse {
   String delegateId;
