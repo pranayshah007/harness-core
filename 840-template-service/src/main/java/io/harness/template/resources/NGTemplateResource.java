@@ -227,8 +227,8 @@ public class NGTemplateResource {
 
   @GET
   @Path("/templateSchema")
-  @ApiOperation(value = "Get Template Schema", nickname = "getTemplateSchema")
-  @Operation(operationId = "getTemplateSchema", summary = "Get Template Schema",
+  @ApiOperation(value = "Get Template Schema Old", nickname = "getTemplateSchemaOld")
+  @Operation(operationId = "getTemplateSchemaOld", summary = "Get Template Schema Old",
           responses =
                   {
                           @io.swagger.v3.oas.annotations.responses.
@@ -241,7 +241,7 @@ public class NGTemplateResource {
                         @NotNull @QueryParam(ACCOUNT_KEY) String accountIdentifier, @QueryParam(ENTITY_TYPE) @NotNull EntityType entityType,
                         @NotNull @QueryParam("yamlGroup")String yamlGroup) {
     JsonNode schema = null;
-    schema = templateService.getTemplateSchema(accountIdentifier, projectIdentifier, orgIdentifier, yamlGroup, scope, entityType);
+    schema = templateService.getTemplateSchema(accountIdentifier, projectIdentifier, orgIdentifier, yamlGroup, scope, entityType, templateEntityType);
     return ResponseDTO.newResponse(schema);
   }
 

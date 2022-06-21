@@ -10,23 +10,21 @@ package io.harness.template.helpers;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.node.TextNode;
 import io.harness.EntityType;
 import io.harness.jackson.JsonNodeUtils;
+import io.harness.ng.core.template.TemplateEntityType;
 
 import java.util.*;
 
 public class YamlSchemaMergeHelper {
 
-    public static void mergeYamlSchema(JsonNode templateSchema, JsonNode specSchema, EntityType entityType){
+    public static void mergeYamlSchema(JsonNode templateSchema, JsonNode specSchema, EntityType entityType, TemplateEntityType templateEntityType){
         JsonNode nGTemplateInfoConfig = templateSchema.get("definitions").get("NGTemplateInfoConfig");
-        Set<String> keys = new HashSet<>();
-        nGTemplateInfoConfig.get("properties").fieldNames().forEachRemaining(keys::add);
-        //todo: we create entity to list tht should be removed from schema
+        Set<String> keys = getKeysToRemoveFromTemplateSpec(templateEntityType);
 
         //TODO: create constants for these
         if(EntityType.PIPELINES.equals(entityType)){
-            //TODO: remove one of for those
+            //TODO: remove one of for those once we add them in the ticket CDS-.
             String pipelineSpecKey = specSchema.get("properties").get("pipeline").get("$ref").asText();
             JsonNodeUtils.upsertPropertyInObjectNode(nGTemplateInfoConfig.get("properties").get("spec"), "$ref", pipelineSpecKey);
             JsonNode refNode = getJsonNodeViaRef(pipelineSpecKey, specSchema);
@@ -47,15 +45,6 @@ public class YamlSchemaMergeHelper {
 
     }
 
-    private static void deletePropertiesInArrayNode(ArrayNode arrayNode, Collection<String> keys) {
-        for(int i = 0; i < arrayNode.size(); i++){
-            TextNode node = (TextNode) arrayNode.get(i);
-            if(keys.contains(node.asText())){
-                arrayNode.remove(i);
-            }
-        }
-    }
-
     private static JsonNode getJsonNodeViaRef(String ref, JsonNode rootNode){
         ref = ref.subSequence(2,ref.length()).toString();
         String[] orderKeys = ref.split("/");
@@ -64,5 +53,16 @@ public class YamlSchemaMergeHelper {
             refNode = refNode.get(str);
         }
         return refNode;
+    }
+
+    private static Set<String> getKeysToRemoveFromTemplateSpec(TemplateEntityType templateEntityType){
+        switch (templateEntityType){
+            case STAGE_TEMPLATE:
+            case STEP_TEMPLATE:
+                return new HashSet<>(Arrays.asList("name", "identifier", "description", "orgIdentifier", "projectIdentifier", "template"));
+            case PIPELINE_TEMPLATE:
+                return new HashSet<>(Arrays.asList("name", "identifier", "description", "type", "tags", "orgIdentifier", "projectIdentifier", "template"));
+        }
+        return new HashSet<>();
     }
 }

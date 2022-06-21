@@ -41,6 +41,7 @@ import io.harness.gitsync.interceptor.GitEntityInfo;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.gitsync.scm.EntityObjectIdUtils;
 import io.harness.grpc.utils.StringValueUtils;
+import io.harness.ng.core.template.TemplateEntityType;
 import io.harness.organization.remote.OrganizationClient;
 import io.harness.pipeline.yamlschema.YamlSchemaServiceClient;
 import io.harness.project.remote.ProjectClient;
@@ -588,16 +589,16 @@ public class NGTemplateServiceImpl implements NGTemplateService {
   }
 
   @Override
-  public JsonNode getTemplateSchema(String accountIdentifier, String projectIdentifier, String orgIdentifier, String yamlGroup, Scope scope, EntityType entityType) {
+  public JsonNode getTemplateSchema(String accountIdentifier, String projectIdentifier, String orgIdentifier, String yamlGroup, Scope scope, EntityType entityType, TemplateEntityType templateEntityType) {
     try {
-      return getTemplateYamlSchemaInternal(accountIdentifier, projectIdentifier, orgIdentifier, yamlGroup, scope, entityType);
+      return getTemplateYamlSchemaInternal(accountIdentifier, projectIdentifier, orgIdentifier, yamlGroup, scope, entityType, templateEntityType);
     } catch (Exception e) {
       log.error("[Template] Failed to get pipeline yaml schema", e);
       throw new JsonSchemaException(e.getMessage());
     }
   }
 
-  private JsonNode getTemplateYamlSchemaInternal(String accountIdentifier, String projectIdentifier, String orgIdentifier, String yamlGroup, Scope scope, EntityType entityType) {
+  private JsonNode getTemplateYamlSchemaInternal(String accountIdentifier, String projectIdentifier, String orgIdentifier, String yamlGroup, Scope scope, EntityType entityType, TemplateEntityType templateEntityType) {
     JsonNode templateSchema =
             yamlSchemaProvider.getYamlSchema(EntityType.TEMPLATE, orgIdentifier, projectIdentifier, scope);
 
@@ -605,7 +606,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     JsonNode specSchema = NGRestUtils
             .getResponse(yamlSchemaServiceClient.getYamlSchema(accountIdentifier, orgIdentifier, projectIdentifier, yamlGroup, entityType, scope)).getSchema();
 
-    YamlSchemaMergeHelper.mergeYamlSchema(templateSchema, specSchema, entityType);
+    YamlSchemaMergeHelper.mergeYamlSchema(templateSchema, specSchema, entityType, templateEntityType);
     return templateSchema;
   }
 
