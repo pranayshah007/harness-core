@@ -18,7 +18,9 @@ import static io.harness.ng.core.remote.OrganizationApiMapper.getOrganizationDto
 import static io.harness.ng.core.remote.OrganizationApiMapper.getOrganizationResponse;
 import static io.harness.ng.core.remote.OrganizationApiMapper.getPageRequest;
 
+import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.accesscontrol.NGAccessControlCheck;
+import io.harness.accesscontrol.ResourceIdentifier;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.OrganizationFilterDTO;
 import io.harness.ng.core.entities.Organization;
@@ -45,7 +47,7 @@ public class OrganizationApiImpl implements OrganizationsApi {
 
   @NGAccessControlCheck(resourceType = ORGANIZATION, permission = CREATE_ORGANIZATION_PERMISSION)
   @Override
-  public OrganizationResponse createOrganization(String account, CreateOrganizationRequest request) {
+  public OrganizationResponse createOrganization(@AccountIdentifier String account, CreateOrganizationRequest request) {
     if (DEFAULT_ORG_IDENTIFIER.equals(request.getSlug())) {
       throw new InvalidRequestException(
           String.format("%s cannot be used as org identifier", DEFAULT_ORG_IDENTIFIER), USER);
@@ -56,7 +58,7 @@ public class OrganizationApiImpl implements OrganizationsApi {
 
   @NGAccessControlCheck(resourceType = ORGANIZATION, permission = VIEW_ORGANIZATION_PERMISSION)
   @Override
-  public OrganizationResponse getOrganization(String id, String account) {
+  public OrganizationResponse getOrganization(@ResourceIdentifier String id, @AccountIdentifier String account) {
     Optional<Organization> organizationOptional = organizationService.get(account, id);
     if (!organizationOptional.isPresent()) {
       throw new NotFoundException(String.format("Organization with identifier [%s] not found", id));
@@ -64,7 +66,6 @@ public class OrganizationApiImpl implements OrganizationsApi {
     return getOrganizationResponse(organizationOptional.get());
   }
 
-  @NGAccessControlCheck(resourceType = ORGANIZATION, permission = VIEW_ORGANIZATION_PERMISSION)
   @Override
   public List<OrganizationResponse> getOrganizations(
       String account, List org, String searchTerm, Integer page, Integer limit) {
@@ -81,7 +82,8 @@ public class OrganizationApiImpl implements OrganizationsApi {
 
   @NGAccessControlCheck(resourceType = ORGANIZATION, permission = EDIT_ORGANIZATION_PERMISSION)
   @Override
-  public OrganizationResponse updateOrganization(String account, String id, UpdateOrganizationRequest request) {
+  public OrganizationResponse updateOrganization(
+      @AccountIdentifier String account, @ResourceIdentifier String id, UpdateOrganizationRequest request) {
     Organization updatedOrganization =
         organizationService.update(account, id, OrganizationApiMapper.getOrganizationDto(id, request));
     return getOrganizationResponse(updatedOrganization);
@@ -89,7 +91,7 @@ public class OrganizationApiImpl implements OrganizationsApi {
 
   @NGAccessControlCheck(resourceType = ORGANIZATION, permission = DELETE_ORGANIZATION_PERMISSION)
   @Override
-  public OrganizationResponse deleteOrganization(String id, String account) {
+  public OrganizationResponse deleteOrganization(@ResourceIdentifier String id, @AccountIdentifier String account) {
     if (DEFAULT_ORG_IDENTIFIER.equals(id)) {
       throw new InvalidRequestException(
           String.format(
