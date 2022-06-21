@@ -15,9 +15,11 @@ import io.harness.pcf.model.CfCliVersion;
 
 import java.util.List;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @AllArgsConstructor
 @OwnedBy(HarnessTeam.CDP)
+@Slf4j
 public abstract class CfCliCommand {
   private CfCliCommand() {}
 
