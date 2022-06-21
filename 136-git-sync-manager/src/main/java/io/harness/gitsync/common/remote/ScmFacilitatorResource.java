@@ -24,6 +24,7 @@ import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.beans.gitsync.GitPRCreateRequest;
+import io.harness.gitsync.beans.GitRepoScopeParams;
 import io.harness.gitsync.common.YamlConstants;
 import io.harness.gitsync.common.dtos.CreatePRDTO;
 import io.harness.gitsync.common.dtos.CreatePRRequest;
@@ -257,6 +258,7 @@ public class ScmFacilitatorResource {
                                                       .projectIdentifier(createPRRequest.getProjectIdentifier())
                                                       .build())
                                            .connectorRef(createPRRequest.getConnectorRef())
+                                           .gitRepoScopeParams(createPRRequest.getGitRepoScopeParams())
                                            .repoName(createPRRequest.getRepoName())
                                            .targetBranch(createPRRequest.getTargetBranchName())
                                            .sourceBranch(createPRRequest.getSourceBranchName())
@@ -285,7 +287,9 @@ public class ScmFacilitatorResource {
       @Parameter(description = GitSyncApiConstants.BRANCH_PARAM_MESSAGE) @QueryParam(
           GitSyncApiConstants.BRANCH_KEY) @NotBlank String branch,
       @Parameter(description = GitSyncApiConstants.FILEPATH_PARAM_MESSAGE) @QueryParam(
-          GitSyncApiConstants.FILE_PATH_KEY) @NotBlank @NotNull String filePath) {
+          GitSyncApiConstants.FILE_PATH_KEY) @NotBlank @NotNull String filePath,
+      @RequestBody(
+          description = GitSyncApiConstants.GIT_REPO_SCOPE_PARAM_MESSAGE) GitRepoScopeParams gitRepoScopeParams) {
     ScmGetFileResponseDTO scmGetFileResponseDTO =
         scmFacilitatorService.getFileByBranch(ScmGetFileByBranchRequestDTO.builder()
                                                   .scope(Scope.builder()
@@ -296,6 +300,7 @@ public class ScmFacilitatorResource {
                                                   .branchName(branch)
                                                   .filePath(filePath)
                                                   .connectorRef(connectorRef)
+                                                  .gitRepoScopeParams(gitRepoScopeParams)
                                                   .repoName(repoName)
                                                   .build());
     return ResponseDTO.newResponse(GetFileResponseDTO.builder()
@@ -327,6 +332,8 @@ public class ScmFacilitatorResource {
           NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
       @Parameter(description = GitSyncApiConstants.GIT_CONNECTOR_REF_PARAM_MESSAGE) @NotBlank @QueryParam(
           GitSyncApiConstants.CONNECTOR_REF) String connectorRef,
+      @RequestBody(
+          description = GitSyncApiConstants.GIT_REPO_SCOPE_PARAM_MESSAGE) GitRepoScopeParams gitRepoScopeParams,
       @Parameter(description = PAGE_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.PAGE) @DefaultValue(
           "0") int pageNum,
       @Parameter(description = SIZE_PARAM_MESSAGE + "(max 100)"
@@ -336,7 +343,7 @@ public class ScmFacilitatorResource {
           NGCommonEntityConstants.SEARCH_TERM) @DefaultValue("") String searchTerm) {
     return ResponseDTO.newResponse(
         scmFacilitatorService.listReposByRefConnector(accountIdentifier, orgIdentifier, projectIdentifier, connectorRef,
-            PageRequest.builder().pageIndex(pageNum).pageSize(pageSize).build(), searchTerm));
+            PageRequest.builder().pageIndex(pageNum).pageSize(pageSize).build(), searchTerm, gitRepoScopeParams));
   }
 
   @GET
@@ -387,6 +394,8 @@ public class ScmFacilitatorResource {
           NGCommonEntityConstants.REPO_NAME) String repoName,
       @Parameter(description = GitSyncApiConstants.GIT_CONNECTOR_REF_PARAM_MESSAGE) @NotBlank @QueryParam(
           GitSyncApiConstants.CONNECTOR_REF) String connectorRef,
+      @RequestBody(
+          description = GitSyncApiConstants.GIT_REPO_SCOPE_PARAM_MESSAGE) GitRepoScopeParams gitRepoScopeParams,
       @Parameter(description = PAGE_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.PAGE) @DefaultValue(
           "0") int pageNum,
       @Parameter(description = SIZE_PARAM_MESSAGE + "(max 100)"
@@ -394,8 +403,8 @@ public class ScmFacilitatorResource {
       int pageSize,
       @Parameter(description = GitSyncApiConstants.SEARCH_TERM_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.SEARCH_TERM) @DefaultValue("") String searchTerm) {
-    return ResponseDTO.newResponse(
-        scmFacilitatorService.listBranchesV2(accountIdentifier, orgIdentifier, projectIdentifier, connectorRef,
-            repoName, PageRequest.builder().pageIndex(pageNum).pageSize(pageSize).build(), searchTerm));
+    return ResponseDTO.newResponse(scmFacilitatorService.listBranchesV2(accountIdentifier, orgIdentifier,
+        projectIdentifier, connectorRef, repoName, PageRequest.builder().pageIndex(pageNum).pageSize(pageSize).build(),
+        searchTerm, gitRepoScopeParams));
   }
 }

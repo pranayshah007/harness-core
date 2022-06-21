@@ -8,6 +8,7 @@
 package io.harness.delegate.service;
 
 import static io.harness.beans.FeatureName.USE_IMMUTABLE_DELEGATE;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.DelegateType.CE_KUBERNETES;
 import static io.harness.delegate.beans.DelegateType.KUBERNETES;
 import static io.harness.delegate.beans.VersionOverrideType.DELEGATE_IMAGE_TAG;
@@ -87,6 +88,21 @@ public class DelegateVersionService {
       return ringVersion;
     }
 
+    return Collections.emptyList();
+  }
+
+  public List<String> getDelegateJarVersions(final String ringName, final String accountId) {
+    if (isNotEmpty(accountId)) {
+      final VersionOverride versionOverride = getVersionOverride(accountId, DELEGATE_JAR);
+      if (versionOverride != null && isNotBlank(versionOverride.getVersion())) {
+        return Collections.singletonList(versionOverride.getVersion());
+      }
+    }
+
+    final List<String> ringVersion = delegateRingService.getDelegateVersionsForRing(ringName);
+    if (!CollectionUtils.isEmpty(ringVersion)) {
+      return ringVersion;
+    }
     return Collections.emptyList();
   }
 

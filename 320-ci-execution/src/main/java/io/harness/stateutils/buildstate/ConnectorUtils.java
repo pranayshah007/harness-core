@@ -539,7 +539,9 @@ public class ConnectorUtils {
         encryptedDataDetails.addAll(
             secretManagerClientService.getEncryptionDetails(ngAccess, gitConfigDTO.getApiAccess().getSpec()));
       }
-      return connectorDetailsBuilder.encryptedDataDetails(encryptedDataDetails).build();
+      return connectorDetailsBuilder.executeOnDelegate(gitConfigDTO.getExecuteOnDelegate())
+          .encryptedDataDetails(encryptedDataDetails)
+          .build();
     } else if (gitConfigDTO.getAuthentication().getAuthType() == GitAuthType.SSH) {
       GithubSshCredentialsDTO githubSshCredentialsDTO =
           (GithubSshCredentialsDTO) gitConfigDTO.getAuthentication().getCredentials();

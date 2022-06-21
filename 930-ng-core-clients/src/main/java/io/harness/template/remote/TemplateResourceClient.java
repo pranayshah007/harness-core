@@ -67,7 +67,7 @@ public interface TemplateResourceClient {
       @Query(value = GitSyncApiConstants.DEFAULT_FROM_OTHER_REPO) Boolean defaultFromOtherRepo, @Body String yaml);
 
   // Refresh Template APIs
-  @POST(TEMPLATE_REFRESH_ENDPOINT + "internal")
+  @POST(TEMPLATE_REFRESH_ENDPOINT + "refreshed-yaml")
   Call<ResponseDTO<RefreshResponseDTO>> getRefreshedYaml(
       @Query(value = NGCommonEntityConstants.ACCOUNT_KEY) @NotEmpty String accountIdentifier,
       @Query(value = NGCommonEntityConstants.ORG_KEY) String orgIdentifier,

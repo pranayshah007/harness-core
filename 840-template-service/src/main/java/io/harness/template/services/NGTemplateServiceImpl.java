@@ -326,8 +326,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     if (stableTemplate != null && stableTemplate.getVersionLabel().equals(deleteVersionLabel)
         && templateEntities.size() != 1) {
       throw new InvalidRequestException(
-          format("Template with identifier [%s] and versionLabel [%s] %s cannot delete the stable template.",
-              templateIdentifier, deleteVersionLabel, getMessageHelper(accountId, orgIdentifier, projectIdentifier)));
+          "You cannot delete the stable version of the template. Please update another version as the stable version before deleting this version");
     }
     return deleteMultipleTemplatesHelper(accountId, orgIdentifier, projectIdentifier,
         Collections.singletonList(templateToDelete), version, comments, templateEntities.size() == 1, stableTemplate);
@@ -353,9 +352,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     if (stableTemplate != null && deleteTemplateVersions.contains(stableTemplate.getVersionLabel())
         && !canDeleteStableTemplate) {
       throw new InvalidRequestException(
-          format("Template with identifier [%s] and versionLabel [%s] %s cannot delete the stable template.",
-              templateIdentifier, stableTemplate.getVersionLabel(),
-              getMessageHelper(accountId, orgIdentifier, projectIdentifier)));
+          "You cannot delete the stable version of the template. Please update another version as the stable version before deleting this version");
     }
     return deleteMultipleTemplatesHelper(accountId, orgIdentifier, projectIdentifier, templateToDeleteList, null,
         comments, canDeleteStableTemplate, stableTemplate);

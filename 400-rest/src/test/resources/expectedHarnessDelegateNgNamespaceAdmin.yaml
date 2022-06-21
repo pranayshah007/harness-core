@@ -134,7 +134,7 @@ spec:
         - name: HELM_DESIRED_VERSION
           value: ""
         - name: JRE_VERSION
-          value: 1.8.0_242
+          value: 11.0.14
         - name: HELM3_PATH
           value: ""
         - name: HELM_PATH

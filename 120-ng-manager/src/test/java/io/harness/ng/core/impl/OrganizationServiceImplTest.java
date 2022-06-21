@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.ng.core.remote.OrganizationMapper.toOrganization;
 import static io.harness.rule.OwnerRule.KARAN;
 import static io.harness.rule.OwnerRule.VIKAS_M;
+import static io.harness.rule.OwnerRule.NAMANG;
 import static io.harness.utils.PageTestUtils.getPage;
 
 import static java.util.Collections.emptyList;
@@ -24,12 +25,14 @@ import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.data.domain.Pageable.unpaged;
 
 import io.harness.CategoryTest;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.Scope;
 import io.harness.category.element.UnitTests;
 import io.harness.context.GlobalContext;
 import io.harness.exception.InvalidRequestException;
@@ -50,8 +53,12 @@ import io.harness.telemetry.helpers.OrganizationInstrumentationHelper;
 import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
 
 import io.dropwizard.jersey.validation.JerseyViolationException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import org.bson.Document;
 import org.junit.Before;
 import org.junit.Test;
@@ -251,5 +258,43 @@ public class OrganizationServiceImplTest extends CategoryTest {
     assertEquals(identifier, argumentCaptor.getValue());
     verify(transactionTemplate, times(1)).execute(any());
     verify(outboxService, times(1)).save(any());
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testGetPermittedOrganizationsWhenOrgIdentifier() {
+    String accountIdentifier = randomAlphabetic(10);
+    String orgIdentifier = randomAlphabetic(10);
+    Scope o1 = Scope.builder().accountIdentifier(accountIdentifier).orgIdentifier(orgIdentifier).build();
+    List<Scope> organizations = Collections.singletonList(o1);
+
+    Set<String> permittedOrganizations =
+        organizationService.getPermittedOrganizations(accountIdentifier, orgIdentifier);
+    assertEquals(permittedOrganizations.size(), 1);
+    assertTrue(permittedOrganizations.contains(orgIdentifier));
+    verify(scopeAccessHelper, times(1)).getPermittedScopes(organizations);
+    verifyNoMoreInteractions(scopeAccessHelper);
+  }
+
+  @Test
+  @Owner(developers = NAMANG)
+  @Category(UnitTests.class)
+  public void testGetPermittedOrganizationsWhenNoOrgIdentifier() {
+    String accountIdentifier = randomAlphabetic(10);
+    Scope o1 = Scope.builder().accountIdentifier(accountIdentifier).orgIdentifier("O1").build();
+    Scope o2 = Scope.builder().accountIdentifier(accountIdentifier).orgIdentifier("O2").build();
+    List<Scope> organizations = new ArrayList<>(Arrays.asList(o1, o2));
+    Criteria orgCriteria = Criteria.where(OrganizationKeys.accountIdentifier)
+                               .is(accountIdentifier)
+                               .and(OrganizationKeys.deleted)
+                               .ne(Boolean.TRUE);
+    when(scopeAccessHelper.getPermittedScopes(organizations)).thenReturn(Collections.singletonList(o1));
+    when(organizationRepository.findAllOrgs(orgCriteria)).thenReturn(organizations);
+    Set<String> permittedOrganizations = organizationService.getPermittedOrganizations(accountIdentifier, null);
+    assertEquals(permittedOrganizations.size(), 1);
+    assertTrue(permittedOrganizations.contains("O1"));
+    verify(organizationRepository, times(1)).findAllOrgs(orgCriteria);
+    verifyNoMoreInteractions(organizationRepository);
   }
 }

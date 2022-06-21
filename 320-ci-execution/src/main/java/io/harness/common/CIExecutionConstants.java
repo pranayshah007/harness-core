@@ -146,6 +146,5 @@ public class CIExecutionConstants {
 
   public static final String PLUGIN_ARTIFACT_FILE_VALUE = "/addon/tmp/.plugin/artifact";
 
-  public static final String AZURE_REPO_GIT_LABEL = "/_git/";
   public static final String AZURE_REPO_BASE_URL = "azure.com";
 }

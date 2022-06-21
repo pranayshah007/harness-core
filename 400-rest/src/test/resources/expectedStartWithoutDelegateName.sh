@@ -16,7 +16,7 @@ if [ ! -e start.sh ]; then
   exit 1
 fi
 
-JRE_DIR=jdk8u242-b08-jre
+JRE_DIR=jdk-11.0.14+9-jre
 JRE_BINARY=$JRE_DIR/bin/java
 case "$OSTYPE" in
   solaris*)
@@ -24,7 +24,7 @@ case "$OSTYPE" in
     ;;
   darwin*)
     OS=macosx
-    JRE_DIR=jdk8u242-b08-jre
+    JRE_DIR=jdk-11.0.14+9-jre
     JRE_BINARY=$JRE_DIR/Contents/Home/bin/java
     ;;
   linux*)
@@ -47,9 +47,9 @@ case "$OSTYPE" in
     ;;
 esac
 
-JVM_URL=http://localhost:8888/jre/openjdk-8u242/jre_x64_${OS}_8u242b08.tar.gz
+JVM_URL=http://localhost:53496/jre/openjdk-11.0.14_9/OpenJDK11U-jre_x64_${OS}_hotspot_11.0.14_9.tar.gz
 
-ALPN_BOOT_JAR_URL=http://localhost:8888/tools/alpn/release/8.1.13.v20181017/alpn-boot-8.1.13.v20181017.jar
+ALPN_BOOT_JAR_URL=""
 
 SOURCE="${BASH_SOURCE[0]}"
 while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symlink

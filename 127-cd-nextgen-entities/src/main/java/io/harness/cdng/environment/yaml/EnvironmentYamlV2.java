@@ -52,8 +52,9 @@ public class EnvironmentYamlV2 implements Visitable {
   List<InfraStructureDefinitionYaml> infrastructureDefinitions;
 
   // environmentInputs
-  Map<String, Object> environmentInputs;
-  Map<String, Object> serviceOverrideInputs;
+  @ApiModelProperty(dataType = SwaggerConstants.JSON_NODE_CLASSPATH) Map<String, Object> environmentInputs;
+
+  @ApiModelProperty(dataType = SwaggerConstants.JSON_NODE_CLASSPATH) Map<String, Object> serviceOverrideInputs;
   @NotNull boolean deployToAll;
   List<ClusterYaml> gitOpsClusters;
 

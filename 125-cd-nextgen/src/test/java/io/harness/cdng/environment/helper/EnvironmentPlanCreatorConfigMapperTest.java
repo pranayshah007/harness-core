@@ -7,7 +7,6 @@
 
 package io.harness.cdng.environment.helper;
 
-import static io.harness.cdng.envGroup.mappers.EnvironmentGroupMapper.toNGEnvironmentGroupConfig;
 import static io.harness.cdng.environment.helper.EnvironmentPlanCreatorConfigMapper.toEnvironmentPlanCreatorConfig;
 
 import static java.util.Arrays.asList;
@@ -16,12 +15,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.harness.CategoryTest;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.environment.yaml.EnvironmentPlanCreatorConfig;
-import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
-import io.harness.cdng.gitops.yaml.ClusterYaml;
 import io.harness.cdng.infra.mapper.InfrastructureEntityConfigMapper;
 import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
-import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 import io.harness.yaml.core.variables.NGServiceOverrides;
@@ -65,79 +61,6 @@ public class EnvironmentPlanCreatorConfigMapperTest extends CategoryTest {
     assertThat(config.getTags().get("k")).isEqualTo("v");
     assertThat(config.getType()).isEqualTo(EnvironmentType.Production);
     assertThat(config.getInfrastructureDefinitions()).hasSize(1);
-    assertThat(config.getServiceOverrides().getServiceRef()).isEqualTo("ref");
-  }
-
-  @Test
-  @Owner(developers = OwnerRule.YOGESH)
-  @Category(UnitTests.class)
-  public void testToEnvPlanCreatorConfigWithGitops() {
-    String yaml = "environmentGroup:\n"
-        + " name: \"name\"\n"
-        + " identifier: \"envGroupId\"\n"
-        + " type: \"Production\"\n"
-        + " tags:\n"
-        + "   k: \"v\"\n"
-        + " accountId: \"accId\"\n"
-        + " orgIdentifier: \"orgId\"\n"
-        + " projectIdentifier: \"projId\"\n";
-
-    EnvironmentYamlV2 envV2 =
-        EnvironmentYamlV2.builder()
-            .environmentRef(ParameterField.<String>builder().value("envId").build())
-            .deployToAll(false)
-            .gitOpsClusters(
-                asList(ClusterYaml.builder().ref(ParameterField.<String>builder().value("c1").build()).build()))
-            .build();
-    EnvironmentPlanCreatorConfig config = EnvironmentPlanCreatorConfigMapper.toEnvPlanCreatorConfigWithGitops(
-        toNGEnvironmentGroupConfig(yaml).getEnvironmentGroupConfig(), envV2, null);
-
-    assertThat(config.getEnvironmentRef().getValue()).isEqualTo("envId");
-    assertThat(config.getIdentifier()).isEqualTo("envGroupId");
-    assertThat(config.getProjectIdentifier()).isEqualTo("projId");
-    assertThat(config.getOrgIdentifier()).isEqualTo("orgId");
-    assertThat(config.getDescription()).isEqualTo(null);
-    assertThat(config.getName()).isEqualTo("name");
-    assertThat(config.getTags()).hasSize(1);
-    assertThat(config.getTags().get("k")).isEqualTo("v");
-    assertThat(config.getInfrastructureDefinitions()).isNull();
-    assertThat(config.getGitOpsClusterRefs()).hasSize(1).containsExactly("c1");
-    assertThat(config.isDeployToAll()).isFalse();
-  }
-
-  @Test
-  @Owner(developers = OwnerRule.YOGESH)
-  @Category(UnitTests.class)
-  public void testToEnvPlanCreatorConfigWithGitopsDeployAll() {
-    String yaml = "environmentGroup:\n"
-        + " name: \"name\"\n"
-        + " identifier: \"envGroupId\"\n"
-        + " tags:\n"
-        + "   k: \"v\"\n"
-        + " accountId: \"accId\"\n"
-        + " orgIdentifier: \"orgId\"\n"
-        + " projectIdentifier: \"projId\"\n";
-    EnvironmentYamlV2 envV2 = EnvironmentYamlV2.builder()
-                                  .environmentRef(ParameterField.<String>builder().value("envId").build())
-                                  .deployToAll(true)
-                                  .build();
-
-    NGServiceOverrides serviceOverride = NGServiceOverrides.builder().serviceRef("ref").build();
-
-    EnvironmentPlanCreatorConfig config = EnvironmentPlanCreatorConfigMapper.toEnvPlanCreatorConfigWithGitops(
-        toNGEnvironmentGroupConfig(yaml).getEnvironmentGroupConfig(), envV2, serviceOverride);
-
-    assertThat(config.getEnvironmentRef().getValue()).isEqualTo("envId");
-    assertThat(config.getIdentifier()).isEqualTo("envGroupId");
-    assertThat(config.getProjectIdentifier()).isEqualTo("projId");
-    assertThat(config.getOrgIdentifier()).isEqualTo("orgId");
-    assertThat(config.getDescription()).isEqualTo(null);
-    assertThat(config.getName()).isEqualTo("name");
-    assertThat(config.getTags()).hasSize(1);
-    assertThat(config.getTags().get("k")).isEqualTo("v");
-    assertThat(config.getInfrastructureDefinitions()).isNull();
-    assertThat(config.getGitOpsClusterRefs()).hasSize(0);
-    assertThat(config.isDeployToAll()).isTrue();
     assertThat(config.getServiceOverrides().getServiceRef()).isEqualTo("ref");
   }
 }

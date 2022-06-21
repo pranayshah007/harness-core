@@ -802,7 +802,7 @@ public class UserGroupServiceImpl implements UserGroupService {
     notNullCheck("userGroup", userGroup);
     if (!(userGroup.getParents().isEmpty())) {
       throw new InvalidRequestException(
-          "This userGroup is being referenced in either approval step/stage or notification strategy or in a deployment freeze window. Please make sure to remove the references to delete this userGroup.");
+          "This userGroup is being referenced in either approval step/stage or notification strategy or as a runtimeInput in an execution step/stage or in a deployment freeze window. Please make sure to remove the references to delete this userGroup.");
     }
     if (!forceDelete && UserGroupUtils.isAdminUserGroup(userGroup)) {
       return false;

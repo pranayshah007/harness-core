@@ -22,9 +22,7 @@ import java.util.Optional;
 public interface VerificationJobInstanceService {
   String create(VerificationJobInstance verificationJobInstance);
   List<String> create(List<VerificationJobInstance> verificationJobInstances);
-  List<String> dedupCreate(List<VerificationJobInstance> verificationJobInstances);
   List<VerificationJobInstance> get(List<String> verificationJobInstanceIds);
-
   VerificationJobInstance getVerificationJobInstance(String verificationJobInstanceId);
   void processVerificationJobInstance(VerificationJobInstance verificationJobInstance);
   void createDataCollectionTasks(VerificationJobInstance verificationJobInstance);
