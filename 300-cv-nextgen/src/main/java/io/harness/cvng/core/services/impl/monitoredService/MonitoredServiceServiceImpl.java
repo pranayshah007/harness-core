@@ -8,6 +8,7 @@
 package io.harness.cvng.core.services.impl.monitoredService;
 
 import static io.harness.cvng.core.beans.params.ServiceEnvironmentParams.builderWithProjectParams;
+import static io.harness.cvng.notification.beans.MonitoredServiceChangeEventType.getMonitoredServiceChangeEventTypeFromActivityType;
 import static io.harness.cvng.notification.utils.NotificationRuleCommonUtils.COOL_OFF_DURATION;
 import static io.harness.cvng.notification.utils.NotificationRuleCommonUtils.getNotificationTemplateId;
 import static io.harness.data.structure.CollectionUtils.distinctByKey;
@@ -1549,7 +1550,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
           CVNGNotificationChannel notificationChannel = notificationRule.getNotificationMethod();
           String templateId = getNotificationTemplateId(notificationRule.getType(), notificationChannel.getType());
           Map<String, String> templateData = notificationRuleCommonUtils.getNotificationTemplateDataForMonitoredService(
-              monitoredService, notificationRule.getName(), condition.getType().getDisplayName(), clock.instant());
+              monitoredService, condition, clock.instant());
           try {
             NotificationResult notificationResult =
                 notificationClient.sendNotificationAsync(notificationChannel.toNotificationChannel(
@@ -1678,10 +1679,13 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
         List<ActivityType> changeObservedActivityTypes = new ArrayList<>();
         changeObservedCondition.getChangeEventTypes().forEach(
             changeEventType -> changeObservedActivityTypes.addAll(changeEventType.getActivityTypes()));
-        return activityService
-            .getAnyEventFromListOfActivityTypes(monitoredServiceParams, changeObservedActivityTypes,
-                clock.instant().minus(5, ChronoUnit.MINUTES), clock.instant())
-            .isPresent();
+        Optional<Activity> activity = activityService.getAnyEventFromListOfActivityTypes(monitoredServiceParams,
+            changeObservedActivityTypes, clock.instant().minus(5, ChronoUnit.MINUTES), clock.instant());
+        if (activity.isPresent()) {
+          changeObservedCondition.setChangeEventTypes(
+              Collections.singletonList(getMonitoredServiceChangeEventTypeFromActivityType(activity.get().getType())));
+        }
+        return activity.isPresent();
       case CHANGE_IMPACT:
         MonitoredServiceChangeImpactCondition changeImpactCondition = (MonitoredServiceChangeImpactCondition) condition;
         List<ActivityType> changeImpactActivityTypes = new ArrayList<>();
@@ -1693,6 +1697,8 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
         if (optionalActivity.isPresent()) {
           Instant activityStartTime = optionalActivity.get().getActivityStartTime();
           long riskTimeBufferMins = Duration.between(activityStartTime, clock.instant()).toMinutes();
+          changeImpactCondition.setChangeEventTypes(Collections.singletonList(
+              getMonitoredServiceChangeEventTypeFromActivityType(optionalActivity.get().getType())));
           return heatMapService.isEveryHeatMapBelowThresholdForRiskTimeBuffer(monitoredServiceParams,
               monitoredService.getIdentifier(), changeImpactCondition.getThreshold(), riskTimeBufferMins);
         } else {

@@ -8,11 +8,27 @@
 package io.harness.cvng.notification.utils;
 
 import io.harness.account.AccountClient;
+import io.harness.cvng.client.NextGenService;
+import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.entities.MonitoredService;
+import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.notification.beans.NotificationRuleType;
 import io.harness.cvng.notification.channelDetails.CVNGNotificationChannelType;
+import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule.MonitoredServiceChangeImpactCondition;
+import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule.MonitoredServiceChangeObservedCondition;
+import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule.MonitoredServiceHealthScoreCondition;
+import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule.MonitoredServiceNotificationRuleCondition;
+import io.harness.cvng.notification.entities.SLONotificationRule.SLOErrorBudgetBurnRateCondition;
+import io.harness.cvng.notification.entities.SLONotificationRule.SLOErrorBudgetRemainingMinutesCondition;
+import io.harness.cvng.notification.entities.SLONotificationRule.SLOErrorBudgetRemainingPercentageCondition;
+import io.harness.cvng.notification.entities.SLONotificationRule.SLONotificationRuleCondition;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.exception.InvalidArgumentsException;
+import io.harness.ng.core.dto.AccountDTO;
+import io.harness.ng.core.dto.OrganizationDTO;
+import io.harness.ng.core.dto.ProjectDTO;
+import io.harness.ng.core.service.dto.ServiceResponseDTO;
 import io.harness.remote.client.RestClientUtils;
 
 import com.google.common.base.Preconditions;
@@ -33,7 +49,9 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 public class NotificationRuleCommonUtils {
   @Inject private AccountClient accountClient;
+  @Inject private NextGenService nextGenService;
   @Inject @Named("portalUrl") String portalUrl;
+  @Inject private MonitoredServiceService monitoredServiceService;
   public static final Duration COOL_OFF_DURATION = Duration.ofHours(1);
   private static final String themeColor = "#EC372E";
   private static final String outerDiv =
@@ -71,8 +89,9 @@ public class NotificationRuleCommonUtils {
         notificationChannelType.getTemplateSuffixIdentifier().toLowerCase());
   }
 
-  public Map<String, String> getNotificationTemplateDataForSLO(ServiceLevelObjective serviceLevelObjective,
-      String notificationRuleName, String conditionName, Instant currentInstant) {
+  public Map<String, String> getNotificationTemplateDataForSLO(
+      ServiceLevelObjective serviceLevelObjective, SLONotificationRuleCondition condition, Instant currentInstant) {
+    // TODO: convert below to GMT, currently it is in IST
     long startTime = currentInstant.getEpochSecond();
     String startDate = new Date(startTime * 1000).toString();
     Long endTime = currentInstant.plus(2, ChronoUnit.HOURS).toEpochMilli();
@@ -82,16 +101,38 @@ public class NotificationRuleCommonUtils {
     String url = String.format("%s/account/%s/%s/orgs/%s/projects/%s/slos/%s?endTime=%s&duration=FOUR_HOURS", baseUrl,
         serviceLevelObjective.getAccountId(), moduleName, serviceLevelObjective.getOrgIdentifier(),
         serviceLevelObjective.getProjectIdentifier(), serviceLevelObjective.getIdentifier(), endTime);
+
+    AccountDTO accountDTO =
+        RestClientUtils.getResponse(accountClient.getAccountDTO(serviceLevelObjective.getAccountId()));
+    OrganizationDTO organizationDTO =
+        nextGenService.getOrganization(serviceLevelObjective.getAccountId(), serviceLevelObjective.getOrgIdentifier());
+    ProjectDTO projectDTO = nextGenService.getProject(serviceLevelObjective.getAccountId(),
+        serviceLevelObjective.getOrgIdentifier(), serviceLevelObjective.getProjectIdentifier());
+    MonitoredService monitoredService = monitoredServiceService.getMonitoredService(
+        MonitoredServiceParams.builder()
+            .accountIdentifier(serviceLevelObjective.getAccountId())
+            .orgIdentifier(serviceLevelObjective.getOrgIdentifier())
+            .projectIdentifier(serviceLevelObjective.getProjectIdentifier())
+            .monitoredServiceIdentifier(serviceLevelObjective.getMonitoredServiceIdentifier())
+            .build());
+    ServiceResponseDTO serviceResponseDTO =
+        nextGenService.getService(serviceLevelObjective.getAccountId(), serviceLevelObjective.getOrgIdentifier(),
+            serviceLevelObjective.getProjectIdentifier(), monitoredService.getServiceIdentifier());
+
+    String headerMessage = getHeaderMessageForSLO(condition);
+    String triggerMessage = getTriggerMessageForSLO(condition);
+
     return new HashMap<String, String>() {
       {
         put("COLOR", themeColor);
         put("OUTER_DIV", outerDiv);
         put("SLO_NAME", serviceLevelObjective.getName());
-        put("ACCOUNT_ID", serviceLevelObjective.getAccountId());
-        put("ORG_ID", serviceLevelObjective.getOrgIdentifier());
-        put("PROJECT_ID", serviceLevelObjective.getProjectIdentifier());
-        put("RULE_NAME", notificationRuleName);
-        put("CONDITION_NAME", conditionName);
+        put("HEADER_MESSAGE", headerMessage);
+        put("SERVICE_NAME", serviceResponseDTO.getName());
+        put("ACCOUNT_NAME", accountDTO.getName());
+        put("ORG_NAME", organizationDTO.getName());
+        put("PROJECT_NAME", projectDTO.getName());
+        put("TRIGGER_MESSAGE", triggerMessage);
         put("START_TS_SECS", String.valueOf(startTime));
         put("START_DATE", startDate);
         put("URL", url);
@@ -100,7 +141,8 @@ public class NotificationRuleCommonUtils {
   }
 
   public Map<String, String> getNotificationTemplateDataForMonitoredService(
-      MonitoredService monitoredService, String notificationRuleName, String conditionName, Instant currentInstant) {
+      MonitoredService monitoredService, MonitoredServiceNotificationRuleCondition condition, Instant currentInstant) {
+    // TODO: convert below to GMT, currently it is in IST
     long startTime = currentInstant.getEpochSecond();
     String startDate = new Date(startTime * 1000).toString();
     Long endTime = currentInstant.plus(2, ChronoUnit.HOURS).toEpochMilli();
@@ -111,17 +153,30 @@ public class NotificationRuleCommonUtils {
         "%s/account/%s/%s/orgs/%s/projects/%s/monitoringservices/edit/%s?tab=ServiceHealth&endTime=%s&duration=FOUR_HOURS",
         baseUrl, monitoredService.getAccountId(), moduleName, monitoredService.getOrgIdentifier(),
         monitoredService.getProjectIdentifier(), monitoredService.getIdentifier(), endTime);
+
+    AccountDTO accountDTO = RestClientUtils.getResponse(accountClient.getAccountDTO(monitoredService.getAccountId()));
+    OrganizationDTO organizationDTO =
+        nextGenService.getOrganization(monitoredService.getAccountId(), monitoredService.getOrgIdentifier());
+    ProjectDTO projectDTO = nextGenService.getProject(
+        monitoredService.getAccountId(), monitoredService.getOrgIdentifier(), monitoredService.getProjectIdentifier());
+    ServiceResponseDTO serviceResponseDTO =
+        nextGenService.getService(monitoredService.getAccountId(), monitoredService.getOrgIdentifier(),
+            monitoredService.getProjectIdentifier(), monitoredService.getServiceIdentifier());
+
+    String headerMessage = getHeaderMessageForMonitoredService(condition);
+    String triggerMessage = getTriggerMessageForMonitoredService(condition);
+
     return new HashMap<String, String>() {
       {
         put("COLOR", themeColor);
         put("OUTER_DIV", outerDiv);
-        put("SERVICE_NAME", monitoredService.getServiceIdentifier());
-        put("ENVIRONMENT_NAME", monitoredService.getEnvironmentIdentifier());
-        put("ACCOUNT_ID", monitoredService.getAccountId());
-        put("ORG_ID", monitoredService.getOrgIdentifier());
-        put("PROJECT_ID", monitoredService.getProjectIdentifier());
-        put("RULE_NAME", notificationRuleName);
-        put("CONDITION_NAME", conditionName);
+        put("MONITORED_SERVICE_NAME", monitoredService.getName());
+        put("HEADER_MESSAGE", headerMessage);
+        put("SERVICE_NAME", serviceResponseDTO.getName());
+        put("ACCOUNT_NAME", accountDTO.getName());
+        put("ORG_NAME", organizationDTO.getName());
+        put("PROJECT_NAME", projectDTO.getName());
+        put("TRIGGER_MESSAGE", triggerMessage);
         put("START_TS_SECS", String.valueOf(startTime));
         put("START_DATE", startDate);
         put("URL", url);
@@ -152,6 +207,83 @@ public class NotificationRuleCommonUtils {
       return newBaseUrl + defaultBaseUrl.substring(hostUrl.length());
     } catch (Exception ex) {
       throw new IllegalStateException("There was error while generating vanity URL", ex);
+    }
+  }
+
+  private String getHeaderMessageForSLO(SLONotificationRuleCondition condition) {
+    switch (condition.getType()) {
+      case ERROR_BUDGET_REMAINING_PERCENTAGE:
+        SLOErrorBudgetRemainingPercentageCondition remainingPercentageCondition =
+            (SLOErrorBudgetRemainingPercentageCondition) condition;
+        return "error budget remains less than " + remainingPercentageCondition.getThreshold() + "% for";
+      case ERROR_BUDGET_REMAINING_MINUTES:
+        SLOErrorBudgetRemainingMinutesCondition remainingMinutesCondition =
+            (SLOErrorBudgetRemainingMinutesCondition) condition;
+        return "error budget remains less than " + remainingMinutesCondition.getThreshold() + " minutes for";
+      case ERROR_BUDGET_BURN_RATE:
+        SLOErrorBudgetBurnRateCondition burnRateCondition = (SLOErrorBudgetBurnRateCondition) condition;
+        return "current burn rate is " + burnRateCondition.getThreshold() + "% for";
+      default:
+        throw new InvalidArgumentsException("Not a valid Notification Rule Condition " + condition.getType());
+    }
+  }
+
+  private String getTriggerMessageForSLO(SLONotificationRuleCondition condition) {
+    switch (condition.getType()) {
+      case ERROR_BUDGET_REMAINING_PERCENTAGE:
+        SLOErrorBudgetRemainingPercentageCondition remainingPercentageCondition =
+            (SLOErrorBudgetRemainingPercentageCondition) condition;
+        return "When Error Budget remaining percentage drops below " + remainingPercentageCondition.getThreshold()
+            + "%";
+      case ERROR_BUDGET_REMAINING_MINUTES:
+        SLOErrorBudgetRemainingMinutesCondition remainingMinutesCondition =
+            (SLOErrorBudgetRemainingMinutesCondition) condition;
+        return "When Error Budget remaining minutes drops below " + remainingMinutesCondition.getThreshold()
+            + " minutes";
+      case ERROR_BUDGET_BURN_RATE:
+        SLOErrorBudgetBurnRateCondition burnRateCondition = (SLOErrorBudgetBurnRateCondition) condition;
+        return "When Error Budget burn rate drops below " + burnRateCondition.getThreshold() + "% in the last "
+            + getDurationAsString(burnRateCondition.getLookBackDuration()) + " minutes";
+      default:
+        throw new InvalidArgumentsException("Not a valid Notification Rule Condition " + condition.getType());
+    }
+  }
+
+  private String getHeaderMessageForMonitoredService(MonitoredServiceNotificationRuleCondition condition) {
+    switch (condition.getType()) {
+      case CHANGE_IMPACT:
+        MonitoredServiceChangeImpactCondition changeImpactCondition = (MonitoredServiceChangeImpactCondition) condition;
+        return "health score drops below " + changeImpactCondition.getThreshold() + " for";
+      case HEALTH_SCORE:
+        MonitoredServiceHealthScoreCondition healthScoreCondition = (MonitoredServiceHealthScoreCondition) condition;
+        return "health score drops below " + healthScoreCondition.getThreshold() + " for";
+      case CHANGE_OBSERVED:
+        MonitoredServiceChangeObservedCondition changeObservedCondition =
+            (MonitoredServiceChangeObservedCondition) condition;
+        return "observed a change in a " + changeObservedCondition.getChangeEventTypes().get(0).getDisplayName()
+            + " for";
+      default:
+        throw new InvalidArgumentsException("Not a valid Notification Rule Condition " + condition.getType());
+    }
+  }
+
+  private String getTriggerMessageForMonitoredService(MonitoredServiceNotificationRuleCondition condition) {
+    switch (condition.getType()) {
+      case CHANGE_IMPACT:
+        MonitoredServiceChangeImpactCondition changeImpactCondition = (MonitoredServiceChangeImpactCondition) condition;
+        return "When service health score drops below " + changeImpactCondition.getThreshold() + " for longer than "
+            + getDurationAsString(changeImpactCondition.getPeriod()) + " minutes due to a change in "
+            + changeImpactCondition.getChangeEventTypes().get(0);
+      case HEALTH_SCORE:
+        MonitoredServiceHealthScoreCondition healthScoreCondition = (MonitoredServiceHealthScoreCondition) condition;
+        return "When service health score drops below " + healthScoreCondition.getThreshold() + " for longer than "
+            + getDurationAsString(healthScoreCondition.getPeriod()) + " minutes";
+      case CHANGE_OBSERVED:
+        MonitoredServiceChangeObservedCondition changeObservedCondition =
+            (MonitoredServiceChangeObservedCondition) condition;
+        return "When a change observed in a " + changeObservedCondition.getChangeEventTypes().get(0).getDisplayName();
+      default:
+        throw new InvalidArgumentsException("Not a valid Notification Rule Condition " + condition.getType());
     }
   }
 }

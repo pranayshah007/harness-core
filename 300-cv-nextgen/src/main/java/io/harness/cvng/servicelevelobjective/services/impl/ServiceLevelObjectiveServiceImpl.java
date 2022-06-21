@@ -452,7 +452,7 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
           CVNGNotificationChannel notificationChannel = notificationRule.getNotificationMethod();
           String templateId = getNotificationTemplateId(notificationRule.getType(), notificationChannel.getType());
           Map<String, String> templateData = notificationRuleCommonUtils.getNotificationTemplateDataForSLO(
-              serviceLevelObjective, notificationRule.getName(), condition.getType().getDisplayName(), clock.instant());
+              serviceLevelObjective, condition, clock.instant());
           try {
             NotificationResult notificationResult =
                 notificationClient.sendNotificationAsync(notificationChannel.toNotificationChannel(
