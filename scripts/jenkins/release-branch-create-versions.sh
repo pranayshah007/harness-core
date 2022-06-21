@@ -18,6 +18,7 @@ PROJFILE="$SHDIR/jira-projects.txt"
 check_file_present $PROJFILE
 # Read contents of file into PROJECTS
 PROJECTS=$(<$PROJFILE)
+IFS="|" read -r -a PROJSPLIT <<< "${PROJECTS}"
 # Set the release date of the version to the date that the build is being done.
 RELDATE=$(date +'%Y-%m-%d')
 # Set the next version number - this will be something like 1.23.5-704219
@@ -32,11 +33,13 @@ if [ "${NEXT_VERSION}" == "" ]; then
   echo "VERSION was also empty - aborting creating Jira versions"
   exit 0
 fi
+# For whatever reason, VERSION doesn't have trailing zeros - so fixing it here.
+NEXT_VERSION="$NEXT_VERSION""00"
 echo "Creating $NEXT_VERSION in product Jira projects"
 # Exclude projects that have been archived, replaced, deleted, or non-product
 EXCLUDE_PROJECTS=",ART,CCE,CDC,CDNG,CDP,CE,COMP,CV,CVNG,CVS,DX,ER,GIT,GTM,LWG,OENG,ONP,OPS,SEC,SWAT,"
 # Iterate over projects
-for PROJ in ${PROJECTS}
+for PROJ in ${PROJSPLIT[@]}
  do
     if [[ $EXCLUDE_PROJECTS == *",$PROJ,"* ]]; then
       echo "Skipping $PROJ - it has been archived or is not applicable"

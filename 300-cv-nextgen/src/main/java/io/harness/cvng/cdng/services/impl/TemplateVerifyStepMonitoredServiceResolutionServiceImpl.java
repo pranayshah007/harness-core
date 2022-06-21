@@ -8,7 +8,10 @@
 package io.harness.cvng.cdng.services.impl;
 
 import static io.harness.cvng.core.utils.FeatureFlagNames.CVNG_MONITORED_SERVICE_DEMO;
+import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
+import io.harness.cvng.cdng.VerifyStepConstants;
+import io.harness.cvng.cdng.beans.CVNGStepInfo;
 import io.harness.cvng.cdng.beans.MonitoredServiceNode;
 import io.harness.cvng.cdng.beans.ResolvedCVConfigInfo;
 import io.harness.cvng.cdng.beans.ResolvedCVConfigInfo.ResolvedCVConfigInfoBuilder;
@@ -26,20 +29,32 @@ import io.harness.cvng.core.services.api.MonitoringSourcePerpetualTaskService;
 import io.harness.cvng.core.services.api.SideKickService;
 import io.harness.cvng.core.services.api.monitoredService.HealthSourceService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
+import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
+import io.harness.pms.sdk.core.filter.creation.beans.FilterCreationContext;
+import io.harness.pms.yaml.YamlField;
+import io.harness.pms.yaml.YamlNode;
+import io.harness.pms.yaml.YamlUtils;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 import com.google.inject.Inject;
+import java.io.IOException;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import org.apache.commons.collections.CollectionUtils;
 
 public class TemplateVerifyStepMonitoredServiceResolutionServiceImpl
     implements VerifyStepMonitoredServiceResolutionService {
-  private static final String NULL_MONITORED_SERVICE_IDENTIFIER = "";
   @Inject private Clock clock;
   @Inject private FeatureFlagService featureFlagService;
   @Inject private MetricPackService metricPackService;
@@ -51,7 +66,10 @@ public class TemplateVerifyStepMonitoredServiceResolutionServiceImpl
   public ResolvedCVConfigInfo getResolvedCVConfigInfo(
       ServiceEnvironmentParams serviceEnvironmentParams, MonitoredServiceNode monitoredServiceNode) {
     ResolvedCVConfigInfoBuilder resolvedCVConfigInfoBuilder = ResolvedCVConfigInfo.builder();
-    populateSourceDataFromTemplate(serviceEnvironmentParams, monitoredServiceNode, resolvedCVConfigInfoBuilder);
+    String executionIdentifier = generateUuid();
+    resolvedCVConfigInfoBuilder.monitoredServiceIdentifier(executionIdentifier);
+    populateSourceDataFromTemplate(
+        serviceEnvironmentParams, monitoredServiceNode, resolvedCVConfigInfoBuilder, executionIdentifier);
     return resolvedCVConfigInfoBuilder.build();
   }
 
@@ -62,8 +80,8 @@ public class TemplateVerifyStepMonitoredServiceResolutionServiceImpl
     if (CollectionUtils.isNotEmpty(healthSources)) {
       List<String> sourceIdentifiersToCleanUp = new ArrayList<>();
       healthSources.forEach(healthSource -> {
-        String sourceIdentifier =
-            HealthSourceService.getNameSpacedIdentifier(verificationJobInstanceId, healthSource.getIdentifier());
+        String sourceIdentifier = HealthSourceService.getNameSpacedIdentifier(
+            resolvedCVConfigInfo.getMonitoredServiceIdentifier(), healthSource.getIdentifier());
         monitoringSourcePerpetualTaskService.createTask(serviceEnvironmentParams.getAccountIdentifier(),
             serviceEnvironmentParams.getOrgIdentifier(), serviceEnvironmentParams.getProjectIdentifier(),
             healthSource.getConnectorRef(), sourceIdentifier, healthSource.isDemoEnabledForAnyCVConfig());
@@ -80,8 +98,15 @@ public class TemplateVerifyStepMonitoredServiceResolutionServiceImpl
     }
   }
 
+  @Override
+  public List<EntityDetailProtoDTO> getReferredEntities(
+      FilterCreationContext filterCreationContext, CVNGStepInfo cvngStepInfo, ProjectParams projectParams) {
+    return new ArrayList<>();
+  }
+
   private void populateSourceDataFromTemplate(ServiceEnvironmentParams serviceEnvironmentParams,
-      MonitoredServiceNode monitoredServiceNode, ResolvedCVConfigInfoBuilder resolvedCVConfigInfoBuilder) {
+      MonitoredServiceNode monitoredServiceNode, ResolvedCVConfigInfoBuilder resolvedCVConfigInfoBuilder,
+      String executionIdentifier) {
     TemplateMonitoredServiceSpec templateMonitoredServiceSpec =
         (TemplateMonitoredServiceSpec) monitoredServiceNode.getSpec();
     MonitoredServiceDTO monitoredServiceDTO = monitoredServiceService.getExpandedMonitoredServiceFromYaml(
@@ -93,29 +118,50 @@ public class TemplateVerifyStepMonitoredServiceResolutionServiceImpl
         getTemplateYaml(templateMonitoredServiceSpec));
     if (Objects.nonNull(monitoredServiceDTO) && Objects.nonNull(monitoredServiceDTO.getSources())
         && CollectionUtils.isNotEmpty(monitoredServiceDTO.getSources().getHealthSources())) {
-      populateCvConfigAndHealSourceData(
-          serviceEnvironmentParams, monitoredServiceDTO.getSources().getHealthSources(), resolvedCVConfigInfoBuilder);
+      populateCvConfigAndHealSourceData(serviceEnvironmentParams, monitoredServiceDTO.getSources().getHealthSources(),
+          resolvedCVConfigInfoBuilder, executionIdentifier);
     } else {
       resolvedCVConfigInfoBuilder.cvConfigs(Collections.emptyList()).healthSources(Collections.emptyList());
     }
   }
+
   private String getTemplateYaml(TemplateMonitoredServiceSpec templateMonitoredServiceSpec) {
-    // TODO: Add logic to generate template yaml.
-    //    String monitoredServiceTemplateRef = templateMonitoredServiceSpec.getMonitoredServiceTemplateRef().getValue();
-    //    String versionLabel = templateMonitoredServiceSpec.getVersionLabel();
-    return null;
+    String monitoredServiceTemplateRef = templateMonitoredServiceSpec.getMonitoredServiceTemplateRef().getValue();
+    String versionLabel = templateMonitoredServiceSpec.getVersionLabel();
+    JsonNode templateInputsNode = templateMonitoredServiceSpec.getTemplateInputs();
+    Map<String, JsonNode> templateMap = new HashMap<>();
+    templateMap.put(VerifyStepConstants.TEMPLATE_YAML_KEYS_TEMPLATE_REF, new TextNode(monitoredServiceTemplateRef));
+    templateMap.put(VerifyStepConstants.TEMPLATE_YAML_KEYS_VERSION_LABEL, new TextNode(versionLabel));
+    templateMap.put(VerifyStepConstants.TEMPLATE_YAML_KEYS_TEMPLATE_INPUTS, templateInputsNode);
+    JsonNode templateNode = new ObjectNode(JsonNodeFactory.instance, templateMap);
+    Map<String, JsonNode> monitoredServiceMap =
+        Collections.singletonMap(VerifyStepConstants.TEMPLATE_YAML_KEYS_TEMPLATE, templateNode);
+    JsonNode monitoredServiceNode = new ObjectNode(JsonNodeFactory.instance, monitoredServiceMap);
+    Map<String, JsonNode> rootMap =
+        Collections.singletonMap(VerifyStepConstants.TEMPLATE_YAML_KEYS_MONITORED_SERVICE, monitoredServiceNode);
+    JsonNode rootNode = new ObjectNode(JsonNodeFactory.instance, rootMap);
+    JsonNode cleanedRootNode = cleanRootNode(rootNode, "__uuid");
+    YamlNode yamlNode = new YamlNode(cleanedRootNode);
+    String yaml;
+    try {
+      yaml = YamlUtils.writeYamlString(new YamlField(yamlNode));
+    } catch (IOException e) {
+      throw new IllegalStateException(e);
+    }
+    return yaml;
   }
 
   private void populateCvConfigAndHealSourceData(ServiceEnvironmentParams serviceEnvironmentParams,
-      Set<HealthSource> healthSources, ResolvedCVConfigInfoBuilder resolvedCVConfigInfoBuilder) {
+      Set<HealthSource> healthSources, ResolvedCVConfigInfoBuilder resolvedCVConfigInfoBuilder,
+      String executionIdentifier) {
     List<CVConfig> allCvConfigs = new ArrayList<>();
     List<ResolvedCVConfigInfo.HealthSourceInfo> healthSourceInfoList = new ArrayList<>();
     healthSources.forEach(healthSource -> {
       HealthSource.CVConfigUpdateResult cvConfigUpdateResult = healthSource.getSpec().getCVConfigUpdateResult(
           serviceEnvironmentParams.getAccountIdentifier(), serviceEnvironmentParams.getOrgIdentifier(),
           serviceEnvironmentParams.getProjectIdentifier(), serviceEnvironmentParams.getEnvironmentIdentifier(),
-          serviceEnvironmentParams.getServiceIdentifier(), NULL_MONITORED_SERVICE_IDENTIFIER,
-          HealthSourceService.getNameSpacedIdentifier(NULL_MONITORED_SERVICE_IDENTIFIER, healthSource.getIdentifier()),
+          serviceEnvironmentParams.getServiceIdentifier(), executionIdentifier,
+          HealthSourceService.getNameSpacedIdentifier(executionIdentifier, healthSource.getIdentifier()),
           healthSource.getName(), Collections.emptyList(), metricPackService);
 
       boolean isDemoEnabledForAnyCVConfig = false;
@@ -140,6 +186,31 @@ public class TemplateVerifyStepMonitoredServiceResolutionServiceImpl
                                    .identifier(healthSource.getIdentifier())
                                    .build());
     });
+    // TODO: Adding this to enable end-end execution. Check if this is really required.
+    allCvConfigs.forEach(cvConfig -> cvConfig.setUuid(generateUuid()));
     resolvedCVConfigInfoBuilder.cvConfigs(allCvConfigs).healthSources(healthSourceInfoList);
+  }
+
+  private JsonNode cleanRootNode(JsonNode rootNode, String key) {
+    Map<String, JsonNode> map = new HashMap<>();
+    rootNode.fieldNames().forEachRemaining(i -> {
+      if (!i.equals(key)) {
+        switch (rootNode.get(i).getNodeType()) {
+          case OBJECT:
+            map.put(i, cleanRootNode(rootNode.get(i), key));
+            break;
+          case MISSING:
+          case ARRAY:
+            List<JsonNode> cleanedChildren = new ArrayList<>();
+            ArrayNode arr = (ArrayNode) rootNode.get(i);
+            arr.forEach(c -> cleanedChildren.add(cleanRootNode(c, key)));
+            map.put(i, new ArrayNode(JsonNodeFactory.instance, cleanedChildren));
+            break;
+          default:
+            map.put(i, rootNode.get(i));
+        }
+      }
+    });
+    return new ObjectNode(JsonNodeFactory.instance, map);
   }
 }

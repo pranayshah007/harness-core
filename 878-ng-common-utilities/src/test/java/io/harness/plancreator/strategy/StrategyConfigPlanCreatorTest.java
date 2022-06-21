@@ -90,15 +90,15 @@ public class StrategyConfigPlanCreatorTest extends NGCommonUtilitiesTestBase {
                                       .build();
     StrategyConfig strategyConfig = StrategyConfig.builder().build();
     StepParameters stepParameters =
-        StrategyStepParameters.builder().childNodeId(childNodeId).strategyConfig(strategyConfig).build();
+        StrategyStepParameters.builder().childNodeId(childNodeId).strategyConfig(strategyConfig).strategyType(StrategyType.MATRIX).build();
 
     PlanNode planNode =
         PlanNode.builder()
             .uuid(strategyNodeId)
-            .identifier(YAMLFieldNameConstants.STRATEGY)
+            .identifier(null)
             .stepType(StrategyStep.STEP_TYPE)
             .group(StepOutcomeGroup.STRATEGY.name())
-            .name(YAMLFieldNameConstants.STRATEGY)
+            .name(null)
             .stepParameters(stepParameters)
             .facilitatorObtainment(
                 FacilitatorObtainment.newBuilder()

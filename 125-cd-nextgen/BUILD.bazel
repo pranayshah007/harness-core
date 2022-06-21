@@ -60,6 +60,7 @@ java_library(
         ":module",
         "//:lombok",
         "//942-enforcement-sdk:module",
+        "//950-ng-core:tests",
         "//955-delegate-beans:module",
         "//960-persistence:supporter-test",
         "//990-commons-test:module",

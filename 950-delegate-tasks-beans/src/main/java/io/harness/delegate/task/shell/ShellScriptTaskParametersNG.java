@@ -30,7 +30,8 @@ import lombok.Value;
 
 @Value
 @Builder
-public class ShellScriptTaskParametersNG implements TaskParameters, ExecutionCapabilityDemander {
+public class ShellScriptTaskParametersNG
+    implements TaskParameters, ExecutionCapabilityDemander, SshSessionConfigMapperFields {
   boolean executeOnDelegate;
   @Expression(ALLOW_SECRETS) String script;
   List<String> outputVars;

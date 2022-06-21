@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.ci.integrationstage;
 
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveIntegerParameter;
@@ -107,6 +114,9 @@ public class K8InitializeTaskParamsBuilder {
     if (infrastructure.getType() == Infrastructure.Type.KUBERNETES_DIRECT) {
       return buildK8DirectTaskParams(
           initializeStepInfo, k8PodDetails, (K8sDirectInfraYaml) infrastructure, ambiance, logPrefix);
+    } else if (infrastructure.getType() == Infrastructure.Type.KUBERNETES_HOSTED) {
+      return buildK8HostedTaskParams(
+          initializeStepInfo, k8PodDetails, (K8sHostedInfraYaml) infrastructure, ambiance, logPrefix);
     }
     return null;
   }
@@ -126,8 +136,8 @@ public class K8InitializeTaskParamsBuilder {
   private CIK8InitializeTaskParams buildK8DirectTaskParams(InitializeStepInfo initializeStepInfo,
       K8PodDetails k8PodDetails, K8sDirectInfraYaml k8sDirectInfraYaml, Ambiance ambiance, String logPrefix) {
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
-    String clusterName = k8sDirectInfraYaml.getSpec().getConnectorRef().getValue();
-    ConnectorDetails k8sConnector = connectorUtils.getConnectorDetails(ngAccess, clusterName);
+    String connectorRef = k8sDirectInfraYaml.getSpec().getConnectorRef().getValue();
+    ConnectorDetails k8sConnector = connectorUtils.getConnectorDetails(ngAccess, connectorRef);
     return CIK8InitializeTaskParams.builder()
         .k8sConnector(k8sConnector)
         .cik8PodParams(getK8DirectPodParams(initializeStepInfo, k8PodDetails, k8sDirectInfraYaml, ambiance, logPrefix))

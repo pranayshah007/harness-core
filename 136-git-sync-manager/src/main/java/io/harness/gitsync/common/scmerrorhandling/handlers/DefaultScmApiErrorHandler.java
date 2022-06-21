@@ -16,6 +16,7 @@ import io.harness.exception.ExplanationException;
 import io.harness.exception.ScmException;
 import io.harness.exception.UnexpectedException;
 import io.harness.exception.WingsException;
+import io.harness.gitsync.common.scmerrorhandling.dtos.ErrorMetadata;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -23,7 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(PL)
 public class DefaultScmApiErrorHandler implements ScmApiErrorHandler {
   @Override
-  public void handleError(int statusCode, String errorMessage) throws WingsException {
+  public void handleError(int statusCode, String errorMessage, ErrorMetadata errorMetadata) throws WingsException {
     if (statusCode >= 300) {
       ErrorCode errorCode = convertScmStatusCodeToErrorCode(statusCode);
       if (errorCode == ErrorCode.UNEXPECTED) {

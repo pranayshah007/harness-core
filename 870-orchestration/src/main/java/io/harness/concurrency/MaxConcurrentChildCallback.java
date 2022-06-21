@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.concurrency;
 
 import io.harness.OrchestrationPublisherName;
@@ -50,11 +57,16 @@ public class MaxConcurrentChildCallback implements OldNotifyCallback {
       }
       ConcurrentChildInstance childInstance = nodeExecutionInfoService.incrementCursor(parentNodeExecutionId);
       if (childInstance == null) {
+        log.error("[MaxConcurrentCallback]: ChildInstance found null for parentId: " + parentNodeExecutionId);
         nodeExecutionService.errorOutActiveNodes(ambiance.getPlanExecutionId());
         return;
       }
+      log.info("[MaxConcurrentCallback]: MaxConcurrentCallback called for parentId: " + parentNodeExecutionId);
       // We have reached the last child already so ignore this callback as there is no new child to run.
-      if (childInstance.getCursor() == childInstance.getChildrenNodeExecutionIds().size()) {
+      if (childInstance.getCursor() >= childInstance.getChildrenNodeExecutionIds().size()) {
+        log.info(
+            "[MaxConcurrentCallback]: Ignoring the callback as we have traversed all the children for parentExecutionId: "
+            + parentNodeExecutionId);
         return;
       }
       int cursor = childInstance.getCursor();
@@ -66,13 +78,8 @@ public class MaxConcurrentChildCallback implements OldNotifyCallback {
   private void getAmbianceAndStartExecution(String nodeExecutionToStart) {
     NodeExecution nodeExecution =
         nodeExecutionService.getWithFieldsIncluded(nodeExecutionToStart, NodeProjectionUtils.withAmbianceAndStatus);
+    log.info("[MaxConcurrentCallback]: Starting the execution with id: " + nodeExecutionToStart);
     engine.startNodeExecution(nodeExecution.getAmbiance());
-    MaxConcurrentChildCallback maxConcurrentChildCallback = MaxConcurrentChildCallback.builder()
-                                                                .parentNodeExecutionId(parentNodeExecutionId)
-                                                                .ambiance(ambiance)
-                                                                .maxConcurrency(maxConcurrency)
-                                                                .build();
-    waitNotifyEngine.waitForAllOn(publisherName, maxConcurrentChildCallback, nodeExecution.getUuid());
   }
 
   @Override

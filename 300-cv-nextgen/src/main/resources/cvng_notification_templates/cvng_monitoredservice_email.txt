@@ -1,2 +1,2 @@
-subject: Monitored Service ${monitoredServiceName} breached Monitored Service Health
-body: This is a Monitored Service notification from Harness. You have breached your Monitored Service Health with name ${monitoredServiceName} inside project ${projectIdentifier}, organisation ${orgIdentifier} and account ${accountIdentifier}.
+subject: Harness SRM
+body: ${OUTER_DIV}${COLOR};"><div style="font-size:15px;">The Service Health for service <a href="${URL}" target="_blank" style="text-decoration:none;color:#1A89BF;"><b>${SERVICE_NAME}</b></a> in environment ${ENVIRONMENT_NAME} has breached a condition<br>AccountID ${ACCOUNT_ID}<br>OrganisationID ${ORG_ID}<br>ProjectID ${PROJECT_ID}<br><b>Rule:</b> ${RULE_NAME}<br><b>Condition:</b> ${CONDITION_NAME}<br></div><div><i>Incident occurred ${START_DATE}</i><br>Click <a href="${URL}" target="_blank" style="text-decoration:none;color:#1A89BF;"><b>here</b></a> for Service Health dashboard</div></div></div>

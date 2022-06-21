@@ -77,6 +77,8 @@ import io.harness.connector.entities.embedded.gitlabconnector.GitlabUsernamePass
 import io.harness.connector.entities.embedded.gitlabconnector.GitlabUsernameToken;
 import io.harness.connector.entities.embedded.helm.HttpHelmConnector;
 import io.harness.connector.entities.embedded.helm.HttpHelmUsernamePasswordAuthentication;
+import io.harness.connector.entities.embedded.helm.OciHelmConnector;
+import io.harness.connector.entities.embedded.helm.OciHelmUsernamePasswordAuthentication;
 import io.harness.connector.entities.embedded.jenkins.JenkinsConnector;
 import io.harness.connector.entities.embedded.jira.JiraConnector;
 import io.harness.connector.entities.embedded.kubernetescluster.K8sClientKeyCert;
@@ -145,6 +147,7 @@ public class ConnectorMorphiaClassesRegistrar implements MorphiaRegistrar {
     set.add(AzureConfig.class);
     set.add(AzureRepoConnector.class);
     set.add(JenkinsConnector.class);
+    set.add(OciHelmConnector.class);
   }
 
   @Override
@@ -199,6 +202,8 @@ public class ConnectorMorphiaClassesRegistrar implements MorphiaRegistrar {
         AwsCodeCommitSecretKeyAccessKey.class);
     h.put("connector.entities.embedded.helm.HttpHelmUsernamePasswordAuthentication",
         HttpHelmUsernamePasswordAuthentication.class);
+    h.put("connector.entities.embedded.helm.OciHelmUsernamePasswordAuthentication",
+        OciHelmUsernamePasswordAuthentication.class);
     h.put("connector.entities.embedded.gcpccm.GcpBillingExportDetails", GcpBillingExportDetails.class);
     h.put("connector.entities.embedded.azureconnector.AzureManualCredential", AzureManualCredential.class);
     h.put("connector.entities.embedded.azureconnector.AzureManagedIdentityCredential",

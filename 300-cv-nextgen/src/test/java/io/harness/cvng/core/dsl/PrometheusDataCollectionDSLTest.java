@@ -28,6 +28,7 @@ import io.harness.cvng.core.entities.VerificationTask.TaskType;
 import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.services.impl.PrometheusDataCollectionInfoMapper;
 import io.harness.datacollection.DataCollectionDSLService;
+import io.harness.datacollection.entity.CallDetails;
 import io.harness.datacollection.entity.RuntimeParameters;
 import io.harness.datacollection.entity.TimeSeriesRecord;
 import io.harness.datacollection.impl.DataCollectionServiceImpl;
@@ -44,6 +45,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -127,6 +129,62 @@ public class PrometheusDataCollectionDSLTest extends HoverflyCVNextGenTestBase {
     assertThat(Sets.newHashSet(timeSeriesRecords))
         .isEqualTo(new Gson().fromJson(
             readJson("expected-prometheus-dsl-output.json"), new TypeToken<Set<TimeSeriesRecord>>() {}.getType()));
+  }
+
+  @Test
+  @Owner(developers = ABHIJITH)
+  @Category(UnitTests.class)
+  // Host filter works only with newer version of Prometheus, hence working with local prometheus setup for now
+  public void testExecute_prometheusDSLWithHostDataHostFilter() throws IOException {
+    DataCollectionDSLService dataCollectionDSLService = new DataCollectionServiceImpl();
+    dataCollectionDSLService.registerDatacollectionExecutorService(executorService);
+    String code = readDSL("metric-collection.datacollection");
+    Instant instant = Instant.parse("2022-06-12T20:34:00.000Z");
+    List<MetricPack> metricPacks = metricPackService.getMetricPacks(builderFactory.getContext().getAccountId(),
+        builderFactory.getContext().getOrgIdentifier(), builderFactory.getContext().getProjectIdentifier(),
+        DataSourceType.APP_DYNAMICS);
+
+    PrometheusCVConfig prometheusCVConfig =
+        builderFactory.prometheusCVConfigBuilder()
+            .metricInfoList(Collections.singletonList(PrometheusCVConfig.MetricInfo.builder()
+                                                          .query("avg(\n"
+                                                              + "\tlearning_engine_task_non_final_status_count\t{\n"
+                                                              + "\n"
+                                                              + "\t\taccountId=\"kmpySmUISimoRrJL6NL73w\"\n"
+                                                              + "\n"
+                                                              + "})")
+                                                          .metricType(TimeSeriesMetricType.RESP_TIME)
+                                                          .identifier("createpayment")
+                                                          .metricName("createpayment")
+                                                          .serviceInstanceFieldName("instance")
+                                                          .isManualQuery(true)
+                                                          .build()))
+            .build();
+    prometheusCVConfig.setMetricPack(metricPacks.get(0));
+    PrometheusDataCollectionInfo prometheusDataCollectionInfo =
+        dataCollectionInfoMapper.toDataCollectionInfo(prometheusCVConfig, TaskType.DEPLOYMENT);
+    prometheusDataCollectionInfo.setCollectHostData(true);
+    PrometheusConnectorDTO prometheusConnectorDTO =
+        PrometheusConnectorDTO.builder().url("http://prometheus.local:9090/").build();
+    Map<String, Object> params = prometheusDataCollectionInfo.getDslEnvVariables(prometheusConnectorDTO);
+
+    RuntimeParameters runtimeParameters =
+        RuntimeParameters.builder()
+            .startTime(instant.minus(Duration.ofDays(1)))
+            .endTime(instant)
+            .commonHeaders(prometheusDataCollectionInfo.collectionHeaders(prometheusConnectorDTO))
+            .otherEnvVariables(params)
+            .baseUrl("http://prometheus.local:9090/")
+            .build();
+    List<CallDetails> callsMade = new ArrayList<>();
+    List<TimeSeriesRecord> timeSeriesRecords = (List<TimeSeriesRecord>) dataCollectionDSLService.execute(
+        code, runtimeParameters, callDetails -> { callsMade.add(callDetails); });
+    CallDetails labelsCallForHost = callsMade.stream()
+                                        .filter(call -> call.getRequest().request().url().toString().contains("values"))
+                                        .findAny()
+                                        .get();
+    assertThat(labelsCallForHost.getResponse().body().toString())
+        .isEqualTo("{status=success, data=[host.docker.internal:8889]}");
   }
 
   @Test

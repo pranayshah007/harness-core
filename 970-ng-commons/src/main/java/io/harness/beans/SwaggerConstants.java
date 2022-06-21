@@ -19,4 +19,5 @@ public interface SwaggerConstants {
   String BOOLEAN_CLASSPATH = "java.lang.Boolean";
   String STRING_LIST_CLASSPATH = "[Ljava.lang.String;";
   String STRING_MAP_CLASSPATH = "Map[String,String]";
+  String JSON_NODE_CLASSPATH = "com.fasterxml.jackson.databind.JsonNode";
 }

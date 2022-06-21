@@ -7,18 +7,16 @@
 
 package io.harness.cdng.manifest.yaml.harness;
 
-import io.harness.annotations.dev.HarnessTeam;
+import static io.harness.annotations.dev.HarnessTeam.CDP;
+
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
-import io.harness.filters.WithFileRef;
 import io.harness.pms.yaml.ParameterField;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-@OwnedBy(HarnessTeam.CDP)
-public interface HarnessStoreConfig extends StoreConfig, WithFileRef {
-  @JsonIgnore ParameterField<String> getFileReference();
-
+@OwnedBy(CDP)
+public interface HarnessStoreConfig extends StoreConfig {
   @JsonIgnore
   default ParameterField<String> getConnectorReference() {
     throw new UnsupportedOperationException("Connector reference is not supported for Harness store");

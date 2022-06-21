@@ -2182,7 +2182,6 @@ public class ApprovalStateTest extends WingsBaseTest {
     approvalState.setUserGroupAsExpression(true);
     approvalState.setUserGroupExpression(expression);
 
-
     when(context.renderExpression(expression)).thenReturn("group1, group2");
     when(context.getAccountId()).thenReturn(ACCOUNT_ID);
     when(userGroupService.get(ACCOUNT_ID, "group1")).thenReturn(UserGroup.builder().uuid("A1").build());

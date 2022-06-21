@@ -38,6 +38,7 @@ io.harness.steps.jira.create.JiraCreateSpecParameters
 io.harness.steps.common.pipeline.PipelineSetupStepParameters
 io.harness.pms.yaml.validation.InputSetValidator
 io.harness.steps.shellscript.K8sInfraDelegateConfigOutput
+io.harness.steps.shellscript.SshInfraDelegateConfigOutput
 io.harness.steps.barriers.beans.BarrierOutcome
 io.harness.when.beans.StageWhenCondition
 io.harness.steps.approval.step.jira.JiraApprovalSpecParameters
@@ -114,3 +115,4 @@ io.harness.plancreator.strategy.MatrixConfig
 io.harness.plancreator.strategy.StrategyConfig
 io.harness.plancreator.strategy.HarnessForConfig
 io.harness.steps.customstage.CustomStageSpecParams
+io.harness.ng.core.envGroup.EnvironmentGroupOutcome

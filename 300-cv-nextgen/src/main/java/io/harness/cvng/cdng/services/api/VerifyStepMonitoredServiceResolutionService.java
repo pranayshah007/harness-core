@@ -7,13 +7,21 @@
 
 package io.harness.cvng.cdng.services.api;
 
+import io.harness.cvng.cdng.beans.CVNGStepInfo;
 import io.harness.cvng.cdng.beans.MonitoredServiceNode;
 import io.harness.cvng.cdng.beans.ResolvedCVConfigInfo;
+import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.beans.params.ServiceEnvironmentParams;
+import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
+import io.harness.pms.sdk.core.filter.creation.beans.FilterCreationContext;
+
+import java.util.List;
 
 public interface VerifyStepMonitoredServiceResolutionService {
   ResolvedCVConfigInfo getResolvedCVConfigInfo(
       ServiceEnvironmentParams serviceEnvironmentParams, MonitoredServiceNode monitoredServiceNode);
   default void managePerpetualTasks(ServiceEnvironmentParams serviceEnvironmentParams,
-                                    ResolvedCVConfigInfo resolvedCVConfigInfo, String verificationJobInstanceId) {}
+      ResolvedCVConfigInfo resolvedCVConfigInfo, String verificationJobInstanceId) {}
+  List<EntityDetailProtoDTO> getReferredEntities(
+      FilterCreationContext filterCreationContext, CVNGStepInfo cvngStepInfo, ProjectParams projectParams);
 }

@@ -34,6 +34,7 @@ import io.harness.delegate.task.azure.request.AzureVMSSTaskParameters;
 import io.harness.delegate.task.azure.response.AzureVMSSTaskExecutionResponse;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 
 import software.wings.beans.command.ExecutionLogCallback;
 import software.wings.delegatetasks.DelegateLogService;
@@ -78,15 +79,16 @@ public abstract class AzureVMSSTaskHandler {
       }
       return response;
     } catch (Exception ex) {
-      String message = getErrorMessage(ex);
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(ex);
+      String message = getErrorMessage(sanitizedException);
       if (azureVMSSTaskParameters.isSyncTask()) {
-        throw new InvalidRequestException(message, ex);
+        throw new InvalidRequestException(message, sanitizedException);
       } else {
         ExecutionLogCallback logCallback = getLogCallBack(azureVMSSTaskParameters, DEPLOYMENT_ERROR);
         logCallback.saveExecutionLog(message, ERROR, FAILURE);
         log.error(format("Exception: [%s] while processing azure vmss task: [%s].", message,
                       azureVMSSTaskParameters.getCommandType().name()),
-            ex);
+            sanitizedException);
         return AzureVMSSTaskExecutionResponse.builder().commandExecutionStatus(FAILURE).errorMessage(message).build();
       }
     }
@@ -182,12 +184,13 @@ public abstract class AzureVMSSTaskHandler {
       logCallBack.saveExecutionLog(message, ERROR, FAILURE);
       throw new InvalidRequestException(message, e);
     } catch (WingsException e) {
-      throw e;
+      throw(WingsException) ExceptionMessageSanitizer.sanitizeException(e);
     } catch (Exception e) {
-      String message =
-          "Error while waiting for provisioning VMSS VM instances to desired capacity. \n" + e.getMessage();
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
+      String message = "Error while waiting for provisioning VMSS VM instances to desired capacity. \n"
+          + sanitizedException.getMessage();
       logCallBack.saveExecutionLog(message, ERROR, FAILURE);
-      throw new InvalidRequestException(message, e);
+      throw new InvalidRequestException(message, sanitizedException);
     }
   }
 

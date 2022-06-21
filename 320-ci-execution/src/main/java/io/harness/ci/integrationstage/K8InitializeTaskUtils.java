@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.ci.integrationstage;
 
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveIntegerParameter;
@@ -74,7 +81,6 @@ import io.harness.delegate.beans.ci.pod.ContainerSecurityContext;
 import io.harness.delegate.beans.ci.pod.EmptyDirVolume;
 import io.harness.delegate.beans.ci.pod.EmptyDirVolume.EmptyDirVolumeBuilder;
 import io.harness.delegate.beans.ci.pod.HostPathVolume;
-import io.harness.delegate.beans.ci.pod.ImageDetailsWithConnector;
 import io.harness.delegate.beans.ci.pod.PVCVolume;
 import io.harness.delegate.beans.ci.pod.PodToleration;
 import io.harness.delegate.beans.ci.pod.PodVolume;
@@ -82,7 +88,6 @@ import io.harness.delegate.beans.ci.pod.SecretVariableDetails;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.ff.CIFeatureFlagService;
-import io.harness.k8s.model.ImageDetails;
 import io.harness.logserviceclient.CILogServiceUtils;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.NGAccess;
@@ -386,6 +391,10 @@ public class K8InitializeTaskUtils {
   }
 
   public ContainerSecurityContext getCtrSecurityContext(Infrastructure infrastructure) {
+    if (infrastructure.getType() != Infrastructure.Type.KUBERNETES_DIRECT) {
+      return ContainerSecurityContext.builder().build();
+    }
+
     OSType os = getOS(infrastructure);
     SecurityContext securityContext = null;
     if (infrastructure.getType() == Infrastructure.Type.KUBERNETES_DIRECT
@@ -421,24 +430,6 @@ public class K8InitializeTaskUtils {
         .add(capabilities.getAdd().getValue())
         .drop(capabilities.getDrop().getValue())
         .build();
-  }
-
-  public ImageDetailsWithConnector getContainerImageInfo(String image, String connectorRef,
-      ConnectorDetails harnessInternalImageConnector, boolean isHarnessManagedImage, NGAccess ngAccess) {
-    ImageDetails imageDetails = IntegrationStageUtils.getImageInfo(image);
-    ConnectorDetails connectorDetails = null;
-    if (connectorRef != null) {
-      connectorDetails = connectorUtils.getConnectorDetails(ngAccess, connectorRef);
-    }
-
-    ConnectorDetails imgConnector = connectorDetails;
-    if (isHarnessManagedImage) {
-      imgConnector = harnessInternalImageConnector;
-    }
-    String fullyQualifiedImageName =
-        IntegrationStageUtils.getFullyQualifiedImageName(imageDetails.getName(), imgConnector);
-    imageDetails.setName(fullyQualifiedImageName);
-    return ImageDetailsWithConnector.builder().imageConnectorDetails(imgConnector).imageDetails(imageDetails).build();
   }
 
   public Map<String, ConnectorDetails> resolveGitAppFunctor(

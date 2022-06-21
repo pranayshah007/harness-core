@@ -8,6 +8,7 @@
 package io.harness.repositories.core.custom;
 
 import static io.harness.rule.OwnerRule.KARAN;
+import static io.harness.rule.OwnerRule.VIKAS_M;
 
 import static java.util.Collections.singletonList;
 import static junit.framework.TestCase.assertEquals;
@@ -27,6 +28,7 @@ import io.harness.ng.core.entities.Organization;
 import io.harness.ng.core.entities.Organization.OrganizationKeys;
 import io.harness.rule.Owner;
 
+import com.mongodb.client.result.DeleteResult;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -95,6 +97,29 @@ public class OrganizationRepositoryCustomImplTest extends CategoryTest {
     assertTrue(query.getQueryObject().containsKey(OrganizationKeys.identifier));
     assertEquals(identifier, query.getQueryObject().get(OrganizationKeys.identifier));
     assertTrue(query.getQueryObject().containsKey(OrganizationKeys.deleted));
+    assertTrue(query.getQueryObject().containsKey(OrganizationKeys.version));
+    assertEquals(version, query.getQueryObject().get(OrganizationKeys.version));
+  }
+
+  @Test
+  @Owner(developers = VIKAS_M)
+  @Category(UnitTests.class)
+  public void testHardDelete() {
+    String accountIdentifier = randomAlphabetic(10);
+    String identifier = randomAlphabetic(10);
+    Long version = 0L;
+    ArgumentCaptor<Query> queryArgumentCaptor = ArgumentCaptor.forClass(Query.class);
+
+    when(mongoTemplate.remove(any(), eq(Organization.class))).thenReturn(DeleteResult.acknowledged(1));
+    boolean deleted = organizationRepository.hardDelete(accountIdentifier, identifier, version);
+    verify(mongoTemplate, times(1)).remove(queryArgumentCaptor.capture(), eq(Organization.class));
+    Query query = queryArgumentCaptor.getValue();
+    assertTrue(deleted);
+    assertEquals(3, query.getQueryObject().size());
+    assertTrue(query.getQueryObject().containsKey(OrganizationKeys.accountIdentifier));
+    assertEquals(accountIdentifier, query.getQueryObject().get(OrganizationKeys.accountIdentifier));
+    assertTrue(query.getQueryObject().containsKey(OrganizationKeys.identifier));
+    assertEquals(identifier, query.getQueryObject().get(OrganizationKeys.identifier));
     assertTrue(query.getQueryObject().containsKey(OrganizationKeys.version));
     assertEquals(version, query.getQueryObject().get(OrganizationKeys.version));
   }

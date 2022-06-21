@@ -16,6 +16,6 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class SCMExceptionErrorMessages {
   public final String FILE_NOT_FOUND_ERROR = "File not found";
-  public final String CREATE_PULL_REQUEST_VALIDATION_FAILED = "Issue while creating pull request";
+  public final String CREATE_PULL_REQUEST_FAILURE = "Issue while creating pull request";
   public final String REPOSITORY_NOT_FOUND_ERROR = "Git repository not found";
 }

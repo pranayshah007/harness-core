@@ -16,6 +16,7 @@ import static io.harness.eventsframework.EventsFrameworkMetadataConstants.PROJEC
 import static io.harness.eventsframework.EventsFrameworkMetadataConstants.RESTORE_ACTION;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.gitops.service.ClusterService;
 import io.harness.eventsframework.consumer.Message;
 import io.harness.eventsframework.entity_crud.organization.OrganizationEntityChangeDTO;
 import io.harness.eventsframework.entity_crud.project.ProjectEntityChangeDTO;
@@ -23,6 +24,9 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.entities.Project;
 import io.harness.ng.core.entities.Project.ProjectKeys;
 import io.harness.ng.core.environment.services.EnvironmentService;
+import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
+import io.harness.ng.core.service.services.ServiceEntityService;
+import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.services.ProjectService;
 
 import com.google.inject.Inject;
@@ -31,6 +35,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BooleanSupplier;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.mongodb.core.query.Criteria;
 
@@ -40,11 +45,21 @@ import org.springframework.data.mongodb.core.query.Criteria;
 public class ProjectEntityCRUDStreamListener implements MessageListener {
   private final ProjectService projectService;
   private final EnvironmentService environmentService;
+  private final ServiceEntityService serviceEntityService;
+  private final ServiceOverrideService serviceOverrideService;
+  private final InfrastructureEntityService infraService;
+  private final ClusterService clusterService;
 
   @Inject
-  public ProjectEntityCRUDStreamListener(ProjectService projectService, EnvironmentService environmentService) {
+  public ProjectEntityCRUDStreamListener(ProjectService projectService, EnvironmentService environmentService,
+      ServiceOverrideService serviceOverrideService, InfrastructureEntityService infraService,
+      ServiceEntityService serviceEntityService, ClusterService clusterService) {
     this.projectService = projectService;
     this.environmentService = environmentService;
+    this.serviceOverrideService = serviceOverrideService;
+    this.serviceEntityService = serviceEntityService;
+    this.infraService = infraService;
+    this.clusterService = clusterService;
   }
 
   @Override
@@ -105,8 +120,34 @@ public class ProjectEntityCRUDStreamListener implements MessageListener {
   }
 
   private boolean processProjectDeleteEvent(ProjectEntityChangeDTO projectEntityChangeDTO) {
-    return environmentService.forceDeleteAllInProject(projectEntityChangeDTO.getAccountIdentifier(),
-        projectEntityChangeDTO.getOrgIdentifier(), projectEntityChangeDTO.getIdentifier());
+    final String accountIdentifier = projectEntityChangeDTO.getAccountIdentifier();
+    final String orgIdentifier = projectEntityChangeDTO.getOrgIdentifier();
+    final String projIdentifier = projectEntityChangeDTO.getIdentifier();
+
+    boolean envDeleted = processQuietly(
+        () -> environmentService.forceDeleteAllInProject(accountIdentifier, orgIdentifier, projIdentifier));
+    boolean infraDeleted =
+        processQuietly(() -> infraService.forceDeleteAllInProject(accountIdentifier, orgIdentifier, projIdentifier));
+    boolean clustersDeleted =
+        processQuietly(() -> clusterService.deleteAllFromProj(accountIdentifier, orgIdentifier, projIdentifier));
+    boolean serviceDeleted = processQuietly(
+        () -> serviceEntityService.forceDeleteAllInProject(accountIdentifier, orgIdentifier, projIdentifier));
+    boolean serviceOverridesDeleted = processQuietly(
+        () -> serviceOverrideService.deleteAllInProject(accountIdentifier, orgIdentifier, projIdentifier));
+
+    return envDeleted && infraDeleted && serviceDeleted && clustersDeleted && serviceOverridesDeleted;
+  }
+
+  boolean processQuietly(BooleanSupplier b) {
+    try {
+      b.getAsBoolean();
+      // supplier processed
+      return true;
+    } catch (Exception ex) {
+      log.error("failed to process entity deletion", ex);
+      // ignore this
+      return false;
+    }
   }
 
   private boolean processOrganizationEntityChangeEvent(

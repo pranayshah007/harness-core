@@ -20,6 +20,7 @@ import io.harness.exception.ScmUnauthorizedException;
 import io.harness.exception.ScmUnexpectedException;
 import io.harness.exception.WingsException;
 import io.harness.gitsync.GitSyncTestBase;
+import io.harness.gitsync.common.scmerrorhandling.dtos.ErrorMetadata;
 import io.harness.gitsync.common.scmerrorhandling.handlers.bitbucketcloud.BitbucketCreatePullRequestScmApiErrorHandler;
 import io.harness.rule.Owner;
 
@@ -45,7 +46,7 @@ public class BitbucketCreatePullRequestScmApiErrorHandlerTest extends GitSyncTes
   @Category(UnitTests.class)
   public void testHandleErrorOnUnauthorizedResponse() {
     try {
-      bitbucketCreatePullRequestScmApiErrorHandler.handleError(401, errorMessage);
+      bitbucketCreatePullRequestScmApiErrorHandler.handleError(401, errorMessage, ErrorMetadata.builder().build());
     } catch (Exception ex) {
       WingsException exception = ExceptionUtils.cause(ScmUnauthorizedException.class, ex);
       assertThat(exception).isNotNull();
@@ -58,7 +59,7 @@ public class BitbucketCreatePullRequestScmApiErrorHandlerTest extends GitSyncTes
   @Category(UnitTests.class)
   public void testHandleErrorOnUnauthenticatedResponse() {
     try {
-      bitbucketCreatePullRequestScmApiErrorHandler.handleError(403, errorMessage);
+      bitbucketCreatePullRequestScmApiErrorHandler.handleError(403, errorMessage, ErrorMetadata.builder().build());
     } catch (Exception ex) {
       WingsException exception = ExceptionUtils.cause(ScmUnauthorizedException.class, ex);
       assertThat(exception).isNotNull();
@@ -71,7 +72,7 @@ public class BitbucketCreatePullRequestScmApiErrorHandlerTest extends GitSyncTes
   @Category(UnitTests.class)
   public void testHandleErrorOnResourceNotFoundResponse() {
     try {
-      bitbucketCreatePullRequestScmApiErrorHandler.handleError(404, errorMessage);
+      bitbucketCreatePullRequestScmApiErrorHandler.handleError(404, errorMessage, ErrorMetadata.builder().build());
     } catch (Exception ex) {
       WingsException exception = ExceptionUtils.cause(ScmBadRequestException.class, ex);
       assertThat(exception).isNotNull();
@@ -84,7 +85,7 @@ public class BitbucketCreatePullRequestScmApiErrorHandlerTest extends GitSyncTes
   @Category(UnitTests.class)
   public void testHandleErrorOnBadRequestResponse() {
     try {
-      bitbucketCreatePullRequestScmApiErrorHandler.handleError(400, errorMessage);
+      bitbucketCreatePullRequestScmApiErrorHandler.handleError(400, errorMessage, ErrorMetadata.builder().build());
     } catch (Exception ex) {
       WingsException exception = ExceptionUtils.cause(ScmBadRequestException.class, ex);
       assertThat(exception).isNotNull();
@@ -97,7 +98,7 @@ public class BitbucketCreatePullRequestScmApiErrorHandlerTest extends GitSyncTes
   @Category(UnitTests.class)
   public void testHandleErrorWhenUnexpectedStatusCode() {
     try {
-      bitbucketCreatePullRequestScmApiErrorHandler.handleError(405, errorMessage);
+      bitbucketCreatePullRequestScmApiErrorHandler.handleError(405, errorMessage, ErrorMetadata.builder().build());
     } catch (Exception ex) {
       WingsException exception = ExceptionUtils.cause(ScmUnexpectedException.class, ex);
       assertThat(exception).isNotNull();

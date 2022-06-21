@@ -39,7 +39,7 @@ public class CodebaseUtilsTest extends CIExecutionTestBase {
                                  .connectionType(GitConnectionType.REPO)
                                  .url("https://github.com/test/repo")
                                  .authentication(GithubAuthenticationDTO.builder().authType(GitAuthType.HTTP).build())
-                                .build())
+                                 .build())
             .build();
 
     String completeURL = CodebaseUtils.getCompleteURLFromConnector(connectorDetails, null, null);

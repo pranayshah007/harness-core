@@ -353,4 +353,17 @@ public interface AzureConstants {
   String TOKEN_TYPE = "token_type";
   String TOKEN_EXPIRES_IN = "expires_in";
   String TOKEN_EXT_EXPIRES_IN = "ext_expires_in";
+  String SUBSCRIPTION = "subscription";
+  String RESOURCE_GROUP = "resourceGroup";
+  String AKS_CLUSTER_NAME = "aksClusterName";
+  String KUBECFG_AUTH_PROVIDER = "auth-provider";
+  String KUBECFG_CLIENT_KEY_DATA = "client-key-data";
+  String KUBECFG_CLIENT_CERTIFICATE_DATA = "client-certificate-data";
+  String KUBECFG_CERTIFICATE_AUTHORITY_DATA = "certificate-authority-data";
+  String KUBECFG_CURRENT_CONTEXT = "current-context";
+  String KUBECFG_API_SERVER_ID = "apiserver-id";
+  String KUBECFG_CLIENT_ID = "client-id";
+  String KUBECFG_CONFIG_MODE = "config-mode";
+  String KUBECFG_TENANT_ID = "tenant-id";
+
 }

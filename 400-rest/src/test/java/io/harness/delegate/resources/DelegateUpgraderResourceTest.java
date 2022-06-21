@@ -62,7 +62,8 @@ public class DelegateUpgraderResourceTest extends JerseyTest {
   @Owner(developers = ARPIT)
   @Category(UnitTests.class)
   public void testDelegateImageTag() {
-    lenient().when(upgraderService.getDelegateImageTag(ACCOUNT_ID, DELEGATE_IMAGE_TAG))
+    lenient()
+        .when(upgraderService.getDelegateImageTag(ACCOUNT_ID, DELEGATE_IMAGE_TAG))
         .thenReturn(new UpgradeCheckResult(DELEGATE_IMAGE_TAG, false));
 
     final Response response = client()
@@ -79,7 +80,8 @@ public class DelegateUpgraderResourceTest extends JerseyTest {
   @Owner(developers = ARPIT)
   @Category(UnitTests.class)
   public void testUpgraderImageTag() {
-    lenient().when(upgraderService.getUpgraderImageTag(ACCOUNT_ID, UPGRADER_IMAGE_TAG))
+    lenient()
+        .when(upgraderService.getUpgraderImageTag(ACCOUNT_ID, UPGRADER_IMAGE_TAG))
         .thenReturn(new UpgradeCheckResult(UPGRADER_IMAGE_TAG, false));
 
     final Response response = client()

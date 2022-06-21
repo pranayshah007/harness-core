@@ -16,6 +16,7 @@ import static io.harness.rule.OwnerRule.VLAD;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -33,9 +34,9 @@ import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
 import io.harness.ng.core.entitysetupusage.entity.EntitySetupUsage.EntitySetupUsageKeys;
 import io.harness.ng.core.entitysetupusage.service.EntitySetupUsageService;
 import io.harness.ng.core.filestore.NGFileType;
-import io.harness.repositories.spring.FileStoreRepository;
 import io.harness.rule.Owner;
 
+import com.google.common.collect.Lists;
 import java.util.Arrays;
 import java.util.List;
 import org.junit.Test;
@@ -51,7 +52,7 @@ import org.springframework.data.domain.Sort;
 @RunWith(MockitoJUnitRunner.class)
 public class FileReferenceServiceTest extends CategoryTest {
   @Mock private EntitySetupUsageService entitySetupUsageService;
-  @Mock private FileStoreRepository fileStoreRepository;
+  @Mock private FileStructureService fileStructureService;
 
   @InjectMocks private FileReferenceServiceImpl fileReferenceService;
 
@@ -103,29 +104,13 @@ public class FileReferenceServiceTest extends CategoryTest {
     String identifier1 = "testFolder1";
     NGFile folder1 =
         NGFile.builder().identifier(identifier1).accountIdentifier(ACCOUNT_IDENTIFIER).type(NGFileType.FOLDER).build();
-    String identifier2 = "testFolder2";
-    NGFile folder2 = NGFile.builder()
-                         .identifier(identifier2)
-                         .accountIdentifier(ACCOUNT_IDENTIFIER)
-                         .parentIdentifier(identifier1)
-                         .type(NGFileType.FOLDER)
-                         .build();
-    Long count1 = 123L;
-    Long count2 = 234L;
-    when(entitySetupUsageService.referredByEntityCount(
-             ACCOUNT_IDENTIFIER, ACCOUNT_IDENTIFIER + "/" + identifier1, EntityType.FILES))
-        .thenReturn(count1);
-    when(entitySetupUsageService.referredByEntityCount(
-             ACCOUNT_IDENTIFIER, ACCOUNT_IDENTIFIER + "/" + identifier2, EntityType.FILES))
-        .thenReturn(count2);
-    when(fileStoreRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndParentIdentifier(
-             folder1.getAccountIdentifier(), folder1.getOrgIdentifier(), folder1.getProjectIdentifier(),
-             folder1.getIdentifier()))
-        .thenReturn(Arrays.asList(folder2));
+
+    when(entitySetupUsageService.countReferredByEntitiesByFQNsIn(any(), any())).thenReturn(2L);
+    when(fileStructureService.listFolderChildrenFQNs(any())).thenReturn(Lists.newArrayList());
 
     assertThatThrownBy(() -> fileReferenceService.validateReferenceByAndThrow(folder1))
         .isInstanceOf(ReferencedEntityException.class)
-        .hasMessage("Folder [testFolder1], or its subfolders, contain file(s) referenced by " + (count1 + count2)
+        .hasMessage("Folder [testFolder1], or its subfolders, contain file(s) referenced by " + 2
             + " other entities and can not be deleted.");
   }
 

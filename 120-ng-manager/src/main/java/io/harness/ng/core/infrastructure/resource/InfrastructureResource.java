@@ -9,6 +9,7 @@ package io.harness.ng.core.infrastructure.resource;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.ng.core.environment.resources.EnvironmentResourceV2.ENVIRONMENT_PARAM_MESSAGE;
 import static io.harness.rbac.CDNGRbacPermissions.ENVIRONMENT_UPDATE_PERMISSION;
 import static io.harness.rbac.CDNGRbacPermissions.ENVIRONMENT_VIEW_PERMISSION;
 import static io.harness.utils.PageUtils.getNGPageResponse;
@@ -374,6 +375,28 @@ public class InfrastructureResource {
   // do not delete this.
   public ResponseDTO<InfrastructureConfig> getInfraConfig() {
     return ResponseDTO.newResponse(InfrastructureConfig.builder().build());
+  }
+
+  @GET
+  @Path("/runtimeInputs")
+  @ApiOperation(value = "This api returns Infrastructure Definition inputs YAML", nickname = "getInfrastructureInputs")
+  @Hidden
+  public ResponseDTO<String> getInfrastructureInputs(
+      @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+      @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @NotNull @QueryParam(
+          NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgIdentifier,
+      @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @NotNull @QueryParam(
+          NGCommonEntityConstants.PROJECT_KEY) @ProjectIdentifier String projectIdentifier,
+      @Parameter(description = ENVIRONMENT_PARAM_MESSAGE) @NotNull @QueryParam(
+          NGCommonEntityConstants.ENVIRONMENT_IDENTIFIER_KEY) @ResourceIdentifier String environmentIdentifier,
+      @Parameter(description = "List of Infrastructure Identifiers") @QueryParam(
+          NGCommonEntityConstants.INFRA_IDENTIFIERS) List<String> infraIdentifiers,
+      @Parameter(description = "Specify whether Deploy to all infrastructures in the environment") @QueryParam(
+          NGCommonEntityConstants.DEPLOY_TO_ALL) @DefaultValue("false") boolean deployToAll) {
+    String infrastructureInputsYaml = infrastructureEntityService.createInfrastructureInputsFromYaml(
+        accountId, projectIdentifier, orgIdentifier, environmentIdentifier, infraIdentifiers, deployToAll);
+    return ResponseDTO.newResponse(infrastructureInputsYaml);
   }
 
   private void throwExceptionForNoRequestDTO(InfrastructureRequestDTO dto) {

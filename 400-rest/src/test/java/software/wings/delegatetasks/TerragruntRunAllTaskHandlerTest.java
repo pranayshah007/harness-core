@@ -15,6 +15,7 @@ import static io.harness.rule.OwnerRule.TATHAGAT;
 import static software.wings.beans.delegation.TerragruntProvisionParameters.TerragruntCommand.APPLY;
 import static software.wings.beans.delegation.TerragruntProvisionParameters.TerragruntCommand.DESTROY;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
@@ -37,9 +38,12 @@ import io.harness.terragrunt.TerragruntClient;
 
 import software.wings.beans.delegation.TerragruntProvisionParameters;
 
+import com.google.common.base.Charsets;
+import com.google.common.io.Resources;
 import com.google.inject.Inject;
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.util.concurrent.TimeoutException;
 import org.junit.Before;
 import org.junit.Test;
@@ -54,6 +58,7 @@ public class TerragruntRunAllTaskHandlerTest extends CategoryTest {
   @Mock LogCallback logCallback;
   @Mock DelegateLogService delegateLogService;
   @Mock private TerragruntClient terragruntClient;
+  @Mock private TerragruntProvisionTaskHelper provisionTaskHelper;
   @InjectMocks @Inject TerragruntRunAllTaskHandler runAllTaskHandler;
 
   private static final String TARGET_ARGS = "-target=target1 -target=target2";
@@ -98,6 +103,11 @@ public class TerragruntRunAllTaskHandlerTest extends CategoryTest {
     doReturn(terragruntCliResponse)
         .when(terragruntClient)
         .runAllPlanDestroy(any(TerragruntCliCommandRequestParams.class), anyString(), anyString(), anyString(), any());
+    URL url = this.getClass().getResource("/terragrunt/terragrunt-info.json");
+    String terragruntInfoJson = Resources.toString(url, Charsets.UTF_8);
+    doReturn(CliResponse.builder().commandExecutionStatus(SUCCESS).output(terragruntInfoJson).build())
+        .when(terragruntClient)
+        .terragruntInfo(any(), any());
   }
 
   @Test
@@ -253,12 +263,21 @@ public class TerragruntRunAllTaskHandlerTest extends CategoryTest {
     doReturn(CliResponse.builder().commandExecutionStatus(SUCCESS).build())
         .when(terragruntClient)
         .runAllDestroy(any(TerragruntCliCommandRequestParams.class), anyString(), anyString(), anyString(), any());
+    doReturn("-force")
+        .when(provisionTaskHelper)
+        .getTfAutoApproveArgument(any(TerragruntCliCommandRequestParams.class), eq("terraform"));
+
+    ArgumentCaptor<TerragruntCliCommandRequestParams> cliParamsCaptor =
+        ArgumentCaptor.forClass(TerragruntCliCommandRequestParams.class);
+    cliCommandRequestParams.setUseAutoApproveFlag(true);
 
     runAllTaskHandler.executeRunAllTask(provisionParameters, cliCommandRequestParams, delegateLogService, APPLY);
 
     verify(terragruntClient, times(1))
-        .runAllDestroy(
-            eq(cliCommandRequestParams), eq(TARGET_ARGS), eq(VAR_PARAMS), eq(UI_LOGS), any(LogCallback.class));
+        .terragruntInfo(any(TerragruntCliCommandRequestParams.class), any(LogCallback.class));
     verify(terragruntClient, never()).runAllOutput(any(), any());
+    verify(terragruntClient, times(1))
+        .runAllDestroy(cliParamsCaptor.capture(), eq(TARGET_ARGS), eq(VAR_PARAMS), eq(UI_LOGS), any(LogCallback.class));
+    assertThat(cliParamsCaptor.getValue().getAutoApproveArgument()).isEqualTo("-force");
   }
 }

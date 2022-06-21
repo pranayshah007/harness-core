@@ -12,6 +12,7 @@ import static io.harness.beans.execution.ExecutionSource.Type.WEBHOOK;
 import static io.harness.beans.sweepingoutputs.CISweepingOutputNames.CODEBASE;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
 
 import static software.wings.beans.TaskType.SCM_GIT_REF_TASK;
 
@@ -36,8 +37,10 @@ import io.harness.delegate.task.scm.GitRefType;
 import io.harness.delegate.task.scm.ScmGitRefTaskParams;
 import io.harness.delegate.task.scm.ScmGitRefTaskResponseData;
 import io.harness.exception.ngexception.CIStageExecutionException;
+import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
+import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
@@ -61,6 +64,7 @@ import io.harness.stateutils.buildstate.CodebaseUtils;
 import io.harness.stateutils.buildstate.ConnectorUtils;
 import io.harness.steps.StepUtils;
 import io.harness.supplier.ThrowingSupplier;
+import io.harness.util.WebhookTriggerProcessorUtils;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
@@ -81,6 +85,8 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
   @Inject private KryoSerializer kryoSerializer;
   @Inject private ConnectorUtils connectorUtils;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputResolver;
+
+  @Inject private ScmGitRefManager scmGitRefManager;
 
   @Override
   public Class<CodeBaseTaskStepParameters> getStepParametersClass() {
@@ -130,6 +136,54 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
       log.error("Failed to retrieve codebase info from returned delegate response");
     }
 
+    saveScmResponseToSweepingOutput(ambiance, stepParameters, scmGitRefTaskResponseData);
+    return StepResponse.builder().status(Status.SUCCEEDED).build();
+  }
+
+  @Override
+  public StepResponse executeSync(Ambiance ambiance, CodeBaseTaskStepParameters stepParameters,
+      StepInputPackage inputPackage, PassThroughData passThroughData) {
+    ExecutionSource executionSource = stepParameters.getExecutionSource();
+    if (executionSource.getType() == MANUAL) {
+      NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
+      ConnectorDetails connectorDetails =
+          connectorUtils.getConnectorDetails(ngAccess, stepParameters.getConnectorRef());
+      // fetch scm details via manager
+      if (connectorUtils.hasApiAccess(connectorDetails)) {
+        ManualExecutionSource manualExecutionSource = (ManualExecutionSource) executionSource;
+        String branch = manualExecutionSource.getBranch();
+        String prNumber = manualExecutionSource.getPrNumber();
+        String tag = manualExecutionSource.getTag();
+        try {
+          ScmConnector scmConnector = scmGitRefManager.getScmConnector(connectorDetails,
+              ngAccess.getAccountIdentifier(), stepParameters.getProjectName(), stepParameters.getRepoName());
+          ScmGitRefTaskResponseData response = scmGitRefManager.fetchCodebaseMetadata(
+              scmConnector, connectorDetails.getIdentifier(), branch, prNumber, tag);
+          saveScmResponseToSweepingOutput(ambiance, stepParameters, response);
+          return StepResponse.builder().status(Status.SUCCEEDED).build();
+        } catch (Exception ex) {
+          log.error("Failed to fetch codebase metadata", ex);
+          return StepResponse.builder()
+              .status(Status.FAILED)
+              .failureInfo(FailureInfo.newBuilder().setErrorMessage(emptyIfNull(ex.getMessage())).build())
+              .build();
+        }
+      }
+    }
+
+    CodebaseSweepingOutput codebaseSweepingOutput = null;
+    if (executionSource.getType() == MANUAL) {
+      codebaseSweepingOutput = buildManualCodebaseSweepingOutput((ManualExecutionSource) executionSource);
+    } else if (executionSource.getType() == WEBHOOK) {
+      codebaseSweepingOutput = buildWebhookCodebaseSweepingOutput((WebhookExecutionSource) executionSource);
+    }
+    saveCodebaseSweepingOutput(ambiance, codebaseSweepingOutput);
+
+    return StepResponse.builder().status(Status.SUCCEEDED).build();
+  }
+
+  private void saveScmResponseToSweepingOutput(Ambiance ambiance, CodeBaseTaskStepParameters stepParameters,
+      ScmGitRefTaskResponseData scmGitRefTaskResponseData) throws InvalidProtocolBufferException {
     CodebaseSweepingOutput codebaseSweepingOutput = null;
     if (scmGitRefTaskResponseData != null
         && scmGitRefTaskResponseData.getGitRefType() == GitRefType.PULL_REQUEST_WITH_COMMITS) {
@@ -143,24 +197,6 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
     if (codebaseSweepingOutput != null) {
       saveCodebaseSweepingOutput(ambiance, codebaseSweepingOutput);
     }
-
-    return StepResponse.builder().status(Status.SUCCEEDED).build();
-  }
-
-  @Override
-  public StepResponse executeSync(Ambiance ambiance, CodeBaseTaskStepParameters stepParameters,
-      StepInputPackage inputPackage, PassThroughData passThroughData) {
-    ExecutionSource executionSource = stepParameters.getExecutionSource();
-
-    CodebaseSweepingOutput codebaseSweepingOutput = null;
-    if (executionSource.getType() == MANUAL) {
-      codebaseSweepingOutput = buildManualCodebaseSweepingOutput((ManualExecutionSource) executionSource);
-    } else if (executionSource.getType() == WEBHOOK) {
-      codebaseSweepingOutput = buildWebhookCodebaseSweepingOutput((WebhookExecutionSource) executionSource);
-    }
-    saveCodebaseSweepingOutput(ambiance, codebaseSweepingOutput);
-
-    return StepResponse.builder().status(Status.SUCCEEDED).build();
   }
 
   @VisibleForTesting
@@ -195,7 +231,7 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
           .scmConnector(scmConnector)
           .build();
     } else {
-      throw new CIStageExecutionException("Manual codebase git task needs at least PR number or branch");
+      throw new CIStageExecutionException("Manual codebase git task needs one of PR number, branch or tag");
     }
   }
 
@@ -217,6 +253,9 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
       build = new Build("tag");
     }
 
+    String commitSha = listCommitsResponse.getCommit().getSha();
+    String shortCommitSha = WebhookTriggerProcessorUtils.getShortCommitSha(commitSha);
+
     return CodebaseSweepingOutput.builder()
         .branch(scmGitRefTaskResponseData.getBranch())
         .tag(tag)
@@ -230,7 +269,8 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
                             .ownerId(listCommitsResponse.getCommit().getAuthor().getLogin())
                             .timeStamp(listCommitsResponse.getCommit().getAuthor().getDate().getSeconds())
                             .build()))
-        .commitSha(listCommitsResponse.getCommit().getSha())
+        .commitSha(commitSha)
+        .shortCommitSha(shortCommitSha)
         .repoUrl(scmGitRefTaskResponseData.getRepoUrl())
         .build();
   }
@@ -255,6 +295,9 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
         }
       }
 
+      String commitSha = prWebhookEvent.getBaseAttributes().getAfter();
+      String shortCommitSha = WebhookTriggerProcessorUtils.getShortCommitSha(commitSha);
+
       return CodebaseSweepingOutput.builder()
           .commits(codeBaseCommits)
           .state(getState(prWebhookEvent))
@@ -264,7 +307,8 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
           .prNumber(String.valueOf(prWebhookEvent.getPullRequestId()))
           .prTitle(prWebhookEvent.getTitle())
           .build(new Build("PR"))
-          .commitSha(prWebhookEvent.getBaseAttributes().getAfter())
+          .commitSha(commitSha)
+          .shortCommitSha(shortCommitSha)
           .baseCommitSha(prWebhookEvent.getBaseAttributes().getBefore())
           .repoUrl(prWebhookEvent.getRepository().getLink())
           .pullRequestLink(prWebhookEvent.getPullRequestLink())
@@ -290,12 +334,16 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
         }
       }
 
+      String commitSha = branchWebhookEvent.getBaseAttributes().getAfter();
+      String shortCommitSha = WebhookTriggerProcessorUtils.getShortCommitSha(commitSha);
+
       return CodebaseSweepingOutput.builder()
           .branch(branchWebhookEvent.getBranchName())
           .commits(codeBaseCommits)
           .build(new Build("branch"))
           .targetBranch(branchWebhookEvent.getBranchName())
-          .commitSha(branchWebhookEvent.getBaseAttributes().getAfter())
+          .commitSha(commitSha)
+          .shortCommitSha(shortCommitSha)
           .repoUrl(branchWebhookEvent.getRepository().getLink())
           .gitUser(branchWebhookEvent.getBaseAttributes().getAuthorName())
           .gitUserEmail(branchWebhookEvent.getBaseAttributes().getAuthorEmail())
@@ -312,11 +360,16 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
     if (isNotEmpty(manualExecutionSource.getTag())) {
       build = new Build("tag");
     }
+
+    String commitSha = manualExecutionSource.getCommitSha();
+    String shortCommitSha = WebhookTriggerProcessorUtils.getShortCommitSha(commitSha);
+
     return CodebaseSweepingOutput.builder()
         .build(build)
         .branch(manualExecutionSource.getBranch())
         .tag(manualExecutionSource.getTag())
-        .commitSha(manualExecutionSource.getCommitSha())
+        .commitSha(commitSha)
+        .shortCommitSha(shortCommitSha)
         .build();
   }
 
@@ -350,13 +403,17 @@ public class CodeBaseTaskStep implements TaskExecutable<CodeBaseTaskStepParamete
                               .build());
     }
 
+    String commitSha = pr.getSha();
+    String shortCommitSha = WebhookTriggerProcessorUtils.getShortCommitSha(commitSha);
+
     codebaseSweepingOutput = CodebaseSweepingOutput.builder()
                                  .branch(pr.getTarget())
                                  .sourceBranch(pr.getSource())
                                  .targetBranch(pr.getTarget())
                                  .prNumber(String.valueOf(pr.getNumber()))
                                  .prTitle(pr.getTitle())
-                                 .commitSha(pr.getSha())
+                                 .commitSha(commitSha)
+                                 .shortCommitSha(shortCommitSha)
                                  .build(new Build("PR"))
                                  .baseCommitSha(pr.getBase().getSha())
                                  .commitRef(pr.getRef())

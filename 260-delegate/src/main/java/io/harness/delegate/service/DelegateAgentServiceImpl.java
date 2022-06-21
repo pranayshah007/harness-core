@@ -14,12 +14,9 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.delegate.app.DelegateApplication.getProcessId;
 import static io.harness.delegate.clienttools.InstallUtils.areClientToolsInstalled;
 import static io.harness.delegate.clienttools.InstallUtils.setupClientTools;
-import static io.harness.delegate.message.ManagerMessageConstants.JRE_VERSION;
 import static io.harness.delegate.message.ManagerMessageConstants.MIGRATE;
 import static io.harness.delegate.message.ManagerMessageConstants.SELF_DESTRUCT;
 import static io.harness.delegate.message.ManagerMessageConstants.UPDATE_PERPETUAL_TASK;
-import static io.harness.delegate.message.ManagerMessageConstants.USE_CDN;
-import static io.harness.delegate.message.ManagerMessageConstants.USE_STORAGE_PROXY;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_DASH;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_GO_AHEAD;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_HEARTBEAT;
@@ -226,6 +223,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
 import javax.net.ssl.SSLException;
@@ -580,7 +578,6 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       if (isPollingForTasksEnabled()) {
         log.info("Polling is enabled for Delegate");
         startHeartbeat(builder);
-        startKeepAlivePacket(builder);
         startTaskPolling();
       } else {
         client = org.atmosphere.wasync.ClientFactory.getDefault().newClient();
@@ -631,8 +628,6 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         // TODO(Abhinav): Check if we can avoid separate call for ECS delegates.
         if (isEcsDelegate()) {
           startKeepAlivePacket(builder);
-        } else {
-          startKeepAlivePacket(builder, socket);
         }
       }
 
@@ -905,16 +900,10 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
           initiateSelfDestruct();
         }
       }
-    } else if (StringUtils.equals(message, USE_CDN)) {
-      setSwitchStorage(true);
-    } else if (StringUtils.equals(message, USE_STORAGE_PROXY)) {
-      setSwitchStorage(false);
     } else if (StringUtils.contains(message, UPDATE_PERPETUAL_TASK)) {
       updateTasks();
     } else if (StringUtils.startsWith(message, MIGRATE)) {
       migrate(StringUtils.substringAfter(message, MIGRATE));
-    } else if (StringUtils.startsWith(message, JRE_VERSION)) {
-      updateJreVersion(StringUtils.substringAfter(message, JRE_VERSION));
     } else if (StringUtils.contains(message, INVALID_TOKEN.name())) {
       log.warn("Delegate used invalid token. Self destruct procedure will be initiated.");
       initiateSelfDestruct();
@@ -924,6 +913,9 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     } else if (StringUtils.contains(message, REVOKED_TOKEN.name())) {
       log.warn("Delegate used revoked token. It will be frozen and drained.");
       freeze();
+    }
+    else {
+      log.warn("Delegate received unhandled message");
     }
   }
 
@@ -1457,17 +1449,6 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     }, 0, delegateConfiguration.getHeartbeatIntervalMs(), TimeUnit.MILLISECONDS);
   }
 
-  private void startKeepAlivePacket(DelegateParamsBuilder builder, Socket socket) {
-    log.info("Starting KeepAlive Packet at interval {} ms", KEEP_ALIVE_INTERVAL);
-    healthMonitorExecutor.scheduleAtFixedRate(() -> {
-      try {
-        sendKeepAlivePacket(builder, socket);
-      } catch (Exception ex) {
-        log.error("Exception while sending KeepAlive Packet", ex);
-      }
-    }, 0, KEEP_ALIVE_INTERVAL, TimeUnit.MILLISECONDS);
-  }
-
   private void startHeartbeat(DelegateParamsBuilder builder) {
     log.info("Starting heartbeat at interval {} ms", delegateConfiguration.getHeartbeatIntervalMs());
     healthMonitorExecutor.scheduleAtFixedRate(() -> {
@@ -1899,72 +1880,74 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
   }
 
   private void dispatchDelegateTask(DelegateTaskEvent delegateTaskEvent) {
-    log.info("DelegateTaskEvent received - {}", delegateTaskEvent);
-    String delegateTaskId = delegateTaskEvent.getDelegateTaskId();
+    try (TaskLogContext ignore = new TaskLogContext(delegateTaskEvent.getDelegateTaskId(), OVERRIDE_ERROR)) {
+      log.info("DelegateTaskEvent received - {}", delegateTaskEvent);
+      String delegateTaskId = delegateTaskEvent.getDelegateTaskId();
 
-    try {
-      if (frozen.get()) {
-        log.info(
-            "Delegate process with detected time out of sync or with revoked token is running. Won't acquire tasks.");
-        return;
+      try {
+        if (frozen.get()) {
+          log.info(
+              "Delegate process with detected time out of sync or with revoked token is running. Won't acquire tasks.");
+          return;
+        }
+
+        if (!acquireTasks.get()) {
+          log.info("[Old] Upgraded process is running. Won't acquire task while completing other tasks");
+          return;
+        }
+
+        if (upgradePending.get() && !delegateTaskEvent.isSync()) {
+          log.info("[Old] Upgrade pending, won't acquire async task");
+          return;
+        }
+
+        if (currentlyAcquiringTasks.contains(delegateTaskId)) {
+          log.info("Task [DelegateTaskEvent: {}] currently acquiring. Don't acquire again", delegateTaskEvent);
+          return;
+        }
+
+        if (currentlyValidatingTasks.containsKey(delegateTaskId)) {
+          log.info("Task [DelegateTaskEvent: {}] already validating. Don't validate again", delegateTaskEvent);
+          return;
+        }
+
+        currentlyAcquiringTasks.add(delegateTaskId);
+
+        log.debug("Try to acquire DelegateTask - accountId: {}", accountId);
+
+        DelegateTaskPackage delegateTaskPackage = executeRestCall(
+            delegateAgentManagerClient.acquireTask(delegateId, delegateTaskId, accountId, delegateInstanceId));
+        if (delegateTaskPackage == null || delegateTaskPackage.getData() == null) {
+          log.warn("Delegate task data not available for task: {} - accountId: {}", delegateTaskId,
+              delegateTaskEvent.getAccountId());
+          return;
+        } else {
+          log.info("received task package {} for delegateInstance {}", delegateTaskPackage, delegateInstanceId);
+        }
+
+        if (isEmpty(delegateTaskPackage.getDelegateInstanceId())) {
+          // Not whitelisted. Perform validation.
+          // TODO: Remove this once TaskValidation does not use secrets
+
+          // applyDelegateSecretFunctor(delegatePackage);
+          DelegateValidateTask delegateValidateTask = getDelegateValidateTask(delegateTaskEvent, delegateTaskPackage);
+          injector.injectMembers(delegateValidateTask);
+          currentlyValidatingTasks.put(delegateTaskPackage.getDelegateTaskId(), delegateTaskPackage);
+          updateCounterIfLessThanCurrent(maxValidatingTasksCount, currentlyValidatingTasks.size());
+          delegateValidateTask.validationResults();
+        } else if (delegateInstanceId.equals(delegateTaskPackage.getDelegateInstanceId())) {
+          applyDelegateSecretFunctor(delegateTaskPackage);
+          // Whitelisted. Proceed immediately.
+          log.info("Delegate {} whitelisted for task and accountId: {}", delegateId, accountId);
+          executeTask(delegateTaskPackage);
+        }
+
+      } catch (IOException e) {
+        log.error("Unable to get task for validation", e);
+      } finally {
+        currentlyAcquiringTasks.remove(delegateTaskId);
+        currentlyExecutingFutures.remove(delegateTaskId);
       }
-
-      if (!acquireTasks.get()) {
-        log.info("[Old] Upgraded process is running. Won't acquire task while completing other tasks");
-        return;
-      }
-
-      if (upgradePending.get() && !delegateTaskEvent.isSync()) {
-        log.info("[Old] Upgrade pending, won't acquire async task");
-        return;
-      }
-
-      if (currentlyAcquiringTasks.contains(delegateTaskId)) {
-        log.info("Task [DelegateTaskEvent: {}] currently acquiring. Don't acquire again", delegateTaskEvent);
-        return;
-      }
-
-      if (currentlyValidatingTasks.containsKey(delegateTaskId)) {
-        log.info("Task [DelegateTaskEvent: {}] already validating. Don't validate again", delegateTaskEvent);
-        return;
-      }
-
-      currentlyAcquiringTasks.add(delegateTaskId);
-
-      log.debug("Try to acquire DelegateTask - accountId: {}", accountId);
-
-      DelegateTaskPackage delegateTaskPackage = executeRestCall(
-          delegateAgentManagerClient.acquireTask(delegateId, delegateTaskId, accountId, delegateInstanceId));
-      if (delegateTaskPackage == null || delegateTaskPackage.getData() == null) {
-        log.warn("Delegate task data not available for task: {} - accountId: {}", delegateTaskId,
-            delegateTaskEvent.getAccountId());
-        return;
-      } else {
-        log.info("received task package {} for delegateInstance {}", delegateTaskPackage, delegateInstanceId);
-      }
-
-      if (isEmpty(delegateTaskPackage.getDelegateInstanceId())) {
-        // Not whitelisted. Perform validation.
-        // TODO: Remove this once TaskValidation does not use secrets
-
-        // applyDelegateSecretFunctor(delegatePackage);
-        DelegateValidateTask delegateValidateTask = getDelegateValidateTask(delegateTaskEvent, delegateTaskPackage);
-        injector.injectMembers(delegateValidateTask);
-        currentlyValidatingTasks.put(delegateTaskPackage.getDelegateTaskId(), delegateTaskPackage);
-        updateCounterIfLessThanCurrent(maxValidatingTasksCount, currentlyValidatingTasks.size());
-        delegateValidateTask.validationResults();
-      } else if (delegateInstanceId.equals(delegateTaskPackage.getDelegateInstanceId())) {
-        applyDelegateSecretFunctor(delegateTaskPackage);
-        // Whitelisted. Proceed immediately.
-        log.info("Delegate {} whitelisted for task and accountId: {}", delegateId, accountId);
-        executeTask(delegateTaskPackage);
-      }
-
-    } catch (IOException e) {
-      log.error("Unable to get task for validation", e);
-    } finally {
-      currentlyAcquiringTasks.remove(delegateTaskId);
-      currentlyExecutingFutures.remove(delegateTaskId);
     }
   }
 
@@ -2103,7 +2086,10 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
             .logStreamingClient(logStreamingClient)
             .accountId(delegateTaskPackage.getAccountId())
             .token(delegateTaskPackage.getLogStreamingToken())
-            .logStreamingSanitizer(LogStreamingSanitizer.builder().secrets(activitySecrets.getRight()).build())
+            .logStreamingSanitizer(
+                LogStreamingSanitizer.builder()
+                    .secrets(activitySecrets.getRight().stream().map(String::trim).collect(Collectors.toSet()))
+                    .build())
             .baseLogKey(logBaseKey)
             .logService(delegateLogService)
             .taskProgressExecutor(taskProgressExecutor)
@@ -2280,7 +2266,12 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
             log.info("Task {} response sent to manager", taskId);
             break;
           }
-          log.warn("Failed to send response for task {}: {}. {}", taskId, response == null ? "null" : response.code(),
+          log.warn("Failed to send response for task {}: {}. error: {}. requested url: {} {}", taskId,
+              response == null ? "null" : response.code(),
+              response == null || response.errorBody() == null ? "null" : response.errorBody().string(),
+              response == null || response.raw() == null || response.raw().request() == null
+                  ? "null"
+                  : response.raw().request().url(),
               attempt < (retries - 1) ? "Retrying." : "Giving up.");
           if (attempt < retries - 1) {
             // Do not sleep for last loop round, as we are going to fail.
@@ -2656,8 +2647,11 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
           log.info("Task {} response sent to manager", taskId);
           return;
         }
-        log.warn(
-            "Failed to send response for task {}: {}. {}", taskId, resp == null ? "null" : resp.code(), "Retrying.");
+        log.warn("Failed to send response for task {}: {}. error: {}. requested url: {} {}", taskId,
+            resp == null ? "null" : resp.code(),
+            resp == null || resp.errorBody() == null ? "null" : resp.errorBody().string(),
+            resp == null || resp.raw() == null || resp.raw().request() == null ? "null" : resp.raw().request().url(),
+            "Retrying.");
         sleep(ofSeconds(FibonacciBackOff.getFibonacciElement(attempt)));
       }
     } catch (Exception e) {

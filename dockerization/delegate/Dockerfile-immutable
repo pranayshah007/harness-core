@@ -28,7 +28,7 @@ RUN ./client_tools.sh $disable_client_tools \
 
 RUN rm /opt/harness-delegate/client_tools.sh
 
-COPY --from=adoptopenjdk/openjdk11:ubi-minimal-jre /opt/java/openjdk/ /opt/java/openjdk/
+COPY --from=adoptopenjdk/openjdk11:x86_64-ubi-minimal-jre-11.0.14_9 /opt/java/openjdk/ /opt/java/openjdk/
 
 ENV HOME=/opt/harness-delegate
 ENV JAVA_HOME=/opt/java/openjdk/

@@ -1,14 +1,24 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.cdng.creator.plan.service;
 
 import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
+import io.harness.cdng.configfile.ConfigFileWrapper;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.cdng.service.beans.ServiceConfig;
 import io.harness.cdng.utilities.ArtifactsUtility;
+import io.harness.cdng.utilities.ConfigFileUtility;
 import io.harness.cdng.utilities.ManifestsUtility;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
+import io.harness.pms.contracts.plan.Dependencies;
 import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.contracts.plan.YamlUpdates;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
@@ -184,6 +194,38 @@ public class ServiceDefinitionPlanCreatorHelper {
     return manifestsPlanNodeId;
   }
 
+  String addDependenciesForConfigFilesV2(YamlNode serviceV2Node,
+      Map<String, PlanCreationResponse> planCreationResponseMap, NGServiceV2InfoConfig serviceV2Config,
+      KryoSerializer kryoSerializer) {
+    YamlUpdates.Builder yamlUpdates = YamlUpdates.newBuilder();
+    YamlField configFilesYamlField =
+        ConfigFileUtility.fetchConfigFilesYamlFieldAndSetYamlUpdates(serviceV2Node, false, yamlUpdates);
+    String configFilesPlanNodeId = "configFiles-" + UUIDGenerator.generateUuid();
+
+    Map<String, ByteString> metadataDependency =
+        prepareMetadataV2(configFilesPlanNodeId, serviceV2Config, kryoSerializer);
+
+    Map<String, YamlField> dependenciesMap = new HashMap<>();
+    dependenciesMap.put(configFilesPlanNodeId, configFilesYamlField);
+
+    PlanCreationResponseBuilder configFilesPlanCreationResponse = PlanCreationResponse.builder().dependencies(
+        getDependencies(configFilesPlanNodeId, metadataDependency, dependenciesMap));
+    if (yamlUpdates.getFqnToYamlCount() > 0) {
+      configFilesPlanCreationResponse.yamlUpdates(yamlUpdates.build());
+    }
+    planCreationResponseMap.put(configFilesPlanNodeId, configFilesPlanCreationResponse.build());
+
+    return configFilesPlanNodeId;
+  }
+
+  private Dependencies getDependencies(
+      String planNodeId, Map<String, ByteString> metadataDependency, Map<String, YamlField> dependenciesMap) {
+    return DependenciesUtils.toDependenciesProto(dependenciesMap)
+        .toBuilder()
+        .putDependencyMetadata(planNodeId, Dependency.newBuilder().putAllMetadata(metadataDependency).build())
+        .build();
+  }
+
   boolean shouldCreatePlanNodeForManifests(ServiceConfig actualServiceConfig) {
     List<ManifestConfigWrapper> manifests = actualServiceConfig.getServiceDefinition().getServiceSpec().getManifests();
 
@@ -202,5 +244,11 @@ public class ServiceDefinitionPlanCreatorHelper {
 
     // Contains either manifests or not.
     return EmptyPredicate.isNotEmpty(manifests);
+  }
+
+  boolean shouldCreatePlanNodeForConfigFilesV2(NGServiceV2InfoConfig serviceV2InfoConfig) {
+    List<ConfigFileWrapper> configFiles = serviceV2InfoConfig.getServiceDefinition().getServiceSpec().getConfigFiles();
+
+    return EmptyPredicate.isNotEmpty(configFiles);
   }
 }

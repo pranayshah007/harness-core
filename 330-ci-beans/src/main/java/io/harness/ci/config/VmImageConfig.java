@@ -7,11 +7,16 @@
 
 package io.harness.ci.config;
 
-import lombok.Builder;
-import lombok.Value;
+import io.harness.annotation.RecasterAlias;
 
-@Value
+import lombok.Builder;
+import lombok.Data;
+import org.springframework.data.annotation.TypeAlias;
+
+@Data
 @Builder
+@TypeAlias("vmImageConfig")
+@RecasterAlias("io.harness.ci.config.VmImageConfig")
 public class VmImageConfig {
   String gitClone;
   String buildAndPushDockerRegistry;

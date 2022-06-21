@@ -17,6 +17,7 @@ import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
 import static io.harness.rule.OwnerRule.KAMAL;
 import static io.harness.rule.OwnerRule.KANHAIYA;
 import static io.harness.rule.OwnerRule.KAPIL;
+import static io.harness.rule.OwnerRule.NAVEEN;
 import static io.harness.rule.OwnerRule.PRAVEEN;
 import static io.harness.rule.OwnerRule.SOWMYA;
 
@@ -31,6 +32,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CvNextGenTestBase;
+import io.harness.account.AccountClient;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.CVNGTestConstants;
@@ -104,6 +106,10 @@ import io.harness.cvng.core.services.impl.PagerdutyChangeSourceUpdateHandler;
 import io.harness.cvng.dashboard.entities.HeatMap;
 import io.harness.cvng.dashboard.entities.HeatMap.HeatMapRisk;
 import io.harness.cvng.dashboard.services.api.HeatMapService;
+import io.harness.cvng.events.monitoredservice.MonitoredServiceCreateEvent;
+import io.harness.cvng.events.monitoredservice.MonitoredServiceDeleteEvent;
+import io.harness.cvng.events.monitoredservice.MonitoredServiceToggleEvent;
+import io.harness.cvng.events.monitoredservice.MonitoredServiceUpdateEvent;
 import io.harness.cvng.models.VerificationType;
 import io.harness.cvng.notification.beans.ChangeObservedConditionSpec;
 import io.harness.cvng.notification.beans.MonitoredServiceChangeEventType;
@@ -118,6 +124,8 @@ import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule.Mo
 import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule.MonitoredServiceHealthScoreCondition;
 import io.harness.cvng.notification.entities.NotificationRule;
 import io.harness.cvng.notification.services.api.NotificationRuleService;
+import io.harness.cvng.notification.utils.NotificationRuleCommonUtils;
+import io.harness.cvng.outbox.CVServiceOutboxEventHandler;
 import io.harness.cvng.servicelevelobjective.beans.ErrorBudgetRisk;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
@@ -129,11 +137,18 @@ import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.environment.dto.EnvironmentResponse;
 import io.harness.ng.core.mapper.TagMapper;
 import io.harness.notification.notificationclient.NotificationResultWithoutStatus;
+import io.harness.outbox.OutboxEvent;
+import io.harness.outbox.api.OutboxService;
+import io.harness.outbox.filter.OutboxEventFilter;
 import io.harness.persistence.HPersistence;
+import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
+import io.serializer.HObjectMapper;
+import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.time.Clock;
 import java.time.Instant;
@@ -157,8 +172,10 @@ import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.Answers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import retrofit2.Response;
 
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
@@ -175,10 +192,17 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
   @Inject VerificationTaskService verificationTaskService;
   @Inject NotificationRuleService notificationRuleService;
   @Inject private ActivityService activityService;
+
+  @Inject private OutboxService outboxService;
+
+  @Inject CVServiceOutboxEventHandler cvServiceOutboxEventHandler;
+
   @Mock SetupUsageEventService setupUsageEventService;
   @Mock ChangeSourceService changeSourceServiceMock;
   @Mock FakeNotificationClient notificationClient;
   @Mock private PersistentLocker mockedPersistentLocker;
+  @Inject NotificationRuleCommonUtils notificationRuleCommonUtils;
+  @Mock(answer = Answers.RETURNS_DEEP_STUBS) AccountClient accountClient;
 
   private BuilderFactory builderFactory;
   String healthSourceName;
@@ -245,6 +269,8 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     FieldUtils.writeField(heatMapService, "clock", clock, true);
     FieldUtils.writeField(monitoredServiceService, "heatMapService", heatMapService, true);
     FieldUtils.writeField(monitoredServiceService, "notificationClient", notificationClient, true);
+    FieldUtils.writeField(monitoredServiceService, "notificationRuleCommonUtils", notificationRuleCommonUtils, true);
+    FieldUtils.writeField(notificationRuleCommonUtils, "accountClient", accountClient, true);
   }
 
   @Test
@@ -321,9 +347,42 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     MonitoredServiceResponse monitoredServiceResponse =
         monitoredServiceService.createFromYaml(builderFactory.getProjectParams(), yaml);
     MonitoredServiceResponse monitoredServiceResponseFromDb =
-        monitoredServiceService.get(builderFactory.getProjectParams(), "service1");
+        monitoredServiceService.get(builderFactory.getProjectParams(), "service1_env3");
     assertThat(monitoredServiceResponse.getMonitoredServiceDTO()).isNotNull();
-    assertThat(monitoredServiceResponse.getMonitoredServiceDTO().getName()).isEqualTo("service1");
+    assertThat(monitoredServiceResponse.getMonitoredServiceDTO().getName()).isEqualTo("service1_env3");
+    assertThat(monitoredServiceResponse.getMonitoredServiceDTO().getEnvironmentRef()).isEqualTo("env3");
+    assertThat(monitoredServiceResponse.getMonitoredServiceDTO().getTemplate().getTemplateRef())
+        .isEqualTo("templateRef123");
+    assertThat(monitoredServiceResponse.getMonitoredServiceDTO().getTemplate().getVersionLabel())
+        .isEqualTo("versionLabel123");
+  }
+
+  @Test
+  @Owner(developers = DEEPAK_CHHIKARA)
+  @Category(UnitTests.class)
+  public void testCreateFromYaml_withoutIdentifier() {
+    String yaml = "monitoredService:\n"
+        + "  template:\n"
+        + "   templateRef: templateRef123\n"
+        + "   versionLabel: versionLabel123\n"
+        + "  type: Application\n"
+        + "  description: description\n"
+        + "  serviceRef: service1\n"
+        + "  environmentRef: <+monitoredService.variables.environmentIdentifier>\n"
+        + "  sources:\n"
+        + "      healthSources:\n"
+        + "      changeSources: \n"
+        + "  tags: {}\n"
+        + "  variables:\n"
+        + "    -   name: environmentIdentifier\n"
+        + "        type: String\n"
+        + "        value: env3";
+    MonitoredServiceResponse monitoredServiceResponse =
+        monitoredServiceService.createFromYaml(builderFactory.getProjectParams(), yaml);
+    MonitoredServiceResponse monitoredServiceResponseFromDb =
+        monitoredServiceService.get(builderFactory.getProjectParams(), "service1_env3");
+    assertThat(monitoredServiceResponse.getMonitoredServiceDTO()).isNotNull();
+    assertThat(monitoredServiceResponse.getMonitoredServiceDTO().getName()).isEqualTo("service1_env3");
     assertThat(monitoredServiceResponse.getMonitoredServiceDTO().getEnvironmentRef()).isEqualTo("env3");
     assertThat(monitoredServiceResponse.getMonitoredServiceDTO().getTemplate().getTemplateRef())
         .isEqualTo("templateRef123");
@@ -340,9 +399,8 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
         + "  type: Application\n"
         + "  description: description\n"
         + "  name: <+monitoredService.name>\n"
-        + "  serviceRef: service1\n"
-        + "  environmentRefList:\n"
-        + "   - env1\n"
+        + "  serviceRef: <+monitoredService.serviceRef>\n"
+        + "  environmentRef: env1\n"
         + "  tags: {}\n"
         + "  sources:\n"
         + "    healthSources:\n"
@@ -796,6 +854,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     assertThat(monitoredServiceListItemDTO.getChangeSummary()).isEqualTo(changeSummary);
     assertThat(monitoredServiceListItemDTO.isHealthMonitoringEnabled()).isFalse();
   }
+
   @Test
   @Owner(developers = KANHAIYA)
   @Category(UnitTests.class)
@@ -859,6 +918,63 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     assertThat(monitoredServiceListItemDTO.getType()).isEqualTo(MonitoredServiceType.APPLICATION);
     assertThat(monitoredServiceListItemDTO.isHealthMonitoringEnabled()).isFalse();
     assertThat(monitoredServiceListItemDTO.getTags()).isEqualTo(tags);
+  }
+
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testList_allUniqueServices() {
+    MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTOBuilder("ms1", "service1", "evn1").build();
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    monitoredServiceDTO = createMonitoredServiceDTOBuilder("ms2", "service2", "evn1").build();
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    monitoredServiceDTO = createMonitoredServiceDTOBuilder("ms3", "service3", "evn1").build();
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+
+    monitoredServiceService.setHealthMonitoringFlag(builderFactory.getProjectParams(), "ms1", true);
+    monitoredServiceService.setHealthMonitoringFlag(builderFactory.getProjectParams(), "ms2", true);
+
+    PageResponse<MonitoredServiceListItemDTO> monitoredServiceListDTOPageResponse =
+        monitoredServiceService.list(projectParams, null, 0, 10, null, false);
+    assertThat(monitoredServiceListDTOPageResponse.getTotalPages()).isEqualTo(1);
+    assertThat(monitoredServiceListDTOPageResponse.getTotalItems()).isEqualTo(3);
+    List<MonitoredServiceListItemDTO> monitoredServiceListItemDTOS = monitoredServiceListDTOPageResponse.getContent();
+    monitoredServiceListItemDTOS = monitoredServiceListItemDTOS.stream()
+                                       .sorted(Comparator.comparing(MonitoredServiceListItemDTO::getIdentifier))
+                                       .collect(toList());
+    assertThat(monitoredServiceListItemDTOS.get(0).isServiceLicenseEnabled()).isEqualTo(true);
+    assertThat(monitoredServiceListItemDTOS.get(1).isServiceLicenseEnabled()).isEqualTo(true);
+    assertThat(monitoredServiceListItemDTOS.get(2).isServiceLicenseEnabled()).isEqualTo(false);
+  }
+
+  @Test
+  @Owner(developers = ARPITJ)
+  @Category(UnitTests.class)
+  public void testList_someCommonServices() {
+    MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTOBuilder("ms1", "service1", "env1").build();
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    monitoredServiceDTO = createMonitoredServiceDTOBuilder("ms2", "service2", "env1").build();
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    monitoredServiceDTO = createMonitoredServiceDTOBuilder("ms3", "service3", "env1").build();
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    monitoredServiceDTO = createMonitoredServiceDTOBuilder("ms4", "service1", "env2").build();
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+
+    monitoredServiceService.setHealthMonitoringFlag(builderFactory.getProjectParams(), "ms1", true);
+    monitoredServiceService.setHealthMonitoringFlag(builderFactory.getProjectParams(), "ms2", true);
+
+    PageResponse<MonitoredServiceListItemDTO> monitoredServiceListDTOPageResponse =
+        monitoredServiceService.list(projectParams, null, 0, 10, null, false);
+    assertThat(monitoredServiceListDTOPageResponse.getTotalPages()).isEqualTo(1);
+    assertThat(monitoredServiceListDTOPageResponse.getTotalItems()).isEqualTo(4);
+    List<MonitoredServiceListItemDTO> monitoredServiceListItemDTOS = monitoredServiceListDTOPageResponse.getContent();
+    monitoredServiceListItemDTOS = monitoredServiceListItemDTOS.stream()
+                                       .sorted(Comparator.comparing(MonitoredServiceListItemDTO::getIdentifier))
+                                       .collect(toList());
+    assertThat(monitoredServiceListItemDTOS.get(0).isServiceLicenseEnabled()).isEqualTo(true);
+    assertThat(monitoredServiceListItemDTOS.get(1).isServiceLicenseEnabled()).isEqualTo(true);
+    assertThat(monitoredServiceListItemDTOS.get(2).isServiceLicenseEnabled()).isEqualTo(false);
+    assertThat(monitoredServiceListItemDTOS.get(3).isServiceLicenseEnabled()).isEqualTo(true);
   }
 
   @Test
@@ -997,6 +1113,19 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = KANHAIYA)
   @Category(UnitTests.class)
+  public void testUpdate_monitoredServiceEnabled() {
+    MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTO();
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    monitoredServiceDTO.setEnabled(true);
+    MonitoredServiceDTO savedMonitoredServiceDTO =
+        monitoredServiceService.update(builderFactory.getContext().getAccountId(), monitoredServiceDTO)
+            .getMonitoredServiceDTO();
+    assertThat(savedMonitoredServiceDTO.isEnabled()).isTrue();
+  }
+
+  @Test
+  @Owner(developers = KANHAIYA)
+  @Category(UnitTests.class)
   public void testUpdate_deletingHealthSource() {
     MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTO();
     monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
@@ -1084,6 +1213,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     assertThat(cvConfigs.size()).isEqualTo(1);
     assertCVConfig((AppDynamicsCVConfig) cvConfigs.get(0), CVMonitoringCategory.PERFORMANCE);
   }
+
   @Test
   @Owner(developers = KAMAL)
   @Category(UnitTests.class)
@@ -1447,6 +1577,9 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     assertThat(monitoredServiceListDTOPageResponse.getTotalItems()).isEqualTo(2);
     assertThat(monitoredServiceListDTOPageResponse.getContent().get(0).getDependentHealthScore().size()).isEqualTo(1);
     assertThat(monitoredServiceListDTOPageResponse.getContent().get(1).getDependentHealthScore().size()).isEqualTo(0);
+
+    List<MonitoredServiceListItemDTO> monitoredServiceListItemDTOS = monitoredServiceListDTOPageResponse.getContent();
+    assertThat(monitoredServiceListItemDTOS.size()).isEqualTo(2);
   }
 
   @Test
@@ -1934,6 +2067,16 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
         .build();
   }
 
+  private MonitoredServiceDTOBuilder createMonitoredServiceDTOBuilder(
+      String monitoredServiceIdentifier, String serviceIdentifier, String environmentIdentifier) {
+    return builderFactory.monitoredServiceDTOBuilder()
+        .identifier(monitoredServiceIdentifier)
+        .serviceRef(serviceIdentifier)
+        .environmentRef(environmentIdentifier)
+        .name(monitoredServiceName)
+        .tags(tags);
+  }
+
   private MonitoredServiceDTOBuilder createMonitoredServiceDTOBuilder() {
     return builderFactory.monitoredServiceDTOBuilder()
         .identifier(monitoredServiceIdentifier)
@@ -1941,6 +2084,10 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
         .environmentRef(environmentIdentifier)
         .name(monitoredServiceName)
         .tags(tags);
+  }
+
+  private MonitoredServiceDTO createEnabledMonitoredService() {
+    return createMonitoredServiceDTOBuilder().enabled(true).build();
   }
 
   @Test
@@ -2169,7 +2316,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = KAPIL)
   @Category(UnitTests.class)
-  public void testSendNotification() throws IllegalAccessException {
+  public void testSendNotification() throws IllegalAccessException, IOException {
     NotificationRuleDTO notificationRuleDTO =
         builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.MONITORED_SERVICE).build();
     NotificationRuleResponse notificationRuleResponse =
@@ -2205,6 +2352,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     FieldUtils.writeField(monitoredServiceService, "clock", clock, true);
     when(notificationClient.sendNotificationAsync(any()))
         .thenReturn(NotificationResultWithoutStatus.builder().notificationId("notificationId").build());
+    when(accountClient.getVanityUrl(any()).execute()).thenReturn(Response.success(new RestResponse()));
 
     monitoredServiceService.sendNotification(monitoredService);
     verify(notificationClient, times(1)).sendNotificationAsync(any());
@@ -2396,6 +2544,81 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     assertThatThrownBy(
         () -> monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO))
         .hasMessage("NotificationRule with identifier rule is of type SLO and cannot be added into MONITORED_SERVICE");
+  }
+
+  @Test
+  @Owner(developers = NAVEEN)
+  @Category(UnitTests.class)
+  public void testCreate_MonitoredServiceCreateAuditEvent() throws JsonProcessingException {
+    MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTO();
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    List<OutboxEvent> outboxEvents = outboxService.list(OutboxEventFilter.builder().maximumEventsPolled(10).build());
+    OutboxEvent outboxEvent = outboxEvents.get(outboxEvents.size() - 1);
+    assertThat(outboxEvent.getEventType()).isEqualTo(MonitoredServiceCreateEvent.builder().build().getEventType());
+    MonitoredServiceCreateEvent monitoredServiceCreateEvent =
+        HObjectMapper.NG_DEFAULT_OBJECT_MAPPER.readValue(outboxEvent.getEventData(), MonitoredServiceCreateEvent.class);
+    assertThat(monitoredServiceCreateEvent.getAccountIdentifier()).isEqualTo(accountId);
+    assertThat(monitoredServiceCreateEvent.getOrgIdentifier()).isEqualTo(orgIdentifier);
+    assertThat(monitoredServiceCreateEvent.getProjectIdentifier()).isEqualTo(projectIdentifier);
+  }
+
+  @Test
+  @Owner(developers = NAVEEN)
+  @Category(UnitTests.class)
+  public void testCreate_withMonitoredServiceEnabled() {
+    MonitoredServiceDTO monitoredServiceDTO = createEnabledMonitoredService();
+    MonitoredServiceDTO savedMonitoredServiceDTO =
+        monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO)
+            .getMonitoredServiceDTO();
+    assertThat(savedMonitoredServiceDTO.isEnabled()).isTrue();
+  }
+
+  @Test
+  @Owner(developers = NAVEEN)
+  @Category(UnitTests.class)
+  public void testUpdate_MonitoredServiceUpdateAuditEvent() throws JsonProcessingException {
+    MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTO();
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    monitoredServiceDTO.setName("new-name");
+    monitoredServiceService.update(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    List<OutboxEvent> outboxEvents = outboxService.list(OutboxEventFilter.builder().maximumEventsPolled(10).build());
+    OutboxEvent outboxEvent = outboxEvents.get(outboxEvents.size() - 1);
+    assertThat(outboxEvent.getEventType()).isEqualTo(MonitoredServiceUpdateEvent.builder().build().getEventType());
+    MonitoredServiceUpdateEvent monitoredServiceUpdateEvent =
+        HObjectMapper.NG_DEFAULT_OBJECT_MAPPER.readValue(outboxEvent.getEventData(), MonitoredServiceUpdateEvent.class);
+    assertThat(monitoredServiceUpdateEvent.getAccountIdentifier()).isEqualTo(accountId);
+    assertThat(monitoredServiceUpdateEvent.getOrgIdentifier()).isEqualTo(orgIdentifier);
+    assertThat(monitoredServiceUpdateEvent.getProjectIdentifier()).isEqualTo(projectIdentifier);
+  }
+
+  @Test
+  @Owner(developers = NAVEEN)
+  @Category(UnitTests.class)
+  public void testDelete_MonitoredServiceDeleteAuditEvent() throws JsonProcessingException {
+    MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTO();
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    monitoredServiceService.delete(builderFactory.getContext().getProjectParams(), monitoredServiceDTO.getIdentifier());
+    List<OutboxEvent> outboxEvents = outboxService.list(OutboxEventFilter.builder().maximumEventsPolled(10).build());
+    OutboxEvent outboxEvent = outboxEvents.get(outboxEvents.size() - 1);
+    assertThat(outboxEvent.getEventType()).isEqualTo(MonitoredServiceDeleteEvent.builder().build().getEventType());
+    MonitoredServiceDeleteEvent monitoredServiceDeleteEvent =
+        HObjectMapper.NG_DEFAULT_OBJECT_MAPPER.readValue(outboxEvent.getEventData(), MonitoredServiceDeleteEvent.class);
+    assertThat(monitoredServiceDeleteEvent.getAccountIdentifier()).isEqualTo(accountId);
+    assertThat(monitoredServiceDeleteEvent.getOrgIdentifier()).isEqualTo(orgIdentifier);
+    assertThat(monitoredServiceDeleteEvent.getProjectIdentifier()).isEqualTo(projectIdentifier);
+  }
+
+  @Test
+  @Owner(developers = NAVEEN)
+  @Category(UnitTests.class)
+  public void testSetHealthMonitoringFlag_MonitoredServiceToggleAuditEvent() {
+    MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTO();
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    monitoredServiceService.setHealthMonitoringFlag(
+        builderFactory.getContext().getProjectParams(), monitoredServiceIdentifier, false);
+    List<OutboxEvent> outboxEvents = outboxService.list(OutboxEventFilter.builder().maximumEventsPolled(10).build());
+    OutboxEvent outboxEvent = outboxEvents.get(outboxEvents.size() - 1);
+    assertThat(outboxEvent.getEventType()).isEqualTo(MonitoredServiceToggleEvent.builder().build().getEventType());
   }
 
   @Test

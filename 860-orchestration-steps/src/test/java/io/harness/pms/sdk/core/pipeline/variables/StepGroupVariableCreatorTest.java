@@ -25,8 +25,6 @@ import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.net.URL;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -81,7 +79,9 @@ public class StepGroupVariableCreatorTest extends CategoryTest {
                                          .map(YamlProperties::getFqn)
                                          .collect(Collectors.toList());
     assertThat(fqnPropertiesList)
-        .containsAll(Collections.singletonList("pipeline.stages.stage1.spec.execution.steps.sg1.name"));
+        .containsOnly("pipeline.stages.stage1.spec.execution.steps.sg1.name",
+            "pipeline.stages.stage1.spec.execution.steps.sg1.delegateSelectors",
+            "pipeline.stages.stage1.spec.execution.steps.sg1.when.condition");
 
     // yaml extra properties
     List<String> fqnExtraPropertiesList = variablesForParentNodeV2.getYamlExtraProperties()
@@ -91,10 +91,9 @@ public class StepGroupVariableCreatorTest extends CategoryTest {
                                               .map(YamlProperties::getFqn)
                                               .collect(Collectors.toList());
     assertThat(fqnExtraPropertiesList)
-        .containsAll(Arrays.asList("pipeline.stages.stage1.spec.execution.steps.sg1.when",
-            "pipeline.stages.stage1.spec.execution.steps.sg1.identifier",
+        .containsOnly("pipeline.stages.stage1.spec.execution.steps.sg1.identifier",
             "pipeline.stages.stage1.spec.execution.steps.sg1.startTs",
-            "pipeline.stages.stage1.spec.execution.steps.sg1.endTs"));
+            "pipeline.stages.stage1.spec.execution.steps.sg1.endTs");
 
     // check for childrenVariableCreator
     LinkedHashMap<String, VariableCreationResponse> variablesForChildrenNodesV2 =

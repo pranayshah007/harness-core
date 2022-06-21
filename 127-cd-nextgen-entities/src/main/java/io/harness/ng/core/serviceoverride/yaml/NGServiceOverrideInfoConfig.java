@@ -42,5 +42,5 @@ public class NGServiceOverrideInfoConfig {
 
   @NotNull String environmentRef;
   @NotNull String serviceRef;
-  List<NGVariable> variableOverrides;
+  List<NGVariable> variables;
 }

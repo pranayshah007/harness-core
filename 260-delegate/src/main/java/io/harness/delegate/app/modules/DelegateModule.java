@@ -53,6 +53,8 @@ import io.harness.cdng.secrets.tasks.SSHConfigValidationDelegateTask;
 import io.harness.cdng.secrets.tasks.WinRmConfigValidationDelegateTask;
 import io.harness.cistatus.service.GithubService;
 import io.harness.cistatus.service.GithubServiceImpl;
+import io.harness.cistatus.service.azurerepo.AzureRepoService;
+import io.harness.cistatus.service.azurerepo.AzureRepoServiceImpl;
 import io.harness.cistatus.service.bitbucket.BitbucketService;
 import io.harness.cistatus.service.bitbucket.BitbucketServiceImpl;
 import io.harness.cistatus.service.gitlab.GitlabService;
@@ -115,6 +117,7 @@ import io.harness.delegate.message.MessengerType;
 import io.harness.delegate.provider.DelegateConfigurationServiceProviderImpl;
 import io.harness.delegate.provider.DelegatePropertiesServiceProviderImpl;
 import io.harness.delegate.serverless.ServerlessAwsLambdaDeployCommandTaskHandler;
+import io.harness.delegate.serverless.ServerlessAwsLambdaPrepareRollbackCommandTaskHandler;
 import io.harness.delegate.serverless.ServerlessAwsLambdaRollbackCommandTaskHandler;
 import io.harness.delegate.serverless.ServerlessCommandTaskHandler;
 import io.harness.delegate.service.DelegateAgentService;
@@ -163,6 +166,11 @@ import io.harness.delegate.task.aws.AwsValidationHandler;
 import io.harness.delegate.task.aws.S3FetchFilesTaskNG;
 import io.harness.delegate.task.azure.AzureValidationHandler;
 import io.harness.delegate.task.azure.appservice.AzureAppServiceTaskParameters.AzureAppServiceTaskType;
+import io.harness.delegate.task.azure.appservice.webapp.AzureWebAppTaskNG;
+import io.harness.delegate.task.azure.appservice.webapp.handler.AzureWebAppRequestHandler;
+import io.harness.delegate.task.azure.appservice.webapp.handler.AzureWebAppRollbackRequestHandler;
+import io.harness.delegate.task.azure.appservice.webapp.handler.AzureWebAppSlotDeploymentRequestHandler;
+import io.harness.delegate.task.azure.appservice.webapp.ng.AzureWebAppRequestType;
 import io.harness.delegate.task.azure.arm.AzureARMTaskParameters;
 import io.harness.delegate.task.azure.resource.operation.AzureResourceProvider;
 import io.harness.delegate.task.cek8s.CEKubernetesTestConnectionDelegateTask;
@@ -201,6 +209,8 @@ import io.harness.delegate.task.helm.HelmDeployServiceNG;
 import io.harness.delegate.task.helm.HelmValuesFetchTaskNG;
 import io.harness.delegate.task.helm.HttpHelmConnectivityDelegateTask;
 import io.harness.delegate.task.helm.HttpHelmValidationHandler;
+import io.harness.delegate.task.helm.OciHelmConnectivityDelegateTask;
+import io.harness.delegate.task.helm.OciHelmValidationHandler;
 import io.harness.delegate.task.jenkins.JenkinsTestConnectionDelegateTask;
 import io.harness.delegate.task.jenkins.JenkinsValidationHandler;
 import io.harness.delegate.task.jira.JiraTaskNG;
@@ -233,7 +243,17 @@ import io.harness.delegate.task.serverless.ServerlessGitFetchTask;
 import io.harness.delegate.task.servicenow.ServiceNowTaskNG;
 import io.harness.delegate.task.servicenow.ServiceNowValidationHandler;
 import io.harness.delegate.task.servicenow.connection.ServiceNowTestConnectionTaskNG;
+import io.harness.delegate.task.shell.CommandTaskNG;
 import io.harness.delegate.task.shell.ShellScriptTaskNG;
+import io.harness.delegate.task.shell.ssh.ArtifactCommandUnitHandler;
+import io.harness.delegate.task.shell.ssh.ArtifactoryCommandUnitHandler;
+import io.harness.delegate.task.shell.ssh.CommandHandler;
+import io.harness.delegate.task.shell.ssh.SshCleanupCommandHandler;
+import io.harness.delegate.task.shell.ssh.SshCopyCommandHandler;
+import io.harness.delegate.task.shell.ssh.SshInitCommandHandler;
+import io.harness.delegate.task.shell.ssh.SshScriptCommandHandler;
+import io.harness.delegate.task.ssh.NGCommandUnitType;
+import io.harness.delegate.task.ssh.artifact.SshWinRmArtifactType;
 import io.harness.delegate.task.stepstatus.StepStatusTask;
 import io.harness.delegate.task.terraform.TFTaskType;
 import io.harness.delegate.task.terraform.TerraformBaseHelper;
@@ -1149,6 +1169,7 @@ public class DelegateModule extends AbstractModule {
     bind(GithubService.class).to(GithubServiceImpl.class);
     bind(GitlabService.class).to(GitlabServiceImpl.class);
     bind(BitbucketService.class).to(BitbucketServiceImpl.class);
+    bind(AzureRepoService.class).to(AzureRepoServiceImpl.class);
     bind(DockerRestClientFactory.class).to(DockerRestClientFactoryImpl.class);
 
     MapBinder<Class<? extends ArtifactSourceDelegateRequest>, Class<? extends DelegateArtifactTaskHandler>>
@@ -1253,6 +1274,28 @@ public class DelegateModule extends AbstractModule {
         .to(ServerlessAwsLambdaDeployCommandTaskHandler.class);
     serverlessTaskTypeToTaskHandlerMap.addBinding(ServerlessCommandType.SERVERLESS_AWS_LAMBDA_ROLLBACK.name())
         .to(ServerlessAwsLambdaRollbackCommandTaskHandler.class);
+    serverlessTaskTypeToTaskHandlerMap.addBinding(ServerlessCommandType.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK.name())
+        .to(ServerlessAwsLambdaPrepareRollbackCommandTaskHandler.class);
+
+    // Azure Web App NG
+    MapBinder<String, AzureWebAppRequestHandler> azureWebAppRequestTypeToRequestHandlerMap =
+        MapBinder.newMapBinder(binder(), String.class, AzureWebAppRequestHandler.class);
+    azureWebAppRequestTypeToRequestHandlerMap.addBinding(AzureWebAppRequestType.SLOT_DEPLOYMENT.name())
+        .to(AzureWebAppSlotDeploymentRequestHandler.class);
+      azureWebAppRequestTypeToRequestHandlerMap.addBinding(AzureWebAppRequestType.ROLLBACK.name())
+              .to(AzureWebAppRollbackRequestHandler.class);
+
+    // Ssh and WinRM task handlers
+    MapBinder<String, CommandHandler> commandUnitHandlers =
+        MapBinder.newMapBinder(binder(), String.class, CommandHandler.class);
+    commandUnitHandlers.addBinding(NGCommandUnitType.INIT).to(SshInitCommandHandler.class);
+    commandUnitHandlers.addBinding(NGCommandUnitType.SCRIPT).to(SshScriptCommandHandler.class);
+    commandUnitHandlers.addBinding(NGCommandUnitType.COPY).to(SshCopyCommandHandler.class);
+    commandUnitHandlers.addBinding(NGCommandUnitType.CLEANUP).to(SshCleanupCommandHandler.class);
+
+    MapBinder<String, ArtifactCommandUnitHandler> artifactCommandHandlers =
+        MapBinder.newMapBinder(binder(), String.class, ArtifactCommandUnitHandler.class);
+    artifactCommandHandlers.addBinding(SshWinRmArtifactType.ARTIFACTORY.name()).to(ArtifactoryCommandUnitHandler.class);
 
     registerSecretManagementBindings();
     registerConnectorValidatorsBindings();
@@ -1579,6 +1622,7 @@ public class DelegateModule extends AbstractModule {
         .toInstance(CEKubernetesTestConnectionDelegateTask.class);
     mapBinder.addBinding(TaskType.K8S_SERVICE_ACCOUNT_INFO).toInstance(K8sFetchServiceAccountTask.class);
     mapBinder.addBinding(TaskType.HTTP_HELM_CONNECTIVITY_TASK).toInstance(HttpHelmConnectivityDelegateTask.class);
+    mapBinder.addBinding(TaskType.OCI_HELM_CONNECTIVITY_TASK).toInstance(OciHelmConnectivityDelegateTask.class);
     mapBinder.addBinding(TaskType.NG_AZURE_TASK).toInstance(AzureTask.class);
 
     mapBinder.addBinding(TaskType.K8_FETCH_NAMESPACES).toInstance(ServiceImplDelegateTask.class);
@@ -1607,6 +1651,8 @@ public class DelegateModule extends AbstractModule {
     mapBinder.addBinding(TaskType.FETCH_S3_FILE_TASK_NG).toInstance(S3FetchFilesTaskNG.class);
     mapBinder.addBinding(TaskType.SERVERLESS_GIT_FETCH_TASK_NG).toInstance(ServerlessGitFetchTask.class);
     mapBinder.addBinding(TaskType.SERVERLESS_COMMAND_TASK).toInstance(ServerlessCommandTask.class);
+    mapBinder.addBinding(TaskType.AZURE_WEB_APP_TASK_NG).toInstance(AzureWebAppTaskNG.class);
+    mapBinder.addBinding(TaskType.COMMAND_TASK_NG).toInstance(CommandTaskNG.class);
   }
 
   private void registerSecretManagementBindings() {
@@ -1693,7 +1739,8 @@ public class DelegateModule extends AbstractModule {
         .to(JenkinsValidationHandler.class);
     connectorTypeToConnectorValidationHandlerMap.addBinding(ConnectorType.HTTP_HELM_REPO.getDisplayName())
         .to(HttpHelmValidationHandler.class);
-
+    connectorTypeToConnectorValidationHandlerMap.addBinding(ConnectorType.OCI_HELM_REPO.getDisplayName())
+        .to(OciHelmValidationHandler.class);
     connectorTypeToConnectorValidationHandlerMap.addBinding(ConnectorType.VAULT.getDisplayName())
         .to(UpsertSecretTaskValidationHandler.class);
     connectorTypeToConnectorValidationHandlerMap.addBinding(ConnectorType.AZURE_KEY_VAULT.getDisplayName())

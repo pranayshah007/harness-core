@@ -7,6 +7,7 @@
 
 package io.harness.ng.core.entitysetupusage;
 
+import static io.harness.NGResourceFilterConstants.CASE_INSENSITIVE_MONGO_OPTIONS;
 import static io.harness.annotations.dev.HarnessTeam.DX;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
@@ -59,7 +60,7 @@ public class EntitySetupUsageQueryFilterHelper {
     }
     if (isNotBlank(searchTerm)) {
       criteria.orOperator(Criteria.where(EntitySetupUsageKeys.referredEntityName).regex(searchTerm),
-          Criteria.where(EntitySetupUsageKeys.referredByEntityName).regex(searchTerm));
+          Criteria.where(EntitySetupUsageKeys.referredByEntityName).regex(searchTerm, CASE_INSENSITIVE_MONGO_OPTIONS));
     }
     populateGitCriteriaForReferredEntity(criteria);
     return criteria;
@@ -186,6 +187,18 @@ public class EntitySetupUsageQueryFilterHelper {
     }
     if (isNotEmpty(referredByEntityName)) {
       criteria.and(EntitySetupUsageKeys.referredByEntityName).regex(referredByEntityName);
+    }
+    populateGitCriteriaForReferredEntity(criteria);
+    return criteria;
+  }
+
+  public Criteria createCriteriaForReferredEntityFQNIn(
+      String accountIdentifier, List<String> referredEntityFQNs, EntityType referredEntityType) {
+    Criteria criteria = new Criteria();
+    criteria.and(EntitySetupUsageKeys.accountIdentifier).is(accountIdentifier);
+    criteria.and(EntitySetupUsageKeys.referredEntityFQN).in(referredEntityFQNs);
+    if (referredEntityType != null) {
+      criteria.and(EntitySetupUsageKeys.referredEntityType).is(referredEntityType.getYamlName());
     }
     populateGitCriteriaForReferredEntity(criteria);
     return criteria;

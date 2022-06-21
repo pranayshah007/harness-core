@@ -25,9 +25,11 @@ import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.DataGenerator;
 import io.harness.cvng.analysis.entities.LearningEngineTask;
 import io.harness.cvng.analysis.entities.LearningEngineTask.LearningEngineTaskKeys;
+import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
 import io.harness.cvng.core.entities.AppDynamicsCVConfig;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.services.api.VerificationTaskService;
+import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.models.VerificationType;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
@@ -74,6 +76,7 @@ public class OrchestrationServiceImplTest extends CvNextGenTestBase {
   @Inject OrchestrationService orchestrationService;
   @Inject private Clock clock;
   @Inject private ServiceLevelIndicatorService serviceLevelIndicatorService;
+  @Inject private MonitoredServiceService monitoredServiceService;
   private BuilderFactory builderFactory;
   private String cvConfigId;
   private String verificationTaskId;
@@ -523,10 +526,11 @@ public class OrchestrationServiceImplTest extends CvNextGenTestBase {
   @Owner(developers = DEEPAK_CHHIKARA)
   @Category(UnitTests.class)
   public void testQueueAnalysis_forSLIVerificationTask() {
+    createMonitoredService();
     List<String> serviceLevelIndicatorIdentifiers =
         serviceLevelIndicatorService.create(builderFactory.getProjectParams(),
             Collections.singletonList(builderFactory.getServiceLevelIndicatorDTOBuilder()), generateUuid(),
-            generateUuid(), generateUuid());
+            "monitoredServiceIdentifier", generateUuid());
     ServiceLevelIndicator serviceLevelIndicator = serviceLevelIndicatorService.getServiceLevelIndicator(
         builderFactory.getProjectParams(), serviceLevelIndicatorIdentifiers.get(0));
     String sliId = serviceLevelIndicator.getUuid();
@@ -557,6 +561,13 @@ public class OrchestrationServiceImplTest extends CvNextGenTestBase {
   public void orchestrate(String verificationTaskId) {
     AnalysisOrchestrator orchestrator = getOrchestrator(verificationTaskId);
     orchestrationService.orchestrate(orchestrator);
+  }
+
+  private void createMonitoredService() {
+    MonitoredServiceDTO monitoredServiceDTO =
+        builderFactory.monitoredServiceDTOBuilder().identifier("monitoredServiceIdentifier").build();
+    monitoredServiceDTO.setSources(MonitoredServiceDTO.Sources.builder().build());
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
   }
 
   @SneakyThrows

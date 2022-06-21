@@ -31,15 +31,18 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.OrchestrationWorkflowType;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.ff.FeatureFlagService;
 
+import org.apache.commons.lang3.StringUtils;
 import software.wings.api.CanaryWorkflowStandardParams;
 import software.wings.api.DeploymentType;
 import software.wings.api.WorkflowElement;
 import software.wings.beans.CanaryOrchestrationWorkflow;
 import software.wings.beans.ExecutionArgs;
+import software.wings.beans.InfrastructureMapping;
 import software.wings.beans.Pipeline;
 import software.wings.beans.PipelineStage;
 import software.wings.beans.PipelineStage.PipelineStageElement;
@@ -80,6 +83,7 @@ import java.util.Set;
 import java.util.StringJoiner;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
+import lombok.NonNull;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.Sort;
 
@@ -102,7 +106,6 @@ public class WorkflowExecutionServiceHelper {
     if (isBlank(workflowExecutionId) || isEmpty(workflowVariables)) {
       return new WorkflowVariablesMetadata(workflowVariables);
     }
-
     WorkflowExecution workflowExecution = workflowExecutionService.getWorkflowExecution(appId, workflowExecutionId);
     if (workflowExecution == null || workflowExecution.getExecutionArgs() == null
         || executionArgs.getWorkflowType() != workflowExecution.getWorkflowType()
@@ -338,7 +341,11 @@ public class WorkflowExecutionServiceHelper {
         }
         continue;
       }
-      variable.setValue(oldWorkflowVariablesMap.get(name));
+      String oldValue = oldWorkflowVariablesMap.get(name);
+      if( !StringUtils.isBlank(oldValue) && (EmptyPredicate.isEmpty(variable.getAllowedList()) || variable.getAllowedList().contains(oldValue))) {
+        //not updating value if variable itself is updated
+        variable.setValue(oldValue);
+      }
       // This is never a noop as we have already dealt with the case that this workflow variable is new.
       oldWorkflowVariablesMap.remove(name);
     }
@@ -480,7 +487,8 @@ public class WorkflowExecutionServiceHelper {
     return !(matchesVariablePattern(defaultValuePresent) && !defaultValuePresent.contains("."));
   }
 
-  public List<String> getInfraMappings(Workflow workflow, Map<String, String> workflowVariables) {
+  @NonNull
+  public List<InfrastructureMapping> getInfraMappings(Workflow workflow, Map<String, String> workflowVariables) {
     if (workflow == null || workflow.getOrchestrationWorkflow() == null) {
       return new ArrayList<>();
     }
@@ -491,7 +499,7 @@ public class WorkflowExecutionServiceHelper {
     return orchestrationWorkflow.getWorkflowPhases()
         .stream()
         .map(phase
-            -> infrastructureMappingService.getInfraMappingsByServiceAndInfraDefinitionIds(workflow.getAppId(),
+            -> infrastructureMappingService.getInfraMappingWithDeploymentType(workflow.getAppId(),
                 workflowService.getResolvedServiceIdFromPhase(phase, workflowVariables),
                 workflowService.getResolvedInfraDefinitionIdFromPhase(phase, workflowVariables)))
         .filter(Objects::nonNull)

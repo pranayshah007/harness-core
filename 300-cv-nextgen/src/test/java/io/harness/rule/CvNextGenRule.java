@@ -12,8 +12,6 @@ import static io.harness.CvNextGenTestBase.getResourceFilePath;
 import static io.harness.cache.CacheBackend.CAFFEINE;
 import static io.harness.cache.CacheBackend.NOOP;
 
-import static org.mockito.Mockito.mock;
-
 import io.harness.AccessControlClientConfiguration;
 import io.harness.AccessControlClientModule;
 import io.harness.accesscontrol.clients.AccessControlClient;
@@ -55,7 +53,6 @@ import io.harness.notification.constant.NotificationClientSecrets;
 import io.harness.notification.module.NotificationClientModule;
 import io.harness.notification.module.NotificationClientPersistenceModule;
 import io.harness.notification.notificationclient.NotificationClient;
-import io.harness.outbox.api.OutboxDao;
 import io.harness.outbox.api.OutboxService;
 import io.harness.outbox.api.impl.OutboxDaoImpl;
 import io.harness.outbox.api.impl.OutboxServiceImpl;
@@ -65,6 +62,7 @@ import io.harness.repositories.outbox.OutboxEventRepository;
 import io.harness.serializer.CvNextGenRegistrars;
 import io.harness.serializer.KryoModule;
 import io.harness.serializer.KryoRegistrar;
+import io.harness.springdata.SpringPersistenceTestModule;
 import io.harness.template.remote.TemplateResourceClient;
 import io.harness.testlib.module.MongoRuleMixin;
 import io.harness.testlib.module.TestMongoModule;
@@ -72,6 +70,7 @@ import io.harness.threading.CurrentThreadExecutor;
 import io.harness.threading.ExecutorModule;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.AbstractModule;
 import com.google.inject.Injector;
@@ -101,6 +100,7 @@ import org.junit.runners.model.Statement;
 import org.mockito.Mockito;
 import org.mockito.stubbing.Answer;
 import org.mongodb.morphia.converters.TypeConverter;
+import org.springframework.core.convert.converter.Converter;
 import org.yaml.snakeyaml.Yaml;
 import retrofit2.Call;
 import retrofit2.Response;
@@ -146,16 +146,22 @@ public class CvNextGenRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
             .addAll(CvNextGenRegistrars.morphiaConverters)
             .build();
       }
+
+      @Provides
+      @Singleton
+      List<Class<? extends Converter<?, ?>>> springConverters() {
+        return ImmutableList.<Class<? extends Converter<?, ?>>>builder()
+            .addAll(CvNextGenRegistrars.springConverters)
+            .build();
+      }
     });
 
+    modules.add(TestMongoModule.getInstance());
     modules.add(mongoTypeModule(annotations));
     modules.add(new AbstractModule() {
       @Override
       protected void configure() {
         bind(HPersistence.class).to(MongoPersistence.class);
-        bind(OutboxDao.class).to(OutboxDaoImpl.class);
-        bind(OutboxService.class).to(OutboxServiceImpl.class);
-        bind(OutboxEventRepository.class).toInstance(mock(OutboxEventRepository.class));
       }
     });
 
@@ -166,9 +172,11 @@ public class CvNextGenRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
         return MongoConfig.builder().build();
       }
     });
+
     modules.add(new CVNextGenCommonsServiceModule());
 
     modules.add(TestMongoModule.getInstance());
+
     VerificationConfiguration verificationConfiguration = getVerificationConfiguration();
     modules.add(Modules.override(new CVServiceModule(verificationConfiguration)).with(binder -> {
       binder.bind(FeatureFlagService.class).to(AlwaysFalseFeatureFlagServiceImpl.class);
@@ -181,7 +189,7 @@ public class CvNextGenRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
         MongoBackendConfiguration.builder().uri("mongodb://localhost:27017/notificationChannel").build();
     modules.add(new EventsFrameworkModule(verificationConfiguration.getEventsFrameworkConfiguration()));
     mongoBackendConfiguration.setType("MONGO");
-    modules.add(new NotificationClientPersistenceModule());
+    modules.add(Modules.override(new SpringPersistenceTestModule()).with(new NotificationClientPersistenceModule()));
     modules.add(new NextGenClientModule(
         NGManagerServiceConfig.builder().managerServiceSecret("secret").ngManagerUrl("http://test-ng-host").build()));
     modules.add(new VerificationManagerClientModule("http://test-host"));

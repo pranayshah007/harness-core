@@ -224,6 +224,9 @@ public class AmbianceUtils {
     if (level == null || !level.hasStrategyMetadata()) {
       return StringUtils.EMPTY;
     }
+    if (!level.getStrategyMetadata().hasMatrixMetadata()) {
+      return "_" + level.getStrategyMetadata().getCurrentIteration();
+    }
     if (level.getStrategyMetadata().getMatrixMetadata().getMatrixCombinationList().isEmpty()) {
       return StringUtils.EMPTY;
     }

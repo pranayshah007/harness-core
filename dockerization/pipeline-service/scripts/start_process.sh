@@ -39,6 +39,11 @@ if [[ "${ENABLE_APPDYNAMICS}" == "true" ]]; then
     echo "Using Appdynamics java agent"
 fi
 
+if [[ "${ENABLE_MONITORING}" == "true" ]] ; then
+    echo "Monitoring  is enabled"
+    JAVA_OPTS="$JAVA_OPTS ${MONITORING_FLAGS}"
+    echo "Using inspectIT Java Agent"
+fi
 
 if [[ "${DEPLOY_MODE}" == "KUBERNETES" || "${DEPLOY_MODE}" == "KUBERNETES_ONPREM" || "${DEPLOY_VERSION}" == "COMMUNITY" ]]; then
     java $JAVA_OPTS -jar $CAPSULE_JAR $COMMAND /opt/harness/config.yml

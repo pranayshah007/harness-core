@@ -7,11 +7,16 @@
 
 package io.harness.beans.build;
 
+import io.harness.annotation.RecasterAlias;
+
 import lombok.Builder;
 import lombok.Value;
+import org.springframework.data.annotation.TypeAlias;
 
 @Value
 @Builder
+@TypeAlias("publishedArtifact")
+@RecasterAlias("io.harness.beans.build.PublishedArtifact")
 public class PublishedArtifact {
   private String buildNumber;
   private String buildLink;

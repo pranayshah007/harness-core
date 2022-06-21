@@ -46,13 +46,6 @@ accessControlClient:
     readTimeOutSeconds: 15
   accessControlServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
 
-
-harness-mongo:
-  uri: mongodb://localhost:27017/harness
-  connectTimeout: 30000
-  serverSelectionTimeout: 90000
-  maxConnectionIdleTime: 600000
-  connectionsPerHost: 50
 stomanager-mongo:
   uri: mongodb://localhost:27017/sto-harness
   connectTimeout: 30000
@@ -61,18 +54,8 @@ stomanager-mongo:
   connectionsPerHost: 300
   indexManagerMode: AUTO
   aliasDBName: sto-manager
-pmsMongo:
-  uri: mongodb://localhost:27017/pms-harness
-  connectTimeout: 30000
-  serverSelectionTimeout: 90000
-  maxConnectionIdleTime: 600000
-  connectionsPerHost: 300
-  indexManagerMode: AUTO
 
 enableAuth: false
-
-scmConnectionConfig:
-  url: localhost:8091
 
 logServiceConfig:
   baseUrl: https://qa.harness.io/log-service/
@@ -141,7 +124,7 @@ ciExecutionServiceConfig:
       entrypoint:
         - /bin/drone-s3
     securityConfig:
-      image: zeronorth/sto_plugin:dev.stable
+      image: zeronorth/sto_plugin:dev
       entrypoint:
         - /bin/sh
         - -c

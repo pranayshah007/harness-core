@@ -12,11 +12,13 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
+import io.harness.delegate.task.shell.ssh.ArtifactCommandUnitHandler;
 import io.harness.logging.LogCallback;
 import io.harness.shell.ScriptProcessExecutor;
 import io.harness.shell.ShellExecutorConfig;
 
 import com.google.inject.Singleton;
+import java.util.Map;
 
 @OwnedBy(HarnessTeam.CDC)
 @Singleton
@@ -28,10 +30,12 @@ public class ShellExecutorFactoryNG {
         shellExecutorConfig);
   }
 
-  public FileBasedScriptExecutorNG getFileBasedExecutor(ShellExecutorConfig shellExecutorConfig,
-      ILogStreamingTaskClient logStreamingTaskClient, CommandUnitsProgress commandUnitsProgress) {
+  public FileBasedProcessScriptExecutorNG getFileBasedExecutor(ShellExecutorConfig shellExecutorConfig,
+      ILogStreamingTaskClient logStreamingTaskClient, CommandUnitsProgress commandUnitsProgress,
+      Map<String, ArtifactCommandUnitHandler> artifactCommandHandlers) {
     return new FileBasedProcessScriptExecutorNG(
-        getExecutionLogCallback(shellExecutorConfig, logStreamingTaskClient, commandUnitsProgress), true);
+        getExecutionLogCallback(shellExecutorConfig, logStreamingTaskClient, commandUnitsProgress), true,
+        artifactCommandHandlers);
   }
 
   private static LogCallback getExecutionLogCallback(ShellExecutorConfig shellExecutorConfig,

@@ -244,14 +244,14 @@ public class SecretSpecBuilderTest extends CategoryTest {
   @Category(UnitTests.class)
   public void shouldDecryptGitSecretVariablesForAzureRepoConnector() {
     AzureRepoUsernameTokenDTO azureRepoUsernameTokenDTO =
-       AzureRepoUsernameTokenDTO.builder()
-           .username("username")
-           .tokenRef(SecretRefData.builder()
-                         .identifier("secretKeyRefIdentifier")
-                         .scope(Scope.ACCOUNT)
-                         .decryptedValue("S3CR3TKEYEXAMPLE".toCharArray())
-                         .build())
-           .build();
+        AzureRepoUsernameTokenDTO.builder()
+            .username("username")
+            .tokenRef(SecretRefData.builder()
+                          .identifier("secretKeyRefIdentifier")
+                          .scope(Scope.ACCOUNT)
+                          .decryptedValue("S3CR3TKEYEXAMPLE".toCharArray())
+                          .build())
+            .build();
     AzureRepoConnectorDTO azureRepoConnectorDTO =
         AzureRepoConnectorDTO.builder()
             .url("https://dev.azure.com/org/project/repo")

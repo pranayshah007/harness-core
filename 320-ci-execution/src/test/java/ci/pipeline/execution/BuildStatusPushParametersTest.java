@@ -8,6 +8,7 @@
 package ci.pipeline.execution;
 
 import static io.harness.annotations.dev.HarnessTeam.CI;
+import static io.harness.delegate.beans.connector.ConnectorType.AZURE_REPO;
 import static io.harness.delegate.beans.connector.ConnectorType.GITHUB;
 import static io.harness.delegate.beans.connector.scm.GitConnectionType.ACCOUNT;
 import static io.harness.delegate.beans.connector.scm.GitConnectionType.REPO;
@@ -27,8 +28,10 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.build.BuildStatusUpdateParameter;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.task.ci.CIBuildStatusPushParameters;
+import io.harness.delegate.task.ci.GitSCMType;
 import io.harness.executionplan.CIExecutionTestBase;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
@@ -55,6 +58,7 @@ public class BuildStatusPushParametersTest extends CIExecutionTestBase {
   @Mock AccountClient accountClient;
   @Mock private ConnectorUtils connectorUtils;
   @Mock GithubConnectorDTO gitConfigDTO;
+  @Mock AzureRepoConnectorDTO azureGitConfigDTO;
   @Mock private PipelineUtils pipelineUtils;
   @Mock private ConnectorDetails connectorDetails;
   @InjectMocks private GitBuildStatusUtility gitBuildStatusUtility;
@@ -157,9 +161,9 @@ public class BuildStatusPushParametersTest extends CIExecutionTestBase {
         Ambiance.newBuilder(ambiance).setMetadata(executionMetadata).build(), buildStatusUpdateParameter,
         Status.SUCCEEDED, "sha");
 
-    assertThat(pushParameters.getDetailsUrl()).
-       isEqualTo(
-          "https://app.harness.io/ng/#/account/accountId/ci/orgs/orgIdentifier/projects/projectIdentfier/pipelines/shortPipelineId/executions/executionuuid/pipeline");
+    assertThat(pushParameters.getDetailsUrl())
+        .isEqualTo(
+            "https://app.harness.io/ng/#/account/accountId/ci/orgs/orgIdentifier/projects/projectIdentfier/pipelines/shortPipelineId/executions/executionuuid/pipeline");
   }
 
   @Test
@@ -180,9 +184,113 @@ public class BuildStatusPushParametersTest extends CIExecutionTestBase {
         Ambiance.newBuilder(ambiance).setMetadata(executionMetadata).build(), buildStatusUpdateParameter,
         Status.SUCCEEDED, "sha");
 
-    assertThat(pushParameters.getDetailsUrl()).
-            isEqualTo(
-               "https://vanity.harness.io/ng/#/account/accountId/ci/orgs/orgIdentifier/projects/projectIdentfier/pipelines/shortPipelineId/executions/executionuuid/pipeline");
+    assertThat(pushParameters.getDetailsUrl())
+        .isEqualTo(
+            "https://vanity.harness.io/ng/#/account/accountId/ci/orgs/orgIdentifier/projects/projectIdentfier/pipelines/shortPipelineId/executions/executionuuid/pipeline");
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testOwnerRepoNameForAccountLevelHttpAzureRepoConnector() throws IOException {
+    String url = "https://dev.azure.com/org/";
+    prepareAccountLevelConnector(url, null);
+
+    when(connectorDetails.getConnectorType()).thenReturn(AZURE_REPO);
+    when(connectorDetails.getConnectorConfig()).thenReturn(azureGitConfigDTO);
+    when(azureGitConfigDTO.getUrl()).thenReturn(url);
+    when(azureGitConfigDTO.getConnectionType()).thenReturn(ACCOUNT);
+
+    ExecutionMetadata executionMetadata =
+        ExecutionMetadata.newBuilder().setExecutionUuid("executionuuid").setPipelineIdentifier("pipelineId").build();
+    BuildStatusUpdateParameter buildStatusUpdateParameter =
+        getBuildStatusUpdateParameter("shortIdentifier", "shortname", "project", "repo");
+
+    CIBuildStatusPushParameters pushParameters = gitBuildStatusUtility.getCIBuildStatusPushParams(
+        Ambiance.newBuilder(ambiance).setMetadata(executionMetadata).build(), buildStatusUpdateParameter,
+        Status.SUCCEEDED, "sha");
+
+    assertThat(pushParameters.getOwner()).isEqualTo("org");
+    assertThat(pushParameters.getRepo()).isEqualTo("project/_git/repo");
+    assertThat(pushParameters.getGitSCMType()).isEqualTo(GitSCMType.AZURE_REPO);
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testOwnerRepoNameForRepoLevelHttpAzureRepoConnector() throws IOException {
+    String url = "https://dev.azure.com/org/project/_git/repo";
+    prepareAccountLevelConnector(url, null);
+
+    when(connectorDetails.getConnectorType()).thenReturn(AZURE_REPO);
+    when(connectorDetails.getConnectorConfig()).thenReturn(azureGitConfigDTO);
+    when(azureGitConfigDTO.getUrl()).thenReturn(url);
+    when(azureGitConfigDTO.getConnectionType()).thenReturn(REPO);
+
+    ExecutionMetadata executionMetadata =
+        ExecutionMetadata.newBuilder().setExecutionUuid("executionuuid").setPipelineIdentifier("pipelineId").build();
+    BuildStatusUpdateParameter buildStatusUpdateParameter =
+        getBuildStatusUpdateParameter("shortIdentifier", "shortname", null, null);
+
+    CIBuildStatusPushParameters pushParameters = gitBuildStatusUtility.getCIBuildStatusPushParams(
+        Ambiance.newBuilder(ambiance).setMetadata(executionMetadata).build(), buildStatusUpdateParameter,
+        Status.SUCCEEDED, "sha");
+
+    assertThat(pushParameters.getOwner()).isEqualTo("org");
+    assertThat(pushParameters.getRepo()).isEqualTo("project/_git/repo");
+    assertThat(pushParameters.getGitSCMType()).isEqualTo(GitSCMType.AZURE_REPO);
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testOwnerRepoNameForAccountLevelSSHAzureRepoConnector() throws IOException {
+    String url = "git@ssh.dev.azure.com:v3/org/";
+    prepareAccountLevelConnector(url, null);
+
+    when(connectorDetails.getConnectorType()).thenReturn(AZURE_REPO);
+    when(connectorDetails.getConnectorConfig()).thenReturn(azureGitConfigDTO);
+    when(azureGitConfigDTO.getUrl()).thenReturn(url);
+    when(azureGitConfigDTO.getConnectionType()).thenReturn(ACCOUNT);
+
+    ExecutionMetadata executionMetadata =
+        ExecutionMetadata.newBuilder().setExecutionUuid("executionuuid").setPipelineIdentifier("pipelineId").build();
+    BuildStatusUpdateParameter buildStatusUpdateParameter =
+        getBuildStatusUpdateParameter("shortIdentifier", "shortname", "project", "repo");
+
+    CIBuildStatusPushParameters pushParameters = gitBuildStatusUtility.getCIBuildStatusPushParams(
+        Ambiance.newBuilder(ambiance).setMetadata(executionMetadata).build(), buildStatusUpdateParameter,
+        Status.SUCCEEDED, "sha");
+
+    assertThat(pushParameters.getOwner()).isEqualTo("org");
+    assertThat(pushParameters.getRepo()).isEqualTo("project/repo");
+    assertThat(pushParameters.getGitSCMType()).isEqualTo(GitSCMType.AZURE_REPO);
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testOwnerRepoNameForRepoLevelSSHAzureRepoConnector() throws IOException {
+    String url = "git@ssh.dev.azure.com:v3/org/project/repo";
+    prepareAccountLevelConnector(url, null);
+
+    when(connectorDetails.getConnectorType()).thenReturn(AZURE_REPO);
+    when(connectorDetails.getConnectorConfig()).thenReturn(azureGitConfigDTO);
+    when(azureGitConfigDTO.getUrl()).thenReturn(url);
+    when(azureGitConfigDTO.getConnectionType()).thenReturn(REPO);
+
+    ExecutionMetadata executionMetadata =
+        ExecutionMetadata.newBuilder().setExecutionUuid("executionuuid").setPipelineIdentifier("pipelineId").build();
+    BuildStatusUpdateParameter buildStatusUpdateParameter =
+        getBuildStatusUpdateParameter("shortIdentifier", "shortname", null, null);
+
+    CIBuildStatusPushParameters pushParameters = gitBuildStatusUtility.getCIBuildStatusPushParams(
+        Ambiance.newBuilder(ambiance).setMetadata(executionMetadata).build(), buildStatusUpdateParameter,
+        Status.SUCCEEDED, "sha");
+
+    assertThat(pushParameters.getOwner()).isEqualTo("org");
+    assertThat(pushParameters.getRepo()).isEqualTo("project/repo");
+    assertThat(pushParameters.getGitSCMType()).isEqualTo(GitSCMType.AZURE_REPO);
   }
 
   private BuildStatusUpdateParameter getBuildStatusUpdateParameter(String identifier, String name) {
@@ -198,6 +306,19 @@ public class BuildStatusPushParametersTest extends CIExecutionTestBase {
         .desc("desc")
         .name(name)
         .build();
+  }
+
+  private BuildStatusUpdateParameter getBuildStatusUpdateParameter(String identifier, String name, String projectName,
+                                                                   String repo) {
+    return BuildStatusUpdateParameter.builder()
+            .connectorIdentifier("testConnector")
+            .projectName(projectName)
+            .repoName(repo)
+            .identifier(identifier)
+            .buildNumber("0")
+            .desc("desc")
+            .name(name)
+            .build();
   }
 
   private void prepareAccountLevelConnector(String url, String vanityUrl) throws IOException {

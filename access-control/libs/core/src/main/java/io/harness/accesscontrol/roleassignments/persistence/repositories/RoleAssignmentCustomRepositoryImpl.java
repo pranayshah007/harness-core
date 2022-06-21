@@ -18,6 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -35,7 +36,15 @@ public class RoleAssignmentCustomRepositoryImpl implements RoleAssignmentCustomR
 
   @Override
   public Page<RoleAssignmentDBO> findAll(Criteria criteria, Pageable pageable) {
+    return findAll(criteria, pageable, null);
+  }
+
+  @Override
+  public Page<RoleAssignmentDBO> findAll(Criteria criteria, Pageable pageable, Sort sortOrder) {
     Query query = new Query(criteria).with(pageable);
+    if (sortOrder != null) {
+      query.with(sortOrder);
+    }
     List<RoleAssignmentDBO> assignments = mongoTemplate.find(query, RoleAssignmentDBO.class);
     return PageableExecutionUtils.getPage(
         assignments, pageable, () -> mongoTemplate.count(Query.of(query).limit(-1).skip(-1), RoleAssignmentDBO.class));

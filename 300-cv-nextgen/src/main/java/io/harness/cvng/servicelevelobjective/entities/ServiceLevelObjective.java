@@ -91,6 +91,7 @@ public class ServiceLevelObjective
   List<NotificationRuleRef> notificationRuleRefs;
   SLOTarget sloTarget;
   ServiceLevelIndicatorType type;
+  private boolean enabled;
   private long lastUpdatedAt;
   private long createdAt;
   private Double sloTargetPercentage;

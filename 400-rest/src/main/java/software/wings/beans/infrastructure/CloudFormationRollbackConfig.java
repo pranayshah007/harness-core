@@ -64,7 +64,7 @@ public class CloudFormationRollbackConfig implements PersistentEntity, UuidAware
   private List<NameValuePair> variables;
 
   private String region;
-  @FdIndex private String awsConfigId;
+  private String awsConfigId;
   private String customStackName;
   private String workflowExecutionId;
   private String cloudFormationRoleArn;

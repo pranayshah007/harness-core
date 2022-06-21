@@ -40,7 +40,13 @@ public enum ResourceType {
   CHAOS_HUB(ResourceTypeConstants.CHAOS_HUB),
   MONITORED_SERVICE(ResourceTypeConstants.MONITORED_SERVICE),
   CHAOS_AGENT(ResourceTypeConstants.CHAOS_AGENT),
-  CHAOS_WORKFLOW(ResourceTypeConstants.CHAOS_WORKFLOW);
+  CHAOS_WORKFLOW(ResourceTypeConstants.CHAOS_WORKFLOW),
+  SERVICE_LEVEL_OBJECTIVE(ResourceTypeConstants.SERVICE_LEVEL_OBJECTIVE),
+  PERSPECTIVE(ResourceTypeConstants.PERSPECTIVE),
+  PERSPECTIVE_BUDGET(ResourceTypeConstants.PERSPECTIVE_BUDGET),
+  PERSPECTIVE_REPORT(ResourceTypeConstants.PERSPECTIVE_REPORT),
+  COST_CATEGORY(ResourceTypeConstants.COST_CATEGORY),
+  SMTP(ResourceTypeConstants.SMTP);
 
   ResourceType(String resourceType) {
     if (!this.name().equals(resourceType)) {

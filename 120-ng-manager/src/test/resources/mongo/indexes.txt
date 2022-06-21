@@ -120,7 +120,6 @@ cgEventConfig {"name": "createdAt_1", "background": true} {"createdAt": 1}
 cgEventConfig {"name": "yaml", "unique": true} {"appId": 1, "name": 1}
 cloudFormationRollbackConfig {"name": "accountId_1", "background": true} {"accountId": 1}
 cloudFormationRollbackConfig {"name": "appId_1", "background": true} {"appId": 1}
-cloudFormationRollbackConfig {"name": "awsConfigId_1", "background": true} {"awsConfigId": 1}
 cloudFormationRollbackConfig {"name": "byAppAndEntityAndAwsConfig", "background": true} {"appId": 1, "entityId": 1, "awsConfigId": 1, "createdAt": 1}
 cloudFormationRollbackConfig {"name": "createdAt_1", "background": true} {"createdAt": 1}
 cloudFormationRollbackConfig {"name": "entityId_1", "background": true} {"entityId": 1}
@@ -473,6 +472,7 @@ instance {"name": "instance_index6", "background": true} {"accountId": 1, "isDel
 instance {"name": "instance_index7", "background": true} {"accountId": 1, "createdAt": 1, "deletedAt": 1}
 instance {"name": "instance_index8", "background": true} {"appId": 1, "serviceId": 1, "isDeleted": 1}
 instance {"name": "instance_index9", "background": true} {"accountId": 1, "isDeleted": 1, "deletedAt": 1}
+instance {"name": "instance_index_appId_infraMappingId_lastWorkflowExecutionId_lastUpdatedAt", "background": true} {"appId": 1, "infraMappingId": 1, "lastWorkflowExecutionId": 1, "lastUpdatedAt": -1}
 instance {"name": "isDeleted_1", "background": true} {"isDeleted": 1}
 instance {"name": "needRetry_1", "background": true} {"needRetry": 1}
 instanceChangeQueue {"name": "earliestGet_1", "background": true, "expireAfterSeconds": 86400} {"earliestGet": 1}
@@ -600,6 +600,7 @@ ngApiKeys {"name": "list_keys_idx", "background": true} {"accountIdentifier": 1,
 ngApiKeys {"name": "unique_idx", "unique": true, "collation": {"locale": "en", "strength": 1}} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "identifier": 1, "parentIdentifier": 1, "apiKeyType": 1}
 ngEncryptedRecords {"name": "uniqueNGEncryptedDataIdx", "unique": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "identifier": 1}
 ngFiles {"name": "list_files_idx", "unique": true} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "identifier": 1}
+ngFiles {"name": "path_idx", "background": true} {"path": 1}
 ngFiles {"name": "unique_idx", "unique": true, "collation": {"locale": "en", "strength": 1}} {"accountIdentifier": 1, "orgIdentifier": 1, "projectIdentifier": 1, "parentIdentifier": 1, "name": 1}
 ngGcsFileMetadata {"name": "accountId_1", "background": true} {"accountId": 1}
 ngGcsFileMetadata {"name": "entityId_1", "background": true} {"entityId": 1}

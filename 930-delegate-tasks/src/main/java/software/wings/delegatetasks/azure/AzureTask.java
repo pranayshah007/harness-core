@@ -111,10 +111,16 @@ public class AzureTask extends AbstractDelegateRunnableTask {
       case GET_ACR_TOKEN: {
         msg = "Could not retrieve any container registries because of invalid parameter(s)";
         validateAzureResourceExist(azureTaskParams, msg, AzureAdditionalParams.CONTAINER_REGISTRY);
-        return azureAsyncTaskHelper.getServicePrincipalCertificateAcrLoginToken(
+        return azureAsyncTaskHelper.getAcrLoginToken(
             azureTaskParams.getAdditionalParams().get(AzureAdditionalParams.CONTAINER_REGISTRY),
             azureTaskParams.getEncryptionDetails(), azureTaskParams.getAzureConnector());
       }
+      case LIST_TAGS:
+        validateAzureResourceExist(azureTaskParams, "Could not retrieve any tags because of invalid parameter(s)",
+            AzureAdditionalParams.SUBSCRIPTION_ID);
+        return azureAsyncTaskHelper.listTags(azureTaskParams.getEncryptionDetails(),
+            azureTaskParams.getAzureConnector(),
+            azureTaskParams.getAdditionalParams().get(AzureAdditionalParams.SUBSCRIPTION_ID));
       default:
         throw new InvalidRequestException("Task type not identified");
     }

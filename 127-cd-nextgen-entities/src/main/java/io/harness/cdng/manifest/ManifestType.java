@@ -10,11 +10,17 @@ package io.harness.cdng.manifest;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
+import com.google.common.collect.ImmutableSet;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Set;
 
 @OwnedBy(HarnessTeam.CDP)
 public interface ManifestType {
+  Set<String> K8S_SUPPORTED_MANIFEST_TYPES = ImmutableSet.of(
+      ManifestType.K8Manifest, ManifestType.HelmChart, ManifestType.Kustomize, ManifestType.OpenshiftTemplate);
+  Set<String> HELM_SUPPORTED_MANIFEST_TYPES = ImmutableSet.of(ManifestType.HelmChart);
+
   String K8Manifest = "K8sManifest";
   String VALUES = "Values";
   String CONFIG_FILE = "configFiles";

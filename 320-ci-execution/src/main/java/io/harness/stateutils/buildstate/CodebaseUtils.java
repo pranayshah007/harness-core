@@ -25,7 +25,6 @@ import static io.harness.common.BuildEnvironmentConstants.DRONE_SOURCE_BRANCH;
 import static io.harness.common.BuildEnvironmentConstants.DRONE_TAG;
 import static io.harness.common.BuildEnvironmentConstants.DRONE_TARGET_BRANCH;
 import static io.harness.common.CIExecutionConstants.AWS_CODE_COMMIT_URL_REGEX;
-import static io.harness.common.CIExecutionConstants.AZURE_REPO_GIT_LABEL;
 import static io.harness.common.CIExecutionConstants.PATH_SEPARATOR;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -219,7 +218,8 @@ public class CodebaseUtils {
       case HTTP:
         GithubHttpCredentialsDTO gitAuth = (GithubHttpCredentialsDTO) gitConfigDTO.getAuthentication().getCredentials();
         if (gitAuth.getType() != GithubHttpAuthenticationType.USERNAME_AND_PASSWORD
-            && gitAuth.getType() != GithubHttpAuthenticationType.USERNAME_AND_TOKEN) {
+            && gitAuth.getType() != GithubHttpAuthenticationType.USERNAME_AND_TOKEN
+            && gitAuth.getType() != GithubHttpAuthenticationType.OAUTH) {
           throw new CIStageExecutionException("Unsupported github connector auth type" + gitAuth.getType());
         }
         break;
@@ -270,7 +270,8 @@ public class CodebaseUtils {
       case HTTP:
         GitlabHttpCredentialsDTO gitAuth = (GitlabHttpCredentialsDTO) gitConfigDTO.getAuthentication().getCredentials();
         if (gitAuth.getType() != GitlabHttpAuthenticationType.USERNAME_AND_PASSWORD
-            && gitAuth.getType() != GitlabHttpAuthenticationType.USERNAME_AND_TOKEN) {
+            && gitAuth.getType() != GitlabHttpAuthenticationType.USERNAME_AND_TOKEN
+            && gitAuth.getType() != GitlabHttpAuthenticationType.OAUTH) {
           throw new CIStageExecutionException("Unsupported gitlab connector auth type" + gitAuth.getType());
         }
         break;
@@ -384,7 +385,7 @@ public class CodebaseUtils {
         if (isEmpty(projectName)) {
           throw new IllegalArgumentException("Project name is not set for azure repo");
         }
-        completeURL = getCompleteUrlForAccountLevelAzureConnector(completeURL, projectName, repoName);
+        completeURL = GitClientHelper.getCompleteUrlForAccountLevelAzureConnector(completeURL, projectName, repoName);
       } else {
         completeURL = StringUtils.join(StringUtils.stripEnd(scmConnector.getUrl(), PATH_SEPARATOR), PATH_SEPARATOR,
             StringUtils.stripStart(repoName, PATH_SEPARATOR));
@@ -421,16 +422,5 @@ public class CodebaseUtils {
     } else {
       throw new CIStageExecutionException("Unsupported git connector type" + gitConnector.getConnectorType());
     }
-  }
-
-  public static String getCompleteUrlForAccountLevelAzureConnector(String url, String projectName, String repoName) {
-    String azureCompleteUrl = StringUtils.join(StringUtils.stripEnd(url, PATH_SEPARATOR), PATH_SEPARATOR,
-        StringUtils.stripStart(projectName, PATH_SEPARATOR));
-    if (GitClientHelper.isHTTPProtocol(azureCompleteUrl)) {
-      azureCompleteUrl = StringUtils.join(azureCompleteUrl, AZURE_REPO_GIT_LABEL);
-    } else if (GitClientHelper.isSSHProtocol(azureCompleteUrl)) {
-      azureCompleteUrl = StringUtils.join(azureCompleteUrl, PATH_SEPARATOR);
-    }
-    return StringUtils.join(azureCompleteUrl, StringUtils.stripStart(repoName, PATH_SEPARATOR));
   }
 }

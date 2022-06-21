@@ -22,7 +22,6 @@ import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.cvng.BuilderFactory;
-import io.harness.cvng.activity.beans.ActivityVerificationResultDTO.CategoryRisk;
 import io.harness.cvng.activity.entities.Activity;
 import io.harness.cvng.activity.entities.DeploymentActivity;
 import io.harness.cvng.activity.services.api.ActivityService;
@@ -38,27 +37,23 @@ import io.harness.cvng.analysis.beans.DeploymentLogAnalysisDTO.ResultSummary;
 import io.harness.cvng.analysis.beans.DeploymentTimeSeriesAnalysisDTO.HostData;
 import io.harness.cvng.analysis.beans.DeploymentTimeSeriesAnalysisDTO.HostInfo;
 import io.harness.cvng.analysis.beans.DeploymentTimeSeriesAnalysisDTO.TransactionMetricHostData;
-import io.harness.cvng.analysis.beans.HealthAdditionalInfo;
 import io.harness.cvng.analysis.beans.Risk;
 import io.harness.cvng.analysis.entities.DeploymentLogAnalysis;
 import io.harness.cvng.analysis.entities.DeploymentTimeSeriesAnalysis;
 import io.harness.cvng.analysis.services.api.DeploymentLogAnalysisService;
 import io.harness.cvng.analysis.services.api.DeploymentTimeSeriesAnalysisService;
-import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.HostRecordDTO;
 import io.harness.cvng.beans.activity.ActivityType;
 import io.harness.cvng.beans.activity.ActivityVerificationStatus;
 import io.harness.cvng.beans.job.BlueGreenVerificationJobDTO;
 import io.harness.cvng.beans.job.CanaryVerificationJobDTO;
-import io.harness.cvng.beans.job.HealthVerificationJobDTO;
 import io.harness.cvng.beans.job.Sensitivity;
 import io.harness.cvng.beans.job.TestVerificationJobDTO;
 import io.harness.cvng.beans.job.VerificationJobType;
 import io.harness.cvng.client.NextGenService;
 import io.harness.cvng.core.beans.LoadTestAdditionalInfo;
 import io.harness.cvng.core.entities.CVConfig;
-import io.harness.cvng.core.services.api.CVConfigService;
 import io.harness.cvng.core.services.api.HostRecordService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.verificationjob.entities.TestVerificationJob.TestVerificationJobKeys;
@@ -101,7 +96,6 @@ public class VerificationJobInstanceAnalysisServiceImplTest extends CvNextGenTes
   @Inject private DeploymentLogAnalysisService deploymentLogAnalysisService;
   @Inject private VerificationJobInstanceAnalysisServiceImpl verificationJobInstanceAnalysisService;
   @Inject private ActivityService activityService;
-  @Inject private CVConfigService cvConfigService;
   @Mock private NextGenService nextGenService;
 
   private String accountId;
@@ -175,19 +169,6 @@ public class VerificationJobInstanceAnalysisServiceImplTest extends CvNextGenTes
     testVerificationJobDTO.setSensitivity(Sensitivity.LOW.name());
     testVerificationJobDTO.setBaselineVerificationJobInstanceId(baselineVerificationJobInstanceId);
     return testVerificationJobDTO;
-  }
-
-  private HealthVerificationJobDTO createHealthVerificationJobDTO() {
-    HealthVerificationJobDTO healthVerificationJob = new HealthVerificationJobDTO();
-    healthVerificationJob.setIdentifier(identifier);
-    healthVerificationJob.setJobName("jobName");
-    healthVerificationJob.setDuration("100");
-    healthVerificationJob.setServiceIdentifier(serviceIdentifier);
-    healthVerificationJob.setProjectIdentifier(projectIdentifier);
-    healthVerificationJob.setOrgIdentifier(orgIdentifier);
-    healthVerificationJob.setEnvIdentifier(envIdentifier);
-    healthVerificationJob.setMonitoringSources(Arrays.asList(generateUuid()));
-    return healthVerificationJob;
   }
 
   @Test
@@ -766,24 +747,6 @@ public class VerificationJobInstanceAnalysisServiceImplTest extends CvNextGenTes
         .hasMessage("Activity not found for verificationJobInstanceId: " + verificationJobInstanceId);
   }
 
-  @Test
-  @Owner(developers = KAMAL)
-  @Category(UnitTests.class)
-  public void testHealthAdditionalInfo() {
-    verificationJobService.create(accountId, createHealthVerificationJobDTO());
-    Instant currentTime = Instant.now();
-    VerificationJob verificationJob =
-        verificationJobService.getVerificationJob(accountId, orgIdentifier, projectIdentifier, identifier);
-    String verificationJobInstanceId = verificationJobInstanceService.create(
-        builderFactory.verificationJobInstanceBuilder().startTime(currentTime).resolvedJob(verificationJob).build());
-    HealthAdditionalInfo healthAdditionalInfo = verificationJobInstanceAnalysisService.getHealthAdditionInfo(
-        accountId, verificationJobInstanceService.getVerificationJobInstance(verificationJobInstanceId));
-    Set<CategoryRisk> risks = new HashSet<>();
-    for (CVMonitoringCategory cvMonitoringCategory : CVMonitoringCategory.values()) {
-      risks.add(CategoryRisk.builder().category(cvMonitoringCategory).risk(-1.0).build());
-    }
-    assertThat(healthAdditionalInfo.getPostActivityRisks()).isEqualTo(risks);
-  }
   @Test
   @Owner(developers = KAMAL)
   @Category(UnitTests.class)
