@@ -37,6 +37,7 @@ public class NGGitOpsTaskParams implements TaskParameters, ExecutionCapabilityDe
   private String activityId;
   ConnectorInfoDTO connectorInfoDTO;
   GitOpsTaskType gitOpsTaskType;
+  private String prLink;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

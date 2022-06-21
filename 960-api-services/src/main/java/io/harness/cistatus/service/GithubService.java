@@ -16,4 +16,6 @@ public interface GithubService {
       Map<String, Object> bodyObjectMap);
 
   String findPR(String apiUrl, String token, String owner, String repo, String prNumber);
+
+  String mergePR(String apiUrl, String token, String owner, String repo, String prNumber);
 }

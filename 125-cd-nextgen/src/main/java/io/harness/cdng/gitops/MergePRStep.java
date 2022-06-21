@@ -9,16 +9,20 @@ package io.harness.cdng.gitops;
 
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
+import static io.harness.exception.WingsException.USER;
 import static io.harness.steps.StepUtils.prepareCDTaskRequest;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.gitops.steps.GitopsClustersStep;
+import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.task.git.GitOpsTaskType;
 import io.harness.delegate.task.git.NGGitOpsResponse;
 import io.harness.delegate.task.git.NGGitOpsTaskParams;
 import io.harness.delegate.task.git.TaskStatus;
+import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
@@ -29,6 +33,9 @@ import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
+import io.harness.pms.sdk.core.resolver.RefObjectUtils;
+import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
@@ -41,6 +48,7 @@ import io.harness.tasks.ResponseData;
 import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
+import de.danielbechler.util.Strings;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.GITOPS)
@@ -48,6 +56,7 @@ import lombok.extern.slf4j.Slf4j;
 public class MergePRStep extends TaskChainExecutableWithRollbackAndRbac {
   @Inject private KryoSerializer kryoSerializer;
   @Inject private StepHelper stepHelper;
+  @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
 
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.GITOPS_MERGE_PR.getYamlType())
@@ -92,24 +101,36 @@ public class MergePRStep extends TaskChainExecutableWithRollbackAndRbac {
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
     MergePRStepParams gitOpsSpecParams = (MergePRStepParams) stepParameters.getSpec();
 
-    NGGitOpsTaskParams ngGitOpsTaskParams =
-        NGGitOpsTaskParams.builder().gitOpsTaskType(GitOpsTaskType.MERGE_PR).build();
+    OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputService.resolveOptional(
+        ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.CREATE_PR_OUTCOME));
+    String prLink = "https://github.com/wings-software/rohittest/pull/6";
+    if (optionalSweepingOutput != null && optionalSweepingOutput.isFound()) {
+      CreatePROutcome createPROutcome = (CreatePROutcome) optionalSweepingOutput.getOutput();
+      prLink = createPROutcome.getPrLink();
+    }
 
-    final TaskData taskData = TaskData.builder()
-                                  .async(true)
-                                  .timeout(CDStepHelper.getTimeoutInMillis(stepParameters))
-                                  .taskType(TaskType.GITOPS_TASK_NG.name())
-                                  .parameters(new Object[] {ngGitOpsTaskParams})
-                                  .build();
+    if (!Strings.isEmpty(prLink)) {
+      NGGitOpsTaskParams ngGitOpsTaskParams =
+          NGGitOpsTaskParams.builder().gitOpsTaskType(GitOpsTaskType.MERGE_PR).prLink(prLink).build();
 
-    String taskName = TaskType.GITOPS_TASK_NG.getDisplayName();
+      final TaskData taskData = TaskData.builder()
+                                    .async(true)
+                                    .timeout(CDStepHelper.getTimeoutInMillis(stepParameters))
+                                    .taskType(TaskType.GITOPS_TASK_NG.name())
+                                    .parameters(new Object[] {ngGitOpsTaskParams})
+                                    .build();
 
-    final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
-        gitOpsSpecParams.getCommandUnits(), taskName,
-        TaskSelectorYaml.toTaskSelector(emptyIfNull(getParameterFieldValue(gitOpsSpecParams.getDelegateSelectors()))),
-        stepHelper.getEnvironmentType(ambiance));
+      String taskName = TaskType.GITOPS_TASK_NG.getDisplayName();
 
-    return TaskChainResponse.builder().chainEnd(true).taskRequest(taskRequest).build();
+      final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
+          gitOpsSpecParams.getCommandUnits(), taskName,
+          TaskSelectorYaml.toTaskSelector(emptyIfNull(getParameterFieldValue(gitOpsSpecParams.getDelegateSelectors()))),
+          stepHelper.getEnvironmentType(ambiance));
+
+      return TaskChainResponse.builder().chainEnd(true).taskRequest(taskRequest).build();
+    } else {
+      throw new InvalidRequestException("Pull Request Details are missing", USER);
+    }
   }
 
   @Override

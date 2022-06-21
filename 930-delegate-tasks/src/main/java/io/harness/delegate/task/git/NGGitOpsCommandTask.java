@@ -17,6 +17,7 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.gitsync.GitPRCreateRequest;
+import io.harness.cistatus.service.GithubRestClient;
 import io.harness.connector.helper.GitApiAccessDecryptionHelper;
 import io.harness.connector.service.git.NGGitService;
 import io.harness.connector.task.git.GitDecryptionHelper;
@@ -28,6 +29,8 @@ import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
+import io.harness.delegate.beans.gitapi.GitApiMergePRTaskResponse;
+import io.harness.delegate.beans.gitapi.GitApiTaskParams;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
@@ -36,6 +39,8 @@ import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.task.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.TaskParameters;
+import io.harness.delegate.task.gitapi.client.impl.GithubApiClient;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.git.model.CommitAndPushRequest;
 import io.harness.git.model.CommitAndPushResult;
@@ -88,11 +93,13 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
   @Inject private GitFetchFilesTaskHelper gitFetchFilesTaskHelper;
   @Inject private GitDecryptionHelper gitDecryptionHelper;
   @Inject private NGGitService ngGitService;
+  @Inject private GithubApiClient githubApiClient;
 
   public static final String FetchFiles = "Fetch Files";
   public static final String UpdateFiles = "Update GitOps Configuration files";
   public static final String CommitAndPush = "Commit and Push";
   public static final String CreatePR = "Create PR";
+  public static final String MergePR = "Merge PR";
 
   private LogCallback logCallback;
 
@@ -111,7 +118,8 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
     NGGitOpsTaskParams gitOpsTaskParams = (NGGitOpsTaskParams) parameters;
 
     switch (gitOpsTaskParams.getGitOpsTaskType()) {
-      case MERGE_PR: // TODO
+      case MERGE_PR:
+        return handleMergePR(gitOpsTaskParams);
       case CREATE_PR:
         return handleCreatePR(gitOpsTaskParams);
       default:
@@ -119,6 +127,44 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
             .taskStatus(TaskStatus.FAILURE)
             .errorMessage("Failed GitOps task: " + gitOpsTaskParams.getGitOpsTaskType())
             .build();
+    }
+  }
+
+  public DelegateResponseData handleMergePR(NGGitOpsTaskParams gitOpsTaskParams) {
+    CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
+    try {
+      log.info("Running Merge PR Task for activityId {}", gitOpsTaskParams.getActivityId());
+
+      logCallback = new NGDelegateLogCallback(getLogStreamingTaskClient(), MergePR, true, commandUnitsProgress);
+
+      ConnectorType connectorType = gitOpsTaskParams.connectorInfoDTO.getConnectorType();
+      GitApiMergePRTaskResponse responseData = null;
+
+      String prLink = gitOpsTaskParams.getPrLink();
+
+      switch (connectorType) {
+        case GITHUB:
+          String[] strings = prLink.split("/");
+          GitApiTaskParams gitApiTaskParams =
+              GitApiTaskParams.builder().owner(strings[2]).repo(strings[3]).prNumber(strings[5]).build();
+          responseData = (GitApiMergePRTaskResponse) githubApiClient.mergePR(gitApiTaskParams);
+        default:
+          logCallback.saveExecutionLog("Connector not supported", INFO, CommandExecutionStatus.FAILURE);
+      }
+
+      logCallback.saveExecutionLog("Done.", INFO, CommandExecutionStatus.SUCCESS);
+
+      return NGGitOpsResponse.builder()
+          .taskStatus(TaskStatus.SUCCESS)
+          .commitId(responseData.getSha())
+          .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
+          .build();
+    } catch (Exception e) {
+      return NGGitOpsResponse.builder()
+          .taskStatus(TaskStatus.FAILURE)
+          .errorMessage(e.getMessage())
+          .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
+          .build();
     }
   }
 
@@ -195,6 +241,16 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
       case GITHUB:
         return url + "/"
             + "pull/" + prNumber + "/";
+      default:
+        return "";
+    }
+  }
+
+  public String getMergePRLink(String prLink, ConnectorType connectorType) {
+    switch (connectorType) {
+      // TODO: GITLAB, BITBUCKET
+      case GITHUB:
+        return "";
       default:
         return "";
     }

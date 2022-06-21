@@ -99,6 +99,23 @@ public class GithubServiceImpl implements GithubService {
     }
   }
 
+  @Override
+  public String mergePR(String apiUrl, String token, String owner, String repo, String prNumber) {
+    try {
+      Response<StatusCreationResponse> response = getGithubClient(GithubAppConfig.builder().githubUrl(apiUrl).build())
+                                                      .mergePR(getAuthToken(token), owner, repo, prNumber)
+                                                      .execute();
+      if (response.isSuccessful()) {
+        return new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(response.body());
+      } else {
+        return null;
+      }
+    } catch (Exception e) {
+      log.error("Failed to merge PR for github url {} and prNum {} ", apiUrl, prNumber, e);
+      return "";
+    }
+  }
+
   @VisibleForTesting
   public GithubRestClient getGithubClient(GithubAppConfig githubAppConfig) {
     try {
