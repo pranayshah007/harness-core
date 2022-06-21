@@ -50,7 +50,7 @@ public class ProjectApiImpl implements ProjectsApi {
   @NGAccessControlCheck(resourceType = PROJECT, permission = CREATE_PROJECT_PERMISSION)
   @Override
   public ProjectResponse createProject(
-      @AccountIdentifier String account, @OrgIdentifier String org, CreateProjectRequest project) {
+      CreateProjectRequest project, @AccountIdentifier String account, @OrgIdentifier String org) {
     Project createdProject = projectService.create(account, org, getProjectDto(org, project));
     return getProjectResponse(createdProject);
   }
@@ -88,8 +88,8 @@ public class ProjectApiImpl implements ProjectsApi {
 
   @NGAccessControlCheck(resourceType = PROJECT, permission = EDIT_PROJECT_PERMISSION)
   @Override
-  public ProjectResponse updateProject(@AccountIdentifier String account, @OrgIdentifier String org,
-      @ResourceIdentifier String id, UpdateProjectRequest updateProjectRequest) {
+  public ProjectResponse updateProject(@ResourceIdentifier String id, UpdateProjectRequest updateProjectRequest,
+      @AccountIdentifier String account, @OrgIdentifier String org) {
     Project updatedProject = projectService.update(account, org, id, getProjectDto(org, id, updateProjectRequest));
     return getProjectResponse(updatedProject);
   }

@@ -47,7 +47,7 @@ public class OrganizationApiImpl implements OrganizationsApi {
 
   @NGAccessControlCheck(resourceType = ORGANIZATION, permission = CREATE_ORGANIZATION_PERMISSION)
   @Override
-  public OrganizationResponse createOrganization(@AccountIdentifier String account, CreateOrganizationRequest request) {
+  public OrganizationResponse createOrganization(CreateOrganizationRequest request, @AccountIdentifier String account) {
     if (DEFAULT_ORG_IDENTIFIER.equals(request.getSlug())) {
       throw new InvalidRequestException(
           String.format("%s cannot be used as org identifier", DEFAULT_ORG_IDENTIFIER), USER);
@@ -83,7 +83,7 @@ public class OrganizationApiImpl implements OrganizationsApi {
   @NGAccessControlCheck(resourceType = ORGANIZATION, permission = EDIT_ORGANIZATION_PERMISSION)
   @Override
   public OrganizationResponse updateOrganization(
-      @AccountIdentifier String account, @ResourceIdentifier String id, UpdateOrganizationRequest request) {
+      @ResourceIdentifier String id, UpdateOrganizationRequest request, @AccountIdentifier String account) {
     Organization updatedOrganization =
         organizationService.update(account, id, OrganizationApiMapper.getOrganizationDto(id, request));
     return getOrganizationResponse(updatedOrganization);
