@@ -1249,6 +1249,7 @@ public class AwsAsgHelperServiceDelegateImpl
     } catch (AmazonClientException amazonClientException) {
       handleAmazonClientException(amazonClientException);
     } catch (Exception e) {
+      // Dummy Change
       Exception sanitizeException = ExceptionMessageSanitizer.sanitizeException(e);
       log.error("Exception clearAllScheduledActionsForAsg", sanitizeException);
       throw new InvalidRequestException(ExceptionUtils.getMessage(sanitizeException), sanitizeException);
