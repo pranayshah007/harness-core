@@ -23,6 +23,8 @@ import static org.mockito.Mockito.mock;
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.gitops.ClusterServiceImpl;
+import io.harness.cdng.gitops.service.ClusterService;
 import io.harness.connector.services.ConnectorService;
 import io.harness.entitysetupusageclient.remote.EntitySetupUsageClient;
 import io.harness.eventsframework.EventsFrameworkConstants;
@@ -35,6 +37,10 @@ import io.harness.govern.ServersModule;
 import io.harness.mongo.MongoPersistence;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.ng.core.entitysetupusage.EntitySetupUsageModule;
+import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
+import io.harness.ng.core.infrastructure.services.impl.InfrastructureEntityServiceImpl;
+import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
+import io.harness.ng.core.serviceoverride.services.impl.ServiceOverrideServiceImpl;
 import io.harness.outbox.api.OutboxService;
 import io.harness.outbox.api.impl.OutboxDaoImpl;
 import io.harness.outbox.api.impl.OutboxServiceImpl;
@@ -191,6 +197,9 @@ public class CDNGEntitiesTestRule implements InjectorRuleMixin, MethodRule, Mong
         bind(Producer.class)
             .annotatedWith(Names.named(EventsFrameworkConstants.SETUP_USAGE))
             .toInstance(mock(NoOpProducer.class));
+        bind(ClusterService.class).to(ClusterServiceImpl.class);
+        bind(InfrastructureEntityService.class).to(InfrastructureEntityServiceImpl.class);
+        bind(ServiceOverrideService.class).to(ServiceOverrideServiceImpl.class);
       }
     });
     modules.add(TimeModule.getInstance());

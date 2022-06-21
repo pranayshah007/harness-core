@@ -35,9 +35,11 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import lombok.experimental.UtilityClass;
+import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(CDC)
 @UtilityClass
+@Slf4j
 public class EnvironmentGroupMapper {
   public EnvironmentGroupResponseDTO writeDTO(
       EnvironmentGroupEntity envGroup, List<EnvironmentResponse> envResponseList) {
@@ -138,5 +140,14 @@ public class EnvironmentGroupMapper {
                        .identifier(entity.getIdentifier())
                        .build())
         .build();
+  }
+
+  public static EnvironmentGroupWrapperConfig toNGEnvironmentGroupConfig(String yaml) {
+    try {
+      return YamlUtils.read(yaml, EnvironmentGroupWrapperConfig.class);
+    } catch (IOException e) {
+      log.error("Cannot create environment group config", e);
+      throw new InvalidRequestException("Cannot create environment group config due to " + e.getMessage());
+    }
   }
 }

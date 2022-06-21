@@ -53,4 +53,10 @@ if [[ "${ENABLE_OPENTELEMETRY}" == "true" ]] ; then
     echo "Using OpenTelemetry Java Agent"
 fi
 
+if [[ "${ENABLE_MONITORING}" == "true" ]] ; then
+    echo "Monitoring  is enabled"
+    JAVA_OPTS="$JAVA_OPTS ${MONITORING_FLAGS}"
+    echo "Using inspectIT Java Agent"
+fi
+
 java $JAVA_OPTS -jar $CAPSULE_JAR $COMMAND /opt/harness/ci-manager-config.yml

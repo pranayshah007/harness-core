@@ -625,7 +625,7 @@ public enum StepType {
       asList(PhaseType.ROLLBACK), TerraformProvisionStepYamlBuilder.class),
   TERRAGRUNT_PROVISION(TerragruntApplyState.class, WorkflowServiceHelper.TERRAGRUNT_PROVISION,
       asList(INFRASTRUCTURE_PROVISIONER), asList(PhaseStepType.values()), asList(DeploymentType.values()),
-      asList(PhaseType.NON_ROLLBACK), TerragruntProvisionStepYamlBuilder.class),
+      asList(PhaseType.NON_ROLLBACK, PhaseType.ROLLBACK), TerragruntProvisionStepYamlBuilder.class),
   TERRAGRUNT_DESTROY(TerragruntDestroyState.class, WorkflowServiceHelper.TERRAGRUNT_DESTROY,
       asList(INFRASTRUCTURE_PROVISIONER),
       asList(POST_DEPLOYMENT, WRAP_UP, K8S_PHASE_STEP, CUSTOM_DEPLOYMENT_PHASE_STEP),

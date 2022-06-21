@@ -31,6 +31,7 @@ import io.harness.cdng.infra.yaml.K8sAzureInfrastructure;
 import io.harness.cdng.infra.yaml.K8sGcpInfrastructure;
 import io.harness.cdng.infra.yaml.PdcInfrastructure;
 import io.harness.cdng.infra.yaml.ServerlessAwsLambdaInfrastructure;
+import io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAzureInfrastructure;
 import io.harness.cdng.k8s.K8sStepHelper;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
@@ -58,7 +59,6 @@ import io.harness.logging.UnitProgress;
 import io.harness.logging.UnitStatus;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.NGAccess;
-import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -85,7 +85,6 @@ import io.harness.steps.executable.SyncExecutableWithRbac;
 import io.harness.steps.shellscript.K8sInfraDelegateConfigOutput;
 import io.harness.steps.shellscript.SshInfraDelegateConfigOutput;
 import io.harness.utils.IdentifierRefHelper;
-import io.harness.walktree.visitor.SimpleVisitorFactory;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
@@ -102,9 +101,7 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
                                                .setStepCategory(StepCategory.STEP)
                                                .build();
 
-  @Inject private EnvironmentService environmentService;
   @Inject private InfrastructureStepHelper infrastructureStepHelper;
-  @Inject private SimpleVisitorFactory simpleVisitorFactory;
   @Inject @Named("PRIVILEGED") private AccessControlClient accessControlClient;
   @Inject private EntityReferenceExtractorUtils entityReferenceExtractorUtils;
   @Inject private PipelineRbacHelper pipelineRbacHelper;
@@ -381,12 +378,17 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
         validateExpression(pdcInfrastructure.getCredentialsRef());
         requireOne(pdcInfrastructure.getHosts(), pdcInfrastructure.getConnectorRef());
         break;
+      case InfrastructureKind.SSH_WINRM_AWS:
+        SshWinRmAwsInfrastructure sshWinRmAwsInfrastructure = (SshWinRmAwsInfrastructure) infrastructure;
+        validateExpression(sshWinRmAwsInfrastructure.getConnectorRef(), sshWinRmAwsInfrastructure.getCredentialsRef(),
+            sshWinRmAwsInfrastructure.getRegion());
+        break;
 
       case InfrastructureKind.AZURE_WEB_APP:
         AzureWebAppInfrastructure azureWebAppInfrastructure = (AzureWebAppInfrastructure) infrastructure;
-        validateExpression(azureWebAppInfrastructure.getConnectorRef(), azureWebAppInfrastructure.getAppService(),
-            azureWebAppInfrastructure.getDeploymentSlot(), azureWebAppInfrastructure.getTargetSlot(),
-            azureWebAppInfrastructure.getSubscriptionId(), azureWebAppInfrastructure.getResourceGroup());
+        validateExpression(azureWebAppInfrastructure.getConnectorRef(), azureWebAppInfrastructure.getWebApp(),
+            azureWebAppInfrastructure.getDeploymentSlot(), azureWebAppInfrastructure.getSubscriptionId(),
+            azureWebAppInfrastructure.getResourceGroup());
         break;
       default:
         throw new InvalidArgumentsException(format("Unknown Infrastructure Kind : [%s]", infrastructure.getKind()));

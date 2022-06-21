@@ -29,6 +29,7 @@ import io.harness.remote.client.NGRestUtils;
 import io.harness.resourcegroup.beans.ValidatorType;
 import io.harness.resourcegroup.framework.v1.service.Resource;
 import io.harness.resourcegroup.framework.v1.service.ResourceInfo;
+import io.harness.resourcegroup.v2.model.AttributeFilter;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
@@ -111,5 +112,10 @@ public class ConnectorResourceImpl implements Resource {
         .resourceType(getType())
         .resourceIdentifier(entityChangeDTO.getIdentifier().getValue())
         .build();
+  }
+
+  @Override
+  public boolean isValidAttributeFilter(AttributeFilter attributeFilter) {
+    return attributeFilter.getAttributeName().equals("type") && !attributeFilter.getAttributeValues().isEmpty();
   }
 }

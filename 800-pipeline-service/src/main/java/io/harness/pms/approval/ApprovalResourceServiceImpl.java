@@ -11,7 +11,6 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.FeatureName.SERVICENOW_CREATE_UPDATE_NG;
 import static io.harness.security.dto.PrincipalType.USER;
 
-import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.EmbeddedUser;
 import io.harness.beans.IdentifierRef;
@@ -40,6 +39,7 @@ import io.harness.steps.approval.step.harness.entities.HarnessApprovalInstance;
 import io.harness.user.remote.UserClient;
 import io.harness.usergroups.UserGroupClient;
 import io.harness.utils.IdentifierRefHelper;
+import io.harness.utils.NGFeatureFlagHelperService;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.Resources;
@@ -66,18 +66,20 @@ public class ApprovalResourceServiceImpl implements ApprovalResourceService {
   private final UserGroupClient userGroupClient;
   private final CurrentUserHelper currentUserHelper;
   private final UserClient userClient;
-  @Inject private AccountClient accountClient;
+  private final NGFeatureFlagHelperService ngFeatureFlagHelperService;
 
   @Inject
   public ApprovalResourceServiceImpl(ApprovalInstanceService approvalInstanceService,
       ApprovalInstanceResponseMapper approvalInstanceResponseMapper, PlanExecutionService planExecutionService,
-      UserGroupClient userGroupClient, CurrentUserHelper currentUserHelper, UserClient userClient) {
+      UserGroupClient userGroupClient, CurrentUserHelper currentUserHelper, UserClient userClient,
+      NGFeatureFlagHelperService ngFeatureFlagHelperService) {
     this.approvalInstanceService = approvalInstanceService;
     this.approvalInstanceResponseMapper = approvalInstanceResponseMapper;
     this.planExecutionService = planExecutionService;
     this.userGroupClient = userGroupClient;
     this.currentUserHelper = currentUserHelper;
     this.userClient = userClient;
+    this.ngFeatureFlagHelperService = ngFeatureFlagHelperService;
   }
 
   @Override
@@ -156,8 +158,7 @@ public class ApprovalResourceServiceImpl implements ApprovalResourceService {
   public String getYamlSnippet(ApprovalType approvalType, String accountId) throws IOException {
     ClassLoader classLoader = this.getClass().getClassLoader();
     String yamlFile = approvalType.getDisplayName();
-    boolean isSnowCreateUpdateEnabled =
-        RestClientUtils.getResponse(accountClient.isFeatureFlagEnabled(SERVICENOW_CREATE_UPDATE_NG.name(), accountId));
+    boolean isSnowCreateUpdateEnabled = ngFeatureFlagHelperService.isEnabled(accountId, SERVICENOW_CREATE_UPDATE_NG);
 
     if (isSnowCreateUpdateEnabled && ApprovalType.SERVICENOW_APPROVAL.equals(approvalType)) {
       yamlFile = yamlFile.concat("WithCreateUpdate");

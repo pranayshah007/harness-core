@@ -42,6 +42,7 @@ var (
 	collectTestReportsFn = collectTestReports
 	runCmdFn             = runCmd
 	isManualFn           = external.IsManualExecution
+	installAgentFn       = installAgents
 	getWorkspace         = external.GetWrkspcPath
 )
 
@@ -69,7 +70,10 @@ type runTestsTask struct {
 	language             string // language of codebase
 	buildTool            string // buildTool used for codebase
 	packages             string // Packages ti will generate callgraph for
+	namespaces           string // Namespaces TI will generate callgraph for, similar to package
 	annotations          string // Annotations to identify tests for instrumentation
+	buildEnvironment     string // Dotnet build environment
+	frameworkVersion     string // Dotnet framework version
 	runOnlySelectedTests bool   // Flag to be used for disabling testIntelligence and running all tests
 	envVarOutputs        []string
 	environment          map[string]string
@@ -112,6 +116,8 @@ func NewRunTestsTask(step *pb.UnitStep, tmpFilePath string, log *zap.SugaredLogg
 		runOnlySelectedTests: r.GetRunOnlySelectedTests(),
 		envVarOutputs:        r.GetEnvVarOutputs(),
 		environment:          r.GetEnvironment(),
+		buildEnvironment:     r.GetBuildEnvironment(),
+		frameworkVersion:     r.GetFrameworkVersion(),
 		cmdContextFactory:    exec.OsCommandContextGracefulWithLog(log),
 		logMetrics:           logMetrics,
 		log:                  log,
@@ -216,6 +222,55 @@ instrPackages: %s`, dir, r.packages)
 	return iniFile, nil
 }
 
+/*
+Creates config.yaml file for .NET agent to consume and returns the path to config.yaml file on successful creation.
+Args:
+  None
+Returns:
+  configPath (string): Path to the config.yaml file. Empty string on errors.
+  err (error): Error if there's one, nil otherwise.
+*/
+func (r *runTestsTask) createDotNetConfigFile() (string, error) {
+	// Create config file
+	dir := fmt.Sprintf(outDir, r.tmpFilePath)
+	err := r.fs.MkdirAll(dir, os.ModePerm)
+	if err != nil {
+		r.log.Errorw(fmt.Sprintf("could not create nested directory %s", dir), zap.Error(err))
+		return "", err
+	}
+
+	if r.namespaces == "" {
+		r.log.Errorw("Dotnet does not support auto detect namespaces", zap.Error(err))
+	}
+	var data string
+	var outputFile string
+
+	outputFile = fmt.Sprintf("%s/config.yaml", r.tmpFilePath)
+	namespaceArray := strings.Split(r.namespaces, ",")
+	for idx, s := range namespaceArray {
+		namespaceArray[idx] = fmt.Sprintf("'%s'", s)
+	}
+	data = fmt.Sprintf(`outDir: '%s'
+logLevel: 0
+writeTo: [COVERAGE_JSON]
+instrPackages: [%s]`, dir, strings.Join(namespaceArray, ","))
+
+	r.log.Infow(fmt.Sprintf("attempting to write %s to %s", data, outputFile))
+	f, err := r.fs.Create(outputFile)
+	if err != nil {
+		r.log.Errorw(fmt.Sprintf("could not create file %s", outputFile), zap.Error(err))
+		return "", err
+	}
+	_, err = f.Write([]byte(data))
+	defer f.Close()
+	if err != nil {
+		r.log.Errorw(fmt.Sprintf("could not write %s to file %s", data, outputFile), zap.Error(err))
+		return "", err
+	}
+	// Return path to the config.yaml file
+	return outputFile, nil
+}
+
 func valid(tests []types.RunnableTest) bool {
 	for _, t := range tests {
 		if t.Class == "" {
@@ -225,7 +280,7 @@ func valid(tests []types.RunnableTest) bool {
 	return true
 }
 
-func (r *runTestsTask) getCmd(ctx context.Context, outputVarFile string) (string, error) {
+func (r *runTestsTask) getCmd(ctx context.Context, agentPath, outputVarFile string) (string, error) {
 	// Get the tests that need to be run if we are running selected tests
 	var selection types.SelectTestsResp
 	var files []types.File
@@ -273,7 +328,9 @@ func (r *runTestsTask) getCmd(ctx context.Context, outputVarFile string) (string
 		{
 			switch r.buildTool {
 			case "dotnet":
-				runner = csharp.NewDotnetRunner(r.log, r.fs, r.cmdContextFactory)
+				runner = csharp.NewDotnetRunner(r.log, r.fs, r.cmdContextFactory, agentPath)
+			case "nunitconsole":
+				runner = csharp.NewNunitConsoleRunner(r.log, r.fs, r.cmdContextFactory, agentPath)
 			default:
 				return "", fmt.Errorf("build tool: %s is not supported for csharp", r.buildTool)
 			}
@@ -287,12 +344,26 @@ func (r *runTestsTask) getCmd(ctx context.Context, outputVarFile string) (string
 		outputVarCmd += fmt.Sprintf("\necho %s $%s >> %s", o, o, outputVarFile)
 	}
 
-	// Create the java agent config file
-	iniFilePath, err := r.createJavaAgentConfigFile(runner)
-	if err != nil {
-		return "", err
+	var iniFilePath, agentArg string
+
+	switch r.language {
+	case "java":
+		{
+			// Create the java agent config file
+			iniFilePath, err = r.createJavaAgentConfigFile(runner)
+			if err != nil {
+				return "", err
+			}
+			agentArg = fmt.Sprintf(javaAgentArg, iniFilePath)
+		}
+	case "csharp":
+		{
+			iniFilePath, err = r.createDotNetConfigFile()
+			if err != nil {
+				return "", err
+			}
+		}
 	}
-	agentArg := fmt.Sprintf(javaAgentArg, iniFilePath)
 
 	testCmd, err := runner.GetCmd(ctx, selection.Tests, r.args, iniFilePath, isManual, !r.runOnlySelectedTests)
 	if err != nil {
@@ -316,8 +387,14 @@ func (r *runTestsTask) execute(ctx context.Context, retryCount int32) (map[strin
 	ctx, cancel := context.WithTimeout(ctx, time.Second*time.Duration(r.timeoutSecs))
 	defer cancel()
 
+	// Install agent artifacts if not present
+	agentPath, err := installAgentFn(ctx, r.tmpFilePath, r.language, r.buildTool, r.frameworkVersion, r.buildEnvironment, r.log, r.fs)
+	if err != nil {
+		return nil, err
+	}
+
 	outputFile := filepath.Join(r.tmpFilePath, fmt.Sprintf("%s%s", r.id, outputEnvSuffix))
-	cmdToExecute, err := r.getCmd(ctx, outputFile)
+	cmdToExecute, err := r.getCmd(ctx, agentPath, outputFile)
 	if err != nil {
 		r.log.Errorw("could not create run command", zap.Error(err))
 		return nil, err

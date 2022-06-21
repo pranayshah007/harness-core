@@ -15,7 +15,9 @@ import static io.harness.remote.client.NGRestUtils.getResponse;
 
 import static java.lang.String.format;
 
+import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.encryption.Scope;
 import io.harness.enforcement.client.services.EnforcementClientService;
@@ -38,6 +40,7 @@ import io.harness.gitsync.scm.EntityObjectIdUtils;
 import io.harness.grpc.utils.StringValueUtils;
 import io.harness.organization.remote.OrganizationClient;
 import io.harness.project.remote.ProjectClient;
+import io.harness.remote.client.RestClientUtils;
 import io.harness.repositories.NGTemplateRepository;
 import io.harness.springdata.TransactionHelper;
 import io.harness.template.TemplateFilterPropertiesDTO;
@@ -79,6 +82,7 @@ public class NGTemplateServiceImpl implements NGTemplateService {
   @Inject @Named("PRIVILEGED") private ProjectClient projectClient;
   @Inject @Named("PRIVILEGED") private OrganizationClient organizationClient;
   @Inject private TemplateReferenceHelper templateReferenceHelper;
+  @Inject private AccountClient accountClient;
 
   private static final String DUP_KEY_EXP_FORMAT_STRING =
       "Template [%s] of versionLabel [%s] under Project[%s], Organization [%s] already exists";
@@ -315,19 +319,16 @@ public class NGTemplateServiceImpl implements NGTemplateService {
         stableTemplate = templateEntity;
       }
     }
-
     if (templateToDelete == null) {
-      throw new InvalidRequestException(format(
-          "Template with identifier [%s] and versionLabel [%s] under Project[%s], Organization [%s], Account [%s] does not exist.",
-          templateIdentifier, deleteVersionLabel, projectIdentifier, orgIdentifier, accountId));
+      throw new InvalidRequestException(format("Template with identifier [%s] and versionLabel [%s] %s does not exist.",
+          templateIdentifier, deleteVersionLabel, getMessageHelper(accountId, orgIdentifier, projectIdentifier)));
     }
     if (stableTemplate != null && stableTemplate.getVersionLabel().equals(deleteVersionLabel)
         && templateEntities.size() != 1) {
-      throw new InvalidRequestException(format(
-          "Template with identifier [%s] and versionLabel [%s] under Project[%s], Organization [%s], Account [%s] cannot delete the stable template",
-          templateIdentifier, deleteVersionLabel, projectIdentifier, orgIdentifier, accountId));
+      throw new InvalidRequestException(
+          format("Template with identifier [%s] and versionLabel [%s] %s cannot delete the stable template.",
+              templateIdentifier, deleteVersionLabel, getMessageHelper(accountId, orgIdentifier, projectIdentifier)));
     }
-
     return deleteMultipleTemplatesHelper(accountId, orgIdentifier, projectIdentifier,
         Collections.singletonList(templateToDelete), version, comments, templateEntities.size() == 1, stableTemplate);
   }
@@ -349,16 +350,27 @@ public class NGTemplateServiceImpl implements NGTemplateService {
         stableTemplate = templateEntity;
       }
     }
-
     if (stableTemplate != null && deleteTemplateVersions.contains(stableTemplate.getVersionLabel())
         && !canDeleteStableTemplate) {
-      throw new InvalidRequestException(format(
-          "Template with identifier [%s] and versionLabel [%s] under Project[%s], Organization [%s], Account [%s] cannot delete the stable template",
-          templateIdentifier, stableTemplate.getVersionLabel(), projectIdentifier, orgIdentifier, accountId));
+      throw new InvalidRequestException(
+          format("Template with identifier [%s] and versionLabel [%s] %s cannot delete the stable template.",
+              templateIdentifier, stableTemplate.getVersionLabel(),
+              getMessageHelper(accountId, orgIdentifier, projectIdentifier)));
     }
-
     return deleteMultipleTemplatesHelper(accountId, orgIdentifier, projectIdentifier, templateToDeleteList, null,
         comments, canDeleteStableTemplate, stableTemplate);
+  }
+
+  private String getMessageHelper(String accountId, String orgIdentifier, String projectIdentifier) {
+    if (EmptyPredicate.isNotEmpty(projectIdentifier)) {
+      return format("under Project[%s], Organization [%s], Account [%s]", projectIdentifier, orgIdentifier, accountId);
+    } else if (EmptyPredicate.isNotEmpty(orgIdentifier)) {
+      return format("under Organization [%s], Account [%s]", orgIdentifier, accountId);
+    } else if (EmptyPredicate.isNotEmpty(accountId)) {
+      return format("under Account [%s]", accountId);
+    } else {
+      return "";
+    }
   }
 
   private boolean deleteMultipleTemplatesHelper(String accountId, String orgIdentifier, String projectIdentifier,
@@ -380,6 +392,11 @@ public class NGTemplateServiceImpl implements NGTemplateService {
       makeGivenTemplateLastUpdatedTemplateTrue(stableTemplate);
     }
     return true;
+  }
+
+  public boolean isHardDeleteEntitiesFeatureFlagEnabled(String accountId) {
+    return RestClientUtils.getResponse(
+        accountClient.isFeatureFlagEnabled(FeatureName.HARD_DELETE_ENTITIES.name(), accountId));
   }
 
   private boolean deleteSingleTemplateHelper(String accountId, String orgIdentifier, String projectIdentifier,
@@ -404,13 +421,18 @@ public class NGTemplateServiceImpl implements NGTemplateService {
     }
     TemplateEntity withDeleted = templateToDelete.withLastUpdatedTemplate(false).withDeleted(true);
     try {
-      TemplateEntity deletedTemplate = templateRepository.deleteTemplate(withDeleted, comments);
-      if (deletedTemplate.getDeleted()) {
+      if (isHardDeleteEntitiesFeatureFlagEnabled(accountId)) {
+        templateRepository.hardDeleteTemplate(templateToDelete, comments);
         return true;
       } else {
-        throw new InvalidRequestException(format(
-            "Template with identifier [%s] and versionLabel [%s], under Project[%s], Organization [%s] couldn't be deleted.",
-            templateIdentifier, versionLabel, projectIdentifier, orgIdentifier));
+        TemplateEntity deletedTemplate = templateRepository.deleteTemplate(withDeleted, comments);
+        if (deletedTemplate.getDeleted()) {
+          return true;
+        } else {
+          throw new InvalidRequestException(format(
+              "Template with identifier [%s] and versionLabel [%s], under Project[%s], Organization [%s] couldn't be deleted.",
+              templateIdentifier, versionLabel, projectIdentifier, orgIdentifier));
+        }
       }
     } catch (Exception e) {
       log.error(String.format("Error while deleting template with identifier [%s] and versionLabel [%s]",

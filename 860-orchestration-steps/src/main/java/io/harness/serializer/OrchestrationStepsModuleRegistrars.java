@@ -20,6 +20,7 @@ import io.harness.plancreator.steps.barrier.BarrierStepNode;
 import io.harness.plancreator.steps.http.HttpStepNode;
 import io.harness.plancreator.steps.internal.FlagConfigurationStepNode;
 import io.harness.plancreator.steps.internal.PMSStepInfo;
+import io.harness.plancreator.strategy.StrategyConfig;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.serializer.kryo.CommonEntitiesKryoRegistrar;
 import io.harness.serializer.kryo.DelegateServiceBeansKryoRegistrar;
@@ -307,6 +308,16 @@ public class OrchestrationStepsModuleRegistrars {
                            .featureFlags(Collections.singletonList(FeatureName.CUSTOM_POLICY_STEP.name()))
                            .yamlGroup(YamlGroup.builder().group(StepCategory.STEP.name()).build())
                            .build())
+                   .build())
+          .add(YamlSchemaRootClass.builder()
+                   .entityType(EntityType.STRATEGY_NODE)
+                   .availableAtProjectLevel(true)
+                   .availableAtOrgLevel(false)
+                   .availableAtAccountLevel(false)
+                   .clazz(StrategyConfig.class)
+                   .yamlSchemaMetadata(YamlSchemaMetadata.builder()
+                                           .yamlGroup(YamlGroup.builder().group(StepCategory.STRATEGY.name()).build())
+                                           .build())
                    .build())
           .build();
 }

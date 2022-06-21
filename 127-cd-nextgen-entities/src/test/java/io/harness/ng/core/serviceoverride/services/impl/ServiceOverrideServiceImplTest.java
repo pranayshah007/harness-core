@@ -8,6 +8,7 @@
 package io.harness.ng.core.serviceoverride.services.impl;
 
 import static io.harness.rule.OwnerRule.HINGER;
+import static io.harness.rule.OwnerRule.YOGESH;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -15,6 +16,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.NGCoreTestBase;
 import io.harness.ng.core.serviceoverride.beans.NGServiceOverridesEntity;
@@ -153,6 +155,177 @@ public class ServiceOverrideServiceImplTest extends NGCoreTestBase {
         ACCOUNT_ID, PROJECT_IDENTIFIER, ORG_IDENTIFIER, ENV_REF, SERVICE_REF);
 
     assertThat(serviceOverrideInputs).isNull();
+  }
+  @Test
+  @Owner(developers = YOGESH)
+  @Category(UnitTests.class)
+  public void testDeleteAllInEnv() {
+    final String proj = UUIDGenerator.generateUuid();
+    final String env1 = UUIDGenerator.generateUuid();
+    final String env2 = UUIDGenerator.generateUuid();
+    NGServiceOverridesEntity e1 = NGServiceOverridesEntity.builder()
+                                      .accountId(ACCOUNT_ID)
+                                      .orgIdentifier(ORG_IDENTIFIER)
+                                      .projectIdentifier(proj)
+                                      .environmentRef(env1)
+                                      .serviceRef(UUIDGenerator.generateUuid())
+                                      .build();
+    NGServiceOverridesEntity e2 = NGServiceOverridesEntity.builder()
+                                      .accountId(ACCOUNT_ID)
+                                      .orgIdentifier(ORG_IDENTIFIER)
+                                      .projectIdentifier(proj)
+                                      .environmentRef(env1)
+                                      .serviceRef(UUIDGenerator.generateUuid())
+                                      .build();
+
+    NGServiceOverridesEntity e3 = NGServiceOverridesEntity.builder()
+                                      .accountId(ACCOUNT_ID)
+                                      .orgIdentifier(ORG_IDENTIFIER)
+                                      .projectIdentifier(proj)
+                                      .environmentRef(env2)
+                                      .serviceRef(UUIDGenerator.generateUuid())
+                                      .build();
+    serviceOverrideService.upsert(e1);
+    serviceOverrideService.upsert(e2);
+    serviceOverrideService.upsert(e3);
+
+    assertThat(serviceOverrideService.deleteAllInEnv(ACCOUNT_ID, ORG_IDENTIFIER, proj, env1)).isTrue();
+
+    assertThat(serviceOverrideService.get(ACCOUNT_ID, ORG_IDENTIFIER, proj, e1.getEnvironmentRef(), e1.getServiceRef()))
+        .isNotPresent();
+    assertThat(serviceOverrideService.get(ACCOUNT_ID, ORG_IDENTIFIER, proj, e2.getEnvironmentRef(), e2.getServiceRef()))
+        .isNotPresent();
+    assertThat(serviceOverrideService.get(ACCOUNT_ID, ORG_IDENTIFIER, proj, e3.getEnvironmentRef(), e3.getServiceRef()))
+        .isPresent();
+  }
+  @Test
+  @Owner(developers = YOGESH)
+  @Category(UnitTests.class)
+  public void testDeleteAllInProject() {
+    final String org1 = UUIDGenerator.generateUuid();
+    final String org2 = UUIDGenerator.generateUuid();
+    final String proj1 = UUIDGenerator.generateUuid();
+    final String proj2 = UUIDGenerator.generateUuid();
+    final String env1 = UUIDGenerator.generateUuid();
+    final String env2 = UUIDGenerator.generateUuid();
+    NGServiceOverridesEntity e1 = NGServiceOverridesEntity.builder()
+                                      .accountId(ACCOUNT_ID)
+                                      .orgIdentifier(org1)
+                                      .projectIdentifier(proj1)
+                                      .environmentRef(env1)
+                                      .serviceRef(UUIDGenerator.generateUuid())
+                                      .build();
+    NGServiceOverridesEntity e2 = NGServiceOverridesEntity.builder()
+                                      .accountId(ACCOUNT_ID)
+                                      .orgIdentifier(org1)
+                                      .projectIdentifier(proj1)
+                                      .environmentRef(env2)
+                                      .serviceRef(UUIDGenerator.generateUuid())
+                                      .build();
+
+    NGServiceOverridesEntity e3 = NGServiceOverridesEntity.builder()
+                                      .accountId(ACCOUNT_ID)
+                                      .orgIdentifier(org2)
+                                      .projectIdentifier(proj2)
+                                      .environmentRef(env1)
+                                      .serviceRef(UUIDGenerator.generateUuid())
+                                      .build();
+    NGServiceOverridesEntity e4 = NGServiceOverridesEntity.builder()
+                                      .accountId(ACCOUNT_ID)
+                                      .orgIdentifier(org2)
+                                      .projectIdentifier(proj1)
+                                      .environmentRef(env1)
+                                      .serviceRef(UUIDGenerator.generateUuid())
+                                      .build();
+
+    NGServiceOverridesEntity e5 = NGServiceOverridesEntity.builder()
+                                      .accountId(ACCOUNT_ID)
+                                      .orgIdentifier(org2)
+                                      .projectIdentifier(proj2)
+                                      .environmentRef(env1)
+                                      .serviceRef(UUIDGenerator.generateUuid())
+                                      .build();
+
+    serviceOverrideService.upsert(e1);
+    serviceOverrideService.upsert(e2);
+    serviceOverrideService.upsert(e3);
+    serviceOverrideService.upsert(e4);
+    serviceOverrideService.upsert(e5);
+
+    // should delete e3, e5
+    assertThat(serviceOverrideService.deleteAllInProject(ACCOUNT_ID, org2, proj2)).isTrue();
+
+    assertThat(serviceOverrideService.get(
+                   ACCOUNT_ID, e1.getOrgIdentifier(), proj1, e1.getEnvironmentRef(), e1.getServiceRef()))
+        .isPresent();
+    assertThat(serviceOverrideService.get(
+                   ACCOUNT_ID, e2.getOrgIdentifier(), proj1, e2.getEnvironmentRef(), e2.getServiceRef()))
+        .isPresent();
+    assertThat(serviceOverrideService.get(
+                   ACCOUNT_ID, e3.getOrgIdentifier(), proj1, e3.getEnvironmentRef(), e3.getServiceRef()))
+        .isNotPresent();
+    assertThat(serviceOverrideService.get(
+                   ACCOUNT_ID, e4.getOrgIdentifier(), proj1, e4.getEnvironmentRef(), e4.getServiceRef()))
+        .isPresent();
+    assertThat(serviceOverrideService.get(
+                   ACCOUNT_ID, e5.getOrgIdentifier(), proj1, e5.getEnvironmentRef(), e5.getServiceRef()))
+        .isNotPresent();
+  }
+  @Test
+  @Owner(developers = YOGESH)
+  @Category(UnitTests.class)
+  public void testDeleteAllInProjectForAService() {
+    final String proj = UUIDGenerator.generateUuid();
+    final String env1 = UUIDGenerator.generateUuid();
+    final String env2 = UUIDGenerator.generateUuid();
+    final String svc1 = UUIDGenerator.generateUuid();
+    final String svc2 = UUIDGenerator.generateUuid();
+    NGServiceOverridesEntity e1 = NGServiceOverridesEntity.builder()
+                                      .accountId(ACCOUNT_ID)
+                                      .orgIdentifier(ORG_IDENTIFIER)
+                                      .projectIdentifier(proj)
+                                      .environmentRef(env1)
+                                      .serviceRef(svc1)
+                                      .build();
+    NGServiceOverridesEntity e2 = NGServiceOverridesEntity.builder()
+                                      .accountId(ACCOUNT_ID)
+                                      .orgIdentifier(ORG_IDENTIFIER)
+                                      .projectIdentifier(proj)
+                                      .environmentRef(env1)
+                                      .serviceRef(svc1)
+                                      .build();
+
+    NGServiceOverridesEntity e3 = NGServiceOverridesEntity.builder()
+                                      .accountId(ACCOUNT_ID)
+                                      .orgIdentifier(ORG_IDENTIFIER)
+                                      .projectIdentifier(proj)
+                                      .environmentRef(env2)
+                                      .serviceRef(svc1)
+                                      .build();
+
+    NGServiceOverridesEntity e4 = NGServiceOverridesEntity.builder()
+                                      .accountId(ACCOUNT_ID)
+                                      .orgIdentifier(ORG_IDENTIFIER)
+                                      .projectIdentifier(proj)
+                                      .environmentRef(env1)
+                                      .serviceRef(svc2)
+                                      .build();
+
+    serviceOverrideService.upsert(e1);
+    serviceOverrideService.upsert(e2);
+    serviceOverrideService.upsert(e3);
+    serviceOverrideService.upsert(e4);
+
+    assertThat(serviceOverrideService.deleteAllInProjectForAService(ACCOUNT_ID, ORG_IDENTIFIER, proj, svc1)).isTrue();
+
+    assertThat(serviceOverrideService.get(ACCOUNT_ID, ORG_IDENTIFIER, proj, e1.getEnvironmentRef(), e1.getServiceRef()))
+        .isNotPresent();
+    assertThat(serviceOverrideService.get(ACCOUNT_ID, ORG_IDENTIFIER, proj, e2.getEnvironmentRef(), e2.getServiceRef()))
+        .isNotPresent();
+    assertThat(serviceOverrideService.get(ACCOUNT_ID, ORG_IDENTIFIER, proj, e3.getEnvironmentRef(), e3.getServiceRef()))
+        .isNotPresent();
+    assertThat(serviceOverrideService.get(ACCOUNT_ID, ORG_IDENTIFIER, proj, e4.getEnvironmentRef(), e4.getServiceRef()))
+        .isPresent();
   }
 
   private String readFile(String filename) {

@@ -17,6 +17,7 @@ import static io.harness.rule.OwnerRule.NAVNEET;
 import static io.harness.rule.OwnerRule.SAHIL;
 import static io.harness.rule.OwnerRule.TMACARI;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
+import static io.harness.rule.OwnerRule.VITALIE;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -48,6 +49,8 @@ import io.harness.cdng.infra.yaml.K8SDirectInfrastructure.K8SDirectInfrastructur
 import io.harness.cdng.infra.yaml.K8sAzureInfrastructure;
 import io.harness.cdng.infra.yaml.K8sGcpInfrastructure;
 import io.harness.cdng.infra.yaml.PdcInfrastructure;
+import io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure;
+import io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure.SshWinRmAwsInfrastructureBuilder;
 import io.harness.cdng.infra.yaml.SshWinRmAzureInfrastructure;
 import io.harness.cdng.k8s.K8sStepHelper;
 import io.harness.cdng.pipeline.PipelineInfrastructure;
@@ -79,6 +82,7 @@ import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.reflection.ReflectionUtils;
+import io.harness.repositories.UpsertOptions;
 import io.harness.rule.Owner;
 import io.harness.steps.OutputExpressionConstants;
 import io.harness.steps.environment.EnvironmentOutcome;
@@ -388,7 +392,7 @@ public class InfrastructureStepTest extends CategoryTest {
                                   .tags(Collections.emptyList())
                                   .build();
 
-    doReturn(expectedEnv).when(environmentService).upsert(expectedEnv);
+    doReturn(expectedEnv).when(environmentService).upsert(expectedEnv, UpsertOptions.DEFAULT);
   }
 
   @Test
@@ -595,6 +599,7 @@ public class InfrastructureStepTest extends CategoryTest {
                                             .subscriptionId(ParameterField.createValueField(subscriptionId))
                                             .resourceGroup(ParameterField.createValueField(resourceGroup))
                                             .cluster(ParameterField.createValueField(cluster))
+                                            .useClusterAdminCredentials(ParameterField.createValueField(true))
                                             .build();
 
     InfraMapping expectedInfraMapping = K8sAzureInfraMapping.builder()
@@ -603,10 +608,75 @@ public class InfrastructureStepTest extends CategoryTest {
                                             .subscription(subscriptionId)
                                             .resourceGroup(resourceGroup)
                                             .cluster(cluster)
+                                            .useClusterAdminCredentials(true)
                                             .build();
 
-    InfraMapping infraMapping = infrastructureStep.createInfraMappingObject(infrastructureSpec);
-    assertThat(infraMapping).isEqualTo(expectedInfraMapping);
+    assertThat(infrastructureStep.createInfraMappingObject(infrastructureSpec)).isEqualTo(expectedInfraMapping);
+
+    infrastructureSpec = K8sAzureInfrastructure.builder()
+                             .connectorRef(ParameterField.createValueField(connector))
+                             .namespace(ParameterField.createValueField(namespace))
+                             .subscriptionId(ParameterField.createValueField(subscriptionId))
+                             .resourceGroup(ParameterField.createValueField(resourceGroup))
+                             .cluster(ParameterField.createValueField(cluster))
+                             .useClusterAdminCredentials(ParameterField.createValueField(null))
+                             .build();
+
+    expectedInfraMapping = K8sAzureInfraMapping.builder()
+                               .azureConnector(connector)
+                               .namespace(namespace)
+                               .subscription(subscriptionId)
+                               .resourceGroup(resourceGroup)
+                               .cluster(cluster)
+                               .useClusterAdminCredentials(null)
+                               .build();
+
+    assertThat(infrastructureStep.createInfraMappingObject(infrastructureSpec)).isEqualTo(expectedInfraMapping);
+
+    infrastructureSpec = K8sAzureInfrastructure.builder()
+                             .connectorRef(ParameterField.createValueField(connector))
+                             .namespace(ParameterField.createValueField(namespace))
+                             .subscriptionId(ParameterField.createValueField(subscriptionId))
+                             .resourceGroup(ParameterField.createValueField(resourceGroup))
+                             .cluster(ParameterField.createValueField(cluster))
+                             .useClusterAdminCredentials(ParameterField.createValueField(false))
+                             .build();
+
+    expectedInfraMapping = K8sAzureInfraMapping.builder()
+                               .azureConnector(connector)
+                               .namespace(namespace)
+                               .subscription(subscriptionId)
+                               .resourceGroup(resourceGroup)
+                               .cluster(cluster)
+                               .useClusterAdminCredentials(false)
+                               .build();
+
+    assertThat(infrastructureStep.createInfraMappingObject(infrastructureSpec)).isEqualTo(expectedInfraMapping);
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testValidateSshWinRmAwsInfrastructure() {
+    SshWinRmAwsInfrastructureBuilder builder = SshWinRmAwsInfrastructure.builder();
+
+    infrastructureStep.validateInfrastructure(builder.build(), null);
+
+    builder.credentialsRef(new ParameterField<>(null, null, true, "expression1", null, true))
+        .connectorRef(ParameterField.createValueField("value"))
+        .build();
+
+    assertThatThrownBy(() -> infrastructureStep.validateInfrastructure(builder.build(), null))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining("Unresolved Expression : [expression1]");
+
+    builder.connectorRef(new ParameterField<>(null, null, true, "expression2", null, true))
+        .credentialsRef(ParameterField.createValueField("value"))
+        .build();
+
+    assertThatThrownBy(() -> infrastructureStep.validateInfrastructure(builder.build(), null))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessageContaining("Unresolved Expression : [expression2]");
   }
 
   @Test
@@ -617,9 +687,8 @@ public class InfrastructureStepTest extends CategoryTest {
                                                    .connectorRef(ParameterField.createValueField("connector-ref"))
                                                    .subscriptionId(ParameterField.createValueField("subscription-id"))
                                                    .resourceGroup(ParameterField.createValueField("resource-group"))
-                                                   .appService(ParameterField.createValueField("appService"))
+                                                   .webApp(ParameterField.createValueField("webApp"))
                                                    .deploymentSlot(ParameterField.createValueField("deployment-slot"))
-                                                   .targetSlot(ParameterField.createValueField("target-slot"))
                                                    .build();
 
     infrastructureStep.validateInfrastructure(infrastructure, null);

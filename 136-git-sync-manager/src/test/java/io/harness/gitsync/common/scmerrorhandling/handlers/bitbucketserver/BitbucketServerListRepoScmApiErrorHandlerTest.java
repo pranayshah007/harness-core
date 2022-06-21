@@ -16,6 +16,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.exception.HintException;
 import io.harness.gitsync.GitSyncTestBase;
+import io.harness.gitsync.common.scmerrorhandling.dtos.ErrorMetadata;
 import io.harness.rule.Owner;
 
 import com.google.inject.Inject;
@@ -37,7 +38,9 @@ public class BitbucketServerListRepoScmApiErrorHandlerTest extends GitSyncTestBa
   @Owner(developers = DEEPAK)
   @Category(UnitTests.class)
   public void testHandleError() {
-    assertThatThrownBy(() -> bitbucketServerListRepoScmApiErrorHandler.handleError(401, "Not Authorised"))
+    assertThatThrownBy(()
+                           -> bitbucketServerListRepoScmApiErrorHandler.handleError(
+                               401, "Not Authorised", ErrorMetadata.builder().build()))
         .isInstanceOf(HintException.class);
   }
 }

@@ -32,7 +32,8 @@ public class EnvironmentStepParameters implements StepParameters {
   String description;
   EnvironmentType type;
   Map<String, String> tags;
-  private ParameterField<String> environmentRef;
+  ParameterField<String> environmentRef;
+  ParameterField<String> envGroupRef;
   Map<String, Object> variables;
   Map<String, Object> serviceOverrides;
 }

@@ -75,6 +75,7 @@ import io.harness.security.encryption.EncryptedDataDetail;
 
 import software.wings.annotation.EncryptableSetting;
 import software.wings.beans.CGConstants;
+import software.wings.beans.DockerConfig;
 import software.wings.beans.GcpConfig;
 import software.wings.beans.GitConfig;
 import software.wings.beans.KubernetesClusterConfig;
@@ -188,7 +189,9 @@ public class SettingServiceHelper {
           || (settingAttribute.getValue() instanceof PcfConfig
               && ((PcfConfig) settingAttribute.getValue()).isSkipValidation())
           || (settingAttribute.getValue() instanceof ArtifactoryConfig
-              && ((ArtifactoryConfig) settingAttribute.getValue()).isSkipValidation());
+              && ((ArtifactoryConfig) settingAttribute.getValue()).isSkipValidation())
+          || (settingAttribute.getValue() instanceof DockerConfig
+              && ((DockerConfig) settingAttribute.getValue()).isSkipValidation());
     }
 
     return false;

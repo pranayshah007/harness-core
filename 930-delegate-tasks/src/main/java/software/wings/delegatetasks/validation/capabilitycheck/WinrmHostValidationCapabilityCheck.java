@@ -18,6 +18,7 @@ import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.task.executioncapability.CapabilityCheck;
 import io.harness.delegate.task.winrm.WinRmSession;
 import io.harness.delegate.task.winrm.WinRmSessionConfig;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.logging.LogCallback;
 import io.harness.logging.NoopExecutionCallback;
 import io.harness.security.encryption.EncryptedDataDetail;
@@ -50,6 +51,7 @@ public class WinrmHostValidationCapabilityCheck implements CapabilityCheck {
     WinRmConnectionAttributes connectionAttributes = capability.getWinRmConnectionAttributes();
     List<EncryptedDataDetail> encryptedDataDetails = capability.getWinrmConnectionEncryptedDataDetails();
     encryptionService.decrypt(connectionAttributes, encryptedDataDetails, false);
+    ExceptionMessageSanitizer.storeAllSecretsForSanitizing(connectionAttributes, encryptedDataDetails);
 
     WinRmSessionConfig config =
         winrmSessionConfig(capability.getValidationInfo(), connectionAttributes, capability.getEnvVariables());
@@ -59,7 +61,7 @@ public class WinrmHostValidationCapabilityCheck implements CapabilityCheck {
     try (WinRmSession ignore = makeSession(config, new NoopExecutionCallback())) {
       capabilityResponseBuilder.validated(true);
     } catch (Exception e) {
-      log.info("Exception in WinrmSession Validation: {}", e);
+      log.info("Exception in WinrmSession Validation: {}", ExceptionMessageSanitizer.sanitizeException(e));
       capabilityResponseBuilder.validated(false);
     }
     return capabilityResponseBuilder.build();

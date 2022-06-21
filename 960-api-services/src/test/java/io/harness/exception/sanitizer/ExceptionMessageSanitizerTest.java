@@ -8,28 +8,39 @@
 package io.harness.exception.sanitizer;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.reflection.ReflectionUtils.getFieldByName;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.DecryptableEntity;
 import io.harness.category.element.UnitTests;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.WingsException;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
 import io.harness.secret.SecretSanitizerThreadLocal;
+import io.harness.security.encryption.EncryptedDataDetail;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 @OwnedBy(CDP)
 public class ExceptionMessageSanitizerTest extends CategoryTest {
+  class DummyConfigClass implements DecryptableEntity {}
+  private DummyConfigClass dummyConfigClass = new DummyConfigClass();
+  private List<EncryptedDataDetail> sourceRepoEncryptionDetails;
+
   @Test
   @Owner(developers = OwnerRule.NAMAN_TALAYCHA)
   @Category(UnitTests.class)
@@ -115,5 +126,26 @@ public class ExceptionMessageSanitizerTest extends CategoryTest {
     assertThat(ex.getMessage()).isEqualTo("************** **************");
     assertThat(ex.getClass()).isEqualTo(Exception.class);
     assertThat(ex.getCause().getClass()).isEqualTo(IOException.class);
+  }
+
+  @Test
+  @Owner(developers = OwnerRule.PRATYUSH)
+  @Category(UnitTests.class)
+  public void testStoreAllSecretsForSanitizingWithEmptyFieldName() {
+    sourceRepoEncryptionDetails = new ArrayList<>();
+    sourceRepoEncryptionDetails.add(EncryptedDataDetail.builder().build());
+    assertDoesNotThrow(
+        () -> ExceptionMessageSanitizer.storeAllSecretsForSanitizing(dummyConfigClass, sourceRepoEncryptionDetails));
+    assertThatThrownBy(
+        () -> getFieldByName(dummyConfigClass.getClass(), sourceRepoEncryptionDetails.get(0).getFieldName()))
+        .isInstanceOf(NullPointerException.class);
+  }
+
+  private void assertDoesNotThrow(Runnable runnable) {
+    try {
+      runnable.run();
+    } catch (Exception ex) {
+      Assert.fail();
+    }
   }
 }

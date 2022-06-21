@@ -18,6 +18,7 @@ import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.exception.ExceptionUtils;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.security.encryption.EncryptedDataDetail;
 
@@ -86,7 +87,7 @@ public class CloudFormationCommandTask extends AbstractDelegateRunnableTask {
       log.error("Exception in processing cloud formation task [{}]", request.toString(), ex);
       return CloudFormationCommandExecutionResponse.builder()
           .commandExecutionStatus(CommandExecutionStatus.FAILURE)
-          .errorMessage(ExceptionUtils.getMessage(ex))
+          .errorMessage(ExceptionUtils.getMessage(ExceptionMessageSanitizer.sanitizeException(ex)))
           .build();
     }
   }

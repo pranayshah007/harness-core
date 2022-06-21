@@ -8,6 +8,7 @@
 package io.harness.ng.core.environment.services;
 
 import io.harness.ng.core.environment.beans.Environment;
+import io.harness.repositories.UpsertOptions;
 
 import java.util.List;
 import java.util.Optional;
@@ -25,7 +26,7 @@ public interface EnvironmentService {
   Environment update(Environment requestEnvironment);
 
   // TODO(archit): make it transactional
-  Environment upsert(Environment requestEnvironment);
+  Environment upsert(Environment requestEnvironment, UpsertOptions upsertOptions);
 
   Page<Environment> list(Criteria criteria, Pageable pageable);
 

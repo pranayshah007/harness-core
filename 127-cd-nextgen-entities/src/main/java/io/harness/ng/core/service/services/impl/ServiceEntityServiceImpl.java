@@ -38,11 +38,13 @@ import io.harness.ng.core.events.ServiceUpsertEvent;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.entity.ServiceEntity.ServiceEntityKeys;
 import io.harness.ng.core.service.services.ServiceEntityService;
+import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
 import io.harness.outbox.api.OutboxService;
 import io.harness.pms.merger.helpers.RuntimeInputFormHelper;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.repositories.UpsertOptions;
 import io.harness.repositories.service.spring.ServiceRepository;
 import io.harness.utils.NGFeatureFlagHelperService;
 import io.harness.utils.YamlPipelineUtils;
@@ -63,6 +65,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -92,6 +95,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   private final OutboxService outboxService;
   private final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_TRANSACTION_RETRY_POLICY;
   private final NGFeatureFlagHelperService ngFeatureFlagHelperService;
+  private final ServiceOverrideService serviceOverrideService;
 
   private static final String DUP_KEY_EXP_FORMAT_STRING_FOR_PROJECT =
       "Service [%s] under Project[%s], Organization [%s] in Account [%s] already exists";
@@ -171,7 +175,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   }
 
   @Override
-  public ServiceEntity upsert(@Valid ServiceEntity requestService) {
+  public ServiceEntity upsert(@Valid ServiceEntity requestService, UpsertOptions upsertOptions) {
     validatePresenceOfRequiredFields(requestService.getAccountId(), requestService.getIdentifier());
     setNameIfNotPresent(requestService);
     modifyServiceRequest(requestService);
@@ -183,12 +187,14 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
             "Service [%s] under Project[%s], Organization [%s] couldn't be upserted.", requestService.getIdentifier(),
             requestService.getProjectIdentifier(), requestService.getOrgIdentifier()));
       }
-      outboxService.save(ServiceUpsertEvent.builder()
-                             .accountIdentifier(requestService.getAccountId())
-                             .orgIdentifier(requestService.getOrgIdentifier())
-                             .projectIdentifier(requestService.getProjectIdentifier())
-                             .service(requestService)
-                             .build());
+      if (upsertOptions.isSendOutboxEvent()) {
+        outboxService.save(ServiceUpsertEvent.builder()
+                               .accountIdentifier(requestService.getAccountId())
+                               .orgIdentifier(requestService.getOrgIdentifier())
+                               .projectIdentifier(requestService.getProjectIdentifier())
+                               .service(requestService)
+                               .build());
+      }
       return result;
     }));
   }
@@ -224,20 +230,25 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
         get(accountId, orgIdentifier, projectIdentifier, serviceIdentifier, false);
 
     if (serviceEntityOptional.isPresent()) {
-      return Failsafe.with(DEFAULT_TRANSACTION_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
-        ServiceEntity serviceEntityRetrieved = serviceEntityOptional.get();
-        final boolean deleted =
-            shouldHardDelete ? serviceRepository.delete(criteria) : serviceRepository.softDelete(criteria);
-        if (!deleted) {
-          throw new InvalidRequestException(
-              String.format("Service [%s] under Project[%s], Organization [%s] couldn't be deleted.",
-                  serviceEntity.getIdentifier(), projectIdentifier, orgIdentifier));
-        }
+      boolean success =
+          Failsafe.with(DEFAULT_TRANSACTION_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
+            ServiceEntity serviceEntityRetrieved = serviceEntityOptional.get();
+            final boolean deleted =
+                shouldHardDelete ? serviceRepository.delete(criteria) : serviceRepository.softDelete(criteria);
+            if (!deleted) {
+              throw new InvalidRequestException(
+                  String.format("Service [%s] under Project[%s], Organization [%s] couldn't be deleted.",
+                      serviceEntity.getIdentifier(), projectIdentifier, orgIdentifier));
+            }
 
-        outboxService.save(new ServiceDeleteEvent(accountId, serviceEntityRetrieved.getOrgIdentifier(),
-            serviceEntityRetrieved.getProjectIdentifier(), serviceEntityRetrieved));
-        return true;
-      }));
+            outboxService.save(new ServiceDeleteEvent(accountId, serviceEntityRetrieved.getOrgIdentifier(),
+                serviceEntityRetrieved.getProjectIdentifier(), serviceEntityRetrieved));
+            return true;
+          }));
+      processQuietly(()
+                         -> serviceOverrideService.deleteAllInProjectForAService(
+                             accountId, orgIdentifier, projectIdentifier, serviceIdentifier));
+      return success;
     } else {
       throw new InvalidRequestException(
           String.format("Service [%s] under Project[%s], Organization [%s] doesn't exist.", serviceIdentifier,
@@ -473,5 +484,17 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
       return;
     }
     serviceEntities.forEach(serviceEntity -> modifyServiceRequest(serviceEntity));
+  }
+
+  boolean processQuietly(BooleanSupplier b) {
+    try {
+      b.getAsBoolean();
+      // supplier processed
+      return true;
+    } catch (Exception ex) {
+      log.error("failed to process entity deletion", ex);
+      // ignore this
+      return false;
+    }
   }
 }

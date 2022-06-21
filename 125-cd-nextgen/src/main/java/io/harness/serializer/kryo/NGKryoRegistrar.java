@@ -31,6 +31,7 @@ import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
 import io.harness.cdng.infra.yaml.K8sGcpInfrastructure;
 import io.harness.cdng.infra.yaml.PdcInfrastructure;
 import io.harness.cdng.infra.yaml.ServerlessAwsLambdaInfrastructure;
+import io.harness.cdng.infra.yaml.SshWinRmAwsInfrastructure;
 import io.harness.cdng.infra.yaml.SshWinRmAzureInfrastructure;
 import io.harness.cdng.k8s.DeleteResourcesWrapper;
 import io.harness.cdng.k8s.K8sBlueGreenOutcome;
@@ -117,6 +118,7 @@ public class NGKryoRegistrar implements KryoRegistrar {
     kryo.register(K8sGcpInfrastructure.class, 8301);
     kryo.register(PdcInfrastructure.class, 8302);
     kryo.register(SshWinRmAzureInfrastructure.class, 8303);
+    kryo.register(SshWinRmAwsInfrastructure.class, 8304);
 
     // Starting using 12500 series as 8100 series is also used in 400-rest
     kryo.register(K8sBlueGreenOutcome.class, 12500);

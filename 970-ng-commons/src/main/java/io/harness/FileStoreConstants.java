@@ -14,8 +14,10 @@ import io.harness.annotations.dev.OwnedBy;
 public final class FileStoreConstants {
   public static final String CREATED_AT = "This is the time at which File was created.";
   public static final String LAST_MODIFIED_AT = "This is the time at which File was last modified.";
-  public static final String ROOT_FOLDER_NAME = "Root";
+  public static final String ROOT_FOLDER_NAME = "/";
   public static final String ROOT_FOLDER_IDENTIFIER = "Root";
+  public static final String ROOT_FOLDER_PARENT_IDENTIFIER = "";
+  public static final String ROOT_FOLDER_PATH = "/";
 
   private FileStoreConstants(){};
 }

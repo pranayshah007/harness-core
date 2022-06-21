@@ -34,7 +34,6 @@ import static org.mockito.Mockito.when;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
-import io.harness.configuration.DeployMode;
 import io.harness.delegate.beans.Delegate;
 import io.harness.exception.GeneralException;
 import io.harness.ff.FeatureFlagService;
@@ -97,7 +96,6 @@ public class EcsDelegateRegistrationTest {
   @Owner(developers = ADWAIT)
   @Category(UnitTests.class)
   public void testHandleEcsDelegateRequest_EcsDelegateRegistration() {
-    doReturn(DeployMode.KUBERNETES).when(mainConfiguration).getDeployMode();
     final Delegate registeredDelegate = Delegate.builder().accountId(ACCOUNT_ID).hostName(HOST_NAME + "_5").build();
     final Delegate requestDelegate =
         Delegate.builder().accountId(ACCOUNT_ID).hostName(HOST_NAME + "_5").keepAlivePacket(false).build();
@@ -110,7 +108,8 @@ public class EcsDelegateRegistrationTest {
     JreConfig oracleJreConfig = JreConfig.builder().version("1.8.0_191").build();
     HashMap<String, JreConfig> jreConfigMap = new HashMap<>();
     jreConfigMap.put("oracle8u191", oracleJreConfig);
-    doReturn("oracle8u191").when(mainConfiguration).getCurrentJre();
+    jreConfigMap.put("openjdk11014_9", JreConfig.builder().version("11.0.14").build());
+    when(mainConfiguration.getMigrateToJre()).thenReturn("openjdk11014_9");
     doReturn(jreConfigMap).when(mainConfiguration).getJreConfigs();
 
     underTest.handleEcsDelegateRequest(requestDelegate);
