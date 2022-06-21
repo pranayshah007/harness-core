@@ -13,6 +13,9 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 
+import com.amazonaws.services.cloudformation.model.ListStackResourcesRequest;
+import com.amazonaws.services.cloudformation.model.ListStackResourcesResult;
+import com.amazonaws.services.cloudformation.model.StackResourceSummary;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.data.structure.EmptyPredicate;
@@ -47,6 +50,8 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.List;
+import java.util.Optional;
+
 import lombok.extern.slf4j.Slf4j;
 
 @Singleton
@@ -188,5 +193,31 @@ public class AwsCFHelperServiceDelegateImpl
       normalizedS3TemplatePath = s3Path.replaceAll("\\+", "%20");
     }
     return normalizedS3TemplatePath;
+  }
+
+  @Override
+  public String getPhysicalIdBasedOnLogicalId(AwsInternalConfig awsConfig, String region, String stackName, String logicalId) {
+
+    try (CloseableAmazonWebServiceClient<AmazonCloudFormationClient> closeableAmazonCloudFormationClient =
+                 new CloseableAmazonWebServiceClient(getAmazonCloudFormationClient(Regions.fromName(region), awsConfig))) {
+      ListStackResourcesRequest listStackResourcesRequest = new ListStackResourcesRequest();
+      listStackResourcesRequest.setStackName(stackName);
+      tracker.trackCFCall("List Stack Resources");
+      ListStackResourcesResult listStackResourcesResult =
+              closeableAmazonCloudFormationClient.getClient().listStackResources(listStackResourcesRequest);
+      Optional<StackResourceSummary> resource = listStackResourcesResult.getStackResourceSummaries().stream().filter(p -> p.getLogicalResourceId().equals(logicalId)).findFirst();
+      if (resource.isPresent()) {
+        return resource.get().getPhysicalResourceId();
+      }
+    } catch (AmazonEC2Exception amazonEC2Exception) {
+      handleAmazonServiceException(amazonEC2Exception);
+    } catch (AmazonClientException amazonClientException) {
+      handleAmazonClientException(amazonClientException);
+    } catch (Exception e) {
+      Exception sanitizeException = ExceptionMessageSanitizer.sanitizeException(e);
+      log.error("Exception getStackBody", sanitizeException);
+      throw new InvalidRequestException(ExceptionUtils.getMessage(sanitizeException), sanitizeException);
+    }
+    return "";
   }
 }

@@ -21,6 +21,10 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.aws.AwsConfig;
+import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsCredentialDTO;
+import io.harness.delegate.beans.connector.awsconnector.AwsCredentialType;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.serverless.ServerlessAwsLambdaDeployResult;
@@ -227,9 +231,8 @@ public class ServerlessAwsLambdaDeployCommandTaskHandler extends ServerlessComma
     if (response.getCommandExecutionStatus() == CommandExecutionStatus.SUCCESS) {
       executionLogCallback.saveExecutionLog(
           color(format("%nDeploy List command executed successfully..%n"), LogColor.White, LogWeight.Bold), INFO);
-      List<String> timeStamps = serverlessAwsCommandTaskHelper.getDeployListTimeStamps(response.getOutput());
-      Optional<String> previousVersionTimeStamp = serverlessAwsCommandTaskHelper.getPreviousVersionTimeStamp(
-          timeStamps, executionLogCallback, serverlessDeployRequest);
+      List<String> timeStampsList = serverlessAwsCommandTaskHelper.getDeployListTimeStamps(response.getOutput());
+      Optional<String> previousVersionTimeStamp = serverlessAwsCommandTaskHelper.getLastDeployedTimestamp(executionLogCallback, timeStampsList, serverlessDeployRequest);
       previousDeployTimeStamp = previousVersionTimeStamp.orElse(null);
       if (previousVersionTimeStamp.isPresent()) {
         executionLogCallback.saveExecutionLog(
