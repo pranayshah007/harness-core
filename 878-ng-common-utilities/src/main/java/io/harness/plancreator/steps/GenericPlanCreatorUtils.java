@@ -63,6 +63,7 @@ public class GenericPlanCreatorUtils {
     }
     return false;
   }
+
   public YamlField obtainNextSiblingField(YamlField currentField) {
     return currentField.getNode().nextSiblingFromParentArray(
         currentField.getName(), Arrays.asList(STEP, PARALLEL, STEP_GROUP));

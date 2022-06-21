@@ -29,20 +29,40 @@ import lombok.Value;
 public class GitopsClustersOutcome implements Outcome, ExecutionSweepingOutput {
   @NotNull List<ClusterData> clustersData;
 
-  public GitopsClustersOutcome appendCluster(@NotNull String env, @NotNull String clusterName) {
-    clustersData.add(ClusterData.builder().env(env).clusterName(clusterName).build());
-    return this;
-  }
-
-  public GitopsClustersOutcome appendCluster(String envGroup, @NotNull String env, @NotNull String clusterName) {
-    clustersData.add(ClusterData.builder().envGroup(envGroup).env(env).clusterName(clusterName).build());
+  public GitopsClustersOutcome appendCluster(@NotNull Metadata env, @NotNull Metadata cluster) {
+    clustersData.add(ClusterData.builder()
+                         .envId(env.getIdentifier())
+                         .envName(env.getName())
+                         .clusterName(cluster.getName())
+                         .clusterId(cluster.getIdentifier())
+                         .build());
     return this;
   }
 
   public GitopsClustersOutcome appendCluster(
-      String envGroup, @NotNull String env, @NotNull String clusterName, Map<String, Object> variables) {
-    clustersData.add(
-        ClusterData.builder().envGroup(envGroup).env(env).clusterName(clusterName).variables(variables).build());
+      @NotNull Metadata envGroup, @NotNull Metadata env, @NotNull Metadata cluster) {
+    clustersData.add(ClusterData.builder()
+                         .envGroupId(envGroup.getIdentifier())
+                         .envGroupName(envGroup.getName())
+                         .envId(env.getIdentifier())
+                         .envName(env.getName())
+                         .clusterId(cluster.getIdentifier())
+                         .clusterName(cluster.getName())
+                         .build());
+    return this;
+  }
+
+  public GitopsClustersOutcome appendCluster(
+      @NotNull Metadata envGroup, @NotNull Metadata env, @NotNull Metadata cluster, Map<String, Object> variables) {
+    clustersData.add(ClusterData.builder()
+                         .envGroupId(envGroup.getIdentifier())
+                         .envGroupName(envGroup.getName())
+                         .envId(env.getIdentifier())
+                         .envName(env.getName())
+                         .clusterId(cluster.getIdentifier())
+                         .clusterName(cluster.getName())
+                         .variables(variables)
+                         .build());
     return this;
   }
 
@@ -51,8 +71,11 @@ public class GitopsClustersOutcome implements Outcome, ExecutionSweepingOutput {
   @JsonTypeName("clusterData")
   @RecasterAlias("io.harness.cdng.gitops.steps.GitopsClustersOutcome.ClusterData")
   public static class ClusterData {
-    String envGroup;
-    String env;
+    String envGroupId;
+    String envGroupName;
+    String envId;
+    String envName;
+    String clusterId;
     String clusterName;
     Map<String, Object> variables;
   }

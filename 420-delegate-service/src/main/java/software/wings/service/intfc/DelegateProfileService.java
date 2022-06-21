@@ -44,4 +44,5 @@ public interface DelegateProfileService extends OwnedByAccount {
   void deleteProfileV2(String accountId, DelegateEntityOwner owner, String delegateProfileIdentifier);
   DelegateProfile updateProfileSelectorsV2(
       String accountId, DelegateEntityOwner owner, String delegateProfileIdentifier, List<String> selectors);
+  void deleteAllProfileOnDeletingOwner(String accountId, DelegateEntityOwner owner);
 }

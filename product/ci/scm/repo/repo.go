@@ -46,8 +46,8 @@ func CreateWebhook(ctx context.Context, request *pb.CreateWebhookRequest, log *z
 	// for native events we convert enums to strings, which the gitprovider expects
 	switch request.GetProvider().GetHook().(type) {
 	case *pb.Provider_Azure:
-		eventStrings := convertAzureEnumToStrings(request.GetNativeEvents().GetAzure())
-		inputParams.NativeEvents = eventStrings
+		// special handling for azure
+		return createWebhookForAzure(ctx, log, request, client, inputParams, start)
 	case *pb.Provider_BitbucketCloud:
 		eventStrings := convertBitbucketCloudEnumToStrings(request.GetNativeEvents().GetBitbucketCloud())
 		inputParams.NativeEvents = eventStrings
@@ -67,20 +67,59 @@ func CreateWebhook(ctx context.Context, request *pb.CreateWebhookRequest, log *z
 
 	hook, response, err := client.Repositories.CreateHook(ctx, request.GetSlug(), &inputParams)
 	if err != nil {
-		log.Errorw("CreateWebhook failure", "provider", gitclient.GetProvider(*request.GetProvider()), "slug", request.GetSlug(), "name", request.GetName(), "target", request.GetTarget(),
-			"elapsed_time_ms", utils.TimeSince(start), zap.Error(err))
-		// this is a hard error with no response
-		if response == nil {
-			return nil, err
-		}
-		// this is an error from the git provider, e.g. the hook exists.
-		out = &pb.CreateWebhookResponse{
-			Status: int32(response.Status),
-			Error:  err.Error(),
-		}
-		return out, nil
+		return handleCreateWebhookErrorResponse(ctx, err, log, request, response, start)
 	}
-	log.Infow("CreateWebhook success", "slug", request.GetSlug(), "name", request.GetName(), "target", request.GetTarget(), "elapsed_time_ms", utils.TimeSince(start))
+
+	return handleCreateWebhookSuccessResponse(ctx, log, request, hook, response, start)
+}
+
+func createWebhookForAzure(ctx context.Context, log *zap.SugaredLogger, request *pb.CreateWebhookRequest, client *scm.Client, inputParams scm.HookInput,
+	startTime time.Time) (out *pb.CreateWebhookResponse, err error) {
+	// We need repoID for azure create webhook api (Find API supports both repoName and repoID)
+	slug := getSlugIDForAzureRepo(ctx, request.GetSlug(), client)
+
+	var (
+		hook     *scm.Hook
+		response *scm.Response
+		events   []string
+	)
+
+	eventStrings := convertAzureEnumToStrings(request.GetNativeEvents().GetAzure())
+	for _, es := range eventStrings {
+		inputParamsCopy := inputParams
+		inputParamsCopy.NativeEvents = []string{es}
+		hook, response, err = client.Repositories.CreateHook(ctx, slug, &inputParamsCopy)
+
+		if err != nil {
+			return handleCreateWebhookErrorResponse(ctx, err, log, request, response, startTime)
+		}
+		// azure returns only one event
+		events = append(events, hook.Events...)
+	}
+
+	hook.Events = events
+	return handleCreateWebhookSuccessResponse(ctx, log, request, hook, response, startTime)
+}
+
+func handleCreateWebhookErrorResponse(_ context.Context, err error, log *zap.SugaredLogger, request *pb.CreateWebhookRequest, response *scm.Response,
+	startTime time.Time) (*pb.CreateWebhookResponse, error) {
+	log.Errorw("CreateWebhook failure", "provider", gitclient.GetProvider(*request.GetProvider()), "slug", request.GetSlug(), "name", request.GetName(), "target", request.GetTarget(),
+		"elapsed_time_ms", utils.TimeSince(startTime), zap.Error(err))
+	// this is a hard error with no response
+	if response == nil {
+		return nil, err
+	}
+	// this is an error from the git provider, e.g. the hook exists.
+	out := &pb.CreateWebhookResponse{
+		Status: int32(response.Status),
+		Error:  err.Error(),
+	}
+	return out, nil
+}
+
+func handleCreateWebhookSuccessResponse(_ context.Context, log *zap.SugaredLogger, request *pb.CreateWebhookRequest, hook *scm.Hook, response *scm.Response,
+	startTime time.Time) (out *pb.CreateWebhookResponse, err error) {
+	log.Infow("CreateWebhook success", "slug", request.GetSlug(), "name", request.GetName(), "target", request.GetTarget(), "elapsed_time_ms", utils.TimeSince(startTime))
 
 	out = &pb.CreateWebhookResponse{
 		Webhook: &pb.WebhookResponse{
@@ -96,7 +135,7 @@ func CreateWebhook(ctx context.Context, request *pb.CreateWebhookRequest, log *z
 	nativeEvents, mappingErr := nativeEventsFromStrings(hook.Events, *request.GetProvider())
 	if mappingErr != nil {
 		log.Errorw("CreateWebhook mapping failure", "provider", gitclient.GetProvider(*request.GetProvider()), "slug", request.GetSlug(), "name", request.GetName(), "target", request.GetTarget(),
-			"elapsed_time_ms", utils.TimeSince(start), zap.Error(err))
+			"elapsed_time_ms", utils.TimeSince(startTime), zap.Error(err))
 		return nil, mappingErr
 	}
 	out.Webhook.NativeEvents = nativeEvents
@@ -145,7 +184,14 @@ func ListWebhooks(ctx context.Context, request *pb.ListWebhooksRequest, log *zap
 		return nil, err
 	}
 
-	scmHooks, response, err := client.Repositories.ListHooks(ctx, request.GetSlug(), scm.ListOptions{Page: int(request.GetPagination().GetPage())})
+	slug := request.GetSlug()
+	switch request.GetProvider().GetHook().(type) {
+	// need repoID for azure
+	case *pb.Provider_Azure:
+		slug = getSlugIDForAzureRepo(ctx, slug, client)
+	}
+
+	scmHooks, response, err := client.Repositories.ListHooks(ctx, slug, scm.ListOptions{Page: int(request.GetPagination().GetPage())})
 	if err != nil {
 		log.Errorw("ListWebhooks failure", "provider", gitclient.GetProvider(*request.GetProvider()), "slug", request.GetSlug(), "elapsed_time_ms", utils.TimeSince(start), zap.Error(err))
 		// this is a hard error with no response
@@ -203,10 +249,6 @@ func nativeEventsFromStrings(sliceOfStrings []string, p pb.Provider) (nativeEven
 		gitlabEvents := convertStringsToGitlabEnum(sliceOfStrings)
 		nativeEvents = &pb.NativeEvents{NativeEvents: &gitlabEvents}
 	case *pb.Provider_Azure:
-		// Azure only allows a single event type per webhook
-		if len(sliceOfStrings) != 1 {
-			return nil, fmt.Errorf("azure only supports a single event type per webhook")
-		}
 		azureEvents := convertStringsToAzureEnum(sliceOfStrings)
 		nativeEvents = &pb.NativeEvents{NativeEvents: &azureEvents}
 	default:
@@ -328,15 +370,17 @@ func convertBitbucketCloudEnumToStrings(enums *pb.BitbucketCloudWebhookEvents) (
 }
 
 func convertAzureEnumToStrings(enums *pb.AzureWebhookEvents) (strings []string) {
-	switch enums.GetEvents() {
-	case pb.AzureWebhookEvent_AZURE_PUSH:
-		strings = append(strings, "git.push")
-	case pb.AzureWebhookEvent_AZURE_PULLREQUEST_CREATED:
-		strings = append(strings, "git.pullrequest.created")
-	case pb.AzureWebhookEvent_AZURE_PULLREQUEST_UPDATED:
-		strings = append(strings, "git.pullrequest.updated")
-	case pb.AzureWebhookEvent_AZURE_PULLREQUEST_MERGED:
-		strings = append(strings, "git.pullrequest.merged")
+	for _, e := range enums.GetEvents() {
+		switch e {
+		case pb.AzureWebhookEvent_AZURE_PUSH:
+			strings = append(strings, "git.push")
+		case pb.AzureWebhookEvent_AZURE_PULLREQUEST_CREATED:
+			strings = append(strings, "git.pullrequest.created")
+		case pb.AzureWebhookEvent_AZURE_PULLREQUEST_UPDATED:
+			strings = append(strings, "git.pullrequest.updated")
+		case pb.AzureWebhookEvent_AZURE_PULLREQUEST_MERGED:
+			strings = append(strings, "git.pullrequest.merged")
+		}
 	}
 	return strings
 }
@@ -356,7 +400,7 @@ func convertStringsToAzureEnum(strings []string) (enums pb.NativeEvents_Azure) {
 		}
 	}
 
-	enums.Azure = &pb.AzureWebhookEvents{Events: array[0]}
+	enums.Azure = &pb.AzureWebhookEvents{Events: array}
 	return enums
 }
 
@@ -395,4 +439,13 @@ func convertBitbucketServerEnumToStrings(enums *pb.BitbucketServerWebhookEvents)
 		}
 	}
 	return strings
+}
+
+func getSlugIDForAzureRepo(ctx context.Context, slug string, client *scm.Client) string {
+	slugValue := slug
+	repo, resp, err := client.Repositories.Find(ctx, slug)
+	if err == nil && resp != nil {
+		slugValue = repo.ID
+	}
+	return slugValue
 }

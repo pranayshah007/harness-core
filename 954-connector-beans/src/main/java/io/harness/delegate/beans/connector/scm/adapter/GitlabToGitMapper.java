@@ -16,6 +16,7 @@ import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabHttpAuthenticationType;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabHttpCredentialsDTO;
+import io.harness.delegate.beans.connector.scm.gitlab.GitlabOauthDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabSshCredentialsDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabUsernamePasswordDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabUsernameTokenDTO;
@@ -48,13 +49,19 @@ public class GitlabToGitMapper {
         username = httpCredentialsSpec.getUsername();
         usernameRef = httpCredentialsSpec.getUsernameRef();
         passwordRef = httpCredentialsSpec.getPasswordRef();
-      } else {
+      } else if (gitlabHttpCredentialsDTO.getType() == GitlabHttpAuthenticationType.USERNAME_AND_TOKEN) {
         final GitlabUsernameTokenDTO httpCredentialsSpec =
             (GitlabUsernameTokenDTO) gitlabHttpCredentialsDTO.getHttpCredentialsSpec();
         username = httpCredentialsSpec.getUsername();
         usernameRef = httpCredentialsSpec.getUsernameRef();
         passwordRef = httpCredentialsSpec.getTokenRef();
+      } else {
+        final GitlabOauthDTO httpCredentialsSpec = (GitlabOauthDTO) gitlabHttpCredentialsDTO.getHttpCredentialsSpec();
+        username = GitlabOauthDTO.userName;
+        usernameRef = null;
+        passwordRef = httpCredentialsSpec.getTokenRef();
       }
+
       return GitConfigCreater.getGitConfigForHttp(connectionType, url, validationRepo, username, usernameRef,
           passwordRef, gitlabConnectorDTO.getDelegateSelectors());
     } else if (authType == GitAuthType.SSH) {

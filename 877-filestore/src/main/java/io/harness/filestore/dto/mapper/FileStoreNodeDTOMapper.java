@@ -59,12 +59,12 @@ public class FileStoreNodeDTOMapper {
         .build();
   }
 
-  public FolderNodeDTO getFolderNodeDTO(
-      FolderNodeDTO folderNodeDTO, final @NotNull String parentIdentifier, final @NotBlank String path) {
+  public FolderNodeDTO getFolderNodeDTO(FolderNodeDTO folderNodeDTO, final @NotNull String parentIdentifier,
+      final @NotBlank String name, final @NotBlank String path) {
     return FolderNodeDTO.builder()
         .identifier(folderNodeDTO.getIdentifier())
         .parentIdentifier(parentIdentifier)
-        .name(folderNodeDTO.getName())
+        .name(name)
         .path(path)
         .lastModifiedAt(folderNodeDTO.getLastModifiedAt())
         .lastModifiedBy(folderNodeDTO.getLastModifiedBy())

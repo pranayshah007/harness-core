@@ -110,7 +110,7 @@ public class PipelineDashboardOverviewResource {
   @ApiOperation(value = "Get pipeline execution", nickname = "getPipelineExecution")
   @Operation(operationId = "getPipelineExecution",
       description = "Returns Pipeline Execution Details for a Given Interval (Presented in Day Wise Format)",
-      summary = "Fetch Pipeline Execution Details",
+      summary = "Fetch Execution Details for an Interval",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",

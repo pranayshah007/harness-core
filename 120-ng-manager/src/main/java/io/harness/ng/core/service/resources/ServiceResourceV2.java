@@ -36,6 +36,7 @@ import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.artifact.ArtifactSummary;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
@@ -397,6 +398,25 @@ public class ServiceResourceV2 {
   // do not delete this.
   public ResponseDTO<NGServiceConfig> getNGServiceConfig() {
     return ResponseDTO.newResponse(NGServiceConfig.builder().build());
+  }
+
+  @GET
+  @Path("/dummy-artifactSummary-api")
+  @ApiOperation(value = "This is dummy api to expose ArtifactSummary", nickname = "dummyArtifactSummaryApi")
+  @Hidden
+  // do not delete this.
+  public ResponseDTO<ArtifactSummary> getArtifactSummaries() {
+    return ResponseDTO.newResponse(new ArtifactSummary() {
+      @Override
+      public String getType() {
+        return null;
+      }
+
+      @Override
+      public String getDisplayName() {
+        return null;
+      }
+    });
   }
 
   @GET

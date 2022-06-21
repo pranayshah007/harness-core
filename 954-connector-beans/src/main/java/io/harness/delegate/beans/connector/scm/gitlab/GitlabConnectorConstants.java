@@ -13,4 +13,5 @@ public class GitlabConnectorConstants {
   public static final String USERNAME_AND_PASSWORD = "UsernamePassword";
   public static final String USERNAME_AND_TOKEN = "UsernameToken";
   public static final String KERBEROS = "Kerberos";
+  public static final String OAUTH = "OAuth";
 }

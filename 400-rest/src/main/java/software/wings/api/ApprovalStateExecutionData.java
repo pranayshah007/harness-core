@@ -111,6 +111,8 @@ public class ApprovalStateExecutionData extends StateExecutionData implements De
   private String skipAssertionResponse;
   private List<NameValuePair> variables;
 
+  @Transient private transient String approvalStateIdentifier;
+
   @Override
   public Map<String, ExecutionDataValue> getExecutionSummary() {
     Map<String, ExecutionDataValue> executionDetails = super.getExecutionSummary();
@@ -196,7 +198,10 @@ public class ApprovalStateExecutionData extends StateExecutionData implements De
 
     putNotNull(executionDetails, "approvalViaApiKey", ExecutionDataValue.builder().value(approvalViaApiKey).build());
     putNotNull(executionDetails, "autoRejectPreviousDeployments",
-        ExecutionDataValue.builder().value(autoRejectPreviousDeployments).build());
+        ExecutionDataValue.builder()
+            .displayName("Auto Reject Previous Deployments")
+            .value(autoRejectPreviousDeployments)
+            .build());
 
     if (approvedBy != null) {
       String approvalDisplayName =

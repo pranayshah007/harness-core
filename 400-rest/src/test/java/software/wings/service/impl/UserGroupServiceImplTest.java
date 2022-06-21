@@ -1474,7 +1474,7 @@ public class UserGroupServiceImplTest extends WingsBaseTest {
     } catch (InvalidRequestException ex) {
       assertThat(ex.getMessage())
           .isEqualTo(
-              "This userGroup is being referenced in either approval step/stage or notification strategy or in a deployment freeze window. Please make sure to remove the references to delete this userGroup.");
+              "This userGroup is being referenced in either approval step/stage or notification strategy or as a runtimeInput in an execution step/stage or in a deployment freeze window. Please make sure to remove the references to delete this userGroup.");
     }
   }
 
