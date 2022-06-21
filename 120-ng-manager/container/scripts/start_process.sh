@@ -41,13 +41,6 @@ fi
 if [[ "${ENABLE_OVEROPS}" == "true" ]] ; then
     echo "OverOps is enabled"
     JAVA_OPTS=$JAVA_OPTS" -Xshare:off -XX:-UseTypeSpeculation -XX:ReservedCodeCacheSize=512m -agentpath:/opt/harness/harness/lib/libETAgent.so"
-    export ET_COLLECTOR_URL=https://app.harness.io/gratis/et-collector
-    export ET_PROJECT_ID=Harness_Error_Tracking
-    export ET_ACCOUNT_ID=vpCkHKsDSxK9_KYfjCTMKA
-    export ET_ORG_ID=default
-    export ET_ENV_ID=qa
-    export ET_APPLICATION_NAME=cgmanager
-    export ET_DEPLOYMENT_NAME=$OVEROPS_DEPLOYMENT_NAME
     echo "Using Overops Java Agent"
 fi
 
