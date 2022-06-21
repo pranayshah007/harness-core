@@ -20,6 +20,7 @@ import static org.apache.commons.lang3.StringUtils.trim;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.expressions.CDExpressionResolveFunctor;
+import io.harness.cdng.gitops.steps.GitOpsStepHelper;
 import io.harness.cdng.gitops.steps.GitopsClustersOutcome;
 import io.harness.cdng.gitops.steps.GitopsClustersStep;
 import io.harness.cdng.k8s.K8sStepHelper;
@@ -93,6 +94,7 @@ public class CreatePRStep extends TaskChainExecutableWithRollbackAndRbac {
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject protected OutcomeService outcomeService;
   @Inject private K8sStepHelper k8sStepHelper;
+  @Inject private GitOpsStepHelper gitOpsStepHelper;
 
   @Override
   public void validateResources(Ambiance ambiance, StepElementParameters stepParameters) {}
@@ -138,26 +140,7 @@ public class CreatePRStep extends TaskChainExecutableWithRollbackAndRbac {
         .build();
   }
 
-  public ManifestOutcome getReleaseRepoOutcome(Ambiance ambiance) {
-    ManifestsOutcome manifestsOutcomes = k8sStepHelper.resolveManifestsOutcome(ambiance);
 
-    List<ManifestOutcome> releaseRepoManifests =
-        manifestsOutcomes.values()
-            .stream()
-            .filter(manifestOutcome -> ManifestType.ReleaseRepo.equals(manifestOutcome.getType()))
-            .collect(Collectors.toList());
-
-    if (isEmpty(releaseRepoManifests)) {
-      throw new InvalidRequestException("Release Repo Manifests are mandatory for Create PR step. Select one from "
-              + String.join(", ", ManifestType.ReleaseRepo),
-          USER);
-    }
-
-    if (releaseRepoManifests.size() > 1) {
-      throw new InvalidRequestException("There can be only a single Release Repo manifest", USER);
-    }
-    return releaseRepoManifests.get(0);
-  }
 
   @Override
   public TaskChainResponse startChainLinkAfterRbac(
@@ -169,7 +152,7 @@ public class CreatePRStep extends TaskChainExecutableWithRollbackAndRbac {
      */
     CreatePRStepParams gitOpsSpecParams = (CreatePRStepParams) stepParameters.getSpec();
 
-    ManifestOutcome releaseRepoOutcome = getReleaseRepoOutcome(ambiance);
+    ManifestOutcome releaseRepoOutcome = gitOpsStepHelper.getReleaseRepoOutcome(ambiance);
     // Fetch files from releaseRepoOutcome and replace expressions if present with cluster name and environment
     Map<String, Map<String, String>> filesToVariablesMap = buildFilePathsToVariablesMap(releaseRepoOutcome, ambiance);
 

@@ -144,10 +144,7 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
 
       switch (connectorType) {
         case GITHUB:
-          String[] strings = prLink.split("/");
-          GitApiTaskParams gitApiTaskParams =
-              GitApiTaskParams.builder().owner(strings[2]).repo(strings[3]).prNumber(strings[5]).build();
-          responseData = (GitApiMergePRTaskResponse) githubApiClient.mergePR(gitApiTaskParams);
+          responseData = (GitApiMergePRTaskResponse) githubApiClient.mergePR(gitOpsTaskParams.getGitApiTaskParams());
         default:
           logCallback.saveExecutionLog("Connector not supported", INFO, CommandExecutionStatus.FAILURE);
       }

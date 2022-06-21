@@ -206,8 +206,8 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
             individualClusters.size(), individualClusters));
         return individualClusters;
       }
-//      throw new InvalidRequestException(format("Failed to fetch clusters from gitops. %s",
-//          response.errorBody() != null ? response.errorBody().string() : ""));
+      throw new InvalidRequestException(format("Failed to fetch clusters from gitops. %s",
+          response.errorBody() != null ? response.errorBody().string() : ""));
     } catch (Exception e) {
       log.error("Failed to fetch clusters from gitops", e);
       throw new InvalidRequestException("Failed to fetch clusters from gitops");

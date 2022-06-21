@@ -14,10 +14,19 @@ import static io.harness.steps.StepUtils.prepareCDTaskRequest;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.IdentifierRef;
+import io.harness.beans.IssueCommentWebhookEvent;
 import io.harness.cdng.CDStepHelper;
+import io.harness.cdng.gitops.steps.GitOpsStepHelper;
 import io.harness.cdng.gitops.steps.GitopsClustersStep;
+import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
+import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.TaskData;
+import io.harness.delegate.beans.ci.pod.ConnectorDetails;
+import io.harness.delegate.beans.gitapi.GitApiRequestType;
+import io.harness.delegate.beans.gitapi.GitApiTaskParams;
+import io.harness.delegate.beans.gitapi.GitRepoType;
 import io.harness.delegate.task.git.GitOpsTaskType;
 import io.harness.delegate.task.git.NGGitOpsResponse;
 import io.harness.delegate.task.git.NGGitOpsTaskParams;
@@ -33,6 +42,7 @@ import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
@@ -44,6 +54,7 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.steps.StepHelper;
 import io.harness.supplier.ThrowingSupplier;
 import io.harness.tasks.ResponseData;
+import io.harness.utils.ConnectorUtils;
 
 import software.wings.beans.TaskType;
 
@@ -57,6 +68,9 @@ public class MergePRStep extends TaskChainExecutableWithRollbackAndRbac {
   @Inject private KryoSerializer kryoSerializer;
   @Inject private StepHelper stepHelper;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
+  @Inject private CDStepHelper cdStepHelper;
+  @Inject private GitOpsStepHelper gitOpsStepHelper;
+  @Inject private ConnectorUtils connectorUtils;
 
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.GITOPS_MERGE_PR.getYamlType())
@@ -101,6 +115,8 @@ public class MergePRStep extends TaskChainExecutableWithRollbackAndRbac {
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
     MergePRStepParams gitOpsSpecParams = (MergePRStepParams) stepParameters.getSpec();
 
+    ManifestOutcome releaseRepoOutcome = gitOpsStepHelper.getReleaseRepoOutcome(ambiance);
+
     OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputService.resolveOptional(
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.CREATE_PR_OUTCOME));
     String prLink = "https://github.com/wings-software/rohittest/pull/6";
@@ -109,9 +125,35 @@ public class MergePRStep extends TaskChainExecutableWithRollbackAndRbac {
       prLink = createPROutcome.getPrLink();
     }
 
+    String accountId = AmbianceUtils.getAccountId(ambiance);
+
+    ConnectorInfoDTO connectorInfoDTO =
+        cdStepHelper.getConnector(releaseRepoOutcome.getStore().getConnectorReference().getValue(), ambiance);
+    ConnectorDetails connectorDetails =
+        connectorUtils.getConnectorDetails(IdentifierRef.builder()
+                                               .accountIdentifier(accountId)
+//                                               .orgIdentifier(AmbianceUtils.getOrgIdentifier(ambiance))
+//                                               .projectIdentifier(AmbianceUtils.getProjectIdentifier(ambiance))
+                                               .build(),
+            connectorInfoDTO.getIdentifier());
+
+    GitApiTaskParams gitApiTaskParams = GitApiTaskParams.builder()
+                                            .gitRepoType(GitRepoType.GITHUB)
+                                            .requestType(GitApiRequestType.MERGE_PR)
+                                            .connectorDetails(connectorDetails)
+                                            .prNumber("6")
+                                            .owner("wings-software")
+                                            .repo("rohittest")
+                                            .build();
+
     if (!Strings.isEmpty(prLink)) {
-      NGGitOpsTaskParams ngGitOpsTaskParams =
-          NGGitOpsTaskParams.builder().gitOpsTaskType(GitOpsTaskType.MERGE_PR).prLink(prLink).build();
+      NGGitOpsTaskParams ngGitOpsTaskParams = NGGitOpsTaskParams.builder()
+                                                  .gitOpsTaskType(GitOpsTaskType.MERGE_PR)
+                                                  .accountId(accountId)
+                                                  .connectorInfoDTO(connectorInfoDTO)
+                                                  .prLink(prLink)
+                                                  .gitApiTaskParams(gitApiTaskParams)
+                                                  .build();
 
       final TaskData taskData = TaskData.builder()
                                     .async(true)
@@ -127,7 +169,11 @@ public class MergePRStep extends TaskChainExecutableWithRollbackAndRbac {
           TaskSelectorYaml.toTaskSelector(emptyIfNull(getParameterFieldValue(gitOpsSpecParams.getDelegateSelectors()))),
           stepHelper.getEnvironmentType(ambiance));
 
-      return TaskChainResponse.builder().chainEnd(true).taskRequest(taskRequest).build();
+      return TaskChainResponse.builder()
+          .chainEnd(true)
+          .passThroughData(MergePRPassThroughData.builder().prLink(prLink).build())
+          .taskRequest(taskRequest)
+          .build();
     } else {
       throw new InvalidRequestException("Pull Request Details are missing", USER);
     }
