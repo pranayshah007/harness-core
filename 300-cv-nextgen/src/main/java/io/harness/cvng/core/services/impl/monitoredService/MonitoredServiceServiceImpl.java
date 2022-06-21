@@ -1697,10 +1697,14 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
         if (optionalActivity.isPresent()) {
           Instant activityStartTime = optionalActivity.get().getActivityStartTime();
           long riskTimeBufferMins = Duration.between(activityStartTime, clock.instant()).toMinutes();
-          changeImpactCondition.setChangeEventTypes(Collections.singletonList(
-              getMonitoredServiceChangeEventTypeFromActivityType(optionalActivity.get().getType())));
-          return heatMapService.isEveryHeatMapBelowThresholdForRiskTimeBuffer(monitoredServiceParams,
-              monitoredService.getIdentifier(), changeImpactCondition.getThreshold(), riskTimeBufferMins);
+          boolean isEveryHeatMapBelowThreshold =
+              heatMapService.isEveryHeatMapBelowThresholdForRiskTimeBuffer(monitoredServiceParams,
+                  monitoredService.getIdentifier(), changeImpactCondition.getThreshold(), riskTimeBufferMins);
+          if (isEveryHeatMapBelowThreshold) {
+            changeImpactCondition.setChangeEventTypes(Collections.singletonList(
+                getMonitoredServiceChangeEventTypeFromActivityType(optionalActivity.get().getType())));
+          }
+          return isEveryHeatMapBelowThreshold;
         } else {
           return false;
         }
