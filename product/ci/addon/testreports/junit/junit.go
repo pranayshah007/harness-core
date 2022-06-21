@@ -8,6 +8,7 @@ package junit
 import (
 	"context"
 	"fmt"
+
 	"github.com/harness/harness-core/commons/go/lib/filesystem"
 	gojunit "github.com/harness/harness-core/product/ci/addon/gojunit"
 	"github.com/harness/harness-core/product/ci/addon/testreports"
@@ -112,6 +113,7 @@ func convert(testCase gojunit.Test, testSuite gojunit.Suite) *types.TestCase {
 		Name:       testCase.Name,
 		SuiteName:  testSuite.Name,
 		ClassName:  testCase.Classname,
+		FileName:   testCase.Filename,
 		DurationMs: testCase.DurationMs,
 		Result:     testCase.Result,
 		SystemOut:  restrictLength(testCase.SystemOut),

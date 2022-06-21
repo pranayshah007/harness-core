@@ -9,6 +9,7 @@ package io.harness.ngtriggers.beans.source;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.ngtriggers.Constants.AWS_CODECOMMIT_REPO;
+import static io.harness.ngtriggers.Constants.AZURE_REPO;
 import static io.harness.ngtriggers.Constants.BITBUCKET_REPO;
 import static io.harness.ngtriggers.Constants.CUSTOM_REPO;
 import static io.harness.ngtriggers.Constants.GITHUB_REPO;
@@ -22,6 +23,7 @@ import org.springframework.data.annotation.TypeAlias;
 @TypeAlias("ngTriggerType")
 @OwnedBy(PIPELINE)
 public enum WebhookTriggerType {
+  @JsonProperty(AZURE_REPO) AZURE(AZURE_REPO, "AZURE_REPO"),
   @JsonProperty(GITHUB_REPO) GITHUB(GITHUB_REPO, "GITHUB"),
   @JsonProperty(GITLAB_REPO) GITLAB(GITLAB_REPO, "GITLAB"),
   @JsonProperty(BITBUCKET_REPO) BITBUCKET(BITBUCKET_REPO, "BITBUCKET"),

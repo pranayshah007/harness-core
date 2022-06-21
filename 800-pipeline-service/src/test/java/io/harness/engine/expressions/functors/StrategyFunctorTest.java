@@ -30,7 +30,7 @@ import java.util.Map;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-public class MatrixFunctorTest extends PipelineServiceTestBase {
+public class StrategyFunctorTest extends PipelineServiceTestBase {
   private static final String ACCOUNT_ID = generateUuid();
   private static final String ORG_ID = generateUuid();
   private static final String PROJECT_ID = generateUuid();
@@ -47,9 +47,13 @@ public class MatrixFunctorTest extends PipelineServiceTestBase {
   @Category(UnitTests.class)
   public void testMatrixFunctorWithStrategyMetadata() {
     Ambiance ambiance = buildAmbiance(true);
-    Map<String, String> expected = new HashMap<>();
-    expected.put("a", "1");
-    assertThat(new MatrixFunctor(ambiance).bind()).isEqualTo(expected);
+    Map<String, Object> expected = new HashMap<>();
+    expected.put("currentIteration", 0);
+    expected.put("totalIteration", 0);
+    Map<String, String> matrix = new HashMap<>();
+    matrix.put("a", "1");
+    expected.put("matrix", matrix);
+    assertThat(new StrategyFunctor(ambiance).bind()).isEqualTo(expected);
   }
 
   @Test
@@ -57,8 +61,8 @@ public class MatrixFunctorTest extends PipelineServiceTestBase {
   @Category(UnitTests.class)
   public void testMatrixFunctorWithoutStrategyMetadata() {
     Ambiance ambiance = buildAmbiance(false);
-    Map<String, String> expected = new HashMap<>();
-    assertThat(new MatrixFunctor(ambiance).bind()).isEqualTo(expected);
+    Map<String, Object> expected = new HashMap<>();
+    assertThat(((Map<String, Object>) new StrategyFunctor(ambiance).bind()).keySet().contains("matrix")).isTrue();
   }
 
   private Ambiance buildAmbiance(boolean addStrategyMetadata) {

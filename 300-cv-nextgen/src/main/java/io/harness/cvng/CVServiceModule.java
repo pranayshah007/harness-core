@@ -37,7 +37,6 @@ import io.harness.cvng.activity.source.services.api.KubernetesActivitySourceServ
 import io.harness.cvng.activity.source.services.impl.KubernetesActivitySourceServiceImpl;
 import io.harness.cvng.analysis.services.api.DeploymentLogAnalysisService;
 import io.harness.cvng.analysis.services.api.DeploymentTimeSeriesAnalysisService;
-import io.harness.cvng.analysis.services.api.HealthVerificationService;
 import io.harness.cvng.analysis.services.api.LearningEngineDevService;
 import io.harness.cvng.analysis.services.api.LearningEngineTaskService;
 import io.harness.cvng.analysis.services.api.LogAnalysisService;
@@ -48,7 +47,6 @@ import io.harness.cvng.analysis.services.api.TrendAnalysisService;
 import io.harness.cvng.analysis.services.api.VerificationJobInstanceAnalysisService;
 import io.harness.cvng.analysis.services.impl.DeploymentLogAnalysisServiceImpl;
 import io.harness.cvng.analysis.services.impl.DeploymentTimeSeriesAnalysisServiceImpl;
-import io.harness.cvng.analysis.services.impl.HealthVerificationServiceImpl;
 import io.harness.cvng.analysis.services.impl.LearningEngineDevServiceImpl;
 import io.harness.cvng.analysis.services.impl.LearningEngineTaskServiceImpl;
 import io.harness.cvng.analysis.services.impl.LogAnalysisServiceImpl;
@@ -305,7 +303,6 @@ import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.S
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.ServiceLevelIndicatorTransformer;
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.ThresholdServiceLevelIndicatorTransformer;
 import io.harness.cvng.statemachine.beans.AnalysisState.StateType;
-import io.harness.cvng.statemachine.services.api.ActivityVerificationStateExecutor;
 import io.harness.cvng.statemachine.services.api.AnalysisStateExecutor;
 import io.harness.cvng.statemachine.services.api.AnalysisStateMachineService;
 import io.harness.cvng.statemachine.services.api.CanaryTimeSeriesAnalysisStateExecutor;
@@ -583,7 +580,6 @@ public class CVServiceModule extends AbstractModule {
     bind(KubernetesActivitySourceService.class).to(KubernetesActivitySourceServiceImpl.class);
     bind(DeploymentLogAnalysisService.class).to(DeploymentLogAnalysisServiceImpl.class);
     bind(VerificationJobInstanceAnalysisService.class).to(VerificationJobInstanceAnalysisServiceImpl.class);
-    bind(HealthVerificationService.class).to(HealthVerificationServiceImpl.class);
     bind(HealthVerificationHeatMapService.class).to(HealthVerificationHeatMapServiceImpl.class);
     bind(OnboardingService.class).to(OnboardingServiceImpl.class);
     bind(CVNGMigrationService.class).to(CVNGMigrationServiceImpl.class).in(Singleton.class);
@@ -923,9 +919,6 @@ public class CVServiceModule extends AbstractModule {
   private void bindAnalysisStateExecutor() {
     MapBinder<StateType, AnalysisStateExecutor> stateTypeAnalysisStateExecutorMap =
         MapBinder.newMapBinder(binder(), StateType.class, AnalysisStateExecutor.class);
-    stateTypeAnalysisStateExecutorMap.addBinding(StateType.ACTIVITY_VERIFICATION)
-        .to(ActivityVerificationStateExecutor.class)
-        .in(Scopes.SINGLETON);
     stateTypeAnalysisStateExecutorMap.addBinding(StateType.CANARY_TIME_SERIES)
         .to(CanaryTimeSeriesAnalysisStateExecutor.class)
         .in(Scopes.SINGLETON);

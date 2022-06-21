@@ -78,6 +78,7 @@ import io.harness.persistence.HPersistence;
 import io.harness.persistence.Store;
 import io.harness.plan.consumers.PartialPlanResponseRedisConsumer;
 import io.harness.plancreator.pipeline.PipelineConfig;
+import io.harness.plancreator.strategy.StrategyConstants;
 import io.harness.pms.annotations.PipelineServiceAuth;
 import io.harness.pms.approval.ApprovalInstanceExpirationJob;
 import io.harness.pms.approval.ApprovalInstanceHandler;
@@ -591,6 +592,7 @@ public class PipelineServiceApplication extends Application<PipelineServiceConfi
     aliases.put(OrchestrationConstants.PIPELINE_SUCCESS,
         "<+pipeline.currentStatus> == \"SUCCEEDED\" || <+pipeline.currentStatus> == \"IGNORE_FAILED\"");
     aliases.put(OrchestrationConstants.ALWAYS, "true");
+    aliases.put(StrategyConstants.MATRIX, "strategy.matrix");
     return aliases;
   }
 

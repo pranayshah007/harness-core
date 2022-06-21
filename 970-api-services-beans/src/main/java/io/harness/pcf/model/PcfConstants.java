@@ -43,9 +43,11 @@ public interface PcfConstants {
   String NAME_MANIFEST_YML_ELEMENT = "name";
   String MEMORY_MANIFEST_YML_ELEMENT = "memory";
   String INSTANCE_MANIFEST_YML_ELEMENT = "instances";
+  String METADATA_MANIFEST_YML_ELEMENT = "metadata";
   String CREATE_SERVICE_MANIFEST_ELEMENT = "create-services";
   String PATH_MANIFEST_YML_ELEMENT = "path";
   String ROUTES_MANIFEST_YML_ELEMENT = "routes";
+  String SIDE_CARS_MANIFEST_YML_ELEMENT = "sidecars";
   String ROUTE_MANIFEST_YML_ELEMENT = "route";
   String NO_ROUTE_MANIFEST_YML_ELEMENT = "no-route";
   String ROUTE_PLACEHOLDER_TOKEN_DEPRECATED = "${ROUTE_MAP}";
@@ -55,14 +57,17 @@ public interface PcfConstants {
 
   String BUILDPACK_MANIFEST_YML_ELEMENT = "buildpack";
   String BUILDPACKS_MANIFEST_YML_ELEMENT = "buildpacks";
+  String PROCESSES_MANIFEST_YML_ELEMENT = "processes";
   String COMMAND_MANIFEST_YML_ELEMENT = "command";
   String DISK_QUOTA_MANIFEST_YML_ELEMENT = "disk_quota";
   String DOCKER_MANIFEST_YML_ELEMENT = "docker";
   String IMAGE_MANIFEST_YML_ELEMENT = "image";
   String USERNAME_MANIFEST_YML_ELEMENT = "username";
   String DOMAINS_MANIFEST_YML_ELEMENT = "domains";
+  String DOMAIN_MANIFEST_YML_ELEMENT = "domain";
   String ENV_MANIFEST_YML_ELEMENT = "env";
   String HEALTH_CHECK_HTTP_ENDPOINT_MANIFEST_YML_ELEMENT = "health-check-http-endpoint";
+  String HEALTH_CHECK_INVOCATION_TIMEOUT_MANIFEST_YML_ELEMENT = "health-check-invocation-timeout";
   String HEALTH_CHECK_TYPE_MANIFEST_YML_ELEMENT = "health-check-type";
   String HOSTS_MANIFEST_YML_ELEMENT = "hosts";
   String NO_HOSTNAME_MANIFEST_YML_ELEMENT = "no-hostname";

@@ -62,7 +62,9 @@ public class CodeBaseStep implements ChildExecutable<CodeBaseStepParameters> {
           || isNotEmpty(manualExecutionSource.getTag())) {
         ConnectorDetails connectorDetails =
             connectorUtils.getConnectorDetails(AmbianceUtils.getNgAccess(ambiance), stepParameters.getConnectorRef());
-        if (connectorUtils.hasApiAccess(connectorDetails)) {
+        boolean executeOnDelegate =
+            connectorDetails.getExecuteOnDelegate() == null || connectorDetails.getExecuteOnDelegate();
+        if (connectorUtils.hasApiAccess(connectorDetails) && executeOnDelegate) {
           childNodeId = stepParameters.getCodeBaseDelegateTaskId();
         }
       }

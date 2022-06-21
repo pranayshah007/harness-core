@@ -11,6 +11,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.rule.OwnerRule.BHAVYA;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doReturn;
 
@@ -121,7 +122,7 @@ public class GitFilePathHelperTest extends CategoryTest {
     GithubConnectorDTO githubConnector = GithubConnectorDTO.builder().connectionType(GitConnectionType.REPO).build();
     doReturn(githubConnector)
         .when(gitSyncConnectorHelper)
-        .getScmConnectorForGivenRepo(anyString(), anyString(), anyString(), anyString(), anyString());
+        .getScmConnectorForGivenRepo(anyString(), anyString(), anyString(), anyString(), any());
     try {
       gitFilePathHelper.getFileUrl(scope, connectorRef, null, filePath, gitRepositoryDTO);
     } catch (WingsException ex) {
@@ -136,7 +137,7 @@ public class GitFilePathHelperTest extends CategoryTest {
     GithubConnectorDTO githubConnector = GithubConnectorDTO.builder().connectionType(GitConnectionType.REPO).build();
     doReturn(githubConnector)
         .when(gitSyncConnectorHelper)
-        .getScmConnectorForGivenRepo(anyString(), anyString(), anyString(), anyString(), anyString());
+        .getScmConnectorForGivenRepo(anyString(), anyString(), anyString(), anyString(), any());
     try {
       gitFilePathHelper.getFileUrl(scope, connectorRef, branch, "", gitRepositoryDTO);
     } catch (WingsException ex) {
@@ -153,7 +154,7 @@ public class GitFilePathHelperTest extends CategoryTest {
         GithubConnectorDTO.builder().connectionType(GitConnectionType.REPO).url(repoUrl).build();
     doReturn(githubConnector)
         .when(gitSyncConnectorHelper)
-        .getScmConnectorForGivenRepo(anyString(), anyString(), anyString(), anyString(), anyString());
+        .getScmConnectorForGivenRepo(anyString(), anyString(), anyString(), anyString(), any());
     String fileUrl = gitFilePathHelper.getFileUrl(scope, connectorRef, branch, filePath, gitRepositoryDTO);
     assertThat(fileUrl).isEqualTo(repoUrl + "blob/" + branch + "/" + filePath);
   }
@@ -167,7 +168,7 @@ public class GitFilePathHelperTest extends CategoryTest {
         GithubConnectorDTO.builder().connectionType(GitConnectionType.ACCOUNT).url(repoUrl).build();
     doReturn(githubConnector)
         .when(gitSyncConnectorHelper)
-        .getScmConnectorForGivenRepo(anyString(), anyString(), anyString(), anyString(), anyString());
+        .getScmConnectorForGivenRepo(anyString(), anyString(), anyString(), anyString(), any());
     String fileUrl = gitFilePathHelper.getFileUrl(scope, connectorRef, branch, filePath, gitRepositoryDTO);
     assertThat(fileUrl).isEqualTo(repoUrl + "repoName/blob/" + branch + "/" + filePath);
   }
@@ -181,7 +182,7 @@ public class GitFilePathHelperTest extends CategoryTest {
         BitbucketConnectorDTO.builder().connectionType(GitConnectionType.REPO).url(repoUrl).build();
     doReturn(bitbucketConnectorDTO)
         .when(gitSyncConnectorHelper)
-        .getScmConnectorForGivenRepo(anyString(), anyString(), anyString(), anyString(), anyString());
+        .getScmConnectorForGivenRepo(anyString(), anyString(), anyString(), anyString(), any());
     String fileUrl = gitFilePathHelper.getFileUrl(scope, connectorRef, branch, filePath, gitRepositoryDTO);
     assertThat(fileUrl).isEqualTo(repoUrl + "src/" + branch + "/" + filePath);
   }
@@ -195,7 +196,7 @@ public class GitFilePathHelperTest extends CategoryTest {
         BitbucketConnectorDTO.builder().connectionType(GitConnectionType.REPO).url(repoUrl).build();
     doReturn(bitbucketConnectorDTO)
         .when(gitSyncConnectorHelper)
-        .getScmConnectorForGivenRepo(anyString(), anyString(), anyString(), anyString(), anyString());
+        .getScmConnectorForGivenRepo(anyString(), anyString(), anyString(), anyString(), any());
     String fileUrl = gitFilePathHelper.getFileUrl(scope, connectorRef, branch, filePath, gitRepositoryDTO);
     assertThat(fileUrl).isEqualTo(
         "https://bitbucket.dev.harness.io/projects/harness/repos/repoName/browse/filePath?at=refs/heads/branch");
@@ -207,15 +208,17 @@ public class GitFilePathHelperTest extends CategoryTest {
   public void testGetFileUrlForAzureRepo_ForRepoTypeConnector() {
     String repoUrl = "https://dev.azure.com/org/gitSync/_git/repoName";
     AzureRepoConnectorDTO azureRepoConnectorDTO =
-            AzureRepoConnectorDTO.builder().connectionType(GitConnectionType.REPO).url(repoUrl)
-                    .authentication(AzureRepoAuthenticationDTO.builder().authType(GitAuthType.HTTP).build()).build();
+        AzureRepoConnectorDTO.builder()
+            .connectionType(GitConnectionType.REPO)
+            .url(repoUrl)
+            .authentication(AzureRepoAuthenticationDTO.builder().authType(GitAuthType.HTTP).build())
+            .build();
     GitRepositoryDTO gitRepository = GitRepositoryDTO.builder().name(repoName).projectName("gitSync").build();
     doReturn(azureRepoConnectorDTO)
-            .when(gitSyncConnectorHelper)
-            .getScmConnectorForGivenRepo(anyString(), anyString(), anyString(), anyString(), anyString());
+        .when(gitSyncConnectorHelper)
+        .getScmConnectorForGivenRepo(anyString(), anyString(), anyString(), anyString(), any());
     String fileUrl = gitFilePathHelper.getFileUrl(scope, connectorRef, branch, filePath, gitRepository);
-    assertThat(fileUrl).isEqualTo(
-            "https://dev.azure.com/org/gitSync/_git/repoName?path=filePath&version=GBbranch");
+    assertThat(fileUrl).isEqualTo("https://dev.azure.com/org/gitSync/_git/repoName?path=filePath&version=GBbranch");
   }
 
   @Test
@@ -225,13 +228,13 @@ public class GitFilePathHelperTest extends CategoryTest {
     String repoUrl = "https://dev.azure.com/org";
     String repoProjectName = "repoProjectName";
     AzureRepoConnectorDTO azureRepoConnectorDTO =
-            AzureRepoConnectorDTO.builder().connectionType(GitConnectionType.ACCOUNT).url(repoUrl).build();
+        AzureRepoConnectorDTO.builder().connectionType(GitConnectionType.ACCOUNT).url(repoUrl).build();
     GitRepositoryDTO gitRepository = GitRepositoryDTO.builder().name(repoName).projectName(repoProjectName).build();
     doReturn(azureRepoConnectorDTO)
-            .when(gitSyncConnectorHelper)
-            .getScmConnectorForGivenRepo(anyString(), anyString(), anyString(), anyString(), anyString());
+        .when(gitSyncConnectorHelper)
+        .getScmConnectorForGivenRepo(anyString(), anyString(), anyString(), anyString(), any());
     String fileUrl = gitFilePathHelper.getFileUrl(scope, connectorRef, branch, filePath, gitRepository);
     assertThat(fileUrl).isEqualTo(
-            "https://dev.azure.com/org/repoProjectName/_git/repoName?path=filePath&version=GBbranch");
+        "https://dev.azure.com/org/repoProjectName/_git/repoName?path=filePath&version=GBbranch");
   }
 }
