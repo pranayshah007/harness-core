@@ -1386,7 +1386,7 @@ public class DelegateServiceImpl implements DelegateService {
                       DELEGATE_ENABLE_DYNAMIC_HANDLING_OF_REQUEST, templateParameters.getAccountId())));
 
       if (useCDN) {
-        final String watcherVersion = getLatestWatcherVersion(templateParameters.getAccountId());
+        final String watcherVersion = getLatestWatcherVersion(templateParameters.getAccountId()).split("\\.")[2];
         params.put("watcherJarVersion", watcherVersion);
       }
 
