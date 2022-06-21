@@ -1,3 +1,10 @@
+/*
+ * Copyright 2021 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Shield 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
+ */
+
 package io.harness.ng.ldap.search;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
@@ -11,9 +18,9 @@ import static software.wings.beans.TaskType.NG_LDAP_SEARCH_GROUPS;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DelegateTaskRequest;
-import io.harness.delegate.beans.ldap.LdapGroupSearchTaskParameters;
 import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.TaskData;
+import io.harness.delegate.beans.ldap.LdapGroupSearchTaskParameters;
 import io.harness.delegate.beans.ldap.LdapGroupSearchTaskResponse;
 import io.harness.delegate.utils.TaskSetupAbstractionHelper;
 import io.harness.encryptors.DelegateTaskUtils;
@@ -33,12 +40,12 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @OwnedBy(HarnessTeam.PL)
-public class NGLdapGroupSearch {
+public class NGLdapSearchService {
   private final DelegateGrpcClientWrapper delegateService;
   private final TaskSetupAbstractionHelper taskSetupAbstractionHelper;
 
   @Inject
-  public NGLdapGroupSearch(
+  public NGLdapSearchService(
       DelegateGrpcClientWrapper delegateService, TaskSetupAbstractionHelper taskSetupAbstractionHelper) {
     this.delegateService = delegateService;
     this.taskSetupAbstractionHelper = taskSetupAbstractionHelper;
@@ -47,10 +54,10 @@ public class NGLdapGroupSearch {
   public Collection<LdapGroupResponse> searchGroupsByName(
       LdapSettings settings, EncryptedDataDetail encryptedDataDetail, String nameQuery) {
     LdapGroupSearchTaskParameters parameters = LdapGroupSearchTaskParameters.builder()
-                                                                   .ldapSettings(settings)
-                                                                   .encryptedDataDetail(encryptedDataDetail)
-                                                                   .name(nameQuery)
-                                                                   .build();
+                                                   .ldapSettings(settings)
+                                                   .encryptedDataDetail(encryptedDataDetail)
+                                                   .name(nameQuery)
+                                                   .build();
 
     DelegateTaskRequest delegateTaskRequest =
         DelegateTaskRequest.builder()
@@ -68,8 +75,7 @@ public class NGLdapGroupSearch {
       throw new SecretManagementException(SECRET_MANAGEMENT_ERROR, "Unknown Response from delegate", USER);
     }
 
-    LdapGroupSearchTaskResponse groupSearchResponse =
-        (LdapGroupSearchTaskResponse) delegateResponseData;
+    LdapGroupSearchTaskResponse groupSearchResponse = (LdapGroupSearchTaskResponse) delegateResponseData;
 
     return groupSearchResponse.getLdapListGroupsResponses();
   }

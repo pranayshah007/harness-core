@@ -1,3 +1,10 @@
+/*
+ * Copyright 2021 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Shield 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
+ */
+
 package io.harness.delegate.task.ldap;
 
 import io.harness.annotations.dev.HarnessModule;
@@ -28,7 +35,7 @@ public class NGLdapGroupSearchTask extends AbstractDelegateRunnableTask {
   @Inject private LdapDelegateService ldapDelegateService;
 
   public NGLdapGroupSearchTask(DelegateTaskPackage delegateTaskPackage, ILogStreamingTaskClient logStreamingTaskClient,
-                               Consumer<DelegateTaskResponse> consumer, BooleanSupplier preExecute) {
+      Consumer<DelegateTaskResponse> consumer, BooleanSupplier preExecute) {
     super(delegateTaskPackage, logStreamingTaskClient, consumer, preExecute);
   }
 
@@ -41,9 +48,8 @@ public class NGLdapGroupSearchTask extends AbstractDelegateRunnableTask {
   public DelegateResponseData run(TaskParameters parameters) {
     LdapGroupSearchTaskParameters ngLdapGroupSearchParameters = (LdapGroupSearchTaskParameters) parameters;
     LdapSettings ldapSettings = ngLdapGroupSearchParameters.getLdapSettings();
-    Collection<LdapGroupResponse> ldapGroupResponses =
-        ldapDelegateService.searchGroupsByName(ldapSettings,
-            ngLdapGroupSearchParameters.getEncryptedDataDetail(), ngLdapGroupSearchParameters.getName());
+    Collection<LdapGroupResponse> ldapGroupResponses = ldapDelegateService.searchGroupsByName(
+        ldapSettings, ngLdapGroupSearchParameters.getEncryptedDataDetail(), ngLdapGroupSearchParameters.getName());
     return LdapGroupSearchTaskResponse.builder().ldapListGroupsResponses(ldapGroupResponses).build();
   }
 }
