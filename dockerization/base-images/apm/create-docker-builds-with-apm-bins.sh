@@ -73,7 +73,8 @@ export ONPREM_PATH=${ONPREM_PATH}
 export VERSION=${VERSION}
 
 IMAGES_LIST=(manager ng-manager verification-service pipeline-service cv-nextgen ce-nextgen \
-template-service ci-manager command-library-server platform-service eventsapi-monitor dms)
+template-service ci-manager command-library-server platform-service eventsapi-monitor dms \
+batch-processing event-server change-data-capture ng-dashboard-aggregator)
 
 #<+steps.build.output.outputVariables.VERSION>
 if [ -z "${VERSION}" ]; then
