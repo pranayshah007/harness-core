@@ -8,7 +8,6 @@
 package io.harness.plancreator.strategy;
 
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.engine.expressions.OrchestrationConstants;
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
@@ -68,9 +67,9 @@ public class StrategyConfigPlanCreator extends ChildrenPlanCreator<StrategyConfi
       maxConcurrency = config.getForConfig().getMaxConcurrency();
     }
     StrategyType strategyType = StrategyType.FOR;
-    if (ctx.getCurrentField().getNode().getField(OrchestrationConstants.MATRIX) != null) {
+    if (ctx.getCurrentField().getNode().getField(io.harness.plancreator.strategy.StrategyConstants.MATRIX) != null) {
       strategyType = StrategyType.MATRIX;
-    } else if (ctx.getCurrentField().getNode().getField(OrchestrationConstants.PARALLELISM) != null) {
+    } else if (ctx.getCurrentField().getNode().getField(io.harness.plancreator.strategy.StrategyConstants.PARALLELISM) != null) {
       strategyType = StrategyType.PARALLELISM;
     }
     StageStrategyUtils.validateStrategyNode(config);

@@ -8,6 +8,7 @@
 package io.harness.plancreator.strategy;
 
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STAGES;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.STEPS;
 
 import io.harness.advisers.nextstep.NextStepAdviserParameters;
 import io.harness.exception.InvalidYamlException;
@@ -150,6 +151,9 @@ public class StageStrategyUtils {
   }
 
   public List<AdviserObtainment> getAdviserObtainmentFromMetaDataForStep(KryoSerializer kryoSerializer, YamlField currentField) {
+    if (currentField.checkIfParentIsParallel(STEPS)) {
+      return new ArrayList<>();
+    }
     List<AdviserObtainment> adviserObtainments = new ArrayList<>();
     if (currentField != null && currentField.getNode() != null) {
       YamlField siblingField = currentField.getNode().nextSiblingFromParentArray(currentField.getName(),
