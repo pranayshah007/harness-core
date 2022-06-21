@@ -24,8 +24,8 @@ import lombok.Getter;
 import lombok.Value;
 
 @OwnedBy(PL)
-@Getter
 @Value
+@Getter
 @Builder
 public class LdapGroupSearchTaskParameters implements TaskParameters, ExecutionCapabilityDemander {
   LdapSettings ldapSettings;

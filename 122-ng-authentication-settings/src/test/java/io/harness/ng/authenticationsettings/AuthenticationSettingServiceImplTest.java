@@ -11,7 +11,6 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.rule.OwnerRule.PRATEEK;
 import static io.harness.rule.OwnerRule.VIKAS_M;
 
-import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -19,15 +18,12 @@ import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
-import io.harness.delegate.beans.ldap.LdapGroupSearchTaskResponse;
 import io.harness.delegate.beans.ldap.LdapSettingsWithEncryptedDataDetail;
-import io.harness.delegate.utils.TaskSetupAbstractionHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.authenticationsettings.impl.AuthenticationSettingsServiceImpl;
 import io.harness.ng.authenticationsettings.remote.AuthSettingsManagerClient;
@@ -36,9 +32,7 @@ import io.harness.ng.ldap.search.NGLdapSearchService;
 import io.harness.rest.RestResponse;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
-import io.harness.service.DelegateGrpcClientWrapper;
 
-import org.mockito.Spy;
 import software.wings.beans.dto.LdapSettings;
 import software.wings.beans.sso.LdapGroupResponse;
 import software.wings.beans.sso.SamlSettings;
@@ -62,12 +56,8 @@ import retrofit2.Response;
 public class AuthenticationSettingServiceImplTest extends CategoryTest {
   @Mock private AuthSettingsManagerClient managerClient;
   @Mock private UserGroupService userGroupService;
-  @Spy
-  @InjectMocks private NGLdapSearchService ngLdapSearchService;
+  @Mock private NGLdapSearchService ngLdapSearchService;
   @Inject @InjectMocks AuthenticationSettingsServiceImpl authenticationSettingsServiceImpl;
-
-  @Mock private TaskSetupAbstractionHelper taskSetupAbstractionHelper;
-  @Mock private DelegateGrpcClientWrapper delegateGrpcClientWrapper;
 
   private SamlSettings samlSettings;
   private LdapSettingsWithEncryptedDataDetail ldapSettingsWithEncryptedDataDetail;
@@ -162,24 +152,5 @@ public class AuthenticationSettingServiceImplTest extends CategoryTest {
     Collection<LdapGroupResponse> resultUserGroups =
         authenticationSettingsServiceImpl.searchLdapGroupsByName(ACCOUNT_ID, "TestLdapID", "TestGroupName");
     assertTrue(resultUserGroups.isEmpty());
-  }
-
-  @Test
-  @Owner(developers = PRATEEK)
-  @Category(UnitTests.class)
-  public void testSearchGroupsByName() {
-    final String accountId = "testAccountId";
-    String groupNameQuery = "grpName";
-    LdapGroupResponse response = LdapGroupResponse.builder().name(groupNameQuery).description("desc").dn("uid=ldap_user1,ou=Users,dc=jumpcloud,dc=com").totalMembers(4).build();
-    Collection<LdapGroupResponse> matchedGroups = Collections.singletonList(response);
-
-    when(delegateGrpcClientWrapper.executeSyncTask(any()))
-            .thenReturn(LdapGroupSearchTaskResponse.builder().ldapListGroupsResponses(matchedGroups).build());
-
-    Collection<LdapGroupResponse> ldapGroupResponse = ngLdapSearchService.searchGroupsByName(
-            LdapSettings.builder().accountId(accountId).build(), EncryptedDataDetail.builder().build(), groupNameQuery);
-
-    assertNotNull(ldapGroupResponse);
-    assertFalse(ldapGroupResponse.isEmpty());
   }
 }
