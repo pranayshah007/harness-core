@@ -38,7 +38,6 @@ import io.harness.ci.app.InspectCommand;
 import io.harness.ci.plan.creator.CIModuleInfoProvider;
 import io.harness.ci.plan.creator.CIPipelineServiceInfoProvider;
 import io.harness.ci.plan.creator.filter.CIFilterCreationResponseMerger;
-import io.harness.configuration.DeployVariant;
 import io.harness.controller.PrimaryVersionChangeScheduler;
 import io.harness.core.ci.services.CIActiveCommitterUsageImpl;
 import io.harness.delegate.beans.DelegateAsyncTaskResponse;
@@ -283,11 +282,7 @@ public class CIManagerApplication extends Application<CIManagerConfiguration> {
     registerPmsSdkEvents(injector);
     initializeEnforcementFramework(injector);
     log.info("CIManagerApplication DEPLOY_VERSION = " + System.getenv().get(DEPLOY_VERSION));
-    if (DeployVariant.isCommunity(System.getenv().get(DEPLOY_VERSION))) {
-      initializeCiManagerMonitoring(injector);
-    } else {
-      log.info("CIManagerApplication DEPLOY_VERSION is not COMMUNITY");
-    }
+    initializeCiManagerMonitoring(injector);
     registerOasResource(configuration, environment, injector);
     log.info("Starting app done");
     MaintenanceController.forceMaintenance(false);
