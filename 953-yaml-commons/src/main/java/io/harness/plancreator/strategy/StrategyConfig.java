@@ -8,12 +8,18 @@
 package io.harness.plancreator.strategy;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.beans.SwaggerConstants.INTEGER_CLASSPATH;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.validation.OneOfField;
+import io.harness.yaml.YamlSchemaTypes;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.annotations.ApiModelProperty;
+import javax.validation.constraints.Min;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
@@ -28,5 +34,9 @@ import lombok.experimental.FieldDefaults;
 public class StrategyConfig {
   @JsonProperty("matrix") MatrixConfigInterface matrixConfig;
   @JsonProperty("for") HarnessForConfig forConfig;
-  @JsonProperty("parallelism") Integer parallelism;
+  @ApiModelProperty(dataType = INTEGER_CLASSPATH)
+  @YamlSchemaTypes(value = {expression})
+  @JsonProperty("parallelism")
+  @Min(value = 0)
+  ParameterField<Integer> parallelism;
 }

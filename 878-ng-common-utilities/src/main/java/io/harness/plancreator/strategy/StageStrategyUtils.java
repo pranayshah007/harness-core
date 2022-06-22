@@ -148,7 +148,8 @@ public class StageStrategyUtils {
       if (axisConfig.size() == 0) {
         throw new InvalidYamlException("No Axes defined in matrix. Please define at least one axis");
       }
-      if (!ParameterField.isBlank(((MatrixConfig) config.getMatrixConfig()).getExclude()) && ((MatrixConfig) config.getMatrixConfig()).getExclude().getValue() != null) {
+      if (!ParameterField.isBlank(((MatrixConfig) config.getMatrixConfig()).getExclude())
+          && ((MatrixConfig) config.getMatrixConfig()).getExclude().getValue() != null) {
         List<ExcludeConfig> excludeConfigs = ((MatrixConfig) config.getMatrixConfig()).getExclude().getValue();
         for (ExcludeConfig excludeConfig : excludeConfigs) {
           if (!excludeConfig.getExclude().keySet().equals(axisConfig.keySet())) {
@@ -157,29 +158,40 @@ public class StageStrategyUtils {
           }
         }
       }
+    } else if (config.getForConfig() != null) {
+      if (!ParameterField.isBlank(config.getForConfig().getIteration())
+          && config.getForConfig().getIteration().getValue() != null
+          && config.getForConfig().getIteration().getValue() == 0) {
+        throw new InvalidYamlException(
+            "Iteration can not be [zero]. Please provide some positive Integer for Iteration count");
+      }
+    } else if (!ParameterField.isBlank(config.getParallelism()) && config.getParallelism().getValue() != null
+        && config.getParallelism().getValue() == 0) {
+      throw new InvalidYamlException(
+          "Parallelism can not be [zero]. please provide some positive Integer for Parallelism");
     }
   }
 
-  public List<AdviserObtainment> getAdviserObtainmentFromMetaDataForStep(KryoSerializer kryoSerializer, YamlField currentField) {
+  public List<AdviserObtainment> getAdviserObtainmentFromMetaDataForStep(
+      KryoSerializer kryoSerializer, YamlField currentField) {
     if (currentField.checkIfParentIsParallel(STEPS)) {
       return new ArrayList<>();
     }
     List<AdviserObtainment> adviserObtainments = new ArrayList<>();
     if (currentField != null && currentField.getNode() != null) {
       YamlField siblingField = currentField.getNode().nextSiblingFromParentArray(currentField.getName(),
-              Arrays.asList(YAMLFieldNameConstants.STEP, YAMLFieldNameConstants.STEP_GROUP,
-                      YAMLFieldNameConstants.PARALLEL));
+          Arrays.asList(
+              YAMLFieldNameConstants.STEP, YAMLFieldNameConstants.STEP_GROUP, YAMLFieldNameConstants.PARALLEL));
       if (siblingField != null && siblingField.getNode().getUuid() != null) {
         AdviserObtainment adviserObtainment =
-                  AdviserObtainment.newBuilder()
-                          .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.NEXT_STEP.name()).build())
-                          .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
-                                  NextStepAdviserParameters.builder().nextNodeId(siblingField.getNode().getUuid()).build())))
-                          .build();
+            AdviserObtainment.newBuilder()
+                .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.NEXT_STEP.name()).build())
+                .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
+                    NextStepAdviserParameters.builder().nextNodeId(siblingField.getNode().getUuid()).build())))
+                .build();
         adviserObtainments.add(adviserObtainment);
       }
     }
     return adviserObtainments;
   }
-
 }
