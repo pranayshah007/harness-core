@@ -17,15 +17,19 @@ import static io.harness.delegate.beans.VersionOverrideType.WATCHER_JAR;
 
 import static java.util.Collections.singletonList;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import static org.apache.commons.lang3.StringUtils.isNotEmpty;
+import static org.apache.commons.lang3.StringUtils.substringBefore;
 
 import io.harness.delegate.beans.VersionOverride;
 import io.harness.delegate.beans.VersionOverride.VersionOverrideKeys;
 import io.harness.delegate.beans.VersionOverrideType;
 import io.harness.delegate.service.intfc.DelegateRingService;
 import io.harness.ff.FeatureFlagService;
+import io.harness.network.Http;
 import io.harness.persistence.HPersistence;
 
 import software.wings.app.MainConfiguration;
+import software.wings.service.impl.infra.InfraDownloadService;
 
 import com.google.inject.Inject;
 import java.util.Collections;
@@ -38,6 +42,7 @@ public class DelegateVersionService {
   public static final String DEFAULT_DELEGATE_IMAGE_TAG = "harness/delegate:latest";
   public static final String DEFAULT_UPGRADER_IMAGE_TAG = "harness/upgrader:latest";
   private final DelegateRingService delegateRingService;
+  private final InfraDownloadService infraDownloadService;
   private final FeatureFlagService featureFlagService;
   private final MainConfiguration mainConfiguration;
   private final HPersistence persistence;
@@ -96,7 +101,19 @@ public class DelegateVersionService {
     if (versionOverride != null && isNotBlank(versionOverride.getVersion())) {
       return versionOverride.getVersion();
     }
-    return delegateRingService.getWatcherVersions(accountId);
+    final String watcherVerionFromRing = delegateRingService.getWatcherVersions(accountId);
+    if (isNotEmpty(watcherVerionFromRing)) {
+      return watcherVerionFromRing;
+    }
+    // Get watcher version from gcp.
+    try {
+      final String watcherMetadataUrl = infraDownloadService.getCdnWatcherMetaDataFileUrl();
+      final String watcherMetadata = Http.getResponseStringFromUrl(watcherMetadataUrl, 10, 10);
+      final String latestVersion = substringBefore(watcherMetadata, " ").trim();
+      return latestVersion;
+    } catch (Exception ex) {
+      throw new IllegalStateException("Unable to fetch watcher version");
+    }
   }
 
   private VersionOverride getVersionOverride(final String accountId, final VersionOverrideType overrideType) {
