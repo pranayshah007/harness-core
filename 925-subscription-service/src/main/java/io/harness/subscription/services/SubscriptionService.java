@@ -14,6 +14,7 @@ import io.harness.subscription.dto.FfSubscriptionDTO;
 import io.harness.subscription.dto.InvoiceDetailDTO;
 import io.harness.subscription.dto.PaymentMethodCollectionDTO;
 import io.harness.subscription.dto.PriceCollectionDTO;
+import io.harness.subscription.dto.StripeBillingDTO;
 import io.harness.subscription.dto.SubscriptionDTO;
 import io.harness.subscription.dto.SubscriptionDetailDTO;
 
@@ -35,6 +36,7 @@ public interface SubscriptionService {
   CustomerDetailDTO createStripeCustomer(String accountIdentifier, CustomerDTO customerDTO);
   CustomerDetailDTO updateStripeCustomer(String accountIdentifier, String customerId, CustomerDTO customerDTO);
   CustomerDetailDTO getStripeCustomer(String accountIdentifier, String customerId);
+  CustomerDetailDTO updateStripeBilling(String accountIdentifier, StripeBillingDTO stripeBillingDTO);
 
   PaymentMethodCollectionDTO listPaymentMethods(String accountIdentifier, String customerId);
 

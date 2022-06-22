@@ -12,6 +12,7 @@ import io.harness.subscription.dto.InvoiceDetailDTO;
 import io.harness.subscription.dto.PaymentMethodCollectionDTO;
 import io.harness.subscription.dto.PriceCollectionDTO;
 import io.harness.subscription.dto.SubscriptionDetailDTO;
+import io.harness.subscription.params.BillingParams;
 import io.harness.subscription.params.CustomerParams;
 import io.harness.subscription.params.SubscriptionParams;
 
@@ -22,6 +23,7 @@ public interface StripeHelper {
   CustomerDetailDTO createCustomer(CustomerParams customerParams);
 
   CustomerDetailDTO updateCustomer(CustomerParams customerParams);
+  CustomerDetailDTO updateBilling(BillingParams customerParams);
 
   CustomerDetailDTO getCustomer(String customerId);
 

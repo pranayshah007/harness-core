@@ -29,6 +29,7 @@ import io.harness.subscription.dto.SubscriptionDetailDTO;
 import io.harness.subscription.dto.TierMode;
 import io.harness.subscription.dto.TiersDTO;
 import io.harness.subscription.helpers.StripeHelper;
+import io.harness.subscription.params.BillingParams;
 import io.harness.subscription.params.CustomerParams;
 import io.harness.subscription.params.ItemParams;
 import io.harness.subscription.params.SubscriptionParams;
@@ -104,6 +105,41 @@ public class StripeHelperImpl implements StripeHelper {
     }
 
     Customer customer = stripeHandler.updateCustomer(customerParams.getCustomerId(), paramsBuilder.build());
+    return toCustomerDetailDTO(customer);
+  }
+
+  @Override
+  public CustomerDetailDTO updateBilling(BillingParams billingParams) {
+
+    CustomerUpdateParams.Builder paramsBuilder = CustomerUpdateParams.builder();
+    CustomerUpdateParams.Address.Builder newAddress = new CustomerUpdateParams.Address.Builder();
+
+    if (!Strings.isNullOrEmpty(billingParams.getCity())) {
+      newAddress.setCity(billingParams.getCity());
+    }
+    if (!Strings.isNullOrEmpty(billingParams.getCountry())) {
+      newAddress.setCountry(billingParams.getCountry());
+    }
+    if (!Strings.isNullOrEmpty(billingParams.getState())) {
+      newAddress.setState(billingParams.getState());
+    }
+    if (!Strings.isNullOrEmpty(billingParams.getLine1())) {
+      newAddress.setLine1(billingParams.getLine1());
+    }
+    if (!Strings.isNullOrEmpty(billingParams.getLine2())) {
+      newAddress.setLine2(billingParams.getLine2());
+    }
+    if (!Strings.isNullOrEmpty(billingParams.getZipCode())) {
+      newAddress.setPostalCode(billingParams.getZipCode());
+    }
+
+    if (!Strings.isNullOrEmpty(billingParams.getCreditCardId())) {
+      paramsBuilder.setSource(billingParams.getCreditCardId());
+    }
+
+    paramsBuilder.setAddress(newAddress.build());
+
+    Customer customer = stripeHandler.updateCustomer(billingParams.getCustomerId(), paramsBuilder.build());
     return toCustomerDetailDTO(customer);
   }
 
