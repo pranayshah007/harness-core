@@ -13,8 +13,8 @@ import io.harness.annotations.dev.OwnedBy;
 
 @OwnedBy(DEL)
 public interface DelegateTokenAuthenticator {
-  void validateDelegateToken(
-      String accountId, String tokenString, String delegateId, boolean shouldSetTokenNameInGlobalContext);
+  void validateDelegateToken(String accountId, String tokenString, String delegateId, String delegateTokenName,
+      boolean shouldSetTokenNameInGlobalContext);
 
   void validateDelegateAuth2Token(String accountId, String tokenString);
 }
