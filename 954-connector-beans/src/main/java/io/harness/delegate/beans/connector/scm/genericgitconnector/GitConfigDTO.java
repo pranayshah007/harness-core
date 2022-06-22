@@ -88,7 +88,7 @@ public class GitConfigDTO extends ConnectorConfigDTO implements ScmConnector, De
   }
 
   @Override
-  public String getGitConnectionUrl(GitRepositoryDTO gitRepositoryDTO) {
+  public String getGitConnectionUrl(String repoName) {
     return "";
   }
 
@@ -98,7 +98,7 @@ public class GitConfigDTO extends ConnectorConfigDTO implements ScmConnector, De
   }
 
   @Override
-  public String getFileUrl(String branchName, String filePath, GitRepositoryDTO gitRepositoryDTO) {
+  public String getFileUrl(String branchName, String filePath, String repoName) {
     return "";
   }
 

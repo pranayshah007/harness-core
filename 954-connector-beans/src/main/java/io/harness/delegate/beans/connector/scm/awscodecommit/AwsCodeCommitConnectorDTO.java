@@ -75,7 +75,7 @@ public class AwsCodeCommitConnectorDTO extends ConnectorConfigDTO implements Scm
   }
 
   @Override
-  public String getGitConnectionUrl(GitRepositoryDTO gitRepositoryDTO) {
+  public String getGitConnectionUrl(String repoName) {
     return "";
   }
 
@@ -85,7 +85,7 @@ public class AwsCodeCommitConnectorDTO extends ConnectorConfigDTO implements Scm
   }
 
   @Override
-  public String getFileUrl(String branchName, String filePath, GitRepositoryDTO gitRepositoryDTO) {
+  public String getFileUrl(String branchName, String filePath, String repoName) {
     return "";
   }
 
