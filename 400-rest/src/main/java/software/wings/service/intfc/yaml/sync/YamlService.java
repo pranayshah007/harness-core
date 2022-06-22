@@ -7,6 +7,7 @@
 
 package software.wings.service.intfc.yaml.sync;
 
+import io.harness.exception.YamlException;
 import io.harness.rest.RestResponse;
 import io.harness.yaml.BaseYaml;
 
@@ -14,6 +15,7 @@ import software.wings.beans.Base;
 import software.wings.beans.yaml.Change;
 import software.wings.beans.yaml.ChangeContext;
 import software.wings.beans.yaml.EntityInformation;
+import software.wings.beans.yaml.YamlType;
 import software.wings.exception.YamlProcessingException;
 import software.wings.yaml.FileOperationStatus;
 import software.wings.yaml.YamlOperationResponse;
@@ -50,6 +52,8 @@ public interface YamlService<Y extends BaseYaml, B extends Base> {
   void sortByProcessingOrder(List<Change> changeList);
 
   int findOrdinal(String yamlFilePath, String accountId);
+
+  YamlType findYamlType(String yamlFilePath) throws YamlException;
 
   BaseYaml getYamlForFilePath(String accountId, String yamlFilePath, String yamlSubType, String applicationId);
 
