@@ -1195,7 +1195,7 @@ public class DelegateSetupServiceTest extends DelegateServiceTestBase {
 
     assertThat(delegateGroupFromDB).isPresent();
     assertThat(delegateGroupFromDB.get().getIdentifier()).isEqualTo("identifier1");
-    assertThat(delegateGroupFromDB.get().getTags()).containsExactlyInAnyOrder("tag123", "tag456", "taggroup1");
+    assertThat(delegateGroupFromDB.get().getTags()).containsExactlyInAnyOrder("tag123", "tag456", "taggroup1", "grp1");
   }
 
   @Test

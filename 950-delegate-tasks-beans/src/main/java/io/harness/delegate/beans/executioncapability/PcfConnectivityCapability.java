@@ -7,6 +7,8 @@
 
 package io.harness.delegate.beans.executioncapability;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import java.time.Duration;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
@@ -37,5 +39,10 @@ public class PcfConnectivityCapability implements ExecutionCapability {
   @Override
   public Duration getPeriodUntilNextValidation() {
     return Duration.ofHours(4);
+  }
+
+  @Override
+  public String getCapabilityToString() {
+    return isNotEmpty(endpointUrl) ? String.format("Capability reach url: %s ", endpointUrl) : null;
   }
 }

@@ -1700,6 +1700,8 @@
 55325:io.harness.delegate.task.azure.artifact.AzureContainerArtifactConfig
 55326:io.harness.delegate.task.azure.appservice.webapp.ng.request.AzureWebAppRollbackRequest
 55327:io.harness.delegate.task.azure.appservice.webapp.ng.response.AzureWebAppNGRollbackResponse
+55328:io.harness.delegate.task.azure.appservice.webapp.ng.request.AzureWebAppFetchPreDeploymentDataRequest
+55329:io.harness.delegate.task.azure.appservice.webapp.ng.response.AzureWebAppFetchPreDeploymentDataResponse
 70001:io.harness.accesscontrol.commons.exceptions.AccessDeniedErrorDTO
 70002:io.harness.accesscontrol.acl.api.PermissionCheckDTO
 70003:io.harness.accesscontrol.acl.api.ResourceScope

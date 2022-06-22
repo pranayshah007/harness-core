@@ -36,6 +36,10 @@ import static io.harness.metrics.impl.DelegateMetricsServiceImpl.DELEGATE_TASK_V
 import static io.harness.persistence.HQuery.excludeAuthority;
 
 import static software.wings.app.ManagerCacheRegistrar.SECRET_CACHE;
+import static software.wings.service.impl.AssignDelegateServiceImpl.PIPELINE;
+import static software.wings.service.impl.AssignDelegateServiceImpl.STAGE;
+import static software.wings.service.impl.AssignDelegateServiceImpl.STEP;
+import static software.wings.service.impl.AssignDelegateServiceImpl.STEP_GROUP;
 import static software.wings.service.impl.DelegateSelectionLogsServiceImpl.NO_ELIGIBLE_DELEGATES;
 
 import static java.lang.System.currentTimeMillis;
@@ -180,6 +184,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -1300,6 +1305,28 @@ public class DelegateTaskServiceClassicImpl implements DelegateTaskServiceClassi
       task.setTaskActivityLogs(Lists.newArrayList());
     }
     task.getTaskActivityLogs().add(message);
+  }
+
+  @Override
+  public List<SelectorCapability> fetchTaskSelectorCapabilities(List<ExecutionCapability> executionCapabilities) {
+    List<SelectorCapability> selectorCapabilities = executionCapabilities.stream()
+                                                        .filter(c -> c instanceof SelectorCapability)
+                                                        .map(c -> (SelectorCapability) c)
+                                                        .collect(Collectors.toList());
+    if (isEmpty(selectorCapabilities)) {
+      return selectorCapabilities;
+    }
+    List<SelectorCapability> selectors =
+        selectorCapabilities.stream()
+            .filter(sel -> Objects.nonNull(sel.getSelectorOrigin()))
+            .filter(c
+                -> c.getSelectorOrigin().equals(STEP) || c.getSelectorOrigin().equals(STEP_GROUP)
+                    || c.getSelectorOrigin().equals(STAGE) || c.getSelectorOrigin().equals(PIPELINE))
+            .collect(toList());
+    if (!isEmpty(selectors)) {
+      return selectors;
+    }
+    return selectorCapabilities;
   }
 
   private void printErrorMessageOnTaskFailure(DelegateTask task) {

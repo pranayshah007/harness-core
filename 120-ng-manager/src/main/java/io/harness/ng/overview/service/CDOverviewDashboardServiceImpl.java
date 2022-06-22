@@ -723,6 +723,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
           String pipelineName = resultSet.getString(NGPipelineSummaryCDConstants.NAME);
           String pipelineId = resultSet.getString(NGPipelineSummaryCDConstants.PIPELINE_IDENTIFIER);
           String status = resultSet.getString(NGPipelineSummaryCDConstants.STATUS);
+          String planExecutionId = resultSet.getString(NGPipelineSummaryCDConstants.PLAN_EXECUTION_ID);
           long executionTime = Long.parseLong(resultSet.getString(NGPipelineSummaryCDConstants.START_TS));
           if (!pipelineExecutionDetailsMap.containsKey(pipelineExecutionId)) {
             pipelineExecutionDetailsMap.put(pipelineExecutionId,
@@ -732,6 +733,7 @@ public class CDOverviewDashboardServiceImpl implements CDOverviewDashboardServic
                     .name(pipelineName)
                     .lastExecutedAt(executionTime)
                     .status(status)
+                    .planExecutionId(planExecutionId)
                     .build());
           }
         }

@@ -8,6 +8,7 @@
 package software.wings.delegatetasks.validation.capabilities;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
@@ -64,5 +65,12 @@ public class SSHHostValidationCapability implements ExecutionCapability {
   @Override
   public Duration getPeriodUntilNextValidation() {
     return Duration.ofHours(4);
+  }
+
+  @Override
+  public String getCapabilityToString() {
+    return isNotEmpty(validationInfo.getPublicDns())
+        ? String.format("Capability reach on host : %s ", validationInfo.getPublicDns())
+        : null;
   }
 }

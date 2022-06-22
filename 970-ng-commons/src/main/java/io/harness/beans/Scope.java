@@ -8,11 +8,15 @@
 package io.harness.beans;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
+import static java.lang.String.format;
 import static lombok.AccessLevel.PRIVATE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.InvalidArgumentsException;
 
+import java.util.Arrays;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldDefaults;
@@ -35,5 +39,46 @@ public class Scope {
         .orgIdentifier(orgIdentifier)
         .projectIdentifier(projectIdentifier)
         .build();
+  }
+
+  public static Scope of(final String accountIdentifier, final String orgIdentifier, final String projectIdentifier,
+      io.harness.encryption.Scope scope) {
+    ScopeBuilder scopeBuilder = Scope.builder().accountIdentifier(accountIdentifier);
+
+    if (scope == io.harness.encryption.Scope.ACCOUNT) {
+      verifyFieldExistence(io.harness.encryption.Scope.ACCOUNT, accountIdentifier);
+
+      return scopeBuilder.build();
+    } else if (scope == io.harness.encryption.Scope.ORG) {
+      verifyFieldExistence(io.harness.encryption.Scope.ORG, accountIdentifier, orgIdentifier);
+
+      return scopeBuilder.orgIdentifier(orgIdentifier).build();
+    } else if (scope == io.harness.encryption.Scope.PROJECT) {
+      verifyFieldExistence(io.harness.encryption.Scope.PROJECT, accountIdentifier, orgIdentifier, projectIdentifier);
+
+      return scopeBuilder.orgIdentifier(orgIdentifier).projectIdentifier(projectIdentifier).build();
+    }
+
+    throw new InvalidArgumentsException(format("Unknown scope %s", scope.getYamlRepresentation()));
+  }
+
+  // orderedFields must be in next order accountIdentifier, orgIdentifier, projectIdentifier
+  private static void verifyFieldExistence(io.harness.encryption.Scope scope, String... orderedFields) {
+    final String[] fieldNames = {"accountIdentifier", "orgIdentifier", "projectIdentifier"};
+    final int fieldsNum = orderedFields.length;
+
+    if (fieldsNum > fieldNames.length) {
+      throw new InvalidArgumentsException(String.format(
+          "Verification field existence failed for %s scope, fields: %s ", scope, Arrays.toString(orderedFields)));
+    }
+
+    for (int fieldNum = 0; fieldNum < fieldsNum; fieldNum++) {
+      String fieldValue = orderedFields[fieldNum];
+
+      if (isEmpty(fieldValue)) {
+        throw new InvalidArgumentsException(
+            String.format("%s cannot be empty for %s scope", fieldNames[fieldNum], scope));
+      }
+    }
   }
 }

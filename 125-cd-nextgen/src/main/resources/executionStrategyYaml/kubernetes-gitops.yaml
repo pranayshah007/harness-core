@@ -1,0 +1,23 @@
+failureStrategies:
+  - onFailure:
+      errors:
+        - AllErrors
+      action:
+        type: StageRollback
+spec:
+  execution:
+    steps:
+      - step:
+          type: CreatePR
+          name: "Create PR"
+          identifier: createPR
+          timeout: 10m
+          spec:
+            overrideConfig: false
+            shell: Bash
+      - step:
+          type: MergePR
+          name: Merge PR
+          identifier: mergePR
+          spec: {}
+          timeout: 10m

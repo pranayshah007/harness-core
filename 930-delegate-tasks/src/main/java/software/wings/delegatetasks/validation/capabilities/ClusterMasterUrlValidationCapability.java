@@ -7,6 +7,8 @@
 
 package software.wings.delegatetasks.validation.capabilities;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.beans.executioncapability.CapabilityType;
@@ -65,6 +67,7 @@ public class ClusterMasterUrlValidationCapability implements ExecutionCapability
 
   @Override
   public String getCapabilityToString() {
-    return String.format("Cluster master URL: %s is unreachable", fetchCapabilityBasis());
+    return isNotEmpty(fetchCapabilityBasis()) ? String.format("Cluster master URL,  %s ", fetchCapabilityBasis())
+                                              : null;
   }
 }
