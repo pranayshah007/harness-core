@@ -32,8 +32,6 @@ public class CiTelemetryPublisher {
     public void recordTelemetry() {
         log.info("CiTelemetryPublisher recordTelemetry execute started.");
         try {
-            Long MILLISECONDS_IN_A_DAY = 86400000L;
-
             String accountId = getAccountId();
             if (EmptyPredicate.isNotEmpty(accountId) || !accountId.equals(GLOBAL_ACCOUNT_ID)) {
                 ciOverviewDashboardService.getActiveCommitterCount(accountId);

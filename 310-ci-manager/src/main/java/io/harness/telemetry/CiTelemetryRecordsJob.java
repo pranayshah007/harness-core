@@ -8,7 +8,6 @@
 package io.harness.telemetry;
 
 import com.google.inject.Inject;
-import com.google.inject.Injector;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import lombok.extern.slf4j.Slf4j;
@@ -21,7 +20,6 @@ import java.util.concurrent.TimeUnit;
 public class CiTelemetryRecordsJob {
     public static final int METRICS_RECORD_PERIOD_SECONDS = 86400;
 
-    @Inject private Injector injector;
     @Inject @Named("ciTelemetryPublisherExecutor") protected ScheduledExecutorService executorService;
     @Inject CiTelemetryPublisher publisher;
 
