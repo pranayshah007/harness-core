@@ -123,6 +123,11 @@ ngManagerServiceHttpClientConfig:
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
 
+ceNgServiceHttpClientConfig:
+  baseUrl: http://localhost:7340/api/
+  connectTimeOutSeconds: 15
+  readTimeOutSeconds: 15
+
 # banzaicloud/telescopes repo
 banzaiRecommenderConfig:
   baseUrl: http://104.155.154.180:9090/
@@ -130,6 +135,7 @@ banzaiRecommenderConfig:
   readTimeOutSeconds: 15
 
 ngManagerServiceSecret: UeWgUReGXlbrB0zkDCBFz1EDfU1zrXbhAbGfQ8jsSCaA881SYFMlHqnn3OQnAKAU6hTQ5NniwuMeKSFW
+ceNgServiceSecret: UeWgUReGXlbrB0zkDCBFz1EDfU1zrXbhAbGfQ8jsSCaA881SYFMlHqnn3OQnAKAU6hTQ5NniwuMeKSFW
 awsCurBilling: true
 
 connectorHealthUpdateJobConfig:
