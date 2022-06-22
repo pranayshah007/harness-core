@@ -348,7 +348,6 @@ public class SCMGitSyncHelper {
         .repoName(gitMetaData.getRepoName())
         .filePath(gitMetaData.getFilePath())
         .commitId(gitMetaData.getCommitId())
-        .fileUrl(gitMetaData.getFileUrl())
         .build();
   }
 

@@ -15,7 +15,6 @@ import io.harness.beans.Scope;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.NestedExceptionUtils;
-import io.harness.gitsync.beans.GitRepositoryDTO;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -47,11 +46,10 @@ public class GitFilePathHelper {
     validateFilePathHasCorrectExtension(filePath);
   }
 
-  public String getFileUrl(
-      Scope scope, String connectorRef, String branchName, String filePath, GitRepositoryDTO gitRepositoryDTO) {
-    ScmConnector scmConnector = gitSyncConnectorHelper.getScmConnectorForGivenRepo(scope.getAccountIdentifier(),
-        scope.getOrgIdentifier(), scope.getProjectIdentifier(), connectorRef, gitRepositoryDTO.getName());
-    return scmConnector.getFileUrl(branchName, filePath, gitRepositoryDTO);
+  public String getFileUrl(Scope scope, String connectorRef, String repoName, String branchName, String filePath) {
+    ScmConnector scmConnector = gitSyncConnectorHelper.getScmConnectorForGivenRepo(
+        scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), connectorRef, repoName);
+    return scmConnector.getFileUrl(branchName, filePath, repoName);
   }
 
   private static void validateFilePathFormat(String filePath) {

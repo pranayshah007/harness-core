@@ -16,7 +16,6 @@ import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
 import io.harness.beans.IdentifierRef;
-import io.harness.beans.Scope;
 import io.harness.common.EntityReference;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
@@ -44,7 +43,6 @@ import io.harness.gitsync.PushFileResponse;
 import io.harness.gitsync.PushInfo;
 import io.harness.gitsync.RepoDetails;
 import io.harness.gitsync.UpdateFileRequest;
-import io.harness.gitsync.beans.GitRepositoryDTO;
 import io.harness.gitsync.common.beans.BranchSyncStatus;
 import io.harness.gitsync.common.beans.GitBranch;
 import io.harness.gitsync.common.beans.GitSyncDirection;
@@ -374,17 +372,16 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
   @Override
   public GetFileResponse getFileByBranch(GetFileRequest getFileRequest) {
     try {
-      Scope scope = ScopeIdentifierMapper.getScopeFromScopeIdentifiers(getFileRequest.getScopeIdentifiers());
       gitFilePathHelper.validateFilePath(getFileRequest.getFilePath());
-      ScmGetFileResponseDTO scmGetFileResponseDTO =
-          scmFacilitatorService.getFileByBranch(ScmGetFileByBranchRequestDTO.builder()
-                                                    .branchName(getFileRequest.getBranchName())
-                                                    .connectorRef(getFileRequest.getConnectorRef())
-                                                    .filePath(getFileRequest.getFilePath())
-                                                    .repoName(getFileRequest.getRepoName())
-                                                    .scope(scope)
-                                                    .build());
-      return prepareGetFileResponse(getFileRequest, scmGetFileResponseDTO, scope);
+      ScmGetFileResponseDTO scmGetFileResponseDTO = scmFacilitatorService.getFileByBranch(
+          ScmGetFileByBranchRequestDTO.builder()
+              .branchName(getFileRequest.getBranchName())
+              .connectorRef(getFileRequest.getConnectorRef())
+              .filePath(getFileRequest.getFilePath())
+              .repoName(getFileRequest.getRepoName())
+              .scope(ScopeIdentifierMapper.getScopeFromScopeIdentifiers(getFileRequest.getScopeIdentifiers()))
+              .build());
+      return prepareGetFileResponse(getFileRequest, scmGetFileResponseDTO);
     } catch (WingsException ex) {
       ScmException scmException = ScmExceptionUtils.getScmException(ex);
       if (scmException == null) {
@@ -403,21 +400,20 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
   @Override
   public io.harness.gitsync.CreateFileResponse createFile(CreateFileRequest createFileRequest) {
     try {
-      Scope scope = ScopeIdentifierMapper.getScopeFromScopeIdentifiers(createFileRequest.getScopeIdentifiers());
       gitFilePathHelper.validateFilePath(createFileRequest.getFilePath());
-      ScmCommitFileResponseDTO scmCommitFileResponseDTO =
-          scmFacilitatorService.createFile(ScmCreateFileRequestDTO.builder()
-                                               .repoName(createFileRequest.getRepoName())
-                                               .branchName(createFileRequest.getBranchName())
-                                               .connectorRef(createFileRequest.getConnectorRef())
-                                               .fileContent(createFileRequest.getFileContent())
-                                               .filePath(createFileRequest.getFilePath())
-                                               .commitMessage(createFileRequest.getCommitMessage())
-                                               .baseBranch(createFileRequest.getBaseBranchName())
-                                               .isCommitToNewBranch(createFileRequest.getIsCommitToNewBranch())
-                                               .scope(scope)
-                                               .build());
-      return prepareCreateFileResponse(createFileRequest, scmCommitFileResponseDTO, scope);
+      ScmCommitFileResponseDTO scmCommitFileResponseDTO = scmFacilitatorService.createFile(
+          ScmCreateFileRequestDTO.builder()
+              .repoName(createFileRequest.getRepoName())
+              .branchName(createFileRequest.getBranchName())
+              .connectorRef(createFileRequest.getConnectorRef())
+              .fileContent(createFileRequest.getFileContent())
+              .filePath(createFileRequest.getFilePath())
+              .commitMessage(createFileRequest.getCommitMessage())
+              .baseBranch(createFileRequest.getBaseBranchName())
+              .isCommitToNewBranch(createFileRequest.getIsCommitToNewBranch())
+              .scope(ScopeIdentifierMapper.getScopeFromScopeIdentifiers(createFileRequest.getScopeIdentifiers()))
+              .build());
+      return prepareCreateFileResponse(createFileRequest, scmCommitFileResponseDTO);
     } catch (WingsException ex) {
       ScmException scmException = ScmExceptionUtils.getScmException(ex);
       if (scmException == null) {
@@ -436,23 +432,22 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
   @Override
   public io.harness.gitsync.UpdateFileResponse updateFile(UpdateFileRequest updateFileRequest) {
     try {
-      Scope scope = ScopeIdentifierMapper.getScopeFromScopeIdentifiers(updateFileRequest.getScopeIdentifiers());
       gitFilePathHelper.validateFilePath(updateFileRequest.getFilePath());
-      ScmCommitFileResponseDTO scmCommitFileResponseDTO =
-          scmFacilitatorService.updateFile(ScmUpdateFileRequestDTO.builder()
-                                               .repoName(updateFileRequest.getRepoName())
-                                               .branchName(updateFileRequest.getBranchName())
-                                               .connectorRef(updateFileRequest.getConnectorRef())
-                                               .fileContent(updateFileRequest.getFileContent())
-                                               .filePath(updateFileRequest.getFilePath())
-                                               .commitMessage(updateFileRequest.getCommitMessage())
-                                               .oldCommitId(updateFileRequest.getOldCommitId())
-                                               .baseBranch(updateFileRequest.getBaseBranchName())
-                                               .oldFileSha(updateFileRequest.getOldFileSha())
-                                               .isCommitToNewBranch(updateFileRequest.getIsCommitToNewBranch())
-                                               .scope(scope)
-                                               .build());
-      return prepareUpdateFileResponse(updateFileRequest, scmCommitFileResponseDTO, scope);
+      ScmCommitFileResponseDTO scmCommitFileResponseDTO = scmFacilitatorService.updateFile(
+          ScmUpdateFileRequestDTO.builder()
+              .repoName(updateFileRequest.getRepoName())
+              .branchName(updateFileRequest.getBranchName())
+              .connectorRef(updateFileRequest.getConnectorRef())
+              .fileContent(updateFileRequest.getFileContent())
+              .filePath(updateFileRequest.getFilePath())
+              .commitMessage(updateFileRequest.getCommitMessage())
+              .oldCommitId(updateFileRequest.getOldCommitId())
+              .baseBranch(updateFileRequest.getBaseBranchName())
+              .oldFileSha(updateFileRequest.getOldFileSha())
+              .isCommitToNewBranch(updateFileRequest.getIsCommitToNewBranch())
+              .scope(ScopeIdentifierMapper.getScopeFromScopeIdentifiers(updateFileRequest.getScopeIdentifiers()))
+              .build());
+      return prepareUpdateFileResponse(updateFileRequest, scmCommitFileResponseDTO);
     } catch (WingsException ex) {
       ScmException scmException = ScmExceptionUtils.getScmException(ex);
       if (scmException == null) {
@@ -539,9 +534,7 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
   }
 
   private GetFileResponse prepareGetFileResponse(
-      GetFileRequest getFileRequest, ScmGetFileResponseDTO scmGetFileResponseDTO, Scope scope) {
-    GitRepositoryDTO gitRepositoryDTO =
-        GitRepositoryDTO.builder().name(getFileRequest.getRepoName()).projectName("").build();
+      GetFileRequest getFileRequest, ScmGetFileResponseDTO scmGetFileResponseDTO) {
     return GetFileResponse.newBuilder()
         .setStatusCode(HTTP_200)
         .setFileContent(scmGetFileResponseDTO.getFileContent())
@@ -551,16 +544,12 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
                             .setCommitId(scmGetFileResponseDTO.getCommitId())
                             .setBlobId(scmGetFileResponseDTO.getBlobId())
                             .setFilePath(getFileRequest.getFilePath())
-                            .setFileUrl(gitFilePathHelper.getFileUrl(scope, getFileRequest.getConnectorRef(),
-                                scmGetFileResponseDTO.getBranchName(), getFileRequest.getFilePath(), gitRepositoryDTO))
                             .build())
         .build();
   }
 
   private io.harness.gitsync.CreateFileResponse prepareCreateFileResponse(
-      CreateFileRequest createFileRequest, ScmCommitFileResponseDTO scmCommitFileResponseDTO, Scope scope) {
-    GitRepositoryDTO gitRepositoryDTO =
-        GitRepositoryDTO.builder().name(createFileRequest.getRepoName()).projectName("").build();
+      CreateFileRequest createFileRequest, ScmCommitFileResponseDTO scmCommitFileResponseDTO) {
     return io.harness.gitsync.CreateFileResponse.newBuilder()
         .setStatusCode(HTTP_200)
         .setGitMetaData(GitMetaData.newBuilder()
@@ -569,16 +558,12 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
                             .setBranchName(createFileRequest.getBranchName())
                             .setCommitId(scmCommitFileResponseDTO.getCommitId())
                             .setBlobId(scmCommitFileResponseDTO.getBlobId())
-                            .setFileUrl(gitFilePathHelper.getFileUrl(scope, createFileRequest.getConnectorRef(),
-                                createFileRequest.getBranchName(), createFileRequest.getFilePath(), gitRepositoryDTO))
                             .build())
         .build();
   }
 
   private io.harness.gitsync.UpdateFileResponse prepareUpdateFileResponse(
-      UpdateFileRequest updateFileRequest, ScmCommitFileResponseDTO scmCommitFileResponseDTO, Scope scope) {
-    GitRepositoryDTO gitRepositoryDTO =
-        GitRepositoryDTO.builder().name(updateFileRequest.getRepoName()).projectName("").build();
+      UpdateFileRequest updateFileRequest, ScmCommitFileResponseDTO scmCommitFileResponseDTO) {
     return io.harness.gitsync.UpdateFileResponse.newBuilder()
         .setStatusCode(HTTP_200)
         .setGitMetaData(GitMetaData.newBuilder()
@@ -587,8 +572,6 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
                             .setBranchName(updateFileRequest.getBranchName())
                             .setCommitId(scmCommitFileResponseDTO.getCommitId())
                             .setBlobId(scmCommitFileResponseDTO.getBlobId())
-                            .setFileUrl(gitFilePathHelper.getFileUrl(scope, updateFileRequest.getConnectorRef(),
-                                updateFileRequest.getBranchName(), updateFileRequest.getFilePath(), gitRepositoryDTO))
                             .build())
         .build();
   }
