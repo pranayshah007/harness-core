@@ -283,6 +283,7 @@ import software.wings.service.impl.pipeline.PipelineServiceHelper;
 import software.wings.service.impl.pipeline.resume.PipelineResumeUtils;
 import software.wings.service.impl.security.auth.AuthHandler;
 import software.wings.service.impl.security.auth.DeploymentAuthHandler;
+import software.wings.service.impl.workflow.WorkflowNotificationHelper;
 import software.wings.service.impl.workflow.WorkflowServiceHelper;
 import software.wings.service.impl.workflow.queuing.WorkflowConcurrencyHelper;
 import software.wings.service.intfc.AlertService;
@@ -475,6 +476,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
   @Inject @AccountExpiryCheck private PreDeploymentChecker accountExpirationChecker;
   @Inject private WorkflowStatusPropagatorFactory workflowStatusPropagatorFactory;
   @Inject private WorkflowExecutionUpdate executionUpdate;
+  @Inject private WorkflowNotificationHelper workflowNotificationHelper;
   private static final long SIXTY_DAYS_IN_MILLIS = 60 * 24 * 60 * 60 * 1000L;
 
   @Inject private EventService eventService;
@@ -875,6 +877,9 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
             (ApprovalStateExecutionData) stateExecutionInstance.fetchStateExecutionData();
         // Check for Approval Id in PAUSED status
         if (approvalStateExecutionData != null && approvalStateExecutionData.getStatus() == ExecutionStatus.PAUSED) {
+          // State name is unique inside a phase step
+          approvalStateExecutionData.setApprovalStateIdentifier(
+              stateExecutionInstance.getChildStateMachineId() + "_" + stateExecutionInstance.getStateName());
           approvalStateExecutionData.setExecutionUuid(workflowExecution.getUuid());
           approvalStateExecutionsData.add(approvalStateExecutionData);
         }
@@ -6307,7 +6312,8 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
       String appId, String workflowExecutionId, String workflowId, String approvalId) {
     WorkflowExecution currentExecution = fetchWorkflowExecution(appId, workflowExecutionId,
         WorkflowExecutionKeys.createdAt, WorkflowExecutionKeys.pipelineExecution, WorkflowExecutionKeys.serviceIds,
-        WorkflowExecutionKeys.infraDefinitionIds, WorkflowExecutionKeys.workflowType, WorkflowExecutionKeys.appId);
+        WorkflowExecutionKeys.infraDefinitionIds, WorkflowExecutionKeys.workflowType, WorkflowExecutionKeys.appId,
+        WorkflowExecutionKeys.pipelineExecutionId);
 
     List<WorkflowExecution> pausedExecutions = wingsPersistence.createQuery(WorkflowExecution.class)
                                                    .filter(WorkflowExecutionKeys.appId, appId)
@@ -6324,7 +6330,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
 
     if (currentExecution.getWorkflowType() == ORCHESTRATION) {
       List<String> approvalIds = getPreviousApprovalIdsWithSameServicesAndInfraForWorkflow(
-          currentExecution, pausedExecutions, serviceIds, infraIds);
+          currentExecution, pausedExecutions, serviceIds, infraIds, approvalId);
       return PreviousApprovalDetails.builder()
           .previousApprovals(approvalIds.stream().map(ApprovalInfo::new).collect(toList()))
           .size(approvalIds.size())
@@ -6359,8 +6365,9 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     return PreviousApprovalDetails.builder().previousApprovals(emptyList()).size(0).build();
   }
 
-  private List<String> getPreviousApprovalIdsWithSameServicesAndInfraForWorkflow(WorkflowExecution currentExecution,
-      List<WorkflowExecution> pausedExecutions, List<String> serviceIds, List<String> infraIds) {
+  List<String> getPreviousApprovalIdsWithSameServicesAndInfraForWorkflow(WorkflowExecution currentExecution,
+      List<WorkflowExecution> pausedExecutions, List<String> serviceIds, List<String> infraIds,
+      String currentApprovalId) {
     List<WorkflowExecution> executionsWithSameServiceAndInfra =
         pausedExecutions.stream()
             .filter(e
@@ -6368,12 +6375,33 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
                     && CollectionUtils.isEqualCollection(e.getInfraDefinitionIds(), infraIds))
             .collect(toList());
     List<String> approvalIds = new ArrayList<>();
+
+    // Removing workflow executions from the same pipeline execution
+    if (currentExecution.getPipelineExecutionId() != null) {
+      executionsWithSameServiceAndInfra.removeIf(
+          e -> currentExecution.getPipelineExecutionId().equals(e.getPipelineExecutionId()));
+    }
+
+    List<ApprovalStateExecutionData> approvalDataForCurrentExecution =
+        fetchApprovalStateExecutionsDataFromWorkflowExecution(currentExecution.getAppId(), currentExecution.getUuid());
+
+    ApprovalStateExecutionData currentApprovalData =
+        approvalDataForCurrentExecution.stream()
+            .filter(approvalStateExecutionData -> currentApprovalId.equals(approvalStateExecutionData.getApprovalId()))
+            .findFirst()
+            .orElseThrow(() -> { throw new InvalidRequestException("Approval no longer in waiting state"); });
+
     executionsWithSameServiceAndInfra.forEach(execution -> {
       List<ApprovalStateExecutionData> approvalDataForWorkflow =
           fetchApprovalStateExecutionsDataFromWorkflowExecution(currentExecution.getAppId(), execution.getUuid());
       if (approvalDataForWorkflow != null) {
         approvalIds.addAll(
-            approvalDataForWorkflow.stream().map(ApprovalStateExecutionData::getApprovalId).collect(toList()));
+            approvalDataForWorkflow
+                .stream()
+                // Getting approval data only from states paused on the same step
+                .filter(ad -> currentApprovalData.getApprovalStateIdentifier().equals(ad.getApprovalStateIdentifier()))
+                .map(ApprovalStateExecutionData::getApprovalId)
+                .collect(toList()));
       }
     });
     return approvalIds;
@@ -6400,15 +6428,23 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
       ApprovalDetails approvalDetails, List<String> previousApprovalIds) {
     String baseUrl = subdomainUrlHelper.getPortalBaseUrl(accountId);
     String executionUrl = "";
+    WorkflowExecution workflowExecution = getWorkflowExecution(appId, workflowExecutionId);
     if (baseUrl != null) {
-      executionUrl = generatePipelineExecutionUrl(accountId, appId, workflowExecutionId, baseUrl);
+      if (workflowExecution.getWorkflowType() == PIPELINE) {
+        executionUrl = generatePipelineExecutionUrl(accountId, appId, workflowExecutionId, baseUrl);
+      } else {
+        executionUrl = workflowNotificationHelper.calculateWorkflowUrl(workflowExecutionId,
+            workflowExecution.getOrchestrationType(), accountId, appId, workflowExecution.getEnvId());
+      }
     }
+
     if (isNotEmpty(previousApprovalIds)) {
       for (String approvalId : previousApprovalIds) {
         ApprovalDetails rejectionDetails = new ApprovalDetails();
         rejectionDetails.setApprovalId(approvalId);
         rejectionDetails.setComments(isEmpty(approvalDetails.getComments())
-                ? "Pipeline rejected when the following execution was approved: " + executionUrl
+                ? (workflowExecution.getWorkflowType() == PIPELINE ? "Pipeline" : "Workflow")
+                    + " rejected when the following execution was approved: " + executionUrl
                 : approvalDetails.getComments());
         rejectionDetails.setAction(REJECT);
         approveOrRejectExecution(appId, rejectionDetails);

@@ -139,8 +139,9 @@ func expectedErrorTest() *types.TestCase {
 
 func expectedNestedTests() []*types.TestCase {
 	test1 := &types.TestCase{
-		Name: "test1",
+		Name:      "test1",
 		ClassName: "t.st.c.ApiControllerTest",
+		FileName:  "/harness/tests/unit/Controller/ApiControllerTest.php",
 		SuiteName: "t\\st\\c\\ApiControllerTest",
 		Result: types.Result{
 			Status: types.StatusPassed,
@@ -149,9 +150,10 @@ func expectedNestedTests() []*types.TestCase {
 	}
 
 	test2 := &types.TestCase{
-		Name: "test17",
+		Name:      "test17",
 		ClassName: "t.st.c.ApiControllerTest",
 		SuiteName: "t\\st\\c\\ApiControllerTest",
+		FileName:  "/harness/tests/unit/Controller/ApiControllerTest.php",
 		Result: types.Result{
 			Status: types.StatusPassed,
 		},
@@ -159,8 +161,9 @@ func expectedNestedTests() []*types.TestCase {
 	}
 
 	test3 := &types.TestCase{
-		Name: "test20",
+		Name:      "test20",
 		ClassName: "t.st.c.RedirectControllerTest",
+		FileName:  "/harness/tests/unit/Controller/RedirectControllerTest.php",
 		SuiteName: "t\\st\\c\\RedirectControllerTest",
 		Result: types.Result{
 			Status: types.StatusPassed,
@@ -169,8 +172,9 @@ func expectedNestedTests() []*types.TestCase {
 	}
 
 	test4 := &types.TestCase{
-		Name: "test29",
+		Name:      "test29",
 		ClassName: "t.st.c.RouteDispatcherTest",
+		FileName:  "/harness/tests/unit/RouteDispatcherTest.php",
 		SuiteName: "t\\st\\c\\RouteDispatcherTest",
 		Result: types.Result{
 			Status: types.StatusPassed,
@@ -179,8 +183,9 @@ func expectedNestedTests() []*types.TestCase {
 	}
 
 	test5 := &types.TestCase{
-		Name: "test40",
+		Name:      "test40",
 		ClassName: "t.st.c.PdoAdapterTest",
+		FileName:  "/harness/tests/unit/Storage/Adapter/PdoAdapterTest.php",
 		SuiteName: "t\\st\\c\\PdoAdapterTest",
 		Result: types.Result{
 			Status: types.StatusPassed,

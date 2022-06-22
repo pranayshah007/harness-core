@@ -33,7 +33,6 @@ import io.harness.delegate.task.azure.appservice.webapp.response.AzureAppDeploym
 import io.harness.delegate.task.azure.appservice.webapp.response.AzureWebAppSlotSetupResponse;
 import io.harness.delegate.task.azure.common.AzureContainerRegistryService;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
-
 import software.wings.beans.artifact.ArtifactStreamAttributes;
 import software.wings.delegatetasks.azure.appservice.webapp.AbstractAzureWebAppTaskHandler;
 import software.wings.delegatetasks.azure.common.AutoCloseableWorkingDirectory;

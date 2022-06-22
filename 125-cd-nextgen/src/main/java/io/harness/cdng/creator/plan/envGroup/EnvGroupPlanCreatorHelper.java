@@ -8,8 +8,13 @@
 package io.harness.cdng.creator.plan.envGroup;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.data.structure.CollectionUtils.emptyIfNull;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
+import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.creator.plan.environment.EnvironmentPlanCreatorHelper;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupConfig;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
 import io.harness.cdng.envGroup.mappers.EnvironmentGroupMapper;
@@ -21,6 +26,8 @@ import io.harness.cdng.environment.yaml.EnvironmentPlanCreatorConfig;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ng.core.environment.beans.Environment;
+import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.contracts.plan.PlanCreationContextValue;
 import io.harness.pms.contracts.plan.YamlUpdates;
@@ -43,11 +50,14 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @OwnedBy(CDP)
 @Singleton
 public class EnvGroupPlanCreatorHelper {
   @Inject private EnvironmentGroupService environmentGroupService;
+  @Inject private EnvironmentService environmentService;
   @Inject private KryoSerializer kryoSerializer;
 
   public EnvGroupPlanCreatorConfig createEnvGroupPlanCreatorConfig(
@@ -60,11 +70,16 @@ public class EnvGroupPlanCreatorHelper {
     final Optional<EnvironmentGroupEntity> entity =
         environmentGroupService.get(accountIdentifier, orgIdentifier, projectIdentifier, envGroupIdentifier, false);
 
-    if (!entity.isPresent()) {
-      throw new InvalidRequestException(
-          String.format("No environment group found with %s identifier in %s project in %s org", envGroupIdentifier,
-              projectIdentifier, orgIdentifier));
+    if (entity.isEmpty()) {
+      throw new InvalidRequestException(format("No environment group found with %s identifier in %s project in %s org",
+          envGroupIdentifier, projectIdentifier, orgIdentifier));
     }
+
+    List<Environment> environments = environmentService.fetchesNonDeletedEnvironmentFromListOfIdentifiers(
+        accountIdentifier, orgIdentifier, projectIdentifier, entity.get().getEnvIdentifiers());
+
+    Map<String, Environment> envMapping =
+        emptyIfNull(environments).stream().collect(Collectors.toMap(Environment::getIdentifier, Function.identity()));
 
     List<EnvironmentPlanCreatorConfig> envConfigs = new ArrayList<>();
     if (!envGroupYaml.isDeployToAll()) {
@@ -72,8 +87,17 @@ public class EnvGroupPlanCreatorHelper {
           EnvironmentGroupMapper.toNGEnvironmentGroupConfig(entity.get().getYaml()).getEnvironmentGroupConfig();
       List<EnvironmentYamlV2> envV2Yamls = envGroupYaml.getEnvGroupConfig();
       for (EnvironmentYamlV2 envYaml : envV2Yamls) {
-        envConfigs.add(
-            EnvironmentPlanCreatorConfigMapper.toEnvPlanCreatorConfigWithGitops(envGroupConfig, envYaml, null));
+        Environment environment = envMapping.get(envYaml.getEnvironmentRef().getValue());
+        if (environment == null) {
+          throw new InvalidRequestException(format("Environment %s not found in environment group %s",
+              envGroupYaml.getEnvGroupRef().getValue(), entity.get().getIdentifier()));
+        }
+        String mergedYaml = environment.getYaml();
+        if (isNotEmpty(envYaml.getEnvironmentInputs())) {
+          mergedYaml = EnvironmentPlanCreatorHelper.mergeEnvironmentInputs(
+              environment.getYaml(), envYaml.getEnvironmentInputs());
+        }
+        envConfigs.add(EnvironmentPlanCreatorConfigMapper.toEnvPlanCreatorConfigWithGitops(mergedYaml, envYaml, null));
       }
     }
 

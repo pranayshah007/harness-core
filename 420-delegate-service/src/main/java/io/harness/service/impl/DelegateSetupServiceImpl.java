@@ -680,6 +680,16 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
         .get();
   }
 
+  @Override
+  public void deleteDelegateGroupsOnDeletingOwner(String accountId, DelegateEntityOwner owner) {
+    Query<DelegateGroup> query = persistence.createQuery(DelegateGroup.class)
+                                     .filter(DelegateGroupKeys.accountId, accountId)
+                                     .filter(DelegateGroupKeys.ng, true)
+                                     .filter(DelegateGroupKeys.owner, owner);
+
+    persistence.delete(query);
+  }
+
   private DelegateGroup getDelegateGroupByAccountAndOwnerAndIdentifier(
       String accountId, DelegateEntityOwner owner, String delegateGroupIdentifier) {
     if (isEmpty(accountId) || isEmpty(delegateGroupIdentifier)) {
