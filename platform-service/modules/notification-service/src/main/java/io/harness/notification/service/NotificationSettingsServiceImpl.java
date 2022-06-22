@@ -17,6 +17,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.dto.UserGroupDTO;
 import io.harness.ng.core.dto.UserGroupFilterDTO;
+import io.harness.ng.core.notification.MicrosoftTeamsConfigDTO;
 import io.harness.ng.core.notification.NotificationSettingConfigDTO;
 import io.harness.ng.core.user.UserInfo;
 import io.harness.notification.NotificationChannelType;
@@ -103,6 +104,7 @@ public class NotificationSettingsServiceImpl implements NotificationSettingsServ
     } catch (Exception ex) {
       log.error("Error while fetching user groups.", ex);
     }
+    log.info( "Microsoft webhookurl: {} ", ((MicrosoftTeamsConfigDTO) userGroupDTOS.get(0).getNotificationConfigs()).getMicrosoftTeamsWebhookUrl());
     return userGroupDTOS;
   }
 
