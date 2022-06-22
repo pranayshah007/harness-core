@@ -75,6 +75,7 @@ import software.wings.beans.AwsConfig;
 import software.wings.beans.AwsCrossAccountAttributes;
 import software.wings.beans.LogColor;
 import software.wings.beans.LogWeight;
+import software.wings.service.impl.AwsApiHelperService;
 import software.wings.service.intfc.aws.delegate.AwsCFHelperServiceDelegate;
 
 import com.google.common.collect.Iterables;
@@ -105,7 +106,7 @@ import software.wings.service.intfc.aws.delegate.AwsS3HelperServiceDelegate;
 public class ServerlessAwsCommandTaskHelper {
   @Inject private ServerlessTaskPluginHelper serverlessTaskPluginHelper;
   @Inject protected AwsCFHelperServiceDelegate awsCFHelperServiceDelegate;
-  @Inject protected AwsS3HelperServiceDelegate awsS3HelperServiceDelegate;
+  @Inject protected AwsApiHelperService awsApiHelperService;
   @Inject private AwsNgConfigMapper awsNgConfigMapper;
 
   private static String AWS_LAMBDA_FUNCTION_RESOURCE_TYPE = "AWS::Lambda::Function";
@@ -401,8 +402,8 @@ public class ServerlessAwsCommandTaskHelper {
 
     String bucketName = optionalBucketName.get();
     ServerlessAwsLambdaInfraConfig serverlessAwsLambdaInfraConfig = (ServerlessAwsLambdaInfraConfig) serverlessPrepareRollbackDataRequest.getServerlessInfraConfig();
-    List<EncryptedDataDetail> encryptedDataDetailList = serverlessAwsLambdaInfraConfig.getEncryptionDataDetails();
-    AwsConfig awsConfig = createAwsConfig(serverlessAwsLambdaInfraConfig.getAwsConnectorDTO());
+    String region = serverlessAwsLambdaInfraConfig.getRegion();
+    AwsInternalConfig awsConfig = awsNgConfigMapper.createAwsInternalConfig(serverlessAwsLambdaInfraConfig.getAwsConnectorDTO());
 
     ListObjectsV2Request listObjectsV2Request = new ListObjectsV2Request();
     String objectKeyPrefix = "serverless/" + serviceName + "/" + serverlessAwsLambdaInfraConfig.getStage() + "/";
@@ -412,7 +413,7 @@ public class ServerlessAwsCommandTaskHelper {
     List<String> objectKeyList = Lists.newArrayList();
     ListObjectsV2Result result;
     do {
-      result = awsS3HelperServiceDelegate.listObjectsInS3(awsConfig, encryptedDataDetailList, listObjectsV2Request);
+      result = awsApiHelperService.listObjectsInS3(awsConfig, region, listObjectsV2Request);
       List<S3ObjectSummary> objectSummaryList = result.getObjectSummaries();
       // in descending order. The most recent one comes first
       objectSummaryList.sort((o1, o2) -> o2.getLastModified().compareTo(o1.getLastModified()));
@@ -430,7 +431,7 @@ public class ServerlessAwsCommandTaskHelper {
     // to the caller.
     for (String objectKey : objectKeyList) {
       Pair<String, InputStream> stringInputStreamPair =
-              downloadArtifact(awsConfig, encryptedDataDetailList, bucketName, objectKey);
+              downloadArtifact(awsConfig, region, bucketName, objectKey);
       if(stringInputStreamPair != null) {
         String object = IOUtils.toString(stringInputStreamPair.getValue(), StandardCharsets.UTF_8);
         if (object.equals(cloudFormationTemplate)) {
@@ -447,47 +448,11 @@ public class ServerlessAwsCommandTaskHelper {
   }
 
   private Pair<String, InputStream> downloadArtifact(
-          AwsConfig awsConfig, List<EncryptedDataDetail> encryptionDetails, String bucketName, String key) {
-    S3Object object = awsS3HelperServiceDelegate.getObjectFromS3(awsConfig, encryptionDetails, bucketName, key);
+          AwsInternalConfig awsInternalConfig, String region, String bucketName, String key) {
+    S3Object object = awsApiHelperService.getObjectFromS3(awsInternalConfig, region, bucketName, key);
     if (object != null) {
       return Pair.of(object.getKey(), object.getObjectContent());
     }
     return null;
-  }
-
-  private AwsConfig createAwsConfig(AwsConnectorDTO awsConnectorDTO) {
-    AwsConfig awsConfig = AwsConfig.builder().build();
-    if (awsConnectorDTO == null) {
-      throw new InvalidArgumentsException("Aws Connector DTO cannot be null");
-    }
-
-    AwsCredentialDTO credential = awsConnectorDTO.getCredential();
-    if (MANUAL_CREDENTIALS == credential.getAwsCredentialType()) {
-      AwsManualConfigSpecDTO awsManualConfigSpecDTO = (AwsManualConfigSpecDTO) credential.getConfig();
-      String accessKey = getSecretAsStringFromPlainTextOrSecretRef(
-              awsManualConfigSpecDTO.getAccessKey(), awsManualConfigSpecDTO.getAccessKeyRef());
-      if (accessKey == null) {
-        throw new InvalidArgumentsException(Pair.of("accessKey", "Missing or empty"));
-      }
-
-      awsConfig = AwsConfig.builder()
-              .accessKey(accessKey.toCharArray())
-              .secretKey(awsManualConfigSpecDTO.getSecretKeyRef().getDecryptedValue())
-              .build();
-    } else if (INHERIT_FROM_DELEGATE == credential.getAwsCredentialType()) {
-      awsConfig.setUseEc2IamCredentials(true);
-    } else if (IRSA == credential.getAwsCredentialType()) {
-      awsConfig.setUseIRSA(true);
-    }
-
-    CrossAccountAccessDTO crossAccountAccess = credential.getCrossAccountAccess();
-    if (crossAccountAccess != null) {
-      awsConfig.setAssumeCrossAccountRole(true);
-      awsConfig.setCrossAccountAttributes(AwsCrossAccountAttributes.builder()
-              .crossAccountRoleArn(crossAccountAccess.getCrossAccountRoleArn())
-              .externalId(crossAccountAccess.getExternalId())
-              .build());
-    }
-    return awsConfig;
   }
 }

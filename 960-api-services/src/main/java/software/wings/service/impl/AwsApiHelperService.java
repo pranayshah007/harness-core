@@ -19,6 +19,8 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+import com.amazonaws.services.s3.model.ListObjectsV2Request;
+import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.AwsCallTracker;
@@ -151,6 +153,23 @@ public class AwsApiHelperService {
       handleAmazonClientException(amazonClientException);
     }
     return new DescribeRepositoriesResult();
+  }
+
+  public ListObjectsV2Result listObjectsInS3(
+          AwsInternalConfig awsConfig, String region, ListObjectsV2Request listObjectsV2Request) {
+    try (CloseableAmazonWebServiceClient<AmazonS3Client> closeableAmazonS3Client =
+                 new CloseableAmazonWebServiceClient(getAmazonS3Client(awsConfig, region))) {
+      tracker.trackS3Call("Get Bucket Region");
+      return closeableAmazonS3Client.getClient().listObjectsV2(listObjectsV2Request);
+    } catch (AmazonServiceException amazonServiceException) {
+      handleAmazonServiceException(amazonServiceException);
+    } catch (AmazonClientException amazonClientException) {
+      handleAmazonClientException(amazonClientException);
+    } catch (Exception e) {
+      log.error("Exception listObjectsInS3", e);
+      throw new InvalidRequestException(ExceptionUtils.getMessage(e), e);
+    }
+    return new ListObjectsV2Result();
   }
 
   public List<String> listS3Buckets(AwsInternalConfig awsInternalConfig, String region) {

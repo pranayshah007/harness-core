@@ -148,7 +148,7 @@ public class ServerlessAwsLambdaRollbackCommandTaskHandlerTest extends CategoryT
 
     doReturn(Optional.of(previousVersionTimeStamp))
         .when(serverlessAwsCommandTaskHelper)
-        .getPreviousVersionTimeStamp(any(), any(), any());
+        .getLastDeployedTimestamp(any(), any(), any());
 
     doReturn(serverlessAwsLambdaFunctionsList)
         .when(serverlessAwsCommandTaskHelper)
@@ -216,7 +216,7 @@ public class ServerlessAwsLambdaRollbackCommandTaskHandlerTest extends CategoryT
 
     doReturn(Optional.of(previousVersionTimeStamp))
         .when(serverlessAwsCommandTaskHelper)
-        .getPreviousVersionTimeStamp(any(), any(), any());
+        .getLastDeployedTimestamp(any(), any(), any());
 
     doReturn(rollbackServerlessCliResponse)
         .when(serverlessAwsCommandTaskHelper)
@@ -301,7 +301,7 @@ public class ServerlessAwsLambdaRollbackCommandTaskHandlerTest extends CategoryT
 
     doReturn(Optional.of(previousVersionTimeStamp))
         .when(serverlessAwsCommandTaskHelper)
-        .getPreviousVersionTimeStamp(any(), any(), any());
+        .getLastDeployedTimestamp(any(), any(), any());
 
     doReturn(rollbackServerlessCliResponse)
         .when(serverlessAwsCommandTaskHelper)
@@ -381,7 +381,7 @@ public class ServerlessAwsLambdaRollbackCommandTaskHandlerTest extends CategoryT
 
     doReturn(Optional.of(previousVersionTimeStamp))
         .when(serverlessAwsCommandTaskHelper)
-        .getPreviousVersionTimeStamp(any(), any(), any());
+        .getLastDeployedTimestamp(any(), any(), any());
 
     doReturn(rollbackServerlessCliResponse)
         .when(serverlessAwsCommandTaskHelper)
