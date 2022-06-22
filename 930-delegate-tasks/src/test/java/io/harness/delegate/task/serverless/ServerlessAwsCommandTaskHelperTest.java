@@ -7,9 +7,17 @@
 
 package io.harness.delegate.task.serverless;
 
-import com.amazonaws.services.s3.model.ListObjectsV2Result;
-import com.amazonaws.services.s3.model.S3Object;
-import com.amazonaws.services.s3.model.S3ObjectSummary;
+import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.beans.AwsInternalConfig;
@@ -25,6 +33,19 @@ import io.harness.rule.Owner;
 import io.harness.serverless.ServerlessCliResponse;
 import io.harness.serverless.ServerlessClient;
 import io.harness.serverless.model.ServerlessDelegateTaskParams;
+
+import software.wings.service.impl.AwsApiHelperService;
+import software.wings.service.intfc.aws.delegate.AwsCFHelperServiceDelegate;
+
+import com.amazonaws.services.s3.model.ListObjectsV2Result;
+import com.amazonaws.services.s3.model.S3Object;
+import com.amazonaws.services.s3.model.S3ObjectSummary;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
+import java.util.Optional;
 import org.apache.commons.io.IOUtils;
 import org.junit.Rule;
 import org.junit.Test;
@@ -33,26 +54,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
-import software.wings.service.impl.AwsApiHelperService;
-import software.wings.service.intfc.aws.delegate.AwsCFHelperServiceDelegate;
-import software.wings.service.intfc.aws.delegate.AwsS3HelperServiceDelegate;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
-
-import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 @OwnedBy(CDP)
 public class ServerlessAwsCommandTaskHelperTest extends CategoryTest {
@@ -124,7 +125,9 @@ public class ServerlessAwsCommandTaskHelperTest extends CategoryTest {
     List<S3ObjectSummary> objectSummaryList = Arrays.asList(obj1, obj2);
     assertThat(timeStamps).contains("1646988531400", "1646989096845");
     doReturn("stackBody").when(awsCFHelperServiceDelegate).getStackBody(any(), any(), any());
-    doReturn("abc1646988531400xyz").when(awsCFHelperServiceDelegate).getPhysicalIdBasedOnLogicalId(any(), any(), any(), any());
+    doReturn("abc1646988531400xyz")
+        .when(awsCFHelperServiceDelegate)
+        .getPhysicalIdBasedOnLogicalId(any(), any(), any(), any());
     doReturn(false).when(listObjectsV2Result).isTruncated();
     doReturn(objectSummaryList).when(listObjectsV2Result).getObjectSummaries();
     InputStream inputStream1 = IOUtils.toInputStream("stackBody1", "UTF-8");
@@ -143,8 +146,8 @@ public class ServerlessAwsCommandTaskHelperTest extends CategoryTest {
     doReturn(listObjectsV2Result).when(awsApiHelperService).listObjectsInS3(any(), any(), any());
     doReturn(AwsInternalConfig.builder().build()).when(awsNgConfigMapper).createAwsInternalConfig(any());
 
-    assertThat(serverlessAwsCommandTaskHelper.getLastDeployedTimestamp(
-                   null, timeStamps, serverlessPrepareRollbackDataRequest))
+    assertThat(
+        serverlessAwsCommandTaskHelper.getLastDeployedTimestamp(null, timeStamps, serverlessPrepareRollbackDataRequest))
         .isEqualTo(Optional.of("1646988531400"));
   }
 
@@ -152,29 +155,31 @@ public class ServerlessAwsCommandTaskHelperTest extends CategoryTest {
   @Owner(developers = PIYUSH_BHUWALKA)
   @Category(UnitTests.class)
   public void testGetServerlessDeploymentBucketName() throws IOException {
-
     ServerlessAwsLambdaInfraConfig serverlessAwsLambdaInfraConfig = ServerlessAwsLambdaInfraConfig.builder()
-            .region("us-east-2")
-            .stage("dev")
-            .awsConnectorDTO(awsConnectorDTO)
-            .build();
+                                                                        .region("us-east-2")
+                                                                        .stage("dev")
+                                                                        .awsConnectorDTO(awsConnectorDTO)
+                                                                        .build();
     String serverlessManifest = "service: ABC";
     ServerlessPrepareRollbackDataRequest serverlessPrepareRollbackDataRequest =
-            ServerlessPrepareRollbackDataRequest.builder()
-                    .manifestContent(serverlessManifest)
-                    .serverlessInfraConfig(serverlessAwsLambdaInfraConfig)
-                    .build();
+        ServerlessPrepareRollbackDataRequest.builder()
+            .manifestContent(serverlessManifest)
+            .serverlessInfraConfig(serverlessAwsLambdaInfraConfig)
+            .build();
     doReturn("stackBody").when(awsCFHelperServiceDelegate).getStackBody(any(), any(), any());
-    doReturn("abc1646988531400xyz").when(awsCFHelperServiceDelegate).getPhysicalIdBasedOnLogicalId(any(), any(), any(), any());
+    doReturn("abc1646988531400xyz")
+        .when(awsCFHelperServiceDelegate)
+        .getPhysicalIdBasedOnLogicalId(any(), any(), any(), any());
     doReturn(AwsInternalConfig.builder().build()).when(awsNgConfigMapper).createAwsInternalConfig(any());
-    assertThat(serverlessAwsCommandTaskHelper.getServerlessDeploymentBucketName(logCallback, serverlessPrepareRollbackDataRequest, serverlessPrepareRollbackDataRequest.getManifestContent())).isEqualTo(Optional.of("abc1646988531400xyz"));
+    assertThat(serverlessAwsCommandTaskHelper.getServerlessDeploymentBucketName(logCallback,
+                   serverlessPrepareRollbackDataRequest, serverlessPrepareRollbackDataRequest.getManifestContent()))
+        .isEqualTo(Optional.of("abc1646988531400xyz"));
   }
 
   @Test
   @Owner(developers = PIYUSH_BHUWALKA)
   @Category(UnitTests.class)
   public void testGetServiceName() throws IOException {
-
     String serverlessManifest = "service: ABC";
     assertThat(serverlessAwsCommandTaskHelper.getServiceName(serverlessManifest)).isEqualTo("ABC");
   }

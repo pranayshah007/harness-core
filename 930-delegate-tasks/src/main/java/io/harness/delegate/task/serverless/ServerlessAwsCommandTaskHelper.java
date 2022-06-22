@@ -8,9 +8,6 @@
 package io.harness.delegate.task.serverless;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
-import static io.harness.delegate.beans.connector.awsconnector.AwsCredentialType.INHERIT_FROM_DELEGATE;
-import static io.harness.delegate.beans.connector.awsconnector.AwsCredentialType.IRSA;
-import static io.harness.delegate.beans.connector.awsconnector.AwsCredentialType.MANUAL_CREDENTIALS;
 import static io.harness.delegate.task.serverless.exception.ServerlessExceptionConstants.SERVERLESS_COMMAND_FAILURE;
 import static io.harness.delegate.task.serverless.exception.ServerlessExceptionConstants.SERVERLESS_COMMAND_FAILURE_EXPLANATION;
 import static io.harness.delegate.task.serverless.exception.ServerlessExceptionConstants.SERVERLESS_COMMAND_FAILURE_HINT;
@@ -20,42 +17,28 @@ import static io.harness.delegate.task.serverless.exception.ServerlessExceptionC
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
 
-import static io.harness.utils.FieldWithPlainTextOrSecretValueHelper.getSecretAsStringFromPlainTextOrSecretRef;
-import static java.util.stream.Collectors.toList;
 import static software.wings.beans.LogHelper.color;
 
 import static java.lang.String.format;
+import static java.util.stream.Collectors.toList;
 
-import com.amazonaws.services.s3.model.ListObjectsV2Request;
-import com.amazonaws.services.s3.model.ListObjectsV2Result;
-import com.amazonaws.services.s3.model.S3Object;
-import com.amazonaws.services.s3.model.S3ObjectSummary;
-import com.google.common.collect.Lists;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.beans.AwsInternalConfig;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
-import io.harness.delegate.beans.connector.awsconnector.AwsCredentialDTO;
-import io.harness.delegate.beans.connector.awsconnector.AwsCredentialType;
-import io.harness.delegate.beans.connector.awsconnector.AwsManualConfigSpecDTO;
-import io.harness.delegate.beans.connector.awsconnector.CrossAccountAccessDTO;
 import io.harness.delegate.beans.serverless.ServerlessAwsLambdaCloudFormationSchema;
 import io.harness.delegate.beans.serverless.ServerlessAwsLambdaFunction;
 import io.harness.delegate.beans.serverless.ServerlessAwsLambdaFunction.ServerlessAwsLambdaFunctionBuilder;
 import io.harness.delegate.beans.serverless.ServerlessAwsLambdaManifestSchema;
-import io.harness.delegate.task.ListNotifyResponseData;
 import io.harness.delegate.task.aws.AwsNgConfigMapper;
 import io.harness.delegate.task.serverless.request.ServerlessCommandRequest;
 import io.harness.delegate.task.serverless.request.ServerlessPrepareRollbackDataRequest;
 import io.harness.exception.ExceptionUtils;
-import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.runtime.serverless.ServerlessAwsLambdaRuntimeException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.filesystem.FileIo;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
-import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.serializer.YamlUtils;
 import io.harness.serverless.AbstractExecutable;
 import io.harness.serverless.ConfigCredentialCommand;
@@ -69,16 +52,17 @@ import io.harness.serverless.ServerlessCommandTaskHelper;
 import io.harness.serverless.model.ServerlessAwsLambdaConfig;
 import io.harness.serverless.model.ServerlessDelegateTaskParams;
 
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.tuple.Pair;
-import software.wings.beans.AwsConfig;
-import software.wings.beans.AwsCrossAccountAttributes;
 import software.wings.beans.LogColor;
 import software.wings.beans.LogWeight;
 import software.wings.service.impl.AwsApiHelperService;
 import software.wings.service.intfc.aws.delegate.AwsCFHelperServiceDelegate;
 
+import com.amazonaws.services.s3.model.ListObjectsV2Request;
+import com.amazonaws.services.s3.model.ListObjectsV2Result;
+import com.amazonaws.services.s3.model.S3Object;
+import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.io.IOException;
@@ -93,12 +77,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeoutException;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.util.CollectionUtils;
-import software.wings.service.intfc.aws.delegate.AwsS3HelperServiceDelegate;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.tuple.Pair;
 
 @OwnedBy(CDP)
 @Singleton
@@ -365,45 +348,50 @@ public class ServerlessAwsCommandTaskHelper {
     Pattern deployTimeOutPattern = Pattern.compile(SERVICE_NAME_REGEX);
     List<String> outputLines = Arrays.asList(inputFile.split(NEW_LINE_REGEX));
     List<String> filteredOutputLines = outputLines.stream()
-            .filter(outputLine -> deployTimeOutPattern.matcher(outputLine).matches())
-            .collect(Collectors.toList());
+                                           .filter(outputLine -> deployTimeOutPattern.matcher(outputLine).matches())
+                                           .collect(Collectors.toList());
     serviceName =
-            filteredOutputLines.stream()
-                    .map(filteredOutputLine -> Iterables.getLast(Arrays.asList(filteredOutputLine.split(WHITESPACE_REGEX)), ""))
-                    .collect(Collectors.toList()).get(0);
+        filteredOutputLines.stream()
+            .map(filteredOutputLine -> Iterables.getLast(Arrays.asList(filteredOutputLine.split(WHITESPACE_REGEX)), ""))
+            .collect(Collectors.toList())
+            .get(0);
 
     return serviceName.trim();
   }
 
-  public Optional<String> getServerlessDeploymentBucketName(
-          LogCallback executionLogCallback, ServerlessPrepareRollbackDataRequest serverlessPrepareRollbackDataRequest, String manifestContent) {
+  public Optional<String> getServerlessDeploymentBucketName(LogCallback executionLogCallback,
+      ServerlessPrepareRollbackDataRequest serverlessPrepareRollbackDataRequest, String manifestContent) {
     ServerlessAwsLambdaManifestSchema serverlessManifestSchema =
-            parseServerlessManifest(executionLogCallback, manifestContent);
+        parseServerlessManifest(executionLogCallback, manifestContent);
     ServerlessAwsLambdaInfraConfig serverlessAwsLambdaInfraConfig =
-            (ServerlessAwsLambdaInfraConfig) serverlessPrepareRollbackDataRequest.getServerlessInfraConfig();
+        (ServerlessAwsLambdaInfraConfig) serverlessPrepareRollbackDataRequest.getServerlessInfraConfig();
     String cloudFormationStackName =
-            serverlessManifestSchema.getService() + "-" + serverlessAwsLambdaInfraConfig.getStage();
+        serverlessManifestSchema.getService() + "-" + serverlessAwsLambdaInfraConfig.getStage();
     String region = serverlessAwsLambdaInfraConfig.getRegion();
 
     return Optional.of(awsCFHelperServiceDelegate.getPhysicalIdBasedOnLogicalId(
-            awsNgConfigMapper.createAwsInternalConfig(serverlessAwsLambdaInfraConfig.getAwsConnectorDTO()), region,
-            cloudFormationStackName, LOGICAL_ID_FOR_SERVERLESS_DEPLOYMENT_BUCKET_RESOURCE));
+        awsNgConfigMapper.createAwsInternalConfig(serverlessAwsLambdaInfraConfig.getAwsConnectorDTO()), region,
+        cloudFormationStackName, LOGICAL_ID_FOR_SERVERLESS_DEPLOYMENT_BUCKET_RESOURCE));
   }
 
-  public Optional<String> getLastDeployedTimestamp(LogCallback executionLogCallback, List<String> timeStampsList, ServerlessPrepareRollbackDataRequest serverlessPrepareRollbackDataRequest) throws IOException {
-
-    Optional<String> optionalBucketName = getServerlessDeploymentBucketName(executionLogCallback, serverlessPrepareRollbackDataRequest, serverlessPrepareRollbackDataRequest.getManifestContent());
+  public Optional<String> getLastDeployedTimestamp(LogCallback executionLogCallback, List<String> timeStampsList,
+      ServerlessPrepareRollbackDataRequest serverlessPrepareRollbackDataRequest) throws IOException {
+    Optional<String> optionalBucketName = getServerlessDeploymentBucketName(executionLogCallback,
+        serverlessPrepareRollbackDataRequest, serverlessPrepareRollbackDataRequest.getManifestContent());
     String serviceName = getServiceName(serverlessPrepareRollbackDataRequest.getManifestContent());
-    String cloudFormationTemplate = getCurrentCloudFormationTemplate(executionLogCallback, serverlessPrepareRollbackDataRequest);
+    String cloudFormationTemplate =
+        getCurrentCloudFormationTemplate(executionLogCallback, serverlessPrepareRollbackDataRequest);
 
-    if(!optionalBucketName.isPresent() || serviceName.isEmpty() || cloudFormationTemplate.isEmpty()) {
+    if (!optionalBucketName.isPresent() || serviceName.isEmpty() || cloudFormationTemplate.isEmpty()) {
       return Optional.empty();
     }
 
     String bucketName = optionalBucketName.get();
-    ServerlessAwsLambdaInfraConfig serverlessAwsLambdaInfraConfig = (ServerlessAwsLambdaInfraConfig) serverlessPrepareRollbackDataRequest.getServerlessInfraConfig();
+    ServerlessAwsLambdaInfraConfig serverlessAwsLambdaInfraConfig =
+        (ServerlessAwsLambdaInfraConfig) serverlessPrepareRollbackDataRequest.getServerlessInfraConfig();
     String region = serverlessAwsLambdaInfraConfig.getRegion();
-    AwsInternalConfig awsConfig = awsNgConfigMapper.createAwsInternalConfig(serverlessAwsLambdaInfraConfig.getAwsConnectorDTO());
+    AwsInternalConfig awsConfig =
+        awsNgConfigMapper.createAwsInternalConfig(serverlessAwsLambdaInfraConfig.getAwsConnectorDTO());
 
     ListObjectsV2Request listObjectsV2Request = new ListObjectsV2Request();
     String objectKeyPrefix = "serverless/" + serviceName + "/" + serverlessAwsLambdaInfraConfig.getStage() + "/";
@@ -418,9 +406,11 @@ public class ServerlessAwsCommandTaskHelper {
       // in descending order. The most recent one comes first
       objectSummaryList.sort((o1, o2) -> o2.getLastModified().compareTo(o1.getLastModified()));
 
-      List<String> objectKeyListForCurrentBatch = objectSummaryList.stream()
-              .filter(
-                      objectSummary -> !objectSummary.getKey().endsWith("/") && objectSummary.getKey().contains("compiled-cloudformation-template.json"))
+      List<String> objectKeyListForCurrentBatch =
+          objectSummaryList.stream()
+              .filter(objectSummary
+                  -> !objectSummary.getKey().endsWith("/")
+                      && objectSummary.getKey().contains("compiled-cloudformation-template.json"))
               .map(S3ObjectSummary::getKey)
               .collect(toList());
       objectKeyList.addAll(objectKeyListForCurrentBatch);
@@ -430,14 +420,13 @@ public class ServerlessAwsCommandTaskHelper {
     // We are not using stream here since addDataToResponse throws a bunch of exceptions and we want to throw them back
     // to the caller.
     for (String objectKey : objectKeyList) {
-      Pair<String, InputStream> stringInputStreamPair =
-              downloadArtifact(awsConfig, region, bucketName, objectKey);
-      if(stringInputStreamPair != null) {
+      Pair<String, InputStream> stringInputStreamPair = downloadArtifact(awsConfig, region, bucketName, objectKey);
+      if (stringInputStreamPair != null) {
         String object = IOUtils.toString(stringInputStreamPair.getValue(), StandardCharsets.UTF_8);
         if (object.equals(cloudFormationTemplate)) {
           String trimmedObjectKey = objectKey.replaceFirst(objectKeyPrefix, "");
           String timeStamp = trimmedObjectKey.substring(0, trimmedObjectKey.indexOf('-'));
-          if(timeStampsList.contains(timeStamp)) {
+          if (timeStampsList.contains(timeStamp)) {
             return Optional.of(timeStamp);
           }
         }
@@ -448,7 +437,7 @@ public class ServerlessAwsCommandTaskHelper {
   }
 
   private Pair<String, InputStream> downloadArtifact(
-          AwsInternalConfig awsInternalConfig, String region, String bucketName, String key) {
+      AwsInternalConfig awsInternalConfig, String region, String bucketName, String key) {
     S3Object object = awsApiHelperService.getObjectFromS3(awsInternalConfig, region, bucketName, key);
     if (object != null) {
       return Pair.of(object.getKey(), object.getObjectContent());

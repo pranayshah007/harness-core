@@ -19,8 +19,6 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
-import com.amazonaws.services.s3.model.ListObjectsV2Request;
-import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.aws.AwsCallTracker;
@@ -75,6 +73,8 @@ import com.amazonaws.services.ecs.model.ServiceNotFoundException;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.Bucket;
+import com.amazonaws.services.s3.model.ListObjectsV2Request;
+import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClient;
@@ -156,9 +156,9 @@ public class AwsApiHelperService {
   }
 
   public ListObjectsV2Result listObjectsInS3(
-          AwsInternalConfig awsConfig, String region, ListObjectsV2Request listObjectsV2Request) {
+      AwsInternalConfig awsConfig, String region, ListObjectsV2Request listObjectsV2Request) {
     try (CloseableAmazonWebServiceClient<AmazonS3Client> closeableAmazonS3Client =
-                 new CloseableAmazonWebServiceClient(getAmazonS3Client(awsConfig, region))) {
+             new CloseableAmazonWebServiceClient(getAmazonS3Client(awsConfig, region))) {
       tracker.trackS3Call("Get Bucket Region");
       return closeableAmazonS3Client.getClient().listObjectsV2(listObjectsV2Request);
     } catch (AmazonServiceException amazonServiceException) {

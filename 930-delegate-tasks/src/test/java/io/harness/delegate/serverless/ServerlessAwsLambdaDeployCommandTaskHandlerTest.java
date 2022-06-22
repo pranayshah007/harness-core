@@ -165,7 +165,7 @@ public class ServerlessAwsLambdaDeployCommandTaskHandlerTest extends CategoryTes
             (ServerlessAwsLambdaManifestConfig) serverlessManifestConfig);
     doReturn(Optional.of(previousVersionTimeStamp))
         .when(serverlessAwsCommandTaskHelper)
-            .getLastDeployedTimestamp(any(), any(), any());
+        .getLastDeployedTimestamp(any(), any(), any());
 
     doReturn(deployServerlessCliResponse)
         .when(serverlessAwsCommandTaskHelper)
@@ -254,7 +254,7 @@ public class ServerlessAwsLambdaDeployCommandTaskHandlerTest extends CategoryTes
             (ServerlessAwsLambdaManifestConfig) serverlessManifestConfig);
     doReturn(Optional.of(previousVersionTimeStamp))
         .when(serverlessAwsCommandTaskHelper)
-            .getLastDeployedTimestamp(any(), any(), any());
+        .getLastDeployedTimestamp(any(), any(), any());
 
     doReturn(deployServerlessCliResponse)
         .when(serverlessAwsCommandTaskHelper)

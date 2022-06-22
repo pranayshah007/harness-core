@@ -246,7 +246,8 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
     if (artifactOutcome.isPresent()) {
       serverlessArtifactConfig = getArtifactConfig(artifactOutcome.get(), ambiance);
     }
-    String manifestFileOverrideContent = renderManifestContent(ambiance, manifestFilePathContent.get().getValue(), serverlessArtifactConfig);
+    String manifestFileOverrideContent =
+        renderManifestContent(ambiance, manifestFilePathContent.get().getValue(), serverlessArtifactConfig);
     ServerlessGitFetchOutcome serverlessGitFetchOutcome = ServerlessGitFetchOutcome.builder()
                                                               .manifestFilePathContent(manifestFilePathContent.get())
                                                               .manifestFileOverrideContent(manifestFileOverrideContent)

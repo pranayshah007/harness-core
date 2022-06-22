@@ -254,8 +254,9 @@ public class ServerlessStepCommonHelperTest extends CategoryTest {
                                                       .taskRequest(TaskRequest.newBuilder().build())
                                                       .build();
     Optional<Pair<String, String>> manifestFilePathContent = Optional.of(Pair.of("a", "b"));
-    doReturn(OptionalOutcome.builder().found(false).build()).when(outcomeService).resolveOptional(
-            ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.ARTIFACTS));
+    doReturn(OptionalOutcome.builder().found(false).build())
+        .when(outcomeService)
+        .resolveOptional(ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.ARTIFACTS));
     doReturn(manifestFilePathContent).when(serverlessStepHelper).getManifestFileContent(any(), any());
     doReturn(expectedTaskChainResponse)
         .when(serverlessAwsLambdaDeployStep)
