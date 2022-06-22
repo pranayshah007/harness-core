@@ -302,7 +302,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = ARPITJ)
   @Category(UnitTests.class)
-  public void testCountUniqueEnabledServices_someCommon() {
+  public void testCountUniqueEnabledServices_someCommonServiceIdentifier() {
     MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTOBuilder("ms1", "service1", "env1").build();
     monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
     monitoredServiceDTO = createMonitoredServiceDTOBuilder("ms2", "service2", "env1").build();

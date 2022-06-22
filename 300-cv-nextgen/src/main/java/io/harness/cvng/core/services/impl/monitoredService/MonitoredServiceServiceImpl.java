@@ -142,10 +142,16 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import javax.ws.rs.NotFoundException;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.SneakyThrows;
 import lombok.Value;
+import lombok.experimental.FieldDefaults;
+import lombok.experimental.SuperBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -1248,15 +1254,14 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
 
   private boolean isUniqueService(ProjectParams projectParams, MonitoredService monitoredService) {
     List<MonitoredService> enabledMonitoredServices = getEnabledMonitoredServices(projectParams.getAccountIdentifier());
-    List<String> ServiceList = new ArrayList<String>() {
-      {
-        add(monitoredService.getServiceIdentifier());
-        add(monitoredService.getOrgIdentifier());
-        add(monitoredService.getProjectIdentifier());
-      }
-    };
 
-    return getDistictServicesFromMonitoredServices(enabledMonitoredServices).contains(ServiceList);
+    return getServiceParamsSet(enabledMonitoredServices)
+        .contains(ServiceParams.builder()
+                      .serviceIdentifier(monitoredService.getServiceIdentifier())
+                      .orgIdentifier(monitoredService.getOrgIdentifier())
+                      .projectIdentifier(monitoredService.getProjectIdentifier())
+                      .accountIdentifier(monitoredService.getAccountId())
+                      .build());
   }
 
   @Override
@@ -1666,29 +1671,20 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
     if (!featureFlagService.isFeatureFlagEnabled(accountId, FeatureFlagNames.CVNG_LICENSE_ENFORCEMENT)) {
       return 0;
     }
-
     List<MonitoredService> enabledMonitoredServices = getEnabledMonitoredServices(accountId);
-
-    return getDistictServicesFromMonitoredServices(enabledMonitoredServices).size();
+    return getServiceParamsSet(enabledMonitoredServices).size();
   }
 
-  private Set<List<String>> getDistictServicesFromMonitoredServices(List<MonitoredService> monitoredServices) {
-    Set<List<String>> distinctServiceSet = new HashSet<>();
-
-    for (MonitoredService monitoredService : monitoredServices) {
-      List<String> ServiceList = new ArrayList<String>() {
-        {
-          add(monitoredService.getServiceIdentifier());
-          add(monitoredService.getOrgIdentifier());
-          add(monitoredService.getProjectIdentifier());
-        }
-      };
-      if (!distinctServiceSet.contains(ServiceList)) {
-        distinctServiceSet.add(ServiceList);
-      }
-    }
-
-    return distinctServiceSet;
+  private Set<ServiceParams> getServiceParamsSet(List<MonitoredService> monitoredServices) {
+    return monitoredServices.stream()
+        .map(monitoredService
+            -> ServiceParams.builder()
+                   .serviceIdentifier(monitoredService.getServiceIdentifier())
+                   .orgIdentifier(monitoredService.getOrgIdentifier())
+                   .projectIdentifier(monitoredService.getProjectIdentifier())
+                   .accountIdentifier(monitoredService.getAccountId())
+                   .build())
+        .collect(Collectors.toSet());
   }
 
   private List<MonitoredService> getEnabledMonitoredServices(String accountId) {
@@ -1819,5 +1815,51 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
   @Builder
   private static class Filter {
     String notificationRuleRef;
+  }
+
+  @FieldDefaults(level = AccessLevel.PRIVATE)
+  @Data
+  @SuperBuilder
+  @NoArgsConstructor
+  @AllArgsConstructor
+  private static class ServiceParams extends ProjectParams {
+    String serviceIdentifier;
+
+    @Override
+    public boolean equals(Object obj) {
+      if (obj == null) {
+        return false;
+      }
+      if (getClass() != obj.getClass()) {
+        return false;
+      }
+      List<String> firstServiceParams = new ArrayList<>();
+      firstServiceParams.add(this.serviceIdentifier);
+      firstServiceParams.add(this.getProjectIdentifier());
+      firstServiceParams.add(this.getOrgIdentifier());
+      firstServiceParams.add(this.getAccountIdentifier());
+
+      List<String> secondServiceParams = new ArrayList<>();
+      secondServiceParams.add(((ServiceParams) obj).serviceIdentifier);
+      secondServiceParams.add(((ServiceParams) obj).getProjectIdentifier());
+      secondServiceParams.add(((ServiceParams) obj).getOrgIdentifier());
+      secondServiceParams.add(((ServiceParams) obj).getAccountIdentifier());
+      return firstServiceParams.equals(secondServiceParams);
+    }
+
+    @Override
+    public int hashCode() {
+      final int prime = 31;
+      int result = 1;
+      List<String> serviceParams = new ArrayList<>();
+      serviceParams.add(this.serviceIdentifier);
+      serviceParams.add(this.getProjectIdentifier());
+      serviceParams.add(this.getOrgIdentifier());
+      serviceParams.add(this.getAccountIdentifier());
+      for (String s : serviceParams) {
+        result = result * prime + s.hashCode();
+      }
+      return result;
+    }
   }
 }
