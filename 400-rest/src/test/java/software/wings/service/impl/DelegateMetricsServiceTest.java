@@ -89,7 +89,7 @@ public class DelegateMetricsServiceTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testRecordResponseMetrics() {
     delegateMetricsService.recordDelegateTaskResponseMetrics(
-        createDefaultDelegateTask(), createDefaultDelegateTaskResponse(), TEST_CUSTOM_METRIC_NAME);
+            createDefaultDelegateTask(), createDefaultDelegateTaskResponse(), TEST_CUSTOM_METRIC_NAME);
 
     Mockito.verify(metricService).incCounter(eq(TEST_CUSTOM_METRIC_NAME));
   }

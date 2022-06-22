@@ -9,28 +9,24 @@ package io.harness.delegate.beans;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.tasks.ResponseData;
 
-import software.wings.beans.SerializationFormat;
 import software.wings.beans.TaskType;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import lombok.Builder;
 import lombok.Data;
 
 @Data
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = true)
+@JsonDeserialize(using = DelegateTaskResponseV2Deserializer.class)
 @TargetModule(HarnessModule._955_DELEGATE_BEANS)
-public class DelegateTaskResponse {
-  private String accountId;
-  private DelegateResponseData response;
-  private ResponseCode responseCode;
-  TaskType taskType;
-  @Builder.Default SerializationFormat serializationFormat = SerializationFormat.KRYO;
-
-  public enum ResponseCode {
-    OK,
-    FAILED,
-    RETRY_ON_OTHER_DELEGATE,
-  }
+public class DelegateTaskResponseV2 {
+  private String id;
+  @JsonProperty("data") private ResponseData responseData;
+  @JsonProperty("type") private TaskType taskType;
+  @JsonProperty("code") private DelegateTaskResponse.ResponseCode responseCode;
 }
