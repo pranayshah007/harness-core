@@ -1,6 +1,5 @@
 package io.harness.telemetry;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
 import io.harness.account.AccountClient;
 import io.harness.annotations.dev.OwnedBy;
@@ -34,7 +33,6 @@ public class CiTelemetryPublisher {
         try {
             String accountId = getAccountId();
             if (EmptyPredicate.isNotEmpty(accountId) || !accountId.equals(GLOBAL_ACCOUNT_ID)) {
-                ciOverviewDashboardService.getActiveCommitterCount(accountId);
                 HashMap<String, Object> map = new HashMap<>();
                 map.put("group_type", ACCOUNT);
                 map.put("group_id", accountId);
@@ -52,7 +50,6 @@ public class CiTelemetryPublisher {
         }
     }
 
-    @VisibleForTesting
     String getAccountId() {
         List<AccountDTO> accountDTOList = RestClientUtils.getResponse(accountClient.getAllAccounts());
         String accountId = accountDTOList.get(0).getIdentifier();
