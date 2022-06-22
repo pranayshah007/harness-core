@@ -53,6 +53,7 @@ import software.wings.api.InstanceElementListParam;
 import software.wings.api.PhaseElement;
 import software.wings.api.ServiceElement;
 import software.wings.api.customdeployment.InstanceFetchStateExecutionData;
+import software.wings.api.customdeployment.InstanceFetchStateExecutionData.InstanceFetchStateExecutionDataBuilder;
 import software.wings.api.instancedetails.InstanceInfoVariables;
 import software.wings.api.shellscript.provision.ShellScriptProvisionExecutionData;
 import software.wings.beans.Activity;
@@ -62,6 +63,7 @@ import software.wings.beans.Log.Builder;
 import software.wings.beans.LogColor;
 import software.wings.beans.ServiceTemplate;
 import software.wings.beans.TaskType;
+import software.wings.beans.artifact.Artifact;
 import software.wings.beans.command.CommandUnit;
 import software.wings.beans.command.FetchInstancesCommandUnit;
 import software.wings.beans.shellscript.provisioner.ShellScriptProvisionParameters;
@@ -244,16 +246,35 @@ public class InstanceFetchState extends State {
 
     appendDelegateTaskDetails(context, delegateTask);
 
+    Artifact artifact = null;
+    if (isRollback()) {
+      artifact = workflowStandardParamsExtensionService.getRollbackArtifactForService(
+          workflowStandardParams, infrastructureMapping.getServiceId());
+    } else {
+      artifact = workflowStandardParamsExtensionService.getArtifactForService(
+          workflowStandardParams, infrastructureMapping.getServiceId());
+    }
+
+    InstanceFetchStateExecutionDataBuilder builder =
+        InstanceFetchStateExecutionData.builder()
+            .activityId(activityId)
+            .hostObjectArrayPath(deploymentTypeTemplate.getHostObjectArrayPath())
+            .hostAttributes(deploymentTypeTemplate.getHostAttributes())
+            .instanceFetchScript(getRenderedScriptExceptSecrets(taskParameters.getScriptBody()))
+            .tags(getRenderedTags(context));
+
+    if (artifact != null) {
+      builder.artifactId(artifact.getUuid())
+          .artifactName(artifact.getDisplayName())
+          .artifactSourceName(artifact.getArtifactSourceName())
+          .artifactStreamId(artifact.getArtifactStreamId())
+          .artifactBuildNum(artifact.getBuildNo());
+    }
+
     return ExecutionResponse.builder()
         .async(true)
         .correlationId(activityId)
-        .stateExecutionData(InstanceFetchStateExecutionData.builder()
-                                .activityId(activityId)
-                                .hostObjectArrayPath(deploymentTypeTemplate.getHostObjectArrayPath())
-                                .hostAttributes(deploymentTypeTemplate.getHostAttributes())
-                                .instanceFetchScript(getRenderedScriptExceptSecrets(taskParameters.getScriptBody()))
-                                .tags(getRenderedTags(context))
-                                .build())
+        .stateExecutionData(builder.build())
         .build();
   }
 
