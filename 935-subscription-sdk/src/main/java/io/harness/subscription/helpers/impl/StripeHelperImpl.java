@@ -332,6 +332,11 @@ public class StripeHelperImpl implements StripeHelper {
   }
 
   @Override
+  public void payInvoice(String invoiceId) {
+    stripeHandler.payInvoice(invoiceId);
+  }
+
+  @Override
   public PaymentMethodCollectionDTO listPaymentMethods(String customerId) {
     PaymentMethodCollection paymentMethodCollection = stripeHandler.retrievePaymentMethodsUnderCustomer(customerId);
     return toPaymentMethodCollectionDTO(paymentMethodCollection);

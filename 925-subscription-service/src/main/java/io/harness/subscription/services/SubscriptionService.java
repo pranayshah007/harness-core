@@ -23,6 +23,7 @@ import java.util.List;
 public interface SubscriptionService {
   PriceCollectionDTO listPrices(String accountIdentifier, ModuleType moduleType);
   InvoiceDetailDTO previewInvoice(String accountIdentifier, SubscriptionDTO subscriptionDTO);
+  void payInvoice(String invoiceId);
 
   SubscriptionDetailDTO createSubscription(String accountIdentifier, SubscriptionDTO subscriptionDTO);
   InvoiceDetailDTO createFfSubscription(String accountIdentifier, FfSubscriptionDTO subscriptionDTO);

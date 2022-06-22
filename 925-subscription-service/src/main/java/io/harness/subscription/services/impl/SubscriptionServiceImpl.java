@@ -119,6 +119,11 @@ public class SubscriptionServiceImpl implements SubscriptionService {
   }
 
   @Override
+  public void payInvoice(String invoiceId) {
+    stripeHelper.payInvoice(invoiceId);
+  }
+
+  @Override
   public InvoiceDetailDTO createFfSubscription(String accountIdentifier, FfSubscriptionDTO subscriptionDTO) {
     isSelfServiceEnable(accountIdentifier);
 

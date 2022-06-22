@@ -82,6 +82,7 @@ import javax.ws.rs.QueryParam;
 @NextGenManagerAuth
 public class SubscriptionResource {
   private static final String SUBSCRIPTION_ID = "subscriptionId";
+  private static final String INVOICE_ID = "invoiceId";
   private static final String CUSTOMER_ID = "customerId";
   @Inject private SubscriptionService subscriptionService;
 
@@ -361,6 +362,14 @@ public class SubscriptionResource {
   @PublicApi
   public RestResponse<Void> syncStripeEvent(@NotNull String stripeEvent) {
     subscriptionService.syncStripeEvent(stripeEvent);
+    return new RestResponse();
+  }
+
+  @POST
+  @Path("/pay_invoice")
+  @PublicApi
+  public RestResponse<Void> payInvoice(@NotNull @QueryParam(INVOICE_ID) String invoiceId) {
+    subscriptionService.payInvoice(invoiceId);
     return new RestResponse();
   }
 }
