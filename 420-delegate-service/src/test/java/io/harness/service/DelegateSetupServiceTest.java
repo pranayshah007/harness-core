@@ -9,6 +9,7 @@ package io.harness.service;
 
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.delegate.beans.DelegateType.KUBERNETES;
+import static io.harness.rule.OwnerRule.ANUPAM;
 import static io.harness.rule.OwnerRule.ARPIT;
 import static io.harness.rule.OwnerRule.BOJAN;
 import static io.harness.rule.OwnerRule.MARKO;
@@ -46,6 +47,7 @@ import io.harness.delegate.beans.DelegateSizeDetails;
 import io.harness.delegate.beans.DelegateToken;
 import io.harness.delegate.beans.DelegateTokenStatus;
 import io.harness.delegate.filter.DelegateFilterPropertiesDTO;
+import io.harness.delegate.filter.DelegateInstanceConnectivityStatus;
 import io.harness.delegate.utils.DelegateEntityOwnerHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.persistence.HPersistence;
@@ -283,6 +285,28 @@ public class DelegateSetupServiceTest extends DelegateServiceTestBase {
     assertThat(delegateGroupListing.getDelegateGroupDetails())
         .extracting(DelegateGroupDetails::getGroupName)
         .containsOnly("grp1");
+  }
+
+  @Test
+  @Owner(developers = ANUPAM)
+  @Category(UnitTests.class)
+  public void listV2ShouldReturnDelegateGroupsFilteredByDelegateInstanceStatus() {
+    prepareInitialData();
+
+    DelegateFilterPropertiesDTO filterPropertiesConnected =
+        DelegateFilterPropertiesDTO.builder().status(DelegateInstanceConnectivityStatus.CONNECTED).build();
+
+    DelegateFilterPropertiesDTO filterPropertiesDisconnected =
+        DelegateFilterPropertiesDTO.builder().status(DelegateInstanceConnectivityStatus.DISCONNECTED).build();
+
+    DelegateGroupListing delegateGroupListing1 =
+        delegateSetupService.listDelegateGroupDetailsV2(TEST_ACCOUNT_ID, null, null, "", "", filterPropertiesConnected);
+
+    DelegateGroupListing delegateGroupListing2 = delegateSetupService.listDelegateGroupDetailsV2(
+        TEST_ACCOUNT_ID, null, null, "", "", filterPropertiesDisconnected);
+
+    assertThat(delegateGroupListing1.getDelegateGroupDetails()).hasSize(2);
+    assertThat(delegateGroupListing2.getDelegateGroupDetails()).hasSize(0);
   }
 
   @Test
