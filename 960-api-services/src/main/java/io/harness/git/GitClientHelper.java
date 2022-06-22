@@ -91,6 +91,8 @@ public class GitClientHelper {
   private static final Integer REPO_GROUP = 7;
   private static final Integer SCM_GROUP = 3;
   private static final Integer PROTOCOL_GROUP = 1;
+  private static final String PATH_SEPARATOR = "/";
+  private static final String AZURE_REPO_GIT_LABEL = "/_git/";
 
   static {
     try {
@@ -498,5 +500,16 @@ public class GitClientHelper {
       throw new InvalidRequestException(
           format("Invalid repo url  %s,should start with either http:// , https:// , ssh:// or git@", url));
     }
+  }
+
+  public static String getCompleteUrlForAccountLevelAzureConnector(String url, String projectName, String repoName) {
+    String azureCompleteUrl = StringUtils.join(
+        StringUtils.stripEnd(url, PATH_SEPARATOR), PATH_SEPARATOR, StringUtils.stripStart(projectName, PATH_SEPARATOR));
+    if (GitClientHelper.isHTTPProtocol(azureCompleteUrl)) {
+      azureCompleteUrl = StringUtils.join(azureCompleteUrl, AZURE_REPO_GIT_LABEL);
+    } else if (GitClientHelper.isSSHProtocol(azureCompleteUrl)) {
+      azureCompleteUrl = StringUtils.join(azureCompleteUrl, PATH_SEPARATOR);
+    }
+    return StringUtils.join(azureCompleteUrl, StringUtils.stripStart(repoName, PATH_SEPARATOR));
   }
 }

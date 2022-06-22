@@ -52,11 +52,11 @@ public interface ScmClientFacilitatorService {
   GitFileContent getFileContent(String yamlGitConfigIdentifier, String accountIdentifier, String orgIdentifier,
       String projectIdentifier, String filePath, String branch, String commitId);
 
-  FileContent getFile(String accountIdentifier, String orgIdentifier, String projectIdentifier, String connectorRef,
-      String repoName, String branchName, String filePath, String commitId);
+  FileContent getFile(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+      ScmConnector scmConnector, String repoName, String branchName, String filePath, String commitId);
 
   CreatePRResponse createPullRequest(
-      Scope scope, String connectorRef, String repoName, String sourceBranch, String targetBranch, String title);
+      Scope scope, ScmConnector scmConnector, String repoName, String sourceBranch, String targetBranch, String title);
 
   CreatePRDTO createPullRequest(GitPRCreateRequest gitCreatePRRequest);
 

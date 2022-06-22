@@ -26,11 +26,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(CDP)
+@Slf4j
 @Singleton
 public class AzureAppServiceResourceUtilities {
   @Inject private AzureContainerRegistryService azureContainerRegistryService;
+  private static final int defaultTimeoutInterval = 10;
 
   public Map<String, AzureAppServiceApplicationSetting> getAppSettingsToAdd(
       List<AzureAppServiceApplicationSetting> applicationSettings) {
@@ -56,5 +59,14 @@ public class AzureAppServiceResourceUtilities {
     }
 
     return dockerSettings;
+  }
+
+  public int getTimeoutIntervalInMin(Integer timeoutIntervalInMin) {
+    if (timeoutIntervalInMin != null) {
+      return timeoutIntervalInMin;
+    } else {
+      log.warn("Missing timeout interval. Setting timeout interval to default 10 min");
+      return defaultTimeoutInterval;
+    }
   }
 }

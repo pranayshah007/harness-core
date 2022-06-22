@@ -20,10 +20,6 @@ public interface VerificationJobService {
   void create(String accountId, VerificationJobDTO verificationJobDTO);
   void save(VerificationJob verificationJob);
 
-  VerificationJob getResolvedHealthVerificationJob(String accountIdentifier, String orgIdentifier,
-      String projectIdentifier, String envIdentifier, String serviceIdentifier);
-  VerificationJob getDefaultHealthVerificationJob(String accountId, String orgIdentifier, String projectIdentifier);
-
   VerificationJob fromDto(VerificationJobDTO verificationJobDTO);
   void createDefaultVerificationJobs(String accountId, String orgIdentifier, String projectIdentifier);
 }

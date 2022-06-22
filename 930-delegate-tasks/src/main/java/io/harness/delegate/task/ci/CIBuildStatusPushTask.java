@@ -8,6 +8,7 @@
 package io.harness.delegate.task.ci;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.delegate.beans.connector.scm.gitlab.GitlabApiAccessType.OAUTH;
 import static io.harness.delegate.beans.connector.scm.gitlab.GitlabApiAccessType.TOKEN;
 
 import static java.lang.String.format;
@@ -43,6 +44,7 @@ import io.harness.delegate.beans.connector.scm.github.GithubAppSpecDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubTokenSpecDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabConnectorDTO;
+import io.harness.delegate.beans.connector.scm.gitlab.GitlabOauthDTO;
 import io.harness.delegate.beans.connector.scm.gitlab.GitlabTokenSpecDTO;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.AbstractDelegateRunnableTask;
@@ -340,6 +342,10 @@ public class CIBuildStatusPushTask extends AbstractDelegateRunnableTask {
           GitlabTokenSpecDTO gitlabTokenSpecDTO = (GitlabTokenSpecDTO) gitConfigDTO.getApiAccess().getSpec();
           secretDecryptionService.decrypt(gitlabTokenSpecDTO, gitConnector.getEncryptedDataDetails());
           return new String(gitlabTokenSpecDTO.getTokenRef().getDecryptedValue());
+        } else if (gitConfigDTO.getApiAccess().getType() == OAUTH) {
+          GitlabOauthDTO gitlabOauthDTO = (GitlabOauthDTO) gitConfigDTO.getApiAccess().getSpec();
+          secretDecryptionService.decrypt(gitlabOauthDTO, gitConnector.getEncryptedDataDetails());
+          return new String(gitlabOauthDTO.getTokenRef().getDecryptedValue());
         } else {
           throw new CIStageExecutionException(
               format("Unsupported access type %s for gitlab status", gitConfigDTO.getApiAccess().getType()));

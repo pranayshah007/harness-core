@@ -133,7 +133,7 @@ public class AzureRepoConnectorDTO extends ConnectorConfigDTO implements ScmConn
                 gitRepositoryDTO.getName(), linkedRepo));
       }
       return getUrl();
-    } else if(isEmpty(gitRepositoryDTO.getName())) {
+    } else if (isEmpty(gitRepositoryDTO.getName()) && isNotEmpty(gitRepositoryDTO.getProjectName())) {
       //this is for project level connection url. In case RepoName is empty for Account Type Connector, Project level connection url is returned.
       return FilePathUtils.addEndingSlashIfMissing(getUrl()) + gitRepositoryDTO.getProjectName();
     }

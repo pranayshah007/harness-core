@@ -9,6 +9,7 @@ package io.harness.beans;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.product.ci.scm.proto.AzureWebhookEvent;
 import io.harness.product.ci.scm.proto.BitbucketCloudWebhookEvent;
 import io.harness.product.ci.scm.proto.BitbucketServerWebhookEvent;
 import io.harness.product.ci.scm.proto.GithubWebhookEvent;
@@ -33,19 +34,24 @@ public enum HookEventType {
           BitbucketCloudWebhookEvent.BITBUCKET_CLOUD_PULL_REQUEST_COMMENT),
       Arrays.asList(BitbucketServerWebhookEvent.BITBUCKET_SERVER_PR,
           BitbucketServerWebhookEvent.BITBUCKET_SERVER_BRANCH_PUSH_TAG,
-          BitbucketServerWebhookEvent.BITBUCKET_SERVER_PR_COMMENT));
+          BitbucketServerWebhookEvent.BITBUCKET_SERVER_PR_COMMENT),
+      Arrays.asList(AzureWebhookEvent.AZURE_PUSH, AzureWebhookEvent.AZURE_PULLREQUEST_CREATED,
+          AzureWebhookEvent.AZURE_PULLREQUEST_MERGED, AzureWebhookEvent.AZURE_PULLREQUEST_UPDATED));
 
   public List<GithubWebhookEvent> githubWebhookEvents;
   public List<GitlabWebhookEvent> gitlabWebhookEvents;
   public List<BitbucketCloudWebhookEvent> bitbucketCloudWebhookEvents;
   public List<BitbucketServerWebhookEvent> bitbucketServerWebhookEvents;
+  public List<AzureWebhookEvent> azureWebhookEvents;
 
   HookEventType(List<GithubWebhookEvent> githubWebhookEvents, List<GitlabWebhookEvent> gitlabWebhookEvents,
       List<BitbucketCloudWebhookEvent> bitbucketCloudWebhookEvents,
-      List<BitbucketServerWebhookEvent> bitbucketServerWebhookEvents) {
+      List<BitbucketServerWebhookEvent> bitbucketServerWebhookEvents,
+      List<AzureWebhookEvent> azureWebhookEvents) {
     this.githubWebhookEvents = githubWebhookEvents;
     this.gitlabWebhookEvents = gitlabWebhookEvents;
     this.bitbucketCloudWebhookEvents = bitbucketCloudWebhookEvents;
     this.bitbucketServerWebhookEvents = bitbucketServerWebhookEvents;
+    this.azureWebhookEvents = azureWebhookEvents;
   }
 }

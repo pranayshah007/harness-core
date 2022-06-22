@@ -15,12 +15,15 @@ import static io.harness.filesystem.FileIo.deleteDirectoryAndItsContentIfExists;
 import static io.harness.logging.LogLevel.INFO;
 import static io.harness.provision.TerraformConstants.TERRAFORM_STATE_FILE_NAME;
 import static io.harness.provision.TerraformConstants.WORKSPACE_STATE_FILE_PATH_FORMAT;
+import static io.harness.provision.TerragruntConstants.FORCE_FLAG;
+import static io.harness.provision.TerragruntConstants.TF_DEFAULT_BINARY_PATH;
 
 import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.cli.CliResponse;
 import io.harness.exception.FileReadException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.filesystem.FileIo;
@@ -29,6 +32,11 @@ import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.provision.TfVarSource.TfVarSourceType;
 import io.harness.security.encryption.EncryptedDataDetail;
+import io.harness.serializer.JsonUtils;
+import io.harness.terraform.TerraformClient;
+import io.harness.terraform.TerraformHelperUtils;
+import io.harness.terraform.beans.TerraformVersion;
+import io.harness.terragrunt.TerragruntCliCommandRequestParams;
 
 import software.wings.api.terraform.TfVarGitSource;
 import software.wings.beans.GitConfig;
@@ -58,6 +66,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeoutException;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -76,9 +85,24 @@ public class TerragruntProvisionTaskHelper {
   @Inject private GitClientHelper gitClientHelper;
   @Inject private EncryptionService encryptionService;
   @Inject private DelegateFileManager delegateFileManager;
+  @Inject private TerraformClient terraformClient;
+
+  static String getTerraformConfigFileDirectoryPath(CliResponse tgInfoResponse)
+      throws InterruptedException, IOException, TimeoutException {
+    String tgInfoOutput = tgInfoResponse.getOutput();
+    return (String) JsonUtils.jsonPath(tgInfoOutput, "WorkingDir");
+  }
+
+  public static String getTfBinaryPath(CliResponse tgInfoResponse) {
+    if (tgInfoResponse != null && tgInfoResponse.getOutput() != null) {
+      String tgInfoOutput = tgInfoResponse.getOutput();
+      return (String) JsonUtils.jsonPath(tgInfoOutput, "TerraformBinary");
+    }
+    log.warn("Error in finding terraform binary path, using default path");
+    return TF_DEFAULT_BINARY_PATH;
+  }
 
   // Todo: refactor to use same methods in Terraform
-
   public void setGitRepoTypeAndSaveExecutionLog(
       TerragruntProvisionParameters parameters, GitConfig gitConfig, LogCallback logCallback) {
     if (isNotEmpty(gitConfig.getBranch())) {
@@ -297,6 +321,16 @@ public class TerragruntProvisionTaskHelper {
         }
       }
     }
+  }
+
+  public String getTfAutoApproveArgument(TerragruntCliCommandRequestParams cliParams, String tfBinaryPath)
+      throws IOException, InterruptedException, TimeoutException {
+    if (!cliParams.isUseAutoApproveFlag()) {
+      return FORCE_FLAG;
+    }
+    TerraformVersion version =
+        terraformClient.version(tfBinaryPath, cliParams.getTimeoutInMillis(), cliParams.getDirectory());
+    return TerraformHelperUtils.getAutoApproveArgument(version);
   }
 
   public static LogCallback getExecutionLogCallback(

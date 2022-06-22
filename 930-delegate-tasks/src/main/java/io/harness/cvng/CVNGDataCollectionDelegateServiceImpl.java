@@ -20,7 +20,6 @@ import io.harness.cvng.beans.cvnglog.ApiCallLogDTO.ApiCallLogDTOField;
 import io.harness.cvng.beans.cvnglog.TraceableType;
 import io.harness.datacollection.DataCollectionDSLService;
 import io.harness.datacollection.entity.RuntimeParameters;
-import io.harness.errorhandling.NGErrorHelper;
 import io.harness.perpetualtask.datacollection.DataCollectionLogContext;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.SecretDecryptionService;
@@ -47,7 +46,6 @@ public class CVNGDataCollectionDelegateServiceImpl implements CVNGDataCollection
   @Inject private Clock clock;
   @Inject private DelegateLogService delegateLogService;
   @Inject @Named("cvngSyncCallExecutor") protected ExecutorService cvngSyncCallExecutor;
-  @Inject private NGErrorHelper ngErrorHelper;
 
   @Override
   public String getDataCollectionResult(String accountId, DataCollectionRequest dataCollectionRequest,
@@ -58,7 +56,15 @@ public class CVNGDataCollectionDelegateServiceImpl implements CVNGDataCollection
             dataCollectionRequest.getConnectorConfigDTO().getDecryptableEntities();
 
         if (isNotEmpty(decryptableEntities)) {
-          for (int decryptableEntityIndex = 0; decryptableEntityIndex < decryptableEntities.size();
+          if (decryptableEntities.size() != encryptedDataDetails.size()) {
+            log.warn("Size of decryptableEntities is not same as size of encryptedDataDetails. "
+                + "Probably it is because of version difference between delegate and manager and decyptable entities got added/removed.");
+          }
+          // using min of encryptedDataDetails, decryptableEntities size to avoid index out of bound exception because
+          // of comparability issues. This allows us to add/remove decryptableEntities without breaking this. This can
+          // still cause issues if not done carefully.
+          for (int decryptableEntityIndex = 0;
+               decryptableEntityIndex < Math.min(decryptableEntities.size(), encryptedDataDetails.size());
                decryptableEntityIndex++) {
             DecryptableEntity decryptableEntity = decryptableEntities.get(decryptableEntityIndex);
             List<EncryptedDataDetail> encryptedDataDetail = encryptedDataDetails.get(decryptableEntityIndex);

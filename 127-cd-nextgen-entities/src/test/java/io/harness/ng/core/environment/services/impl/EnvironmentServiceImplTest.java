@@ -369,7 +369,7 @@ public class EnvironmentServiceImplTest extends CDNGEntitiesTestBase {
     environmentService.create(createEnvironmentRequest);
 
     String environmentInputsYaml =
-        environmentService.createEnvironmentInputsYaml("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", "IDENTIFIER");
+        environmentService.createEnvironmentInputsYaml("ACCOUNT_ID", "PROJECT_ID", "ORG_ID", "IDENTIFIER");
     String resFile = "env-with-runtime-inputs-res.yaml";
     String resInputs = readFile(resFile);
     assertThat(environmentInputsYaml).isEqualTo(resInputs);
@@ -385,7 +385,7 @@ public class EnvironmentServiceImplTest extends CDNGEntitiesTestBase {
 
     environmentService.update(updateEnvironmentRequest);
     String environmentInputsYaml2 =
-        environmentService.createEnvironmentInputsYaml("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", "IDENTIFIER");
+        environmentService.createEnvironmentInputsYaml("ACCOUNT_ID", "PROJECT_ID", "ORG_ID", "IDENTIFIER");
     assertThat(environmentInputsYaml2).isNull();
   }
 

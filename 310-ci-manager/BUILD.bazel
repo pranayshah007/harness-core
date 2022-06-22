@@ -15,6 +15,7 @@ shared_dependencies = [
     "//940-primary-version-manager:module",
     "//942-enforcement-sdk:module",
     "//950-telemetry:module",
+    "//952-scm-java-client:module",
     "//959-common-entities:module",
     "//955-delegate-beans:module",
     "//960-persistence:module",
