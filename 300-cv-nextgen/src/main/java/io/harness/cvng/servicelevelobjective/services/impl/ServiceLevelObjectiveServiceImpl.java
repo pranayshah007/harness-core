@@ -13,9 +13,11 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.cvng.beans.cvnglog.CVNGLogDTO;
+import io.harness.cvng.core.beans.params.MonitoredServiceParams;
 import io.harness.cvng.core.beans.params.PageParams;
 import io.harness.cvng.core.beans.params.ProjectParams;
 import io.harness.cvng.core.beans.params.logsFilterParams.SLILogsFilter;
+import io.harness.cvng.core.entities.MonitoredService;
 import io.harness.cvng.core.services.api.CVNGLogService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
@@ -119,8 +121,12 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
   public ServiceLevelObjectiveResponse create(
       ProjectParams projectParams, ServiceLevelObjectiveDTO serviceLevelObjectiveDTO) {
     validateCreate(serviceLevelObjectiveDTO, projectParams);
+    MonitoredService monitoredService = monitoredServiceService.getMonitoredService(
+        MonitoredServiceParams.builderWithProjectParams(projectParams)
+            .monitoredServiceIdentifier(serviceLevelObjectiveDTO.getMonitoredServiceRef())
+            .build());
     ServiceLevelObjective serviceLevelObjective =
-        saveServiceLevelObjectiveEntity(projectParams, serviceLevelObjectiveDTO);
+        saveServiceLevelObjectiveEntity(projectParams, serviceLevelObjectiveDTO, monitoredService.isEnabled());
     outboxService.save(ServiceLevelObjectiveCreateEvent.builder()
                            .resourceName(serviceLevelObjectiveDTO.getName())
                            .newServiceLevelObjectiveDTO(serviceLevelObjectiveDTO)
@@ -550,6 +556,18 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
     return condition.shouldSendNotification(sloHealthIndicator);
   }
 
+  @Override
+  public void setMonitoredServiceSLOsEnableFlag(
+      ProjectParams projectParams, String monitoredServiceIdentifier, boolean isEnabled) {
+    hPersistence.update(hPersistence.createQuery(ServiceLevelObjective.class)
+                            .filter(ServiceLevelObjectiveKeys.accountId, projectParams.getAccountIdentifier())
+                            .filter(ServiceLevelObjectiveKeys.orgIdentifier, projectParams.getOrgIdentifier())
+                            .filter(ServiceLevelObjectiveKeys.projectIdentifier, projectParams.getProjectIdentifier())
+                            .filter(ServiceLevelObjectiveKeys.monitoredServiceIdentifier, monitoredServiceIdentifier),
+        hPersistence.createUpdateOperations(ServiceLevelObjective.class)
+            .set(ServiceLevelObjectiveKeys.enabled, isEnabled));
+  }
+
   private ServiceLevelObjective updateSLOEntity(ProjectParams projectParams,
       ServiceLevelObjective serviceLevelObjective, ServiceLevelObjectiveDTO serviceLevelObjectiveDTO) {
     UpdateOperations<ServiceLevelObjective> updateOperations =
@@ -627,7 +645,7 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
   }
 
   private ServiceLevelObjective saveServiceLevelObjectiveEntity(
-      ProjectParams projectParams, ServiceLevelObjectiveDTO serviceLevelObjectiveDTO) {
+      ProjectParams projectParams, ServiceLevelObjectiveDTO serviceLevelObjectiveDTO, boolean isEnabled) {
     ServiceLevelObjective serviceLevelObjective =
         ServiceLevelObjective.builder()
             .accountId(projectParams.getAccountIdentifier())
@@ -649,6 +667,7 @@ public class ServiceLevelObjectiveServiceImpl implements ServiceLevelObjectiveSe
                            .getSLOTarget(serviceLevelObjectiveDTO.getTarget().getSpec()))
             .sloTargetPercentage(serviceLevelObjectiveDTO.getTarget().getSloTargetPercentage())
             .userJourneyIdentifier(serviceLevelObjectiveDTO.getUserJourneyRef())
+            .enabled(isEnabled)
             .build();
     hPersistence.save(serviceLevelObjective);
     return serviceLevelObjective;

@@ -22,6 +22,7 @@ import io.harness.delegate.beans.DelegateApproval;
 import io.harness.delegate.beans.DelegateApprovalResponse;
 import io.harness.delegate.beans.DelegateConnectionHeartbeat;
 import io.harness.delegate.beans.DelegateDTO;
+import io.harness.delegate.beans.DelegateEntityOwner;
 import io.harness.delegate.beans.DelegateGroup;
 import io.harness.delegate.beans.DelegateInitializationDetails;
 import io.harness.delegate.beans.DelegateParams;
@@ -226,4 +227,6 @@ public interface DelegateService extends OwnedByAccount {
       String accountId, String delegateTokenName, DelegateApproval action) throws InvalidRequestException;
 
   void checkUniquenessOfDelegateName(String accountId, String delegateName, boolean isNg);
+
+  void markDelegatesAsDeletedOnDeletingOwner(String accountId, DelegateEntityOwner owner);
 }

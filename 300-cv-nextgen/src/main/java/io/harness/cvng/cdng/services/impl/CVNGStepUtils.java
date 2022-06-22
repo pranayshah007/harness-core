@@ -7,10 +7,25 @@
 
 package io.harness.cvng.cdng.services.impl;
 
+import static io.harness.walktree.visitor.utilities.VisitorParentPathUtils.PATH_CONNECTOR;
+
+import io.harness.cvng.cdng.beans.MonitoredServiceNode;
+import io.harness.cvng.cdng.beans.MonitoredServiceSpec.MonitoredServiceSpecType;
+import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
+import io.harness.cvng.core.beans.params.ProjectParams;
+import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
+import io.harness.eventsframework.schemas.entity.EntityTypeProtoEnum;
+import io.harness.filters.FilterCreatorHelper;
+import io.harness.pms.sdk.core.filter.creation.beans.FilterCreationContext;
+import io.harness.pms.yaml.ParameterField;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
+import io.harness.pms.yaml.YamlUtils;
 
 import com.google.common.base.Preconditions;
+import java.util.List;
+import java.util.Objects;
 
 public class CVNGStepUtils {
   public static final String INFRASTRUCTURE_KEY = "infrastructure";
@@ -63,5 +78,22 @@ public class CVNGStepUtils {
     } else {
       return findStageByIdentifier(yamlNode.getParentNode(), identifier);
     }
+  }
+
+  public static MonitoredServiceSpecType getMonitoredServiceSpecType(MonitoredServiceNode monitoredServiceNode) {
+    return Objects.nonNull(monitoredServiceNode) ? MonitoredServiceSpecType.getByName(monitoredServiceNode.getType())
+                                                 : MonitoredServiceSpecType.DEFAULT;
+  }
+  public static void addReferredEntities(MonitoredServiceDTO monitoredServiceDTO, List<EntityDetailProtoDTO> result,
+      FilterCreationContext filterCreationContext, ProjectParams projectParams) {
+    monitoredServiceDTO.getSources().getHealthSources().forEach(healthSource -> {
+      String connectorIdentifier = healthSource.getSpec().getConnectorRef();
+      String fullQualifiedDomainName =
+          YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode()) + PATH_CONNECTOR
+          + YAMLFieldNameConstants.SPEC + PATH_CONNECTOR + "monitoredService.healthSources.connectorRef";
+      result.add(FilterCreatorHelper.convertToEntityDetailProtoDTO(projectParams.getAccountIdentifier(),
+          projectParams.getOrgIdentifier(), projectParams.getProjectIdentifier(), fullQualifiedDomainName,
+          ParameterField.createValueField(connectorIdentifier), EntityTypeProtoEnum.CONNECTORS));
+    });
   }
 }

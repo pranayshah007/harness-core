@@ -9,7 +9,8 @@ package io.harness.plancreator.strategy;
 
 public enum StrategyType {
   FOR("for"),
-  MATRIX("matrix");
+  MATRIX("matrix"),
+  PARALLELISM("parallelism");
 
   String displayName;
 

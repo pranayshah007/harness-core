@@ -13,4 +13,5 @@ public class NGPipelineSummaryCDConstants {
   public static final String START_TS = "startts";
   public static final String ID = "id";
   public static final String PIPELINE_IDENTIFIER = "pipelineidentifier";
+  public static final String PLAN_EXECUTION_ID = "planexecutionid";
 }

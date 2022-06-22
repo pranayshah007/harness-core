@@ -7,12 +7,16 @@
 
 package io.harness.common;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import static java.util.Objects.isNull;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.yaml.ParameterField;
 
+import java.util.List;
+import java.util.Optional;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -62,5 +66,37 @@ public class ParameterFieldHelper {
     }
 
     return fieldValue;
+  }
+
+  public Optional<String> getParameterFieldFinalValue(ParameterField<String> fieldValue) {
+    if (fieldValue == null) {
+      return Optional.empty();
+    }
+
+    return Optional.ofNullable(fieldValue.fetchFinalValue().toString());
+  }
+
+  public <T> boolean hasListValue(ParameterField<List<T>> listParameterField, boolean allowExpression) {
+    if (ParameterField.isNull(listParameterField)) {
+      return false;
+    }
+
+    if (allowExpression && listParameterField.isExpression()) {
+      return true;
+    }
+
+    return isNotEmpty(getParameterFieldValue(listParameterField));
+  }
+
+  public boolean hasStringValue(ParameterField<String> parameterField, boolean allowExpression) {
+    if (ParameterField.isNull(parameterField)) {
+      return false;
+    }
+
+    if (allowExpression && parameterField.isExpression()) {
+      return true;
+    }
+
+    return isNotEmpty(getParameterFieldValue(parameterField));
   }
 }

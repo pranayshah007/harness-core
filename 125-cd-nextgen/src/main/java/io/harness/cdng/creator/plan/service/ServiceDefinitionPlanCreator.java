@@ -157,6 +157,12 @@ public class ServiceDefinitionPlanCreator extends ChildrenPlanCreator<YamlField>
       serviceSpecChildrenIds.add(manifestPlanNodeId);
     }
 
+    if (ServiceDefinitionPlanCreatorHelper.shouldCreatePlanNodeForConfigFilesV2(config)) {
+      String configFilesPlanNodeId = ServiceDefinitionPlanCreatorHelper.addDependenciesForConfigFilesV2(
+          serviceV2Node, planCreationResponseMap, config, kryoSerializer);
+      serviceSpecChildrenIds.add(configFilesPlanNodeId);
+    }
+
     // Add serviceSpec node
     addServiceSpecNodeV2(config, planCreationResponseMap, serviceSpecChildrenIds);
   }

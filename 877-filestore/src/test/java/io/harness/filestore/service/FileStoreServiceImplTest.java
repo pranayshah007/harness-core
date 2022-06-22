@@ -703,7 +703,7 @@ public class FileStoreServiceImplTest extends CategoryTest {
   public void testGetWithNullIdentifier() {
     assertThatThrownBy(() -> fileStoreService.get(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, null, true))
         .isInstanceOf(InvalidArgumentsException.class)
-        .hasMessage("File or folder identifier cannot be null or empty");
+        .hasMessage("File or folder with identifier cannot be null or empty");
   }
 
   @Test

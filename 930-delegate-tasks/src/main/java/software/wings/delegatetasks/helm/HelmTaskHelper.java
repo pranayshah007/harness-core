@@ -629,6 +629,7 @@ public class HelmTaskHelper {
       }
     } finally {
       // We do remove repo only when the useFlags FF is on.
+      deleteDirectoryAndItsContentIfExists(workingDirectory + "/helm");
       if (useRepoFlags) {
         deleteQuietlyWithErrorLog(tempDir);
       }

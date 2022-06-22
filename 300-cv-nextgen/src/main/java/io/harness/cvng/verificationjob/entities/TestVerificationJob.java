@@ -81,10 +81,6 @@ public class TestVerificationJob extends VerificationJob {
   }
 
   @Override
-  public boolean shouldDoDataCollection() {
-    return true;
-  }
-  @Override
   protected void validateParams() {
     Preconditions.checkNotNull(sensitivity, generateErrorMessageFromParam(TestVerificationJobKeys.sensitivity));
   }

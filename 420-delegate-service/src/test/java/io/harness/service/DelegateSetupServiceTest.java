@@ -57,9 +57,9 @@ import io.harness.service.intfc.DelegateInsightsService;
 import software.wings.beans.DelegateConnection;
 import software.wings.beans.SelectorType;
 
-import com.google.common.collect.Sets;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import io.fabric8.utils.Lists;
 import java.time.Duration;
@@ -1195,7 +1195,7 @@ public class DelegateSetupServiceTest extends DelegateServiceTestBase {
 
     assertThat(delegateGroupFromDB).isPresent();
     assertThat(delegateGroupFromDB.get().getIdentifier()).isEqualTo("identifier1");
-    assertThat(delegateGroupFromDB.get().getTags()).containsExactlyInAnyOrder("tag123", "tag456", "taggroup1");
+    assertThat(delegateGroupFromDB.get().getTags()).containsExactlyInAnyOrder("tag123", "tag456", "taggroup1", "grp1");
   }
 
   @Test

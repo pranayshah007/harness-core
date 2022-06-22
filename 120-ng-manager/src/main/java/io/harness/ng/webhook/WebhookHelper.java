@@ -12,12 +12,14 @@ import static io.harness.constants.Constants.X_AMZ_SNS_MESSAGE_TYPE;
 import static io.harness.constants.Constants.X_BIT_BUCKET_EVENT;
 import static io.harness.constants.Constants.X_GIT_HUB_EVENT;
 import static io.harness.constants.Constants.X_GIT_LAB_EVENT;
+import static io.harness.constants.Constants.X_VSS_HEADER;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.eventsframework.EventsFrameworkConstants.GIT_BRANCH_HOOK_EVENT_STREAM;
 import static io.harness.eventsframework.EventsFrameworkConstants.GIT_PR_EVENT_STREAM;
 import static io.harness.eventsframework.EventsFrameworkConstants.GIT_PUSH_EVENT_STREAM;
 import static io.harness.eventsframework.EventsFrameworkConstants.WEBHOOK_EVENTS_STREAM;
 import static io.harness.eventsframework.webhookpayloads.webhookdata.SourceRepoType.AWS_CODECOMMIT;
+import static io.harness.eventsframework.webhookpayloads.webhookdata.SourceRepoType.AZURE;
 import static io.harness.eventsframework.webhookpayloads.webhookdata.SourceRepoType.BITBUCKET;
 import static io.harness.eventsframework.webhookpayloads.webhookdata.SourceRepoType.GITHUB;
 import static io.harness.eventsframework.webhookpayloads.webhookdata.SourceRepoType.GITLAB;
@@ -148,6 +150,8 @@ public class WebhookHelper {
       sourceRepoType = BITBUCKET;
     } else if (containsHeaderKey(headers, X_AMZ_SNS_MESSAGE_TYPE)) {
       sourceRepoType = AWS_CODECOMMIT;
+    } else if (containsHeaderKey(headers, X_VSS_HEADER)) {
+      sourceRepoType = AZURE;
     } else {
       log.info("Got unrecognized source repo type for the webhook {}", event.getUuid());
     }

@@ -60,6 +60,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -606,7 +607,7 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
       DelegateEntityOwner owner = DelegateEntityOwnerHelper.buildOwner(orgIdentifier, projectIdentifier);
       DelegateGroup delegateGroup =
           getDelegateGroupByAccountAndOwnerAndIdentifier(accountIdentifier, owner, groupIdentifier);
-      return Optional.of(DelegateGroupDTO.convertToDTO(delegateGroup));
+      return Optional.of(DelegateGroupDTO.convertToDTO(delegateGroup, listDelegateGroupImplicitTags(delegateGroup)));
     } catch (Exception e) {
       log.error("Error occurred during fetching list of delegate group tags", e);
       return Optional.empty();
@@ -662,7 +663,7 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
                                                        .build())
                              .build());
       log.info("Updating tags for delegate group: {} tags: {}", groupIdentifier, delegateGroupTags.getTags());
-      return Optional.of(DelegateGroupDTO.convertToDTO(updatedDelegateGroup));
+      return Optional.of(DelegateGroupDTO.convertToDTO(updatedDelegateGroup, null));
     } catch (Exception e) {
       log.error("Error occurred during updating delegate group tags", e);
       return Optional.empty();
@@ -678,6 +679,16 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
         .filter(DelegateGroupKeys.accountId, accountId)
         .filter(DelegateGroupKeys.uuid, delegateGroupId)
         .get();
+  }
+
+  @Override
+  public void deleteDelegateGroupsOnDeletingOwner(String accountId, DelegateEntityOwner owner) {
+    Query<DelegateGroup> query = persistence.createQuery(DelegateGroup.class)
+                                     .filter(DelegateGroupKeys.accountId, accountId)
+                                     .filter(DelegateGroupKeys.ng, true)
+                                     .filter(DelegateGroupKeys.owner, owner);
+
+    persistence.delete(query);
   }
 
   private DelegateGroup getDelegateGroupByAccountAndOwnerAndIdentifier(
@@ -705,5 +716,26 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
         -> delegateTokenStatusMap.put(
             delegateToken.getName(), DelegateTokenStatus.ACTIVE.equals(delegateToken.getStatus())));
     return delegateTokenStatusMap;
+  }
+
+  private Set<String> listDelegateGroupImplicitTags(final DelegateGroup delegateGroup) {
+    Set<String> implicitTags = new HashSet<>();
+    if (delegateGroup == null) {
+      return implicitTags;
+    }
+    implicitTags.add(delegateGroup.getName().toLowerCase());
+    final DelegateProfile delegateProfile =
+        delegateCache.getDelegateProfile(delegateGroup.getAccountId(), delegateGroup.getDelegateConfigurationId());
+
+    if (delegateProfile != null && isNotEmpty(delegateProfile.getName())) {
+      implicitTags.add(delegateProfile.getName().toLowerCase());
+    }
+
+    if (delegateProfile != null && isNotEmpty(delegateProfile.getSelectors())) {
+      for (final String selector : delegateProfile.getSelectors()) {
+        implicitTags.add(selector.toLowerCase());
+      }
+    }
+    return implicitTags;
   }
 }

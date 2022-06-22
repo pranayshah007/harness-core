@@ -15,9 +15,7 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.creator.plan.environment.EnvironmentPlanCreatorHelper;
-import io.harness.cdng.envGroup.beans.EnvironmentGroupConfig;
 import io.harness.cdng.envGroup.beans.EnvironmentGroupEntity;
-import io.harness.cdng.envGroup.mappers.EnvironmentGroupMapper;
 import io.harness.cdng.envGroup.services.EnvironmentGroupService;
 import io.harness.cdng.envGroup.yaml.EnvGroupPlanCreatorConfig;
 import io.harness.cdng.envgroup.yaml.EnvironmentGroupYaml;
@@ -25,6 +23,7 @@ import io.harness.cdng.environment.helper.EnvironmentPlanCreatorConfigMapper;
 import io.harness.cdng.environment.yaml.EnvironmentPlanCreatorConfig;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.visitor.YamlTypes;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.services.EnvironmentService;
@@ -40,6 +39,7 @@ import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.KryoSerializer;
 import io.harness.utils.YamlPipelineUtils;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -83,8 +83,6 @@ public class EnvGroupPlanCreatorHelper {
 
     List<EnvironmentPlanCreatorConfig> envConfigs = new ArrayList<>();
     if (!envGroupYaml.isDeployToAll()) {
-      EnvironmentGroupConfig envGroupConfig =
-          EnvironmentGroupMapper.toNGEnvironmentGroupConfig(entity.get().getYaml()).getEnvironmentGroupConfig();
       List<EnvironmentYamlV2> envV2Yamls = envGroupYaml.getEnvGroupConfig();
       for (EnvironmentYamlV2 envYaml : envV2Yamls) {
         Environment environment = envMapping.get(envYaml.getEnvironmentRef().getValue());
@@ -92,12 +90,24 @@ public class EnvGroupPlanCreatorHelper {
           throw new InvalidRequestException(format("Environment %s not found in environment group %s",
               envGroupYaml.getEnvGroupRef().getValue(), entity.get().getIdentifier()));
         }
-        String mergedYaml = environment.getYaml();
-        if (isNotEmpty(envYaml.getEnvironmentInputs())) {
-          mergedYaml = EnvironmentPlanCreatorHelper.mergeEnvironmentInputs(
-              environment.getYaml(), envYaml.getEnvironmentInputs());
+        String originalEnvYaml = environment.getYaml();
+
+        // TODO: need to remove this once we have the migration for old env
+        if (EmptyPredicate.isEmpty(originalEnvYaml)) {
+          try {
+            originalEnvYaml = YamlPipelineUtils.getYamlString(environment);
+          } catch (JsonProcessingException e) {
+            throw new InvalidRequestException("Unable to convert environment to yaml");
+          }
         }
-        envConfigs.add(EnvironmentPlanCreatorConfigMapper.toEnvPlanCreatorConfigWithGitops(mergedYaml, envYaml, null));
+
+        String mergedEnvYaml = originalEnvYaml;
+        if (isNotEmpty(envYaml.getEnvironmentInputs())) {
+          mergedEnvYaml =
+              EnvironmentPlanCreatorHelper.mergeEnvironmentInputs(originalEnvYaml, envYaml.getEnvironmentInputs());
+        }
+        envConfigs.add(
+            EnvironmentPlanCreatorConfigMapper.toEnvPlanCreatorConfigWithGitops(mergedEnvYaml, envYaml, null));
       }
     }
 

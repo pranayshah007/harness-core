@@ -12,12 +12,18 @@ import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.plancreator.strategy.StageStrategyUtils;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.creators.PartialPlanCreator;
+import io.harness.pms.yaml.YAMLFieldNameConstants;
+import io.harness.pms.yaml.YamlField;
 import io.harness.serializer.KryoSerializer;
+import io.harness.steps.matrix.StrategyConstants;
+import io.harness.steps.matrix.StrategyMetadata;
 
 import com.google.inject.Inject;
+import com.google.protobuf.ByteString;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
@@ -37,6 +43,26 @@ public abstract class AbstractStepPlanCreator<T extends AbstractStepNode> implem
       return Collections.emptyMap();
     }
     return Collections.singletonMap(STEP, stepTypes);
+  }
+
+  protected void addStrategyFieldDependencyIfPresent(PlanCreationContext ctx, AbstractStepNode field,
+      Map<String, YamlField> dependenciesNodeMap, Map<String, ByteString> metadataMap) {
+    YamlField strategyField = ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.STRATEGY);
+    if (strategyField != null) {
+      dependenciesNodeMap.put(field.getUuid(), strategyField);
+      // This is mandatory because it is the parent's responsibility to pass the nodeId and the childNodeId to the
+      // strategy node
+      metadataMap.put(StrategyConstants.STRATEGY_METADATA + strategyField.getNode().getUuid(),
+          ByteString.copyFrom(kryoSerializer.asDeflatedBytes(
+              StrategyMetadata.builder()
+                  .strategyNodeId(field.getUuid())
+                  .adviserObtainments(
+                      StageStrategyUtils.getAdviserObtainmentFromMetaDataForStep(kryoSerializer, ctx.getCurrentField()))
+                  .childNodeId(strategyField.getNode().getUuid())
+                  .strategyNodeIdentifier(field.getIdentifier())
+                  .strategyNodeName(field.getName())
+                  .build())));
+    }
   }
 
   @Override public abstract PlanCreationResponse createPlanForField(PlanCreationContext ctx, T stepElement);
