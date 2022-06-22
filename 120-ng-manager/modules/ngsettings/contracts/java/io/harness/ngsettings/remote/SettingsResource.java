@@ -106,5 +106,5 @@ public interface SettingsResource {
              NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.PROJECT_KEY)
-      String projectIdentifier, @RequestBody @Body @NotNull List<SettingRequestDTO>);
+      String projectIdentifier, @RequestBody @Body @NotNull List<SettingRequestDTO> settingRequestDTO);
 }
