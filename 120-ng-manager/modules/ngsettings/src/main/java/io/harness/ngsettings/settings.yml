@@ -1,0 +1,15 @@
+# Any edit in this file should accompany an increment in version.
+name: settingsDefinition
+version: 1
+settings:
+  - identifier: <setting_id>
+    name: <setting_name>
+    category: CORE
+    defaultValue: <optional>
+    valueType: STRING|BOOLEAN|NUMBER
+    allowedValues: [<optional list>]
+    allowOverride: true|false
+    allowedScopes:
+      - account
+      - organization
+      - project
