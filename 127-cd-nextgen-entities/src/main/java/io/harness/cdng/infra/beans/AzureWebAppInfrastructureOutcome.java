@@ -30,7 +30,7 @@ public class AzureWebAppInfrastructureOutcome implements InfrastructureOutcome {
   String infrastructureKey;
   String subscription;
   String resourceGroup;
-  String appService;
+  String webApp;
   String deploymentSlot;
 
   @Override

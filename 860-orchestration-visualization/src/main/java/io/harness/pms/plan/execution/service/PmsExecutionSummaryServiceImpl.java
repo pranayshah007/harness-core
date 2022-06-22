@@ -112,8 +112,9 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
         return;
       }
       GraphLayoutNodeDTO graphLayoutNodeDTO = graphLayoutNodeDTOMap.get(stageSetupId);
+      modifyGraphLayoutNode(graphLayoutNodeDTO, nodeExecution);
       update.set(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.layoutNodeMap + "." + nodeExecution.getUuid(),
-          graphLayoutNodeDTO);
+              graphLayoutNodeDTO);
       String strategyNodeId = AmbianceUtils.getStrategyLevelFromAmbiance(ambiance).get().getSetupId();
       update.addToSet(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.layoutNodeMap + "." + strategyNodeId
               + ".edgeLayoutList.currentNodeChildren",
@@ -121,6 +122,9 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
       summaryUpdate.pull(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.layoutNodeMap + "." + strategyNodeId
               + ".edgeLayoutList.currentNodeChildren",
           stageSetupId);
+      summaryUpdate.set(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.layoutNodeMap + "." + stageSetupId
+                      + ".hidden",
+              true);
       update(planExecutionId, update);
     }
   }
@@ -131,20 +135,22 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
         accountId, orgId, projectId, planExecutionId);
   }
 
-  private void updatePipelineLevelInfo(String planExecutionId, NodeExecution nodeExecution) {
-    if (OrchestrationUtils.isPipelineNode(nodeExecution)) {
-      Update update = new Update();
-      ExecutionSummaryUpdateUtils.addPipelineUpdateCriteria(update, nodeExecution);
-      Criteria criteria = Criteria.where(PlanExecutionSummaryKeys.planExecutionId).is(planExecutionId);
-      Query query = new Query(criteria);
-      pmsExecutionSummaryRepository.update(query, update);
-    }
-  }
-
   @Override
   public void update(String planExecutionId, Update update) {
     Criteria criteria = Criteria.where(PlanExecutionSummaryKeys.planExecutionId).is(planExecutionId);
     Query query = new Query(criteria);
     pmsExecutionSummaryRepository.update(query, update);
+  }
+
+
+  /**
+   * Modifies the identifier and name of the dummy node we are copying.
+   * @param graphLayoutNodeDTO
+   * @param nodeExecution
+   */
+  private void modifyGraphLayoutNode(GraphLayoutNodeDTO graphLayoutNodeDTO, NodeExecution nodeExecution) {
+    graphLayoutNodeDTO.setNodeIdentifier(nodeExecution.getIdentifier());
+    graphLayoutNodeDTO.setName(nodeExecution.getName());
+    graphLayoutNodeDTO.setNodeExecutionId(nodeExecution.getUuid());
   }
 }

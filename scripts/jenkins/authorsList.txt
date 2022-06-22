@@ -90,6 +90,7 @@ Kanhaiya Rathi kanhaiya.rathi@harness.io
 Kapil Choudhary kapil.choudhary@harness.io
 Kapil Kumawat kapil.kumawat@harness.io
 Karan Siwach karan.siwach@harness.io
+Kshitij Rastogi kshitij.rastogi@harness.io
 Lazar Matovic lazar.matovic@harness.io
 Lovish Bansal lovish.bansal@harness.io
 Lucas Mari lucas.mari@harness.io
@@ -284,3 +285,4 @@ Amit Kumar Das amit.das@harness.io
 Sarthak Jain sarthak.jain@harness.io
 Abhishek Abhishek abhishek.abhishek@harness.io
 Jimit Gandhi jimit.gandhi@harness.io
+Tarun Uba tarun.uba@harness.io

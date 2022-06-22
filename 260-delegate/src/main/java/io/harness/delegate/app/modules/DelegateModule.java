@@ -53,6 +53,8 @@ import io.harness.cdng.secrets.tasks.SSHConfigValidationDelegateTask;
 import io.harness.cdng.secrets.tasks.WinRmConfigValidationDelegateTask;
 import io.harness.cistatus.service.GithubService;
 import io.harness.cistatus.service.GithubServiceImpl;
+import io.harness.cistatus.service.azurerepo.AzureRepoService;
+import io.harness.cistatus.service.azurerepo.AzureRepoServiceImpl;
 import io.harness.cistatus.service.bitbucket.BitbucketService;
 import io.harness.cistatus.service.bitbucket.BitbucketServiceImpl;
 import io.harness.cistatus.service.gitlab.GitlabService;
@@ -115,6 +117,7 @@ import io.harness.delegate.message.MessengerType;
 import io.harness.delegate.provider.DelegateConfigurationServiceProviderImpl;
 import io.harness.delegate.provider.DelegatePropertiesServiceProviderImpl;
 import io.harness.delegate.serverless.ServerlessAwsLambdaDeployCommandTaskHandler;
+import io.harness.delegate.serverless.ServerlessAwsLambdaPrepareRollbackCommandTaskHandler;
 import io.harness.delegate.serverless.ServerlessAwsLambdaRollbackCommandTaskHandler;
 import io.harness.delegate.serverless.ServerlessCommandTaskHandler;
 import io.harness.delegate.service.DelegateAgentService;
@@ -165,6 +168,7 @@ import io.harness.delegate.task.azure.AzureValidationHandler;
 import io.harness.delegate.task.azure.appservice.AzureAppServiceTaskParameters.AzureAppServiceTaskType;
 import io.harness.delegate.task.azure.appservice.webapp.AzureWebAppTaskNG;
 import io.harness.delegate.task.azure.appservice.webapp.handler.AzureWebAppRequestHandler;
+import io.harness.delegate.task.azure.appservice.webapp.handler.AzureWebAppRollbackRequestHandler;
 import io.harness.delegate.task.azure.appservice.webapp.handler.AzureWebAppSlotDeploymentRequestHandler;
 import io.harness.delegate.task.azure.appservice.webapp.ng.AzureWebAppRequestType;
 import io.harness.delegate.task.azure.arm.AzureARMTaskParameters;
@@ -1165,6 +1169,7 @@ public class DelegateModule extends AbstractModule {
     bind(GithubService.class).to(GithubServiceImpl.class);
     bind(GitlabService.class).to(GitlabServiceImpl.class);
     bind(BitbucketService.class).to(BitbucketServiceImpl.class);
+    bind(AzureRepoService.class).to(AzureRepoServiceImpl.class);
     bind(DockerRestClientFactory.class).to(DockerRestClientFactoryImpl.class);
 
     MapBinder<Class<? extends ArtifactSourceDelegateRequest>, Class<? extends DelegateArtifactTaskHandler>>
@@ -1269,12 +1274,16 @@ public class DelegateModule extends AbstractModule {
         .to(ServerlessAwsLambdaDeployCommandTaskHandler.class);
     serverlessTaskTypeToTaskHandlerMap.addBinding(ServerlessCommandType.SERVERLESS_AWS_LAMBDA_ROLLBACK.name())
         .to(ServerlessAwsLambdaRollbackCommandTaskHandler.class);
+    serverlessTaskTypeToTaskHandlerMap.addBinding(ServerlessCommandType.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK.name())
+        .to(ServerlessAwsLambdaPrepareRollbackCommandTaskHandler.class);
 
     // Azure Web App NG
     MapBinder<String, AzureWebAppRequestHandler> azureWebAppRequestTypeToRequestHandlerMap =
         MapBinder.newMapBinder(binder(), String.class, AzureWebAppRequestHandler.class);
     azureWebAppRequestTypeToRequestHandlerMap.addBinding(AzureWebAppRequestType.SLOT_DEPLOYMENT.name())
         .to(AzureWebAppSlotDeploymentRequestHandler.class);
+      azureWebAppRequestTypeToRequestHandlerMap.addBinding(AzureWebAppRequestType.ROLLBACK.name())
+              .to(AzureWebAppRollbackRequestHandler.class);
 
     // Ssh and WinRM task handlers
     MapBinder<String, CommandHandler> commandUnitHandlers =

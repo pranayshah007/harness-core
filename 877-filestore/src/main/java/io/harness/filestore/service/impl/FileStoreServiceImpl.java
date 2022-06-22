@@ -236,8 +236,7 @@ public class FileStoreServiceImpl implements FileStoreService {
   @Override
   public FolderNodeDTO listFolderNodes(@NotNull String accountIdentifier, String orgIdentifier,
       String projectIdentifier, @NotNull FolderNodeDTO folderNodeDTO) {
-    FolderNodeDTO updatedFolderNode =
-        updateFolderNode(accountIdentifier, orgIdentifier, projectIdentifier, folderNodeDTO);
+    FolderNodeDTO updatedFolderNode = fixFolderNode(accountIdentifier, orgIdentifier, projectIdentifier, folderNodeDTO);
     return populateFolderNode(updatedFolderNode, accountIdentifier, orgIdentifier, projectIdentifier);
   }
 
@@ -406,12 +405,13 @@ public class FileStoreServiceImpl implements FileStoreService {
         createSortByLastModifiedAtDesc());
   }
 
-  private FolderNodeDTO updateFolderNode(final String accountIdentifier, final String orgIdentifier,
+  private FolderNodeDTO fixFolderNode(final String accountIdentifier, final String orgIdentifier,
       final String projectIdentifier, FolderNodeDTO folderNodeDTO) {
     final String folderIdentifier = folderNodeDTO.getIdentifier();
     final String folderName = folderNodeDTO.getName();
     if (ROOT_FOLDER_IDENTIFIER.equals(folderIdentifier) || ROOT_FOLDER_NAME.equals(folderName)) {
-      return FileStoreNodeDTOMapper.getFolderNodeDTO(folderNodeDTO, ROOT_FOLDER_PARENT_IDENTIFIER, ROOT_FOLDER_PATH);
+      return FileStoreNodeDTOMapper.getFolderNodeDTO(
+          folderNodeDTO, ROOT_FOLDER_PARENT_IDENTIFIER, ROOT_FOLDER_NAME, ROOT_FOLDER_PATH);
     }
 
     NGFile ngFile = fetchFileOrThrow(accountIdentifier, orgIdentifier, projectIdentifier, folderIdentifier);
@@ -509,7 +509,7 @@ public class FileStoreServiceImpl implements FileStoreService {
     String name = fileDto.getName();
 
     if (ROOT_FOLDER_IDENTIFIER.equals(parentIdentifier)) {
-      return format("%s%s%s%s", PATH_SEPARATOR, ROOT_FOLDER_NAME, PATH_SEPARATOR, name);
+      return format("%s%s", ROOT_FOLDER_PATH, name);
     }
 
     Optional<NGFile> parent =

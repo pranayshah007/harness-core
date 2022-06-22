@@ -19,6 +19,7 @@ import io.harness.accesscontrol.acl.api.Resource;
 import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.apiexamples.PipelineAPIConstants;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.filter.dto.FilterPropertiesDTO;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
@@ -36,6 +37,7 @@ import io.harness.pms.pipeline.PipelineResourceConstants;
 import io.harness.pms.pipeline.mappers.ExecutionGraphMapper;
 import io.harness.pms.pipeline.mappers.PipelineExecutionSummaryDtoMapper;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
+import io.harness.pms.plan.execution.beans.dto.ExecutionDataResponseDTO;
 import io.harness.pms.plan.execution.beans.dto.PipelineExecutionDetailDTO;
 import io.harness.pms.plan.execution.beans.dto.PipelineExecutionFilterPropertiesDTO;
 import io.harness.pms.plan.execution.beans.dto.PipelineExecutionSummaryDTO;
@@ -53,7 +55,9 @@ import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import javax.validation.constraints.NotNull;
@@ -137,7 +141,15 @@ public class ExecutionDetailsResource {
           NGCommonEntityConstants.SIZE) @DefaultValue("10") int size,
       @Parameter(description = NGCommonEntityConstants.SORT_PARAM_MESSAGE) @QueryParam("sort") List<String> sort,
       @QueryParam(NGResourceFilterConstants.FILTER_KEY) String filterIdentifier,
-      @QueryParam("module") String moduleName, FilterPropertiesDTO filterProperties,
+      @QueryParam("module") String moduleName,
+      @RequestBody(description = "Returns a List of Pipeline Executions with Specific Filters",
+          content =
+          {
+            @Content(mediaType = "application/json",
+                examples = @ExampleObject(name = "List", summary = "Sample List Pipeline Executions",
+                    value = PipelineAPIConstants.LIST_EXECUTIONS,
+                    description = "Sample List Pipeline Executions JSON Payload"))
+          }) FilterPropertiesDTO filterProperties,
       @QueryParam("status") List<ExecutionStatus> statusesList, @QueryParam("myDeployments") boolean myDeployments,
       @BeanParam GitEntityFindInfoDTO gitEntityBasicInfo) {
     log.info("Get List of executions");
@@ -174,7 +186,7 @@ public class ExecutionDetailsResource {
   @ApiOperation(value = "Gets Execution Detail V2", nickname = "getExecutionDetailV2")
   @Operation(operationId = "getExecutionDetailV2",
       description = "Returns the Pipeline Execution Details for a Given PlanExecution ID",
-      summary = "Fetch Pipeline Execution Details",
+      summary = "Fetch Execution Details",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",
@@ -230,7 +242,7 @@ public class ExecutionDetailsResource {
   @ApiOperation(value = "Gets Execution Detail", nickname = "getExecutionDetail")
   @Operation(operationId = "getExecutionDetail",
       description = "Returns the Pipeline Execution Details for a Given PlanExecution ID",
-      summary = "Fetch Pipeline Execution Details",
+      summary = "Fetch Execution Details",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(
@@ -271,6 +283,26 @@ public class ExecutionDetailsResource {
             .executionGraph(ExecutionGraphMapper.toExecutionGraph(
                 pmsExecutionService.getOrchestrationGraph(stageNodeId, planExecutionId, stageNodeExecutionId)))
             .build());
+  }
+
+  @GET
+  @Path("/{planExecutionId}/metadata")
+  @ApiOperation(value = "Get metadata of an execution", nickname = "getExecutionData")
+  @NGAccessControlCheck(resourceType = "PIPELINE", permission = PipelineRbacPermissions.PIPELINE_VIEW)
+  @Operation(operationId = "getExecutionData", summary = "Get execution metadata of a pipeline execution",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns metadata of a execution")
+      })
+  @Hidden
+  public ResponseDTO<ExecutionDataResponseDTO>
+  getExecutions(@NotNull @Parameter(description = PipelineResourceConstants.ACCOUNT_PARAM_MESSAGE, required = true)
+                @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+      @NotNull @PathParam(NGCommonEntityConstants.PLAN_KEY) @Parameter(
+          description = "ExecutionId of the execution for which we want to get Metadata") String planExecutionId) {
+    ExecutionDataResponseDTO executionDetailsResponseDTO = pmsExecutionService.getExecutionData(planExecutionId);
+    return ResponseDTO.newResponse(executionDetailsResponseDTO);
   }
 
   @GET

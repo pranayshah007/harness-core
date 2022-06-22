@@ -14,6 +14,7 @@ import static io.harness.expression.Expression.ALLOW_SECRETS;
 import static io.harness.expression.Expression.DISALLOW_SECRETS;
 
 import io.harness.delegate.beans.connector.awsconnector.AwsCapabilityHelper;
+import io.harness.delegate.beans.connector.azureconnector.AzureCapabilityHelper;
 import io.harness.delegate.beans.connector.gcp.GcpCapabilityHelper;
 import io.harness.delegate.beans.connector.helm.OciHelmConnectorDTO;
 import io.harness.delegate.beans.connector.k8Connector.K8sTaskCapabilityHelper;
@@ -30,6 +31,7 @@ import io.harness.delegate.beans.storeconfig.OciHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.S3HelmStoreDelegateConfig;
 import io.harness.delegate.capability.EncryptedDataDetailsCapabilityHelper;
 import io.harness.delegate.task.TaskParameters;
+import io.harness.delegate.task.k8s.AzureK8sInfraDelegateConfig;
 import io.harness.delegate.task.k8s.DirectK8sInfraDelegateConfig;
 import io.harness.delegate.task.k8s.GcpK8sInfraDelegateConfig;
 import io.harness.delegate.task.k8s.HelmChartManifestDelegateConfig;
@@ -88,6 +90,11 @@ public class HelmCommandRequestNG implements TaskParameters, ExecutionCapability
     if (k8sInfraDelegateConfig instanceof GcpK8sInfraDelegateConfig) {
       capabilities.addAll(GcpCapabilityHelper.fetchRequiredExecutionCapabilities(
           ((GcpK8sInfraDelegateConfig) k8sInfraDelegateConfig).getGcpConnectorDTO(), maskingEvaluator));
+    }
+
+    if (k8sInfraDelegateConfig instanceof AzureK8sInfraDelegateConfig) {
+      capabilities.addAll(AzureCapabilityHelper.fetchRequiredExecutionCapabilities(
+          ((AzureK8sInfraDelegateConfig) k8sInfraDelegateConfig).getAzureConnectorDTO(), maskingEvaluator));
     }
 
     if (manifestDelegateConfig != null) {

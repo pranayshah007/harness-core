@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: rolesConfiguration
-version: 26
+version: 27
 roles:
     - identifier: _project_admin
       name: Project Admin
@@ -547,6 +547,8 @@ roles:
         - core_file_view
         - core_file_access
         - core_variable_view
+        - core_template_view
+        - core_template_access
       allowedScopeLevels:
         - project
       managed: true

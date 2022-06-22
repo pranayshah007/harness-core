@@ -19,4 +19,5 @@ public interface OrchestrationConstants {
   String PIPELINE_FAILURE = "OnPipelineFailure";
   String ALWAYS = "Always";
   String CURRENT_STATUS = "currentStatus";
+
 }

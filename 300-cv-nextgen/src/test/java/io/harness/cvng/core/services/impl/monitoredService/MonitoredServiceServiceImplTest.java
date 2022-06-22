@@ -347,9 +347,42 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     MonitoredServiceResponse monitoredServiceResponse =
         monitoredServiceService.createFromYaml(builderFactory.getProjectParams(), yaml);
     MonitoredServiceResponse monitoredServiceResponseFromDb =
-        monitoredServiceService.get(builderFactory.getProjectParams(), "service1");
+        monitoredServiceService.get(builderFactory.getProjectParams(), "service1_env3");
     assertThat(monitoredServiceResponse.getMonitoredServiceDTO()).isNotNull();
-    assertThat(monitoredServiceResponse.getMonitoredServiceDTO().getName()).isEqualTo("service1");
+    assertThat(monitoredServiceResponse.getMonitoredServiceDTO().getName()).isEqualTo("service1_env3");
+    assertThat(monitoredServiceResponse.getMonitoredServiceDTO().getEnvironmentRef()).isEqualTo("env3");
+    assertThat(monitoredServiceResponse.getMonitoredServiceDTO().getTemplate().getTemplateRef())
+        .isEqualTo("templateRef123");
+    assertThat(monitoredServiceResponse.getMonitoredServiceDTO().getTemplate().getVersionLabel())
+        .isEqualTo("versionLabel123");
+  }
+
+  @Test
+  @Owner(developers = DEEPAK_CHHIKARA)
+  @Category(UnitTests.class)
+  public void testCreateFromYaml_withoutIdentifier() {
+    String yaml = "monitoredService:\n"
+        + "  template:\n"
+        + "   templateRef: templateRef123\n"
+        + "   versionLabel: versionLabel123\n"
+        + "  type: Application\n"
+        + "  description: description\n"
+        + "  serviceRef: service1\n"
+        + "  environmentRef: <+monitoredService.variables.environmentIdentifier>\n"
+        + "  sources:\n"
+        + "      healthSources:\n"
+        + "      changeSources: \n"
+        + "  tags: {}\n"
+        + "  variables:\n"
+        + "    -   name: environmentIdentifier\n"
+        + "        type: String\n"
+        + "        value: env3";
+    MonitoredServiceResponse monitoredServiceResponse =
+        monitoredServiceService.createFromYaml(builderFactory.getProjectParams(), yaml);
+    MonitoredServiceResponse monitoredServiceResponseFromDb =
+        monitoredServiceService.get(builderFactory.getProjectParams(), "service1_env3");
+    assertThat(monitoredServiceResponse.getMonitoredServiceDTO()).isNotNull();
+    assertThat(monitoredServiceResponse.getMonitoredServiceDTO().getName()).isEqualTo("service1_env3");
     assertThat(monitoredServiceResponse.getMonitoredServiceDTO().getEnvironmentRef()).isEqualTo("env3");
     assertThat(monitoredServiceResponse.getMonitoredServiceDTO().getTemplate().getTemplateRef())
         .isEqualTo("templateRef123");
@@ -366,9 +399,8 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
         + "  type: Application\n"
         + "  description: description\n"
         + "  name: <+monitoredService.name>\n"
-        + "  serviceRef: service1\n"
-        + "  environmentRefList:\n"
-        + "   - env1\n"
+        + "  serviceRef: <+monitoredService.serviceRef>\n"
+        + "  environmentRef: env1\n"
         + "  tags: {}\n"
         + "  sources:\n"
         + "    healthSources:\n"
@@ -820,7 +852,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     assertThat(monitoredServiceListItemDTO.getEnvironmentRef()).isEqualTo(environmentIdentifier);
     assertThat(monitoredServiceListItemDTO.getType()).isEqualTo(MonitoredServiceType.APPLICATION);
     assertThat(monitoredServiceListItemDTO.getChangeSummary()).isEqualTo(changeSummary);
-    assertThat(monitoredServiceListItemDTO.isHealthMonitoringEnabled()).isFalse();
+    assertThat(monitoredServiceListItemDTO.isHealthMonitoringEnabled()).isTrue();
   }
 
   @Test
@@ -884,7 +916,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     assertThat(monitoredServiceListItemDTO.getEnvironmentName()).isEqualTo("Mocked env name");
     assertThat(monitoredServiceListItemDTO.getEnvironmentRef()).isEqualTo(environmentIdentifier);
     assertThat(monitoredServiceListItemDTO.getType()).isEqualTo(MonitoredServiceType.APPLICATION);
-    assertThat(monitoredServiceListItemDTO.isHealthMonitoringEnabled()).isFalse();
+    assertThat(monitoredServiceListItemDTO.isHealthMonitoringEnabled()).isTrue();
     assertThat(monitoredServiceListItemDTO.getTags()).isEqualTo(tags);
   }
 
@@ -1584,7 +1616,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     assertThat(monitoredServiceListItemDTO.getServiceRef()).isEqualTo(serviceIdentifier);
     assertThat(monitoredServiceListItemDTO.getEnvironmentRef()).isEqualTo(environmentIdentifier);
     assertThat(monitoredServiceListItemDTO.getType()).isEqualTo(MonitoredServiceType.APPLICATION);
-    assertThat(monitoredServiceListItemDTO.isHealthMonitoringEnabled()).isFalse();
+    assertThat(monitoredServiceListItemDTO.isHealthMonitoringEnabled()).isTrue();
     assertThat(monitoredServiceListItemDTO.getIdentifier()).isNotEqualTo("service_2_local");
   }
 
@@ -1709,7 +1741,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     assertThat(monitoredServiceListItemDTO.getServiceRef()).isEqualTo(environmentParams.getServiceIdentifier());
     assertThat(monitoredServiceListItemDTO.getEnvironmentRef()).isEqualTo(environmentParams.getEnvironmentIdentifier());
     assertThat(monitoredServiceListItemDTO.getType()).isEqualTo(MonitoredServiceType.APPLICATION);
-    assertThat(monitoredServiceListItemDTO.isHealthMonitoringEnabled()).isFalse();
+    assertThat(monitoredServiceListItemDTO.isHealthMonitoringEnabled()).isTrue();
     assertThat(monitoredServiceListItemDTO.getServiceName()).isEqualTo("Mocked service name");
     assertThat(monitoredServiceListItemDTO.getEnvironmentName()).isEqualTo("Mocked env name");
     assertThat(monitoredServiceListItemDTO.getCurrentHealthScore().getRiskStatus()).isEqualTo(Risk.HEALTHY);
@@ -1769,7 +1801,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     assertThat(monitoredServiceListItemDTO.getServiceRef()).isEqualTo(environmentParams.getServiceIdentifier());
     assertThat(monitoredServiceListItemDTO.getEnvironmentRef()).isEqualTo(environmentParams.getEnvironmentIdentifier());
     assertThat(monitoredServiceListItemDTO.getType()).isEqualTo(MonitoredServiceType.APPLICATION);
-    assertThat(monitoredServiceListItemDTO.isHealthMonitoringEnabled()).isFalse();
+    assertThat(monitoredServiceListItemDTO.isHealthMonitoringEnabled()).isTrue();
     assertThat(monitoredServiceListItemDTO.getServiceName()).isEqualTo("Mocked service name");
     assertThat(monitoredServiceListItemDTO.getEnvironmentName()).isEqualTo("Mocked env name");
     assertThat(monitoredServiceListItemDTO.getCurrentHealthScore().getRiskStatus()).isEqualTo(Risk.HEALTHY);
@@ -2030,6 +2062,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
 
   private MonitoredServiceDTOBuilder createMonitoredServiceDTOBuilder() {
     return builderFactory.monitoredServiceDTOBuilder()
+        .enabled(true)
         .identifier(monitoredServiceIdentifier)
         .serviceRef(serviceIdentifier)
         .environmentRef(environmentIdentifier)

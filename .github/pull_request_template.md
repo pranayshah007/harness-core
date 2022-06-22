@@ -36,3 +36,6 @@
 - FunctionalTest2: `trigger ft2`
 - CodeBaseHash: `trigger codebasehash`
 </details>
+
+## PR check failures and solutions
+https://harness.atlassian.net/wiki/spaces/BT/pages/21106884744/PR+Checks+-+Failures+and+Solutions

@@ -14,12 +14,9 @@ import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.delegate.app.DelegateApplication.getProcessId;
 import static io.harness.delegate.clienttools.InstallUtils.areClientToolsInstalled;
 import static io.harness.delegate.clienttools.InstallUtils.setupClientTools;
-import static io.harness.delegate.message.ManagerMessageConstants.JRE_VERSION;
 import static io.harness.delegate.message.ManagerMessageConstants.MIGRATE;
 import static io.harness.delegate.message.ManagerMessageConstants.SELF_DESTRUCT;
 import static io.harness.delegate.message.ManagerMessageConstants.UPDATE_PERPETUAL_TASK;
-import static io.harness.delegate.message.ManagerMessageConstants.USE_CDN;
-import static io.harness.delegate.message.ManagerMessageConstants.USE_STORAGE_PROXY;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_DASH;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_GO_AHEAD;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_HEARTBEAT;
@@ -226,6 +223,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
 import javax.net.ssl.SSLException;
@@ -580,7 +578,6 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       if (isPollingForTasksEnabled()) {
         log.info("Polling is enabled for Delegate");
         startHeartbeat(builder);
-        startKeepAlivePacket(builder);
         startTaskPolling();
       } else {
         client = org.atmosphere.wasync.ClientFactory.getDefault().newClient();
@@ -631,8 +628,6 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         // TODO(Abhinav): Check if we can avoid separate call for ECS delegates.
         if (isEcsDelegate()) {
           startKeepAlivePacket(builder);
-        } else {
-          startKeepAlivePacket(builder, socket);
         }
       }
 
@@ -905,16 +900,10 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
           initiateSelfDestruct();
         }
       }
-    } else if (StringUtils.equals(message, USE_CDN)) {
-      setSwitchStorage(true);
-    } else if (StringUtils.equals(message, USE_STORAGE_PROXY)) {
-      setSwitchStorage(false);
     } else if (StringUtils.contains(message, UPDATE_PERPETUAL_TASK)) {
       updateTasks();
     } else if (StringUtils.startsWith(message, MIGRATE)) {
       migrate(StringUtils.substringAfter(message, MIGRATE));
-    } else if (StringUtils.startsWith(message, JRE_VERSION)) {
-      updateJreVersion(StringUtils.substringAfter(message, JRE_VERSION));
     } else if (StringUtils.contains(message, INVALID_TOKEN.name())) {
       log.warn("Delegate used invalid token. Self destruct procedure will be initiated.");
       initiateSelfDestruct();
@@ -924,6 +913,9 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     } else if (StringUtils.contains(message, REVOKED_TOKEN.name())) {
       log.warn("Delegate used revoked token. It will be frozen and drained.");
       freeze();
+    }
+    else {
+      log.warn("Delegate received unhandled message");
     }
   }
 
@@ -1455,17 +1447,6 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       // Log delegate performance after every 60 sec i.e. heartbeat interval.
       logCurrentTasks();
     }, 0, delegateConfiguration.getHeartbeatIntervalMs(), TimeUnit.MILLISECONDS);
-  }
-
-  private void startKeepAlivePacket(DelegateParamsBuilder builder, Socket socket) {
-    log.info("Starting KeepAlive Packet at interval {} ms", KEEP_ALIVE_INTERVAL);
-    healthMonitorExecutor.scheduleAtFixedRate(() -> {
-      try {
-        sendKeepAlivePacket(builder, socket);
-      } catch (Exception ex) {
-        log.error("Exception while sending KeepAlive Packet", ex);
-      }
-    }, 0, KEEP_ALIVE_INTERVAL, TimeUnit.MILLISECONDS);
   }
 
   private void startHeartbeat(DelegateParamsBuilder builder) {
@@ -2105,7 +2086,10 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
             .logStreamingClient(logStreamingClient)
             .accountId(delegateTaskPackage.getAccountId())
             .token(delegateTaskPackage.getLogStreamingToken())
-            .logStreamingSanitizer(LogStreamingSanitizer.builder().secrets(activitySecrets.getRight()).build())
+            .logStreamingSanitizer(
+                LogStreamingSanitizer.builder()
+                    .secrets(activitySecrets.getRight().stream().map(String::trim).collect(Collectors.toSet()))
+                    .build())
             .baseLogKey(logBaseKey)
             .logService(delegateLogService)
             .taskProgressExecutor(taskProgressExecutor)
