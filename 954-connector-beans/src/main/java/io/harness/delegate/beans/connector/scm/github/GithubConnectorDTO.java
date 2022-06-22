@@ -7,7 +7,6 @@
 
 package io.harness.delegate.beans.connector.scm.github;
 
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.utils.FilePathUtils.removeStartingAndEndingSlash;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -61,7 +60,6 @@ public class GithubConnectorDTO
   @Valid GithubApiAccessDTO apiAccess;
   Set<String> delegateSelectors;
   Boolean executeOnDelegate;
-  String gitConnectionUrl;
 
   @Builder
   public GithubConnectorDTO(GitConnectionType connectionType, String url, String validationRepo,
@@ -104,19 +102,7 @@ public class GithubConnectorDTO
   }
 
   @Override
-  public String getUrl() {
-    if (isNotEmpty(gitConnectionUrl)) {
-      return gitConnectionUrl;
-    }
-    return url;
-  }
-
-  @Override
   public String getGitConnectionUrl(String repoName) {
-    if (isNotEmpty(gitConnectionUrl)) {
-      return gitConnectionUrl;
-    }
-
     if (connectionType == GitConnectionType.REPO) {
       String linkedRepo = GitClientHelper.getGitRepo(url);
       if (!linkedRepo.equals(repoName)) {

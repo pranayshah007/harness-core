@@ -19,7 +19,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CategoryTest;
-import io.harness.ScopeIdentifiers;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
@@ -81,7 +80,6 @@ public class HarnessToGitHelperServiceImplTest extends CategoryTest {
   String orgId = "orgId";
   String projectId = "projectId";
   String projectId2 = "projectId2";
-  String connectorRef = "connectorRef";
   String identifier = "identifier";
   String fileContent = "fileContent";
   String blobId = "blobId";
@@ -89,17 +87,11 @@ public class HarnessToGitHelperServiceImplTest extends CategoryTest {
   String repoName = "repoName";
   String hintMessage = "hintMessage";
   String explanationMessage = "explanationMessage";
-  ScopeIdentifiers scopeIdentifiers;
   int prNumber = 0;
 
   @Before
   public void before() {
     initializeLogging();
-    scopeIdentifiers = ScopeIdentifiers.newBuilder()
-                           .setOrgIdentifier(orgId)
-                           .setAccountIdentifier(accountId)
-                           .setProjectIdentifier(projectId)
-                           .build();
   }
 
   @Test
@@ -181,7 +173,6 @@ public class HarnessToGitHelperServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = MOHIT_GARG)
   @Category(UnitTests.class)
-  @Ignore("Not working after jdk upgrade") // todo: @Mohit
   public void testGetFileByBranchWhenSCMOpsIsSuccess() {
     GetFileRequest getFileRequest = getGetFileRequestDefault();
     when(scmFacilitatorService.getFileByBranch(any()))
@@ -238,7 +229,6 @@ public class HarnessToGitHelperServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = MOHIT_GARG)
   @Category(UnitTests.class)
-  @Ignore("Not working after jdk upgrade") // todo: @Mohit
   public void testCreateFileWhenSCMOpsIsSuccess() {
     CreateFileRequest createFileRequest = getCreateFileRequestDefault();
     when(scmFacilitatorService.createFile(any()))
@@ -289,7 +279,6 @@ public class HarnessToGitHelperServiceImplTest extends CategoryTest {
   @Test
   @Owner(developers = MOHIT_GARG)
   @Category(UnitTests.class)
-  @Ignore("Not working after jdk upgrade") // todo: @Mohit
   public void testUpdateFileWhenSCMOpsIsSuccess() {
     UpdateFileRequest updateFileRequest = getUpdateFileRequestDefault();
     when(scmFacilitatorService.updateFile(any()))
@@ -397,33 +386,15 @@ public class HarnessToGitHelperServiceImplTest extends CategoryTest {
   }
 
   private UpdateFileRequest getUpdateFileRequestDefault() {
-    return UpdateFileRequest.newBuilder()
-        .setBranchName(branch)
-        .setFilePath(filePath)
-        .setRepoName(repoName)
-        .setScopeIdentifiers(scopeIdentifiers)
-        .setConnectorRef(connectorRef)
-        .build();
+    return UpdateFileRequest.newBuilder().setBranchName(branch).setFilePath(filePath).setRepoName(repoName).build();
   }
 
   private CreateFileRequest getCreateFileRequestDefault() {
-    return CreateFileRequest.newBuilder()
-        .setBranchName(branch)
-        .setFilePath(filePath)
-        .setRepoName(repoName)
-        .setScopeIdentifiers(scopeIdentifiers)
-        .setConnectorRef(connectorRef)
-        .build();
+    return CreateFileRequest.newBuilder().setBranchName(branch).setFilePath(filePath).setRepoName(repoName).build();
   }
 
   private GetFileRequest getGetFileRequestDefault() {
-    return GetFileRequest.newBuilder()
-        .setBranchName(branch)
-        .setFilePath(filePath)
-        .setRepoName(repoName)
-        .setScopeIdentifiers(scopeIdentifiers)
-        .setConnectorRef(connectorRef)
-        .build();
+    return GetFileRequest.newBuilder().setBranchName(branch).setFilePath(filePath).setRepoName(repoName).build();
   }
 
   private GitSyncEntityDTO getGitSyncEntityDTODefault() {

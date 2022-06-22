@@ -21,9 +21,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @OwnedBy(DX)
 public interface ScmConnector {
-  // Set gitConnectionUrl not this
   void setUrl(String url);
-  String getUrl(); // This will gitConnectionUrl if that is set, else will return url.
+  String getUrl();
   ConnectorType getConnectorType();
 
   /**
@@ -32,11 +31,6 @@ public interface ScmConnector {
    * If it is an ACCOUNT level connector, it should construct corresponding connection url for input repo
    */
   String getGitConnectionUrl(String repoName);
-  /**
-   * This method is used to set gitConnection Url to the repo provided, instead of setting url, set gitConnectionUrl
-   * In case of ACCOUNT type connector, a connection url to Repo is required for further usecase
-   */
-  @JsonIgnore void setGitConnectionUrl(String url);
 
   @JsonIgnore GitRepositoryDTO getGitRepositoryDetails();
 

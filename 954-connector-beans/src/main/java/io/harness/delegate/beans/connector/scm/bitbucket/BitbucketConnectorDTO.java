@@ -7,7 +7,6 @@
 
 package io.harness.delegate.beans.connector.scm.bitbucket;
 
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.utils.FilePathUtils.FILE_PATH_SEPARATOR;
 import static io.harness.utils.FilePathUtils.removeStartingAndEndingSlash;
 
@@ -63,7 +62,6 @@ public class BitbucketConnectorDTO extends ConnectorConfigDTO implements ScmConn
   @Valid @NotNull private BitbucketAuthenticationDTO authentication;
   @Valid private BitbucketApiAccessDTO apiAccess;
   private Set<String> delegateSelectors;
-  private String gitConnectionUrl;
 
   @Builder
   public BitbucketConnectorDTO(GitConnectionType connectionType, String url, String validationRepo,
@@ -104,19 +102,7 @@ public class BitbucketConnectorDTO extends ConnectorConfigDTO implements ScmConn
   }
 
   @Override
-  public String getUrl() {
-    if (isNotEmpty(gitConnectionUrl)) {
-      return gitConnectionUrl;
-    }
-    return url;
-  }
-
-  @Override
   public String getGitConnectionUrl(String repoName) {
-    if (isNotEmpty(gitConnectionUrl)) {
-      return gitConnectionUrl;
-    }
-
     if (connectionType == GitConnectionType.REPO) {
       String linkedRepo = getGitRepositoryDetails().getName();
       if (!linkedRepo.equals(repoName)) {
