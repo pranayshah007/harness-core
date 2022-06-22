@@ -29,6 +29,7 @@ import io.harness.redis.RedisConfig;
 import io.harness.serializer.FeatureFlagBeansRegistrars;
 import io.harness.serializer.KryoModule;
 import io.harness.serializer.KryoRegistrar;
+import io.harness.serializer.kryo.*;
 import io.harness.testlib.module.MongoRuleMixin;
 import io.harness.testlib.module.TestMongoModule;
 import io.harness.threading.CurrentThreadExecutor;
@@ -75,6 +76,11 @@ public class FeatureFlagRule implements MethodRule, InjectorRuleMixin, MongoRule
       Set<Class<? extends KryoRegistrar>> kryoRegistrars() {
         return ImmutableSet.<Class<? extends KryoRegistrar>>builder()
             .addAll(FeatureFlagBeansRegistrars.kryoRegistrars)
+            .add(ApiServiceBeansKryoRegister.class)
+            .add(LicenseBeanKryoClassesRegistrar.class)
+            .add(AccessControlClientKryoRegistrar.class)
+            .add(RbacCoreKryoRegistrar.class)
+            .add(NGCoreBeansKryoRegistrar.class)
             .build();
       }
 
