@@ -69,6 +69,7 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.HttpHost;
+import org.jetbrains.annotations.NotNull;
 import org.jfrog.artifactory.client.Artifactory;
 import org.jfrog.artifactory.client.ArtifactoryClientBuilder;
 import org.jfrog.artifactory.client.ArtifactoryRequest;
@@ -325,8 +326,8 @@ public class ArtifactoryServiceImpl implements ArtifactoryService {
   }
 
   @Override
-  public List<HelmChart> getHelmCharts(
-      ArtifactoryConfigRequest artifactoryConfig, String repositoryName, String chartName, int maxVersions) {
+  public List<HelmChart> getHelmCharts(ArtifactoryConfigRequest artifactoryConfig, String repositoryName,
+      String chartName, int maxVersions, String version, boolean isRegex) {
     log.info("Retrieving helm charts for repositoryName {} chartName {}", repositoryName, chartName);
     Artifactory artifactory = getArtifactoryClient(artifactoryConfig);
     try {
@@ -334,7 +335,8 @@ public class ArtifactoryServiceImpl implements ArtifactoryService {
         throw new ArtifactoryServerException("Chart name can not be empty");
       }
       String aclQuery = "api/search/aql";
-      List<String> helmChartNames = getHelmChartNames(artifactory, aclQuery, repositoryName, chartName, maxVersions);
+      List<String> helmChartNames =
+          getHelmChartNames(artifactory, aclQuery, repositoryName, chartName, maxVersions, version, isRegex);
       if (isEmpty(helmChartNames)) {
         return new ArrayList<>();
       }
@@ -345,6 +347,28 @@ public class ArtifactoryServiceImpl implements ArtifactoryService {
       handleAndRethrow(e, USER);
     }
     return new ArrayList<>();
+  }
+
+  private List<String> getHelmChartNamesForVersion(Artifactory artifactory, String aclQuery, String repositoryName,
+      String chartName, String version) throws IOException {
+    List<String> helmChartNames = new ArrayList<>();
+    if (chartName.charAt(0) == '/') {
+      chartName = chartName.substring(1);
+    }
+    String requestBody = "items.find({\"repo\":\"" + repositoryName + "\"}, {\"@chart.name\": \"" + chartName
+        + "\"}, {\"@chart.version\": \"" + version + "\"})"
+        + ".include(\"name\", \"repo\", \"created\", \"path\").sort({\"$desc\" : [\"created\"]})";
+
+    ArtifactoryResponse artifactoryResponse = getArtifactoryResponse(artifactory, aclQuery, requestBody);
+    Map<String, List> response = artifactoryResponse.parseBody(Map.class);
+    if (response != null) {
+      List<Map<String, Object>> results = response.get(RESULTS);
+      for (Map<String, Object> item : results) {
+        String name = (String) item.get("name");
+        helmChartNames.add(name);
+      }
+    }
+    return helmChartNames;
   }
 
   private List<HelmChart> getHelmChartsVersionsForChartNames(
@@ -367,14 +391,12 @@ public class ArtifactoryServiceImpl implements ArtifactoryService {
   }
 
   public List<String> getHelmChartNames(Artifactory artifactory, String aclQuery, String repositoryName,
-      String chartName, int maxVersions) throws IOException {
+      String chartName, int maxVersions, String version, boolean isRegex) throws IOException {
     List<String> helmChartNames = new ArrayList<>();
     if (chartName.charAt(0) == '/') {
       chartName = chartName.substring(1);
     }
-    String requestBody = "items.find({\"repo\":\"" + repositoryName + "\"}, {\"@chart.name\": \"" + chartName
-        + "\"}).include(\"name\", \"repo\", \"created\", \"path\").sort({\"$desc\" : [\"created\"]}).limit("
-        + maxVersions + ")";
+    String requestBody = getRequestBody(repositoryName, chartName, maxVersions, version, isRegex);
     ArtifactoryResponse artifactoryResponse = getArtifactoryResponse(artifactory, aclQuery, requestBody);
     Map<String, List> response = artifactoryResponse.parseBody(Map.class);
     if (response != null) {
@@ -385,6 +407,26 @@ public class ArtifactoryServiceImpl implements ArtifactoryService {
       }
     }
     return helmChartNames;
+  }
+
+  @NotNull
+  private String getRequestBody(
+      String repositoryName, String chartName, int maxVersions, String version, boolean isRegex) {
+    if (isEmpty(version)) {
+      return "items.find({\"repo\":\"" + repositoryName + "\"}, {\"@chart.name\": \"" + chartName
+          + "\"}).include(\"name\", \"repo\", \"created\", \"path\").sort({\"$desc\" : [\"created\"]}).limit("
+          + maxVersions + ")";
+    }
+
+    if (!isRegex) {
+      return "items.find({\"repo\":\"" + repositoryName + "\"}, {\"@chart.name\": \"" + chartName
+          + "\"}, {\"@chart.version\": \"" + version + "\"})"
+          + ".include(\"name\", \"repo\", \"created\", \"path\")";
+    } else {
+      return "items.find({\"repo\":\"" + repositoryName + "\"}, {\"@chart.name\": \"" + chartName
+          + "\"}, {\"@chart.version\": {\"$match\": \"" + version + "\"}})"
+          + ".include(\"name\", \"repo\", \"created\", \"path\").sort({\"$desc\" : [\"created\"]}).limit(1)";
+    }
   }
 
   public ArtifactoryResponse getArtifactoryResponse(Artifactory artifactory, String aclQuery, String requestBody)
