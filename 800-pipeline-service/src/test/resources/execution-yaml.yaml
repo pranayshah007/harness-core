@@ -1,0 +1,30 @@
+pipeline:
+    name: execyaml_test
+    identifier: execyaml_test
+    allowStageExecutions: false
+    projectIdentifier: nitisha
+    orgIdentifier: default
+    tags: {}
+    stages:
+        - stage:
+              name: build
+              identifier: build
+              type: CI
+              spec:
+                  cloneCodebase: false
+                  infrastructure:
+                      type: KubernetesDirect
+                      spec:
+                          connectorRef: CI_Kubernetes
+                          namespace: ci-prod1-delegate
+                  execution:
+                      steps:
+                          - step:
+                                type: Run
+                                name: docker
+                                identifier: docker
+                                spec:
+                                    connectorRef: CI_DockerHub
+                                    image: alpine
+                                    shell: Sh
+                                    command: echo "hello ci 3745"

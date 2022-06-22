@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: rolesConfiguration
-version: 26
+version: 27
 roles:
     - identifier: _project_admin
       name: Project Admin
@@ -357,6 +357,9 @@ roles:
         - core_connector_edit
         - core_connector_delete
         - core_connector_access
+        - core_smtp_view
+        - core_smtp_edit
+        - core_smtp_delete
         - core_delegate_view
         - core_delegate_edit
         - core_delegate_delete
@@ -481,6 +484,7 @@ roles:
       permissions:
         - core_secret_view
         - core_connector_view
+        - core_smtp_view
         - core_delegate_view
         - core_delegateconfiguration_view
         - core_service_view
@@ -547,6 +551,8 @@ roles:
         - core_file_view
         - core_file_access
         - core_variable_view
+        - core_template_view
+        - core_template_access
       allowedScopeLevels:
         - project
       managed: true

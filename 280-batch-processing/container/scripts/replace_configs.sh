@@ -233,6 +233,14 @@ if [[ "" != "$NEXT_GEN_MANAGER_SECRET" ]]; then
   yq write -i $CONFIG_FILE ngManagerServiceSecret "$NEXT_GEN_MANAGER_SECRET"
 fi
 
+if [[ "" != "$CE_NG_SERVICE_HTTP_CLIENT_CONFIG_BASE_URL" ]]; then
+  yq write -i $CONFIG_FILE ceNgServiceHttpClientConfig.baseUrl "$CE_NG_SERVICE_HTTP_CLIENT_CONFIG_BASE_URL"
+fi
+
+if [[ "" != "$CE_NG_SERVICE_SECRET" ]]; then
+  yq write -i $CONFIG_FILE ceNgServiceSecret "$CE_NG_SERVICE_SECRET"
+fi
+
 if [[ "" != "$CONNECTOR_HEALTH_UPDATE_JOB_ENABLED" ]]; then
   yq write -i $CONFIG_FILE connectorHealthUpdateJobConfig.enabled "$CONNECTOR_HEALTH_UPDATE_JOB_ENABLED"
 fi

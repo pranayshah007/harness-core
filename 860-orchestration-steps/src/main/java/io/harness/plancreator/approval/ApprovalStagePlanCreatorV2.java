@@ -84,6 +84,7 @@ public class ApprovalStagePlanCreatorV2 extends AbstractPmsStagePlanCreator<PmsA
         specPlanNode.getUuid(), PlanCreationResponse.builder().node(specPlanNode.getUuid(), specPlanNode).build());
 
     addStrategyFieldDependencyIfPresent(ctx, field, dependenciesNodeMap, metadataMap);
+
     planCreationResponseMap.put(executionField.getNode().getUuid(),
         PlanCreationResponse.builder()
             .dependencies(

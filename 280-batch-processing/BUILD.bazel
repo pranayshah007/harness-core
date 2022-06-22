@@ -17,6 +17,7 @@ shared_dependencies = [
     "//490-ce-commons:module",
     "//950-telemetry:module",
     "//959-psql-database-models:module",
+    "//clients/notification:module",
     "//:lombok",
     "@maven//:com_google_cloud_google_cloud_bigquerydatatransfer",
     "@maven//:com_slack_api_slack_api_client",

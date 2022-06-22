@@ -11,17 +11,12 @@ import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
-import io.harness.filters.WithFileRef;
 import io.harness.pms.yaml.ParameterField;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import java.util.List;
 
 @OwnedBy(CDP)
-public interface HarnessStoreConfig extends StoreConfig, WithFileRef {
-  @JsonIgnore List<ParameterField<String>> getFileReferences();
-  @JsonIgnore ParameterField<List<HarnessStoreFile>> getFiles();
-
+public interface HarnessStoreConfig extends StoreConfig {
   @JsonIgnore
   default ParameterField<String> getConnectorReference() {
     throw new UnsupportedOperationException("Connector reference is not supported for Harness store");

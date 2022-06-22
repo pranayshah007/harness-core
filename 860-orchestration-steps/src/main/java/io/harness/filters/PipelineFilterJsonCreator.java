@@ -90,6 +90,7 @@ public class PipelineFilterJsonCreator extends ChildrenFilterJsonCreator<Pipelin
                         .stream()
                         .map(YamlField::getNode)
                         .map(YamlNode::getType)
+                        .filter(Objects::nonNull)
                         .collect(Collectors.toSet()))
         .build();
   }

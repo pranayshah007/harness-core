@@ -8,11 +8,16 @@
 package io.harness.template.services;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.template.resources.NGTemplateResource.TEMPLATE;
 
+import io.harness.accesscontrol.acl.api.Resource;
+import io.harness.accesscontrol.acl.api.ResourceScope;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.git.model.ChangeType;
+import io.harness.template.beans.PermissionTypes;
 import io.harness.template.beans.refresh.ErrorNodeSummary;
 import io.harness.template.beans.refresh.TemplateInfo;
 import io.harness.template.beans.refresh.ValidateTemplateInputsResponseDTO;
@@ -41,6 +46,8 @@ public class TemplateRefreshServiceImpl implements TemplateRefreshService {
   private TemplateInputsRefreshHelper templateInputsRefreshHelper;
   private NGTemplateService templateService;
   private TemplateInputsValidator templateInputsValidator;
+
+  private AccessControlClient accessControlClient;
 
   @Override
   public void refreshAndUpdateTemplate(
@@ -147,6 +154,8 @@ public class TemplateRefreshServiceImpl implements TemplateRefreshService {
 
       TemplateInfo templateInfo = top.getTemplateInfo();
       if (!visitedTemplateSet.contains(templateInfo)) {
+        accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountId, orgId, projectId),
+            Resource.of(TEMPLATE, templateInfo.getTemplateIdentifier()), PermissionTypes.TEMPLATE_EDIT_PERMISSION);
         refreshAndUpdateTemplate(
             accountId, orgId, projectId, templateInfo.getTemplateIdentifier(), templateInfo.getVersionLabel());
         visitedTemplateSet.add(templateInfo);

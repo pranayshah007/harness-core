@@ -40,7 +40,6 @@ import io.harness.cvng.beans.AppDynamicsDataCollectionInfo;
 import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.activity.ActivityVerificationStatus;
 import io.harness.cvng.beans.job.CanaryVerificationJobDTO;
-import io.harness.cvng.beans.job.HealthVerificationJobDTO;
 import io.harness.cvng.beans.job.Sensitivity;
 import io.harness.cvng.beans.job.TestVerificationJobDTO;
 import io.harness.cvng.beans.job.VerificationJobDTO;
@@ -60,7 +59,6 @@ import io.harness.cvng.core.services.api.MonitoringSourcePerpetualTaskService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.statemachine.beans.AnalysisStatus;
 import io.harness.cvng.verificationjob.beans.TestVerificationBaselineExecutionDTO;
-import io.harness.cvng.verificationjob.entities.HealthVerificationJob;
 import io.harness.cvng.verificationjob.entities.TestVerificationJob;
 import io.harness.cvng.verificationjob.entities.VerificationJob;
 import io.harness.cvng.verificationjob.entities.VerificationJob.RuntimeParameter;
@@ -87,7 +85,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -608,58 +605,6 @@ public class VerificationJobInstanceServiceImplTest extends CvNextGenTestBase {
     return monitoringSourcePerpetualTaskService.getDeploymentWorkerId(
         accountId, orgIdentifier, projectIdentifier, connectorId, monitoringSourceIdentifier);
   }
-  @Test
-  @Owner(developers = RAGHU)
-  @Category(UnitTests.class)
-  public void testDedupCreate_withHealthJob() {
-    Instant now = Instant.parse("2021-02-26T09:03:48.439Z");
-    int numOfJobInstances = 10;
-    List<VerificationJobInstance> verificationJobInstances = new ArrayList<>();
-    for (int i = 0; i < numOfJobInstances; i++) {
-      verificationJobInstances.add(
-          builderFactory.verificationJobInstanceBuilder()
-              .accountId(accountId)
-              .startTime(now.plus(Duration.ofMinutes(i)))
-              .executionStatus(ExecutionStatus.QUEUED)
-              .deploymentStartTime(now.minus(Duration.ofMinutes(2)))
-              .resolvedJob(
-                  HealthVerificationJob.builder()
-                      .accountId(accountId)
-                      .orgIdentifier(orgIdentifier)
-                      .projectIdentifier(projectIdentifier)
-                      .identifier("job-" + i)
-                      .duration(RuntimeParameter.builder().value("5m").isRuntimeParam(false).build())
-                      .envIdentifier(
-                          RuntimeParameter.builder().isRuntimeParam(false).value(i % 2 == 0 ? "e0" : "e1").build())
-                      .serviceIdentifier(
-                          RuntimeParameter.builder().isRuntimeParam(false).value(i % 2 == 0 ? "s0" : "s1").build())
-                      .build())
-              .build());
-    }
-
-    List<String> jobIds = verificationJobInstanceService.dedupCreate(verificationJobInstances);
-    assertThat(jobIds.size()).isEqualTo(2);
-    verificationJobInstances = hPersistence.createQuery(VerificationJobInstance.class, excludeAuthority).asList();
-    Collections.sort(verificationJobInstances, Comparator.comparing(v -> v.getResolvedJob().getIdentifier()));
-    for (int i = 0; i < 2; i++) {
-      VerificationJobInstance verificationJobInstance = verificationJobInstances.get(i);
-      assertThat(verificationJobInstance.getAccountId()).isEqualTo(accountId);
-      assertThat(verificationJobInstance.getExecutionStatus()).isEqualTo(ExecutionStatus.QUEUED);
-      assertThat(verificationJobInstance.getStartTime()).isEqualTo(Instant.parse("2021-02-26T09:00:00.000Z"));
-      assertThat(((HealthVerificationJob) verificationJobInstance.getResolvedJob())
-                     .getPreActivityVerificationStartTime(verificationJobInstance.getStartTime()))
-          .isEqualTo(Instant.parse("2021-02-26T08:55:00.000Z"));
-      assertThat(verificationJobInstance.getStartTime()).isEqualTo(Instant.parse("2021-02-26T09:00:00.000Z"));
-
-      HealthVerificationJob resolvedJob = (HealthVerificationJob) verificationJobInstance.getResolvedJob();
-      assertThat(resolvedJob.getIdentifier()).isEqualTo("job-" + i);
-      assertThat(resolvedJob.getAccountId()).isEqualTo(accountId);
-      assertThat(resolvedJob.getOrgIdentifier()).isEqualTo(orgIdentifier);
-      assertThat(resolvedJob.getProjectIdentifier()).isEqualTo(projectIdentifier);
-      assertThat(resolvedJob.getEnvIdentifier()).isEqualTo("e" + i);
-      assertThat(resolvedJob.getServiceIdentifier()).isEqualTo("s" + i);
-    }
-  }
 
   @Test
   @Owner(developers = RAGHU)
@@ -930,20 +875,6 @@ public class VerificationJobInstanceServiceImplTest extends CvNextGenTestBase {
     canaryVerificationJobDTO.setSensitivity(Sensitivity.MEDIUM.name());
     canaryVerificationJobDTO.setDuration("15m");
     return canaryVerificationJobDTO;
-  }
-
-  private VerificationJobDTO newHealthVerificationJobDTO() {
-    HealthVerificationJobDTO healthVerificationJobDTO = new HealthVerificationJobDTO();
-    healthVerificationJobDTO.setIdentifier(verificationJobIdentifier);
-    healthVerificationJobDTO.setJobName(generateUuid());
-    healthVerificationJobDTO.setDataSources(Lists.newArrayList(DataSourceType.SPLUNK));
-    healthVerificationJobDTO.setMonitoringSources(Arrays.asList(monitoringSourceIdentifier));
-    healthVerificationJobDTO.setServiceIdentifier(serviceIdentifier);
-    healthVerificationJobDTO.setOrgIdentifier(orgIdentifier);
-    healthVerificationJobDTO.setProjectIdentifier(projectIdentifier);
-    healthVerificationJobDTO.setEnvIdentifier(builderFactory.getContext().getEnvIdentifier());
-    healthVerificationJobDTO.setDuration("15m");
-    return healthVerificationJobDTO;
   }
 
   private CVConfig newCVConfig() {

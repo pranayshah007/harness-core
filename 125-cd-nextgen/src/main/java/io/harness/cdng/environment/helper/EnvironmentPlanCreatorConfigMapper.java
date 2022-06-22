@@ -49,18 +49,18 @@ public class EnvironmentPlanCreatorConfigMapper {
 
   public EnvironmentPlanCreatorConfig toEnvPlanCreatorConfigWithGitops(
       String mergedEnvYaml, EnvironmentYamlV2 envYaml, NGServiceOverrides serviceOverride) {
-    NGEnvironmentInfoConfig ngEnvironmentInfoConfig =
+    NGEnvironmentInfoConfig config =
         EnvironmentMapper.toNGEnvironmentConfig(mergedEnvYaml).getNgEnvironmentInfoConfig();
     return EnvironmentPlanCreatorConfig.builder()
         .environmentRef(envYaml.getEnvironmentRef())
-        .identifier(ngEnvironmentInfoConfig.getIdentifier())
-        .projectIdentifier(ngEnvironmentInfoConfig.getProjectIdentifier())
-        .orgIdentifier(ngEnvironmentInfoConfig.getOrgIdentifier())
-        .description(ngEnvironmentInfoConfig.getDescription())
-        .name(ngEnvironmentInfoConfig.getName())
-        .tags(ngEnvironmentInfoConfig.getTags())
-        .type(ngEnvironmentInfoConfig.getType())
-        .variables(ngEnvironmentInfoConfig.getVariables())
+        .identifier(config.getIdentifier())
+        .projectIdentifier(config.getProjectIdentifier())
+        .orgIdentifier(config.getOrgIdentifier())
+        .description(config.getDescription())
+        .name(config.getName())
+        .tags(config.getTags())
+        .type(config.getType())
+        .variables(config.getVariables())
         .serviceOverrides(serviceOverride)
         .gitOpsClusterRefs(getClusterRefs(envYaml))
         .deployToAll(envYaml.isDeployToAll())

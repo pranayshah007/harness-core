@@ -14,13 +14,11 @@ import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.instance.info.InstanceInfoService;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
-import io.harness.cdng.serverless.ServerlessAwsLambdaRollbackDataOutcome.ServerlessAwsLambdaRollbackDataOutcomeBuilder;
 import io.harness.cdng.serverless.beans.ServerlessAwsLambdaStepExecutorParams;
 import io.harness.cdng.serverless.beans.ServerlessExecutionPassThroughData;
 import io.harness.cdng.serverless.beans.ServerlessGitFetchFailurePassThroughData;
 import io.harness.cdng.serverless.beans.ServerlessStepExceptionPassThroughData;
 import io.harness.cdng.serverless.beans.ServerlessStepExecutorParams;
-import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
@@ -30,6 +28,7 @@ import io.harness.delegate.task.serverless.ServerlessCommandType;
 import io.harness.delegate.task.serverless.ServerlessDeployConfig;
 import io.harness.delegate.task.serverless.ServerlessManifestConfig;
 import io.harness.delegate.task.serverless.request.ServerlessDeployRequest;
+import io.harness.delegate.task.serverless.request.ServerlessPrepareRollbackDataRequest;
 import io.harness.delegate.task.serverless.response.ServerlessDeployResponse;
 import io.harness.exception.ExceptionUtils;
 import io.harness.executions.steps.ExecutionNodeType;
@@ -41,7 +40,6 @@ import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.AmbianceUtils;
-import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
@@ -67,6 +65,7 @@ public class ServerlessAwsLambdaDeployStep
                                                .setStepCategory(StepCategory.STEP)
                                                .build();
   private final String SERVERLESS_AWS_LAMBDA_DEPLOY_COMMAND_NAME = "ServerlessAwsLambdaDeploy";
+  private final String SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_COMMAND_NAME = "ServerlessAwsLambdaPrepareRollback";
   @Inject private ServerlessStepCommonHelper serverlessStepCommonHelper;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
   @Inject private InstanceInfoService instanceInfoService;
@@ -92,8 +91,6 @@ public class ServerlessAwsLambdaDeployStep
         (ServerlessAwsLambdaDeployStepParameters) stepElementParameters.getSpec();
     ServerlessAwsLambdaStepExecutorParams serverlessAwsLambdaStepExecutorParams =
         (ServerlessAwsLambdaStepExecutorParams) serverlessStepExecutorParams;
-    String manifestFileOverrideContent = serverlessStepCommonHelper.renderManifestContent(
-        ambiance, serverlessAwsLambdaStepExecutorParams.getManifestFilePathContent().getValue());
     final String accountId = AmbianceUtils.getAccountId(ambiance);
     ServerlessArtifactConfig serverlessArtifactConfig = null;
     Optional<ArtifactOutcome> artifactOutcome = serverlessStepCommonHelper.resolveArtifactsOutcome(ambiance);
@@ -103,17 +100,11 @@ public class ServerlessAwsLambdaDeployStep
     ServerlessDeployConfig serverlessDeployConfig = serverlessStepCommonHelper.getServerlessDeployConfig(
         serverlessDeployStepParameters, serverlessAwsLambdaStepHelper);
     Map<String, Object> manifestParams = new HashMap<>();
-    manifestParams.put("manifestFileOverrideContent", manifestFileOverrideContent);
+    manifestParams.put(
+        "manifestFileOverrideContent", serverlessAwsLambdaStepExecutorParams.getManifestFileOverrideContent());
     manifestParams.put("manifestFilePathContent", serverlessAwsLambdaStepExecutorParams.getManifestFilePathContent());
     ServerlessManifestConfig serverlessManifestConfig = serverlessStepCommonHelper.getServerlessManifestConfig(
         manifestParams, serverlessManifestOutcome, ambiance, serverlessAwsLambdaStepHelper);
-    ServerlessGitFetchOutcome serverlessGitFetchOutcome =
-        ServerlessGitFetchOutcome.builder()
-            .manifestFilePathContent(serverlessAwsLambdaStepExecutorParams.getManifestFilePathContent())
-            .manifestFileOverrideContent(manifestFileOverrideContent)
-            .build();
-    executionSweepingOutputService.consume(ambiance, OutcomeExpressionConstants.SERVERLESS_GIT_FETCH_OUTCOME,
-        serverlessGitFetchOutcome, StepOutcomeGroup.STEP.name());
     ServerlessDeployRequest serverlessDeployRequest =
         ServerlessDeployRequest.builder()
             .commandName(SERVERLESS_AWS_LAMBDA_DEPLOY_COMMAND_NAME)
@@ -125,10 +116,40 @@ public class ServerlessAwsLambdaDeployStep
             .serverlessArtifactConfig(serverlessArtifactConfig)
             .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
             .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))
-            .manifestContent(manifestFileOverrideContent)
+            .manifestContent(serverlessAwsLambdaStepExecutorParams.getManifestFileOverrideContent())
             .build();
     return serverlessStepCommonHelper.queueServerlessTask(
-        stepElementParameters, serverlessDeployRequest, ambiance, executionPassThroughData);
+        stepElementParameters, serverlessDeployRequest, ambiance, executionPassThroughData, true);
+  }
+
+  @Override
+  public TaskChainResponse executeServerlessPrepareRollbackTask(ManifestOutcome serverlessManifestOutcome,
+      Ambiance ambiance, StepElementParameters stepElementParameters,
+      ServerlessStepPassThroughData serverlessStepPassThroughData, UnitProgressData unitProgressData,
+      ServerlessStepExecutorParams serverlessStepExecutorParams) {
+    InfrastructureOutcome infrastructureOutcome = serverlessStepPassThroughData.getInfrastructureOutcome();
+    ServerlessAwsLambdaStepExecutorParams serverlessAwsLambdaStepExecutorParams =
+        (ServerlessAwsLambdaStepExecutorParams) serverlessStepExecutorParams;
+    final String accountId = AmbianceUtils.getAccountId(ambiance);
+    Map<String, Object> manifestParams = new HashMap<>();
+    manifestParams.put(
+        "manifestFileOverrideContent", serverlessAwsLambdaStepExecutorParams.getManifestFileOverrideContent());
+    manifestParams.put("manifestFilePathContent", serverlessAwsLambdaStepExecutorParams.getManifestFilePathContent());
+    ServerlessManifestConfig serverlessManifestConfig = serverlessStepCommonHelper.getServerlessManifestConfig(
+        manifestParams, serverlessManifestOutcome, ambiance, serverlessAwsLambdaStepHelper);
+    ServerlessPrepareRollbackDataRequest serverlessPrepareRollbackDataRequest =
+        ServerlessPrepareRollbackDataRequest.builder()
+            .commandName(SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK_COMMAND_NAME)
+            .accountId(accountId)
+            .serverlessCommandType(ServerlessCommandType.SERVERLESS_AWS_LAMBDA_PREPARE_ROLLBACK)
+            .serverlessInfraConfig(serverlessStepCommonHelper.getServerlessInfraConfig(infrastructureOutcome, ambiance))
+            .serverlessManifestConfig(serverlessManifestConfig)
+            .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
+            .timeoutIntervalInMin(CDStepHelper.getTimeoutInMin(stepElementParameters))
+            .manifestContent(serverlessAwsLambdaStepExecutorParams.getManifestFileOverrideContent())
+            .build();
+    return serverlessStepCommonHelper.queueServerlessTask(
+        stepElementParameters, serverlessPrepareRollbackDataRequest, ambiance, serverlessStepPassThroughData, false);
   }
 
   @Override
@@ -156,8 +177,6 @@ public class ServerlessAwsLambdaDeployStep
         (ServerlessExecutionPassThroughData) passThroughData;
     InfrastructureOutcome infrastructureOutcome = serverlessExecutionPassThroughData.getInfrastructure();
     ServerlessDeployResponse serverlessDeployResponse;
-    ServerlessAwsLambdaRollbackDataOutcomeBuilder serverlessRollbackDataOutcomeBuilder =
-        ServerlessAwsLambdaRollbackDataOutcome.builder();
     try {
       serverlessDeployResponse = (ServerlessDeployResponse) responseDataSupplier.get();
     } catch (Exception e) {
@@ -166,21 +185,9 @@ public class ServerlessAwsLambdaDeployStep
         log.error("Error while processing serverless task response: {}", e.getMessage(), e);
         return serverlessStepCommonHelper.handleTaskException(ambiance, serverlessExecutionPassThroughData, e);
       }
-      serverlessRollbackDataOutcomeBuilder.previousVersionTimeStamp(serverlessException.getPreviousVersionTimeStamp());
-      serverlessRollbackDataOutcomeBuilder.isFirstDeployment(serverlessException.isFirstDeployment());
-      executionSweepingOutputService.consume(ambiance,
-          OutcomeExpressionConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK_DATA_OUTCOME,
-          serverlessRollbackDataOutcomeBuilder.build(), StepOutcomeGroup.STEP.name());
       log.error("Error while processing serverless task response: {}", e.getMessage(), e);
       return serverlessStepCommonHelper.handleTaskException(ambiance, serverlessExecutionPassThroughData, e);
     }
-    serverlessRollbackDataOutcomeBuilder.previousVersionTimeStamp(
-        serverlessAwsLambdaStepHelper.getPreviousVersion(serverlessDeployResponse));
-    serverlessRollbackDataOutcomeBuilder.isFirstDeployment(
-        serverlessAwsLambdaStepHelper.getIsFirstDeployment(serverlessDeployResponse));
-    executionSweepingOutputService.consume(ambiance,
-        OutcomeExpressionConstants.SERVERLESS_AWS_LAMBDA_ROLLBACK_DATA_OUTCOME,
-        serverlessRollbackDataOutcomeBuilder.build(), StepOutcomeGroup.STEP.name());
     StepResponseBuilder stepResponseBuilder =
         StepResponse.builder().unitProgressList(serverlessDeployResponse.getUnitProgressData().getUnitProgresses());
     if (serverlessDeployResponse.getCommandExecutionStatus() != CommandExecutionStatus.SUCCESS) {

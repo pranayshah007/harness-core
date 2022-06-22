@@ -122,7 +122,7 @@ public class RunTestsStepProtobufSerializer implements ProtobufStepSerializer<Ru
 
     String frameworkVersion = RunTimeInputHandler.resolveDotNetVersion(runTestsStepInfo.getFrameworkVersion());
     if (StringUtils.isNotEmpty(frameworkVersion)) {
-      runTestsStepBuilder.setFrameworkVersion(buildEnvName.toLowerCase());
+      runTestsStepBuilder.setFrameworkVersion(frameworkVersion.toLowerCase());
     }
 
     UnitTestReport reports = runTestsStepInfo.getReports().getValue();

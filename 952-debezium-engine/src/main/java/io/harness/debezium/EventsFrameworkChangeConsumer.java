@@ -19,22 +19,22 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.connect.source.SourceRecord;
 
 @Slf4j
-public class EventsFrameworkChangeConsumer implements MongoDatabaseChangeConsumer {
+public class EventsFrameworkChangeConsumer implements MongoCollectionChangeConsumer {
   private static final String OP_FIELD = "__op";
   private static final String DEFAULT_STRING = "default";
 
-  private final String databaseName;
+  private final String collectionName;
   private final DebeziumProducerFactory producerFactory;
 
-  public EventsFrameworkChangeConsumer(String databaseName, DebeziumProducerFactory producerFactory) {
-    this.databaseName = databaseName;
+  public EventsFrameworkChangeConsumer(String collectionName, DebeziumProducerFactory producerFactory) {
+    this.collectionName = collectionName;
     this.producerFactory = producerFactory;
   }
 
   @Override
   public void handleBatch(List<ChangeEvent<String, String>> records,
       DebeziumEngine.RecordCommitter<ChangeEvent<String, String>> recordCommitter) throws InterruptedException {
-    log.info("Handling a batch of {} records for database {}", records.size(), databaseName);
+    log.info("Handling a batch of {} records for collection {}", records.size(), collectionName);
 
     // Add the batch records to the stream(s)
     for (ChangeEvent<String, String> record : records) {
@@ -71,7 +71,7 @@ public class EventsFrameworkChangeConsumer implements MongoDatabaseChangeConsume
   }
 
   @Override
-  public String getDatabase() {
-    return databaseName;
+  public String getCollection() {
+    return collectionName;
   }
 }

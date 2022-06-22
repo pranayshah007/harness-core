@@ -61,6 +61,7 @@ public class SplunkMetricHealthSourceSpecTransformer
 
     return SplunkMetricHealthSourceSpec.builder()
         .connectorRef(cvConfigs.get(0).getConnectorIdentifier())
+        .feature(cvConfigs.get(0).getProductName())
         .metricDefinitions(metricDefinitions)
         .build();
   }

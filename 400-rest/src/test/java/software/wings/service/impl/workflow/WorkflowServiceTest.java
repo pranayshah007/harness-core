@@ -4468,10 +4468,8 @@ public class WorkflowServiceTest extends WingsBaseTest {
               WorkflowCategoryStepsMeta::getStepIds)
           .contains(tuple(WorkflowStepType.INFRASTRUCTURE_PROVISIONER.name(),
               WorkflowStepType.INFRASTRUCTURE_PROVISIONER.getDisplayName(),
-              isRollback ? asList(
-                  CLOUD_FORMATION_CREATE_STACK.name(), CLOUD_FORMATION_DELETE_STACK.name(), TERRAFORM_APPLY.name())
-                         : asList(CLOUD_FORMATION_CREATE_STACK.name(), CLOUD_FORMATION_DELETE_STACK.name(),
-                             TERRAFORM_APPLY.name(), TERRAGRUNT_PROVISION.name())));
+              asList(CLOUD_FORMATION_CREATE_STACK.name(), CLOUD_FORMATION_DELETE_STACK.name(), TERRAFORM_APPLY.name(),
+                  TERRAGRUNT_PROVISION.name())));
     }
   }
 

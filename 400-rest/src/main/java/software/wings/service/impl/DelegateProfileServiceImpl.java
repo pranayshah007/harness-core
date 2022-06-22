@@ -399,6 +399,17 @@ public class DelegateProfileServiceImpl implements DelegateProfileService, Accou
     }
   }
 
+  @Override
+  public void deleteAllProfileOnDeletingOwner(String accountId, DelegateEntityOwner owner) {
+    // delete all delegate profiles when a corresponding owner will be deleted
+    Query<DelegateProfile> query = persistence.createQuery(DelegateProfile.class)
+                                       .filter(DelegateProfileKeys.accountId, accountId)
+                                       .filter(DelegateProfileKeys.ng, true)
+                                       .filter(DelegateProfileKeys.owner, owner);
+
+    persistence.delete(query);
+  }
+
   private void publishDelegateProfileChangeEventViaEventFramework(DelegateProfile delegateProfile, String action) {
     if (delegateProfile == null) {
       return;

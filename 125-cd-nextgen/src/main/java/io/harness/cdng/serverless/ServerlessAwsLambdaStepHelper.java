@@ -30,7 +30,6 @@ import io.harness.delegate.task.serverless.ServerlessAwsLambdaDeployConfig;
 import io.harness.delegate.task.serverless.ServerlessAwsLambdaManifestConfig;
 import io.harness.delegate.task.serverless.ServerlessDeployConfig;
 import io.harness.delegate.task.serverless.ServerlessManifestConfig;
-import io.harness.delegate.task.serverless.response.ServerlessDeployResponse;
 import io.harness.exception.InvalidRequestException;
 import io.harness.git.model.FetchFilesResult;
 import io.harness.git.model.GitFile;
@@ -151,17 +150,5 @@ public class ServerlessAwsLambdaStepHelper implements ServerlessStepHelper {
     }
     throw new UnsupportedOperationException(
         format("Unsupported serverless manifest type: [%s]", manifestOutcome.getType()));
-  }
-
-  public String getPreviousVersion(ServerlessDeployResponse serverlessDeployResponse) {
-    ServerlessAwsLambdaDeployResult serverlessAwsLambdaDeployResult =
-        (ServerlessAwsLambdaDeployResult) serverlessDeployResponse.getServerlessDeployResult();
-    return serverlessAwsLambdaDeployResult.getPreviousVersionTimeStamp();
-  }
-
-  public boolean getIsFirstDeployment(ServerlessDeployResponse serverlessDeployResponse) {
-    ServerlessAwsLambdaDeployResult serverlessAwsLambdaDeployResult =
-        (ServerlessAwsLambdaDeployResult) serverlessDeployResponse.getServerlessDeployResult();
-    return serverlessAwsLambdaDeployResult.isFirstDeployment();
   }
 }

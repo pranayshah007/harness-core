@@ -16,8 +16,8 @@ public enum ExecutionStrategyType {
   @JsonProperty("Canary") CANARY("Canary"),
   @JsonProperty("BlueGreen") BLUE_GREEN("BlueGreen"),
   @JsonProperty("Rolling") ROLLING("Rolling"),
-  @JsonProperty("Default") DEFAULT("Default");
-  ;
+  @JsonProperty("Default") DEFAULT("Default"),
+  @JsonProperty("GitOps") GITOPS("GitOps");
 
   private String displayName;
 

@@ -28,10 +28,10 @@ public enum TIDotNetVersion {
 
   @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
   public static TIDotNetVersion getDotNetVersion(@JsonProperty("frameworkVersion") String yamlName) {
-    for (TIDotNetVersion dotNetVersion : TIDotNetVersion.values()) {
-      if (dotNetVersion.yamlName.equalsIgnoreCase(yamlName)) {
-        return dotNetVersion;
-      }
+    if (yamlName.equalsIgnoreCase("FIVEPOINTZERO") || yamlName.equalsIgnoreCase(FIVEPOINTZERO.yamlName)) {
+      return FIVEPOINTZERO;
+    } else if (yamlName.equalsIgnoreCase("SIXPOINTZERO") || yamlName.equalsIgnoreCase(SIXPOINTZERO.yamlName)) {
+      return SIXPOINTZERO;
     }
     throw new IllegalArgumentException("Invalid value: " + yamlName);
   }

@@ -23,6 +23,7 @@ import io.harness.pms.yaml.YamlUtils;
 import io.harness.utils.YamlPipelineUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Preconditions;
 import com.google.inject.Inject;
@@ -88,14 +89,28 @@ public class YamlExpressionResolveHelper {
   }
 
   private void resolveExpressionsInArray(YamlNode arrayNode, EngineExpressionEvaluator engineExpressionEvaluator) {
+    int childIndex = 0;
     for (YamlNode arrayElement : arrayNode.asArray()) {
       if (arrayElement.isObject()) {
         resolveExpressionsInObject(arrayElement, engineExpressionEvaluator);
       } else if (arrayElement.isArray()) {
         resolveExpressionsInArray(arrayElement, engineExpressionEvaluator);
       } else if (arrayElement.getCurrJsonNode().isValueNode()) {
-        resolveExpressionInValueNode(
-            arrayNode, arrayElement.getName(), arrayElement.getCurrJsonNode().asText(), engineExpressionEvaluator);
+        resolveExpressionForArrayElement(
+            arrayNode, childIndex, arrayElement.getCurrJsonNode().asText(), engineExpressionEvaluator);
+      }
+      childIndex = childIndex + 1;
+    }
+  }
+
+  public void resolveExpressionForArrayElement(
+      YamlNode parentNode, int childIndex, String childValue, EngineExpressionEvaluator engineExpressionEvaluator) {
+    ArrayNode object = (ArrayNode) parentNode.getCurrJsonNode();
+    if (EngineExpressionEvaluator.hasExpressions(childValue)) {
+      String resolvedExpression = engineExpressionEvaluator.renderExpression(childValue, true);
+      // Update node value only if expression was successfully resolved
+      if (isExpressionResolved(resolvedExpression) && !resolvedExpression.equals(childValue)) {
+        object.set(childIndex, resolvedExpression);
       }
     }
   }

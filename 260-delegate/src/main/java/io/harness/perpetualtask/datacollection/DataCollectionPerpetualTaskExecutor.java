@@ -94,16 +94,16 @@ public class DataCollectionPerpetualTaskExecutor implements PerpetualTaskExecuto
       List<List<EncryptedDataDetail>> encryptedDataDetails = dataCollectionInfo.getEncryptedDataDetails();
 
       if (isNotEmpty(decryptableEntities)) {
-        for (int index = 0; index < decryptableEntities.size(); index++) {
+        if (decryptableEntities.size() != encryptedDataDetails.size()) {
+          log.warn(
+              "Size of decryptableEntities is not same as size of encryptedDataDetails. Probably it is because of version difference between delegate and manager and decyptable entities got added/removed.");
+        }
+        // using min of encryptedDataDetails, decryptableEntities size to avoid index out of bound exception because of
+        // comparability issues. This allows us to add/remove decryptableEntities without breaking this. This can still
+        // cause issues if not done carefully.
+        for (int index = 0; index < Math.min(encryptedDataDetails.size(), decryptableEntities.size()); index++) {
           DecryptableEntity decryptableEntity = decryptableEntities.get(index);
-          if (encryptedDataDetails.get(index) instanceof EncryptedDataDetail) {
-            EncryptedDataDetail encryptedDataDetail = (EncryptedDataDetail) encryptedDataDetails.get(index);
-            List<EncryptedDataDetail> encryptedDataDetailList = new ArrayList<>();
-            encryptedDataDetailList.add(encryptedDataDetail);
-            secretDecryptionService.decrypt(decryptableEntity, encryptedDataDetailList);
-          } else {
-            secretDecryptionService.decrypt(decryptableEntity, encryptedDataDetails.get(index));
-          }
+          secretDecryptionService.decrypt(decryptableEntity, encryptedDataDetails.get(index));
         }
       }
 

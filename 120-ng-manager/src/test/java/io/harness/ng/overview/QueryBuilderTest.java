@@ -94,23 +94,23 @@ public class QueryBuilderTest extends CategoryTest {
 
     // failedStatusList
     String expectedQueryResult = "select " + columnsExecutionStatus
-        + " from pipeline_execution_summary_cd where accountid='accountId' and orgidentifier='orgId' and projectidentifier='projectId' and status in ('FAILED','ABORTED','EXPIRED') and startts is not null ORDER BY startts DESC LIMIT 20;";
+        + " from pipeline_execution_summary_cd where accountid='accountId' and orgidentifier='orgId' and projectidentifier='projectId' and status in ('FAILED','ABORTED','EXPIRED') and startts>=1619626802000 and startts<1622650432000 and startts is not null ORDER BY startts DESC LIMIT 20;";
     String queryResult = new CDOverviewDashboardServiceImpl().queryBuilderStatus(
-        "accountId", "orgId", "projectId", 20, failedStatusList);
+        "accountId", "orgId", "projectId", 20, failedStatusList, 1619626802000L, 1622650432000L);
     assertThat(queryResult).isEqualTo(expectedQueryResult);
 
     // activeStatusList
     expectedQueryResult = "select " + columnsExecutionStatus
-        + " from pipeline_execution_summary_cd where accountid='accountId' and orgidentifier='orgId' and projectidentifier='projectId' and status in ('RUNNING') and startts is not null ORDER BY startts DESC LIMIT 20;";
+        + " from pipeline_execution_summary_cd where accountid='accountId' and orgidentifier='orgId' and projectidentifier='projectId' and status in ('RUNNING') and startts>=1619626802000 and startts<1622650432000 and startts is not null ORDER BY startts DESC LIMIT 20;";
     queryResult = new CDOverviewDashboardServiceImpl().queryBuilderStatus(
-        "accountId", "orgId", "projectId", 20, activeStatusList);
+        "accountId", "orgId", "projectId", 20, activeStatusList, 1619626802000L, 1622650432000L);
     assertThat(queryResult).isEqualTo(expectedQueryResult);
 
     // pending
     expectedQueryResult = "select " + columnsExecutionStatus
-        + " from pipeline_execution_summary_cd where accountid='accountId' and orgidentifier='orgId' and projectidentifier='projectId' and status in ('INTERVENTIONWAITING','APPROVALWAITING') and startts is not null ORDER BY startts DESC LIMIT 20;";
+        + " from pipeline_execution_summary_cd where accountid='accountId' and orgidentifier='orgId' and projectidentifier='projectId' and status in ('INTERVENTIONWAITING','APPROVALWAITING') and startts>=1619626802000 and startts<1622650432000 and startts is not null ORDER BY startts DESC LIMIT 20;";
     queryResult = new CDOverviewDashboardServiceImpl().queryBuilderStatus(
-        "accountId", "orgId", "projectId", 20, pendingStatusList);
+        "accountId", "orgId", "projectId", 20, pendingStatusList, 1619626802000L, 1622650432000L);
     assertThat(queryResult).isEqualTo(expectedQueryResult);
   }
 
@@ -142,23 +142,23 @@ public class QueryBuilderTest extends CategoryTest {
 
     // failed
     String expectedQueryResult =
-        "select id from pipeline_execution_summary_cd where accountid='acc' and orgidentifier='org' and projectidentifier='pro' and status in ('FAILED','ABORTED','EXPIRED') and startts is not null ORDER BY startts DESC LIMIT 4";
+        "select id from pipeline_execution_summary_cd where accountid='acc' and orgidentifier='org' and projectidentifier='pro' and status in ('FAILED','ABORTED','EXPIRED') and startts>=1619626802000 and startts<1622650432000 and startts is not null ORDER BY startts DESC LIMIT 4";
     String queryResult = new CDOverviewDashboardServiceImpl().queryBuilderSelectIdLimitTimeCdTable(
-        "acc", "org", "pro", 4, failedStatusList);
+        "acc", "org", "pro", 4, failedStatusList, 1619626802000L, 1622650432000L);
     assertThat(queryResult).isEqualTo(expectedQueryResult);
 
     // active
     expectedQueryResult =
-        "select id from pipeline_execution_summary_cd where accountid='acc' and orgidentifier='org' and projectidentifier='pro' and status in ('RUNNING') and startts is not null ORDER BY startts DESC LIMIT 4";
+        "select id from pipeline_execution_summary_cd where accountid='acc' and orgidentifier='org' and projectidentifier='pro' and status in ('RUNNING') and startts>=1619626802000 and startts<1622650432000 and startts is not null ORDER BY startts DESC LIMIT 4";
     queryResult = new CDOverviewDashboardServiceImpl().queryBuilderSelectIdLimitTimeCdTable(
-        "acc", "org", "pro", 4, activeStatusList);
+        "acc", "org", "pro", 4, activeStatusList, 1619626802000L, 1622650432000L);
     assertThat(queryResult).isEqualTo(expectedQueryResult);
 
     // pending
     expectedQueryResult =
-        "select id from pipeline_execution_summary_cd where accountid='acc' and orgidentifier='org' and projectidentifier='pro' and status in ('INTERVENTIONWAITING','APPROVALWAITING') and startts is not null ORDER BY startts DESC LIMIT 4";
+        "select id from pipeline_execution_summary_cd where accountid='acc' and orgidentifier='org' and projectidentifier='pro' and status in ('INTERVENTIONWAITING','APPROVALWAITING') and startts>=1619626802000 and startts<1622650432000 and startts is not null ORDER BY startts DESC LIMIT 4";
     queryResult = new CDOverviewDashboardServiceImpl().queryBuilderSelectIdLimitTimeCdTable(
-        "acc", "org", "pro", 4, pendingStatusList);
+        "acc", "org", "pro", 4, pendingStatusList, 1619626802000L, 1622650432000L);
     assertThat(queryResult).isEqualTo(expectedQueryResult);
   }
 

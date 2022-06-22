@@ -38,6 +38,7 @@ import static io.harness.provision.TerraformConstants.INHERIT_APPROVED_PLAN;
 import static io.harness.provision.TerraformConstants.RUN_PLAN_ONLY_KEY;
 import static io.harness.provision.TerragruntConstants.PATH_TO_MODULE;
 import static io.harness.provision.TerragruntConstants.PROVISIONER_ID;
+import static io.harness.provision.TerragruntConstants.SKIP_ROLLBACK;
 import static io.harness.provision.TerragruntConstants.TIMEOUT_MILLIS;
 import static io.harness.provision.TerragruntConstants.WORKSPACE;
 import static io.harness.validation.Validator.notEmptyCheck;
@@ -1708,27 +1709,24 @@ public class WorkflowServiceImpl implements WorkflowService {
                                            .filter(step -> StateType.TERRAGRUNT_PROVISION.name().equals(step.getType()))
                                            .collect(Collectors.toList());
 
-    if (isEmpty(provisionerSteps)) {
-      return null;
-    }
-
     List<GraphNode> rollbackProvisionerNodes = Lists.newArrayList();
     Map<String, String> provisionerIdWorkspaceMap = new HashMap<>();
     Map<String, String> provisionerIdPathToModuleMap = new HashMap<>();
-
-    PhaseStep rollbackProvisionerStep = new PhaseStep(phaseStepType, phaseStepName);
-    rollbackProvisionerStep.setUuid(generateUuid());
+    Set<String> skipRollbackProvisionerIds = new HashSet<>();
 
     provisionerSteps.forEach(step -> {
-      StateType stateType = getTerragruntRollbackStateIfRequired(step);
+      String provisionerId = (String) step.getProperties().get(PROVISIONER_ID);
+      StateType stateType =
+          getTerragruntRollbackStateIfRequired(step, skipRollbackProvisionerIds.contains(provisionerId));
       if (isTerragruntPlanState(step)) {
         if (step.getProperties().get(WORKSPACE) != null) {
-          provisionerIdWorkspaceMap.put(
-              (String) step.getProperties().get(PROVISIONER_ID), (String) step.getProperties().get(WORKSPACE));
+          provisionerIdWorkspaceMap.put(provisionerId, (String) step.getProperties().get(WORKSPACE));
         }
         if (step.getProperties().get(PATH_TO_MODULE) != null) {
-          provisionerIdPathToModuleMap.put(
-              (String) step.getProperties().get(PROVISIONER_ID), (String) step.getProperties().get(PATH_TO_MODULE));
+          provisionerIdPathToModuleMap.put(provisionerId, (String) step.getProperties().get(PATH_TO_MODULE));
+        }
+        if (shouldSkipDefaultRollback(step)) {
+          skipRollbackProvisionerIds.add(provisionerId);
         }
       }
 
@@ -1737,11 +1735,11 @@ public class WorkflowServiceImpl implements WorkflowService {
         propertiesMap.put(PROVISIONER_ID, step.getProperties().get(PROVISIONER_ID));
         propertiesMap.put(TIMEOUT_MILLIS, step.getProperties().get(TIMEOUT_MILLIS));
         propertiesMap.put(WORKSPACE,
-            isTerragruntInheritState(step) ? provisionerIdWorkspaceMap.get(step.getProperties().get(PROVISIONER_ID))
+            isTerragruntInheritState(step) ? provisionerIdWorkspaceMap.get(provisionerId)
                                            : step.getProperties().get(WORKSPACE));
 
         propertiesMap.put(PATH_TO_MODULE,
-            isTerragruntInheritState(step) ? provisionerIdPathToModuleMap.get(step.getProperties().get(PROVISIONER_ID))
+            isTerragruntInheritState(step) ? provisionerIdPathToModuleMap.get(provisionerId)
                                            : step.getProperties().get(PATH_TO_MODULE));
 
         rollbackProvisionerNodes.add(GraphNode.builder()
@@ -1752,20 +1750,33 @@ public class WorkflowServiceImpl implements WorkflowService {
                                          .build());
       }
     });
+
+    PhaseStep rollbackProvisionerStep = new PhaseStep(phaseStepType, phaseStepName);
+    rollbackProvisionerStep.setUuid(generateUuid());
     rollbackProvisionerStep.setRollback(true);
     rollbackProvisionerStep.setSteps(rollbackProvisionerNodes);
     return rollbackProvisionerStep;
   }
 
-  StateType getTerragruntRollbackStateIfRequired(GraphNode step) {
+  StateType getTerragruntRollbackStateIfRequired(GraphNode step, boolean containedInSkipRollbacks) {
     if (step.getType().equals(StateType.TERRAGRUNT_PROVISION.name())) {
-      if (isTerragruntPlanState(step)) {
+      if (isTerragruntPlanState(step) || shouldSkipDefaultRollback(step)
+          || (isTerragruntInheritState(step) && containedInSkipRollbacks)) {
         return null;
       } else {
         return TERRAGRUNT_ROLLBACK;
       }
     }
     return null;
+  }
+
+  private boolean shouldSkipDefaultRollback(GraphNode step) {
+    if (step.getType().equals(StateType.TERRAGRUNT_PROVISION.name())) {
+      Map<String, Object> properties = step.getProperties();
+      Object o = properties.get(SKIP_ROLLBACK);
+      return (o instanceof Boolean) && ((Boolean) o);
+    }
+    return false;
   }
 
   private boolean isTerragruntPlanState(GraphNode step) {

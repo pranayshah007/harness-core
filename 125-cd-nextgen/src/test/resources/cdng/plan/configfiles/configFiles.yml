@@ -18,9 +18,5 @@
         type: Harness
         spec:
           files:
-            - ref: folderIdentifer
-              path: Root/folder,
-              isEncrypted: true
-            - ref: fileIdentifer,
-              path: Root/folder/fileName.txt,
-              isEncrypted: false
+            - path: /folder/config.yml,
+              scope: account
