@@ -112,4 +112,5 @@ public class NGCommonEntityConstants {
 
   public static final String INFRA = "infra";
   public static final String OVERRIDES_ONLY = "overridesOnly";
+  public static final String RUNTIME_INPUTS_TEMPLATE = "Runtime inputs template YAML";
 }
