@@ -59,7 +59,6 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.MultipartBody;
 import okhttp3.RequestBody;
-import org.hibernate.validator.constraints.NotBlank;
 import retrofit2.Call;
 
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
@@ -280,8 +279,7 @@ public class AuthenticationSettingsServiceImpl implements AuthenticationSettings
   }
 
   @Override
-  public Collection<LdapGroupResponse> searchLdapGroupsByName(
-      @NotBlank String accountIdentifier, @NotBlank String ldapId, @NotBlank String name) {
+  public Collection<LdapGroupResponse> searchLdapGroupsByName(String accountIdentifier, String ldapId, String name) {
     Call<RestResponse<LdapSettingsWithEncryptedDataDetail>> settingsWithEncryptedDataDetails =
         managerClient.getLdapSettingsWithEncryptedDataDetails(accountIdentifier);
     if (null == settingsWithEncryptedDataDetails) {

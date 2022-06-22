@@ -10,8 +10,6 @@ package io.harness.ng.ldap.search;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.NgSetupFields.NG;
 import static io.harness.delegate.beans.NgSetupFields.OWNER;
-import static io.harness.eraro.ErrorCode.SECRET_MANAGEMENT_ERROR;
-import static io.harness.exception.WingsException.USER;
 
 import static software.wings.beans.TaskType.NG_LDAP_SEARCH_GROUPS;
 
@@ -24,12 +22,12 @@ import io.harness.delegate.beans.ldap.LdapGroupSearchTaskParameters;
 import io.harness.delegate.beans.ldap.LdapGroupSearchTaskResponse;
 import io.harness.delegate.utils.TaskSetupAbstractionHelper;
 import io.harness.encryptors.DelegateTaskUtils;
-import io.harness.exception.SecretManagementException;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.service.DelegateGrpcClientWrapper;
 
 import software.wings.beans.dto.LdapSettings;
 import software.wings.beans.sso.LdapGroupResponse;
+import software.wings.service.impl.ldap.LdapDelegateException;
 
 import com.google.inject.Inject;
 import java.time.Duration;
@@ -37,6 +35,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
+import org.ldaptive.LdapException;
 
 @Slf4j
 @OwnedBy(HarnessTeam.PL)
@@ -72,7 +71,9 @@ public class NGLdapSearchService {
     DelegateTaskUtils.validateDelegateTaskResponse(delegateResponseData);
 
     if (!(delegateResponseData instanceof LdapGroupSearchTaskResponse)) {
-      throw new SecretManagementException(SECRET_MANAGEMENT_ERROR, "Unknown Response from delegate", USER);
+      log.error("Group name search query {}, failed on ldap server in account {}", nameQuery, settings.getAccountId());
+      throw new LdapDelegateException(
+          NG_LDAP_SEARCH_GROUPS.name(), new LdapException("Groups name search failed on ldap server"));
     }
 
     LdapGroupSearchTaskResponse groupSearchResponse = (LdapGroupSearchTaskResponse) delegateResponseData;

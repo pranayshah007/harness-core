@@ -24,7 +24,6 @@ import java.util.Collection;
 import java.util.Set;
 import javax.validation.constraints.NotNull;
 import okhttp3.MultipartBody;
-import org.hibernate.validator.constraints.NotBlank;
 
 @OwnedBy(HarnessTeam.PL)
 public interface AuthenticationSettingsService {
@@ -43,7 +42,7 @@ public interface AuthenticationSettingsService {
   SSOConfig deleteSAMLMetadata(@NotNull String accountIdentifier);
   LoginTypeResponse getSAMLLoginTest(@NotNull String accountIdentifier);
   Collection<LdapGroupResponse> searchLdapGroupsByName(
-      @NotBlank String accountIdentifier, @NotBlank String ldapId, @NotBlank String name);
+      @NotNull String accountIdentifier, @NotNull String ldapId, @NotNull String name);
   boolean setTwoFactorAuthAtAccountLevel(
       String accountIdentifier, TwoFactorAdminOverrideSettings twoFactorAdminOverrideSettings);
   PasswordStrengthPolicy getPasswordStrengthSettings(String accountIdentifier);
