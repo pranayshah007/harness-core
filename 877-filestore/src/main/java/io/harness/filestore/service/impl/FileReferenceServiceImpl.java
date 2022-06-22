@@ -31,7 +31,6 @@ import io.harness.utils.IdentifierRefHelper;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
@@ -132,18 +131,5 @@ public class FileReferenceServiceImpl implements FileReferenceService {
         .map(i -> i.getReferredEntity().getEntityRef().getIdentifier())
         .distinct()
         .collect(Collectors.toList());
-  }
-
-  public List<String> listAllReferredFileUsageIdentifiers(String accountIdentifier, String referredByEntityFQN) {
-    try {
-      return entitySetupUsageService.listAllReferredUsages(accountIdentifier, referredByEntityFQN, EntityType.FILES)
-          .stream()
-          .map(entity -> entity.getReferredEntity().getEntityRef().getIdentifier())
-          .collect(Collectors.toList());
-
-    } catch (Exception e) {
-      log.error("Cannot fetch file identifiers from referenced object.", e);
-      return Collections.emptyList();
-    }
   }
 }
