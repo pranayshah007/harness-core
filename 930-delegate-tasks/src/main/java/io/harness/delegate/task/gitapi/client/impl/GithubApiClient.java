@@ -16,6 +16,7 @@ import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+import com.google.gson.Gson;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cistatus.service.GithubAppConfig;
@@ -28,6 +29,7 @@ import io.harness.delegate.beans.connector.scm.github.GithubAppSpecDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubTokenSpecDTO;
 import io.harness.delegate.beans.gitapi.GitApiFindPRTaskResponse;
+import io.harness.delegate.beans.gitapi.GitApiMergePRTaskResponse;
 import io.harness.delegate.beans.gitapi.GitApiTaskParams;
 import io.harness.delegate.beans.gitapi.GitApiTaskResponse;
 import io.harness.delegate.beans.gitapi.GitApiTaskResponse.GitApiTaskResponseBuilder;
@@ -43,6 +45,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jooq.tools.json.JSONObject;
+import org.jooq.tools.json.JSONValue;
 
 @Singleton
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
@@ -106,7 +110,7 @@ public class GithubApiClient implements GitApiClient {
               gitApiURL, token, gitApiTaskParams.getOwner(), gitApiTaskParams.getRepo(), gitApiTaskParams.getPrNumber());
       if (isNotBlank(mergePRResponse)) {
         responseBuilder.commandExecutionStatus(CommandExecutionStatus.SUCCESS)
-                .gitApiResult(GitApiFindPRTaskResponse.builder().prJson(mergePRResponse).build());
+                .gitApiResult(GitApiMergePRTaskResponse.builder().message(mergePRResponse).build());
       } else {
         responseBuilder.commandExecutionStatus(FAILURE).errorMessage("Merging PR encountered a problem");
       }

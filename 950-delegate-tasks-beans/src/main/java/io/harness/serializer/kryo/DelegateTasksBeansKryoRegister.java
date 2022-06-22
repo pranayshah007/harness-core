@@ -241,6 +241,7 @@ import io.harness.delegate.beans.git.YamlGitConfigDTO;
 import io.harness.delegate.beans.gitapi.DecryptGitAPIAccessTaskResponse;
 import io.harness.delegate.beans.gitapi.DecryptGitAPiAccessTaskParams;
 import io.harness.delegate.beans.gitapi.GitApiFindPRTaskResponse;
+import io.harness.delegate.beans.gitapi.GitApiMergePRTaskResponse;
 import io.harness.delegate.beans.gitapi.GitApiRequestType;
 import io.harness.delegate.beans.gitapi.GitApiResult;
 import io.harness.delegate.beans.gitapi.GitApiTaskParams;
@@ -1571,5 +1572,6 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AzureContainerArtifactConfig.class, 55325);
     kryo.register(AzureWebAppRollbackRequest.class, 55326);
     kryo.register(AzureWebAppNGRollbackResponse.class, 55327);
+    kryo.register(GitApiMergePRTaskResponse.class, 55328);
   }
 }

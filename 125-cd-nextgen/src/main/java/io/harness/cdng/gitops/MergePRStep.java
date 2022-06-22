@@ -9,8 +9,12 @@ package io.harness.cdng.gitops;
 
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
+import static io.harness.data.structure.ListUtils.trimStrings;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.steps.StepUtils.prepareCDTaskRequest;
+
+import static org.apache.commons.lang3.StringUtils.isEmpty;
+import static org.apache.commons.lang3.StringUtils.trim;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -19,20 +23,25 @@ import io.harness.beans.IssueCommentWebhookEvent;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.gitops.steps.GitOpsStepHelper;
 import io.harness.cdng.gitops.steps.GitopsClustersStep;
+import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
+import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.gitapi.GitApiRequestType;
 import io.harness.delegate.beans.gitapi.GitApiTaskParams;
 import io.harness.delegate.beans.gitapi.GitRepoType;
+import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
+import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.delegate.task.git.GitOpsTaskType;
 import io.harness.delegate.task.git.NGGitOpsResponse;
 import io.harness.delegate.task.git.NGGitOpsTaskParams;
 import io.harness.delegate.task.git.TaskStatus;
 import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
+import io.harness.ng.core.NGAccess;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
 import io.harness.plancreator.steps.common.rollback.TaskChainExecutableWithRollbackAndRbac;
@@ -60,6 +69,9 @@ import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
 import de.danielbechler.util.Strings;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.GITOPS)
@@ -125,17 +137,34 @@ public class MergePRStep extends TaskChainExecutableWithRollbackAndRbac {
       prLink = createPROutcome.getPrLink();
     }
 
+    GitStoreDelegateConfig gitStoreDelegateConfig = getGitStoreDelegateConfig(ambiance, releaseRepoOutcome);
+
     String accountId = AmbianceUtils.getAccountId(ambiance);
 
     ConnectorInfoDTO connectorInfoDTO =
         cdStepHelper.getConnector(releaseRepoOutcome.getStore().getConnectorReference().getValue(), ambiance);
+    String scope = "";
+    if (!isEmpty(connectorInfoDTO.getProjectIdentifier()) & !isEmpty(accountId)) {
+      scope = "org.";
+    } else {
+      scope = "account.";
+    }
     ConnectorDetails connectorDetails =
         connectorUtils.getConnectorDetails(IdentifierRef.builder()
                                                .accountIdentifier(accountId)
-//                                               .orgIdentifier(AmbianceUtils.getOrgIdentifier(ambiance))
-//                                               .projectIdentifier(AmbianceUtils.getProjectIdentifier(ambiance))
+                                               .orgIdentifier(connectorInfoDTO.getOrgIdentifier())
+                                               .projectIdentifier(connectorInfoDTO.getProjectIdentifier())
                                                .build(),
-            connectorInfoDTO.getIdentifier());
+            scope + connectorInfoDTO.getIdentifier());
+
+    //    ConnectorDetails connectorDetails = ConnectorDetails.builder()
+    //            .connectorConfig(connectorInfoDTO.getConnectorConfig())
+    //            .connectorType(connectorInfoDTO.getConnectorType())
+    //            .identifier(connectorInfoDTO.getIdentifier())
+    //            .orgIdentifier(connectorInfoDTO.getOrgIdentifier())
+    //            .projectIdentifier(connectorInfoDTO.getProjectIdentifier())
+    //            .encryptedDataDetails(gitStoreDelegateConfig.getEncryptedDataDetails())
+    //            .build();
 
     GitApiTaskParams gitApiTaskParams = GitApiTaskParams.builder()
                                             .gitRepoType(GitRepoType.GITHUB)
@@ -177,6 +206,15 @@ public class MergePRStep extends TaskChainExecutableWithRollbackAndRbac {
     } else {
       throw new InvalidRequestException("Pull Request Details are missing", USER);
     }
+  }
+
+  public GitStoreDelegateConfig getGitStoreDelegateConfig(Ambiance ambiance, ManifestOutcome manifestOutcome) {
+    GitStoreConfig gitStoreConfig = (GitStoreConfig) manifestOutcome.getStore();
+    String connectorId = gitStoreConfig.getConnectorRef().getValue();
+    ConnectorInfoDTO connectorDTO = cdStepHelper.getConnector(connectorId, ambiance);
+
+    return cdStepHelper.getGitStoreDelegateConfig(
+        gitStoreConfig, connectorDTO, manifestOutcome, new ArrayList<>(), ambiance);
   }
 
   @Override
