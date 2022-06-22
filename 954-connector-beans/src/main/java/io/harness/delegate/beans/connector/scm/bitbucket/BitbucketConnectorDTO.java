@@ -7,7 +7,6 @@
 
 package io.harness.delegate.beans.connector.scm.bitbucket;
 
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.utils.FilePathUtils.FILE_PATH_SEPARATOR;
 import static io.harness.utils.FilePathUtils.removeStartingAndEndingSlash;
 
@@ -63,7 +62,6 @@ public class BitbucketConnectorDTO extends ConnectorConfigDTO implements ScmConn
   @Valid @NotNull private BitbucketAuthenticationDTO authentication;
   @Valid private BitbucketApiAccessDTO apiAccess;
   private Set<String> delegateSelectors;
-  private String gitConnectionUrl;
 
   @Builder
   public BitbucketConnectorDTO(GitConnectionType connectionType, String url, String validationRepo,
@@ -103,25 +101,18 @@ public class BitbucketConnectorDTO extends ConnectorConfigDTO implements ScmConn
     return ConnectorType.BITBUCKET;
   }
 
-  public String getUrl() {
-    if (isNotEmpty(gitConnectionUrl)) {
-      return gitConnectionUrl;
-    }
-    return url;
-  }
-
   @Override
-  public String getGitConnectionUrl(GitRepositoryDTO gitRepositoryDTO) {
+  public String getGitConnectionUrl(String repoName) {
     if (connectionType == GitConnectionType.REPO) {
       String linkedRepo = getGitRepositoryDetails().getName();
-      if (!linkedRepo.equals(gitRepositoryDTO.getName())) {
+      if (!linkedRepo.equals(repoName)) {
         throw new InvalidRequestException(
             String.format("Provided repoName [%s] does not match with the repoName [%s] provided in connector.",
-                gitRepositoryDTO.getName(), linkedRepo));
+                repoName, linkedRepo));
       }
       return getUrl();
     }
-    return FilePathUtils.addEndingSlashIfMissing(getUrl()) + gitRepositoryDTO.getName();
+    return FilePathUtils.addEndingSlashIfMissing(getUrl()) + repoName;
   }
 
   @Override
@@ -139,9 +130,9 @@ public class BitbucketConnectorDTO extends ConnectorConfigDTO implements ScmConn
   }
 
   @Override
-  public String getFileUrl(String branchName, String filePath, GitRepositoryDTO gitRepositoryDTO) {
+  public String getFileUrl(String branchName, String filePath, String repoName) {
     ScmConnectorHelper.validateGetFileUrlParams(branchName, filePath);
-    String repoUrl = removeStartingAndEndingSlash(getGitConnectionUrl(gitRepositoryDTO));
+    String repoUrl = removeStartingAndEndingSlash(getGitConnectionUrl(repoName));
     filePath = removeStartingAndEndingSlash(filePath);
     if (GitClientHelper.isBitBucketSAAS(repoUrl)) {
       return String.format("%s/src/%s/%s", repoUrl, branchName, filePath);

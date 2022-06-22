@@ -7,8 +7,6 @@
 
 package io.harness.delegate.beans.connector.scm.gitlab;
 
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
-
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.DecryptableEntity;
@@ -54,7 +52,6 @@ public class GitlabConnectorDTO extends ConnectorConfigDTO implements ScmConnect
   @Valid @NotNull GitlabAuthenticationDTO authentication;
   @Valid GitlabApiAccessDTO apiAccess;
   Set<String> delegateSelectors;
-  String gitConnectionUrl;
 
   @Builder
   public GitlabConnectorDTO(GitConnectionType connectionType, String url, String validationRepo,
@@ -89,21 +86,13 @@ public class GitlabConnectorDTO extends ConnectorConfigDTO implements ScmConnect
   }
 
   @Override
-  public String getUrl() {
-    if (isNotEmpty(gitConnectionUrl)) {
-      return gitConnectionUrl;
-    }
-    return url;
-  }
-
-  @Override
   @JsonIgnore
   public ConnectorType getConnectorType() {
     return ConnectorType.GITLAB;
   }
 
   @Override
-  public String getGitConnectionUrl(GitRepositoryDTO gitRepositoryDTO) {
+  public String getGitConnectionUrl(String repoName) {
     return "";
   }
 
@@ -113,7 +102,7 @@ public class GitlabConnectorDTO extends ConnectorConfigDTO implements ScmConnect
   }
 
   @Override
-  public String getFileUrl(String branchName, String filePath, GitRepositoryDTO gitRepositoryDTO) {
+  public String getFileUrl(String branchName, String filePath, String repoName) {
     return "";
   }
 
