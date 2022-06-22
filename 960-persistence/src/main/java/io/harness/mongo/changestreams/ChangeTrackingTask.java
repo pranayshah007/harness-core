@@ -71,14 +71,20 @@ public class ChangeTrackingTask implements Runnable {
 
   private void openChangeStream(Consumer<ChangeStreamDocument<DBObject>> changeStreamDocumentConsumer) {
     ChangeStreamIterable<DBObject> changeStreamIterable;
+    ChangeStreamIterable<DBObject> changeStreamIterableResumeToken;
     if (Objects.isNull(clientSession)) {
       changeStreamIterable = pipeline == null ? collection.watch() : collection.watch(pipeline);
+      changeStreamIterableResumeToken = pipeline == null ? collection.watch() : collection.watch(pipeline);
     } else {
-      changeStreamIterable =
-          pipeline == null ? collection.watch(clientSession) : collection.watch(clientSession, pipeline);
+      changeStreamIterable = pipeline == null ? collection.watch(clientSession) : collection.watch(clientSession, pipeline);
+      changeStreamIterableResumeToken = pipeline == null ? collection.watch(clientSession) : collection.watch(clientSession, pipeline);
     }
+
     changeStreamIterable =
-        changeStreamIterable.fullDocument(FullDocument.UPDATE_LOOKUP).maxAwaitTime(1, TimeUnit.MINUTES);
+            changeStreamIterable.fullDocument(FullDocument.UPDATE_LOOKUP).maxAwaitTime(1, TimeUnit.MINUTES);
+    changeStreamIterableResumeToken =
+            changeStreamIterableResumeToken.fullDocument(FullDocument.UPDATE_LOOKUP).maxAwaitTime(1, TimeUnit.MINUTES);
+
     MongoCursor<ChangeStreamDocument<DBObject>> mongoCursor = null;
     try {
       if (resumeToken == null) {
@@ -86,7 +92,17 @@ public class ChangeTrackingTask implements Runnable {
         mongoCursor = changeStreamIterable.iterator();
       } else {
         log.info("Opening changeStream with resumeToken");
-        mongoCursor = changeStreamIterable.resumeAfter(resumeToken).iterator();
+        boolean isResumeTokenValid = true;
+        try {
+          mongoCursor = changeStreamIterableResumeToken.resumeAfter(resumeToken).iterator();
+        } catch (Exception ex) {
+          isResumeTokenValid = false;
+          log.error("Resume Token Invalid :{}", ex);
+        }
+        if (!isResumeTokenValid) {
+          log.error("Resume Token Invalid, Creating Change Stream Without Resume Token");
+          mongoCursor = changeStreamIterable.iterator();
+        }
       }
       log.info("Connection details for mongo cursor {}", mongoCursor.getServerCursor());
       mongoCursor.forEachRemaining(changeStreamDocumentConsumer);
