@@ -163,6 +163,7 @@ public class EventPublisherServerImpl extends EventPublisherGrpc.EventPublisherI
       if ("io.harness.perpetualtask.k8s.watch.K8SClusterSyncEvent".equals(type)) {
         log.info("Event publishedMessage: {}", publishedMessage);
       }
+      return publishedMessage;
     } catch (Exception e) {
       log.error("Error persisting message {}", publishMessage, e);
       return null;
