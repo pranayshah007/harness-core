@@ -9,9 +9,12 @@ package io.harness.ng.authenticationsettings.remote;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.beans.ldap.LdapSettingsWithEncryptedDataDetail;
 import io.harness.ng.core.account.AuthenticationMechanism;
 import io.harness.ng.core.user.TwoFactorAdminOverrideSettings;
 import io.harness.rest.RestResponse;
+import io.harness.serializer.kryo.KryoRequest;
+import io.harness.serializer.kryo.KryoResponse;
 
 import software.wings.beans.loginSettings.LoginSettings;
 import software.wings.beans.loginSettings.PasswordStrengthPolicy;
@@ -105,4 +108,10 @@ public interface AuthSettingsManagerClient {
 
   @GET(API_PREFIX + "login-settings/username-password/password-strength-policy")
   Call<RestResponse<PasswordStrengthPolicy>> getPasswordStrengthSettings(@Query("accountId") String accountIdentifier);
+
+  @GET(API_PREFIX + "sso/ldap/setting-with-encrypted-details")
+  @KryoRequest
+  @KryoResponse
+  Call<RestResponse<LdapSettingsWithEncryptedDataDetail>> getLdapSettingsWithEncryptedDataDetails(
+      @Query("accountId") String accountIdentifier);
 }

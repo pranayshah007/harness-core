@@ -32,6 +32,8 @@ import io.harness.stream.BoundedInputStream;
 import software.wings.app.MainConfiguration;
 import software.wings.beans.loginSettings.LoginSettings;
 import software.wings.beans.loginSettings.PasswordStrengthPolicy;
+import software.wings.beans.sso.LdapSettings;
+import software.wings.beans.sso.LdapTestResponse;
 import software.wings.security.authentication.LoginTypeResponse;
 import software.wings.security.authentication.SSOConfig;
 
@@ -367,6 +369,25 @@ public class AuthenticationSettingsResource {
         ResourceScope.of(accountId, null, null), Resource.of(AUTHSETTING, null), VIEW_AUTHSETTING_PERMISSION);
     LoginTypeResponse response = authenticationSettingsService.getSAMLLoginTest(accountId);
     return new RestResponse<>(response);
+  }
+
+  @POST
+  @Hidden
+  @Path("ldap/settings/test/connection")
+  @ApiOperation(value = "Validates Ldap Connection Setting", nickname = "validateLdapConnectionSettings")
+  @Operation(operationId = "validateLdapConnectionSettings", summary = "Validates Ldap Connection Setting",
+      description = "Checks if passed Ldap Connection Setting is able to connect to configured ldap server",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Successfully validated Ldap Connection Setting")
+      })
+  public RestResponse<LdapTestResponse>
+  validateLdapConnectionSettings(@Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam("accountIdentifier")
+                                 @NotNull String accountIdentifier, @Valid LdapSettings settings) {
+    LdapTestResponse ldapTestResponse =
+        authenticationSettingsService.validateLdapConnectionSettings(accountIdentifier, settings);
+    return new RestResponse<>(ldapTestResponse);
   }
 
   @PUT

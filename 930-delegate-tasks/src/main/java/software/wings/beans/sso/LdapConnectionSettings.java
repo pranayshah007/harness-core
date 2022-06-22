@@ -61,6 +61,7 @@ public class LdapConnectionSettings implements LdapConnectionConfig, Encryptable
 
   @AssertTrue(message = "Bind password/Secret can't be empty if Bind DN is provided.")
   private boolean isNonEmptyCredentials() {
+    System.out.println();
     if (StringUtils.isNotBlank(bindDN)) {
       return StringUtils.isNotBlank(bindPassword) || StringUtils.isNotBlank(String.valueOf(bindSecret));
     }

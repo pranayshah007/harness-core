@@ -16,10 +16,13 @@ import io.harness.ng.core.user.TwoFactorAdminOverrideSettings;
 
 import software.wings.beans.loginSettings.LoginSettings;
 import software.wings.beans.loginSettings.PasswordStrengthPolicy;
+import software.wings.beans.sso.LdapSettings;
+import software.wings.beans.sso.LdapTestResponse;
 import software.wings.security.authentication.LoginTypeResponse;
 import software.wings.security.authentication.SSOConfig;
 
 import java.util.Set;
+import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import okhttp3.MultipartBody;
 
@@ -42,4 +45,5 @@ public interface AuthenticationSettingsService {
   boolean setTwoFactorAuthAtAccountLevel(
       String accountIdentifier, TwoFactorAdminOverrideSettings twoFactorAdminOverrideSettings);
   PasswordStrengthPolicy getPasswordStrengthSettings(String accountIdentifier);
+  LdapTestResponse validateLdapConnectionSettings(@NotNull String accountIdentifier, @Valid LdapSettings settings);
 }

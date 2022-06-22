@@ -12,6 +12,9 @@ import io.harness.beans.EncryptedDataParent;
 import io.harness.beans.SecretChangeLog;
 import io.harness.cvng.beans.SplunkSavedSearch;
 import io.harness.cvng.beans.SplunkValidationResponse;
+import io.harness.delegate.beans.ldap.LdapSettingsWithEncryptedDataDetail;
+import io.harness.delegate.beans.ldap.NGLdapDelegateTaskParameters;
+import io.harness.delegate.beans.ldap.NGLdapDelegateTaskResponse;
 import io.harness.delegate.task.executioncapability.BatchCapabilityCheckTaskParameters;
 import io.harness.delegate.task.executioncapability.BatchCapabilityCheckTaskResponse;
 import io.harness.delegate.task.winrm.AuthenticationScheme;
@@ -558,6 +561,7 @@ public class DelegateTasksKryoRegistrar implements KryoRegistrar {
     kryo.register(DataCollectionTaskResult.class, 5184);
     kryo.register(DataCollectionTaskResult.DataCollectionTaskStatus.class, 5185);
     kryo.register(ShellScriptParameters.class, 5186);
+    kryo.register(LdapSettingsWithEncryptedDataDetail.class, 5188);
     kryo.register(AmiServiceSetupElement.class, 5218);
     kryo.register(AmiServiceDeployElement.class, 5220);
     kryo.register(WorkflowStandardParams.class, 5227);
@@ -585,6 +589,8 @@ public class DelegateTasksKryoRegistrar implements KryoRegistrar {
     kryo.register(ElkQueryType.class, 5275);
     kryo.register(PcfInstanceElement.class, 5293);
     kryo.register(PcfConfig.class, 5296);
+    kryo.register(NGLdapDelegateTaskResponse.class, 5297);
+    kryo.register(NGLdapDelegateTaskParameters.class, 5298);
     kryo.register(SmtpConfig.class, 5304);
     kryo.register(CloudWatchDataCollectionInfo.class, 5317);
     kryo.register(CloudWatchMetric.class, 5318);
