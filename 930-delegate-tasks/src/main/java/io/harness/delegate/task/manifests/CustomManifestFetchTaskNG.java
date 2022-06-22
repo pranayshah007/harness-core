@@ -8,6 +8,7 @@ import static io.harness.exception.WingsException.USER;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.logging.LogLevel.ERROR;
+import static io.harness.logging.LogLevel.INFO;
 
 import static software.wings.beans.LogColor.White;
 import static software.wings.beans.LogHelper.color;
@@ -85,6 +86,8 @@ public class CustomManifestFetchTaskNG extends AbstractDelegateRunnableTask {
     DelegateFile delegateFile = null;
     CustomManifestValuesFetchResponse valuesFetchResponse = null;
 
+    logCallback.saveExecutionLog(color("Starting custom values fetch task \n", White, Bold));
+
     CustomManifestSource customManifestSource = fetchParams.getCustomManifestSource();
     if (customManifestSource != null && customManifestSource.getScript() == null) {
       throw new InvalidRequestException("Script can not be null for custom manifest source", USER);
@@ -93,7 +96,7 @@ public class CustomManifestFetchTaskNG extends AbstractDelegateRunnableTask {
     if (customManifestSource != null) {
       try {
         defaultSourceWorkingDirectory = customManifestService.executeCustomSourceScript(
-            fetchParams.getActivityId(), logCallback, customManifestSource);
+            fetchParams.getActivityId(), logCallback, customManifestSource, false);
 
         logCallback.saveExecutionLog(color("Successfully fetched following files:", White, Bold));
         logCallback.saveExecutionLog(k8sTaskHelperBase.getManifestFileNamesInLogFormat(defaultSourceWorkingDirectory));
@@ -147,7 +150,7 @@ public class CustomManifestFetchTaskNG extends AbstractDelegateRunnableTask {
 
     try {
       valuesFetchResponse =
-          customManifestFetchTaskHelper.fetchValuesTask(fetchParams, logCallback, defaultSourceWorkingDirectory);
+          customManifestFetchTaskHelper.fetchValuesTask(fetchParams, logCallback, defaultSourceWorkingDirectory, false);
       if (valuesFetchResponse.getCommandExecutionStatus() == FAILURE) {
         return valuesFetchResponse;
       }
@@ -163,7 +166,8 @@ public class CustomManifestFetchTaskNG extends AbstractDelegateRunnableTask {
       cleanup(defaultSourceWorkingDirectory);
     }
 
-    logCallback.saveExecutionLog("Done.", LogLevel.INFO, SUCCESS);
+    logCallback.saveExecutionLog(color("Successfully completed custom values fetch task \n \n", White, Bold), INFO);
+
     return CustomManifestValuesFetchResponse.builder()
         .commandExecutionStatus(SUCCESS)
         .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))

@@ -20,7 +20,6 @@ import io.harness.cdng.gitops.CreatePRStepInfo;
 import io.harness.cdng.gitops.CreatePRStepParams;
 import io.harness.cdng.helm.HelmDeployStepInfo;
 import io.harness.cdng.helm.HelmDeployStepParams;
-import io.harness.cdng.helm.NativeHelmStepPassThroughData;
 import io.harness.cdng.helm.rollback.HelmRollbackStepInfo;
 import io.harness.cdng.helm.rollback.HelmRollbackStepParams;
 import io.harness.cdng.infra.InfrastructureDef;
@@ -143,7 +142,6 @@ public class NGKryoRegistrar implements KryoRegistrar {
 
     kryo.register(HelmDeployStepInfo.class, 13001);
     kryo.register(HelmDeployStepParams.class, 13002);
-    kryo.register(NativeHelmStepPassThroughData.class, 13003);
     kryo.register(HelmRollbackStepInfo.class, 13004);
     kryo.register(HelmRollbackStepParams.class, 13005);
 

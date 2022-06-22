@@ -190,7 +190,8 @@ public class HelmDeployStep extends TaskChainExecutableWithRollbackAndRbac imple
             .commandName(HELM_COMMAND_NAME)
             .valuesYamlList(manifestFilesContents)
             .k8sInfraDelegateConfig(nativeHelmStepHelper.getK8sInfraDelegateConfig(infrastructure, ambiance))
-            .manifestDelegateConfig(nativeHelmStepHelper.getManifestDelegateConfig(manifestOutcome, ambiance))
+            .manifestDelegateConfig(nativeHelmStepHelper.getManifestDelegateConfigWrapper(
+                executionPassThroughData.getZippedManifestId(), manifestOutcome, ambiance))
             .commandUnitsProgress(UnitProgressDataMapper.toCommandUnitsProgress(unitProgressData))
             .releaseName(releaseName)
             .helmVersion(nativeHelmStepHelper.getHelmVersionBasedOnFF(
