@@ -16,8 +16,8 @@ timescaledb:
   timescaledbUrl: "jdbc:postgresql://localhost:5432/harness"
   timescaledbUsername: "postgres"
   timescaledbPassword: ""
-  connectTimeout: 10
-  socketTimeout: 30
+  connectTimeout: 300
+  socketTimeout: 300
   logUnclosedConnections: false
   loggerLevel: OFF
   isHealthCheckNeeded: false
