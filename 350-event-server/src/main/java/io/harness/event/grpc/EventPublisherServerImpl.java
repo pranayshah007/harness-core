@@ -149,7 +149,6 @@ public class EventPublisherServerImpl extends EventPublisherGrpc.EventPublisherI
   public io.harness.ccm.commons.entities.events.PublishedMessage toPublishedMessage(
       String accountId, PublishMessage publishMessage) {
     try {
-      final String clusterId = publishMessage.getAttributesMap().get("identifier/clusterId");
       final String type = AnyUtils.toFqcn(publishMessage.getPayload());
       PublishedMessage publishedMessage =
           PublishedMessage.builder()
@@ -161,10 +160,7 @@ public class EventPublisherServerImpl extends EventPublisherGrpc.EventPublisherI
               .category(publishMessage.getCategory())
               .occurredAt(HTimestamps.toMillis(publishMessage.getOccurredAt()))
               .build();
-      if (("5ee158b22aa4186d1c2e927e".equals(clusterId) || "5ee15b482aa4186d1c9c1ef6".equals(clusterId)
-              || "5ee158392aa4186d1c13e6b0".equals(clusterId))
-          && "hW63Ny6rQaaGsKkVjE0pJA".equals(accountId)
-          && "io.harness.perpetualtask.k8s.watch.K8SClusterSyncEvent".equals(type)) {
+      if ("io.harness.perpetualtask.k8s.watch.K8SClusterSyncEvent".equals(type)) {
         log.info("Event publishedMessage: {}", publishedMessage);
       }
     } catch (Exception e) {
