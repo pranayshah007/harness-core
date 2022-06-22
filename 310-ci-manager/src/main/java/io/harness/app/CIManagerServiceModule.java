@@ -7,9 +7,17 @@
 
 package io.harness.app;
 
-import static io.harness.AuthorizationServiceHeader.CI_MANAGER;
-import static io.harness.lock.DistributedLockImplementation.MONGO;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Suppliers;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.google.common.util.concurrent.TimeLimiter;
+import com.google.inject.AbstractModule;
+import com.google.inject.Provides;
+import com.google.inject.Singleton;
+import com.google.inject.name.Named;
+import com.google.inject.name.Names;
+import io.dropwizard.jackson.Jackson;
 import io.harness.AccessControlClientModule;
 import io.harness.CIExecutionServiceModule;
 import io.harness.account.AccountClientModule;
@@ -59,18 +67,8 @@ import io.harness.tiserviceclient.TIServiceClientModule;
 import io.harness.token.TokenClientModule;
 import io.harness.user.UserClientModule;
 import io.harness.yaml.core.StepSpecType;
+import lombok.extern.slf4j.Slf4j;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Suppliers;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import com.google.common.util.concurrent.TimeLimiter;
-import com.google.inject.AbstractModule;
-import com.google.inject.Provides;
-import com.google.inject.Singleton;
-import com.google.inject.name.Named;
-import com.google.inject.name.Names;
-import io.dropwizard.jackson.Jackson;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -79,7 +77,9 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
-import lombok.extern.slf4j.Slf4j;
+
+import static io.harness.AuthorizationServiceHeader.CI_MANAGER;
+import static io.harness.lock.DistributedLockImplementation.MONGO;
 
 @Slf4j
 @OwnedBy(HarnessTeam.PIPELINE)
@@ -173,6 +173,13 @@ public class CIManagerServiceModule extends AbstractModule {
     bind(CIFeatureFlagService.class).to(CIFeatureFlagServiceImpl.class).in(Singleton.class);
     bind(CIOverviewDashboardService.class).to(CIOverviewDashboardServiceImpl.class);
     bind(ScmServiceClient.class).to(ScmServiceClientImpl.class);
+    bind(ScheduledExecutorService.class)
+            .annotatedWith(Names.named("ciTelemetryPublisherExecutor"))
+            .toInstance(new ScheduledThreadPoolExecutor(1,
+                    new ThreadFactoryBuilder()
+                            .setNameFormat("ci-telemetry-publisher-Thread-%d")
+                            .setPriority(Thread.NORM_PRIORITY)
+                            .build()));
 
     try {
       bind(TimeScaleDBService.class)

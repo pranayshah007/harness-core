@@ -7,15 +7,6 @@
 
 package io.harness.app.CIDashboard;
 
-import static io.harness.rule.OwnerRule.JAMIE;
-import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 import io.harness.CategoryTest;
 import io.harness.app.beans.entities.BuildActiveInfo;
 import io.harness.app.beans.entities.BuildCount;
@@ -41,13 +32,6 @@ import io.harness.ng.core.dashboard.AuthorInfo;
 import io.harness.pms.execution.ExecutionStatus;
 import io.harness.rule.Owner;
 import io.harness.timescaledb.TimeScaleDBService;
-
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -56,6 +40,21 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 import org.mockito.stubbing.Answer;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import static io.harness.rule.OwnerRule.JAMIE;
+import static io.harness.rule.OwnerRule.PRASHANTSHARMA;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class CIDashboardsApisTest extends CategoryTest {
   @Mock TimeScaleDBService timeScaleDBService;
@@ -640,5 +639,29 @@ public class CIDashboardsApisTest extends CategoryTest {
     UsageDataDTO usage =
         UsageDataDTO.builder().count(1).displayName("Last 30 Days").references(usageReferences).build();
     assertThat(usage).isEqualTo(ciOverviewDashboardServiceImpl.getActiveCommitter("accountId", 0L));
+  }
+
+  @Test
+  @Owner(developers = JAMIE)
+  @Category(UnitTests.class)
+  public void testGetActiveCommittersCount() throws SQLException {
+    final long expectedResult = 100L;
+    ResultSet resultSet = mock(ResultSet.class);
+    Connection connection = mock(Connection.class);
+    PreparedStatement statement = mock(PreparedStatement.class);
+    when(statement.executeQuery()).thenReturn(resultSet);
+    when(connection.prepareStatement(any())).thenReturn(statement);
+    when(timeScaleDBService.getDBConnection()).thenReturn(connection);
+    final int[] count = {0};
+    when(resultSet.next()).then((Answer<Boolean>) invocation -> {
+      if (count[0] <= 1) {
+        count[0]++;
+        return true;
+      }
+      return false;
+    });
+    when(resultSet.getLong(1)).then((Answer<Long>) invocation -> expectedResult);
+
+    assertThat(expectedResult).isEqualTo(ciOverviewDashboardServiceImpl.getActiveCommitterCount("accountId"));
   }
 }
