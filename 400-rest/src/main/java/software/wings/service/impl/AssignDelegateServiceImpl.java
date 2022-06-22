@@ -37,7 +37,6 @@ import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.Cd1SetupFields;
 import io.harness.beans.DelegateTask;
 import io.harness.beans.DelegateTask.DelegateTaskKeys;
-import io.harness.beans.FeatureName;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.Delegate.DelegateKeys;
 import io.harness.delegate.beans.DelegateActivity;
@@ -82,7 +81,6 @@ import com.google.common.cache.LoadingCache;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Singleton;
-import io.fabric8.utils.Lists;
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -131,10 +129,10 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
 
   private static final String NO_ACTIVE_DELEGATES = "Account has no active delegates";
 
-  public final String PIPELINE = "pipeline";
-  public final String STAGE = "stage";
-  public final String STEP_GROUP = "stepGroup";
-  public final String STEP = "step";
+  public static final String PIPELINE = "pipeline";
+  public static final String STAGE = "stage";
+  public static final String STEP_GROUP = "stepGroup";
+  public static final String STEP = "step";
 
   @Inject private DelegateSelectionLogsService delegateSelectionLogsService;
   @Inject private DelegateService delegateService;
@@ -455,17 +453,13 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
     if (isEmpty(executionCapabilities)) {
       return true;
     }
-    List<SelectorCapability> selectorsCapabilityList = executionCapabilities.stream()
-                                                           .filter(c -> c instanceof SelectorCapability)
-                                                           .map(c -> (SelectorCapability) c)
-                                                           .collect(Collectors.toList());
-    if (featureFlagService.isEnabled(FeatureName.OVERRIDE_CONNECTOR_SELECTOR, delegate.getAccountId())) {
-      selectorsCapabilityList = selectorCapabilitiesWithHierarchyApplied(selectorsCapabilityList);
-    }
 
+    List<SelectorCapability> selectorsCapabilityList =
+        delegateTaskServiceClassic.fetchTaskSelectorCapabilities(executionCapabilities);
     if (isEmpty(selectorsCapabilityList)) {
       return true;
     }
+    log.info("Selectors received : {}",selectorsCapabilityList);
 
     Set<String> delegateSelectors = trimmedLowercaseSet(delegateService.retrieveDelegateSelectors(delegate, true));
     if (isEmpty(delegateSelectors)) {
@@ -1089,20 +1083,5 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
       return Optional.of(tags);
     }
     return Optional.ofNullable(delegate.getTags());
-  }
-
-  private List<SelectorCapability> selectorCapabilitiesWithHierarchyApplied(
-      List<SelectorCapability> selectorCapabilities) {
-    List<SelectorCapability> selectors =
-        selectorCapabilities.stream()
-            .filter(sel -> Objects.nonNull(sel.getSelectorOrigin()))
-            .filter(c
-                -> c.getSelectorOrigin().equals(STEP) || c.getSelectorOrigin().equals(STEP_GROUP)
-                    || c.getSelectorOrigin().equals(STAGE) || c.getSelectorOrigin().equals(PIPELINE))
-            .collect(toList());
-    if (!Lists.isNullOrEmpty(selectors)) {
-      return selectors;
-    }
-    return selectorCapabilities;
   }
 }

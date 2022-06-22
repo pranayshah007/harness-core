@@ -22,6 +22,7 @@ import static software.wings.service.impl.DelegateSelectionLogsServiceImpl.CAN_N
 import static software.wings.service.impl.DelegateSelectionLogsServiceImpl.ELIGIBLE_DELEGATES;
 import static software.wings.service.impl.DelegateSelectionLogsServiceImpl.NO_ELIGIBLE_DELEGATES;
 
+import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.Matchers.any;
@@ -38,6 +39,7 @@ import io.harness.beans.DelegateTask;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.DelegateSelectionLogParams;
 import io.harness.delegate.beans.executioncapability.CapabilityType;
+import io.harness.delegate.beans.executioncapability.HttpConnectionExecutionCapability;
 import io.harness.delegate.beans.executioncapability.SelectorCapability;
 import io.harness.ff.FeatureFlagService;
 import io.harness.persistence.HPersistence;
@@ -170,7 +172,48 @@ public class DelegateSelectionLogsServiceImplTest extends WingsBaseTest {
     assertThat(delegateSelectionLogParams.size()).isEqualTo(1);
     assertThat(delegateSelectionLogParams.get(0).getConclusion()).isEqualTo(INFO);
     assertThat(delegateSelectionLogParams.get(0).getEventTimestamp()).isNotNull();
-    assertThat(delegateSelectionLogParams.get(0).getMessage()).isEqualTo("Selectors: sel1, sel2");
+    assertThat(delegateSelectionLogParams.get(0).getMessage())
+        .isEqualTo("[Selector(s) originated from taskSelector[sel1, sel2] ]");
+  }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void shouldLogDelegateTaskInfoWithNoExecutionCapabilityString() {
+    String taskId = generateUuid();
+    String accountId = generateUuid();
+
+    DelegateTask task = DelegateTask.builder()
+                            .uuid(taskId)
+                            .accountId(accountId)
+                            .selectionLogsTrackingEnabled(true)
+                            .executionCapabilities(asList(HttpConnectionExecutionCapability.builder().url("").build()))
+                            .build();
+    delegateSelectionLogsService.logDelegateTaskInfo(task);
+    List<DelegateSelectionLogParams> delegateSelectionLogParams =
+        delegateSelectionLogsService.fetchTaskSelectionLogs(accountId, taskId);
+    assertThat(delegateSelectionLogParams).isEmpty();
+  }
+
+  @Test
+  @Owner(developers = JENNY)
+  @Category(UnitTests.class)
+  public void shouldLogDelegateTaskInfoWithExecutionCapabilityString() {
+    String taskId = generateUuid();
+    String accountId = generateUuid();
+
+    DelegateTask task = DelegateTask.builder()
+                            .uuid(taskId)
+                            .accountId(accountId)
+                            .selectionLogsTrackingEnabled(true)
+                            .executionCapabilities(
+                                asList(HttpConnectionExecutionCapability.builder().url("https://google.com").build()))
+                            .build();
+    delegateSelectionLogsService.logDelegateTaskInfo(task);
+    List<DelegateSelectionLogParams> delegateSelectionLogParams =
+        delegateSelectionLogsService.fetchTaskSelectionLogs(accountId, taskId);
+    assertThat(delegateSelectionLogParams).isNotEmpty();
+    assertThat(delegateSelectionLogParams.get(0).getMessage()).isEqualTo("[Capability reach URL: https://google.com ]");
   }
 
   @Test

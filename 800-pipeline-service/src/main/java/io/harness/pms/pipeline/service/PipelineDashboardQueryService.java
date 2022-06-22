@@ -9,6 +9,7 @@ package io.harness.pms.pipeline.service;
 
 import io.harness.exception.InvalidRequestException;
 import io.harness.pms.Dashboard.StatusAndTime;
+import io.harness.timescaledb.DBUtils;
 import io.harness.timescaledb.Tables;
 
 import com.google.inject.Inject;
@@ -26,13 +27,6 @@ public class PipelineDashboardQueryService {
   @Inject private DSLContext dsl;
 
   private String CD_TableName = "pipeline_execution_summary_cd";
-
-  public boolean isConnectionError(DataAccessException ex) {
-    if (ex.getMessage().contains("Error getting connection from data source")) {
-      return true;
-    }
-    return false;
-  }
 
   public List<StatusAndTime> getPipelineExecutionStatusAndTime(String accountId, String orgId, String projectId,
       String pipelineId, long startInterval, long endInterval, String tableName) {
@@ -65,7 +59,7 @@ public class PipelineDashboardQueryService {
       statusAndTime = this.dsl.select(select).from(from).where(conditions).fetch().into(StatusAndTime.class);
       return statusAndTime;
     } catch (DataAccessException ex) {
-      if (isConnectionError(ex)) {
+      if (DBUtils.isConnectionError(ex)) {
         throw new InvalidRequestException(
             "Unable to fetch Dashboard data for executions, Please ensure timescale is enabled", ex);
       } else {
@@ -111,7 +105,7 @@ public class PipelineDashboardQueryService {
       mean = this.dsl.select(select).from(from).where(conditions).fetch().into(long.class);
       return mean.get(0);
     } catch (DataAccessException ex) {
-      if (isConnectionError(ex)) {
+      if (DBUtils.isConnectionError(ex)) {
         throw new InvalidRequestException(
             "Unable to fetch Dashboard data for executions, Please ensure timescale is enabled", ex);
       } else {
@@ -155,7 +149,7 @@ public class PipelineDashboardQueryService {
       median = this.dsl.select(select).from(from).where(conditions).fetch().into(long.class);
       return median.get(0);
     } catch (DataAccessException ex) {
-      if (isConnectionError(ex)) {
+      if (DBUtils.isConnectionError(ex)) {
         throw new InvalidRequestException(
             "Unable to fetch Dashboard data for executions, Please ensure timescale is enabled", ex);
       } else {

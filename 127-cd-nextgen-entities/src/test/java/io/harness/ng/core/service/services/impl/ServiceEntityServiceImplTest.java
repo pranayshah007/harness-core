@@ -13,6 +13,7 @@ import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.MOHIT_GARG;
 import static io.harness.rule.OwnerRule.PRABU;
 import static io.harness.rule.OwnerRule.YOGESH;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
@@ -73,6 +74,7 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
   @Mock private NGFeatureFlagHelperService ngFeatureFlagHelperService;
   @Mock private EntitySetupUsageServiceImpl entitySetupUsageService;
   @Mock private ServiceOverrideService serviceOverrideService;
+  @Mock private ServiceEntitySetupUsageHelper entitySetupUsageHelper;
   @Inject @InjectMocks private ServiceEntityServiceImpl serviceEntityService;
   private static final String ACCOUNT_ID = "ACCOUNT_ID";
   private static final String ORG_ID = "ORG_ID";
@@ -85,6 +87,7 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
     Reflect.on(serviceEntityService).set("ngFeatureFlagHelperService", ngFeatureFlagHelperService);
     Reflect.on(serviceEntityService).set("outboxService", outboxService);
     Reflect.on(serviceEntityService).set("serviceOverrideService", serviceOverrideService);
+    Reflect.on(serviceEntityService).set("entitySetupUsageHelper", entitySetupUsageHelper);
   }
 
   @Test

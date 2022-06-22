@@ -24,11 +24,8 @@ import static io.harness.delegate.beans.DelegateType.HELM_DELEGATE;
 import static io.harness.delegate.beans.DelegateType.KUBERNETES;
 import static io.harness.delegate.beans.DelegateType.SHELL_SCRIPT;
 import static io.harness.delegate.beans.K8sPermissionType.NAMESPACE_ADMIN;
-import static io.harness.delegate.message.ManagerMessageConstants.JRE_VERSION;
 import static io.harness.delegate.message.ManagerMessageConstants.MIGRATE;
 import static io.harness.delegate.message.ManagerMessageConstants.SELF_DESTRUCT;
-import static io.harness.delegate.message.ManagerMessageConstants.USE_CDN;
-import static io.harness.delegate.message.ManagerMessageConstants.USE_STORAGE_PROXY;
 import static io.harness.delegate.utils.DelegateTelemetryConstants.DELEGATE_CREATED_EVENT;
 import static io.harness.delegate.utils.DelegateTelemetryConstants.DELEGATE_REGISTERED_EVENT;
 import static io.harness.eraro.ErrorCode.USAGE_LIMITS_EXCEEDED;
@@ -2356,21 +2353,12 @@ public class DelegateServiceImpl implements DelegateService {
 
     if (isNotBlank(delegate.getDelegateGroupId())) {
       DelegateGroup delegateGroup = persistence.get(DelegateGroup.class, delegate.getDelegateGroupId());
-
       if (delegateGroup == null || DelegateGroupStatus.DELETED == delegateGroup.getStatus()) {
         log.warn("Sending self destruct command from register delegate because the delegate group is deleted.");
         delegateMetricsService.recordDelegateMetrics(delegate, DELEGATE_REGISTRATION_FAILED);
         return DelegateRegisterResponse.builder().action(DelegateRegisterResponse.Action.SELF_DESTRUCT).build();
       }
     }
-
-    broadcasterFactory.lookup(STREAM_DELEGATE + delegate.getAccountId(), true)
-        .broadcast(mainConfiguration.useCdnForDelegateStorage() ? USE_CDN : USE_STORAGE_PROXY);
-
-    String delegateTargetJreVersion = getTargetJreVersion(delegate.getAccountId());
-    StringBuilder jreMessage = new StringBuilder().append(JRE_VERSION).append(delegateTargetJreVersion);
-    broadcasterFactory.lookup(STREAM_DELEGATE + delegate.getAccountId(), true).broadcast(jreMessage.toString());
-    log.debug("Sending message to delegate: {}", jreMessage);
 
     if (accountService.isAccountMigrated(delegate.getAccountId())) {
       String migrateMsg = MIGRATE + accountService.get(delegate.getAccountId()).getMigratedToClusterUrl();
@@ -2426,14 +2414,6 @@ public class DelegateServiceImpl implements DelegateService {
         return DelegateRegisterResponse.builder().action(DelegateRegisterResponse.Action.SELF_DESTRUCT).build();
       }
     }
-
-    broadcasterFactory.lookup(STREAM_DELEGATE + delegateParams.getAccountId(), true)
-        .broadcast(mainConfiguration.useCdnForDelegateStorage() ? USE_CDN : USE_STORAGE_PROXY);
-
-    String delegateTargetJreVersion = getTargetJreVersion(delegateParams.getAccountId());
-    StringBuilder jreMessage = new StringBuilder().append(JRE_VERSION).append(delegateTargetJreVersion);
-    broadcasterFactory.lookup(STREAM_DELEGATE + delegateParams.getAccountId(), true).broadcast(jreMessage.toString());
-    log.info("Sending message to delegate: {}", jreMessage);
 
     if (accountService.isAccountMigrated(delegateParams.getAccountId())) {
       String migrateMsg = MIGRATE + accountService.get(delegateParams.getAccountId()).getMigratedToClusterUrl();
@@ -2642,7 +2622,6 @@ public class DelegateServiceImpl implements DelegateService {
       updateBroadcastMessageIfEcsDelegate(message, delegate, registeredDelegate);
       broadcasterFactory.lookup(STREAM_DELEGATE + delegate.getAccountId(), true).broadcast(message.toString());
     }
-
     return registeredDelegate;
   }
 
@@ -4112,12 +4091,27 @@ public class DelegateServiceImpl implements DelegateService {
 
     Query<Delegate> delegateQuery = persistence.createQuery(Delegate.class)
                                         .filter(DelegateKeys.accountId, accountId)
-                                        .filter(DelegateKeys.delegateName, delegateName);
+                                        .filter(DelegateKeys.delegateName, delegateName)
+                                        .field(DelegateKeys.status)
+                                        .notEqual(DelegateInstanceStatus.DELETED);
     if (delegateQuery.get() != null) {
       throw new InvalidRequestException(
           "Delegate with same name exists. Delegate name must be unique across account.", USER);
     }
   }
+
+  @Override
+  public void markDelegatesAsDeletedOnDeletingOwner(String accountId, DelegateEntityOwner owner) {
+    Query<Delegate> query = persistence.createQuery(Delegate.class)
+                                .filter(DelegateKeys.accountId, accountId)
+                                .filter(DelegateKeys.owner, owner);
+
+    UpdateOperations<Delegate> updateOperations =
+        persistence.createUpdateOperations(Delegate.class).set(DelegateKeys.status, DelegateInstanceStatus.DELETED);
+
+    persistence.update(query, updateOperations);
+  }
+
   private String getDelegateXmx(String delegateType) {
     // TODO: ARPIT remove this community and null check once new delegate and watcher goes in prod.
     return (DeployVariant.isCommunity(deployVersion) || (delegateType != null && (delegateType.equals(DOCKER))))

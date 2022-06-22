@@ -9,6 +9,9 @@ package software.wings.service.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.DEL;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
+import static org.apache.commons.lang3.StringUtils.EMPTY;
 
 import io.harness.annotations.dev.BreakDependencyOn;
 import io.harness.annotations.dev.HarnessModule;
@@ -20,6 +23,8 @@ import io.harness.beans.FeatureName;
 import io.harness.delegate.beans.Delegate;
 import io.harness.delegate.beans.DelegateSelectionLogParams;
 import io.harness.delegate.beans.DelegateSelectionLogResponse;
+import io.harness.delegate.beans.executioncapability.ExecutionCapability;
+import io.harness.delegate.beans.executioncapability.SelectorCapability;
 import io.harness.ff.FeatureFlagService;
 import io.harness.persistence.HPersistence;
 import io.harness.selection.log.DelegateSelectionLog;
@@ -27,9 +32,9 @@ import io.harness.selection.log.DelegateSelectionLog.DelegateSelectionLogKeys;
 import io.harness.selection.log.DelegateSelectionLogTaskMetadata;
 import io.harness.service.intfc.DelegateCache;
 
-import software.wings.delegatetasks.delegatecapability.CapabilityHelper;
 import software.wings.service.intfc.DelegateSelectionLogsService;
 import software.wings.service.intfc.DelegateService;
+import software.wings.service.intfc.DelegateTaskServiceClassic;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -56,6 +61,7 @@ import org.apache.commons.lang3.tuple.Pair;
 public class DelegateSelectionLogsServiceImpl implements DelegateSelectionLogsService {
   @Inject private HPersistence persistence;
   @Inject private DelegateService delegateService;
+  @Inject private DelegateTaskServiceClassic delegateTaskServiceClassic;
   @Inject private DelegateCache delegateCache;
   @Inject private FeatureFlagService featureFlagService;
 
@@ -292,16 +298,27 @@ public class DelegateSelectionLogsServiceImpl implements DelegateSelectionLogsSe
     if (!delegateTask.isSelectionLogsTrackingEnabled()) {
       return;
     }
-    String delegateSelectorReceived =
-        CapabilityHelper.generateSelectionLogForSelectors(delegateTask.getExecutionCapabilities());
-    if (isEmpty(delegateSelectorReceived)) {
+    List<String> info = new ArrayList<>();
+    String delegateSelectorReceived = generateSelectionLogForSelectors(delegateTask.getExecutionCapabilities());
+    if (isNotEmpty(delegateSelectorReceived)) {
+      info.add(delegateSelectorReceived);
+    }
+    if (isNotEmpty(delegateTask.getExecutionCapabilities())) {
+      delegateTask.getExecutionCapabilities().forEach(capability -> {
+        if (isNotEmpty(capability.getCapabilityToString())) {
+          info.add(capability.getCapabilityToString());
+        }
+      });
+    }
+
+    if (isEmpty(info)) {
       return;
     }
     save(DelegateSelectionLog.builder()
              .accountId(delegateTask.getAccountId())
              .taskId(delegateTask.getUuid())
              .conclusion(INFO)
-             .message(delegateSelectorReceived)
+             .message(info.toString())
              .eventTimestamp(System.currentTimeMillis())
              .build());
   }
@@ -321,5 +338,19 @@ public class DelegateSelectionLogsServiceImpl implements DelegateSelectionLogsSe
                    .map(Delegate::getHostName)
                    .orElse(delegateId))
         .collect(Collectors.toSet());
+  }
+
+  public String generateSelectionLogForSelectors(List<ExecutionCapability> executionCapabilities) {
+    if (isEmpty(executionCapabilities)) {
+      return EMPTY;
+    }
+    List<String> taskSelectors = new ArrayList<>();
+    List<SelectorCapability> selectorCapabilities = delegateTaskServiceClassic.fetchTaskSelectorCapabilities(executionCapabilities);
+    if (isEmpty(selectorCapabilities)) {
+      return EMPTY;
+    }
+    selectorCapabilities.forEach(
+        capability -> taskSelectors.add(capability.getSelectorOrigin().concat(capability.getSelectors().toString())));
+    return String.format("Selector(s) originated from %s ", String.join(", ", taskSelectors));
   }
 }

@@ -57,7 +57,7 @@ public class NotificationSettingsServiceImpl implements NotificationSettingsServ
   private final NotificationSettingRepository notificationSettingRepository;
   private final SmtpConfigClient smtpConfigClient;
   private static final Pattern VALID_EXPRESSION_PATTERN =
-      Pattern.compile("\\<\\+secrets.getValue\\((\\\"|\\')\\w*(\\\"|\\')\\)>");
+      Pattern.compile("\\<\\+secrets.getValue\\((\\\"|\\')\\w*[\\.]?\\w*(\\\"|\\')\\)>");
   private static final String INVALID_EXPRESSION_EXCEPTION = "Expression provided is not valid";
 
   private List<UserGroupDTO> getUserGroups(List<String> userGroupIds) {

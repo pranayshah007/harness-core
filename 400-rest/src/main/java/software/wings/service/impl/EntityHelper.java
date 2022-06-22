@@ -851,6 +851,8 @@ public class EntityHelper {
         finalYaml = format("%s/%s%s", yamlPrefix, YamlConstants.DEPLOYMENT_GOVERNANCE_FOLDER, YAML_EXTENSION);
       } else if (entity instanceof UserGroup) {
         finalYaml = ((UserGroup) entity).getName() + YAML_EXTENSION;
+      } else if (entity instanceof ApiKeyEntry) {
+        finalYaml = ((ApiKeyEntry) entity).getName() + YAML_EXTENSION;
       } else {
         finalYaml = yamlPrefix;
       }

@@ -15,6 +15,7 @@ import io.harness.annotations.dev.TargetModule;
 
 import software.wings.beans.appmanifest.ApplicationManifestSummary;
 import software.wings.beans.appmanifest.LastDeployedHelmChartInformation;
+import software.wings.beans.appmanifest.ManifestInput;
 
 import java.util.List;
 import java.util.Map;
@@ -41,12 +42,22 @@ public class ManifestVariable extends Variable {
   public ManifestVariable(String name, String description, boolean mandatory, String value, boolean fixed,
       String allowedValues, List<String> allowedList, Map<String, Object> metadata, VariableType type, String serviceId,
       List<ApplicationManifestSummary> applicationManifestSummary, String serviceName, List<String> workflowIds,
-      LastDeployedHelmChartInformation lastDeployedHelmChartInformation) {
+      LastDeployedHelmChartInformation lastDeployedHelmChartInformation, HelmChartInputType inputType,
+      String appManifestId) {
     super(name, description, mandatory, value, fixed, allowedValues, allowedList, metadata, type);
     this.serviceId = serviceId;
     this.applicationManifestSummary = applicationManifestSummary;
     this.serviceName = serviceName;
     this.workflowIds = workflowIds;
     this.lastDeployedHelmChartInfo = lastDeployedHelmChartInformation;
+    this.inputType = inputType;
+    this.appManifestId = appManifestId;
+  }
+
+  public ManifestInput mapManifestVariableToManifestInput() {
+    if (HelmChartInputType.VERSION.equals(inputType)) {
+      return ManifestInput.builder().appManifestId(getAppManifestId()).buildNo(getValue()).build();
+    }
+    return null;
   }
 }

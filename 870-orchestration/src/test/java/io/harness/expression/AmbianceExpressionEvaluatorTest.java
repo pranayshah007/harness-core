@@ -23,7 +23,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.engine.executions.plan.PlanExecutionService;
 import io.harness.engine.expressions.AmbianceExpressionEvaluator;
-import io.harness.engine.expressions.functors.MatrixFunctor;
+import io.harness.engine.expressions.functors.StrategyFunctor;
 import io.harness.expression.field.dummy.DummyOrchestrationField;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.ambiance.Level;
@@ -239,9 +239,11 @@ public class AmbianceExpressionEvaluatorTest extends OrchestrationTestBase {
     Ambiance ambiance = buildAmbiance(true);
 
     EngineExpressionEvaluator evaluator = prepareEngineExpressionEvaluator(
-        new ImmutableMap.Builder<String, Object>().put("matrix", new MatrixFunctor(ambiance)).build());
+        new ImmutableMap.Builder<String, Object>().put("strategy", new StrategyFunctor(ambiance)).build());
 
-    validateSingleExpression(evaluator, "matrix.a", "1", false);
+    validateSingleExpression(evaluator, "strategy.matrix.a", "1", false);
+    validateSingleExpression(evaluator, "strategy.currentIteration", 0, false);
+    validateSingleExpression(evaluator, "strategy.totalIteration", 0, false);
   }
   private void validateExpression(EngineExpressionEvaluator evaluator, String expression, Object expected) {
     validateExpression(evaluator, expression, expected, false);

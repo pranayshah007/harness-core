@@ -22,6 +22,7 @@ import static io.harness.rule.OwnerRule.RAMA;
 import static io.harness.rule.OwnerRule.SRINIVAS;
 import static io.harness.rule.OwnerRule.UJJAWAL;
 import static io.harness.rule.OwnerRule.VIKAS_M;
+import static io.harness.rule.OwnerRule.YUVRAJ;
 
 import static software.wings.beans.Application.Builder.anApplication;
 import static software.wings.beans.BasicOrchestrationWorkflow.BasicOrchestrationWorkflowBuilder.aBasicOrchestrationWorkflow;
@@ -104,6 +105,7 @@ import software.wings.beans.Pipeline;
 import software.wings.beans.PipelineExecution;
 import software.wings.beans.PipelineStage;
 import software.wings.beans.PipelineStage.PipelineStageElement;
+import software.wings.beans.RuntimeInputsConfig;
 import software.wings.beans.Service;
 import software.wings.beans.Variable;
 import software.wings.beans.Workflow;
@@ -1857,6 +1859,46 @@ public class PipelineServiceTest extends WingsBaseTest {
             .build();
     when(workflowService.readWorkflowWithoutServices(APP_ID, WORKFLOW_ID)).thenReturn(workflow1);
     when(workflowService.readWorkflowWithoutServices(APP_ID, WORKFLOW_ID + 2)).thenReturn(workflow2);
+
+    Set<String> actualUserGroups = pipelineService.getUserGroups(pipeline);
+    Set<String> expectedUserGroups = new HashSet<>(Arrays.asList("userGroup1", "userGroup2", "userGroup3"));
+    assertThat(actualUserGroups.size()).isEqualTo(3);
+    assertThat(actualUserGroups).isEqualTo(expectedUserGroups);
+  }
+
+  @Test
+  @Owner(developers = YUVRAJ)
+  @Category(UnitTests.class)
+  public void test_getUserGroupsForRuntimeValues() {
+    Map<String, Object> properties1 = new HashMap<>();
+    properties1.put("userGroups", Arrays.asList("userGroup1", "userGroup2"));
+    PipelineStage stage1 = PipelineStage.builder()
+                               .pipelineStageElements(Collections.singletonList(PipelineStageElement.builder()
+                                                                                    .name("STAGE1")
+                                                                                    .type(APPROVAL.name())
+                                                                                    .properties(properties1)
+                                                                                    .disable(false)
+                                                                                    .build()))
+                               .build();
+    Map<String, Object> properties2 = new HashMap<>();
+    properties2.put("workflowId", WORKFLOW_ID);
+
+    RuntimeInputsConfig runtimeInputsConfig =
+        RuntimeInputsConfig.builder().userGroupIds(Arrays.asList("userGroup2", "userGroup3")).build();
+    PipelineStage stage2 =
+        PipelineStage.builder()
+            .pipelineStageElements(Collections.singletonList(PipelineStageElement.builder()
+                                                                 .name("STAGE2")
+                                                                 .type(ENV_STATE.name())
+                                                                 .properties(properties2)
+                                                                 .runtimeInputsConfig(runtimeInputsConfig)
+                                                                 .disable(false)
+                                                                 .build()))
+            .build();
+    Pipeline pipeline = preparePipeline(stage1, stage2);
+
+    Workflow workflow1 = aWorkflow().orchestrationWorkflow(aCanaryOrchestrationWorkflow().build()).build();
+    when(workflowService.readWorkflowWithoutServices(APP_ID, WORKFLOW_ID)).thenReturn(workflow1);
 
     Set<String> actualUserGroups = pipelineService.getUserGroups(pipeline);
     Set<String> expectedUserGroups = new HashSet<>(Arrays.asList("userGroup1", "userGroup2", "userGroup3"));

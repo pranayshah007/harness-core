@@ -48,10 +48,9 @@ public class ManagerCacheRegistrar extends AbstractModule {
   public static final String APIKEY_RESTRICTION_CACHE = "apiKeyRestrictionCache";
   public static final String WHITELIST_CACHE = "whitelistCache";
   public static final String PRIMARY_CACHE_PREFIX = "primary_";
-  public static final String SECRET_TOKEN_CACHE = "secretTokenCache";
+  public static final String SECRET_CACHE = "secretCache";
 
-  @Provides
-  @Named(AUTH_TOKEN_CACHE)
+  @Provides  @Named(AUTH_TOKEN_CACHE)
   @Singleton
   public Cache<String, AuthToken> getAuthTokenCache(
       HarnessCacheManager harnessCacheManager, VersionInfoManager versionInfoManager) {
@@ -121,11 +120,11 @@ public class ManagerCacheRegistrar extends AbstractModule {
   }
 
   @Provides
-  @Named(SECRET_TOKEN_CACHE)
+  @Named(SECRET_CACHE)
   @Singleton
   public Cache<String, EncryptedDataDetails> getSecretTokenCache(
       HarnessCacheManager harnessCacheManager, VersionInfoManager versionInfoManager) {
-    return harnessCacheManager.getCache(SECRET_TOKEN_CACHE, String.class, EncryptedDataDetails.class,
+    return harnessCacheManager.getCache(SECRET_CACHE, String.class, EncryptedDataDetails.class,
         CreatedExpiryPolicy.factoryOf(TWENTY_MINUTES), versionInfoManager.getVersionInfo().getBuildNo());
   }
 
@@ -155,8 +154,8 @@ public class ManagerCacheRegistrar extends AbstractModule {
     }, Names.named(APIKEY_RESTRICTION_CACHE)));
     mapBinder.addBinding(WHITELIST_CACHE).to(Key.get(new TypeLiteral<Cache<String, WhitelistConfig>>() {
     }, Names.named(WHITELIST_CACHE)));
-    mapBinder.addBinding(SECRET_TOKEN_CACHE).to(Key.get(new TypeLiteral<Cache<String, EncryptedDataDetails>>() {
-    }, Names.named(SECRET_TOKEN_CACHE)));
+    mapBinder.addBinding(SECRET_CACHE).to(Key.get(new TypeLiteral<Cache<String, EncryptedDataDetails>>() {
+    }, Names.named(SECRET_CACHE)));
   }
 
   private void registerRequiredBindings() {

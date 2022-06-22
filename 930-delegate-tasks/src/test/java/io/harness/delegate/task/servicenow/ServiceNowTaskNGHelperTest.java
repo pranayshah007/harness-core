@@ -10,13 +10,17 @@ package io.harness.delegate.task.servicenow;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.rule.OwnerRule.HINGER;
 import static io.harness.rule.OwnerRule.PRABU;
+import static io.harness.rule.OwnerRule.vivekveman;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -26,6 +30,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.connector.servicenow.ServiceNowConnectorDTO;
 import io.harness.encryption.SecretRefData;
 import io.harness.exception.HintException;
+import io.harness.exception.ServiceNowException;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.SecretDecryptionService;
 import io.harness.serializer.JsonUtils;
@@ -38,6 +43,7 @@ import software.wings.helpers.ext.servicenow.ServiceNowRestClient;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
+import java.io.IOException;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.Collections;
@@ -401,5 +407,128 @@ public class ServiceNowTaskNGHelperTest extends CategoryTest {
     verify(secretDecryptionService).decrypt(any(), any());
 
     verify(serviceNowRestClient).getTemplateList(anyString(), eq("incident"), anyInt(), anyInt(), anyString());
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void responseTest() throws IOException {
+    Response<JsonNode> jsonNodeResponse = Response.success(200, null);
+
+    serviceNowTaskNgHelper.handleResponse(jsonNodeResponse, "Success Message");
+    ResponseBody body = mock(ResponseBody.class);
+    Response<JsonNode> jsonNodeResponse1 = Response.error(401, body);
+    assertThatThrownBy(() -> serviceNowTaskNgHelper.handleResponse(jsonNodeResponse1, any()))
+        .isInstanceOf(ServiceNowException.class);
+
+    Response<JsonNode> jsonNodeResponse2 = Response.error(404, body);
+    assertThatThrownBy(() -> serviceNowTaskNgHelper.handleResponse(jsonNodeResponse2, any()))
+        .isInstanceOf(ServiceNowException.class);
+  }
+
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testApplyServiceNowWithoutTemplateToCreateTicket() throws Exception {
+    ServiceNowRestClient serviceNowRestClient = Mockito.mock(ServiceNowRestClient.class);
+    Retrofit retrofit = Mockito.mock(Retrofit.class);
+    Call mockCall = Mockito.mock(Call.class);
+    when(serviceNowRestClient.createTicket(anyString(), anyString(), anyString(), isNull(), anyMap()))
+        .thenReturn(mockCall);
+
+    ImmutableMap<String, JsonNode> responsemap =
+        ImmutableMap.of("number", JsonUtils.asTree(Collections.singletonMap("display_value", TICKET_NUMBER)));
+
+    JsonNode successResponse = JsonUtils.asTree(Collections.singletonMap("result", responsemap));
+    Response<JsonNode> jsonNodeResponse = Response.success(successResponse);
+    when(mockCall.execute()).thenReturn(jsonNodeResponse);
+
+    Call mockFetchIssueCall = Mockito.mock(Call.class);
+    when(serviceNowRestClient.getIssue(anyString(), anyString(), anyString(), anyString()))
+        .thenReturn(mockFetchIssueCall);
+    Map<String, Map<String, String>> getIssueResponseMap =
+        ImmutableMap.of("parent", ImmutableMap.of("value", "", "display_value", ""), "description",
+            ImmutableMap.of("value", "BEvalue2", "display_value", "UIvalue2"), "number",
+            ImmutableMap.of("value", "INC00001", "display_value", "INC00001"));
+
+    JsonNode fetchIssueResponse =
+        JsonUtils.asTree(Collections.singletonMap("result", Collections.singletonList(getIssueResponseMap)));
+    Response<JsonNode> jsonNodeFetchIssueResponse = Response.success(fetchIssueResponse);
+    when(mockFetchIssueCall.execute()).thenReturn(jsonNodeFetchIssueResponse);
+    PowerMockito.whenNew(Retrofit.class).withAnyArguments().thenReturn(retrofit);
+    PowerMockito.when(retrofit.create(ServiceNowRestClient.class)).thenReturn(serviceNowRestClient);
+    Map<String, String> fieldmap = ImmutableMap.of("value", "BEvalue2", "display_value", "UIvalue2");
+    ServiceNowConnectorDTO serviceNowConnectorDTO = getServiceNowConnector();
+    ServiceNowTaskNGResponse response =
+        serviceNowTaskNgHelper.getServiceNowResponse(ServiceNowTaskNGParameters.builder()
+                                                         .action(ServiceNowActionNG.CREATE_TICKET)
+                                                         .serviceNowConnectorDTO(serviceNowConnectorDTO)
+                                                         .templateName(TEMPLATE_NAME)
+                                                         .useServiceNowTemplate(false)
+                                                         .ticketType("incident")
+                                                         .fields(fieldmap)
+                                                         .build());
+
+    assertThat(response.getDelegateMetaInfo()).isNull();
+
+    // ServiceNow Outcome
+    assertThat(response.getTicket().getNumber()).isEqualTo(TICKET_NUMBER);
+    assertThat(response.getTicket().getUrl())
+        .isEqualTo("https://harness.service-now.com/nav_to.do?uri=/incident.do?sysparm_query=number=INC00001");
+    assertThat(response.getTicket().getFields()).hasSize(1);
+    verify(secretDecryptionService).decrypt(any(), any());
+  }
+  @Test
+  @Owner(developers = vivekveman)
+  @Category(UnitTests.class)
+  public void testUpdateServiceNowWithoutTemplateToCreateTicket() throws Exception {
+    ServiceNowRestClient serviceNowRestClient = Mockito.mock(ServiceNowRestClient.class);
+    Retrofit retrofit = Mockito.mock(Retrofit.class);
+    Call mockCall = Mockito.mock(Call.class);
+    when(serviceNowRestClient.updateTicket(anyString(), anyString(), anyString(), anyString(), isNull(), anyMap()))
+        .thenReturn(mockCall);
+
+    ImmutableMap<String, JsonNode> responsemap =
+        ImmutableMap.of("number", JsonUtils.asTree(Collections.singletonMap("display_value", TICKET_NUMBER)));
+
+    JsonNode successResponse = JsonUtils.asTree(Collections.singletonMap("result", responsemap));
+    Response<JsonNode> jsonNodeResponse = Response.success(successResponse);
+    when(mockCall.execute()).thenReturn(jsonNodeResponse);
+
+    Call mockFetchIssueCall = Mockito.mock(Call.class);
+    when(serviceNowRestClient.getIssue(anyString(), anyString(), anyString(), anyString()))
+        .thenReturn(mockFetchIssueCall);
+    Map<String, Map<String, String>> getIssueResponseMap =
+        ImmutableMap.of("parent", ImmutableMap.of("value", "", "display_value", ""), "sys_id",
+            ImmutableMap.of("value", "BEvalue2", "display_value", "UIvalue2"), "number",
+            ImmutableMap.of("value", "INC00001", "display_value", "INC00001"));
+
+    JsonNode fetchIssueResponse =
+        JsonUtils.asTree(Collections.singletonMap("result", Collections.singletonList(getIssueResponseMap)));
+    Response<JsonNode> jsonNodeFetchIssueResponse = Response.success(fetchIssueResponse);
+    when(mockFetchIssueCall.execute()).thenReturn(jsonNodeFetchIssueResponse);
+    PowerMockito.whenNew(Retrofit.class).withAnyArguments().thenReturn(retrofit);
+    PowerMockito.when(retrofit.create(ServiceNowRestClient.class)).thenReturn(serviceNowRestClient);
+    Map<String, String> fieldmap = ImmutableMap.of("value", "BEvalue2", "display_value", "UIvalue2");
+    ServiceNowConnectorDTO serviceNowConnectorDTO = getServiceNowConnector();
+    ServiceNowTaskNGResponse response =
+        serviceNowTaskNgHelper.getServiceNowResponse(ServiceNowTaskNGParameters.builder()
+                                                         .action(ServiceNowActionNG.UPDATE_TICKET)
+                                                         .serviceNowConnectorDTO(serviceNowConnectorDTO)
+                                                         .templateName(TEMPLATE_NAME)
+                                                         .useServiceNowTemplate(false)
+                                                         .ticketType("incident")
+                                                         .fields(fieldmap)
+                                                         .ticketNumber(TICKET_NUMBER)
+                                                         .build());
+
+    assertThat(response.getDelegateMetaInfo()).isNull();
+
+    // ServiceNow Outcome
+    assertThat(response.getTicket().getNumber()).isEqualTo(TICKET_NUMBER);
+    assertThat(response.getTicket().getUrl())
+        .isEqualTo("https://harness.service-now.com/nav_to.do?uri=/incident.do?sysparm_query=number=INC00001");
+    assertThat(response.getTicket().getFields()).hasSize(1);
+    verify(secretDecryptionService).decrypt(any(), any());
   }
 }

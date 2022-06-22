@@ -53,6 +53,7 @@ public class DebeziumServiceApplication extends Application<DebeziumServiceConfi
 
   @Override
   public void run(DebeziumServiceConfiguration appConfig, Environment environment) throws Exception {
+    log.info("Starting Debezium Service Application ...");
     DebeziumServiceModuleConfig moduleConfig =
         DebeziumServiceModuleConfig.builder()
             .lockImplementation(appConfig.getDistributedLockImplementation())

@@ -72,7 +72,8 @@ public interface VerificationManagerClient {
 
   @POST("account/validate-delegate-token")
   Call<RestResponse<Boolean>> authenticateDelegateRequest(@Query("accountId") String accountId,
-      @Query("delegateToken") String delegateToken, @Query("delegateId") String delegateId);
+      @Query("delegateToken") String delegateToken, @Query("delegateId") String delegateId,
+      @Query("delegateTokenName") String delegateTokenName);
 
   @POST(KUBERNETES_RESOURCE + "/namespaces")
   Call<RestResponse<List<String>>> getKubernetesNamespaces(@Query("accountId") String accountId,

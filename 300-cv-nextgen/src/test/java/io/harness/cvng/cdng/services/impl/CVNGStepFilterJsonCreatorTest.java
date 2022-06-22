@@ -7,15 +7,20 @@
 
 package io.harness.cvng.cdng.services.impl;
 
+import static io.harness.rule.OwnerRule.DEEPAK_CHHIKARA;
 import static io.harness.rule.OwnerRule.KAMAL;
 
+import static org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
+import io.harness.cvng.cdng.beans.CVNGStepInfo;
 import io.harness.cvng.cdng.beans.CVNGStepType;
+import io.harness.cvng.cdng.beans.ConfiguredMonitoredServiceSpec;
+import io.harness.cvng.cdng.beans.MonitoredServiceNode;
 import io.harness.cvng.cdng.beans.TestVerificationJobSpec;
 import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
 import io.harness.cvng.core.services.api.MetricPackService;
@@ -49,6 +54,8 @@ import org.mockito.MockitoAnnotations;
 public class CVNGStepFilterJsonCreatorTest extends CvNextGenTestBase {
   private static final List<String> YAML_FILE_PATHS = Arrays.asList("pipeline/pipeline-with-verify.yaml",
       "pipeline/pipeline-canary-with-verify.yaml", "pipeline/pipeline-service-propagation-with-verify.yaml");
+  private static final List<String> CONFIGURED_YAML_FILE_PATHS =
+      Arrays.asList("pipeline/pipeline-with-verify-configured-monitored-service.yaml");
   @Inject private CVNGStepFilterJsonCreator cvngStepFilterJsonCreator;
   @Inject private MonitoredServiceService monitoredServiceService;
   @Inject private ChangeSourceService changeSourceService;
@@ -212,6 +219,76 @@ public class CVNGStepFilterJsonCreatorTest extends CvNextGenTestBase {
                           .build())
                   .build());
       assertThat(filterCreationResponse.getReferredEntities()).hasSize(1);
+    }
+  }
+
+  @Test
+  @Owner(developers = DEEPAK_CHHIKARA)
+  @Category(UnitTests.class)
+  public void testHandleNode_configuredMonitoredServiceDoesNotExist() {
+    String monitoredServiceIdentifier = randomAlphabetic(10);
+    ParameterField<String> monitoredServiceRef = new ParameterField<>();
+    monitoredServiceRef.setValue(monitoredServiceIdentifier);
+    MonitoredServiceNode monitoredServiceNode =
+        MonitoredServiceNode.builder()
+            .spec(ConfiguredMonitoredServiceSpec.builder().monitoredServiceRef(monitoredServiceRef).build())
+            .type("Configured")
+            .build();
+    CVNGStepInfo cvngStepInfo = builderFactory.cvngStepInfoBuilder().build();
+    cvngStepInfo.setMonitoredService(monitoredServiceNode);
+    CONFIGURED_YAML_FILE_PATHS.forEach(yamlFilePath
+        -> assertThatThrownBy(
+            ()
+                -> cvngStepFilterJsonCreator.handleNode(FilterCreationContext.builder()
+                                                            .currentField(getVerifyStepYamlField(yamlFilePath))
+                                                            .setupMetadata(SetupMetadata.newBuilder()
+                                                                               .setAccountId(accountId)
+                                                                               .setOrgId(orgIdentifier)
+                                                                               .setProjectId(projectIdentifier)
+                                                                               .build())
+                                                            .build(),
+                    StepElementConfig.builder().stepSpecType(cvngStepInfo).build()))
+               .isInstanceOf(NullPointerException.class)
+               .hasMessage("MonitoredService does not exist for identifier %s", monitoredServiceIdentifier));
+  }
+
+  @Test
+  @Owner(developers = KAMAL)
+  @Category(UnitTests.class)
+  public void testHandleNode_validConfiguredMonitoredService() throws IOException {
+    MonitoredServiceDTO monitoredServiceDTO = builderFactory.monitoredServiceDTOBuilder().build();
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    ParameterField<String> monitoredServiceRef = new ParameterField<>();
+    monitoredServiceRef.setValue(monitoredServiceDTO.getIdentifier());
+    MonitoredServiceNode monitoredServiceNode =
+        MonitoredServiceNode.builder()
+            .spec(ConfiguredMonitoredServiceSpec.builder().monitoredServiceRef(monitoredServiceRef).build())
+            .type("Configured")
+            .build();
+    CVNGStepInfo cvngStepInfo = builderFactory.cvngStepInfoBuilder().build();
+    cvngStepInfo.setMonitoredService(monitoredServiceNode);
+    for (String yamlFilePath : CONFIGURED_YAML_FILE_PATHS) {
+      FilterCreationResponse filterCreationResponse =
+          cvngStepFilterJsonCreator.handleNode(FilterCreationContext.builder()
+                                                   .setupMetadata(SetupMetadata.newBuilder()
+                                                                      .setAccountId(accountId)
+                                                                      .setOrgId(orgIdentifier)
+                                                                      .setProjectId(projectIdentifier)
+                                                                      .build())
+                                                   .currentField(getVerifyStepYamlField(yamlFilePath))
+                                                   .build(),
+              StepElementConfig.builder().stepSpecType(cvngStepInfo).build());
+      assertThat(filterCreationResponse.getReferredEntities()).hasSize(1);
+      assertThat(filterCreationResponse.getReferredEntities().get(0).getIdentifierRef().getIdentifier().getValue())
+          .isEqualTo(BuilderFactory.CONNECTOR_IDENTIFIER);
+      assertThat(
+          filterCreationResponse.getReferredEntities().get(0).getIdentifierRef().getProjectIdentifier().getValue())
+          .isEqualTo(projectIdentifier);
+      assertThat(filterCreationResponse.getReferredEntities().get(0).getIdentifierRef().getOrgIdentifier().getValue())
+          .isEqualTo(orgIdentifier);
+      assertThat(
+          filterCreationResponse.getReferredEntities().get(0).getIdentifierRef().getAccountIdentifier().getValue())
+          .isEqualTo(accountId);
     }
   }
 

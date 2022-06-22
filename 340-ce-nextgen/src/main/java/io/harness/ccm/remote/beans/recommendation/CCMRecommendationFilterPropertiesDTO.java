@@ -54,6 +54,7 @@ public class CCMRecommendationFilterPropertiesDTO extends FilterPropertiesDTO {
   @Schema(name = "limit", description = "Query Limit") Long limit;
 
   @Override
+  @Schema(type = "string", allowableValues = {"CCMRecommendation"})
   public FilterType getFilterType() {
     return FilterType.CCMRECOMMENDATION;
   }

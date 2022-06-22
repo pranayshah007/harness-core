@@ -28,5 +28,5 @@ import lombok.experimental.FieldDefaults;
 public class StrategyConfig {
   @JsonProperty("matrix") MatrixConfigInterface matrixConfig;
   @JsonProperty("for") HarnessForConfig forConfig;
-  @JsonProperty("parallelism") int parallelism;
+  @JsonProperty("parallelism") Integer parallelism;
 }

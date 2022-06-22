@@ -23,25 +23,30 @@ import static io.harness.pcf.model.PcfConstants.COMMAND_MANIFEST_YML_ELEMENT;
 import static io.harness.pcf.model.PcfConstants.DISK_QUOTA_MANIFEST_YML_ELEMENT;
 import static io.harness.pcf.model.PcfConstants.DOCKER_MANIFEST_YML_ELEMENT;
 import static io.harness.pcf.model.PcfConstants.DOMAINS_MANIFEST_YML_ELEMENT;
+import static io.harness.pcf.model.PcfConstants.DOMAIN_MANIFEST_YML_ELEMENT;
 import static io.harness.pcf.model.PcfConstants.ENV_MANIFEST_YML_ELEMENT;
 import static io.harness.pcf.model.PcfConstants.HARNESS__INACTIVE__IDENTIFIER;
 import static io.harness.pcf.model.PcfConstants.HARNESS__STATUS__IDENTIFIER;
 import static io.harness.pcf.model.PcfConstants.HEALTH_CHECK_HTTP_ENDPOINT_MANIFEST_YML_ELEMENT;
+import static io.harness.pcf.model.PcfConstants.HEALTH_CHECK_INVOCATION_TIMEOUT_MANIFEST_YML_ELEMENT;
 import static io.harness.pcf.model.PcfConstants.HEALTH_CHECK_TYPE_MANIFEST_YML_ELEMENT;
 import static io.harness.pcf.model.PcfConstants.HOSTS_MANIFEST_YML_ELEMENT;
 import static io.harness.pcf.model.PcfConstants.HOST_MANIFEST_YML_ELEMENT;
 import static io.harness.pcf.model.PcfConstants.INSTANCE_MANIFEST_YML_ELEMENT;
 import static io.harness.pcf.model.PcfConstants.MEMORY_MANIFEST_YML_ELEMENT;
+import static io.harness.pcf.model.PcfConstants.METADATA_MANIFEST_YML_ELEMENT;
 import static io.harness.pcf.model.PcfConstants.NAME_MANIFEST_YML_ELEMENT;
 import static io.harness.pcf.model.PcfConstants.NO_HOSTNAME_MANIFEST_YML_ELEMENT;
 import static io.harness.pcf.model.PcfConstants.NO_ROUTE_MANIFEST_YML_ELEMENT;
 import static io.harness.pcf.model.PcfConstants.PATH_MANIFEST_YML_ELEMENT;
 import static io.harness.pcf.model.PcfConstants.PCF_ARTIFACT_DOWNLOAD_DIR_PATH;
+import static io.harness.pcf.model.PcfConstants.PROCESSES_MANIFEST_YML_ELEMENT;
 import static io.harness.pcf.model.PcfConstants.RANDOM_ROUTE_MANIFEST_YML_ELEMENT;
 import static io.harness.pcf.model.PcfConstants.REPOSITORY_DIR_PATH;
 import static io.harness.pcf.model.PcfConstants.ROUTES_MANIFEST_YML_ELEMENT;
 import static io.harness.pcf.model.PcfConstants.ROUTE_PATH_MANIFEST_YML_ELEMENT;
 import static io.harness.pcf.model.PcfConstants.SERVICES_MANIFEST_YML_ELEMENT;
+import static io.harness.pcf.model.PcfConstants.SIDE_CARS_MANIFEST_YML_ELEMENT;
 import static io.harness.pcf.model.PcfConstants.STACK_MANIFEST_YML_ELEMENT;
 import static io.harness.pcf.model.PcfConstants.TIMEOUT_MANIFEST_YML_ELEMENT;
 
@@ -626,6 +631,12 @@ public class PcfCommandTaskBaseHelper {
     return path.replace(".yml", "_1.yml");
   }
 
+  /**
+   * Sources:
+   * <a href="https://docs.huihoo.com/cloudfoundry/documentation/devguide/deploy-apps/manifest.html">Link1</a>
+   * <a href="https://docs.cloudfoundry.org/devguide/deploy-apps/manifest-attributes.html">Link2</a>
+   * <a href="https://docs.pivotal.io/application-service/2-13/devguide/deploy-apps/manifest-attributes.html">Link3</a>
+   */
   public Map<String, Object> generateFinalMapForYamlDump(Map<String, Object> applicationToBeUpdated) {
     Map<String, Object> yamlMap = new LinkedHashMap<>();
 
@@ -639,17 +650,21 @@ public class PcfCommandTaskBaseHelper {
     addToMapIfExists(yamlMap, applicationToBeUpdated, DISK_QUOTA_MANIFEST_YML_ELEMENT);
     addToMapIfExists(yamlMap, applicationToBeUpdated, DOCKER_MANIFEST_YML_ELEMENT);
     addToMapIfExists(yamlMap, applicationToBeUpdated, DOMAINS_MANIFEST_YML_ELEMENT);
+    addToMapIfExists(yamlMap, applicationToBeUpdated, DOMAIN_MANIFEST_YML_ELEMENT);
     addToMapIfExists(yamlMap, applicationToBeUpdated, ENV_MANIFEST_YML_ELEMENT);
     addToMapIfExists(yamlMap, applicationToBeUpdated, HEALTH_CHECK_HTTP_ENDPOINT_MANIFEST_YML_ELEMENT);
     addToMapIfExists(yamlMap, applicationToBeUpdated, HEALTH_CHECK_TYPE_MANIFEST_YML_ELEMENT);
-    addToMapIfExists(yamlMap, applicationToBeUpdated, "health-check-invocation-timeout");
+    addToMapIfExists(yamlMap, applicationToBeUpdated, HEALTH_CHECK_INVOCATION_TIMEOUT_MANIFEST_YML_ELEMENT);
     addToMapIfExists(yamlMap, applicationToBeUpdated, HOSTS_MANIFEST_YML_ELEMENT);
     addToMapIfExists(yamlMap, applicationToBeUpdated, HOST_MANIFEST_YML_ELEMENT);
+    addToMapIfExists(yamlMap, applicationToBeUpdated, METADATA_MANIFEST_YML_ELEMENT);
     addToMapIfExists(yamlMap, applicationToBeUpdated, NO_HOSTNAME_MANIFEST_YML_ELEMENT);
     addToMapIfExists(yamlMap, applicationToBeUpdated, NO_ROUTE_MANIFEST_YML_ELEMENT);
+    addToMapIfExists(yamlMap, applicationToBeUpdated, PROCESSES_MANIFEST_YML_ELEMENT);
     addToMapIfExists(yamlMap, applicationToBeUpdated, RANDOM_ROUTE_MANIFEST_YML_ELEMENT);
     addToMapIfExists(yamlMap, applicationToBeUpdated, ROUTE_PATH_MANIFEST_YML_ELEMENT);
     addToMapIfExists(yamlMap, applicationToBeUpdated, ROUTES_MANIFEST_YML_ELEMENT);
+    addToMapIfExists(yamlMap, applicationToBeUpdated, SIDE_CARS_MANIFEST_YML_ELEMENT);
     addToMapIfExists(yamlMap, applicationToBeUpdated, SERVICES_MANIFEST_YML_ELEMENT);
     addToMapIfExists(yamlMap, applicationToBeUpdated, STACK_MANIFEST_YML_ELEMENT);
     addToMapIfExists(yamlMap, applicationToBeUpdated, TIMEOUT_MANIFEST_YML_ELEMENT);

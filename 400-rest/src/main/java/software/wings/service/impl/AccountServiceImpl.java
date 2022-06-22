@@ -2044,8 +2044,8 @@ public class AccountServiceImpl implements AccountService {
     UpdateOperations<Account> updateOperations = persistence.createUpdateOperations(Account.class);
 
     updateOperations.set(AccountKeys.accountActivelyUsed, accountActivelyUsed);
-    UpdateResults updateResults = persistence.update(
-            persistence.createQuery(Account.class).filter(Mapper.ID_KEY, accountId), updateOperations);
+    UpdateResults updateResults =
+        persistence.update(persistence.createQuery(Account.class).filter(Mapper.ID_KEY, accountId), updateOperations);
 
     if (updateResults != null && updateResults.getUpdatedCount() > 0) {
       log.info("Successfully set accountActivelyUsed to {} for accountId = {} ", accountActivelyUsed, accountId);
@@ -2054,7 +2054,6 @@ public class AccountServiceImpl implements AccountService {
 
     log.info("Failed to set accountActivelyUsed to {} for accountId = {} ", accountActivelyUsed, accountId);
     return false;
-
   }
 
   @Override

@@ -10,6 +10,7 @@ package io.harness.pms.redisConsumer;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.redisHandler.RedisAbstractHandler;
+import io.harness.timescaledb.DBUtils;
 import io.harness.timescaledb.Tables;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -154,13 +155,6 @@ public class PipelineExecutionSummaryCDChangeEventHandler extends RedisAbstractH
     return record;
   }
 
-  public boolean isConnectionError(DataAccessException ex) {
-    if (ex.getMessage().contains("Error getting connection from data source")) {
-      return true;
-    }
-    return false;
-  }
-
   @Override
   public boolean handleCreateEvent(String id, String value) {
     Record record = createRecord(value, id);
@@ -170,12 +164,13 @@ public class PipelineExecutionSummaryCDChangeEventHandler extends RedisAbstractH
     try {
       dsl.insertInto(Tables.PIPELINE_EXECUTION_SUMMARY_CD)
           .set(record)
-          .onConflict(Tables.PIPELINE_EXECUTION_SUMMARY_CD.ID)
+          .onConflict(Tables.PIPELINE_EXECUTION_SUMMARY_CD.ID, Tables.PIPELINE_EXECUTION_SUMMARY_CD.STARTTS)
           .doNothing()
           .execute();
+      log.info("Successfully inserted data for id {}", id);
     } catch (DataAccessException ex) {
       log.error("Caught Exception while inserting data", ex);
-      if (isConnectionError(ex)) {
+      if (DBUtils.isConnectionError(ex)) {
         return false;
       }
     }
@@ -186,9 +181,10 @@ public class PipelineExecutionSummaryCDChangeEventHandler extends RedisAbstractH
   public boolean handleDeleteEvent(String id) {
     try {
       dsl.delete(Tables.PIPELINE_EXECUTION_SUMMARY_CD).where(Tables.PIPELINE_EXECUTION_SUMMARY_CD.ID.eq(id)).execute();
+      log.info("Successfully deleted data for id {}", id);
     } catch (DataAccessException ex) {
       log.error("Caught Exception while deleting data", ex);
-      if (isConnectionError(ex)) {
+      if (DBUtils.isConnectionError(ex)) {
         return false;
       }
     }
@@ -204,14 +200,14 @@ public class PipelineExecutionSummaryCDChangeEventHandler extends RedisAbstractH
     try {
       dsl.insertInto(Tables.PIPELINE_EXECUTION_SUMMARY_CD)
           .set(record)
-          .onConflict(Tables.PIPELINE_EXECUTION_SUMMARY_CD.ID)
+          .onConflict(Tables.PIPELINE_EXECUTION_SUMMARY_CD.ID, Tables.PIPELINE_EXECUTION_SUMMARY_CD.STARTTS)
           .doUpdate()
           .set(record)
-          .where(Tables.PIPELINE_EXECUTION_SUMMARY_CD.ID.eq(id))
           .execute();
+      log.info("Successfully updated data for id {}", id);
     } catch (DataAccessException ex) {
       log.error("Caught Exception while updating data", ex);
-      if (isConnectionError(ex)) {
+      if (DBUtils.isConnectionError(ex)) {
         return false;
       }
     }
