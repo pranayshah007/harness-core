@@ -98,8 +98,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
   public InvoiceDetailDTO previewInvoice(String accountIdentifier, SubscriptionDTO subscriptionDTO) {
     isSelfServiceEnable(accountIdentifier);
 
-    StripeCustomer stripeCustomer = stripeCustomerRepository.findByAccountIdentifierAndCustomerId(
-        accountIdentifier, subscriptionDTO.getCustomerId());
+    StripeCustomer stripeCustomer = stripeCustomerRepository.findByAccountIdentifier(accountIdentifier);
     if (stripeCustomer == null) {
       throw new InvalidRequestException("Cannot preview. Please finish customer information firstly");
     }
