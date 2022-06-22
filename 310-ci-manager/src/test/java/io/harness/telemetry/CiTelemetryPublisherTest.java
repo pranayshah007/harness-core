@@ -19,12 +19,14 @@ import io.harness.rule.Owner;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 import retrofit2.Call;
 
 import java.util.Collections;
@@ -42,6 +44,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 @OwnedBy(CI)
+@RunWith(PowerMockRunner.class)
 @PrepareForTest({RestClientUtils.class})
 public class CiTelemetryPublisherTest extends CategoryTest {
     @InjectMocks CiTelemetryPublisher telemetryPublisher;
