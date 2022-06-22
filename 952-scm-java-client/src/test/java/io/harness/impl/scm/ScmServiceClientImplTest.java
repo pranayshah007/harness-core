@@ -244,7 +244,7 @@ public class ScmServiceClientImplTest extends CategoryTest {
 
     when(scmGitProviderHelper.getSlug(any())).thenReturn(slug);
     when(scmGitProviderMapper.mapToSCMGitProvider(any())).thenReturn(getGitProviderDefault());
-    when(ScmGitWebhookHelper.getCreateWebhookRequest(any(), any(), any(), any()))
+    when(ScmGitWebhookHelper.getCreateWebhookRequest(any(), any(), any(), any(), any()))
         .thenReturn(CreateWebhookRequest.newBuilder().build());
     when(scmBlockingStub.createWebhook(any())).thenReturn(CreateWebhookResponse.newBuilder().setStatus(300).build());
     assertThatThrownBy(() -> scmService.createWebhook(scmConnector, getGitWebhookDetails(), scmBlockingStub))

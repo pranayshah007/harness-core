@@ -61,13 +61,17 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+
+
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @OwnedBy(CDC)
 public class WorkflowExecutionServiceHelperTest extends WingsBaseTest {
@@ -564,7 +568,7 @@ public class WorkflowExecutionServiceHelperTest extends WingsBaseTest {
   }
 
   private Variable prepareVariable(int index, VariableType type, EntityType entityType) {
-    Variable variable = aVariable().name("var" + index).type(type).mandatory(true).build();
+    Variable variable = aVariable().name("var" + index).allowedList(Collections.singletonList("val" + index)).type(type).mandatory(true).build();
     if (VariableType.ENTITY == type) {
       variable.setMetadata(singletonMap(Variable.ENTITY_TYPE, entityType));
     }

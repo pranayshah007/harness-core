@@ -47,5 +47,5 @@ public class InfraStructureDefinitionYaml implements Visitable {
   private ParameterField<String> ref;
 
   // inputs
-  Map<String, Object> inputs;
+  @ApiModelProperty(dataType = SwaggerConstants.JSON_NODE_CLASSPATH) Map<String, Object> inputs;
 }

@@ -7,6 +7,8 @@
 
 package io.harness.delegate.beans.executioncapability;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
@@ -61,5 +63,11 @@ public class SocketConnectivityExecutionCapability implements ExecutionCapabilit
   @Override
   public Duration getPeriodUntilNextValidation() {
     return Duration.ofHours(4);
+  }
+
+  @Override
+  public String getCapabilityToString() {
+    return isNotEmpty(fetchCapabilityBasis()) ? String.format("Capability reach url:  %s ", fetchCapabilityBasis())
+                                              : null;
   }
 }

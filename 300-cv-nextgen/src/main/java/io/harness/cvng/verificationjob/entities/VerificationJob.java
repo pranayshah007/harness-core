@@ -121,7 +121,6 @@ public abstract class VerificationJob
 
   public abstract VerificationJobType getType();
   public abstract VerificationJobDTO getVerificationJobDTO();
-  public abstract boolean shouldDoDataCollection();
 
   public void validate() {
     Preconditions.checkNotNull(accountId, generateErrorMessageFromParam(VerificationJobKeys.accountId));

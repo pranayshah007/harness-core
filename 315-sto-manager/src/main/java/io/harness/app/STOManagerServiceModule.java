@@ -29,6 +29,7 @@ import io.harness.grpc.DelegateServiceDriverGrpcClientModule;
 import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.grpc.client.AbstractManagerGrpcClientModule;
 import io.harness.grpc.client.ManagerGrpcClientModule;
+import io.harness.impl.scm.ScmServiceClientImpl;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.lock.PersistentLockModule;
 import io.harness.logserviceclient.CILogServiceClientModule;
@@ -41,6 +42,7 @@ import io.harness.redis.RedisConfig;
 import io.harness.remote.client.ClientMode;
 import io.harness.secrets.SecretNGManagerClientModule;
 import io.harness.service.DelegateServiceDriverModule;
+import io.harness.service.ScmServiceClient;
 import io.harness.stoserviceclient.STOServiceClientModule;
 import io.harness.telemetry.AbstractTelemetryModule;
 import io.harness.telemetry.TelemetryConfiguration;
@@ -162,6 +164,7 @@ public class STOManagerServiceModule extends AbstractModule {
     bind(HPersistence.class).to(MongoPersistence.class).in(Singleton.class);
     bind(STOYamlSchemaService.class).to(STOYamlSchemaServiceImpl.class).in(Singleton.class);
     bind(CIFeatureFlagService.class).to(CIFeatureFlagServiceImpl.class).in(Singleton.class);
+    bind(ScmServiceClient.class).to(ScmServiceClientImpl.class);
 
     // Keeping it to 1 thread to start with. Assuming executor service is used only to
     // serve health checks. If it's being used for other tasks also, max pool size should be increased.

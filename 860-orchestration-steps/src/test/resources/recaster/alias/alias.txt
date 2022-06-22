@@ -116,3 +116,4 @@ io.harness.plancreator.strategy.StrategyConfig
 io.harness.plancreator.strategy.HarnessForConfig
 io.harness.steps.customstage.CustomStageSpecParams
 io.harness.ng.core.envGroup.EnvironmentGroupOutcome
+io.harness.steps.policy.PolicyStepSpecParameters

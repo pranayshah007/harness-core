@@ -15,11 +15,13 @@ public class ChangeConsumerFactory {
   @Inject private DebeziumProducerFactory producerFactory;
 
   @SuppressWarnings("unchecked")
-  public <T extends MongoDatabaseChangeConsumer> T get(String databaseName, ChangeConsumerConfig changeConsumerConfig) {
+  public <T extends MongoCollectionChangeConsumer> T get(
+      String collectionName, ChangeConsumerConfig changeConsumerConfig) {
     ConsumerType consumerType = changeConsumerConfig.getConsumerType();
+
     switch (consumerType) {
       case EVENTS_FRAMEWORK:
-        return (T) new EventsFrameworkChangeConsumer(databaseName, producerFactory);
+        return (T) new EventsFrameworkChangeConsumer(collectionName, producerFactory);
       default:
         throw new InvalidRequestException("Change Consumer not Supported for " + consumerType.toString());
     }

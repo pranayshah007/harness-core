@@ -14,7 +14,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.utils.DelegateEntityOwnerHelper;
 import io.harness.gitsync.beans.YamlDTO;
 
-import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 import lombok.Builder;
 import lombok.Getter;
@@ -32,20 +32,27 @@ public class DelegateGroupDTO implements YamlDTO {
 
   Set<String> tags;
 
-  public static DelegateGroupDTO convertToDTO(DelegateGroup delegateGroup) {
+  public static DelegateGroupDTO convertToDTO(DelegateGroup delegateGroup, Set<String> implicitTags) {
     String orgIdentifier = delegateGroup.getOwner() != null
         ? DelegateEntityOwnerHelper.extractOrgIdFromOwnerIdentifier(delegateGroup.getOwner().getIdentifier())
         : null;
     String projectIdentifier = delegateGroup.getOwner() != null
         ? DelegateEntityOwnerHelper.extractProjectIdFromOwnerIdentifier(delegateGroup.getOwner().getIdentifier())
         : null;
+    Set<String> tags = new HashSet<>();
+    if (isNotEmpty(delegateGroup.getTags())) {
+      tags.addAll(delegateGroup.getTags());
+    }
+    if (isNotEmpty(implicitTags)) {
+      tags.addAll(implicitTags);
+    }
     return DelegateGroupDTO.builder()
         .accountIdentifier(delegateGroup.getAccountId())
         .orgIdentifier(orgIdentifier)
         .projectIdentifier(projectIdentifier)
         .name(delegateGroup.getName())
         .identifier(delegateGroup.getIdentifier())
-        .tags(isNotEmpty(delegateGroup.getTags()) ? delegateGroup.getTags() : Collections.emptySet())
+        .tags(tags)
         .build();
   }
 }

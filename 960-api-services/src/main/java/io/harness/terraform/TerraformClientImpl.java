@@ -219,6 +219,20 @@ public class TerraformClientImpl implements TerraformClient {
     return TerraformVersion.createDefault();
   }
 
+  @NotNull
+  @Override
+  public TerraformVersion version(String tfBinaryPath, long timeoutInMillis, String scriptDirectory)
+      throws InterruptedException, TimeoutException, IOException {
+    String command = tfBinaryPath + " version";
+    CliResponse response = cliHelper.executeCliCommand(
+        command, timeoutInMillis, Collections.emptyMap(), scriptDirectory, new NoopExecutionCallback());
+    if (response.getCommandExecutionStatus() == CommandExecutionStatus.SUCCESS) {
+      return TerraformVersion.create(response.getOutput());
+    }
+
+    return TerraformVersion.createDefault();
+  }
+
   @VisibleForTesting
   CliResponse executeTerraformCLICommand(String command, long timeoutInMillis, Map<String, String> envVariables,
       String scriptDirectory, LogCallback executionLogCallBack, String loggingCommand, LogOutputStream logOutputStream)

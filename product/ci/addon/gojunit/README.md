@@ -1,19 +1,7 @@
-[![License][license-badge]][license-link]
-[![Godoc][godoc-badge]][godoc-link]
-[![Go Report Card][go-report-badge]][go-report-link]
-[![CircleCI][circleci-badge]][circleci-link]
-
 # Go JUnit
 
-🐜 Go library for ingesting JUnit XML reports
+🐜 Go library for ingesting JUnit XML reports. Adapted from github.com/joshdk/go-junit
 
-## Installing
-
-You can fetch this library by running the following
-
-```bash
-go get -u github.com/joshdk/go-junit
-```
 
 ## Usage
 
@@ -155,26 +143,6 @@ In all cases, omitting (or even duplicated) the XML declaration tag is allowed.
 <?xml version="1.0" encoding="UTF-8"?>
 ```
 
-## Contributing
-
-Found a bug or want to make go-junit better? Please [open a pull request](https://github.com/joshdk/go-junit/compare)!
-
-To make things easier, try out the following:
-
-- Running `make test` will run the test suite to verify behavior.
-
-- Running `make lint` will format the code, and report any linting issues using [golangci/golangci-lint](https://github.com/golangci/golangci-lint).
-
 ## License
 
 This code is distributed under the [MIT License][license-link], see [LICENSE.txt][license-file] for more information.
-
-[circleci-badge]:   https://circleci.com/gh/joshdk/go-junit.svg?&style=shield
-[circleci-link]:    https://circleci.com/gh/joshdk/go-junit/tree/master
-[go-report-badge]:  https://goreportcard.com/badge/github.com/joshdk/go-junit
-[go-report-link]:   https://goreportcard.com/report/github.com/joshdk/go-junit
-[godoc-badge]:      https://godoc.org/github.com/joshdk/go-junit?status.svg
-[godoc-link]:       https://godoc.org/github.com/joshdk/go-junit
-[license-badge]:    https://img.shields.io/badge/license-MIT-green.svg
-[license-file]:     https://github.com/joshdk/go-junit/blob/master/LICENSE.txt
-[license-link]:     https://opensource.org/licenses/MIT

@@ -105,6 +105,7 @@ message GetFileRequest {
   ScopeIdentifiers scopeIdentifiers = 6;
   map<string, string> contextMap = 7;
   io.harness.security.Principal principal = 8;
+  GitRepoScopeParams gitRepoScopeParams = 9;
 }
 
 message GetFileResponse {
@@ -126,6 +127,7 @@ message CreateFileRequest {
   ScopeIdentifiers scopeIdentifiers = 12;
   map<string, string> contextMap = 13;
   io.harness.security.Principal principal = 14;
+  GitRepoScopeParams gitRepoScopeParams = 15;
 }
 
 message CreateFileResponse {
@@ -148,6 +150,7 @@ message UpdateFileRequest {
   ScopeIdentifiers scopeIdentifiers = 12;
   map<string, string> contextMap = 13;
   io.harness.security.Principal principal = 14;
+  GitRepoScopeParams gitRepoScopeParams = 15;
 }
 
 message UpdateFileResponse {
@@ -165,6 +168,7 @@ message CreatePRRequest {
   ScopeIdentifiers scopeIdentifiers = 6;
   map<string, string> contextMap = 7;
   io.harness.security.Principal principal = 8;
+  GitRepoScopeParams gitRepoScopeParams = 9;
 }
 
 message CreatePRResponse {
@@ -180,10 +184,15 @@ message GitMetaData {
   string filePath = 4;
   string blobId = 5;
   string fileUrl = 6;
+  GitRepoScopeParams gitRepoScopeParams = 7;
 }
 
 message ErrorDetails {
   string errorMessage = 1;
   string explanationMessage = 2;
   string hintMessage = 3;
+}
+
+message GitRepoScopeParams {
+  string gitProjectName = 1;
 }

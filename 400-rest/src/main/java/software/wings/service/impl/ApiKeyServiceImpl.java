@@ -122,7 +122,7 @@ public class ApiKeyServiceImpl implements ApiKeyService {
             .build();
     String id = duplicateCheck(
         () -> wingsPersistence.save(apiKeyEntryToBeSaved), ApiKeyEntryKeys.name, apiKeyEntryToBeSaved.getName());
-    auditServiceHelper.reportForAuditingUsingAccountId(accountId, null, apiKeyEntry, Type.CREATE);
+    auditServiceHelper.reportForAuditingUsingAccountId(accountId, null, apiKeyEntryToBeSaved, Type.CREATE);
     return get(id, accountId);
   }
 
@@ -151,7 +151,7 @@ public class ApiKeyServiceImpl implements ApiKeyService {
     if (!same) {
       evictApiKeyAndRebuildCache(apiKeyEntryAfterUpdate.getDecryptedKey(), accountId, true);
     }
-    auditServiceHelper.reportForAuditingUsingAccountId(accountId, null, apiKeyEntry, Type.UPDATE);
+    auditServiceHelper.reportForAuditingUsingAccountId(accountId, null, apiKeyEntryAfterUpdate, Type.UPDATE);
     return apiKeyEntryAfterUpdate;
   }
 

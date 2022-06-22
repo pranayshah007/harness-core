@@ -7,16 +7,12 @@
 
 package io.harness.cdng.gitops.steps;
 
-import static java.util.Collections.singletonList;
-
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import javax.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -34,24 +30,15 @@ import org.springframework.data.annotation.TypeAlias;
 @AllArgsConstructor
 public class ClusterStepParameters implements StepParameters {
   private String envGroupRef;
+  private String envGroupName;
   private boolean deployToAllEnvs;
   @Singular private List<EnvClusterRefs> envClusterRefs;
 
-  public ClusterStepParameters and(@NotNull String envRef, boolean deployToAllClusters, Set<String> clusterRefs) {
-    if (envClusterRefs == null) {
-      envClusterRefs = new ArrayList<>();
-    }
-    envClusterRefs.add(
-        EnvClusterRefs.builder().envRef(envRef).clusterRefs(clusterRefs).deployToAll(deployToAllClusters).build());
-    return this;
-  }
-
-  public static ClusterStepParameters WithEnvGroupRef(@NotNull String envGroupRef) {
-    return ClusterStepParameters.builder().envGroupRef(envGroupRef).deployToAllEnvs(true).build();
-  }
-
-  public ClusterStepParameters(String envGroupRef, String env) {
-    this.envGroupRef = envGroupRef;
-    this.envClusterRefs = singletonList(EnvClusterRefs.builder().envRef(env).deployToAll(true).build());
+  public static ClusterStepParameters WithEnvGroup(@NotNull Metadata envGroup) {
+    return ClusterStepParameters.builder()
+        .envGroupRef(envGroup.getIdentifier())
+        .envGroupName(envGroup.getName())
+        .deployToAllEnvs(true)
+        .build();
   }
 }

@@ -360,7 +360,7 @@ public class EnvironmentServiceImpl implements EnvironmentService {
 
   @Override
   public String createEnvironmentInputsYaml(
-      String accountId, String orgIdentifier, String projectIdentifier, String envIdentifier) {
+      String accountId, String projectIdentifier, String orgIdentifier, String envIdentifier) {
     Map<String, Object> yamlInputs =
         createEnvironmentInputsYamlInternal(accountId, orgIdentifier, projectIdentifier, envIdentifier);
 

@@ -11,6 +11,7 @@ import static com.google.common.collect.ImmutableMap.of;
 import static java.util.stream.Collectors.toSet;
 
 import io.harness.AccessControlClientConfiguration;
+import io.harness.ScmConnectionConfig;
 import io.harness.cache.CacheConfig;
 import io.harness.ci.beans.entities.LogServiceConfig;
 import io.harness.ci.beans.entities.TIServiceConfig;
@@ -80,6 +81,8 @@ public class STOManagerConfiguration extends Configuration implements AssetsBund
   @JsonProperty("pmsPlanCreatorServicePoolConfig") private ThreadPoolConfig pmsPlanCreatorServicePoolConfig;
   @JsonProperty("asyncDelegateResponseConsumption") private ThreadPoolConfig asyncDelegateResponseConsumption;
   @JsonProperty("segmentConfiguration") @ConfigSecret private SegmentConfiguration segmentConfiguration;
+
+  private ScmConnectionConfig scmConnectionConfig;
 
   @JsonProperty("pmsSdkExecutionPoolConfig") private ThreadPoolConfig pmsSdkExecutionPoolConfig;
   private String ngManagerServiceSecret;

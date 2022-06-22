@@ -35,6 +35,7 @@ import io.harness.exception.WingsException;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.EnvironmentValidationHelper;
 import io.harness.ng.core.OrgAndProjectValidationHelper;
+import io.harness.ng.core.beans.NGEntityTemplateResponseDTO;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -381,7 +382,7 @@ public class InfrastructureResource {
   @Path("/runtimeInputs")
   @ApiOperation(value = "This api returns Infrastructure Definition inputs YAML", nickname = "getInfrastructureInputs")
   @Hidden
-  public ResponseDTO<String> getInfrastructureInputs(
+  public ResponseDTO<NGEntityTemplateResponseDTO> getInfrastructureInputs(
       @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
       @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @NotNull @QueryParam(
@@ -396,7 +397,8 @@ public class InfrastructureResource {
           NGCommonEntityConstants.DEPLOY_TO_ALL) @DefaultValue("false") boolean deployToAll) {
     String infrastructureInputsYaml = infrastructureEntityService.createInfrastructureInputsFromYaml(
         accountId, projectIdentifier, orgIdentifier, environmentIdentifier, infraIdentifiers, deployToAll);
-    return ResponseDTO.newResponse(infrastructureInputsYaml);
+    return ResponseDTO.newResponse(
+        NGEntityTemplateResponseDTO.builder().inputSetTemplateYaml(infrastructureInputsYaml).build());
   }
 
   private void throwExceptionForNoRequestDTO(InfrastructureRequestDTO dto) {

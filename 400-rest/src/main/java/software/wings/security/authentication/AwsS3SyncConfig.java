@@ -24,4 +24,5 @@ public class AwsS3SyncConfig {
   private String awsAccessKey;
   private String awsSecretKey;
   private String region;
+  private int awsS3SyncTimeoutMinutes;
 }

@@ -7,6 +7,8 @@
 
 package io.harness.delegate.beans.executioncapability;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import java.time.Duration;
 import java.util.List;
 import lombok.Builder;
@@ -38,5 +40,11 @@ public class SocketConnectivityBulkOrExecutionCapability implements ExecutionCap
   @Override
   public Duration getPeriodUntilNextValidation() {
     return Duration.ofHours(4);
+  }
+
+  @Override
+  public String getCapabilityToString() {
+    return isNotEmpty(fetchCapabilityBasis()) ? String.format("Capability to reach, %s ", fetchCapabilityBasis())
+                                              : null;
   }
 }

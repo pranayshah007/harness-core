@@ -66,6 +66,7 @@ import io.harness.lock.noop.PersistentNoopLocker;
 import io.harness.metrics.modules.MetricsModule;
 import io.harness.metrics.service.api.MetricsPublisher;
 import io.harness.mongo.MongoConfig;
+import io.harness.notifications.NotificationResourceClientModule;
 import io.harness.persistence.HPersistence;
 import io.harness.pricing.client.CloudInfoPricingClientModule;
 import io.harness.remote.client.ClientMode;
@@ -142,6 +143,8 @@ public class BatchProcessingModule extends AbstractModule {
         batchMainConfig.getNgManagerServiceSecret(), BATCH_PROCESSING.getServiceId(), ClientMode.PRIVILEGED));
     install(NgLicenseHttpClientModule.getInstance(batchMainConfig.getNgManagerServiceHttpClientConfig(),
         batchMainConfig.getNgManagerServiceSecret(), MANAGER.getServiceId()));
+    install(new NotificationResourceClientModule(batchMainConfig.getCeNgServiceHttpClientConfig(),
+        batchMainConfig.getCeNgServiceSecret(), BATCH_PROCESSING.getServiceId(), ClientMode.PRIVILEGED));
     install(new AbstractTelemetryModule() {
       @Override
       public TelemetryConfiguration telemetryConfiguration() {

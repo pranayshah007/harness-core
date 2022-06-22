@@ -7,6 +7,7 @@
 
 package io.harness.grpc;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 
 import io.harness.annotations.dev.BreakDependencyOn;
@@ -52,6 +53,7 @@ import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.NoDelegatesException;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.executioncapability.ExecutionCapability;
+import io.harness.delegate.beans.executioncapability.SelectorCapability;
 import io.harness.exception.ExceptionUtils;
 import io.harness.perpetualtask.PerpetualTaskClientContext;
 import io.harness.perpetualtask.PerpetualTaskClientContext.PerpetualTaskClientContextBuilder;
@@ -64,6 +66,7 @@ import io.harness.service.intfc.DelegateTaskService;
 import software.wings.service.intfc.DelegateService;
 import software.wings.service.intfc.DelegateTaskServiceClassic;
 
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.protobuf.ByteString;
@@ -120,8 +123,12 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
                                                        -> (ExecutionCapability) kryoSerializer.asInflatedObject(
                                                            capability.getKryoCapability().toByteArray()))
                                                    .collect(Collectors.toList());
-      List<String> taskSelectors =
-          request.getSelectorsList().stream().map(TaskSelector::getSelector).collect(Collectors.toList());
+
+      if (isNotEmpty(request.getSelectorsList())) {
+        List<SelectorCapability> selectorCapabilities =
+            request.getSelectorsList().stream().map(this::toSelectorCapability).collect(Collectors.toList());
+        capabilities.addAll(selectorCapabilities);
+      }
 
       DelegateTaskBuilder taskBuilder =
           DelegateTask.builder()
@@ -133,7 +140,6 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
               .logStreamingAbstractions(logAbstractions)
               .workflowExecutionId(setupAbstractions.get(DelegateTaskKeys.workflowExecutionId))
               .executionCapabilities(capabilities)
-              .tags(taskSelectors)
               .selectionLogsTrackingEnabled(request.getSelectionTrackingLogEnabled())
               .eligibleToExecuteDelegateIds(new LinkedList<>(request.getEligibleToExecuteDelegateIdsList()))
               .forceExecute(request.getForceExecute())
@@ -384,5 +390,13 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
       log.error("Unexpected error occurred while processing reset perpetual task request.", ex);
       responseObserver.onError(io.grpc.Status.INTERNAL.withDescription(ex.getMessage()).asRuntimeException());
     }
+  }
+
+  private SelectorCapability toSelectorCapability(TaskSelector taskSelector) {
+    String origin = isNotEmpty(taskSelector.getOrigin()) ? taskSelector.getOrigin() : "default";
+    return SelectorCapability.builder()
+        .selectors(Sets.newHashSet(taskSelector.getSelector()))
+        .selectorOrigin(origin)
+        .build();
   }
 }

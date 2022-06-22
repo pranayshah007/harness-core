@@ -38,6 +38,8 @@ public class NotificationSettingsServiceImplTest extends CategoryTest {
   private static final String SLACK_SECRET_1 = "<+secrets.getValue('SlackWebhookUrlSecret1')>";
   private static final String SLACK_SECRET_2 = "<+secrets.getValue('SlackWebhookUrlSecret2')>";
   private static final String SLACK_SECRET_3 = "<+secrets.getValue(\"SlackWebhookUrlSecret3\")>";
+  private static final String SLACK_ORG_SECRET = "<+secrets.getValue('org.SlackWebhookUrlSecret')>";
+  private static final String SLACK_ACCOUNT_SECRET = "<+secrets.getValue('account.SlackWebhookUrlSecret')>";
   private static final String PAGERDUTY_SECRET = "<+secrets.getValue('PagerDutyWebhookUrlSecret')>";
   private long expressionFunctorToken;
 
@@ -62,6 +64,23 @@ public class NotificationSettingsServiceImplTest extends CategoryTest {
         String.format("${ngSecretManager.obtain(\"SlackWebhookUrlSecret1\", %d)}", expressionFunctorToken);
     String expectedUserGroup2 =
         String.format("${ngSecretManager.obtain(\"SlackWebhookUrlSecret2\", %d)}", expressionFunctorToken);
+    assertEquals(expectedUserGroup1, resolvedUserGroups.get(0));
+    assertEquals(expectedUserGroup2, resolvedUserGroups.get(1));
+  }
+
+  @Test
+  @Owner(developers = ADITHYA)
+  @Category(UnitTests.class)
+  public void testGetNotificationRequestForOrgSecretAndAccountSecretExpressionSlackUserGroups() {
+    List<String> notificationSettings = new ArrayList<>();
+    notificationSettings.add(SLACK_ORG_SECRET);
+    notificationSettings.add(SLACK_ACCOUNT_SECRET);
+    List<String> resolvedUserGroups = notificationSettingsService.resolveUserGroups(
+        NotificationChannelType.SLACK, notificationSettings, expressionFunctorToken);
+    String expectedUserGroup1 =
+        String.format("${ngSecretManager.obtain(\"org.SlackWebhookUrlSecret\", %d)}", expressionFunctorToken);
+    String expectedUserGroup2 =
+        String.format("${ngSecretManager.obtain(\"account.SlackWebhookUrlSecret\", %d)}", expressionFunctorToken);
     assertEquals(expectedUserGroup1, resolvedUserGroups.get(0));
     assertEquals(expectedUserGroup2, resolvedUserGroups.get(1));
   }
