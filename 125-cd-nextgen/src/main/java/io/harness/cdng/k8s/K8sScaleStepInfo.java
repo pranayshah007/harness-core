@@ -52,10 +52,9 @@ public class K8sScaleStepInfo extends K8sScaleBaseStepInfo implements CDStepInfo
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 
   @Builder(builderMethodName = "infoBuilder")
-  public K8sScaleStepInfo(ParameterField<Boolean> skipDryRun, ParameterField<Boolean> skipSteadyStateCheck,
-      InstanceSelectionWrapper instanceSelection, ParameterField<String> workload,
-      ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
-    super(instanceSelection, workload, skipDryRun, skipSteadyStateCheck, delegateSelectors);
+  public K8sScaleStepInfo(ParameterField<Boolean> skipSteadyStateCheck, InstanceSelectionWrapper instanceSelection,
+      ParameterField<String> workload, ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
+    super(instanceSelection, workload, skipSteadyStateCheck, delegateSelectors);
   }
 
   @Override
@@ -73,7 +72,6 @@ public class K8sScaleStepInfo extends K8sScaleBaseStepInfo implements CDStepInfo
     return K8sScaleStepParameter.infoBuilder()
         .instanceSelection(instanceSelection)
         .workload(workload)
-        .skipDryRun(skipDryRun)
         .skipSteadyStateCheck(skipSteadyStateCheck)
         .delegateSelectors(delegateSelectors)
         .build();

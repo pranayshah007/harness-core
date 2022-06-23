@@ -51,9 +51,9 @@ public class K8sDeleteStepInfo extends K8sDeleteBaseStepInfo implements CDStepIn
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 
   @Builder(builderMethodName = "infoBuilder")
-  public K8sDeleteStepInfo(DeleteResourcesWrapper deleteResources, ParameterField<Boolean> skipDryRun,
-      ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
-    super(deleteResources, skipDryRun, delegateSelectors);
+  public K8sDeleteStepInfo(
+      DeleteResourcesWrapper deleteResources, ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
+    super(deleteResources, delegateSelectors);
   }
 
   @Override
@@ -70,7 +70,6 @@ public class K8sDeleteStepInfo extends K8sDeleteBaseStepInfo implements CDStepIn
   public SpecParameters getSpecParameters() {
     return K8sDeleteStepParameters.infoBuilder()
         .deleteResources(this.getDeleteResources())
-        .skipDryRun(this.getSkipDryRun())
         .delegateSelectors(this.getDelegateSelectors())
         .build();
   }
