@@ -71,6 +71,7 @@ import static software.wings.service.impl.trigger.TriggerServiceTestHelper.build
 import static software.wings.service.impl.trigger.TriggerServiceTestHelper.setPipelineStages;
 import static software.wings.utils.WingsTestConstants.ACCOUNT_ID;
 import static software.wings.utils.WingsTestConstants.APP_ID;
+import static software.wings.utils.WingsTestConstants.APP_MANIFEST_NAME;
 import static software.wings.utils.WingsTestConstants.APP_NAME;
 import static software.wings.utils.WingsTestConstants.ARTIFACT_FILTER;
 import static software.wings.utils.WingsTestConstants.ARTIFACT_ID;
@@ -3197,7 +3198,8 @@ public class TriggerServiceTest extends WingsBaseTest {
             .build()));
 
     when(helmChartService.getLastCollectedManifestMatchingRegex(ACCOUNT_ID, MANIFEST_ID, ARTIFACT_FILTER))
-        .thenReturn(HelmChart.builder().uuid(HELM_CHART_ID).build());
+        .thenReturn(
+            HelmChart.builder().uuid(HELM_CHART_ID).applicationManifestId(APP_MANIFEST_NAME).version("1").build());
     when(workflowExecutionService.obtainLastGoodDeployedHelmCharts(APP_ID, PIPELINE_ID))
         .thenReturn(asList(HelmChart.builder().uuid(HELM_CHART_ID + 2).serviceId(SERVICE_ID + 2).build()));
     ApplicationManifest appManifest =
@@ -3236,7 +3238,8 @@ public class TriggerServiceTest extends WingsBaseTest {
     triggerService.save(trigger);
 
     when(helmChartService.getLastCollectedManifest(ACCOUNT_ID, MANIFEST_ID))
-        .thenReturn(HelmChart.builder().uuid(HELM_CHART_ID).build());
+        .thenReturn(
+            HelmChart.builder().uuid(HELM_CHART_ID).applicationManifestId(APP_MANIFEST_NAME).version("1").build());
     when(workflowExecutionService.obtainLastGoodDeployedHelmCharts(APP_ID, WORKFLOW_ID))
         .thenReturn(asList(HelmChart.builder().uuid(HELM_CHART_ID + 2).serviceId(SERVICE_ID + 2).build()));
     ApplicationManifest appManifest =
@@ -3287,7 +3290,8 @@ public class TriggerServiceTest extends WingsBaseTest {
     triggerService.save(trigger);
 
     when(helmChartService.getLastCollectedManifest(ACCOUNT_ID, MANIFEST_ID))
-        .thenReturn(HelmChart.builder().uuid(HELM_CHART_ID).build());
+        .thenReturn(
+            HelmChart.builder().uuid(HELM_CHART_ID).applicationManifestId(APP_MANIFEST_NAME).version("1").build());
     when(workflowExecutionService.obtainLastGoodDeployedHelmCharts(APP_ID, PIPELINE_ID))
         .thenReturn(asList(HelmChart.builder().uuid(HELM_CHART_ID + 2).serviceId(SERVICE_ID + 2).build(),
             HelmChart.builder().uuid(HELM_CHART_ID + 3).serviceId(SERVICE_ID).build()));
@@ -3808,7 +3812,8 @@ public class TriggerServiceTest extends WingsBaseTest {
         .thenReturn(true);
 
     when(helmChartService.getLastCollectedManifest(ACCOUNT_ID, MANIFEST_ID))
-        .thenReturn(HelmChart.builder().uuid(HELM_CHART_ID).build());
+        .thenReturn(
+            HelmChart.builder().uuid(HELM_CHART_ID).applicationManifestId(APP_MANIFEST_NAME).version("1").build());
     when(workflowExecutionService.obtainLastGoodDeployedHelmCharts(APP_ID, WORKFLOW_ID))
         .thenReturn(asList(HelmChart.builder().uuid(HELM_CHART_ID + 2).serviceId(SERVICE_ID + 2).build()));
     ApplicationManifest appManifest =
