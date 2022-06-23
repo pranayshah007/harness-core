@@ -139,7 +139,7 @@ public class ServiceCommandExecutorServiceTest extends WingsBaseTest {
     CommandExecutionStatus commandExecutionStatus = cmdExecutorService.execute(nestedCommand, context);
     assertThat(commandExecutionStatus).isEqualTo(SUCCESS);
     verify(commandUnitExecutorServiceMap).get(DeploymentType.SSH.name());
-    verify(sshCommandUnitExecutorService, times(3)).execute(any(AbstractCommandUnit.class), eq(context));
+    verify(sshCommandUnitExecutorService, times(3)).execute(any(), eq(context));
   }
 
   /**
@@ -167,7 +167,7 @@ public class ServiceCommandExecutorServiceTest extends WingsBaseTest {
     CommandExecutionStatus commandExecutionStatus = cmdExecutorService.execute(nestedCommand, context);
     assertThat(commandExecutionStatus).isEqualTo(SUCCESS);
     verify(commandUnitExecutorServiceMap).get(DeploymentType.SSH.name());
-    verify(sshCommandUnitExecutorService, times(3)).execute(any(AbstractCommandUnit.class), eq(context));
+    verify(sshCommandUnitExecutorService, times(3)).execute(any(), eq(context));
   }
 
   /**
@@ -195,7 +195,7 @@ public class ServiceCommandExecutorServiceTest extends WingsBaseTest {
     CommandExecutionStatus commandExecutionStatus = cmdExecutorService.execute(nestedCommand, context);
     assertThat(commandExecutionStatus).isEqualTo(SUCCESS);
     verify(commandUnitExecutorServiceMap).get(DeploymentType.WINRM.name());
-    verify(sshCommandUnitExecutorService, times(3)).execute(any(AbstractCommandUnit.class), eq(context));
+    verify(sshCommandUnitExecutorService, times(3)).execute(any(), eq(context));
   }
 
   /**

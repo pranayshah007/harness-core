@@ -15,4 +15,7 @@ public interface ArtifactMetadataKeys {
   String IMAGE = "image";
   String TAG = "tag";
   String REGISTRY_HOSTNAME = "registryHostname";
+  String artifactPath = "artifactPath";
+  String artifactName = "artifactName";
+  String artifactFileSize = "artifactFileSize";
 }

@@ -38,7 +38,7 @@ public interface PMSPipelineService {
   Optional<PipelineEntity> getWithoutPerformingValidations(
       String accountId, String orgIdentifier, String projectIdentifier, String identifier, boolean deleted);
 
-  PipelineEntity updatePipelineYaml(PipelineEntity pipelineEntity, ChangeType changeType);
+  PipelineCRUDResult updatePipelineYaml(PipelineEntity pipelineEntity, ChangeType changeType);
 
   PipelineEntity syncPipelineEntityWithGit(EntityDetailProtoDTO entityDetail);
 
@@ -57,7 +57,7 @@ public interface PMSPipelineService {
   Page<PipelineEntity> list(Criteria criteria, Pageable pageable, String accountId, String orgIdentifier,
       String projectIdentifier, Boolean getDistinctFromBranches);
 
-  String importPipelineFromRemote(String accountId, String orgIdentifier, String projectIdentifier,
+  PipelineEntity importPipelineFromRemote(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, PipelineImportRequestDTO pipelineImportRequest);
 
   Long countAllPipelines(Criteria criteria);

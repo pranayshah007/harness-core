@@ -21,4 +21,7 @@ public interface AzureKubernetesClient extends AzureResourceClient {
    * @return list of Kubernetes clusters
    */
   List<KubernetesCluster> listKubernetesClusters(AzureConfig azureConfig, String subscriptionId);
+
+  String getClusterCredentials(AzureConfig azureConfig, String accessToken, String subscriptionId, String resourceGroup,
+      String aksClusterName, boolean shouldGetAdminCredentials);
 }

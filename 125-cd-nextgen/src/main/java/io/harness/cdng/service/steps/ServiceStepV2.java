@@ -48,13 +48,13 @@ public class ServiceStepV2 implements SyncExecutable<ServiceStepParametersV2> {
         entityReferenceExtractorUtils, pipelineRbacHelper, accessControlClient, ambiance, stepParameters);
     return StepResponse.builder()
         .status(Status.SUCCEEDED)
-        .stepOutcome(
-            StepResponse.StepOutcome.builder()
-                .name(OutcomeExpressionConstants.SERVICE)
-                .outcome(ServiceStepOutcome.fromServiceStepV2(stepParameters.getIdentifier(), stepParameters.getName(),
-                    stepParameters.getType(), stepParameters.getDescription(), stepParameters.getTags()))
-                .group(StepCategory.STAGE.name())
-                .build())
+        .stepOutcome(StepResponse.StepOutcome.builder()
+                         .name(OutcomeExpressionConstants.SERVICE)
+                         .outcome(ServiceStepOutcome.fromServiceStepV2(stepParameters.getIdentifier(),
+                             stepParameters.getName(), stepParameters.getType(), stepParameters.getDescription(),
+                             stepParameters.getTags(), stepParameters.getGitOpsEnabled()))
+                         .group(StepCategory.STAGE.name())
+                         .build())
         .build();
   }
 }

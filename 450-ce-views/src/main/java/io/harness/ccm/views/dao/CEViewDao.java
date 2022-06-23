@@ -13,6 +13,9 @@ import io.harness.ccm.views.entities.CEView;
 import io.harness.ccm.views.entities.CEView.CEViewKeys;
 import io.harness.ccm.views.entities.ViewState;
 import io.harness.ccm.views.entities.ViewType;
+import io.harness.ccm.views.graphql.QLCESortOrder;
+import io.harness.ccm.views.graphql.QLCEViewSortCriteria;
+import io.harness.exception.InvalidRequestException;
 import io.harness.persistence.HPersistence;
 
 import com.google.inject.Inject;
@@ -20,6 +23,7 @@ import com.google.inject.Singleton;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.mongodb.morphia.query.Query;
+import org.mongodb.morphia.query.Sort;
 import org.mongodb.morphia.query.UpdateOperations;
 
 @Slf4j
@@ -47,6 +51,9 @@ public class CEViewDao {
                                                     .set(CEViewKeys.viewType, ceView.getViewType())
                                                     .set(CEViewKeys.viewState, ViewState.COMPLETED)
                                                     .set(CEViewKeys.dataSources, ceView.getDataSources());
+    if (ceView.getFolderId() != null) {
+      updateOperations = updateOperations.set(CEViewKeys.folderId, ceView.getFolderId());
+    }
     hPersistence.update(query, updateOperations);
     return (CEView) query.asList().get(0);
   }
@@ -93,8 +100,10 @@ public class CEViewDao {
         .get();
   }
 
-  public List<CEView> findByAccountId(String accountId) {
-    return hPersistence.createQuery(CEView.class).filter(CEViewKeys.accountId, accountId).asList();
+  public List<CEView> findByAccountId(String accountId, QLCEViewSortCriteria sortCriteria) {
+    Query<CEView> query = hPersistence.createQuery(CEView.class).filter(CEViewKeys.accountId, accountId);
+    query = decorateQueryWithSortCriteria(query, sortCriteria);
+    return query.asList();
   }
 
   public List<CEView> findByAccountIdAndState(String accountId, ViewState viewState) {
@@ -116,5 +125,49 @@ public class CEViewDao {
         .filter(CEViewKeys.accountId, accountId)
         .filter(CEViewKeys.viewType, viewType)
         .count();
+  }
+
+  public List<CEView> findByAccountIdAndFolderId(String accountId, String folderId, QLCEViewSortCriteria sortCriteria) {
+    Query<CEView> query = hPersistence.createQuery(CEView.class)
+                              .filter(CEViewKeys.accountId, accountId)
+                              .filter(CEViewKeys.folderId, folderId);
+    query = decorateQueryWithSortCriteria(query, sortCriteria);
+    return query.asList();
+  }
+
+  public List<CEView> moveMultiplePerspectiveFolder(String accountId, List<String> uuids, String toFolderId) {
+    Query<CEView> query = hPersistence.createQuery(CEView.class)
+                              .field(CEViewKeys.accountId)
+                              .equal(accountId)
+                              .field(CEViewKeys.uuid)
+                              .in(uuids);
+    UpdateOperations<CEView> updateOperations =
+        hPersistence.createUpdateOperations(CEView.class).set(CEViewKeys.folderId, toFolderId);
+    hPersistence.update(query, updateOperations);
+    return query.asList();
+  }
+
+  private Query<CEView> decorateQueryWithSortCriteria(Query<CEView> query, QLCEViewSortCriteria sortCriteria) {
+    if (sortCriteria == null) {
+      return query;
+    }
+    String sortField;
+    switch (sortCriteria.getSortType()) {
+      case COST:
+        sortField = CEViewKeys.totalCost;
+        break;
+      case TIME:
+        sortField = CEViewKeys.createdAt;
+        break;
+      case NAME:
+        sortField = CEViewKeys.name;
+        break;
+      default:
+        throw new InvalidRequestException("Sort type not supported");
+    }
+    if (sortCriteria.getSortOrder().equals(QLCESortOrder.DESCENDING)) {
+      return query.order(Sort.descending(sortField));
+    }
+    return query.order(Sort.ascending(sortField));
   }
 }

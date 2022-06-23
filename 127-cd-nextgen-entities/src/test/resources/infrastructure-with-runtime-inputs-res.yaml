@@ -1,0 +1,7 @@
+infrastructureDefinitions:
+- ref: "IDENTIFIER"
+  inputs:
+    identifier: "IDENTIFIER"
+    type: "KubernetesDirect"
+    spec:
+      namespace: "<+input>"

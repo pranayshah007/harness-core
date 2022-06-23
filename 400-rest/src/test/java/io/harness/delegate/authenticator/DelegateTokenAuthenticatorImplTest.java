@@ -85,7 +85,7 @@ public class DelegateTokenAuthenticatorImplTest extends WingsBaseTest {
     createPersistenceMocksForDelegateToken(null);
     TokenGenerator tokenGenerator = new TokenGenerator(ACCOUNT_ID, accountKey);
     delegateTokenAuthenticator.validateDelegateToken(
-        ACCOUNT_ID, tokenGenerator.getToken("https", "localhost", 9090, "hostname"), null, false);
+        ACCOUNT_ID, tokenGenerator.getToken("https", "localhost", 9090, "hostname"), null, null, false);
   }
 
   @Test
@@ -104,7 +104,7 @@ public class DelegateTokenAuthenticatorImplTest extends WingsBaseTest {
     TokenGenerator tokenGenerator = new TokenGenerator(ACCOUNT_ID, accountKey);
 
     delegateTokenAuthenticator.validateDelegateToken(
-        ACCOUNT_ID, tokenGenerator.getToken("https", "localhost", 9090, "hostname"), null, false);
+        ACCOUNT_ID, tokenGenerator.getToken("https", "localhost", 9090, "hostname"), null, null, false);
   }
 
   @Test
@@ -125,7 +125,7 @@ public class DelegateTokenAuthenticatorImplTest extends WingsBaseTest {
 
     assertThatThrownBy(()
                            -> delegateTokenAuthenticator.validateDelegateToken(ACCOUNT1_ID,
-                               tokenGenerator.getToken("https", "localhost", 9090, "hostname"), null, false))
+                               tokenGenerator.getToken("https", "localhost", 9090, "hostname"), null, null, false))
         .isInstanceOf(InvalidTokenException.class);
   }
 
@@ -155,7 +155,7 @@ public class DelegateTokenAuthenticatorImplTest extends WingsBaseTest {
     TokenGenerator tokenGenerator = new TokenGenerator(ACCOUNT_ID, accountKey);
 
     delegateTokenAuthenticator.validateDelegateToken(
-        ACCOUNT_ID, tokenGenerator.getToken("https", "localhost", 9090, "hostname"), null, false);
+        ACCOUNT_ID, tokenGenerator.getToken("https", "localhost", 9090, "hostname"), null, null, false);
   }
 
   @Test
@@ -196,7 +196,7 @@ public class DelegateTokenAuthenticatorImplTest extends WingsBaseTest {
     TokenGenerator tokenGeneratorNg = new TokenGenerator(ACCOUNT_ID, accountKey);
 
     delegateTokenAuthenticator.validateDelegateToken(
-        ACCOUNT_ID, tokenGeneratorNg.getToken("https", "localhost", 9090, "hostname"), null, false);
+        ACCOUNT_ID, tokenGeneratorNg.getToken("https", "localhost", 9090, "hostname"), null, null, false);
   }
 
   @Test
@@ -207,7 +207,7 @@ public class DelegateTokenAuthenticatorImplTest extends WingsBaseTest {
     TokenGenerator tokenGenerator = new TokenGenerator(GLOBAL_ACCOUNT_ID, accountKey);
     assertThatThrownBy(()
                            -> delegateTokenAuthenticator.validateDelegateToken(GLOBAL_ACCOUNT_ID,
-                               tokenGenerator.getToken("https", "localhost", 9090, "hostname"), null, false))
+                               tokenGenerator.getToken("https", "localhost", 9090, "hostname"), null, null, false))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Access denied");
   }
@@ -220,7 +220,8 @@ public class DelegateTokenAuthenticatorImplTest extends WingsBaseTest {
 
     String expiredToken =
         "eyJlbmMiOiJBMTI4R0NNIiwiYWxnIjoiZGlyIn0..SFvYSml0znPxoa7K.JcsFw5GiYevubqqzjy-nQyDMzjtA64YhxZjnQz6VH7lRCAGP5JML9Ov86rSRV1V7Kb-a12UvTNzqEqdJ4PCLv4R7GA5SzCwxLEYrlTLtUWX40r0GKuRGoiJVJqax2bBy3gOqDftETZCm_90lD3NxDeJ__RICl4osp9IxCKmlfGyoqriAswoEvkVtu0wjRlvBS-FtY42AeyCf9XIH5rppw-AsXoHH40M6_8FN-mFkilfqv3QKPaGL6Zph.1ipAjbMS834AKSotvHy4sg";
-    assertThatThrownBy(() -> delegateTokenAuthenticator.validateDelegateToken(ACCOUNT_ID, expiredToken, null, false))
+    assertThatThrownBy(
+        () -> delegateTokenAuthenticator.validateDelegateToken(ACCOUNT_ID, expiredToken, null, null, false))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Unauthorized");
   }
@@ -232,8 +233,8 @@ public class DelegateTokenAuthenticatorImplTest extends WingsBaseTest {
     createPersistenceMocksForDelegateToken(null);
     TokenGenerator tokenGenerator = new TokenGenerator(ACCOUNT_ID, accountKey);
     assertThatThrownBy(()
-                           -> delegateTokenAuthenticator.validateDelegateToken(
-                               null, tokenGenerator.getToken("https", "localhost", 9090, "hostname"), null, false))
+                           -> delegateTokenAuthenticator.validateDelegateToken(null,
+                               tokenGenerator.getToken("https", "localhost", 9090, "hostname"), null, null, false))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Access denied");
   }
@@ -246,7 +247,7 @@ public class DelegateTokenAuthenticatorImplTest extends WingsBaseTest {
     TokenGenerator tokenGenerator = new TokenGenerator(ACCOUNT_ID, accountKey);
     assertThatThrownBy(()
                            -> delegateTokenAuthenticator.validateDelegateToken(ACCOUNT_ID + "1",
-                               tokenGenerator.getToken("https", "localhost", 9090, "hostname"), null, false))
+                               tokenGenerator.getToken("https", "localhost", 9090, "hostname"), null, null, false))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Access denied");
   }
@@ -255,7 +256,7 @@ public class DelegateTokenAuthenticatorImplTest extends WingsBaseTest {
   @Owner(developers = ANUBHAW)
   @Category(UnitTests.class)
   public void shouldThrowThrowInavlidTokenForDelegate() {
-    assertThatThrownBy(() -> delegateTokenAuthenticator.validateDelegateToken(ACCOUNT_ID, "Dummy", null, false))
+    assertThatThrownBy(() -> delegateTokenAuthenticator.validateDelegateToken(ACCOUNT_ID, "Dummy", null, null, false))
         .isInstanceOf(InvalidTokenException.class);
   }
 
@@ -266,7 +267,7 @@ public class DelegateTokenAuthenticatorImplTest extends WingsBaseTest {
     createPersistenceMocksForDelegateToken(null);
 
     assertThatThrownBy(
-        () -> delegateTokenAuthenticator.validateDelegateToken(ACCOUNT_ID, getDelegateToken(), null, false))
+        () -> delegateTokenAuthenticator.validateDelegateToken(ACCOUNT_ID, getDelegateToken(), null, null, false))
         .isInstanceOf(InvalidTokenException.class);
   }
 

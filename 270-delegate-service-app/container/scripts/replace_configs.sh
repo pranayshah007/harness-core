@@ -155,6 +155,10 @@ if [[ "" != "$CF_CLIENT_READ_TIMEOUT" ]]; then
   yq write -i $CONFIG_FILE cfClientConfig.readTimeout "$CF_CLIENT_READ_TIMEOUT"
 fi
 
+if [[ "" != "$CF_CLIENT_BUFFER_SIZE" ]]; then
+  yq write -i $CONFIG_FILE cfClientConfig.bufferSize "$CF_CLIENT_BUFFER_SIZE"
+fi
+
 if [[ "" != "$CF_MIGRATION_ENABLED" ]]; then
   yq write -i $CONFIG_FILE cfMigrationConfig.enabled "$CF_MIGRATION_ENABLED"
 fi

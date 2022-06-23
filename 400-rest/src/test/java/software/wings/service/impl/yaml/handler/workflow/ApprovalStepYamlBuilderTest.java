@@ -7,11 +7,15 @@
 
 package software.wings.service.impl.yaml.handler.workflow;
 
+import static io.harness.rule.OwnerRule.FERNANDOD;
 import static io.harness.rule.OwnerRule.INDER;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -23,8 +27,11 @@ import io.harness.serializer.JsonUtils;
 import software.wings.beans.approval.JiraApprovalParams;
 import software.wings.beans.approval.ServiceNowApprovalParams;
 import software.wings.beans.servicenow.ServiceNowTicketType;
+import software.wings.beans.yaml.ChangeContext;
+import software.wings.yaml.workflow.StepYaml;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import org.junit.Test;
@@ -34,6 +41,60 @@ import org.mockito.InjectMocks;
 @OwnedBy(HarnessTeam.CDC)
 public class ApprovalStepYamlBuilderTest extends StepYamlBuilderTestBase {
   @InjectMocks private ApprovalStepYamlBuilder approvalStepYamlBuilder;
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldValidateThrowExceptionWhenTemplateExpressionUnsupported() {
+    StepYaml stepYaml = mock(StepYaml.class);
+    ChangeContext<StepYaml> changeContext = mock(ChangeContext.class);
+
+    when(changeContext.getYaml()).thenReturn(stepYaml);
+    when(stepYaml.getProperties()).thenReturn(Collections.singletonMap("templateExpressions", new Object()));
+    when(stepYaml.getName()).thenReturn("Owner Approval");
+
+    assertThatCode(() -> approvalStepYamlBuilder.validate(changeContext))
+        .isInstanceOf(InvalidRequestException.class)
+        .hasMessage("Template expressions in step [Owner Approval]");
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldValidateSetNullWhenTemplateExpressionEmpty() {
+    StepYaml stepYaml = mock(StepYaml.class);
+    ChangeContext<StepYaml> changeContext = mock(ChangeContext.class);
+
+    Map<String, Object> properties = new HashMap<>();
+    properties.put("templateExpressions", "");
+
+    when(changeContext.getYaml()).thenReturn(stepYaml);
+    when(stepYaml.getProperties()).thenReturn(properties);
+    when(stepYaml.getName()).thenReturn("Owner Approval");
+
+    assertThatCode(() -> approvalStepYamlBuilder.validate(changeContext)).doesNotThrowAnyException();
+    assertThat(properties).containsEntry("templateExpressions", null);
+    assertThat(properties).hasSize(1);
+  }
+
+  @Test
+  @Owner(developers = FERNANDOD)
+  @Category(UnitTests.class)
+  public void shouldValidateSetNullWhenTemplateExpressionEmpty2() {
+    StepYaml stepYaml = mock(StepYaml.class);
+    ChangeContext<StepYaml> changeContext = mock(ChangeContext.class);
+
+    Map<String, Object> properties = new HashMap<>();
+    properties.put("templateExpressions", "''");
+
+    when(changeContext.getYaml()).thenReturn(stepYaml);
+    when(stepYaml.getProperties()).thenReturn(properties);
+    when(stepYaml.getName()).thenReturn("Owner Approval");
+
+    assertThatCode(() -> approvalStepYamlBuilder.validate(changeContext)).doesNotThrowAnyException();
+    assertThat(properties).containsEntry("templateExpressions", null);
+    assertThat(properties).hasSize(1);
+  }
 
   @Test
   @Owner(developers = INDER)

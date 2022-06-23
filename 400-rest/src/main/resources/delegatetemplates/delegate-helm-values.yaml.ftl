@@ -18,18 +18,13 @@ delegateToken: ${delegateToken}
 
 # Short 6 character identifier of the account
 accountIdShort: ${kubernetesAccountLabel}
-
 delegateName: ${delegateName}
+delegateType: ${delegateType}
+delegateDockerImage: ${delegateDockerImage}
+managerHostAndPort: ${managerHostAndPort}
 
-# Id of the delegate profile that needs to run when the delegate is
-# coming up
 delegateProfile: "${delegateProfile}"
 
-delegateType: "${delegateType}"
-
-delegateDockerImage: ${delegateDockerImage}
-
-managerHostAndPort: ${managerHostAndPort}
 <#if isImmutable == "false">
 watcherStorageUrl: ${watcherStorageUrl}
 watcherCheckLocation: ${watcherCheckLocation}

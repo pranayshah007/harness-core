@@ -336,7 +336,7 @@ io.grpc:grpc-stub:jar:1.33.1
 io.grpc:grpc-testing:jar:1.33.1:test
 io.gsonfire:gson-fire:jar:1.8.3
 io.harness.cv:data-collection-dsl:jar:0.21-RELEASE
-io.harness:ff-java-server-sdk:jar:1.0.5.1
+io.harness:ff-java-server-sdk:jar:1.1.5.1
 io.jsonwebtoken:jjwt:jar:0.9.1
 io.kubernetes:client-java-api:jar:9.0.2
 io.kubernetes:client-java-extended:jar:9.0.2

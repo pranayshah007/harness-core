@@ -10,6 +10,7 @@ package io.harness.serializer.kryo;
 import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.concurrency.MaxConcurrentChildCallback;
 import io.harness.engine.execution.ExecutionInputData;
 import io.harness.engine.execution.WaitForExecutionInputCallback;
 import io.harness.engine.governance.PolicyEvaluationFailureException;
@@ -38,5 +39,6 @@ public class OrchestrationKryoRegistrar implements KryoRegistrar {
     kryo.register(PolicyEvaluationFailureException.class, 87011);
     kryo.register(ExecutionInputData.class, 87012);
     kryo.register(WaitForExecutionInputCallback.class, 87013);
+    kryo.register(MaxConcurrentChildCallback.class, 87014);
   }
 }

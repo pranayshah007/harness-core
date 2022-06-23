@@ -25,4 +25,16 @@ public interface ServiceOverrideService {
 
   boolean delete(@NotEmpty String accountId, @NotEmpty String orgIdentifier, @NotEmpty String projectIdentifier,
       @NotEmpty String environmentRef, @NotEmpty String serviceRef);
+
+  boolean deleteAllInEnv(@NotEmpty String accountId, @NotEmpty String orgIdentifier, @NotEmpty String projectIdentifier,
+      @NotEmpty String environmentRef);
+
+  boolean deleteAllInProject(
+      @NotEmpty String accountId, @NotEmpty String orgIdentifier, @NotEmpty String projectIdentifier);
+
+  boolean deleteAllInProjectForAService(@NotEmpty String accountId, @NotEmpty String orgIdentifier,
+      @NotEmpty String projectIdentifier, @NotEmpty String serviceRef);
+
+  String createServiceOverrideInputsYaml(String accountId, String projectIdentifier, String orgIdentifier,
+      String environmentIdentifier, String serviceIdentifier);
 }

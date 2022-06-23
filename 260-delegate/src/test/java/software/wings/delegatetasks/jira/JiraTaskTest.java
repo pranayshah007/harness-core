@@ -150,11 +150,34 @@ public class JiraTaskTest extends CategoryTest {
   @Test
   @Owner(developers = LUCAS_SALES)
   @Category(UnitTests.class)
+  public void shouldReturnErrorWhenIssueIsNull() {
+    JiraTaskParameters taskParameters = getTaskParams(JiraAction.UPDATE_TICKET_NG);
+    taskParameters.setCustomFields(
+        singletonMap("customfield_10633", new JiraCustomFieldValue("user", taskParameters.getUserQuery())));
+    when(jiraNGClient.getIssue(JIRA_ISSUE_ID)).thenReturn(null);
+    List<JiraUserData> userDataList = Arrays.asList(new JiraUserData("accountId", "Lucas", true));
+
+    doReturn(jiraNGClient).when(spyJiraTask).getNGJiraClient(taskParameters);
+    doReturn(userDataList).when(jiraNGClient).getUsers(anyString(), any(), any());
+
+    DelegateResponseData delegateResponseData = spyJiraTask.run(new Object[] {taskParameters});
+    JiraExecutionData executionData =
+        JiraExecutionData.builder()
+            .executionStatus(ExecutionStatus.FAILED)
+            .errorMessage(String.format(
+                "Wasn't able to find issue with provided issue identifier: \"%s\". Please, provide valid key or id.",
+                JIRA_ISSUE_ID))
+            .build();
+    assertThat(delegateResponseData).isEqualToComparingFieldByField(executionData);
+  }
+  @Test
+  @Owner(developers = LUCAS_SALES)
+  @Category(UnitTests.class)
   public void shouldFetchUserListInfo() {
     JiraTaskParameters taskParameters = getTaskParams(JiraAction.SEARCH_USER);
     List<JiraUserData> mockUserList = new ArrayList<>(Arrays.asList(new JiraUserData("UserId", "User Name", true)));
     doReturn(jiraNGClient).when(spyJiraTask).getNGJiraClient(taskParameters);
-    doReturn(mockUserList).when(jiraNGClient).getUsers(anyString(), anyString(), anyString());
+    doReturn(mockUserList).when(jiraNGClient).getUsers(any(), any(), any());
 
     JiraExecutionData jiraExecutionData =
         JiraExecutionData.builder().executionStatus(ExecutionStatus.SUCCESS).userSearchList(mockUserList).build();
@@ -177,10 +200,8 @@ public class JiraTaskTest extends CategoryTest {
     List<JiraUserData> userDataList = Arrays.asList(new JiraUserData("accountId", "Lucas", true));
 
     doReturn(jiraNGClient).when(spyJiraTask).getNGJiraClient(taskParameters);
-    doReturn(userDataList).when(jiraNGClient).getUsers(anyString(), anyString(), anyString());
-    doThrow(new JiraClientException("error"))
-        .when(jiraNGClient)
-        .updateIssue(anyString(), anyString(), anyString(), anyMap());
+    doReturn(userDataList).when(jiraNGClient).getUsers(any(), any(), any());
+    doThrow(new JiraClientException("error")).when(jiraNGClient).updateIssue(any(), any(), any(), anyMap());
 
     DelegateResponseData delegateResponseData = spyJiraTask.run(new Object[] {taskParameters});
     assertThat(delegateResponseData).hasFieldOrPropertyWithValue("executionStatus", ExecutionStatus.FAILED);
@@ -200,7 +221,7 @@ public class JiraTaskTest extends CategoryTest {
         Arrays.asList(new JiraUserData("accountId", "Lucas", true), new JiraUserData("accountI2d", "Lucas", true));
 
     doReturn(jiraNGClient).when(spyJiraTask).getNGJiraClient(taskParameters);
-    doReturn(userDataList).when(jiraNGClient).getUsers(anyString(), anyString(), anyString());
+    doReturn(userDataList).when(jiraNGClient).getUsers(any(), any(), any());
 
     spyJiraTask.run(new Object[] {taskParameters});
   }
@@ -214,9 +235,9 @@ public class JiraTaskTest extends CategoryTest {
     List<JiraUserData> userDataList = Arrays.asList(new JiraUserData("accountId", "Lucas", true));
 
     doReturn(jiraNGClient).when(spyJiraTask).getNGJiraClient(taskParameters);
-    doReturn(issueNG).when(jiraNGClient).createIssue(anyString(), anyString(), anyMap());
-    doReturn(userDataList).when(jiraNGClient).getUsers(anyString(), anyString(), anyString());
-    doThrow(new JiraClientException("error")).when(jiraNGClient).createIssue(anyString(), anyString(), anyMap());
+    doReturn(issueNG).when(jiraNGClient).createIssue(any(), any(), anyMap());
+    doReturn(userDataList).when(jiraNGClient).getUsers(any(), any(), any());
+    doThrow(new JiraClientException("error")).when(jiraNGClient).createIssue(any(), any(), anyMap());
 
     DelegateResponseData delegateResponseData = spyJiraTask.run(new Object[] {taskParameters});
     assertThat(delegateResponseData).hasFieldOrPropertyWithValue("executionStatus", ExecutionStatus.FAILED);
@@ -232,9 +253,9 @@ public class JiraTaskTest extends CategoryTest {
     List<JiraUserData> userDataList = Arrays.asList(new JiraUserData("accountId", "Lucas", true));
 
     doReturn(jiraNGClient).when(spyJiraTask).getNGJiraClient(taskParameters);
-    doReturn(issueNG).when(jiraNGClient).createIssue(anyString(), anyString(), anyMap());
-    doReturn(userDataList).when(jiraNGClient).getUsers(anyString(), anyString(), anyString());
-    doReturn(mock(JiraIssueNG.class)).when(jiraNGClient).createIssue(anyString(), anyString(), anyMap());
+    doReturn(issueNG).when(jiraNGClient).createIssue(any(), any(), anyMap());
+    doReturn(userDataList).when(jiraNGClient).getUsers(any(), any(), any());
+    doReturn(mock(JiraIssueNG.class)).when(jiraNGClient).createIssue(any(), any(), anyMap());
     JiraExecutionData jiraExecutionData =
         JiraExecutionData.builder()
             .jiraAction(JiraAction.CREATE_TICKET_NG)
@@ -263,8 +284,8 @@ public class JiraTaskTest extends CategoryTest {
     when(jiraNGClient.getIssue(JIRA_ISSUE_ID)).thenReturn(issueNG);
     when(issueNG.getKey()).thenReturn(JIRA_ISSUE_ID);
     when(issueNG.getFields()).thenReturn(singletonMap("Project Key", PROJECT_KEY));
-    doReturn(mock(JiraIssueNG.class)).when(jiraNGClient).updateIssue(anyString(), anyString(), anyString(), any());
-    doReturn(userDataList).when(jiraNGClient).getUsers(anyString(), anyString(), anyString());
+    doReturn(mock(JiraIssueNG.class)).when(jiraNGClient).updateIssue(any(), any(), any(), any());
+    doReturn(userDataList).when(jiraNGClient).getUsers(any(), any(), any());
     JiraExecutionData jiraExecutionData =
         JiraExecutionData.builder()
             .executionStatus(ExecutionStatus.SUCCESS)
@@ -797,10 +818,11 @@ public class JiraTaskTest extends CategoryTest {
   }
 
   @Test
-  @Owner(developers = AGORODETKI)
+  @Owner(developers = LUCAS_SALES)
   @Category(UnitTests.class)
-  public void shouldReturnSuccessfulExecutionForGetCreateMetadata()
+  public void shouldReturnSuccessfulExecutionForGetCreateMetadataNew()
       throws JiraException, URISyntaxException, IOException, RestException {
+    doReturn(false).when(spyJiraTask).getDisableOptimizationFlag();
     JiraTaskParameters taskParameters = getTaskParams(JiraAction.GET_CREATE_METADATA);
     URI uri = new URI(Resource.getBaseUri() + "issue/createmeta");
     URI resolutionUri = new URI(Resource.getBaseUri() + "resolution");
@@ -808,6 +830,48 @@ public class JiraTaskTest extends CategoryTest {
     queryParams.put("expand", "projects.issuetypes.fields");
     queryParams.put("projectKeys", PROJECT_KEY);
     queryParams.put("issuetypeNames", STORY);
+    doReturn(jiraClient).when(spyJiraTask).getJiraClient(taskParameters);
+    when(jiraClient.getRestClient()).thenReturn(restClient);
+    when(restClient.buildURI(Resource.getBaseUri() + "issue/createmeta", queryParams)).thenReturn(uri);
+    when(restClient.get(uri)).thenReturn(json);
+    when(restClient.buildURI(Resource.getBaseUri() + "resolution")).thenReturn(resolutionUri);
+    when(restClient.get(resolutionUri)).thenReturn(jsonArray);
+    when(json.getString("expand")).thenReturn("");
+    when(json.getJSONArray("projects")).thenReturn(jsonArray);
+    when(jsonArray.size()).thenReturn(1);
+    when(jsonArray.getJSONObject(0)).thenReturn(json);
+    when(json.getString("id")).thenReturn(PROJECT_KEY);
+    when(json.getString("key")).thenReturn(PROJECT_KEY);
+    when(json.getString("name")).thenReturn(PROJECT_KEY);
+    when(json.getJSONArray("issuetypes")).thenReturn(jsonArray);
+    when(json.containsKey("description")).thenReturn(false);
+    when(json.getBoolean("subtask")).thenReturn(false);
+    when(json.getJSONObject("fields")).thenReturn(json);
+    when(json.keySet()).thenReturn(emptySet());
+    when(json.containsKey("statuses")).thenReturn(false);
+    when(json.getBoolean("required")).thenReturn(false);
+    when(json.getJSONObject("schema")).thenReturn(json);
+    when(json.containsKey("allowedValues")).thenReturn(false);
+    when(json.get("key")).thenReturn("");
+    try (MockedStatic<JSONObject> jsonArrayMockedStatic = Mockito.mockStatic(JSONObject.class)) {
+      when(JSONObject.fromObject(any())).thenReturn(json);
+      DelegateResponseData responseData = spyJiraTask.run(new Object[] {taskParameters});
+      assertThat(((JiraExecutionData) responseData).getCreateMetadata()).isNotNull();
+      assertThat(((JiraExecutionData) responseData).getExecutionStatus()).isEqualTo(ExecutionStatus.SUCCESS);
+    }
+  }
+  @Test
+  @Owner(developers = AGORODETKI)
+  @Category(UnitTests.class)
+  public void shouldReturnSuccessfulExecutionForGetCreateMetadata()
+      throws JiraException, URISyntaxException, IOException, RestException {
+    doReturn(true).when(spyJiraTask).getDisableOptimizationFlag();
+    JiraTaskParameters taskParameters = getTaskParams(JiraAction.GET_CREATE_METADATA);
+    URI uri = new URI(Resource.getBaseUri() + "issue/createmeta");
+    URI resolutionUri = new URI(Resource.getBaseUri() + "resolution");
+    Map<String, String> queryParams = new HashMap<>();
+    queryParams.put("expand", "projects.issuetypes.fields");
+    queryParams.put("projectKeys", PROJECT_KEY);
     doReturn(jiraClient).when(spyJiraTask).getJiraClient(taskParameters);
     when(jiraClient.getRestClient()).thenReturn(restClient);
     when(restClient.buildURI(Resource.getBaseUri() + "issue/createmeta", queryParams)).thenReturn(uri);

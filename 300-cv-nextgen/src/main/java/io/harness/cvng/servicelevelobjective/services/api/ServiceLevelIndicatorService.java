@@ -45,4 +45,7 @@ public interface ServiceLevelIndicatorService {
       String healthSourceIdentifier, List<String> metricIdentifiers);
 
   List<String> getSLIs(ProjectParams projectParams, String monitoredServiceIdentifier);
+
+  void setMonitoredServiceSLIsEnableFlag(
+      ProjectParams projectParams, String monitoredServiceIdentifier, boolean isEnabled);
 }

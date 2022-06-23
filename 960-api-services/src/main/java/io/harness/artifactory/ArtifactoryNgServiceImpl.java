@@ -113,4 +113,10 @@ public class ArtifactoryNgServiceImpl implements ArtifactoryNgService {
     return artifactoryClient.downloadArtifacts(
         artifactoryConfig, repoKey, metadata, artifactPathMetadataKey, artifactFileNameMetadataKey);
   }
+
+  @Override
+  public Long getFileSize(
+      ArtifactoryConfigRequest artifactoryConfig, Map<String, String> metadata, String artifactPathMetadataKey) {
+    return artifactoryClient.getFileSize(artifactoryConfig, metadata, artifactPathMetadataKey);
+  }
 }

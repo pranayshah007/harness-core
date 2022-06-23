@@ -34,6 +34,7 @@ import io.harness.delegate.task.pcf.request.CfCommandRouteUpdateRequest;
 import io.harness.delegate.task.pcf.response.CfCommandExecutionResponse;
 import io.harness.delegate.task.pcf.response.CfRouteUpdateCommandResponse;
 import io.harness.exception.InvalidArgumentsException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.filesystem.FileIo;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
@@ -94,6 +95,7 @@ public class PcfRouteUpdateCommandTaskHandler extends PcfCommandTaskHandler {
       CfCommandRouteUpdateRequest cfCommandRouteUpdateRequest = (CfCommandRouteUpdateRequest) cfCommandRequest;
       CfInternalConfig pcfConfig = cfCommandRouteUpdateRequest.getPcfConfig();
       secretDecryptionService.decrypt(pcfConfig, encryptedDataDetails, false);
+      ExceptionMessageSanitizer.storeAllSecretsForSanitizing(pcfConfig, encryptedDataDetails);
 
       CfRequestConfig cfRequestConfig =
           CfRequestConfig.builder()
@@ -140,10 +142,11 @@ public class PcfRouteUpdateCommandTaskHandler extends PcfCommandTaskHandler {
       cfCommandResponse.setOutput(StringUtils.EMPTY);
       cfCommandResponse.setCommandExecutionStatus(CommandExecutionStatus.SUCCESS);
     } catch (Exception e) {
-      log.error("Exception in processing PCF Route Update task", e);
+      Exception sanitizedException = ExceptionMessageSanitizer.sanitizeException(e);
+      log.error("Exception in processing PCF Route Update task", sanitizedException);
       executionLogCallback.saveExecutionLog("\n\n--------- PCF Route Update failed to complete successfully");
-      executionLogCallback.saveExecutionLog("# Error: " + e.getMessage());
-      cfCommandResponse.setOutput(e.getMessage());
+      executionLogCallback.saveExecutionLog("# Error: " + sanitizedException.getMessage());
+      cfCommandResponse.setOutput(sanitizedException.getMessage());
       cfCommandResponse.setCommandExecutionStatus(CommandExecutionStatus.FAILURE);
     } finally {
       try {

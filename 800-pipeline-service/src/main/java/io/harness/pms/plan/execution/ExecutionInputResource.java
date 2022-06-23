@@ -14,6 +14,7 @@ import io.harness.accesscontrol.OrgIdentifier;
 import io.harness.accesscontrol.ProjectIdentifier;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.FeatureName;
 import io.harness.engine.execution.ExecutionInputService;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.ExecutionInputInstance;
@@ -21,6 +22,7 @@ import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
+import io.harness.pms.PmsFeatureFlagService;
 import io.harness.pms.annotations.PipelineServiceAuth;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineResourceConstants;
@@ -29,6 +31,7 @@ import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.dto.ExecutionInputDTO;
 import io.harness.pms.plan.execution.beans.dto.ExecutionInputStatus;
 import io.harness.pms.plan.execution.beans.dto.ExecutionInputStatusDTO;
+import io.harness.pms.plan.execution.mapper.ExecutionInputDTOMapper;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.pms.rbac.PipelineRbacPermissions;
 import io.harness.pms.variables.VariableCreatorMergeService;
@@ -90,6 +93,7 @@ public class ExecutionInputResource {
   @Inject private final PMSPipelineService pmsPipelineService;
   @Inject private final VariableCreatorMergeService variableCreatorMergeService;
   @Inject private final ExecutionInputService executionInputService;
+  @Inject private final PmsFeatureFlagService pmsFeatureFlagService;
   @GET
   @Path("/{nodeExecutionId}")
   @ApiOperation(
@@ -113,13 +117,12 @@ public class ExecutionInputResource {
           description = PipelineResourceConstants.PROJECT_PARAM_MESSAGE) @ProjectIdentifier String projectIdentifier,
       @NotNull @PathParam("nodeExecutionId") @Parameter(
           description = PlanExecutionResourceConstants.NODE_EXECUTION_ID_PARAM_MESSAGE) String nodeExecutionId) {
+    if (!pmsFeatureFlagService.isEnabled(accountId, FeatureName.NG_EXECUTION_INPUT)) {
+      throw new InvalidRequestException(
+          "Feature flag [NG_EXECUTION_INPUT] not enabled to support execution inputs in a Pipeline.");
+    }
     ExecutionInputInstance executionInputInstance = executionInputService.getExecutionInputInstance(nodeExecutionId);
-    // TODO(BRIJESH): Write mapper to convert entity to DTO.
-    return ResponseDTO.newResponse(ExecutionInputDTO.builder()
-                                       .inputInstanceId(executionInputInstance.getInputInstanceId())
-                                       .inputTemplate(executionInputInstance.getTemplate())
-                                       .nodeExecutionId(executionInputInstance.getNodeExecutionId())
-                                       .build());
+    return ResponseDTO.newResponse(ExecutionInputDTOMapper.toExecutionInputDTO(executionInputInstance));
   }
 
   @POST
@@ -147,11 +150,17 @@ public class ExecutionInputResource {
           description = PlanExecutionResourceConstants.NODE_EXECUTION_ID_PARAM_MESSAGE) String nodeExecutionId,
       @RequestBody(required = true,
           description = "Execution Input for the provided nodeExecutionId") @NotNull String executionInputYaml) {
-    executionInputService.continueExecution(nodeExecutionId);
-    return ResponseDTO.newResponse(ExecutionInputStatusDTO.builder()
-                                       .nodeExecutionId(nodeExecutionId)
-                                       .status(ExecutionInputStatus.Success)
-                                       .build());
+    if (!pmsFeatureFlagService.isEnabled(accountId, FeatureName.NG_EXECUTION_INPUT)) {
+      throw new InvalidRequestException(
+          "Feature flag [NG_EXECUTION_INPUT] not enabled to support execution inputs in a Pipeline.");
+    }
+
+    boolean isInputProcessed = executionInputService.continueExecution(nodeExecutionId, executionInputYaml);
+    return ResponseDTO.newResponse(
+        ExecutionInputStatusDTO.builder()
+            .nodeExecutionId(nodeExecutionId)
+            .status(isInputProcessed ? ExecutionInputStatus.Success : ExecutionInputStatus.Failed)
+            .build());
   }
 
   @POST

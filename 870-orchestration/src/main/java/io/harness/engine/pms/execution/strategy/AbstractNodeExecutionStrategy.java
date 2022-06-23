@@ -19,6 +19,7 @@ import io.harness.logging.AutoLogContext;
 import io.harness.plan.Node;
 import io.harness.pms.PmsFeatureFlagService;
 import io.harness.pms.contracts.ambiance.Ambiance;
+import io.harness.pms.contracts.execution.events.InitiateMode;
 import io.harness.pms.contracts.execution.events.SdkResponseEventProto;
 import io.harness.pms.execution.utils.AmbianceUtils;
 
@@ -38,9 +39,17 @@ public abstract class AbstractNodeExecutionStrategy<P extends Node, M extends Pm
   @Inject PmsFeatureFlagService pmsFeatureFlagService;
   @Override
   public NodeExecution runNode(@NonNull Ambiance ambiance, @NonNull P node, M metadata) {
+    return runNode(ambiance, node, metadata, InitiateMode.CREATE_AND_START);
+  }
+
+  @Override
+  public NodeExecution runNode(@NonNull Ambiance ambiance, @NonNull P node, M metadata, InitiateMode initiateMode) {
     try (AutoLogContext ignore = AmbianceUtils.autoLogContext(ambiance)) {
       String parentId = AmbianceUtils.obtainParentRuntimeId(ambiance);
       String notifyId = parentId == null ? null : AmbianceUtils.obtainCurrentRuntimeId(ambiance);
+      if (initiateMode == InitiateMode.CREATE) {
+        return createNodeExecution(ambiance, node, metadata, notifyId, parentId, null);
+      }
       return createAndRunNodeExecution(ambiance, node, metadata, notifyId, parentId, null);
     } catch (Exception ex) {
       log.error("Exception happened while running Node", ex);

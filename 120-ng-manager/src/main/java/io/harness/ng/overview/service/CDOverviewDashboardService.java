@@ -38,7 +38,7 @@ public interface CDOverviewDashboardService {
       String accountId, String orgId, String projectId, long startInterval, long endInterval);
 
   DashboardExecutionStatusInfo getDeploymentActiveFailedRunningInfo(
-      String accountId, String orgId, String projectId, long days);
+      String accountId, String orgId, String projectId, long days, long startInterval, long endInterval);
 
   DashboardWorkloadDeployment getDashboardWorkloadDeployment(String accountIdentifier, String orgIdentifier,
       String projectIdentifier, long startInterval, long endInterval, long previousStartInterval,

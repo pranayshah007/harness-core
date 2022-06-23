@@ -39,7 +39,7 @@ public class NGServiceOverrideEntityConfigMapper {
       try {
         final NGServiceOverrideConfig config =
             YamlPipelineUtils.read(serviceOverridesEntity.getYaml(), NGServiceOverrideConfig.class);
-        variableOverride = config.getServiceOverrideInfoConfig().getVariableOverrides();
+        variableOverride = config.getServiceOverrideInfoConfig().getVariables();
       } catch (IOException e) {
         throw new InvalidRequestException("Cannot create service ng service config due to " + e.getMessage());
       }
@@ -48,7 +48,7 @@ public class NGServiceOverrideEntityConfigMapper {
         .serviceOverrideInfoConfig(NGServiceOverrideInfoConfig.builder()
                                        .environmentRef(serviceOverridesEntity.getEnvironmentRef())
                                        .serviceRef(serviceOverridesEntity.getServiceRef())
-                                       .variableOverrides(variableOverride)
+                                       .variables(variableOverride)
                                        .build())
         .build();
   }

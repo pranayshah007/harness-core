@@ -7,6 +7,8 @@
 
 package software.wings.delegatetasks.validation.capabilities;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.beans.executioncapability.CapabilityType;
@@ -61,5 +63,11 @@ public class ClusterMasterUrlValidationCapability implements ExecutionCapability
   @Override
   public Duration getPeriodUntilNextValidation() {
     return Duration.ofHours(4);
+  }
+
+  @Override
+  public String getCapabilityToString() {
+    return isNotEmpty(fetchCapabilityBasis()) ? String.format("Cluster master URL,  %s ", fetchCapabilityBasis())
+                                              : null;
   }
 }

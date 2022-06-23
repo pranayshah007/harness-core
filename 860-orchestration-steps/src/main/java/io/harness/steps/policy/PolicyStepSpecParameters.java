@@ -9,6 +9,7 @@ package io.harness.steps.policy;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.plancreator.steps.common.SpecParameters;
 import io.harness.pms.yaml.ParameterField;
@@ -18,10 +19,13 @@ import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.NonNull;
 import lombok.Value;
+import org.springframework.data.annotation.TypeAlias;
 
 @Value
 @EqualsAndHashCode(callSuper = true)
 @OwnedBy(PIPELINE)
+@TypeAlias("policyStepSpecParameters")
+@RecasterAlias("io.harness.steps.policy.PolicyStepSpecParameters")
 public class PolicyStepSpecParameters extends PolicyStepBase implements SpecParameters {
   @Builder
   public PolicyStepSpecParameters(

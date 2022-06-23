@@ -45,6 +45,7 @@ public class ServiceStepParametersV2 implements StepParameters {
     }
     return ServiceStepParametersV2.builder()
         .identifier(serviceV2InfoConfig.getIdentifier())
+        .name(serviceV2InfoConfig.getName())
         .type(serviceV2InfoConfig.getServiceDefinition().getType().getYamlName())
         .tags(serviceV2InfoConfig.getTags())
         .gitOpsEnabled(serviceV2InfoConfig.getGitOpsEnabled())

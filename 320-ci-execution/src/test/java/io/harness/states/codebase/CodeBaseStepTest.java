@@ -19,6 +19,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.execution.ManualExecutionSource;
 import io.harness.beans.execution.WebhookExecutionSource;
 import io.harness.category.element.UnitTests;
+import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.ChildExecutableResponse;
 import io.harness.pms.plan.execution.SetupAbstractionKeys;
@@ -67,6 +68,9 @@ public class CodeBaseStepTest extends CategoryTest {
             .connectorRef("connectorRef")
             .executionSource(ManualExecutionSource.builder().branch("main").build())
             .build();
+
+    ConnectorDetails connectorDetails = ConnectorDetails.builder().executeOnDelegate(Boolean.TRUE).build();
+    when(connectorUtils.getConnectorDetails(any(), any())).thenReturn(connectorDetails);
     when(connectorUtils.hasApiAccess(any())).thenReturn(true);
     ChildExecutableResponse childExecutableResponse =
         codeBaseStep.obtainChild(ambiance, codeBaseStepParameters, stepInputPackage);
@@ -84,6 +88,8 @@ public class CodeBaseStepTest extends CategoryTest {
             .connectorRef("connectorRef")
             .executionSource(ManualExecutionSource.builder().prNumber("1").build())
             .build();
+    ConnectorDetails connectorDetails = ConnectorDetails.builder().build();
+    when(connectorUtils.getConnectorDetails(any(), any())).thenReturn(connectorDetails);
     when(connectorUtils.hasApiAccess(any())).thenReturn(true);
     ChildExecutableResponse childExecutableResponse =
         codeBaseStep.obtainChild(ambiance, codeBaseStepParameters, stepInputPackage);

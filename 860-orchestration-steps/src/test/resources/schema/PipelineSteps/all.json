@@ -493,13 +493,13 @@
         {
           "type": "object",
           "required": [
-            "approvalMessage",
             "approvers",
             "includePipelineExecutionHistory"
           ],
           "properties": {
             "approvalMessage": {
-              "type": "string"
+              "type": "string",
+              "minLength": 1
             },
             "approverInputs": {
               "type": "array",
@@ -962,6 +962,33 @@
               "policySpec": {
                 "$ref": "#/definitions/CustomPolicyStepSpec"
               }
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "QueueStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/PMSStepInfo"
+        },
+        {
+          "type": "object",
+          "required": [
+            "key",
+            "scope"
+          ],
+          "properties": {
+            "key": {
+              "type": "string"
+            },
+            "scope": {
+              "type": "string",
+              "enum": [
+                "Pipeline",
+                "Stage"
+              ]
             }
           }
         }
@@ -1589,8 +1616,7 @@
             "shell": {
               "type": "string",
               "enum": [
-                "Bash",
-                "PowerShell"
+                "Bash"
               ]
             },
             "source": {

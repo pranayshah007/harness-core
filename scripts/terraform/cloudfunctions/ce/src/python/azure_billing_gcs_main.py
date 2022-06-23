@@ -102,6 +102,30 @@ def get_csv_paths(jsonData):
         # Should be a valid CSV file. Add all exclusions here
         if blob.name.endswith("DefaultRule-AllBlobs.csv"):
             continue
+        if blob.name.endswith("_manifest.json"):
+            # This is partitioned CSV folder
+            path = blob.name.split("/")
+            # Verify path length
+            # 0Z0vv0uwRoax_oZ62jBFfg/tKFNTih2SPyIdWt_yJMZvg/8445d4f3-c4d8-4c5e-a6f1-743cee2c9e84/HarnessExport/20220501-20220531/202205182219/0685ce72-f617-4593-b95c-d00d9bc9b207/000001.csv
+            if len(path) not in [8]:
+                continue
+            # verify third last should be month folder
+            try:
+                report_month = path[-4].split("-")
+                startstr = report_month[0]
+                endstr = report_month[1]
+                if (len(startstr) != 8) or (len(endstr) != 8):
+                    raise
+                if not int(endstr) > int(startstr):
+                    raise
+                # Check for valid dates
+                datetime.datetime.strptime(startstr, '%Y%m%d')
+                datetime.datetime.strptime(endstr, '%Y%m%d')
+            except Exception as e:
+                # Any error we should not take this path for processing
+                print(e)
+                continue
+            unique_cur_paths.add('/'.join(path[:-3]))
         if blob.name.endswith(".csv") or blob.name.endswith(".csv.gz"):
             path = blob.name.split("/")
             # We will have multiple connectors per account in Harness in NG.

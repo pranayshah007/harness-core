@@ -24,9 +24,11 @@ import io.harness.event.MessageProcessorType;
 import io.harness.event.PublishMessage;
 import io.harness.event.PublishRequest;
 import io.harness.event.PublishResponse;
+import io.harness.event.app.EventServiceConfig;
 import io.harness.event.metrics.ClusterResourcesMetricsGroup;
 import io.harness.event.metrics.EventServiceMetricNames;
 import io.harness.event.metrics.MessagesMetricsGroupContext;
+import io.harness.event.service.intfc.EventDataBulkWriteService;
 import io.harness.event.service.intfc.LastReceivedPublishedMessageRepository;
 import io.harness.grpc.utils.AnyUtils;
 import io.harness.grpc.utils.HTimestamps;
@@ -36,12 +38,15 @@ import io.harness.metrics.service.api.MetricService;
 import io.harness.perpetualtask.k8s.watch.K8SClusterSyncEvent;
 import io.harness.persistence.HPersistence;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import io.grpc.Context;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
@@ -50,15 +55,26 @@ import org.apache.commons.lang3.StringUtils;
 @Slf4j
 @Singleton
 public class EventPublisherServerImpl extends EventPublisherGrpc.EventPublisherImplBase {
+  private final EventDataBulkWriteService eventDataBulkWriteService;
+  private final EventServiceConfig eventServiceConfig;
   private final HPersistence hPersistence;
   private final LastReceivedPublishedMessageRepository lastReceivedPublishedMessageRepository;
   private final MessageProcessorRegistry messageProcessorRegistry;
   private final MetricService metricService;
 
+  private final String POD_UTILIZATION = "io.harness.event.payloads.PodMetric";
+  private final String NODE_UTILIZATION = "io.harness.event.payloads.NodeMetric";
+  private final String PV_UTILIZATION = "io.harness.event.payloads.PVMetric";
+  private final String K8S_CONTAINER_STATE = "io.harness.event.payloads.ContainerStateProto";
+  private final String K8S_WORKLOAD_SPEC = "io.harness.perpetualtask.k8s.watch.K8sWorkloadSpec";
+
   @Inject
-  public EventPublisherServerImpl(HPersistence hPersistence,
+  public EventPublisherServerImpl(EventDataBulkWriteService eventDataBulkWriteService,
+      EventServiceConfig eventServiceConfig, HPersistence hPersistence,
       LastReceivedPublishedMessageRepository lastReceivedPublishedMessageRepository,
       MessageProcessorRegistry messageProcessorRegistry, MetricService metricService) {
+    this.eventDataBulkWriteService = eventDataBulkWriteService;
+    this.eventServiceConfig = eventServiceConfig;
     this.hPersistence = hPersistence;
     this.lastReceivedPublishedMessageRepository = lastReceivedPublishedMessageRepository;
     this.messageProcessorRegistry = messageProcessorRegistry;
@@ -73,11 +89,12 @@ public class EventPublisherServerImpl extends EventPublisherGrpc.EventPublisherI
          AutoLogContext ignore1 = new DelegateLogContext(delegateId, OVERRIDE_ERROR)) {
       log.info("Received publish request with {} messages", request.getMessagesCount());
 
-      List<io.harness.ccm.commons.entities.events.PublishedMessage> withoutCategory = new ArrayList<>();
-      List<io.harness.ccm.commons.entities.events.PublishedMessage> withCategory = new ArrayList<>();
+      final boolean enableBatchWrite = eventServiceConfig.getEventDataBatchQueryConfig().isEnableBatchWrite();
+      List<PublishedMessage> withoutCategory = new ArrayList<>();
+      List<PublishedMessage> withCategory = new ArrayList<>();
       request.getMessagesList()
           .stream()
-          .map(publishMessage -> toPublishedMessage(accountId, publishMessage))
+          .map(publishMessage -> toPublishedMessage(accountId, enableBatchWrite, publishMessage))
           .filter(Objects::nonNull)
           .forEach(publishedMessage -> {
             if (isEmpty(publishedMessage.getCategory())) {
@@ -89,7 +106,11 @@ public class EventPublisherServerImpl extends EventPublisherGrpc.EventPublisherI
 
       if (isNotEmpty(withoutCategory)) {
         try {
-          hPersistence.saveIgnoringDuplicateKeys(withoutCategory);
+          if (enableBatchWrite) {
+            eventDataBulkWriteService.bulkInsertPublishedMessages(withoutCategory);
+          } else {
+            hPersistence.saveIgnoringDuplicateKeys(withoutCategory);
+          }
         } catch (Exception e) {
           log.warn("Encountered error while persisting messages", e);
           responseObserver.onError(Status.INTERNAL.withCause(e).asException());
@@ -146,17 +167,28 @@ public class EventPublisherServerImpl extends EventPublisherGrpc.EventPublisherI
     }
   }
 
-  public io.harness.ccm.commons.entities.events.PublishedMessage toPublishedMessage(
-      String accountId, PublishMessage publishMessage) {
+  public PublishedMessage toPublishedMessage(
+      String accountId, boolean enableBatchWrite, PublishMessage publishMessage) {
     try {
+      String uuid = StringUtils.defaultIfEmpty(publishMessage.getMessageId(), generateUuid());
+      String messageType = AnyUtils.toFqcn(publishMessage.getPayload());
+      Date validUntil = Date.from(OffsetDateTime.now().plusDays(14).toInstant());
+      if (enableBatchWrite) {
+        uuid = generateUuid();
+      }
+      if (ImmutableSet.of(POD_UTILIZATION, NODE_UTILIZATION, PV_UTILIZATION, K8S_CONTAINER_STATE, K8S_WORKLOAD_SPEC)
+              .contains(messageType)) {
+        validUntil = Date.from(OffsetDateTime.now().plusDays(7).toInstant());
+      }
       return PublishedMessage.builder()
-          .uuid(StringUtils.defaultIfEmpty(publishMessage.getMessageId(), generateUuid()))
+          .uuid(uuid)
           .accountId(accountId)
           .data(publishMessage.getPayload().toByteArray())
-          .type(AnyUtils.toFqcn(publishMessage.getPayload()))
+          .type(messageType)
           .attributes(publishMessage.getAttributesMap())
           .category(publishMessage.getCategory())
           .occurredAt(HTimestamps.toMillis(publishMessage.getOccurredAt()))
+          .validUntil(validUntil)
           .build();
     } catch (Exception e) {
       log.error("Error persisting message {}", publishMessage, e);

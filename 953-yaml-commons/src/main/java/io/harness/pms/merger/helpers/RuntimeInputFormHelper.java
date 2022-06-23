@@ -49,11 +49,12 @@ public class RuntimeInputFormHelper {
     Map<FQN, Object> fullMap = yamlConfig.getFqnToValueMap();
     Map<FQN, Object> templateMap = new LinkedHashMap<>();
     fullMap.keySet().forEach(key -> {
-      String value = fullMap.get(key).toString().replace("\"", "");
+      String value = fullMap.get(key).toString().replace("\\\"", "").replace("\"", "");
       if (NGExpressionUtils.matchesExecutionInputPattern(value)) {
         templateMap.put(key, fullMap.get(key));
         fullMap.put(key,
-            EXPR_START + NGExpressionUtils.EXPRESSION_INPUT_CONSTANT + "." + key.getExpressionFqn() + EXPR_END_ESC);
+            EXPR_START + NGExpressionUtils.EXPRESSION_INPUT_CONSTANT + "." + key.getExpressionFqnWithoutIgnoring()
+                + EXPR_END_ESC);
       }
     });
     // Updating the executionInput field to expression in jsonNode.

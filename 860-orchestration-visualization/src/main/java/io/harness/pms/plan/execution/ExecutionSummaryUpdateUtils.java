@@ -47,6 +47,9 @@ public class ExecutionSummaryUpdateUtils {
       update.set(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.layoutNodeMap + "." + nodeExecution.getNodeId()
               + ".status",
           status);
+      update.set(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.layoutNodeMap + "." + nodeExecution.getNodeId()
+              + ".moduleInfo.stepParameters",
+          nodeExecution.getResolvedStepParameters());
     }
     if (!OrchestrationUtils.isStageNode(nodeExecution)) {
       return;
@@ -57,12 +60,11 @@ public class ExecutionSummaryUpdateUtils {
     if (AmbianceUtils.getStrategyLevelFromAmbiance(nodeExecution.getAmbiance()).isPresent()) {
       // If nodeExecution is under strategy then we use nodeExecution.getUuid rather than the planNodeId
       stageUuid = nodeExecution.getUuid();
-      String identifierPostFix = AmbianceUtils.getStrategyPostfix(nodeExecution.getAmbiance());
       update.set(
           PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.layoutNodeMap + "." + stageUuid + ".nodeIdentifier",
-          nodeExecution.getIdentifier() + identifierPostFix);
+          nodeExecution.getIdentifier());
       update.set(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.layoutNodeMap + "." + stageUuid + ".name",
-          nodeExecution.getName() + identifierPostFix);
+          nodeExecution.getName());
       update.set(
           PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.layoutNodeMap + "." + stageUuid + ".strategyMetadata",
           AmbianceUtils.obtainCurrentLevel(nodeExecution.getAmbiance()).getStrategyMetadata());

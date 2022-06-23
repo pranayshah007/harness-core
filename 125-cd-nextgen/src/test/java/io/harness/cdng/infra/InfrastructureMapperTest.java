@@ -13,6 +13,7 @@ import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.FILIP;
 import static io.harness.rule.OwnerRule.MLUKIC;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
+import static io.harness.rule.OwnerRule.TMACARI;
 import static io.harness.rule.OwnerRule.VAIBHAV_SI;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -21,6 +22,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
+import io.harness.cdng.infra.beans.AzureWebAppInfrastructureOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
@@ -28,6 +30,7 @@ import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
 import io.harness.cdng.infra.beans.PdcInfrastructureOutcome;
 import io.harness.cdng.infra.beans.ServerlessAwsLambdaInfrastructureOutcome;
 import io.harness.cdng.infra.beans.SshWinRmAzureInfrastructureOutcome;
+import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
 import io.harness.cdng.infra.yaml.K8sAzureInfrastructure;
 import io.harness.cdng.infra.yaml.K8sGcpInfrastructure;
@@ -344,6 +347,7 @@ public class InfrastructureMapperTest extends CategoryTest {
             .subscriptionId(ParameterField.createValueField("subscriptionId"))
             .resourceGroup(ParameterField.createValueField("resourceGroup"))
             .cluster(ParameterField.createValueField("cluster"))
+            .useClusterAdminCredentials(ParameterField.createValueField(true))
             .build();
 
     K8sAzureInfrastructureOutcome k8sAzureInfrastructureOutcome =
@@ -356,11 +360,63 @@ public class InfrastructureMapperTest extends CategoryTest {
             .cluster("cluster")
             .environment(environment)
             .infrastructureKey("8f62fc4abbc11a8400589ccac4b76f32ba0f7df2")
+            .useClusterAdminCredentials(true)
+            .build();
+
+    assertThat(InfrastructureMapper.toOutcome(k8SAzureInfrastructure, environment, serviceOutcome))
+        .isEqualTo(k8sAzureInfrastructureOutcome);
+
+    k8SAzureInfrastructure = K8sAzureInfrastructure.builder()
+                                 .connectorRef(ParameterField.createValueField("connectorId"))
+                                 .namespace(ParameterField.createValueField("namespace"))
+                                 .releaseName(ParameterField.createValueField("release"))
+                                 .subscriptionId(ParameterField.createValueField("subscriptionId"))
+                                 .resourceGroup(ParameterField.createValueField("resourceGroup"))
+                                 .cluster(ParameterField.createValueField("cluster"))
+                                 .useClusterAdminCredentials(ParameterField.createValueField(false))
+                                 .build();
+
+    k8sAzureInfrastructureOutcome = K8sAzureInfrastructureOutcome.builder()
+                                        .connectorRef("connectorId")
+                                        .namespace("namespace")
+                                        .releaseName("release")
+                                        .subscription("subscriptionId")
+                                        .resourceGroup("resourceGroup")
+                                        .cluster("cluster")
+                                        .environment(environment)
+                                        .infrastructureKey("8f62fc4abbc11a8400589ccac4b76f32ba0f7df2")
+                                        .useClusterAdminCredentials(false)
+                                        .build();
+
+    assertThat(InfrastructureMapper.toOutcome(k8SAzureInfrastructure, environment, serviceOutcome))
+        .isEqualTo(k8sAzureInfrastructureOutcome);
+  }
+
+  @Test
+  @Owner(developers = TMACARI)
+  @Category(UnitTests.class)
+  public void testAzureWebAppInfraMapper() {
+    AzureWebAppInfrastructure azureWebAppInfrastructure =
+        AzureWebAppInfrastructure.builder()
+            .connectorRef(ParameterField.createValueField("connectorId"))
+            .subscriptionId(ParameterField.createValueField("subscriptionId"))
+            .resourceGroup(ParameterField.createValueField("resourceGroup"))
+            .webApp(ParameterField.createValueField("webApp"))
+            .deploymentSlot(ParameterField.createValueField("deploymentSlot"))
             .build();
 
     InfrastructureOutcome infrastructureOutcome =
-        InfrastructureMapper.toOutcome(k8SAzureInfrastructure, environment, serviceOutcome);
-    assertThat(infrastructureOutcome).isEqualTo(k8sAzureInfrastructureOutcome);
+        InfrastructureMapper.toOutcome(azureWebAppInfrastructure, environment, serviceOutcome);
+    assertThat(infrastructureOutcome)
+        .isEqualToIgnoringGivenFields(AzureWebAppInfrastructureOutcome.builder()
+                                          .connectorRef("connectorId")
+                                          .subscription("subscriptionId")
+                                          .resourceGroup("resourceGroup")
+                                          .webApp("webApp")
+                                          .deploymentSlot("deploymentSlot")
+                                          .environment(environment)
+                                          .build(),
+            "infrastructureKey");
   }
 
   @Test

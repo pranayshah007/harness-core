@@ -73,6 +73,7 @@ public class WorkflowExecutionMonitorHandlerTest extends WingsBaseTest {
   @Mock PersistenceIteratorFactory persistenceIteratorFactory;
   @Mock private ExecutionInterruptManager executionInterruptManager;
   @Mock private StateMachineExecutor stateMachineExecutor;
+  @Mock private WorkflowExecutionZombieHandler zombieHandler;
 
   @Inject private HPersistence persistence;
   @Inject @InjectMocks private WorkflowExecutionMonitorHandler workflowExecutionMonitorHandler;

@@ -319,6 +319,26 @@ public class PMSPipelineRepositoryCustomImplTest extends CategoryTest {
   @Test
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
+  public void testUpdateNonExistentPipeline() {
+    String newYaml = "pipeline: new yaml";
+    PipelineEntity pipelineToUpdate = PipelineEntity.builder()
+                                          .accountId(accountIdentifier)
+                                          .orgIdentifier(orgIdentifier)
+                                          .projectIdentifier(projectIdentifier)
+                                          .identifier(pipelineId)
+                                          .name("new name")
+                                          .description("new desc")
+                                          .yaml(newYaml)
+                                          .storeType(StoreType.REMOTE)
+                                          .build();
+    doReturn(null).when(transactionHelper).performTransaction(any());
+    PipelineEntity updatedEntity = pipelineRepository.updatePipelineYaml(pipelineToUpdate);
+    assertThat(updatedEntity).isNull();
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
   public void testUpdatePipelineEntityInDB() {
     Query query = new Query();
     Update update = new Update();
@@ -366,10 +386,9 @@ public class PMSPipelineRepositoryCustomImplTest extends CategoryTest {
                                         .yaml(pipelineYaml)
                                         .deleted(true)
                                         .build();
-    doReturn(pipelineEntity).when(mongoTemplate).findAndModify(any(), any(), any(), any(Class.class));
-    PipelineEntity deletedEntity =
-        pipelineRepository.delete(accountIdentifier, orgIdentifier, projectIdentifier, pipelineId);
-    assertThat(deletedEntity).isEqualTo(pipelineEntity);
+    doReturn(pipelineEntity).when(mongoTemplate).findAndRemove(any(), any());
+    pipelineRepository.delete(accountIdentifier, orgIdentifier, projectIdentifier, pipelineId);
+    verify(mongoTemplate, times(1)).findAndRemove(any(), any());
     verify(outboxService, times(1)).save(any());
   }
 

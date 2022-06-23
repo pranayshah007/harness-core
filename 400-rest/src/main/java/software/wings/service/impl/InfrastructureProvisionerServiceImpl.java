@@ -1016,10 +1016,23 @@ public class InfrastructureProvisionerServiceImpl implements InfrastructureProvi
     if (isEmpty(variables)) {
       return Collections.emptyMap();
     }
-    return variables.stream()
-        .filter(entry -> entry.getValue() != null)
-        .filter(entry -> "TEXT".equals(entry.getValueType()))
-        .collect(toMap(NameValuePair::getName, entry -> context.renderExpression(entry.getValue())));
+
+    Map<String, String> map = new HashMap<>();
+    for (NameValuePair entry : variables) {
+      if (entry.getValue() != null && "TEXT".equals(entry.getValueType())) {
+        map.merge(entry.getName(), context.renderExpression(entry.getValue()),
+            (a, b) -> { throw new IllegalStateException(format("Duplicate key: %s", entry.getName())); });
+      }
+    }
+    return map;
+  }
+
+  private EncryptedDataDetail getValue(String accountId, String workflowExecutionId, NameValuePair entry) {
+    Optional<EncryptedDataDetail> encryptedDataDetailOptional =
+        secretManager.encryptedDataDetails(accountId, null, entry.getValue(), workflowExecutionId);
+
+    return encryptedDataDetailOptional.orElseThrow(
+        () -> new InvalidRequestException(format("The encrypted variable %s was not found", entry.getName()), USER));
   }
 
   @Override
@@ -1029,18 +1042,15 @@ public class InfrastructureProvisionerServiceImpl implements InfrastructureProvi
       return Collections.emptyMap();
     }
     String accountId = appService.getAccountIdByAppId(appId);
-    return variables.stream()
-        .filter(entry -> entry.getValue() != null)
-        .filter(entry -> "ENCRYPTED_TEXT".equals(entry.getValueType()))
-        .collect(toMap(NameValuePair::getName, entry -> {
-          Optional<EncryptedDataDetail> encryptedDataDetailOptional =
-              secretManager.encryptedDataDetails(accountId, null, entry.getValue(), workflowExecutionId);
 
-          return encryptedDataDetailOptional.orElseThrow(
-              ()
-                  -> new InvalidRequestException(
-                      format("The encrypted variable %s was not found", entry.getName()), USER));
-        }));
+    Map<String, EncryptedDataDetail> map = new HashMap<>();
+    for (NameValuePair entry : variables) {
+      if (entry.getValue() != null && "ENCRYPTED_TEXT".equals(entry.getValueType())) {
+        map.merge(entry.getName(), getValue(accountId, workflowExecutionId, entry),
+            (a, b) -> { throw new IllegalStateException(format("Duplicate encrypted key: %s", entry.getName())); });
+      }
+    }
+    return map;
   }
 
   @Override

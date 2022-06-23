@@ -34,8 +34,10 @@ import io.harness.azure.model.AzureARMRGTemplateExportOptions;
 import io.harness.azure.model.AzureARMTemplate;
 import io.harness.azure.model.AzureConfig;
 import io.harness.azure.model.management.ManagementGroupInfo;
+import io.harness.azure.model.tag.TagDetails;
 import io.harness.azure.utility.AzureUtils;
 import io.harness.exception.AzureClientException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.serializer.JsonUtils;
 
 import com.google.common.reflect.TypeToken;
@@ -120,7 +122,7 @@ public class AzureManagementClientImpl extends AzureClient implements AzureManag
             ServiceResponse<PageImpl<ManagementGroupInfo>> result = listManagementDelegate(response);
             return Observable.just(new ServiceResponse<Page<ManagementGroupInfo>>(result.body(), result.response()));
           } catch (Exception t) {
-            return Observable.error(t);
+            return Observable.error(ExceptionMessageSanitizer.sanitizeException(t));
           }
         });
   }
@@ -139,7 +141,7 @@ public class AzureManagementClientImpl extends AzureClient implements AzureManag
             ServiceResponse<PageImpl<ManagementGroupInfo>> result = listManagementDelegate(response);
             return Observable.just(new ServiceResponse<Page<ManagementGroupInfo>>(result.body(), result.response()));
           } catch (Exception t) {
-            return Observable.error(t);
+            return Observable.error(ExceptionMessageSanitizer.sanitizeException(t));
           }
         });
   }
@@ -269,7 +271,7 @@ public class AzureManagementClientImpl extends AzureClient implements AzureManag
       String errorMessage = format(
           "Error occurred while deploying at resource group scope, deploymentName: %s, subscriptionId: %s,  resourceGroupName: %s, deploymentMode: %s",
           deploymentName, subscriptionId, resourceGroupName, deploymentMode);
-      throw new AzureClientException(errorMessage, e);
+      throw new AzureClientException(errorMessage, ExceptionMessageSanitizer.sanitizeException(e));
     }
   }
 
@@ -610,5 +612,54 @@ public class AzureManagementClientImpl extends AzureClient implements AzureManag
     properties.withTemplate(JsonUtils.readTree(template.getTemplateJSON()));
     properties.withParameters(JsonUtils.readTree(template.getParametersJSON()));
     return properties;
+  }
+
+  @Override
+  public List<TagDetails> listTags(AzureConfig azureConfig, String subscriptionId) {
+    ServiceResponse<Page<TagDetails>> response =
+        listTagsSinglePageAsync(azureConfig, subscriptionId).toBlocking().single();
+
+    return new PagedList<TagDetails>(response.body()) {
+      @Override
+      public Page<TagDetails> nextPage(String nextPageLink) {
+        return listTagsNextSinglePageAsync(azureConfig, nextPageLink).toBlocking().single().body();
+      }
+    };
+  }
+
+  private Observable<ServiceResponse<Page<TagDetails>>> listTagsSinglePageAsync(
+      final AzureConfig azureConfig, String subscriptionId) {
+    return getAzureManagementRestClient(azureConfig.getAzureEnvironmentType())
+        .listTags(getAzureBearerAuthToken(azureConfig), subscriptionId)
+        .flatMap(toTagDetails());
+  }
+
+  private Observable<ServiceResponse<Page<TagDetails>>> listTagsNextSinglePageAsync(
+      final AzureConfig azureConfig, final String nextPageLink) {
+    if (nextPageLink == null) {
+      throw new IllegalArgumentException(NEXT_PAGE_LINK_BLANK_VALIDATION_MSG);
+    }
+    String nextUrl = String.format("%s", nextPageLink);
+
+    return getAzureManagementRestClient(azureConfig.getAzureEnvironmentType())
+        .listNext(getAzureBearerAuthToken(azureConfig), nextUrl, AzureManagementRestClient.APP_VERSION)
+        .flatMap(toTagDetails());
+  }
+
+  @NotNull
+  private Func1<Response<ResponseBody>, Observable<ServiceResponse<Page<TagDetails>>>> toTagDetails() {
+    return response -> {
+      try {
+        ServiceResponse<PageImpl<TagDetails>> result =
+            serviceResponseFactory.<PageImpl<TagDetails>, CloudException>newInstance(azureJacksonAdapter)
+                .register(200, (new TypeToken<PageImpl<TagDetails>>() {}).getType())
+                .registerError(CloudException.class)
+                .build(response);
+
+        return Observable.just(new ServiceResponse<Page<TagDetails>>(result.body(), result.response()));
+      } catch (Exception t) {
+        return Observable.error(t);
+      }
+    };
   }
 }

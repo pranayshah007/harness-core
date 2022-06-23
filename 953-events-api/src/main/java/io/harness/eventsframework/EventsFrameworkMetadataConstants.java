@@ -40,6 +40,7 @@ public final class EventsFrameworkMetadataConstants {
   public static final String USER_SCOPE_RECONCILIATION = "userScopeReconciliation";
   public static final String CHAOS_HUB = "chaoshub";
   public static final String CHAOS_AGENT = "chaosagent";
+  public static final String CHAOS_WORKFLOW = "chaosworkflow";
 
   public static final String SERVICE_ENTITY = "service";
   public static final String ENVIRONMENT_ENTITY = "environment";

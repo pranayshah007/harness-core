@@ -8,16 +8,31 @@
 package io.harness.engine.execution;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.pms.yaml.validation.RuntimeInputValuesValidator.validateStaticValues;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.ExecutionInputInstance;
+import io.harness.pms.merger.YamlConfig;
+import io.harness.pms.merger.fqn.FQN;
+import io.harness.pms.merger.helpers.MergeHelper;
+import io.harness.pms.merger.helpers.YamlSubMapExtractor;
+import io.harness.pms.serializer.recaster.RecastOrchestrationUtils;
 import io.harness.repositories.ExecutionInputRepository;
 import io.harness.waiter.WaitNotifyEngine;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @Singleton
@@ -26,21 +41,19 @@ import lombok.extern.slf4j.Slf4j;
 public class ExecutionInputServiceImpl implements ExecutionInputService {
   @Inject WaitNotifyEngine waitNotifyEngine;
   @Inject ExecutionInputRepository executionInputRepository;
-
   @Override
-  // TODO(BRIJESH): Should return the status if merging was successful. Use lock so that only one input can be processed
-  // and only one doneWith should be called.
-  public void continueExecution(String nodeExecutionId) {
-    Optional<ExecutionInputInstance> optional = executionInputRepository.findByNodeExecutionId(nodeExecutionId);
-    if (optional.isPresent()) {
-      ExecutionInputInstance executionInputInstance = optional.get();
-      // Write the merging logic here.
-      waitNotifyEngine.doneWith(executionInputInstance.getInputInstanceId(),
-          ExecutionInputData.builder().inputInstanceId(executionInputInstance.getInputInstanceId()).build());
-    } else {
-      throw new InvalidRequestException(
-          String.format("Execution Input template does not exist for input execution id : %s", nodeExecutionId));
+  // TODO(BRIJESH): Use lock so that only one input can be processed and only one doneWith should be called.
+  public boolean continueExecution(String nodeExecutionId, String executionInputYaml) {
+    ExecutionInputInstance executionInputInstance;
+    try {
+      executionInputInstance = mergeUserInputInTemplate(nodeExecutionId, executionInputYaml);
+    } catch (NoSuchElementException ex) {
+      log.error("User input could not be processed for nodeExecutionId {}", nodeExecutionId, ex);
+      return false;
     }
+    waitNotifyEngine.doneWith(executionInputInstance.getInputInstanceId(),
+        ExecutionInputData.builder().inputInstanceId(executionInputInstance.getInputInstanceId()).build());
+    return true;
   }
 
   @Override
@@ -56,5 +69,75 @@ public class ExecutionInputServiceImpl implements ExecutionInputService {
   @Override
   public ExecutionInputInstance save(ExecutionInputInstance executionInputInstance) {
     return executionInputRepository.save(executionInputInstance);
+  }
+
+  @Override
+  public List<ExecutionInputInstance> getExecutionInputInstances(Set<String> nodeExecutionIds) {
+    return executionInputRepository.findByNodeExecutionIds(nodeExecutionIds);
+  }
+
+  private ExecutionInputInstance mergeUserInputInTemplate(String nodeExecutionId, String executionInputYaml) {
+    Optional<ExecutionInputInstance> optional = executionInputRepository.findByNodeExecutionId(nodeExecutionId);
+    if (optional.isPresent()) {
+      ExecutionInputInstance executionInputInstance = optional.get();
+      executionInputInstance.setUserInput(executionInputYaml);
+
+      Map<FQN, String> invalidFQNsInInputSet =
+          getInvalidFQNsInInputSet(executionInputInstance.getTemplate(), executionInputYaml);
+      if (!EmptyPredicate.isEmpty(invalidFQNsInInputSet)) {
+        throw new InvalidRequestException("Some fields are not valid: "
+            + invalidFQNsInInputSet.keySet()
+                  .stream()
+                  .map(FQN::getExpressionFqn)
+                  .collect(Collectors.toList())
+                  .toString());
+      }
+      JsonNode mergedJsonNode = MergeHelper.mergeExecutionInputIntoOriginalYamlJsonNode(
+          executionInputInstance.getTemplate(), executionInputInstance.getUserInput(), false);
+      executionInputInstance.setMergedInputTemplate(RecastOrchestrationUtils.fromJson(mergedJsonNode.toString()));
+      return executionInputRepository.save(executionInputInstance);
+    } else {
+      throw new InvalidRequestException(
+          String.format("Execution Input template does not exist for input execution id : %s", nodeExecutionId));
+    }
+  }
+
+  // Using duplicate method of InputSetErrorHelper in 800-pipeline-service. Will refactor the method and use the bring
+  // down to 870.
+  public Map<FQN, String> getInvalidFQNsInInputSet(String templateYaml, String inputSetPipelineCompYaml) {
+    Map<FQN, String> errorMap = new LinkedHashMap<>();
+    YamlConfig inputSetConfig = new YamlConfig(inputSetPipelineCompYaml);
+    Set<FQN> inputSetFQNs = new LinkedHashSet<>(inputSetConfig.getFqnToValueMap().keySet());
+    if (EmptyPredicate.isEmpty(templateYaml)) {
+      inputSetFQNs.forEach(fqn -> errorMap.put(fqn, "Pipeline no longer contains any runtime input"));
+      return errorMap;
+    }
+    YamlConfig templateConfig = new YamlConfig(templateYaml);
+
+    templateConfig.getFqnToValueMap().keySet().forEach(key -> {
+      if (inputSetFQNs.contains(key)) {
+        Object templateValue = templateConfig.getFqnToValueMap().get(key);
+        Object value = inputSetConfig.getFqnToValueMap().get(key);
+        if (key.isType() || key.isIdentifierOrVariableName()) {
+          if (!value.toString().equals(templateValue.toString())) {
+            errorMap.put(key,
+                "The value for " + key.getExpressionFqn() + " is " + templateValue.toString()
+                    + "in the pipeline yaml, but the input set has it as " + value.toString());
+          }
+        } else {
+          String error = validateStaticValues(templateValue, value);
+          if (EmptyPredicate.isNotEmpty(error)) {
+            errorMap.put(key, error);
+          }
+        }
+
+        inputSetFQNs.remove(key);
+      } else {
+        Map<FQN, Object> subMap = YamlSubMapExtractor.getFQNToObjectSubMap(inputSetConfig.getFqnToValueMap(), key);
+        subMap.keySet().forEach(inputSetFQNs::remove);
+      }
+    });
+    inputSetFQNs.forEach(fqn -> errorMap.put(fqn, "Field either not present in pipeline or not a runtime input"));
+    return errorMap;
   }
 }

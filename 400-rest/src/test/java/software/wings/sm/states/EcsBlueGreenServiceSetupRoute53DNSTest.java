@@ -30,10 +30,10 @@ import static software.wings.utils.WingsTestConstants.SERVICE_NAME;
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -120,7 +120,7 @@ public class EcsBlueGreenServiceSetupRoute53DNSTest extends WingsBaseTest {
     state.setServiceDiscoveryService1JSON("Svc1Json");
     state.setServiceDiscoveryService2JSON("Svc2Json");
     ExecutionContextImpl mockContext = mock(ExecutionContextImpl.class);
-    when(mockContext.renderExpression(anyString())).thenAnswer(new Answer<String>() {
+    when(mockContext.renderExpression(nullable(String.class))).thenAnswer(new Answer<String>() {
       @Override
       public String answer(InvocationOnMock invocation) throws Throwable {
         Object[] args = invocation.getArguments();
@@ -144,20 +144,22 @@ public class EcsBlueGreenServiceSetupRoute53DNSTest extends WingsBaseTest {
                               .build();
     doReturn(bag).when(mockEcsStateHelper).prepareBagForEcsSetUp(any(), anyInt(), any(), any(), any(), any(), any());
     Activity activity = Activity.builder().uuid(ACTIVITY_ID).build();
-    doReturn(activity).when(mockEcsStateHelper).createActivity(any(), anyString(), anyString(), any(), any());
+    doReturn(activity)
+        .when(mockEcsStateHelper)
+        .createActivity(any(), nullable(String.class), nullable(String.class), any(), any());
     EcsSetupParams params =
         anEcsSetupParams().withBlueGreen(false).withServiceName("EcsSvc").withClusterName(CLUSTER_NAME).build();
     doReturn(params).when(mockEcsStateHelper).buildContainerSetupParams(any(), any());
     CommandStateExecutionData executionData = aCommandStateExecutionData().build();
     doReturn(executionData)
         .when(mockEcsStateHelper)
-        .getStateExecutionData(any(), anyString(), any(), any(Activity.class));
+        .getStateExecutionData(any(), nullable(String.class), any(), any(Activity.class));
     EcsSetupContextVariableHolder holder = EcsSetupContextVariableHolder.builder().build();
     doReturn(holder).when(mockEcsStateHelper).renderEcsSetupContextVariables(any());
     doReturn(DelegateTask.builder().uuid("DEL_TASK_ID").description("desc").build())
         .when(mockEcsStateHelper)
-        .createAndQueueDelegateTaskForEcsServiceSetUp(any(), any(), anyString(), any(), eq(true));
-    doNothing().when(stateExecutionService).appendDelegateTaskDetails(anyString(), any());
+        .createAndQueueDelegateTaskForEcsServiceSetUp(any(), any(), nullable(String.class), any(), eq(true));
+    doNothing().when(stateExecutionService).appendDelegateTaskDetails(nullable(String.class), any());
     ExecutionResponse response = state.execute(mockContext);
     ArgumentCaptor<EcsSetupStateConfig> captor = ArgumentCaptor.forClass(EcsSetupStateConfig.class);
     verify(mockEcsStateHelper).buildContainerSetupParams(any(), captor.capture());
@@ -207,24 +209,24 @@ public class EcsBlueGreenServiceSetupRoute53DNSTest extends WingsBaseTest {
     doReturn(executionData).when(mockContext).getStateExecutionData();
     PhaseElement phaseElement =
         PhaseElement.builder().serviceElement(ServiceElement.builder().uuid(SERVICE_ID).build()).build();
-    doReturn(phaseElement).when(mockContext).getContextElement(any(), anyString());
+    doReturn(phaseElement).when(mockContext).getContextElement(any(), nullable(String.class));
     Artifact artifact = anArtifact().withRevision("rev").build();
-    doReturn(artifact).when(mockContext).getDefaultArtifactForService(anyString());
+    doReturn(artifact).when(mockContext).getDefaultArtifactForService(nullable(String.class));
     ImageDetails details = ImageDetails.builder().name("imgName").tag("imgTag").build();
-    doReturn(details).when(mockArtifactCollectionUtils).fetchContainerImageDetails(any(), anyString());
+    doReturn(details).when(mockArtifactCollectionUtils).fetchContainerImageDetails(any(), nullable(String.class));
     ContainerServiceElement containerServiceElement = ContainerServiceElement.builder().build();
     doReturn(containerServiceElement)
         .when(mockEcsStateHelper)
-        .buildContainerServiceElement(
-            any(), any(), any(), any(), anyString(), anyString(), anyString(), any(), anyInt(), any());
+        .buildContainerServiceElement(any(), any(), any(), any(), nullable(String.class), nullable(String.class),
+            nullable(String.class), any(), anyInt(), any());
     SweepingOutputInstanceBuilder builder = SweepingOutputInstance.builder();
     doReturn(builder).when(mockContext).prepareSweepingOutputBuilder(any());
-    doReturn("foo").when(mockEcsStateHelper).getSweepingOutputName(any(), anyBoolean(), anyString());
+    doReturn("foo").when(mockEcsStateHelper).getSweepingOutputName(any(), anyBoolean(), nullable(String.class));
     doReturn(null).when(mockSweepingOutputService).save(any());
     ExecutionResponse response = state.handleAsyncResponse(mockContext, ImmutableMap.of(ACTIVITY_ID, delegateResponse));
     verify(mockEcsStateHelper)
-        .buildContainerServiceElement(
-            any(), any(), any(), any(), anyString(), anyString(), anyString(), any(), anyInt(), any());
+        .buildContainerServiceElement(any(), any(), any(), any(), nullable(String.class), nullable(String.class),
+            nullable(String.class), any(), anyInt(), any());
     verify(mockEcsStateHelper).populateFromDelegateResponse(any(), any(), any());
   }
 

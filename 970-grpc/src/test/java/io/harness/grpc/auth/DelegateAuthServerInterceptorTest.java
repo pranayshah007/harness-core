@@ -131,7 +131,7 @@ public class DelegateAuthServerInterceptorTest extends CategoryTest {
   public void shouldBlockIfTokenValidationFails() throws Exception {
     doThrow(new AccessDeniedException("Key not found", null))
         .when(tokenAuthenticator)
-        .validateDelegateToken(ACCOUNT_ID, TOKEN, null, false);
+        .validateDelegateToken(ACCOUNT_ID, TOKEN, null, null, false);
     val metadata = new Metadata();
     metadata.put(ACCOUNT_ID_METADATA_KEY, ACCOUNT_ID);
     metadata.put(TOKEN_METADATA_KEY, TOKEN);
@@ -153,7 +153,7 @@ public class DelegateAuthServerInterceptorTest extends CategoryTest {
     val eventSvcStub = EventPublisherGrpc.newBlockingStub(channel).withInterceptors(
         MetadataUtils.newAttachHeadersInterceptor(metadata));
     eventSvcStub.publish(PublishRequest.newBuilder().addMessages(PublishMessage.newBuilder()).build());
-    verify(tokenAuthenticator).validateDelegateToken(ACCOUNT_ID, TOKEN, null, false);
+    verify(tokenAuthenticator).validateDelegateToken(ACCOUNT_ID, TOKEN, null, null, false);
     assertThat(ACCOUNT_ID_CTX_KEY.get(contextRecordingInterceptor.lastContext)).isEqualTo(ACCOUNT_ID);
     assertThat(fakeService.getMessageCount()).isEqualTo(1);
   }

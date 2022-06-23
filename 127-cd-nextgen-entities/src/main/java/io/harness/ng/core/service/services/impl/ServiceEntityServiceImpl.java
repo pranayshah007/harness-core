@@ -8,19 +8,25 @@
 package io.harness.ng.core.service.services.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.beans.FeatureName.HARD_DELETE_ENTITIES;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
 import static io.harness.springdata.TransactionUtils.DEFAULT_TRANSACTION_RETRY_POLICY;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
+import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.ReferencedEntityException;
 import io.harness.exception.UnexpectedException;
+import io.harness.exception.YamlException;
 import io.harness.ng.DuplicateKeyExceptionParser;
 import io.harness.ng.core.EntityDetail;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
@@ -32,20 +38,34 @@ import io.harness.ng.core.events.ServiceUpsertEvent;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.entity.ServiceEntity.ServiceEntityKeys;
 import io.harness.ng.core.service.services.ServiceEntityService;
+import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
+import io.harness.ng.core.utils.CoreCriteriaUtils;
 import io.harness.outbox.api.OutboxService;
+import io.harness.pms.merger.helpers.RuntimeInputFormHelper;
+import io.harness.pms.yaml.YamlField;
+import io.harness.pms.yaml.YamlUtils;
+import io.harness.repositories.UpsertOptions;
 import io.harness.repositories.service.spring.ServiceRepository;
+import io.harness.utils.NGFeatureFlagHelperService;
+import io.harness.utils.YamlPipelineUtils;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
-import com.mongodb.client.result.UpdateResult;
+import com.mongodb.client.result.DeleteResult;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -74,6 +94,9 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   @Inject @Named(OUTBOX_TRANSACTION_TEMPLATE) private final TransactionTemplate transactionTemplate;
   private final OutboxService outboxService;
   private final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_TRANSACTION_RETRY_POLICY;
+  private final NGFeatureFlagHelperService ngFeatureFlagHelperService;
+  private final ServiceOverrideService serviceOverrideService;
+  private final ServiceEntitySetupUsageHelper entitySetupUsageHelper;
 
   private static final String DUP_KEY_EXP_FORMAT_STRING_FOR_PROJECT =
       "Service [%s] under Project[%s], Organization [%s] in Account [%s] already exists";
@@ -91,17 +114,19 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
       validatePresenceOfRequiredFields(serviceEntity.getAccountId(), serviceEntity.getIdentifier());
       setNameIfNotPresent(serviceEntity);
       modifyServiceRequest(serviceEntity);
-      return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
-        ServiceEntity service = serviceRepository.save(serviceEntity);
-        outboxService.save(ServiceCreateEvent.builder()
-                               .accountIdentifier(serviceEntity.getAccountId())
-                               .orgIdentifier(serviceEntity.getOrgIdentifier())
-                               .projectIdentifier(serviceEntity.getProjectIdentifier())
-                               .service(serviceEntity)
-                               .build());
-        return service;
-      }));
-
+      ServiceEntity createdService =
+          Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+            ServiceEntity service = serviceRepository.save(serviceEntity);
+            outboxService.save(ServiceCreateEvent.builder()
+                                   .accountIdentifier(serviceEntity.getAccountId())
+                                   .orgIdentifier(serviceEntity.getOrgIdentifier())
+                                   .projectIdentifier(serviceEntity.getProjectIdentifier())
+                                   .service(serviceEntity)
+                                   .build());
+            return service;
+          }));
+      entitySetupUsageHelper.updateSetupUsages(createdService);
+      return createdService;
     } catch (DuplicateKeyException ex) {
       throw new DuplicateFieldException(
           getDuplicateServiceExistsErrorMessage(serviceEntity.getAccountId(), serviceEntity.getOrgIdentifier(),
@@ -128,23 +153,26 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
             requestService.getIdentifier(), false);
     if (serviceEntityOptional.isPresent()) {
       ServiceEntity oldService = serviceEntityOptional.get();
-      return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
-        ServiceEntity updatedResult = serviceRepository.update(criteria, requestService);
-        if (updatedResult == null) {
-          throw new InvalidRequestException(
-              String.format("Service [%s] under Project[%s], Organization [%s] couldn't be updated or doesn't exist.",
+      ServiceEntity updatedService =
+          Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+            ServiceEntity updatedResult = serviceRepository.update(criteria, requestService);
+            if (updatedResult == null) {
+              throw new InvalidRequestException(String.format(
+                  "Service [%s] under Project[%s], Organization [%s] couldn't be updated or doesn't exist.",
                   requestService.getIdentifier(), requestService.getProjectIdentifier(),
                   requestService.getOrgIdentifier()));
-        }
-        outboxService.save(ServiceUpdateEvent.builder()
-                               .accountIdentifier(requestService.getAccountId())
-                               .orgIdentifier(requestService.getOrgIdentifier())
-                               .projectIdentifier(requestService.getProjectIdentifier())
-                               .newService(updatedResult)
-                               .oldService(oldService)
-                               .build());
-        return updatedResult;
-      }));
+            }
+            outboxService.save(ServiceUpdateEvent.builder()
+                                   .accountIdentifier(requestService.getAccountId())
+                                   .orgIdentifier(requestService.getOrgIdentifier())
+                                   .projectIdentifier(requestService.getProjectIdentifier())
+                                   .newService(updatedResult)
+                                   .oldService(oldService)
+                                   .build());
+            return updatedResult;
+          }));
+      entitySetupUsageHelper.updateSetupUsages(updatedService);
+      return updatedService;
     } else {
       throw new InvalidRequestException(String.format(
           "Service [%s] under Project[%s], Organization [%s] doesn't exist.", requestService.getIdentifier(),
@@ -153,26 +181,32 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   }
 
   @Override
-  public ServiceEntity upsert(@Valid ServiceEntity requestService) {
+  public ServiceEntity upsert(@Valid ServiceEntity requestService, UpsertOptions upsertOptions) {
     validatePresenceOfRequiredFields(requestService.getAccountId(), requestService.getIdentifier());
     setNameIfNotPresent(requestService);
     modifyServiceRequest(requestService);
     Criteria criteria = getServiceEqualityCriteria(requestService, requestService.getDeleted());
-    return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
-      ServiceEntity result = serviceRepository.upsert(criteria, requestService);
-      if (result == null) {
-        throw new InvalidRequestException(String.format(
-            "Service [%s] under Project[%s], Organization [%s] couldn't be upserted.", requestService.getIdentifier(),
-            requestService.getProjectIdentifier(), requestService.getOrgIdentifier()));
-      }
-      outboxService.save(ServiceUpsertEvent.builder()
-                             .accountIdentifier(requestService.getAccountId())
-                             .orgIdentifier(requestService.getOrgIdentifier())
-                             .projectIdentifier(requestService.getProjectIdentifier())
-                             .service(requestService)
-                             .build());
-      return result;
-    }));
+    ServiceEntity upsertedService =
+        Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+          ServiceEntity result = serviceRepository.upsert(criteria, requestService);
+          if (result == null) {
+            throw new InvalidRequestException(
+                String.format("Service [%s] under Project[%s], Organization [%s] couldn't be upserted.",
+                    requestService.getIdentifier(), requestService.getProjectIdentifier(),
+                    requestService.getOrgIdentifier()));
+          }
+          if (upsertOptions.isSendOutboxEvent()) {
+            outboxService.save(ServiceUpsertEvent.builder()
+                                   .accountIdentifier(requestService.getAccountId())
+                                   .orgIdentifier(requestService.getOrgIdentifier())
+                                   .projectIdentifier(requestService.getProjectIdentifier())
+                                   .service(requestService)
+                                   .build());
+          }
+          return result;
+        }));
+    entitySetupUsageHelper.updateSetupUsages(upsertedService);
+    return upsertedService;
   }
 
   @Override
@@ -188,6 +222,11 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   @Override
   public boolean delete(
       String accountId, String orgIdentifier, String projectIdentifier, String serviceIdentifier, Long version) {
+    checkArgument(isNotEmpty(accountId), "accountId must be present");
+    checkArgument(isNotEmpty(serviceIdentifier), "serviceIdentifier must be present");
+
+    final boolean shouldHardDelete = ngFeatureFlagHelperService.isEnabled(accountId, HARD_DELETE_ENTITIES);
+
     ServiceEntity serviceEntity = ServiceEntity.builder()
                                       .accountId(accountId)
                                       .orgIdentifier(orgIdentifier)
@@ -199,22 +238,28 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
     Criteria criteria = getServiceEqualityCriteria(serviceEntity, false);
     Optional<ServiceEntity> serviceEntityOptional =
         get(accountId, orgIdentifier, projectIdentifier, serviceIdentifier, false);
+
     if (serviceEntityOptional.isPresent()) {
-      return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
-        UpdateResult updateResult = serviceRepository.delete(criteria);
-        if (!updateResult.wasAcknowledged() || updateResult.getModifiedCount() != 1) {
-          throw new InvalidRequestException(
-              String.format("Service [%s] under Project[%s], Organization [%s] couldn't be deleted.", serviceIdentifier,
-                  projectIdentifier, orgIdentifier));
-        }
-        outboxService.save(ServiceDeleteEvent.builder()
-                               .accountIdentifier(accountId)
-                               .orgIdentifier(orgIdentifier)
-                               .projectIdentifier(projectIdentifier)
-                               .service(serviceEntityOptional.get())
-                               .build());
-        return true;
-      }));
+      boolean success =
+          Failsafe.with(DEFAULT_TRANSACTION_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
+            ServiceEntity serviceEntityRetrieved = serviceEntityOptional.get();
+            final boolean deleted =
+                shouldHardDelete ? serviceRepository.delete(criteria) : serviceRepository.softDelete(criteria);
+            if (!deleted) {
+              throw new InvalidRequestException(
+                  String.format("Service [%s] under Project[%s], Organization [%s] couldn't be deleted.",
+                      serviceEntity.getIdentifier(), projectIdentifier, orgIdentifier));
+            }
+
+            outboxService.save(new ServiceDeleteEvent(accountId, serviceEntityRetrieved.getOrgIdentifier(),
+                serviceEntityRetrieved.getProjectIdentifier(), serviceEntityRetrieved));
+            return true;
+          }));
+      processQuietly(()
+                         -> serviceOverrideService.deleteAllInProjectForAService(
+                             accountId, orgIdentifier, projectIdentifier, serviceIdentifier));
+      entitySetupUsageHelper.deleteSetupUsages(serviceEntityOptional.get());
+      return success;
     } else {
       throw new InvalidRequestException(
           String.format("Service [%s] under Project[%s], Organization [%s] doesn't exist.", serviceIdentifier,
@@ -242,7 +287,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
       throw new UnexpectedException(
           "Error while deleting the Service as was not able to check entity reference records.");
     }
-    if (EmptyPredicate.isNotEmpty(referredByEntities)) {
+    if (isNotEmpty(referredByEntities)) {
       throw new ReferencedEntityException(String.format(
           "The service %s cannot be deleted because it is being referenced in %d %s. To delete your service, please remove the reference service from these entities.",
           serviceEntity.getIdentifier(), referredByEntities.size(),
@@ -318,6 +363,49 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   public ServiceEntity find(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String serviceIdentifier, boolean deleted) {
     return serviceRepository.find(accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, deleted);
+  }
+
+  @Override
+  public String createServiceInputsYaml(String yaml) {
+    Map<String, Object> serviceInputs = new HashMap<>();
+
+    try {
+      YamlField serviceYamlField = YamlUtils.readTree(yaml).getNode().getField(YamlTypes.SERVICE_ENTITY);
+      if (serviceYamlField == null) {
+        throw new YamlException("Yaml provided is not a service yaml.");
+      }
+      ObjectNode serviceNode = (ObjectNode) serviceYamlField.getNode().getCurrJsonNode();
+      String serviceDefinition = serviceNode.retain(YamlTypes.SERVICE_DEFINITION).toString();
+      if (isEmpty(serviceDefinition)) {
+        throw new YamlException("Service yaml provided does not have service definition in it.");
+      }
+      String serviceDefinitionInputs = RuntimeInputFormHelper.createTemplateFromYaml(serviceDefinition);
+      if (isEmpty(serviceDefinitionInputs)) {
+        return serviceDefinitionInputs;
+      }
+      JsonNode serviceDefinitionNode = YamlUtils.readTree(serviceDefinitionInputs).getNode().getCurrJsonNode();
+      serviceInputs.put(YamlTypes.SERVICE_INPUTS, serviceDefinitionNode);
+      return YamlPipelineUtils.writeYamlString(serviceInputs);
+    } catch (IOException e) {
+      throw new InvalidRequestException("Error occurred while creating service inputs ", e);
+    }
+  }
+
+  @Override
+  public boolean forceDeleteAllInProject(String accountId, String orgIdentifier, String projectIdentifier) {
+    final boolean shouldHardDelete = ngFeatureFlagHelperService.isEnabled(accountId, HARD_DELETE_ENTITIES);
+    if (!shouldHardDelete) {
+      return false;
+    }
+    Criteria criteria = CoreCriteriaUtils.createCriteriaForGetList(accountId, orgIdentifier, projectIdentifier);
+    return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+      DeleteResult deleteResult = serviceRepository.deleteMany(criteria);
+      if (!deleteResult.wasAcknowledged()) {
+        throw new InvalidRequestException(String.format(
+            "Services under Project[%s], Organization [%s] couldn't be deleted.", projectIdentifier, orgIdentifier));
+      }
+      return true;
+    }));
   }
 
   String getDuplicateServiceExistsErrorMessage(
@@ -406,6 +494,18 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
     if (isEmpty(serviceEntities)) {
       return;
     }
-    serviceEntities.forEach(serviceEntity -> modifyServiceRequest(serviceEntity));
+    serviceEntities.forEach(this::modifyServiceRequest);
+  }
+
+  boolean processQuietly(BooleanSupplier b) {
+    try {
+      b.getAsBoolean();
+      // supplier processed
+      return true;
+    } catch (Exception ex) {
+      log.error("failed to process entity deletion", ex);
+      // ignore this
+      return false;
+    }
   }
 }

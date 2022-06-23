@@ -31,4 +31,7 @@ public interface ArtifactoryNgService {
 
   InputStream downloadArtifacts(ArtifactoryConfigRequest artifactoryConfig, String repoKey,
       Map<String, String> metadata, String artifactPathMetadataKey, String artifactFileNameMetadataKey);
+
+  Long getFileSize(
+      ArtifactoryConfigRequest artifactoryConfig, Map<String, String> metadata, String artifactPathMetadataKey);
 }

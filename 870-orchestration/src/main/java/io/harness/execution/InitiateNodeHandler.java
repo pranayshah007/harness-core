@@ -51,8 +51,8 @@ public class InitiateNodeHandler extends PmsBaseEventHandler<InitiateNodeEvent> 
   @Override
   protected void handleEventWithContext(InitiateNodeEvent event) {
     if (pmsFeatureFlagService.isEnabled(AmbianceUtils.getAccountId(event.getAmbiance()), FeatureName.PIPELINE_MATRIX)) {
-      engine.initiateNode(
-          event.getAmbiance(), event.getNodeId(), event.getRuntimeId(), null, event.getStrategyMetadata(), true);
+      engine.initiateNode(event.getAmbiance(), event.getNodeId(), event.getRuntimeId(), null,
+          event.hasStrategyMetadata() ? event.getStrategyMetadata() : null, event.getInitiateMode());
     } else {
       engine.initiateNode(event.getAmbiance(), event.getNodeId(), event.getRuntimeId(), null);
     }

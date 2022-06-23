@@ -15,7 +15,8 @@ public class SlackNotificationMethodTransformer
     extends NotificationMethodTransformer<CVNGSlackChannel, CVNGSlackChannelSpec> {
   @Override
   public CVNGSlackChannel getEntityNotificationMethod(CVNGSlackChannelSpec notificationChannelSpec) {
-    return new NotificationRule.CVNGSlackChannel(notificationChannelSpec.getUserGroups(),notificationChannelSpec.getWebhookUrl());
+    return new NotificationRule.CVNGSlackChannel(
+        notificationChannelSpec.getUserGroups(), notificationChannelSpec.getWebhookUrl());
   }
 
   @Override

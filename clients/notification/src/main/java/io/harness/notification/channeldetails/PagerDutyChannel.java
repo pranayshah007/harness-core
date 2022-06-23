@@ -31,12 +31,19 @@ import lombok.NoArgsConstructor;
 @EqualsAndHashCode(callSuper = true)
 public class PagerDutyChannel extends NotificationChannel {
   List<String> integrationKeys;
+  String orgIdentifier;
+  String projectIdentifier;
+  long expressionFunctorToken;
 
   @Builder
   public PagerDutyChannel(String accountId, List<NotificationRequest.UserGroup> userGroups, String templateId,
-      Map<String, String> templateData, Team team, List<String> integrationKeys) {
+      Map<String, String> templateData, Team team, List<String> integrationKeys, String orgIdentifier,
+      String projectIdentifier, long expressionFunctorToken) {
     super(accountId, userGroups, templateId, templateData, team);
     this.integrationKeys = integrationKeys;
+    this.orgIdentifier = orgIdentifier;
+    this.projectIdentifier = projectIdentifier;
+    this.expressionFunctorToken = expressionFunctorToken;
   }
 
   @Override
@@ -46,11 +53,24 @@ public class PagerDutyChannel extends NotificationChannel {
     return builder.setId(notificationId)
         .setAccountId(accountId)
         .setTeam(team)
-        .setPagerDuty(builder.getPagerDutyBuilder()
-                          .addAllPagerDutyIntegrationKeys(integrationKeys)
-                          .setTemplateId(templateId)
-                          .putAllTemplateData(templateData)
-                          .addAllUserGroup(CollectionUtils.emptyIfNull(userGroups)))
+        .setPagerDuty(buildPagerDuty(builder))
         .build();
+  }
+
+  private NotificationRequest.PagerDuty buildPagerDuty(NotificationRequest.Builder builder) {
+    NotificationRequest.PagerDuty.Builder pagerDutyBuilder =
+        builder.getPagerDutyBuilder()
+            .addAllPagerDutyIntegrationKeys(integrationKeys)
+            .setTemplateId(templateId)
+            .putAllTemplateData(templateData)
+            .addAllUserGroup(CollectionUtils.emptyIfNull(userGroups));
+    if (orgIdentifier != null) {
+      pagerDutyBuilder.setOrgIdentifier(orgIdentifier);
+    }
+    if (projectIdentifier != null) {
+      pagerDutyBuilder.setProjectIdentifier(projectIdentifier);
+    }
+    pagerDutyBuilder.setExpressionFunctorToken(expressionFunctorToken);
+    return pagerDutyBuilder.build();
   }
 }

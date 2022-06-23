@@ -36,6 +36,7 @@
           "type": "string"
         },
         "createdBy": {
+          "readOnly": true,
           "$ref": "#/definitions/EmbeddedUserDetailsDTO"
         },
         "description": {
@@ -58,9 +59,11 @@
         },
         "lastModifiedAt": {
           "type": "integer",
-          "format": "int64"
+          "format": "int64",
+          "readOnly": true
         },
         "lastModifiedBy": {
+          "readOnly": true,
           "$ref": "#/definitions/EmbeddedUserDetailsDTO"
         },
         "mimeType": {
@@ -74,6 +77,10 @@
         },
         "parentIdentifier": {
           "type": "string"
+        },
+        "path": {
+          "type": "string",
+          "readOnly": true
         },
         "projectIdentifier": {
           "type": "string"

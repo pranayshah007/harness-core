@@ -21,6 +21,7 @@ import io.harness.ccm.graphql.dto.recommendation.K8sRecommendationFilterDTO;
 import io.harness.ccm.graphql.dto.recommendation.RecommendationsDTO;
 import io.harness.ccm.graphql.query.recommendation.RecommendationsOverviewQueryV2;
 import io.harness.ccm.graphql.utils.GraphQLUtils;
+import io.harness.ccm.remote.beans.recommendation.CCMRecommendationFilterPropertiesDTO;
 import io.harness.ccm.remote.beans.recommendation.FilterValuesDTO;
 import io.harness.rule.Owner;
 import io.harness.rule.OwnerRule;
@@ -31,7 +32,6 @@ import java.util.List;
 import javax.validation.constraints.NotNull;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -47,17 +47,19 @@ public class RESTWrapperRecommendationOverviewTest extends CategoryTest {
 
   private ArgumentCaptor<ResolutionEnvironment> envCaptor;
   private ArgumentCaptor<K8sRecommendationFilterDTO> filterCaptor;
-  private K8sRecommendationFilterDTO filter;
+  private CCMRecommendationFilterPropertiesDTO ccmFilter;
+  private ArgumentCaptor<RecommendationOverviewStats> recCaptor;
 
   private static final String ACCOUNT_ID = "ACCOUNT_ID";
   private static final GraphQLUtils graphQLUtils = new GraphQLUtils();
 
   @Before
   public void setUp() throws Exception {
-    filter = K8sRecommendationFilterDTO.builder().build();
+    ccmFilter = CCMRecommendationFilterPropertiesDTO.builder().build();
 
     envCaptor = ArgumentCaptor.forClass(ResolutionEnvironment.class);
     filterCaptor = ArgumentCaptor.forClass(K8sRecommendationFilterDTO.class);
+    recCaptor = ArgumentCaptor.forClass(RecommendationOverviewStats.class);
   }
 
   @After
@@ -73,7 +75,7 @@ public class RESTWrapperRecommendationOverviewTest extends CategoryTest {
 
     when(overviewQueryV2.recommendations(filterCaptor.capture(), envCaptor.capture())).thenReturn(data);
 
-    assertThat(restWrapperRecommendationOverview.list(ACCOUNT_ID, filter).getData()).isEqualTo(data);
+    assertThat(restWrapperRecommendationOverview.list(ACCOUNT_ID, ccmFilter).getData()).isEqualTo(data);
 
     assertPaginatedFilter(filterCaptor.getValue());
   }
@@ -86,7 +88,7 @@ public class RESTWrapperRecommendationOverviewTest extends CategoryTest {
 
     when(overviewQueryV2.recommendationStats(filterCaptor.capture(), envCaptor.capture())).thenReturn(data);
 
-    assertThat(restWrapperRecommendationOverview.stats(ACCOUNT_ID, filter).getData()).isEqualTo(data);
+    assertThat(restWrapperRecommendationOverview.stats(ACCOUNT_ID, ccmFilter).getData()).isEqualTo(data);
 
     assertNonPaginatedFilter(filterCaptor.getValue());
   }
@@ -94,11 +96,10 @@ public class RESTWrapperRecommendationOverviewTest extends CategoryTest {
   @Test
   @Owner(developers = OwnerRule.UTSAV)
   @Category(UnitTests.class)
-  @Ignore("TODO: please provide clear motivation why this test is ignored")
   public void testCount() throws Exception {
-    when(overviewQueryV2.count(any(RecommendationOverviewStats.class), envCaptor.capture())).thenReturn(10);
+    when(overviewQueryV2.count(recCaptor.capture(), envCaptor.capture())).thenReturn(10);
 
-    assertThat(restWrapperRecommendationOverview.count(ACCOUNT_ID, filter).getData()).isEqualTo(10);
+    assertThat(restWrapperRecommendationOverview.count(ACCOUNT_ID, ccmFilter).getData()).isEqualTo(10);
 
     Object object = envCaptor.getValue().dataFetchingEnvironment.getVariables().get("filter");
     assertThat(object).isInstanceOfSatisfying(K8sRecommendationFilterDTO.class, this::assertNonPaginatedFilter);

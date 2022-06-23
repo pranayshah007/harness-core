@@ -14,7 +14,6 @@ import io.harness.beans.steps.stepinfo.SecurityStepInfo;
 import io.harness.beans.sweepingoutputs.StageInfraDetails.Type;
 import io.harness.beans.yaml.extended.ImagePullPolicy;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
-import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.config.StepImageConfig;
 import io.harness.execution.CIExecutionConfigService;
 import io.harness.pms.yaml.ParameterField;
@@ -30,7 +29,7 @@ public class CIStepInfoUtils {
     if (infraType == Type.K8) {
       return getK8PluginCustomStepImageConfig(step, ciExecutionConfigService, accountId).getImage();
     } else if (infraType == Type.VM) {
-      return getVmPluginCustomStepImageConfig(step, ciExecutionConfigService.getCiExecutionServiceConfig());
+      return getVmPluginCustomStepImageConfig(step, ciExecutionConfigService, accountId);
     }
     return null;
   }
@@ -79,34 +78,11 @@ public class CIStepInfoUtils {
 
   private static StepImageConfig getK8PluginCustomStepImageConfig(
       PluginCompatibleStep step, CIExecutionConfigService ciExecutionConfigService, String accountId) {
-    return ciExecutionConfigService.getPluginVersion(step.getNonYamlInfo().getStepInfoType(), accountId);
+    return ciExecutionConfigService.getPluginVersionForK8(step.getNonYamlInfo().getStepInfoType(), accountId);
   }
 
   private static String getVmPluginCustomStepImageConfig(
-      PluginCompatibleStep step, CIExecutionServiceConfig ciExecutionServiceConfig) {
-    switch (step.getNonYamlInfo().getStepInfoType()) {
-      case DOCKER:
-        return ciExecutionServiceConfig.getStepConfig().getVmImageConfig().getBuildAndPushDockerRegistry();
-      case GCR:
-        return ciExecutionServiceConfig.getStepConfig().getVmImageConfig().getBuildAndPushGCR();
-      case ECR:
-        return ciExecutionServiceConfig.getStepConfig().getVmImageConfig().getBuildAndPushECR();
-      case RESTORE_CACHE_S3:
-      case SAVE_CACHE_S3:
-        return ciExecutionServiceConfig.getStepConfig().getVmImageConfig().getCacheS3();
-      case UPLOAD_S3:
-        return ciExecutionServiceConfig.getStepConfig().getVmImageConfig().getS3Upload();
-      case UPLOAD_GCS:
-        return ciExecutionServiceConfig.getStepConfig().getVmImageConfig().getGcsUpload();
-      case SAVE_CACHE_GCS:
-      case RESTORE_CACHE_GCS:
-        return ciExecutionServiceConfig.getStepConfig().getVmImageConfig().getCacheGCS();
-      case SECURITY:
-        return ciExecutionServiceConfig.getStepConfig().getVmImageConfig().getSecurity();
-      case UPLOAD_ARTIFACTORY:
-        return ciExecutionServiceConfig.getStepConfig().getVmImageConfig().getArtifactoryUpload();
-      default:
-        throw new IllegalStateException("Unexpected value: " + step.getStepType().getType());
-    }
+      PluginCompatibleStep step, CIExecutionConfigService ciExecutionConfigService, String accountId) {
+    return ciExecutionConfigService.getPluginVersionForVM(step.getNonYamlInfo().getStepInfoType(), accountId);
   }
 }

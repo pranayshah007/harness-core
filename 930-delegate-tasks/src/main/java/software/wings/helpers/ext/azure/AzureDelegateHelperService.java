@@ -25,6 +25,9 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.azure.AzureEnvironmentType;
+import io.harness.azure.model.tag.AzureListTagsResponse;
+import io.harness.azure.model.tag.TagDetails;
+import io.harness.azure.model.tag.TagValue;
 import io.harness.exception.AzureServiceException;
 import io.harness.exception.ClusterNotFoundException;
 import io.harness.exception.ExceptionUtils;

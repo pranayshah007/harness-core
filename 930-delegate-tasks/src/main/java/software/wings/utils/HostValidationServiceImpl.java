@@ -24,6 +24,7 @@ import io.harness.delegate.task.winrm.WinRmSession;
 import io.harness.delegate.task.winrm.WinRmSessionConfig;
 import io.harness.eraro.ErrorCode;
 import io.harness.eraro.ResponseMessage;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.logging.NoopExecutionCallback;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.shell.SshSessionConfig;
@@ -71,6 +72,8 @@ public class HostValidationServiceImpl implements HostValidationService {
     List<HostValidationResponse> hostValidationResponses = new ArrayList<>();
 
     encryptionService.decrypt((EncryptableSetting) connectionSetting.getValue(), encryptionDetails, false);
+    ExceptionMessageSanitizer.storeAllSecretsForSanitizing(
+        (EncryptableSetting) connectionSetting.getValue(), encryptionDetails);
     if (connectionSetting.getValue() instanceof HostConnectionAttributes
         && ((HostConnectionAttributes) connectionSetting.getValue()).isVaultSSH()) {
       secretManagementDelegateService.signPublicKey(

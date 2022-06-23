@@ -24,14 +24,15 @@ import io.harness.cdng.configfile.steps.ConfigFileStepParameters;
 import io.harness.cdng.configfile.steps.IndividualConfigFileStep;
 import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.manifest.yaml.GitStore;
-import io.harness.cdng.manifest.yaml.harness.HarnessFileType;
 import io.harness.cdng.manifest.yaml.harness.HarnessStore;
+import io.harness.cdng.manifest.yaml.harness.HarnessStoreFile;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.cdng.service.steps.ServiceStepsHelper;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.connector.ConnectorResponseDTO;
 import io.harness.connector.services.ConnectorService;
+import io.harness.encryption.Scope;
 import io.harness.filestore.dto.node.FileNodeDTO;
 import io.harness.filestore.dto.node.FileStoreNodeDTO;
 import io.harness.filestore.service.FileStoreService;
@@ -49,6 +50,7 @@ import io.harness.tasks.ResponseData;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.junit.Test;
@@ -59,12 +61,8 @@ import org.mockito.Mock;
 @OwnedBy(CDP)
 public class IndividualConfigFileStepTest extends CDNGTestBase {
   private static final String IDENTIFIER = "identifier";
-  private static final String FILE_PATH = "file/path";
-  private static final String FILE_REFERENCE_WITH_ACCOUNT_SCOUPE = "account.fileReference";
-  private static final String FILE_REFERENCE = "fileReference";
-  private static final String FILE_PATH_OVERRIDE = "file/path/override";
-  private static final String FILE_REFERENCE_OVERRIDE_WITH_ACCOUNT_SCOUPE = "account.fileReferenceOverride";
-  private static final String FILE_REFERENCE_OVERRIDE = "fileReferenceOverride";
+  private static final String FILE_PATH = "/file/path";
+  private static final String FILE_PATH_OVERRIDE = "/file/path/override";
   private static final String MASTER = "master";
   private static final String COMMIT_ID = "commitId";
   private static final String CONNECTOR_REF = "connectorRef";
@@ -98,19 +96,15 @@ public class IndividualConfigFileStepTest extends CDNGTestBase {
     Ambiance ambiance = getAmbiance();
     Map<String, ResponseData> responseData = new HashMap<>();
     when(serviceStepsHelper.getChildrenOutcomes(responseData))
-        .thenReturn(Collections.singletonList(
-            ConfigFileOutcome.builder().identifier(IDENTIFIER).configFileType(ConfigFileType.LOCAL_FILE).build()));
+        .thenReturn(Collections.singletonList(ConfigFileOutcome.builder().identifier(IDENTIFIER).build()));
     when(executionSweepingOutputService.listOutputsWithGivenNameAndSetupIds(
              any(), eq(FAILED_CHILDREN_OUTPUT), anyList()))
         .thenReturn(Collections.emptyList());
-    when(fileStoreService.get(ACCOUNT_IDENTIFIER, null, null, FILE_REFERENCE, false))
+    when(fileStoreService.getByPath(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, FILE_PATH, false))
         .thenReturn(Optional.of(getFileStoreNode()));
 
-    ConfigFileStepParameters stepParameters = ConfigFileStepParameters.builder()
-                                                  .identifier(IDENTIFIER)
-                                                  .order(0)
-                                                  .spec(getConfigFileAttributesWithHarnessStore())
-                                                  .build();
+    ConfigFileStepParameters stepParameters =
+        ConfigFileStepParameters.builder().identifier(IDENTIFIER).order(0).spec(getConfigFileAttributes()).build();
     StepResponse response =
         individualConfigFileStep.executeSync(ambiance, stepParameters, getStepInputPackage(), getPassThroughData());
 
@@ -119,14 +113,14 @@ public class IndividualConfigFileStepTest extends CDNGTestBase {
 
     StepResponse.StepOutcome[] stepOutcomes = response.getStepOutcomes().toArray(new StepResponse.StepOutcome[1]);
     ConfigFileOutcome configFileOutcome = (ConfigFileOutcome) stepOutcomes[0].getOutcome();
-    assertThat(configFileOutcome.getConfigFileType()).isEqualTo(ConfigFileType.LOCAL_FILE);
     assertThat(configFileOutcome.getIdentifier()).isEqualTo(IDENTIFIER);
 
     assertThat(configFileOutcome.getStore().getKind()).isEqualTo(StoreConfigType.HARNESS.getDisplayName());
     HarnessStore store = (HarnessStore) configFileOutcome.getStore();
-    assertThat(store.getFilePath().getValue()).isEqualTo(FILE_PATH);
-    assertThat(store.getFileReference().getValue()).isEqualTo(FILE_REFERENCE_WITH_ACCOUNT_SCOUPE);
-    assertThat(store.getFileType()).isEqualTo(HarnessFileType.FILE_STORE);
+    HarnessStoreFile harnessStoreFile = store.getFiles().getValue().get(0);
+
+    assertThat(harnessStoreFile.getPath().getValue()).isEqualTo(FILE_PATH);
+    assertThat(harnessStoreFile.getScope().getValue()).isEqualTo(Scope.PROJECT);
   }
 
   private FileStoreNodeDTO getFileStoreNode() {
@@ -145,15 +139,14 @@ public class IndividualConfigFileStepTest extends CDNGTestBase {
     Ambiance ambiance = getAmbiance();
     Map<String, ResponseData> responseData = new HashMap<>();
     when(serviceStepsHelper.getChildrenOutcomes(responseData))
-        .thenReturn(Collections.singletonList(
-            ConfigFileOutcome.builder().identifier(IDENTIFIER).configFileType(ConfigFileType.LOCAL_FILE).build()));
+        .thenReturn(Collections.singletonList(ConfigFileOutcome.builder().identifier(IDENTIFIER).build()));
     when(executionSweepingOutputService.listOutputsWithGivenNameAndSetupIds(
              any(), eq(FAILED_CHILDREN_OUTPUT), anyList()))
         .thenReturn(Collections.emptyList());
-    when(fileStoreService.get(ACCOUNT_IDENTIFIER, null, null, FILE_REFERENCE_OVERRIDE, false))
+    when(fileStoreService.getByPath(ACCOUNT_IDENTIFIER, ORG_IDENTIFIER, PROJECT_IDENTIFIER, FILE_PATH_OVERRIDE, false))
         .thenReturn(Optional.of(getFileStoreNode()));
 
-    ConfigFileAttributes spec = getConfigFileAttributesWithHarnessStore();
+    ConfigFileAttributes spec = getConfigFileAttributes();
     ConfigFileStepParameters stepParameters = ConfigFileStepParameters.builder()
                                                   .identifier(IDENTIFIER)
                                                   .order(0)
@@ -171,14 +164,14 @@ public class IndividualConfigFileStepTest extends CDNGTestBase {
 
     StepResponse.StepOutcome[] stepOutcomes = response.getStepOutcomes().toArray(new StepResponse.StepOutcome[1]);
     ConfigFileOutcome configFileOutcome = (ConfigFileOutcome) stepOutcomes[0].getOutcome();
-    assertThat(configFileOutcome.getConfigFileType()).isEqualTo(ConfigFileType.LOCAL_FILE);
     assertThat(configFileOutcome.getIdentifier()).isEqualTo(IDENTIFIER);
 
     assertThat(configFileOutcome.getStore().getKind()).isEqualTo(StoreConfigType.HARNESS.getDisplayName());
     HarnessStore store = (HarnessStore) configFileOutcome.getStore();
-    assertThat(store.getFilePath().getValue()).isEqualTo(FILE_PATH_OVERRIDE);
-    assertThat(store.getFileReference().getValue()).isEqualTo(FILE_REFERENCE_OVERRIDE_WITH_ACCOUNT_SCOUPE);
-    assertThat(store.getFileType()).isEqualTo(HarnessFileType.FILE_STORE);
+    HarnessStoreFile harnessStoreFile = store.getFiles().getValue().get(0);
+
+    assertThat(harnessStoreFile.getPath().getValue()).isEqualTo(FILE_PATH_OVERRIDE);
+    assertThat(harnessStoreFile.getScope().getValue()).isEqualTo(Scope.PROJECT);
   }
 
   @Test
@@ -188,8 +181,7 @@ public class IndividualConfigFileStepTest extends CDNGTestBase {
     Ambiance ambiance = getAmbiance();
     Map<String, ResponseData> responseData = new HashMap<>();
     when(serviceStepsHelper.getChildrenOutcomes(responseData))
-        .thenReturn(Collections.singletonList(
-            ConfigFileOutcome.builder().identifier(IDENTIFIER).configFileType(ConfigFileType.LOCAL_FILE).build()));
+        .thenReturn(Collections.singletonList(ConfigFileOutcome.builder().identifier(IDENTIFIER).build()));
     when(executionSweepingOutputService.listOutputsWithGivenNameAndSetupIds(
              any(), eq(FAILED_CHILDREN_OUTPUT), anyList()))
         .thenReturn(Collections.emptyList());
@@ -213,7 +205,6 @@ public class IndividualConfigFileStepTest extends CDNGTestBase {
 
     StepResponse.StepOutcome[] stepOutcomes = response.getStepOutcomes().toArray(new StepResponse.StepOutcome[1]);
     ConfigFileOutcome configFileOutcome = (ConfigFileOutcome) stepOutcomes[0].getOutcome();
-    assertThat(configFileOutcome.getConfigFileType()).isEqualTo(ConfigFileType.LOCAL_FILE);
     assertThat(configFileOutcome.getIdentifier()).isEqualTo(IDENTIFIER);
 
     assertThat(configFileOutcome.getStore().getKind()).isEqualTo(StoreConfigType.GIT.getDisplayName());
@@ -240,39 +231,42 @@ public class IndividualConfigFileStepTest extends CDNGTestBase {
     return StepExceptionPassThroughData.builder().build();
   }
 
-  private ConfigFileAttributes getConfigFileAttributesWithHarnessStore() {
+  private ConfigFileAttributes getConfigFileAttributes() {
     return ConfigFileAttributes.builder()
-        .type(ConfigFileType.LOCAL_FILE)
-        .store(ParameterField.createValueField(
-            StoreConfigWrapper.builder()
-                .type(StoreConfigType.HARNESS)
-                .spec(HarnessStore.builder()
-                          .filePath(ParameterField.createValueField(FILE_PATH))
-                          .fileType(HarnessFileType.FILE_STORE)
-                          .fileReference(ParameterField.createValueField(FILE_REFERENCE_WITH_ACCOUNT_SCOUPE))
-                          .build())
-                .build()))
+        .store(ParameterField.createValueField(StoreConfigWrapper.builder()
+                                                   .type(StoreConfigType.HARNESS)
+                                                   .spec(HarnessStore.builder().files(getFiles()).build())
+                                                   .build()))
         .build();
+  }
+
+  private ParameterField<List<HarnessStoreFile>> getFiles() {
+    return ParameterField.createValueField(
+        Collections.singletonList(HarnessStoreFile.builder()
+                                      .path(ParameterField.createValueField(FILE_PATH))
+                                      .scope(ParameterField.createValueField(Scope.PROJECT))
+                                      .build()));
   }
 
   private ConfigFileAttributes getConfigFileAttributesOverride() {
     return ConfigFileAttributes.builder()
-        .type(ConfigFileType.LOCAL_FILE)
-        .store(ParameterField.createValueField(
-            StoreConfigWrapper.builder()
-                .type(StoreConfigType.HARNESS)
-                .spec(HarnessStore.builder()
-                          .filePath(ParameterField.createValueField(FILE_PATH_OVERRIDE))
-                          .fileType(HarnessFileType.FILE_STORE)
-                          .fileReference(ParameterField.createValueField(FILE_REFERENCE_OVERRIDE_WITH_ACCOUNT_SCOUPE))
-                          .build())
-                .build()))
+        .store(ParameterField.createValueField(StoreConfigWrapper.builder()
+                                                   .type(StoreConfigType.HARNESS)
+                                                   .spec(HarnessStore.builder().files(getFilesOverride()).build())
+                                                   .build()))
         .build();
+  }
+
+  private ParameterField<List<HarnessStoreFile>> getFilesOverride() {
+    return ParameterField.createValueField(
+        Collections.singletonList(HarnessStoreFile.builder()
+                                      .path(ParameterField.createValueField(FILE_PATH_OVERRIDE))
+                                      .scope(ParameterField.createValueField(Scope.PROJECT))
+                                      .build()));
   }
 
   private ConfigFileAttributes getConfigFileAttributesWithGitStore() {
     return ConfigFileAttributes.builder()
-        .type(ConfigFileType.LOCAL_FILE)
         .store(
             ParameterField.createValueField(StoreConfigWrapper.builder()
                                                 .type(StoreConfigType.GIT)

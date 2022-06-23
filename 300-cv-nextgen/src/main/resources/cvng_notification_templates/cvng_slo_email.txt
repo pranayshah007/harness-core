@@ -1,2 +1,2 @@
-subject: SLO ${sloName} breached Error Budget
-body: This is a SLO notification from Harness. You have breached your SLO Error Budget with name ${sloName} inside project ${projectIdentifier}, organisation ${orgIdentifier} and account ${accountIdentifier}.
+subject: Harness SRM
+body: ${OUTER_DIV}${COLOR};"><div style="font-size:15px;">The Error Budget for SLO <a href="${URL}" target="_blank" style="text-decoration:none;color:#1A89BF;"><b>${SLO_NAME}</b></a> has breached a condition<br>AccountID ${ACCOUNT_ID}<br>OrganisationID ${ORG_ID}<br>ProjectID ${PROJECT_ID}<br><b>Rule:</b> ${RULE_NAME}<br><b>Condition:</b> ${CONDITION_NAME}<br></div><div><i>Incident occurred ${START_DATE}</i><br>Click <a href="${URL}" target="_blank" style="text-decoration:none;color:#1A89BF;"><b>here</b></a> for SLO dashboard</div></div></div>

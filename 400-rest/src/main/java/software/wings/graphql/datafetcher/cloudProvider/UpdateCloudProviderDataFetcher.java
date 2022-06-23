@@ -45,6 +45,7 @@ public class UpdateCloudProviderDataFetcher
   @Inject private PhysicalDataCenterDataFetcherHelper physicalDataCenterDataFetcherHelper;
   @Inject private AzureDataFetcherHelper azureDataFetcherHelper;
   @Inject private AwsDataFetcherHelper awsDataFetcherHelper;
+  @Inject private RancherDataFetcherHelper rancherDataFetcherHelper;
 
   @Inject
   public UpdateCloudProviderDataFetcher() {
@@ -113,6 +114,11 @@ public class UpdateCloudProviderDataFetcher
         checkIfInputIsNotPresent(input.getCloudProviderType(), input.getAwsCloudProvider());
         awsDataFetcherHelper.updateSettingAttribute(
             settingAttribute, input.getAwsCloudProvider(), mutationContext.getAccountId());
+        break;
+      case RANCHER:
+        checkIfInputIsNotPresent(input.getCloudProviderType(), input.getRancherCloudProvider());
+        rancherDataFetcherHelper.updateSettingAttribute(
+            settingAttribute, input.getRancherCloudProvider(), mutationContext.getAccountId());
         break;
       default:
         throw new InvalidRequestException("Invalid cloud provider type");

@@ -48,4 +48,11 @@ public class K8sBGSwapServicesStepParameters extends K8sBGSwapServicesStepInfo i
   public List<String> getCommandUnits() {
     return Collections.singletonList(K8sCommandUnitConstants.SwapServiceSelectors);
   }
+
+  @Nonnull
+  @Override
+  @JsonIgnore
+  public List<String> getCommandUnits(boolean isPruningEnabled) {
+    return getCommandUnits();
+  }
 }

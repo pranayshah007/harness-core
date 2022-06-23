@@ -17,17 +17,6 @@
       store:
         type: Harness
         spec:
-          fileReference: harnessEncFileIdentifier
-          filePath: secretManagerIdentifier
-          fileType: Encrypted
-      type: Encrypted
-- configFile:
-    identifier: harnessFSConfigFileIdentifier
-    spec:
-      store:
-        type: Harness
-        spec:
-          fileReference: harnessFSFileIdentifier
-          filePath: harnessFSFileIdentifier
-          fileType: FileStore
-      type: LocalFile
+          files:
+            - path: /folder/config.yml,
+              scope: account

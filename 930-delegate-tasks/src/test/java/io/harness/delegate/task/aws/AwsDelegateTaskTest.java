@@ -10,6 +10,7 @@ package io.harness.delegate.task.aws;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.ACHYUTH;
+import static io.harness.rule.OwnerRule.VITALIE;
 import static io.harness.rule.OwnerRule.VLICA;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -36,12 +37,16 @@ import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialDTO;
 import io.harness.delegate.beans.connector.awsconnector.AwsCredentialType;
 import io.harness.delegate.beans.connector.awsconnector.AwsIAMRolesResponse;
+import io.harness.delegate.beans.connector.awsconnector.AwsListASGInstancesTaskParamsRequest;
+import io.harness.delegate.beans.connector.awsconnector.AwsListEC2InstancesTaskParamsRequest;
+import io.harness.delegate.beans.connector.awsconnector.AwsListEC2InstancesTaskResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsS3BucketResponse;
 import io.harness.delegate.beans.connector.awsconnector.AwsTaskParams;
 import io.harness.delegate.beans.connector.awsconnector.AwsTaskType;
 import io.harness.delegate.beans.connector.awsconnector.AwsValidateTaskResponse;
 import io.harness.errorhandling.NGErrorHelper;
 import io.harness.exception.InvalidRequestException;
+import io.harness.logging.CommandExecutionStatus;
 import io.harness.rule.Owner;
 
 import software.wings.service.impl.aws.model.AwsCFTemplateParamsData;
@@ -67,6 +72,9 @@ public class AwsDelegateTaskTest extends CategoryTest {
   @Mock private AwsS3DelegateTaskHelper awsS3DelegateTaskHelper;
   @Mock private AwsCFDelegateTaskHelper awsCFDelegateTaskHelper;
   @Mock private AwsIAMDelegateTaskHelper awsIAMDelegateTaskHelper;
+  @Mock private AwsListEC2InstancesDelegateTaskHelper awsListEC2InstancesDelegateTaskHelper;
+  @Mock private AwsASGDelegateTaskHelper awsASGDelegateTaskHelper;
+
   @InjectMocks
   private AwsDelegateTask task =
       new AwsDelegateTask(DelegateTaskPackage.builder().data(TaskData.builder().build()).build(), null, null, null);
@@ -221,5 +229,49 @@ public class AwsDelegateTaskTest extends CategoryTest {
     assertThatThrownBy(() -> task.run(awsTaskParams))
         .hasMessage("Task type not provided")
         .isInstanceOf(InvalidRequestException.class);
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testShouldListInstances() {
+    AwsListEC2InstancesTaskParamsRequest awsTaskParams =
+        AwsListEC2InstancesTaskParamsRequest.builder().awsTaskType(AwsTaskType.LIST_EC2_INSTANCES).build();
+
+    AwsListEC2InstancesTaskResponse response = AwsListEC2InstancesTaskResponse.builder()
+                                                   .instances(Collections.emptyList())
+                                                   .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                                                   .build();
+
+    doReturn(response).when(awsListEC2InstancesDelegateTaskHelper).getInstances(eq(awsTaskParams));
+
+    DelegateResponseData result = task.run(awsTaskParams);
+    assertThat(result).isNotNull();
+    assertThat(result).isInstanceOf(AwsListEC2InstancesTaskResponse.class);
+    assertThat(result).isEqualTo(response);
+
+    verify(awsListEC2InstancesDelegateTaskHelper, times(1)).getInstances(eq(awsTaskParams));
+  }
+
+  @Test
+  @Owner(developers = VITALIE)
+  @Category(UnitTests.class)
+  public void testShouldListASGInstances() {
+    AwsListASGInstancesTaskParamsRequest awsTaskParams =
+        AwsListASGInstancesTaskParamsRequest.builder().awsTaskType(AwsTaskType.LIST_ASG_INSTANCES).build();
+
+    AwsListEC2InstancesTaskResponse response = AwsListEC2InstancesTaskResponse.builder()
+                                                   .instances(Collections.emptyList())
+                                                   .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
+                                                   .build();
+
+    doReturn(response).when(awsASGDelegateTaskHelper).getInstances(eq(awsTaskParams));
+
+    DelegateResponseData result = task.run(awsTaskParams);
+    assertThat(result).isNotNull();
+    assertThat(result).isInstanceOf(AwsListEC2InstancesTaskResponse.class);
+    assertThat(result).isEqualTo(response);
+
+    verify(awsASGDelegateTaskHelper, times(1)).getInstances(eq(awsTaskParams));
   }
 }

@@ -51,6 +51,7 @@ java_library(
         "@maven//:com_hierynomus_sshj",
         "@maven//:com_splunk_splunk",
         "@maven//:io_cloudsoft_windows_winrm4j",
+        "@maven//:io_dropwizard_dropwizard_views_freemarker",
         "@maven//:io_grpc_grpc_netty",
         "@maven//:io_harness_cv_data_collection_dsl",
         "@maven//:io_netty_netty_all",

@@ -8,6 +8,7 @@
 package io.harness.artifactory;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.TMACARI;
 
 import static java.util.stream.Collectors.toList;
@@ -152,5 +153,16 @@ public class ArtifactoryClientImplTest extends CategoryTest {
     InputStream artifactInputStream = artifactoryClient.downloadArtifacts(
         artifactoryConfig, "harness-rpm", metadata, "artifactPath", "artifactFileName");
     assertThat(artifactInputStream).isNotNull();
+  }
+
+  @Test
+  @Owner(developers = ACASIAN)
+  @Category(UnitTests.class)
+  public void shouldGetArtifactFileSize() {
+    Map<String, String> metadata =
+        ImmutableMap.of("artifactPath", "harness-maven/io/harness/todolist/todolist/1.1/todolist-1.1.war");
+    Long fileSize = artifactoryClient.getFileSize(artifactoryConfig, metadata, "artifactPath");
+    assertThat(fileSize).isNotNull();
+    assertThat(fileSize).isEqualTo(1776799L);
   }
 }

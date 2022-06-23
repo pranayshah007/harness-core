@@ -44,6 +44,7 @@ import io.harness.ccm.service.impl.AWSBucketPolicyHelperServiceImpl;
 import io.harness.ccm.service.impl.AWSOrganizationHelperServiceImpl;
 import io.harness.ccm.service.impl.AnomalyServiceImpl;
 import io.harness.ccm.service.impl.AwsEntityChangeEventServiceImpl;
+import io.harness.ccm.service.impl.AzureEntityChangeEventServiceImpl;
 import io.harness.ccm.service.impl.CCMConnectorDetailsServiceImpl;
 import io.harness.ccm.service.impl.CCMNotificationServiceImpl;
 import io.harness.ccm.service.impl.CEYamlServiceImpl;
@@ -53,6 +54,7 @@ import io.harness.ccm.service.intf.AWSBucketPolicyHelperService;
 import io.harness.ccm.service.intf.AWSOrganizationHelperService;
 import io.harness.ccm.service.intf.AnomalyService;
 import io.harness.ccm.service.intf.AwsEntityChangeEventService;
+import io.harness.ccm.service.intf.AzureEntityChangeEventService;
 import io.harness.ccm.service.intf.CCMConnectorDetailsService;
 import io.harness.ccm.service.intf.CCMNotificationService;
 import io.harness.ccm.service.intf.CEYamlService;
@@ -68,10 +70,12 @@ import io.harness.ccm.utils.LogAccountIdentifier;
 import io.harness.ccm.views.businessMapping.service.impl.BusinessMappingServiceImpl;
 import io.harness.ccm.views.businessMapping.service.intf.BusinessMappingService;
 import io.harness.ccm.views.service.CEReportScheduleService;
+import io.harness.ccm.views.service.CEViewFolderService;
 import io.harness.ccm.views.service.CEViewService;
 import io.harness.ccm.views.service.ViewCustomFieldService;
 import io.harness.ccm.views.service.ViewsBillingService;
 import io.harness.ccm.views.service.impl.CEReportScheduleServiceImpl;
+import io.harness.ccm.views.service.impl.CEViewFolderServiceImpl;
 import io.harness.ccm.views.service.impl.CEViewServiceImpl;
 import io.harness.ccm.views.service.impl.ViewCustomFieldServiceImpl;
 import io.harness.ccm.views.service.impl.ViewsBillingServiceImpl;
@@ -98,6 +102,7 @@ import io.harness.mongo.MongoConfig;
 import io.harness.mongo.MongoPersistence;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.ng.core.event.MessageListener;
+import io.harness.notification.module.NotificationClientModule;
 import io.harness.persistence.HPersistence;
 import io.harness.persistence.NoopUserProvider;
 import io.harness.persistence.UserProvider;
@@ -223,6 +228,7 @@ public class CENextGenModule extends AbstractModule {
     bind(AwsClient.class).to(AwsClientImpl.class);
     bind(GCPEntityChangeEventService.class).to(GCPEntityChangeEventServiceImpl.class);
     bind(AwsEntityChangeEventService.class).to(AwsEntityChangeEventServiceImpl.class);
+    bind(AzureEntityChangeEventService.class).to(AzureEntityChangeEventServiceImpl.class);
     bind(BusinessMappingService.class).to(BusinessMappingServiceImpl.class);
     bind(LicenseUsageInterface.class).to(LicenseUsageInterfaceImpl.class).in(Singleton.class);
 
@@ -255,12 +261,14 @@ public class CENextGenModule extends AbstractModule {
     install(FeatureFlagModule.getInstance());
     install(new EventsFrameworkModule(configuration.getEventsFrameworkConfiguration()));
     install(JooqModule.getInstance());
+    install(new NotificationClientModule(configuration.getNotificationClientConfiguration()));
     install(new AbstractTelemetryModule() {
       @Override
       public TelemetryConfiguration telemetryConfiguration() {
         return configuration.getSegmentConfiguration();
       }
     });
+
     bind(HPersistence.class).to(MongoPersistence.class);
     bind(CENextGenConfiguration.class).toInstance(configuration);
     bind(SQLConverter.class).to(SQLConverterImpl.class);
@@ -270,6 +278,7 @@ public class CENextGenModule extends AbstractModule {
     bind(GcpResourceManagerService.class).to(GcpResourceManagerServiceImpl.class);
     bind(ViewsBillingService.class).to(ViewsBillingServiceImpl.class);
     bind(CEViewService.class).to(CEViewServiceImpl.class);
+    bind(CEViewFolderService.class).to(CEViewFolderServiceImpl.class);
     bind(ClusterRecordService.class).to(ClusterRecordServiceImpl.class);
     bind(ViewCustomFieldService.class).to(ViewCustomFieldServiceImpl.class);
     bind(CEReportScheduleService.class).to(CEReportScheduleServiceImpl.class);

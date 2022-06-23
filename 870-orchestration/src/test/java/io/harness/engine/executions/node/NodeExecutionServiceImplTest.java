@@ -208,12 +208,15 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
                                   .status(Status.RUNNING)
                                   .parentId(pipelineNode.getUuid())
                                   .ambiance(ambiance)
+                                  .stepType(StepType.newBuilder().setStepCategory(StepCategory.STEP).build())
+
                                   .version(1L)
                                   .build();
     NodeExecution forkNode = NodeExecution.builder()
                                  .uuid("forkNode")
-                                 .status(Status.RUNNING)
+                                 .status(RUNNING)
                                  .parentId(stageNode.getUuid())
+                                 .stepType(StepType.newBuilder().setStepCategory(StepCategory.STEP).build())
                                  .ambiance(ambiance)
                                  .version(1L)
                                  .build();
@@ -221,6 +224,8 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
                                .uuid("child1")
                                .status(Status.RUNNING)
                                .parentId(forkNode.getUuid())
+                               .stepType(StepType.newBuilder().setStepCategory(StepCategory.STEP).build())
+
                                .ambiance(ambiance)
                                .version(1L)
                                .build();
@@ -228,6 +233,8 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
                                .uuid("child2")
                                .status(Status.RUNNING)
                                .parentId(forkNode.getUuid())
+                               .stepType(StepType.newBuilder().setStepCategory(StepCategory.STEP).build())
+
                                .ambiance(ambiance)
                                .version(1L)
                                .build();
@@ -235,6 +242,8 @@ public class NodeExecutionServiceImplTest extends OrchestrationTestBase {
                                .uuid("child3")
                                .status(Status.RUNNING)
                                .parentId(forkNode.getUuid())
+                               .stepType(StepType.newBuilder().setStepCategory(StepCategory.STEP).build())
+
                                .ambiance(ambiance)
                                .version(1L)
                                .build();

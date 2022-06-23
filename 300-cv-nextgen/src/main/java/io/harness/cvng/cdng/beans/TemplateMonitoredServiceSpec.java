@@ -13,6 +13,7 @@ import io.harness.beans.SwaggerConstants;
 import io.harness.pms.yaml.ParameterField;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import com.fasterxml.jackson.databind.JsonNode;
 import io.swagger.annotations.ApiModelProperty;
 import javax.validation.constraints.NotNull;
 import lombok.Data;
@@ -23,7 +24,7 @@ import lombok.experimental.SuperBuilder;
 @Data
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@JsonTypeName("TEMPLATE")
+@JsonTypeName("Template")
 @OwnedBy(HarnessTeam.CV)
 @SuperBuilder
 public class TemplateMonitoredServiceSpec extends MonitoredServiceSpec {
@@ -32,6 +33,8 @@ public class TemplateMonitoredServiceSpec extends MonitoredServiceSpec {
   ParameterField<String> monitoredServiceTemplateRef;
 
   @NotNull String versionLabel;
+
+  @NotNull @ApiModelProperty(dataType = SwaggerConstants.JSON_NODE_CLASSPATH) JsonNode templateInputs;
 
   @Override
   public String getType() {

@@ -1,9 +1,20 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.plancreator.strategy;
 
 import static io.harness.pms.yaml.YAMLFieldNameConstants.STAGES;
+import static io.harness.pms.yaml.YAMLFieldNameConstants.STEPS;
 
 import io.harness.advisers.nextstep.NextStepAdviserParameters;
+import io.harness.exception.InvalidYamlException;
 import io.harness.plancreator.stages.stage.AbstractStageNode;
+import io.harness.plancreator.stages.stage.StageElementConfig;
+import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
 import io.harness.pms.contracts.plan.EdgeLayoutList;
@@ -41,6 +52,27 @@ public class StageStrategyUtils {
     return planNodeId;
   }
 
+  public String getSwappedPlanNodeId(PlanCreationContext ctx, AbstractStepNode stageNode) {
+    YamlField strategyField = ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.STRATEGY);
+    // Since strategy is a child of stage but in execution we want to wrap stage around strategy,
+    // we are swapping the uuid of stage and strategy node.
+    String planNodeId = stageNode.getUuid();
+    if (strategyField != null) {
+      planNodeId = strategyField.getNode().getUuid();
+    }
+    return planNodeId;
+  }
+
+  public String getSwappedPlanNodeId(PlanCreationContext ctx, StageElementConfig stageNode) {
+    YamlField strategyField = ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.STRATEGY);
+    // Since strategy is a child of stage but in execution we want to wrap stage around strategy,
+    // we are swapping the uuid of stage and strategy node.
+    String planNodeId = stageNode.getUuid();
+    if (strategyField != null) {
+      planNodeId = strategyField.getNode().getUuid();
+    }
+    return planNodeId;
+  }
   public List<AdviserObtainment> getAdviserObtainments(
       YamlField stageField, KryoSerializer kryoSerializer, boolean checkForStrategy) {
     List<AdviserObtainment> adviserObtainments = new ArrayList<>();
@@ -84,14 +116,17 @@ public class StageStrategyUtils {
     StrategyType strategyType = StrategyType.FOR;
     if (yamlField.getNode().getField(YAMLFieldNameConstants.STRATEGY).getNode().getField("matrix") != null) {
       strategyType = StrategyType.MATRIX;
+    } else if (yamlField.getNode().getField(YAMLFieldNameConstants.STRATEGY).getNode().getField("parallelism")
+        != null) {
+      strategyType = StrategyType.PARALLELISM;
     }
     stageYamlFieldMap.put(yamlField.getNode().getUuid(),
         GraphLayoutNode.newBuilder()
             .setNodeUUID(yamlField.getNode().getUuid())
             .setNodeType(strategyType.name())
-            .setName(YAMLFieldNameConstants.STRATEGY)
+            .setName(yamlField.getNode().getName())
             .setNodeGroup(StepOutcomeGroup.STRATEGY.name())
-            .setNodeIdentifier(YAMLFieldNameConstants.STRATEGY)
+            .setNodeIdentifier(yamlField.getNode().getIdentifier())
             .setEdgeLayoutList(edgeLayoutList)
             .build());
     stageYamlFieldMap.put(planNodeId,
@@ -104,5 +139,37 @@ public class StageStrategyUtils {
             .setEdgeLayoutList(EdgeLayoutList.newBuilder().build())
             .build());
     return stageYamlFieldMap;
+  }
+
+  public void validateStrategyNode(StrategyConfig config) {
+    if (config.getMatrixConfig() != null) {
+      Map<String, AxisConfig> axisConfig = ((MatrixConfig) config.getMatrixConfig()).getAxes();
+      if (axisConfig.size() == 0) {
+        throw new InvalidYamlException("No Axes defined in matrix. Please define at least one axis");
+      }
+    }
+  }
+
+  public List<AdviserObtainment> getAdviserObtainmentFromMetaDataForStep(
+      KryoSerializer kryoSerializer, YamlField currentField) {
+    if (currentField.checkIfParentIsParallel(STEPS)) {
+      return new ArrayList<>();
+    }
+    List<AdviserObtainment> adviserObtainments = new ArrayList<>();
+    if (currentField != null && currentField.getNode() != null) {
+      YamlField siblingField = currentField.getNode().nextSiblingFromParentArray(currentField.getName(),
+          Arrays.asList(
+              YAMLFieldNameConstants.STEP, YAMLFieldNameConstants.STEP_GROUP, YAMLFieldNameConstants.PARALLEL));
+      if (siblingField != null && siblingField.getNode().getUuid() != null) {
+        AdviserObtainment adviserObtainment =
+            AdviserObtainment.newBuilder()
+                .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.NEXT_STEP.name()).build())
+                .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
+                    NextStepAdviserParameters.builder().nextNodeId(siblingField.getNode().getUuid()).build())))
+                .build();
+        adviserObtainments.add(adviserObtainment);
+      }
+    }
+    return adviserObtainments;
   }
 }

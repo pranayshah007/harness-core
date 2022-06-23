@@ -16,6 +16,7 @@ import static io.harness.rule.OwnerRule.ARPIT;
 import static io.harness.rule.OwnerRule.BOJAN;
 import static io.harness.rule.OwnerRule.BRETT;
 import static io.harness.rule.OwnerRule.DEEPAK;
+import static io.harness.rule.OwnerRule.GAURAV;
 import static io.harness.rule.OwnerRule.GEORGE;
 import static io.harness.rule.OwnerRule.INDER;
 import static io.harness.rule.OwnerRule.JENNY;
@@ -85,6 +86,7 @@ import io.harness.delegate.beans.executioncapability.ExecutionCapability;
 import io.harness.delegate.events.DelegateGroupDeleteEvent;
 import io.harness.delegate.events.DelegateGroupUpsertEvent;
 import io.harness.delegate.events.DelegateUnregisterEvent;
+import io.harness.delegate.service.DelegateVersionService;
 import io.harness.delegate.task.http.HttpTaskParameters;
 import io.harness.exception.InvalidRequestException;
 import io.harness.k8s.model.response.CEK8sDelegatePrerequisite;
@@ -181,6 +183,7 @@ public class DelegateServiceImplTest extends WingsBaseTest {
   @Mock private DelegateCallbackRegistry delegateCallbackRegistry;
   @Mock private EmailNotificationService emailNotificationService;
   @Mock private AccountService accountService;
+  @Mock private DelegateVersionService delegateVersionService;
   @Mock private Account account;
   @Mock private DelegateProfileService delegateProfileService;
   @Mock private DelegateCache delegateCache;
@@ -1367,7 +1370,7 @@ public class DelegateServiceImplTest extends WingsBaseTest {
         DelegateConfiguration.builder().delegateVersions(singletonList(VERSION)).build();
     when(accountService.getDelegateConfiguration(ACCOUNT_ID)).thenReturn(delegateConfiguration);
 
-    Double ratio = delegateService.getConnectedRatioWithPrimary(VERSION, ACCOUNT_ID);
+    Double ratio = delegateService.getConnectedRatioWithPrimary(VERSION, ACCOUNT_ID, null);
     assertThat(ratio).isEqualTo(1.0);
   }
 
@@ -1391,7 +1394,34 @@ public class DelegateServiceImplTest extends WingsBaseTest {
         DelegateConfiguration.builder().delegateVersions(singletonList(VERSION)).build();
     when(accountService.getDelegateConfiguration(Account.GLOBAL_ACCOUNT_ID)).thenReturn(delegateConfiguration);
 
-    Double ratio = delegateService.getConnectedRatioWithPrimary(VERSION, null);
+    Double ratio = delegateService.getConnectedRatioWithPrimary(VERSION, null, null);
+    assertThat(ratio).isEqualTo(1.0);
+  }
+
+  @Test
+  @Owner(developers = GAURAV)
+  @Category(UnitTests.class)
+  public void testGetConnectedRatioWithPrimaryWithRing() {
+    String delegateId = generateUuid();
+
+    DelegateConnection delegateConnection = DelegateConnection.builder()
+                                                .accountId(ACCOUNT_ID)
+                                                .delegateId(delegateId)
+                                                .version(VERSION)
+                                                .disconnected(false)
+                                                .lastHeartbeat(System.currentTimeMillis())
+                                                .build();
+
+    persistence.save(delegateConnection);
+
+    DelegateConfiguration delegateConfiguration =
+        DelegateConfiguration.builder().delegateVersions(singletonList(VERSION)).build();
+    when(accountService.getDelegateConfiguration(ACCOUNT_ID)).thenReturn(delegateConfiguration);
+
+    final String ringName = "ring3";
+    when(delegateVersionService.getDelegateJarVersions(ringName, ACCOUNT_ID))
+        .thenReturn(Collections.singletonList(VERSION));
+    Double ratio = delegateService.getConnectedRatioWithPrimary(VERSION, ACCOUNT_ID, ringName);
     assertThat(ratio).isEqualTo(1.0);
   }
 

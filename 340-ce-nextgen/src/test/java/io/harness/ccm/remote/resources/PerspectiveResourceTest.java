@@ -40,9 +40,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
-@RunWith(MockitoJUnitRunner.class)
+@RunWith(MockitoJUnitRunner.Silent.class)
 public class PerspectiveResourceTest extends CategoryTest {
   private CEViewService ceViewService = mock(CEViewService.class);
   private ViewCustomFieldService viewCustomFieldService = mock(ViewCustomFieldService.class);
@@ -79,7 +79,7 @@ public class PerspectiveResourceTest extends CategoryTest {
                       .viewVersion(perspectiveVersion)
                       .build();
     when(ceViewService.get(PERSPECTIVE_ID)).thenReturn(perspective);
-    when(ceViewService.save(perspective)).thenReturn(perspective);
+    when(ceViewService.save(perspective, false)).thenReturn(perspective);
     when(ceViewService.update(perspective)).thenReturn(perspective);
     when(bigQueryHelper.getCloudProviderTableName(ACCOUNT_ID, UNIFIED_TABLE)).thenReturn(UNIFIED_TABLE_NAME);
     when(budgetService.deleteBudgetsForPerspective(ACCOUNT_ID, PERSPECTIVE_ID)).thenReturn(true);
@@ -95,7 +95,7 @@ public class PerspectiveResourceTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testCreatePerspective() {
     perspectiveResource.create(ACCOUNT_ID, false, perspective);
-    verify(ceViewService).save(perspective);
+    verify(ceViewService).save(perspective, false);
     verify(ceViewService).updateTotalCost(perspective, bigQueryService.get(), UNIFIED_TABLE_NAME);
   }
 

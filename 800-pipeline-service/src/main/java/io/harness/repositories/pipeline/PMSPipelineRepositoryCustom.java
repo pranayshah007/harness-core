@@ -56,13 +56,15 @@ public interface PMSPipelineRepositoryCustom {
   PipelineEntity updatePipelineMetadata(
       String accountId, String orgIdentifier, String projectIdentifier, Criteria criteria, Update update);
 
-  PipelineEntity deleteForOldGitSync(PipelineEntity pipelineToUpdate);
+  void deleteForOldGitSync(PipelineEntity pipelineToDelete);
 
   /**
    * this method is to be used for new git experience, and for all pipelines that are not git synced in both old and new
    * flows
    */
-  PipelineEntity delete(String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier);
+  void delete(String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier);
 
-  String importPipelineFromRemote(String accountId, String orgIdentifier, String projectIdentifier);
+  boolean deleteAllPipelinesInAProject(String accountId, String orgIdentifier, String projectIdentifier);
+
+  PipelineEntity savePipelineEntityForImportedYAML(PipelineEntity pipelineToSave, boolean pushToGit);
 }

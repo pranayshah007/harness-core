@@ -124,12 +124,10 @@ public class Delegate implements PersistentEntity, UuidAware, CreatedAtAware, Ac
 
   private String delegateTokenName;
 
+  private boolean heartbeatAsObject;
+
   @Override
   public void updateNextIteration(String fieldName, long nextIteration) {
-    if (DelegateKeys.capabilitiesCheckNextIteration.equals(fieldName)) {
-      this.capabilitiesCheckNextIteration = nextIteration;
-      return;
-    }
     if (DelegateKeys.taskExpiryCheckNextIteration.equals(fieldName)) {
       this.taskExpiryCheckNextIteration = nextIteration;
       return;
@@ -139,9 +137,6 @@ public class Delegate implements PersistentEntity, UuidAware, CreatedAtAware, Ac
 
   @Override
   public Long obtainNextIteration(String fieldName) {
-    if (DelegateKeys.capabilitiesCheckNextIteration.equals(fieldName)) {
-      return this.capabilitiesCheckNextIteration;
-    }
     if (DelegateKeys.taskExpiryCheckNextIteration.equals(fieldName)) {
       return this.taskExpiryCheckNextIteration;
     }

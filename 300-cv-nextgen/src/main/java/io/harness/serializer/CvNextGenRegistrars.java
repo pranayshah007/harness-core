@@ -29,6 +29,7 @@ import com.google.common.collect.ImmutableSet;
 import java.util.Collections;
 import lombok.experimental.UtilityClass;
 import org.mongodb.morphia.converters.TypeConverter;
+import org.springframework.core.convert.converter.Converter;
 
 @UtilityClass
 @OwnedBy(HarnessTeam.CV)
@@ -74,4 +75,6 @@ public class CvNextGenRegistrars {
                                            .build())
                    .build())
           .build();
+  public static final ImmutableList<Class<? extends Converter<?, ?>>> springConverters =
+      ImmutableList.<Class<? extends Converter<?, ?>>>builder().build();
 }

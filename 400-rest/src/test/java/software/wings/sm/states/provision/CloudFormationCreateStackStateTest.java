@@ -550,9 +550,11 @@ public class CloudFormationCreateStackStateTest extends WingsBaseTest {
     Map<String, ResponseData> delegateResponse = ImmutableMap.of(ACTIVITY_ID,
         GitCommandExecutionResponse.builder()
             .gitCommandStatus(GitCommandExecutionResponse.GitCommandStatus.FAILURE)
+            .errorMessage("anErrorMessage")
             .build());
     ExecutionResponse response = state.handleAsyncResponse(mockContext, delegateResponse);
     assertThat(response.getExecutionStatus()).isEqualTo(ExecutionStatus.FAILED);
+    assertThat(response.getErrorMessage()).isEqualTo("anErrorMessage");
   }
 
   @Test
@@ -607,9 +609,11 @@ public class CloudFormationCreateStackStateTest extends WingsBaseTest {
     Map<String, ResponseData> delegateResponse = ImmutableMap.of(ACTIVITY_ID,
         FetchS3FilesExecutionResponse.builder()
             .commandStatus(FetchS3FilesExecutionResponse.FetchS3FilesCommandStatus.FAILURE)
+            .errorMessage("any error message")
             .build());
     ExecutionResponse response = state.handleAsyncResponse(mockContext, delegateResponse);
     assertThat(response.getExecutionStatus()).isEqualTo(ExecutionStatus.FAILED);
+    assertThat(response.getErrorMessage()).isNotEmpty();
   }
 
   private void testHandleAsyncResponse(CloudFormationCreateStackResponse createStackResponse) {
@@ -883,5 +887,37 @@ public class CloudFormationCreateStackStateTest extends WingsBaseTest {
 
     assertThat(commandsS3withParams.size()).isEqualTo(2);
     assertThat(commandsS3withParams).contains("Fetch Files");
+  }
+
+  @Test
+  @Owner(developers = NAVNEET)
+  @Category(UnitTests.class)
+  public void verifyDuplicateKeyErrorHandlingForTextVariables() {
+    CloudFormationInfrastructureProvisioner provisioner = CloudFormationInfrastructureProvisioner.builder()
+                                                              .sourceType(TEMPLATE_URL.name())
+                                                              .templateFilePath(TEMPLATE_FILE_PATH)
+                                                              .build();
+    when(mockInfrastructureProvisionerService.extractTextVariables(any(), any()))
+        .thenThrow(new IllegalStateException("Duplicate key"));
+
+    ExecutionResponse response = state.buildAndQueueDelegateTask(mockContext, provisioner, awsConfig, ACTIVITY_ID);
+    assertThat(response.getExecutionStatus()).isEqualTo(ExecutionStatus.FAILED);
+    assertThat(response.getErrorMessage()).isEqualTo("Duplicate key");
+  }
+
+  @Test
+  @Owner(developers = NAVNEET)
+  @Category(UnitTests.class)
+  public void verifyDuplicateKeyErrorHandlingForEncryptedTextVariables() {
+    CloudFormationInfrastructureProvisioner provisioner = CloudFormationInfrastructureProvisioner.builder()
+                                                              .sourceType(TEMPLATE_URL.name())
+                                                              .templateFilePath(TEMPLATE_FILE_PATH)
+                                                              .build();
+    when(mockInfrastructureProvisionerService.extractEncryptedTextVariables(any(), any(), any()))
+        .thenThrow(new IllegalStateException("Duplicate encrypted key"));
+
+    ExecutionResponse response = state.buildAndQueueDelegateTask(mockContext, provisioner, awsConfig, ACTIVITY_ID);
+    assertThat(response.getExecutionStatus()).isEqualTo(ExecutionStatus.FAILED);
+    assertThat(response.getErrorMessage()).isEqualTo("Duplicate encrypted key");
   }
 }

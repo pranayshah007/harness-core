@@ -16,6 +16,9 @@ import static org.mockito.Mockito.mock;
 import io.harness.CIExecutionServiceModule;
 import io.harness.CIExecutionTestModule;
 import io.harness.ModuleType;
+import io.harness.SCMGrpcClientModule;
+import io.harness.ScmConnectionConfig;
+import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cache.CacheConfig;
@@ -25,6 +28,7 @@ import io.harness.callback.DelegateCallbackToken;
 import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.config.CIStepConfig;
 import io.harness.ci.config.StepImageConfig;
+import io.harness.ci.config.VmImageConfig;
 import io.harness.delegate.DelegateServiceGrpc;
 import io.harness.engine.pms.tasks.NgDelegate2TaskExecutor;
 import io.harness.entitysetupusageclient.EntitySetupUsageClientModule;
@@ -36,6 +40,7 @@ import io.harness.ff.CIFeatureFlagNoopServiceImpl;
 import io.harness.ff.CIFeatureFlagService;
 import io.harness.govern.ProviderModule;
 import io.harness.govern.ServersModule;
+import io.harness.impl.scm.ScmServiceClientImpl;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.lock.PersistentLockModule;
 import io.harness.mongo.MongoPersistence;
@@ -50,6 +55,7 @@ import io.harness.registrars.ExecutionRegistrar;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.rule.Cache;
 import io.harness.rule.InjectorRuleMixin;
+import io.harness.service.ScmServiceClient;
 import io.harness.springdata.SpringPersistenceTestModule;
 import io.harness.testlib.module.MongoRuleMixin;
 import io.harness.testlib.module.TestMongoModule;
@@ -116,6 +122,14 @@ public class CIExecutionRule implements MethodRule, InjectorRuleMixin, MongoRule
         bind(CIFeatureFlagService.class).to(CIFeatureFlagNoopServiceImpl.class);
       }
     });
+
+    modules.add(new AbstractModule() {
+      @Override
+      protected void configure() {
+        bind(ScmServiceClient.class).to(ScmServiceClientImpl.class);
+      }
+    });
+
     CacheConfigBuilder cacheConfigBuilder =
         CacheConfig.builder().disabledCaches(new HashSet<>()).cacheNamespace("harness-cache");
     if (annotations.stream().anyMatch(annotation -> annotation instanceof Cache)) {
@@ -144,6 +158,20 @@ public class CIExecutionRule implements MethodRule, InjectorRuleMixin, MongoRule
 
     modules.add(TestMongoModule.getInstance());
     modules.add(new SpringPersistenceTestModule());
+
+    VmImageConfig vmImageConfig = VmImageConfig.builder()
+                                      .gitClone("vm-gitClone")
+                                      .artifactoryUpload("vm-artifactoryUpload")
+                                      .s3Upload("vm-s3Upload")
+                                      .gcsUpload("vm-gcsUpload")
+                                      .buildAndPushDockerRegistry("vm-buildAndPushDockerRegistry")
+                                      .buildAndPushECR("vm-buildAndPushECR")
+                                      .buildAndPushGCR("vm-buildAndPushGCR")
+                                      .cacheGCS("vm-cacheGCS")
+                                      .cacheS3("vm-cacheS3")
+                                      .security("vm-security")
+                                      .build();
+
     CIStepConfig ciStepConfig =
         CIStepConfig.builder()
             .gitCloneConfig(StepImageConfig.builder().image("gc:1.2.3").build())
@@ -157,6 +185,7 @@ public class CIExecutionRule implements MethodRule, InjectorRuleMixin, MongoRule
             .cacheGCSConfig(StepImageConfig.builder().image("cachegcs:1.2.3").build())
             .cacheS3Config(StepImageConfig.builder().image("caches3:1.2.3").build())
             .gcsUploadConfig(StepImageConfig.builder().image("gcsUpload:1.2.3").build())
+            .vmImageConfig(vmImageConfig)
             .build();
 
     modules.add(new CIExecutionServiceModule(CIExecutionServiceConfig.builder()
@@ -172,6 +201,17 @@ public class CIExecutionRule implements MethodRule, InjectorRuleMixin, MongoRule
                                                  .stepConfig(ciStepConfig)
                                                  .build(),
         false));
+
+    modules.add(new ProviderModule() {
+      @Provides
+      @Named("PRIVILEGED")
+      @Singleton
+      AccessControlClient accessControlClient() {
+        return mock(AccessControlClient.class);
+      }
+    });
+    modules.add(new SCMGrpcClientModule(ScmConnectionConfig.builder().url("dummyurl").build()));
+
     modules.add(TimeModule.getInstance());
     modules.add(new ProviderModule() {
       @Provides

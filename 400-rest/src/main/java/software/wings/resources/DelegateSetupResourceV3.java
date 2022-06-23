@@ -208,8 +208,8 @@ public class DelegateSetupResourceV3 {
   public RestResponse<Double>
   getConnectedRatioWithPrimary(@Parameter(description = "Target version for which the ratio is calculated") @QueryParam(
                                    "targetVersion") @NotEmpty String targetVersion,
-      @QueryParam("accountId") String accountId) {
-    return new RestResponse<>(delegateService.getConnectedRatioWithPrimary(targetVersion, accountId));
+      @QueryParam("accountId") String accountId, @QueryParam("ring") String ringName) {
+    return new RestResponse<>(delegateService.getConnectedRatioWithPrimary(targetVersion, accountId, ringName));
   }
 
   @GET
