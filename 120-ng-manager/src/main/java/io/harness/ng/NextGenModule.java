@@ -191,6 +191,8 @@ import io.harness.ng.opa.OpaService;
 import io.harness.ng.opa.OpaServiceImpl;
 import io.harness.ng.opa.entities.connector.OpaConnectorService;
 import io.harness.ng.opa.entities.connector.OpaConnectorServiceImpl;
+import io.harness.ng.opa.entities.secret.OpaSecretService;
+import io.harness.ng.opa.entities.secret.OpaSecretServiceImpl;
 import io.harness.ng.overview.service.CDLandingDashboardService;
 import io.harness.ng.overview.service.CDLandingDashboardServiceImpl;
 import io.harness.ng.overview.service.CDOverviewDashboardService;
@@ -839,6 +841,7 @@ public class NextGenModule extends AbstractModule {
     bind(ServiceAccountService.class).to(ServiceAccountServiceImpl.class);
     bind(OpaService.class).to(OpaServiceImpl.class);
     bind(OpaConnectorService.class).to(OpaConnectorServiceImpl.class);
+    bind(OpaSecretService.class).to(OpaSecretServiceImpl.class);
   }
 
   private OrchestrationModuleConfig getOrchestrationConfig() {

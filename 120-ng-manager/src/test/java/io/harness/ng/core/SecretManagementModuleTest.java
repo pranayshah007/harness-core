@@ -33,6 +33,11 @@ import io.harness.ng.core.api.NGSecretManagerService;
 import io.harness.ng.core.api.impl.NGSecretManagerServiceImpl;
 import io.harness.ng.core.entitysetupusage.service.EntitySetupUsageService;
 import io.harness.ng.eventsframework.EventsFrameworkModule;
+import io.harness.ng.opa.OpaService;
+import io.harness.ng.opa.OpaServiceImpl;
+import io.harness.ng.opa.entities.secret.OpaSecretService;
+import io.harness.ng.opa.entities.secret.OpaSecretServiceImpl;
+import io.harness.opaclient.OpaServiceClient;
 import io.harness.outbox.api.OutboxService;
 import io.harness.redis.RedisConfig;
 import io.harness.remote.client.ServiceHttpClientConfig;
@@ -228,6 +233,30 @@ public class SecretManagementModuleTest extends CategoryTest {
     });
     modules.add(secretManagementModule);
     modules.add(secretManagementClientModule);
+    modules.add(new ProviderModule(){
+      @Provides
+      @Singleton
+      OpaService registerConnecterService() {
+        return mock(OpaServiceImpl.class);
+      }
+    });
+
+    modules.add(new ProviderModule(){
+      @Provides
+      @Singleton
+      OpaSecretService registerConnecterService() {
+        return mock(OpaSecretServiceImpl.class);
+      }
+    });
+
+    modules.add(new ProviderModule(){
+      @Provides
+      @Singleton
+      OpaServiceClient registerOpaServiceClientService() {
+        return mock(OpaServiceClient.class);
+      }
+    });
+
     Injector injector = Guice.createInjector(modules);
 
     NGSecretManagerService ngSecretManagerService = injector.getInstance(NGSecretManagerService.class);

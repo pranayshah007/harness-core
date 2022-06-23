@@ -13,6 +13,8 @@ import io.harness.annotations.dev.OwnedBy;
 @OwnedBy(HarnessTeam.PIPELINE)
 public interface OpaConstants {
   String OPA_EVALUATION_TYPE_CONNECTOR = "connector";
+  String OPA_EVALUATION_TYPE_SECRET = "secret";
+
   String OPA_EVALUATION_ACTION_CONNECTOR_SAVE = "onsave";
 
   String OPA_EVALUATION_TYPE_PIPELINE = "pipeline";
