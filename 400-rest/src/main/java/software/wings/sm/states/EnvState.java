@@ -59,6 +59,7 @@ import software.wings.beans.ArtifactVariable;
 import software.wings.beans.DeploymentExecutionContext;
 import software.wings.beans.EntityType;
 import software.wings.beans.ExecutionArgs;
+import software.wings.beans.HelmChartInputType;
 import software.wings.beans.ManifestVariable;
 import software.wings.beans.NameValuePair;
 import software.wings.beans.VariableType;
@@ -192,6 +193,7 @@ public class EnvState extends State implements WorkflowState {
     if (featureFlagService.isEnabled(FeatureName.HELM_CHART_AS_ARTIFACT, context.getAccountId())) {
       List<HelmChart> helmCharts = deploymentExecutionContext.getHelmCharts();
       List<ManifestVariable> manifestVariables = getManifestVariables(workflowStandardParams);
+      manifestVariables.addAll(getManifestVariablesFromManifestInputs(workflowStandardParams));
       executionArgs.setHelmCharts(helmCharts);
       executionArgs.setManifestVariables(manifestVariables);
     }
@@ -249,6 +251,22 @@ public class EnvState extends State implements WorkflowState {
     return workflowStandardParams.getArtifactInputs()
         .stream()
         .map(artifactInput -> ArtifactVariable.builder().artifactInput(artifactInput).build())
+        .collect(toList());
+  }
+
+  private List<ManifestVariable> getManifestVariablesFromManifestInputs(WorkflowStandardParams workflowStandardParams) {
+    if (isEmpty(workflowStandardParams.getManifestInputs())) {
+      return new ArrayList<>();
+    }
+
+    return workflowStandardParams.getManifestInputs()
+        .stream()
+        .map(manifestInput
+            -> ManifestVariable.builder()
+                   .appManifestId(manifestInput.getAppManifestId())
+                   .value(manifestInput.getBuildNo())
+                   .inputType(HelmChartInputType.VERSION)
+                   .build())
         .collect(toList());
   }
 

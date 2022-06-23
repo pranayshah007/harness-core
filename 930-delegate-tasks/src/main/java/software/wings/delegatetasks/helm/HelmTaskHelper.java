@@ -616,7 +616,7 @@ public class HelmTaskHelper {
         command = fetchHelmChartVersionsCommandWithRepoFlags(helmChartConfigParams.getHelmVersion(),
             helmChartConfigParams.getChartName(), helmChartConfigParams.getRepoName(), destinationDirectory, tempDir);
       }
-      if (isNotEmpty(helmChartConfigParams.getChartVersion())) {
+      if (isNotEmpty(helmChartConfigParams.getChartVersion()) && !helmChartCollectionParams.isRegex()) {
         command =
             command + HELM_CHART_VERSION_FLAG.replace(CHART_VERSION, helmChartConfigParams.getChartVersion().trim());
       }
@@ -704,7 +704,7 @@ public class HelmTaskHelper {
           helmChartConfigParams.getChartName(), helmChartConfigParams.getRepoName(), chartDirectory);
 
       // fetch specific version
-      if (isNotEmpty(helmChartConfigParams.getChartVersion())) {
+      if (isNotEmpty(helmChartConfigParams.getChartVersion()) && !helmChartCollectionParams.isRegex()) {
         command =
             command + HELM_CHART_VERSION_FLAG.replace(CHART_VERSION, helmChartConfigParams.getChartVersion().trim());
       }
