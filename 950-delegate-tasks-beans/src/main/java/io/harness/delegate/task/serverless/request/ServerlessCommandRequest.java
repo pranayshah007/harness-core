@@ -89,14 +89,10 @@ public interface ServerlessCommandRequest extends TaskParameters, ExecutionCapab
             (ServerlessArtifactoryArtifactConfig) serverlessArtifactConfig;
         capabilities.addAll(ArtifactoryCapabilityHelper.fetchRequiredExecutionCapabilities(
             serverlessArtifactoryArtifactConfig.getConnectorDTO().getConnectorConfig(), maskingEvaluator));
-      } else if (serverlessArtifactConfig != null && serverlessArtifactConfig instanceof ServerlessEcrArtifactConfig) {
+      } else if (serverlessArtifactConfig instanceof ServerlessEcrArtifactConfig) {
         AwsConnectorDTO connectorConfigDTO = (AwsConnectorDTO) ((ServerlessEcrArtifactConfig) serverlessArtifactConfig)
                                                  .getConnectorDTO()
                                                  .getConnectorConfig();
-        if (connectorConfigDTO.getCredential().getAwsCredentialType() != MANUAL_CREDENTIALS) {
-          throw new UnknownEnumTypeException(
-              "AWS Credential Type", String.valueOf(connectorConfigDTO.getCredential().getAwsCredentialType()));
-        }
         capabilities.addAll(
             AwsCapabilityHelper.fetchRequiredExecutionCapabilities(connectorConfigDTO, maskingEvaluator));
       }
