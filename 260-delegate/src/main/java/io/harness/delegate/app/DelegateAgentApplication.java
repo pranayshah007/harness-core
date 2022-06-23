@@ -118,6 +118,10 @@ public class DelegateAgentApplication extends Application<DelegateAgentConfig> {
     bootstrap.setMetricRegistry(new MetricRegistry());
   }
 
+  @Override
+  protected void bootstrapLogging() {
+  }
+
   private void addShutdownHook(final Injector injector) {
     Runtime.getRuntime().addShutdownHook(new Thread(() -> {
       try {
