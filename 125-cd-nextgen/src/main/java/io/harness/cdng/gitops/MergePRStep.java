@@ -9,43 +9,36 @@ package io.harness.cdng.gitops;
 
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
-import static io.harness.data.structure.ListUtils.trimStrings;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.steps.StepUtils.prepareCDTaskRequest;
 
 import static org.apache.commons.lang3.StringUtils.isEmpty;
-import static org.apache.commons.lang3.StringUtils.trim;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
-import io.harness.beans.IssueCommentWebhookEvent;
 import io.harness.cdng.CDStepHelper;
 import io.harness.cdng.gitops.steps.GitOpsStepHelper;
-import io.harness.cdng.gitops.steps.GitopsClustersStep;
 import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
-import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.gitapi.GitApiRequestType;
 import io.harness.delegate.beans.gitapi.GitApiTaskParams;
 import io.harness.delegate.beans.gitapi.GitRepoType;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
-import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.delegate.task.git.GitOpsTaskType;
 import io.harness.delegate.task.git.NGGitOpsResponse;
 import io.harness.delegate.task.git.NGGitOpsTaskParams;
 import io.harness.delegate.task.git.TaskStatus;
 import io.harness.exception.InvalidRequestException;
 import io.harness.executions.steps.ExecutionNodeType;
-import io.harness.ng.core.NGAccess;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.plancreator.steps.common.StepElementParameters;
-import io.harness.plancreator.steps.common.rollback.TaskChainExecutableWithRollbackAndRbac;
+import io.harness.plancreator.steps.common.rollback.TaskExecutableWithRollbackAndRbac;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
@@ -56,8 +49,6 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
-import io.harness.pms.sdk.core.steps.executables.TaskChainResponse;
-import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.serializer.KryoSerializer;
@@ -69,15 +60,12 @@ import io.harness.utils.ConnectorUtils;
 import software.wings.beans.TaskType;
 
 import com.google.inject.Inject;
-import de.danielbechler.util.Strings;
 import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.GITOPS)
 @Slf4j
-public class MergePRStep extends TaskChainExecutableWithRollbackAndRbac {
+public class MergePRStep extends TaskExecutableWithRollbackAndRbac<NGGitOpsResponse> {
   @Inject private KryoSerializer kryoSerializer;
   @Inject private StepHelper stepHelper;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
@@ -96,15 +84,8 @@ public class MergePRStep extends TaskChainExecutableWithRollbackAndRbac {
   }
 
   @Override
-  public TaskChainResponse executeNextLinkWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
-      StepInputPackage inputPackage, PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseSupplier)
-      throws Exception {
-    return null;
-  }
-
-  @Override
-  public StepResponse finalizeExecutionWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
-      PassThroughData passThroughData, ThrowingSupplier<ResponseData> responseDataSupplier) throws Exception {
+  public StepResponse handleTaskResultWithSecurityContext(Ambiance ambiance, StepElementParameters stepParameters,
+      ThrowingSupplier<NGGitOpsResponse> responseDataSupplier) throws Exception {
     ResponseData responseData = responseDataSupplier.get();
 
     NGGitOpsResponse ngGitOpsResponse = (NGGitOpsResponse) responseData;
@@ -124,7 +105,7 @@ public class MergePRStep extends TaskChainExecutableWithRollbackAndRbac {
   }
 
   @Override
-  public TaskChainResponse startChainLinkAfterRbac(
+  public TaskRequest obtainTaskAfterRbac(
       Ambiance ambiance, StepElementParameters stepParameters, StepInputPackage inputPackage) {
     MergePRStepParams gitOpsSpecParams = (MergePRStepParams) stepParameters.getSpec();
 
@@ -193,16 +174,9 @@ public class MergePRStep extends TaskChainExecutableWithRollbackAndRbac {
 
     String taskName = TaskType.GITOPS_TASK_NG.getDisplayName();
 
-    final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
-        gitOpsSpecParams.getCommandUnits(), taskName,
+    return prepareCDTaskRequest(ambiance, taskData, kryoSerializer, gitOpsSpecParams.getCommandUnits(), taskName,
         TaskSelectorYaml.toTaskSelector(emptyIfNull(getParameterFieldValue(gitOpsSpecParams.getDelegateSelectors()))),
         stepHelper.getEnvironmentType(ambiance));
-
-    return TaskChainResponse.builder()
-        .chainEnd(true)
-        .passThroughData(CreatePRPassThroughData.builder().build())
-        .taskRequest(taskRequest)
-        .build();
   }
 
   public GitStoreDelegateConfig getGitStoreDelegateConfig(Ambiance ambiance, ManifestOutcome manifestOutcome) {

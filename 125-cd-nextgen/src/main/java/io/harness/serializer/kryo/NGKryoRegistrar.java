@@ -15,7 +15,6 @@ import io.harness.cdng.artifact.bean.artifactsource.DockerArtifactSource;
 import io.harness.cdng.artifact.steps.ArtifactStepParameters;
 import io.harness.cdng.configfile.steps.ConfigFileStepParameters;
 import io.harness.cdng.environment.yaml.EnvironmentYaml;
-import io.harness.cdng.gitops.CreatePRPassThroughData;
 import io.harness.cdng.gitops.CreatePRStepInfo;
 import io.harness.cdng.gitops.CreatePRStepParams;
 import io.harness.cdng.gitops.MergePRStepInfo;
@@ -90,7 +89,6 @@ public class NGKryoRegistrar implements KryoRegistrar {
   public void register(Kryo kryo) {
     kryo.register(CreatePRStepInfo.class, 13007);
     kryo.register(CreatePRStepParams.class, 13008);
-    kryo.register(CreatePRPassThroughData.class, 13009);
 
     kryo.register(ArtifactStepParameters.class, 8001);
     kryo.register(ServiceStepParameters.class, 8008);
