@@ -137,6 +137,7 @@ import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.lock.PersistentLocker;
 import io.harness.ng.beans.PageResponse;
+import io.harness.ng.core.dto.AccountDTO;
 import io.harness.ng.core.environment.dto.EnvironmentResponse;
 import io.harness.ng.core.mapper.TagMapper;
 import io.harness.notification.notificationclient.NotificationResultWithoutStatus;
@@ -2402,6 +2403,8 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     when(notificationClient.sendNotificationAsync(any()))
         .thenReturn(NotificationResultWithoutStatus.builder().notificationId("notificationId").build());
     when(accountClient.getVanityUrl(any()).execute()).thenReturn(Response.success(new RestResponse()));
+    when(accountClient.getAccountDTO(any()).execute())
+        .thenReturn(Response.success(new RestResponse(AccountDTO.builder().build())));
 
     monitoredServiceService.sendNotification(monitoredService);
     verify(notificationClient, times(1)).sendNotificationAsync(any());
@@ -2429,8 +2432,9 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
 
     MonitoredServiceHealthScoreCondition condition =
         MonitoredServiceHealthScoreCondition.builder().threshold(20.0).period(600000).build();
-    assertThat(
-        ((MonitoredServiceServiceImpl) monitoredServiceService).shouldSendNotification(monitoredService, condition))
+    assertThat(((MonitoredServiceServiceImpl) monitoredServiceService)
+                   .getNotificationMessage(monitoredService, condition)
+                   .isShouldSendNotification())
         .isTrue();
   }
 
@@ -2455,8 +2459,9 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
 
     MonitoredServiceHealthScoreCondition condition =
         MonitoredServiceHealthScoreCondition.builder().threshold(20.0).period(600000).build();
-    assertThat(
-        ((MonitoredServiceServiceImpl) monitoredServiceService).shouldSendNotification(monitoredService, condition))
+    assertThat(((MonitoredServiceServiceImpl) monitoredServiceService)
+                   .getNotificationMessage(monitoredService, condition)
+                   .isShouldSendNotification())
         .isFalse();
   }
 
@@ -2485,8 +2490,9 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
             .changeEventTypes(Arrays.asList(MonitoredServiceChangeEventType.DEPLOYMENT))
             .build();
 
-    assertThat(
-        ((MonitoredServiceServiceImpl) monitoredServiceService).shouldSendNotification(monitoredService, condition))
+    assertThat(((MonitoredServiceServiceImpl) monitoredServiceService)
+                   .getNotificationMessage(monitoredService, condition)
+                   .isShouldSendNotification())
         .isTrue();
   }
 
@@ -2518,14 +2524,16 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
             .threshold(20.0)
             .period(600000)
             .build();
-    assertThat(
-        ((MonitoredServiceServiceImpl) monitoredServiceService).shouldSendNotification(monitoredService, condition))
+    assertThat(((MonitoredServiceServiceImpl) monitoredServiceService)
+                   .getNotificationMessage(monitoredService, condition)
+                   .isShouldSendNotification())
         .isTrue();
 
     clock = Clock.fixed(clock.instant().plus(10, ChronoUnit.MINUTES), ZoneOffset.UTC);
     FieldUtils.writeField(monitoredServiceService, "clock", clock, true);
-    assertThat(
-        ((MonitoredServiceServiceImpl) monitoredServiceService).shouldSendNotification(monitoredService, condition))
+    assertThat(((MonitoredServiceServiceImpl) monitoredServiceService)
+                   .getNotificationMessage(monitoredService, condition)
+                   .isShouldSendNotification())
         .isFalse();
   }
 

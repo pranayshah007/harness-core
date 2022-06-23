@@ -9,7 +9,10 @@ package io.harness.cvng.core.services.impl.monitoredService;
 
 import static io.harness.cvng.core.beans.params.ServiceEnvironmentParams.builderWithProjectParams;
 import static io.harness.cvng.core.constant.MonitoredServiceConstants.REGULAR_EXPRESSION;
+import static io.harness.cvng.notification.beans.MonitoredServiceChangeEventType.getMonitoredServiceChangeEventTypeFromActivityType;
+import static io.harness.cvng.notification.utils.NotificationRuleCommonUtils.CHANGE_EVENT_TYPE;
 import static io.harness.cvng.notification.utils.NotificationRuleCommonUtils.COOL_OFF_DURATION;
+import static io.harness.cvng.notification.utils.NotificationRuleCommonUtils.CURRENT_HEALTH_SCORE;
 import static io.harness.cvng.notification.utils.NotificationRuleCommonUtils.getNotificationTemplateId;
 import static io.harness.data.structure.CollectionUtils.distinctByKey;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -93,6 +96,7 @@ import io.harness.cvng.notification.entities.NotificationRule;
 import io.harness.cvng.notification.entities.NotificationRule.CVNGNotificationChannel;
 import io.harness.cvng.notification.services.api.NotificationRuleService;
 import io.harness.cvng.notification.utils.NotificationRuleCommonUtils;
+import io.harness.cvng.notification.utils.NotificationRuleCommonUtils.NotificationMessage;
 import io.harness.cvng.servicelevelobjective.entities.SLOHealthIndicator;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelObjective;
 import io.harness.cvng.servicelevelobjective.services.api.SLODashboardService;
@@ -1607,11 +1611,12 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
       List<MonitoredServiceNotificationRuleCondition> conditions =
           ((MonitoredServiceNotificationRule) notificationRule).getConditions();
       for (MonitoredServiceNotificationRuleCondition condition : conditions) {
-        if (shouldSendNotification(monitoredService, condition)) {
+        NotificationMessage notificationMessage = getNotificationMessage(monitoredService, condition);
+        if (notificationMessage.isShouldSendNotification()) {
           CVNGNotificationChannel notificationChannel = notificationRule.getNotificationMethod();
           String templateId = getNotificationTemplateId(notificationRule.getType(), notificationChannel.getType());
           Map<String, String> templateData = notificationRuleCommonUtils.getNotificationTemplateDataForMonitoredService(
-              monitoredService, notificationRule.getName(), condition.getType().getDisplayName(), clock.instant());
+              monitoredService, condition, notificationMessage, clock.instant());
           try {
             NotificationResult notificationResult =
                 notificationClient.sendNotificationAsync(notificationChannel.toNotificationChannel(
@@ -1749,7 +1754,7 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
   }
 
   @VisibleForTesting
-  boolean shouldSendNotification(
+  NotificationMessage getNotificationMessage(
       MonitoredService monitoredService, MonitoredServiceNotificationRuleCondition condition) {
     MonitoredServiceParams monitoredServiceParams = MonitoredServiceParams.builder()
                                                         .accountIdentifier(monitoredService.getAccountId())
@@ -1757,21 +1762,41 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
                                                         .projectIdentifier(monitoredService.getProjectIdentifier())
                                                         .monitoredServiceIdentifier(monitoredService.getIdentifier())
                                                         .build();
+    Map<String, String> templateDataMap = new HashMap<>();
+    boolean isEveryHeatMapBelowThreshold = false;
+
     switch (condition.getType()) {
       case HEALTH_SCORE:
         MonitoredServiceHealthScoreCondition healthScoreCondition = (MonitoredServiceHealthScoreCondition) condition;
-        return heatMapService.isEveryHeatMapBelowThresholdForRiskTimeBuffer(monitoredServiceParams,
-            monitoredService.getIdentifier(), healthScoreCondition.getThreshold(), healthScoreCondition.getPeriod());
+        isEveryHeatMapBelowThreshold = heatMapService.isEveryHeatMapBelowThresholdForRiskTimeBuffer(
+            monitoredServiceParams, monitoredService.getIdentifier(), healthScoreCondition.getThreshold(),
+            healthScoreCondition.getPeriod());
+        if (isEveryHeatMapBelowThreshold) {
+          List<RiskData> allServiceRiskScoreList =
+              heatMapService.getLatestRiskScoreForAllServicesList(monitoredServiceParams.getAccountIdentifier(),
+                  monitoredServiceParams.getOrgIdentifier(), monitoredServiceParams.getProjectIdentifier(),
+                  Collections.singletonList(monitoredServiceParams.getMonitoredServiceIdentifier()));
+          templateDataMap.put(CURRENT_HEALTH_SCORE, allServiceRiskScoreList.get(0).getHealthScore().toString());
+        }
+        return NotificationMessage.builder()
+            .shouldSendNotification(isEveryHeatMapBelowThreshold)
+            .templateDataMap(templateDataMap)
+            .build();
       case CHANGE_OBSERVED:
         MonitoredServiceChangeObservedCondition changeObservedCondition =
             (MonitoredServiceChangeObservedCondition) condition;
         List<ActivityType> changeObservedActivityTypes = new ArrayList<>();
         changeObservedCondition.getChangeEventTypes().forEach(
             changeEventType -> changeObservedActivityTypes.addAll(changeEventType.getActivityTypes()));
-        return activityService
-            .getAnyEventFromListOfActivityTypes(monitoredServiceParams, changeObservedActivityTypes,
-                clock.instant().minus(5, ChronoUnit.MINUTES), clock.instant())
-            .isPresent();
+        Optional<Activity> activity = activityService.getAnyEventFromListOfActivityTypes(monitoredServiceParams,
+            changeObservedActivityTypes, clock.instant().minus(5, ChronoUnit.MINUTES), clock.instant());
+        activity.ifPresent(value
+            -> templateDataMap.put(CHANGE_EVENT_TYPE,
+                getMonitoredServiceChangeEventTypeFromActivityType(value.getType()).getDisplayName()));
+        return NotificationMessage.builder()
+            .shouldSendNotification(activity.isPresent())
+            .templateDataMap(templateDataMap)
+            .build();
       case CHANGE_IMPACT:
         MonitoredServiceChangeImpactCondition changeImpactCondition = (MonitoredServiceChangeImpactCondition) condition;
         List<ActivityType> changeImpactActivityTypes = new ArrayList<>();
@@ -1781,15 +1806,29 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
             activityService.getAnyEventFromListOfActivityTypes(monitoredServiceParams, changeImpactActivityTypes,
                 clock.instant().minus(changeImpactCondition.getPeriod(), ChronoUnit.MILLIS), clock.instant());
         if (optionalActivity.isPresent()) {
+          templateDataMap.put(CHANGE_EVENT_TYPE,
+              getMonitoredServiceChangeEventTypeFromActivityType(optionalActivity.get().getType()).getDisplayName());
           Instant activityStartTime = optionalActivity.get().getActivityStartTime();
           long riskTimeBufferMins = Duration.between(activityStartTime, clock.instant()).toMinutes();
-          return heatMapService.isEveryHeatMapBelowThresholdForRiskTimeBuffer(monitoredServiceParams,
-              monitoredService.getIdentifier(), changeImpactCondition.getThreshold(), riskTimeBufferMins);
+          isEveryHeatMapBelowThreshold =
+              heatMapService.isEveryHeatMapBelowThresholdForRiskTimeBuffer(monitoredServiceParams,
+                  monitoredService.getIdentifier(), changeImpactCondition.getThreshold(), riskTimeBufferMins);
+          if (isEveryHeatMapBelowThreshold) {
+            List<RiskData> allServiceRiskScoreList =
+                heatMapService.getLatestRiskScoreForAllServicesList(monitoredServiceParams.getAccountIdentifier(),
+                    monitoredServiceParams.getOrgIdentifier(), monitoredServiceParams.getProjectIdentifier(),
+                    Collections.singletonList(monitoredServiceParams.getMonitoredServiceIdentifier()));
+            templateDataMap.put(CURRENT_HEALTH_SCORE, allServiceRiskScoreList.get(0).getHealthScore().toString());
+          }
+          return NotificationMessage.builder()
+              .shouldSendNotification(isEveryHeatMapBelowThreshold)
+              .templateDataMap(templateDataMap)
+              .build();
         } else {
-          return false;
+          return NotificationMessage.builder().shouldSendNotification(false).build();
         }
       default:
-        return false;
+        return NotificationMessage.builder().shouldSendNotification(false).build();
     }
   }
 

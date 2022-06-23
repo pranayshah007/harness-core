@@ -1,5 +1,5 @@
 {
-    "text" : "*Harness SRM*\n*The Error Budget for SLO <${URL}|${SLO_NAME}> has breached a condition*\n",
+    "text" : "*Harness SRM*\n*SLO: <${URL}|${SLO_NAME}> ${HEADER_MESSAGE} <${URL}|${SERVICE_NAME}> service*\n",
     "attachments" : [
         {
           "color" : "${COLOR}",
@@ -8,9 +8,49 @@
               "type" : "section",
               "text" : {
                 "type" : "mrkdwn",
-                "text": "AccountID ${ACCOUNT_ID}\nOrganisationID ${ORG_ID}\nProjectID ${PROJECT_ID}\n*Rule:* ${RULE_NAME}\n*Condition:* ${CONDITION_NAME}\n _Incident occurred<!date^${START_TS_SECS}^ {date_short_pretty} at {time}| ${START_DATE}>_. \nClick <${URL}|here> for SLO dashboard"
+                "text": "*Trigger*\n${TRIGGER_MESSAGE}"
               }
-            }
+            },
+            {
+              "type" : "section",
+              "text" : {
+                "type" : "mrkdwn",
+                "text": "_Incident occurred<!date^${START_TS_SECS}^ {date_short_pretty} at {time}| ${START_DATE}>_"
+              }
+            },
+            {
+              "type": "divider"
+            },
+            {
+                "type": "section",
+                "fields": [
+                    {
+                        "type": "mrkdwn",
+                        "text": "*Account Name*\n${ACCOUNT_NAME}"
+                    },
+                    {
+                        "type": "mrkdwn",
+                        "text": "*Organization Name*\n${ORG_NAME}"
+                    },
+                    {
+                        "type": "mrkdwn",
+                        "text": "*Project Name*\n${PROJECT_NAME}"
+                    }
+                ]
+            },
+            {
+                "type": "actions",
+                "elements": [
+                    {
+                        "type": "button",
+                        "text": {
+                            "type": "plain_text",
+                            "text": "View SLO Details"
+                        },
+                        "url": "${URL}"
+                    }
+                ]
+            },
           ]
         }
     ]
