@@ -244,6 +244,11 @@ public class SubscriptionServiceImpl implements SubscriptionService {
       String accountIdentifier, String subscriptionId, SubscriptionDTO subscriptionDTO) {
     isSelfServiceEnable(accountIdentifier);
 
+    StripeCustomer stripeCustomer = stripeCustomerRepository.findByAccountIdentifier(accountIdentifier);
+    if (stripeCustomer == null) {
+      stripeCustomer = stripeCustomerRepository.findByAccountIdentifier(accountIdentifier);
+    }
+
     SubscriptionDetail subscriptionDetail = subscriptionDetailRepository.findBySubscriptionId(subscriptionId);
     if (checkSubscriptionInValid(subscriptionDetail, accountIdentifier)) {
       throw new InvalidRequestException("Invalid subscriptionId");
@@ -255,6 +260,7 @@ public class SubscriptionServiceImpl implements SubscriptionService {
                                    .subscriptionId(subscriptionDetail.getSubscriptionId())
                                    .paymentMethodId(subscriptionDTO.getPaymentMethodId())
                                    .items(subscriptionDTO.getItems())
+                                  .customerId(stripeCustomer.getCustomerId())
                                    .build();
     return stripeHelper.updateSubscription(param);
   }

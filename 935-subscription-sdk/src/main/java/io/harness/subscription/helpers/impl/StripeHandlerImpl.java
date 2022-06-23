@@ -29,8 +29,10 @@ import com.stripe.param.PriceListParams;
 import com.stripe.param.SubscriptionCreateParams;
 import com.stripe.param.SubscriptionRetrieveParams;
 import com.stripe.param.SubscriptionUpdateParams;
+
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 
 public class StripeHandlerImpl {
   StripeHandlerImpl() {}
@@ -86,9 +88,20 @@ public class StripeHandlerImpl {
     }
   }
 
-  Customer updateCustomer(String customerId, CustomerUpdateParams customerUpdateParams) {
+  Customer updateCustomer(String customerId, String paymentMethodId, CustomerUpdateParams customerUpdateParams) {
     try {
+      PaymentMethod paymentMethod =
+              PaymentMethod.retrieve(
+                      paymentMethodId
+              );
+
+      Map<String, Object> params = new HashMap<>();
+      params.put("customer", customerId);
+
+      PaymentMethod updatedPaymentMethod =
+              paymentMethod.attach(params);
       Customer customer = Customer.retrieve(customerId);
+
       return customer.update(customerUpdateParams);
     } catch (StripeException e) {
       throw new InvalidRequestException("Unable to update customer information", e);

@@ -55,6 +55,8 @@ import com.stripe.param.InvoiceUpcomingParams;
 import com.stripe.param.PriceListParams;
 import com.stripe.param.SubscriptionCreateParams;
 import com.stripe.param.SubscriptionUpdateParams;
+import org.apache.commons.collections.CollectionUtils;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -104,7 +106,7 @@ public class StripeHelperImpl implements StripeHelper {
       paramsBuilder.setMetadata(ImmutableMap.of("accountId", customerParams.getAccountIdentifier()));
     }
 
-    Customer customer = stripeHandler.updateCustomer(customerParams.getCustomerId(), paramsBuilder.build());
+    Customer customer = stripeHandler.updateCustomer(customerParams.getCustomerId(), null, paramsBuilder.build());
     return toCustomerDetailDTO(customer);
   }
 
@@ -132,13 +134,13 @@ public class StripeHelperImpl implements StripeHelper {
       newAddress.setPostalCode(billingParams.getZipCode());
     }
 
-    if (!Strings.isNullOrEmpty(billingParams.getCreditCardId())) {
-      paramsBuilder.setSource(billingParams.getCreditCardId());
-    }
+//    if (!Strings.isNullOrEmpty(billingParams.getCreditCardId())) {
+//      paramsBuilder.setSource(billingParams.getCreditCardId());
+//    }
 
     paramsBuilder.setAddress(newAddress.build());
 
-    Customer customer = stripeHandler.updateCustomer(billingParams.getCustomerId(), paramsBuilder.build());
+    Customer customer = stripeHandler.updateCustomer(billingParams.getCustomerId(),billingParams.getCreditCardId(), paramsBuilder.build());
     return toCustomerDetailDTO(customer);
   }
 
@@ -227,13 +229,16 @@ public class StripeHelperImpl implements StripeHelper {
 
     // Collect item information in new subscription
     Map<String, ItemParams> newItems = new HashMap<>();
-    subscriptionParams.getItems().forEach(item -> newItems.put(item.getPriceId(), item));
+    if(CollectionUtils.isNotEmpty(subscriptionParams.getItems())) {
+      subscriptionParams.getItems().forEach(item -> newItems.put(item.getPriceId(), item));
+    }
 
     // Go through current subscription and update.
     SubscriptionUpdateParams.Builder updateParamBuilder = SubscriptionUpdateParams.builder();
     updateParamBuilder.setProrationBehavior(SubscriptionUpdateParams.ProrationBehavior.ALWAYS_INVOICE)
-        .setPaymentBehavior(SubscriptionUpdateParams.PaymentBehavior.PENDING_IF_INCOMPLETE)
-        .addAllExpand(subscriptionExpandList);
+        .setPaymentBehavior(SubscriptionUpdateParams.PaymentBehavior.ALLOW_INCOMPLETE)
+        .addAllExpand(subscriptionExpandList)
+        .setDefaultPaymentMethod(subscriptionParams.getPaymentMethodId());
     if (!newItems.isEmpty()) {
       List<SubscriptionItem> data = subscription.getItems().getData();
       // update or delete existing item in subscription
@@ -294,8 +299,9 @@ public class StripeHelperImpl implements StripeHelper {
     invoiceParams.put("customer", customerId);
 
     Invoice invoice = stripeHandler.retrieveUpcomingInvoice(invoiceParams);
+    InvoiceDetailDTO dto = toInvoiceDetailDTO(invoice);
 
-    return toInvoiceDetailDTO(invoice);
+    return dto;
   }
   @Override
   public InvoiceDetailDTO previewInvoice(SubscriptionParams subscriptionParams) {
@@ -320,11 +326,11 @@ public class StripeHelperImpl implements StripeHelper {
     }
 
     // Add new items
-    subscriptionParams.getItems().forEach(newItem
-        -> upcomingParamBuilder.addSubscriptionItem(InvoiceUpcomingParams.SubscriptionItem.builder()
-                                                        .setPrice(newItem.getPriceId())
-                                                        .setQuantity(newItem.getQuantity())
-                                                        .build()));
+//    subscriptionParams.getItems().forEach(newItem
+//        -> upcomingParamBuilder.addSubscriptionItem(InvoiceUpcomingParams.SubscriptionItem.builder()
+//                                                        .setPrice(newItem.getPriceId())
+//                                                        .setQuantity(newItem.getQuantity())
+//                                                        .build()));
 
     return toInvoiceDetailDTO(stripeHandler.previewInvoice(
         subscriptionParams.getCustomerId(), subscriptionParams.getSubscriptionId(), upcomingParamBuilder.build()));
