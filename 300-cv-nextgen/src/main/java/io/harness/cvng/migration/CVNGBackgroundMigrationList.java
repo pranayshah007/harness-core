@@ -38,6 +38,7 @@ import io.harness.cvng.migration.list.FixRuntimeParamInCanaryBlueGreenVerificati
 import io.harness.cvng.migration.list.FixRuntimeParamsInDefaultHealthJob;
 import io.harness.cvng.migration.list.NewRelicCustomPackForExistingProjects;
 import io.harness.cvng.migration.list.NoOppMigration;
+import io.harness.cvng.migration.list.PrometheusConnectorAuthenticationPerpetualTaskMigration;
 import io.harness.cvng.migration.list.RecoverMonitoringSourceWorkerId;
 import io.harness.cvng.migration.list.RecreateMetricPackAndThresholdMigration;
 import io.harness.cvng.migration.list.SetNotRequiredActivityAnalysisStatusToIgnored;
@@ -110,7 +111,8 @@ public class CVNGBackgroundMigrationList {
         .add(Pair.of(46, AddMetricIdentifierToTimeSeriesThreshold.class))
         .add(Pair.of(47, AppDCVConfigCompleteMetricPathMigration.class))
         .add(Pair.of(48, SetNotRequiredActivityAnalysisStatusToIgnored.class))
-        .add(Pair.of(49, AddEnabledFlagToSLISLOMigration.class))
+        .add(Pair.of(49, PrometheusConnectorAuthenticationPerpetualTaskMigration.class))
+        .add(Pair.of(50, AddEnabledFlagToSLISLOMigration.class))
         .build();
   }
 }
