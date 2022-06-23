@@ -37,6 +37,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @OwnedBy(HarnessTeam.PL)
 public class NGLdapServiceImpl implements NGLdapService {
+  public static final String UNKNOWN_RESPONSE_FROM_DELEGATE = "Unknown Response from delegate";
   private final DelegateGrpcClientWrapper delegateService;
   private final TaskSetupAbstractionHelper taskSetupAbstractionHelper;
   @Override
@@ -83,7 +84,7 @@ public class NGLdapServiceImpl implements NGLdapService {
   private void validateDelegateTaskResponse(DelegateResponseData delegateResponseData) {
     if (delegateResponseData instanceof ErrorNotifyResponseData) {
       throw new LdapDelegateException(
-          "Unknown Response from delegate", ((ErrorNotifyResponseData) delegateResponseData).getException());
+          UNKNOWN_RESPONSE_FROM_DELEGATE, ((ErrorNotifyResponseData) delegateResponseData).getException());
     } else if (delegateResponseData instanceof RemoteMethodReturnValueData
         && (((RemoteMethodReturnValueData) delegateResponseData).getException() instanceof InvalidRequestException)) {
       throw(InvalidRequestException)((RemoteMethodReturnValueData) delegateResponseData).getException();
