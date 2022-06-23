@@ -63,12 +63,14 @@ import io.harness.cvng.core.entities.MonitoredService.MonitoredServiceKeys;
 import io.harness.cvng.core.handler.monitoredService.BaseMonitoredServiceHandler;
 import io.harness.cvng.core.services.api.CVConfigService;
 import io.harness.cvng.core.services.api.CVNGLogService;
+import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.api.SetupUsageEventService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
 import io.harness.cvng.core.services.api.monitoredService.ChangeSourceService;
 import io.harness.cvng.core.services.api.monitoredService.HealthSourceService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.core.services.api.monitoredService.ServiceDependencyService;
+import io.harness.cvng.core.utils.FeatureFlagNames;
 import io.harness.cvng.core.utils.template.MonitoredServiceYamlExpressionEvaluator;
 import io.harness.cvng.core.utils.template.TemplateFacade;
 import io.harness.cvng.dashboard.services.api.HeatMapService;
@@ -97,6 +99,8 @@ import io.harness.cvng.servicelevelobjective.services.api.SLODashboardService;
 import io.harness.cvng.servicelevelobjective.services.api.SLOHealthIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveService;
+import io.harness.enforcement.client.services.EnforcementClientService;
+import io.harness.enforcement.constants.FeatureRestrictionName;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageResponse;
@@ -139,10 +143,16 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import javax.ws.rs.NotFoundException;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.SneakyThrows;
 import lombok.Value;
+import lombok.experimental.FieldDefaults;
+import lombok.experimental.SuperBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -190,6 +200,10 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
   @Inject private OutboxService outboxService;
   @Inject private NotificationRuleCommonUtils notificationRuleCommonUtils;
   @Inject private ServiceLevelIndicatorService serviceLevelIndicatorService;
+  @Inject private EnforcementClientService enforcementClientService;
+  @Inject private FeatureFlagService featureFlagService;
+
+  private static final String templateIdentifierName = "monitoredServiceName";
 
   @Override
   public MonitoredServiceResponse create(String accountId, MonitoredServiceDTO monitoredServiceDTO) {
@@ -1187,6 +1201,16 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
   public HealthMonitoringFlagResponse setHealthMonitoringFlag(
       ProjectParams projectParams, String identifier, boolean enable) {
     MonitoredService monitoredService = getMonitoredService(projectParams, identifier);
+    if (enable == true
+        && featureFlagService.isFeatureFlagEnabled(
+            projectParams.getAccountIdentifier(), FeatureFlagNames.CVNG_LICENSE_ENFORCEMENT)) {
+      long increment = 0;
+      if (!isUniqueService(projectParams, monitoredService)) {
+        increment = 1;
+      }
+      enforcementClientService.checkAvailabilityWithIncrement(
+          FeatureRestrictionName.SRM_SERVICES, projectParams.getAccountIdentifier(), increment);
+    }
     Preconditions.checkNotNull(monitoredService, "Monitored service with identifier %s does not exists", identifier);
 
     MonitoredServiceParams monitoredServiceParams = MonitoredServiceParams.builder()
@@ -1234,6 +1258,18 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
         .identifier(identifier)
         .healthMonitoringEnabled(enable)
         .build();
+  }
+
+  private boolean isUniqueService(ProjectParams projectParams, MonitoredService monitoredService) {
+    List<MonitoredService> enabledMonitoredServices = getEnabledMonitoredServices(projectParams.getAccountIdentifier());
+
+    return getServiceParamsSet(enabledMonitoredServices)
+        .contains(ServiceParams.builder()
+                      .serviceIdentifier(monitoredService.getServiceIdentifier())
+                      .orgIdentifier(monitoredService.getOrgIdentifier())
+                      .projectIdentifier(monitoredService.getProjectIdentifier())
+                      .accountIdentifier(monitoredService.getAccountId())
+                      .build());
   }
 
   @Override
@@ -1638,6 +1674,34 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
                     .collect(Collectors.toList())));
   }
 
+  @Override
+  public long countUniqueEnabledServices(String accountId) {
+    if (!featureFlagService.isFeatureFlagEnabled(accountId, FeatureFlagNames.CVNG_LICENSE_ENFORCEMENT)) {
+      return 0;
+    }
+    List<MonitoredService> enabledMonitoredServices = getEnabledMonitoredServices(accountId);
+    return getServiceParamsSet(enabledMonitoredServices).size();
+  }
+
+  private Set<ServiceParams> getServiceParamsSet(List<MonitoredService> monitoredServices) {
+    return monitoredServices.stream()
+        .map(monitoredService
+            -> ServiceParams.builder()
+                   .serviceIdentifier(monitoredService.getServiceIdentifier())
+                   .orgIdentifier(monitoredService.getOrgIdentifier())
+                   .projectIdentifier(monitoredService.getProjectIdentifier())
+                   .accountIdentifier(monitoredService.getAccountId())
+                   .build())
+        .collect(Collectors.toSet());
+  }
+
+  private List<MonitoredService> getEnabledMonitoredServices(String accountId) {
+    return hPersistence.createQuery(MonitoredService.class)
+        .filter(MonitoredServiceKeys.accountId, accountId)
+        .filter(MonitoredServiceKeys.enabled, true)
+        .asList();
+  }
+
   private List<MonitoredService> get(ProjectParams projectParams, Filter filter) {
     List<MonitoredService> monitoredServiceList =
         hPersistence.createQuery(MonitoredService.class)
@@ -1759,5 +1823,51 @@ public class MonitoredServiceServiceImpl implements MonitoredServiceService {
   @Builder
   private static class Filter {
     String notificationRuleRef;
+  }
+
+  @FieldDefaults(level = AccessLevel.PRIVATE)
+  @Data
+  @SuperBuilder
+  @NoArgsConstructor
+  @AllArgsConstructor
+  private static class ServiceParams extends ProjectParams {
+    String serviceIdentifier;
+
+    @Override
+    public boolean equals(Object obj) {
+      if (obj == null) {
+        return false;
+      }
+      if (getClass() != obj.getClass()) {
+        return false;
+      }
+      List<String> firstServiceParams = new ArrayList<>();
+      firstServiceParams.add(this.serviceIdentifier);
+      firstServiceParams.add(this.getProjectIdentifier());
+      firstServiceParams.add(this.getOrgIdentifier());
+      firstServiceParams.add(this.getAccountIdentifier());
+
+      List<String> secondServiceParams = new ArrayList<>();
+      secondServiceParams.add(((ServiceParams) obj).serviceIdentifier);
+      secondServiceParams.add(((ServiceParams) obj).getProjectIdentifier());
+      secondServiceParams.add(((ServiceParams) obj).getOrgIdentifier());
+      secondServiceParams.add(((ServiceParams) obj).getAccountIdentifier());
+      return firstServiceParams.equals(secondServiceParams);
+    }
+
+    @Override
+    public int hashCode() {
+      final int prime = 31;
+      int result = 1;
+      List<String> serviceParams = new ArrayList<>();
+      serviceParams.add(this.serviceIdentifier);
+      serviceParams.add(this.getProjectIdentifier());
+      serviceParams.add(this.getOrgIdentifier());
+      serviceParams.add(this.getAccountIdentifier());
+      for (String s : serviceParams) {
+        result = result * prime + s.hashCode();
+      }
+      return result;
+    }
   }
 }

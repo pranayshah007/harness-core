@@ -109,4 +109,5 @@ public interface MonitoredServiceService extends DeleteEntityByHandler<Monitored
   PageResponse<NotificationRuleResponse> getNotificationRules(
       ProjectParams projectParams, String monitoredServiceIdentifier, PageParams pageParams);
   void beforeNotificationRuleDelete(ProjectParams projectParams, String notificationRuleRef);
+  long countUniqueEnabledServices(String accountId);
 }

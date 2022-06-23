@@ -48,6 +48,9 @@ public enum FeatureRestrictionName {
   TEST_INTELLIGENCE,
   TEMPLATE_SERVICE,
 
+  // CV Features
+  SRM_SERVICES,
+
   // CD Step Palette
   K8S_BG_SWAP_SERVICES,
   K8S_BLUE_GREEN_DEPLOY,
