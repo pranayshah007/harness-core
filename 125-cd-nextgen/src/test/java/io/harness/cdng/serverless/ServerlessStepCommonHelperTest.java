@@ -10,14 +10,19 @@ package io.harness.cdng.serverless;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
+import static io.harness.rule.OwnerRule.ALLU_VAMSI;
 
+import static io.harness.steps.StepUtils.prepareCDTaskRequest;
+import static io.harness.steps.StepUtils.prepareTaskRequest;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.powermock.api.mockito.PowerMockito.when;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.EnvironmentType;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryArtifactOutcome;
@@ -44,9 +49,12 @@ import io.harness.delegate.beans.serverless.ServerlessDeployResult;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.exception.TaskNGDataException;
 import io.harness.delegate.task.git.TaskStatus;
+import io.harness.delegate.task.serverless.request.ServerlessCommandRequest;
+import io.harness.delegate.task.serverless.request.ServerlessDeployRequest;
 import io.harness.delegate.task.serverless.response.ServerlessCommandResponse;
 import io.harness.delegate.task.serverless.response.ServerlessDeployResponse;
 import io.harness.delegate.task.serverless.response.ServerlessGitFetchResponse;
+import io.harness.delegate.task.serverless.ServerlessGitFetchFileConfig;
 import io.harness.exception.GeneralException;
 import io.harness.git.model.FetchFilesResult;
 import io.harness.git.model.GitFile;
@@ -55,6 +63,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.execution.failure.FailureInfo;
 import io.harness.pms.contracts.execution.failure.FailureType;
+import io.harness.pms.contracts.execution.tasks.TaskRequest;
 import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.data.OptionalOutcome;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
@@ -64,6 +73,8 @@ import io.harness.pms.sdk.core.steps.io.PassThroughData;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
+import io.harness.steps.StepHelper;
+import io.harness.steps.StepUtils;
 import io.harness.tasks.ResponseData;
 
 import java.util.Arrays;
@@ -78,9 +89,14 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
+
+import static org.mockito.Mockito.verify;
+
+
 
 @OwnedBy(CDP)
 public class ServerlessStepCommonHelperTest extends CategoryTest {
@@ -98,9 +114,69 @@ public class ServerlessStepCommonHelperTest extends CategoryTest {
   @Mock private ServerlessAwsLambdaDeployStep serverlessAwsLambdaDeployStep;
   @Mock private ServerlessEntityHelper serverlessEntityHelper;
   @Mock private ServerlessStepHelper serverlessStepHelper;
+  @Mock private StepUtils stepUtils;
+  @Mock private StepHelper stepHelper;
 
   @Spy @InjectMocks private ServerlessStepCommonHelper serverlessStepCommonHelper;
 
+
+  final TaskRequest createdTaskRequest = TaskRequest.newBuilder().build();
+  final ServerlessAwsLambdaDeployStepParameters serverlessSpecParameters = ServerlessAwsLambdaDeployStepParameters
+          .infoBuilder().build();
+  final StepElementParameters stepElementParameters =
+          StepElementParameters.builder().spec(serverlessSpecParameters).timeout(ParameterField.createValueField("10m")).build();
+
+//  @Test(expected = GeneralException.class)
+//  @Owner(developers = ALLU_VAMSI)
+//  @Category(UnitTests.class)
+//  public void startChainLinkTest() {
+//     StepElementParameters stepElementParameters = StepElementParameters.builder().uuid("uuid").identifier("identifier")
+//             .name("name").description("description").build();
+//     TaskChainResponse taskChainResponse = serverlessStepCommonHelper.startChainLink(ambiance, stepElementParameters, serverlessStepHelper);
+//    TaskChainResponse taskChainResponse1= taskChainResponse;
+//  }
+
+  @Test(expected = GeneralException.class)
+  @Owner(developers = ALLU_VAMSI)
+  @Category(UnitTests.class)
+  public void queueServerlessTaskTest() {
+    ServerlessDeployRequest serverlessCommandRequest = ServerlessDeployRequest.builder()
+            .accountId("accountId").commandName("commandName").timeoutIntervalInMin(10).manifestContent("content").build();
+    ServerlessExecutionPassThroughData executionPassThroughData = ServerlessExecutionPassThroughData.builder().build();
+    //doReturn(EnvironmentType.ALL).when(stepHelper).getEnvironmentType(ambiance);
+//    StepUtils stepUtils = Mockito.spy(new StepUtils());
+
+    //doReturn(createdTaskRequest).when(stepUtils).prepareCDTaskRequest(any(),any(),any(),any(),any(),any(),any());
+    //doReturn(createdTaskRequest).when(prepareTaskRequest(ambiance,any(),any(),any(),any(),any(),any(),any(),any(),any()));
+    //doReturn(createdTaskRequest).when(stepUtils).prepareCDTaskRequest(any(),any(),any(),any(),any(),any(),any());
+    ServerlessStepPassThroughData passThroughData = ServerlessStepPassThroughData.builder().build();
+    TaskChainResponse taskChainResponse = serverlessStepCommonHelper
+            .queueServerlessTask(stepElementParameters,serverlessCommandRequest ,ambiance, executionPassThroughData);
+  }
+
+//@Test(expected = GeneralException.class)
+//@Owner(developers = ALLU_VAMSI)
+//@Category(UnitTests.class)
+//public void getGitFetchFileTaskResponseTest() {
+//  doReturn(createdTaskRequest).when(prepareCDTaskRequest(any(),any(),any(),any(),any(),any(),any()));
+//  ServerlessStepPassThroughData passThroughData = ServerlessStepPassThroughData.builder().build();
+//  GitStoreDelegateConfig gitStoreDelegateConfig = GitStoreDelegateConfig.builder().build();
+//  ServerlessGitFetchFileConfig serverlessGitFetchFilesConfig = ServerlessGitFetchFileConfig
+//                                                              .builder().gitStoreDelegateConfig(gitStoreDelegateConfig)
+//                                                              .build();
+//  TaskChainResponse taskChainResponse = serverlessStepCommonHelper
+//                         .getGitFetchFileTaskResponse(ambiance,true,
+//                                 stepElementParameters,passThroughData,
+//                                 serverlessGitFetchFilesConfig);
+//
+//}
+
+//@Test(expected = GeneralException.class)
+//@Owner(developers = ALLU_VAMSI)
+//@Category(UnitTests.class)
+//public void getGitFetchFileTaskResponseTest(){
+//
+//}
   @Test(expected = GeneralException.class)
   @Owner(developers = PIYUSH_BHUWALKA)
   @Category(UnitTests.class)
@@ -252,12 +328,12 @@ public class ServerlessStepCommonHelperTest extends CategoryTest {
     assertThat(taskChainResponse).isEqualTo(expectedTaskChainResponse);
   }
 
-  @Test
-  @Owner(developers = PIYUSH_BHUWALKA)
-  @Category(UnitTests.class)
-  public void queueServerlessTaskTest() {
-    // Not written because not sure how to test prepareCDTaskRequest
-  }
+//  @Test
+//  @Owner(developers = PIYUSH_BHUWALKA)
+//  @Category(UnitTests.class)
+//  public void queueServerlessTaskTest() {
+//    // Not written because not sure how to test prepareCDTaskRequest
+//  }
 
   @Test
   @Owner(developers = PIYUSH_BHUWALKA)

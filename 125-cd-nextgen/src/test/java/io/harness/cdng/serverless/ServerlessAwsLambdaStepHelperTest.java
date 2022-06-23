@@ -9,6 +9,7 @@ package io.harness.cdng.serverless;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
+import static io.harness.rule.OwnerRule.ALLU_VAMSI;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.doReturn;
@@ -22,7 +23,10 @@ import io.harness.cdng.manifest.yaml.GitStoreConfig;
 import io.harness.cdng.manifest.yaml.K8sManifestOutcome;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.manifest.yaml.ServerlessAwsLambdaManifestOutcome;
+import io.harness.delegate.beans.instancesync.ServerInstanceInfo;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
+import io.harness.delegate.beans.serverless.ServerlessDeployResult;
+import io.harness.delegate.beans.serverless.ServerlessAwsLambdaDeployResult;
 import io.harness.delegate.task.serverless.ServerlessAwsLambdaDeployConfig;
 import io.harness.delegate.task.serverless.ServerlessAwsLambdaManifestConfig;
 import io.harness.delegate.task.serverless.ServerlessDeployConfig;
@@ -32,11 +36,13 @@ import io.harness.logging.LogCallback;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
+import io.harness.git.model.FetchFilesResult;
+import io.harness.git.model.CommitResult;
+import io.harness.git.model.GitFile;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+
+import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Before;
 import org.junit.Rule;
@@ -165,4 +171,38 @@ public class ServerlessAwsLambdaStepHelperTest extends CategoryTest {
     ManifestOutcome manifestOutcome = K8sManifestOutcome.builder().build();
     serverlessAwsLambdaStepHelper.getServerlessManifestConfig(manifestOutcome, ambiance, new HashMap<>());
   }
+
+  @Test
+  @Owner(developers = ALLU_VAMSI)
+  @Category(UnitTests.class)
+  public void getManifestFileContentTest(){
+      GitStoreConfig gitStoreConfig = GitStore.builder().build();
+      ManifestOutcome manifestOutcome  = ServerlessAwsLambdaManifestOutcome.builder()
+                                        .configOverridePath(ParameterField.createValueField("adsf"))
+                                        .store(gitStoreConfig).identifier("identifier")
+                                        .build();
+      GitFile gitFile = GitFile.builder().filePath("filePath").fileContent("fileContent").build();
+      List<GitFile> gitFileList = Arrays.asList(gitFile);
+      FetchFilesResult fetchFilesResult = FetchFilesResult.builder().files(gitFileList).build();
+      Map<String, FetchFilesResult> fetchFilesResultMap = new HashMap<String, FetchFilesResult>()
+      {{
+          put("identifier",fetchFilesResult);
+      }};
+      Optional<Pair<String, String>> manifestFileContent = Optional.of(new MutablePair<>("adsf", "fileContent"));
+
+      assertThat(serverlessAwsLambdaStepHelper.getManifestFileContent(fetchFilesResultMap,manifestOutcome))
+              .isEqualTo(manifestFileContent);
+  }
+
+//  @Test
+//  @Category(UnitTests.class)
+//  public void getServerlessDeployFunctionInstanceInfoTest() {
+//    //ManifestOutcome manifestOutcome = ServerlessAwsLambdaManifestOutcome.builder().build();
+//    ServerlessDeployResult serverlessDeployResult = ServerlessAwsLambdaDeployResult.builder().build();
+//    //List<ManifestOutcome> manifestOutcomeList = Arrays.asList(manifestOutcome);
+//    List<ServerlessDeployResult> serverlessDeployResultList = Arrays.asList(serverlessDeployResult);
+//    System.out.println(serverlessDeployResultList.get(0));
+//    //assertThat(serverlessAwsLambdaStepHelper.getServerlessManifestOutcome(manifestOutcomeList))
+//      //      .isEqualTo(manifestOutcome);
+//  }
 }
