@@ -396,10 +396,11 @@ public class AuthenticationFilter implements ContainerRequestFilter {
       String header = containerRequestContext.getHeaderString(HttpHeaders.AUTHORIZATION);
       if (header != null && header.contains("Delegate")) {
         String delegateId = containerRequestContext.getHeaderString("delegateId");
+        String delegateTokeName = containerRequestContext.getHeaderString("delegateTokenName");
 
         authService.validateDelegateToken(accountId,
             substringAfter(containerRequestContext.getHeaderString(HttpHeaders.AUTHORIZATION), "Delegate "), delegateId,
-            true);
+            delegateTokeName, true);
       } else {
         throw new IllegalStateException("Invalid header:" + header);
       }

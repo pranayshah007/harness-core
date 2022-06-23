@@ -45,6 +45,7 @@ import software.wings.service.intfc.FileService;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -103,6 +104,7 @@ public class FileStructureServiceImplTest extends CategoryTest {
    *                         folder5 -
    *                                  file9
    *                                  file10
+   *       emptyFolder
    *
    */
   @Test
@@ -117,7 +119,8 @@ public class FileStructureServiceImplTest extends CategoryTest {
             NGFile.builder().type(NGFileType.FILE).name("file1").identifier("file1").fileUuid("file1Uuid").build(),
             NGFile.builder().type(NGFileType.FILE).name("file2").identifier("file2").fileUuid("file2Uuid").build(),
             NGFile.builder().type(NGFileType.FOLDER).name("folder1").identifier("folder1").build(),
-            NGFile.builder().type(NGFileType.FOLDER).name("folder3").identifier("folder3").build()));
+            NGFile.builder().type(NGFileType.FOLDER).name("folder3").identifier("folder3").build(),
+            NGFile.builder().type(NGFileType.FOLDER).name("emptyfolder").identifier("emptyfolder").build()));
 
     when(fileStoreRepository.findAllAndSort(eq(createCriteriaByScopeAndParentIdentifier(scope, "folder1")), any()))
         .thenReturn(Arrays.asList(
@@ -149,13 +152,18 @@ public class FileStructureServiceImplTest extends CategoryTest {
 
     fileStructureService.createFolderTreeStructure(rootFolder, scope, true);
 
-    assertThat(getFSNodesIdentifiers(rootFolder.getChildren())).contains("file1", "file2", "folder1", "folder3");
+    assertThat(getFSNodesIdentifiers(rootFolder.getChildren()))
+        .contains("file1", "file2", "folder1", "folder3", "emptyfolder");
 
     FolderNodeDTO folder1 = getFolderChildren(rootFolder, "folder1");
     FolderNodeDTO folder3 = getFolderChildren(rootFolder, "folder3");
+    FolderNodeDTO emptyFolder = getFolderChildren(rootFolder, "emptyfolder");
+    FolderNodeDTO nullFolder = getFolderChildren(rootFolder, null);
 
     assertThat(getFSNodesIdentifiers(folder1.getChildren())).contains("file3", "file4", "folder2");
     assertThat(getFSNodesIdentifiers(folder3.getChildren())).contains("file7", "file8", "folder4");
+    assertThat(getFSNodesIdentifiers(emptyFolder.getChildren())).isEmpty();
+    assertThat(nullFolder).isNull();
 
     FolderNodeDTO folder2 = getFolderChildren(folder1, "folder2");
     FolderNodeDTO folder4 = getFolderChildren(folder3, "folder4");
@@ -196,6 +204,34 @@ public class FileStructureServiceImplTest extends CategoryTest {
         .isInstanceOf(UnexpectedException.class)
         .hasMessage(
             "Unexpected folder tree structure creation  error: io.harness.exception.InvalidRequestException: Unable to download file");
+  }
+
+  @Test
+  @Owner(developers = IVAN)
+  @Category(UnitTests.class)
+  public void shouldReturn() {
+    // Given
+    when(fileStoreRepository
+             .findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndIdentifierNotAndPathStartsWith(
+                 any(), any(), any(), any(), any(), any()))
+        .thenReturn(Arrays.asList(NGFile.builder()
+                                      .accountIdentifier("acc1")
+                                      .orgIdentifier("org1")
+                                      .projectIdentifier("proj1")
+                                      .identifier("ident1")
+                                      .build(),
+            NGFile.builder()
+                .accountIdentifier("acc2")
+                .orgIdentifier("org2")
+                .projectIdentifier("proj2")
+                .identifier("ident2")
+                .build()));
+
+    // When
+    List<String> childrenFqns = fileStructureService.listFolderChildrenFQNs(NGFile.builder().build());
+
+    // Then
+    assertThat(childrenFqns).isNotNull().containsExactly("acc1/org1/proj1/ident1", "acc2/org2/proj2/ident2");
   }
 
   private FolderNodeDTO getFolderChildren(FolderNodeDTO parentFolder, String folderName) {

@@ -367,7 +367,7 @@ public class ConnectorUtilsTest extends CIExecutionTestBase {
 
     List<TaskSelector> taskSelectors = connectorUtils.fetchDelegateSelector(ambiance, executionSweepingOutputResolver);
     assertThat(taskSelectors)
-        .isEqualTo(Arrays.asList(TaskSelector.newBuilder().setSelector("delegate").setOrigin("").build()));
+        .isEqualTo(Arrays.asList(TaskSelector.newBuilder().setSelector("delegate").setOrigin("default").build()));
   }
 
   @Test

@@ -30,7 +30,7 @@ const (
 	dbEndpoint    = "/reports/write?accountId=%s&orgId=%s&projectId=%s&pipelineId=%s&buildId=%s&stageId=%s&stepId=%s&report=%s&repo=%s&sha=%s&commitLink=%s"
 	testEndpoint  = "/tests/select?accountId=%s&orgId=%s&projectId=%s&pipelineId=%s&buildId=%s&stageId=%s&stepId=%s&repo=%s&sha=%s&source=%s&target=%s"
 	cgEndpoint    = "/tests/uploadcg?accountId=%s&orgId=%s&projectId=%s&pipelineId=%s&buildId=%s&stageId=%s&stepId=%s&repo=%s&sha=%s&source=%s&target=%s&timeMs=%d"
-	agentEndpoint = "/agents/link?language=%s&os=%s&arch=%s&framework=%s&version=%s&buildenv=%s"
+	agentEndpoint = "/agents/link?accountId=%s&language=%s&os=%s&arch=%s&framework=%s&version=%s&buildenv=%s"
 )
 
 // defaultClient is the default http.Client.
@@ -82,7 +82,7 @@ func (c *HTTPClient) Write(ctx context.Context, org, project, pipeline, build, s
 }
 
 func (c *HTTPClient) DownloadLink(ctx context.Context, language, os, arch, framework, version, env string) ([]types.DownloadLink, error) {
-	path := fmt.Sprintf(agentEndpoint, language, os, arch, framework, version, env)
+	path := fmt.Sprintf(agentEndpoint, c.AccountID, language, os, arch, framework, version, env)
 	var resp []types.DownloadLink
 	ctx = context.WithValue(ctx, "reqId", "")
 	_, err := c.do(ctx, c.Endpoint+path, "GET", nil, &resp)

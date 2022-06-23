@@ -5,11 +5,12 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.debezium;
+package io.harness.tasks;
 
-import io.debezium.engine.ChangeEvent;
-import io.debezium.engine.DebeziumEngine;
+import io.harness.annotations.dev.HarnessModule;
+import io.harness.annotations.dev.TargetModule;
 
-public interface MongoDatabaseChangeConsumer extends DebeziumEngine.ChangeConsumer<ChangeEvent<String, String>> {
-  String getDatabase();
+@TargetModule(HarnessModule._955_DELEGATE_BEANS)
+public interface SerializableResponseData extends ResponseData {
+  byte[] serialize();
 }

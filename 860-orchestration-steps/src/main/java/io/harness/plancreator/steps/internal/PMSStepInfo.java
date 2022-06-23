@@ -7,8 +7,6 @@
 
 package io.harness.plancreator.steps.internal;
 
-import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
-
 import io.harness.advisers.rollback.OnFailRollbackParameters;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.plancreator.steps.barrier.BarrierStepInfo;
@@ -17,6 +15,7 @@ import io.harness.plancreator.steps.common.StepParametersUtils;
 import io.harness.plancreator.steps.common.WithStepElementParameters;
 import io.harness.plancreator.steps.http.HttpStepInfo;
 import io.harness.plancreator.steps.http.PmsAbstractStepNode;
+import io.harness.plancreator.steps.resourceconstraint.QueueStepInfo;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.steps.StepUtils;
@@ -30,14 +29,15 @@ import io.harness.steps.servicenow.create.ServiceNowCreateStepInfo;
 import io.harness.steps.servicenow.update.ServiceNowUpdateStepInfo;
 import io.harness.steps.shellscript.ShellScriptStepInfo;
 import io.harness.yaml.core.StepSpecType;
-
 import io.swagger.annotations.ApiModel;
+
+import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 @OwnedBy(PIPELINE)
 @ApiModel(subTypes = {BarrierStepInfo.class, HttpStepInfo.class, FlagConfigurationStepInfo.class,
               HarnessApprovalStepInfo.class, JiraApprovalStepInfo.class, JiraCreateStepInfo.class,
               JiraUpdateStepInfo.class, ShellScriptStepInfo.class, ServiceNowApprovalStepInfo.class,
-              PolicyStepInfo.class, ServiceNowCreateStepInfo.class, ServiceNowUpdateStepInfo.class})
+              PolicyStepInfo.class, ServiceNowCreateStepInfo.class, ServiceNowUpdateStepInfo.class, QueueStepInfo.class})
 public interface PMSStepInfo extends StepSpecType, WithStepElementParameters {
   default StepParameters getStepParameters(
       PmsAbstractStepNode stepElementConfig, OnFailRollbackParameters failRollbackParameters, PlanCreationContext ctx) {

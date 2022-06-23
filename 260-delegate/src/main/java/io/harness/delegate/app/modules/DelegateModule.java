@@ -167,6 +167,7 @@ import io.harness.delegate.task.aws.S3FetchFilesTaskNG;
 import io.harness.delegate.task.azure.AzureValidationHandler;
 import io.harness.delegate.task.azure.appservice.AzureAppServiceTaskParameters.AzureAppServiceTaskType;
 import io.harness.delegate.task.azure.appservice.webapp.AzureWebAppTaskNG;
+import io.harness.delegate.task.azure.appservice.webapp.handler.AzureWebAppFetchPreDeploymentDataRequestHandler;
 import io.harness.delegate.task.azure.appservice.webapp.handler.AzureWebAppRequestHandler;
 import io.harness.delegate.task.azure.appservice.webapp.handler.AzureWebAppRollbackRequestHandler;
 import io.harness.delegate.task.azure.appservice.webapp.handler.AzureWebAppSlotDeploymentRequestHandler;
@@ -1282,8 +1283,10 @@ public class DelegateModule extends AbstractModule {
         MapBinder.newMapBinder(binder(), String.class, AzureWebAppRequestHandler.class);
     azureWebAppRequestTypeToRequestHandlerMap.addBinding(AzureWebAppRequestType.SLOT_DEPLOYMENT.name())
         .to(AzureWebAppSlotDeploymentRequestHandler.class);
-      azureWebAppRequestTypeToRequestHandlerMap.addBinding(AzureWebAppRequestType.ROLLBACK.name())
-              .to(AzureWebAppRollbackRequestHandler.class);
+    azureWebAppRequestTypeToRequestHandlerMap.addBinding(AzureWebAppRequestType.ROLLBACK.name())
+        .to(AzureWebAppRollbackRequestHandler.class);
+    azureWebAppRequestTypeToRequestHandlerMap.addBinding(AzureWebAppRequestType.FETCH_PRE_DEPLOYMENT_DATA.name())
+        .to(AzureWebAppFetchPreDeploymentDataRequestHandler.class);
 
     // Ssh and WinRM task handlers
     MapBinder<String, CommandHandler> commandUnitHandlers =

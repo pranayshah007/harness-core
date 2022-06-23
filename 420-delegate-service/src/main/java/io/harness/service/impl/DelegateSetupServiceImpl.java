@@ -42,6 +42,7 @@ import io.harness.delegate.beans.DelegateToken.DelegateTokenKeys;
 import io.harness.delegate.beans.DelegateTokenStatus;
 import io.harness.delegate.events.DelegateGroupUpsertEvent;
 import io.harness.delegate.filter.DelegateFilterPropertiesDTO;
+import io.harness.delegate.filter.DelegateInstanceConnectivityStatus;
 import io.harness.delegate.utils.DelegateEntityOwnerHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.filter.dto.FilterDTO;
@@ -60,6 +61,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -487,13 +489,28 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
 
     List<String> delegateGroupIds = getDelegateGroupIds(accountId, orgId, projectId, filterProperties, searchTerm);
 
-    final Map<String, List<Delegate>> delegatesByGroup = persistence.createQuery(Delegate.class)
-                                                             .filter(DelegateKeys.accountId, accountId)
-                                                             .field(DelegateKeys.delegateGroupId)
-                                                             .in(delegateGroupIds)
-                                                             .asList()
-                                                             .stream()
-                                                             .collect(groupingBy(Delegate::getDelegateGroupId));
+    List<Delegate> delegateList = persistence.createQuery(Delegate.class)
+                                      .filter(DelegateKeys.accountId, accountId)
+                                      .field(DelegateKeys.delegateGroupId)
+                                      .in(delegateGroupIds)
+                                      .asList();
+
+    // filter delegates if filtering by delegateInstanceConnectivityStatus is enabled
+    if (filterProperties != null && filterProperties.getStatus() != null
+        && newFilterStatus(filterProperties.getStatus())) {
+      delegateList = filterByDelegateInstanceStatus(delegateList, filterProperties);
+    }
+
+    final Map<String, List<Delegate>> delegatesByGroup =
+        delegateList.stream().collect(groupingBy(Delegate::getDelegateGroupId));
+
+    // Remove groupId which doesn't have single delegate after filter is applied.
+    if (filterProperties != null && filterProperties.getStatus() != null
+        && newFilterStatus(filterProperties.getStatus())) {
+      delegateGroupIds = delegateGroupIds.stream()
+                             .filter(delegateGroup -> isNotEmpty(delegatesByGroup.get(delegateGroup)))
+                             .collect(toList());
+    }
 
     List<DelegateGroupDetails> delegateGroupDetails =
         delegateGroupIds.stream()
@@ -505,6 +522,25 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
             .sorted(new DelegateGroupDetailsComparator())
             .collect(toList());
     return DelegateGroupListing.builder().delegateGroupDetails(delegateGroupDetails).build();
+  }
+
+  // Todo: Anupam to remove this condition once UI changes are deployed.
+  private boolean newFilterStatus(DelegateInstanceConnectivityStatus status) {
+    return DelegateInstanceConnectivityStatus.CONNECTED.equals(status)
+        || DelegateInstanceConnectivityStatus.DISCONNECTED.equals(status);
+  }
+
+  private List<Delegate> filterByDelegateInstanceStatus(
+      List<Delegate> delegateList, DelegateFilterPropertiesDTO filterProperties) {
+    if (filterProperties.getStatus().equals(DelegateInstanceConnectivityStatus.DISCONNECTED)) {
+      return delegateList.stream()
+          .filter(
+              delegate -> delegate.getLastHeartBeat() <= System.currentTimeMillis() - HEARTBEAT_EXPIRY_TIME.toMillis())
+          .collect(toList());
+    }
+    return delegateList.stream()
+        .filter(delegate -> delegate.getLastHeartBeat() > System.currentTimeMillis() - HEARTBEAT_EXPIRY_TIME.toMillis())
+        .collect(toList());
   }
 
   @Override
@@ -606,7 +642,7 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
       DelegateEntityOwner owner = DelegateEntityOwnerHelper.buildOwner(orgIdentifier, projectIdentifier);
       DelegateGroup delegateGroup =
           getDelegateGroupByAccountAndOwnerAndIdentifier(accountIdentifier, owner, groupIdentifier);
-      return Optional.of(DelegateGroupDTO.convertToDTO(delegateGroup));
+      return Optional.of(DelegateGroupDTO.convertToDTO(delegateGroup, listDelegateGroupImplicitTags(delegateGroup)));
     } catch (Exception e) {
       log.error("Error occurred during fetching list of delegate group tags", e);
       return Optional.empty();
@@ -662,7 +698,7 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
                                                        .build())
                              .build());
       log.info("Updating tags for delegate group: {} tags: {}", groupIdentifier, delegateGroupTags.getTags());
-      return Optional.of(DelegateGroupDTO.convertToDTO(updatedDelegateGroup));
+      return Optional.of(DelegateGroupDTO.convertToDTO(updatedDelegateGroup, null));
     } catch (Exception e) {
       log.error("Error occurred during updating delegate group tags", e);
       return Optional.empty();
@@ -715,5 +751,26 @@ public class DelegateSetupServiceImpl implements DelegateSetupService {
         -> delegateTokenStatusMap.put(
             delegateToken.getName(), DelegateTokenStatus.ACTIVE.equals(delegateToken.getStatus())));
     return delegateTokenStatusMap;
+  }
+
+  private Set<String> listDelegateGroupImplicitTags(final DelegateGroup delegateGroup) {
+    Set<String> implicitTags = new HashSet<>();
+    if (delegateGroup == null) {
+      return implicitTags;
+    }
+    implicitTags.add(delegateGroup.getName().toLowerCase());
+    final DelegateProfile delegateProfile =
+        delegateCache.getDelegateProfile(delegateGroup.getAccountId(), delegateGroup.getDelegateConfigurationId());
+
+    if (delegateProfile != null && isNotEmpty(delegateProfile.getName())) {
+      implicitTags.add(delegateProfile.getName().toLowerCase());
+    }
+
+    if (delegateProfile != null && isNotEmpty(delegateProfile.getSelectors())) {
+      for (final String selector : delegateProfile.getSelectors()) {
+        implicitTags.add(selector.toLowerCase());
+      }
+    }
+    return implicitTags;
   }
 }

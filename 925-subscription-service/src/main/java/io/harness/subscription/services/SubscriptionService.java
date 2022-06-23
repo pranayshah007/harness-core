@@ -14,6 +14,7 @@ import io.harness.subscription.dto.FfSubscriptionDTO;
 import io.harness.subscription.dto.InvoiceDetailDTO;
 import io.harness.subscription.dto.PaymentMethodCollectionDTO;
 import io.harness.subscription.dto.PriceCollectionDTO;
+import io.harness.subscription.dto.StripeBillingDTO;
 import io.harness.subscription.dto.SubscriptionDTO;
 import io.harness.subscription.dto.SubscriptionDetailDTO;
 
@@ -22,6 +23,7 @@ import java.util.List;
 public interface SubscriptionService {
   PriceCollectionDTO listPrices(String accountIdentifier, ModuleType moduleType);
   InvoiceDetailDTO previewInvoice(String accountIdentifier, SubscriptionDTO subscriptionDTO);
+  void payInvoice(String invoiceId);
 
   SubscriptionDetailDTO createSubscription(String accountIdentifier, SubscriptionDTO subscriptionDTO);
   InvoiceDetailDTO createFfSubscription(String accountIdentifier, FfSubscriptionDTO subscriptionDTO);
@@ -35,6 +37,7 @@ public interface SubscriptionService {
   CustomerDetailDTO createStripeCustomer(String accountIdentifier, CustomerDTO customerDTO);
   CustomerDetailDTO updateStripeCustomer(String accountIdentifier, String customerId, CustomerDTO customerDTO);
   CustomerDetailDTO getStripeCustomer(String accountIdentifier, String customerId);
+  CustomerDetailDTO updateStripeBilling(String accountIdentifier, StripeBillingDTO stripeBillingDTO);
 
   PaymentMethodCollectionDTO listPaymentMethods(String accountIdentifier, String customerId);
 

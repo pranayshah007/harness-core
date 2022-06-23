@@ -2096,7 +2096,7 @@ public class WorkflowExecutionServiceTest extends WingsBaseTest {
         Collections.singletonList(ArtifactInput.builder().buildNo("build1").artifactStreamId("id").build());
 
     OrchestrationWorkflow orchestrationWorkflow =
-        workflowExecutionServiceSpy.updateWorkflowWithArtifactCollectionSteps(workflow, artifactInputs);
+        workflowExecutionServiceSpy.updateWorkflowWithArtifactCollectionSteps(workflow, artifactInputs, null);
     assertThat(orchestrationWorkflow).isNotNull().isInstanceOf(CanaryOrchestrationWorkflow.class);
     CanaryOrchestrationWorkflow canaryOrchestrationWorkflow = (CanaryOrchestrationWorkflow) orchestrationWorkflow;
     PhaseStep preDeploymentSteps = canaryOrchestrationWorkflow.getPreDeploymentSteps();
@@ -2105,7 +2105,7 @@ public class WorkflowExecutionServiceTest extends WingsBaseTest {
 
     GraphNode graphNode = preDeploymentSteps.getSteps().get(0);
     assertThat(graphNode.getType()).isEqualTo(ARTIFACT_COLLECT_LOOP_STATE.getType());
-    assertThat(graphNode.getName()).isEqualTo("Artifact Collection");
+    assertThat(graphNode.getName()).isEqualTo("Artifact/Manifest Collection");
     assertThat(graphNode.getProperties()).isNotNull().isNotEmpty();
     assertThat(graphNode.getProperties().get(ArtifactCollectLoopStateKeys.artifactInputList)).isEqualTo(artifactInputs);
   }

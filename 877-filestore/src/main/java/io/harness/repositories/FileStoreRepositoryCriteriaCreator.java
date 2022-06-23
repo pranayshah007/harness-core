@@ -12,11 +12,16 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.filestore.entities.NGFile.NGFiles;
 
+import static org.springframework.data.mongodb.core.aggregation.Aggregation.group;
+import static org.springframework.data.mongodb.core.aggregation.Aggregation.match;
+import static org.springframework.data.mongodb.core.aggregation.Aggregation.sort;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
 import io.harness.filestore.dto.filter.FilesFilterPropertiesDTO;
 import io.harness.ng.core.common.beans.NGTag.NGTagKeys;
+import io.harness.ng.core.filestore.NGFileType;
 import io.harness.ng.core.filestore.dto.FileFilterDTO;
 import io.harness.ng.core.mapper.TagMapper;
 import io.harness.ng.core.utils.URLDecoderUtility;
@@ -24,6 +29,7 @@ import io.harness.ng.core.utils.URLDecoderUtility;
 import java.util.List;
 import lombok.experimental.UtilityClass;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.query.Criteria;
 
 @OwnedBy(HarnessTeam.CDP)
@@ -94,6 +100,14 @@ public class FileStoreRepositoryCriteriaCreator {
     }
 
     return criteria;
+  }
+
+  public static Aggregation createCreateByAggregation(Scope scope) {
+    Criteria criteria = createScopeCriteria(scope);
+    criteria.and(NGFiles.type).is(NGFileType.FILE);
+
+    return Aggregation.newAggregation(
+        match(criteria), group(NGFiles.createdBy), sort(Sort.Direction.ASC, NGFiles.createdBy));
   }
 
   public static Sort createSortByLastModifiedAtDesc() {

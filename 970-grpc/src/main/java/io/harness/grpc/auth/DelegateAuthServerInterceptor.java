@@ -59,6 +59,7 @@ public class DelegateAuthServerInterceptor implements ServerInterceptor {
     String accountId = metadata.get(DelegateAuthCallCredentials.ACCOUNT_ID_METADATA_KEY);
     String token = metadata.get(DelegateAuthCallCredentials.TOKEN_METADATA_KEY);
     String delegateId = metadata.get(DelegateAuthCallCredentials.DELEGATE_ID);
+    String delegateTokenName = metadata.get(DelegateAuthCallCredentials.DELEGATE_TOKEN_NAME);
 
     // Urgent fix for DEL-1954. We are allowing delegate service to be invoked by delegate agent, in which case
     // accountId is mandatory, but also by other backend services, in which case serviceId is mandatory. If accountId is
@@ -82,7 +83,7 @@ public class DelegateAuthServerInterceptor implements ServerInterceptor {
     }
     Context ctx;
     try {
-      tokenAuthenticator.validateDelegateToken(accountId, token, delegateId, false);
+      tokenAuthenticator.validateDelegateToken(accountId, token, delegateId, delegateTokenName, false);
       ctx = GrpcAuthUtils.newAuthenticatedContext().withValue(ACCOUNT_ID_CTX_KEY, accountId);
     } catch (Exception e) {
       log.warn("Token verification failed. Unauthenticated", e);

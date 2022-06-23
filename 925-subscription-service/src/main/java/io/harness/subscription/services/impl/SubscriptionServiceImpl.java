@@ -22,12 +22,14 @@ import io.harness.subscription.dto.FfSubscriptionDTO;
 import io.harness.subscription.dto.InvoiceDetailDTO;
 import io.harness.subscription.dto.PaymentMethodCollectionDTO;
 import io.harness.subscription.dto.PriceCollectionDTO;
+import io.harness.subscription.dto.StripeBillingDTO;
 import io.harness.subscription.dto.SubscriptionDTO;
 import io.harness.subscription.dto.SubscriptionDetailDTO;
 import io.harness.subscription.entities.StripeCustomer;
 import io.harness.subscription.entities.SubscriptionDetail;
 import io.harness.subscription.handlers.StripeEventHandler;
 import io.harness.subscription.helpers.StripeHelper;
+import io.harness.subscription.params.BillingParams;
 import io.harness.subscription.params.CustomerParams;
 import io.harness.subscription.params.CustomerParams.CustomerParamsBuilder;
 import io.harness.subscription.params.ItemParams;
@@ -114,6 +116,11 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     }
 
     return stripeHelper.previewInvoice(params);
+  }
+
+  @Override
+  public void payInvoice(String invoiceId) {
+    stripeHelper.payInvoice(invoiceId);
   }
 
   @Override
@@ -368,6 +375,30 @@ public class SubscriptionServiceImpl implements SubscriptionService {
     }
 
     return stripeHelper.getCustomer(stripeCustomer.getCustomerId());
+  }
+
+  @Override
+  public CustomerDetailDTO updateStripeBilling(String accountIdentifier, StripeBillingDTO stripeBillingDTO) {
+    isSelfServiceEnable(accountIdentifier);
+
+    StripeCustomer stripeCustomer = stripeCustomerRepository.findByAccountIdentifier(accountIdentifier);
+    if (stripeCustomer == null) {
+      throw new InvalidRequestException("Customer doesn't exists");
+    }
+
+    BillingParams params = BillingParams.builder().build();
+    params.setLine1(stripeBillingDTO.getLine1());
+    params.setLine2(stripeBillingDTO.getLine2());
+    params.setCity(stripeBillingDTO.getCity());
+    params.setState(stripeBillingDTO.getState());
+    params.setCountry(stripeBillingDTO.getCountry());
+    params.setZipCode(stripeBillingDTO.getZipCode());
+
+    params.setCreditCardId(stripeBillingDTO.getCreditCardId());
+
+    params.setCustomerId(stripeCustomer.getCustomerId());
+
+    return stripeHelper.updateBilling(params);
   }
 
   //  @Override

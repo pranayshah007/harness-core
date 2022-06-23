@@ -21,4 +21,6 @@ public interface DelegateMetricsService {
   void recordDelegateMetrics(Delegate delegate, String metricName);
 
   void recordPerpetualTaskMetrics(String accountId, String perpetualTaskType, String metricName);
+
+  void recordDelegateJWTCacheMetrics(String accountId, String metricName);
 }

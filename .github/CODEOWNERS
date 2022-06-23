@@ -23,6 +23,13 @@ bazel* diptiman.adak@harness.io udham.singh@harness.io
 /300-cv-nextgen/src/main/java* praveen.sugavanam@harness.io kamal.joshi@harness.io abhijith.pradeep@harness.io deepak.chhikara@harness.io kanhaiya.rathi@harness.io kapil.choudhary@harness.io
 /800-pipeline-service/src/main/java/**/*Resource*.java vaibhav.si@harness.io prashant.pal@harness.io archit.singla@harness.io
 
+/315-sto-manager/ @harness/sto
+/323-sto-utilities/ @harness/sto
+/325-sto-beans/ @harness/sto
+/320-ci-execution/src/**/Security*.java @harness/sto
+/320-ci-execution/src/**/STO*.java @harness/sto
+/330-ci-beans/src/**/Security*.java @harness/sto
+
 ### All BUILD.bazel files 260-delegate depends on - to avoid the introduction of new, unnecessary dependencies increasing the delegate JAR size.
 /260-delegate/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io
 /420-delegate-agent/BUILD.bazel johannes@harness.io raghu@harness.io jenny.james@harness.io marko.milic@harness.io gaurav.jain@harness.io

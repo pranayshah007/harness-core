@@ -88,7 +88,7 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
         -> scmClientFacilitatorService.listUserRepos(accountIdentifier, orgIdentifier, projectIdentifier, scmConnector,
             PageRequestDTO.builder().pageIndex(pageRequest.getPageIndex()).pageSize(pageRequest.getPageSize()).build()),
         scmConnector);
-    if (isFailureResponse(response.getStatus())) {
+    if (ScmApiErrorHandlingHelper.isFailureResponse(response.getStatus(), scmConnector.getConnectorType())) {
       ScmApiErrorHandlingHelper.processAndThrowError(ScmApis.LIST_REPOSITORIES, scmConnector.getConnectorType(),
           scmConnector.getUrl(), response.getStatus(), response.getError(),
           ErrorMetadata.builder().connectorRef(connectorRef).build());
@@ -107,7 +107,7 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
             -> scmClientFacilitatorService.listUserRepos(accountIdentifier, orgIdentifier, projectIdentifier,
                 scmConnector, PageRequestDTO.builder().fetchAll(true).build()),
             scmConnector);
-    if (isFailureResponse(response.getStatus())) {
+    if (ScmApiErrorHandlingHelper.isFailureResponse(response.getStatus(), scmConnector.getConnectorType())) {
       ScmApiErrorHandlingHelper.processAndThrowError(ScmApis.LIST_REPOSITORIES, scmConnector.getConnectorType(),
           scmConnector.getUrl(), response.getStatus(), response.getError(),
           ErrorMetadata.builder().connectorRef(connectorRef).build());
@@ -132,7 +132,8 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
                     .build()),
             scmConnector);
 
-    if (isFailureResponse(listBranchesWithDefaultResponse.getStatus())) {
+    if (ScmApiErrorHandlingHelper.isFailureResponse(
+            listBranchesWithDefaultResponse.getStatus(), scmConnector.getConnectorType())) {
       ScmApiErrorHandlingHelper.processAndThrowError(ScmApis.LIST_BRANCHES, scmConnector.getConnectorType(),
           scmConnector.getUrl(), listBranchesWithDefaultResponse.getStatus(),
           listBranchesWithDefaultResponse.getError(),
@@ -170,7 +171,7 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
             scmGetFileByBranchRequestDTO.getFilePath(), null),
         scmConnector);
 
-    if (isFailureResponse(fileContent.getStatus())) {
+    if (ScmApiErrorHandlingHelper.isFailureResponse(fileContent.getStatus(), scmConnector.getConnectorType())) {
       ScmApiErrorHandlingHelper.processAndThrowError(ScmApis.GET_FILE, scmConnector.getConnectorType(),
           scmConnector.getUrl(), fileContent.getStatus(), fileContent.getError(),
           ErrorMetadata.builder()
@@ -216,7 +217,7 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
                                                           .build()),
             scmConnector);
 
-    if (isFailureResponse(createFileResponse.getStatus())) {
+    if (ScmApiErrorHandlingHelper.isFailureResponse(createFileResponse.getStatus(), scmConnector.getConnectorType())) {
       ScmApiErrorHandlingHelper.processAndThrowError(ScmApis.CREATE_FILE, scmConnector.getConnectorType(),
           scmConnector.getUrl(), createFileResponse.getStatus(), createFileResponse.getError(),
           ErrorMetadata.builder()
@@ -262,7 +263,7 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
                                                           .build()),
             scmConnector);
 
-    if (isFailureResponse(updateFileResponse.getStatus())) {
+    if (ScmApiErrorHandlingHelper.isFailureResponse(updateFileResponse.getStatus(), scmConnector.getConnectorType())) {
       ScmApiErrorHandlingHelper.processAndThrowError(ScmApis.UPDATE_FILE, scmConnector.getConnectorType(),
           scmConnector.getUrl(), updateFileResponse.getStatus(), updateFileResponse.getError(),
           ErrorMetadata.builder()
@@ -294,7 +295,7 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
                 scmCreatePRRequestDTO.getTitle()),
             scmConnector);
 
-    if (isFailureResponse(createPRResponse.getStatus())) {
+    if (ScmApiErrorHandlingHelper.isFailureResponse(createPRResponse.getStatus(), scmConnector.getConnectorType())) {
       ScmApiErrorHandlingHelper.processAndThrowError(ScmApis.CREATE_PULL_REQUEST, scmConnector.getConnectorType(),
           scmConnector.getUrl(), createPRResponse.getStatus(), createPRResponse.getError(),
           ErrorMetadata.builder()
@@ -323,7 +324,7 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
             scmGetFileByCommitIdRequestDTO.getFilePath(), scmGetFileByCommitIdRequestDTO.getCommitId()),
         scmConnector);
 
-    if (isFailureResponse(fileContent.getStatus())) {
+    if (ScmApiErrorHandlingHelper.isFailureResponse(fileContent.getStatus(), scmConnector.getConnectorType())) {
       ScmApiErrorHandlingHelper.processAndThrowError(ScmApis.GET_FILE, scmConnector.getConnectorType(),
           scmConnector.getUrl(), fileContent.getStatus(), fileContent.getError(),
           ErrorMetadata.builder()
@@ -351,7 +352,7 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
                 accountIdentifier, orgIdentifier, projectIdentifier, scmConnector),
             scmConnector);
 
-    if (isFailureResponse(getUserRepoResponse.getStatus())) {
+    if (ScmApiErrorHandlingHelper.isFailureResponse(getUserRepoResponse.getStatus(), scmConnector.getConnectorType())) {
       ScmApiErrorHandlingHelper.processAndThrowError(ScmApis.GET_DEFAULT_BRANCH, scmConnector.getConnectorType(),
           scmConnector.getUrl(), getUserRepoResponse.getStatus(), getUserRepoResponse.getError(),
           ErrorMetadata.builder().connectorRef(connectorRef).repoName(repoName).build());
@@ -378,10 +379,6 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
     }
   }
 
-  private boolean isFailureResponse(int statusCode) {
-    return statusCode >= 300;
-  }
-
   @VisibleForTesting
   protected void createNewBranch(Scope scope, ScmConnector scmConnector, String newBranchName, String baseBranchName) {
     CreateBranchResponse createBranchResponse =
@@ -389,7 +386,8 @@ public class ScmFacilitatorServiceImpl implements ScmFacilitatorService {
             -> scmClientFacilitatorService.createNewBranch(scope, scmConnector, newBranchName, baseBranchName),
             scmConnector);
 
-    if (isFailureResponse(createBranchResponse.getStatus())) {
+    if (ScmApiErrorHandlingHelper.isFailureResponse(
+            createBranchResponse.getStatus(), scmConnector.getConnectorType())) {
       ScmApiErrorHandlingHelper.processAndThrowError(ScmApis.CREATE_BRANCH, scmConnector.getConnectorType(),
           scmConnector.getUrl(), createBranchResponse.getStatus(), createBranchResponse.getError(),
           ErrorMetadata.builder().newBranchName(newBranchName).branchName(baseBranchName).build());

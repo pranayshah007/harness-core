@@ -31,10 +31,12 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.OrchestrationWorkflowType;
+import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.ff.FeatureFlagService;
 
+import org.apache.commons.lang3.StringUtils;
 import software.wings.api.CanaryWorkflowStandardParams;
 import software.wings.api.DeploymentType;
 import software.wings.api.WorkflowElement;
@@ -104,7 +106,6 @@ public class WorkflowExecutionServiceHelper {
     if (isBlank(workflowExecutionId) || isEmpty(workflowVariables)) {
       return new WorkflowVariablesMetadata(workflowVariables);
     }
-
     WorkflowExecution workflowExecution = workflowExecutionService.getWorkflowExecution(appId, workflowExecutionId);
     if (workflowExecution == null || workflowExecution.getExecutionArgs() == null
         || executionArgs.getWorkflowType() != workflowExecution.getWorkflowType()
@@ -340,7 +341,11 @@ public class WorkflowExecutionServiceHelper {
         }
         continue;
       }
-      variable.setValue(oldWorkflowVariablesMap.get(name));
+      String oldValue = oldWorkflowVariablesMap.get(name);
+      if( !StringUtils.isBlank(oldValue) && (EmptyPredicate.isEmpty(variable.getAllowedList()) || variable.getAllowedList().contains(oldValue))) {
+        //not updating value if variable itself is updated
+        variable.setValue(oldValue);
+      }
       // This is never a noop as we have already dealt with the case that this workflow variable is new.
       oldWorkflowVariablesMap.remove(name);
     }

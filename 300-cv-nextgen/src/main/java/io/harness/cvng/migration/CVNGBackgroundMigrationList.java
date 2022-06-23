@@ -10,6 +10,7 @@ package io.harness.cvng.migration;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cvng.migration.list.AddDeploymentMonitoringSourcePerpetualTask;
+import io.harness.cvng.migration.list.AddEnabledFlagToSLISLOMigration;
 import io.harness.cvng.migration.list.AddEnvRefsToMonitoredServiceMigration;
 import io.harness.cvng.migration.list.AddMetricIdentifierInCVConfigsAndMetricPacks;
 import io.harness.cvng.migration.list.AddMetricIdentifierToTimeSeriesThreshold;
@@ -109,6 +110,7 @@ public class CVNGBackgroundMigrationList {
         .add(Pair.of(46, AddMetricIdentifierToTimeSeriesThreshold.class))
         .add(Pair.of(47, AppDCVConfigCompleteMetricPathMigration.class))
         .add(Pair.of(48, SetNotRequiredActivityAnalysisStatusToIgnored.class))
+        .add(Pair.of(49, AddEnabledFlagToSLISLOMigration.class))
         .build();
   }
 }

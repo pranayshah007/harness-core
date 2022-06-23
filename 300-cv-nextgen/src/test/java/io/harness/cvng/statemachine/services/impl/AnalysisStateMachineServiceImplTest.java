@@ -29,12 +29,14 @@ import io.harness.cvng.beans.DataSourceType;
 import io.harness.cvng.beans.job.CanaryVerificationJobDTO;
 import io.harness.cvng.beans.job.Sensitivity;
 import io.harness.cvng.beans.job.VerificationJobDTO;
+import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
 import io.harness.cvng.core.entities.AppDynamicsCVConfig;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.entities.VerificationTask;
 import io.harness.cvng.core.entities.VerificationTask.DeploymentInfo;
 import io.harness.cvng.core.services.api.CVConfigService;
 import io.harness.cvng.core.services.api.VerificationTaskService;
+import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.servicelevelobjective.entities.ServiceLevelIndicator;
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorService;
 import io.harness.cvng.statemachine.beans.AnalysisInput;
@@ -80,6 +82,8 @@ public class AnalysisStateMachineServiceImplTest extends CvNextGenTestBase {
   @Inject private VerificationTaskService verificationTaskService;
   @Inject private ServiceLevelIndicatorService serviceLevelIndicatorService;
 
+  @Inject private MonitoredServiceService monitoredServiceService;
+
   private final DataGenerator dataGenerator = DataGenerator.builder().accountId(generateUuid()).build();
   private String accountId;
   private String cvConfigId;
@@ -90,6 +94,7 @@ public class AnalysisStateMachineServiceImplTest extends CvNextGenTestBase {
   private TimeSeriesAnalysisState deploymentTimeSeriesAnalysisState;
 
   private BuilderFactory builderFactory;
+  private String monitoredServiceIdentifier;
 
   @Before
   public void setup() throws IllegalAccessException {
@@ -99,6 +104,8 @@ public class AnalysisStateMachineServiceImplTest extends CvNextGenTestBase {
     accountId = builderFactory.getContext().getAccountId();
     cvConfigId = cvConfig.getUuid();
     verificationTaskId = cvConfigId;
+    monitoredServiceIdentifier = "monitoredServiceIdentifier";
+    createMonitoredService();
     String verificationJobInstanceId =
         verificationJobInstanceService.create(builderFactory.verificationJobInstanceBuilder()
                                                   .resolvedJob(builderFactory.getDeploymentVerificationJob())
@@ -146,7 +153,7 @@ public class AnalysisStateMachineServiceImplTest extends CvNextGenTestBase {
     List<String> serviceLevelIndicatorIdentifiers =
         serviceLevelIndicatorService.create(builderFactory.getProjectParams(),
             Collections.singletonList(builderFactory.getServiceLevelIndicatorDTOBuilder()), generateUuid(),
-            generateUuid(), generateUuid());
+            monitoredServiceIdentifier, generateUuid());
     ServiceLevelIndicator serviceLevelIndicator = serviceLevelIndicatorService.getServiceLevelIndicator(
         builderFactory.getProjectParams(), serviceLevelIndicatorIdentifiers.get(0));
     String sliId = serviceLevelIndicator.getUuid();
@@ -555,5 +562,12 @@ public class AnalysisStateMachineServiceImplTest extends CvNextGenTestBase {
     Optional<AnalysisStateMachine> ignoredStateMachine =
         stateMachineService.ignoreOldStateMachine(analysisStateMachine);
     assertThat(ignoredStateMachine).isNotPresent();
+  }
+
+  private void createMonitoredService() {
+    MonitoredServiceDTO monitoredServiceDTO =
+        builderFactory.monitoredServiceDTOBuilder().identifier(monitoredServiceIdentifier).build();
+    monitoredServiceDTO.setSources(MonitoredServiceDTO.Sources.builder().build());
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
   }
 }

@@ -10,6 +10,9 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.gitsync.beans.YamlDTO;
+import io.harness.walktree.beans.VisitableChildren;
+import io.harness.walktree.visitor.SimpleVisitorHelper;
+import io.harness.walktree.visitor.Visitable;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
@@ -20,6 +23,14 @@ import org.springframework.data.annotation.TypeAlias;
 @Data
 @Builder
 @TypeAlias("nGServiceConfig")
-public class NGServiceConfig implements YamlDTO {
+@SimpleVisitorHelper(helperClass = NGServiceConfigVisitorHelper.class)
+public class NGServiceConfig implements YamlDTO, Visitable {
   @JsonProperty("service") NGServiceV2InfoConfig ngServiceV2InfoConfig;
+
+  @Override
+  public VisitableChildren getChildrenToWalk() {
+    VisitableChildren children = VisitableChildren.builder().build();
+    children.add("service", ngServiceV2InfoConfig);
+    return children;
+  }
 }

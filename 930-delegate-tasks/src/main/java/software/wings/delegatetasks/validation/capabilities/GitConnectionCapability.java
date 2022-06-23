@@ -7,6 +7,8 @@
 
 package software.wings.delegatetasks.validation.capabilities;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.delegate.beans.executioncapability.CapabilityType;
@@ -54,5 +56,11 @@ public class GitConnectionCapability implements ExecutionCapability {
   @Override
   public Duration getPeriodUntilNextValidation() {
     return Duration.ofHours(4);
+  }
+
+  @Override
+  public String getCapabilityToString() {
+    return isNotEmpty(gitConfig.getRepoUrl()) ? String.format("Capability reach url : %s ", gitConfig.getRepoUrl())
+                                              : null;
   }
 }
