@@ -116,12 +116,12 @@ public class CreatePRStep extends TaskChainExecutableWithRollbackAndRbac {
     if (TaskStatus.SUCCESS.equals(ngGitOpsResponse.getTaskStatus())) {
       CreatePROutcome createPROutcome = CreatePROutcome.builder()
                                             .changedFiles(((CreatePRPassThroughData) passThroughData).getFilePaths())
-                                            .prLink(ngGitOpsResponse.getPrLink())
+                                            .prNumber(ngGitOpsResponse.getPrNumber())
                                             .commitId(ngGitOpsResponse.getCommitId())
                                             .build();
 
       executionSweepingOutputService.consume(
-          ambiance, OutcomeExpressionConstants.CREATE_PR_OUTCOME, createPROutcome, StepOutcomeGroup.STEP.name());
+          ambiance, OutcomeExpressionConstants.CREATE_PR_OUTCOME, createPROutcome, StepOutcomeGroup.STAGE.name());
 
       return StepResponse.builder()
           .unitProgressList(ngGitOpsResponse.getUnitProgressData().getUnitProgresses())
@@ -139,8 +139,6 @@ public class CreatePRStep extends TaskChainExecutableWithRollbackAndRbac {
         .failureInfo(FailureInfo.newBuilder().setErrorMessage(ngGitOpsResponse.getErrorMessage()).build())
         .build();
   }
-
-
 
   @Override
   public TaskChainResponse startChainLinkAfterRbac(

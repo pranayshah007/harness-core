@@ -18,7 +18,6 @@ import io.harness.cdng.environment.yaml.EnvironmentYaml;
 import io.harness.cdng.gitops.CreatePRPassThroughData;
 import io.harness.cdng.gitops.CreatePRStepInfo;
 import io.harness.cdng.gitops.CreatePRStepParams;
-import io.harness.cdng.gitops.MergePRPassThroughData;
 import io.harness.cdng.gitops.MergePRStepInfo;
 import io.harness.cdng.gitops.MergePRStepParams;
 import io.harness.cdng.helm.HelmDeployStepInfo;
@@ -173,6 +172,5 @@ public class NGKryoRegistrar implements KryoRegistrar {
     kryo.register(CommandStepInfo.class, 12600);
     kryo.register(MergePRStepParams.class, 12601);
     kryo.register(MergePRStepInfo.class, 12602);
-    kryo.register(MergePRPassThroughData.class, 12603);
   }
 }

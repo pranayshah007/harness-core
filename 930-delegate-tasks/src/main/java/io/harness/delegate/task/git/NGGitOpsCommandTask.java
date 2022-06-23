@@ -9,6 +9,7 @@ package io.harness.delegate.task.git;
 
 import static io.harness.annotations.dev.HarnessTeam.GITOPS;
 import static io.harness.git.model.ChangeType.MODIFY;
+import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
 
 import static software.wings.beans.LogHelper.color;
@@ -29,8 +30,10 @@ import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.gitapi.GitApiMergePRTaskResponse;
 import io.harness.delegate.beans.gitapi.GitApiTaskParams;
+import io.harness.delegate.beans.gitapi.GitApiTaskResponse;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
@@ -138,22 +141,29 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
       logCallback = new NGDelegateLogCallback(getLogStreamingTaskClient(), MergePR, true, commandUnitsProgress);
 
       ConnectorType connectorType = gitOpsTaskParams.connectorInfoDTO.getConnectorType();
-      GitApiMergePRTaskResponse responseData = null;
-
-      String prLink = gitOpsTaskParams.getPrLink();
+      GitApiTaskResponse responseData = null;
 
       switch (connectorType) {
         case GITHUB:
-          responseData = (GitApiMergePRTaskResponse) githubApiClient.mergePR(gitOpsTaskParams.getGitApiTaskParams());
+          responseData = (GitApiTaskResponse) githubApiClient.mergePR(gitOpsTaskParams.getGitApiTaskParams());
         default:
           logCallback.saveExecutionLog("Connector not supported", INFO, CommandExecutionStatus.FAILURE);
+      }
+
+      if (responseData.getCommandExecutionStatus() != CommandExecutionStatus.SUCCESS) {
+        logCallback.saveExecutionLog(
+            "Error encountered when merging the pull request", ERROR, CommandExecutionStatus.FAILURE);
+        return NGGitOpsResponse.builder()
+            .taskStatus(TaskStatus.FAILURE)
+            .errorMessage(responseData.getErrorMessage())
+            .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
+            .build();
       }
 
       logCallback.saveExecutionLog("Done.", INFO, CommandExecutionStatus.SUCCESS);
 
       return NGGitOpsResponse.builder()
           .taskStatus(TaskStatus.SUCCESS)
-          .commitId(responseData.getSha())
           .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
           .build();
     } catch (Exception e) {
@@ -200,7 +210,8 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
 
       CreatePRResponse createPRResponse =
           createPullRequest(scmConnector, newBranch, baseBranch, PR_TITLE, gitOpsTaskParams.getAccountId());
-      String prLink = getPRLink(createPRResponse.getNumber(), scmConnector.getConnectorType(), scmConnector.getUrl());
+
+      String prLink = getPRLink(createPRResponse.getNumber(), scmConnector, scmConnector.getConnectorType());
 
       logCallback.saveExecutionLog("Created PR " + prLink, INFO);
       logCallback.saveExecutionLog("Done.", INFO, CommandExecutionStatus.SUCCESS);
@@ -232,12 +243,15 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
     return fetchFilesResult;
   }
 
-  public String getPRLink(int prNumber, ConnectorType connectorType, String url) {
+  public String getPRLink(int prNumber, ScmConnector scmConnector, ConnectorType connectorType) {
     switch (connectorType) {
       // TODO: GITLAB, BITBUCKET
       case GITHUB:
-        return url + "/"
-            + "pull/" + prNumber + "/";
+        GithubConnectorDTO githubConnectorDTO = (GithubConnectorDTO) scmConnector;
+        return "https://github.com"
+            + "/" + githubConnectorDTO.getGitRepositoryDetails().getOrg() + "/"
+            + githubConnectorDTO.getGitRepositoryDetails().getName() + "/pull"
+            + "/" + prNumber;
       default:
         return "";
     }

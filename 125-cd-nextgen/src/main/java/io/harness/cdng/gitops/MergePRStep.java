@@ -30,6 +30,7 @@ import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
+import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
 import io.harness.delegate.beans.gitapi.GitApiRequestType;
 import io.harness.delegate.beans.gitapi.GitApiTaskParams;
 import io.harness.delegate.beans.gitapi.GitRepoType;
@@ -129,15 +130,25 @@ public class MergePRStep extends TaskChainExecutableWithRollbackAndRbac {
 
     ManifestOutcome releaseRepoOutcome = gitOpsStepHelper.getReleaseRepoOutcome(ambiance);
 
-    OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputService.resolveOptional(
-        ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.CREATE_PR_OUTCOME));
-    String prLink = "https://github.com/wings-software/rohittest/pull/6";
-    if (optionalSweepingOutput != null && optionalSweepingOutput.isFound()) {
-      CreatePROutcome createPROutcome = (CreatePROutcome) optionalSweepingOutput.getOutput();
-      prLink = createPROutcome.getPrLink();
+    GitStoreDelegateConfig gitStoreDelegateConfig = getGitStoreDelegateConfig(ambiance, releaseRepoOutcome);
+    String repoOwner = null, repoName = null;
+    switch (gitStoreDelegateConfig.getGitConfigDTO().getConnectorType()) {
+      case GITHUB:
+        GithubConnectorDTO githubConnectorDTO = (GithubConnectorDTO) gitStoreDelegateConfig.getGitConfigDTO();
+        repoOwner = githubConnectorDTO.getGitRepositoryDetails().getOrg();
+        repoName = githubConnectorDTO.getGitRepositoryDetails().getName();
+      default:
     }
 
-    GitStoreDelegateConfig gitStoreDelegateConfig = getGitStoreDelegateConfig(ambiance, releaseRepoOutcome);
+    OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputService.resolveOptional(
+        ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.CREATE_PR_OUTCOME));
+    int prNumber;
+    if (optionalSweepingOutput != null && optionalSweepingOutput.isFound()) {
+      CreatePROutcome createPROutcome = (CreatePROutcome) optionalSweepingOutput.getOutput();
+      prNumber = createPROutcome.getPrNumber();
+    } else {
+      throw new InvalidRequestException("Pull Request Details are missing", USER);
+    }
 
     String accountId = AmbianceUtils.getAccountId(ambiance);
 
@@ -157,55 +168,41 @@ public class MergePRStep extends TaskChainExecutableWithRollbackAndRbac {
                                                .build(),
             scope + connectorInfoDTO.getIdentifier());
 
-    //    ConnectorDetails connectorDetails = ConnectorDetails.builder()
-    //            .connectorConfig(connectorInfoDTO.getConnectorConfig())
-    //            .connectorType(connectorInfoDTO.getConnectorType())
-    //            .identifier(connectorInfoDTO.getIdentifier())
-    //            .orgIdentifier(connectorInfoDTO.getOrgIdentifier())
-    //            .projectIdentifier(connectorInfoDTO.getProjectIdentifier())
-    //            .encryptedDataDetails(gitStoreDelegateConfig.getEncryptedDataDetails())
-    //            .build();
-
     GitApiTaskParams gitApiTaskParams = GitApiTaskParams.builder()
                                             .gitRepoType(GitRepoType.GITHUB)
                                             .requestType(GitApiRequestType.MERGE_PR)
                                             .connectorDetails(connectorDetails)
-                                            .prNumber("6")
-                                            .owner("wings-software")
-                                            .repo("rohittest")
+                                            .prNumber(String.valueOf(prNumber))
+                                            .owner(repoOwner)
+                                            .repo(repoName)
                                             .build();
 
-    if (!Strings.isEmpty(prLink)) {
-      NGGitOpsTaskParams ngGitOpsTaskParams = NGGitOpsTaskParams.builder()
-                                                  .gitOpsTaskType(GitOpsTaskType.MERGE_PR)
-                                                  .accountId(accountId)
-                                                  .connectorInfoDTO(connectorInfoDTO)
-                                                  .prLink(prLink)
-                                                  .gitApiTaskParams(gitApiTaskParams)
-                                                  .build();
+    NGGitOpsTaskParams ngGitOpsTaskParams = NGGitOpsTaskParams.builder()
+                                                .gitOpsTaskType(GitOpsTaskType.MERGE_PR)
+                                                .accountId(accountId)
+                                                .connectorInfoDTO(connectorInfoDTO)
+                                                .gitApiTaskParams(gitApiTaskParams)
+                                                .build();
 
-      final TaskData taskData = TaskData.builder()
-                                    .async(true)
-                                    .timeout(CDStepHelper.getTimeoutInMillis(stepParameters))
-                                    .taskType(TaskType.GITOPS_TASK_NG.name())
-                                    .parameters(new Object[] {ngGitOpsTaskParams})
-                                    .build();
+    final TaskData taskData = TaskData.builder()
+                                  .async(true)
+                                  .timeout(CDStepHelper.getTimeoutInMillis(stepParameters))
+                                  .taskType(TaskType.GITOPS_TASK_NG.name())
+                                  .parameters(new Object[] {ngGitOpsTaskParams})
+                                  .build();
 
-      String taskName = TaskType.GITOPS_TASK_NG.getDisplayName();
+    String taskName = TaskType.GITOPS_TASK_NG.getDisplayName();
 
-      final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
-          gitOpsSpecParams.getCommandUnits(), taskName,
-          TaskSelectorYaml.toTaskSelector(emptyIfNull(getParameterFieldValue(gitOpsSpecParams.getDelegateSelectors()))),
-          stepHelper.getEnvironmentType(ambiance));
+    final TaskRequest taskRequest = prepareCDTaskRequest(ambiance, taskData, kryoSerializer,
+        gitOpsSpecParams.getCommandUnits(), taskName,
+        TaskSelectorYaml.toTaskSelector(emptyIfNull(getParameterFieldValue(gitOpsSpecParams.getDelegateSelectors()))),
+        stepHelper.getEnvironmentType(ambiance));
 
-      return TaskChainResponse.builder()
-          .chainEnd(true)
-          .passThroughData(MergePRPassThroughData.builder().prLink(prLink).build())
-          .taskRequest(taskRequest)
-          .build();
-    } else {
-      throw new InvalidRequestException("Pull Request Details are missing", USER);
-    }
+    return TaskChainResponse.builder()
+        .chainEnd(true)
+        .passThroughData(CreatePRPassThroughData.builder().build())
+        .taskRequest(taskRequest)
+        .build();
   }
 
   public GitStoreDelegateConfig getGitStoreDelegateConfig(Ambiance ambiance, ManifestOutcome manifestOutcome) {
