@@ -45,13 +45,13 @@ import com.mongodb.WriteResult;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.StreamSupport;
 import lombok.Builder;
 import lombok.Value;
@@ -97,14 +97,14 @@ public class MongoPersistence implements HPersistence {
   @Inject Morphia morphia;
   @Inject IndexManager indexManager;
 
-  private Map<String, Info> storeInfo = new HashMap<>();
-  private Map<Class, Store> classStores = new HashMap<>();
+  private Map<String, Info> storeInfo = new ConcurrentHashMap<>();
+  private Map<Class, Store> classStores = new ConcurrentHashMap<>();
   private Map<String, AdvancedDatastore> datastoreMap;
   @Inject UserProvider userProvider;
 
   @Inject
   public MongoPersistence(@Named("primaryDatastore") AdvancedDatastore primaryDatastore) {
-    datastoreMap = new HashMap<>();
+    datastoreMap = new ConcurrentHashMap<>();
     datastoreMap.put(DEFAULT_STORE.getName(), primaryDatastore);
   }
 
