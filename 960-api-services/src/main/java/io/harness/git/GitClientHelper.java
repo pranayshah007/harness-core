@@ -91,8 +91,12 @@ public class GitClientHelper {
   private static final Integer REPO_GROUP = 7;
   private static final Integer SCM_GROUP = 3;
   private static final Integer PROTOCOL_GROUP = 1;
+  private static final String DOT_SEPARATOR = ".";
   private static final String PATH_SEPARATOR = "/";
+  private static final String COLON_SEPARATOR = ":";
   private static final String AZURE_REPO_GIT_LABEL = "/_git/";
+  private static final String AZURE_SSH_PROTOCOl = "git@ssh";
+  private static final String AZURE_SSH_API_VERSION = "v3";
 
   static {
     try {
@@ -511,5 +515,14 @@ public class GitClientHelper {
       azureCompleteUrl = StringUtils.join(azureCompleteUrl, PATH_SEPARATOR);
     }
     return StringUtils.join(azureCompleteUrl, StringUtils.stripStart(repoName, PATH_SEPARATOR));
+  }
+
+  public static String getCompleteSSHUrlFromHttpUrlForAzure(String httpUrl) {
+    String scmGroup = getGitSCM(httpUrl);
+    String gitOwner = getGitOwner(httpUrl, true);
+    String gitRepo = getGitRepo(httpUrl);
+    String completeUrl = StringUtils.join(AZURE_SSH_PROTOCOl, DOT_SEPARATOR, scmGroup, COLON_SEPARATOR,
+        AZURE_SSH_API_VERSION, PATH_SEPARATOR, gitOwner, PATH_SEPARATOR, gitRepo);
+    return completeUrl.replaceFirst(AZURE_REPO_GIT_LABEL, PATH_SEPARATOR);
   }
 }

@@ -21,12 +21,16 @@ import io.harness.ngtriggers.beans.source.webhook.v2.git.PayloadAware;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
 @Data
+@Builder
 @NoArgsConstructor
+@AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @OwnedBy(CI)
 public class AzureRepoSpec implements WebhookTriggerSpecV2 {
