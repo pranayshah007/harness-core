@@ -8,6 +8,7 @@
 package io.harness.delegate.k8s;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.delegate.k8s.K8sRollingRollbackBaseHandler.ResourceRecreationStatus.RESOURCE_CREATION_SUCCESSFUL;
 import static io.harness.delegate.k8s.K8sTestHelper.buildProcessResult;
 import static io.harness.delegate.k8s.K8sTestHelper.buildRelease;
 import static io.harness.delegate.k8s.K8sTestHelper.buildReleaseMultipleManagedWorkloads;
@@ -22,12 +23,14 @@ import static io.harness.rule.OwnerRule.ABOSII;
 import static io.harness.rule.OwnerRule.ACASIAN;
 import static io.harness.rule.OwnerRule.ANSHUL;
 import static io.harness.rule.OwnerRule.BOJANA;
+import static io.harness.rule.OwnerRule.NAMAN_TALAYCHA;
 import static io.harness.rule.OwnerRule.TATHAGAT;
 import static io.harness.rule.OwnerRule.YOGESH;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
+import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -68,6 +71,7 @@ import io.harness.rule.Owner;
 
 import com.google.common.collect.ImmutableList;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import org.junit.Before;
@@ -549,6 +553,16 @@ public class K8sRollingRollbackBaseHandlerTest extends CategoryTest {
                    ImmutableList.of(KubernetesResourceId.builder().build()), logCallback, k8sDelegateTaskParams))
         .isEqualTo(ResourceRecreationStatus.NO_RESOURCE_CREATED);
     verify(releaseHistory, never()).getPreviousRollbackEligibleRelease(anyInt());
+  }
+
+  @Test
+  @Owner(developers = NAMAN_TALAYCHA)
+  @Category(UnitTests.class)
+  public void testGetResourcesRecreated() {
+    List<KubernetesResourceId> prunedResourceIds =
+        singletonList(KubernetesResourceId.builder().name("dummy_name").build());
+    assertThat(k8sRollingRollbackBaseHandler.getResourcesRecreated(prunedResourceIds, RESOURCE_CREATION_SUCCESSFUL))
+        .isEqualTo(new HashSet<>(prunedResourceIds));
   }
 
   @Test

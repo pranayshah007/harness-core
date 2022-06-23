@@ -41,6 +41,10 @@ if [[ "" != "$NG_MANAGER_URL" ]]; then
   yq write -i $CONFIG_FILE nextGen.ngManagerUrl "$NG_MANAGER_URL"
 fi
 
+if [[ "" != "$NG_MANAGER_CLIENT_BASEURL" ]]; then
+  yq write -i $CONFIG_FILE ngManagerClientConfig.baseUrl "$NG_MANAGER_CLIENT_BASEURL"
+fi
+
   yq write -i /opt/harness/cv-nextgen-config.yml server.requestLog.appenders[0].type "console"
   yq write -i /opt/harness/cv-nextgen-config.yml server.requestLog.appenders[0].threshold "TRACE"
   yq write -i /opt/harness/cv-nextgen-config.yml server.requestLog.appenders[0].target "STDOUT"
@@ -58,6 +62,10 @@ fi
 
 if [[ "" != "$NEXT_GEN_MANAGER_SECRET" ]]; then
   yq write -i /opt/harness/cv-nextgen-config.yml nextGen.managerServiceSecret "$NEXT_GEN_MANAGER_SECRET"
+fi
+
+if [[ "" != "$NEXT_GEN_MANAGER_SECRET" ]]; then
+  yq write -i $CONFIG_FILE ngManagerServiceSecret "$NEXT_GEN_MANAGER_SECRET"
 fi
 
 if [[ "" != "$MANAGER_JWT_AUTH_SECRET" ]]; then
@@ -189,3 +197,5 @@ replace_key_value accessControlClientConfig.accessControlServiceSecret "$ACCESS_
 
 replace_key_value templateServiceClientConfig.baseUrl "$TEMPLATE_SERVICE_ENDPOINT"
 replace_key_value templateServiceSecret "$TEMPLATE_SERVICE_SECRET"
+
+replace_key_value enforcementClientConfiguration.enforcementCheckEnabled "$ENFORCEMENT_CHECK_ENABLED"

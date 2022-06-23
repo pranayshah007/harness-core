@@ -130,6 +130,7 @@ gcpConfig:
   gcpProjectId: gcpProjectIdPlaceHolder
   gcpAwsConnectorCrudPubSubTopic: "ce-aws-connector-crud"
   gcpGcpConnectorCrudPubSubTopic: "ce-gcp-connector-crud"
+  gcpAzureConnectorCrudPubSubTopic: "ce-azure-connector-crud"
 
 ceAzureSetupConfig:
   azureAppClientId: azureAppClientIdPlaceholder

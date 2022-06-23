@@ -68,7 +68,11 @@ import io.harness.tasks.ResponseData;
 import io.harness.tasks.Task;
 import io.harness.yaml.core.StepSpecType;
 
+import software.wings.beans.SerializationFormat;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Duration;
@@ -226,17 +230,26 @@ public class StepUtils {
         withLogs ? generateLogAbstractions(ambiance) : new LinkedHashMap<>();
     units = withLogs ? units : new ArrayList<>();
 
-    TaskDetails taskDetails =
+    TaskDetails.Builder taskDetailsBuilder =
         TaskDetails.newBuilder()
-            .setKryoParameters(ByteString.copyFrom(kryoSerializer.asDeflatedBytes(taskParameters) == null
-                    ? new byte[] {}
-                    : kryoSerializer.asDeflatedBytes(taskParameters)))
             .setExecutionTimeout(Duration.newBuilder().setSeconds(taskData.getTimeout() / 1000).build())
             .setExpressionFunctorToken(ambiance.getExpressionFunctorToken())
             .setMode(taskData.isAsync() ? TaskMode.ASYNC : TaskMode.SYNC)
             .setParked(taskData.isParked())
-            .setType(TaskType.newBuilder().setType(taskData.getTaskType()).build())
-            .build();
+            .setType(TaskType.newBuilder().setType(taskData.getTaskType()).build());
+
+    ObjectMapper objectMapper = new ObjectMapper();
+    if (taskData.getSerializationFormat().equals(SerializationFormat.JSON)) {
+      try {
+        taskDetailsBuilder.setJsonParameters(ByteString.copyFrom(objectMapper.writeValueAsBytes(taskParameters)));
+      } catch (JsonProcessingException e) {
+        throw new InvalidRequestException("Could not serialize the task request", e);
+      }
+    } else {
+      taskDetailsBuilder.setKryoParameters(ByteString.copyFrom(kryoSerializer.asDeflatedBytes(taskParameters) == null
+              ? new byte[] {}
+              : kryoSerializer.asDeflatedBytes(taskParameters)));
+    }
 
     Map<String, String> setupAbstractionsMap = buildAbstractions(ambiance, taskScope);
     if (environmentType != null && environmentType != EnvironmentType.ALL) {
@@ -246,7 +259,7 @@ public class StepUtils {
     SubmitTaskRequest.Builder requestBuilder =
         SubmitTaskRequest.newBuilder()
             .setAccountId(AccountId.newBuilder().setId(accountId).build())
-            .setDetails(taskDetails)
+            .setDetails(taskDetailsBuilder.build())
             .addAllSelectors(CollectionUtils.emptyIfNull(selectors))
             .setLogAbstractions(TaskLogAbstractions.newBuilder().putAllValues(logAbstractionMap).build())
             .setSetupAbstractions(TaskSetupAbstractions.newBuilder().putAllValues(setupAbstractionsMap).build())

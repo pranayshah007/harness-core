@@ -21,6 +21,8 @@ import io.harness.pms.pipeline.PipelineEntity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.HashMap;
 import java.util.Map;
+
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -32,7 +34,7 @@ public class PipelineCreateEvent implements Event {
   private String accountIdentifier;
   private String projectIdentifier;
   private PipelineEntity pipeline;
-  private Boolean isFromGit;
+  private Boolean isForOldGitSync;
 
   public PipelineCreateEvent(
       String accountIdentifier, String orgIdentifier, String projectIdentifier, PipelineEntity pipeline) {
@@ -40,16 +42,17 @@ public class PipelineCreateEvent implements Event {
     this.orgIdentifier = orgIdentifier;
     this.projectIdentifier = projectIdentifier;
     this.pipeline = pipeline;
-    this.isFromGit = false;
+    this.isForOldGitSync = false;
   }
 
+  @Builder
   public PipelineCreateEvent(String orgIdentifier, String accountIdentifier, String projectIdentifier,
-      PipelineEntity pipeline, Boolean isFromGit) {
+      PipelineEntity pipeline, Boolean isForOldGitSync) {
     this.orgIdentifier = orgIdentifier;
     this.accountIdentifier = accountIdentifier;
     this.projectIdentifier = projectIdentifier;
     this.pipeline = pipeline;
-    this.isFromGit = isFromGit;
+    this.isForOldGitSync = isForOldGitSync;
   }
 
   @JsonIgnore

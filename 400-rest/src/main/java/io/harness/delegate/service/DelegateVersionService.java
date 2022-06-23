@@ -10,6 +10,7 @@ package io.harness.delegate.service;
 import static io.harness.beans.FeatureName.USE_IMMUTABLE_DELEGATE;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.DelegateType.CE_KUBERNETES;
+import static io.harness.delegate.beans.DelegateType.HELM_DELEGATE;
 import static io.harness.delegate.beans.DelegateType.KUBERNETES;
 import static io.harness.delegate.beans.VersionOverrideType.DELEGATE_IMAGE_TAG;
 import static io.harness.delegate.beans.VersionOverrideType.DELEGATE_JAR;
@@ -128,7 +129,9 @@ public class DelegateVersionService {
   }
 
   private boolean isImmutableDelegate(final String accountId, final String delegateType) {
-    return featureFlagService.isEnabled(USE_IMMUTABLE_DELEGATE, accountId)
-        && (KUBERNETES.equals(delegateType) || CE_KUBERNETES.equals(delegateType));
+    // helm delegate only supports immutable delegate hence bypassing FF for helm delegates.
+    return (featureFlagService.isEnabled(USE_IMMUTABLE_DELEGATE, accountId)
+               && (KUBERNETES.equals(delegateType) || CE_KUBERNETES.equals(delegateType)))
+        || HELM_DELEGATE.equals(delegateType);
   }
 }

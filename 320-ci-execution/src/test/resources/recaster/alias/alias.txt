@@ -248,4 +248,7 @@ io.harness.beans.yaml.extended.infrastrucutre.VmPoolYaml
 io.harness.beans.execution.WebhookBaseAttributes
 io.harness.beans.execution.WebhookExecutionSource
 io.harness.beans.execution.WebhookGitUser
+io.harness.plancreator.steps.resourceconstraint.QueueStepNode
+io.harness.steps.resourcerestraint.beans.QueueHoldingScope
+io.harness.plancreator.steps.resourceconstraint.QueueStepInfo
 io.harness.steps.policy.PolicyStepSpecParameters

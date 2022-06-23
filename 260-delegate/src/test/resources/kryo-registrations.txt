@@ -708,6 +708,7 @@
 6504:io.harness.delegate.beans.DelegateProfileParams
 6505:io.harness.delegate.beans.DelegateTaskEvent
 6506:io.harness.delegate.beans.DelegateTaskAbortEvent
+6507:io.harness.beans.DelegateHeartbeatResponseStreaming
 7101:software.wings.helpers.ext.ecs.request.EcsBGRoute53ServiceSetupRequest
 7102:software.wings.helpers.ext.ecs.response.EcsBGRoute53ServiceSetupResponse
 7103:software.wings.helpers.ext.ecs.request.EcsBGRoute53DNSWeightUpdateRequest
@@ -957,6 +958,7 @@
 7459:software.wings.beans.artifact.ArtifactInput
 7460:software.wings.beans.GitConfig.UrlType
 7461:software.wings.beans.ApprovalDetails.Action
+7462:software.wings.beans.appmanifest.ManifestInput
 7464:software.wings.helpers.ext.gcb.models.GcbArtifactObjects
 7467:software.wings.sm.states.azure.AzureVMSSSetupContextElement
 7470:software.wings.service.impl.analysis.SetupTestNodeData.Instance
@@ -1705,6 +1707,8 @@
 55327:io.harness.delegate.task.azure.appservice.webapp.ng.response.AzureWebAppNGRollbackResponse
 55328:io.harness.delegate.task.azure.appservice.webapp.ng.request.AzureWebAppFetchPreDeploymentDataRequest
 55329:io.harness.delegate.task.azure.appservice.webapp.ng.response.AzureWebAppFetchPreDeploymentDataResponse
+55401:io.harness.delegate.beans.SerializedResponseData
+55402:software.wings.beans.SerializationFormat
 70001:io.harness.accesscontrol.commons.exceptions.AccessDeniedErrorDTO
 70002:io.harness.accesscontrol.acl.api.PermissionCheckDTO
 70003:io.harness.accesscontrol.acl.api.ResourceScope

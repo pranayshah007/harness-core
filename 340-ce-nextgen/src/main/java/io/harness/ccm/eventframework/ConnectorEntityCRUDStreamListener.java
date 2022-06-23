@@ -20,6 +20,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.commons.dao.CEMetadataRecordDao;
 import io.harness.ccm.commons.entities.batch.CEMetadataRecord;
 import io.harness.ccm.service.intf.AwsEntityChangeEventService;
+import io.harness.ccm.service.intf.AzureEntityChangeEventService;
 import io.harness.ccm.service.intf.GCPEntityChangeEventService;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.eventsframework.consumer.Message;
@@ -41,6 +42,7 @@ public class ConnectorEntityCRUDStreamListener implements MessageListener {
   @Inject EntityChangeHandler entityChangeHandler;
   @Inject CEMetadataRecordDao ceMetadataRecordDao;
   @Inject GCPEntityChangeEventService gcpEntityChangeEventService;
+  @Inject AzureEntityChangeEventService azureEntityChangeEventService;
 
   @Override
   public boolean handleMessage(Message message) {
@@ -72,6 +74,14 @@ public class ConnectorEntityCRUDStreamListener implements MessageListener {
         String action = metadataMap.get(ACTION);
         if (action != null) {
           return processGCPEntityChangeEvent(entityChangeDTO, action);
+        }
+      }
+
+      if (isCEAzureEvent(metadataMap)) {
+        EntityChangeDTO entityChangeDTO = getEntityChangeDTO(message);
+        String action = metadataMap.get(ACTION);
+        if (action != null) {
+          return processAzureEntityChangeEvent(entityChangeDTO, action);
         }
       }
     }
@@ -173,6 +183,24 @@ public class ConnectorEntityCRUDStreamListener implements MessageListener {
         break;
       default:
         log.error("Change Event of type %s, not handled", action);
+    }
+    return true;
+  }
+
+  private boolean processAzureEntityChangeEvent(EntityChangeDTO entityChangeDTO, String action) {
+    log.info("In processEntityChangeEvent {}, {} ", entityChangeDTO, action);
+    switch (action) {
+      case CREATE_ACTION:
+        azureEntityChangeEventService.processAzureEntityCreateEvent(entityChangeDTO);
+        break;
+      case UPDATE_ACTION:
+        azureEntityChangeEventService.processAzureEntityUpdateEvent(entityChangeDTO);
+        break;
+      case DELETE_ACTION:
+        azureEntityChangeEventService.processAzureEntityDeleteEvent(entityChangeDTO);
+        break;
+      default:
+        log.error("Azure Entity Change Event of type {}, not handled", action);
     }
     return true;
   }

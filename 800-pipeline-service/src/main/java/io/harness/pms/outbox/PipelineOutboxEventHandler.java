@@ -76,7 +76,7 @@ public class PipelineOutboxEventHandler implements OutboxEventHandler {
       principal = ((PrincipalContextData) globalContext.get(PRINCIPAL_CONTEXT)).getPrincipal();
     }
     pipelineActionObserverSubject.fireInform(PipelineActionObserver::onCreate, event);
-    if (event.getIsFromGit()) {
+    if (event.getIsForOldGitSync()) {
       return true;
     }
     return auditClientService.publishAudit(auditEntry, fromSecurityPrincipal(principal), globalContext);
@@ -102,7 +102,7 @@ public class PipelineOutboxEventHandler implements OutboxEventHandler {
       principal = ((PrincipalContextData) globalContext.get(PRINCIPAL_CONTEXT)).getPrincipal();
     }
     pipelineActionObserverSubject.fireInform(PipelineActionObserver::onUpdate, event);
-    if (event.getIsFromGit()) {
+    if (event.getIsForOldGitSync()) {
       return true;
     }
     return auditClientService.publishAudit(auditEntry, fromSecurityPrincipal(principal), globalContext);
@@ -119,7 +119,7 @@ public class PipelineOutboxEventHandler implements OutboxEventHandler {
       principal = ((PrincipalContextData) globalContext.get(PRINCIPAL_CONTEXT)).getPrincipal();
     }
     pipelineActionObserverSubject.fireInform(PipelineActionObserver::onDelete, event);
-    if (event.getIsFromGit()) {
+    if (event.getIsForOldGitSync()) {
       return true;
     }
     AuditEntry auditEntry = AuditEntry.builder()

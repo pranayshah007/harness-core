@@ -37,6 +37,7 @@ awsS3SyncConfig:
   awsAccessKey: awsS3SyncAccessKeyPlaceHolder
   awsSecretKey: awsS3SyncSecretKeyPlaceHolder
   region: awsS3SyncRegionPlaceHolder
+  awsS3SyncTimeoutMinutes: 30
 
 azureStorageSyncConfig:
   azureStorageAccountName: PlaceHolder

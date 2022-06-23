@@ -261,6 +261,8 @@ replace_key_value cfClientConfig.sleepInterval "$CF_CLIENT_SLEEPINTERVAL"
 replace_key_value featureFlagConfig.featureFlagSystem "$FEATURE_FLAG_SYSTEM"
 replace_key_value featureFlagConfig.syncFeaturesToCF "$SYNC_FEATURES_TO_CF"
 
+replace_key_value awsS3SyncConfig.awsS3SyncTimeoutMinutes "$AWS_S3_SYNC_TIMEOUT_MINUTES"
+
 replace_key_value banzaiRecommenderConfig.baseUrl "$BANZAI_RECOMMENDER_BASEURL"
 replace_key_value awsCurBilling "$AWS_CUR_BILLING"
 

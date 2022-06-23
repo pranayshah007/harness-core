@@ -9,6 +9,8 @@ package io.harness.ngtriggers.utils;
 
 import static io.harness.annotations.dev.HarnessTeam.CI;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.delegate.beans.connector.ConnectorType.AZURE_REPO;
 import static io.harness.delegate.beans.connector.ConnectorType.BITBUCKET;
 import static io.harness.delegate.beans.connector.ConnectorType.GIT;
 import static io.harness.delegate.beans.connector.ConnectorType.GITHUB;
@@ -24,6 +26,7 @@ import io.harness.beans.IdentifierRef;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
+import io.harness.delegate.beans.connector.scm.azurerepo.AzureRepoConnectorDTO;
 import io.harness.delegate.beans.connector.scm.bitbucket.BitbucketConnectorDTO;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
@@ -35,9 +38,12 @@ import io.harness.exception.InvalidArgumentsException;
 import io.harness.exception.TriggerException;
 import io.harness.exception.WingsException;
 import io.harness.exception.ngexception.CIStageExecutionException;
+import io.harness.git.GitClientHelper;
 import io.harness.ngtriggers.beans.dto.TriggerDetails;
 import io.harness.ngtriggers.beans.scm.WebhookPayloadData;
+import io.harness.ngtriggers.beans.source.WebhookTriggerType;
 import io.harness.ngtriggers.beans.source.webhook.v2.WebhookTriggerConfigV2;
+import io.harness.ngtriggers.beans.source.webhook.v2.azurerepo.AzureRepoSpec;
 import io.harness.ngtriggers.beans.source.webhook.v2.git.GitAware;
 import io.harness.ngtriggers.eventmapper.filters.dto.FilterRequestData;
 import io.harness.ngtriggers.helpers.WebhookConfigHelper;
@@ -59,6 +65,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 @Slf4j
 @Singleton
@@ -69,6 +76,7 @@ public class SCMDataObtainer implements GitProviderBaseDataObtainer {
   private final KryoSerializer kryoSerializer;
   public static final String GIT_URL_SUFFIX = ".git";
   public static final String PATH_SEPARATOR = "/";
+  public static final String AZURE_REPO_BASE_URL = "azure.com";
 
   @Inject
   public SCMDataObtainer(
@@ -87,16 +95,17 @@ public class SCMDataObtainer implements GitProviderBaseDataObtainer {
     }
   }
 
-  private String getGitURL(GitConnectionType connectionType, String url, String repoName) {
-    String gitUrl = retrieveGenericGitConnectorURL(repoName, connectionType, url);
+  private String getGitURL(GitConnectionType connectionType, String url, String projectName, String repoName) {
+    String gitUrl = retrieveGenericGitConnectorURL(projectName, repoName, connectionType, url);
 
-    if (!url.endsWith(GIT_URL_SUFFIX) && !url.contains("dev.azure.com")) {
+    if (!url.endsWith(GIT_URL_SUFFIX) && !url.contains(AZURE_REPO_BASE_URL)) {
       gitUrl += GIT_URL_SUFFIX;
     }
     return gitUrl;
   }
 
-  private String retrieveGenericGitConnectorURL(String repoName, GitConnectionType connectionType, String url) {
+  private String retrieveGenericGitConnectorURL(
+      String projectName, String repoName, GitConnectionType connectionType, String url) {
     String gitUrl;
     if (connectionType == GitConnectionType.REPO) {
       gitUrl = url;
@@ -105,10 +114,11 @@ public class SCMDataObtainer implements GitProviderBaseDataObtainer {
         throw new IllegalArgumentException("Repo name is not set in trigger git connector spec");
       }
 
-      if (url.endsWith(PATH_SEPARATOR)) {
-        gitUrl = url + repoName;
+      if (isNotEmpty(projectName) && url.contains(AZURE_REPO_BASE_URL)) {
+        gitUrl = GitClientHelper.getCompleteUrlForAccountLevelAzureConnector(url, projectName, repoName);
       } else {
-        gitUrl = url + PATH_SEPARATOR + repoName;
+        gitUrl = StringUtils.join(StringUtils.stripEnd(url, PATH_SEPARATOR), PATH_SEPARATOR,
+            StringUtils.stripStart(repoName, PATH_SEPARATOR));
       }
     } else {
       throw new InvalidArgumentsException(
@@ -159,6 +169,9 @@ public class SCMDataObtainer implements GitProviderBaseDataObtainer {
     if (gitConnector.getConnectorType() == GITHUB) {
       GithubConnectorDTO gitConfigDTO = (GithubConnectorDTO) gitConnector.getConnectorConfig();
       return gitConfigDTO.getConnectionType();
+    } else if (gitConnector.getConnectorType() == AZURE_REPO) {
+      AzureRepoConnectorDTO gitConfigDTO = (AzureRepoConnectorDTO) gitConnector.getConnectorConfig();
+      return gitConfigDTO.getConnectionType();
     } else if (gitConnector.getConnectorType() == BITBUCKET) {
       BitbucketConnectorDTO gitConfigDTO = (BitbucketConnectorDTO) gitConnector.getConnectorConfig();
       return gitConfigDTO.getConnectionType();
@@ -176,12 +189,14 @@ public class SCMDataObtainer implements GitProviderBaseDataObtainer {
   List<Commit> getCommitsInPr(ConnectorDetails connectorDetails, TriggerDetails triggerDetails, long number) {
     ScmConnector scmConnector = (ScmConnector) connectorDetails.getConnectorConfig();
     try {
-      GitAware gitAware = WebhookConfigHelper.retrieveGitAware(
-          (WebhookTriggerConfigV2) triggerDetails.getNgTriggerConfigV2().getSource().getSpec());
-
+      WebhookTriggerConfigV2 webhookTriggerConfigV2 =
+          (WebhookTriggerConfigV2) triggerDetails.getNgTriggerConfigV2().getSource().getSpec();
+      GitAware gitAware = WebhookConfigHelper.retrieveGitAware(webhookTriggerConfigV2);
+      String projectName = getProjectNameIfApplicable(webhookTriggerConfigV2);
       String repoName = gitAware.fetchRepoName();
 
-      scmConnector.setUrl(getGitURL(retrieveGitConnectionType(connectorDetails), scmConnector.getUrl(), repoName));
+      scmConnector.setUrl(
+          getGitURL(retrieveGitConnectionType(connectorDetails), scmConnector.getUrl(), projectName, repoName));
     } catch (Exception ex) {
       log.error("Failed to update url");
     }
@@ -221,5 +236,13 @@ public class SCMDataObtainer implements GitProviderBaseDataObtainer {
       throw new TriggerException("Failed to fetch commit details", WingsException.SRE);
     }
     return new ArrayList<>();
+  }
+
+  private String getProjectNameIfApplicable(WebhookTriggerConfigV2 webhookTriggerConfigV2) {
+    WebhookTriggerType webhookTriggerType = webhookTriggerConfigV2.getType();
+    if (webhookTriggerType == WebhookTriggerType.AZURE) {
+      return ((AzureRepoSpec) webhookTriggerConfigV2.getSpec()).getSpec().getProjectName();
+    }
+    return null;
   }
 }

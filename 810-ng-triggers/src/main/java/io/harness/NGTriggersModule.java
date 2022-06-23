@@ -84,6 +84,7 @@ public class NGTriggersModule extends AbstractModule {
         MapBinder.newMapBinder(binder(), String.class, GitProviderBaseDataObtainer.class);
     gitProviderBaseDataObtainerMap.addBinding(WebhookSourceRepo.AWS_CODECOMMIT.name())
         .to(AwsCodeCommitDataObtainer.class);
+    gitProviderBaseDataObtainerMap.addBinding(WebhookSourceRepo.AZURE_REPO.name()).to(SCMDataObtainer.class);
     gitProviderBaseDataObtainerMap.addBinding(WebhookSourceRepo.GITHUB.name()).to(SCMDataObtainer.class);
     gitProviderBaseDataObtainerMap.addBinding(WebhookSourceRepo.BITBUCKET.name()).to(SCMDataObtainer.class);
     gitProviderBaseDataObtainerMap.addBinding(WebhookSourceRepo.GITLAB.name()).to(SCMDataObtainer.class);
