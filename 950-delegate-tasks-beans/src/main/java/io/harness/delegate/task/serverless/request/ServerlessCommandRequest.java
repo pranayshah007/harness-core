@@ -29,6 +29,7 @@ import io.harness.delegate.task.serverless.ServerlessArtifactoryArtifactConfig;
 import io.harness.delegate.task.serverless.ServerlessAwsLambdaInfraConfig;
 import io.harness.delegate.task.serverless.ServerlessAwsLambdaManifestConfig;
 import io.harness.delegate.task.serverless.ServerlessCommandType;
+import io.harness.delegate.task.serverless.ServerlessEcrArtifactConfig;
 import io.harness.delegate.task.serverless.ServerlessInfraConfig;
 import io.harness.delegate.task.serverless.ServerlessManifestConfig;
 import io.harness.exception.UnknownEnumTypeException;
@@ -58,36 +59,44 @@ public interface ServerlessCommandRequest extends TaskParameters, ExecutionCapab
     List<EncryptedDataDetail> cloudProviderEncryptionDetails = serverlessInfraConfig.getEncryptionDataDetails();
 
     List<ExecutionCapability> capabilities =
-        new ArrayList<>(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
-            cloudProviderEncryptionDetails, maskingEvaluator));
+            new ArrayList<>(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
+                    cloudProviderEncryptionDetails, maskingEvaluator));
     if (serverlessInfraConfig instanceof ServerlessAwsLambdaInfraConfig) {
       AwsConnectorDTO awsConnectorDTO = ((ServerlessAwsLambdaInfraConfig) serverlessInfraConfig).getAwsConnectorDTO();
       if (awsConnectorDTO.getCredential().getAwsCredentialType() != MANUAL_CREDENTIALS) {
         throw new UnknownEnumTypeException(
-            "AWS Credential Type", String.valueOf(awsConnectorDTO.getCredential().getAwsCredentialType()));
+                "AWS Credential Type", String.valueOf(awsConnectorDTO.getCredential().getAwsCredentialType()));
       }
       capabilities.addAll(AwsCapabilityHelper.fetchRequiredExecutionCapabilities(awsConnectorDTO, maskingEvaluator));
     }
     if (getServerlessManifestConfig() != null) {
       if (serverlessManifestConfig instanceof ServerlessAwsLambdaManifestConfig) {
         ServerlessAwsLambdaManifestConfig serverlessAwsLambdaManifestConfig =
-            (ServerlessAwsLambdaManifestConfig) serverlessManifestConfig;
+                (ServerlessAwsLambdaManifestConfig) serverlessManifestConfig;
         if (serverlessAwsLambdaManifestConfig.getGitStoreDelegateConfig().getType() == GIT) {
           GitStoreDelegateConfig gitStoreDelegateConfig = serverlessAwsLambdaManifestConfig.getGitStoreDelegateConfig();
           capabilities.addAll(GitCapabilityHelper.fetchRequiredExecutionCapabilities(
-              ScmConnectorMapper.toGitConfigDTO(gitStoreDelegateConfig.getGitConfigDTO()),
-              gitStoreDelegateConfig.getEncryptedDataDetails(), gitStoreDelegateConfig.getSshKeySpecDTO()));
+                  ScmConnectorMapper.toGitConfigDTO(gitStoreDelegateConfig.getGitConfigDTO()),
+                  gitStoreDelegateConfig.getEncryptedDataDetails(), gitStoreDelegateConfig.getSshKeySpecDTO()));
           capabilities.addAll(EncryptedDataDetailsCapabilityHelper.fetchExecutionCapabilitiesForEncryptedDataDetails(
-              gitStoreDelegateConfig.getEncryptedDataDetails(), maskingEvaluator));
+                  gitStoreDelegateConfig.getEncryptedDataDetails(), maskingEvaluator));
         }
       }
     }
     if (getServerlessArtifactConfig() != null) {
       if (serverlessArtifactConfig instanceof ServerlessArtifactoryArtifactConfig) {
         ServerlessArtifactoryArtifactConfig serverlessArtifactoryArtifactConfig =
-            (ServerlessArtifactoryArtifactConfig) serverlessArtifactConfig;
+                (ServerlessArtifactoryArtifactConfig) serverlessArtifactConfig;
         capabilities.addAll(ArtifactoryCapabilityHelper.fetchRequiredExecutionCapabilities(
-            serverlessArtifactoryArtifactConfig.getConnectorDTO().getConnectorConfig(), maskingEvaluator));
+                serverlessArtifactoryArtifactConfig.getConnectorDTO().getConnectorConfig(), maskingEvaluator));
+      } else if(serverlessArtifactConfig != null && serverlessArtifactConfig instanceof ServerlessEcrArtifactConfig) {
+        AwsConnectorDTO connectorConfigDTO = ((AwsConnectorDTO) ((ServerlessEcrArtifactConfig) serverlessArtifactConfig).getConnectorDTO().getConnectorConfig());
+        if (connectorConfigDTO.getCredential().getAwsCredentialType() != MANUAL_CREDENTIALS) {
+          throw new UnknownEnumTypeException(
+                  "AWS Credential Type", String.valueOf(connectorConfigDTO.getCredential().getAwsCredentialType()));
+        }
+        capabilities.addAll(AwsCapabilityHelper.fetchRequiredExecutionCapabilities(
+                connectorConfigDTO, maskingEvaluator));
       }
     }
     capabilities.add(ServerlessInstallationCapability.builder().criteria("Serverless Installed").build());
