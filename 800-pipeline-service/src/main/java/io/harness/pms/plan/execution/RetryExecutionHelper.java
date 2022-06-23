@@ -8,6 +8,7 @@
 package io.harness.pms.plan.execution;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -22,6 +23,7 @@ import io.harness.engine.executions.retry.RetryStageInfo;
 import io.harness.exception.InvalidRequestException;
 import io.harness.execution.PlanExecutionMetadata;
 import io.harness.execution.StagesExecutionMetadata;
+import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.plan.IdentityPlanNode;
 import io.harness.plan.Node;
 import io.harness.plan.Plan;
@@ -31,10 +33,12 @@ import io.harness.pms.merger.fqn.FQN;
 import io.harness.pms.merger.helpers.InputSetMergeHelper;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.service.PMSPipelineService;
+import io.harness.pms.pipeline.service.PMSPipelineTemplateHelper;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.service.PMSExecutionService;
 import io.harness.pms.plan.utils.PlanResourceUtility;
 import io.harness.repositories.executions.PmsExecutionSummaryRespository;
+import io.harness.template.yaml.TemplateRefHelper;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -66,6 +70,7 @@ public class RetryExecutionHelper {
   private final PmsExecutionSummaryRespository pmsExecutionSummaryRespository;
   private final PMSPipelineService pmsPipelineService;
   private final PMSExecutionService pmsExecutionService;
+  private final PMSPipelineTemplateHelper pmsPipelineTemplateHelper;
 
   public List<String> fetchOnlyFailedStages(List<RetryStageInfo> info, List<String> retryStagesIdentifier) {
     List<String> onlyFailedStage = new ArrayList<>();
@@ -148,6 +153,17 @@ public class RetryExecutionHelper {
     }
     PlanExecutionMetadata planExecutionMetadata = byPlanExecutionId.get();
     String executedPipeline = planExecutionMetadata.getYaml();
+    TemplateMergeResponseDTO templateMergeResponseDTO = null;
+    // if pipeline is having templates we need to use resolved yaml
+    if (TemplateRefHelper.hasTemplateRef(updatedPipeline)) {
+      templateMergeResponseDTO = pmsPipelineTemplateHelper.resolveTemplateRefsInPipeline(
+          accountId, orgIdentifier, projectIdentifier, updatedPipeline);
+      if (templateMergeResponseDTO != null) {
+        updatedPipeline = isNotEmpty(templateMergeResponseDTO.getMergedPipelineYaml())
+            ? templateMergeResponseDTO.getMergedPipelineYaml()
+            : updatedPipeline;
+      }
+    }
     StagesExecutionMetadata stagesExecutionMetadata = planExecutionMetadata.getStagesExecutionMetadata();
     if (stagesExecutionMetadata != null && stagesExecutionMetadata.isStagesExecution()) {
       updatedPipeline =
