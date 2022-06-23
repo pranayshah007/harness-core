@@ -36,7 +36,6 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.ff.FeatureFlagService;
 
-import org.apache.commons.lang3.StringUtils;
 import software.wings.api.CanaryWorkflowStandardParams;
 import software.wings.api.DeploymentType;
 import software.wings.api.WorkflowElement;
@@ -84,6 +83,7 @@ import java.util.StringJoiner;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.NonNull;
+import org.apache.commons.lang3.StringUtils;
 import org.mongodb.morphia.query.Query;
 import org.mongodb.morphia.query.Sort;
 
@@ -342,8 +342,9 @@ public class WorkflowExecutionServiceHelper {
         continue;
       }
       String oldValue = oldWorkflowVariablesMap.get(name);
-      if( !StringUtils.isBlank(oldValue) && (EmptyPredicate.isEmpty(variable.getAllowedList()) || variable.getAllowedList().contains(oldValue))) {
-        //not updating value if variable itself is updated
+      if (!StringUtils.isBlank(oldValue)
+          && (EmptyPredicate.isEmpty(variable.getAllowedList()) || variable.getAllowedList().contains(oldValue))) {
+        // not updating value if variable itself is updated
         variable.setValue(oldValue);
       }
       // This is never a noop as we have already dealt with the case that this workflow variable is new.

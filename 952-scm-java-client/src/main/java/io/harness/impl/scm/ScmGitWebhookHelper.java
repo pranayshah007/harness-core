@@ -43,9 +43,8 @@ import org.apache.commons.lang3.NotImplementedException;
 @UtilityClass
 @OwnedBy(HarnessTeam.DX)
 public class ScmGitWebhookHelper {
-  public static boolean isIdenticalEvents(
-      WebhookResponse webhookResponse, HookEventType hookEventType, ScmConnector scmConnector,
-      List<NativeEvents> allNativeEventsList) {
+  public static boolean isIdenticalEvents(WebhookResponse webhookResponse, HookEventType hookEventType,
+      ScmConnector scmConnector, List<NativeEvents> allNativeEventsList) {
     if (scmConnector instanceof GithubConnectorDTO) {
       return compareEvents(
           webhookResponse.getNativeEvents().getGithub().getEventsList(), hookEventType.githubWebhookEvents);

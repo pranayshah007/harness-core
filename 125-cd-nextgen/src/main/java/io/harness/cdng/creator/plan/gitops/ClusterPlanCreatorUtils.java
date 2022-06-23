@@ -93,7 +93,7 @@ public class ClusterPlanCreatorUtils {
     checkNotNull(config, "environment group must be present");
 
     if (config.isDeployToAll()) {
-      return ClusterStepParameters.WithEnvGroup(new Metadata(config.getIdentifier(),config.getName()));
+      return ClusterStepParameters.WithEnvGroup(new Metadata(config.getIdentifier(), config.getName()));
     }
 
     checkArgument(isNotEmpty(config.getEnvironmentPlanCreatorConfigs()),

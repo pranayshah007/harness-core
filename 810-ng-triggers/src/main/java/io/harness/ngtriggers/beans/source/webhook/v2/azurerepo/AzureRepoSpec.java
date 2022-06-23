@@ -32,16 +32,15 @@ import lombok.experimental.FieldDefaults;
 public class AzureRepoSpec implements WebhookTriggerSpecV2 {
   AzureRepoTriggerEvent type;
 
-  @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
-  AzureRepoEventSpec spec;
+  @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true) AzureRepoEventSpec spec;
 
   @Override
   public GitAware fetchGitAware() {
-        return spec;
-    }
+    return spec;
+  }
 
   @Override
   public PayloadAware fetchPayloadAware() {
-        return spec;
-    }
+    return spec;
+  }
 }

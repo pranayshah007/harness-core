@@ -90,11 +90,11 @@ public class CommonStepInfo {
           .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("FlowControl/Barrier").build())
           .build();
   StepInfo queueStepInfo = StepInfo.newBuilder()
-                              .setName("Queue")
-                              .setType("Queue")
-                              .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("FlowControl/Queue").build())
-                              .setFeatureFlag(FeatureName.PIPELINE_QUEUE_STEP.name())
-                              .build();
+                               .setName("Queue")
+                               .setType("Queue")
+                               .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("FlowControl/Queue").build())
+                               .setFeatureFlag(FeatureName.PIPELINE_QUEUE_STEP.name())
+                               .build();
   StepInfo serviceNowApprovalStepInfo =
       StepInfo.newBuilder()
           .setName("ServiceNow Approval")

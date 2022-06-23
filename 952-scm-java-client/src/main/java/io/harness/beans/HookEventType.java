@@ -46,8 +46,7 @@ public enum HookEventType {
 
   HookEventType(List<GithubWebhookEvent> githubWebhookEvents, List<GitlabWebhookEvent> gitlabWebhookEvents,
       List<BitbucketCloudWebhookEvent> bitbucketCloudWebhookEvents,
-      List<BitbucketServerWebhookEvent> bitbucketServerWebhookEvents,
-      List<AzureWebhookEvent> azureWebhookEvents) {
+      List<BitbucketServerWebhookEvent> bitbucketServerWebhookEvents, List<AzureWebhookEvent> azureWebhookEvents) {
     this.githubWebhookEvents = githubWebhookEvents;
     this.gitlabWebhookEvents = gitlabWebhookEvents;
     this.bitbucketCloudWebhookEvents = bitbucketCloudWebhookEvents;

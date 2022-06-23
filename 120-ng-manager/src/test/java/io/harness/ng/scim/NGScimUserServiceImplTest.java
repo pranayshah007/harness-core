@@ -33,8 +33,8 @@ import io.harness.ng.core.user.remote.dto.UserMetadataDTO;
 import io.harness.ng.core.user.service.NgUserService;
 import io.harness.rule.Owner;
 import io.harness.scim.ScimUser;
-
 import io.harness.utils.featureflaghelper.NGFeatureFlagHelperService;
+
 import software.wings.beans.Account;
 import software.wings.beans.UserInvite;
 
@@ -60,7 +60,8 @@ public class NGScimUserServiceImplTest extends NgManagerTestBase {
     ngUserService = mock(NgUserService.class);
     userGroupService = mock(UserGroupService.class);
     nGFeatureFlagHelperService = mock(NGFeatureFlagHelperService.class);
-    scimUserService = new NGScimUserServiceImpl(ngUserService, inviteService, userGroupService, nGFeatureFlagHelperService);
+    scimUserService =
+        new NGScimUserServiceImpl(ngUserService, inviteService, userGroupService, nGFeatureFlagHelperService);
   }
 
   @Test
@@ -95,7 +96,8 @@ public class NGScimUserServiceImplTest extends NgManagerTestBase {
     when(ngUserService.getUserInfoByEmailFromCG(any())).thenReturn(Optional.ofNullable(userInfo));
     when(ngUserService.getUserByEmail(userInfo.getEmail(), true)).thenReturn(Optional.ofNullable(userMetadataDTO));
     when(ngUserService.getUserById(any())).thenReturn(Optional.ofNullable(userInfo));
-    when(nGFeatureFlagHelperService.isEnabled(account.getUuid(), FeatureName.ACCOUNT_BASIC_ROLE_ONLY)).thenReturn(false);
+    when(nGFeatureFlagHelperService.isEnabled(account.getUuid(), FeatureName.ACCOUNT_BASIC_ROLE_ONLY))
+        .thenReturn(false);
     Response response = scimUserService.createUser(scimUser, account.getUuid());
 
     assertThat(response).isNotNull();
@@ -124,7 +126,8 @@ public class NGScimUserServiceImplTest extends NgManagerTestBase {
     when(ngUserService.getUserInfoByEmailFromCG(anyString())).thenReturn(Optional.ofNullable(userInfo));
     when(ngUserService.getUserByEmail(userInfo.getEmail(), true)).thenReturn(Optional.ofNullable(null));
     when(ngUserService.getUserById(anyString())).thenReturn(Optional.ofNullable(userInfo));
-    when(nGFeatureFlagHelperService.isEnabled(account.getUuid(), FeatureName.ACCOUNT_BASIC_ROLE_ONLY)).thenReturn(false);
+    when(nGFeatureFlagHelperService.isEnabled(account.getUuid(), FeatureName.ACCOUNT_BASIC_ROLE_ONLY))
+        .thenReturn(false);
     Response response = scimUserService.createUser(scimUser, account.getUuid());
 
     assertThat(response).isNotNull();

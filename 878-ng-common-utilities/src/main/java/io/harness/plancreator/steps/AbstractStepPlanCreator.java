@@ -56,7 +56,8 @@ public abstract class AbstractStepPlanCreator<T extends AbstractStepNode> implem
           ByteString.copyFrom(kryoSerializer.asDeflatedBytes(
               StrategyMetadata.builder()
                   .strategyNodeId(field.getUuid())
-                  .adviserObtainments(StageStrategyUtils.getAdviserObtainmentFromMetaDataForStep(kryoSerializer, ctx.getCurrentField()))
+                  .adviserObtainments(
+                      StageStrategyUtils.getAdviserObtainmentFromMetaDataForStep(kryoSerializer, ctx.getCurrentField()))
                   .childNodeId(strategyField.getNode().getUuid())
                   .strategyNodeIdentifier(field.getIdentifier())
                   .strategyNodeName(field.getName())
@@ -65,5 +66,4 @@ public abstract class AbstractStepPlanCreator<T extends AbstractStepNode> implem
   }
 
   @Override public abstract PlanCreationResponse createPlanForField(PlanCreationContext ctx, T stepElement);
-
 }

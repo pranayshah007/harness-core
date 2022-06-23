@@ -21,6 +21,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.data.annotation.TypeAlias;
 
 @OwnedBy(CDP)
@@ -39,8 +40,15 @@ public class K8sCanaryDeleteStepParameters extends K8sCanaryDeleteStepInfo imple
     this.canaryDeleteStepFqn = canaryDeleteStepFqn;
   }
 
+  @NotNull
   @Override
   public List<String> getCommandUnits() {
     return Arrays.asList(K8sCommandUnitConstants.Init, K8sCommandUnitConstants.Delete);
+  }
+
+  @NotNull
+  @Override
+  public List<String> getCommandUnits(boolean isPruningEnabled) {
+    return getCommandUnits();
   }
 }

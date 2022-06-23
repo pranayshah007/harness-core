@@ -8,15 +8,17 @@
 package io.harness.delegate.task.k8s;
 
 import io.harness.k8s.model.K8sPod;
+import io.harness.k8s.model.KubernetesResourceId;
 
 import java.util.List;
 import lombok.Builder;
-import lombok.Value;
+import lombok.Data;
 
-@Value
+@Data
 @Builder
 public class K8sRollingDeployResponse implements K8sNGTaskResponse {
   Integer releaseNumber;
   List<K8sPod> k8sPodList;
   String loadBalancer;
+  List<KubernetesResourceId> prunedResourceIds;
 }

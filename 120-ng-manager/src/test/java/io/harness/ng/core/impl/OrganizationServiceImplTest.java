@@ -10,8 +10,8 @@ package io.harness.ng.core.impl;
 import static io.harness.annotations.dev.HarnessTeam.PL;
 import static io.harness.ng.core.remote.OrganizationMapper.toOrganization;
 import static io.harness.rule.OwnerRule.KARAN;
-import static io.harness.rule.OwnerRule.VIKAS_M;
 import static io.harness.rule.OwnerRule.NAMANG;
+import static io.harness.rule.OwnerRule.VIKAS_M;
 import static io.harness.utils.PageTestUtils.getPage;
 
 import static java.util.Collections.emptyList;

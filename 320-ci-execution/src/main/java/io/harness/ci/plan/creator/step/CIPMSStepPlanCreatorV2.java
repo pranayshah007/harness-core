@@ -101,9 +101,9 @@ public abstract class CIPMSStepPlanCreatorV2<T extends CIAbstractStepNode> exten
     Map<String, YamlField> dependenciesNodeMap = new HashMap<>();
     Map<String, ByteString> metadataMap = new HashMap<>();
     StepParameters stepParameters = getStepParameters(ctx, stepElement);
-    //Adds a strategy field as dependency if present.
+    // Adds a strategy field as dependency if present.
     addStrategyFieldDependencyIfPresent(ctx, stepElement, dependenciesNodeMap, metadataMap);
-    //Swap the nodeUUid with the strategy node if present
+    // Swap the nodeUUid with the strategy node if present
     PlanNode stepPlanNode =
         PlanNode.builder()
             .uuid(StageStrategyUtils.getSwappedPlanNodeId(ctx, stepElement))
@@ -192,7 +192,8 @@ public abstract class CIPMSStepPlanCreatorV2<T extends CIAbstractStepNode> exten
       String nextNodeUuid = null;
       YamlField siblingField = GenericPlanCreatorUtils.obtainNextSiblingField(currentField);
       // Check if step is in parallel section then dont have nextNodeUUid set.
-      if (siblingField != null && !GenericPlanCreatorUtils.checkIfStepIsInParallelSection(currentField) && !StageStrategyUtils.isWrappedUnderStrategy(currentField)) {
+      if (siblingField != null && !GenericPlanCreatorUtils.checkIfStepIsInParallelSection(currentField)
+          && !StageStrategyUtils.isWrappedUnderStrategy(currentField)) {
         nextNodeUuid = siblingField.getNode().getUuid();
       }
 
@@ -275,7 +276,8 @@ public abstract class CIPMSStepPlanCreatorV2<T extends CIAbstractStepNode> exten
 
   private AdviserObtainment getNextStepAdviserObtainment(YamlField currentField) {
     if (currentField != null && currentField.getNode() != null) {
-      if (GenericPlanCreatorUtils.checkIfStepIsInParallelSection(currentField) || StageStrategyUtils.isWrappedUnderStrategy(currentField)) {
+      if (GenericPlanCreatorUtils.checkIfStepIsInParallelSection(currentField)
+          || StageStrategyUtils.isWrappedUnderStrategy(currentField)) {
         return null;
       }
       YamlField siblingField = GenericPlanCreatorUtils.obtainNextSiblingField(currentField);
@@ -313,7 +315,8 @@ public abstract class CIPMSStepPlanCreatorV2<T extends CIAbstractStepNode> exten
 
   private AdviserObtainment getOnSuccessAdviserObtainment(YamlField currentField) {
     if (currentField != null && currentField.getNode() != null) {
-      if (GenericPlanCreatorUtils.checkIfStepIsInParallelSection(currentField) || StageStrategyUtils.isWrappedUnderStrategy(currentField)) {
+      if (GenericPlanCreatorUtils.checkIfStepIsInParallelSection(currentField)
+          || StageStrategyUtils.isWrappedUnderStrategy(currentField)) {
         return null;
       }
       YamlField siblingField = GenericPlanCreatorUtils.obtainNextSiblingField(currentField);
