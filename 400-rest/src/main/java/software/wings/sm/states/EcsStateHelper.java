@@ -699,6 +699,7 @@ public class EcsStateHelper {
       executionData.setServiceName(setupExecutionData.getContainerServiceName());
       executionData.setLoadBalancer(containerServiceElement.getLoadBalancer());
       executionData.setPreviousAwsAutoScalarConfigs(setupExecutionData.getPreviousAwsAutoScalarConfigs());
+      executionData.setOldInstanceData(singletonList(ContainerServiceData.builder().name(setupExecutionData.getEcsServiceToBeDownsized()).build()));
 
       containerServiceElement.setPreviousAwsAutoScalarConfigs(setupExecutionData.getPreviousAwsAutoScalarConfigs());
       containerServiceElement.setNewEcsServiceName(setupExecutionData.getContainerServiceName());
