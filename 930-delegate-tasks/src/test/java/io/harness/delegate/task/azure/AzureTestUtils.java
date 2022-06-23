@@ -30,6 +30,7 @@ public class AzureTestUtils {
   public static final String SUBSCRIPTION_ID = "subscription-id";
   public static final String RESOURCE_GROUP = "resource-group";
   public static final String DEPLOYMENT_SLOT = "deployment-slot";
+  public static final String TARGET_SLOT = "target-slot";
   public static final String ROLLBACK = "rollback";
   public static final double TRAFFIC_WEIGHT = 20.0;
   public static final String TEST_IMAGE = "test-image";
