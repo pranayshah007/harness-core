@@ -705,6 +705,7 @@
 6504:io.harness.delegate.beans.DelegateProfileParams
 6505:io.harness.delegate.beans.DelegateTaskEvent
 6506:io.harness.delegate.beans.DelegateTaskAbortEvent
+6507:io.harness.beans.DelegateHeartbeatResponseStreaming
 7101:software.wings.helpers.ext.ecs.request.EcsBGRoute53ServiceSetupRequest
 7102:software.wings.helpers.ext.ecs.response.EcsBGRoute53ServiceSetupResponse
 7103:software.wings.helpers.ext.ecs.request.EcsBGRoute53DNSWeightUpdateRequest
