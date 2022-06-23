@@ -30,8 +30,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Singleton
 public class CommonStepInfo {
-  private static final String APPROVAL_STEP_CATEGORY = "Approval";
-
   @Inject PmsFeatureFlagHelper pmsFeatureFlagHelper;
 
   StepInfo shellScriptStepInfo =
@@ -91,6 +89,12 @@ public class CommonStepInfo {
           .setType("Barrier")
           .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("FlowControl/Barrier").build())
           .build();
+  StepInfo queueStepInfo = StepInfo.newBuilder()
+                              .setName("Queue")
+                              .setType("Queue")
+                              .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("FlowControl/Queue").build())
+                              .setFeatureFlag(FeatureName.PIPELINE_QUEUE_STEP.name())
+                              .build();
   StepInfo serviceNowApprovalStepInfo =
       StepInfo.newBuilder()
           .setName("ServiceNow Approval")
@@ -146,6 +150,7 @@ public class CommonStepInfo {
     stepInfos.add(jiraCreateStepInfo);
     stepInfos.add(jiraUpdateStepInfo);
     stepInfos.add(barrierStepInfo);
+    stepInfos.add(queueStepInfo);
     stepInfos.add(serviceNowApprovalStepInfo);
     stepInfos.add(policyStepInfo);
     stepInfos.add(serviceNowCreateStepInfo);

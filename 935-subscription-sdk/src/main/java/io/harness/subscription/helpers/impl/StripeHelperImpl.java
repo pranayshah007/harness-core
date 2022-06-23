@@ -110,7 +110,6 @@ public class StripeHelperImpl implements StripeHelper {
 
   @Override
   public CustomerDetailDTO updateBilling(BillingParams billingParams) {
-
     CustomerUpdateParams.Builder paramsBuilder = CustomerUpdateParams.builder();
     CustomerUpdateParams.Address.Builder newAddress = new CustomerUpdateParams.Address.Builder();
 

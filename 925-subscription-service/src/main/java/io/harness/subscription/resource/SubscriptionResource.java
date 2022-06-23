@@ -282,20 +282,19 @@ public class SubscriptionResource {
   @Path("/billing")
   @ApiOperation(value = "Updates the customer's billing information", nickname = "updateBilling")
   @Operation(operationId = "updateBilling", summary = "Update the customer's billing information",
-          responses =
-                  {
-                          @io.swagger.v3.oas.annotations.responses.
-                                  ApiResponse(responseCode = "default", description = "Returns customer details")
-                  })
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Returns customer details")
+      })
   @NGAccessControlCheck(resourceType = ResourceTypes.LICENSE, permission = VIEW_LICENSE_PERMISSION)
   public ResponseDTO<CustomerDetailDTO>
   updateCustomer(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
-          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String AccountIdentifier,
-                 @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                         required = true, description = "This is the information of the Stripe Billing Request.") @NotNull
-                 @Valid StripeBillingDTO stripeBillingDTO) {
-    return ResponseDTO.newResponse(
-            subscriptionService.updateStripeBilling(AccountIdentifier, stripeBillingDTO));
+                     NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String AccountIdentifier,
+      @io.swagger.v3.oas.annotations.parameters.RequestBody(
+          required = true, description = "This is the information of the Stripe Billing Request.") @NotNull
+      @Valid StripeBillingDTO stripeBillingDTO) {
+    return ResponseDTO.newResponse(subscriptionService.updateStripeBilling(AccountIdentifier, stripeBillingDTO));
   }
 
   @GET

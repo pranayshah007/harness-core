@@ -918,8 +918,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     } else if (StringUtils.contains(message, REVOKED_TOKEN.name())) {
       log.warn("Delegate used revoked token. It will be frozen and drained.");
       freeze();
-    }
-    else {
+    } else {
       log.warn("Delegate received unhandled message");
     }
   }

@@ -1108,7 +1108,8 @@ public class TriggerServiceImpl implements TriggerService {
     if (isNotEmpty(helmCharts)) {
       executionArgs.setHelmCharts(helmCharts.stream()
                                       .filter(Objects::nonNull)
-                                      .filter(triggerServiceHelper.distinctByKey(helmChart -> helmChart.getApplicationManifestId()+ helmChart.getVersion()))
+                                      .filter(triggerServiceHelper.distinctByKey(
+                                          helmChart -> helmChart.getApplicationManifestId() + helmChart.getVersion()))
                                       .collect(toList()));
     }
     executionArgs.setOrchestrationId(trigger.getWorkflowId());

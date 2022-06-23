@@ -16,15 +16,15 @@ import io.harness.licensing.services.LicenseService;
 import io.harness.repositories.StripeCustomerRepository;
 import io.harness.repositories.SubscriptionDetailRepository;
 import io.harness.subscription.constant.Prices;
-import io.harness.subscription.dto.CustomerDetailDTO;
 import io.harness.subscription.dto.CustomerDTO;
+import io.harness.subscription.dto.CustomerDetailDTO;
 import io.harness.subscription.dto.FfSubscriptionDTO;
 import io.harness.subscription.dto.InvoiceDetailDTO;
 import io.harness.subscription.dto.PaymentMethodCollectionDTO;
 import io.harness.subscription.dto.PriceCollectionDTO;
-import io.harness.subscription.dto.SubscriptionDetailDTO;
 import io.harness.subscription.dto.StripeBillingDTO;
 import io.harness.subscription.dto.SubscriptionDTO;
+import io.harness.subscription.dto.SubscriptionDetailDTO;
 import io.harness.subscription.entities.StripeCustomer;
 import io.harness.subscription.entities.SubscriptionDetail;
 import io.harness.subscription.handlers.StripeEventHandler;
@@ -376,7 +376,6 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
     return stripeHelper.getCustomer(stripeCustomer.getCustomerId());
   }
-
 
   @Override
   public CustomerDetailDTO updateStripeBilling(String accountIdentifier, StripeBillingDTO stripeBillingDTO) {
