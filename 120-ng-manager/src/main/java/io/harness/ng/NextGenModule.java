@@ -617,6 +617,7 @@ public class NextGenModule extends AbstractModule {
         return appConfig.getBaseUrls();
       }
     });
+    install(new NGLdapModule(appConfig));
     install(OrchestrationModule.getInstance(getOrchestrationConfig()));
     install(OrchestrationStepsModule.getInstance(null));
     install(EntitySetupUsageModule.getInstance());
