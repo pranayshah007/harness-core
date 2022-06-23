@@ -239,7 +239,8 @@ public class CDStepHelper {
       StepElementParameters stepElementParameters, InfrastructureOutcome infrastructure,
       ManifestOutcome k8sManifestOutcome, ValuesManifestOutcome valuesManifestOutcome,
       List<ValuesManifestOutcome> aggregatedValuesManifests,
-      Map<String, Collection<CustomSourceFile>> customFetchContent, String zippedManifestId) {
+      Map<String, Collection<CustomSourceFile>> customFetchContent, String zippedManifestId,
+      boolean shouldOpenLogStream) {
     LinkedList<ValuesManifestOutcome> orderedValuesManifests = new LinkedList<>(aggregatedValuesManifests);
     List<GitFetchFilesConfig> gitFetchFilesConfigs =
         mapValuesManifestToGitFetchFileConfig(aggregatedValuesManifests, ambiance);
@@ -280,7 +281,7 @@ public class CDStepHelper {
                                                         .build();
 
     return getGitFetchFileTaskChainResponse(
-        ambiance, gitFetchFilesConfigs, stepElementParameters, k8sStepPassThroughData, true);
+        ambiance, gitFetchFilesConfigs, stepElementParameters, k8sStepPassThroughData, shouldOpenLogStream);
   }
 
   protected List<GitFetchFilesConfig> mapValuesManifestsToGitFetchFileConfig(

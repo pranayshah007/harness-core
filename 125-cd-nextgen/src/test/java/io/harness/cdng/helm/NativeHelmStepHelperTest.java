@@ -948,7 +948,7 @@ public class NativeHelmStepHelperTest extends CategoryTest {
     TaskChainResponse taskChainResponse = TaskChainResponse.builder().chainEnd(false).taskRequest(taskRequest).build();
     doReturn(taskChainResponse)
         .when(nativeHelmStepHelper)
-        .executeValuesFetchTask(any(), any(), any(), any(), any(), any(), eq(emptyMap()), eq(""));
+        .executeValuesFetchTask(any(), any(), any(), any(), any(), any(), any(), any());
     nativeHelmStepHelper.executeNextLink(
         nativeHelmStepExecutor, ambiance, stepElementParams, passThroughData, responseDataSuplier);
 
@@ -956,7 +956,7 @@ public class NativeHelmStepHelperTest extends CategoryTest {
     verify(nativeHelmStepHelper, times(1))
         .executeValuesFetchTask(eq(ambiance), eq(stepElementParams), eq(passThroughData.getInfrastructure()),
             eq(passThroughData.getK8sManifestOutcome()), eq(passThroughData.getValuesManifestOutcomes()),
-            valuesFilesContentCaptor.capture(), eq(emptyMap()), eq(""));
+            valuesFilesContentCaptor.capture(), any(), any());
 
     Map<String, HelmFetchFileResult> duplicatehelmChartValuesFileMapContent = valuesFilesContentCaptor.getValue();
     assertThat(duplicatehelmChartValuesFileMapContent).isNotEmpty();

@@ -16,13 +16,9 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.HarnessStringUtils.emptyIfNull;
 import static io.harness.eraro.ErrorCode.GENERAL_ERROR;
 import static io.harness.exception.WingsException.USER;
-import static io.harness.k8s.manifest.ManifestHelper.getValuesYamlGitFilePath;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.steps.StepUtils.prepareCDTaskRequest;
 
-import static software.wings.beans.appmanifest.ManifestFile.VALUES_YAML_KEY;
-
-import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 
@@ -39,18 +35,13 @@ import io.harness.cdng.k8s.beans.StepExceptionPassThroughData;
 import io.harness.cdng.manifest.ManifestStoreType;
 import io.harness.cdng.manifest.ManifestType;
 import io.harness.cdng.manifest.steps.ManifestsOutcome;
-import io.harness.cdng.manifest.yaml.GitStoreConfig;
-import io.harness.cdng.manifest.yaml.HelmChartManifestOutcome;
 import io.harness.cdng.manifest.yaml.ManifestOutcome;
 import io.harness.cdng.manifest.yaml.ValuesManifestOutcome;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
-import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
-import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.exception.TaskNGDataException;
-import io.harness.delegate.task.git.GitFetchFilesConfig;
 import io.harness.delegate.task.git.GitFetchResponse;
 import io.harness.delegate.task.git.TaskStatus;
 import io.harness.delegate.task.helm.HelmCmdExecResponseNG;
@@ -92,7 +83,6 @@ import com.google.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -161,7 +151,7 @@ public class NativeHelmStepHelper extends CDStepHelper {
                                                         .store(storeConfig)
                                                         .build();
       return prepareGitFetchValuesTaskChainResponse(storeConfig, ambiance, stepElementParameters, infrastructure,
-          helmChartManifestOutcome, valuesManifestOutcome, aggregatedValuesManifests, emptyMap(), "");
+          helmChartManifestOutcome, valuesManifestOutcome, aggregatedValuesManifests, emptyMap(), "", true);
     }
 
     return prepareHelmFetchValuesTaskChainResponse(ambiance, stepElementParameters, infrastructure,
@@ -380,7 +370,6 @@ public class NativeHelmStepHelper extends CDStepHelper {
           false, helmValuesFetchResponse.getUnitProgressData());
     }
   }
-
   private TaskChainResponse handleCustomFetchResponse(ResponseData responseData, Ambiance ambiance,
       StepElementParameters stepElementParameters, K8sStepPassThroughData k8sStepPassThroughData,
       ManifestOutcome k8sManifest) {
@@ -432,7 +421,7 @@ public class NativeHelmStepHelper extends CDStepHelper {
         k8sStepPassThroughData.getInfrastructure(), k8sManifest, valuesManifestOutcome,
         k8sStepPassThroughData.getValuesManifestOutcomes(),
         customManifestValuesFetchResponse.getValuesFilesContentMap(),
-        customManifestValuesFetchResponse.getZippedManifestFileId());
+        customManifestValuesFetchResponse.getZippedManifestFileId(), false);
   }
 
   public static String getErrorMessage(HelmCmdExecResponseNG helmCmdExecResponseNG) {
