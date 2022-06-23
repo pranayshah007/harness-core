@@ -143,6 +143,16 @@ public class StripeHandlerImpl {
     }
   }
 
+  Invoice payInvoice(String invoiceId) {
+    try {
+      Invoice invoice = Invoice.retrieve(invoiceId);
+
+      return invoice.pay();
+    } catch (StripeException e) {
+      throw new InvalidRequestException("Unable to preview upcoming invoice", e);
+    }
+  }
+
   PaymentIntent retrievePaymentIntent(String paymentIntentId) {
     try {
       return PaymentIntent.retrieve(paymentIntentId);

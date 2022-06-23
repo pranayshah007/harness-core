@@ -58,6 +58,8 @@ public enum EntityType {
       ModuleType.PMS, EntityTypeConstants.HARNESS_APPROVAL, IdentifierRef.class, EntityYamlRootNames.HARNESS_APPROVAL),
   @JsonProperty(EntityTypeConstants.BARRIER)
   BARRIER_STEP(ModuleType.PMS, EntityTypeConstants.BARRIER, IdentifierRef.class, EntityYamlRootNames.BARRIER),
+  @JsonProperty(EntityTypeConstants.QUEUE)
+  QUEUE_STEP(ModuleType.PMS, EntityTypeConstants.QUEUE, IdentifierRef.class, EntityYamlRootNames.QUEUE),
   @JsonProperty(EntityTypeConstants.FlagConfiguration)
   FLAG_CONFIGURATION(ModuleType.CF, EntityTypeConstants.FlagConfiguration, IdentifierRef.class,
       EntityYamlRootNames.FLAG_CONFIGURATION),

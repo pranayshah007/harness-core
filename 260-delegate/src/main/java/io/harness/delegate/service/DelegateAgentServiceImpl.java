@@ -536,6 +536,11 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
 
       final List<String> supportedTasks = Arrays.stream(TaskType.values()).map(Enum::name).collect(toList());
 
+      // Remove tasks which are in TaskTypeV2 and only specified with onlyV2 as true
+      final List<String> unsupportedTasks =
+          Arrays.stream(TaskType.values()).filter(element -> element.isUnsupported()).map(Enum::name).collect(toList());
+      supportedTasks.removeAll(unsupportedTasks);
+
       if (isNotBlank(DELEGATE_TYPE)) {
         log.info("Registering delegate with delegate Type: {}, DelegateGroupName: {} that supports tasks: {}",
             DELEGATE_TYPE, DELEGATE_GROUP_NAME, supportedTasks);
@@ -913,8 +918,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
     } else if (StringUtils.contains(message, REVOKED_TOKEN.name())) {
       log.warn("Delegate used revoked token. It will be frozen and drained.");
       freeze();
-    }
-    else {
+    } else {
       log.warn("Delegate received unhandled message");
     }
   }

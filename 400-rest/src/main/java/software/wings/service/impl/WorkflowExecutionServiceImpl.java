@@ -28,6 +28,7 @@ import static io.harness.beans.ExecutionStatus.SUCCESS;
 import static io.harness.beans.ExecutionStatus.WAITING;
 import static io.harness.beans.ExecutionStatus.activeStatuses;
 import static io.harness.beans.ExecutionStatus.isActiveStatus;
+import static io.harness.beans.FeatureName.ADD_MANIFEST_COLLECTION_STEP;
 import static io.harness.beans.FeatureName.ARTIFACT_COLLECTION_CONFIGURABLE;
 import static io.harness.beans.FeatureName.AUTO_REJECT_PREVIOUS_APPROVALS;
 import static io.harness.beans.FeatureName.HELM_CHART_AS_ARTIFACT;
@@ -247,7 +248,10 @@ import software.wings.beans.WorkflowExecution.WorkflowExecutionKeys;
 import software.wings.beans.alert.AlertType;
 import software.wings.beans.alert.DeploymentRateApproachingLimitAlert;
 import software.wings.beans.alert.UsageLimitExceededAlert;
+import software.wings.beans.appmanifest.AppManifestKind;
+import software.wings.beans.appmanifest.ApplicationManifest;
 import software.wings.beans.appmanifest.HelmChart;
+import software.wings.beans.appmanifest.ManifestInput;
 import software.wings.beans.approval.ApprovalInfo;
 import software.wings.beans.approval.PreviousApprovalDetails;
 import software.wings.beans.artifact.Artifact;
@@ -1551,6 +1555,18 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
         stdParams.setArtifactInputs(artifactInputs);
       }
     }
+
+    if (containManifestInputs(executionArgs, accountId)) {
+      List<ManifestInput> manifestInputs =
+          executionArgs.getManifestVariables()
+              .stream()
+              .filter(manifestVariable -> HelmChartInputType.VERSION.equals(manifestVariable.getInputType()))
+              .map(ManifestVariable::mapManifestVariableToManifestInput)
+              .collect(toList());
+      if (isNotEmpty(manifestInputs)) {
+        stdParams.setManifestInputs(manifestInputs);
+      }
+    }
     // Setting  exclude hosts with same artifact
     stdParams.setExcludeHostsWithSameArtifact(executionArgs.isExcludeHostsWithSameArtifact());
     stdParams.setNotifyTriggeredUserOnly(executionArgs.isNotifyTriggeredUserOnly());
@@ -1730,11 +1746,19 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
         workflowConcurrencyHelper.enhanceWithConcurrencySteps(workflow, executionArgs.getWorkflowVariables()));
 
     List<ArtifactInput> artifactInputs = null;
+    List<Service> services = workflowService.getResolvedServices(workflow, executionArgs.getWorkflowVariables());
     if (containArtifactInputs(executionArgs, accountId)) {
-      artifactInputs = getArtifactInputsForWorkflow(executionArgs, workflow);
-      if (isNotEmpty(artifactInputs)) {
-        workflow.setOrchestrationWorkflow(updateWorkflowWithArtifactCollectionSteps(workflow, artifactInputs));
-      }
+      artifactInputs = getArtifactInputsForWorkflow(executionArgs, services);
+    }
+
+    List<ManifestInput> manifestInputs = null;
+    if (containManifestInputs(executionArgs, accountId)) {
+      manifestInputs = getManifestInputsForWorkflow(executionArgs, services, appId);
+    }
+
+    if (isNotEmpty(artifactInputs) || isNotEmpty(manifestInputs)) {
+      workflow.setOrchestrationWorkflow(
+          updateWorkflowWithArtifactCollectionSteps(workflow, artifactInputs, manifestInputs));
     }
 
     if (isEmpty(workflow.getAccountId())) {
@@ -1764,13 +1788,17 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
       stdParams.setArtifactInputs(artifactInputs);
     }
 
+    if (isNotEmpty(manifestInputs)) {
+      stdParams.setManifestInputs(manifestInputs);
+    }
+
     return triggerExecution(workflowExecution, stateMachine, new CanaryWorkflowExecutionAdvisor(),
         workflowExecutionUpdate, stdParams, trigger, null, workflow);
   }
 
   @VisibleForTesting
   OrchestrationWorkflow updateWorkflowWithArtifactCollectionSteps(
-      Workflow workflow, List<ArtifactInput> artifactInputs) {
+      Workflow workflow, List<ArtifactInput> artifactInputs, List<ManifestInput> manifestInputs) {
     CanaryOrchestrationWorkflow canaryOrchestrationWorkflow =
         (CanaryOrchestrationWorkflow) workflow.getOrchestrationWorkflow();
 
@@ -1783,24 +1811,32 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
       preDeploymentSteps.setSteps(new ArrayList<>());
     }
 
-    preDeploymentSteps.getSteps().add(0, getArtifactCollectionStep(artifactInputs));
+    preDeploymentSteps.getSteps().add(0, getArtifactCollectionStep(artifactInputs, manifestInputs));
     canaryOrchestrationWorkflow.setGraph(canaryOrchestrationWorkflow.generateGraph());
     return canaryOrchestrationWorkflow;
   }
 
-  private GraphNode getArtifactCollectionStep(List<ArtifactInput> artifactInputs) {
+  private GraphNode getArtifactCollectionStep(List<ArtifactInput> artifactInputs, List<ManifestInput> manifestInputs) {
+    if (manifestInputs == null) {
+      manifestInputs = new ArrayList<>();
+    }
+    if (artifactInputs == null) {
+      artifactInputs = new ArrayList<>();
+    }
+
     return GraphNode.builder()
         .type(ARTIFACT_COLLECT_LOOP_STATE.getType())
-        .name("Artifact Collection")
+        .name("Artifact/Manifest Collection")
         .properties(ImmutableMap.<String, Object>builder()
                         .put(ArtifactCollectLoopStateKeys.artifactInputList, artifactInputs)
+                        .put(ArtifactCollectLoopStateKeys.manifestInputList, manifestInputs)
                         .build())
         .build();
   }
 
-  private List<ArtifactInput> getArtifactInputsForWorkflow(@NotNull ExecutionArgs executionArgs, Workflow workflow) {
+  private List<ArtifactInput> getArtifactInputsForWorkflow(
+      @NotNull ExecutionArgs executionArgs, List<Service> services) {
     List<ArtifactInput> artifactInputs = new ArrayList<>();
-    List<Service> services = workflowService.getResolvedServices(workflow, executionArgs.getWorkflowVariables());
     if (isNotEmpty(services)) {
       Set<String> serviceIds = services.stream().map(Service::getUuid).collect(toSet());
       Set<String> artifactStreamIds = new HashSet<>();
@@ -1822,11 +1858,43 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     return artifactInputs;
   }
 
+  private List<ManifestInput> getManifestInputsForWorkflow(
+      @NotNull ExecutionArgs executionArgs, List<Service> services, String appId) {
+    List<ManifestInput> manifestInputs = new ArrayList<>();
+    if (isNotEmpty(services)) {
+      Set<String> serviceIds = services.stream().map(Service::getUuid).collect(toSet());
+      Set<String> appManifestIds = new HashSet<>();
+      serviceIds.forEach(serviceId -> {
+        List<ApplicationManifest> appManifests =
+            applicationManifestService.getManifestsByServiceId(appId, serviceId, AppManifestKind.K8S_MANIFEST);
+        if (isNotEmpty(appManifests)) {
+          appManifestIds.addAll(appManifests.stream().map(ApplicationManifest::getUuid).collect(Collectors.toSet()));
+        }
+      });
+      manifestInputs = executionArgs.getManifestVariables()
+                           .stream()
+                           .filter(manifestVariable
+                               -> HelmChartInputType.VERSION.equals(manifestVariable.getInputType())
+                                   && appManifestIds.contains(manifestVariable.getAppManifestId()))
+                           .map(ManifestVariable::mapManifestVariableToManifestInput)
+                           .filter(Objects::nonNull)
+                           .collect(Collectors.toList());
+    }
+    return manifestInputs;
+  }
+
   private boolean containArtifactInputs(ExecutionArgs executionArgs, String accountId) {
     return featureFlagService.isEnabled(ARTIFACT_COLLECTION_CONFIGURABLE, accountId)
         && executionArgs.getArtifactVariables() != null
         && executionArgs.getArtifactVariables().stream().anyMatch(
             artifactVariable -> artifactVariable.getArtifactInput() != null);
+  }
+
+  private boolean containManifestInputs(ExecutionArgs executionArgs, String accountId) {
+    return featureFlagService.isEnabled(ADD_MANIFEST_COLLECTION_STEP, accountId)
+        && executionArgs.getManifestVariables() != null
+        && executionArgs.getManifestVariables().stream().anyMatch(
+            manifestVariable -> HelmChartInputType.VERSION.equals(manifestVariable.getInputType()));
   }
 
   private List<String> getWorkflowServiceIds(Workflow workflow) {
@@ -3237,7 +3305,11 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
 
     setArtifactsFromArtifactVariables(executionArgs);
 
-    setManifestsFromManifestVariables(appId, executionArgs, accountId);
+    if (!featureFlagService.isEnabled(ADD_MANIFEST_COLLECTION_STEP, accountId)) {
+      setManifestsFromManifestVariables(appId, executionArgs, accountId);
+    } else {
+      populateManifestVariablesFromHelmCharts(executionArgs);
+    }
 
     switch (executionArgs.getWorkflowType()) {
       case PIPELINE: {
@@ -3274,6 +3346,22 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
       manifests.addAll(
           getHelmChartsForVersionManifestVariables(appId, executionArgs.getManifestVariables(), accountId));
       executionArgs.setHelmCharts(manifests);
+    }
+  }
+
+  private void populateManifestVariablesFromHelmCharts(ExecutionArgs executionArgs) {
+    if (isNotEmpty(executionArgs.getHelmCharts()) && isEmpty(executionArgs.getManifestVariables())) {
+      List<ManifestVariable> manifestVariables = executionArgs.getHelmCharts()
+                                                     .stream()
+                                                     .map(helmChart
+                                                         -> ManifestVariable.builder()
+                                                                .appManifestId(helmChart.getApplicationManifestId())
+                                                                .value(helmChart.getVersion())
+                                                                .inputType(HelmChartInputType.VERSION)
+                                                                .build())
+                                                     .collect(toList());
+      executionArgs.setManifestVariables(manifestVariables);
+      executionArgs.setHelmCharts(new ArrayList<>());
     }
   }
 

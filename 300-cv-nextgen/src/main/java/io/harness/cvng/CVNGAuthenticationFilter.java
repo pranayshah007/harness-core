@@ -59,7 +59,8 @@ public class CVNGAuthenticationFilter
       String accountId = containerRequestContext.getUriInfo().getQueryParameters().getFirst("accountId");
       String token = containerRequestContext.getHeaderString(HttpHeaders.AUTHORIZATION);
       String delegateId = containerRequestContext.getHeaderString("delegateId");
-      validateDelegateToken(accountId, token, delegateId);
+      String delegateTokenName = containerRequestContext.getHeaderString("delegateTokenName");
+      validateDelegateToken(accountId, token, delegateId, delegateTokenName);
       return;
     }
 
@@ -67,9 +68,9 @@ public class CVNGAuthenticationFilter
   }
 
   @Override
-  public void validateDelegateToken(String accountId, String tokenString, String delegateId) {
+  public void validateDelegateToken(String accountId, String tokenString, String delegateId, String delegateTokenName) {
     try {
-      if (managerClient.authenticateDelegateRequest(accountId, tokenString, delegateId)
+      if (managerClient.authenticateDelegateRequest(accountId, tokenString, delegateId, delegateTokenName)
               .execute()
               .body()
               .getResource()) {
