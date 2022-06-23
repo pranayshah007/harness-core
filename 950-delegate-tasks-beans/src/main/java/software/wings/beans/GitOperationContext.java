@@ -27,4 +27,5 @@ public class GitOperationContext {
 
   private GitCommitRequest gitCommitRequest;
   private GitDiffRequest gitDiffRequest;
+  private boolean useGitFetchCommandTimeout;
 }

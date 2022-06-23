@@ -138,6 +138,7 @@ import org.eclipse.jgit.treewalk.CanonicalTreeParser;
 @OwnedBy(CDP)
 public class GitClientV2Impl implements GitClientV2 {
   private static final int GIT_COMMAND_RETRY = 3;
+  private static final int GIT_FETCH_COMMAND_TIMEOUT = 180;
   private static final String UPLOAD_PACK_ERROR = "git-upload-pack";
   private static final String INVALID_ADVERTISEMENT_ERROR = "invalid advertisement of";
   private static final String REDIRECTION_BLOCKED_ERROR = "Redirection blocked";
@@ -177,7 +178,15 @@ public class GitClientV2Impl implements GitClientV2 {
         log.info(gitClientHelper.getGitLogMessagePrefix(request.getRepoType())
             + "Repo exist. do hard sync with remote branch");
 
-        ((FetchCommand) (getAuthConfiguredCommand(git.fetch(), request))).setTagOpt(TagOpt.FETCH_TAGS).call();
+        if (request.useFetchCommandTimeout()) {
+          ((FetchCommand) (getAuthConfiguredCommand(git.fetch(), request)))
+              .setTagOpt(TagOpt.FETCH_TAGS)
+              .setTimeout(GIT_FETCH_COMMAND_TIMEOUT)
+              .call();
+        } else {
+          ((FetchCommand) (getAuthConfiguredCommand(git.fetch(), request))).setTagOpt(TagOpt.FETCH_TAGS).call();
+        }
+
         checkout(request);
 
         // Do not sync to the HEAD of the branch if a specific commit SHA is provided
@@ -1269,10 +1278,19 @@ public class GitClientV2Impl implements GitClientV2 {
 
       try (Git git = Git.open(repoDir)) {
         // update ref with latest commits on remote
-        FetchResult fetchResult = ((FetchCommand) (getAuthConfiguredCommand(git.fetch(), request)))
-                                      .setRemoveDeletedRefs(true)
-                                      .setTagOpt(TagOpt.FETCH_TAGS)
-                                      .call(); // fetch all remote references
+        FetchResult fetchResult;
+        if (request.useFetchCommandTimeout()) {
+          fetchResult = ((FetchCommand) (getAuthConfiguredCommand(git.fetch(), request)))
+                            .setRemoveDeletedRefs(true)
+                            .setTagOpt(TagOpt.FETCH_TAGS)
+                            .setTimeout(GIT_FETCH_COMMAND_TIMEOUT)
+                            .call();
+        } else {
+          fetchResult = ((FetchCommand) (getAuthConfiguredCommand(git.fetch(), request)))
+                            .setRemoveDeletedRefs(true)
+                            .setTagOpt(TagOpt.FETCH_TAGS)
+                            .call();
+        }
 
         log.info(new StringBuilder()
                      .append(gitClientHelper.getGitLogMessagePrefix(request.getRepoType()))

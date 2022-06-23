@@ -9,6 +9,8 @@ package io.harness.git.model;
 
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
+import static java.util.Objects.isNull;
+
 import lombok.Data;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
@@ -28,11 +30,17 @@ public class GitBaseRequest {
   @NotEmpty private String accountId;
   private GitRepositoryType repoType;
 
+  private Integer fetchCommandTimeout;
+
   public boolean useBranch() {
     return isNotEmpty(branch);
   }
 
   public boolean useCommitId() {
     return isNotEmpty(commitId);
+  }
+
+  public boolean useFetchCommandTimeout() {
+    return isNull(fetchCommandTimeout);
   }
 }

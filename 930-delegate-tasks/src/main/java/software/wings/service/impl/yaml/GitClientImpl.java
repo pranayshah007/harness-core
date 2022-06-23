@@ -164,6 +164,7 @@ public class GitClientImpl implements GitClient {
    * proxy. See:
    * https://stackoverflow.com/questions/67492788/eclipse-egit-tfs-git-connection-authentication-not-supported
    */
+  private static final int GIT_FETCH_COMMAND_TIMEOUT = 180;
   public static final HttpConnectionFactory connectionFactory = new HttpClientConnectionFactory();
 
   @VisibleForTesting
@@ -592,7 +593,7 @@ public class GitClientImpl implements GitClient {
                      .toString());
 
         gitClientHelper.createDirStructureForFileDownload(gitConfig, gitConnectorId);
-        cloneRepoForFilePathCheckout(gitConfig, StringUtils.EMPTY, gitConnectorId);
+        cloneRepoForFilePathCheckout(gitConfig, StringUtils.EMPTY, gitConnectorId, false);
         checkoutGivenCommitForAllPaths(gitRequest.getNewCommitId(), gitConfig, gitConnectorId);
         List<GitFile> gitFilesFromDiff;
 
@@ -694,7 +695,7 @@ public class GitClientImpl implements GitClient {
 
       // clone repo locally without checkout
       String branch = gitRequest.isUseBranch() ? gitRequest.getBranch() : StringUtils.EMPTY;
-      cloneRepoForFilePathCheckout(gitConfig, branch, gitConnectorId);
+      cloneRepoForFilePathCheckout(gitConfig, branch, gitConnectorId, false);
       // if useBranch is set, use it to checkout latest, else checkout given commitId
       String latestCommitSha;
       if (gitRequest.isUseBranch()) {
@@ -1019,8 +1020,10 @@ public class GitClientImpl implements GitClient {
    * Ensure repo locally cloned. This is called before performing any git operation with remote
    *
    * @param gitConfig the git config
+   * @param useGitFetchCommandTimeout
    */
-  private synchronized void cloneRepoForFilePathCheckout(GitConfig gitConfig, String branch, String connectorId) {
+  private synchronized void cloneRepoForFilePathCheckout(
+      GitConfig gitConfig, String branch, String connectorId, boolean useGitFetchCommandTimeout) {
     log.info(new StringBuilder(64)
                  .append(getGitLogMessagePrefix(gitConfig.getGitRepoType()))
                  .append("Cloning repo without checkout for file fetch op, for GitConfig: ")
@@ -1036,10 +1039,19 @@ public class GitClientImpl implements GitClient {
 
       try (Git git = Git.open(repoDir)) {
         // update ref with latest commits on remote
-        FetchResult fetchResult = ((FetchCommand) (getAuthConfiguredCommand(git.fetch(), gitConfig)))
-                                      .setRemoveDeletedRefs(true)
-                                      .setTagOpt(TagOpt.FETCH_TAGS)
-                                      .call(); // fetch all remote references
+        FetchResult fetchResult;
+        if (useGitFetchCommandTimeout) {
+          fetchResult = ((FetchCommand) (getAuthConfiguredCommand(git.fetch(), gitConfig)))
+                            .setRemoveDeletedRefs(true)
+                            .setTagOpt(TagOpt.FETCH_TAGS)
+                            .setTimeout(GIT_FETCH_COMMAND_TIMEOUT)
+                            .call();
+        } else {
+          fetchResult = ((FetchCommand) (getAuthConfiguredCommand(git.fetch(), gitConfig)))
+                            .setRemoveDeletedRefs(true)
+                            .setTagOpt(TagOpt.FETCH_TAGS)
+                            .call();
+        }
 
         log.info(new StringBuilder()
                      .append(getGitLogMessagePrefix(gitConfig.getGitRepoType()))
@@ -1084,9 +1096,16 @@ public class GitClientImpl implements GitClient {
       try (Git git = Git.open(repoDir)) {
         log.info(getGitLogMessagePrefix(gitConfig.getGitRepoType()) + "Repo exist. do hard sync with remote branch");
 
-        FetchResult fetchResult = ((FetchCommand) (getAuthConfiguredCommand(git.fetch(), gitConfig)))
-                                      .setTagOpt(TagOpt.FETCH_TAGS)
-                                      .call(); // fetch all remote references
+        if (gitOperationContext.isUseGitFetchCommandTimeout()) {
+          ((FetchCommand) (getAuthConfiguredCommand(git.fetch(), gitConfig)))
+              .setTagOpt(TagOpt.FETCH_TAGS)
+              .setTimeout(GIT_FETCH_COMMAND_TIMEOUT)
+              .call();
+
+        } else {
+          ((FetchCommand) (getAuthConfiguredCommand(git.fetch(), gitConfig))).setTagOpt(TagOpt.FETCH_TAGS).call();
+        }
+
         checkout(gitOperationContext);
 
         // Do not sync to the HEAD of the branch if a specific commit SHA is provided

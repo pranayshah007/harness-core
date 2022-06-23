@@ -22,6 +22,7 @@ import java.util.concurrent.TimeUnit;
 public class GitCommandRequest implements GitCommand {
   protected GitCommandType gitCommandType;
   public static final long gitRequestTimeout = TimeUnit.MINUTES.toMillis(20);
+  private boolean useGitFetchCommandTimeout;
 
   public GitCommandRequest(GitCommandType gitCommandType) {
     this.gitCommandType = gitCommandType;
