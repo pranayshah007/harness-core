@@ -93,12 +93,12 @@ public class ArtifactCollectLoopStateTest extends WingsBaseTest {
         .isIn(ArtifactCollectLoopParams.builder()
                   .artifactStreamId(ARTIFACT_STREAM_ID_1)
                   .buildNo("1.0")
-                  .stepName("ARTIFACT_COLLECT_LOOP_STATE_1")
+                  .stepName("Artifact Collection_1")
                   .build(),
             ArtifactCollectLoopParams.builder()
                 .artifactStreamId(ARTIFACT_STREAM_ID_2)
                 .buildNo("2.0")
-                .stepName("ARTIFACT_COLLECT_LOOP_STATE_2")
+                .stepName("Artifact Collection_2")
                 .build());
   }
 

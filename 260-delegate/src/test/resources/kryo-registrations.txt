@@ -954,6 +954,7 @@
 7459:software.wings.beans.artifact.ArtifactInput
 7460:software.wings.beans.GitConfig.UrlType
 7461:software.wings.beans.ApprovalDetails.Action
+7462:software.wings.beans.appmanifest.ManifestInput
 7464:software.wings.helpers.ext.gcb.models.GcbArtifactObjects
 7467:software.wings.sm.states.azure.AzureVMSSSetupContextElement
 7470:software.wings.service.impl.analysis.SetupTestNodeData.Instance
