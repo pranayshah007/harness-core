@@ -21,6 +21,7 @@ import software.wings.api.ServiceElement;
 import software.wings.api.WorkflowElement;
 import software.wings.beans.ErrorStrategy;
 import software.wings.beans.ExecutionCredential;
+import software.wings.beans.appmanifest.ManifestInput;
 import software.wings.beans.artifact.ArtifactInput;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -47,6 +48,7 @@ public class WorkflowStandardParams implements ContextElement {
   private List<String> helmChartIds;
   private WorkflowElement workflowElement;
   @Getter @Setter private List<ArtifactInput> artifactInputs;
+  @Getter @Setter private List<ManifestInput> manifestInputs;
 
   // TODO: centralized in-memory executionCredential and special encrypted mapping
   private ExecutionCredential executionCredential;

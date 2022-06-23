@@ -8,6 +8,8 @@
 package software.wings.delegatetasks.helm;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 
@@ -23,6 +25,7 @@ import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.TaskParameters;
+import io.harness.expression.RegexFunctor;
 import io.harness.perpetualtask.manifest.ManifestRepositoryService;
 
 import software.wings.beans.appmanifest.HelmChart;
@@ -33,7 +36,9 @@ import software.wings.helpers.ext.helm.response.HelmCollectChartResponse;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import lombok.extern.slf4j.Slf4j;
@@ -71,13 +76,27 @@ public class HelmCollectChartTask extends AbstractDelegateRunnableTask {
       }
 
       if (taskParams.getCollectionType() == HelmChartCollectionType.SPECIFIC_VERSION) {
-        // that specific version is found
-        if (helmCharts.size() == 1
-            && helmCharts.get(0).getVersion().equals(taskParams.getHelmChartConfigParams().getChartVersion())) {
-          return HelmCollectChartResponse.builder().commandExecutionStatus(SUCCESS).helmCharts(helmCharts).build();
-        } else {
-          return HelmCollectChartResponse.builder().commandExecutionStatus(SUCCESS).helmCharts(null).build();
+        if (isEmpty(taskParams.getHelmChartConfigParams().getChartVersion())) {
+          return HelmCollectChartResponse.builder()
+              .commandExecutionStatus(SUCCESS)
+              .helmCharts(isNotEmpty(helmCharts) ? Collections.singletonList(helmCharts.get(0)) : null)
+              .build();
         }
+        // that specific version is found
+        Optional<HelmChart> helmChart =
+            helmCharts.stream()
+                .filter(chart -> {
+                  if (taskParams.isRegex()) {
+                    return new RegexFunctor().match(
+                        taskParams.getHelmChartConfigParams().getChartVersion(), chart.getVersion());
+                  }
+                  return chart.getVersion().equals(taskParams.getHelmChartConfigParams().getChartVersion());
+                })
+                .findFirst();
+        return HelmCollectChartResponse.builder()
+            .commandExecutionStatus(SUCCESS)
+            .helmCharts(helmChart.map(Collections::singletonList).orElse(null))
+            .build();
       } else {
         return HelmCollectChartResponse.builder().commandExecutionStatus(SUCCESS).helmCharts(helmCharts).build();
       }

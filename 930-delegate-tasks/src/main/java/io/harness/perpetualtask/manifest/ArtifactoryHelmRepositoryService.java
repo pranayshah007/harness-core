@@ -49,8 +49,10 @@ public class ArtifactoryHelmRepositoryService implements ManifestRepositoryServi
 
     String repoName = artifactoryHelmTaskHelper.getArtifactoryRepoNameFromHelmConfig(helmRepoConfig);
 
-    List<HelmChart> helmCharts = artifactoryService.getHelmCharts(
-        request, repoName, helmChartCollectionParams.getHelmChartConfigParams().getChartName(), maxVersions);
+    List<HelmChart> helmCharts = artifactoryService.getHelmCharts(request, repoName,
+        helmChartCollectionParams.getHelmChartConfigParams().getChartName(), maxVersions,
+        helmChartCollectionParams.getHelmChartConfigParams().getChartVersion(), helmChartCollectionParams.isRegex());
+
     if (helmCharts == null) {
       return new ArrayList<>();
     }
@@ -64,6 +66,7 @@ public class ArtifactoryHelmRepositoryService implements ManifestRepositoryServi
                    .name(helmChartCollectionParams.getHelmChartConfigParams().getChartName())
                    .version(helmChart.getVersion())
                    .displayName(helmChart.getDisplayName())
+                   .appVersion(helmChart.getAppVersion())
                    .build())
         .collect(Collectors.toList());
   }
