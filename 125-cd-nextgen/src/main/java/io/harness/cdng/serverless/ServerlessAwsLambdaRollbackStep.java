@@ -145,7 +145,7 @@ public class ServerlessAwsLambdaRollbackStep extends TaskExecutableWithRollbackA
             .build();
     return serverlessStepCommonHelper
         .queueServerlessTask(stepElementParameters, serverlessRollbackRequest, ambiance,
-            ServerlessExecutionPassThroughData.builder().infrastructure(infrastructureOutcome).build())
+            ServerlessExecutionPassThroughData.builder().infrastructure(infrastructureOutcome).build(), true)
         .getTaskRequest();
   }
 

@@ -115,13 +115,12 @@ public class NGTemplateRefreshResource {
   }
 
   @POST
-  @Path("/internal")
-  @ApiOperation(
-      value = "This refreshes and update template inputs in given yaml", nickname = "getRefreshedYaml", hidden = true)
+  @Path("refreshed-yaml")
+  @ApiOperation(value = "This refreshes and update template inputs in given yaml", nickname = "getRefreshedYaml")
   @Hidden
-  public ResponseDTO<RefreshResponseDTO>
-  getRefreshedYaml(@Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
-                       NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
+  public ResponseDTO<RefreshResponseDTO> getRefreshedYaml(
+      @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier String accountId,
       @Parameter(description = NGCommonEntityConstants.ORG_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.ORG_KEY) @OrgIdentifier String orgId,
       @Parameter(description = NGCommonEntityConstants.PROJECT_PARAM_MESSAGE) @QueryParam(

@@ -705,6 +705,7 @@
 6504:io.harness.delegate.beans.DelegateProfileParams
 6505:io.harness.delegate.beans.DelegateTaskEvent
 6506:io.harness.delegate.beans.DelegateTaskAbortEvent
+6507:io.harness.beans.DelegateHeartbeatResponseStreaming
 7101:software.wings.helpers.ext.ecs.request.EcsBGRoute53ServiceSetupRequest
 7102:software.wings.helpers.ext.ecs.response.EcsBGRoute53ServiceSetupResponse
 7103:software.wings.helpers.ext.ecs.request.EcsBGRoute53DNSWeightUpdateRequest
@@ -954,6 +955,7 @@
 7459:software.wings.beans.artifact.ArtifactInput
 7460:software.wings.beans.GitConfig.UrlType
 7461:software.wings.beans.ApprovalDetails.Action
+7462:software.wings.beans.appmanifest.ManifestInput
 7464:software.wings.helpers.ext.gcb.models.GcbArtifactObjects
 7467:software.wings.sm.states.azure.AzureVMSSSetupContextElement
 7470:software.wings.service.impl.analysis.SetupTestNodeData.Instance
@@ -1488,6 +1490,7 @@
 19550:io.harness.delegate.beans.executioncapability.GitInstallationCapability
 19551:io.harness.delegate.beans.connector.ConnectorValidationParameterResponse
 19552:io.harness.delegate.beans.connector.scm.github.GithubOauthDTO
+19553:io.harness.delegate.beans.connector.scm.gitlab.GitlabOauthDTO
 19630:io.harness.delegate.beans.connector.helm.OciHelmValidationParams
 19640:io.harness.delegate.beans.connector.helm.HttpHelmConnectivityTaskParams
 19641:io.harness.delegate.beans.connector.helm.HttpHelmConnectivityTaskResponse
@@ -1604,6 +1607,10 @@
 29306:io.harness.delegate.beans.connector.helm.OciHelmConnectivityTaskParams
 29307:io.harness.delegate.beans.connector.helm.OciHelmConnectivityTaskResponse
 29308:io.harness.delegate.beans.storeconfig.OciHelmStoreDelegateConfig
+29309:io.harness.delegate.task.serverless.request.ServerlessPrepareRollbackDataRequest
+29310:io.harness.delegate.task.serverless.response.ServerlessPrepareRollbackDataResponse
+29311:io.harness.delegate.beans.serverless.ServerlessPrepareRollbackDataResult
+29312:io.harness.delegate.beans.serverless.ServerlessAwsLambdaPrepareRollbackDataResult
 31010:java.lang.StackTraceElement[]
 31011:java.lang.StackTraceElement
 31012:io.harness.exception.DelegateErrorHandlerException
@@ -1688,6 +1695,21 @@
 55318:io.harness.delegate.task.ssh.config.FileDelegateConfig
 55319:io.harness.delegate.beans.storeconfig.HarnessStoreDelegateConfig
 55320:io.harness.delegate.task.ssh.config.ConfigFileParameters
+55321:io.harness.delegate.task.azure.appservice.webapp.ng.request.AzureWebAppSlotDeploymentRequest
+55322:io.harness.delegate.task.azure.appservice.webapp.ng.response.AzureWebAppSlotDeploymentResponse
+55323:io.harness.delegate.task.azure.artifact.AzureArtifactConfig
+55324:io.harness.delegate.task.azure.artifact.AzureArtifactType
+55325:io.harness.delegate.task.azure.artifact.AzureContainerArtifactConfig
+55326:io.harness.delegate.task.azure.appservice.webapp.ng.request.AzureWebAppRollbackRequest
+55327:io.harness.delegate.task.azure.appservice.webapp.ng.response.AzureWebAppNGRollbackResponse
+55328:io.harness.delegate.task.azure.appservice.webapp.ng.request.AzureWebAppFetchPreDeploymentDataRequest
+55329:io.harness.delegate.task.azure.appservice.webapp.ng.response.AzureWebAppFetchPreDeploymentDataResponse
+55330:io.harness.delegate.task.azure.appservice.webapp.ng.request.AzureWebAppTrafficShiftRequest
+55331:io.harness.delegate.task.azure.appservice.webapp.ng.response.AzureWebAppTrafficShiftResponse
+55332:io.harness.delegate.task.azure.appservice.webapp.ng.request.AzureWebAppSwapSlotsRequest
+55333:io.harness.delegate.task.azure.appservice.webapp.ng.response.AzureWebAppSwapSlotsResponseNG
+55401:io.harness.delegate.beans.SerializedResponseData
+55402:software.wings.beans.SerializationFormat
 70001:io.harness.accesscontrol.commons.exceptions.AccessDeniedErrorDTO
 70002:io.harness.accesscontrol.acl.api.PermissionCheckDTO
 70003:io.harness.accesscontrol.acl.api.ResourceScope
@@ -2195,3 +2217,5 @@
 980028:io.harness.exception.AzureAKSException
 980029:io.harness.exception.runtime.SshCommandExecutionException
 9800001:io.harness.beans.RecasterMap
+
+

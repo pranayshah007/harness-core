@@ -7,10 +7,15 @@
 
 package io.harness.beans.yaml.extended;
 
+import io.harness.annotation.RecasterAlias;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
+import org.springframework.data.annotation.TypeAlias;
 
+@TypeAlias("imagePullPolicy")
+@RecasterAlias("io.harness.beans.yaml.extended.ImagePullPolicy")
 public enum ImagePullPolicy {
   @JsonProperty("Always") ALWAYS("Always"),
   @JsonProperty("Never") NEVER("Never"),

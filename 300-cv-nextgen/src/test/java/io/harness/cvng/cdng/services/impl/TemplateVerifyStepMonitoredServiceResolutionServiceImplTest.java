@@ -33,7 +33,6 @@ import io.harness.cvng.core.entities.SideKick;
 import io.harness.cvng.core.services.api.MetricPackService;
 import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.persistence.HPersistence;
-import io.harness.pms.yaml.ParameterField;
 import io.harness.rule.Owner;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -81,10 +80,8 @@ public class TemplateVerifyStepMonitoredServiceResolutionServiceImplTest extends
     URL testFile =
         TemplateVerifyStepMonitoredServiceResolutionServiceImplTest.class.getResource("verify-step-with-template.json");
     JsonNode templateInputsNode = objectMapper.readTree(testFile);
-    ParameterField<JsonNode> parameterField = new ParameterField<>();
-    parameterField.setValue(templateInputsNode);
     templateMonitoredServiceSpec =
-        builderFactory.getTemplateMonitoredServiceSpecBuilder().templateInputs(parameterField).build();
+        builderFactory.getTemplateMonitoredServiceSpecBuilder().templateInputs(templateInputsNode).build();
     when(mockMonitoredServiceService.getExpandedMonitoredServiceFromYaml(any(), any())).thenReturn(monitoredServiceDTO);
     monitoredServiceNode = getDefaultMonitoredServiceNode();
     FieldUtils.writeField(templateService, "monitoredServiceService", mockMonitoredServiceService, true);

@@ -11,6 +11,7 @@ import static io.harness.beans.sweepingoutputs.StageInfraDetails.STAGE_INFRA_DET
 import static io.harness.rule.OwnerRule.ALEKSANDAR;
 import static io.harness.rule.OwnerRule.HARSH;
 import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
+import static io.harness.rule.OwnerRule.RUTVIJ_MEHTA;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -366,7 +367,7 @@ public class ConnectorUtilsTest extends CIExecutionTestBase {
 
     List<TaskSelector> taskSelectors = connectorUtils.fetchDelegateSelector(ambiance, executionSweepingOutputResolver);
     assertThat(taskSelectors)
-        .isEqualTo(Arrays.asList(TaskSelector.newBuilder().setSelector("delegate").setOrigin("").build()));
+        .isEqualTo(Arrays.asList(TaskSelector.newBuilder().setSelector("delegate").setOrigin("default").build()));
   }
 
   @Test
@@ -395,5 +396,25 @@ public class ConnectorUtilsTest extends CIExecutionTestBase {
     verify(connectorResourceClient, times(1)).get(eq(connectorId06), eq(ACCOUNT_ID), eq(ORG_ID), eq(PROJ_ID));
     verify(secretManagerClientService, times(1))
         .getEncryptionDetails(eq(ngAccess), any(AzureRepoHttpCredentialsSpecDTO.class));
+  }
+
+  @Test
+  @Owner(developers = RUTVIJ_MEHTA)
+  @Category(UnitTests.class)
+  public void testGetScmAuthType() throws IOException {
+    ConnectorDetails connectorDetails1 = ciExecutionPlanTestHelper.getGitConnector();
+    assertThat(connectorUtils.getScmAuthType(connectorDetails1)).isEqualTo("Http");
+
+    ConnectorDetails connectorDetails2 = ciExecutionPlanTestHelper.getGithubConnector();
+    assertThat(connectorUtils.getScmAuthType(connectorDetails2)).isEqualTo("Http");
+
+    ConnectorDetails connectorDetails3 = ciExecutionPlanTestHelper.getBitBucketConnector();
+    assertThat(connectorUtils.getScmAuthType(connectorDetails3)).isEqualTo("Http");
+
+    ConnectorDetails connectorDetails4 = ciExecutionPlanTestHelper.getGitLabConnector();
+    assertThat(connectorUtils.getScmAuthType(connectorDetails4)).isEqualTo("Http");
+
+    ConnectorDetails connectorDetails5 = ciExecutionPlanTestHelper.getCodeCommitConnector();
+    assertThat(connectorUtils.getScmAuthType(connectorDetails5)).isEqualTo("HTTPS");
   }
 }

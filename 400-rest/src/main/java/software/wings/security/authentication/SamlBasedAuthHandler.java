@@ -110,7 +110,6 @@ public class SamlBasedAuthHandler implements AuthHandler {
   static final String AZURE_GET_MEMBER_OBJECTS_URL_FORMAT =
       "https://graph.microsoft.com/v1.0/%s/users/%s/getMemberObjects";
   static final String AZURE_OAUTH_LOGIN_URL_FORMAT = "https://login.microsoftonline.com/%s/oauth2/v2.0/token";
-  private static final String getMethod = "GET";
 
   @Override
   public AuthenticationResponse authenticate(String... credentials) {
@@ -314,7 +313,7 @@ public class SamlBasedAuthHandler implements AuthHandler {
   private String getEmailIdFromSamlResponseString(String samlResponseString, SamlSettings samlSettings)
       throws SamlException {
     SamlClient samlClient = samlClientService.getSamlClient(samlSettings);
-    SamlResponse samlResponse = samlClient.decodeAndValidateSamlResponse(samlResponseString, getMethod);
+    SamlResponse samlResponse = samlClient.decodeAndValidateSamlResponse(samlResponseString);
     return samlResponse.getNameID();
   }
 
@@ -345,7 +344,7 @@ public class SamlBasedAuthHandler implements AuthHandler {
         SamlSettings samlSettings = samlSettingsIterator.next();
         try {
           SamlClient samlClient = samlClientService.getSamlClient(samlSettings);
-          SamlResponse samlResponse = samlClient.decodeAndValidateSamlResponse(samlResponseString, getMethod);
+          SamlResponse samlResponse = samlClient.decodeAndValidateSamlResponse(samlResponseString);
           Assertion samlAssertionValue = samlResponse.getAssertion();
           List<AttributeStatement> attributeStatements = samlAssertionValue.getAttributeStatements();
           final String groupMembershipAttr = samlSettings.getGroupMembershipAttr();
@@ -378,7 +377,7 @@ public class SamlBasedAuthHandler implements AuthHandler {
         SamlSettings samlSettings = samlSettingsIterator.next();
         try {
           SamlClient samlClient = samlClientService.getSamlClient(samlSettings);
-          SamlResponse samlResponse = samlClient.decodeAndValidateSamlResponse(samlResponseString, getMethod);
+          SamlResponse samlResponse = samlClient.decodeAndValidateSamlResponse(samlResponseString);
           Assertion samlAssertionValue = samlResponse.getAssertion();
           List<AttributeStatement> attributeStatements = samlAssertionValue.getAttributeStatements();
           final String userIdAttr = samlSettings.getUserIdAttr() != null ? samlSettings.getUserIdAttr() : USER_ID_ATTR;
@@ -580,7 +579,7 @@ public class SamlBasedAuthHandler implements AuthHandler {
 
   private User getUser(String samlResponseString, SamlSettings samlSettings) throws SamlException {
     SamlClient samlClient = samlClientService.getSamlClient(samlSettings);
-    SamlResponse samlResponse = samlClient.decodeAndValidateSamlResponse(samlResponseString, getMethod);
+    SamlResponse samlResponse = samlClient.decodeAndValidateSamlResponse(samlResponseString);
     String nameId = samlResponse.getNameID();
     try {
       User user = authenticationUtils.getUser(nameId);

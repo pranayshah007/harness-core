@@ -24,7 +24,7 @@ java_library(
         "@maven//:org_apache_commons_commons_lang3",
         "@maven//:org_eclipse_jgit_org_eclipse_jgit",
         "@maven//:org_eclipse_jgit_org_eclipse_jgit_ssh_jsch",
-        "@maven//:org_hibernate_hibernate_validator",
+        "@maven//:org_hibernate_validator_hibernate_validator",
         "@maven//:org_mongodb_morphia_morphia",
         "@maven//:org_slf4j_slf4j_api",
         "@maven//:org_springframework_data_spring_data_commons",

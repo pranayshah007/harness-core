@@ -7,15 +7,20 @@
 
 package io.harness.ci.beans.entities;
 
+import io.harness.annotation.RecasterAlias;
+
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.Value;
+import org.springframework.data.annotation.TypeAlias;
 
 @Value
 @Getter
 @Setter
 @Builder
+@TypeAlias("tiServiceConfig")
+@RecasterAlias("io.harness.ci.beans.entities.TIServiceConfig")
 public class TIServiceConfig {
   String baseUrl;
   String globalToken;

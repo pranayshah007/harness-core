@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
+import software.wings.utils.EcsConvention;
 
 @Singleton
 @Slf4j
@@ -135,6 +136,9 @@ public class EcsSetupCommandHandler extends EcsCommandTaskHandler {
       ContainerSetupCommandUnitExecutionDataBuilder commandExecutionDataBuilder,
       ExecutionLogCallback executionLogCallback, boolean isMultipleLoadBalancersFeatureFlagActive,
       boolean timeoutErrorSupported) {
+
+    String servicenm = EcsConvention.getServiceName(setupParams.getTaskFamily(), taskDefinition.getRevision());
+    ecsSetupCommandTaskHelper.storeCurrentServiceNameAndCountInfo((AwsConfig) cloudProviderSetting.getValue(), setupParams, encryptedDataDetails, commandExecutionDataBuilder, servicenm);
     ecsSetupCommandTaskHelper.downsizeOldOrUnhealthy(
         cloudProviderSetting, setupParams, encryptedDataDetails, executionLogCallback, timeoutErrorSupported);
 

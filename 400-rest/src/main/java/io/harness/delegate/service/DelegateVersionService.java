@@ -8,7 +8,9 @@
 package io.harness.delegate.service;
 
 import static io.harness.beans.FeatureName.USE_IMMUTABLE_DELEGATE;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.delegate.beans.DelegateType.CE_KUBERNETES;
+import static io.harness.delegate.beans.DelegateType.HELM_DELEGATE;
 import static io.harness.delegate.beans.DelegateType.KUBERNETES;
 import static io.harness.delegate.beans.VersionOverrideType.DELEGATE_IMAGE_TAG;
 import static io.harness.delegate.beans.VersionOverrideType.DELEGATE_JAR;
@@ -90,6 +92,21 @@ public class DelegateVersionService {
     return Collections.emptyList();
   }
 
+  public List<String> getDelegateJarVersions(final String ringName, final String accountId) {
+    if (isNotEmpty(accountId)) {
+      final VersionOverride versionOverride = getVersionOverride(accountId, DELEGATE_JAR);
+      if (versionOverride != null && isNotBlank(versionOverride.getVersion())) {
+        return Collections.singletonList(versionOverride.getVersion());
+      }
+    }
+
+    final List<String> ringVersion = delegateRingService.getDelegateVersionsForRing(ringName);
+    if (!CollectionUtils.isEmpty(ringVersion)) {
+      return ringVersion;
+    }
+    return Collections.emptyList();
+  }
+
   public List<String> getWatcherJarVersions(final String accountId) {
     final VersionOverride versionOverride = getVersionOverride(accountId, WATCHER_JAR);
     if (versionOverride != null && isNotBlank(versionOverride.getVersion())) {
@@ -112,7 +129,9 @@ public class DelegateVersionService {
   }
 
   private boolean isImmutableDelegate(final String accountId, final String delegateType) {
-    return featureFlagService.isEnabled(USE_IMMUTABLE_DELEGATE, accountId)
-        && (KUBERNETES.equals(delegateType) || CE_KUBERNETES.equals(delegateType));
+    // helm delegate only supports immutable delegate hence bypassing FF for helm delegates.
+    return (featureFlagService.isEnabled(USE_IMMUTABLE_DELEGATE, accountId)
+               && (KUBERNETES.equals(delegateType) || CE_KUBERNETES.equals(delegateType)))
+        || HELM_DELEGATE.equals(delegateType);
   }
 }

@@ -7,6 +7,13 @@
 
 package io.harness.beans.dependencies;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import io.harness.annotation.RecasterAlias;
 
-public enum CIDependencyType { @JsonProperty("Service") SERVICE }
+import com.fasterxml.jackson.annotation.JsonProperty;
+import org.springframework.data.annotation.TypeAlias;
+
+@TypeAlias("ciDependencyType")
+@RecasterAlias("io.harness.beans.dependencies.CIDependencyType")
+public enum CIDependencyType {
+  @JsonProperty("Service") SERVICE
+}

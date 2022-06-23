@@ -617,7 +617,7 @@ message BitbucketServerWebhookEvents {
 
 message AzureWebhookEvents {
   // Azure only allows one event type per hook
-  AzureWebhookEvent events = 1;
+  repeated AzureWebhookEvent events = 1;
 }
 
 message NativeEvents {

@@ -10,9 +10,11 @@ package io.harness.delegate.task.azure.common;
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.delegate.beans.logstreaming.CommandUnitProgress;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
+import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 
 @OwnedBy(CDP)
@@ -27,8 +29,20 @@ public class NgAzureLogCallbackProvider implements AzureLogCallbackProvider {
 
   @Override
   public LogCallback obtainLogCallback(String commandUnitName) {
-    // TODO: check if azure flows has any scenario of reusing existing stream/command unit. In this case
-    //  shouldOpenStream should be variable
-    return new NGDelegateLogCallback(streamingTaskClient, commandUnitName, true, commandUnitsProgress);
+    return new NGDelegateLogCallback(
+        streamingTaskClient, commandUnitName, shouldOpenStream(commandUnitName), commandUnitsProgress);
+  }
+
+  private boolean shouldOpenStream(String commandUnitName) {
+    if (commandUnitsProgress.getCommandUnitProgressMap() == null) {
+      return false;
+    }
+
+    CommandUnitProgress unitProgress = commandUnitsProgress.getCommandUnitProgressMap().get(commandUnitName);
+    if (unitProgress != null) {
+      return CommandExecutionStatus.RUNNING == unitProgress.getStatus();
+    }
+
+    return false;
   }
 }

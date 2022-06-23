@@ -23,6 +23,10 @@ import io.harness.eventsframework.consumer.Message;
 import io.harness.eventsframework.entity_crud.organization.OrganizationEntityChangeDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.event.MessageListener;
+import io.harness.service.intfc.DelegateSetupService;
+
+import software.wings.service.intfc.DelegateProfileService;
+import software.wings.service.intfc.DelegateService;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -38,10 +42,18 @@ import org.apache.commons.lang3.StringUtils;
 @Singleton
 public class OrganizationEntityCRUDEventListener implements MessageListener {
   private final DelegateNgTokenService delegateNgTokenService;
+  private final DelegateProfileService delegateProfileService;
+  private final DelegateService delegateService;
+  private final DelegateSetupService delegateSetupService;
 
   @Inject
-  public OrganizationEntityCRUDEventListener(final DelegateNgTokenService delegateNgTokenService) {
+  public OrganizationEntityCRUDEventListener(final DelegateNgTokenService delegateNgTokenService,
+      final DelegateProfileService delegateProfileService, final DelegateService delegateService,
+      final DelegateSetupService delegateSetupService) {
     this.delegateNgTokenService = delegateNgTokenService;
+    this.delegateProfileService = delegateProfileService;
+    this.delegateService = delegateService;
+    this.delegateSetupService = delegateSetupService;
   }
 
   @Override
@@ -99,6 +111,10 @@ public class OrganizationEntityCRUDEventListener implements MessageListener {
     try {
       final DelegateEntityOwner owner =
           DelegateEntityOwnerHelper.buildOwner(organizationEntityChangeDTO.getIdentifier(), null);
+      delegateService.markDelegatesAsDeletedOnDeletingOwner(organizationEntityChangeDTO.getAccountIdentifier(), owner);
+      delegateSetupService.deleteDelegateGroupsOnDeletingOwner(
+          organizationEntityChangeDTO.getAccountIdentifier(), owner);
+      delegateProfileService.deleteAllProfileOnDeletingOwner(organizationEntityChangeDTO.getAccountIdentifier(), owner);
       delegateNgTokenService.deleteAllTokensOwnedByOrgAndProject(
           organizationEntityChangeDTO.getAccountIdentifier(), owner);
       log.info("Organization {}/{} deleted and all Delegate Token owned by organization has been deleted.",

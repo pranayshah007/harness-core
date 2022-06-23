@@ -9,30 +9,23 @@ package io.harness.cdng.manifest.yaml.harness;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.cdng.manifest.yaml.harness.HarnessStoreConstants.HARNESS_STORE_TYPE;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.SwaggerConstants;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.common.ParameterFieldHelper;
-import io.harness.filters.FileRefExtractorHelper;
 import io.harness.pms.yaml.ParameterField;
-import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.beans.VisitableChildren;
-import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
 import io.harness.yaml.YamlSchemaTypes;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -45,7 +38,6 @@ import org.springframework.data.annotation.TypeAlias;
 @Builder
 @EqualsAndHashCode(callSuper = false)
 @JsonTypeName(HARNESS_STORE_TYPE)
-@SimpleVisitorHelper(helperClass = FileRefExtractorHelper.class)
 @TypeAlias("harnessStore")
 @RecasterAlias("io.harness.cdng.manifest.yaml.harness.HarnessStore")
 public class HarnessStore implements HarnessStoreConfig, Visitable {
@@ -60,6 +52,11 @@ public class HarnessStore implements HarnessStoreConfig, Visitable {
   @JsonProperty("files")
   private ParameterField<List<HarnessStoreFile>> files;
 
+  @Wither
+  @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
+  @JsonProperty("secretFiles")
+  private ParameterField<List<String>> secretFiles;
+
   // For Visitor Framework Impl
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 
@@ -68,15 +65,8 @@ public class HarnessStore implements HarnessStoreConfig, Visitable {
     return HARNESS_STORE_TYPE;
   }
 
-  @Override
-  public List<ParameterField<String>> getFileReferences() {
-    return files != null && isNotEmpty(files.getValue())
-        ? files.getValue().stream().map(HarnessStoreFile::getRef).collect(Collectors.toList())
-        : Collections.emptyList();
-  }
-
   public HarnessStore cloneInternal() {
-    return HarnessStore.builder().files(files).build();
+    return HarnessStore.builder().files(files).secretFiles(secretFiles).build();
   }
 
   @Override
@@ -93,22 +83,17 @@ public class HarnessStore implements HarnessStoreConfig, Visitable {
       resultantHarnessStore = resultantHarnessStore.withFiles(harnessStore.getFiles());
     }
 
+    if (harnessStore.getSecretFiles() != null) {
+      resultantHarnessStore = resultantHarnessStore.withSecretFiles(harnessStore.getSecretFiles());
+    }
+
     return resultantHarnessStore;
   }
 
-  @Override
-  public Map<String, ParameterField<String>> extractFileRefs() {
-    Map<String, ParameterField<String>> fileRefMap = new HashMap<>();
-    if (files != null && isNotEmpty(files.getValue())) {
-      for (HarnessStoreFile file : files.getValue()) {
-        fileRefMap.put(YAMLFieldNameConstants.FILE_REF, file.getRef());
-      }
-    }
-
-    return fileRefMap;
-  }
-
   public HarnessStoreDTO toHarnessStoreDTO() {
-    return HarnessStoreDTO.builder().files(ParameterFieldHelper.getParameterFieldValue(files)).build();
+    return HarnessStoreDTO.builder()
+        .files(ParameterFieldHelper.getParameterFieldValue(files))
+        .secretFiles(ParameterFieldHelper.getParameterFieldValue(secretFiles))
+        .build();
   }
 }

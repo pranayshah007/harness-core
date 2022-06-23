@@ -8,10 +8,10 @@
 package software.wings.expression;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.data.structure.UUIDGenerator.generateUuid;
 import static io.harness.exception.WingsException.USER;
-import static io.harness.security.encryption.EncryptionType.LOCAL;
 
 import static software.wings.beans.ServiceVariableType.ENCRYPTED_TEXT;
 import static software.wings.expression.SecretManagerFunctorInterface.obtainConfigFileExpression;
@@ -30,7 +30,6 @@ import io.harness.exception.FunctorException;
 import io.harness.exception.InvalidRequestException;
 import io.harness.expression.ExpressionFunctor;
 import io.harness.ff.FeatureFlagService;
-import io.harness.security.SimpleEncryption;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.EncryptedRecordData;
 import io.harness.security.encryption.EncryptionConfig;
@@ -61,7 +60,7 @@ public class SecretManagerFunctor implements ExpressionFunctor, SecretManagerFun
   private FeatureFlagService featureFlagService;
   private ManagerDecryptionService managerDecryptionService;
   private SecretManager secretManager;
-  private final Cache<String, EncryptedRecordData> secretsCache;
+  private final Cache<String, EncryptedDataDetails> secretsCache;
   private String accountId;
   private String appId;
   private String envId;
@@ -147,6 +146,13 @@ public class SecretManagerFunctor implements ExpressionFunctor, SecretManagerFun
 
     EncryptedData encryptedData = secretManager.getSecretMappedToAppByName(accountId, appId, envId, secretName);
     if (encryptedData == null) {
+      encryptedData = secretManager.getSecretByName(accountId, secretName);
+
+      // check if secret exists in account to throw appropriate error message
+      if (encryptedData != null) {
+        throw new InvalidRequestException(
+            "Secret with name [" + secretName + "] is not scoped to this application or environment", USER);
+      }
       throw new InvalidRequestException("No secret found with name + [" + secretName + "]", USER);
     }
     ServiceVariable serviceVariable = ServiceVariable.builder()
@@ -156,8 +162,27 @@ public class SecretManagerFunctor implements ExpressionFunctor, SecretManagerFun
                                           .secretTextName(secretName)
                                           .build();
 
-    List<EncryptedDataDetail> encryptedDataDetails =
-        secretManager.getEncryptionDetails(serviceVariable, appId, workflowExecutionId);
+    List<EncryptedDataDetail> encryptedDataDetails = null;
+
+    if (secretsCache != null) {
+      // Cache hit.
+      EncryptedDataDetails cachedValue = secretsCache.get(encryptedData.getUuid());
+      if (cachedValue != null) {
+        encryptedDataDetails = cachedValue.getEncryptedDataDetailList();
+      }
+    }
+
+    if (isEmpty(encryptedDataDetails)) {
+      // Cache miss.
+      encryptedDataDetails = secretManager.getEncryptionDetails(serviceVariable, appId, workflowExecutionId);
+
+      if (io.harness.data.structure.EmptyPredicate.isEmpty(encryptedDataDetails)) {
+        throw new InvalidRequestException("No secret found with identifier + [" + secretName + "]", USER);
+      }
+      EncryptedDataDetails objectToCache =
+          EncryptedDataDetails.builder().encryptedDataDetailList(encryptedDataDetails).build();
+      secretsCache.put(encryptedData.getUuid(), objectToCache);
+    }
 
     boolean enabled = featureFlagService.isEnabled(FeatureName.THREE_PHASE_SECRET_DECRYPTION, accountId);
 
@@ -168,28 +193,8 @@ public class SecretManagerFunctor implements ExpressionFunctor, SecretManagerFun
             .collect(Collectors.toList());
 
     if (isNotEmpty(localEncryptedDetails)) {
-      EncryptedRecordData locallyEncryptedData = secretsCache.get(encryptedData.getUuid());
-      String secretValue;
-      if (locallyEncryptedData == null) {
-        log.debug("Cache miss for secret with name: {}", serviceVariable.getSecretTextName());
-        managerDecryptionService.decrypt(serviceVariable, localEncryptedDetails);
-        secretValue = new String(serviceVariable.getValue());
-        String localEncryptionKey = generateUuid();
-        char[] reEncryptedValue = new SimpleEncryption(localEncryptionKey).encryptChars(serviceVariable.getValue());
-        locallyEncryptedData = EncryptedRecordData.builder()
-                                   .uuid(encryptedData.getUuid())
-                                   .name(encryptedData.getName())
-                                   .encryptionType(LOCAL)
-                                   .encryptionKey(localEncryptionKey)
-                                   .encryptedValue(reEncryptedValue)
-                                   .base64Encoded(encryptedData.isBase64Encoded())
-                                   .build();
-        secretsCache.put(encryptedData.getUuid(), locallyEncryptedData);
-      } else {
-        // Cache hit. Decrypt the value locally with previously saved encryption key.
-        secretValue = new String(new SimpleEncryption(locallyEncryptedData.getEncryptionKey())
-                                     .decryptChars(locallyEncryptedData.getEncryptedValue()));
-      }
+      managerDecryptionService.decrypt(serviceVariable, localEncryptedDetails);
+      String secretValue = new String(serviceVariable.getValue());
       evaluatedSecrets.put(secretName, secretValue);
       return returnSecretValue(secretName, secretValue);
     }

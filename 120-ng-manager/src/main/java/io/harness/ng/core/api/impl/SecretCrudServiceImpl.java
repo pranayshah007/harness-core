@@ -48,6 +48,9 @@ import io.harness.ng.core.models.Secret.SecretKeys;
 import io.harness.ng.core.models.SecretTextSpec;
 import io.harness.ng.core.remote.SecretValidationMetaData;
 import io.harness.ng.core.remote.SecretValidationResultDTO;
+import io.harness.ng.opa.entities.secret.OpaSecretService;
+import io.harness.opaclient.model.OpaConstants;
+import io.harness.pms.contracts.governance.GovernanceMetadata;
 import io.harness.secretmanagerclient.SecretType;
 import io.harness.secretmanagerclient.ValueType;
 import io.harness.secretmanagerclient.dto.SecretManagerConfigDTO;
@@ -82,12 +85,13 @@ public class SecretCrudServiceImpl implements SecretCrudService {
   private final NGEncryptedDataService encryptedDataService;
   private final NGAccountSettingService accountSettingService;
   private final NGConnectorSecretManagerService ngConnectorSecretManagerService;
+  private final OpaSecretService opaSecretService;
 
   @Inject
   public SecretCrudServiceImpl(SecretEntityReferenceHelper secretEntityReferenceHelper, FileUploadLimit fileUploadLimit,
       NGSecretServiceV2 ngSecretService, @Named(ENTITY_CRUD) Producer eventProducer,
       NGEncryptedDataService encryptedDataService, NGAccountSettingService accountSettingService,
-      NGConnectorSecretManagerService ngConnectorSecretManagerService) {
+      NGConnectorSecretManagerService ngConnectorSecretManagerService, OpaSecretService opaSecretService) {
     this.fileUploadLimit = fileUploadLimit;
     this.secretEntityReferenceHelper = secretEntityReferenceHelper;
     this.ngSecretService = ngSecretService;
@@ -95,6 +99,7 @@ public class SecretCrudServiceImpl implements SecretCrudService {
     this.encryptedDataService = encryptedDataService;
     this.accountSettingService = accountSettingService;
     this.ngConnectorSecretManagerService = ngConnectorSecretManagerService;
+    this.opaSecretService = opaSecretService;
   }
 
   private void checkEqualityOrThrow(Object str1, Object str2) {
@@ -143,11 +148,11 @@ public class SecretCrudServiceImpl implements SecretCrudService {
     if (SecretText.equals(dto.getType()) && isEmpty(((SecretTextSpecDTO) dto.getSpec()).getValue())) {
       throw new InvalidRequestException("value cannot be empty for a secret text.");
     }
-
+    boolean isHarnessManaged = checkIfSecretManagerUsedIsHarnessManaged(accountIdentifier, dto);
     boolean isBuiltInSMDisabled =
         accountSettingService.getIsBuiltInSMDisabled(accountIdentifier, null, null, AccountSettingType.CONNECTOR);
 
-    if (isBuiltInSMDisabled && checkIfSecretManagerUsedIsHarnessManaged(accountIdentifier, dto)) {
+    if (isBuiltInSMDisabled && isHarnessManaged) {
       throw new InvalidRequestException("Built-in Harness Secret Manager cannot be used to create Secret.");
     }
 
@@ -182,11 +187,25 @@ public class SecretCrudServiceImpl implements SecretCrudService {
     return Boolean.TRUE.equals(isHarnessManaged);
   }
 
+  private boolean isOpaPoliciesSatisfied(String accountIdentifier, SecretDTOV2 dto, SecretResponseWrapper secretResponseWrapper){
+    GovernanceMetadata governanceMetadata = opaSecretService.evaluatePoliciesWithEntity(accountIdentifier, dto, dto.getOrgIdentifier(), dto.getProjectIdentifier(),OpaConstants.OPA_EVALUATION_ACTION_CONNECTOR_SAVE,dto.getIdentifier());
+    secretResponseWrapper.setGovernanceMetadata(governanceMetadata);
+    return governanceMetadata == null || !OpaConstants.OPA_STATUS_ERROR.equals(governanceMetadata.getStatus());
+  }
+
   private SecretResponseWrapper createSecretInternal(String accountIdentifier, SecretDTOV2 dto, boolean draft) {
+    SecretResponseWrapper secretResponseWrapper = SecretResponseWrapper.builder().build();
+    if(!isOpaPoliciesSatisfied(accountIdentifier, dto, secretResponseWrapper)){
+      return secretResponseWrapper;
+    }
+    GovernanceMetadata governanceMetadata = secretResponseWrapper.getGovernanceMetadata();
+
     secretEntityReferenceHelper.createSetupUsageForSecretManager(accountIdentifier, dto.getOrgIdentifier(),
         dto.getProjectIdentifier(), dto.getIdentifier(), dto.getName(), getSecretManagerIdentifier(dto));
     Secret secret = ngSecretService.create(accountIdentifier, dto, draft);
-    return getResponseWrapper(secret);
+    secretResponseWrapper = getResponseWrapper(secret);
+    secretResponseWrapper.setGovernanceMetadata(governanceMetadata);
+    return secretResponseWrapper;
   }
 
   @Override
@@ -380,6 +399,13 @@ public class SecretCrudServiceImpl implements SecretCrudService {
       String accountIdentifier, String orgIdentifier, String projectIdentifier, String identifier, SecretDTOV2 dto) {
     validateUpdateRequestAndGetSecret(accountIdentifier, orgIdentifier, projectIdentifier, identifier, dto);
     boolean remoteUpdateSuccess = true;
+
+    SecretResponseWrapper secretResponseWrapper = SecretResponseWrapper.builder().build();
+    if(!isOpaPoliciesSatisfied(accountIdentifier, dto, secretResponseWrapper)){
+      return secretResponseWrapper;
+    }
+    GovernanceMetadata governanceMetadata = secretResponseWrapper.getGovernanceMetadata();
+
     if (SecretText.equals(dto.getType())) {
       NGEncryptedData encryptedData = encryptedDataService.updateSecretText(accountIdentifier, dto);
       if (!Optional.ofNullable(encryptedData).isPresent()) {
@@ -390,7 +416,9 @@ public class SecretCrudServiceImpl implements SecretCrudService {
     if (remoteUpdateSuccess) {
       updatedSecret = ngSecretService.update(accountIdentifier, dto, false);
     }
-    return processAndGetSecret(remoteUpdateSuccess, updatedSecret);
+    secretResponseWrapper= processAndGetSecret(remoteUpdateSuccess, updatedSecret);
+    secretResponseWrapper.setGovernanceMetadata(governanceMetadata);
+    return secretResponseWrapper;
   }
 
   @Override
@@ -399,6 +427,13 @@ public class SecretCrudServiceImpl implements SecretCrudService {
     if (dto.getSpec().getErrorMessageForInvalidYaml().isPresent()) {
       throw new InvalidRequestException(dto.getSpec().getErrorMessageForInvalidYaml().get(), USER);
     }
+
+    SecretResponseWrapper secretResponseWrapper = SecretResponseWrapper.builder().build();
+    if(!isOpaPoliciesSatisfied(accountIdentifier, dto, secretResponseWrapper)){
+      return secretResponseWrapper;
+    }
+    GovernanceMetadata governanceMetadata = secretResponseWrapper.getGovernanceMetadata();
+
     validateUpdateRequestAndGetSecret(accountIdentifier, orgIdentifier, projectIdentifier, identifier, dto);
 
     boolean remoteUpdateSuccess = true;
@@ -417,7 +452,9 @@ public class SecretCrudServiceImpl implements SecretCrudService {
     if (remoteUpdateSuccess) {
       updatedSecret = ngSecretService.update(accountIdentifier, dto, true);
     }
-    return processAndGetSecret(remoteUpdateSuccess, updatedSecret);
+    secretResponseWrapper = processAndGetSecret(remoteUpdateSuccess, updatedSecret);
+    secretResponseWrapper.setGovernanceMetadata(governanceMetadata);
+    return secretResponseWrapper;
   }
 
   private void publishEvent(Secret secret, String action) {
@@ -448,6 +485,12 @@ public class SecretCrudServiceImpl implements SecretCrudService {
   @Override
   public SecretResponseWrapper createFile(
       @NotNull String accountIdentifier, @NotNull SecretDTOV2 dto, @NotNull InputStream inputStream) {
+    SecretResponseWrapper secretResponseWrapper = SecretResponseWrapper.builder().build();
+    if(!isOpaPoliciesSatisfied(accountIdentifier, dto, secretResponseWrapper)){
+      return secretResponseWrapper;
+    }
+    GovernanceMetadata governanceMetadata = secretResponseWrapper.getGovernanceMetadata();
+
     SecretFileSpecDTO specDTO = (SecretFileSpecDTO) dto.getSpec();
     NGEncryptedData encryptedData = encryptedDataService.createSecretFile(
         accountIdentifier, dto, new BoundedInputStream(inputStream, fileUploadLimit.getEncryptedFileLimit()));
@@ -456,7 +499,9 @@ public class SecretCrudServiceImpl implements SecretCrudService {
       secretEntityReferenceHelper.createSetupUsageForSecretManager(accountIdentifier, dto.getOrgIdentifier(),
           dto.getProjectIdentifier(), dto.getIdentifier(), dto.getName(), specDTO.getSecretManagerIdentifier());
       Secret secret = ngSecretService.create(accountIdentifier, dto, false);
-      return getResponseWrapper(secret);
+      secretResponseWrapper = getResponseWrapper(secret);
+      secretResponseWrapper.setGovernanceMetadata(governanceMetadata);
+      return secretResponseWrapper;
     }
     throw new SecretManagementException(SECRET_MANAGEMENT_ERROR, "Unable to create secret file remotely", USER);
   }
@@ -480,6 +525,12 @@ public class SecretCrudServiceImpl implements SecretCrudService {
   @Override
   public SecretResponseWrapper updateFile(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       String identifier, @Valid SecretDTOV2 dto, @NotNull InputStream inputStream) {
+    SecretResponseWrapper secretResponseWrapper = SecretResponseWrapper.builder().build();
+    if(!isOpaPoliciesSatisfied(accountIdentifier, dto, secretResponseWrapper)){
+      return secretResponseWrapper;
+    }
+    GovernanceMetadata governanceMetadata = secretResponseWrapper.getGovernanceMetadata();
+
     validateUpdateRequestAndGetSecret(accountIdentifier, orgIdentifier, projectIdentifier, identifier, dto);
     boolean success =
         Optional
@@ -491,7 +542,9 @@ public class SecretCrudServiceImpl implements SecretCrudService {
     if (success) {
       Secret updatedSecret = ngSecretService.update(accountIdentifier, dto, false);
       publishEvent(updatedSecret, EventsFrameworkMetadataConstants.UPDATE_ACTION);
-      return getResponseWrapper(updatedSecret);
+      secretResponseWrapper = getResponseWrapper(updatedSecret);
+      secretResponseWrapper.setGovernanceMetadata(governanceMetadata);
+      return secretResponseWrapper;
     }
     throw new SecretManagementException(SECRET_MANAGEMENT_ERROR, "Unable to update secret file remotely", USER);
   }

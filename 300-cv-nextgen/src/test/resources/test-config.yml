@@ -57,6 +57,16 @@ managerClientConfig:
   connectTimeOutSeconds: 15
   readTimeOutSeconds: 15
 
+ngManagerClientConfig:
+  baseUrl: http://localhost:7457/
+  connectTimeOutSeconds: 15
+  readTimeOutSeconds: 15
+
+enforcementClientConfiguration:
+  enforcementCheckEnabled: true
+
+ngManagerServiceSecret: IC04LYMBf1lDP5oeY4hupxd4HJhLmN6azUku3xEbeE3SUx5G3ZYzhbiwVtK4i7AmqyU9OZkwB4v8E9qM
+
 templateServiceClientConfig:
   baseUrl: http://localhost:15001/api/
   connectTimeOutSeconds: 15

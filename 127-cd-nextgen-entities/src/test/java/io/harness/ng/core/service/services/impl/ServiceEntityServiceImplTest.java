@@ -39,6 +39,7 @@ import io.harness.ng.core.entitysetupusage.impl.EntitySetupUsageServiceImpl;
 import io.harness.ng.core.service.dto.ServiceResponseDTO;
 import io.harness.ng.core.service.entity.ServiceEntity;
 import io.harness.ng.core.service.mappers.ServiceElementMapper;
+import io.harness.ng.core.serviceoverride.services.ServiceOverrideService;
 import io.harness.ng.core.utils.CoreCriteriaUtils;
 import io.harness.outbox.api.OutboxService;
 import io.harness.repositories.UpsertOptions;
@@ -72,6 +73,8 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
   @Mock private OutboxService outboxService;
   @Mock private NGFeatureFlagHelperService ngFeatureFlagHelperService;
   @Mock private EntitySetupUsageServiceImpl entitySetupUsageService;
+  @Mock private ServiceOverrideService serviceOverrideService;
+  @Mock private ServiceEntitySetupUsageHelper entitySetupUsageHelper;
   @Inject @InjectMocks private ServiceEntityServiceImpl serviceEntityService;
   private static final String ACCOUNT_ID = "ACCOUNT_ID";
   private static final String ORG_ID = "ORG_ID";
@@ -83,6 +86,8 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
     Reflect.on(serviceEntityService).set("entitySetupUsageService", entitySetupUsageService);
     Reflect.on(serviceEntityService).set("ngFeatureFlagHelperService", ngFeatureFlagHelperService);
     Reflect.on(serviceEntityService).set("outboxService", outboxService);
+    Reflect.on(serviceEntityService).set("serviceOverrideService", serviceOverrideService);
+    Reflect.on(serviceEntityService).set("entitySetupUsageHelper", entitySetupUsageHelper);
   }
 
   @Test
@@ -208,6 +213,7 @@ public class ServiceEntityServiceImplTest extends CDNGEntitiesTestBase {
         .thenReturn(Page.empty());
     boolean delete = serviceEntityService.delete("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", "IDENTIFIER", 1L);
     assertThat(delete).isTrue();
+    verify(serviceOverrideService).deleteAllInProjectForAService("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", "IDENTIFIER");
 
     Optional<ServiceEntity> deletedService =
         serviceEntityService.get("ACCOUNT_ID", "ORG_ID", "PROJECT_ID", "UPDATED_SERVICE", false);

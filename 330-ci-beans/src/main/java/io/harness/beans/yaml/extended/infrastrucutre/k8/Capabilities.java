@@ -10,6 +10,7 @@ package io.harness.beans.yaml.extended.infrastrucutre.k8;
 import static io.harness.beans.SwaggerConstants.STRING_LIST_CLASSPATH;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.YamlSchemaTypes;
 
@@ -18,10 +19,13 @@ import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.TypeAlias;
 
 @Data
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
+@TypeAlias("capabilities")
+@RecasterAlias("io.harness.beans.yaml.extended.infrastrucutre.k8.Capabilities")
 public class Capabilities {
   @YamlSchemaTypes(value = {runtime})
   @ApiModelProperty(dataType = STRING_LIST_CLASSPATH)

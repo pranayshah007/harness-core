@@ -10,6 +10,7 @@ package io.harness.gitsync.common.dtos;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.Scope;
+import io.harness.gitsync.beans.GitRepoScopeParams;
 
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -30,4 +31,5 @@ public class ScmCreateFileRequestDTO {
   boolean isCommitToNewBranch;
   String baseBranch;
   String commitMessage;
+  GitRepoScopeParams gitRepoScopeParams;
 }

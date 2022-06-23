@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: permissionsConfiguration
-version: 26
+version: 28
 permissions:
   - identifier: core_project_delete
     name: Delete Project
@@ -136,6 +136,24 @@ permissions:
       - account
       - organization
       - project
+  - identifier: core_smtp_view
+    name: View SMTP Config
+    status: ACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: core_smtp_edit
+    name: Create or Edit a SMTP Config
+    status: ACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: core_smtp_delete
+    name: Delete SMTP Config
+    status: ACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
   - identifier: core_delegate_view
     name: View Delegates
     status: ACTIVE
@@ -955,6 +973,22 @@ permissions:
       - project
   - identifier: chaos_chaosagent_delete
     name: Delete a Chaos Agent
+    status: ACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project
+  - identifier: chaos_chaosgitops_view
+    name: View Gitops
+    status: ACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+      - organization
+      - project    
+  - identifier: chaos_chaosgitops_edit
+    name: Edit Gitops
     status: ACTIVE
     includeInAllRoles: false
     allowedScopeLevels:

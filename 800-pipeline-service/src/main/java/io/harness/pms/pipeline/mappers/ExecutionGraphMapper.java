@@ -56,6 +56,7 @@ public class ExecutionGraphMapper {
         .delegateInfoList(mapDelegateSelectionLogParamsToDelegateInfo(graphVertex.getGraphDelegateSelectionLogParams()))
         .interruptHistories(InterruptConfigDTOMapper.toInterruptEffectDTOList(graphVertex.getInterruptHistories()))
         .stepDetails(graphVertex.getOrchestrationMapStepDetails())
+        .strategyMetadata(graphVertex.getStrategyMetadata())
         .build();
   }
 

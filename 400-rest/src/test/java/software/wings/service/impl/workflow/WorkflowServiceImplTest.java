@@ -11,12 +11,14 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 import static io.harness.beans.ExecutionStatus.SUCCESS;
 import static io.harness.beans.PageResponse.PageResponseBuilder.aPageResponse;
 import static io.harness.rule.OwnerRule.AGORODETKI;
+import static io.harness.rule.OwnerRule.BUHA;
 import static io.harness.rule.OwnerRule.MOUNIK;
 import static io.harness.rule.OwnerRule.PRABU;
 
 import static software.wings.beans.BasicOrchestrationWorkflow.BasicOrchestrationWorkflowBuilder.aBasicOrchestrationWorkflow;
 import static software.wings.beans.CanaryOrchestrationWorkflow.CanaryOrchestrationWorkflowBuilder.aCanaryOrchestrationWorkflow;
 import static software.wings.beans.PhaseStep.PhaseStepBuilder.aPhaseStep;
+import static software.wings.beans.PhaseStepType.PRE_DEPLOYMENT;
 import static software.wings.beans.PhaseStepType.VERIFY_SERVICE;
 import static software.wings.beans.Workflow.WorkflowBuilder.aWorkflow;
 import static software.wings.beans.WorkflowPhase.WorkflowPhaseBuilder.aWorkflowPhase;
@@ -114,6 +116,7 @@ import com.google.inject.Inject;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Test;
@@ -1042,5 +1045,141 @@ public class WorkflowServiceImplTest extends WingsBaseTest {
     assertThat(manifestVariable.getApplicationManifestSummary().get(0).getDefaultManifest()).isNull();
     assertThat(manifestVariable.getApplicationManifestSummary().get(1).getAppManifestId()).isEqualTo(MANIFEST_ID + 2);
     assertThat(manifestVariable.getApplicationManifestSummary().get(0).getAppManifestId()).isEqualTo(MANIFEST_ID);
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void shouldGenerateDefaultTerragruntRollbackProvisioner() {
+    Map<String, Object> properties = new HashMap<>();
+    properties.put("provisionerId", "some_provisioner_id");
+
+    PhaseStep phaseStep = aPhaseStep(PRE_DEPLOYMENT)
+                              .addAllSteps(Collections.singletonList(GraphNode.builder()
+                                                                         .name("Terragrunt provision step")
+                                                                         .type("TERRAGRUNT_PROVISION")
+                                                                         .properties(properties)
+                                                                         .build()))
+                              .build();
+    phaseStep.setName("Pre-deployment-step");
+
+    PhaseStep rollbackStep = workflowService.generateRollbackProvisioners(
+        phaseStep, PhaseStepType.ROLLBACK_PROVISIONERS, "Rollback provisioners");
+
+    assertThat(rollbackStep).isNotNull();
+    assertThat(rollbackStep.getName()).isEqualTo("Rollback provisioners");
+    assertThat(rollbackStep.isRollback()).isTrue();
+    assertThat(rollbackStep.getSteps()).isNotNull();
+    assertThat(rollbackStep.getSteps().size()).isEqualTo(1);
+
+    GraphNode defaultRollbackStep = rollbackStep.getSteps().get(0);
+    assertThat(defaultRollbackStep.isRollback()).isTrue();
+    assertThat(defaultRollbackStep.getType()).isEqualTo("TERRAGRUNT_ROLLBACK");
+    assertThat(defaultRollbackStep.getName()).isEqualTo("Rollback Terragrunt provision step");
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void shouldNotGenerateTerragruntRollbackProvisionerWhenSkipDefaultRollbackIsTrue() {
+    Map<String, Object> properties = new HashMap<>();
+    properties.put("provisionerId", "some_provisioner_id");
+    properties.put("skipRollback", true);
+
+    PhaseStep phaseStep = aPhaseStep(PRE_DEPLOYMENT)
+                              .addAllSteps(Collections.singletonList(GraphNode.builder()
+                                                                         .name("Terragrunt provision step")
+                                                                         .type("TERRAGRUNT_PROVISION")
+                                                                         .properties(properties)
+                                                                         .build()))
+                              .build();
+    phaseStep.setName("Pre-deployment-step");
+
+    PhaseStep rollbackStep = workflowService.generateRollbackProvisioners(
+        phaseStep, PhaseStepType.ROLLBACK_PROVISIONERS, "Rollback provisioners");
+
+    assertThat(rollbackStep).isNotNull();
+    assertThat(rollbackStep.getName()).isEqualTo("Rollback provisioners");
+    assertThat(rollbackStep.isRollback()).isTrue();
+    assertThat(rollbackStep.getSteps()).isNotNull();
+    assertThat(rollbackStep.getSteps().isEmpty()).isTrue();
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void shouldGenerateTerragruntRollbackProvisionerWhenSkipDefaultRollbackIsTrueInPlanAndNotSetInInheret() {
+    Map<String, Object> properties1 = new HashMap<>();
+    properties1.put("provisionerId", "some_provisioner_id");
+    properties1.put("runPlanOnly", true);
+
+    Map<String, Object> properties2 = new HashMap<>();
+    properties2.put("provisionerId", "some_provisioner_id");
+    properties2.put("inheritApprovedPlan", true);
+
+    PhaseStep phaseStep = aPhaseStep(PRE_DEPLOYMENT)
+                              .addAllSteps(asList(GraphNode.builder()
+                                                      .name("Terragrunt provision plan step")
+                                                      .type("TERRAGRUNT_PROVISION")
+                                                      .properties(properties1)
+                                                      .build(),
+                                  GraphNode.builder()
+                                      .name("Terragrunt provision apply step")
+                                      .type("TERRAGRUNT_PROVISION")
+                                      .properties(properties2)
+                                      .build()))
+                              .build();
+    phaseStep.setName("Pre-deployment-step");
+
+    PhaseStep rollbackStep = workflowService.generateRollbackProvisioners(
+        phaseStep, PhaseStepType.ROLLBACK_PROVISIONERS, "Rollback provisioners");
+
+    assertThat(rollbackStep).isNotNull();
+    assertThat(rollbackStep.getName()).isEqualTo("Rollback provisioners");
+    assertThat(rollbackStep.isRollback()).isTrue();
+    assertThat(rollbackStep.getSteps()).isNotNull();
+    assertThat(rollbackStep.getSteps().size()).isEqualTo(1);
+
+    GraphNode defaultRollbackStep = rollbackStep.getSteps().get(0);
+    assertThat(defaultRollbackStep.isRollback()).isTrue();
+    assertThat(defaultRollbackStep.getType()).isEqualTo("TERRAGRUNT_ROLLBACK");
+    assertThat(defaultRollbackStep.getName()).isEqualTo("Rollback Terragrunt provision apply step");
+  }
+
+  @Test
+  @Owner(developers = BUHA)
+  @Category(UnitTests.class)
+  public void shouldNotGenerateTerragruntRollbackProvisionerWhenSkipDefaultRollbackIsTrueInPlanAndNotSetInInheret() {
+    Map<String, Object> properties1 = new HashMap<>();
+    properties1.put("provisionerId", "some_provisioner_id");
+    properties1.put("runPlanOnly", true);
+    properties1.put("skipRollback", true);
+
+    Map<String, Object> properties2 = new HashMap<>();
+    properties2.put("provisionerId", "some_provisioner_id");
+    properties2.put("inheritApprovedPlan", true);
+
+    PhaseStep phaseStep = aPhaseStep(PRE_DEPLOYMENT)
+                              .addAllSteps(asList(GraphNode.builder()
+                                                      .name("Terragrunt provision plan step")
+                                                      .type("TERRAGRUNT_PROVISION")
+                                                      .properties(properties1)
+                                                      .build(),
+                                  GraphNode.builder()
+                                      .name("Terragrunt provision apply step")
+                                      .type("TERRAGRUNT_PROVISION")
+                                      .properties(properties2)
+                                      .build()))
+                              .build();
+    phaseStep.setName("Pre-deployment-step");
+
+    PhaseStep rollbackStep = workflowService.generateRollbackProvisioners(
+        phaseStep, PhaseStepType.ROLLBACK_PROVISIONERS, "Rollback provisioners");
+
+    assertThat(rollbackStep).isNotNull();
+    assertThat(rollbackStep.getName()).isEqualTo("Rollback provisioners");
+    assertThat(rollbackStep.isRollback()).isTrue();
+    assertThat(rollbackStep.getSteps()).isNotNull();
+    assertThat(rollbackStep.getSteps().isEmpty()).isTrue();
   }
 }

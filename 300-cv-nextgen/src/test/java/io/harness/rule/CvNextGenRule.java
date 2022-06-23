@@ -34,6 +34,7 @@ import io.harness.cvng.client.VerificationManagerService;
 import io.harness.cvng.core.NGManagerServiceConfig;
 import io.harness.cvng.core.services.api.FeatureFlagService;
 import io.harness.cvng.core.services.impl.AlwaysFalseFeatureFlagServiceImpl;
+import io.harness.enforcement.client.services.EnforcementClientService;
 import io.harness.factory.ClosingFactory;
 import io.harness.factory.ClosingFactoryModule;
 import io.harness.govern.ProviderModule;
@@ -184,6 +185,7 @@ public class CvNextGenRule implements MethodRule, InjectorRuleMixin, MongoRuleMi
       binder.bind(Clock.class).toInstance(CVNGTestConstants.FIXED_TIME_FOR_TESTS);
       binder.bind(TemplateResourceClient.class).toInstance(getMockedTemplateResourceClient());
       binder.bind(NextGenService.class).to(FakeNextGenService.class);
+      binder.bind(EnforcementClientService.class).toInstance(Mockito.mock(EnforcementClientService.class));
     }));
     MongoBackendConfiguration mongoBackendConfiguration =
         MongoBackendConfiguration.builder().uri("mongodb://localhost:27017/notificationChannel").build();

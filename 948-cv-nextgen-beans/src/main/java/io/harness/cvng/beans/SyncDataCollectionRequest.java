@@ -29,6 +29,16 @@ public class SyncDataCollectionRequest extends DataCollectionRequest<ConnectorCo
   Instant startTime;
   Instant endTime;
 
+  @Override
+  public Instant getStartTime(Instant currentTime) {
+    return startTime;
+  }
+
+  @Override
+  public Instant getEndTime(Instant currentTime) {
+    return endTime;
+  }
+
   public SyncDataCollectionRequest() {
     setType(DataCollectionRequestType.SYNC_DATA_COLLECTION);
   }

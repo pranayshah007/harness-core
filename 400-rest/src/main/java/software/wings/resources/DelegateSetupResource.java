@@ -187,9 +187,9 @@ public class DelegateSetupResource {
   @Timed
   @ExceptionMetered
   @PublicApi
-  public RestResponse<Double> getConnectedRatioWithPrimary(
-      @QueryParam("targetVersion") @NotEmpty String targetVersion, @QueryParam("accountId") String accountId) {
-    return new RestResponse<>(delegateService.getConnectedRatioWithPrimary(targetVersion, accountId));
+  public RestResponse<Double> getConnectedRatioWithPrimary(@QueryParam("targetVersion") @NotEmpty String targetVersion,
+      @QueryParam("accountId") String accountId, @QueryParam("ringName") String ringName) {
+    return new RestResponse<>(delegateService.getConnectedRatioWithPrimary(targetVersion, accountId, ringName));
   }
 
   @GET

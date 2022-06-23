@@ -111,7 +111,7 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
     GetUserReposResponse getUserReposResponse = GetUserReposResponse.newBuilder().addAllRepos(repositories).build();
     when(scmOrchestratorService.processScmRequestUsingConnectorSettings(any(), any())).thenReturn(getUserReposResponse);
     List<GitRepositoryResponseDTO> repositoryResponseDTOList = scmFacilitatorService.listReposByRefConnector(
-        accountIdentifier, orgIdentifier, projectIdentifier, connectorRef, pageRequest, "");
+        accountIdentifier, orgIdentifier, projectIdentifier, connectorRef, pageRequest, "", null);
     assertThat(repositoryResponseDTOList.size()).isEqualTo(2);
     assertThat(repositoryResponseDTOList.get(0).getName()).isEqualTo("repo1");
     assertThat(repositoryResponseDTOList.get(1).getName()).isEqualTo("repo2");
@@ -128,7 +128,7 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
     when(scmOrchestratorService.processScmRequestUsingConnectorSettings(any(), any()))
         .thenReturn(listBranchesWithDefaultResponse);
     GitBranchesResponseDTO gitBranchesResponseDTO = scmFacilitatorService.listBranchesV2(
-        accountIdentifier, orgIdentifier, projectIdentifier, connectorRef, repoName, pageRequest, "");
+        accountIdentifier, orgIdentifier, projectIdentifier, connectorRef, repoName, pageRequest, "", null);
     assertThat(gitBranchesResponseDTO.getDefaultBranch().getName()).isEqualTo(defaultBranch);
     assertThat(gitBranchesResponseDTO.getBranches().size()).isEqualTo(1);
     assertThat(gitBranchesResponseDTO.getBranches().get(0).getName()).isEqualTo(branch);
@@ -144,7 +144,7 @@ public class ScmFacilitatorServiceImplTest extends GitSyncTestBase {
             .build();
     when(scmOrchestratorService.processScmRequestUsingConnectorSettings(any(), any())).thenReturn(getUserRepoResponse);
     String branchName = scmFacilitatorService.getDefaultBranch(
-        accountIdentifier, orgIdentifier, projectIdentifier, connectorRef, repoName);
+        accountIdentifier, orgIdentifier, projectIdentifier, connectorRef, repoName, null);
     assertThat(branchName).isEqualTo(defaultBranch);
   }
 

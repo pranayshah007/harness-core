@@ -41,6 +41,7 @@ import io.harness.delegate.beans.NotificationTaskResponse;
 import io.harness.delegate.beans.PagerDutyTaskParams;
 import io.harness.delegate.beans.RemoteMethodReturnValueData;
 import io.harness.delegate.beans.SecretDetail;
+import io.harness.delegate.beans.SerializedResponseData;
 import io.harness.delegate.beans.SlackTaskParams;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.artifactory.ArtifactoryFetchBuildsResponse;
@@ -268,8 +269,10 @@ import io.harness.delegate.beans.secrets.SSHConfigValidationTaskResponse;
 import io.harness.delegate.beans.secrets.WinRmConfigValidationTaskResponse;
 import io.harness.delegate.beans.serverless.ServerlessAwsLambdaDeployResult;
 import io.harness.delegate.beans.serverless.ServerlessAwsLambdaFunction;
+import io.harness.delegate.beans.serverless.ServerlessAwsLambdaPrepareRollbackDataResult;
 import io.harness.delegate.beans.serverless.ServerlessAwsLambdaRollbackResult;
 import io.harness.delegate.beans.serverless.ServerlessDeployResult;
+import io.harness.delegate.beans.serverless.ServerlessPrepareRollbackDataResult;
 import io.harness.delegate.beans.serverless.ServerlessRollbackResult;
 import io.harness.delegate.beans.storeconfig.ArtifactoryStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.FetchType;
@@ -326,8 +329,18 @@ import io.harness.delegate.task.azure.appservice.AzureAppServiceTaskParameters.A
 import io.harness.delegate.task.azure.appservice.AzureAppServiceTaskResponse;
 import io.harness.delegate.task.azure.appservice.webapp.ng.AzureWebAppInfraDelegateConfig;
 import io.harness.delegate.task.azure.appservice.webapp.ng.AzureWebAppRequestType;
+import io.harness.delegate.task.azure.appservice.webapp.ng.request.AzureWebAppFetchPreDeploymentDataRequest;
+import io.harness.delegate.task.azure.appservice.webapp.ng.request.AzureWebAppRollbackRequest;
+import io.harness.delegate.task.azure.appservice.webapp.ng.request.AzureWebAppSlotDeploymentRequest;
+import io.harness.delegate.task.azure.appservice.webapp.ng.request.AzureWebAppSwapSlotsRequest;
 import io.harness.delegate.task.azure.appservice.webapp.ng.request.AzureWebAppTaskRequest;
+import io.harness.delegate.task.azure.appservice.webapp.ng.request.AzureWebAppTrafficShiftRequest;
+import io.harness.delegate.task.azure.appservice.webapp.ng.response.AzureWebAppFetchPreDeploymentDataResponse;
+import io.harness.delegate.task.azure.appservice.webapp.ng.response.AzureWebAppNGRollbackResponse;
+import io.harness.delegate.task.azure.appservice.webapp.ng.response.AzureWebAppSlotDeploymentResponse;
+import io.harness.delegate.task.azure.appservice.webapp.ng.response.AzureWebAppSwapSlotsResponseNG;
 import io.harness.delegate.task.azure.appservice.webapp.ng.response.AzureWebAppTaskResponse;
+import io.harness.delegate.task.azure.appservice.webapp.ng.response.AzureWebAppTrafficShiftResponse;
 import io.harness.delegate.task.azure.appservice.webapp.request.AzureWebAppListWebAppDeploymentSlotsParameters;
 import io.harness.delegate.task.azure.appservice.webapp.request.AzureWebAppListWebAppInstancesParameters;
 import io.harness.delegate.task.azure.appservice.webapp.request.AzureWebAppListWebAppNamesParameters;
@@ -356,6 +369,9 @@ import io.harness.delegate.task.azure.arm.response.AzureARMListManagementGroupRe
 import io.harness.delegate.task.azure.arm.response.AzureARMListSubscriptionLocationsResponse;
 import io.harness.delegate.task.azure.arm.response.AzureARMRollbackResponse;
 import io.harness.delegate.task.azure.arm.response.AzureBlueprintDeploymentResponse;
+import io.harness.delegate.task.azure.artifact.AzureArtifactConfig;
+import io.harness.delegate.task.azure.artifact.AzureArtifactType;
+import io.harness.delegate.task.azure.artifact.AzureContainerArtifactConfig;
 import io.harness.delegate.task.azure.request.AzureLoadBalancerDetailForBGDeployment;
 import io.harness.delegate.task.azure.request.AzureVMSSDeployTaskParameters;
 import io.harness.delegate.task.azure.request.AzureVMSSGetVirtualMachineScaleSetParameters;
@@ -520,10 +536,12 @@ import io.harness.delegate.task.serverless.ServerlessRollbackConfig;
 import io.harness.delegate.task.serverless.request.ServerlessCommandRequest;
 import io.harness.delegate.task.serverless.request.ServerlessDeployRequest;
 import io.harness.delegate.task.serverless.request.ServerlessGitFetchRequest;
+import io.harness.delegate.task.serverless.request.ServerlessPrepareRollbackDataRequest;
 import io.harness.delegate.task.serverless.request.ServerlessRollbackRequest;
 import io.harness.delegate.task.serverless.response.ServerlessCommandResponse;
 import io.harness.delegate.task.serverless.response.ServerlessDeployResponse;
 import io.harness.delegate.task.serverless.response.ServerlessGitFetchResponse;
+import io.harness.delegate.task.serverless.response.ServerlessPrepareRollbackDataResponse;
 import io.harness.delegate.task.serverless.response.ServerlessRollbackResponse;
 import io.harness.delegate.task.servicenow.ServiceNowTaskNGParameters;
 import io.harness.delegate.task.servicenow.ServiceNowTaskNGResponse;
@@ -629,6 +647,7 @@ import software.wings.beans.LambdaTestEvent;
 import software.wings.beans.PerpetualTaskBroadcastEvent;
 import software.wings.beans.PhysicalDataCenterConfig;
 import software.wings.beans.PrometheusConfig;
+import software.wings.beans.SerializationFormat;
 import software.wings.beans.SettingAttribute;
 import software.wings.beans.SlackConfig;
 import software.wings.beans.SpotInstConfig;
@@ -1384,6 +1403,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(EmptyDirVolume.class, 543486);
     kryo.register(HostPathVolume.class, 543487);
     kryo.register(PVCVolume.class, 543488);
+
     kryo.register(AwsCFTemplateParamsData.class, 5478);
     kryo.register(PhysicalDataCenterConnectorValidationParams.class, 543489);
     kryo.register(ContainerSecurityContext.class, 543490);
@@ -1504,6 +1524,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(ArtifactoryBaseArtifactDelegateRequest.class, 563531);
     kryo.register(AzureK8sInfraDelegateConfig.class, 563532);
     kryo.register(AzureAcrTokenTaskResponse.class, 563533);
+
     kryo.register(LdapTestResponse.Status.class, 5500);
     kryo.register(LdapGroupSettings.class, 5498);
     kryo.register(LdapTestResponse.class, 5499);
@@ -1512,6 +1533,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(EcsRunTaskDeployRequest.class, 7501);
     kryo.register(EcsRunTaskDeployResponse.class, 7502);
     kryo.register(EcsDeployRollbackDataFetchResponse.class, 8087);
+
     kryo.register(SlackTaskParams.class, 55210);
     kryo.register(MailTaskParams.class, 55211);
     kryo.register(PagerDutyTaskParams.class, 55212);
@@ -1525,6 +1547,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(JenkinsCapabilityHelper.class, 29302);
     kryo.register(JenkinsValidationParams.class, 29303);
     kryo.register(JenkinsArtifactDelegateRequest.class, 29304);
+
     kryo.register(OciHelmConnectivityTaskParams.class, 29306);
     kryo.register(OciHelmConnectivityTaskResponse.class, 29307);
     kryo.register(OciHelmStoreDelegateConfig.class, 29308);
@@ -1549,5 +1572,24 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(FileDelegateConfig.class, 55318);
     kryo.register(HarnessStoreDelegateConfig.class, 55319);
     kryo.register(ConfigFileParameters.class, 55320);
+    kryo.register(ServerlessPrepareRollbackDataRequest.class, 29309);
+    kryo.register(ServerlessPrepareRollbackDataResponse.class, 29310);
+    kryo.register(ServerlessPrepareRollbackDataResult.class, 29311);
+    kryo.register(ServerlessAwsLambdaPrepareRollbackDataResult.class, 29312);
+    kryo.register(AzureWebAppSlotDeploymentRequest.class, 55321);
+    kryo.register(AzureWebAppSlotDeploymentResponse.class, 55322);
+    kryo.register(AzureArtifactConfig.class, 55323);
+    kryo.register(AzureArtifactType.class, 55324);
+    kryo.register(AzureContainerArtifactConfig.class, 55325);
+    kryo.register(AzureWebAppRollbackRequest.class, 55326);
+    kryo.register(AzureWebAppNGRollbackResponse.class, 55327);
+    kryo.register(AzureWebAppFetchPreDeploymentDataRequest.class, 55328);
+    kryo.register(AzureWebAppFetchPreDeploymentDataResponse.class, 55329);
+    kryo.register(AzureWebAppTrafficShiftRequest.class, 55330);
+    kryo.register(AzureWebAppTrafficShiftResponse.class, 55331);
+    kryo.register(AzureWebAppSwapSlotsRequest.class, 55332);
+    kryo.register(AzureWebAppSwapSlotsResponseNG.class, 55333);
+    kryo.register(SerializedResponseData.class, 55401);
+    kryo.register(SerializationFormat.class, 55402);
   }
 }

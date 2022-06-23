@@ -7,6 +7,7 @@
 
 package io.harness.cvng;
 
+import static io.harness.AuthorizationServiceHeader.CV_NEXT_GEN;
 import static io.harness.cvng.beans.change.ChangeSourceType.HARNESS_CD;
 import static io.harness.cvng.cdng.services.impl.CVNGNotifyEventListener.CVNG_ORCHESTRATION;
 import static io.harness.eventsframework.EventsFrameworkConstants.SRM_STATEMACHINE_EVENT;
@@ -37,7 +38,6 @@ import io.harness.cvng.activity.source.services.api.KubernetesActivitySourceServ
 import io.harness.cvng.activity.source.services.impl.KubernetesActivitySourceServiceImpl;
 import io.harness.cvng.analysis.services.api.DeploymentLogAnalysisService;
 import io.harness.cvng.analysis.services.api.DeploymentTimeSeriesAnalysisService;
-import io.harness.cvng.analysis.services.api.HealthVerificationService;
 import io.harness.cvng.analysis.services.api.LearningEngineDevService;
 import io.harness.cvng.analysis.services.api.LearningEngineTaskService;
 import io.harness.cvng.analysis.services.api.LogAnalysisService;
@@ -48,7 +48,6 @@ import io.harness.cvng.analysis.services.api.TrendAnalysisService;
 import io.harness.cvng.analysis.services.api.VerificationJobInstanceAnalysisService;
 import io.harness.cvng.analysis.services.impl.DeploymentLogAnalysisServiceImpl;
 import io.harness.cvng.analysis.services.impl.DeploymentTimeSeriesAnalysisServiceImpl;
-import io.harness.cvng.analysis.services.impl.HealthVerificationServiceImpl;
 import io.harness.cvng.analysis.services.impl.LearningEngineDevServiceImpl;
 import io.harness.cvng.analysis.services.impl.LearningEngineTaskServiceImpl;
 import io.harness.cvng.analysis.services.impl.LogAnalysisServiceImpl;
@@ -305,7 +304,6 @@ import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.S
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.ServiceLevelIndicatorTransformer;
 import io.harness.cvng.servicelevelobjective.transformer.servicelevelindicator.ThresholdServiceLevelIndicatorTransformer;
 import io.harness.cvng.statemachine.beans.AnalysisState.StateType;
-import io.harness.cvng.statemachine.services.api.ActivityVerificationStateExecutor;
 import io.harness.cvng.statemachine.services.api.AnalysisStateExecutor;
 import io.harness.cvng.statemachine.services.api.AnalysisStateMachineService;
 import io.harness.cvng.statemachine.services.api.CanaryTimeSeriesAnalysisStateExecutor;
@@ -321,12 +319,15 @@ import io.harness.cvng.statemachine.services.api.ServiceGuardTrendAnalysisStateE
 import io.harness.cvng.statemachine.services.api.TestTimeSeriesAnalysisStateExecutor;
 import io.harness.cvng.statemachine.services.impl.AnalysisStateMachineServiceImpl;
 import io.harness.cvng.statemachine.services.impl.OrchestrationServiceImpl;
+import io.harness.cvng.usage.impl.CVLicenseUsageImpl;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
 import io.harness.cvng.verificationjob.services.api.VerificationJobService;
 import io.harness.cvng.verificationjob.services.impl.VerificationJobInstanceServiceImpl;
 import io.harness.cvng.verificationjob.services.impl.VerificationJobServiceImpl;
+import io.harness.enforcement.client.EnforcementClientModule;
 import io.harness.eventsframework.EventsFrameworkMetadataConstants;
 import io.harness.govern.ProviderMethodInterceptor;
+import io.harness.licensing.usage.interfaces.LicenseUsageInterface;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.mongo.MongoPersistence;
 import io.harness.outbox.TransactionOutboxModule;
@@ -577,13 +578,13 @@ public class CVServiceModule extends AbstractModule {
     bind(ActivityService.class).to(ActivityServiceImpl.class);
     bind(LogDashboardService.class).to(LogDashboardServiceImpl.class);
     bind(ErrorTrackingDashboardService.class).to(ErrorTrackingDashboardServiceImpl.class);
+    bind(LicenseUsageInterface.class).to(CVLicenseUsageImpl.class);
     bind(DeploymentTimeSeriesAnalysisService.class).to(DeploymentTimeSeriesAnalysisServiceImpl.class);
     bind(NextGenService.class).to(NextGenServiceImpl.class);
     bind(HostRecordService.class).to(HostRecordServiceImpl.class);
     bind(KubernetesActivitySourceService.class).to(KubernetesActivitySourceServiceImpl.class);
     bind(DeploymentLogAnalysisService.class).to(DeploymentLogAnalysisServiceImpl.class);
     bind(VerificationJobInstanceAnalysisService.class).to(VerificationJobInstanceAnalysisServiceImpl.class);
-    bind(HealthVerificationService.class).to(HealthVerificationServiceImpl.class);
     bind(HealthVerificationHeatMapService.class).to(HealthVerificationHeatMapServiceImpl.class);
     bind(OnboardingService.class).to(OnboardingServiceImpl.class);
     bind(CVNGMigrationService.class).to(CVNGMigrationServiceImpl.class).in(Singleton.class);
@@ -868,7 +869,7 @@ public class CVServiceModule extends AbstractModule {
         .in(Scopes.SINGLETON);
     ServiceHttpClientConfig serviceHttpClientConfig = this.verificationConfiguration.getAuditClientConfig();
     String secret = this.verificationConfiguration.getTemplateServiceSecret();
-    String serviceId = AuthorizationServiceHeader.CV_NEXT_GEN.getServiceId();
+    String serviceId = CV_NEXT_GEN.getServiceId();
     bind(OutboxDao.class).to(OutboxDaoImpl.class);
     bind(OutboxService.class).to(OutboxServiceImpl.class);
     install(new AuditClientModule(
@@ -882,6 +883,9 @@ public class CVServiceModule extends AbstractModule {
         .to(ServiceLevelObjectiveOutboxEventHandler.class);
     bind(OutboxEventHandler.class).to(CVServiceOutboxEventHandler.class);
     bindRetryOnExceptionInterceptor();
+    install(EnforcementClientModule.getInstance(verificationConfiguration.getNgManagerClientConfig(),
+        verificationConfiguration.getNgManagerServiceSecret(), CV_NEXT_GEN.getServiceId(),
+        verificationConfiguration.getEnforcementClientConfiguration()));
   }
 
   private void bindChangeSourceUpdatedEntity() {
@@ -923,9 +927,6 @@ public class CVServiceModule extends AbstractModule {
   private void bindAnalysisStateExecutor() {
     MapBinder<StateType, AnalysisStateExecutor> stateTypeAnalysisStateExecutorMap =
         MapBinder.newMapBinder(binder(), StateType.class, AnalysisStateExecutor.class);
-    stateTypeAnalysisStateExecutorMap.addBinding(StateType.ACTIVITY_VERIFICATION)
-        .to(ActivityVerificationStateExecutor.class)
-        .in(Scopes.SINGLETON);
     stateTypeAnalysisStateExecutorMap.addBinding(StateType.CANARY_TIME_SERIES)
         .to(CanaryTimeSeriesAnalysisStateExecutor.class)
         .in(Scopes.SINGLETON);

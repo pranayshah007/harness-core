@@ -134,6 +134,7 @@ public class NextGenConfiguration extends Configuration {
   public static final String FILE_STORE_RESOURCE_PACKAGE = "io.harness.filestore.resource";
   public static final String GITOPS_RESOURCE_PACKAGE = "io.harness.ng.gitops.resource";
   public static final String INFRA_RESOURCE_PACKAGE = "io.harness.ng.core.infrastructure.resource";
+  public static final String OAUTH_RESOURCE_PACKAGE = "io.harness.ng.oauth";
   public static final Collection<Class<?>> HARNESS_RESOURCE_CLASSES = getResourceClasses();
 
   @JsonProperty("swagger") private SwaggerBundleConfiguration swaggerBundleConfiguration;
@@ -155,6 +156,7 @@ public class NextGenConfiguration extends Configuration {
   @JsonProperty("pipelineServiceClientConfig") private ServiceHttpClientConfig pipelineServiceClientConfig;
   @JsonProperty("auditClientConfig") private ServiceHttpClientConfig auditClientConfig;
   @JsonProperty("ceNextGenClientConfig") private ServiceHttpClientConfig ceNextGenClientConfig;
+  @JsonProperty("cvngClientConfig") private ServiceHttpClientConfig cvngClientConfig;
   @JsonProperty("lightwingClientConfig") private ServiceHttpClientConfig lightwingClientConfig;
   @JsonProperty("templateServiceClientConfig") private ServiceHttpClientConfig templateServiceClientConfig;
   @JsonProperty("eventsFramework") @ConfigSecret private EventsFrameworkConfiguration eventsFrameworkConfiguration;
@@ -261,7 +263,7 @@ public class NextGenConfiguration extends Configuration {
                 NextGenConfiguration.AZURE_RESOURCES_PACKAGE, NextGenConfiguration.NG_TRIAL_SIGNUP_PACKAGE,
                 NextGenConfiguration.VARIABLE_RESOURCE_PACKAGE, NextGenConfiguration.FILE_STORE_RESOURCE_PACKAGE,
                 NextGenConfiguration.GITOPS_RESOURCE_PACKAGE, NextGenConfiguration.INFRA_RESOURCE_PACKAGE,
-                NextGenConfiguration.AWS_PACKAGE))
+                NextGenConfiguration.AWS_PACKAGE, NextGenConfiguration.OAUTH_RESOURCE_PACKAGE))
         .collect(Collectors.toSet());
   }
 

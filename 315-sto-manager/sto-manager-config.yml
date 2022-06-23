@@ -155,6 +155,8 @@ ciExecutionServiceConfig:
       cacheGCS: plugins/cache:1.3.7
       cacheS3: plugins/cache:1.3.7
 
+scmConnectionConfig:
+  url: localhost:8091
 
 pmsSdkExecutionPoolConfig:
   corePoolSize: ${PMS_SDK_EXECUTION_POOL_CORE_SIZE:-50}

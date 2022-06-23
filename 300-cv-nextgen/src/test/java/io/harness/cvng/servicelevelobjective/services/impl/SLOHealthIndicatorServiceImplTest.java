@@ -17,7 +17,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
+import io.harness.cvng.core.beans.monitoredService.MonitoredServiceDTO;
 import io.harness.cvng.core.beans.params.ProjectParams;
+import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceService;
 import io.harness.cvng.servicelevelobjective.beans.ErrorBudgetRisk;
 import io.harness.cvng.servicelevelobjective.beans.ServiceLevelIndicatorDTO;
 import io.harness.cvng.servicelevelobjective.entities.SLIRecord;
@@ -43,12 +45,16 @@ public class SLOHealthIndicatorServiceImplTest extends CvNextGenTestBase {
   @Inject SLOHealthIndicatorService sloHealthIndicatorService;
   @Inject SLIRecordService sliRecordService;
   @Inject ServiceLevelIndicatorService serviceLevelIndicatorService;
+  @Inject MonitoredServiceService monitoredServiceService;
 
   private BuilderFactory builderFactory;
+  private String monitoredServiceIdentifier;
 
   @Before
   public void setup() {
     builderFactory = BuilderFactory.getDefault();
+    monitoredServiceIdentifier = "monitoredServiceIdentifier";
+    createMonitoredService();
   }
 
   @Test
@@ -68,10 +74,17 @@ public class SLOHealthIndicatorServiceImplTest extends CvNextGenTestBase {
     assertThat(newSLOHealthIndicator.getErrorBudgetRisk()).isEqualTo(ErrorBudgetRisk.HEALTHY);
   }
 
+  private void createMonitoredService() {
+    MonitoredServiceDTO monitoredServiceDTO =
+        builderFactory.monitoredServiceDTOBuilder().identifier(monitoredServiceIdentifier).build();
+    monitoredServiceDTO.setSources(MonitoredServiceDTO.Sources.builder().build());
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+  }
+
   private void createAndSaveSLI(ProjectParams projectParams, ServiceLevelIndicatorDTO serviceLevelIndicatorDTO,
       String serviceLevelObjectiveIdentifier) {
     serviceLevelIndicatorService.create(projectParams, Collections.singletonList(serviceLevelIndicatorDTO),
-        serviceLevelObjectiveIdentifier, generateUuid(), generateUuid());
+        serviceLevelObjectiveIdentifier, monitoredServiceIdentifier, generateUuid());
   }
 
   private void insertDummySLIRecords(int numOfGoodRecords, int numOfBadReocrds, Instant startTime, Instant endTime,

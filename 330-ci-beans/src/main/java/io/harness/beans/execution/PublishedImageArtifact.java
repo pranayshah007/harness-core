@@ -7,15 +7,19 @@
 
 package io.harness.beans.execution;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
 import lombok.Builder;
 import lombok.Value;
+import org.springframework.data.annotation.TypeAlias;
 
 @Value
 @Builder
 @OwnedBy(HarnessTeam.CI)
+@TypeAlias("publishedImageArtifact")
+@RecasterAlias("io.harness.beans.execution.PublishedImageArtifact")
 public class PublishedImageArtifact {
   String imageName;
   String tag;

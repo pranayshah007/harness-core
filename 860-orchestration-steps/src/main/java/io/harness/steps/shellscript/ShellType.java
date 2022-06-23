@@ -14,8 +14,7 @@ import io.harness.shell.ScriptType;
 
 @OwnedBy(PIPELINE)
 public enum ShellType {
-  Bash(ScriptType.BASH),
-  PowerShell(ScriptType.POWERSHELL);
+  Bash(ScriptType.BASH);
 
   private final ScriptType scriptType;
 
