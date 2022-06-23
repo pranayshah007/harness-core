@@ -186,6 +186,12 @@ public class MSTeamsServiceImpl implements ChannelService {
       for(String s : microsoftTeamsWebhookUrls) {
         log.info("Async delegate task created with taskID Ms webhook urls: {}", s );
       }
+      log.info("message: {}", message);
+      log.info("notificationId: {}", notificationId);
+      log.info("abstraction map account: {}", abstractionMap.get(ACCOUNT_IDENTIFIER));
+      log.info("abstraction map project: {}", abstractionMap.get(PROJECT_IDENTIFIER));
+      log.info("abstraction map org: {}", abstractionMap.get(ORG_IDENTIFIER));
+      log.info("expressionFucntor: {}", expressionFunctorToken);
       processingResponse = NotificationProcessingResponse.allSent(microsoftTeamsWebhookUrls.size());
     } else {
       processingResponse = microsoftTeamsSender.send(microsoftTeamsWebhookUrls, message, notificationId);
