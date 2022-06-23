@@ -69,17 +69,6 @@ public class NGLdapServiceImpl implements NGLdapService {
     validateDelegateTaskResponse(delegateResponseData);
     return delegateResponseData;
   }
-  private Map<String, String> buildAbstractions(
-      String accountIdIdentifier, String orgIdentifier, String projectIdentifier) {
-    Map<String, String> abstractions = new HashMap<>(2);
-    // Verify if its a Task from NG
-    String owner = taskSetupAbstractionHelper.getOwner(accountIdIdentifier, orgIdentifier, projectIdentifier);
-    if (isNotEmpty(owner)) {
-      abstractions.put(OWNER, owner);
-    }
-    abstractions.put(NG, "true");
-    return abstractions;
-  }
 
   private void validateDelegateTaskResponse(DelegateResponseData delegateResponseData) {
     if (delegateResponseData instanceof ErrorNotifyResponseData) {
@@ -89,5 +78,16 @@ public class NGLdapServiceImpl implements NGLdapService {
         && (((RemoteMethodReturnValueData) delegateResponseData).getException() instanceof InvalidRequestException)) {
       throw(InvalidRequestException)((RemoteMethodReturnValueData) delegateResponseData).getException();
     }
+  }
+
+  private Map<String, String> buildAbstractions(
+      String accountIdIdentifier, String orgIdentifier, String projectIdentifier) {
+    Map<String, String> abstractions = new HashMap<>(2);
+    String owner = taskSetupAbstractionHelper.getOwner(accountIdIdentifier, orgIdentifier, projectIdentifier);
+    if (isNotEmpty(owner)) {
+      abstractions.put(OWNER, owner);
+    }
+    abstractions.put(NG, "true");
+    return abstractions;
   }
 }
