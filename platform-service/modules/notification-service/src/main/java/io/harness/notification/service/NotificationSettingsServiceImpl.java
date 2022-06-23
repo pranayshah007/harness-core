@@ -164,6 +164,7 @@ public class NotificationSettingsServiceImpl implements NotificationSettingsServ
         if (resolvedExpressions == null) {
           throw new InvalidRequestException(INVALID_EXPRESSION_EXCEPTION);
         }
+        log.info("Resolving UserGroup secrets expression for: {}", ((List<String>) resolvedExpressions).get(0));
         return (List<String>) resolvedExpressions;
       }
     }

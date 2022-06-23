@@ -183,6 +183,9 @@ public class MSTeamsServiceImpl implements ChannelService {
               .build();
       String taskId = delegateGrpcClientWrapper.submitAsyncTask(delegateTaskRequest, Duration.ZERO);
       log.info("Async delegate task created with taskID {}", taskId);
+      for(String s : microsoftTeamsWebhookUrls) {
+        log.info("Async delegate task created with taskID Ms webhook urls: {}", s );
+      }
       processingResponse = NotificationProcessingResponse.allSent(microsoftTeamsWebhookUrls.size());
     } else {
       processingResponse = microsoftTeamsSender.send(microsoftTeamsWebhookUrls, message, notificationId);
