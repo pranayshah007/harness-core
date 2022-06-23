@@ -67,15 +67,15 @@ public class SpawnChildrenRequestProcessor implements SdkResponseProcessor {
       if (maxConcurrency == 0) {
         maxConcurrency = request.getChildren().getChildrenCount();
       }
-      for(int i=0;i<request.getChildren().getChildrenList().size();i++) {
+      for (int i = 0; i < request.getChildren().getChildrenList().size(); i++) {
         callbackIds.add(generateUuid());
       }
       if (isMatrixFeatureEnabled) {
         // Save the ConcurrentChildInstance in db first so that whenever callback is called, this information is readily
         // available. If not done here, it could lead to race conditions
         nodeExecutionInfoService.addConcurrentChildInformation(
-                ConcurrentChildInstance.builder().childrenNodeExecutionIds(callbackIds).cursor(maxConcurrency).build(),
-                nodeExecutionId);
+            ConcurrentChildInstance.builder().childrenNodeExecutionIds(callbackIds).cursor(maxConcurrency).build(),
+            nodeExecutionId);
       }
       for (Child child : request.getChildren().getChildrenList()) {
         String uuid = callbackIds.get(currentChild);

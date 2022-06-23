@@ -32,7 +32,7 @@ public interface ACLRepository {
 
   List<String> getDistinctPrincipalsInACLsForRoleAssignment(String id);
 
-  List<ACL> getByAclQueryStringInAndEnabled(List<String> aclQueryStrings, boolean enabled);
+  List<ACL> getByAclQueryStringInAndEnabled(Set<String> aclQueryStrings, boolean enabled);
 
   void cleanCollection();
 

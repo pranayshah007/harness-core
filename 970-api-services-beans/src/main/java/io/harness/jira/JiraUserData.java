@@ -1,5 +1,6 @@
 package io.harness.jira;
 
+import io.harness.exception.InvalidArgumentsException;
 import io.harness.jackson.JsonNodeUtils;
 import io.harness.jira.deserializer.JiraUserDataDeserializer;
 
@@ -14,11 +15,17 @@ import lombok.NoArgsConstructor;
 @JsonDeserialize(using = JiraUserDataDeserializer.class)
 public class JiraUserData {
   private String accountId;
+  private String name;
   private String displayName;
   private boolean active;
 
   public JiraUserData(JsonNode node) {
-    this.accountId = JsonNodeUtils.mustGetString(node, "accountId");
+    try {
+      this.accountId = JsonNodeUtils.mustGetString(node, "accountId");
+    } catch (InvalidArgumentsException ex) {
+      this.accountId = JsonNodeUtils.mustGetString(node, "key");
+      this.name = JsonNodeUtils.mustGetString(node, "name");
+    }
     this.displayName = JsonNodeUtils.mustGetString(node, "displayName");
     this.active = JsonNodeUtils.mustGetBoolean(node, "active");
   }

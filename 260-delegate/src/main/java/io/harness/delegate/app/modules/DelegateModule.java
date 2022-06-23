@@ -171,6 +171,8 @@ import io.harness.delegate.task.azure.appservice.webapp.handler.AzureWebAppFetch
 import io.harness.delegate.task.azure.appservice.webapp.handler.AzureWebAppRequestHandler;
 import io.harness.delegate.task.azure.appservice.webapp.handler.AzureWebAppRollbackRequestHandler;
 import io.harness.delegate.task.azure.appservice.webapp.handler.AzureWebAppSlotDeploymentRequestHandler;
+import io.harness.delegate.task.azure.appservice.webapp.handler.AzureWebAppSlotSwapRequestHandler;
+import io.harness.delegate.task.azure.appservice.webapp.handler.AzureWebAppTrafficShiftRequestHandler;
 import io.harness.delegate.task.azure.appservice.webapp.ng.AzureWebAppRequestType;
 import io.harness.delegate.task.azure.arm.AzureARMTaskParameters;
 import io.harness.delegate.task.azure.resource.operation.AzureResourceProvider;
@@ -1287,6 +1289,10 @@ public class DelegateModule extends AbstractModule {
         .to(AzureWebAppRollbackRequestHandler.class);
     azureWebAppRequestTypeToRequestHandlerMap.addBinding(AzureWebAppRequestType.FETCH_PRE_DEPLOYMENT_DATA.name())
         .to(AzureWebAppFetchPreDeploymentDataRequestHandler.class);
+    azureWebAppRequestTypeToRequestHandlerMap.addBinding(AzureWebAppRequestType.SLOT_TRAFFIC_SHIFT.name())
+        .to(AzureWebAppTrafficShiftRequestHandler.class);
+    azureWebAppRequestTypeToRequestHandlerMap.addBinding(AzureWebAppRequestType.SWAP_SLOTS.name())
+        .to(AzureWebAppSlotSwapRequestHandler.class);
 
     // Ssh and WinRM task handlers
     MapBinder<String, CommandHandler> commandUnitHandlers =

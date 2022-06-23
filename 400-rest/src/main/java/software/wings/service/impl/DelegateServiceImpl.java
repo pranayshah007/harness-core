@@ -75,6 +75,8 @@ import io.harness.annotations.dev.BreakDependencyOn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.beans.DelegateHeartbeatResponseStreaming;
+import io.harness.beans.DelegateHeartbeatResponseStreaming.DelegateHeartbeatResponseStreamingBuilder;
 import io.harness.beans.DelegateTask;
 import io.harness.beans.EmbeddedUser;
 import io.harness.beans.PageRequest;
@@ -933,6 +935,7 @@ public class DelegateServiceImpl implements DelegateService {
     if (delegate.getDelegateTokenName() != null) {
       setUnset(updateOperations, DelegateKeys.delegateTokenName, delegate.getDelegateTokenName());
     }
+    setUnset(updateOperations, DelegateKeys.heartbeatAsObject, delegate.isHeartbeatAsObject());
     return updateOperations;
   }
 
@@ -2514,6 +2517,7 @@ public class DelegateServiceImpl implements DelegateService {
                                   .currentlyExecutingDelegateTasks(delegateParams.getCurrentlyExecutingDelegateTasks())
                                   .ceEnabled(delegateParams.isCeEnabled())
                                   .delegateTokenName(delegateTokenName.orElse(null))
+                                  .heartbeatAsObject(delegateParams.isHeartbeatAsObject())
                                   .build();
 
     if (ECS.equals(delegateParams.getDelegateType())) {
@@ -2617,12 +2621,37 @@ public class DelegateServiceImpl implements DelegateService {
 
     // Not needed to be done when polling is enabled for delegate
     if (isDelegateWithoutPollingEnabled(delegate)) {
-      // Broadcast Message containing, DelegateId and SeqNum (if applicable)
-      StringBuilder message = new StringBuilder(128).append("[X]").append(delegate.getUuid());
-      updateBroadcastMessageIfEcsDelegate(message, delegate, registeredDelegate);
-      broadcasterFactory.lookup(STREAM_DELEGATE + delegate.getAccountId(), true).broadcast(message.toString());
+      if (delegate.isHeartbeatAsObject()) {
+        broadcastDelegateHeartBeatResponse(delegate, registeredDelegate);
+      } else {
+        // Broadcast Message containing, DelegateId and SeqNum (if applicable)
+        StringBuilder message = new StringBuilder(128).append("[X]").append(delegate.getUuid());
+        updateBroadcastMessageIfEcsDelegate(message, delegate, registeredDelegate);
+        broadcasterFactory.lookup(STREAM_DELEGATE + delegate.getAccountId(), true).broadcast(message.toString());
+      }
     }
     return registeredDelegate;
+  }
+
+  private void broadcastDelegateHeartBeatResponse(Delegate delegate, Delegate registeredDelegate) {
+    DelegateHeartbeatResponseStreamingBuilder builder = DelegateHeartbeatResponseStreaming.builder()
+                                                            .delegateId(delegate.getUuid())
+                                                            .status(delegate.getStatus().toString())
+                                                            .useCdn(delegate.isUseCdn());
+    if (ECS.equals(delegate.getDelegateType())) {
+      String hostName = getDelegateHostNameByRemovingSeqNum(registeredDelegate);
+      String seqNum = getDelegateSeqNumFromHostName(registeredDelegate);
+      DelegateSequenceConfig sequenceConfig =
+          getDelegateSequenceConfig(delegate.getAccountId(), hostName, Integer.parseInt(seqNum));
+      registeredDelegate.setDelegateRandomToken(sequenceConfig.getDelegateToken());
+      registeredDelegate.setSequenceNum(sequenceConfig.getSequenceNum().toString());
+      builder.delegateRandomToken(sequenceConfig.getDelegateToken())
+          .sequenceNumber(sequenceConfig.getSequenceNum().toString());
+    }
+    long now = clock.millis();
+    builder.responseSentAt(now);
+    DelegateHeartbeatResponseStreaming response = builder.build();
+    broadcasterFactory.lookup(STREAM_DELEGATE + delegate.getAccountId(), true).broadcast(response);
   }
 
   private boolean isGroupedCgDelegate(final Delegate delegate) {

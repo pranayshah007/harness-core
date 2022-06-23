@@ -3751,7 +3751,7 @@ public class DelegateServiceTest extends WingsBaseTest {
             .name("harness-delegate")
             .identifier("_delegateGroupId1")
             .size(DelegateSize.LAPTOP)
-            .delegateType(DelegateType.KUBERNETES)
+            .delegateType(HELM_DELEGATE)
             .k8sConfigDetails(K8sConfigDetails.builder().k8sPermissionType(CLUSTER_ADMIN).build())
             .tokenName(TOKEN_NAME)
             .build();

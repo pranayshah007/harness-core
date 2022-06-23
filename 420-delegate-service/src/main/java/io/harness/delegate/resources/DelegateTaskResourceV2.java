@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.delegate.resources;
 
 import static io.harness.logging.AutoLogContext.OverrideBehavior.OVERRIDE_ERROR;
@@ -53,7 +60,6 @@ public class DelegateTaskResourceV2 {
   @ExceptionMetered
   public void updateTaskResponseV2(@PathParam("delegateId") String delegateId, @PathParam("taskId") String taskId,
       @QueryParam("accountId") @NotEmpty String accountId, DelegateTaskResponseV2 delegateTaskResponseV2) {
-
     TaskType taskType = delegateTaskResponseV2.getTaskType();
     ObjectMapper objectMapper = new ObjectMapper();
     // Convert DelegateTaskResponseV2 to DelegateTaskResponse
@@ -69,7 +75,6 @@ public class DelegateTaskResourceV2 {
                                                         .taskType(taskType)
                                                         .serializationFormat(SerializationFormat.JSON)
                                                         .build();
-
 
     DelegateTaskResponse delegateTaskResponse = DelegateTaskResponse.builder()
                                                     .responseCode(delegateTaskResponseV2.getResponseCode())

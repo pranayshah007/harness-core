@@ -459,7 +459,7 @@ public class AssignDelegateServiceImpl implements AssignDelegateService, Delegat
     if (isEmpty(selectorsCapabilityList)) {
       return true;
     }
-    log.info("Selectors received : {}",selectorsCapabilityList);
+    log.info("Selectors received : {}", selectorsCapabilityList);
 
     Set<String> delegateSelectors = trimmedLowercaseSet(delegateService.retrieveDelegateSelectors(delegate, true));
     if (isEmpty(delegateSelectors)) {

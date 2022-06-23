@@ -89,8 +89,11 @@ public class StrategyConfigPlanCreatorTest extends NGCommonUtilitiesTestBase {
                                       .currentField(approvalStageYamlField.getNode().getField("strategy"))
                                       .build();
     StrategyConfig strategyConfig = StrategyConfig.builder().build();
-    StepParameters stepParameters =
-        StrategyStepParameters.builder().childNodeId(childNodeId).strategyConfig(strategyConfig).strategyType(StrategyType.MATRIX).build();
+    StepParameters stepParameters = StrategyStepParameters.builder()
+                                        .childNodeId(childNodeId)
+                                        .strategyConfig(strategyConfig)
+                                        .strategyType(StrategyType.MATRIX)
+                                        .build();
 
     PlanNode planNode =
         PlanNode.builder()

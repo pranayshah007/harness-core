@@ -402,7 +402,6 @@ public class ConnectorUtilsTest extends CIExecutionTestBase {
   @Owner(developers = RUTVIJ_MEHTA)
   @Category(UnitTests.class)
   public void testGetScmAuthType() throws IOException {
-
     ConnectorDetails connectorDetails1 = ciExecutionPlanTestHelper.getGitConnector();
     assertThat(connectorUtils.getScmAuthType(connectorDetails1)).isEqualTo("Http");
 
@@ -417,6 +416,5 @@ public class ConnectorUtilsTest extends CIExecutionTestBase {
 
     ConnectorDetails connectorDetails5 = ciExecutionPlanTestHelper.getCodeCommitConnector();
     assertThat(connectorUtils.getScmAuthType(connectorDetails5)).isEqualTo("HTTPS");
-
   }
 }

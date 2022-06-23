@@ -36,6 +36,7 @@ import io.harness.pms.sdk.core.execution.events.node.facilitate.FacilitatorRespo
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
 import io.harness.steps.resourcerestraint.beans.AcquireMode;
+import io.harness.steps.resourcerestraint.beans.HoldingScope;
 import io.harness.steps.resourcerestraint.beans.ResourceRestraint;
 import io.harness.steps.resourcerestraint.beans.ResourceRestraint.ResourceRestraintKeys;
 import io.harness.steps.resourcerestraint.beans.ResourceRestraintInstance.ResourceRestraintInstanceKeys;
@@ -76,12 +77,13 @@ public class ResourceRestraintFacilitator implements Facilitator {
     final ResourceRestraint resourceRestraint = Preconditions.checkNotNull(
         resourceRestraintService.getByNameAndAccountId(specParameters.getName(), AmbianceUtils.getAccountId(ambiance)));
 
-    ConstraintUnit renderedResourceUnit =
-        new ConstraintUnit(pmsEngineExpressionService.renderExpression(ambiance, specParameters.getResourceUnit()));
+    ConstraintUnit renderedResourceUnit = new ConstraintUnit(
+        pmsEngineExpressionService.renderExpression(ambiance, specParameters.getResourceUnit().getValue()));
 
     final Constraint constraint = resourceRestraintInstanceService.createAbstraction(resourceRestraint);
 
-    String releaseEntityId = ResourceRestraintUtils.getReleaseEntityId(ambiance, specParameters.getHoldingScope());
+    HoldingScope holdingScope = specParameters.getHoldingScope();
+    String releaseEntityId = ResourceRestraintUtils.getReleaseEntityId(ambiance, holdingScope);
 
     try (AcquiredLock<?> lock = persistentLocker.waitToAcquireLock(
              LOCK_PREFIX + resourceRestraint.getUuid(), Duration.ofSeconds(10), Duration.ofMinutes(1))) {
@@ -92,8 +94,7 @@ public class ResourceRestraintFacilitator implements Facilitator {
 
       int permits = specParameters.getPermits();
       if (AcquireMode.ENSURE == specParameters.getAcquireMode()) {
-        permits -= resourceRestraintInstanceService.getAllCurrentlyAcquiredPermits(
-            specParameters.getHoldingScope(), releaseEntityId);
+        permits -= resourceRestraintInstanceService.getAllCurrentlyAcquiredPermits(holdingScope, releaseEntityId);
       }
 
       FacilitatorResponseBuilder responseBuilder = FacilitatorResponse.builder();

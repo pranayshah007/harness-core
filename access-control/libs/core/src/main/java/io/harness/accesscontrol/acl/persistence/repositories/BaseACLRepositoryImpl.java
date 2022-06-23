@@ -143,7 +143,7 @@ public abstract class BaseACLRepositoryImpl implements ACLRepository {
   }
 
   @Override
-  public List<ACL> getByAclQueryStringInAndEnabled(List<String> aclQueries, boolean enabled) {
+  public List<ACL> getByAclQueryStringInAndEnabled(Set<String> aclQueries, boolean enabled) {
     Query query = new Query(Criteria.where(ACLKeys.aclQueryString).in(aclQueries).and(ACLKeys.enabled).is(enabled));
     query.fields().include(ACLKeys.aclQueryString).include(ACLKeys.jexlCondition).include(ACLKeys.conditional);
     return mongoTemplate.find(query, ACL.class);

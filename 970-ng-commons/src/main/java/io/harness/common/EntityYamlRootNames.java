@@ -11,6 +11,8 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
 
+import lombok.experimental.UtilityClass;
+
 /**
  * Name of the top element in yaml.
  * For example:
@@ -20,6 +22,7 @@ import io.harness.annotations.dev.OwnedBy;
  * </p>
  * In this the top element is <b>connector</b>
  */
+@UtilityClass
 @OwnedBy(PL)
 public class EntityYamlRootNames {
   public static final String GITOPS_CREATE_PR = "CreatePR";
@@ -98,6 +101,7 @@ public class EntityYamlRootNames {
   public static final String BUILD_AND_PUSH_ECR = "BuildAndPushECR";
   public static final String BUILD_AND_PUSH_DOCKER_REGISTRY = "BuildAndPushDockerRegistry";
   public static final String NG_FILE = "NgFile";
+  public static final String QUEUE = "Lock";
   public static final String CLOUDFORMATION_CREATE_STACK_STEP = "CreateStack";
   public static final String CLOUDFORMATION_DELETE_STACK_STEP = "DeleteStack";
   public static final String SERVERLESS_AWS_LAMBDA_DEPLOY = "ServerlessAwsLambdaDeploy";

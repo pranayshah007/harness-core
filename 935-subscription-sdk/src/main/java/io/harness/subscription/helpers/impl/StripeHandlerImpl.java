@@ -145,8 +145,7 @@ public class StripeHandlerImpl {
 
   Invoice payInvoice(String invoiceId) {
     try {
-      Invoice invoice =
-              Invoice.retrieve(invoiceId);
+      Invoice invoice = Invoice.retrieve(invoiceId);
 
       return invoice.pay();
     } catch (StripeException e) {

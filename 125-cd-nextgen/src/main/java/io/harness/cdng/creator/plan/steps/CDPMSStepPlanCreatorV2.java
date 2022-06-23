@@ -139,10 +139,14 @@ public abstract class CDPMSStepPlanCreatorV2<T extends CdAbstractStepNode> exten
             .skipUnresolvedExpressionsCheck(stepElement.getStepSpecType().skipUnresolvedExpressionsCheck())
             .build();
     // Add a dependency of strategy if present
-    return PlanCreationResponse.builder().planNode(stepPlanNode).dependencies(DependenciesUtils.toDependenciesProto(dependenciesNodeMap)
-            .toBuilder()
-            .putDependencyMetadata(stepElement.getUuid(), Dependency.newBuilder().putAllMetadata(metadataMap).build())
-            .build()).build();
+    return PlanCreationResponse.builder()
+        .planNode(stepPlanNode)
+        .dependencies(DependenciesUtils.toDependenciesProto(dependenciesNodeMap)
+                          .toBuilder()
+                          .putDependencyMetadata(
+                              stepElement.getUuid(), Dependency.newBuilder().putAllMetadata(metadataMap).build())
+                          .build())
+        .build();
   }
 
   protected List<AdviserObtainment> getAdviserObtainmentFromMetaData(YamlField currentField) {
@@ -176,8 +180,10 @@ public abstract class CDPMSStepPlanCreatorV2<T extends CdAbstractStepNode> exten
   }
   private AdviserObtainment getNextStepAdviserObtainment(YamlField currentField) {
     if (currentField != null && currentField.getNode() != null) {
-      //If it is wrapped under parallel or strategy then we should not add next step as the next step adviser would be on strategy node
-      if (GenericPlanCreatorUtils.checkIfStepIsInParallelSection(currentField) || StageStrategyUtils.isWrappedUnderStrategy(currentField)) {
+      // If it is wrapped under parallel or strategy then we should not add next step as the next step adviser would be
+      // on strategy node
+      if (GenericPlanCreatorUtils.checkIfStepIsInParallelSection(currentField)
+          || StageStrategyUtils.isWrappedUnderStrategy(currentField)) {
         return null;
       }
       YamlField siblingField = GenericPlanCreatorUtils.obtainNextSiblingField(currentField);
@@ -194,9 +200,10 @@ public abstract class CDPMSStepPlanCreatorV2<T extends CdAbstractStepNode> exten
 
   private AdviserObtainment getOnSuccessAdviserObtainment(YamlField currentField) {
     if (currentField != null && currentField.getNode() != null) {
-      //If it is wrapped under parallel or strategy then we should not add next step as the next step adviser would be
+      // If it is wrapped under parallel or strategy then we should not add next step as the next step adviser would be
       // on strategy node or parallel node
-      if (GenericPlanCreatorUtils.checkIfStepIsInParallelSection(currentField) || StageStrategyUtils.isWrappedUnderStrategy(currentField)) {
+      if (GenericPlanCreatorUtils.checkIfStepIsInParallelSection(currentField)
+          || StageStrategyUtils.isWrappedUnderStrategy(currentField)) {
         return null;
       }
       YamlField siblingField = GenericPlanCreatorUtils.obtainNextSiblingField(currentField);
@@ -311,7 +318,8 @@ public abstract class CDPMSStepPlanCreatorV2<T extends CdAbstractStepNode> exten
       String nextNodeUuid = null;
       YamlField siblingField = GenericPlanCreatorUtils.obtainNextSiblingField(currentField);
       // Check if step is in parallel section or inside strategy section then dont have nextNodeUUid set.
-      if (siblingField != null && !GenericPlanCreatorUtils.checkIfStepIsInParallelSection(currentField) && !StageStrategyUtils.isWrappedUnderStrategy(currentField)) {
+      if (siblingField != null && !GenericPlanCreatorUtils.checkIfStepIsInParallelSection(currentField)
+          && !StageStrategyUtils.isWrappedUnderStrategy(currentField)) {
         nextNodeUuid = siblingField.getNode().getUuid();
       }
 
