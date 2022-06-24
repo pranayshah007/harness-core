@@ -27,4 +27,5 @@ import org.springframework.data.annotation.TypeAlias;
 public class NativeHelmExecutionPassThroughData implements PassThroughData {
   InfrastructureOutcome infrastructure;
   UnitProgressData lastActiveUnitProgressData;
+  String zippedManifestId;
 }

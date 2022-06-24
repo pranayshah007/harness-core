@@ -34,6 +34,7 @@ import static software.wings.beans.LogColor.Gray;
 import static software.wings.beans.LogColor.White;
 import static software.wings.beans.LogHelper.color;
 import static software.wings.beans.LogWeight.Bold;
+import static software.wings.delegatetasks.helm.HelmTaskHelper.copyManifestFilesToWorkingDir;
 
 import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
@@ -47,6 +48,7 @@ import io.harness.container.ContainerInfo;
 import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
+import io.harness.delegate.beans.storeconfig.CustomRemoteStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.beans.storeconfig.GcsHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
@@ -101,6 +103,7 @@ import com.google.common.util.concurrent.TimeLimiter;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.google.inject.Inject;
 import io.fabric8.kubernetes.api.model.Pod;
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -142,6 +145,7 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
   @Inject private SecretDecryptionService secretDecryptionService;
   private ILogStreamingTaskClient logStreamingTaskClient;
   @Inject private TimeLimiter timeLimiter;
+  @Inject private CustomManifestFetchTaskHelper customManifestFetchTaskHelper;
   public static final String TIMED_OUT_IN_STEADY_STATE = "Timed out waiting for controller to reach in steady state";
   public static final String InstallUpgrade = "Install / Upgrade";
   public static final String Rollback = "Rollback";
@@ -632,12 +636,15 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
   }
 
   @VisibleForTesting
-  void prepareRepoAndCharts(HelmCommandRequestNG commandRequest, long timeoutInMillis) {
+  void prepareRepoAndCharts(HelmCommandRequestNG commandRequest, long timeoutInMillis) throws IOException {
     ManifestDelegateConfig manifestDelegateConfig = commandRequest.getManifestDelegateConfig();
     HelmChartManifestDelegateConfig helmChartManifestDelegateConfig =
         (HelmChartManifestDelegateConfig) manifestDelegateConfig;
 
     switch (helmChartManifestDelegateConfig.getStoreDelegateConfig().getType()) {
+      case CUSTOM_REMOTE:
+        fetchCustomSourceManifest(commandRequest);
+        break;
       case GIT:
         fetchSourceRepo(commandRequest);
         break;
@@ -651,6 +658,26 @@ public class HelmDeployServiceImplNG implements HelmDeployServiceNG {
         throw new InvalidRequestException(
             "Unsupported store type: " + helmChartManifestDelegateConfig.getStoreDelegateConfig().getType(), USER);
     }
+  }
+
+  void fetchCustomSourceManifest(HelmCommandRequestNG commandRequest) throws IOException {
+    CustomRemoteStoreDelegateConfig storeDelegateConfig =
+        (CustomRemoteStoreDelegateConfig) commandRequest.getManifestDelegateConfig().getStoreDelegateConfig();
+
+    // handleIncorrectConfiguration(sourceRepoConfig);
+    String workingDirectory = Paths.get(commandRequest.getWorkingDir()).toString();
+    customManifestFetchTaskHelper.downloadAndUnzipCustomSourceManifestFiles(workingDirectory,
+        storeDelegateConfig.getCustomManifestSource().getZippedManifestFileId(), commandRequest.getAccountId());
+
+    File file = new File(workingDirectory);
+    if (isEmpty(file.list())) {
+      throw new InvalidRequestException("No manifest files found under working directory", USER);
+    }
+    File manifestDirectory = file.listFiles(pathname -> !file.isHidden())[0];
+    copyManifestFilesToWorkingDir(manifestDirectory, new File(workingDirectory));
+
+    commandRequest.setWorkingDir(workingDirectory);
+    commandRequest.getLogCallback().saveExecutionLog("Custom source manifest downloaded locally");
   }
 
   private void fetchSourceRepo(HelmCommandRequestNG commandRequest) {

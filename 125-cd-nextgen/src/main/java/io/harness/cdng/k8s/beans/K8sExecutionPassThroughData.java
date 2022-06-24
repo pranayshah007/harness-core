@@ -15,6 +15,7 @@ import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
 import io.harness.pms.sdk.core.steps.io.PassThroughData;
 
+import java.util.List;
 import lombok.Builder;
 import lombok.Value;
 import org.springframework.data.annotation.TypeAlias;
@@ -27,4 +28,6 @@ import org.springframework.data.annotation.TypeAlias;
 public class K8sExecutionPassThroughData implements PassThroughData {
   InfrastructureOutcome infrastructure;
   UnitProgressData lastActiveUnitProgressData;
+  String zippedManifestId;
+  List<String> manifestFiles;
 }

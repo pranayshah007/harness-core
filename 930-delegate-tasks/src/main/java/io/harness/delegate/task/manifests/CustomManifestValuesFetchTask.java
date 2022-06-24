@@ -113,7 +113,7 @@ public class CustomManifestValuesFetchTask extends AbstractDelegateRunnableTask 
         logFilePathList(customManifestSource.getFilePaths(), logCallback);
 
         Collection<CustomSourceFile> valuesContent =
-            customManifestService.fetchValues(customManifestSource, workingDirectory, activityId, logCallback);
+            customManifestService.fetchValues(customManifestSource, workingDirectory, activityId, logCallback, true);
         fetchedFilesContent.put(fetchFileConfig.getKey(), valuesContent);
       } catch (IOException e) {
         Throwable cause = e.getCause();

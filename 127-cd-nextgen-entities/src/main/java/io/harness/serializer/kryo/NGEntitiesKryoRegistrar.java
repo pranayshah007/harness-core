@@ -35,6 +35,7 @@ import io.harness.cdng.instance.outcome.DeploymentInfoOutcome;
 import io.harness.cdng.manifest.ManifestConfigType;
 import io.harness.cdng.manifest.yaml.ArtifactoryStoreConfig;
 import io.harness.cdng.manifest.yaml.BitbucketStore;
+import io.harness.cdng.manifest.yaml.CustomRemoteStoreConfig;
 import io.harness.cdng.manifest.yaml.GcsStoreConfig;
 import io.harness.cdng.manifest.yaml.GitLabStore;
 import io.harness.cdng.manifest.yaml.GitStore;
@@ -186,11 +187,15 @@ public class NGEntitiesKryoRegistrar implements KryoRegistrar {
     kryo.register(ConfigFileAttributes.class, 12588);
     kryo.register(HarnessStore.class, 12590);
     kryo.register(NGServiceV2InfoConfig.class, 12592);
+
     kryo.register(HarnessStoreFile.class, 12593);
     kryo.register(OciHelmChartStoreGenericConfig.class, 12594);
     kryo.register(OciHelmChartStoreConfigType.class, 12595);
     kryo.register(OciHelmChartConfig.class, 12596);
     kryo.register(OciHelmChartStoreConfigWrapper.class, 12597);
+
+    kryo.register(CustomRemoteStoreConfig.class, 12599);
+
     kryo.register(ReleaseRepoManifest.class, 12598);
   }
 }

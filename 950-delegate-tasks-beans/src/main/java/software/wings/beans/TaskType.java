@@ -23,6 +23,8 @@ import io.harness.delegate.task.TaskParameters;
 @OwnedBy(CDC)
 @TargetModule(HarnessModule._955_DELEGATE_BEANS)
 public enum TaskType {
+  CUSTOM_MANIFEST_VALUES_FETCH_TASK_NG(
+      TaskGroup.CUSTOM_MANIFEST_VALUES_FETCH_TASK, "Custom Manifest/Values Fetch Task"),
   GITOPS_TASK_NG(TaskGroup.GIT),
   BATCH_CAPABILITY_CHECK(TaskGroup.BATCH_CAPABILITY_CHECK),
   CAPABILITY_VALIDATION(TaskGroup.CAPABILITY_VALIDATION),

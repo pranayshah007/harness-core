@@ -17,7 +17,6 @@ import io.harness.pms.sdk.core.data.Outcome;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-
 @OwnedBy(CDP)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({
@@ -34,7 +33,6 @@ public interface ManifestOutcome extends Outcome, WithIdentifier {
   String getIdentifier();
   String getType();
   StoreConfig getStore();
-
   default int getOrder() {
     return -1;
   }

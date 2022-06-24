@@ -19,6 +19,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 public interface HarnessStoreConfig extends StoreConfig {
   @JsonIgnore
   default ParameterField<String> getConnectorReference() {
-    throw new UnsupportedOperationException("Connector reference is not supported for Harness store");
+    return null;
   }
 }

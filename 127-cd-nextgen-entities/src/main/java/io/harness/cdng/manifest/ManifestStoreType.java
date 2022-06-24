@@ -16,7 +16,7 @@ import java.util.Set;
 @OwnedBy(HarnessTeam.CDP)
 public interface ManifestStoreType {
   String GIT = "Git";
-  String LOCAL = "Local";
+  String HARNESS = "Harness";
   String GITHUB = "Github";
   String BITBUCKET = "Bitbucket";
   String GITLAB = "GitLab";
@@ -27,6 +27,7 @@ public interface ManifestStoreType {
   String INLINE = "Inline";
   String S3URL = "S3Url";
   String InheritFromManifest = "InheritFromManifest";
+  String CUSTOM_REMOTE = "Custom Remote";
   String OCI = "OciHelmChart";
 
   static boolean isInGitSubset(String manifestType) {

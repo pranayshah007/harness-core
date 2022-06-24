@@ -275,6 +275,7 @@ import io.harness.delegate.beans.serverless.ServerlessDeployResult;
 import io.harness.delegate.beans.serverless.ServerlessPrepareRollbackDataResult;
 import io.harness.delegate.beans.serverless.ServerlessRollbackResult;
 import io.harness.delegate.beans.storeconfig.ArtifactoryStoreDelegateConfig;
+import io.harness.delegate.beans.storeconfig.CustomRemoteStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.beans.storeconfig.GcsHelmStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
@@ -1548,9 +1549,12 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(JenkinsValidationParams.class, 29303);
     kryo.register(JenkinsArtifactDelegateRequest.class, 29304);
 
+    kryo.register(CustomRemoteStoreDelegateConfig.class, 29305);
+
     kryo.register(OciHelmConnectivityTaskParams.class, 29306);
     kryo.register(OciHelmConnectivityTaskResponse.class, 29307);
     kryo.register(OciHelmStoreDelegateConfig.class, 29308);
+
     kryo.register(AzureWebAppTaskRequest.class, 55300);
     kryo.register(AzureWebAppRequestType.class, 55301);
     kryo.register(AzureWebAppTaskResponse.class, 55302);

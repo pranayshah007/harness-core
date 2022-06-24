@@ -10,6 +10,7 @@ package io.harness.serializer.kryo;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.serializer.KryoRegistrar;
 import io.harness.yaml.core.variables.NGVariableType;
 import io.harness.yaml.core.variables.NumberNGVariable;
@@ -24,6 +25,7 @@ import com.esotericsoftware.kryo.Kryo;
 public class YamlKryoRegistrar implements KryoRegistrar {
   @Override
   public void register(Kryo kryo) {
+    kryo.register(TaskSelectorYaml.class, 35005);
     kryo.register(StringNGVariable.class, 35006);
     kryo.register(NumberNGVariable.class, 35007);
     kryo.register(CodeBase.class, 35011);

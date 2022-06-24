@@ -78,6 +78,8 @@ import io.harness.cdng.manifest.yaml.OpenshiftManifestOutcome;
 import io.harness.cdng.manifest.yaml.OpenshiftParamManifestOutcome;
 import io.harness.cdng.manifest.yaml.S3StoreConfig;
 import io.harness.cdng.manifest.yaml.ValuesManifestOutcome;
+import io.harness.cdng.manifest.yaml.harness.HarnessStore;
+import io.harness.cdng.manifest.yaml.harness.HarnessStoreFile;
 import io.harness.cdng.manifest.yaml.kinds.ValuesManifest;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
@@ -128,6 +130,8 @@ import io.harness.delegate.task.k8s.KustomizeManifestDelegateConfig;
 import io.harness.delegate.task.k8s.ManifestDelegateConfig;
 import io.harness.delegate.task.k8s.ManifestType;
 import io.harness.delegate.task.k8s.OpenshiftManifestDelegateConfig;
+import io.harness.delegate.task.localstore.LocalStoreFetchFilesResult;
+import io.harness.encryption.Scope;
 import io.harness.eventsframework.schemas.entity.EntityDetailProtoDTO;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.GeneralException;
@@ -347,7 +351,6 @@ public class K8sStepHelperTest extends CategoryTest {
                        .paths(ParameterField.createValueField(asList("file1", "file2")))
                        .build())
             .build();
-
     doReturn(
         Optional.of(ConnectorResponseDTO.builder()
                         .connector(ConnectorInfoDTO.builder().connectorConfig(GitConfigDTO.builder().build()).build())
@@ -1517,14 +1520,16 @@ public class K8sStepHelperTest extends CategoryTest {
 
     TaskRequest taskRequest = TaskRequest.getDefaultInstance();
     TaskChainResponse taskChainResponse = TaskChainResponse.builder().chainEnd(false).taskRequest(taskRequest).build();
-    doReturn(taskChainResponse).when(k8sStepHelper).executeValuesFetchTask(any(), any(), any(), any(), any(), any());
+    doReturn(taskChainResponse)
+        .when(k8sStepHelper)
+        .executeValuesFetchTask(any(), any(), any(), any(), any(), any(), Collections.emptyMap(), "");
     k8sStepHelper.executeNextLink(k8sStepExecutor, ambiance, stepElementParams, passThroughData, responseDataSuplier);
 
     ArgumentCaptor<Map> valuesFilesContentCaptor = ArgumentCaptor.forClass(Map.class);
     verify(k8sStepHelper, times(1))
         .executeValuesFetchTask(eq(ambiance), eq(stepElementParams), eq(passThroughData.getInfrastructure()),
             eq(passThroughData.getK8sManifestOutcome()), eq(passThroughData.getValuesManifestOutcomes()),
-            valuesFilesContentCaptor.capture());
+            valuesFilesContentCaptor.capture(), Collections.emptyMap(), "");
 
     Map<String, HelmFetchFileResult> duplicatehelmChartValuesFileMapContent = valuesFilesContentCaptor.getValue();
     assertThat(duplicatehelmChartValuesFileMapContent).isNotEmpty();
@@ -2069,9 +2074,10 @@ public class K8sStepHelperTest extends CategoryTest {
 
     Map<String, HelmFetchFileResult> helmChartFetchFilesResultMap = new HashMap<>();
 
-    assertThatCode(()
-                       -> k8sStepHelper.executeValuesFetchTask(ambiance, stepElementParameters, outcomeBuilder.build(),
-                           manifestOutcome, aggregatedValuesManifests, helmChartFetchFilesResultMap));
+    assertThatCode(
+        ()
+            -> k8sStepHelper.executeValuesFetchTask(ambiance, stepElementParameters, outcomeBuilder.build(),
+                manifestOutcome, aggregatedValuesManifests, helmChartFetchFilesResultMap, Collections.emptyMap(), ""));
   }
 
   @Test
@@ -2118,9 +2124,14 @@ public class K8sStepHelperTest extends CategoryTest {
 
     List<KustomizePatchesManifestOutcome> kustomizePatchesManifests = new ArrayList<>();
 
+    Map<String, LocalStoreFetchFilesResult> localStoreFileMapContents = new HashMap<>();
+
+    List<String> manifestFiles = new ArrayList<>();
+
     assertThatCode(()
                        -> k8sStepHelper.prepareKustomizePatchesFetchTask(k8sStepExecutor, ambiance,
-                           stepElementParameters, outcomeBuilder.build(), manifestOutcome, kustomizePatchesManifests));
+                           stepElementParameters, outcomeBuilder.build(), manifestOutcome, kustomizePatchesManifests,
+                           localStoreFileMapContents, manifestFiles));
   }
 
   @Test
@@ -2535,4 +2546,125 @@ public class K8sStepHelperTest extends CategoryTest {
     doReturn(manifestsOutcomeOnlyTemplate).when(outcomeService).resolveOptional(eq(ambiance), eq(manifests));
     assertThat(k8sStepHelper.startChainLink(k8sStepExecutor, ambiance, rollingStepElementParams)).isNotNull();
   }
+
+  @Test
+  @Owner(developers = PRATYUSH)
+  @Category(UnitTests.class)
+  public void testStartChainLinkKustomizePatchesLocalStore() {
+    K8sDirectInfrastructureOutcome k8sDirectInfrastructureOutcome =
+        K8sDirectInfrastructureOutcome.builder().namespace("default").build();
+    ParameterField filePath = ParameterField.createValueField("folder/path/values.yaml");
+    ParameterField folderPath = ParameterField.createValueField("folder/path/");
+    HarnessStoreFile harnessStoreFile1 =
+        HarnessStoreFile.builder().path(folderPath).scope(ParameterField.createValueField(Scope.ACCOUNT)).build();
+    HarnessStoreFile harnessStoreFile2 =
+        HarnessStoreFile.builder().path(filePath).scope(ParameterField.createValueField(Scope.ORG)).build();
+    HarnessStoreFile harnessStoreFile3 =
+        HarnessStoreFile.builder().path(filePath).scope(ParameterField.createValueField(Scope.PROJECT)).build();
+    List<HarnessStoreFile> harnessStoreFileList1 = new ArrayList<>(Arrays.asList(harnessStoreFile1));
+    List<HarnessStoreFile> harnessStoreFileList2 = new ArrayList<>(Arrays.asList(harnessStoreFile2, harnessStoreFile3));
+    HarnessStore localStoreConfig1 =
+        HarnessStore.builder().files(ParameterField.createValueField(harnessStoreFileList1)).build();
+    HarnessStore localStoreConfig2 =
+        HarnessStore.builder().files(ParameterField.createValueField(harnessStoreFileList2)).build();
+    KustomizeManifestOutcome kustomizeManifestOutcome =
+        KustomizeManifestOutcome.builder()
+            .identifier("Kustomize")
+            .store(localStoreConfig1)
+            .patchesPaths(ParameterField.createValueField(asList("path/to/k8s/manifest/patch.yaml")))
+            .build();
+    KustomizePatchesManifestOutcome kustomizePatchesManifestOutcome1 =
+        KustomizePatchesManifestOutcome.builder().identifier("KustomizePatches1").store(localStoreConfig2).build();
+    Map<String, ManifestOutcome> manifestOutcomeMap =
+        ImmutableMap.of("Kustomize", kustomizeManifestOutcome, "KustomizePatches1", kustomizePatchesManifestOutcome1);
+    RefObject manifests = RefObject.newBuilder()
+                              .setName(OutcomeExpressionConstants.MANIFESTS)
+                              .setKey(OutcomeExpressionConstants.MANIFESTS)
+                              .setRefType(RefType.newBuilder().setType(OrchestrationRefType.OUTCOME).build())
+                              .build();
+
+    RefObject infra = RefObject.newBuilder()
+                          .setName(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME)
+                          .setKey(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME)
+                          .setRefType(RefType.newBuilder().setType(OrchestrationRefType.OUTCOME).build())
+                          .build();
+
+    StepElementParameters rollingStepElementParams =
+        StepElementParameters.builder().spec(K8sRollingStepParameters.infoBuilder().build()).build();
+
+    OptionalOutcome manifestsOutcome =
+        OptionalOutcome.builder().found(true).outcome(new ManifestsOutcome(manifestOutcomeMap)).build();
+
+    doReturn(true).when(cdFeatureFlagHelper).isEnabled(any(), any());
+    doReturn(manifestsOutcome).when(outcomeService).resolveOptional(eq(ambiance), eq(manifests));
+    doReturn(k8sDirectInfrastructureOutcome).when(outcomeService).resolve(eq(ambiance), eq(infra));
+    //    doReturn(
+    //            Optional.of(ConnectorResponseDTO.builder()
+    //                    .connector(ConnectorInfoDTO.builder()
+    //                            .connectorConfig(
+    //                                    GitConfigDTO.builder().gitAuthType(GitAuthType.HTTP).url(SOME_URL).build())
+    //                            .name("test")
+    //                            .build())
+    //
+    //                    .build()))
+    //            .when(connectorService)
+    //            .get(nullable(String.class), nullable(String.class), nullable(String.class), nullable(String.class));
+    when(k8sStepExecutor.executeK8sTask(any(), any(), any(), any(), any(), anyBoolean(), any()))
+        .thenReturn(TaskChainResponse.builder().chainEnd(true).build());
+
+    TaskChainResponse taskChainResponse =
+        k8sStepHelper.startChainLink(k8sStepExecutor, ambiance, rollingStepElementParams);
+
+    assertThat(taskChainResponse).isNotNull();
+    assertThat(taskChainResponse.isChainEnd()).isEqualTo(false);
+    assertThat(taskChainResponse.getTaskRequest().getDelegateTaskRequest().getTaskName())
+        .isEqualTo("Git Fetch Files Task");
+    assertThat(taskChainResponse.getTaskRequest().getDelegateTaskRequest().getLogKeys(0))
+        .isEqualTo(
+            "accountId:test-account/orgId:test-org/projectId:test-project/pipelineId:/runSequence:0-commandUnit:Fetch Files");
+    assertThat(taskChainResponse.getPassThroughData()).isNotNull();
+    assertThat(taskChainResponse.getPassThroughData()).isInstanceOf(K8sStepPassThroughData.class);
+    K8sStepPassThroughData k8sStepPassThroughData = (K8sStepPassThroughData) taskChainResponse.getPassThroughData();
+    assertThat(getKustomizePatchesManifestOutcomes(k8sStepPassThroughData.getManifestOutcomeList())).isNotEmpty();
+    assertThat(getKustomizePatchesManifestOutcomes(k8sStepPassThroughData.getManifestOutcomeList()).size())
+        .isEqualTo(2);
+    List<KustomizePatchesManifestOutcome> KustomizePatchesManifestOutcome =
+        getKustomizePatchesManifestOutcomes(k8sStepPassThroughData.getManifestOutcomeList());
+    assertThat(KustomizePatchesManifestOutcome.get(0).getIdentifier())
+        .isEqualTo(kustomizeManifestOutcome.getIdentifier());
+    assertThat(KustomizePatchesManifestOutcome.get(0).getStore()).isEqualTo(kustomizeManifestOutcome.getStore());
+    assertThat(KustomizePatchesManifestOutcome.get(1).getIdentifier())
+        .isEqualTo(kustomizePatchesManifestOutcome1.getIdentifier());
+    assertThat(KustomizePatchesManifestOutcome.get(1).getStore())
+        .isEqualTo(kustomizePatchesManifestOutcome1.getStore());
+
+    Map<String, LocalStoreFetchFilesResult> localStoreFileMapContents =
+        k8sStepPassThroughData.getLocalStoreFileMapContents();
+    assertThat(localStoreFileMapContents.get("Kustomize").getLocalStoreFileContents().size()).isEqualTo(1);
+    assertThat(localStoreFileMapContents.get("KustomizePatches1").getLocalStoreFileContents().size()).isEqualTo(2);
+    ArgumentCaptor<Object> argumentCaptor = ArgumentCaptor.forClass(Object.class);
+    verify(kryoSerializer, times(3)).asDeflatedBytes(argumentCaptor.capture());
+    TaskParameters taskParameters = (TaskParameters) argumentCaptor.getAllValues().get(0);
+    assertThat(taskParameters).isInstanceOf(GitFetchRequest.class);
+    GitFetchRequest gitFetchRequest = (GitFetchRequest) taskParameters;
+    assertThat(gitFetchRequest.getGitFetchFilesConfigs()).isEmpty();
+    assertThat(argumentCaptor.getAllValues().get(1)).isInstanceOf(GitConnectionNGCapability.class);
+  }
+
+  //  @Test
+  //  @Owner(developers = PRATYUSH)
+  //  @Category(UnitTests.class)
+  //  public void testGetFileContentsAsLocalStoreFetchFilesResult() {
+  //    ParameterField filePath = ParameterField.createValueField("folder/path/values.yaml");
+  //    ParameterField isEncrypted = ParameterField.createValueField(false);
+  //    HarnessStoreFile harnessStoreFile1 =
+  //    HarnessStoreFile.builder().isEncrypted(isEncrypted).path(filePath).ref(ParameterField.createValueField("accountId")).build();
+  //    HarnessStoreFile harnessStoreFile2 =
+  //    HarnessStoreFile.builder().isEncrypted(isEncrypted).path(filePath).ref(ParameterField.createValueField("orgId")).build();
+  //    HarnessStoreFile harnessStoreFile3 =
+  //    HarnessStoreFile.builder().isEncrypted(isEncrypted).path(filePath).ref(ParameterField.createValueField("projectId")).build();
+  //    List<HarnessStoreFile> harnessStoreFileList = new ArrayList<>(Arrays.asList(harnessStoreFile1,
+  //    harnessStoreFile2, harnessStoreFile3)); HarnessStore localStoreConfig =
+  //    HarnessStore.builder().files(ParameterField.createValueField(harnessStoreFileList)).build();
+  //  }
 }

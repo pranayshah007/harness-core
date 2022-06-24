@@ -18,6 +18,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.cdng.manifest.ManifestType;
 import io.harness.cdng.manifest.yaml.ManifestAttributes;
+import io.harness.cdng.manifest.yaml.harness.HarnessStoreFile;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigWrapper;
 import io.harness.cdng.visitor.helpers.manifest.K8sManifestVisitorHelper;
@@ -31,6 +32,7 @@ import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
 import io.harness.yaml.YamlSchemaTypes;
 
+import com.esotericsoftware.kryo.NotNull;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
@@ -74,6 +76,12 @@ public class K8sManifest implements ManifestAttributes, Visitable {
   @YamlSchemaTypes({runtime})
   @SkipAutoEvaluation
   ParameterField<List<String>> valuesPaths;
+
+  @Wither
+  @YamlSchemaTypes(value = {runtime})
+  @ApiModelProperty(dataType = "io.harness.cdng.manifest.yaml.harness.HarnessStoreFile")
+  @JsonProperty("files")
+  private ParameterField<List<HarnessStoreFile>> files;
 
   @Wither @YamlSchemaTypes({string, bool}) @SkipAutoEvaluation ParameterField<Boolean> skipResourceVersioning;
   // For Visitor Framework Impl

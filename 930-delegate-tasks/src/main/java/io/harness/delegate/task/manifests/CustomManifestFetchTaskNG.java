@@ -1,8 +1,8 @@
 /*
- * Copyright 2021 Harness Inc. All rights reserved.
- * Use of this source code is governed by the PolyForm Shield 1.0.0 license
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
  * that can be found in the licenses directory at the root of this repository, also available at
- * https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
 package io.harness.delegate.task.manifests;
@@ -15,6 +15,7 @@ import static io.harness.exception.WingsException.USER;
 import static io.harness.logging.CommandExecutionStatus.FAILURE;
 import static io.harness.logging.CommandExecutionStatus.SUCCESS;
 import static io.harness.logging.LogLevel.ERROR;
+import static io.harness.logging.LogLevel.INFO;
 
 import static software.wings.beans.LogColor.White;
 import static software.wings.beans.LogHelper.color;
@@ -30,7 +31,10 @@ import io.harness.delegate.beans.DelegateResponseData;
 import io.harness.delegate.beans.DelegateTaskPackage;
 import io.harness.delegate.beans.DelegateTaskResponse;
 import io.harness.delegate.beans.FileBucket;
+import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
+import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
+import io.harness.delegate.beans.logstreaming.UnitProgressDataMapper;
 import io.harness.delegate.task.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.helm.CustomManifestFetchTaskHelper;
@@ -60,27 +64,36 @@ import org.jetbrains.annotations.NotNull;
 
 @Slf4j
 @OwnedBy(HarnessTeam.CDP)
-public class CustomManifestFetchTask extends AbstractDelegateRunnableTask {
+public class CustomManifestFetchTaskNG extends AbstractDelegateRunnableTask {
   private static final String ZIPPED_CUSTOM_MANIFEST_FILE_NAME = "zippedCustomManifestFiles";
   @Inject private CustomManifestService customManifestService;
   @Inject private K8sTaskHelperBase k8sTaskHelperBase;
   @Inject private DelegateFileManagerBase delegateFileManagerBase;
   @Inject private CustomManifestFetchTaskHelper customManifestFetchTaskHelper;
 
-  public CustomManifestFetchTask(DelegateTaskPackage delegateTaskPackage,
+  public CustomManifestFetchTaskNG(DelegateTaskPackage delegateTaskPackage,
       ILogStreamingTaskClient logStreamingTaskClient, Consumer<DelegateTaskResponse> consumer,
       BooleanSupplier preExecute) {
     super(delegateTaskPackage, logStreamingTaskClient, consumer, preExecute);
   }
 
   @Override
+  public DelegateResponseData run(Object[] parameters) {
+    throw new NotImplementedException("not implemented");
+  }
+
+  @Override
   public DelegateResponseData run(TaskParameters parameters) {
+    CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
     CustomManifestValuesFetchParams fetchParams = (CustomManifestValuesFetchParams) parameters;
-    LogCallback logCallback = getLogStreamingTaskClient().obtainLogCallback(fetchParams.getCommandUnitName());
+    LogCallback logCallback = new NGDelegateLogCallback(
+        getLogStreamingTaskClient(), fetchParams.getCommandUnitName(), true, commandUnitsProgress);
 
     String defaultSourceWorkingDirectory = null;
     DelegateFile delegateFile = null;
     CustomManifestValuesFetchResponse valuesFetchResponse = null;
+
+    logCallback.saveExecutionLog(color("Starting custom values fetch task \n", White, Bold));
 
     CustomManifestSource customManifestSource = fetchParams.getCustomManifestSource();
     if (customManifestSource != null && customManifestSource.getScript() == null) {
@@ -90,7 +103,7 @@ public class CustomManifestFetchTask extends AbstractDelegateRunnableTask {
     if (customManifestSource != null) {
       try {
         defaultSourceWorkingDirectory = customManifestService.executeCustomSourceScript(
-            fetchParams.getActivityId(), logCallback, customManifestSource, true);
+            fetchParams.getActivityId(), logCallback, customManifestSource, false);
 
         logCallback.saveExecutionLog(color("Successfully fetched following files:", White, Bold));
         logCallback.saveExecutionLog(k8sTaskHelperBase.getManifestFileNamesInLogFormat(defaultSourceWorkingDirectory));
@@ -144,7 +157,7 @@ public class CustomManifestFetchTask extends AbstractDelegateRunnableTask {
 
     try {
       valuesFetchResponse =
-          customManifestFetchTaskHelper.fetchValuesTask(fetchParams, logCallback, defaultSourceWorkingDirectory, true);
+          customManifestFetchTaskHelper.fetchValuesTask(fetchParams, logCallback, defaultSourceWorkingDirectory, false);
       if (valuesFetchResponse.getCommandExecutionStatus() == FAILURE) {
         return valuesFetchResponse;
       }
@@ -160,9 +173,11 @@ public class CustomManifestFetchTask extends AbstractDelegateRunnableTask {
       cleanup(defaultSourceWorkingDirectory);
     }
 
-    logCallback.saveExecutionLog("Done.", LogLevel.INFO, SUCCESS);
+    logCallback.saveExecutionLog(color("Successfully completed custom values fetch task \n \n", White, Bold), INFO);
+
     return CustomManifestValuesFetchResponse.builder()
         .commandExecutionStatus(SUCCESS)
+        .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
         .valuesFilesContentMap(valuesFetchResponse.getValuesFilesContentMap())
         .zippedManifestFileId(delegateFile == null ? null : delegateFile.getFileId())
         .build();
@@ -209,10 +224,5 @@ public class CustomManifestFetchTask extends AbstractDelegateRunnableTask {
 
   private void zipManifestFiles(String manifestFilesDirectory, String destZippedManifestFile) throws IOException {
     zipManifestDirectory(manifestFilesDirectory, destZippedManifestFile);
-  }
-
-  @Override
-  public DelegateResponseData run(Object[] parameters) {
-    throw new NotImplementedException("not implemented");
   }
 }
