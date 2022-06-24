@@ -20,12 +20,12 @@ import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.GitAuthType;
 import io.harness.delegate.beans.connector.scm.GitConnectionType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
+import io.harness.delegate.beans.connector.scm.utils.ScmConnectorHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.git.GitClientHelper;
 import io.harness.gitsync.beans.GitRepositoryDTO;
-import io.harness.utils.FilePathUtils;
-import io.harness.delegate.beans.connector.scm.utils.ScmConnectorHelper;
 import io.harness.gitsync.beans.GitRepositoryDTO.GitRepositoryDTOBuilder;
+import io.harness.utils.FilePathUtils;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -134,11 +134,12 @@ public class AzureRepoConnectorDTO extends ConnectorConfigDTO implements ScmConn
       }
       return getUrl();
     } else if (isEmpty(gitRepositoryDTO.getName()) && isNotEmpty(gitRepositoryDTO.getProjectName())) {
-      //this is for project level connection url. In case RepoName is empty for Account Type Connector, Project level connection url is returned.
+      // this is for project level connection url. In case RepoName is empty for Account Type Connector, Project level
+      // connection url is returned.
       return FilePathUtils.addEndingSlashIfMissing(getUrl()) + gitRepositoryDTO.getProjectName();
     }
     return FilePathUtils.addEndingSlashIfMissing(getUrl()) + gitRepositoryDTO.getProjectName()
-            + AZURE_REPO_NAME_SEPARATOR + gitRepositoryDTO.getName();
+        + AZURE_REPO_NAME_SEPARATOR + gitRepositoryDTO.getName();
   }
 
   @Override
@@ -149,7 +150,8 @@ public class AzureRepoConnectorDTO extends ConnectorConfigDTO implements ScmConn
     } else {
       orgAndProject = GitClientHelper.getAzureRepoOrgAndProjectSSH(url);
     }
-    GitRepositoryDTOBuilder gitRepositoryDTOBuilder = GitRepositoryDTO.builder()
+    GitRepositoryDTOBuilder gitRepositoryDTOBuilder =
+        GitRepositoryDTO.builder()
             .org(GitClientHelper.getAzureRepoOrg(orgAndProject))
             .projectName(GitClientHelper.getAzureRepoProject(orgAndProject));
 

@@ -167,13 +167,13 @@ public class GitlabEntityToDTOTest extends CategoryTest {
     final GitlabAuthenticationDTO gitlabAuthenticationDTO =
         GitlabAuthenticationDTO.builder()
             .authType(HTTP)
-            .credentials(
-                GitlabHttpCredentialsDTO.builder()
-                    .type(GitlabHttpAuthenticationType.OAUTH)
-                    .httpCredentialsSpec(GitlabOauthDTO.builder()
-                                             .tokenRef(SecretRefHelper.createSecretRef(tokenRef))
-                                             .refreshTokenRef(SecretRefHelper.createSecretRef(refreshTokenRef)).build())
-                    .build())
+            .credentials(GitlabHttpCredentialsDTO.builder()
+                             .type(GitlabHttpAuthenticationType.OAUTH)
+                             .httpCredentialsSpec(GitlabOauthDTO.builder()
+                                                      .tokenRef(SecretRefHelper.createSecretRef(tokenRef))
+                                                      .refreshTokenRef(SecretRefHelper.createSecretRef(refreshTokenRef))
+                                                      .build())
+                             .build())
             .build();
 
     final GitlabApiAccessDTO gitlabApiAccessDTO =

@@ -47,4 +47,11 @@ public class K8sDeleteStepParameters extends K8sDeleteBaseStepInfo implements K8
     }
     return Arrays.asList(K8sCommandUnitConstants.Init, K8sCommandUnitConstants.Delete);
   }
+
+  @Nonnull
+  @Override
+  @JsonIgnore
+  public List<String> getCommandUnits(boolean isPruningEnabled) {
+    return getCommandUnits();
+  }
 }

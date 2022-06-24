@@ -20,6 +20,7 @@ import io.harness.pms.execution.utils.AmbianceUtils;
 import io.harness.pms.plan.execution.ExecutionSummaryUpdateUtils;
 import io.harness.pms.plan.execution.beans.PipelineExecutionSummaryEntity;
 import io.harness.pms.plan.execution.beans.dto.GraphLayoutNodeDTO;
+import io.harness.pms.plan.execution.beans.dto.GraphLayoutNodeDTO.GraphLayoutNodeDTOKeys;
 import io.harness.repositories.executions.PmsExecutionSummaryRespository;
 
 import com.google.inject.Inject;
@@ -112,9 +113,7 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
         return;
       }
       GraphLayoutNodeDTO graphLayoutNodeDTO = graphLayoutNodeDTOMap.get(stageSetupId);
-      modifyGraphLayoutNode(graphLayoutNodeDTO, nodeExecution);
-      update.set(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.layoutNodeMap + "." + nodeExecution.getUuid(),
-              graphLayoutNodeDTO);
+      cloneGraphLayoutNodeDtoWithModifications(graphLayoutNodeDTO, nodeExecution, update);
       String strategyNodeId = AmbianceUtils.getStrategyLevelFromAmbiance(ambiance).get().getSetupId();
       update.addToSet(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.layoutNodeMap + "." + strategyNodeId
               + ".edgeLayoutList.currentNodeChildren",
@@ -122,9 +121,8 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
       summaryUpdate.pull(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.layoutNodeMap + "." + strategyNodeId
               + ".edgeLayoutList.currentNodeChildren",
           stageSetupId);
-      summaryUpdate.set(PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.layoutNodeMap + "." + stageSetupId
-                      + ".hidden",
-              true);
+      summaryUpdate.set(
+          PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.layoutNodeMap + "." + stageSetupId + ".hidden", true);
       update(planExecutionId, update);
     }
   }
@@ -142,15 +140,25 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
     pmsExecutionSummaryRepository.update(query, update);
   }
 
-
   /**
-   * Modifies the identifier and name of the dummy node we are copying.
+   * This adds information for dummy node created during plan creation for newly spawned nodes.
+   *
    * @param graphLayoutNodeDTO
    * @param nodeExecution
+   * @param update
    */
-  private void modifyGraphLayoutNode(GraphLayoutNodeDTO graphLayoutNodeDTO, NodeExecution nodeExecution) {
-    graphLayoutNodeDTO.setNodeIdentifier(nodeExecution.getIdentifier());
-    graphLayoutNodeDTO.setName(nodeExecution.getName());
-    graphLayoutNodeDTO.setNodeExecutionId(nodeExecution.getUuid());
+  private void cloneGraphLayoutNodeDtoWithModifications(
+      GraphLayoutNodeDTO graphLayoutNodeDTO, NodeExecution nodeExecution, Update update) {
+    String baseKey =
+        PipelineExecutionSummaryEntity.PlanExecutionSummaryKeys.layoutNodeMap + "." + nodeExecution.getUuid() + ".";
+    update.set(baseKey + GraphLayoutNodeDTOKeys.nodeType, graphLayoutNodeDTO.getNodeType());
+    update.set(baseKey + GraphLayoutNodeDTOKeys.nodeGroup, graphLayoutNodeDTO.getNodeGroup());
+    update.set(baseKey + GraphLayoutNodeDTOKeys.module, graphLayoutNodeDTO.getModule());
+    update.set(baseKey + GraphLayoutNodeDTOKeys.edgeLayoutList, graphLayoutNodeDTO.getEdgeLayoutList());
+    update.set(baseKey + GraphLayoutNodeDTOKeys.skipInfo, graphLayoutNodeDTO.getSkipInfo());
+    update.set(baseKey + GraphLayoutNodeDTOKeys.nodeRunInfo, graphLayoutNodeDTO.getNodeRunInfo());
+    update.set(baseKey + GraphLayoutNodeDTOKeys.nodeIdentifier, nodeExecution.getIdentifier());
+    update.set(baseKey + GraphLayoutNodeDTOKeys.name, nodeExecution.getName());
+    update.set(baseKey + GraphLayoutNodeDTOKeys.nodeUuid, nodeExecution.getNodeId());
   }
 }

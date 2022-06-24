@@ -156,6 +156,7 @@ public class NextGenConfiguration extends Configuration {
   @JsonProperty("pipelineServiceClientConfig") private ServiceHttpClientConfig pipelineServiceClientConfig;
   @JsonProperty("auditClientConfig") private ServiceHttpClientConfig auditClientConfig;
   @JsonProperty("ceNextGenClientConfig") private ServiceHttpClientConfig ceNextGenClientConfig;
+  @JsonProperty("cvngClientConfig") private ServiceHttpClientConfig cvngClientConfig;
   @JsonProperty("lightwingClientConfig") private ServiceHttpClientConfig lightwingClientConfig;
   @JsonProperty("templateServiceClientConfig") private ServiceHttpClientConfig templateServiceClientConfig;
   @JsonProperty("eventsFramework") @ConfigSecret private EventsFrameworkConfiguration eventsFrameworkConfiguration;

@@ -70,8 +70,21 @@ public class JiraClient {
     this.restClient = createRestClient();
   }
 
+  public JiraInstanceData getInstanceData() {
+    return executeCall(restClient.getInstanceData(), "fetching jira instance data");
+  }
+  public JiraUserData getUser(String userKey) {
+    return executeCall(restClient.getUser(userKey), "getting user");
+  }
+
   public List<JiraUserData> getUsers(String userQuery, String accountId, String startAt) {
-    return executeCall(restClient.getUsers(userQuery, accountId, "10", startAt), "fetching users");
+    JiraInstanceData jiraInstanceData = getInstanceData();
+    switch (jiraInstanceData.deploymentType) {
+      case SERVER:
+        return executeCall(restClient.getUsersForJiraServer(userQuery, accountId, "10", startAt), "fetching users");
+      default:
+        return executeCall(restClient.getUsers(userQuery, accountId, "10", startAt), "fetching users");
+    }
   }
 
   /**

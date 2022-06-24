@@ -365,10 +365,10 @@ public class ConnectorUtils {
     } else if (gitConnector.getConnectorType() == GITLAB) {
       GitlabConnectorDTO gitConfigDTO = (GitlabConnectorDTO) gitConnector.getConnectorConfig();
       return gitConfigDTO.getAuthentication().getAuthType().getDisplayName();
-    } else if (gitConnector.getConnectorType() == CODECOMMIT){
+    } else if (gitConnector.getConnectorType() == CODECOMMIT) {
       AwsCodeCommitConnectorDTO gitConfigDTO = (AwsCodeCommitConnectorDTO) gitConnector.getConnectorConfig();
       return gitConfigDTO.getAuthentication().getAuthType().getDisplayName();
-    } else if (gitConnector.getConnectorType() == GIT){
+    } else if (gitConnector.getConnectorType() == GIT) {
       GitConfigDTO gitConfigDTO = (GitConfigDTO) gitConnector.getConnectorConfig();
       return gitConfigDTO.getGitAuthType().getDisplayName();
     } else {
@@ -378,7 +378,8 @@ public class ConnectorUtils {
 
   public String getScmHostType(ConnectorDetails gitConnector) {
     String url = retrieveURL(gitConnector);
-    if (GitClientHelper.isGithubSAAS(url) || GitClientHelper.isGitlabSAAS(url)|| GitClientHelper.isBitBucketSAAS(url) || GitClientHelper.isAzureRepoSAAS(url)) {
+    if (GitClientHelper.isGithubSAAS(url) || GitClientHelper.isGitlabSAAS(url) || GitClientHelper.isBitBucketSAAS(url)
+        || GitClientHelper.isAzureRepoSAAS(url)) {
       return SAAS;
     } else {
       return SELF_MANAGED;

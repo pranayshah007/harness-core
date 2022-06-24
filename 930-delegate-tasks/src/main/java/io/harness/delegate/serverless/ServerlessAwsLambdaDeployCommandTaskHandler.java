@@ -11,7 +11,6 @@ import static io.harness.delegate.task.serverless.exception.ServerlessExceptionC
 import static io.harness.delegate.task.serverless.exception.ServerlessExceptionConstants.SERVERLESS_FETCH_DEPLOY_OUTPUT_FAILED;
 import static io.harness.delegate.task.serverless.exception.ServerlessExceptionConstants.SERVERLESS_FETCH_DEPLOY_OUTPUT_HINT;
 import static io.harness.logging.LogLevel.ERROR;
-import static io.harness.logging.LogLevel.INFO;
 
 import static software.wings.beans.LogColor.White;
 import static software.wings.beans.LogHelper.color;
@@ -77,6 +76,7 @@ public class ServerlessAwsLambdaDeployCommandTaskHandler extends ServerlessComma
   private ServerlessAwsLambdaManifestSchema serverlessManifestSchema;
   private ServerlessAwsLambdaInfraConfig serverlessAwsLambdaInfraConfig;
   private long timeoutInMillis;
+  private String serverlessAwsLambdaCredentialType;
 
   @Override
   protected ServerlessCommandResponse executeTaskInternal(ServerlessCommandRequest serverlessCommandRequest,
@@ -103,6 +103,12 @@ public class ServerlessAwsLambdaDeployCommandTaskHandler extends ServerlessComma
     timeoutInMillis = serverlessDeployRequest.getTimeoutIntervalInMin() * 60000;
     serverlessAwsLambdaInfraConfig =
         (ServerlessAwsLambdaInfraConfig) serverlessDeployRequest.getServerlessInfraConfig();
+    serverlessAwsLambdaCredentialType =
+        serverlessInfraConfigHelper.getServerlessAwsLambdaCredentialType(serverlessAwsLambdaInfraConfig);
+
+    serverlessAwsLambdaConfig = (ServerlessAwsLambdaConfig) serverlessInfraConfigHelper.createServerlessConfig(
+        serverlessDeployRequest.getServerlessInfraConfig());
+
     LogCallback setupDirectoryLogCallback = serverlessTaskHelperBase.getLogCallback(
         iLogStreamingTaskClient, ServerlessCommandUnitConstants.setupDirectory.toString(), true, commandUnitsProgress);
     try {
@@ -126,16 +132,13 @@ public class ServerlessAwsLambdaDeployCommandTaskHandler extends ServerlessComma
       throw ex;
     }
 
+    serverlessClient = ServerlessClient.client(serverlessDelegateTaskParams.getServerlessClientPath());
+
     LogCallback configureCredsLogCallback = serverlessTaskHelperBase.getLogCallback(
         iLogStreamingTaskClient, ServerlessCommandUnitConstants.configureCred.toString(), true, commandUnitsProgress);
-    try {
-      configureCredential(serverlessDeployRequest, configureCredsLogCallback, serverlessDelegateTaskParams);
-    } catch (Exception ex) {
-      configureCredsLogCallback.saveExecutionLog(
-          color(format("%n configure credential failed."), LogColor.Red, LogWeight.Bold), LogLevel.ERROR,
-          CommandExecutionStatus.FAILURE);
-      throw ex;
-    }
+
+    serverlessAwsCommandTaskHelper.setUpConfigureCredential(serverlessAwsLambdaConfig, configureCredsLogCallback,
+        serverlessDelegateTaskParams, serverlessAwsLambdaCredentialType, serverlessClient, timeoutInMillis);
 
     LogCallback pluginLogCallback = serverlessTaskHelperBase.getLogCallback(
         iLogStreamingTaskClient, ServerlessCommandUnitConstants.plugin.toString(), true, commandUnitsProgress);
@@ -172,27 +175,6 @@ public class ServerlessAwsLambdaDeployCommandTaskHandler extends ServerlessComma
     serverlessTaskHelperBase.replaceManifestWithRenderedContent(serverlessDelegateTaskParams, serverlessManifestConfig,
         serverlessDeployRequest.getManifestContent(), serverlessManifestSchema);
     executionLogCallback.saveExecutionLog(format("Done..%n"), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
-  }
-
-  private void configureCredential(ServerlessDeployRequest serverlessDeployRequest, LogCallback executionLogCallback,
-      ServerlessDelegateTaskParams serverlessDelegateTaskParams) throws Exception {
-    serverlessAwsLambdaConfig = (ServerlessAwsLambdaConfig) serverlessInfraConfigHelper.createServerlessConfig(
-        serverlessDeployRequest.getServerlessInfraConfig());
-    serverlessClient = ServerlessClient.client(serverlessDelegateTaskParams.getServerlessClientPath());
-
-    ServerlessCliResponse response = serverlessAwsCommandTaskHelper.configCredential(serverlessClient,
-        serverlessAwsLambdaConfig, serverlessDelegateTaskParams, executionLogCallback, true, timeoutInMillis);
-
-    if (response.getCommandExecutionStatus() == CommandExecutionStatus.SUCCESS) {
-      executionLogCallback.saveExecutionLog(
-          color(format("%nConfig Credential command executed successfully..%n"), LogColor.White, LogWeight.Bold), INFO);
-      executionLogCallback.saveExecutionLog(format("Done..%n"), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
-    } else {
-      executionLogCallback.saveExecutionLog(
-          color(format("%nConfig Credential command failed..%n"), LogColor.Red, LogWeight.Bold), ERROR,
-          CommandExecutionStatus.FAILURE);
-      serverlessAwsCommandTaskHelper.handleCommandExecutionFailure(response, serverlessClient.configCredential());
-    }
   }
 
   private ServerlessDeployResponse deploy(ServerlessDeployRequest serverlessDeployRequest,

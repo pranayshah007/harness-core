@@ -145,7 +145,6 @@ public class WebhookConfigHelper {
     azureRepoMap.put(AzureRepoTriggerEvent.PULL_REQUEST.getValue(),
         getAzureRepoPRAction().stream().map(azureRepoPRAction -> azureRepoPRAction.getValue()).collect(toList()));
 
-
     Map githubMap = new HashMap<GitEvent, List<GitAction>>();
     resposeMap.put(GITHUB.getValue(), githubMap);
     githubMap.put(GithubTriggerEvent.PUSH.getValue(), emptyList());

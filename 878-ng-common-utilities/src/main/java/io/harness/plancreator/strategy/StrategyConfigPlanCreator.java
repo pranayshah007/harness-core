@@ -69,7 +69,8 @@ public class StrategyConfigPlanCreator extends ChildrenPlanCreator<StrategyConfi
     StrategyType strategyType = StrategyType.FOR;
     if (ctx.getCurrentField().getNode().getField(io.harness.plancreator.strategy.StrategyConstants.MATRIX) != null) {
       strategyType = StrategyType.MATRIX;
-    } else if (ctx.getCurrentField().getNode().getField(io.harness.plancreator.strategy.StrategyConstants.PARALLELISM) != null) {
+    } else if (ctx.getCurrentField().getNode().getField(io.harness.plancreator.strategy.StrategyConstants.PARALLELISM)
+        != null) {
       strategyType = StrategyType.PARALLELISM;
     }
     StageStrategyUtils.validateStrategyNode(config);

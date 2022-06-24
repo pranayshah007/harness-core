@@ -128,8 +128,11 @@ public class DelegateServiceGrpcImpl extends DelegateServiceImplBase {
                                                    .collect(Collectors.toList());
 
       if (isNotEmpty(request.getSelectorsList())) {
-        List<SelectorCapability> selectorCapabilities =
-            request.getSelectorsList().stream().map(this::toSelectorCapability).collect(Collectors.toList());
+        List<SelectorCapability> selectorCapabilities = request.getSelectorsList()
+                                                            .stream()
+                                                            .filter(s -> isNotEmpty(s.getSelector()))
+                                                            .map(this::toSelectorCapability)
+                                                            .collect(Collectors.toList());
         capabilities.addAll(selectorCapabilities);
       }
 

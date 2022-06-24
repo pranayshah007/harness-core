@@ -50,7 +50,8 @@ public class ManagerCacheRegistrar extends AbstractModule {
   public static final String PRIMARY_CACHE_PREFIX = "primary_";
   public static final String SECRET_CACHE = "secretCache";
 
-  @Provides  @Named(AUTH_TOKEN_CACHE)
+  @Provides
+  @Named(AUTH_TOKEN_CACHE)
   @Singleton
   public Cache<String, AuthToken> getAuthTokenCache(
       HarnessCacheManager harnessCacheManager, VersionInfoManager versionInfoManager) {

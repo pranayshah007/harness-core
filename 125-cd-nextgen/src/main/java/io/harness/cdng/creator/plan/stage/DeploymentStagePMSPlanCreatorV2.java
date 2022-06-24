@@ -140,7 +140,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     YamlField specField =
         Preconditions.checkNotNull(ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.SPEC));
     stageParameters.specConfig(getSpecParameters(specField.getNode().getUuid(), ctx, stageNode));
-    //We need to swap the ids if strategy is present
+    // We need to swap the ids if strategy is present
     return PlanNode.builder()
         .uuid(StageStrategyUtils.getSwappedPlanNodeId(ctx, stageNode))
         .name(stageNode.getName())

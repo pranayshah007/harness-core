@@ -10,8 +10,8 @@ package io.harness.ng.trialsignup;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.k8s.KubernetesConvention.getAccountIdentifier;
 import static io.harness.ng.NextGenModule.CONNECTOR_DECORATOR_SERVICE;
-
 import static io.harness.telemetry.Destination.AMPLITUDE;
+
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 import static java.lang.String.format;
@@ -198,7 +198,7 @@ public class ProvisionService {
 
       HashMap<String, Object> provisionMap = new HashMap<>();
       telemetryReporter.sendTrackEvent(PROVISION_STARTED, null, accountId, provisionMap,
-              Collections.singletonMap(AMPLITUDE, true), io.harness.telemetry.Category.GLOBAL);
+          Collections.singletonMap(AMPLITUDE, true), io.harness.telemetry.Category.GLOBAL);
 
       KubernetesCredentialDTO kubernetesCredentialDTO =
           KubernetesCredentialDTO.builder()
@@ -288,7 +288,7 @@ public class ProvisionService {
         if (steps.size() > 0 && steps.get(0).isDone()) {
           HashMap<String, Object> provisionMap = new HashMap<>();
           telemetryReporter.sendTrackEvent(PROVISION_COMPLETED, null, accountId, provisionMap,
-                  Collections.singletonMap(AMPLITUDE, true), io.harness.telemetry.Category.GLOBAL);
+              Collections.singletonMap(AMPLITUDE, true), io.harness.telemetry.Category.GLOBAL);
           return DelegateStatus.SUCCESS;
         } else if (steps.size() > 0 && !steps.get(0).isDone()) {
           return DelegateStatus.IN_PROGRESS;

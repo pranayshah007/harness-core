@@ -643,4 +643,12 @@ public class GitClientHelperTest extends CategoryTest {
     assertThat(GitClientHelper.getGitRepo("git@ssh.harness.azure.com:v3/wings-software/project/portal"))
         .isEqualTo("project/portal");
   }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testGetCompleteSSHUrlFromHttpUrlForAzure() {
+    assertThat(GitClientHelper.getCompleteSSHUrlFromHttpUrlForAzure("https://dev.azure.com/org/test/_git/test"))
+        .isEqualTo("git@ssh.dev.azure.com:v3/org/test/test");
+  }
 }

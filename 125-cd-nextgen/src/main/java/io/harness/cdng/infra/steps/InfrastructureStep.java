@@ -44,7 +44,6 @@ import io.harness.connector.utils.ConnectorUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
-import io.harness.delegate.beans.connector.awsconnector.AwsCredentialType;
 import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
 import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
@@ -236,12 +235,6 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
         throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
             connectorInfo.getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
             ConnectorType.AWS.name()));
-      }
-
-      AwsConnectorDTO awsConnector = (AwsConnectorDTO) connectorInfo.getConnectorConfig();
-      if (AwsCredentialType.MANUAL_CREDENTIALS != awsConnector.getCredential().getAwsCredentialType()) {
-        throw new InvalidRequestException(
-            "Deployment using AWS infrastructure with manual credentials is only supported.");
       }
     }
 

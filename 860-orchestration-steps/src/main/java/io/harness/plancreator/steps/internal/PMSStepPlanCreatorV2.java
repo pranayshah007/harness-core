@@ -124,12 +124,15 @@ public abstract class PMSStepPlanCreatorV2<T extends PmsAbstractStepNode> extend
             .skipUnresolvedExpressionsCheck(stepElement.getStepSpecType().skipUnresolvedExpressionsCheck())
             .build();
 
-    return PlanCreationResponse.builder().planNode(stepPlanNode).dependencies(DependenciesUtils.toDependenciesProto(dependenciesNodeMap)
-            .toBuilder()
-            .putDependencyMetadata(stepElement.getUuid(), Dependency.newBuilder().putAllMetadata(metadataMap).build())
-            .build()).build();
+    return PlanCreationResponse.builder()
+        .planNode(stepPlanNode)
+        .dependencies(DependenciesUtils.toDependenciesProto(dependenciesNodeMap)
+                          .toBuilder()
+                          .putDependencyMetadata(
+                              stepElement.getUuid(), Dependency.newBuilder().putAllMetadata(metadataMap).build())
+                          .build())
+        .build();
   }
-
 
   protected List<AdviserObtainment> getAdviserObtainmentFromMetaData(YamlField currentField) {
     boolean isStepInsideRollback = false;
@@ -162,7 +165,8 @@ public abstract class PMSStepPlanCreatorV2<T extends PmsAbstractStepNode> extend
   }
   private AdviserObtainment getNextStepAdviserObtainment(YamlField currentField) {
     if (currentField != null && currentField.getNode() != null) {
-      if (GenericPlanCreatorUtils.checkIfStepIsInParallelSection(currentField) || StageStrategyUtils.isWrappedUnderStrategy(currentField)) {
+      if (GenericPlanCreatorUtils.checkIfStepIsInParallelSection(currentField)
+          || StageStrategyUtils.isWrappedUnderStrategy(currentField)) {
         return null;
       }
       YamlField siblingField = GenericPlanCreatorUtils.obtainNextSiblingField(currentField);
@@ -179,7 +183,8 @@ public abstract class PMSStepPlanCreatorV2<T extends PmsAbstractStepNode> extend
 
   private AdviserObtainment getOnSuccessAdviserObtainment(YamlField currentField) {
     if (currentField != null && currentField.getNode() != null) {
-      if (GenericPlanCreatorUtils.checkIfStepIsInParallelSection(currentField) || StageStrategyUtils.isWrappedUnderStrategy(currentField)) {
+      if (GenericPlanCreatorUtils.checkIfStepIsInParallelSection(currentField)
+          || StageStrategyUtils.isWrappedUnderStrategy(currentField)) {
         return null;
       }
       YamlField siblingField = GenericPlanCreatorUtils.obtainNextSiblingField(currentField);
@@ -294,7 +299,8 @@ public abstract class PMSStepPlanCreatorV2<T extends PmsAbstractStepNode> extend
       String nextNodeUuid = null;
       YamlField siblingField = GenericPlanCreatorUtils.obtainNextSiblingField(currentField);
       // Check if step is in parallel section then dont have nextNodeUUid set.
-      if (siblingField != null && !GenericPlanCreatorUtils.checkIfStepIsInParallelSection(currentField) && !StageStrategyUtils.isWrappedUnderStrategy(currentField)) {
+      if (siblingField != null && !GenericPlanCreatorUtils.checkIfStepIsInParallelSection(currentField)
+          && !StageStrategyUtils.isWrappedUnderStrategy(currentField)) {
         nextNodeUuid = siblingField.getNode().getUuid();
       }
 

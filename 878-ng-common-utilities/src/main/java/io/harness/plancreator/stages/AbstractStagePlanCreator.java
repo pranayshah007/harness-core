@@ -9,7 +9,6 @@ package io.harness.plancreator.stages;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
-import com.google.common.collect.ImmutableMap;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
@@ -33,6 +32,7 @@ import io.harness.serializer.KryoSerializer;
 import io.harness.steps.matrix.StrategyConstants;
 import io.harness.steps.matrix.StrategyMetadata;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.protobuf.ByteString;
 import java.util.Collections;
@@ -97,8 +97,8 @@ public abstract class AbstractStagePlanCreator<T extends AbstractStageNode> exte
                                                  .adviserObtainments(StageStrategyUtils.getAdviserObtainments(
                                                      ctx.getCurrentField(), kryoSerializer, false))
                                                  .childNodeId(strategyField.getNode().getUuid())
-                              .strategyNodeName(field.getName())
-                              .strategyNodeIdentifier(field.getIdentifier())
+                                                 .strategyNodeName(field.getName())
+                                                 .strategyNodeIdentifier(field.getIdentifier())
                                                  .build())));
     }
   }
@@ -123,29 +123,29 @@ public abstract class AbstractStagePlanCreator<T extends AbstractStageNode> exte
    * @param metadataMap
    */
   protected void addStrategyFieldDependencyIfPresent(PlanCreationContext ctx, AbstractStageNode field,
-                                                     LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, Map<String, ByteString> metadataMap) {
+      LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, Map<String, ByteString> metadataMap) {
     YamlField strategyField = ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.STRATEGY);
     if (strategyField != null) {
       // This is mandatory because it is the parent's responsibility to pass the nodeId and the childNodeId to the
       // strategy node
       metadataMap.put(StrategyConstants.STRATEGY_METADATA + strategyField.getNode().getUuid(),
-              ByteString.copyFrom(
-                      kryoSerializer.asDeflatedBytes(StrategyMetadata.builder()
-                              .strategyNodeId(field.getUuid())
-                              .adviserObtainments(StageStrategyUtils.getAdviserObtainments(
-                                      ctx.getCurrentField(), kryoSerializer, false))
-                              .childNodeId(strategyField.getNode().getUuid())
-                              .strategyNodeName(field.getName())
-                              .strategyNodeIdentifier(field.getIdentifier())
-                              .build())));
+          ByteString.copyFrom(
+              kryoSerializer.asDeflatedBytes(StrategyMetadata.builder()
+                                                 .strategyNodeId(field.getUuid())
+                                                 .adviserObtainments(StageStrategyUtils.getAdviserObtainments(
+                                                     ctx.getCurrentField(), kryoSerializer, false))
+                                                 .childNodeId(strategyField.getNode().getUuid())
+                                                 .strategyNodeName(field.getName())
+                                                 .strategyNodeIdentifier(field.getIdentifier())
+                                                 .build())));
       planCreationResponseMap.put(field.getUuid(),
-              PlanCreationResponse.builder()
-                      .dependencies(DependenciesUtils.toDependenciesProto(ImmutableMap.of(field.getUuid(), strategyField))
-                              .toBuilder()
-                              .putDependencyMetadata(
-                                      field.getUuid(), Dependency.newBuilder().putAllMetadata(metadataMap).build())
-                              .build())
-                      .build());
+          PlanCreationResponse.builder()
+              .dependencies(DependenciesUtils.toDependenciesProto(ImmutableMap.of(field.getUuid(), strategyField))
+                                .toBuilder()
+                                .putDependencyMetadata(
+                                    field.getUuid(), Dependency.newBuilder().putAllMetadata(metadataMap).build())
+                                .build())
+              .build());
     }
   }
 }

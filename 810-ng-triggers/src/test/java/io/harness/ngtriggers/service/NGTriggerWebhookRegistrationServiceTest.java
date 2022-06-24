@@ -167,8 +167,9 @@ public class NGTriggerWebhookRegistrationServiceTest extends CategoryTest {
     when(connectorUtils.getConnectionType(connectorDetails)).thenReturn(GitConnectionType.ACCOUNT);
 
     ClassLoader classLoader = getClass().getClassLoader();
-    String ngTriggerYaml_azurerepo_pr = Resources.toString(Objects.requireNonNull(classLoader.getResource(
-        "ng-trigger-azurerepo-pr-v2-without-project.yaml")), StandardCharsets.UTF_8);
+    String ngTriggerYaml_azurerepo_pr = Resources.toString(
+        Objects.requireNonNull(classLoader.getResource("ng-trigger-azurerepo-pr-v2-without-project.yaml")),
+        StandardCharsets.UTF_8);
 
     when(ngTriggerElementMapper.toTriggerConfigV2(any(String.class))).thenCallRealMethod();
     NGTriggerConfigV2 ngTriggerConfigV2 = ngTriggerElementMapper.toTriggerConfigV2(ngTriggerYaml_azurerepo_pr);

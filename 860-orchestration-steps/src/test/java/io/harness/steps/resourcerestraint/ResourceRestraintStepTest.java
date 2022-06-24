@@ -56,7 +56,8 @@ import org.mockito.Mock;
 @OwnedBy(HarnessTeam.PIPELINE)
 public class ResourceRestraintStepTest extends OrchestrationStepsTestBase {
   private static final String RESOURCE_RESTRAINT_ID = generateUuid();
-  private static final ParameterField<String> RESOURCE_UNIT = ParameterField.<String>builder().value(generateUuid()).build();
+  private static final ParameterField<String> RESOURCE_UNIT =
+      ParameterField.<String>builder().value(generateUuid()).build();
 
   @Mock private ResourceRestraintInstanceService resourceRestraintInstanceService;
   @Mock private ResourceRestraintService resourceRestraintService;

@@ -10,10 +10,10 @@ package io.harness.ci.integrationstage;
 import static io.harness.beans.execution.WebhookEvent.Type.BRANCH;
 import static io.harness.beans.execution.WebhookEvent.Type.PR;
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveOSType;
+import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParameter;
 import static io.harness.beans.yaml.extended.infrastrucutre.Infrastructure.Type.KUBERNETES_DIRECT;
 import static io.harness.beans.yaml.extended.infrastrucutre.Infrastructure.Type.KUBERNETES_HOSTED;
 import static io.harness.beans.yaml.extended.infrastrucutre.Infrastructure.Type.VM;
-import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParameter;
 import static io.harness.common.CIExecutionConstants.AZURE_REPO_BASE_URL;
 import static io.harness.common.CIExecutionConstants.GIT_URL_SUFFIX;
 import static io.harness.common.CIExecutionConstants.IMAGE_PATH_SPLIT_REGEX;
@@ -408,12 +408,12 @@ public class IntegrationStageUtils {
         continue;
       }
       CIStepInfo ciStepInfo = (CIStepInfo) stepElementConfig.getStepSpecType();
-      if(ciStepInfo.getStepType() == RunTestsStep.STEP_TYPE) {
+      if (ciStepInfo.getStepType() == RunTestsStep.STEP_TYPE) {
         RunTestsStepInfo runTestsStepInfo = (RunTestsStepInfo) ciStepInfo;
         TIBuildDetails tiBuildDetails = TIBuildDetails.builder()
-                .buildTool(runTestsStepInfo.getBuildTool().getValue().getYamlName())
-                .language(runTestsStepInfo.getLanguage().getValue().getYamlName())
-                .build();
+                                            .buildTool(runTestsStepInfo.getBuildTool().getValue().getYamlName())
+                                            .language(runTestsStepInfo.getLanguage().getValue().getYamlName())
+                                            .build();
         tiBuildDetailsList.add(tiBuildDetails);
       }
     }
@@ -429,7 +429,7 @@ public class IntegrationStageUtils {
         continue;
       }
       CIStepInfo ciStepInfo = (CIStepInfo) stepElementConfig.getStepSpecType();
-      if(ciStepInfo.getStepType() == RunStep.STEP_TYPE) {
+      if (ciStepInfo.getStepType() == RunStep.STEP_TYPE) {
         imageDetailsList.add(getCiImageDetails(((RunStepInfo) ciStepInfo).getImage().getValue()));
       } else if (ciStepInfo.getStepType() == RunTestsStep.STEP_TYPE) {
         imageDetailsList.add(getCiImageDetails(((RunTestsStepInfo) ciStepInfo).getImage().getValue()));
@@ -653,18 +653,14 @@ public class IntegrationStageUtils {
       infraHostType = HARNESS_HOSTED;
     }
 
-    return CIInfraDetails.builder()
-            .infraType(infraType)
-            .infraOSType(infraOSType)
-            .infraHostType(infraHostType)
-            .build();
+    return CIInfraDetails.builder().infraType(infraType).infraOSType(infraOSType).infraHostType(infraHostType).build();
   }
 
   public static CIScmDetails getCiScmDetails(ConnectorUtils connectorUtils, ConnectorDetails connectorDetails) {
     return CIScmDetails.builder()
-            .scmProvider(connectorDetails.getConnectorType().getDisplayName())
-            .scmAuthType(connectorUtils.getScmAuthType(connectorDetails))
-            .scmHostType(connectorUtils.getScmHostType(connectorDetails))
-            .build();
+        .scmProvider(connectorDetails.getConnectorType().getDisplayName())
+        .scmAuthType(connectorUtils.getScmAuthType(connectorDetails))
+        .scmHostType(connectorUtils.getScmHostType(connectorDetails))
+        .build();
   }
 }

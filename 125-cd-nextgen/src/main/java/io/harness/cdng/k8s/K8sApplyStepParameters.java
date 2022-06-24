@@ -58,4 +58,11 @@ public class K8sApplyStepParameters extends K8sApplyBaseStepInfo implements K8sS
           K8sCommandUnitConstants.WrapUp);
     }
   }
+
+  @Nonnull
+  @Override
+  @JsonIgnore
+  public List<String> getCommandUnits(boolean isPruningEnabled) {
+    return getCommandUnits();
+  }
 }

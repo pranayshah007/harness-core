@@ -150,26 +150,26 @@ public class StageStrategyUtils {
     }
   }
 
-  public List<AdviserObtainment> getAdviserObtainmentFromMetaDataForStep(KryoSerializer kryoSerializer, YamlField currentField) {
+  public List<AdviserObtainment> getAdviserObtainmentFromMetaDataForStep(
+      KryoSerializer kryoSerializer, YamlField currentField) {
     if (currentField.checkIfParentIsParallel(STEPS)) {
       return new ArrayList<>();
     }
     List<AdviserObtainment> adviserObtainments = new ArrayList<>();
     if (currentField != null && currentField.getNode() != null) {
       YamlField siblingField = currentField.getNode().nextSiblingFromParentArray(currentField.getName(),
-              Arrays.asList(YAMLFieldNameConstants.STEP, YAMLFieldNameConstants.STEP_GROUP,
-                      YAMLFieldNameConstants.PARALLEL));
+          Arrays.asList(
+              YAMLFieldNameConstants.STEP, YAMLFieldNameConstants.STEP_GROUP, YAMLFieldNameConstants.PARALLEL));
       if (siblingField != null && siblingField.getNode().getUuid() != null) {
         AdviserObtainment adviserObtainment =
-                  AdviserObtainment.newBuilder()
-                          .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.NEXT_STEP.name()).build())
-                          .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
-                                  NextStepAdviserParameters.builder().nextNodeId(siblingField.getNode().getUuid()).build())))
-                          .build();
+            AdviserObtainment.newBuilder()
+                .setType(AdviserType.newBuilder().setType(OrchestrationAdviserTypes.NEXT_STEP.name()).build())
+                .setParameters(ByteString.copyFrom(kryoSerializer.asBytes(
+                    NextStepAdviserParameters.builder().nextNodeId(siblingField.getNode().getUuid()).build())))
+                .build();
         adviserObtainments.add(adviserObtainment);
       }
     }
     return adviserObtainments;
   }
-
 }
