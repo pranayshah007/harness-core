@@ -273,8 +273,9 @@ public class CIK8InitializeTaskHandlerTest extends CategoryTest {
         cik8InitializeTaskParams.getCik8PodParams().getContainerParamsList().get(0).getImageDetailsWithConnector();
 
     when(k8sConnectorHelper.getKubernetesConfig(any(ConnectorDetails.class))).thenReturn(kubernetesConfig);
-    when(secretSpecBuilder.decryptGitSecretVariables(cik8InitializeTaskParams.getCik8PodParams().getGitConnector()))
-        .thenReturn(gitSecretData);
+    //TODO: fix
+//    when(secretSpecBuilder.decryptGitSecretVariables(cik8InitializeTaskParams.getCik8PodParams().getGitConnector()))
+//        .thenReturn(gitSecretData);
     when(cik8JavaClientHandler.createRegistrySecret(coreV1Api, namespace, secretName, imageDetailsWithConnector))
         .thenReturn(imgSecret);
     when(secretSpecBuilder.decryptCustomSecretVariables(getSecretVariableDetails())).thenReturn(getCustomVarSecret());

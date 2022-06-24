@@ -37,6 +37,7 @@ import io.harness.rule.Owner;
 import io.harness.sto.beans.entities.STOServiceConfig;
 import io.harness.stoserviceclient.STOServiceUtils;
 import io.harness.tiserviceclient.TIServiceUtils;
+import io.harness.yaml.extended.ci.codebase.CodeBase;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -95,12 +96,14 @@ public class VmInitializeTaskUtilsTest extends CIExecutionTestBase {
                         .output(StageDetails.builder().stageRuntimeID(stageRuntimeId).build())
                         .build());
 
+    final CodeBase ciCodebase = initializeStepInfo.getCiCodebase();
     Map<String, String> m = new HashMap<>();
-    when(codebaseUtils.getGitConnector(AmbianceUtils.getNgAccess(ambiance), initializeStepInfo.getCiCodebase(),
+    when(codebaseUtils.getGitConnector(AmbianceUtils.getNgAccess(ambiance), ciCodebase.getConnectorRef().getValue(),
              initializeStepInfo.isSkipGitClone()))
         .thenReturn(null);
     when(codebaseUtils.getCodebaseVars(any(), any())).thenReturn(m);
-    when(codebaseUtils.getGitEnvVariables(null, initializeStepInfo.getCiCodebase())).thenReturn(m);
+    when(codebaseUtils.getGitEnvVariables(null, ciCodebase.getProjectName().getValue(),
+            ciCodebase.getRepoName().getValue())).thenReturn(m);
     when(logServiceUtils.getLogServiceConfig()).thenReturn(LogServiceConfig.builder().baseUrl("1.1.1.1").build());
     when(logServiceUtils.getLogServiceToken(any())).thenReturn("test");
     when(tiServiceUtils.getTiServiceConfig()).thenReturn(TIServiceConfig.builder().baseUrl("1.1.1.2").build());
@@ -142,11 +145,13 @@ public class VmInitializeTaskUtilsTest extends CIExecutionTestBase {
                         .build());
 
     Map<String, String> m = new HashMap<>();
-    when(codebaseUtils.getGitConnector(AmbianceUtils.getNgAccess(ambiance), initializeStepInfo.getCiCodebase(),
+    final CodeBase ciCodebase = initializeStepInfo.getCiCodebase();
+    when(codebaseUtils.getGitConnector(AmbianceUtils.getNgAccess(ambiance), ciCodebase.getConnectorRef().getValue(),
              initializeStepInfo.isSkipGitClone()))
         .thenReturn(null);
     when(codebaseUtils.getCodebaseVars(any(), any())).thenReturn(m);
-    when(codebaseUtils.getGitEnvVariables(null, initializeStepInfo.getCiCodebase())).thenReturn(m);
+    when(codebaseUtils.getGitEnvVariables(null, ciCodebase.getProjectName().getValue(),
+            ciCodebase.getRepoName().getValue())).thenReturn(m);
     when(logServiceUtils.getLogServiceConfig()).thenReturn(LogServiceConfig.builder().baseUrl("1.1.1.1").build());
     when(logServiceUtils.getLogServiceToken(any())).thenReturn("test");
     when(tiServiceUtils.getTiServiceConfig()).thenReturn(TIServiceConfig.builder().baseUrl("1.1.1.2").build());

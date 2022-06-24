@@ -526,7 +526,7 @@ public class K8InitializeTaskUtils {
   }
 
   @NotNull
-  public Map<String, String> getCommonStepEnvVariables(K8PodDetails k8PodDetails, Map<String, String> gitEnvVars,
+  public Map<String, String> getCommonStepEnvVariables(K8PodDetails k8PodDetails,
       Map<String, String> runtimeCodebaseVars, String workDirPath, String logPrefix, Ambiance ambiance) {
     Map<String, String> envVars = new HashMap<>();
     final String accountID = AmbianceUtils.getAccountId(ambiance);
@@ -536,9 +536,6 @@ public class K8InitializeTaskUtils {
     final int buildNumber = ambiance.getMetadata().getRunSequence();
     final String stageID = k8PodDetails.getStageID();
     final String executionID = ambiance.getPlanExecutionId();
-
-    // Add git connector environment variables
-    envVars.putAll(gitEnvVars);
 
     // Add runtime git vars, i.e. manual pull request execution data.
     envVars.putAll(runtimeCodebaseVars);

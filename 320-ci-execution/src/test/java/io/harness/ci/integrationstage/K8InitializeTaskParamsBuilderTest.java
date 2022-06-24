@@ -84,8 +84,8 @@ public class K8InitializeTaskParamsBuilderTest extends CIExecutionTestBase {
     when(k8InitializeTaskUtils.getLogServiceEnvVariables(any(), any())).thenReturn(new HashMap<>());
     when(k8InitializeTaskUtils.getTIServiceEnvVariables(any())).thenReturn(new HashMap<>());
     when(k8InitializeTaskUtils.getSTOServiceEnvVariables(any())).thenReturn(new HashMap<>());
-    when(codebaseUtils.getGitEnvVariables(any(), any())).thenReturn(new HashMap<>());
-    when(k8InitializeTaskUtils.getCommonStepEnvVariables(any(), any(), any(), any(), any(), any()))
+    when(codebaseUtils.getGitEnvVariables(any(), any(), any())).thenReturn(new HashMap<>());
+    when(k8InitializeTaskUtils.getCommonStepEnvVariables(any(), any(), any(), any(), any()))
         .thenReturn(new HashMap<>());
     when(k8InitializeTaskUtils.getWorkDir()).thenReturn("/harness");
     when(k8InitializeTaskUtils.getCtrSecurityContext(any())).thenReturn(ContainerSecurityContext.builder().build());
@@ -97,7 +97,7 @@ public class K8InitializeTaskParamsBuilderTest extends CIExecutionTestBase {
     when(k8InitializeStepUtils.getStageCpuRequest(any(), any())).thenReturn(1024);
     when(k8InitializeStepUtils.getStageMemoryRequest(any(), any())).thenReturn(1024);
     when(k8InitializeServiceUtils.createServiceContainerDefinitions(any(), any(), any())).thenReturn(new ArrayList<>());
-    when(k8InitializeStepUtils.createStepContainerDefinitions(any(), any(), any(), any(), any(), any()))
+    when(k8InitializeStepUtils.createStepContainerDefinitions(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(Arrays.asList(K8InitializeTaskUtilsHelper.getRunStepContainer(0)));
     doNothing().when(k8InitializeTaskUtils).consumeSweepingOutput(any(), any(), any());
     doNothing().when(k8InitializeTaskUtils).consumeSweepingOutput(any(), any(), any());

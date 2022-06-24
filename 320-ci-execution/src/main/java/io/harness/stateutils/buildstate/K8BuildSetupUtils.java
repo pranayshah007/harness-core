@@ -298,8 +298,9 @@ public class K8BuildSetupUtils {
         harnessImageUtils.getHarnessImageConnectorDetailsForK8(ngAccess, infrastructure);
     CodeBase ciCodebase = initializeStepInfo.getCiCodebase();
     ConnectorDetails gitConnector =
-        codebaseUtils.getGitConnector(ngAccess, ciCodebase, initializeStepInfo.isSkipGitClone());
-    Map<String, String> gitEnvVars = codebaseUtils.getGitEnvVariables(gitConnector, ciCodebase);
+        codebaseUtils.getGitConnector(ngAccess, ciCodebase.getConnectorRef().getValue(), initializeStepInfo.isSkipGitClone());
+    Map<String, String> gitEnvVars = codebaseUtils.getGitEnvVariables(gitConnector, ciCodebase.getProjectName().getValue(),
+            ciCodebase.getRepoName().getValue());
     Map<String, String> runtimeCodebaseVars = codebaseUtils.getRuntimeCodebaseVars(ambiance);
 
     List<CIK8ContainerParams> containerParamsList =
@@ -354,7 +355,6 @@ public class K8BuildSetupUtils {
         .labels(buildLabels)
         .serviceAccountName(serviceAccountName)
         .annotations(annotations)
-        .gitConnector(gitConnector)
         .containerParamsList(containerParamsList)
         .pvcParamList(pvcParamsList)
         .initContainerParamsList(singletonList(setupAddOnContainerParams))

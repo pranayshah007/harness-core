@@ -22,6 +22,7 @@ import io.harness.category.element.UnitTests;
 import io.harness.executionplan.CIExecutionTestBase;
 import io.harness.plancreator.execution.ExecutionWrapperConfig;
 import io.harness.plancreator.stages.stage.StageElementConfig;
+import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.rule.Owner;
 import io.harness.util.PortFinder;
 
@@ -46,8 +47,10 @@ public class K8InitializeStepUtilsTest extends CIExecutionTestBase {
     CIExecutionArgs ciExecutionArgs = K8InitializeStepUtilsHelper.getCIExecutionArgs();
 
     List<ContainerDefinitionInfo> expected = K8InitializeStepUtilsHelper.getStepContainers();
+    //TODO: figure out what to set ambiance to
+    Ambiance ambiance = null;
     List<ContainerDefinitionInfo> stepContainers = k8InitializeStepUtils.createStepContainerDefinitions(
-        steps, integrationStageConfig, ciExecutionArgs, portFinder, "test", OSType.Linux);
+        steps, integrationStageConfig, ciExecutionArgs, portFinder, "test", OSType.Linux, ambiance);
 
     assertThat(stepContainers).isEqualTo(expected);
   }
@@ -62,8 +65,9 @@ public class K8InitializeStepUtilsTest extends CIExecutionTestBase {
     CIExecutionArgs ciExecutionArgs = K8InitializeStepUtilsHelper.getCIExecutionArgs();
 
     List<ContainerDefinitionInfo> expected = K8InitializeStepUtilsHelper.getWinStepContainers();
+    Ambiance ambiance = null;
     List<ContainerDefinitionInfo> stepContainers = k8InitializeStepUtils.createStepContainerDefinitions(
-        steps, integrationStageConfig, ciExecutionArgs, portFinder, "test", OSType.Windows);
+        steps, integrationStageConfig, ciExecutionArgs, portFinder, "test", OSType.Windows, ambiance);
 
     assertThat(stepContainers).isEqualTo(expected);
   }

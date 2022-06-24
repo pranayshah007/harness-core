@@ -16,14 +16,13 @@ import lombok.Getter;
 @Getter
 @EqualsAndHashCode(callSuper = true)
 public class CIK8PodParams<T extends ContainerParams> extends PodParams<T> {
-  private final ConnectorDetails gitConnector;
   private final String branchName;
   private final String commitId;
   private final String stepExecVolumeName;
   private final String stepExecWorkingDir;
 
   @Builder
-  public CIK8PodParams(ConnectorDetails gitConnector, String branchName, String commitId, String stepExecVolumeName,
+  public CIK8PodParams(String branchName, String commitId, String stepExecVolumeName,
       String stepExecWorkingDir, String name, String namespace, Map<String, String> annotations,
       Map<String, String> labels, List<T> containerParamsList, List<T> initContainerParamsList,
       List<PVCParams> pvcParamList, List<HostAliasParams> hostAliasParamsList, Integer runAsUser,
@@ -32,7 +31,6 @@ public class CIK8PodParams<T extends ContainerParams> extends PodParams<T> {
     super(name, namespace, annotations, labels, containerParamsList, initContainerParamsList, pvcParamList,
         hostAliasParamsList, runAsUser, serviceAccountName, automountServiceAccountToken, nodeSelector, tolerations,
         volumes, runtime, priorityClassName);
-    this.gitConnector = gitConnector;
     this.branchName = branchName;
     this.commitId = commitId;
     this.stepExecVolumeName = stepExecVolumeName;

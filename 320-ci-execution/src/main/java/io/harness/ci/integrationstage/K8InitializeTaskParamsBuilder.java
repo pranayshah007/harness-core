@@ -13,6 +13,7 @@ import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParam
 import static io.harness.beans.sweepingoutputs.ContainerPortDetails.PORT_DETAILS;
 import static io.harness.beans.sweepingoutputs.PodCleanupDetails.CLEANUP_DETAILS;
 import static io.harness.beans.sweepingoutputs.StageInfraDetails.STAGE_INFRA_DETAILS;
+import static io.harness.common.CIExecutionConstants.GIT_CLONE_STEP_ID;
 import static io.harness.common.CIExecutionConstants.HARNESS_SERVICE_LOG_KEY_VARIABLE;
 import static io.harness.common.CIExecutionConstants.POD_MAX_WAIT_UNTIL_READY_SECS;
 import static io.harness.common.CIExecutionConstants.PORT_STARTING_RANGE;
@@ -153,16 +154,13 @@ public class K8InitializeTaskParamsBuilder {
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
     String namespace = "account-" + getAccountIdentifier(ngAccess.getAccountIdentifier());
 
-    ConnectorDetails gitConnector = codebaseUtils.getGitConnector(
-        ngAccess, initializeStepInfo.getCiCodebase(), initializeStepInfo.isSkipGitClone());
     Pair<CIK8ContainerParams, List<CIK8ContainerParams>> podContainers = getStageContainers(
-        initializeStepInfo, k8PodDetails, k8sHostedInfraYaml, ambiance, volumes, logPrefix, gitConnector);
+        initializeStepInfo, k8PodDetails, k8sHostedInfraYaml, ambiance, volumes, logPrefix);
     saveSweepingOutput(podName, k8sHostedInfraYaml, podContainers, ambiance);
     return CIK8PodParams.<CIK8ContainerParams>builder()
         .name(podName)
         .namespace(namespace)
         .labels(buildLabels)
-        .gitConnector(gitConnector)
         .containerParamsList(podContainers.getRight())
         //.pvcParamList(pvcParamsList)
         .initContainerParamsList(singletonList(podContainers.getLeft()))
@@ -190,12 +188,10 @@ public class K8InitializeTaskParamsBuilder {
       buildLabels.putAll(labels);
     }
 
-    NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
-    ConnectorDetails gitConnector = codebaseUtils.getGitConnector(
-        ngAccess, initializeStepInfo.getCiCodebase(), initializeStepInfo.isSkipGitClone());
+
     List<PodVolume> volumes = k8InitializeTaskUtils.convertDirectK8Volumes(k8sDirectInfraYaml);
     Pair<CIK8ContainerParams, List<CIK8ContainerParams>> podContainers = getStageContainers(
-        initializeStepInfo, k8PodDetails, k8sDirectInfraYaml, ambiance, volumes, logPrefix, gitConnector);
+        initializeStepInfo, k8PodDetails, k8sDirectInfraYaml, ambiance, volumes, logPrefix);
     saveSweepingOutput(podName, k8sDirectInfraYaml, podContainers, ambiance);
     return CIK8PodParams.<CIK8ContainerParams>builder()
         .name(podName)
@@ -208,7 +204,6 @@ public class K8InitializeTaskParamsBuilder {
         .automountServiceAccountToken(k8sDirectInfraYaml.getSpec().getAutomountServiceAccountToken().getValue())
         .priorityClassName(k8sDirectInfraYaml.getSpec().getPriorityClassName().getValue())
         .tolerations(k8InitializeTaskUtils.getPodTolerations(k8sDirectInfraYaml.getSpec().getTolerations()))
-        .gitConnector(gitConnector)
         .containerParamsList(podContainers.getRight())
         //.pvcParamList(pvcParamsList)
         .initContainerParamsList(singletonList(podContainers.getLeft()))
@@ -218,7 +213,7 @@ public class K8InitializeTaskParamsBuilder {
 
   private Pair<CIK8ContainerParams, List<CIK8ContainerParams>> getStageContainers(InitializeStepInfo initializeStepInfo,
       K8PodDetails k8PodDetails, Infrastructure infrastructure, Ambiance ambiance, List<PodVolume> volumes,
-      String logPrefix, ConnectorDetails gitConnector) {
+      String logPrefix) {
     List<String> sharedPaths = k8InitializeTaskUtils.getSharedPaths(initializeStepInfo);
     Map<String, String> volumeToMountPath = k8InitializeTaskUtils.getVolumeToMountPath(sharedPaths, volumes);
     OSType os = k8InitializeTaskUtils.getOS(infrastructure);
@@ -229,10 +224,13 @@ public class K8InitializeTaskParamsBuilder {
     Map<String, String> logEnvVars = k8InitializeTaskUtils.getLogServiceEnvVariables(k8PodDetails, accountId);
     Map<String, String> tiEnvVars = k8InitializeTaskUtils.getTIServiceEnvVariables(accountId);
     Map<String, String> stoEnvVars = k8InitializeTaskUtils.getSTOServiceEnvVariables(accountId);
-    Map<String, String> gitEnvVars = codebaseUtils.getGitEnvVariables(gitConnector, ciCodebase);
+    ConnectorDetails gitConnector = codebaseUtils.getGitConnector(
+            ngAccess, ciCodebase.getConnectorRef().getValue(), initializeStepInfo.isSkipGitClone());
+    Map<String, String> gitEnvVars = codebaseUtils.getGitEnvVariables(gitConnector,
+            ciCodebase.getProjectName().getValue(), ciCodebase.getRepoName().getValue() );
     Map<String, String> runtimeCodebaseVars = codebaseUtils.getRuntimeCodebaseVars(ambiance);
     Map<String, String> commonEnvVars = k8InitializeTaskUtils.getCommonStepEnvVariables(
-        k8PodDetails, gitEnvVars, runtimeCodebaseVars, k8InitializeTaskUtils.getWorkDir(), logPrefix, ambiance);
+        k8PodDetails, runtimeCodebaseVars, k8InitializeTaskUtils.getWorkDir(), logPrefix, ambiance);
 
     ConnectorDetails harnessInternalImageConnector =
         harnessImageUtils.getHarnessImageConnectorDetailsForK8(ngAccess, infrastructure);
@@ -269,7 +267,7 @@ public class K8InitializeTaskParamsBuilder {
         k8InitializeStepUtils.getStepConnectorRefs(initializeStepInfo.getStageElementConfig(), ambiance);
     for (ContainerDefinitionInfo containerDefinitionInfo : stageCtrDefinitions) {
       CIK8ContainerParams cik8ContainerParams = createCIK8ContainerParams(ngAccess, containerDefinitionInfo,
-          harnessInternalImageConnector, commonEnvVars, stoEnvVars, stepConnectors, volumeToMountPath,
+          harnessInternalImageConnector, commonEnvVars, stoEnvVars, gitEnvVars, stepConnectors, volumeToMountPath,
           k8InitializeTaskUtils.getWorkDir(), k8InitializeTaskUtils.getCtrSecurityContext(infrastructure), logPrefix,
           secretVariableDetails, githubApiTokenFunctorConnectors, os);
       containerParams.add(cik8ContainerParams);
@@ -287,7 +285,7 @@ public class K8InitializeTaskParamsBuilder {
 
   private CIK8ContainerParams createCIK8ContainerParams(NGAccess ngAccess,
       ContainerDefinitionInfo containerDefinitionInfo, ConnectorDetails harnessInternalImageConnector,
-      Map<String, String> commonEnvVars, Map<String, String> stoEnvVars,
+      Map<String, String> commonEnvVars, Map<String, String> stoEnvVars, Map<String, String> gitEnvVars,
       Map<String, List<K8BuildJobEnvInfo.ConnectorConversionInfo>> connectorRefs, Map<String, String> volumeToMountPath,
       String workDirPath, ContainerSecurityContext ctrSecurityContext, String logPrefix,
       List<SecretVariableDetails> secretVariableDetails, Map<String, ConnectorDetails> githubApiTokenFunctorConnectors,
@@ -332,6 +330,10 @@ public class K8InitializeTaskParamsBuilder {
         k8InitializeTaskUtils.getSecretVariableDetails(ngAccess, containerDefinitionInfo, secretVariableDetails);
 
     Map<String, String> envVarsWithSecretRef = k8InitializeTaskUtils.removeEnvVarsWithSecretRef(envVars);
+    if(GIT_CLONE_STEP_ID.equals(containerDefinitionInfo.getStepIdentifier())) {
+      envVars.putAll(gitEnvVars);
+    }
+
     envVars.putAll(commonEnvVars); //  commonEnvVars needs to be put in end because they overrides webhook parameters
     if (containerDefinitionInfo.getContainerType() == CIContainerType.SERVICE) {
       envVars.put(HARNESS_SERVICE_LOG_KEY_VARIABLE,
@@ -400,7 +402,7 @@ public class K8InitializeTaskParamsBuilder {
         k8InitializeServiceUtils.createServiceContainerDefinitions(stageElementConfig, portFinder, os);
     List<ContainerDefinitionInfo> stepCtrDefinitionInfos =
         k8InitializeStepUtils.createStepContainerDefinitions(initializeStepInfo.getExecutionElementConfig().getSteps(),
-            stageElementConfig, ciExecutionArgs, portFinder, AmbianceUtils.getAccountId(ambiance), os);
+            stageElementConfig, ciExecutionArgs, portFinder, AmbianceUtils.getAccountId(ambiance), os, ambiance);
 
     List<ContainerDefinitionInfo> containerDefinitionInfos = new ArrayList<>();
     containerDefinitionInfos.addAll(serviceCtrDefinitionInfos);

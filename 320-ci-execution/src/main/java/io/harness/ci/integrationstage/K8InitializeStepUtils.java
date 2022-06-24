@@ -105,10 +105,11 @@ public class K8InitializeStepUtils {
   @Inject private CIExecutionConfigService ciExecutionConfigService;
   @Inject private CIFeatureFlagService featureFlagService;
   @Inject private ConnectorUtils connectorUtils;
+  @Inject private CodebaseUtils codebaseUtils;
 
   public List<ContainerDefinitionInfo> createStepContainerDefinitions(List<ExecutionWrapperConfig> steps,
       StageElementConfig integrationStage, CIExecutionArgs ciExecutionArgs, PortFinder portFinder, String accountId,
-      OSType os) {
+      OSType os, Ambiance ambiance) {
     List<ContainerDefinitionInfo> containerDefinitionInfos = new ArrayList<>();
     if (steps == null) {
       return containerDefinitionInfos;
@@ -134,7 +135,7 @@ public class K8InitializeStepUtils {
             Math.max(0, stageCpuRequest - getContainerCpuLimit(containerResource, "stepType", "stepId", accountId));
         ContainerDefinitionInfo containerDefinitionInfo =
             createStepContainerDefinition(stepElementConfig, integrationStage, ciExecutionArgs, portFinder, stepIndex,
-                accountId, os, extraMemoryPerStep, extraCPUPerStep);
+                accountId, os, extraMemoryPerStep, extraCPUPerStep, ambiance);
         if (containerDefinitionInfo != null) {
           containerDefinitionInfos.add(containerDefinitionInfo);
         }
@@ -156,7 +157,7 @@ public class K8InitializeStepUtils {
                 IntegrationStageUtils.getStepElementConfig(executionWrapperInParallel);
             ContainerDefinitionInfo containerDefinitionInfo =
                 createStepContainerDefinition(stepElementConfig, integrationStage, ciExecutionArgs, portFinder,
-                    stepIndex, accountId, os, extraMemoryPerStep, extraCPUPerStep);
+                    stepIndex, accountId, os, extraMemoryPerStep, extraCPUPerStep, ambiance);
             if (containerDefinitionInfo != null) {
               containerDefinitionInfos.add(containerDefinitionInfo);
             }
@@ -169,7 +170,7 @@ public class K8InitializeStepUtils {
 
   private ContainerDefinitionInfo createStepContainerDefinition(StepElementConfig stepElement,
       StageElementConfig integrationStage, CIExecutionArgs ciExecutionArgs, PortFinder portFinder, int stepIndex,
-      String accountId, OSType os, Integer extraMemoryPerStep, Integer extraCPUPerStep) {
+      String accountId, OSType os, Integer extraMemoryPerStep, Integer extraCPUPerStep, Ambiance ambiance) {
     if (!(stepElement.getStepSpecType() instanceof CIStepInfo)) {
       return null;
     }
@@ -201,7 +202,15 @@ public class K8InitializeStepUtils {
         GitCloneStepInfo gitCloneStepInfo = ((GitCloneStepInfo) ciStepInfo);
 
         //Create a PluginStepInfo from the GitCloneStepInfo
-        PluginStepInfo pluginStepInfo = createPluginStepInfo(gitCloneStepInfo, ciExecutionConfigService, accountId, os );
+        PluginStepInfo pluginStepInfo = createPluginStepInfo(gitCloneStepInfo, ciExecutionConfigService, accountId, os);
+
+        //Add the Git Environment variables
+        NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
+        ConnectorDetails gitConnector = codebaseUtils.getGitConnector(
+                ngAccess, pluginStepInfo.getConnectorRef().getValue(), false);
+        Map<String, String> gitEnvVars = codebaseUtils.getGitEnvVariables(gitConnector,
+                gitCloneStepInfo.getProjectName().getValue(), gitCloneStepInfo.getRepoName().getValue());
+        pluginStepInfo.getEnvVariables().putAll(gitEnvVars);
 
         return createPluginStepContainerDefinition(pluginStepInfo, integrationStage, ciExecutionArgs,
                 portFinder, stepIndex, stepElement.getIdentifier(), stepElement.getName(), accountId, os,
@@ -825,8 +834,8 @@ public class K8InitializeStepUtils {
 
     PluginStepInfo step = PluginStepInfo.builder()
             .connectorRef(gitCloneStepInfo.getConnectorRef())
-            .identifier(GIT_CLONE_STEP_ID)
-            .name(GIT_CLONE_STEP_NAME)
+            .identifier(gitCloneStepInfo.getIdentifier())
+            .name(gitCloneStepInfo.getName())
             .settings(ParameterField.createValueField(settings))
             .envVariables(envVariables)
             .entrypoint(entrypoint)

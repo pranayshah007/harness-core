@@ -54,6 +54,7 @@ import io.harness.steps.StepUtils;
 import io.harness.stoserviceclient.STOServiceUtils;
 import io.harness.tiserviceclient.TIServiceUtils;
 import io.harness.util.CIVmSecretEvaluator;
+import io.harness.yaml.extended.ci.codebase.CodeBase;
 import io.harness.yaml.utils.NGVariablesUtils;
 
 import com.google.inject.Inject;
@@ -116,10 +117,12 @@ public class VmInitializeTaskParamsBuilder {
                                           .build();
 
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
+    final CodeBase ciCodebase = initializeStepInfo.getCiCodebase();
     ConnectorDetails gitConnector = codebaseUtils.getGitConnector(
-        ngAccess, initializeStepInfo.getCiCodebase(), initializeStepInfo.isSkipGitClone());
+        ngAccess, ciCodebase.getConnectorRef().getValue(), initializeStepInfo.isSkipGitClone());
     Map<String, String> codebaseEnvVars = codebaseUtils.getCodebaseVars(ambiance, ciExecutionArgs);
-    Map<String, String> gitEnvVars = codebaseUtils.getGitEnvVariables(gitConnector, initializeStepInfo.getCiCodebase());
+    Map<String, String> gitEnvVars = codebaseUtils.getGitEnvVariables(gitConnector,
+            ciCodebase.getProjectName().getValue(), ciCodebase.getRepoName().getValue());
 
     Map<String, String> envVars = new HashMap<>();
     envVars.putAll(codebaseEnvVars);

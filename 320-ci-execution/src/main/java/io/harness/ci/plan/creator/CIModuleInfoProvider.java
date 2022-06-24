@@ -133,7 +133,9 @@ public class CIModuleInfoProvider implements ExecutionSummaryModuleInfoProvider 
                   baseNGAccess, initializeStepInfo.getCiCodebase().getConnectorRef().getValue());
               if (executionTriggerInfo.getTriggerType() == TriggerType.WEBHOOK) {
                 url =
-                    IntegrationStageUtils.getGitURLFromConnector(connectorDetails, initializeStepInfo.getCiCodebase());
+                    IntegrationStageUtils.getGitURLFromConnector(connectorDetails,
+                            initializeStepInfo.getCiCodebase().getProjectName().getValue(),
+                            initializeStepInfo.getCiCodebase().getRepoName().getValue());
               }
               if (url == null) {
                 url = connectorUtils.retrieveURL(connectorDetails);
