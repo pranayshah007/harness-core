@@ -41,6 +41,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.joor.Reflect.on;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyList;
@@ -289,13 +290,13 @@ public class K8sTaskHelperTest extends CategoryTest {
 
     verify(mockGitService, times(1))
         .downloadFiles(eq(GitConfig.builder().repoUrl(REPO_URL).build()), any(GitFileConfig.class), eq("./dir"),
-            eq(false), false, null);
+            eq(false), eq(false), eq(logCallback));
     verify(mockEncryptionService, times(1)).decrypt(any(), anyList(), eq(false));
 
     // handle exception
     doThrow(new RuntimeException())
         .when(mockGitService)
-        .downloadFiles(any(GitConfig.class), any(GitFileConfig.class), anyString(), eq(false), false, null);
+        .downloadFiles(any(GitConfig.class), any(GitFileConfig.class), anyString(), eq(false), eq(false), any());
     assertThat(
         spyHelper.fetchManifestFilesAndWriteToDirectory(
             K8sDelegateManifestConfig.builder()
@@ -334,7 +335,7 @@ public class K8sTaskHelperTest extends CategoryTest {
     verify(scmFetchFilesHelper, times(1)).downloadFilesUsingScm(any(), any(), any(), any());
     verify(mockGitService, times(0))
         .downloadFiles(eq(GitConfig.builder().repoUrl(REPO_URL).build()), any(GitFileConfig.class), eq("./dir"),
-            eq(false), false, null);
+            eq(false), eq(false), any());
     verify(mockEncryptionService, times(1)).decrypt(any(), anyList(), eq(false));
 
     // handle exception
