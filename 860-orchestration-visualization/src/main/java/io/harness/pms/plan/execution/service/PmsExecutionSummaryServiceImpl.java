@@ -109,7 +109,8 @@ public class PmsExecutionSummaryServiceImpl implements PmsExecutionSummaryServic
       }
       PipelineExecutionSummaryEntity pipelineExecutionSummaryEntity = entity.get();
       Map<String, GraphLayoutNodeDTO> graphLayoutNodeDTOMap = pipelineExecutionSummaryEntity.getLayoutNodeMap();
-      if (graphLayoutNodeDTOMap.containsKey(nodeExecution.getUuid())) {
+      if (graphLayoutNodeDTOMap.containsKey(nodeExecution.getUuid())
+          && graphLayoutNodeDTOMap.get(nodeExecution.getUuid()).getNodeExecutionId() != null) {
         return;
       }
       GraphLayoutNodeDTO graphLayoutNodeDTO = graphLayoutNodeDTOMap.get(stageSetupId);
