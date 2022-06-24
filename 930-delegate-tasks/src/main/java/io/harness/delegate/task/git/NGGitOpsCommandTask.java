@@ -159,6 +159,7 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
             .build();
       }
 
+      logCallback.saveExecutionLog(format("PR Link: %s", gitOpsTaskParams.getPrLink(), INFO));
       logCallback.saveExecutionLog(
           format("%s", ((GitApiMergePRTaskResponse) responseData.getGitApiResult()).getMessage()), INFO);
       logCallback.saveExecutionLog(
