@@ -8,6 +8,7 @@
 package io.harness.shell;
 
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.filesystem.FileIo.createDirectoryIfDoesNotExist;
 import static io.harness.filesystem.FileIo.deleteDirectoryAndItsContentIfExists;
 import static io.harness.filesystem.FileIo.deleteFileIfExists;
@@ -37,14 +38,18 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
@@ -104,13 +109,16 @@ public class ScriptProcessExecutor extends AbstractScriptExecutor {
 
       if (!isEmpty(config.getKubeConfigContent())) {
         try (FileOutputStream outputStream = new FileOutputStream(kubeConfigFile)) {
-          outputStream.write(config.getKubeConfigContent().getBytes(Charset.forName("UTF-8")));
+          outputStream.write(config.getKubeConfigContent().getBytes(StandardCharsets.UTF_8));
           environment.put(HARNESS_KUBE_CONFIG_PATH, kubeConfigFile.getCanonicalPath());
         }
       }
 
+      Optional<Path> gcpKeyFile = createGcpKeyFileIfNeeded(workingDirectory.toPath());
+      gcpKeyFile.ifPresent(updateEnvironmentWithGcpPath(environment));
+
       try (FileOutputStream outputStream = new FileOutputStream(scriptFile)) {
-        outputStream.write(command.getBytes(Charset.forName("UTF-8")));
+        outputStream.write(command.getBytes(StandardCharsets.UTF_8));
 
         String[] commandList = new String[] {"/bin/bash", scriptFilename};
         ProcessExecutor processExecutor =
@@ -148,6 +156,9 @@ public class ScriptProcessExecutor extends AbstractScriptExecutor {
         } else {
           deleteFileIfExists(scriptFile.getAbsolutePath());
           deleteFileIfExists(kubeConfigFile.getAbsolutePath());
+          if (gcpKeyFile.isPresent()) {
+            deleteFileIfExists(gcpKeyFile.get().toAbsolutePath().toString());
+          }
         }
       }
     } catch (IOException e) {
@@ -231,6 +242,9 @@ public class ScriptProcessExecutor extends AbstractScriptExecutor {
       }
     }
 
+    Optional<Path> gcpKeyFile = createGcpKeyFileIfNeeded(workingDirectory.toPath());
+    gcpKeyFile.ifPresent(updateEnvironmentWithGcpPath(environment));
+
     String envVariablesFilename;
     File envVariablesOutputFile = null;
 
@@ -251,7 +265,7 @@ public class ScriptProcessExecutor extends AbstractScriptExecutor {
 
     Map<String, String> envVariablesMap = new HashMap<>();
     try (FileOutputStream outputStream = new FileOutputStream(scriptFile)) {
-      outputStream.write(command.getBytes(Charset.forName("UTF-8")));
+      outputStream.write(command.getBytes(StandardCharsets.UTF_8));
       Files.setPosixFilePermissions(scriptFile.toPath(),
           newHashSet(
               PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_EXECUTE, PosixFilePermission.OWNER_WRITE));
@@ -287,7 +301,7 @@ public class ScriptProcessExecutor extends AbstractScriptExecutor {
       commandExecutionStatus = processResult.getExitValue() == 0 ? SUCCESS : FAILURE;
       if (commandExecutionStatus == SUCCESS && envVariablesOutputFile != null) {
         try (BufferedReader br =
-                 new BufferedReader(new InputStreamReader(new FileInputStream(envVariablesOutputFile), "UTF-8"))) {
+                 new BufferedReader(new InputStreamReader(new FileInputStream(envVariablesOutputFile), StandardCharsets.UTF_8))) {
           processScriptOutputFile(envVariablesMap, br, secretVariablesToCollect);
         } catch (IOException e) {
           saveExecutionLog("IOException:" + e, ERROR);
@@ -312,6 +326,9 @@ public class ScriptProcessExecutor extends AbstractScriptExecutor {
         deleteFileIfExists(kubeConfigFile.getAbsolutePath());
         if (envVariablesOutputFile != null) {
           deleteFileIfExists(envVariablesOutputFile.getAbsolutePath());
+        }
+        if (gcpKeyFile.isPresent()) {
+          deleteFileIfExists(gcpKeyFile.get().toAbsolutePath().toString());
         }
       }
     }
@@ -362,5 +379,19 @@ public class ScriptProcessExecutor extends AbstractScriptExecutor {
   @Override
   public String getHost() {
     return null;
+  }
+
+  private Optional<Path> createGcpKeyFileIfNeeded(Path workingDir) throws IOException {
+    if (isNotEmpty(config.getGcpKeyFileContent())) {
+      Path gcpKeyFile = Files.createTempFile(workingDir, "gcpKey-", ".json");
+      Files.write(gcpKeyFile, new String(config.getGcpKeyFileContent()).getBytes(StandardCharsets.UTF_8));
+      return Optional.of(gcpKeyFile);
+    } else {
+      return Optional.empty();
+    }
+  }
+
+  private Consumer<Path> updateEnvironmentWithGcpPath(Map<String, String> environment) {
+    return path -> environment.put("GOOGLE_APPLICATION_CREDENTIALS", path.toAbsolutePath().toString());
   }
 }
