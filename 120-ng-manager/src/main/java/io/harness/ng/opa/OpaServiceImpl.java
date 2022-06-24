@@ -16,7 +16,6 @@ import io.harness.data.structure.HarnessStringUtils;
 import io.harness.exception.InvalidRequestException;
 import io.harness.network.SafeHttpCall;
 import io.harness.opaclient.OpaServiceClient;
-import io.harness.opaclient.OpaUtils;
 import io.harness.opaclient.model.OpaConstants;
 import io.harness.opaclient.model.OpaEvaluationResponseHolder;
 import io.harness.opaclient.model.OpaPolicyEvaluationResponse;
@@ -30,13 +29,11 @@ import io.harness.serializer.JsonUtils;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import lombok.AllArgsConstructor;
@@ -131,13 +128,6 @@ public class OpaServiceImpl implements OpaService {
     Map<String, String> metadataMap = ImmutableMap.<String, String>builder().put("entityName", name).build();
 
     return URLEncoder.encode(JsonUtils.asJson(metadataMap), StandardCharsets.UTF_8.toString());
-  }
-
-  public OpaEvaluationContext createEvaluationContext(String yaml, String key) throws IOException {
-    return OpaEvaluationContext.builder()
-        .entity(OpaUtils.extractObjectFromYamlString(yaml, key))
-        .date(new Date())
-        .build();
   }
 
   private String getUserIdentifier() {

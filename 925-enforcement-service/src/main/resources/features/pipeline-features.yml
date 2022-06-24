@@ -22,6 +22,21 @@ features:
       COMMUNITY:
         restrictionType: AVAILABILITY
         enabled: true
+  - name: INTEGRATED_APPROVALS_WITH_CUSTOM_SCRIPT
+    description: Support for Integrated approvals with Custom Shell Script
+    restrictions:
+      FREE:
+        restrictionType: AVAILABILITY
+        enabled: false
+      TEAM:
+        restrictionType: AVAILABILITY
+        enabled: true
+      ENTERPRISE:
+        restrictionType: AVAILABILITY
+        enabled: true
+      COMMUNITY:
+        restrictionType: AVAILABILITY
+        enabled: false
   - name: INTEGRATED_APPROVALS_WITH_JIRA
     description: Support for Integrated approvals with Harness JIRA
     restrictions:

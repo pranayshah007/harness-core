@@ -1,4 +1,5 @@
 io.harness.steps.approval.step.jira.JiraApprovalOutcome
+io.harness.steps.approval.step.custom.CustomApprovalOutcome
 io.harness.steps.section.chain.SectionChainStepParameters
 io.harness.yaml.core.properties.NGProperties
 io.harness.steps.resourcerestraint.beans.ResourceRestraintOutcome
@@ -42,17 +43,20 @@ io.harness.steps.shellscript.SshInfraDelegateConfigOutput
 io.harness.steps.barriers.beans.BarrierOutcome
 io.harness.when.beans.StageWhenCondition
 io.harness.steps.approval.step.jira.JiraApprovalSpecParameters
+io.harness.steps.approval.step.custom.CustomApprovalSpecParameters
 io.harness.plancreator.steps.http.HttpStepInfo
 io.harness.plancreator.steps.http.HttpStepNode
 io.harness.steps.jira.create.JiraCreateStepNode
 io.harness.steps.jira.update.JiraUpdateStepNode
 io.harness.steps.approval.step.jira.JiraApprovalStepNode
+io.harness.steps.approval.step.custom.CustomApprovalStepNode
 io.harness.steps.approval.step.harness.HarnessApprovalStepNode
 io.harness.plancreator.steps.barrier.BarrierStepNode
 io.harness.steps.shellscript.ShellScriptStepNode
 io.harness.steps.template.TemplateStepNode
 io.harness.steps.template.stage.TemplateStageNode
 io.harness.steps.approval.step.jira.JiraApprovalStepInfo
+io.harness.steps.approval.step.custom.CustomApprovalStepInfo
 io.harness.advisers.rollback.OnFailRollbackParameters
 io.harness.steps.shellscript.ShellScriptSourceWrapper
 io.harness.steps.shellscript.ShellScriptInlineSource

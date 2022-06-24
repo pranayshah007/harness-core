@@ -16,6 +16,7 @@ import io.harness.connector.ConnectorDTO;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.opa.OpaEvaluationContext;
 import io.harness.ng.opa.OpaService;
+import io.harness.opaclient.OpaUtils;
 import io.harness.opaclient.model.OpaConstants;
 import io.harness.pms.contracts.governance.GovernanceMetadata;
 import io.harness.remote.client.RestClientUtils;
@@ -26,6 +27,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.google.inject.Inject;
 import java.io.IOException;
+
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -35,6 +37,12 @@ import lombok.extern.slf4j.Slf4j;
 public class OpaConnectorServiceImpl implements OpaConnectorService {
   private OpaService opaService;
   private AccountClient accountClient;
+
+  public ConnectorOpaEvaluationContext createEvaluationContext(String yaml, String key) throws IOException {
+    return ConnectorOpaEvaluationContext.builder()
+            .entity(OpaUtils.extractObjectFromYamlString(yaml, key))
+            .build();
+  }
 
   public GovernanceMetadata evaluatePoliciesWithEntity(String accountId, ConnectorDTO connectorDTO,
       String orgIdentifier, String projectIdentifier, String action, String identifier) {
@@ -51,7 +59,7 @@ public class OpaConnectorServiceImpl implements OpaConnectorService {
 
     try {
       String expandedYaml = getConnectorYaml(connectorDTO);
-      context = opaService.createEvaluationContext(expandedYaml, OpaConstants.OPA_EVALUATION_TYPE_CONNECTOR);
+      context = createEvaluationContext(expandedYaml, OpaConstants.OPA_EVALUATION_TYPE_CONNECTOR);
       return opaService.evaluate(context, accountId, orgIdentifier, projectIdentifier, identifier, action,
           OpaConstants.OPA_EVALUATION_TYPE_CONNECTOR);
     } catch (IOException ex) {
@@ -85,7 +93,7 @@ public class OpaConnectorServiceImpl implements OpaConnectorService {
     }
     OpaEvaluationContext context;
     try {
-      context = opaService.createEvaluationContext(expandedJson, OpaConstants.OPA_EVALUATION_TYPE_CONNECTOR);
+      context = createEvaluationContext(expandedJson, OpaConstants.OPA_EVALUATION_TYPE_CONNECTOR);
       opaService.evaluate(context, accountId, orgIdentifier, projectIdentifier, identifier, action,
           OpaConstants.OPA_EVALUATION_TYPE_CONNECTOR);
     } catch (IOException ex) {
