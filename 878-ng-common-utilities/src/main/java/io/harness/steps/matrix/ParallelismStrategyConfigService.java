@@ -10,6 +10,7 @@ package io.harness.steps.matrix;
 import io.harness.plancreator.strategy.StrategyConfig;
 import io.harness.pms.contracts.execution.ChildrenExecutableResponse;
 import io.harness.pms.contracts.execution.StrategyMetadata;
+import io.harness.pms.yaml.ParameterField;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,7 +18,10 @@ import java.util.List;
 public class ParallelismStrategyConfigService implements StrategyConfigService {
   @Override
   public List<ChildrenExecutableResponse.Child> fetchChildren(StrategyConfig strategyConfig, String childNodeId) {
-    Integer parallelism = strategyConfig.getParallelism();
+    Integer parallelism = 0;
+    if (!ParameterField.isBlank(strategyConfig.getParallelism())) {
+      parallelism = strategyConfig.getParallelism().getValue();
+    }
     List<ChildrenExecutableResponse.Child> children = new ArrayList<>();
     for (int i = 0; i < parallelism; i++) {
       children.add(ChildrenExecutableResponse.Child.newBuilder()

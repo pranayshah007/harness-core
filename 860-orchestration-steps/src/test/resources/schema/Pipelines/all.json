@@ -905,12 +905,32 @@
       "type": "object",
       "properties": {
         "iteration": {
-          "type": "integer",
-          "format": "int32"
+          "oneOf": [
+            {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            },
+            {
+              "type": "string",
+              "pattern": "<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>",
+              "minLength": 1
+            }
+          ]
         },
         "maxConcurrency": {
-          "type": "integer",
-          "format": "int32"
+          "oneOf": [
+            {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            },
+            {
+              "type": "string",
+              "pattern": "<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>",
+              "minLength": 1
+            }
+          ]
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -1335,14 +1355,33 @@
           "type": "object",
           "properties": {
             "exclude": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/ExcludeConfig"
-              }
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldListExcludeConfig"
+                },
+                {
+                  "type": "array"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "minLength": 1
+                }
+              ]
             },
             "maxConcurrency": {
-              "type": "integer",
-              "format": "int32"
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0
+                },
+                {
+                  "type": "string",
+                  "pattern": "<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>",
+                  "minLength": 1
+                }
+              ]
             }
           }
         }
@@ -1719,6 +1758,45 @@
         },
         "value": {
           "type": "object"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ParameterFieldListExcludeConfig": {
+      "type": "object",
+      "properties": {
+        "defaultValue": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ExcludeConfig"
+          }
+        },
+        "executionInput": {
+          "type": "boolean"
+        },
+        "expression": {
+          "type": "boolean"
+        },
+        "expressionValue": {
+          "type": "string"
+        },
+        "inputSetValidator": {
+          "$ref": "#/definitions/InputSetValidator"
+        },
+        "jsonResponseField": {
+          "type": "boolean"
+        },
+        "responseField": {
+          "type": "string"
+        },
+        "typeString": {
+          "type": "boolean"
+        },
+        "value": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ExcludeConfig"
+          }
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -3076,6 +3154,9 @@
           "type": "string",
           "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"
         },
+        "strategy": {
+          "$ref": "#/definitions/StrategyConfig"
+        },
         "timeout": {
           "type": "string",
           "pattern": "^(([1-9])+\\d+[s])|(((([1-9])+\\d*[mhwd])+([\\s]?\\d+[smhwd])*)|(<\\+input>.*)|(.*<\\+.*>.*))$"
@@ -3410,8 +3491,18 @@
           ]
         },
         "parallelism": {
-          "type": "integer",
-          "format": "int32"
+          "oneOf": [
+            {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            },
+            {
+              "type": "string",
+              "pattern": "<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>",
+              "minLength": 1
+            }
+          ]
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -3421,6 +3512,16 @@
             {
               "required": [
                 "parallelism"
+              ]
+            },
+            {
+              "required": [
+                "for"
+              ]
+            },
+            {
+              "required": [
+                "matrix"
               ]
             }
           ]
