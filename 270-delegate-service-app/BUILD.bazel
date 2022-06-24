@@ -347,7 +347,6 @@ shared_dependencies = [
     "@maven//:io_kubernetes_client_java_api",
     "@maven//:io_kubernetes_client_java_extended",
     "@maven//:io_kubernetes_client_java_proto",
-    "@maven//:io_netty_netty",
     "@maven//:io_netty_netty_buffer",
     "@maven//:io_netty_netty_codec",
     "@maven//:io_netty_netty_codec_dns",

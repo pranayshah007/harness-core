@@ -4668,7 +4668,6 @@ plain_artifacts = [
     "io.kubernetes:client-java-proto:11.0.2",
     "io.kubernetes:client-java:11.0.2",
     "io.leangen.graphql:spqr:0.11.2",
-    "io.netty:netty:3.10.6.Final",
     "io.netty:netty-all:4.1.77.Final",
     "io.netty:netty-buffer:4.1.77.Final",
     "io.netty:netty-handler-proxy:4.1.77.Final",
