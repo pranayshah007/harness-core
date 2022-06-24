@@ -459,26 +459,25 @@ public class StepUtils {
         // Delegate Selector Precedence: 1)Step -> 2)stepGroup -> 3)Stage ->  4)Pipeline
 
         ParameterField<List<TaskSelectorYaml>> delegateSelectors = withDelegateSelector.fetchDelegateSelectors();
-        if (!ParameterField.isNull(withDelegateSelector.fetchDelegateSelectors())
-            && !isEmpty(delegateSelectors.getValue())) {
+        if (hasDelegateSelectors(delegateSelectors, withDelegateSelector)) {
           setOriginAndDelegateSelectors(delegateSelectors, withDelegateSelector, STEP);
           return;
         }
 
         delegateSelectors = delegateSelectorsFromFqn(ctx, STEP_GROUP);
-        if (!ParameterField.isNull(delegateSelectors) && !isEmpty(delegateSelectors.getValue())) {
+        if (hasDelegateSelectors(delegateSelectors, withDelegateSelector)) {
           setOriginAndDelegateSelectors(delegateSelectors, withDelegateSelector, STEP_GROUP);
           return;
         }
 
         delegateSelectors = delegateSelectorsFromFqn(ctx, STAGE);
-        if (!ParameterField.isNull(delegateSelectors) && !isEmpty(delegateSelectors.getValue())) {
+        if (hasDelegateSelectors(delegateSelectors, withDelegateSelector)) {
           setOriginAndDelegateSelectors(delegateSelectors, withDelegateSelector, STAGE);
           return;
         }
 
         delegateSelectors = delegateSelectorsFromFqn(ctx, YAMLFieldNameConstants.PIPELINE);
-        if (!ParameterField.isNull(delegateSelectors) && !isEmpty(delegateSelectors.getValue())) {
+        if (hasDelegateSelectors(delegateSelectors, withDelegateSelector)) {
           setOriginAndDelegateSelectors(delegateSelectors, withDelegateSelector, YAMLFieldNameConstants.PIPELINE);
         }
       }
@@ -491,5 +490,18 @@ public class StepUtils {
       WithDelegateSelector withDelegateSelector, String origin) {
     delegateSelectors.getValue().forEach(selector -> selector.setOrigin(origin));
     withDelegateSelector.setDelegateSelectors(delegateSelectors);
+  }
+
+  private static boolean hasDelegateSelectors(
+      ParameterField<List<TaskSelectorYaml>> delegateSelectors, WithDelegateSelector withDelegateSelector) {
+    if (ParameterField.isNull(withDelegateSelector.fetchDelegateSelectors()) || isEmpty(delegateSelectors.getValue())) {
+      return false;
+    }
+    List<TaskSelectorYaml> selectorYamls =
+        delegateSelectors.getValue().stream().filter(s -> isNotEmpty(s.getDelegateSelectors())).collect(toList());
+    if (selectorYamls.isEmpty()) {
+      return false;
+    }
+    return true;
   }
 }
