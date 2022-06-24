@@ -13,6 +13,7 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.exception.InvalidYamlException;
 import io.harness.pms.contracts.plan.Dependencies;
 import io.harness.pms.contracts.plan.FilterCreationBlobRequest;
 import io.harness.pms.contracts.plan.FilterCreationBlobResponse;
@@ -99,6 +100,10 @@ public class FilterCreatorService
             FilterCreationContext.builder().currentField(yamlField).setupMetadata(setupMetadata).build(), obj);
       } catch (IOException e) {
         // YamlUtils.getErrorNodePartialFQN() uses exception path to build FQN
+        if (e.getCause() instanceof InvalidYamlException) {
+          log.error(e.getMessage());
+          throw new InvalidYamlException(e.getMessage());
+        }
         log.error(format("Invalid yaml in node [%s]", YamlUtils.getErrorNodePartialFQN(yamlField.getNode(), e)), e);
         throw new InvalidYamlRuntimeException("Invalid yaml in node [%s]", e, yamlField.getNode());
       }
