@@ -61,4 +61,7 @@ public class K8sDelegateManifestConfig implements NestedAnnotationResolver {
   private boolean optimizedFilesFetch;
 
   private boolean shouldSaveManifest;
+
+  // getting use in k8s swimlane
+  private boolean useGitFetchCommandTimeout;
 }

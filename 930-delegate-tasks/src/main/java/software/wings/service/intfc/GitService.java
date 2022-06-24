@@ -28,16 +28,17 @@ public interface GitService {
   void ensureRepoLocallyClonedAndUpdated(GitOperationContext gitOperationContext);
 
   GitFetchFilesResult fetchFilesByPath(GitConfig gitConfig, String connectorId, String commitId, String branch,
-      List<String> filePaths, boolean useBranch, boolean shouldExportCommitSha);
+      List<String> filePaths, boolean useBranch, boolean shouldExportCommitSha, boolean useGitFetchCommandTimeout);
 
-  GitFetchFilesResult fetchFilesBetweenCommits(
-      GitConfig gitConfig, String newCommitId, String oldCommitId, String connectorId);
+  GitFetchFilesResult fetchFilesBetweenCommits(GitConfig gitConfig, String newCommitId, String oldCommitId,
+      String connectorId, boolean useGitFetchCommandTimeout);
 
   GitFetchFilesResult fetchFilesByPath(GitConfig gitConfig, String connectorId, String commitId, String branch,
-      List<String> filePaths, boolean useBranch, List<String> fileExtensions, boolean isRecursive);
+      List<String> filePaths, boolean useBranch, List<String> fileExtensions, boolean isRecursive,
+      boolean useGitFetchCommandTimeout);
 
-  String downloadFiles(
-      GitConfig gitConfig, GitFileConfig gitFileConfig, String destinationDirectory, boolean shouldExportCommitSha);
+  String downloadFiles(GitConfig gitConfig, GitFileConfig gitFileConfig, String destinationDirectory,
+      boolean shouldExportCommitSha, boolean useGitFetchCommandTimeout);
 
   GitCommitAndPushResult commitAndPush(GitOperationContext gitOperationContext);
 }

@@ -102,7 +102,7 @@ public class TriggerTask extends AbstractDelegateRunnableTask {
 
       gitConfig.setGitRepoType(GitRepositoryType.TRIGGER);
       GitFetchFilesResult gitFetchFilesResult =
-          gitService.fetchFilesBetweenCommits(gitConfig, currentCommitId, oldCommitId, gitConnectorId);
+          gitService.fetchFilesBetweenCommits(gitConfig, currentCommitId, oldCommitId, gitConnectorId, false);
 
       boolean deploymentNeeded = isDeploymentNeeded(filePaths, gitFetchFilesResult.getFiles());
       return TriggerDeploymentNeededResponse.builder()

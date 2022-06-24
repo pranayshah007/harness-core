@@ -56,6 +56,7 @@ public class GitFetchFilesTaskParams
   private boolean isGitHostConnectivityCheck;
   private boolean optimizedFilesFetch;
   private boolean shouldInheritGitFetchFilesConfigMap;
+  private boolean useGitFetchCommandTimeout;
 
   @Override
   public List<ExecutionCapability> fetchRequiredExecutionCapabilities(ExpressionEvaluator maskingEvaluator) {

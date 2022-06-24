@@ -382,7 +382,8 @@ public enum FeatureName {
   CCM_MICRO_FRONTEND,
   GITOPS_BYO_ARGO,
   NG_GIT_EXPERIENCE_IMPORT_FLOW,
-  CVNG_LICENSE_ENFORCEMENT;
+  CVNG_LICENSE_ENFORCEMENT,
+  ADD_STATIC_GIT_COMMAND_FETCH_TIMEOUT; // Currently only getting used for k8s and helm swimlanes
 
   FeatureName() {
     scope = Scope.PER_ACCOUNT;

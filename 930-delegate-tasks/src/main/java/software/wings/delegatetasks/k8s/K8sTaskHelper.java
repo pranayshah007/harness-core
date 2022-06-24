@@ -317,7 +317,7 @@ public class K8sTaskHelper {
             manifestFilesDirectory, gitFileConfig, gitConfig, executionLogCallback);
       } else {
         latestCommitSha = gitService.downloadFiles(
-            gitConfig, gitFileConfig, manifestFilesDirectory, delegateManifestConfig.isShouldSaveManifest());
+            gitConfig, gitFileConfig, manifestFilesDirectory, delegateManifestConfig.isShouldSaveManifest(), false);
         if (delegateManifestConfig.isShouldSaveManifest()) {
           delegateManifestConfig.getGitFileConfig().setUseBranch(false);
           delegateManifestConfig.getGitFileConfig().setCommitId(latestCommitSha);

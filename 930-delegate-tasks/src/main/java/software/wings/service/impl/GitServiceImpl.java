@@ -149,7 +149,7 @@ public class GitServiceImpl implements GitService {
 
   @Override
   public GitFetchFilesResult fetchFilesByPath(GitConfig gitConfig, String connectorId, String commitId, String branch,
-      List<String> filePaths, boolean useBranch, boolean shouldExportCommitSha) {
+      List<String> filePaths, boolean useBranch, boolean shouldExportCommitSha, boolean useGitFetchCommandTimeout) {
     return gitClient.fetchFilesByPath(gitConfig,
         GitFetchFilesRequest.builder()
             .commitId(commitId)
@@ -158,13 +158,14 @@ public class GitServiceImpl implements GitService {
             .gitConnectorId(connectorId)
             .useBranch(useBranch)
             .recursive(true)
+            .useGitFetchCommandTimeout(useGitFetchCommandTimeout)
             .build(),
         shouldExportCommitSha);
   }
 
   @Override
-  public String downloadFiles(
-      GitConfig gitConfig, GitFileConfig gitFileConfig, String destinationDirectory, boolean shouldExportCommitSha) {
+  public String downloadFiles(GitConfig gitConfig, GitFileConfig gitFileConfig, String destinationDirectory,
+      boolean shouldExportCommitSha, boolean useGitFetchCommandTimeout) {
     return gitClient.downloadFiles(gitConfig,
         GitFetchFilesRequest.builder()
             .commitId(gitFileConfig.getCommitId())
@@ -173,24 +174,27 @@ public class GitServiceImpl implements GitService {
             .gitConnectorId(gitFileConfig.getConnectorId())
             .useBranch(gitFileConfig.isUseBranch())
             .recursive(true)
+            .useGitFetchCommandTimeout(useGitFetchCommandTimeout)
             .build(),
         destinationDirectory, shouldExportCommitSha);
   }
 
   @Override
-  public GitFetchFilesResult fetchFilesBetweenCommits(
-      GitConfig gitConfig, String newCommitId, String oldCommitId, String connectorId) {
+  public GitFetchFilesResult fetchFilesBetweenCommits(GitConfig gitConfig, String newCommitId, String oldCommitId,
+      String connectorId, boolean useGitFetchCommandTimeout) {
     return gitClient.fetchFilesBetweenCommits(gitConfig,
         GitFilesBetweenCommitsRequest.builder()
             .newCommitId(newCommitId)
             .oldCommitId(oldCommitId)
             .gitConnectorId(connectorId)
+            .useGitFetchCommandTimeout(useGitFetchCommandTimeout)
             .build());
   }
 
   @Override
   public GitFetchFilesResult fetchFilesByPath(GitConfig gitConfig, String connectorId, String commitId, String branch,
-      List<String> filePaths, boolean useBranch, List<String> fileExtensions, boolean isRecursive) {
+      List<String> filePaths, boolean useBranch, List<String> fileExtensions, boolean isRecursive,
+      boolean useGitFetchCommandTimeout) {
     return gitClient.fetchFilesByPath(gitConfig,
         GitFetchFilesRequest.builder()
             .commitId(commitId)
@@ -200,6 +204,7 @@ public class GitServiceImpl implements GitService {
             .useBranch(useBranch)
             .fileExtensions(fileExtensions)
             .recursive(isRecursive)
+            .useGitFetchCommandTimeout(useGitFetchCommandTimeout)
             .build(),
         false);
   }

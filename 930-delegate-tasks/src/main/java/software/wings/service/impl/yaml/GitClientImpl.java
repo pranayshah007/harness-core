@@ -593,7 +593,8 @@ public class GitClientImpl implements GitClient {
                      .toString());
 
         gitClientHelper.createDirStructureForFileDownload(gitConfig, gitConnectorId);
-        cloneRepoForFilePathCheckout(gitConfig, StringUtils.EMPTY, gitConnectorId, false);
+        cloneRepoForFilePathCheckout(
+            gitConfig, StringUtils.EMPTY, gitConnectorId, gitRequest.isUseGitFetchCommandTimeout());
         checkoutGivenCommitForAllPaths(gitRequest.getNewCommitId(), gitConfig, gitConnectorId);
         List<GitFile> gitFilesFromDiff;
 

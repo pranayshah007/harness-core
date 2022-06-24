@@ -9,6 +9,7 @@ package software.wings.sm.states;
 
 import static io.harness.annotations.dev.HarnessTeam.CDP;
 import static io.harness.beans.EnvironmentType.ALL;
+import static io.harness.beans.FeatureName.ADD_STATIC_GIT_COMMAND_FETCH_TIMEOUT;
 import static io.harness.beans.FeatureName.CUSTOM_MANIFEST;
 import static io.harness.beans.FeatureName.DELETE_HELM_REPO_CACHE_DIR;
 import static io.harness.beans.FeatureName.GIT_HOST_CONNECTIVITY;
@@ -495,8 +496,9 @@ public class HelmDeployState extends State {
             .isGitHostConnectivityCheck(
                 featureFlagService.isEnabled(FeatureName.GIT_HOST_CONNECTIVITY, context.getAccountId()))
             .optimizedFilesFetch(featureFlagService.isEnabled(OPTIMIZED_GIT_FETCH_FILES, context.getAccountId()))
-            .useNewKubectlVersion(
-                featureFlagService.isEnabled(FeatureName.NEW_KUBECTL_VERSION, context.getAccountId()));
+            .useNewKubectlVersion(featureFlagService.isEnabled(FeatureName.NEW_KUBECTL_VERSION, context.getAccountId()))
+            .useGitFetchCommandTimeout(
+                featureFlagService.isEnabled(ADD_STATIC_GIT_COMMAND_FETCH_TIMEOUT, context.getAccountId()));
 
     if (gitFileConfig != null) {
       helmInstallCommandRequestBuilder.gitFileConfig(gitFileConfig);
@@ -1259,6 +1261,8 @@ public class HelmDeployState extends State {
         applicationManifestUtils.createGitFetchFilesTaskParams(context, app, appManifestMap);
     fetchFilesTaskParams.setOptimizedFilesFetch(
         featureFlagService.isEnabled(OPTIMIZED_GIT_FETCH_FILES, context.getAccountId()));
+    fetchFilesTaskParams.setUseGitFetchCommandTimeout(
+        featureFlagService.isEnabled(ADD_STATIC_GIT_COMMAND_FETCH_TIMEOUT, context.getAccountId()));
     fetchFilesTaskParams.setActivityId(activityId);
     fetchFilesTaskParams.setFinalState(true);
     fetchFilesTaskParams.setAppManifestKind(AppManifestKind.VALUES);

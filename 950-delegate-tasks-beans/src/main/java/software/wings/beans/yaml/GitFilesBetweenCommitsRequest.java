@@ -18,15 +18,18 @@ public class GitFilesBetweenCommitsRequest extends GitCommandRequest {
   private String newCommitId;
   private String oldCommitId;
   private String gitConnectorId;
+  private boolean useGitFetchCommandTimeout;
 
   public GitFilesBetweenCommitsRequest() {
     super(GitCommandType.FILES_BETWEEN_COMMITS);
   }
 
-  public GitFilesBetweenCommitsRequest(String newCommitId, String oldCommitId, String gitConnectorId) {
+  public GitFilesBetweenCommitsRequest(
+      String newCommitId, String oldCommitId, String gitConnectorId, boolean useGitFetchCommandTimeout) {
     super(GitCommandType.FILES_BETWEEN_COMMITS);
     this.newCommitId = newCommitId;
     this.oldCommitId = oldCommitId;
     this.gitConnectorId = gitConnectorId;
+    this.useGitFetchCommandTimeout = useGitFetchCommandTimeout;
   }
 }
