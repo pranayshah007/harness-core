@@ -28,6 +28,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
 import io.harness.beans.FeatureName;
 import io.harness.beans.SecretText;
+import io.harness.delegate.beans.ldap.LdapSettingsWithEncryptedDataDetail;
 import io.harness.eraro.ErrorCode;
 import io.harness.exception.InvalidRequestException;
 import io.harness.exception.WingsException;
@@ -366,6 +367,19 @@ public class SSOServiceImpl implements SSOService {
   @Override
   public LdapSettings getLdapSettings(@NotBlank String accountId) {
     return ssoSettingService.getLdapSettingsByAccountId(accountId);
+  }
+
+  @Override
+  public LdapSettingsWithEncryptedDataDetail getLdapSettingWithEncryptedDataDetail(@NotBlank String accountId) {
+    LdapSettings ldapSettings = ssoSettingService.getLdapSettingsByAccountId(accountId);
+    populateEncryptedFields(ldapSettings);
+    encryptSecretIfFFisEnabled(ldapSettings);
+    ldapSettings.encryptLdapInlineSecret(secretManager);
+    EncryptedDataDetail encryptedDataDetail = ldapSettings.getEncryptedDataDetails(secretManager);
+    return LdapSettingsWithEncryptedDataDetail.builder()
+        .ldapSettings(LdapSettingsMapper.ldapSettingsDTO(ldapSettings))
+        .encryptedDataDetail(encryptedDataDetail)
+        .build();
   }
 
   @Override

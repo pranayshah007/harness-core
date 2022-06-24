@@ -28,6 +28,7 @@ import io.harness.data.algorithm.HashGenerator;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.exception.FunctorException;
 import io.harness.ff.FeatureFlagService;
+import io.harness.metrics.intfc.DelegateMetricsService;
 import io.harness.rule.Owner;
 import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.security.encryption.EncryptionType;
@@ -50,6 +51,7 @@ import org.mockito.stubbing.Answer;
 public class SecretManagerFunctorTest extends WingsBaseTest {
   @Inject private FeatureFlagService featureFlagService;
   @Mock private ManagerDecryptionService managerDecryptionService;
+  @Mock private DelegateMetricsService delegateMetricsService;
   @Mock private SecretManager secretManager;
   @Mock private Cache<String, EncryptedDataDetails> secretsCache;
   private static final String ACCOUNT_ID = "ACCOUNT_ID";
@@ -129,6 +131,7 @@ public class SecretManagerFunctorTest extends WingsBaseTest {
         .envId(ENV_ID)
         .workflowExecutionId(WORKFLOW_EXECUTION_ID)
         .expressionFunctorToken(token)
+        .delegateMetricsService(delegateMetricsService)
         .build();
   }
 

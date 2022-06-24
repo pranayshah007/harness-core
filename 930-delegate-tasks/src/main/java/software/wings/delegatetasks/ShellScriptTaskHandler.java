@@ -69,7 +69,7 @@ public class ShellScriptTaskHandler {
     }
     if (parameters.isExecuteOnDelegate()) {
       ScriptProcessExecutor executor = shellExecutorFactory.getExecutor(
-          parameters.processExecutorConfig(containerDeploymentDelegateHelper), parameters.isSaveExecutionLogs());
+          parameters.processExecutorConfig(containerDeploymentDelegateHelper, encryptionService), parameters.isSaveExecutionLogs());
       if (parameters.isLocalOverrideFeatureFlag()) {
         parameters.setScript(delegateLocalConfigService.replacePlaceholdersWithLocalConfig(parameters.getScript()));
       }

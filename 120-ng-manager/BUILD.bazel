@@ -17,6 +17,8 @@ shared_dependencies = [
     "@maven//:io_grpc_grpc_stub",
 ] + [
     "//:lombok",
+    "//120-ng-manager/modules/ldap:module",
+    "//120-ng-manager/modules/ldap/contracts:module",
     "//122-ng-authentication-settings:module",
     "//clients/resource-group:module",
     "//123-ng-core-user:module",

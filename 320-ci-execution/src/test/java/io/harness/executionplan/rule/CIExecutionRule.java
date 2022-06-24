@@ -29,6 +29,14 @@ import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.config.CIStepConfig;
 import io.harness.ci.config.StepImageConfig;
 import io.harness.ci.config.VmImageConfig;
+import io.harness.cistatus.service.GithubService;
+import io.harness.cistatus.service.GithubServiceImpl;
+import io.harness.cistatus.service.azurerepo.AzureRepoService;
+import io.harness.cistatus.service.azurerepo.AzureRepoServiceImpl;
+import io.harness.cistatus.service.bitbucket.BitbucketService;
+import io.harness.cistatus.service.bitbucket.BitbucketServiceImpl;
+import io.harness.cistatus.service.gitlab.GitlabService;
+import io.harness.cistatus.service.gitlab.GitlabServiceImpl;
 import io.harness.delegate.DelegateServiceGrpc;
 import io.harness.engine.pms.tasks.NgDelegate2TaskExecutor;
 import io.harness.entitysetupusageclient.EntitySetupUsageClientModule;
@@ -55,8 +63,10 @@ import io.harness.registrars.ExecutionRegistrar;
 import io.harness.remote.client.ServiceHttpClientConfig;
 import io.harness.rule.Cache;
 import io.harness.rule.InjectorRuleMixin;
+import io.harness.secrets.SecretDecryptor;
 import io.harness.service.ScmServiceClient;
 import io.harness.springdata.SpringPersistenceTestModule;
+import io.harness.stateutils.buildstate.SecretDecryptorViaNg;
 import io.harness.testlib.module.MongoRuleMixin;
 import io.harness.testlib.module.TestMongoModule;
 import io.harness.threading.CurrentThreadExecutor;
@@ -127,6 +137,11 @@ public class CIExecutionRule implements MethodRule, InjectorRuleMixin, MongoRule
       @Override
       protected void configure() {
         bind(ScmServiceClient.class).to(ScmServiceClientImpl.class);
+        bind(GithubService.class).to(GithubServiceImpl.class);
+        bind(GitlabService.class).to(GitlabServiceImpl.class);
+        bind(BitbucketService.class).to(BitbucketServiceImpl.class);
+        bind(AzureRepoService.class).to(AzureRepoServiceImpl.class);
+        bind(SecretDecryptor.class).to(SecretDecryptorViaNg.class);
       }
     });
 

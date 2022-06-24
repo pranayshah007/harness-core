@@ -36,6 +36,8 @@ import io.harness.delegate.task.ci.GitSCMType;
 import io.harness.encryption.Scope;
 import io.harness.exception.ngexception.CIStageExecutionException;
 import io.harness.git.GitClientHelper;
+import io.harness.git.checks.GitStatusCheckHelper;
+import io.harness.git.checks.GitStatusCheckParams;
 import io.harness.ng.core.NGAccess;
 import io.harness.plancreator.steps.common.StageElementParameters;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -94,6 +96,7 @@ public class GitBuildStatusUtility {
   @Inject @Named("ngBaseUrl") private String ngBaseUrl;
   @Inject private PipelineUtils pipelineUtils;
   @Inject private AccountClient accountClient;
+  @Inject private GitStatusCheckHelper gitStatusCheckHelper;
   @Inject ExecutionSweepingOutputService executionSweepingOutputResolver;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
 
@@ -150,26 +153,64 @@ public class GitBuildStatusUtility {
       }
 
       if (ciBuildStatusPushParameters.getState() != UNSUPPORTED) {
-        Map<String, String> abstractions = buildAbstractions(ambiance, Scope.PROJECT);
-        DelegateTaskRequest delegateTaskRequest = DelegateTaskRequest.builder()
-                                                      .accountId(accountId)
-                                                      .taskSetupAbstractions(abstractions)
-                                                      .executionTimeout(java.time.Duration.ofSeconds(60))
-                                                      .taskType("BUILD_STATUS")
-                                                      .taskParameters(ciBuildStatusPushParameters)
-                                                      .taskDescription("CI git build status task")
-                                                      .build();
-
-        String taskId = delegateGrpcClientWrapper.submitAsyncTask(delegateTaskRequest, Duration.ZERO);
-        log.info("Submitted git status update request for stage {}, planId {}, commitId {}, status {} with taskId {}",
-            buildStatusUpdateParameter.getIdentifier(), ambiance.getPlanExecutionId(), commitSha,
-            ciBuildStatusPushParameters.getState(), taskId);
+        ConnectorDetails connectorDetails = ciBuildStatusPushParameters.getConnectorDetails();
+        boolean executeOnDelegate =
+                connectorDetails.getExecuteOnDelegate() == null || connectorDetails.getExecuteOnDelegate();
+        if (executeOnDelegate) {
+          sendStatusViaDelegate(ambiance, ciBuildStatusPushParameters, accountId, buildStatusUpdateParameter.getIdentifier());
+        } else {
+          sendStatus(ambiance, ciBuildStatusPushParameters, accountId, buildStatusUpdateParameter.getIdentifier());
+        }
       } else {
         log.info("Skipping git status update request for stage {}, planId {}, commitId {}, status {}, scm type {}",
             buildStatusUpdateParameter.getIdentifier(), ambiance.getPlanExecutionId(), commitSha,
             ciBuildStatusPushParameters.getState(), ciBuildStatusPushParameters.getGitSCMType());
       }
     }
+  }
+
+  private void sendStatus(
+      Ambiance ambiance, CIBuildStatusPushParameters ciBuildStatusPushParameters, String accountId, String stageId) {
+    GitStatusCheckParams gitStatusCheckParams = convertParams(ciBuildStatusPushParameters);
+    log.info("Sending git status update request for stage {}, planId {}, commitId {}, status {}",
+            stageId, ambiance.getPlanExecutionId(), ciBuildStatusPushParameters.getSha(),
+            ciBuildStatusPushParameters.getState());
+    gitStatusCheckHelper.sendStatus(gitStatusCheckParams, accountId);
+  }
+
+  private void sendStatusViaDelegate(Ambiance ambiance, CIBuildStatusPushParameters ciBuildStatusPushParameters, String accountId, String stageId) {
+    Map<String, String> abstractions = buildAbstractions(ambiance, Scope.PROJECT);
+    DelegateTaskRequest delegateTaskRequest = DelegateTaskRequest.builder()
+            .accountId(accountId)
+            .taskSetupAbstractions(abstractions)
+            .executionTimeout(java.time.Duration.ofSeconds(60))
+            .taskType("BUILD_STATUS")
+            .taskParameters(ciBuildStatusPushParameters)
+            .taskDescription("CI git build status task")
+            .build();
+
+    String taskId = delegateGrpcClientWrapper.submitAsyncTask(delegateTaskRequest, Duration.ZERO);
+    log.info("Submitted git status update request for stage {}, planId {}, commitId {}, status {} with taskId {}",
+            stageId, ambiance.getPlanExecutionId(), ciBuildStatusPushParameters.getSha(),
+            ciBuildStatusPushParameters.getState(), taskId);
+  }
+
+  private GitStatusCheckParams convertParams(CIBuildStatusPushParameters params) {
+    return GitStatusCheckParams.builder()
+            .title(params.getTitle())
+            .desc(params.getDesc())
+            .state(params.getState())
+            .buildNumber(params.getBuildNumber())
+            .detailsUrl(params.getDetailsUrl())
+            .repo(params.getRepo())
+            .owner(params.getOwner())
+            .sha(params.getSha())
+            .identifier(params.getIdentifier())
+            .target_url(params.getTarget_url())
+            .userName(params.getUserName())
+            .connectorDetails(params.getConnectorDetails())
+            .gitSCMType(params.getGitSCMType())
+            .build();
   }
 
   public CIBuildStatusPushParameters getCIBuildStatusPushParams(

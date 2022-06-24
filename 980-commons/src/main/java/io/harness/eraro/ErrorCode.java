@@ -409,6 +409,8 @@ public enum ErrorCode {
 
   EVENT_PUBLISH_FAILED("Event published failed"),
 
+  CUSTOM_APPROVAL_ERROR,
+
   JIRA_ERROR,
 
   EXPRESSION_EVALUATION_FAILED,

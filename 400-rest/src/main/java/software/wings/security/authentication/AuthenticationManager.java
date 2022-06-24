@@ -468,15 +468,22 @@ public class AuthenticationManager {
     }
   }
 
+  private String getAccountId(User user, String... credentials) {
+    String accountId = (credentials != null && credentials.length >= 3) ? credentials[2] : user.getDefaultAccountId();
+    if (accountId == null) {
+      accountId = user.getDefaultAccountId();
+    }
+    return accountId;
+  }
+
   public Response samlLogin(String... credentials) throws URISyntaxException {
+    String accountId;
+    User user = null;
     try {
-      User user = samlBasedAuthHandler.authenticate(credentials).getUser();
-      String accountId = (credentials != null && credentials.length >= 3) ? credentials[2] : user.getDefaultAccountId();
+      user = samlBasedAuthHandler.authenticate(credentials).getUser();
+      accountId = getAccountId(user, credentials);
       if (accountId == null) {
-        accountId = user.getDefaultAccountId();
-        if (accountId == null) {
-          throw new WingsException("Default accountId of user is null");
-        }
+        throw new WingsException("Default accountId of user is null");
       }
       HashMap<String, String> claimMap = new HashMap<>();
       claimMap.put(EMAIL, user.getEmail());
@@ -491,7 +498,12 @@ public class AuthenticationManager {
       return Response.seeOther(redirectUrl).build();
     } catch (WingsException e) {
       if (e.getCode() == ErrorCode.SAML_TEST_SUCCESS_MECHANISM_NOT_ENABLED) {
-        URI redirectUrl = new URI(getBaseUrl() + LOGIN_ERROR_CODE_SAMLTESTSUCCESS);
+        accountId = getAccountId(user, credentials);
+        String baseUrl = accountService.get(accountId).getSubdomainUrl();
+        if (isEmpty(baseUrl)) {
+          baseUrl = getBaseUrl();
+        }
+        URI redirectUrl = new URI(baseUrl + LOGIN_ERROR_CODE_SAMLTESTSUCCESS);
         return Response.seeOther(redirectUrl).build();
       } else {
         return generateInvalidSSOResponse(e);

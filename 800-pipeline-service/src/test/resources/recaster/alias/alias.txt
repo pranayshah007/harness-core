@@ -120,3 +120,7 @@ io.harness.plancreator.steps.resourceconstraint.QueueStepInfo
 io.harness.steps.resourcerestraint.beans.QueueHoldingScope
 io.harness.ng.core.envGroup.EnvironmentGroupOutcome
 io.harness.steps.policy.PolicyStepSpecParameters
+io.harness.steps.approval.step.custom.CustomApprovalSpecParameters
+io.harness.steps.approval.step.custom.CustomApprovalStepInfo
+io.harness.steps.approval.step.custom.CustomApprovalStepNode
+io.harness.steps.approval.step.custom.CustomApprovalOutcome

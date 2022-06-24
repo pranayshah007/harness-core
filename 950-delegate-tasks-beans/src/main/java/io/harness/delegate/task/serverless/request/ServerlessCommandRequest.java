@@ -28,6 +28,7 @@ import io.harness.delegate.task.serverless.ServerlessArtifactoryArtifactConfig;
 import io.harness.delegate.task.serverless.ServerlessAwsLambdaInfraConfig;
 import io.harness.delegate.task.serverless.ServerlessAwsLambdaManifestConfig;
 import io.harness.delegate.task.serverless.ServerlessCommandType;
+import io.harness.delegate.task.serverless.ServerlessEcrArtifactConfig;
 import io.harness.delegate.task.serverless.ServerlessInfraConfig;
 import io.harness.delegate.task.serverless.ServerlessManifestConfig;
 import io.harness.expression.ExpressionEvaluator;
@@ -82,6 +83,12 @@ public interface ServerlessCommandRequest extends TaskParameters, ExecutionCapab
             (ServerlessArtifactoryArtifactConfig) serverlessArtifactConfig;
         capabilities.addAll(ArtifactoryCapabilityHelper.fetchRequiredExecutionCapabilities(
             serverlessArtifactoryArtifactConfig.getConnectorDTO().getConnectorConfig(), maskingEvaluator));
+      } else if (serverlessArtifactConfig instanceof ServerlessEcrArtifactConfig) {
+        AwsConnectorDTO connectorConfigDTO = (AwsConnectorDTO) ((ServerlessEcrArtifactConfig) serverlessArtifactConfig)
+                                                 .getConnectorDTO()
+                                                 .getConnectorConfig();
+        capabilities.addAll(
+            AwsCapabilityHelper.fetchRequiredExecutionCapabilities(connectorConfigDTO, maskingEvaluator));
       }
     }
     capabilities.add(ServerlessInstallationCapability.builder().criteria("Serverless Installed").build());

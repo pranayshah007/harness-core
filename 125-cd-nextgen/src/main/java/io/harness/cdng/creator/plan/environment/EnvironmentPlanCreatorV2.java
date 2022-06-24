@@ -78,9 +78,9 @@ public class EnvironmentPlanCreatorV2 extends ChildrenPlanCreator<EnvironmentPla
                                            .asArray()
                                            .get(0)
                                            .getField(YamlTypes.INFRASTRUCTURE_DEF);
-
       PlanNode infraSpecNode =
-          InfrastructurePmsPlanCreator.getInfraStepPlanNode(infrastructureDefinitionConfig.getSpec());
+          InfrastructurePmsPlanCreator.getInfraStepPlanNode(infrastructureDefinitionConfig.getSpec(),
+              infrastructureDefinitionConfig.getIdentifier(), infrastructureDefinitionConfig.getName());
       planCreationResponseMap.put(
           infraSpecNode.getUuid(), PlanCreationResponse.builder().node(infraSpecNode.getUuid(), infraSpecNode).build());
       String infraSectionNodeChildId = infraSpecNode.getUuid();
