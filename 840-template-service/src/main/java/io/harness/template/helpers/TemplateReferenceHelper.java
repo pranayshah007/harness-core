@@ -100,6 +100,8 @@ public class TemplateReferenceHelper {
     }
     EntityReferenceResponse response =
         entityReferenceServiceBlockingStub.getReferences(entityReferenceRequestBuilder.build());
+    //response.getModuleInfo() -> templateEntity.setModules()
+    // TODO add Set<String> to Template Entity and Return it in getTemplateSummary where ref are shown
     List<EntityDetailProtoDTO> referredEntities =
         correctFQNsOfReferredEntities(response.getReferredEntitiesList(), templateEntity.getTemplateEntityType());
     List<EntityDetailProtoDTO> referredEntitiesInLinkedTemplates = getNestedTemplateReferences(

@@ -51,6 +51,9 @@ public class FilterCreationBlobResponseUtils {
     if (isNotEmpty(response.getResponse().getFilter())) {
       filters.put(response.getServiceName(), response.getResponse().getFilter());
     }
+    if(!filters.containsKey(response.getServiceName())){
+      filters.put(response.getServiceName(), response.getResponse().getFilter());
+    }
   }
 
   public void mergeReferredEntities(FilterCreationBlobResponse.Builder builder, FilterCreationBlobResponse response) {

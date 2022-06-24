@@ -14,6 +14,7 @@ import io.harness.pms.contracts.plan.Dependencies;
 import io.harness.pms.contracts.plan.FilterCreationBlobResponse;
 import io.harness.pms.contracts.plan.SetupMetadata;
 import io.harness.pms.contracts.service.EntityReferenceRequest;
+import io.harness.pms.contracts.service.EntityReferenceResponse;
 import io.harness.pms.filter.creation.FilterCreatorMergeService;
 import io.harness.pms.yaml.YamlUtils;
 
@@ -30,7 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 public class EntityReferenceService {
   @Inject FilterCreatorMergeService filterCreatorMergeService;
 
-  public FilterCreationBlobResponse getReferences(EntityReferenceRequest request) {
+  public EntityReferenceResponse getReferences(EntityReferenceRequest request) {
     try {
       Dependencies dependencies = filterCreatorMergeService.getDependencies(request.getYaml());
 
@@ -41,7 +42,12 @@ public class EntityReferenceService {
       FilterCreationBlobResponse response = filterCreatorMergeService.obtainFiltersRecursively(
           filterCreatorMergeService.getServices(), dependencies, filters, setupMetadataBuilder.build());
       filterCreatorMergeService.validateFilterCreationBlobResponse(response);
-      return response;
+      EntityReferenceResponse entityReferenceResponse =
+              EntityReferenceResponse.newBuilder()
+                      .addAllReferredEntities(response.getReferredEntitiesList())
+                      .addModuleInfo(response.getFilter())
+                      .build();
+      return entityReferenceResponse;
     } catch (IOException e) {
       log.error("Error while getting references for template ", e);
       throw new InvalidRequestException(

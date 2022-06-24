@@ -9,6 +9,7 @@ package io.harness.pms.template;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.pms.contracts.plan.FilterCreationBlobResponse;
 import io.harness.pms.contracts.service.EntityReferenceRequest;
 import io.harness.pms.contracts.service.EntityReferenceResponse;
 import io.harness.pms.contracts.service.EntityReferenceServiceGrpc.EntityReferenceServiceImplBase;
@@ -22,10 +23,12 @@ public class EntityReferenceGrpcService extends EntityReferenceServiceImplBase {
 
   @Override
   public void getReferences(EntityReferenceRequest request, StreamObserver<EntityReferenceResponse> responseObserver) {
-    EntityReferenceResponse entityReferenceResponse =
-        EntityReferenceResponse.newBuilder()
-            .addAllReferredEntities(entityReferenceService.getReferences(request).getReferredEntitiesList())
-            .build();
+    EntityReferenceResponse entityReferenceResponse = entityReferenceService.getReferences(request);
+//    EntityReferenceResponse entityReferenceResponse =
+//        EntityReferenceResponse.newBuilder()
+//            .addAllReferredEntities(filterCreationBlobResponse.getReferredEntitiesList())
+//                .addModuleInfo(entityReferenceService.getFilter())
+//            .build();
     responseObserver.onNext(entityReferenceResponse);
     responseObserver.onCompleted();
   }
