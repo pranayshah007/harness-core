@@ -124,6 +124,7 @@ BAZEL_MODULES="\
   //930-delegate-tasks:module \
   //930-ng-core-clients:module \
   //932-connector-task:module \
+  //933-scm-commons:module \
   //935-analyser-service:module \
   //937-persistence-tracer:module \
   //940-feature-flag:module \
@@ -330,6 +331,7 @@ build_bazel_module 920-delegate-service-beans
 build_bazel_module 930-delegate-tasks
 build_bazel_module 930-ng-core-clients
 build_bazel_module 932-connector-task
+build_bazel_module 933-scm-commons
 build_bazel_module 940-feature-flag
 build_bazel_module 940-secret-manager-client
 build_bazel_module 947-scim-core

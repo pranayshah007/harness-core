@@ -330,6 +330,7 @@ import io.harness.perpetualtask.manifest.ManifestRepositoryService;
 import io.harness.perpetualtask.polling.manifest.HelmChartCollectionService;
 import io.harness.perpetualtask.polling.manifest.ManifestCollectionService;
 import io.harness.secretmanagerclient.EncryptDecryptHelper;
+import io.harness.secrets.SecretDecryptor;
 import io.harness.secrets.SecretsDelegateCacheHelperService;
 import io.harness.secrets.SecretsDelegateCacheHelperServiceImpl;
 import io.harness.secrets.SecretsDelegateCacheService;
@@ -585,6 +586,7 @@ import software.wings.service.impl.newrelic.NewRelicDelgateServiceImpl;
 import software.wings.service.impl.security.DelegateDecryptionServiceImpl;
 import software.wings.service.impl.security.EncryptionServiceImpl;
 import software.wings.service.impl.security.SecretDecryptionServiceImpl;
+import software.wings.service.impl.security.SecretDecryptorImpl;
 import software.wings.service.impl.security.SecretManagementDelegateServiceImpl;
 import software.wings.service.impl.servicenow.ServiceNowDelegateServiceImpl;
 import software.wings.service.impl.splunk.SplunkDelegateServiceImpl;
@@ -1670,6 +1672,7 @@ public class DelegateModule extends AbstractModule {
     bind(SecretDecryptionService.class).to(SecretDecryptionServiceImpl.class);
     bind(DelegateDecryptionService.class).to(DelegateDecryptionServiceImpl.class);
     bind(EncryptDecryptHelper.class).to(EncryptDecryptHelperImpl.class);
+    bind(SecretDecryptor.class).to(SecretDecryptorImpl.class);
 
     binder()
         .bind(VaultEncryptor.class)
