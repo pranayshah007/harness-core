@@ -4,6 +4,7 @@ io.harness.yaml.core.properties.NGProperties
 io.harness.steps.approval.step.jira.JiraApprovalOutcome
 io.harness.beans.steps.stepinfo.PluginStepInfo
 io.harness.beans.steps.stepinfo.SecurityStepInfo
+io.harness.beans.steps.stepinfo.GitCloneStepInfo
 io.harness.plancreator.steps.internal.FlagConfigurationStepInfo
 barrierSpecParameters
 io.harness.steps.jira.update.beans.TransitionTo
@@ -145,6 +146,7 @@ io.harness.beans.steps.nodes.S3UploadNode
 io.harness.beans.steps.nodes.SaveCacheGCSNode
 io.harness.beans.steps.nodes.SaveCacheS3Node
 io.harness.beans.steps.nodes.SecurityNode
+io.harness.beans.steps.nodes.GitCloneStepNode
 io.harness.steps.servicenow.create.ServiceNowCreateSpecParameters
 io.harness.steps.servicenow.create.ServiceNowCreateStepNode
 io.harness.steps.servicenow.create.ServiceNowCreateStepInfo

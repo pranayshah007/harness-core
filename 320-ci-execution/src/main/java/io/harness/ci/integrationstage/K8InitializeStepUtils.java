@@ -14,6 +14,13 @@ import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParam
 import static io.harness.beans.serializer.RunTimeInputHandler.resolveStringParameterWithDefaultValue;
 import static io.harness.common.CIExecutionConstants.DEFAULT_CONTAINER_CPU_POV;
 import static io.harness.common.CIExecutionConstants.DEFAULT_CONTAINER_MEM_POV;
+import static io.harness.common.CIExecutionConstants.GIT_CLONE_DEPTH_ATTRIBUTE;
+import static io.harness.common.CIExecutionConstants.GIT_CLONE_MANUAL_DEPTH;
+import static io.harness.common.CIExecutionConstants.GIT_CLONE_STEP_ID;
+import static io.harness.common.CIExecutionConstants.GIT_CLONE_STEP_NAME;
+import static io.harness.common.CIExecutionConstants.GIT_SSL_NO_VERIFY;
+import static io.harness.common.CIExecutionConstants.HARNESS_WORKSPACE;
+import static io.harness.common.CIExecutionConstants.PR_CLONE_STRATEGY_ATTRIBUTE;
 import static io.harness.common.CIExecutionConstants.STEP_PREFIX;
 import static io.harness.common.CIExecutionConstants.STEP_REQUEST_MEMORY_MIB;
 import static io.harness.common.CIExecutionConstants.STEP_REQUEST_MILLI_CPU;
@@ -36,11 +43,13 @@ import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.stages.IntegrationStageConfig;
 import io.harness.beans.steps.CIStepInfo;
 import io.harness.beans.steps.CIStepInfoType;
+import io.harness.beans.steps.stepinfo.GitCloneStepInfo;
 import io.harness.beans.steps.stepinfo.PluginStepInfo;
 import io.harness.beans.steps.stepinfo.RunStepInfo;
 import io.harness.beans.steps.stepinfo.RunTestsStepInfo;
 import io.harness.beans.sweepingoutputs.StageInfraDetails;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
+import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.utils.QuantityUtils;
 import io.harness.delegate.beans.ci.pod.CIContainerType;
 import io.harness.delegate.beans.ci.pod.ConnectorDetails;
@@ -57,7 +66,9 @@ import io.harness.plancreator.steps.ParallelStepElementConfig;
 import io.harness.plancreator.steps.StepElementConfig;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlUtils;
+import io.harness.stateutils.buildstate.CodebaseUtils;
 import io.harness.stateutils.buildstate.ConnectorUtils;
 import io.harness.stateutils.buildstate.PluginSettingUtils;
 import io.harness.stateutils.buildstate.providers.StepContainerUtils;
@@ -67,8 +78,15 @@ import io.harness.utils.TimeoutUtils;
 import io.harness.yaml.core.variables.NGVariableType;
 import io.harness.yaml.core.variables.SecretNGVariable;
 import io.harness.yaml.core.variables.StringNGVariable;
+import io.harness.yaml.extended.ci.codebase.Build;
+import io.harness.yaml.extended.ci.codebase.BuildSpec;
+import io.harness.yaml.extended.ci.codebase.BuildType;
+import io.harness.yaml.extended.ci.codebase.impl.BranchBuildSpec;
+import io.harness.yaml.extended.ci.codebase.impl.TagBuildSpec;
 import io.harness.yaml.extended.ci.container.ContainerResource;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
@@ -179,6 +197,15 @@ public class K8InitializeStepUtils {
         return createPluginCompatibleStepContainerDefinition((PluginCompatibleStep) ciStepInfo, integrationStage,
             ciExecutionArgs, portFinder, stepIndex, stepElement.getIdentifier(), stepElement.getName(),
             stepElement.getType(), timeout, accountId, os, extraMemoryPerStep, extraCPUPerStep);
+      case GIT_CLONE:
+        GitCloneStepInfo gitCloneStepInfo = ((GitCloneStepInfo) ciStepInfo);
+
+        //Create a PluginStepInfo from the GitCloneStepInfo
+        PluginStepInfo pluginStepInfo = createPluginStepInfo(gitCloneStepInfo, ciExecutionConfigService, accountId, os );
+
+        return createPluginStepContainerDefinition(pluginStepInfo, integrationStage, ciExecutionArgs,
+                portFinder, stepIndex, stepElement.getIdentifier(), stepElement.getName(), accountId, os,
+                extraMemoryPerStep, extraCPUPerStep);
       case PLUGIN:
         return createPluginStepContainerDefinition((PluginStepInfo) ciStepInfo, integrationStage, ciExecutionArgs,
             portFinder, stepIndex, stepElement.getIdentifier(), stepElement.getName(), accountId, os,
@@ -524,6 +551,9 @@ public class K8InitializeStepUtils {
       case RUN:
         return getContainerCpuLimit(
             ((RunStepInfo) ciStepInfo).getResources(), stepElement.getType(), stepElement.getIdentifier(), accountId);
+      case GIT_CLONE:
+        return getContainerCpuLimit(((GitCloneStepInfo) ciStepInfo).getResources(), stepElement.getType(),
+                stepElement.getIdentifier(), accountId);
       case PLUGIN:
         return getContainerCpuLimit(((PluginStepInfo) ciStepInfo).getResources(), stepElement.getType(),
             stepElement.getIdentifier(), accountId);
@@ -569,6 +599,8 @@ public class K8InitializeStepUtils {
     switch (ciStepInfo.getNonYamlInfo().getStepInfoType()) {
       case RUN:
         return ((RunStepInfo) ciStepInfo).getResources();
+      case GIT_CLONE:
+        return ((GitCloneStepInfo) ciStepInfo).getResources();
       case PLUGIN:
         return ((PluginStepInfo) ciStepInfo).getResources();
       case RUN_TESTS:
@@ -735,7 +767,8 @@ public class K8InitializeStepUtils {
       case UPLOAD_ARTIFACTORY:
       case UPLOAD_S3:
       case UPLOAD_GCS:
-        return ((PluginCompatibleStep) ciStepInfo).getResources();
+      case GIT_CLONE:
+        return ((GitCloneStepInfo) ciStepInfo).getResources();
       case PLUGIN:
         return ((PluginStepInfo) ciStepInfo).getResources();
       case RUN_TESTS:
@@ -743,5 +776,97 @@ public class K8InitializeStepUtils {
       default:
         return null;
     }
+  }
+
+  //Overloaded - the base method is setup to handle nulls accountId and Os.
+  public static PluginStepInfo createPluginStepInfo(GitCloneStepInfo gitCloneStepInfo,
+                                                    CIExecutionConfigService ciExecutionConfigService) {
+    return createPluginStepInfo(gitCloneStepInfo, ciExecutionConfigService, null, null);
+  }
+
+  //TODO: this probably belongs in a different class, not sure where to put it yet.
+
+  // Duplicates logic found at CIStepGroupUtils.getGitCloneStep for GitCloneStepInfo
+  public static PluginStepInfo createPluginStepInfo(GitCloneStepInfo gitCloneStepInfo,
+                                                    CIExecutionConfigService ciExecutionConfigService, String accountId,
+                                                    OSType os) {
+    Map<String, JsonNode> settings = new HashMap<>();
+    Integer depth = gitCloneStepInfo.getDepth().getValue();
+
+    if (depth == null) {
+
+      if(gitCloneStepInfo.getBuild() != null) {
+        Build build = gitCloneStepInfo.getBuild().getValue();
+        if (isNotEmpty(getBranch(build)) || isNotEmpty(getTag(build))) {
+          depth = GIT_CLONE_MANUAL_DEPTH;
+        }
+      }
+    }
+
+    if (depth != null && depth != 0) {
+      settings.put(GIT_CLONE_DEPTH_ATTRIBUTE, JsonNodeFactory.instance.textNode(depth.toString()));
+    }
+
+    if (gitCloneStepInfo.getPrCloneStrategy().getValue() != null) {
+      settings.put(PR_CLONE_STRATEGY_ATTRIBUTE,
+              JsonNodeFactory.instance.textNode(gitCloneStepInfo.getPrCloneStrategy().getValue().getYamlName()));
+    }
+
+    Map<String, String> envVariables = new HashMap<>();
+    if (gitCloneStepInfo.getSslVerify().getValue() != null && !gitCloneStepInfo.getSslVerify().getValue()) {
+      envVariables.put(GIT_SSL_NO_VERIFY, "true");
+    }
+
+    CIExecutionServiceConfig ciExecutionServiceConfig = ciExecutionConfigService.getCiExecutionServiceConfig();
+    List<String> entrypoint = ciExecutionServiceConfig.getStepConfig().getGitCloneConfig().getEntrypoint();
+    if (OSType.Windows == os) {
+      entrypoint = ciExecutionServiceConfig.getStepConfig().getGitCloneConfig().getWindowsEntrypoint();
+    }
+
+    PluginStepInfo step = PluginStepInfo.builder()
+            .connectorRef(gitCloneStepInfo.getConnectorRef())
+            .identifier(GIT_CLONE_STEP_ID)
+            .name(GIT_CLONE_STEP_NAME)
+            .settings(ParameterField.createValueField(settings))
+            .envVariables(envVariables)
+            .entrypoint(entrypoint)
+            .harnessManagedImage(true)
+            .resources(gitCloneStepInfo.getResources())
+            .privileged(ParameterField.createValueField(null))
+            .reports(ParameterField.createValueField(null))
+            .build();
+
+    if (accountId != null) {
+      String gitCloneImage =
+              ciExecutionConfigService.getPluginVersionForK8(CIStepInfoType.GIT_CLONE, accountId).getImage();
+      step.setImage(ParameterField.createValueField(gitCloneImage));
+    }
+    return step;
+  }
+
+  public static String getBranch(Build build) {
+    String branch = null;
+    if(build != null) {
+      BuildSpec buildSpec = build.getSpec();
+      if(buildSpec != null) {
+        if (BuildType.BRANCH.equals(build.getType())) {
+          branch = ((BranchBuildSpec) buildSpec).getBranch().fetchFinalValue().toString();
+        }
+      }
+    }
+    return branch;
+  }
+
+  public static String getTag(Build build) {
+    String tag = null;
+    if(build != null) {
+      BuildSpec buildSpec = build.getSpec();
+      if(buildSpec != null) {
+        if (BuildType.TAG.equals(build.getType())) {
+          tag = ((TagBuildSpec) buildSpec).getTag().fetchFinalValue().toString();
+        }
+      }
+    }
+    return tag;
   }
 }

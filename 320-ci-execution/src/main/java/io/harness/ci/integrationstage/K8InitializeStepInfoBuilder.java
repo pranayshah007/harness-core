@@ -51,6 +51,7 @@ import io.harness.beans.serializer.RunTimeInputHandler;
 import io.harness.beans.stages.IntegrationStageConfig;
 import io.harness.beans.steps.CIStepInfo;
 import io.harness.beans.steps.CIStepInfoType;
+import io.harness.beans.steps.stepinfo.GitCloneStepInfo;
 import io.harness.beans.steps.stepinfo.PluginStepInfo;
 import io.harness.beans.steps.stepinfo.RunStepInfo;
 import io.harness.beans.steps.stepinfo.RunTestsStepInfo;
@@ -361,6 +362,11 @@ public class K8InitializeStepInfoBuilder implements InitializeStepInfoBuilder {
         return createPluginCompatibleStepContainerDefinition((PluginCompatibleStep) ciStepInfo, integrationStage,
             ciExecutionArgs, portFinder, stepIndex, stepElement.getIdentifier(), stepElement.getName(),
             stepElement.getType(), timeout, accountId, os);
+      case GIT_CLONE:
+        PluginStepInfo pluginStepInfo = K8InitializeStepUtils.createPluginStepInfo(((GitCloneStepInfo) ciStepInfo),
+                ciExecutionConfigService, accountId, os);
+        return createPluginStepContainerDefinition(pluginStepInfo, integrationStage, ciExecutionArgs,
+                portFinder, stepIndex, stepElement.getIdentifier(), stepElement.getName(), accountId, os);
       case PLUGIN:
         return createPluginStepContainerDefinition((PluginStepInfo) ciStepInfo, integrationStage, ciExecutionArgs,
             portFinder, stepIndex, stepElement.getIdentifier(), stepElement.getName(), accountId, os);
@@ -769,6 +775,9 @@ public class K8InitializeStepInfoBuilder implements InitializeStepInfoBuilder {
       case RUN:
         return getContainerMemoryLimit(
             ((RunStepInfo) ciStepInfo).getResources(), stepElement.getType(), stepElement.getIdentifier(), accountId);
+      case GIT_CLONE:
+        return getContainerMemoryLimit(((GitCloneStepInfo) ciStepInfo).getResources(), stepElement.getType(),
+                stepElement.getIdentifier(), accountId);
       case PLUGIN:
         return getContainerMemoryLimit(((PluginStepInfo) ciStepInfo).getResources(), stepElement.getType(),
             stepElement.getIdentifier(), accountId);
@@ -834,6 +843,9 @@ public class K8InitializeStepInfoBuilder implements InitializeStepInfoBuilder {
       case RUN:
         return getContainerCpuLimit(
             ((RunStepInfo) ciStepInfo).getResources(), stepElement.getType(), stepElement.getIdentifier(), accountId);
+      case GIT_CLONE:
+        return getContainerCpuLimit( ((GitCloneStepInfo) ciStepInfo).getResources(), stepElement.getType(),
+                stepElement.getIdentifier(), accountId);
       case PLUGIN:
         return getContainerCpuLimit(((PluginStepInfo) ciStepInfo).getResources(), stepElement.getType(),
             stepElement.getIdentifier(), accountId);

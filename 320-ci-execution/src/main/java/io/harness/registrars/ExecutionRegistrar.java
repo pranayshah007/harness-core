@@ -17,6 +17,7 @@ import io.harness.states.CleanupStep;
 import io.harness.states.DockerStep;
 import io.harness.states.ECRStep;
 import io.harness.states.GCRStep;
+import io.harness.states.GitCloneStep;
 import io.harness.states.InitializeTaskStep;
 import io.harness.states.IntegrationStageStepPMS;
 import io.harness.states.PluginStep;
@@ -47,6 +48,7 @@ public class ExecutionRegistrar {
     engineSteps.put(CleanupStep.STEP_TYPE, CleanupStep.class);
     engineSteps.put(RunStep.STEP_TYPE, RunStep.class);
     engineSteps.put(PluginStep.STEP_TYPE, PluginStep.class);
+    engineSteps.put(GitCloneStep.STEP_TYPE, GitCloneStep.class);
     engineSteps.put(SecurityStep.STEP_TYPE, SecurityStep.class);
     engineSteps.put(ECRStep.STEP_TYPE, ECRStep.class);
     engineSteps.put(GCRStep.STEP_TYPE, GCRStep.class);

@@ -18,6 +18,7 @@ import io.harness.ci.creator.variables.CIStageVariableCreator;
 import io.harness.ci.creator.variables.CIStepVariableCreator;
 import io.harness.ci.creator.variables.DockerStepVariableCreator;
 import io.harness.ci.creator.variables.GCSUploadStepVariableCreator;
+import io.harness.ci.creator.variables.GitCloneStepVariableCreator;
 import io.harness.ci.creator.variables.PluginStepVariableCreator;
 import io.harness.ci.creator.variables.RestoreCacheGCSStepVariableCreator;
 import io.harness.ci.creator.variables.RestoreCacheS3StepVariableCreator;
@@ -38,6 +39,7 @@ import io.harness.plancreator.BuildAndPushECRStepPlanCreator;
 import io.harness.plancreator.BuildAndPushGCRStepPlanCreator;
 import io.harness.plancreator.DockerStepPlanCreator;
 import io.harness.plancreator.GCSUploadStepPlanCreator;
+import io.harness.plancreator.GitCloneStepPlanCreator;
 import io.harness.plancreator.PluginStepPlanCreator;
 import io.harness.plancreator.RestoreCacheGCSStepPlanCreator;
 import io.harness.plancreator.RestoreCacheS3StepPlanCreator;
@@ -94,6 +96,7 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
     planCreators.add(new ExecutionPmsPlanCreator());
     planCreators.add(new ParallelPlanCreator());
     planCreators.add(new StrategyConfigPlanCreator());
+    planCreators.add(new GitCloneStepPlanCreator());
     injectorUtils.injectMembers(planCreators);
     return planCreators;
   }
@@ -130,6 +133,7 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
     variableCreators.add(new BuildAndPushGCRStepVariableCreator());
     variableCreators.add(new SaveCacheS3StepVariableCreator());
     variableCreators.add(new SecurityStepVariableCreator());
+    variableCreators.add(new GitCloneStepVariableCreator());
 
     return variableCreators;
   }
@@ -154,6 +158,13 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
                                   .setType(StepSpecTypeConstants.PLUGIN)
                                   .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("Build").build())
                                   .build();
+
+    StepInfo gitCloneStepInfo = StepInfo.newBuilder()
+            .setName("Git Clone")
+            .setType(StepSpecTypeConstants.GIT_CLONE)
+            .setStepMetaData(StepMetaData.newBuilder().addFolderPaths("Build").build())
+            .build();
+
     StepInfo restoreCacheFromGCS = StepInfo.newBuilder()
                                        .setName("Restore Cache From GCS")
                                        .setType(StepSpecTypeConstants.RESTORE_CACHE_GCS)
@@ -242,6 +253,7 @@ public class CIPipelineServiceInfoProvider implements PipelineServiceInfoProvide
     stepInfos.add(uploadArtifactsToJfrogBuild);
     stepInfos.add(saveCacheToGCS);
     stepInfos.add(saveCacheToS3);
+    stepInfos.add(gitCloneStepInfo);
 
     return stepInfos;
   }

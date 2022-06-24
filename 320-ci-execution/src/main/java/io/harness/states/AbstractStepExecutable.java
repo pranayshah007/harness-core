@@ -32,6 +32,7 @@ import io.harness.beans.steps.CIStepInfoType;
 import io.harness.beans.steps.outcome.CIStepArtifactOutcome;
 import io.harness.beans.steps.outcome.CIStepOutcome;
 import io.harness.beans.steps.outcome.StepArtifacts;
+import io.harness.beans.steps.stepinfo.GitCloneStepInfo;
 import io.harness.beans.steps.stepinfo.PluginStepInfo;
 import io.harness.beans.steps.stepinfo.RunStepInfo;
 import io.harness.beans.steps.stepinfo.RunTestsStepInfo;
@@ -45,6 +46,7 @@ import io.harness.beans.sweepingoutputs.VmStageInfraDetails;
 import io.harness.beans.yaml.extended.infrastrucutre.OSType;
 import io.harness.ci.config.CIExecutionServiceConfig;
 import io.harness.ci.integrationstage.IntegrationStageUtils;
+import io.harness.ci.integrationstage.K8InitializeStepUtils;
 import io.harness.ci.serializer.PluginCompatibleStepSerializer;
 import io.harness.ci.serializer.PluginStepProtobufSerializer;
 import io.harness.ci.serializer.RunStepProtobufSerializer;
@@ -73,6 +75,7 @@ import io.harness.exception.ExceptionUtils;
 import io.harness.exception.exceptionmanager.ExceptionManager;
 import io.harness.exception.ngexception.CILiteEngineException;
 import io.harness.exception.ngexception.CIStageExecutionException;
+import io.harness.execution.CIExecutionConfigService;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logstreaming.LogStreamingHelper;
 import io.harness.plancreator.steps.common.StepElementParameters;
@@ -132,6 +135,7 @@ public abstract class AbstractStepExecutable implements AsyncExecutableWithRbac<
   @Inject private VmStepSerializer vmStepSerializer;
   @Inject private ConnectorUtils connectorUtils;
   @Inject private WaitNotifyEngine waitNotifyEngine;
+  @Inject private CIExecutionConfigService ciExecutionConfigService;
 
   @Override
   public Class<StepElementParameters> getStepParametersClass() {
@@ -469,6 +473,12 @@ public abstract class AbstractStepExecutable implements AsyncExecutableWithRbac<
       case RUN:
         return runStepProtobufSerializer.serializeStepWithStepParameters((RunStepInfo) ciStepInfo, port, taskId, logKey,
             stepIdentifier, ParameterField.createValueField(Timeout.fromString(timeout)), accountId, stepName);
+      case GIT_CLONE:
+        GitCloneStepInfo gitCloneStepInfo = ((GitCloneStepInfo) ciStepInfo);
+        PluginStepInfo pluginStepInfo = K8InitializeStepUtils.createPluginStepInfo(gitCloneStepInfo,
+                ciExecutionConfigService, accountId, os );
+        return pluginStepProtobufSerializer.serializeStepWithStepParameters(pluginStepInfo, port, taskId, logKey,
+                stepIdentifier, ParameterField.createValueField(Timeout.fromString(timeout)), accountId, stepName);
       case PLUGIN:
         return pluginStepProtobufSerializer.serializeStepWithStepParameters((PluginStepInfo) ciStepInfo, port, taskId,
             logKey, stepIdentifier, ParameterField.createValueField(Timeout.fromString(timeout)), accountId, stepName);
@@ -494,7 +504,6 @@ public abstract class AbstractStepExecutable implements AsyncExecutableWithRbac<
       case TEST:
       case BUILD:
       case SETUP_ENV:
-      case GIT_CLONE:
       case INITIALIZE_TASK:
       default:
         log.info("serialisation is not implemented");
