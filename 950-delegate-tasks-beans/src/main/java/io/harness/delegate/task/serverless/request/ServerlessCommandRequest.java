@@ -103,7 +103,7 @@ public interface ServerlessCommandRequest extends TaskParameters, ExecutionCapab
             AwsConnectorDTO connectorConfigDTO =
                 (AwsConnectorDTO) ((ServerlessEcrArtifactConfig) serverlessArtifactConfig)
                         .getConnectorDTO()
-                        .getConnectorConfig());
+                        .getConnectorConfig();
             capabilities.addAll(
                 AwsCapabilityHelper.fetchRequiredExecutionCapabilities(connectorConfigDTO, maskingEvaluator));
           }
