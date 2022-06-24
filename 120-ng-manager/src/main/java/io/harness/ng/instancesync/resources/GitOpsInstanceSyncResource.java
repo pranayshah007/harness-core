@@ -1,7 +1,9 @@
 package io.harness.ng.instancesync.resources;
 
+import io.harness.NGCommonEntityConstants;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.dtos.InstanceDTO;
 import io.harness.dtos.gitops.GitOpsInstanceRequestDTO;
 import io.harness.helper.GitOpsRequestDTOMapper;
 import io.harness.ng.core.dto.ErrorDTO;
@@ -16,14 +18,17 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import io.swagger.v3.oas.annotations.Hidden;
 import java.util.List;
+import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
 
 @Api("gitOpsInstanceSync")
 @Path("gitOpsInstanceSync")
@@ -41,11 +46,19 @@ import lombok.extern.slf4j.Slf4j;
 public class GitOpsInstanceSyncResource {
   private final InstanceService instanceService;
   @POST
-  @Path("/create")
   @ApiOperation(value = "Create instances and save in DB", nickname = "createGitOpsInstances")
-  public ResponseDTO<Boolean> createGitOpsInstances(
-      @NotNull List<GitOpsInstanceRequestDTO> gitOpsInstanceRequestDTOList, String accountId) {
-    instanceService.saveAll(GitOpsRequestDTOMapper.instanceDTOList(gitOpsInstanceRequestDTOList, accountId));
+  public ResponseDTO<Pair<Boolean, List<InstanceDTO>>> createGitOpsInstances(
+      @QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @NotNull @Valid List<GitOpsInstanceRequestDTO> gitOpsInstanceRequestDTOList) {
+    List<InstanceDTO> instanceDTOList =
+        instanceService.saveAll(GitOpsRequestDTOMapper.instanceDTOList(gitOpsInstanceRequestDTOList, accountId));
+    return ResponseDTO.newResponse(Pair.of(Boolean.TRUE, instanceDTOList));
+  }
+  @POST
+  @ApiOperation(value = "Delete instances", nickname = "deleteGitOpsInstances")
+  public ResponseDTO<Boolean> deleteGitOpsInstances(@QueryParam(NGCommonEntityConstants.ACCOUNT_KEY) String accountId,
+      @NotNull @Valid List<GitOpsInstanceRequestDTO> gitOpsInstanceRequestDTOList) {
+    instanceService.deleteAll(GitOpsRequestDTOMapper.instanceDTOList(gitOpsInstanceRequestDTOList, accountId));
     return ResponseDTO.newResponse(Boolean.TRUE);
   }
 }

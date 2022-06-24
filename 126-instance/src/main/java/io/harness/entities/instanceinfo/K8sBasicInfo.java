@@ -18,5 +18,5 @@ public class K8sBasicInfo extends InstanceInfo {
   @NotNull private String namespace;
   @NotNull private String podName;
   private String podIP;
-  @NotNull private List<K8sContainer> containerList;
+  private List<K8sContainer> containerList;
 }
