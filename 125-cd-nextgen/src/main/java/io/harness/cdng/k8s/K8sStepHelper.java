@@ -308,23 +308,23 @@ public class K8sStepHelper extends CDStepHelper {
       Map<String, LocalStoreFetchFilesResult> localStoreFileMapContents, List<String> manifestFiles) {
     StoreConfig storeConfig = k8sManifestOutcome.getStore();
     List<GitFetchFilesConfig> gitFetchFilesConfigs = new ArrayList<>();
-    K8sStepPassThroughData k8sStepPassThroughData = K8sStepPassThroughData.builder()
-                                                        .k8sManifestOutcome(k8sManifestOutcome)
-                                                        .infrastructure(infrastructure)
-                                                        .localStoreFileMapContents(localStoreFileMapContents)
-                                                        .build();
+    K8sStepPassThroughData.K8sStepPassThroughDataBuilder k8sStepPassThroughDataBuilder =
+        K8sStepPassThroughData.builder();
+    k8sStepPassThroughDataBuilder.k8sManifestOutcome(k8sManifestOutcome);
+    k8sStepPassThroughDataBuilder.infrastructure(infrastructure);
+    k8sStepPassThroughDataBuilder.localStoreFileMapContents(localStoreFileMapContents);
 
     if (ManifestStoreType.isInGitSubset(storeConfig.getKind())) {
       List<KustomizePatchesManifestOutcome> orderedPatchesManifests =
           (List<KustomizePatchesManifestOutcome>) fetchGitFetchFileConfigAndRearrangeTheParamOrPatchesManifestOutcome(
               kustomizePatchesManifests, k8sManifestOutcome, ambiance, gitFetchFilesConfigs);
-      return prepareGitFetchPatchesTaskChainResponse(
-          ambiance, stepElementParameters, orderedPatchesManifests, k8sStepPassThroughData, gitFetchFilesConfigs);
+      return prepareGitFetchPatchesTaskChainResponse(ambiance, stepElementParameters, orderedPatchesManifests,
+          k8sStepPassThroughDataBuilder, gitFetchFilesConfigs);
     }
 
     if (ManifestStoreType.HARNESS.equals(storeConfig.getKind())) {
-      return prepareGitFetchPatchesTaskChainResponse(
-          ambiance, stepElementParameters, kustomizePatchesManifests, k8sStepPassThroughData, gitFetchFilesConfigs);
+      return prepareGitFetchPatchesTaskChainResponse(ambiance, stepElementParameters, kustomizePatchesManifests,
+          k8sStepPassThroughDataBuilder, gitFetchFilesConfigs);
     }
 
     return k8sStepExecutor.executeK8sTask(k8sManifestOutcome, ambiance, stepElementParameters, emptyList(),
@@ -361,7 +361,8 @@ public class K8sStepHelper extends CDStepHelper {
 
   private TaskChainResponse prepareGitFetchPatchesTaskChainResponse(Ambiance ambiance,
       StepElementParameters stepElementParameters, List<KustomizePatchesManifestOutcome> kustomizePatchesManifests,
-      K8sStepPassThroughData k8sStepPassThroughData, List<GitFetchFilesConfig> gitFetchFilesConfigs) {
+      K8sStepPassThroughData.K8sStepPassThroughDataBuilder k8sStepPassThroughDataBuilder,
+      List<GitFetchFilesConfig> gitFetchFilesConfigs) {
     List<ManifestOutcome> stepOverrides = getStepLevelManifestOutcomes(stepElementParameters);
 
     if (!isEmpty(stepOverrides)) {
@@ -376,18 +377,11 @@ public class K8sStepHelper extends CDStepHelper {
       }
     }
 
-    K8sStepPassThroughData newK8sStepPassThroughData =
-        K8sStepPassThroughData.builder()
-            .k8sManifestOutcome(k8sStepPassThroughData.getK8sManifestOutcome())
-            .manifestOutcomeList(new LinkedList<>(kustomizePatchesManifests))
-            .infrastructure(k8sStepPassThroughData.getInfrastructure())
-            .localStoreFileMapContents(k8sStepPassThroughData.getLocalStoreFileMapContents())
-            .build();
-    //    K8sStepPassThroughData newK8sStepPassthroughData =  k8sStepPassThroughData.toBuilder().manifestOutcomeList(new
-    //    LinkedList<>(orderedPatchesManifests)).build();
+    k8sStepPassThroughDataBuilder.manifestOutcomeList(new LinkedList<>(kustomizePatchesManifests));
+    K8sStepPassThroughData k8sStepPassThroughData = k8sStepPassThroughDataBuilder.build();
 
     return getGitFetchFileTaskChainResponse(
-        ambiance, gitFetchFilesConfigs, stepElementParameters, newK8sStepPassThroughData, true);
+        ambiance, gitFetchFilesConfigs, stepElementParameters, k8sStepPassThroughData, true);
   }
 
   private List<GitFetchFilesConfig> mapOpenshiftParamOrKustomizePatchesManifestToGitFetchFileConfig(

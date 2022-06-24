@@ -39,7 +39,7 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.cdng.k8s.K8sStepPassThroughData")
 public class K8sStepPassThroughData implements PassThroughData {
   ManifestOutcome k8sManifestOutcome;
-  @Setter List<ManifestOutcome> manifestOutcomeList;
+  List<ManifestOutcome> manifestOutcomeList;
   InfrastructureOutcome infrastructure;
   Map<String, HelmFetchFileResult> helmValuesFileMapContents;
   Map<String, LocalStoreFetchFilesResult> localStoreFileMapContents;
@@ -76,9 +76,5 @@ public class K8sStepPassThroughData implements PassThroughData {
       }
     }
     return openshiftParamManifestOutcomes;
-  }
-
-  public void setManifestOutcomeList(List<ManifestOutcome> manifestOutcomeList) {
-    this.manifestOutcomeList = manifestOutcomeList;
   }
 }
