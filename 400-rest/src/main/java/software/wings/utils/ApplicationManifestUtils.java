@@ -7,7 +7,6 @@
 
 package software.wings.utils;
 
-import static io.harness.beans.FeatureName.ADD_STATIC_GIT_COMMAND_FETCH_TIMEOUT;
 import static io.harness.beans.FeatureName.GIT_HOST_CONNECTIVITY;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
