@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.ngsettings.entities;
 
 import io.harness.annotation.StoreIn;
@@ -8,14 +15,15 @@ import io.harness.data.validator.NGEntityName;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.ng.DbAliases;
-import io.harness.ng.core.setting.SettingCategory;
-import io.harness.ng.core.setting.SettingValueType;
+import io.harness.ngsettings.SettingCategory;
+import io.harness.ngsettings.SettingValueType;
 import io.harness.persistence.PersistentEntity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.google.common.collect.ImmutableList;
 import java.util.List;
 import java.util.Set;
+import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
@@ -44,7 +52,7 @@ public class SettingConfiguration implements PersistentEntity {
   @NotNull SettingValueType valueType;
   @NotNull Set<String> allowedValues;
   @NotNull Boolean allowOverrides;
-  Set<String> allowedScopeLevels;
+  @NotBlank Set<String> allowedScopes;
 
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()
@@ -52,13 +60,13 @@ public class SettingConfiguration implements PersistentEntity {
                  .name("category_identifier_allowedScopes_unique_idx")
                  .field(SettingConfigurationKeys.category)
                  .field(SettingConfigurationKeys.identifier)
-                 .field(SettingConfigurationKeys.allowedScopeLevels)
+                 .field(SettingConfigurationKeys.allowedScopes)
                  .unique(true)
                  .build())
         .add(CompoundMongoIndex.builder()
                  .name("category_allowedScopes_idx")
                  .field(SettingConfigurationKeys.category)
-                 .field(SettingConfigurationKeys.allowedScopeLevels)
+                 .field(SettingConfigurationKeys.allowedScopes)
                  .unique(false)
                  .build())
         .build();
