@@ -37,6 +37,6 @@ public class GitIntegrationTestUtils {
                                                     .useBranch(true)
                                                     .build();
 
-    return gitClient.fetchFilesByPath(gitConfig, gitFetchFilesRequest, false);
+    return gitClient.fetchFilesByPath(gitConfig, gitFetchFilesRequest, false, null);
   }
 }

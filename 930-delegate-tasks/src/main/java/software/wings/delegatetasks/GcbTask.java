@@ -204,7 +204,7 @@ public class GcbTask extends AbstractDelegateRunnableTask {
             .commitId(repositorySpec.getSourceId())
             .recursive(false)
             .build(),
-        false);
+        false, null);
     return result.getFiles().get(0).getFileContent();
   }
 

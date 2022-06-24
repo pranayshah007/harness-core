@@ -167,7 +167,8 @@ public class TerragruntProvisionTaskHelperTest extends CategoryTest {
     verify(logCallback, times(2)).saveExecutionLog(any(), any(), any());
     verify(encryptionService, times(1))
         .decrypt(tfVarGitSource.getGitConfig(), tfVarGitSource.getEncryptedDataDetails(), false);
-    verify(gitClient).downloadFiles(any(GitConfig.class), requestArgumentCaptor.capture(), anyString(), eq(false));
+    verify(gitClient).downloadFiles(
+        any(GitConfig.class), requestArgumentCaptor.capture(), anyString(), eq(false), null);
     GitFetchFilesRequest gitFetchFilesRequest = requestArgumentCaptor.getValue();
     assertThat(gitFetchFilesRequest.getBranch()).isEqualTo(gitFileConfig.getBranch());
     assertThat(gitFetchFilesRequest.getCommitId()).isEqualTo(gitFileConfig.getCommitId());

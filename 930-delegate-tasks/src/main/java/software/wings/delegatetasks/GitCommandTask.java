@@ -210,7 +210,7 @@ public class GitCommandTask extends AbstractDelegateRunnableTask {
 
   private GitCommandExecutionResponse getFilesFromGitUsingPath(GitFetchFilesRequest gitRequest, GitConfig gitConfig) {
     try {
-      GitFetchFilesResult gitResult = gitClient.fetchFilesByPath(gitConfig, gitRequest, false);
+      GitFetchFilesResult gitResult = gitClient.fetchFilesByPath(gitConfig, gitRequest, false, null);
       return GitCommandExecutionResponse.builder()
           .gitCommandRequest(gitRequest)
           .gitCommandResult(gitResult)

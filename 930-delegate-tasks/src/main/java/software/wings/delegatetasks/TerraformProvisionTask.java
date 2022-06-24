@@ -721,7 +721,7 @@ public class TerraformProvisionTask extends AbstractDelegateRunnableTask {
               .gitConnectorId(tfVarGitSource.getGitFileConfig().getConnectorId())
               .recursive(true)
               .build(),
-          tfVarDirectory, false);
+          tfVarDirectory, false, null);
 
       saveExecutionLog(
           format("TfVar Git directory: [%s]", tfVarDirectory), CommandExecutionStatus.RUNNING, INFO, logCallback);

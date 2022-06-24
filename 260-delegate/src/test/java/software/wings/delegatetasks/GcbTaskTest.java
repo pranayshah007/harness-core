@@ -292,7 +292,7 @@ public class GcbTaskTest extends CategoryTest {
     operationMeta.setBuild(GcbBuildDetails.builder().status(GcbBuildStatus.SUCCESS).build());
     buildOperationDetails.setOperationMeta(operationMeta);
 
-    doReturn(gitResult).when(gitClient).fetchFilesByPath(any(), any(), eq(false));
+    doReturn(gitResult).when(gitClient).fetchFilesByPath(any(), any(), eq(false), null);
     when(gcbService.createBuild(gcpConfig, encryptedDataDetails, gcbBuildDetails)).thenReturn(buildOperationDetails);
 
     GcbDelegateResponse response = task.run(taskParams);

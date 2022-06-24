@@ -173,7 +173,7 @@ public class TerragruntProvisionTaskHelper {
               .gitConnectorId(tfVarGitSource.getGitFileConfig().getConnectorId())
               .recursive(true)
               .build(),
-          tfVarDirectory, false);
+          tfVarDirectory, false, null);
 
       logCallback.saveExecutionLog(
           format("TfVar Git directory: [%s]", tfVarDirectory), INFO, CommandExecutionStatus.RUNNING);
