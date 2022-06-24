@@ -126,7 +126,7 @@ pmsGrpcClientConfig:
   target: localhost:12011
   authority: localhost
 
-shouldConfigureWithPMS: true
+shouldConfigureWithPMS: false
 
 portalUrl: https://localhost:8181/
 
