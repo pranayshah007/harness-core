@@ -7,7 +7,6 @@
 
 package io.harness.delegate.task.serverless.request;
 
-import static io.harness.delegate.beans.connector.awsconnector.AwsCredentialType.MANUAL_CREDENTIALS;
 import static io.harness.delegate.beans.storeconfig.StoreDelegateConfigType.GIT;
 
 import io.harness.annotations.dev.HarnessTeam;
@@ -31,7 +30,6 @@ import io.harness.delegate.task.serverless.ServerlessAwsLambdaManifestConfig;
 import io.harness.delegate.task.serverless.ServerlessCommandType;
 import io.harness.delegate.task.serverless.ServerlessInfraConfig;
 import io.harness.delegate.task.serverless.ServerlessManifestConfig;
-import io.harness.exception.UnknownEnumTypeException;
 import io.harness.expression.ExpressionEvaluator;
 import io.harness.security.encryption.EncryptedDataDetail;
 
@@ -62,10 +60,6 @@ public interface ServerlessCommandRequest extends TaskParameters, ExecutionCapab
             cloudProviderEncryptionDetails, maskingEvaluator));
     if (serverlessInfraConfig instanceof ServerlessAwsLambdaInfraConfig) {
       AwsConnectorDTO awsConnectorDTO = ((ServerlessAwsLambdaInfraConfig) serverlessInfraConfig).getAwsConnectorDTO();
-      if (awsConnectorDTO.getCredential().getAwsCredentialType() != MANUAL_CREDENTIALS) {
-        throw new UnknownEnumTypeException(
-            "AWS Credential Type", String.valueOf(awsConnectorDTO.getCredential().getAwsCredentialType()));
-      }
       capabilities.addAll(AwsCapabilityHelper.fetchRequiredExecutionCapabilities(awsConnectorDTO, maskingEvaluator));
     }
     if (getServerlessManifestConfig() != null) {

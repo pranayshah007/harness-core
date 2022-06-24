@@ -23,6 +23,7 @@ import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.delegate.beans.connector.awsconnector.AwsCredentialType;
 import io.harness.delegate.beans.serverless.ServerlessAwsLambdaCloudFormationSchema;
 import io.harness.delegate.beans.serverless.ServerlessAwsLambdaFunction;
 import io.harness.delegate.beans.serverless.ServerlessAwsLambdaFunction.ServerlessAwsLambdaFunctionBuilder;
@@ -37,6 +38,7 @@ import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.filesystem.FileIo;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
+import io.harness.logging.LogLevel;
 import io.harness.serializer.YamlUtils;
 import io.harness.serverless.AbstractExecutable;
 import io.harness.serverless.ConfigCredentialCommand;
@@ -246,6 +248,38 @@ public class ServerlessAwsCommandTaskHelper {
           color(
               format("%nSkipping plugin installation, found no plugins in config..%n"), LogColor.White, LogWeight.Bold),
           INFO);
+    }
+  }
+
+  public void setUpConfigureCredential(ServerlessAwsLambdaConfig serverlessAwsLambdaConfig,
+      LogCallback executionLogCallback, ServerlessDelegateTaskParams serverlessDelegateTaskParams,
+      String serverlessAwsLambdaCredentialType, ServerlessClient serverlessClient, long timeoutInMillis)
+      throws Exception {
+    try {
+      if (serverlessAwsLambdaCredentialType.equals(AwsCredentialType.MANUAL_CREDENTIALS.name())) {
+        ServerlessCliResponse response = configCredential(serverlessClient, serverlessAwsLambdaConfig,
+            serverlessDelegateTaskParams, executionLogCallback, true, timeoutInMillis);
+
+        if (response.getCommandExecutionStatus() == CommandExecutionStatus.SUCCESS) {
+          executionLogCallback.saveExecutionLog(
+              color(format("%nConfig Credential command executed successfully..%n"), LogColor.White, LogWeight.Bold),
+              INFO);
+          executionLogCallback.saveExecutionLog(format("Done..%n"), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+        } else {
+          executionLogCallback.saveExecutionLog(
+              color(format("%nConfig Credential command failed..%n"), LogColor.Red, LogWeight.Bold), ERROR,
+              CommandExecutionStatus.FAILURE);
+          handleCommandExecutionFailure(response, serverlessClient.configCredential());
+        }
+      } else {
+        executionLogCallback.saveExecutionLog(
+            format("skipping configure credentials command..%n%n"), LogLevel.INFO, CommandExecutionStatus.SUCCESS);
+      }
+    } catch (Exception ex) {
+      executionLogCallback.saveExecutionLog(
+          color(format("%n configure credential failed."), LogColor.Red, LogWeight.Bold), LogLevel.ERROR,
+          CommandExecutionStatus.FAILURE);
+      throw ex;
     }
   }
 
