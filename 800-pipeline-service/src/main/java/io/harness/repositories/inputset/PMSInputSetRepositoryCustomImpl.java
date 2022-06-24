@@ -135,6 +135,34 @@ public class PMSInputSetRepositoryCustomImpl implements PMSInputSetRepositoryCus
   }
 
   @Override
+  public InputSetEntity saveForImportedYAML(InputSetEntity entityToSave, boolean pushToGit) {
+    String accountIdentifier = entityToSave.getAccountIdentifier();
+    String orgIdentifier = entityToSave.getOrgIdentifier();
+    String projectIdentifier = entityToSave.getProjectIdentifier();
+    GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
+    String yamlToPush = entityToSave.getYaml();
+    entityToSave.setStoreType(StoreType.REMOTE);
+    entityToSave.setConnectorRef(gitEntityInfo.getConnectorRef());
+    entityToSave.setRepo(gitEntityInfo.getRepoName());
+    entityToSave.setFilePath(gitEntityInfo.getFilePath());
+    return transactionHelper.performTransaction(() -> {
+      if (pushToGit) {
+        Scope scope = Scope.of(accountIdentifier, orgIdentifier, projectIdentifier);
+        gitAwareEntityHelper.updateFileImportedFromGit(entityToSave, yamlToPush, scope);
+      }
+      InputSetEntity savedInputSetEntity = mongoTemplate.save(entityToSave);
+      outboxService.save(InputSetCreateEvent.builder()
+                             .accountIdentifier(accountIdentifier)
+                             .orgIdentifier(orgIdentifier)
+                             .projectIdentifier(projectIdentifier)
+                             .pipelineIdentifier(savedInputSetEntity.getPipelineIdentifier())
+                             .inputSet(savedInputSetEntity)
+                             .build());
+      return savedInputSetEntity;
+    });
+  }
+
+  @Override
   public Optional<InputSetEntity> findForOldGitSync(String accountId, String orgIdentifier, String projectIdentifier,
       String pipelineIdentifier, String identifier, boolean notDeleted) {
     Criteria criteriaForFind = PMSInputSetFilterHelper.getCriteriaForFind(

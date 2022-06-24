@@ -740,6 +740,9 @@ public class InputSetResourcePMS {
       @PathParam(NGCommonEntityConstants.INPUT_SET_IDENTIFIER_KEY) @Parameter(
           description = PipelineResourceConstants.INPUT_SET_ID_PARAM_MESSAGE) String inputSetIdentifier,
       @BeanParam GitImportInfoDTO gitImportInfoDTO, InputSetImportRequestDTO inputSetImportRequestDTO) {
-    return ResponseDTO.newResponse(InputSetImportResponseDTO.builder().build());
+    InputSetEntity inputSetEntity = pmsInputSetService.importInputSetFromRemote(
+        accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSetIdentifier, inputSetImportRequestDTO);
+    return ResponseDTO.newResponse(
+        InputSetImportResponseDTO.builder().identifier(inputSetEntity.getIdentifier()).build());
   }
 }
