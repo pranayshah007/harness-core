@@ -159,7 +159,7 @@ public class AwsApiHelperService {
       AwsInternalConfig awsConfig, String region, ListObjectsV2Request listObjectsV2Request) {
     try (CloseableAmazonWebServiceClient<AmazonS3Client> closeableAmazonS3Client =
              new CloseableAmazonWebServiceClient(getAmazonS3Client(awsConfig, region))) {
-      tracker.trackS3Call("Get Bucket Region");
+      tracker.trackS3Call("List Objects In S3");
       return closeableAmazonS3Client.getClient().listObjectsV2(listObjectsV2Request);
     } catch (AmazonServiceException amazonServiceException) {
       handleAmazonServiceException(amazonServiceException);
