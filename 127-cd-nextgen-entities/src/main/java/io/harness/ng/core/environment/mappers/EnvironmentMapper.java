@@ -9,7 +9,9 @@ package io.harness.ng.core.environment.mappers;
 
 import static io.harness.NGConstants.HARNESS_BLUE;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+import static io.harness.data.structure.HarnessStringUtils.join;
 import static io.harness.ng.core.mapper.TagMapper.convertToList;
 import static io.harness.ng.core.mapper.TagMapper.convertToMap;
 
@@ -28,17 +30,28 @@ import io.harness.utils.YamlPipelineUtils;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
+import javax.validation.ConstraintViolation;
 import javax.validation.Valid;
+import javax.validation.Validation;
+import javax.validation.Validator;
+import javax.validation.ValidatorFactory;
 import lombok.experimental.UtilityClass;
 
 @OwnedBy(PIPELINE)
 @UtilityClass
 public class EnvironmentMapper {
+  ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+  Validator validator = factory.getValidator();
+
   public Environment toEnvironmentEntity(String accountId, EnvironmentRequestDTO environmentRequestDTO) {
     final Environment environment;
     if (isNotEmpty(environmentRequestDTO.getYaml())) {
       NGEnvironmentConfig ngEnvironmentConfig = toNGEnvironmentConfig(environmentRequestDTO);
+
+      validate(ngEnvironmentConfig);
+
       environment = toNGEnvironmentEntity(accountId, ngEnvironmentConfig, environmentRequestDTO.getColor());
       environment.setYaml(environmentRequestDTO.getYaml());
       return environment;
@@ -47,6 +60,15 @@ public class EnvironmentMapper {
     NGEnvironmentConfig ngEnvironmentConfig = toNGEnvironmentConfig(environment);
     environment.setYaml(toYaml(ngEnvironmentConfig));
     return environment;
+  }
+
+  private void validate(NGEnvironmentConfig ngEnvironmentConfig) {
+    Set<ConstraintViolation<NGEnvironmentConfig>> violations = validator.validate(ngEnvironmentConfig);
+    if (isEmpty(violations)) {
+      return;
+    }
+    final List<String> messages = violations.stream().map(ConstraintViolation::getMessage).collect(Collectors.toList());
+    throw new InvalidRequestException(join(",", messages));
   }
 
   public Environment toNGEnvironmentEntity(String accountId, EnvironmentRequestDTO dto) {

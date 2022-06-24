@@ -16,6 +16,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.beans.DelegateFileManagerBase;
 import io.harness.delegate.beans.FileBucket;
 import io.harness.exception.FunctorException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.expression.ExpressionFunctor;
 import io.harness.terraform.expression.TerraformPlanExpressionInterface;
 
@@ -88,7 +89,8 @@ public class TerraformPlanDelegateFunctor implements ExpressionFunctor {
 
       return TerraformPlan.builder().jsonPlanFilePath(outputFilePath.toString()).build();
     } catch (IOException e) {
-      throw new FunctorException(format("Failed to download file '%s'", fileId), e);
+      throw new FunctorException(
+          format("Failed to download file '%s'", fileId), ExceptionMessageSanitizer.sanitizeException(e));
     }
   }
 }

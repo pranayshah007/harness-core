@@ -44,7 +44,6 @@ import io.harness.connector.utils.ConnectorUtils;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
-import io.harness.delegate.beans.connector.awsconnector.AwsCredentialType;
 import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
 import io.harness.delegate.beans.connector.gcpconnector.GcpConnectorDTO;
 import io.harness.delegate.task.k8s.K8sInfraDelegateConfig;
@@ -59,7 +58,6 @@ import io.harness.logging.UnitProgress;
 import io.harness.logging.UnitStatus;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.NGAccess;
-import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.ng.core.k8s.ServiceSpecType;
 import io.harness.pms.contracts.ambiance.Ambiance;
@@ -86,7 +84,6 @@ import io.harness.steps.executable.SyncExecutableWithRbac;
 import io.harness.steps.shellscript.K8sInfraDelegateConfigOutput;
 import io.harness.steps.shellscript.SshInfraDelegateConfigOutput;
 import io.harness.utils.IdentifierRefHelper;
-import io.harness.walktree.visitor.SimpleVisitorFactory;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
@@ -103,9 +100,7 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
                                                .setStepCategory(StepCategory.STEP)
                                                .build();
 
-  @Inject private EnvironmentService environmentService;
   @Inject private InfrastructureStepHelper infrastructureStepHelper;
-  @Inject private SimpleVisitorFactory simpleVisitorFactory;
   @Inject @Named("PRIVILEGED") private AccessControlClient accessControlClient;
   @Inject private EntityReferenceExtractorUtils entityReferenceExtractorUtils;
   @Inject private PipelineRbacHelper pipelineRbacHelper;
@@ -240,12 +235,6 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
         throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
             connectorInfo.getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
             ConnectorType.AWS.name()));
-      }
-
-      AwsConnectorDTO awsConnector = (AwsConnectorDTO) connectorInfo.getConnectorConfig();
-      if (AwsCredentialType.MANUAL_CREDENTIALS != awsConnector.getCredential().getAwsCredentialType()) {
-        throw new InvalidRequestException(
-            "Deployment using AWS infrastructure with manual credentials is only supported.");
       }
     }
 
@@ -390,9 +379,9 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
 
       case InfrastructureKind.AZURE_WEB_APP:
         AzureWebAppInfrastructure azureWebAppInfrastructure = (AzureWebAppInfrastructure) infrastructure;
-        validateExpression(azureWebAppInfrastructure.getConnectorRef(), azureWebAppInfrastructure.getAppService(),
-            azureWebAppInfrastructure.getDeploymentSlot(), azureWebAppInfrastructure.getTargetSlot(),
-            azureWebAppInfrastructure.getSubscriptionId(), azureWebAppInfrastructure.getResourceGroup());
+        validateExpression(azureWebAppInfrastructure.getConnectorRef(), azureWebAppInfrastructure.getWebApp(),
+            azureWebAppInfrastructure.getDeploymentSlot(), azureWebAppInfrastructure.getSubscriptionId(),
+            azureWebAppInfrastructure.getResourceGroup());
         break;
       default:
         throw new InvalidArgumentsException(format("Unknown Infrastructure Kind : [%s]", infrastructure.getKind()));

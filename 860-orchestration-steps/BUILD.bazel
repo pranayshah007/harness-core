@@ -30,7 +30,7 @@ java_library(
         "@maven//:javax_validation_validation_api",
         "@maven//:org_apache_commons_commons_collections4",
         "@maven//:org_apache_commons_commons_lang3",
-        "@maven//:org_hibernate_hibernate_validator",
+        "@maven//:org_hibernate_validator_hibernate_validator",
         "@maven//:org_mongodb_mongo_java_driver",
         "@maven//:org_mongodb_morphia_morphia",
         "@maven//:org_slf4j_slf4j_api",

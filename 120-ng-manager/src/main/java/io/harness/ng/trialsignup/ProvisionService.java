@@ -10,6 +10,7 @@ package io.harness.ng.trialsignup;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.k8s.KubernetesConvention.getAccountIdentifier;
 import static io.harness.ng.NextGenModule.CONNECTOR_DECORATOR_SERVICE;
+import static io.harness.telemetry.Destination.AMPLITUDE;
 
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
@@ -52,6 +53,7 @@ import io.harness.product.ci.scm.proto.GetUserReposResponse;
 import io.harness.product.ci.scm.proto.Repository;
 import io.harness.rest.RestResponse;
 import io.harness.service.ScmClient;
+import io.harness.telemetry.TelemetryReporter;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -62,6 +64,7 @@ import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -83,6 +86,7 @@ public class ProvisionService {
   @Inject @Named(CONNECTOR_DECORATOR_SERVICE) private ConnectorService connectorService;
   @Inject private ScmClient scmClient;
   //  @Inject private GitSyncConnectorHelper gitSyncConnectorHelper;
+  @Inject TelemetryReporter telemetryReporter;
 
   private static final String K8S_CONNECTOR_NAME = "Harness Kubernetes Cluster";
   private static final String K8S_CONNECTOR_DESC =
@@ -103,6 +107,8 @@ public class ProvisionService {
       + "\"account_id\":\"%s\",\"account_id_short\":\"%s\",\"account_secret\":\"%s\"}}'";
 
   private static final String SAMPLE_DELEGATE_STATUS_ENDPOINT_FORMAT_STRING = "http://%s/account-%s.txt";
+  private static final String PROVISION_STARTED = "provision_started";
+  private static final String PROVISION_COMPLETED = "provision_completed";
 
   public ProvisionResponse.SetupStatus provisionCIResources(String accountId) {
     if (!licenceValid(accountId)) {
@@ -189,6 +195,11 @@ public class ProvisionService {
       if (connectorResponseDTO.isPresent()) {
         return TRUE;
       }
+
+      HashMap<String, Object> provisionMap = new HashMap<>();
+      telemetryReporter.sendTrackEvent(PROVISION_STARTED, null, accountId, provisionMap,
+          Collections.singletonMap(AMPLITUDE, true), io.harness.telemetry.Category.GLOBAL);
+
       KubernetesCredentialDTO kubernetesCredentialDTO =
           KubernetesCredentialDTO.builder()
               .kubernetesCredentialType(KubernetesCredentialType.INHERIT_FROM_DELEGATE)
@@ -275,6 +286,9 @@ public class ProvisionService {
                         .build());
         }
         if (steps.size() > 0 && steps.get(0).isDone()) {
+          HashMap<String, Object> provisionMap = new HashMap<>();
+          telemetryReporter.sendTrackEvent(PROVISION_COMPLETED, null, accountId, provisionMap,
+              Collections.singletonMap(AMPLITUDE, true), io.harness.telemetry.Category.GLOBAL);
           return DelegateStatus.SUCCESS;
         } else if (steps.size() > 0 && !steps.get(0).isDone()) {
           return DelegateStatus.IN_PROGRESS;

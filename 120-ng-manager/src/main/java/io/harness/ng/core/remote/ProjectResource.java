@@ -123,7 +123,7 @@ public class ProjectResource {
   @POST
   @ApiOperation(value = "Create a Project", nickname = "postProject")
   @NGAccessControlCheck(resourceType = PROJECT, permission = CREATE_PROJECT_PERMISSION)
-  @Operation(operationId = "postProject", summary = "Creates a Project",
+  @Operation(operationId = "postProject", summary = "Create a Project", description = "Creates a new Harness Project.",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -146,7 +146,8 @@ public class ProjectResource {
   @GET
   @Path("{identifier}")
   @ApiOperation(value = "Gets a Project by ID", nickname = "getProject")
-  @Operation(operationId = "getProject", summary = "Gets a Project by ID",
+  @Operation(operationId = "getProject", summary = "List Project details",
+      description = "Lists a Project's details for the given ID.",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -173,7 +174,8 @@ public class ProjectResource {
 
   @GET
   @ApiOperation(value = "Get Project list", nickname = "getProjectList")
-  @Operation(operationId = "getProjectList", summary = "List user's project",
+  @Operation(operationId = "getProjectList", summary = "List all Projects for a user",
+      description = "Lists all Projects the user is a member of by using the user's API key token.",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -259,7 +261,8 @@ public class ProjectResource {
   @PUT
   @Path("{identifier}")
   @ApiOperation(value = "Update a Project by ID", nickname = "putProject")
-  @Operation(operationId = "putProject", summary = "Update Project by ID",
+  @Operation(operationId = "putProject", summary = "Update a Project",
+      description = "Updates Project details for the given ID.",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.
@@ -289,7 +292,8 @@ public class ProjectResource {
   @DELETE
   @Path("{identifier}")
   @ApiOperation(value = "Delete a Project by identifier", nickname = "deleteProject")
-  @Operation(operationId = "deleteProject", summary = "Deletes the Project corresponding to the specified Project ID.",
+  @Operation(operationId = "deleteProject", summary = "Delete a Project",
+      description = "Deletes a Project corresponding to the given ID.",
       responses =
       {
         @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "default",

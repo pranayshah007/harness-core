@@ -28,6 +28,7 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.FieldDefaults;
+import lombok.experimental.FieldNameConstants;
 
 @Data
 @Builder
@@ -36,6 +37,7 @@ import lombok.experimental.FieldDefaults;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @ApiModel("GraphLayoutNode")
 @OwnedBy(PIPELINE)
+@FieldNameConstants(innerTypeName = "GraphLayoutNodeDTOKeys")
 @Schema(name = "GraphLayoutNode", description = "This is the view of the Graph for execution of the Pipeline.")
 public class GraphLayoutNodeDTO {
   String nodeType;

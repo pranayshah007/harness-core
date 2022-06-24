@@ -68,7 +68,11 @@ import io.harness.tasks.ResponseData;
 import io.harness.tasks.Task;
 import io.harness.yaml.core.StepSpecType;
 
+import software.wings.beans.SerializationFormat;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Duration;
@@ -226,17 +230,26 @@ public class StepUtils {
         withLogs ? generateLogAbstractions(ambiance) : new LinkedHashMap<>();
     units = withLogs ? units : new ArrayList<>();
 
-    TaskDetails taskDetails =
+    TaskDetails.Builder taskDetailsBuilder =
         TaskDetails.newBuilder()
-            .setKryoParameters(ByteString.copyFrom(kryoSerializer.asDeflatedBytes(taskParameters) == null
-                    ? new byte[] {}
-                    : kryoSerializer.asDeflatedBytes(taskParameters)))
             .setExecutionTimeout(Duration.newBuilder().setSeconds(taskData.getTimeout() / 1000).build())
             .setExpressionFunctorToken(ambiance.getExpressionFunctorToken())
             .setMode(taskData.isAsync() ? TaskMode.ASYNC : TaskMode.SYNC)
             .setParked(taskData.isParked())
-            .setType(TaskType.newBuilder().setType(taskData.getTaskType()).build())
-            .build();
+            .setType(TaskType.newBuilder().setType(taskData.getTaskType()).build());
+
+    ObjectMapper objectMapper = new ObjectMapper();
+    if (taskData.getSerializationFormat().equals(SerializationFormat.JSON)) {
+      try {
+        taskDetailsBuilder.setJsonParameters(ByteString.copyFrom(objectMapper.writeValueAsBytes(taskParameters)));
+      } catch (JsonProcessingException e) {
+        throw new InvalidRequestException("Could not serialize the task request", e);
+      }
+    } else {
+      taskDetailsBuilder.setKryoParameters(ByteString.copyFrom(kryoSerializer.asDeflatedBytes(taskParameters) == null
+              ? new byte[] {}
+              : kryoSerializer.asDeflatedBytes(taskParameters)));
+    }
 
     Map<String, String> setupAbstractionsMap = buildAbstractions(ambiance, taskScope);
     if (environmentType != null && environmentType != EnvironmentType.ALL) {
@@ -246,7 +259,7 @@ public class StepUtils {
     SubmitTaskRequest.Builder requestBuilder =
         SubmitTaskRequest.newBuilder()
             .setAccountId(AccountId.newBuilder().setId(accountId).build())
-            .setDetails(taskDetails)
+            .setDetails(taskDetailsBuilder.build())
             .addAllSelectors(CollectionUtils.emptyIfNull(selectors))
             .setLogAbstractions(TaskLogAbstractions.newBuilder().putAllValues(logAbstractionMap).build())
             .setSetupAbstractions(TaskSetupAbstractions.newBuilder().putAllValues(setupAbstractionsMap).build())
@@ -446,26 +459,25 @@ public class StepUtils {
         // Delegate Selector Precedence: 1)Step -> 2)stepGroup -> 3)Stage ->  4)Pipeline
 
         ParameterField<List<TaskSelectorYaml>> delegateSelectors = withDelegateSelector.fetchDelegateSelectors();
-        if (!ParameterField.isNull(withDelegateSelector.fetchDelegateSelectors())
-            && !isEmpty(delegateSelectors.getValue())) {
+        if (hasDelegateSelectors(delegateSelectors, withDelegateSelector)) {
           setOriginAndDelegateSelectors(delegateSelectors, withDelegateSelector, STEP);
           return;
         }
 
         delegateSelectors = delegateSelectorsFromFqn(ctx, STEP_GROUP);
-        if (!ParameterField.isNull(delegateSelectors) && !isEmpty(delegateSelectors.getValue())) {
+        if (hasDelegateSelectors(delegateSelectors, withDelegateSelector)) {
           setOriginAndDelegateSelectors(delegateSelectors, withDelegateSelector, STEP_GROUP);
           return;
         }
 
         delegateSelectors = delegateSelectorsFromFqn(ctx, STAGE);
-        if (!ParameterField.isNull(delegateSelectors) && !isEmpty(delegateSelectors.getValue())) {
+        if (hasDelegateSelectors(delegateSelectors, withDelegateSelector)) {
           setOriginAndDelegateSelectors(delegateSelectors, withDelegateSelector, STAGE);
           return;
         }
 
         delegateSelectors = delegateSelectorsFromFqn(ctx, YAMLFieldNameConstants.PIPELINE);
-        if (!ParameterField.isNull(delegateSelectors) && !isEmpty(delegateSelectors.getValue())) {
+        if (hasDelegateSelectors(delegateSelectors, withDelegateSelector)) {
           setOriginAndDelegateSelectors(delegateSelectors, withDelegateSelector, YAMLFieldNameConstants.PIPELINE);
         }
       }
@@ -478,5 +490,18 @@ public class StepUtils {
       WithDelegateSelector withDelegateSelector, String origin) {
     delegateSelectors.getValue().forEach(selector -> selector.setOrigin(origin));
     withDelegateSelector.setDelegateSelectors(delegateSelectors);
+  }
+
+  private static boolean hasDelegateSelectors(
+      ParameterField<List<TaskSelectorYaml>> delegateSelectors, WithDelegateSelector withDelegateSelector) {
+    if (ParameterField.isNull(withDelegateSelector.fetchDelegateSelectors()) || isEmpty(delegateSelectors.getValue())) {
+      return false;
+    }
+    List<TaskSelectorYaml> selectorYamls =
+        delegateSelectors.getValue().stream().filter(s -> isNotEmpty(s.getDelegateSelectors())).collect(toList());
+    if (selectorYamls.isEmpty()) {
+      return false;
+    }
+    return true;
   }
 }

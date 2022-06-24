@@ -102,6 +102,7 @@ public class K8sRollingRollbackStep extends TaskExecutableWithRollbackAndRbac<K8
           .build();
     }
 
+    String accountId = AmbianceUtils.getAccountId(ambiance);
     K8sRollingRollbackDeployRequestBuilder rollbackRequestBuilder = K8sRollingRollbackDeployRequest.builder();
     InfrastructureOutcome infrastructure = (InfrastructureOutcome) outcomeService.resolve(
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.INFRASTRUCTURE_OUTCOME));
@@ -109,7 +110,9 @@ public class K8sRollingRollbackStep extends TaskExecutableWithRollbackAndRbac<K8
     if (k8sRollingOptionalOutput.isFound()) {
       K8sRollingOutcome k8sRollingOutcome = (K8sRollingOutcome) k8sRollingOptionalOutput.getOutput();
       rollbackRequestBuilder.releaseName(k8sRollingOutcome.getReleaseName())
-          .releaseNumber(k8sRollingOutcome.getReleaseNumber());
+          .releaseNumber(k8sRollingOutcome.getReleaseNumber())
+          .prunedResourceIds(k8sStepHelper.getPrunedResourcesIds(
+              AmbianceUtils.getAccountId(ambiance), k8sRollingOutcome.getPrunedResourceIds()));
     } else {
       K8sRollingReleaseOutput releaseOutput = (K8sRollingReleaseOutput) k8sRollingReleaseOptionalOutput.getOutput();
       rollbackRequestBuilder.releaseName(releaseOutput.getName());
@@ -120,7 +123,8 @@ public class K8sRollingRollbackStep extends TaskExecutableWithRollbackAndRbac<K8
         .timeoutIntervalInMin(
             NGTimeConversionHelper.convertTimeStringToMinutes(stepElementParameters.getTimeout().getValue()))
         .k8sInfraDelegateConfig(k8sStepHelper.getK8sInfraDelegateConfig(infrastructure, ambiance))
-        .useNewKubectlVersion(k8sStepHelper.isUseNewKubectlVersion(AmbianceUtils.getAccountId(ambiance)))
+        .useNewKubectlVersion(k8sStepHelper.isUseNewKubectlVersion(accountId))
+        .pruningEnabled(k8sStepHelper.isPruningEnabled(accountId))
         .build();
 
     return k8sStepHelper
@@ -162,11 +166,19 @@ public class K8sRollingRollbackStep extends TaskExecutableWithRollbackAndRbac<K8
     } else {
       final K8sRollingDeployRollbackResponse response =
           (K8sRollingDeployRollbackResponse) executionResponse.getK8sNGTaskResponse();
+      K8sRollingRollbackOutcome k8sRollingRollbackOutcome =
+          K8sRollingRollbackOutcome.builder().recreatedResourceIds(response.getRecreatedResourceIds()).build();
 
       StepOutcome stepOutcome = instanceInfoService.saveServerInstancesIntoSweepingOutput(
           ambiance, K8sPodToServiceInstanceInfoMapper.toServerInstanceInfoList(response.getK8sPodList()));
 
-      stepResponse = stepResponseBuilder.status(Status.SUCCEEDED).stepOutcome(stepOutcome).build();
+      stepResponse = stepResponseBuilder.status(Status.SUCCEEDED)
+                         .stepOutcome(stepOutcome)
+                         .stepOutcome(StepOutcome.builder()
+                                          .name(OutcomeExpressionConstants.OUTPUT)
+                                          .outcome(k8sRollingRollbackOutcome)
+                                          .build())
+                         .build();
     }
 
     return stepResponse;

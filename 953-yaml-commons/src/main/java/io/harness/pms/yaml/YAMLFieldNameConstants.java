@@ -72,4 +72,8 @@ public class YAMLFieldNameConstants {
 
   public final String CHILD_NODE_OF_SPEC = "childNodeOfSpec";
   public final String GITOPS_ENABLED = "gitOpsEnabled";
+
+  public final String ORG_IDENTIFIER = "orgIdentifier";
+  public final String PROJECT_IDENTIFIER = "projectIdentifier";
+  public final String PIPELINE_IDENTIFIER = "pipelineIdentifier";
 }

@@ -20,7 +20,6 @@ import io.harness.delegate.metrics.DelegateAgentMetricResource;
 import io.harness.delegate.metrics.DelegateAgentMetrics;
 import io.harness.delegate.service.DelegateAgentService;
 import io.harness.event.client.EventPublisher;
-import io.harness.grpc.pingpong.PingPongClient;
 import io.harness.health.HealthMonitor;
 import io.harness.health.HealthService;
 import io.harness.serializer.YamlUtils;
@@ -95,8 +94,6 @@ public class DelegateAgentApplication extends Application<DelegateAgentConfig> {
     registerResources(environment, injector);
     initializeMetrics(environment, injector);
 
-    injector.getInstance(PingPongClient.class).startAsync();
-
     log.info("Starting Delegate in {} mode", DEPLOY_MODE);
     log.info("Process: {}", ManagementFactory.getRuntimeMXBean().getName());
 
@@ -121,6 +118,10 @@ public class DelegateAgentApplication extends Application<DelegateAgentConfig> {
     bootstrap.setMetricRegistry(new MetricRegistry());
   }
 
+  @Override
+  protected void bootstrapLogging() {
+  }
+
   private void addShutdownHook(final Injector injector) {
     Runtime.getRuntime().addShutdownHook(new Thread(() -> {
       try {
@@ -133,9 +134,6 @@ public class DelegateAgentApplication extends Application<DelegateAgentConfig> {
       injector.getInstance(ExecutorService.class).shutdown();
       injector.getInstance(EventPublisher.class).shutdown();
       log.info("Executor services have been shut down.");
-
-      injector.getInstance(PingPongClient.class).stopAsync();
-      log.info("PingPong client have been shut down.");
 
       injector.getInstance(DefaultAsyncHttpClient.class).close();
       log.info("Async HTTP client has been closed.");

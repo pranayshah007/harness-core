@@ -19,7 +19,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import org.apache.commons.lang3.tuple.Pair;
 
 @OwnedBy(DEL)
 public interface DelegateSelectionLogsService {
@@ -38,9 +37,6 @@ public interface DelegateSelectionLogsService {
   void logTaskValidationFailed(DelegateTask delegateTask, String failureMessage);
 
   List<DelegateSelectionLogParams> fetchTaskSelectionLogs(String accountId, String taskId);
-
-  List<Pair<String, List<DelegateSelectionLogParams>>> fetchTaskSelectionLogsGroupByAssessment(
-      String accountId, String taskId);
 
   DelegateSelectionLogResponse fetchTaskSelectionLogsData(String accountId, String taskId);
 

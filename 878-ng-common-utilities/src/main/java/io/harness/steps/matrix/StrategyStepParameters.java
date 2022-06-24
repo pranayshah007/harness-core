@@ -8,7 +8,9 @@
 package io.harness.steps.matrix;
 
 import io.harness.plancreator.strategy.StrategyConfig;
+import io.harness.plancreator.strategy.StrategyType;
 import io.harness.pms.sdk.core.steps.io.StepParameters;
+import io.harness.pms.yaml.ParameterField;
 
 import lombok.Builder;
 import lombok.Data;
@@ -18,4 +20,6 @@ import lombok.Data;
 public class StrategyStepParameters implements StepParameters {
   StrategyConfig strategyConfig;
   String childNodeId;
+  ParameterField<Integer> maxConcurrency;
+  StrategyType strategyType;
 }

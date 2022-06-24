@@ -30,6 +30,7 @@ import org.junit.experimental.categories.Category;
 public class CiBeansComponentTest extends CiBeansTestBase {
   @Inject private Map<String, TestExecution> tests;
 
+
   @Test
   @Owner(developers = AMAN)
   @Category(UnitTests.class)

@@ -1,10 +1,29 @@
 {
   "@type": "MessageCard",
-  "themeColor": "${THEME_COLOR}",
-  "summary": "Monitored Service ${monitoredServiceName} breached Monitored Service Health",
+  "themeColor": "#FFFFFF",
+  "summary": "Harness SRM",
   "sections": [
     {
-      "activityTitle": "This is a Monitored Service notification from Harness. You have breached your Monitored Service Health with name ${monitoredServiceName} inside project ${projectIdentifier}, organisation ${orgIdentifier} and account ${accountIdentifier}."
+      "activityTitle": "Service Health: ${MONITORED_SERVICE_NAME} ${HEADER_MESSAGE} ${SERVICE_NAME} service",
+      "activitySubtitle": "Trigger ${TRIGGER_MESSAGE}. Incident occurred ${START_DATE}",
+      "facts": [
+              {
+                  "name": "Account Name",
+                  "value": "${ACCOUNT_NAME}"
+              },
+              {
+                  "name": "Organization Name",
+                  "value": "${ORG_NAME}"
+              },
+             {
+                  "name": "Project Name",
+                  "value": "${PROJECT_NAME}"
+             },
+             {
+                   "name": "View Service Health details",
+                   "value": "[${URL}](${URL})"
+             },
+      ],
     }
   ]
 }

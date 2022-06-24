@@ -31,7 +31,7 @@ import com.amazonaws.auth.policy.Statement;
 import com.amazonaws.services.costandusagereport.model.ReportDefinition;
 import com.amazonaws.services.identitymanagement.model.AmazonIdentityManagementException;
 import com.amazonaws.services.identitymanagement.model.EvaluationResult;
-import com.amazonaws.services.s3.model.ObjectListing;
+import com.amazonaws.services.s3.iterable.S3Objects;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.amazonaws.services.securitytoken.model.AWSSecurityTokenServiceException;
 import com.google.common.annotations.VisibleForTesting;
@@ -246,20 +246,20 @@ public class CEAWSConnectorValidator extends io.harness.ccm.connectors.AbstractC
       for (EvaluationResult result : evaluationResults) {
         if (result.getOrganizationsDecisionDetail() != null
             && !result.getOrganizationsDecisionDetail().isAllowedByOrganizations()) {
-          reason = "Action: " + result.getEvalActionName() + " not allowed (" + result.getEvalDecision()
-              + ") on Resource: " + result.getEvalResourceName();
+          // Just log the error and continue
+          log.info("Action: " + result.getEvalActionName() + " not allowed (" + result.getEvalDecision()
+              + ") on Resource: " + result.getEvalResourceName());
+          continue;
         } else {
           reason =
               "Action: " + result.getEvalActionName() + " not allowed on Resource: " + result.getEvalResourceName();
         }
 
-        errorList.add(
-            ErrorDetail.builder()
-                .message(
-                    "Check organization service control policy in your AWS account. Review AWS access permissions as per the documentation.")
-                .reason(reason)
-                .code(403)
-                .build());
+        errorList.add(ErrorDetail.builder()
+                          .message("Review AWS access permissions as per the documentation.")
+                          .reason(reason)
+                          .code(403)
+                          .build());
       }
     }
     if (errorSize == errorList.size()) {
@@ -346,9 +346,9 @@ public class CEAWSConnectorValidator extends io.harness.ccm.connectors.AbstractC
     Date latestFileLastmodifiedTime = Date.from(Instant.EPOCH);
     String latestFileName = "";
     try {
-      ObjectListing s3BucketObject = awsClient.getBucket(credentialsProvider, s3BucketName, s3PathPrefix);
+      S3Objects s3Objects = awsClient.getIterableS3ObjectSummaries(credentialsProvider, s3BucketName, s3PathPrefix);
       // Caveat: This can be slow for some accounts.
-      for (S3ObjectSummary objectSummary : s3BucketObject.getObjectSummaries()) {
+      for (S3ObjectSummary objectSummary : s3Objects) {
         if (objectSummary.getKey().endsWith(".csv.gz")) {
           if (objectSummary.getLastModified().compareTo(latestFileLastmodifiedTime) > 0) {
             latestFileLastmodifiedTime = objectSummary.getLastModified();

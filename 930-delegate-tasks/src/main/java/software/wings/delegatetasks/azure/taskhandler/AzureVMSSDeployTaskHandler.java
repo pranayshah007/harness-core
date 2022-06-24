@@ -32,6 +32,7 @@ import io.harness.delegate.task.azure.response.AzureVMInstanceData;
 import io.harness.delegate.task.azure.response.AzureVMSSDeployTaskResponse;
 import io.harness.delegate.task.azure.response.AzureVMSSTaskExecutionResponse;
 import io.harness.exception.ExceptionUtils;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 
 import software.wings.beans.command.ExecutionLogCallback;
 
@@ -61,7 +62,7 @@ public class AzureVMSSDeployTaskHandler extends AzureVMSSTaskHandler {
       AzureVMSSDeployTaskResponse deployTaskResponse = resizeVirtualMachineScaleSet(azureConfig, deployTaskParameters);
       return logAndGenerateSuccessResponse(deployTaskResponse, deployTaskParameters);
     } catch (Exception ex) {
-      return logAndGenerateSFailureResponse(ex);
+      return logAndGenerateSFailureResponse(ExceptionMessageSanitizer.sanitizeException(ex));
     }
   }
 

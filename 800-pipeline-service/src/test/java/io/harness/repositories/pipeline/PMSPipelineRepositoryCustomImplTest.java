@@ -28,7 +28,6 @@ import io.harness.gitsync.interceptor.GitSyncBranchContext;
 import io.harness.gitsync.persistance.GitAwarePersistence;
 import io.harness.gitsync.persistance.GitSyncSdkService;
 import io.harness.manage.GlobalContextManager;
-import io.harness.outbox.OutboxEvent;
 import io.harness.outbox.api.OutboxService;
 import io.harness.pms.pipeline.PipelineEntity;
 import io.harness.pms.pipeline.PipelineEntity.PipelineEntityKeys;
@@ -37,8 +36,6 @@ import io.harness.rule.Owner;
 import io.harness.springdata.TransactionHelper;
 
 import java.util.Optional;
-import java.util.function.Supplier;
-import lombok.Data;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -141,15 +138,8 @@ public class PMSPipelineRepositoryCustomImplTest extends CategoryTest {
         pipelineToSave.withStoreType(StoreType.INLINE).withVersion(0L);
     doReturn(pipelineToSaveWithStoreTypeWithExtraFields).when(mongoTemplate).save(pipelineToSaveWithStoreType);
 
-    DummyClassForSupplier dummy = new DummyClassForSupplier();
-    Supplier<OutboxEvent> randomSupplier = () -> {
-      dummy.setVal(10);
-      return null;
-    };
-    PipelineEntity savedPipelineEntity = pipelineRepository.savePipelineEntity(pipelineToSave, randomSupplier);
+    PipelineEntity savedPipelineEntity = pipelineRepository.savePipelineEntity(pipelineToSave);
     assertThat(savedPipelineEntity).isEqualTo(pipelineToSaveWithStoreTypeWithExtraFields);
-    // to check if the supplier is actually called
-    assertThat(dummy.getVal()).isEqualTo(10);
     verify(gitAwareEntityHelper, times(0)).createEntityOnGit(any(), any(), any());
   }
 
@@ -172,8 +162,7 @@ public class PMSPipelineRepositoryCustomImplTest extends CategoryTest {
                                         .identifier(pipelineId)
                                         .yaml(pipelineYaml)
                                         .build();
-    PipelineEntity pipelineToSaveWithStoreType = pipelineToSave.withYaml("")
-                                                     .withStoreType(StoreType.REMOTE)
+    PipelineEntity pipelineToSaveWithStoreType = pipelineToSave.withStoreType(StoreType.REMOTE)
                                                      .withConnectorRef(connectorRef)
                                                      .withRepo(repoName)
                                                      .withFilePath(filePath);
@@ -181,15 +170,9 @@ public class PMSPipelineRepositoryCustomImplTest extends CategoryTest {
         pipelineToSave.withStoreType(StoreType.INLINE).withVersion(0L);
     doReturn(pipelineToSaveWithStoreTypeWithExtraFields).when(mongoTemplate).save(pipelineToSaveWithStoreType);
 
-    DummyClassForSupplier dummy = new DummyClassForSupplier();
-    Supplier<OutboxEvent> randomSupplier = () -> {
-      dummy.setVal(10);
-      return null;
-    };
-    PipelineEntity savedPipelineEntity = pipelineRepository.savePipelineEntity(pipelineToSave, randomSupplier);
+    PipelineEntity savedPipelineEntity = pipelineRepository.savePipelineEntity(pipelineToSave);
     assertThat(savedPipelineEntity).isEqualTo(pipelineToSaveWithStoreTypeWithExtraFields);
     // to check if the supplier is actually called
-    assertThat(dummy.getVal()).isEqualTo(10);
     verify(gitAwareEntityHelper, times(1)).createEntityOnGit(pipelineToSave, pipelineYaml, scope);
   }
 
@@ -319,6 +302,26 @@ public class PMSPipelineRepositoryCustomImplTest extends CategoryTest {
   @Test
   @Owner(developers = NAMAN)
   @Category(UnitTests.class)
+  public void testUpdateNonExistentPipeline() {
+    String newYaml = "pipeline: new yaml";
+    PipelineEntity pipelineToUpdate = PipelineEntity.builder()
+                                          .accountId(accountIdentifier)
+                                          .orgIdentifier(orgIdentifier)
+                                          .projectIdentifier(projectIdentifier)
+                                          .identifier(pipelineId)
+                                          .name("new name")
+                                          .description("new desc")
+                                          .yaml(newYaml)
+                                          .storeType(StoreType.REMOTE)
+                                          .build();
+    doReturn(null).when(transactionHelper).performTransaction(any());
+    PipelineEntity updatedEntity = pipelineRepository.updatePipelineYaml(pipelineToUpdate);
+    assertThat(updatedEntity).isNull();
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
   public void testUpdatePipelineEntityInDB() {
     Query query = new Query();
     Update update = new Update();
@@ -370,10 +373,5 @@ public class PMSPipelineRepositoryCustomImplTest extends CategoryTest {
     pipelineRepository.delete(accountIdentifier, orgIdentifier, projectIdentifier, pipelineId);
     verify(mongoTemplate, times(1)).findAndRemove(any(), any());
     verify(outboxService, times(1)).save(any());
-  }
-
-  @Data
-  public static class DummyClassForSupplier {
-    int val;
   }
 }

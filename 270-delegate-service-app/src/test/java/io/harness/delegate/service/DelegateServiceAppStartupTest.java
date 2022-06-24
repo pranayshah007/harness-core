@@ -57,7 +57,7 @@ public class DelegateServiceAppStartupTest extends DelegateServiceAppTestBase {
   }
 
   @BeforeClass
-  public static void beforeClass() {
+  public static void beforeClass() throws Exception{
     MONGO_SERVER = startMongoServer();
     String directoryPath = Project.moduleDirectory(DelegateServiceAppStartupTest.class);
     String configPath = Paths.get(directoryPath, "delegate-service-config.yml").toString();

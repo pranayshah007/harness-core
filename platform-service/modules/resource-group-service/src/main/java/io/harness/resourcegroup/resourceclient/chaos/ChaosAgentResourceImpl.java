@@ -20,6 +20,7 @@ import io.harness.eventsframework.entity_crud.EntityChangeDTO;
 import io.harness.resourcegroup.beans.ValidatorType;
 import io.harness.resourcegroup.framework.v1.service.Resource;
 import io.harness.resourcegroup.framework.v1.service.ResourceInfo;
+import io.harness.resourcegroup.v2.model.AttributeFilter;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
@@ -30,8 +31,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-
-import io.harness.resourcegroup.v2.model.AttributeFilter;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.experimental.FieldDefaults;

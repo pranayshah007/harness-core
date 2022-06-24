@@ -249,7 +249,7 @@ public class ServiceLevelObjectiveResourceTest extends CvNextGenTestBase {
                             .request(MediaType.APPLICATION_JSON_TYPE)
                             .post(Entity.json(convertToJson(sloYaml)));
     assertThat(response.getStatus()).isEqualTo(400);
-    assertThat(response.readEntity(String.class)).contains("\"field\":\"dayOfWeek\",\"message\":\"may not be null\"");
+    assertThat(response.readEntity(String.class)).contains("\"field\":\"dayOfWeek\",\"message\":\"must not be null\"");
   }
 
   @Test

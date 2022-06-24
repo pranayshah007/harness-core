@@ -73,11 +73,15 @@ public class CEGcpConnectorValidator extends io.harness.ccm.connectors.AbstractC
     String orgIdentifier = connectorResponseDTO.getConnector().getOrgIdentifier();
     String connectorIdentifier = connectorResponseDTO.getConnector().getIdentifier();
     String projectId = gcpCloudCostConnectorDTO.getProjectId(); // Source project id
-    String datasetId = gcpCloudCostConnectorDTO.getBillingExportSpec().getDatasetId();
-    String gcpTableName = gcpCloudCostConnectorDTO.getBillingExportSpec().getTableId();
     String impersonatedServiceAccount = gcpCloudCostConnectorDTO.getServiceAccountEmail();
     final List<CEFeatures> featuresEnabled = gcpCloudCostConnectorDTO.getFeaturesEnabled();
     final List<ErrorDetail> errorList = new ArrayList<>();
+    String datasetId = "";
+    String gcpTableName = "";
+    if (gcpCloudCostConnectorDTO.getBillingExportSpec() != null) {
+      datasetId = gcpCloudCostConnectorDTO.getBillingExportSpec().getDatasetId();
+      gcpTableName = gcpCloudCostConnectorDTO.getBillingExportSpec().getTableId();
+    }
     if (featuresEnabled.contains(CEFeatures.BILLING)
         && (projectId.isEmpty() || datasetId.isEmpty() || impersonatedServiceAccount.isEmpty())) {
       return ConnectorValidationResult.builder()
@@ -126,28 +130,31 @@ public class CEGcpConnectorValidator extends io.harness.ccm.connectors.AbstractC
           return permissionsValidationResult;
         }
       }
-      ConnectorValidationResult connectorValidationResult =
-          validateAccessToBillingReport(projectId, datasetId, gcpTableName, impersonatedServiceAccount);
-      if (connectorValidationResult != null) {
-        return connectorValidationResult;
-      } else {
-        // 4. Check for data at destination only when 24 hrs have elapsed since connector last modified at
-        long now = Instant.now().toEpochMilli() - 24 * 60 * 60 * 1000;
-        if (connectorResponseDTO.getCreatedAt() < now) {
-          if (featuresEnabled.contains(CEFeatures.BILLING)
-              && !ceConnectorsHelper.isDataSyncCheck(accountIdentifier, connectorIdentifier,
-                  ConnectorType.GCP_CLOUD_COST, ceConnectorsHelper.JOB_TYPE_CLOUDFUNCTION)) {
-            log.error("Error with processing data"); // Used for log based metrics
-            errorList.add(ErrorDetail.builder()
-                              .reason("Error with processing data")
-                              .message("") // UI adds "Contact Harness Support or Harness Community Forum." in this case
-                              .code(500)
-                              .build());
-            return ConnectorValidationResult.builder()
-                .errorSummary("Error with processing data")
-                .errors(errorList)
-                .status(ConnectivityStatus.FAILURE)
-                .build();
+      if (featuresEnabled.contains(CEFeatures.BILLING)) {
+        ConnectorValidationResult connectorValidationResult =
+            validateAccessToBillingReport(projectId, datasetId, gcpTableName, impersonatedServiceAccount);
+        if (connectorValidationResult != null) {
+          return connectorValidationResult;
+        } else {
+          // 4. Check for data at destination only when 24 hrs have elapsed since connector last modified at
+          long now = Instant.now().toEpochMilli() - 24 * 60 * 60 * 1000;
+          if (connectorResponseDTO.getCreatedAt() < now) {
+            if (featuresEnabled.contains(CEFeatures.BILLING)
+                && !ceConnectorsHelper.isDataSyncCheck(accountIdentifier, connectorIdentifier,
+                    ConnectorType.GCP_CLOUD_COST, ceConnectorsHelper.JOB_TYPE_CLOUDFUNCTION)) {
+              log.error("Error with processing data"); // Used for log based metrics
+              errorList.add(
+                  ErrorDetail.builder()
+                      .reason("Error with processing data")
+                      .message("") // UI adds "Contact Harness Support or Harness Community Forum." in this case
+                      .code(500)
+                      .build());
+              return ConnectorValidationResult.builder()
+                  .errorSummary("Error with processing data")
+                  .errors(errorList)
+                  .status(ConnectivityStatus.FAILURE)
+                  .build();
+            }
           }
         }
       }
@@ -161,6 +168,7 @@ public class CEGcpConnectorValidator extends io.harness.ccm.connectors.AbstractC
           .status(ConnectivityStatus.FAILURE)
           .build();
     }
+
     log.info("Validation successful for connector {}", connectorIdentifier);
     return ConnectorValidationResult.builder()
         .status(ConnectivityStatus.SUCCESS)

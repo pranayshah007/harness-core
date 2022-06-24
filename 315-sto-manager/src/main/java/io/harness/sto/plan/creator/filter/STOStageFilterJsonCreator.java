@@ -55,6 +55,7 @@ import lombok.extern.slf4j.Slf4j;
 public class STOStageFilterJsonCreator extends GenericStageFilterJsonCreator {
   @Inject ConnectorUtils connectorUtils;
   @Inject private SimpleVisitorFactory simpleVisitorFactory;
+  @Inject ValidationUtils validationUtils;
 
   @Override
   public Set<String> getSupportedStageTypes() {
@@ -120,7 +121,7 @@ public class STOStageFilterJsonCreator extends GenericStageFilterJsonCreator {
       throw new CIStageExecutionException("Infrastructure is mandatory for execution");
     }
     if (infrastructure.getType() == Infrastructure.Type.VM) {
-      ValidationUtils.validateVmInfraDependencies(integrationStageConfig.getServiceDependencies().getValue());
+      validationUtils.validateVmInfraDependencies(integrationStageConfig.getServiceDependencies().getValue());
     }
   }
 

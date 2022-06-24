@@ -13,9 +13,12 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.azure.context.AzureWebClientContext;
 import io.harness.azure.model.AzureConfig;
 import io.harness.delegate.beans.connector.azureconnector.AzureConnectorDTO;
+import io.harness.delegate.task.azure.appservice.AzureAppServiceResourceUtilities;
+import io.harness.delegate.task.azure.appservice.deployment.AzureAppServiceDeploymentService;
 import io.harness.delegate.task.azure.appservice.webapp.ng.AzureWebAppInfraDelegateConfig;
 import io.harness.delegate.task.azure.appservice.webapp.ng.request.AzureWebAppTaskRequest;
 import io.harness.delegate.task.azure.appservice.webapp.ng.response.AzureWebAppRequestResponse;
+import io.harness.delegate.task.azure.common.AzureAppServiceService;
 import io.harness.delegate.task.azure.common.AzureConnectorMapper;
 import io.harness.delegate.task.azure.common.AzureLogCallbackProvider;
 import io.harness.exception.InvalidArgumentsException;
@@ -26,6 +29,9 @@ import org.apache.commons.lang3.tuple.Pair;
 @OwnedBy(CDP)
 public abstract class AzureWebAppRequestHandler<T extends AzureWebAppTaskRequest> {
   @Inject private AzureConnectorMapper connectorMapper;
+  @Inject protected AzureAppServiceDeploymentService azureAppServiceDeploymentService;
+  @Inject protected AzureAppServiceService azureAppServiceService;
+  @Inject protected AzureAppServiceResourceUtilities azureAppServiceResourceUtilities;
 
   public final AzureWebAppRequestResponse handleRequest(
       AzureWebAppTaskRequest azureWebAppTaskRequest, AzureLogCallbackProvider logCallbackProvider) {

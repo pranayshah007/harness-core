@@ -28,6 +28,7 @@ import io.harness.steps.http.HttpStep;
 import io.harness.steps.jira.create.JiraCreateStep;
 import io.harness.steps.jira.update.JiraUpdateStep;
 import io.harness.steps.policy.step.PolicyStep;
+import io.harness.steps.resourcerestraint.QueueStep;
 import io.harness.steps.resourcerestraint.ResourceRestraintStep;
 import io.harness.steps.servicenow.create.ServiceNowCreateStep;
 import io.harness.steps.servicenow.update.ServiceNowUpdateStep;
@@ -45,6 +46,7 @@ public class OrchestrationStepsModuleStepRegistrar {
 
     engineSteps.put(BarrierStep.STEP_TYPE, BarrierStep.class);
     engineSteps.put(ResourceRestraintStep.STEP_TYPE, ResourceRestraintStep.class);
+    engineSteps.put(QueueStep.STEP_TYPE, QueueStep.class);
     engineSteps.put(PipelineSetupStep.STEP_TYPE, PipelineSetupStep.class);
 
     engineSteps.put(ApprovalStageStep.STEP_TYPE, ApprovalStageStep.class);

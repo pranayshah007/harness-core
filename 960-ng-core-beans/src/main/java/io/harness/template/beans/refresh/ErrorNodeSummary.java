@@ -9,6 +9,7 @@ package io.harness.template.beans.refresh;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.template.beans.TemplateResponseDTO;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,6 +22,7 @@ import lombok.Data;
 public class ErrorNodeSummary {
   NodeInfo nodeInfo;
   TemplateInfo templateInfo;
+  TemplateResponseDTO templateResponse;
   List<ErrorNodeSummary> childrenErrorNodes;
 
   public void addChildrenErrorNode(ErrorNodeSummary errorNodeSummary) {

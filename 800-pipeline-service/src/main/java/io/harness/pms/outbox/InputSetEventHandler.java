@@ -61,6 +61,9 @@ public class InputSetEventHandler {
     } else if (globalContext.get(PRINCIPAL_CONTEXT) != null) {
       principal = ((PrincipalContextData) globalContext.get(PRINCIPAL_CONTEXT)).getPrincipal();
     }
+    if (event.getIsForOldGitSync()) {
+      return true;
+    }
     return auditClientService.publishAudit(auditEntry, fromSecurityPrincipal(principal), globalContext);
   }
 
@@ -83,6 +86,9 @@ public class InputSetEventHandler {
     } else if (globalContext.get(PRINCIPAL_CONTEXT) != null) {
       principal = ((PrincipalContextData) globalContext.get(PRINCIPAL_CONTEXT)).getPrincipal();
     }
+    if (event.getIsForOldGitSync()) {
+      return true;
+    }
     return auditClientService.publishAudit(auditEntry, fromSecurityPrincipal(principal), globalContext);
   }
 
@@ -103,6 +109,9 @@ public class InputSetEventHandler {
       principal = new ServicePrincipal(PIPELINE_SERVICE.getServiceId());
     } else if (globalContext.get(PRINCIPAL_CONTEXT) != null) {
       principal = ((PrincipalContextData) globalContext.get(PRINCIPAL_CONTEXT)).getPrincipal();
+    }
+    if (event.getIsForOldGitSync()) {
+      return true;
     }
     return auditClientService.publishAudit(auditEntry, fromSecurityPrincipal(principal), globalContext);
   }

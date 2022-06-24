@@ -44,5 +44,5 @@ public class ServiceYamlV2 implements Visitable {
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
   @Pattern(regexp = NGRegexValidatorConstants.RUNTIME_OR_FIXED_IDENTIFIER_PATTERN)
   private ParameterField<String> serviceRef;
-  Map<String, Object> serviceInputs;
+  @ApiModelProperty(dataType = SwaggerConstants.JSON_NODE_CLASSPATH) Map<String, Object> serviceInputs;
 }

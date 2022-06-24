@@ -36,11 +36,13 @@ import io.harness.accesscontrol.acl.api.ResourceScope;
 import io.harness.accesscontrol.clients.AccessControlClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.artifact.ArtifactSummary;
 import io.harness.cdng.service.beans.ServiceDefinitionType;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.OrgAndProjectValidationHelper;
+import io.harness.ng.core.beans.NGEntityTemplateResponseDTO;
 import io.harness.ng.core.dto.ErrorDTO;
 import io.harness.ng.core.dto.FailureDTO;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -400,10 +402,29 @@ public class ServiceResourceV2 {
   }
 
   @GET
+  @Path("/dummy-artifactSummary-api")
+  @ApiOperation(value = "This is dummy api to expose ArtifactSummary", nickname = "dummyArtifactSummaryApi")
+  @Hidden
+  // do not delete this.
+  public ResponseDTO<ArtifactSummary> getArtifactSummaries() {
+    return ResponseDTO.newResponse(new ArtifactSummary() {
+      @Override
+      public String getType() {
+        return null;
+      }
+
+      @Override
+      public String getDisplayName() {
+        return null;
+      }
+    });
+  }
+
+  @GET
   @Path("/runtimeInputs/{serviceIdentifier}")
   @ApiOperation(value = "This api returns runtime input YAML", nickname = "getRuntimeInputsServiceEntity")
   @Hidden
-  public ResponseDTO<String> getServiceRuntimeInputs(
+  public ResponseDTO<NGEntityTemplateResponseDTO> getServiceRuntimeInputs(
       @Parameter(description = SERVICE_PARAM_MESSAGE) @PathParam(
           "serviceIdentifier") @ResourceIdentifier String serviceIdentifier,
       @Parameter(description = NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE) @NotNull @QueryParam(
@@ -420,7 +441,8 @@ public class ServiceResourceV2 {
         throw new InvalidRequestException("Service is not configured with a Service definition. Service Yaml is empty");
       }
       String serviceInputYaml = serviceEntityService.createServiceInputsYaml(serviceEntity.get().getYaml());
-      return ResponseDTO.newResponse(serviceInputYaml);
+      return ResponseDTO.newResponse(
+          NGEntityTemplateResponseDTO.builder().inputSetTemplateYaml(serviceInputYaml).build());
     } else {
       throw new NotFoundException(String.format("Service with identifier [%s] in project [%s], org [%s] not found",
           serviceIdentifier, projectIdentifier, orgIdentifier));

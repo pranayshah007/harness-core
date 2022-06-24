@@ -1,0 +1,12 @@
+name: Delegate Auth Cache Metrics
+identifier: delegate_auth_cache_metrics
+metricGroup: delegate_account
+metrics:
+  - metricName: delegate_auth_cache_hit
+    metricDefinition: Delegate auth cache hit count
+    type: Count
+    unit: "1"
+  - metricName: delegate_auth_cache_miss
+    metricDefinition: Delegate auth cache miss count
+    type: Count
+    unit: "1"

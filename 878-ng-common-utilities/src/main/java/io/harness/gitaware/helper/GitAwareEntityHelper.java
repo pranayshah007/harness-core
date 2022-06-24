@@ -18,6 +18,7 @@ import io.harness.gitsync.scm.SCMGitSyncHelper;
 import io.harness.gitsync.scm.beans.ScmCreateFileGitRequest;
 import io.harness.gitsync.scm.beans.ScmCreateFileGitResponse;
 import io.harness.gitsync.scm.beans.ScmGetFileResponse;
+import io.harness.gitsync.scm.beans.ScmGitMetaData;
 import io.harness.gitsync.scm.beans.ScmUpdateFileGitRequest;
 import io.harness.gitsync.scm.beans.ScmUpdateFileGitResponse;
 import io.harness.persistence.gitaware.GitAware;
@@ -31,7 +32,7 @@ import java.util.Map;
 @Singleton
 public class GitAwareEntityHelper {
   @Inject SCMGitSyncHelper scmGitSyncHelper;
-  private static final String DEFAULT = "__default__";
+  public static final String DEFAULT = "__default__";
 
   public GitAware fetchEntityFromRemote(
       GitAware entity, Scope scope, GitContextRequestParams gitContextRequestParams, Map<String, String> contextMap) {
@@ -51,6 +52,19 @@ public class GitAwareEntityHelper {
     entity.setData(scmGetFileResponse.getFileContent());
     GitAwareContextHelper.updateScmGitMetaData(scmGetFileResponse.getGitMetaData());
     return entity;
+  }
+
+  // todo: make pipeline import call this method too
+  public String fetchYAMLFromRemote(String accountId, String orgIdentifier, String projectIdentifier) {
+    GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
+    Scope scope = Scope.of(accountId, orgIdentifier, projectIdentifier);
+    GitContextRequestParams gitContextRequestParams = GitContextRequestParams.builder()
+                                                          .branchName(gitEntityInfo.getBranch())
+                                                          .connectorRef(gitEntityInfo.getConnectorRef())
+                                                          .filePath(gitEntityInfo.getFilePath())
+                                                          .repoName(gitEntityInfo.getRepoName())
+                                                          .build();
+    return fetchYAMLFromRemote(scope, gitContextRequestParams, Collections.emptyMap());
   }
 
   public String fetchYAMLFromRemote(
@@ -122,6 +136,18 @@ public class GitAwareEntityHelper {
 
   public ScmUpdateFileGitResponse updateEntityOnGit(GitAware gitAwareEntity, String yaml, Scope scope) {
     GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
+    return updateEntityOnGit(
+        gitAwareEntity, yaml, scope, gitEntityInfo.getLastObjectId(), gitEntityInfo.getLastCommitId());
+  }
+
+  public ScmUpdateFileGitResponse updateFileImportedFromGit(GitAware gitAwareEntity, String yaml, Scope scope) {
+    ScmGitMetaData scmGitMetaData = GitAwareContextHelper.getScmGitMetaData();
+    return updateEntityOnGit(gitAwareEntity, yaml, scope, scmGitMetaData.getBlobId(), scmGitMetaData.getCommitId());
+  }
+
+  ScmUpdateFileGitResponse updateEntityOnGit(
+      GitAware gitAwareEntity, String yaml, Scope scope, String oldFileSHA, String oldCommitID) {
+    GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
     String repoName = gitAwareEntity.getRepo();
     if (isNullOrDefault(repoName)) {
       throw new InvalidRequestException("No repo name provided.");
@@ -151,8 +177,8 @@ public class GitAwareEntityHelper {
                                                           .isCommitToNewBranch(gitEntityInfo.isNewBranch())
                                                           .commitMessage(commitMsg)
                                                           .baseBranch(baseBranch)
-                                                          .oldFileSha(gitEntityInfo.getLastObjectId())
-                                                          .oldCommitId(gitEntityInfo.getLastCommitId())
+                                                          .oldFileSha(oldFileSHA)
+                                                          .oldCommitId(oldCommitID)
                                                           .build();
 
     ScmUpdateFileGitResponse scmUpdateFileGitResponse =

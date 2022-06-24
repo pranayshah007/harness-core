@@ -9,6 +9,7 @@ package io.harness.repositories.custom;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import com.mongodb.client.result.DeleteResult;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity.NGTriggerEntityKeys;
@@ -98,6 +99,15 @@ public class NGTriggerRepositoryCustomImpl implements NGTriggerRepositoryCustom 
         "[Retrying]: Failed deleting Trigger; attempt: {}", "[Failed]: Failed deleting Trigger; attempt: {}");
     return Failsafe.with(retryPolicy)
         .get(() -> mongoTemplate.updateFirst(query, updateOperationsForDelete, NGTriggerEntity.class));
+  }
+
+  @Override
+  public DeleteResult hardDelete(Criteria criteria) {
+    Query query = new Query(criteria);
+    RetryPolicy<Object> retryPolicy = getRetryPolicy(
+            "[Retrying]: Failed hard deleting Trigger; attempt: {}", "[Failed]: Failed deleting Trigger; attempt: {}");
+    return Failsafe.with(retryPolicy).get(() -> mongoTemplate.remove(query, NGTriggerEntity.class));
+
   }
 
   private RetryPolicy<Object> getRetryPolicy(String failedAttemptMessage, String failureMessage) {

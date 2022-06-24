@@ -26,7 +26,7 @@ public class ForLoopStrategyConfigService implements StrategyConfigService {
                        .setStrategyMetadata(StrategyMetadata.newBuilder()
                                                 .setCurrentIteration(i)
                                                 .setTotalIterations(harnessForConfig.getIteration().getValue())
-                                                .getDefaultInstanceForType())
+                                                .build())
                        .build());
     }
     return children;

@@ -32,6 +32,7 @@ import io.harness.aws.cf.Status;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.ExceptionUtils;
 import io.harness.exception.InvalidRequestException;
+import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.logging.CommandExecutionStatus;
 import io.harness.logging.LogCallback;
 import io.harness.logging.LogLevel;
@@ -84,6 +85,7 @@ public class CloudFormationCreateStackHandler extends CloudFormationCommandTaskH
   protected CloudFormationCommandExecutionResponse executeInternal(CloudFormationCommandRequest request,
       List<EncryptedDataDetail> details, ExecutionLogCallback executionLogCallback) {
     encryptionService.decrypt(request.getAwsConfig(), details, false);
+    ExceptionMessageSanitizer.storeAllSecretsForSanitizing(request.getAwsConfig(), details);
     AwsInternalConfig awsInternalConfig = AwsConfigToInternalMapper.toAwsInternalConfig(request.getAwsConfig());
 
     CloudFormationCreateStackRequest upsertRequest = (CloudFormationCreateStackRequest) request;
@@ -176,8 +178,8 @@ public class CloudFormationCreateStackHandler extends CloudFormationCommandTaskH
         }
       }
     } catch (Exception ex) {
-      String errorMessage =
-          format("# Exception: %s while Updating stack: %s", ExceptionUtils.getMessage(ex), stack.getStackName());
+      String errorMessage = format("# Exception: %s while Updating stack: %s",
+          ExceptionUtils.getMessage(ExceptionMessageSanitizer.sanitizeException(ex)), stack.getStackName());
       executionLogCallback.saveExecutionLog(errorMessage, LogLevel.ERROR, CommandExecutionStatus.FAILURE);
       builder.errorMessage(errorMessage).commandExecutionStatus(CommandExecutionStatus.FAILURE);
     }
@@ -262,7 +264,8 @@ public class CloudFormationCreateStackHandler extends CloudFormationCommandTaskH
         }
       }
     } catch (Exception ex) {
-      String errorMessage = format("Exception: %s while creating stack: %s", ExceptionUtils.getMessage(ex), stackName);
+      String errorMessage = format("Exception: %s while creating stack: %s",
+          ExceptionUtils.getMessage(ExceptionMessageSanitizer.sanitizeException(ex)), stackName);
       executionLogCallback.saveExecutionLog(errorMessage, LogLevel.ERROR, CommandExecutionStatus.FAILURE);
       builder.errorMessage(errorMessage).commandExecutionStatus(CommandExecutionStatus.FAILURE);
     }

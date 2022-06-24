@@ -26,11 +26,11 @@ import lombok.extern.slf4j.Slf4j;
 @OwnedBy(PL)
 public class GithubCreatePullRequestScmApiErrorHandler implements ScmApiErrorHandler {
   public static final String CREATE_PULL_REQUEST_FAILURE = "The pull request could not be created in Github. ";
-  public static final String CREATE_PULL_REQUEST_VALIDATION_FAILED_EXPLANATION = "Please check the following:\n"
+  public static final String CREATE_PULL_REQUEST_VALIDATION_FAILED_HINT = "Please check the following:\n"
       + "1. If already a pull request exists for request source branch<BRANCH> to target branch<TARGET_BRANCH>.\n"
       + "2. If source branch<BRANCH> and target branch<TARGET_BRANCH> both exists in Github repository.\n"
       + "3. If title of the pull request is empty.";
-  public static final String CREATE_PULL_REQUEST_VALIDATION_FAILED_HINT =
+  public static final String CREATE_PULL_REQUEST_VALIDATION_FAILED_EXPLANATION =
       "There was issue while creating pull request. Possible reasons can be:\n"
       + "1. There is already an open pull request from source branch<BRANCH> to target branch<TARGET_BRANCH> for given Github repository.\n"
       + "2. The source branch<BRANCH> or target branch<TARGET_BRANCH> doesn't exist for given Github repository.\n"
@@ -56,7 +56,7 @@ public class GithubCreatePullRequestScmApiErrorHandler implements ScmApiErrorHan
         throw NestedExceptionUtils.hintWithExplanationException(
             ErrorMessageFormatter.formatMessage(CREATE_PULL_REQUEST_VALIDATION_FAILED_HINT, errorMetadata),
             ErrorMessageFormatter.formatMessage(CREATE_PULL_REQUEST_VALIDATION_FAILED_EXPLANATION, errorMetadata),
-            new ScmBadRequestException(SCMExceptionErrorMessages.CREATE_PULL_REQUEST_VALIDATION_FAILED));
+            new ScmBadRequestException(SCMExceptionErrorMessages.CREATE_PULL_REQUEST_FAILURE));
       default:
         log.error(String.format("Error while creating github pull request: [%s: %s]", statusCode, errorMessage));
         throw new ScmUnexpectedException(errorMessage);

@@ -9,6 +9,7 @@ package io.harness.beans.yaml.extended.infrastrucutre;
 
 import static io.harness.annotations.dev.HarnessTeam.CI;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.yaml.YamlNode;
 
@@ -30,6 +31,7 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName("VM")
 @TypeAlias("VmInfraYaml")
 @OwnedBy(CI)
+@RecasterAlias("io.harness.beans.yaml.extended.infrastrucutre.VmInfraYaml")
 public class VmInfraYaml implements Infrastructure {
   @JsonProperty(YamlNode.UUID_FIELD_NAME)
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })

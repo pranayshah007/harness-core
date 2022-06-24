@@ -61,6 +61,7 @@ public class CustomStagePlanCreator extends AbstractPmsStagePlanCreator<CustomSt
       PlanCreationContext ctx, CustomStageNode field) {
     LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap = new LinkedHashMap<>();
     Map<String, YamlField> dependenciesNodeMap = new HashMap<>();
+    Map<String, ByteString> metadataMap = new HashMap<>();
 
     YamlField specField =
         Preconditions.checkNotNull(ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.SPEC));
@@ -71,9 +72,14 @@ public class CustomStagePlanCreator extends AbstractPmsStagePlanCreator<CustomSt
       throw new InvalidRequestException("Execution section is required in Custom stage");
     }
     dependenciesNodeMap.put(executionField.getNode().getUuid(), executionField);
+    addStrategyFieldDependencyIfPresent(ctx, field, dependenciesNodeMap,metadataMap);
+
     planCreationResponseMap.put(executionField.getNode().getUuid(),
         PlanCreationResponse.builder()
-            .dependencies(DependenciesUtils.toDependenciesProto(dependenciesNodeMap))
+            .dependencies(DependenciesUtils.toDependenciesProto(dependenciesNodeMap)
+                    .toBuilder()
+                    .putDependencyMetadata(field.getUuid(), Dependency.newBuilder().putAllMetadata(metadataMap).build())
+                    .build())
             .build());
 
     // Adding Spec node

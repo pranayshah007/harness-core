@@ -1,3 +1,10 @@
+/*
+ * Copyright 2022 Harness Inc. All rights reserved.
+ * Use of this source code is governed by the PolyForm Free Trial 1.0.0 license
+ * that can be found in the licenses directory at the root of this repository, also available at
+ * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
+ */
+
 package io.harness.cdng.creator.plan.gitops;
 
 import static java.util.Arrays.asList;
@@ -39,9 +46,9 @@ public class ClusterPlanCreatorUtilsTest {
     PlanNode expected = ClusterPlanCreatorUtils.getGitopsClustersStepPlanNodeBuilder(nodeUuid, input).build();
 
     assertThat(expected.getFacilitatorObtainments()).isNotNull();
-    assertThat(expected.getIdentifier()).isEqualTo("GitopsClusters");
+    assertThat(expected.getIdentifier()).isEqualTo("Gitops Clusters");
     assertThat(expected.getUuid()).isEqualTo(nodeUuid);
-    assertThat(expected.getName()).isEqualTo("GitopsClusters");
+    assertThat(expected.getName()).isEqualTo("Gitops Clusters");
     assertThat(expected.getStepType()).isEqualTo(GitopsClustersStep.STEP_TYPE);
 
     ClusterStepParameters stepParameters = (ClusterStepParameters) expected.getStepParameters();
@@ -59,9 +66,9 @@ public class ClusterPlanCreatorUtilsTest {
     PlanNode expected = ClusterPlanCreatorUtils.getGitopsClustersStepPlanNodeBuilder(nodeUuid, input).build();
 
     assertThat(expected.getFacilitatorObtainments()).isNotNull();
-    assertThat(expected.getIdentifier()).isEqualTo("GitopsClusters");
+    assertThat(expected.getIdentifier()).isEqualTo("Gitops Clusters");
     assertThat(expected.getUuid()).isEqualTo(nodeUuid);
-    assertThat(expected.getName()).isEqualTo("GitopsClusters");
+    assertThat(expected.getName()).isEqualTo("Gitops Clusters");
     assertThat(expected.getStepType()).isEqualTo(GitopsClustersStep.STEP_TYPE);
 
     ClusterStepParameters stepParameters = (ClusterStepParameters) expected.getStepParameters();

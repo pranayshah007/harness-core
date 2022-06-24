@@ -9,6 +9,7 @@ package io.harness.repositories.custom;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 
+import com.mongodb.client.result.DeleteResult;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ngtriggers.beans.entity.NGTriggerEntity;
 
@@ -24,4 +25,5 @@ public interface NGTriggerRepositoryCustom {
   NGTriggerEntity updateValidationStatus(Criteria criteria, NGTriggerEntity ngTriggerEntity);
   NGTriggerEntity updateValidationStatusAndMetadata(Criteria criteria, NGTriggerEntity ngTriggerEntity);
   UpdateResult delete(Criteria criteria);
+  DeleteResult hardDelete(Criteria criteria);
 }

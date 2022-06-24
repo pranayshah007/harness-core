@@ -26,6 +26,7 @@ import static io.harness.rule.OwnerRule.BUHA;
 import static io.harness.rule.OwnerRule.MATT;
 import static io.harness.rule.OwnerRule.NAMAN;
 import static io.harness.rule.OwnerRule.PIYUSH_BHUWALKA;
+import static io.harness.rule.OwnerRule.RAGHAV_GUPTA;
 import static io.harness.rule.OwnerRule.ROHITKARELIA;
 
 import static com.fasterxml.jackson.dataformat.yaml.YAMLGenerator.Feature.USE_NATIVE_TYPE_ID;
@@ -72,6 +73,9 @@ import io.harness.ngtriggers.beans.source.webhook.v2.TriggerEventDataCondition;
 import io.harness.ngtriggers.beans.source.webhook.v2.WebhookTriggerConfigV2;
 import io.harness.ngtriggers.beans.source.webhook.v2.awscodecommit.AwsCodeCommitSpec;
 import io.harness.ngtriggers.beans.source.webhook.v2.awscodecommit.event.AwsCodeCommitTriggerEvent;
+import io.harness.ngtriggers.beans.source.webhook.v2.azurerepo.AzureRepoSpec;
+import io.harness.ngtriggers.beans.source.webhook.v2.azurerepo.action.AzureRepoPRAction;
+import io.harness.ngtriggers.beans.source.webhook.v2.azurerepo.event.AzureRepoTriggerEvent;
 import io.harness.ngtriggers.beans.source.webhook.v2.bitbucket.BitbucketSpec;
 import io.harness.ngtriggers.beans.source.webhook.v2.bitbucket.action.BitbucketPRAction;
 import io.harness.ngtriggers.beans.source.webhook.v2.bitbucket.event.BitbucketTriggerEvent;
@@ -118,6 +122,9 @@ public class NGTriggerElementMapperV2Test extends CategoryTest {
   private String ngTriggerYaml_bitbucket_pr;
   private String ngTriggerYaml_bitbucket_push;
 
+  private String ngTriggerYaml_azurerepo_pr;
+  private String ngTriggerYaml_azurerepo_push;
+
   private String ngTriggerYaml_awscodecommit_push;
   private String ngTriggerYaml_custom;
   private String ngTriggerYaml_cron;
@@ -145,6 +152,7 @@ public class NGTriggerElementMapperV2Test extends CategoryTest {
       + "              spec:\n"
       + "                releaseName: releaseName1";
   private static final String JEXL = "true";
+  private static final String PROJECT = "project";
   private static final String REPO = "myrepo";
   private static final String CONN = "conn";
   @Mock private TriggerEventHistoryRepository triggerEventHistoryRepository;
@@ -170,6 +178,10 @@ public class NGTriggerElementMapperV2Test extends CategoryTest {
         Objects.requireNonNull(classLoader.getResource("ng-trigger-bitbucket-pr-v2.yaml")), StandardCharsets.UTF_8);
     ngTriggerYaml_bitbucket_push = Resources.toString(
         Objects.requireNonNull(classLoader.getResource("ng-trigger-bitbucket-push-v2.yaml")), StandardCharsets.UTF_8);
+    ngTriggerYaml_azurerepo_pr = Resources.toString(
+        Objects.requireNonNull(classLoader.getResource("ng-trigger-azurerepo-pr-v2.yaml")), StandardCharsets.UTF_8);
+    ngTriggerYaml_azurerepo_push = Resources.toString(
+        Objects.requireNonNull(classLoader.getResource("ng-trigger-azurerepo-push-v2.yaml")), StandardCharsets.UTF_8);
     ngTriggerYaml_awscodecommit_push =
         Resources.toString(Objects.requireNonNull(classLoader.getResource("ng-trigger-awscodecommit-push-v2.yaml")),
             StandardCharsets.UTF_8);
@@ -418,6 +430,64 @@ public class NGTriggerElementMapperV2Test extends CategoryTest {
     assertThat(spec.fetchGitAware().fetchConnectorRef()).isEqualTo(CONN);
     assertThat(spec.fetchGitAware().fetchAutoAbortPreviousExecutions()).isTrue();
     assertThat(spec.fetchGitAware().fetchEvent()).isEqualTo(BitbucketTriggerEvent.PUSH);
+    assertThat(spec.fetchGitAware().fetchActions()).isEmpty();
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testAzureRepoPR() throws Exception {
+    NGTriggerConfigV2 ngTriggerConfigV2 = ngTriggerElementMapper.toTriggerConfigV2(ngTriggerYaml_azurerepo_pr);
+
+    assertRootLevelProperties(ngTriggerConfigV2);
+
+    NGTriggerSourceV2 ngTriggerSourceV2 = ngTriggerConfigV2.getSource();
+    assertThat(ngTriggerSourceV2).isNotNull();
+    assertThat(ngTriggerSourceV2.getType()).isEqualTo(WEBHOOK);
+    NGTriggerSpecV2 ngTriggerSpecV2 = ngTriggerSourceV2.getSpec();
+    assertThat(WebhookTriggerConfigV2.class.isAssignableFrom(ngTriggerSpecV2.getClass())).isTrue();
+    WebhookTriggerConfigV2 webhookTriggerConfigV2 = (WebhookTriggerConfigV2) ngTriggerSpecV2;
+    assertThat(webhookTriggerConfigV2.getType()).isEqualTo(WebhookTriggerType.AZURE);
+    assertThat(AzureRepoSpec.class.isAssignableFrom(webhookTriggerConfigV2.getSpec().getClass())).isTrue();
+    AzureRepoSpec spec = (AzureRepoSpec) webhookTriggerConfigV2.getSpec();
+    assertThat(spec.getSpec().getProjectName()).isEqualTo(PROJECT);
+    assertThat(spec.getType()).isEqualTo(AzureRepoTriggerEvent.PULL_REQUEST);
+    assertThat(spec.fetchPayloadAware().fetchPayloadConditions()).containsAll(payloadConditions);
+    assertThat(spec.fetchPayloadAware().fetchHeaderConditions()).containsAll(headerConditions);
+    assertThat(spec.fetchPayloadAware().fetchJexlCondition()).isEqualTo(JEXL);
+    assertThat(spec.fetchGitAware().fetchRepoName()).isEqualTo(REPO);
+    assertThat(spec.fetchGitAware().fetchConnectorRef()).isEqualTo(CONN);
+    assertThat(spec.fetchGitAware().fetchEvent()).isEqualTo(AzureRepoTriggerEvent.PULL_REQUEST);
+    assertThat(spec.fetchGitAware().fetchActions())
+        .containsAll(asList(AzureRepoPRAction.UPDATE, AzureRepoPRAction.CREATE, AzureRepoPRAction.MERGE));
+  }
+
+  @Test
+  @Owner(developers = RAGHAV_GUPTA)
+  @Category(UnitTests.class)
+  public void testAzureRepoPush() throws Exception {
+    NGTriggerConfigV2 ngTriggerConfigV2 = ngTriggerElementMapper.toTriggerConfigV2(ngTriggerYaml_azurerepo_push);
+
+    assertRootLevelProperties(ngTriggerConfigV2);
+
+    NGTriggerSourceV2 ngTriggerSourceV2 = ngTriggerConfigV2.getSource();
+    assertThat(ngTriggerSourceV2).isNotNull();
+    assertThat(ngTriggerSourceV2.getType()).isEqualTo(WEBHOOK);
+    NGTriggerSpecV2 ngTriggerSpecV2 = ngTriggerSourceV2.getSpec();
+    assertThat(WebhookTriggerConfigV2.class.isAssignableFrom(ngTriggerSpecV2.getClass())).isTrue();
+    WebhookTriggerConfigV2 webhookTriggerConfigV2 = (WebhookTriggerConfigV2) ngTriggerSpecV2;
+    assertThat(webhookTriggerConfigV2.getType()).isEqualTo(WebhookTriggerType.AZURE);
+    assertThat(AzureRepoSpec.class.isAssignableFrom(webhookTriggerConfigV2.getSpec().getClass())).isTrue();
+    AzureRepoSpec spec = (AzureRepoSpec) webhookTriggerConfigV2.getSpec();
+    assertThat(spec.getSpec().getProjectName()).isEqualTo(PROJECT);
+    assertThat(spec.getType()).isEqualTo(AzureRepoTriggerEvent.PUSH);
+    assertThat(spec.fetchPayloadAware().fetchPayloadConditions()).containsAll(payloadConditions);
+    assertThat(spec.fetchPayloadAware().fetchHeaderConditions()).containsAll(headerConditions);
+    assertThat(spec.fetchPayloadAware().fetchJexlCondition()).isEqualTo(JEXL);
+    assertThat(spec.fetchGitAware().fetchRepoName()).isEqualTo(REPO);
+    assertThat(spec.fetchGitAware().fetchConnectorRef()).isEqualTo(CONN);
+    assertThat(spec.fetchGitAware().fetchAutoAbortPreviousExecutions()).isTrue();
+    assertThat(spec.fetchGitAware().fetchEvent()).isEqualTo(AzureRepoTriggerEvent.PUSH);
     assertThat(spec.fetchGitAware().fetchActions()).isEmpty();
   }
 

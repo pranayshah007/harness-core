@@ -28,6 +28,8 @@ import static java.util.Collections.singletonList;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.fail;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyLong;
@@ -132,7 +134,7 @@ public class CfCliClientImplTest extends CategoryTest {
     ProcessExecutor processExecutor = mock(ProcessExecutor.class);
     ProcessResult processResult = mock(ProcessResult.class);
     doReturn(processResult).when(processExecutor).execute();
-    doReturn(0).doReturn(1).when(processResult).getExitValue();
+    doReturn(0).doReturn(0).doReturn(1).doReturn(1).when(processResult).getExitValue();
 
     doReturn(processExecutor).when(cfCliClient).createProcessExecutorForCfTask(anyLong(), anyString(), anyMap(), any());
     cfCliClient.performConfigureAutoscaler(
@@ -206,7 +208,7 @@ public class CfCliClientImplTest extends CategoryTest {
     ProcessExecutor processExecutor = mock(ProcessExecutor.class);
     ProcessResult processResult = mock(ProcessResult.class);
     doReturn(processResult).when(processExecutor).execute();
-    doReturn(0).doReturn(1).when(processResult).getExitValue();
+    doReturn(0).doReturn(0).doReturn(1).doReturn(1).when(processResult).getExitValue();
 
     CfAppAutoscalarRequestData cfAppAutoscalarRequestData = CfAppAutoscalarRequestData.builder()
                                                                 .applicationName(APP_NAME)
@@ -329,7 +331,9 @@ public class CfCliClientImplTest extends CategoryTest {
 
     doNothing().when(logCallback).saveExecutionLog(anyString());
     doReturn(true).when(cfCliClient).doLogin(any(CfRequestConfig.class), any(LogCallback.class), anyString());
-    doReturn(new ProcessResult(0, null)).when(cfCliClient).runProcessExecutor(any(ProcessExecutor.class));
+    doReturn(new ProcessResult(0, null))
+        .when(cfCliClient)
+        .getProcessResult(nullable(String.class), any(), anyInt(), any());
     cfCliClient.runPcfPluginScript(requestData, logCallback);
   }
 

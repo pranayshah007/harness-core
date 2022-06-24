@@ -52,8 +52,25 @@ public interface FileStoreService {
 
   /**
    * Get the file metadata with its content transformed to String if includeContent is set.
+   * If the path is related to folder then returns recursively all files metadata
+   * with its content including files in folder sub-folders.
+   *
+   * @param accountIdentifier the account identifier
+   * @param orgIdentifier the organization identifier
+   * @param projectIdentifier the project identifier
+   * @param path the file or folder path
+   * @param includeContent include file content
+   * @return file store node with content
+   */
+  Optional<FileStoreNodeDTO> getByPath(@NotNull String accountIdentifier, String orgIdentifier,
+      String projectIdentifier, @NotNull String path, boolean includeContent);
+
+  /**
+   * Get the file metadata with its content transformed to String if includeContent is set.
    * If identifier is related to folder then returns recursively all files metadata
    * with its content including files in folder sub-folders.
+   *
+   * Note: the identifier is not referring to scoped identifier.
    *
    * @param accountIdentifier the account identifier
    * @param orgIdentifier the organization identifier

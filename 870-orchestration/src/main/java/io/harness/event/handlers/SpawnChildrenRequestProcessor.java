@@ -62,9 +62,23 @@ public class SpawnChildrenRequestProcessor implements SdkResponseProcessor {
       List<String> callbackIds = new ArrayList<>();
       int currentChild = 0;
       int maxConcurrency = (int) request.getChildren().getMaxConcurrency();
+      // If maxConcurrency is not defined then we will run all children in parallel therefore maxConcurrency should be
+      // number of children
+      if (maxConcurrency == 0) {
+        maxConcurrency = request.getChildren().getChildrenCount();
+      }
+      for (int i = 0; i < request.getChildren().getChildrenList().size(); i++) {
+        callbackIds.add(generateUuid());
+      }
+      if (isMatrixFeatureEnabled) {
+        // Save the ConcurrentChildInstance in db first so that whenever callback is called, this information is readily
+        // available. If not done here, it could lead to race conditions
+        nodeExecutionInfoService.addConcurrentChildInformation(
+            ConcurrentChildInstance.builder().childrenNodeExecutionIds(callbackIds).cursor(maxConcurrency).build(),
+            nodeExecutionId);
+      }
       for (Child child : request.getChildren().getChildrenList()) {
-        String uuid = generateUuid();
-        callbackIds.add(uuid);
+        String uuid = callbackIds.get(currentChild);
         if (isMatrixFeatureEnabled) {
           InitiateMode initiateMode = InitiateMode.CREATE;
           if (shouldCreateAndStart(maxConcurrency, currentChild)) {
@@ -72,20 +86,10 @@ public class SpawnChildrenRequestProcessor implements SdkResponseProcessor {
           }
           createAndStart(ambiance, nodeExecutionId, uuid, child.getChildNodeId(), child.getStrategyMetadata(),
               maxConcurrency, initiateMode);
-          currentChild++;
         } else {
           initiateNodeHelper.publishEvent(ambiance, child.getChildNodeId(), uuid);
         }
-      }
-
-      if (isMatrixFeatureEnabled) {
-        // Save the ConcurrentChildInstance in db
-        nodeExecutionInfoService.addConcurrentChildInformation(
-            ConcurrentChildInstance.builder()
-                .childrenNodeExecutionIds(callbackIds)
-                .cursor((int) request.getChildren().getMaxConcurrency())
-                .build(),
-            nodeExecutionId);
+        currentChild++;
       }
 
       // Attach a Callback to the parent for the child
@@ -101,7 +105,7 @@ public class SpawnChildrenRequestProcessor implements SdkResponseProcessor {
   }
 
   private boolean shouldCreateAndStart(int maxConcurrency, int currentChild) {
-    return maxConcurrency == 0 || currentChild < maxConcurrency;
+    return currentChild < maxConcurrency;
   }
 
   private void createAndStart(Ambiance ambiance, String parentNodeExecutionId, String childNodeExecutionId,

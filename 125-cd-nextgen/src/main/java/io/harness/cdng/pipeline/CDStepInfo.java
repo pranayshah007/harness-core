@@ -10,7 +10,12 @@ package io.harness.cdng.pipeline;
 import io.harness.advisers.rollback.OnFailRollbackParameters;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.azure.webapp.AzureWebAppRollbackStep;
+import io.harness.cdng.azure.webapp.AzureWebAppSlotDeploymentStep;
+import io.harness.cdng.azure.webapp.AzureWebAppSwapSlotStep;
+import io.harness.cdng.azure.webapp.AzureWebAppTrafficShiftStep;
 import io.harness.cdng.gitops.CreatePRStepInfo;
+import io.harness.cdng.gitops.MergePRStepInfo;
 import io.harness.cdng.helm.HelmDeployStepInfo;
 import io.harness.cdng.helm.rollback.HelmRollbackStepInfo;
 import io.harness.cdng.k8s.K8sApplyStepInfo;
@@ -44,13 +49,15 @@ import io.harness.yaml.core.StepSpecType;
 import io.swagger.annotations.ApiModel;
 
 @ApiModel(
-    subTypes = {CreatePRStepInfo.class, K8sApplyStepInfo.class, K8sBlueGreenStepInfo.class, K8sCanaryStepInfo.class,
+    subTypes = {CreatePRStepInfo.class, MergePRStepInfo.class, K8sApplyStepInfo.class, K8sBlueGreenStepInfo.class, K8sCanaryStepInfo.class,
         K8sRollingStepInfo.class, K8sRollingRollbackStepInfo.class, K8sScaleStepInfo.class, K8sDeleteStepInfo.class,
         K8sBGSwapServicesStepInfo.class, K8sCanaryDeleteStepInfo.class, TerraformApplyStepInfo.class,
         TerraformPlanStepInfo.class, TerraformDestroyStepInfo.class, TerraformRollbackStepInfo.class,
         HelmDeployStepInfo.class, HelmRollbackStepInfo.class, CloudformationCreateStackStepInfo.class,
         CloudformationDeleteStackStepInfo.class, ServerlessAwsLambdaDeployStepInfo.class,
-        ServerlessAwsLambdaRollbackStepInfo.class, CloudformationRollbackStepInfo.class, CommandStepInfo.class})
+        ServerlessAwsLambdaRollbackStepInfo.class, CloudformationRollbackStepInfo.class, CommandStepInfo.class,
+        AzureWebAppSlotDeploymentStep.class, AzureWebAppTrafficShiftStep.class, AzureWebAppSwapSlotStep.class,
+        AzureWebAppRollbackStep.class})
 
 @OwnedBy(HarnessTeam.CDC)
 public interface CDStepInfo extends StepSpecType, WithStepElementParameters, WithDelegateSelector {

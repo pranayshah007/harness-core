@@ -31,11 +31,9 @@ public class DebeziumConfigurationTest {
             "3", "MongoDbConnectorClass", "rs0/host1", "shop", "", "", "false", "products", "", "2000");
     RedisConfig redisConfig = new RedisConfig();
     Properties expected_props = new Properties();
-    Properties props = new DebeziumConfiguration().getDebeziumProperties(debeziumConfig, redisConfig);
     expected_props.setProperty(DebeziumConfiguration.CONNECTOR_NAME, debeziumConfig.getConnectorName());
     expected_props.setProperty(DebeziumConfiguration.OFFSET_STORAGE, RedisOffsetBackingStore.class.getName());
     expected_props.setProperty(DebeziumConfiguration.OFFSET_STORAGE_FILE_FILENAME, JsonUtils.asJson(redisConfig));
-    expected_props.setProperty(DebeziumConfiguration.OFFSET_STORAGE_KEY, debeziumConfig.getOffsetStorageTopic());
     expected_props.setProperty(
         DebeziumConfiguration.KEY_CONVERTER_SCHEMAS_ENABLE, debeziumConfig.getKeyConverterSchemasEnable());
     expected_props.setProperty(
@@ -49,14 +47,12 @@ public class DebeziumConfigurationTest {
     expected_props.setProperty(DebeziumConfiguration.MONGODB_NAME, debeziumConfig.getMongodbName());
     Optional.ofNullable(debeziumConfig.getMongodbUser())
         .filter(x -> !x.isEmpty())
-        .ifPresent(x -> props.setProperty(DebeziumConfiguration.MONGODB_USER, x));
+        .ifPresent(x -> expected_props.setProperty(DebeziumConfiguration.MONGODB_USER, x));
     Optional.ofNullable(debeziumConfig.getMongodbPassword())
         .filter(x -> !x.isEmpty())
-        .ifPresent(x -> props.setProperty(DebeziumConfiguration.MONGODB_PASSWORD, x));
+        .ifPresent(x -> expected_props.setProperty(DebeziumConfiguration.MONGODB_PASSWORD, x));
     expected_props.setProperty(DebeziumConfiguration.MONGODB_SSL_ENABLED, debeziumConfig.getSslEnabled());
     expected_props.setProperty(DebeziumConfiguration.DATABASE_INCLUDE_LIST, debeziumConfig.getDatabaseIncludeList());
-    expected_props.setProperty(
-        DebeziumConfiguration.COLLECTION_INCLUDE_LIST, debeziumConfig.getCollectionIncludeList());
     expected_props.setProperty(DebeziumConfiguration.TRANSFORMS, "unwrap");
     expected_props.setProperty(DebeziumConfiguration.TRANSFORMS_UNWRAP_TYPE,
         DebeziumConfiguration.DEBEZIUM_CONNECTOR_MONGODB_TRANSFORMS_EXTRACT_NEW_DOCUMENT_STATE);
@@ -68,6 +64,11 @@ public class DebeziumConfigurationTest {
     expected_props.setProperty(
         DebeziumConfiguration.CONNECT_BACKOFF_INITIAL_DELAY_MS, debeziumConfig.getConnectBackoffInitialDelayMillis());
     expected_props.setProperty(DebeziumConfiguration.SNAPSHOT_FETCH_SIZE, debeziumConfig.getSnapshotFetchSize());
-    assertEquals(expected_props, props);
+    assertEquals(expected_props, DebeziumConfiguration.getDebeziumProperties(debeziumConfig, redisConfig));
+    expected_props.setProperty(DebeziumConfiguration.OFFSET_STORAGE_KEY,
+        DebeziumConstants.DEBEZIUM_OFFSET_PREFIX + debeziumConfig.getConnectorName() + "-"
+            + "coll1");
+    expected_props.setProperty(DebeziumConfiguration.COLLECTION_INCLUDE_LIST, "coll1");
+    assertEquals(expected_props, DebeziumConfiguration.getDebeziumProperties(debeziumConfig, redisConfig, "coll1"));
   }
 }

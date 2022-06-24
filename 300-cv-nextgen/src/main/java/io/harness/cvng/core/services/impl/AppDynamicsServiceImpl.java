@@ -226,13 +226,41 @@ public class AppDynamicsServiceImpl implements AppDynamicsService {
   @Override
   public AppdynamicsMetricDataResponse getMetricData(ProjectParams projectParams, String connectorIdentifier,
       String appName, String baseFolder, String tier, String metricPath, String tracingId) {
+    return getMetricDataV2(
+        projectParams, connectorIdentifier, appName, getCompletePath(baseFolder, tier, metricPath), tracingId);
+  }
+
+  @Override
+  public String getServiceInstanceMetricPath(ProjectParams projectParams, String connectorIdentifier, String appName,
+      String baseFolder, String tier, String metricPath, String tracingId) {
+    String[] metricPathFolders = metricPath.split("\\|");
+    StringBuilder metricPathSoFar = new StringBuilder(512);
+    int index = 0;
+
+    for (; index < metricPathFolders.length - 1; index++) {
+      if (containsIndividualNode(
+              projectParams, connectorIdentifier, appName, baseFolder, tier, metricPathSoFar.toString(), tracingId)) {
+        break;
+      }
+      metricPathSoFar.append('|').append(metricPathFolders[index]);
+    }
+    metricPathSoFar.append("|Individual Nodes|*");
+    for (; index < metricPathFolders.length; index++) {
+      { metricPathSoFar.append('|').append(metricPathFolders[index]); }
+    }
+    return metricPathSoFar.substring(1, metricPathSoFar.length());
+  }
+
+  @Override
+  public AppdynamicsMetricDataResponse getMetricDataV2(ProjectParams projectParams, String connectorIdentifier,
+      String appName, String completeMetricPath, String tracingId) {
     Instant endTime = clock.instant();
     Instant startTime = endTime.minus(Duration.ofHours(1));
     DataCollectionRequest request = AppDynamicSingleMetricDataRequest.builder()
                                         .applicationName(appName)
                                         .startTime(startTime)
                                         .endTime(endTime)
-                                        .metricPath(getCompletePath(baseFolder, tier, metricPath))
+                                        .metricPath(completeMetricPath)
                                         .type(DataCollectionRequestType.APPDYNAMICS_GET_SINGLE_METRIC_DATA)
                                         .build();
 
@@ -272,15 +300,15 @@ public class AppDynamicsServiceImpl implements AppDynamicsService {
   }
 
   @Override
-  public String getServiceInstanceMetricPath(ProjectParams projectParams, String connectorIdentifier, String appName,
-      String baseFolder, String tier, String metricPath, String tracingId) {
-    String[] metricPathFolders = metricPath.split("\\|");
+  public String getCompleteServiceInstanceMetricPath(ProjectParams projectParams, String connectorIdentifier,
+      String appName, String completeMetricPath, String tracingId) {
+    String[] metricPathFolders = completeMetricPath.split("\\|");
     StringBuilder metricPathSoFar = new StringBuilder(512);
-    int index = 0;
+    metricPathSoFar.append(metricPathFolders[0]);
+    int index = 1;
 
     for (; index < metricPathFolders.length - 1; index++) {
-      if (containsIndividualNode(
-              projectParams, connectorIdentifier, appName, baseFolder, tier, metricPathSoFar.toString(), tracingId)) {
+      if (containsIndividualNode(projectParams, connectorIdentifier, appName, metricPathSoFar.toString(), tracingId)) {
         break;
       }
       metricPathSoFar.append('|').append(metricPathFolders[index]);
@@ -289,7 +317,7 @@ public class AppDynamicsServiceImpl implements AppDynamicsService {
     for (; index < metricPathFolders.length; index++) {
       { metricPathSoFar.append('|').append(metricPathFolders[index]); }
     }
-    return metricPathSoFar.substring(1, metricPathSoFar.length());
+    return metricPathSoFar.toString();
   }
 
   @Override
@@ -302,6 +330,15 @@ public class AppDynamicsServiceImpl implements AppDynamicsService {
       String baseFolder, String tier, String metricPath, String tracingId) {
     List<AppDynamicsFileDefinition> appDynamicsFileDefinitions =
         getMetricStructure(projectParams, connectorIdentifier, appName, baseFolder, tier, metricPath, tracingId);
+    return appDynamicsFileDefinitions.stream()
+        .map(AppDynamicsFileDefinition::getName)
+        .anyMatch(name -> name.equals("Individual Nodes"));
+  }
+
+  private boolean containsIndividualNode(ProjectParams projectParams, String connectorIdentifier, String appName,
+      String completeMetricFolderPath, String tracingId) {
+    List<AppDynamicsFileDefinition> appDynamicsFileDefinitions =
+        getMetricStructure(projectParams, connectorIdentifier, appName, completeMetricFolderPath, tracingId);
     return appDynamicsFileDefinitions.stream()
         .map(AppDynamicsFileDefinition::getName)
         .anyMatch(name -> name.equals("Individual Nodes"));
@@ -326,7 +363,9 @@ public class AppDynamicsServiceImpl implements AppDynamicsService {
 
     OnboardingResponseDTO response =
         onboardingService.getOnboardingResponse(projectParams.getAccountIdentifier(), onboardingRequestDTO);
-
+    if (response == null || response.getResult() == null) {
+      return Collections.EMPTY_LIST;
+    }
     final Gson gson = new Gson();
     Type type = new TypeToken<List<AppDynamicsFileDefinition>>() {}.getType();
     return gson.fromJson(JsonUtils.asJson(response.getResult()), type);

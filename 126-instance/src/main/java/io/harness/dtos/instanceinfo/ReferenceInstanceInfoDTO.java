@@ -32,4 +32,9 @@ public class ReferenceInstanceInfoDTO extends InstanceInfoDTO {
   public String prepareInstanceSyncHandlerKey() {
     return podName;
   }
+
+  @Override
+  public String getType() {
+    return "Reference";
+  }
 }

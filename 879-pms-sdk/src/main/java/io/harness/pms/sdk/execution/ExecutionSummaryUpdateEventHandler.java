@@ -57,7 +57,14 @@ public class ExecutionSummaryUpdateEventHandler implements OrchestrationEventHan
             .setPlanExecutionId(ambiance.getPlanExecutionId())
             .setNodeExecutionId(AmbianceUtils.obtainCurrentLevel(ambiance).getRuntimeId());
     Optional<Level> stageLevel = AmbianceUtils.getStageLevelFromAmbiance(ambiance);
-    stageLevel.ifPresent(value -> executionSummaryUpdateRequest.setNodeUuid(value.getSetupId()));
+    stageLevel.ifPresent(value -> {
+      // If stage is inside strategy then nodeExecutionUuid is the key which we want to update
+      if (value.hasStrategyMetadata()) {
+        executionSummaryUpdateRequest.setNodeUuid(value.getRuntimeId());
+      } else {
+        executionSummaryUpdateRequest.setNodeUuid(value.getSetupId());
+      }
+    });
     String pipelineInfoJson = RecastOrchestrationUtils.toJson(
         executionSummaryModuleInfoProvider.getPipelineLevelModuleInfo(orchestrationEvent));
     if (EmptyPredicate.isNotEmpty(pipelineInfoJson)) {

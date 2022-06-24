@@ -168,8 +168,8 @@ public class PMSOutboxEventHandlerTest {
     String identifier = randomAlphabetic(10);
     InputSetEntity inputSet =
         InputSetEntity.builder().name(randomAlphabetic(10)).identifier(identifier).yaml(inputsetNewYaml).build();
-    InputSetCreateEvent inputSetCreateEvent =
-        new InputSetCreateEvent(accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSet);
+    InputSetCreateEvent inputSetCreateEvent = new InputSetCreateEvent(
+        accountIdentifier, orgIdentifier, projectIdentifier, pipelineIdentifier, inputSet, false);
     OutboxEvent outboxEvent = TestUtils.createOutboxEvent(inputSetCreateEvent, PipelineOutboxEvents.INPUT_SET_CREATED);
     final ArgumentCaptor<AuditEntry> auditEntryArgumentCaptor = ArgumentCaptor.forClass(AuditEntry.class);
     when(auditClientService.publishAudit(any(), any(), any())).thenReturn(true);

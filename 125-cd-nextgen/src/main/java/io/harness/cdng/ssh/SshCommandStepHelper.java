@@ -12,6 +12,7 @@ import static io.harness.cdng.manifest.yaml.harness.HarnessStoreConstants.HARNES
 import static io.harness.common.ParameterFieldHelper.getBooleanParameterFieldValue;
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
@@ -27,6 +28,7 @@ import io.harness.cdng.manifest.yaml.harness.HarnessStore;
 import io.harness.cdng.manifest.yaml.harness.HarnessStoreFile;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
 import io.harness.common.ParameterFieldHelper;
+import io.harness.common.ParameterRuntimeFiledHelper;
 import io.harness.delegate.beans.storeconfig.HarnessStoreDelegateConfig;
 import io.harness.delegate.beans.storeconfig.StoreDelegateConfig;
 import io.harness.delegate.task.shell.SshCommandTaskParameters;
@@ -39,6 +41,7 @@ import io.harness.delegate.task.ssh.NgInitCommandUnit;
 import io.harness.delegate.task.ssh.ScriptCommandUnit;
 import io.harness.delegate.task.ssh.config.ConfigFileParameters;
 import io.harness.delegate.task.ssh.config.FileDelegateConfig;
+import io.harness.encryption.Scope;
 import io.harness.exception.InvalidRequestException;
 import io.harness.filestore.dto.node.FileNodeDTO;
 import io.harness.filestore.dto.node.FileStoreNodeDTO;
@@ -62,6 +65,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
+import javax.validation.constraints.NotNull;
 
 @Singleton
 @OwnedBy(CDP)
@@ -84,12 +88,12 @@ public class SshCommandStepHelper extends CDStepHelper {
         .environmentVariables(
             shellScriptHelperService.getEnvironmentVariables(executeCommandStepParameters.getEnvironmentVariables()))
         .sshInfraDelegateConfig(sshEntityHelper.getSshInfraDelegateConfig(infrastructure, ambiance))
-        .artifactDelegateConfig(artifactOutcome.isPresent()
-                ? sshEntityHelper.getArtifactDelegateConfigConfig(artifactOutcome.get(), ambiance)
-                : null)
-        .fileDelegateConfig(configFilesOutcomeOptional.isPresent()
-                ? getFileDelegateConfig(ambiance, configFilesOutcomeOptional.get())
-                : null)
+        .artifactDelegateConfig(
+            artifactOutcome.map(outcome -> sshEntityHelper.getArtifactDelegateConfigConfig(outcome, ambiance))
+                .orElse(null))
+        .fileDelegateConfig(
+            configFilesOutcomeOptional.map(configFilesOutcome -> getFileDelegateConfig(ambiance, configFilesOutcome))
+                .orElse(null))
         .commandUnits(mapCommandUnits(executeCommandStepParameters.getCommandUnits(), onDelegate))
         .host(executeCommandStepParameters.getHost())
         .build();
@@ -109,26 +113,59 @@ public class SshCommandStepHelper extends CDStepHelper {
 
   private HarnessStoreDelegateConfig buildHarnessStoreDelegateConfig(Ambiance ambiance, HarnessStore harnessStore) {
     List<HarnessStoreFile> files = ParameterFieldHelper.getParameterFieldValue(harnessStore.getFiles());
-    if (isEmpty(files)) {
-      throw new InvalidRequestException(format("No files found for store : [%s]", harnessStore.getKind()));
-    }
+    List<String> secretFiles = ParameterFieldHelper.getParameterFieldValue(harnessStore.getSecretFiles());
 
     List<ConfigFileParameters> configFileParameters = new ArrayList<>(files.size());
-    for (HarnessStoreFile storeFile : files) {
-      String fileIdentifierRef = storeFile.getRef().getValue();
-      NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
-      IdentifierRef fileRef = IdentifierRefHelper.getIdentifierRef(fileIdentifierRef, ngAccess.getAccountIdentifier(),
-          ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
+    NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
 
-      boolean isEncrypted = ParameterFieldHelper.getBooleanParameterFieldValue(storeFile.getIsEncrypted());
-      if (isEncrypted) {
+    if (isNotEmpty(files)) {
+      files.forEach(harnessStoreFile -> {
+        Scope fileScope =
+            ParameterRuntimeFiledHelper.getScopeParameterFieldFinalValue(harnessStoreFile.getScope())
+                .orElseThrow(() -> new InvalidRequestException("Config file scope cannot be null or empty"));
+        io.harness.beans.Scope scope = io.harness.beans.Scope.of(
+            ngAccess.getAccountIdentifier(), ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier(), fileScope);
+
+        configFileParameters.add(fetchConfigFileFromFileStore(scope, harnessStoreFile));
+      });
+    }
+
+    if (isNotEmpty(secretFiles)) {
+      secretFiles.forEach(secretFileRef -> {
+        IdentifierRef fileRef = IdentifierRefHelper.getIdentifierRef(secretFileRef, ngAccess.getAccountIdentifier(),
+            ngAccess.getOrgIdentifier(), ngAccess.getProjectIdentifier());
+
         configFileParameters.add(fetchSecretConfigFile(fileRef));
-      } else {
-        configFileParameters.add(fetchConfigFileFromFileStore(fileRef));
-      }
+      });
     }
 
     return HarnessStoreDelegateConfig.builder().configFiles(configFileParameters).build();
+  }
+
+  private ConfigFileParameters fetchConfigFileFromFileStore(
+      io.harness.beans.Scope scope, @NotNull HarnessStoreFile file) {
+    String filePathValue =
+        ParameterFieldHelper.getParameterFieldFinalValue(file.getPath())
+            .orElseThrow(() -> new InvalidRequestException("Config file path cannot be null or empty"));
+    Optional<FileStoreNodeDTO> configFile = fileStoreService.getByPath(
+        scope.getAccountIdentifier(), scope.getOrgIdentifier(), scope.getProjectIdentifier(), filePathValue, true);
+
+    if (!configFile.isPresent()) {
+      throw new InvalidRequestException(format("Config file not found in local file store, path [%s], scope: [%s]",
+          filePathValue, ParameterRuntimeFiledHelper.getScopeParameterFieldFinalValue(file.getScope()).orElse(null)));
+    }
+
+    FileStoreNodeDTO fileStoreNodeDTO = configFile.get();
+    if (NGFileType.FOLDER.equals(fileStoreNodeDTO.getType()) || !(fileStoreNodeDTO instanceof FileNodeDTO)) {
+      throw new InvalidRequestException("Copy config can only accept file types, but provided folder");
+    }
+
+    FileNodeDTO fileNodeDTO = (FileNodeDTO) fileStoreNodeDTO;
+    return ConfigFileParameters.builder()
+        .fileContent(fileNodeDTO.getContent())
+        .fileName(fileNodeDTO.getName())
+        .fileSize(fileNodeDTO.getSize())
+        .build();
   }
 
   private ConfigFileParameters fetchSecretConfigFile(IdentifierRef fileRef) {
@@ -143,29 +180,14 @@ public class SshCommandStepHelper extends CDStepHelper {
     return ConfigFileParameters.builder()
         .fileContent(new String(ngEncryptedData.getEncryptedValue()))
         .fileName(ngEncryptedData.getName())
-        .fileSize(Long.valueOf(new String(ngEncryptedData.getEncryptedValue()).getBytes(StandardCharsets.UTF_8).length))
+        .fileSize(getEncryptedDataLength(ngEncryptedData))
         .build();
   }
-  private ConfigFileParameters fetchConfigFileFromFileStore(IdentifierRef fileRef) {
-    Optional<FileStoreNodeDTO> configFile = fileStoreService.get(fileRef.getAccountIdentifier(),
-        fileRef.getOrgIdentifier(), fileRef.getProjectIdentifier(), fileRef.getIdentifier(), true);
-    if (!configFile.isPresent()) {
-      throw new InvalidRequestException(
-          format("Config file with identifier [%s] not found in local file store", fileRef.getIdentifier()));
-    }
 
-    FileStoreNodeDTO fileStoreNodeDTO = configFile.get();
-    if (NGFileType.FOLDER.equals(fileStoreNodeDTO.getType()) || !(fileStoreNodeDTO instanceof FileNodeDTO)) {
-      throw new InvalidRequestException("Copy config can only accept file types, but provided folder");
-    }
-
-    FileNodeDTO fileNodeDTO = (FileNodeDTO) fileStoreNodeDTO;
-    return ConfigFileParameters.builder()
-        .fileContent(fileNodeDTO.getContent())
-        .fileName(fileNodeDTO.getName())
-        .fileSize(Long.valueOf(fileNodeDTO.getContent().getBytes(StandardCharsets.UTF_8).length))
-        .build();
+  private int getEncryptedDataLength(NGEncryptedData ngEncryptedData) {
+    return new String(ngEncryptedData.getEncryptedValue()).getBytes(StandardCharsets.UTF_8).length;
   }
+
   private List<NgCommandUnit> mapCommandUnits(List<CommandUnitWrapper> stepCommandUnits, boolean onDelegate) {
     if (isEmpty(stepCommandUnits)) {
       throw new InvalidRequestException("No command units found for configured step");

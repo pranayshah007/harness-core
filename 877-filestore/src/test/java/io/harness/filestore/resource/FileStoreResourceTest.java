@@ -13,15 +13,18 @@ import static io.harness.EntityType.SECRETS;
 import static io.harness.EntityType.SERVICE;
 import static io.harness.EntityType.TEMPLATE;
 import static io.harness.exception.WingsException.USER;
-import static io.harness.filestore.FilePermissionConstants.FILE_ACCESS_PERMISSION;
 import static io.harness.filestore.FilePermissionConstants.FILE_DELETE_PERMISSION;
+import static io.harness.filestore.FilePermissionConstants.FILE_EDIT_PERMISSION;
 import static io.harness.filestore.FilePermissionConstants.FILE_VIEW_PERMISSION;
 import static io.harness.rule.OwnerRule.BOJAN;
+import static io.harness.rule.OwnerRule.FILIP;
 import static io.harness.rule.OwnerRule.IVAN;
 import static io.harness.rule.OwnerRule.VLAD;
 
+import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doNothing;
@@ -42,17 +45,23 @@ import io.harness.filestore.dto.filter.FilesFilterPropertiesDTO;
 import io.harness.filestore.dto.node.FolderNodeDTO;
 import io.harness.filestore.service.impl.FileStoreServiceImpl;
 import io.harness.ng.beans.PageRequest;
+import io.harness.ng.core.Status;
 import io.harness.ng.core.dto.EmbeddedUserDetailsDTO;
 import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ng.core.entitysetupusage.dto.EntitySetupUsageDTO;
+import io.harness.ng.core.filestore.FileUsage;
+import io.harness.ng.core.filestore.NGFileType;
 import io.harness.ng.core.filestore.dto.FileDTO;
+import io.harness.ng.core.filestore.dto.FileFilterDTO;
+import io.harness.ng.core.filestore.dto.FileStoreRequest;
 import io.harness.rule.Owner;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import javax.ws.rs.core.Response;
@@ -60,6 +69,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.data.domain.Page;
@@ -72,6 +82,7 @@ public class FileStoreResourceTest extends CategoryTest {
   private final String ORG = "org";
   private final String PROJECT = "project";
   private final String IDENTIFIER = "testFile";
+  private final String EMPTY_TAGS = "";
 
   @Mock private FileStoreServiceImpl fileStoreService;
   @Mock private AccessControlClient accessControlClient;
@@ -116,6 +127,105 @@ public class FileStoreResourceTest extends CategoryTest {
 
     assertThat(returnedFile).isNotNull();
     assertThat(returnedFile.getPath()).isEqualTo(file.getPath());
+  }
+
+  @Test
+  @Owner(developers = FILIP)
+  @Category(UnitTests.class)
+  public void testCreateFile() {
+    final FileDTO createRequest = FileDTO.builder()
+                                      .parentIdentifier("Root")
+                                      .identifier("testfile")
+                                      .name("Test File")
+                                      .type(NGFileType.FILE)
+                                      .fileUsage(FileUsage.CONFIG)
+                                      .build();
+
+    ResponseDTO<FileDTO> response =
+        fileStoreResource.create(ACCOUNT, ORG, PROJECT, EMPTY_TAGS, getStreamWithDummyContent(), createRequest);
+
+    assertThat(response.getStatus()).isEqualTo(Status.SUCCESS);
+
+    verify(fileStoreService).create(any(), any());
+  }
+
+  @Test
+  @Owner(developers = FILIP)
+  @Category(UnitTests.class)
+  public void testCreateFileViaYaml() {
+    final FileDTO createRequest = FileDTO.builder()
+                                      .parentIdentifier("Root")
+                                      .identifier("testfile")
+                                      .name("Test File")
+                                      .type(NGFileType.FILE)
+                                      .fileUsage(FileUsage.CONFIG)
+                                      .build();
+
+    ResponseDTO<FileDTO> response =
+        fileStoreResource.createViaYaml(ACCOUNT, ORG, PROJECT, FileStoreRequest.builder().file(createRequest).build());
+
+    assertThat(response.getStatus()).isEqualTo(Status.SUCCESS);
+
+    verify(fileStoreService).create(any(), isNull());
+  }
+
+  @Test
+  @Owner(developers = FILIP)
+  @Category(UnitTests.class)
+  public void testUpdateFile() {
+    final FileDTO updateRequest = FileDTO.builder()
+                                      .parentIdentifier("Root")
+                                      .identifier("testfile")
+                                      .name("Test File")
+                                      .type(NGFileType.FILE)
+                                      .fileUsage(FileUsage.CONFIG)
+                                      .build();
+
+    ResponseDTO<FileDTO> response = fileStoreResource.update(
+        ACCOUNT, ORG, PROJECT, IDENTIFIER, EMPTY_TAGS, updateRequest, getStreamWithDummyContent());
+
+    assertThat(response.getStatus()).isEqualTo(Status.SUCCESS);
+
+    verify(fileStoreService).update(any(), any(), eq(IDENTIFIER));
+  }
+
+  @Test
+  @Owner(developers = FILIP)
+  @Category(UnitTests.class)
+  public void testUpdateFileViaYaml() {
+    final FileDTO updateRequest = FileDTO.builder()
+                                      .parentIdentifier("Root")
+                                      .identifier("testfile")
+                                      .name("Test File")
+                                      .type(NGFileType.FILE)
+                                      .fileUsage(FileUsage.CONFIG)
+                                      .build();
+
+    ResponseDTO<FileDTO> response = fileStoreResource.updateViaYaml(
+        ACCOUNT, ORG, PROJECT, IDENTIFIER, FileStoreRequest.builder().file(updateRequest).build());
+
+    assertThat(response.getStatus()).isEqualTo(Status.SUCCESS);
+
+    verify(fileStoreService).update(any(), any(), eq(IDENTIFIER));
+  }
+
+  @Test
+  @Owner(developers = FILIP)
+  @Category(UnitTests.class)
+  public void testList() {
+    final PageRequest pageRequest = PageRequest.builder().pageSize(10).pageIndex(1).build();
+
+    ResponseDTO<Page<FileDTO>> response =
+        fileStoreResource.list(ACCOUNT, ORG, PROJECT, singletonList(IDENTIFIER), "search-term", pageRequest);
+
+    assertThat(response.getStatus()).isEqualTo(Status.SUCCESS);
+
+    ArgumentCaptor<FileFilterDTO> captor = ArgumentCaptor.forClass(FileFilterDTO.class);
+    verify(fileStoreService).listFilesAndFolders(eq(ACCOUNT), eq(ORG), eq(PROJECT), captor.capture(), any());
+
+    assertThat(captor.getValue())
+        .extracting(FileFilterDTO::getIdentifiers, FileFilterDTO::getSearchTerm)
+        .containsExactly(singletonList(IDENTIFIER), "search-term");
   }
 
   @Test
@@ -195,9 +305,8 @@ public class FileStoreResourceTest extends CategoryTest {
     int page = 1;
     int size = 10;
     SearchPageParams pageParams = SearchPageParams.builder().page(page).size(size).build();
-    final Page<EntitySetupUsageDTO> entityServiceUsageList =
-        new PageImpl<>(Collections.singletonList(entitySetupUsage));
-    doNothing().when(accessControlClient).checkForAccessOrThrow(any(), any(), eq(FILE_ACCESS_PERMISSION));
+    final Page<EntitySetupUsageDTO> entityServiceUsageList = new PageImpl<>(singletonList(entitySetupUsage));
+    doNothing().when(accessControlClient).checkForAccessOrThrow(any(), any(), eq(FILE_EDIT_PERMISSION));
     when(fileStoreService.listReferencedBy(pageParams, ACCOUNT, ORG, PROJECT, IDENTIFIER, EntityType.PIPELINES))
         .thenReturn(entityServiceUsageList);
     ResponseDTO<Page<EntitySetupUsageDTO>> response =
@@ -216,7 +325,7 @@ public class FileStoreResourceTest extends CategoryTest {
     int size = 10;
     doThrow(new NGAccessDeniedException("Principal doesn't have file access permission", USER, null))
         .when(accessControlClient)
-        .checkForAccessOrThrow(any(), any(), eq(FILE_ACCESS_PERMISSION));
+        .checkForAccessOrThrow(any(), any(), eq(FILE_VIEW_PERMISSION));
     assertThatThrownBy(()
                            -> fileStoreResource.getReferencedBy(
                                page, size, ACCOUNT, ORG, PROJECT, IDENTIFIER, EntityType.PIPELINES, null))
@@ -315,5 +424,9 @@ public class FileStoreResourceTest extends CategoryTest {
     assertThatThrownBy(() -> fileStoreResource.getCreatedByList(ACCOUNT, ORG, PROJECT))
         .isInstanceOf(NGAccessDeniedException.class)
         .hasMessage("Principal doesn't have file view permission");
+  }
+
+  private static InputStream getStreamWithDummyContent() {
+    return new ByteArrayInputStream("File content".getBytes());
   }
 }

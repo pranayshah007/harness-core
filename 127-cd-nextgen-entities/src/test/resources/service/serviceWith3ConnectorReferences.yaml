@@ -1,0 +1,37 @@
+service:
+  name: newservice
+  identifier: newservice
+  serviceDefinition:
+    type: Kubernetes
+    spec:
+      manifests:
+        - manifest:
+            identifier: abc
+            type: K8sManifest
+            spec:
+              store:
+                type: Git
+                spec:
+                  connectorRef: testconnector
+                  gitFetchType: Branch
+                  paths:
+                    - a/b
+                  repoName: demo
+                  branch: master
+              skipResourceVersioning: false
+      artifacts:
+        primary:
+          spec:
+            connectorRef: account.harnessImagePrimary
+            imagePath: nginx
+            tag: <+input>
+          type: DockerRegistry
+        sidecars:
+          - sidecar:
+              spec:
+                connectorRef: org.harnessImageSidecar
+                imagePath: todolist
+                tag: <+input>
+              identifier: sidecar1
+              type: DockerRegistry
+  gitOpsEnabled: false

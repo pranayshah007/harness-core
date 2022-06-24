@@ -13,7 +13,9 @@ import static io.harness.pms.merger.helpers.InputSetYamlHelper.getPipelineCompon
 import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.InputSetReference;
+import io.harness.common.NGExpressionUtils;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.exception.InvalidRequestException;
 import io.harness.gitaware.helper.GitAwareContextHelper;
 import io.harness.gitsync.beans.StoreType;
 import io.harness.gitsync.sdk.EntityGitDetails;
@@ -37,13 +39,21 @@ import lombok.experimental.UtilityClass;
 public class PMSInputSetElementMapper {
   public InputSetEntity toInputSetEntity(
       String accountId, String orgIdentifier, String projectIdentifier, String pipelineIdentifier, String yaml) {
+    String identifier = InputSetYamlHelper.getStringField(yaml, "identifier", "inputSet");
+    if (EmptyPredicate.isEmpty(identifier) || NGExpressionUtils.isRuntimeOrExpressionField(identifier)) {
+      throw new InvalidRequestException("Input Set Identifier cannot be empty or a runtime input");
+    }
+    String name = InputSetYamlHelper.getStringField(yaml, "name", "inputSet");
+    if (EmptyPredicate.isEmpty(name) || NGExpressionUtils.isRuntimeOrExpressionField(name)) {
+      throw new InvalidRequestException("Input Set Name cannot be empty or a runtime input");
+    }
     return InputSetEntity.builder()
         .accountId(accountId)
         .orgIdentifier(orgIdentifier)
         .projectIdentifier(projectIdentifier)
         .pipelineIdentifier(pipelineIdentifier)
-        .identifier(InputSetYamlHelper.getStringField(yaml, "identifier", "inputSet"))
-        .name(InputSetYamlHelper.getStringField(yaml, "name", "inputSet"))
+        .identifier(identifier)
+        .name(name)
         .description(InputSetYamlHelper.getStringField(yaml, "description", "inputSet"))
         .tags(TagMapper.convertToList(InputSetYamlHelper.getTags(yaml, "inputSet")))
         .inputSetEntityType(InputSetEntityType.INPUT_SET)

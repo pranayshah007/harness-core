@@ -12,6 +12,7 @@ import static io.harness.beans.SwaggerConstants.BOOLEAN_CLASSPATH;
 import static io.harness.beans.SwaggerConstants.STRING_CLASSPATH;
 import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.runtime;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.yaml.YamlSchemaTypes;
@@ -32,6 +33,7 @@ import org.springframework.data.annotation.TypeAlias;
 @JsonTypeName("PersistentVolumeClaim")
 @TypeAlias("persistentVolumeClaim")
 @OwnedBy(CI)
+@RecasterAlias("io.harness.beans.yaml.extended.volumes.PersistentVolumeClaimYaml")
 public class PersistentVolumeClaimYaml implements CIVolume {
   @Builder.Default @NotNull private CIVolume.Type type = Type.PERSISTENT_VOLUME_CLAIM;
   @NotNull @ApiModelProperty(dataType = STRING_CLASSPATH) private ParameterField<String> mountPath;

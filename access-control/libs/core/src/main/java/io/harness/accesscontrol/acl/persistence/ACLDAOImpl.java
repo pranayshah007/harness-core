@@ -142,18 +142,21 @@ public class ACLDAOImpl implements ACLDAO {
   }
 
   @Override
-  public List<Boolean> checkForAccess(Principal principal, List<PermissionCheck> permissionChecks) {
+  public List<List<ACL>> getMatchingACLs(Principal principal, List<PermissionCheck> permissionChecks) {
     List<Set<String>> aclQueryStringsPerPermission = new ArrayList<>();
-    List<String> aclQueryStrings = new ArrayList<>();
+    Set<String> aclQueryStrings = new HashSet<>();
     permissionChecks.forEach(permissionCheck -> {
       Set<String> queryStrings = getQueryStrings(permissionCheck, principal);
       aclQueryStringsPerPermission.add(queryStrings);
       aclQueryStrings.addAll(queryStrings);
     });
 
-    Set<String> aclsPresentInDB = aclRepository.getByAclQueryStringInAndEnabled(aclQueryStrings, true);
+    List<ACL> aclsPresentInDB = aclRepository.getByAclQueryStringInAndEnabled(aclQueryStrings, true);
     return aclQueryStringsPerPermission.stream()
-        .map(queryStringsForPermission -> queryStringsForPermission.stream().anyMatch(aclsPresentInDB::contains))
+        .map(queryStringsForPermission
+            -> aclsPresentInDB.stream()
+                   .filter(acl -> queryStringsForPermission.contains(acl.getAclQueryString()))
+                   .collect(Collectors.toList()))
         .collect(Collectors.toList());
   }
 }

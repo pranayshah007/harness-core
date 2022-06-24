@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: rolesConfiguration
-version: 26
+version: 28
 roles:
     - identifier: _project_admin
       name: Project Admin
@@ -118,6 +118,8 @@ roles:
         - chaos_chaosagent_view
         - chaos_chaosagent_edit
         - chaos_chaosagent_delete
+        - chaos_chaosgitops_view
+        - chaos_chaosgitops_edit
         - chaos_chaosworkflow_view
         - chaos_chaosworkflow_edit
         - chaos_chaosworkflow_delete
@@ -163,6 +165,7 @@ roles:
         - core_variable_view
         - chaos_chaoshub_view
         - chaos_chaosagent_view
+        - chaos_chaosgitops_view
         - chaos_chaosworkflow_view
       allowedScopeLevels:
         - project
@@ -289,6 +292,8 @@ roles:
         - chaos_chaosagent_view
         - chaos_chaosagent_edit
         - chaos_chaosagent_delete
+        - chaos_chaosgitops_view
+        - chaos_chaosgitops_edit
         - chaos_chaosworkflow_view
         - chaos_chaosworkflow_edit
         - chaos_chaosworkflow_delete
@@ -336,6 +341,7 @@ roles:
         - core_variable_view
         - chaos_chaoshub_view
         - chaos_chaosagent_view
+        - chaos_chaosgitops_view
         - chaos_chaosworkflow_view
       allowedScopeLevels:
         - organization
@@ -357,6 +363,9 @@ roles:
         - core_connector_edit
         - core_connector_delete
         - core_connector_access
+        - core_smtp_view
+        - core_smtp_edit
+        - core_smtp_delete
         - core_delegate_view
         - core_delegate_edit
         - core_delegate_delete
@@ -469,6 +478,8 @@ roles:
         - chaos_chaosagent_view
         - chaos_chaosagent_edit
         - chaos_chaosagent_delete
+        - chaos_chaosgitops_view
+        - chaos_chaosgitops_edit
         - chaos_chaosworkflow_view
         - chaos_chaosworkflow_edit
         - chaos_chaosworkflow_delete
@@ -481,6 +492,7 @@ roles:
       permissions:
         - core_secret_view
         - core_connector_view
+        - core_smtp_view
         - core_delegate_view
         - core_delegateconfiguration_view
         - core_service_view
@@ -519,6 +531,7 @@ roles:
         - core_variable_view
         - chaos_chaoshub_view
         - chaos_chaosagent_view
+        - chaos_chaosgitops_view
         - chaos_chaosworkflow_view
       allowedScopeLevels:
         - account
@@ -547,6 +560,8 @@ roles:
         - core_file_view
         - core_file_access
         - core_variable_view
+        - core_template_view
+        - core_template_access
       allowedScopeLevels:
         - project
       managed: true
