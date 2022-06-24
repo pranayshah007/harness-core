@@ -527,6 +527,7 @@ import io.harness.delegate.task.serverless.ServerlessAwsLambdaManifestConfig;
 import io.harness.delegate.task.serverless.ServerlessAwsLambdaRollbackConfig;
 import io.harness.delegate.task.serverless.ServerlessCommandType;
 import io.harness.delegate.task.serverless.ServerlessDeployConfig;
+import io.harness.delegate.task.serverless.ServerlessEcrArtifactConfig;
 import io.harness.delegate.task.serverless.ServerlessGitFetchFileConfig;
 import io.harness.delegate.task.serverless.ServerlessInfraConfig;
 import io.harness.delegate.task.serverless.ServerlessInfraType;
@@ -1524,6 +1525,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(ArtifactoryBaseArtifactDelegateRequest.class, 563531);
     kryo.register(AzureK8sInfraDelegateConfig.class, 563532);
     kryo.register(AzureAcrTokenTaskResponse.class, 563533);
+    kryo.register(ServerlessEcrArtifactConfig.class, 563534);
 
     kryo.register(LdapTestResponse.Status.class, 5500);
     kryo.register(LdapGroupSettings.class, 5498);
