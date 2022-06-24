@@ -17,17 +17,17 @@ import io.harness.steps.environment.EnvironmentOutcome;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.List;
 import java.util.Map;
-import lombok.Builder;
 import lombok.Value;
+import lombok.experimental.SuperBuilder;
 import org.springframework.data.annotation.TypeAlias;
 
 @Value
-@Builder
+@SuperBuilder
 @JsonTypeName(InfrastructureKind.PDC)
 @TypeAlias("cdng.infra.beans.PdcInfrastructureOutcome")
 @OwnedBy(HarnessTeam.CDP)
 @RecasterAlias("io.harness.cdng.infra.beans.PdcInfrastructureOutcome")
-public class PdcInfrastructureOutcome implements InfrastructureOutcome {
+public class PdcInfrastructureOutcome extends InfrastructureOutcomeAbstract implements InfrastructureOutcome {
   String credentialsRef;
   List<String> hosts;
   String connectorRef;

@@ -17,6 +17,7 @@ import io.harness.cdng.environment.yaml.EnvironmentPlanCreatorConfig;
 import io.harness.cdng.infra.steps.InfraSectionStepParameters;
 import io.harness.cdng.infra.steps.InfrastructureSectionStep;
 import io.harness.cdng.infra.steps.InfrastructureStep;
+import io.harness.cdng.infra.yaml.InfraConfigStepParameter;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.InfrastructureDefinitionConfig;
 import io.harness.cdng.pipeline.PipelineInfrastructure;
@@ -67,18 +68,28 @@ import lombok.experimental.UtilityClass;
 @OwnedBy(HarnessTeam.CDC)
 @UtilityClass
 public class InfrastructurePmsPlanCreator {
-  public PlanNode getInfraStepPlanNode(Infrastructure pipelineInfrastructure) {
+  public PlanNode getInfraStepPlanNode(
+      Infrastructure pipelineInfrastructure, String infraIdentifier, String infraName) {
+    InfraConfigStepParameter infraConfigStepParameter = InfraConfigStepParameter.builder()
+                                                            .infraIdentifier(infraIdentifier)
+                                                            .infraName(infraName)
+                                                            .spec(pipelineInfrastructure)
+                                                            .build();
     return PlanNode.builder()
         .uuid(UUIDGenerator.generateUuid())
         .name(PlanCreatorConstants.INFRA_NODE_NAME)
         .identifier(PlanCreatorConstants.SPEC_IDENTIFIER)
         .stepType(InfrastructureStep.STEP_TYPE)
-        .stepParameters(pipelineInfrastructure)
+        .stepParameters(infraConfigStepParameter)
         .facilitatorObtainment(
             FacilitatorObtainment.newBuilder()
                 .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.SYNC).build())
                 .build())
         .build();
+  }
+
+  public PlanNode getInfraStepPlanNode(Infrastructure pipelineInfrastructure) {
+    return getInfraStepPlanNode(pipelineInfrastructure, null, null);
   }
 
   public static LinkedHashMap<String, PlanCreationResponse> createPlanForInfraSectionV2(YamlNode infraSectionNode,
