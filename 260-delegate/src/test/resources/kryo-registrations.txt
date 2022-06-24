@@ -362,6 +362,7 @@
 5185:software.wings.service.impl.analysis.DataCollectionTaskResult.DataCollectionTaskStatus
 5186:software.wings.beans.delegation.ShellScriptParameters
 5187:software.wings.service.impl.aws.model.response.HostReachabilityResponse
+5188:io.harness.delegate.beans.ldap.LdapSettingsWithEncryptedDataDetail
 5189:software.wings.beans.command.CodeDeployParams
 5190:software.wings.beans.yaml.GitCommand.GitCommandType
 5191:software.wings.beans.GitConfig
@@ -438,6 +439,8 @@
 5279:software.wings.helpers.ext.pcf.request.CfCommandSetupRequest
 5293:software.wings.api.PcfInstanceElement
 5296:software.wings.beans.PcfConfig
+5297:io.harness.delegate.beans.ldap.NGLdapDelegateTaskResponse
+5298:io.harness.delegate.beans.ldap.NGLdapDelegateTaskParameters
 5303:software.wings.helpers.ext.mail.EmailData
 5304:software.wings.helpers.ext.mail.SmtpConfig
 5305:io.harness.security.encryption.EncryptionConfig
