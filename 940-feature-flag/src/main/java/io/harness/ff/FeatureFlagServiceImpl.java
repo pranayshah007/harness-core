@@ -229,10 +229,15 @@ public class FeatureFlagServiceImpl implements FeatureFlagService {
        */
       accountId = FeatureFlagConstants.STATIC_ACCOUNT_ID;
     }
-    String name = accountId;
+    String name;
     if (optionalAccountClient.isPresent()) {
+      log.debug("Fetching account name for account id " + accountId);
       AccountDTO accountDTO = RestClientUtils.getResponse(optionalAccountClient.get().getAccountDTO(accountId));
       name = accountDTO.getName();
+      log.debug("Account name is " + name);
+    } else {
+      log.debug("Since account client is not present, setting name as account id");
+      name = accountId;
     }
     Target target = Target.builder().identifier(accountId).name(name).build();
     return cfClient.get().boolVariation(featureName.name(), target, false);
