@@ -12,4 +12,5 @@ import io.harness.delegate.beans.gitapi.GitApiTaskParams;
 
 public interface GitApiClient {
   DelegateResponseData findPullRequest(GitApiTaskParams gitApiTaskParams);
+  DelegateResponseData mergePR(GitApiTaskParams gitApiTaskParams);
 }

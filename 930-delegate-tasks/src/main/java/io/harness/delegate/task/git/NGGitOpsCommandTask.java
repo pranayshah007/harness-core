@@ -8,7 +8,9 @@
 package io.harness.delegate.task.git;
 
 import static io.harness.annotations.dev.HarnessTeam.GITOPS;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.git.model.ChangeType.MODIFY;
+import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
 
 import static software.wings.beans.LogHelper.color;
@@ -28,6 +30,9 @@ import io.harness.delegate.beans.connector.ConnectorType;
 import io.harness.delegate.beans.connector.scm.ScmConnector;
 import io.harness.delegate.beans.connector.scm.adapter.ScmConnectorMapper;
 import io.harness.delegate.beans.connector.scm.genericgitconnector.GitConfigDTO;
+import io.harness.delegate.beans.connector.scm.github.GithubConnectorDTO;
+import io.harness.delegate.beans.gitapi.GitApiMergePRTaskResponse;
+import io.harness.delegate.beans.gitapi.GitApiTaskResponse;
 import io.harness.delegate.beans.logstreaming.CommandUnitsProgress;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.beans.logstreaming.NGDelegateLogCallback;
@@ -36,6 +41,8 @@ import io.harness.delegate.beans.storeconfig.FetchType;
 import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.task.AbstractDelegateRunnableTask;
 import io.harness.delegate.task.TaskParameters;
+import io.harness.delegate.task.gitapi.client.impl.GithubApiClient;
+import io.harness.exception.InvalidRequestException;
 import io.harness.exception.sanitizer.ExceptionMessageSanitizer;
 import io.harness.git.model.CommitAndPushRequest;
 import io.harness.git.model.CommitAndPushResult;
@@ -88,11 +95,13 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
   @Inject private GitFetchFilesTaskHelper gitFetchFilesTaskHelper;
   @Inject private GitDecryptionHelper gitDecryptionHelper;
   @Inject private NGGitService ngGitService;
+  @Inject private GithubApiClient githubApiClient;
 
   public static final String FetchFiles = "Fetch Files";
   public static final String UpdateFiles = "Update GitOps Configuration files";
   public static final String CommitAndPush = "Commit and Push";
   public static final String CreatePR = "Create PR";
+  public static final String MergePR = "Merge PR";
 
   private LogCallback logCallback;
 
@@ -111,7 +120,8 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
     NGGitOpsTaskParams gitOpsTaskParams = (NGGitOpsTaskParams) parameters;
 
     switch (gitOpsTaskParams.getGitOpsTaskType()) {
-      case MERGE_PR: // TODO
+      case MERGE_PR:
+        return handleMergePR(gitOpsTaskParams);
       case CREATE_PR:
         return handleCreatePR(gitOpsTaskParams);
       default:
@@ -119,6 +129,54 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
             .taskStatus(TaskStatus.FAILURE)
             .errorMessage("Failed GitOps task: " + gitOpsTaskParams.getGitOpsTaskType())
             .build();
+    }
+  }
+
+  public DelegateResponseData handleMergePR(NGGitOpsTaskParams gitOpsTaskParams) {
+    CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
+    try {
+      log.info("Running Merge PR Task for activityId {}", gitOpsTaskParams.getActivityId());
+      logCallback = new NGDelegateLogCallback(getLogStreamingTaskClient(), MergePR, true, commandUnitsProgress);
+
+      ConnectorType connectorType = gitOpsTaskParams.connectorInfoDTO.getConnectorType();
+      GitApiTaskResponse responseData = null;
+
+      switch (connectorType) {
+        case GITHUB:
+          responseData = (GitApiTaskResponse) githubApiClient.mergePR(gitOpsTaskParams.getGitApiTaskParams());
+          break;
+        default:
+          logCallback.saveExecutionLog("Connector not supported", INFO, CommandExecutionStatus.FAILURE);
+      }
+
+      if (responseData.getCommandExecutionStatus() != CommandExecutionStatus.SUCCESS) {
+        logCallback.saveExecutionLog(
+            "Error encountered when merging the pull request", ERROR, CommandExecutionStatus.FAILURE);
+        return NGGitOpsResponse.builder()
+            .taskStatus(TaskStatus.FAILURE)
+            .errorMessage(responseData.getErrorMessage())
+            .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
+            .build();
+      }
+
+      logCallback.saveExecutionLog(format("PR Link: %s", gitOpsTaskParams.getPrLink(), INFO));
+      logCallback.saveExecutionLog(
+          format("%s", ((GitApiMergePRTaskResponse) responseData.getGitApiResult()).getMessage()), INFO);
+      logCallback.saveExecutionLog(
+          format("Commit Sha is %s", ((GitApiMergePRTaskResponse) responseData.getGitApiResult()).getSha()), INFO);
+      logCallback.saveExecutionLog("Done.", INFO, CommandExecutionStatus.SUCCESS);
+
+      return NGGitOpsResponse.builder()
+          .taskStatus(TaskStatus.SUCCESS)
+          .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
+          .build();
+    } catch (Exception e) {
+      logCallback.saveExecutionLog(e.getMessage(), ERROR, CommandExecutionStatus.FAILURE);
+      return NGGitOpsResponse.builder()
+          .taskStatus(TaskStatus.FAILURE)
+          .errorMessage(e.getMessage())
+          .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
+          .build();
     }
   }
 
@@ -132,6 +190,10 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
       FetchFilesResult fetchFilesResult =
           getFetchFilesResult(gitOpsTaskParams.getGitFetchFilesConfig(), gitOpsTaskParams.getAccountId());
 
+      if (fetchFilesResult == null) {
+        throw new InvalidRequestException("Fetch Files task encountered an error");
+      }
+
       logCallback = markDoneAndStartNew(logCallback, UpdateFiles, commandUnitsProgress);
 
       String baseBranch = gitOpsTaskParams.getGitFetchFilesConfig().getGitStoreDelegateConfig().getBranch();
@@ -141,6 +203,7 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
           gitOpsTaskParams.getGitFetchFilesConfig().getGitStoreDelegateConfig().getGitConfigDTO();
 
       createNewBranch(scmConnector, newBranch, baseBranch);
+
       updateFiles(gitOpsTaskParams.getFilesToVariablesMap(), fetchFilesResult);
 
       logCallback = markDoneAndStartNew(logCallback, CommitAndPush, commandUnitsProgress);
@@ -148,6 +211,11 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
       CommitAndPushResult gitCommitAndPushResult = commit(gitOpsTaskParams, fetchFilesResult, COMMIT_MSG, newBranch);
 
       List<GitFileChange> files = gitCommitAndPushResult.getFilesCommittedToGit();
+      if (files == null || isEmpty(files)) {
+        logCallback.saveExecutionLog(
+            "No files were committed. Hence not creating a pull request.", ERROR, CommandExecutionStatus.FAILURE);
+        throw new InvalidRequestException("No files were committed. Hence not creating a pull request.");
+      }
       StringBuilder sb = new StringBuilder(1024);
       files.forEach(f -> sb.append("\n- ").append(f.getFilePath()));
 
@@ -157,7 +225,8 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
 
       CreatePRResponse createPRResponse =
           createPullRequest(scmConnector, newBranch, baseBranch, PR_TITLE, gitOpsTaskParams.getAccountId());
-      String prLink = getPRLink(createPRResponse.getNumber(), scmConnector.getConnectorType(), scmConnector.getUrl());
+
+      String prLink = getPRLink(createPRResponse.getNumber(), scmConnector, scmConnector.getConnectorType());
 
       logCallback.saveExecutionLog("Created PR " + prLink, INFO);
       logCallback.saveExecutionLog("Done.", INFO, CommandExecutionStatus.SUCCESS);
@@ -170,6 +239,7 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
           .unitProgressData(UnitProgressDataMapper.toUnitProgressData(commandUnitsProgress))
           .build();
     } catch (Exception e) {
+      logCallback.saveExecutionLog(e.getMessage(), ERROR, CommandExecutionStatus.FAILURE);
       return NGGitOpsResponse.builder()
           .taskStatus(TaskStatus.FAILURE)
           .errorMessage(e.getMessage())
@@ -184,17 +254,27 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
 
     FetchFilesResult fetchFilesResult = fetchFilesFromRepo(gitFetchFilesConfig, logCallback, accountId);
 
+    if (fetchFilesResult.getFiles().isEmpty()) {
+      logCallback.saveExecutionLog(color(format("%nGit Fetch Files completed successfully but no files were fetched"),
+                                       LogColor.White, LogWeight.Bold),
+          INFO);
+      return fetchFilesResult;
+    }
+
     logCallback.saveExecutionLog(
         color(format("%nGit Fetch Files completed successfully."), LogColor.White, LogWeight.Bold), INFO);
     return fetchFilesResult;
   }
 
-  public String getPRLink(int prNumber, ConnectorType connectorType, String url) {
+  public String getPRLink(int prNumber, ScmConnector scmConnector, ConnectorType connectorType) {
     switch (connectorType) {
       // TODO: GITLAB, BITBUCKET
       case GITHUB:
-        return url + "/"
-            + "pull/" + prNumber + "/";
+        GithubConnectorDTO githubConnectorDTO = (GithubConnectorDTO) scmConnector;
+        return "https://github.com"
+            + "/" + githubConnectorDTO.getGitRepositoryDetails().getOrg() + "/"
+            + githubConnectorDTO.getGitRepositoryDetails().getName() + "/pull"
+            + "/" + prNumber;
       default:
         return "";
     }
@@ -318,8 +398,9 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
    * filesToVariablesMap map and then perfoms a merge.
    * If the variable key exists in the checkout file then it updates it's value(override).
    * If the variable doesn't exist, we append the variable to the file.
+   *
    * @param filesToVariablesMap resolve filesPaths from the releaseRepoConfig to Cluster Variables
-   * @param fetchFilesResult Files checkout out from git
+   * @param fetchFilesResult    Files checkout out from git
    * @throws ParseException
    * @throws IOException
    */
@@ -353,6 +434,7 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
   /**
    * This method replaces values for existing fields from file content and adds new entries for new keys
    * in the stringObjectMap
+   *
    * @param fileContent
    * @param stringObjectMap
    * @return Updated file content with new keys

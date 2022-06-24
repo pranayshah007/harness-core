@@ -10,6 +10,7 @@ package io.harness.cdng.gitops;
 import io.harness.plancreator.steps.TaskSelectorYaml;
 import io.harness.pms.yaml.ParameterField;
 
+import java.util.Arrays;
 import java.util.List;
 import lombok.Builder;
 
@@ -17,5 +18,10 @@ public class MergePRStepParams extends MergePRBaseStepInfo implements GitOpsSpec
   @Builder(builderMethodName = "infoBuilder")
   public MergePRStepParams(ParameterField<List<TaskSelectorYaml>> delegateSelectors) {
     super(delegateSelectors);
+  }
+
+  @Override
+  public List<String> getCommandUnits() {
+    return Arrays.asList("Merge PR");
   }
 }
