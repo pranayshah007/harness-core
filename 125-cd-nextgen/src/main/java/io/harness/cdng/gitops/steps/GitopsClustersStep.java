@@ -181,12 +181,18 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
                                      .pageSize(clusterIdentifiers.size())
                                      .filter(filter)
                                      .build();
-      final Response<PageResponse<Cluster>> response =
-          Failsafe.with(retryPolicyForGitopsClustersFetch)
-              .get(() -> gitopsResourceClient.listClusters(query).execute());
-      if (response.isSuccessful() && response.body() != null) {
-        List<Cluster> content = CollectionUtils.emptyIfNull(response.body().getContent());
-
+//      final Response<PageResponse<Cluster>> response =
+//          Failsafe.with(retryPolicyForGitopsClustersFetch)
+//              .get(() -> gitopsResourceClient.listClusters(query).execute());
+//
+//      if (response.isSuccessful() && response.body() != null) {
+      final Response<PageResponse<Cluster>> response = null;
+      if (true) {
+        //List<Cluster> content = CollectionUtils.emptyIfNull(response.body().getContent());
+        List<Cluster> content = new ArrayList<>();
+        content.add(new Cluster("c28", "c28"));
+        content.add(new Cluster("c29", "c29"));
+        content.add(new Cluster("c30", "c30"));
         saveExecutionLog(format("%d clusters %s exist in Harness Gitops", content.size(), content));
 
         content.forEach(c -> {

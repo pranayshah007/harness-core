@@ -9,10 +9,9 @@ package io.harness.cdng.gitops;
 
 import static io.harness.common.ParameterFieldHelper.getParameterFieldValue;
 import static io.harness.data.structure.CollectionUtils.emptyIfNull;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.exception.WingsException.USER;
 import static io.harness.steps.StepUtils.prepareCDTaskRequest;
-
-import static org.apache.commons.lang3.StringUtils.isEmpty;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -118,7 +117,9 @@ public class MergePRStep extends TaskExecutableWithRollbackAndRbac<NGGitOpsRespo
         GithubConnectorDTO githubConnectorDTO = (GithubConnectorDTO) gitStoreDelegateConfig.getGitConfigDTO();
         repoOwner = githubConnectorDTO.getGitRepositoryDetails().getOrg();
         repoName = githubConnectorDTO.getGitRepositoryDetails().getName();
+        break;
       default:
+        throw new InvalidRequestException("Connector not supported", USER);
     }
 
     OptionalSweepingOutput optionalSweepingOutput = executionSweepingOutputService.resolveOptional(
