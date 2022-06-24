@@ -21,6 +21,7 @@ import io.harness.beans.DecryptableEntity;
 import io.harness.beans.IdentifierRef;
 import io.harness.cdng.artifact.outcome.ArtifactOutcome;
 import io.harness.cdng.artifact.outcome.ArtifactoryGenericArtifactOutcome;
+import io.harness.cdng.artifact.outcome.EcrArtifactOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.ServerlessAwsLambdaInfrastructureOutcome;
 import io.harness.connector.ConnectorInfoDTO;
@@ -31,6 +32,7 @@ import io.harness.delegate.beans.connector.awsconnector.AwsConnectorDTO;
 import io.harness.delegate.task.serverless.ServerlessArtifactConfig;
 import io.harness.delegate.task.serverless.ServerlessArtifactoryArtifactConfig;
 import io.harness.delegate.task.serverless.ServerlessAwsLambdaInfraConfig;
+import io.harness.delegate.task.serverless.ServerlessEcrArtifactConfig;
 import io.harness.delegate.task.serverless.ServerlessInfraConfig;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.NGAccess;
@@ -123,6 +125,20 @@ public class ServerlessEntityHelper {
           .artifactDirectory(artifactoryGenericArtifactOutcome.getArtifactDirectory())
           .artifactPath(artifactoryGenericArtifactOutcome.getArtifactPath())
           .repositoryFormat(artifactoryGenericArtifactOutcome.getRepositoryFormat())
+          .build();
+    } else if (artifactOutcome instanceof EcrArtifactOutcome) {
+      EcrArtifactOutcome ecrArtifactOutcome = (EcrArtifactOutcome) artifactOutcome;
+      connectorDTO = getConnectorInfoDTO(ecrArtifactOutcome.getConnectorRef(), ngAccess);
+      return ServerlessEcrArtifactConfig.builder()
+          .imagePath(ecrArtifactOutcome.getImagePath())
+          .identifier(ecrArtifactOutcome.getIdentifier())
+          .connectorDTO(connectorDTO)
+          .encryptedDataDetails(getEncryptionDataDetails(connectorDTO, ngAccess))
+          .region(ecrArtifactOutcome.getRegion())
+          .image(ecrArtifactOutcome.getImage())
+          .primaryArtifact(ecrArtifactOutcome.isPrimaryArtifact())
+          .tag(ecrArtifactOutcome.getTag())
+          .type(ecrArtifactOutcome.getType())
           .build();
     } else {
       throw new UnsupportedOperationException(

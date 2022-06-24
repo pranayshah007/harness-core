@@ -22,6 +22,9 @@ import io.harness.category.element.UnitTests;
 import io.harness.connector.ConnectorDTO;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.network.SafeHttpCall;
+import io.harness.ng.core.dto.secrets.SecretDTOV2;
+import io.harness.ng.opa.entities.connector.ConnectorOpaEvaluationContext;
+import io.harness.ng.opa.entities.secret.SecretOpaEvaluationContext;
 import io.harness.opaclient.OpaServiceClient;
 import io.harness.opaclient.model.OpaEvaluationResponseHolder;
 import io.harness.pms.contracts.governance.GovernanceMetadata;
@@ -59,13 +62,148 @@ public class OpaServiceImplTest extends NgManagerTestBase {
   @Test
   @Owner(developers = UJJAWAL)
   @Category(UnitTests.class)
+  public void testEvaluateSecret() throws IOException {
+    try {
+      SecretDTOV2 secretDTOV2 = SecretDTOV2.builder().identifier("id").name("name").build();
+      OpaEvaluationContext opaEvaluationContext = SecretOpaEvaluationContext.builder().secret(secretDTOV2).build();
+      when(opaServiceClient.evaluateWithCredentials(
+               anyString(), anyString(), anyString(), anyString(), anyString(), any(), anyString(), anyString(), any()))
+          .thenReturn(request);
+
+      OpaEvaluationResponseHolder evaluationResponse =
+          OpaEvaluationResponseHolder.builder().status("pass").id("id").build();
+      when(SafeHttpCall.executeWithExceptions(request)).thenAnswer(invocationOnMock -> evaluationResponse);
+
+      GovernanceMetadata governanceMetadata = opaService.evaluate(
+          opaEvaluationContext, "accountId", "orgIdentifier", "projectIdentifier", "identifier", "onsave", "key");
+
+      assertThat(governanceMetadata.getStatus()).isNotBlank();
+      assertThat(governanceMetadata.getStatus()).isEqualTo(evaluationResponse.getStatus());
+      assertThat(governanceMetadata.getId()).isEqualTo(evaluationResponse.getId());
+
+    } catch (Exception e) {
+      assertThat(e).isNull();
+    }
+  }
+
+  @Test
+  @Owner(developers = UJJAWAL)
+  @Category(UnitTests.class)
+  public void testEvaluatSecret2() {
+    try {
+      SecretDTOV2 secretDTOV2 = SecretDTOV2.builder().identifier("id").name("name").build();
+      OpaEvaluationContext opaEvaluationContext = SecretOpaEvaluationContext.builder().secret(secretDTOV2).build();
+      when(opaServiceClient.evaluateWithCredentials(
+               anyString(), anyString(), anyString(), anyString(), anyString(), any(), anyString(), anyString(), any()))
+          .thenReturn(request);
+
+      OpaEvaluationResponseHolder evaluationResponse =
+          OpaEvaluationResponseHolder.builder().status("error").id("id").build();
+      when(SafeHttpCall.executeWithExceptions(request)).thenAnswer(invocationOnMock -> evaluationResponse);
+
+      GovernanceMetadata governanceMetadata = opaService.evaluate(
+          opaEvaluationContext, "accountId", "orgIdentifier", "projectIdentifier", "identifier", "onsave", "key");
+      assertThat(governanceMetadata.getStatus()).isNotBlank();
+      assertThat(governanceMetadata.getStatus()).isEqualTo(evaluationResponse.getStatus());
+      assertThat(governanceMetadata.getStatus()).isEqualTo("error");
+
+      assertThat(governanceMetadata.getId()).isEqualTo(evaluationResponse.getId());
+
+    } catch (Exception e) {
+      assertThat(e).isNull();
+    }
+  }
+
+  @Test
+  @Owner(developers = UJJAWAL)
+  @Category(UnitTests.class)
+  public void testEvaluateSecret3() {
+    try {
+      SecretDTOV2 secretDTOV2 = SecretDTOV2.builder().identifier("id").name("name").build();
+      OpaEvaluationContext opaEvaluationContext = SecretOpaEvaluationContext.builder().secret(secretDTOV2).build();
+      when(opaServiceClient.evaluateWithCredentials(
+               anyString(), anyString(), anyString(), anyString(), anyString(), any(), anyString(), anyString(), any()))
+          .thenReturn(request);
+
+      OpaEvaluationResponseHolder evaluationResponse =
+          OpaEvaluationResponseHolder.builder().status("error").id("id").build();
+      when(SafeHttpCall.executeWithExceptions(request)).thenAnswer(invocationOnMock -> null);
+
+      GovernanceMetadata governanceMetadata = opaService.evaluate(
+          opaEvaluationContext, "accountId", "orgIdentifier", "projectIdentifier", "identifier", "onsave", "key");
+      assertThat(governanceMetadata.getStatus()).isNotBlank();
+      assertThat(governanceMetadata.getStatus()).isEqualTo(evaluationResponse.getStatus());
+      assertThat(governanceMetadata.getStatus()).isEqualTo("error");
+
+      assertThat(governanceMetadata.getId()).isEqualTo(evaluationResponse.getId());
+
+    } catch (Exception e) {
+      assertThat(e).isNotNull();
+    }
+  }
+
+  @Test
+  @Owner(developers = UJJAWAL)
+  @Category(UnitTests.class)
+  public void testEvaluateSecret4() {
+    try {
+      when(opaServiceClient.evaluateWithCredentials(
+               anyString(), anyString(), anyString(), anyString(), anyString(), any(), anyString(), anyString(), any()))
+          .thenReturn(request);
+
+      OpaEvaluationResponseHolder evaluationResponse =
+          OpaEvaluationResponseHolder.builder().status("error").id("id").build();
+      when(SafeHttpCall.executeWithExceptions(request)).thenAnswer(invocationOnMock -> evaluationResponse);
+
+      GovernanceMetadata governanceMetadata =
+          opaService.evaluate(null, "accountId", "orgIdentifier", "projectIdentifier", "identifier", "onsave", "key");
+      assertThat(governanceMetadata.getStatus()).isNotBlank();
+      assertThat(governanceMetadata.getStatus()).isEqualTo(evaluationResponse.getStatus());
+      assertThat(governanceMetadata.getStatus()).isEqualTo("error");
+    } catch (Exception e) {
+      assertThat(e).isNotNull();
+    }
+  }
+
+  @Test
+  @Owner(developers = UJJAWAL)
+  @Category(UnitTests.class)
+  public void testEvaluateSecret5() {
+    try {
+      SecretDTOV2 secretDTOV2 = SecretDTOV2.builder().identifier("id").name("name").build();
+      OpaEvaluationContext opaEvaluationContext = SecretOpaEvaluationContext.builder().secret(secretDTOV2).build();
+      when(opaServiceClient.evaluateWithCredentials(
+               anyString(), anyString(), anyString(), anyString(), anyString(), any(), anyString(), anyString(), any()))
+          .thenReturn(request);
+
+      OpaEvaluationResponseHolder evaluationResponse =
+          OpaEvaluationResponseHolder.builder().status("pass").id("id").build();
+      when(SafeHttpCall.executeWithExceptions(request)).thenAnswer(invocationOnMock -> evaluationResponse);
+
+      GovernanceMetadata governanceMetadata = opaService.evaluate(
+          opaEvaluationContext, "accountId", "orgIdentifier", "projectIdentifier", "identifier", "onsave", "key");
+      assertThat(governanceMetadata.getStatus()).isNotBlank();
+      assertThat(governanceMetadata.getStatus()).isEqualTo(evaluationResponse.getStatus());
+      assertThat(governanceMetadata.getStatus()).isEqualTo("pass");
+
+      assertThat(governanceMetadata.getId()).isEqualTo(evaluationResponse.getId());
+      assertThat(evaluationResponse.getId()).isEqualTo(secretDTOV2.getIdentifier());
+
+    } catch (Exception e) {
+      assertThat(e).isNotNull();
+    }
+  }
+
+  @Test
+  @Owner(developers = UJJAWAL)
+  @Category(UnitTests.class)
   public void testEvaluate() throws IOException {
     try {
       ConnectorInfoDTO connectorInfoDTO =
           ConnectorInfoDTO.builder().name("name").identifier("id").orgIdentifier("orgId").build();
       ConnectorDTO connectorDTO = ConnectorDTO.builder().connectorInfo(connectorInfoDTO).build();
 
-      OpaEvaluationContext opaEvaluationContext = OpaEvaluationContext.builder().entity(connectorDTO).build();
+      OpaEvaluationContext opaEvaluationContext = ConnectorOpaEvaluationContext.builder().entity(connectorDTO).build();
       when(opaServiceClient.evaluateWithCredentials(
                anyString(), anyString(), anyString(), anyString(), anyString(), any(), anyString(), anyString(), any()))
           .thenReturn(request);
@@ -95,7 +233,7 @@ public class OpaServiceImplTest extends NgManagerTestBase {
           ConnectorInfoDTO.builder().name("name").identifier("id").orgIdentifier("orgId").build();
       ConnectorDTO connectorDTO = ConnectorDTO.builder().connectorInfo(connectorInfoDTO).build();
 
-      OpaEvaluationContext opaEvaluationContext = OpaEvaluationContext.builder().entity(connectorDTO).build();
+      OpaEvaluationContext opaEvaluationContext = ConnectorOpaEvaluationContext.builder().entity(connectorDTO).build();
       when(opaServiceClient.evaluateWithCredentials(
                anyString(), anyString(), anyString(), anyString(), anyString(), any(), anyString(), anyString(), any()))
           .thenReturn(request);
@@ -126,7 +264,7 @@ public class OpaServiceImplTest extends NgManagerTestBase {
           ConnectorInfoDTO.builder().name("name").identifier("id").orgIdentifier("orgId").build();
       ConnectorDTO connectorDTO = ConnectorDTO.builder().connectorInfo(connectorInfoDTO).build();
 
-      OpaEvaluationContext opaEvaluationContext = OpaEvaluationContext.builder().entity(connectorDTO).build();
+      OpaEvaluationContext opaEvaluationContext = ConnectorOpaEvaluationContext.builder().entity(connectorDTO).build();
       when(opaServiceClient.evaluateWithCredentials(
                anyString(), anyString(), anyString(), anyString(), anyString(), any(), anyString(), anyString(), any()))
           .thenReturn(request);
@@ -183,7 +321,7 @@ public class OpaServiceImplTest extends NgManagerTestBase {
           ConnectorInfoDTO.builder().name("name").identifier("id").orgIdentifier("orgId").build();
       ConnectorDTO connectorDTO = ConnectorDTO.builder().connectorInfo(connectorInfoDTO).build();
 
-      OpaEvaluationContext opaEvaluationContext = OpaEvaluationContext.builder().entity(connectorDTO).build();
+      OpaEvaluationContext opaEvaluationContext = ConnectorOpaEvaluationContext.builder().entity(connectorDTO).build();
       when(opaServiceClient.evaluateWithCredentials(
                anyString(), anyString(), anyString(), anyString(), anyString(), any(), anyString(), anyString(), any()))
           .thenReturn(request);

@@ -192,6 +192,13 @@ public class StepUtils {
         selectors, Scope.PROJECT, environmentType);
   }
 
+  public static TaskRequest prepareCDTaskRequest(Ambiance ambiance, TaskData taskData, KryoSerializer kryoSerializer,
+      List<String> keys, List<String> units, String taskName, List<TaskSelector> selectors,
+      EnvironmentType environmentType) {
+    return prepareTaskRequest(ambiance, taskData, kryoSerializer, TaskCategory.DELEGATE_TASK_V2, keys, units, true,
+        taskName, selectors, Scope.PROJECT, environmentType);
+  }
+
   public static TaskRequest prepareTaskRequestWithoutLogs(
       Ambiance ambiance, TaskData taskData, KryoSerializer kryoSerializer) {
     return prepareTaskRequest(
@@ -219,6 +226,16 @@ public class StepUtils {
   public static TaskRequest prepareTaskRequest(Ambiance ambiance, TaskData taskData, KryoSerializer kryoSerializer,
       TaskCategory taskCategory, List<String> units, boolean withLogs, String taskName, List<TaskSelector> selectors,
       Scope taskScope, EnvironmentType environmentType) {
+    LinkedHashMap<String, String> logAbstractionMap =
+        withLogs ? generateLogAbstractions(ambiance) : new LinkedHashMap<>();
+    return prepareTaskRequest(ambiance, taskData, kryoSerializer, taskCategory,
+        CollectionUtils.emptyIfNull(generateLogKeys(logAbstractionMap, units)), units, withLogs, taskName, selectors,
+        taskScope, environmentType);
+  }
+
+  public static TaskRequest prepareTaskRequest(Ambiance ambiance, TaskData taskData, KryoSerializer kryoSerializer,
+      TaskCategory taskCategory, List<String> keys, List<String> units, boolean withLogs, String taskName,
+      List<TaskSelector> selectors, Scope taskScope, EnvironmentType environmentType) {
     String accountId = Preconditions.checkNotNull(ambiance.getSetupAbstractionsMap().get("accountId"));
     TaskParameters taskParameters = (TaskParameters) taskData.getParameters()[0];
     List<ExecutionCapability> capabilities = new ArrayList<>();
@@ -277,13 +294,12 @@ public class StepUtils {
               .collect(toList()));
     }
 
-    DelegateTaskRequest delegateTaskRequest =
-        DelegateTaskRequest.newBuilder()
-            .addAllUnits(CollectionUtils.emptyIfNull(units))
-            .addAllLogKeys(CollectionUtils.emptyIfNull(generateLogKeys(logAbstractionMap, units)))
-            .setRequest(requestBuilder.build())
-            .setTaskName(taskName == null ? taskData.getTaskType() : taskName)
-            .build();
+    DelegateTaskRequest delegateTaskRequest = DelegateTaskRequest.newBuilder()
+                                                  .addAllUnits(CollectionUtils.emptyIfNull(units))
+                                                  .addAllLogKeys(keys)
+                                                  .setRequest(requestBuilder.build())
+                                                  .setTaskName(taskName == null ? taskData.getTaskType() : taskName)
+                                                  .build();
 
     return TaskRequest.newBuilder().setDelegateTaskRequest(delegateTaskRequest).setTaskCategory(taskCategory).build();
   }

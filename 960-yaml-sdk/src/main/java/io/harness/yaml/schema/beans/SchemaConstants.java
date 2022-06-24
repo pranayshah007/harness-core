@@ -8,6 +8,8 @@
 package io.harness.yaml.schema.beans;
 
 import static io.harness.annotations.dev.HarnessTeam.DX;
+import static io.harness.expression.EngineExpressionEvaluator.EXPR_END_ESC;
+import static io.harness.expression.EngineExpressionEvaluator.EXPR_START_ESC;
 
 import io.harness.annotations.dev.OwnedBy;
 @OwnedBy(DX)
@@ -44,6 +46,7 @@ public class SchemaConstants {
   public static final String PATTERN_NODE = "pattern";
   public static final String MIN_LENGTH_NODE = "minLength";
   public static final String RUNTIME_INPUT_PATTERN = "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$";
+  public static final String EXPRESSION_PATTERN = EXPR_START_ESC + "([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)" + EXPR_END_ESC;
   public static final String SPEC_NODE = "spec";
   public static final String STAGE_ELEMENT_WRAPPER_CONFIG = "StageElementWrapperConfig";
   public static final String STAGE_NODE = "stage";

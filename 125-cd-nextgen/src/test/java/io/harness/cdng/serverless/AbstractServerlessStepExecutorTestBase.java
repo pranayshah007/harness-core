@@ -17,6 +17,8 @@ import static org.mockito.Mockito.verify;
 
 import io.harness.CategoryTest;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.artifact.outcome.ArtifactOutcome;
+import io.harness.cdng.artifact.outcome.ArtifactoryArtifactOutcome;
 import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.manifest.yaml.ServerlessAwsLambdaManifestOutcome;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfig;
@@ -24,6 +26,8 @@ import io.harness.cdng.serverless.beans.ServerlessAwsLambdaStepExecutorParams;
 import io.harness.cdng.serverless.beans.ServerlessExecutionPassThroughData;
 import io.harness.cdng.serverless.beans.ServerlessStepExecutorParams;
 import io.harness.delegate.beans.logstreaming.UnitProgressData;
+import io.harness.delegate.task.serverless.ServerlessArtifactConfig;
+import io.harness.delegate.task.serverless.ServerlessArtifactoryArtifactConfig;
 import io.harness.delegate.task.serverless.ServerlessAwsLambdaDeployConfig;
 import io.harness.delegate.task.serverless.ServerlessAwsLambdaInfraConfig;
 import io.harness.delegate.task.serverless.ServerlessAwsLambdaManifestConfig;
@@ -93,6 +97,10 @@ public abstract class AbstractServerlessStepExecutorTestBase extends CategoryTes
     ServerlessExecutionPassThroughData passThroughData =
         ServerlessExecutionPassThroughData.builder().infrastructure(infrastructureOutcome).build();
 
+    ServerlessArtifactConfig serverlessArtifactConfig = ServerlessArtifactoryArtifactConfig.builder().build();
+    ArtifactOutcome artifactOutcome = ArtifactoryArtifactOutcome.builder().build();
+    doReturn(Optional.of(artifactOutcome)).when(serverlessStepHelper).resolveArtifactsOutcome(eq(ambiance));
+    doReturn(serverlessArtifactConfig).when(serverlessStepHelper).getArtifactConfig(eq(artifactOutcome), eq(ambiance));
     doReturn(serverlessDeployConfig)
         .when(serverlessStepHelper)
         .getServerlessDeployConfig(

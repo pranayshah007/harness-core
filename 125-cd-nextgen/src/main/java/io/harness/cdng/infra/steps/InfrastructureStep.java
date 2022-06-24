@@ -25,6 +25,7 @@ import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
 import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
+import io.harness.cdng.infra.yaml.InfraConfigStepParameter;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
 import io.harness.cdng.infra.yaml.K8sAzureInfrastructure;
@@ -94,7 +95,7 @@ import java.util.Optional;
 import java.util.Set;
 
 @OwnedBy(CDC)
-public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure> {
+public class InfrastructureStep implements SyncExecutableWithRbac<InfraConfigStepParameter> {
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.INFRASTRUCTURE.getName())
                                                .setStepCategory(StepCategory.STEP)
@@ -110,8 +111,8 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
   @Inject ExecutionSweepingOutputService executionSweepingOutputService;
 
   @Override
-  public Class<Infrastructure> getStepParametersClass() {
-    return Infrastructure.class;
+  public Class<InfraConfigStepParameter> getStepParametersClass() {
+    return InfraConfigStepParameter.class;
   }
 
   InfraMapping createInfraMappingObject(Infrastructure infrastructureSpec) {
@@ -119,8 +120,12 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
   }
 
   @Override
-  public StepResponse executeSyncAfterRbac(Ambiance ambiance, Infrastructure infrastructure,
+  public StepResponse executeSyncAfterRbac(Ambiance ambiance, InfraConfigStepParameter infraConfigStep,
       StepInputPackage inputPackage, PassThroughData passThroughData) {
+    Infrastructure infrastructure = infraConfigStep.getSpec();
+    String infraId = infraConfigStep.getInfraIdentifier();
+    String infraName = infraConfigStep.getInfraName();
+
     long startTime = System.currentTimeMillis();
 
     NGLogCallback logCallback = infrastructureStepHelper.getInfrastructureLogCallback(ambiance, true);
@@ -136,7 +141,7 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
     ServiceStepOutcome serviceOutcome = (ServiceStepOutcome) outcomeService.resolve(
         ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.SERVICE));
     InfrastructureOutcome infrastructureOutcome =
-        InfrastructureMapper.toOutcome(infrastructure, environmentOutcome, serviceOutcome);
+        InfrastructureMapper.toOutcome(infrastructure, environmentOutcome, serviceOutcome, infraId, infraName);
 
     if (environmentOutcome != null) {
       if (EmptyPredicate.isNotEmpty(environmentOutcome.getName())) {
@@ -409,7 +414,8 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
   }
 
   @Override
-  public void validateResources(Ambiance ambiance, Infrastructure infrastructure) {
+  public void validateResources(Ambiance ambiance, InfraConfigStepParameter infraConfigStep) {
+    Infrastructure infrastructure = infraConfigStep.getSpec();
     ExecutionPrincipalInfo executionPrincipalInfo = ambiance.getMetadata().getPrincipalInfo();
     String principal = executionPrincipalInfo.getPrincipal();
     if (EmptyPredicate.isEmpty(principal)) {

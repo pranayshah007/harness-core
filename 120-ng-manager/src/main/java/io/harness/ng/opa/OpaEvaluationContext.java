@@ -12,14 +12,13 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.opaclient.model.UserOpaEvaluationContext;
 
 import java.util.Date;
-import lombok.Builder;
 import lombok.Data;
+import lombok.experimental.SuperBuilder;
 
 @Data
-@Builder
+@SuperBuilder
 @OwnedBy(HarnessTeam.PL)
 public class OpaEvaluationContext {
-  Object entity;
   UserOpaEvaluationContext user;
   String action;
   Date date;
