@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.morphia.MorphiaRegistrar;
 import io.harness.morphia.MorphiaRegistrarHelperPut;
+import io.harness.pms.approval.custom.CustomApprovalCallback;
 import io.harness.pms.approval.jira.JiraApprovalCallback;
 import io.harness.pms.approval.servicenow.ServiceNowApprovalCallback;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
@@ -36,5 +37,6 @@ public class PMSPipelineMorphiaRegistrar implements MorphiaRegistrar {
   public void registerImplementationClasses(MorphiaRegistrarHelperPut h, MorphiaRegistrarHelperPut w) {
     h.put("pms.approval.jira", JiraApprovalCallback.class);
     h.put("pms.approval.servicenow", ServiceNowApprovalCallback.class);
+    h.put("pms.approval.custom", CustomApprovalCallback.class);
   }
 }

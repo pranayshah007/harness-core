@@ -9,6 +9,7 @@ package io.harness.serializer.kryo;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.pms.approval.custom.CustomApprovalCallback;
 import io.harness.pms.approval.jira.JiraApprovalCallback;
 import io.harness.pms.approval.servicenow.ServiceNowApprovalCallback;
 import io.harness.pms.async.plan.PartialPlanCreatorResponseData;
@@ -33,5 +34,6 @@ public class PipelineServiceKryoRegistrar implements KryoRegistrar {
     kryo.register(YamlSchemaDetailsWrapperValue.class, 800006);
     kryo.register(YamlSchemaDetailsValue.class, 800007);
     kryo.register(PartialSchemaDTOWrapperValue.class, 800008);
+    kryo.register(CustomApprovalCallback.class, 800009);
   }
 }
