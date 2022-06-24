@@ -57,6 +57,7 @@ import software.wings.beans.command.CommandUnitDetails.CommandUnitType;
 import software.wings.beans.container.EcsSteadyStateCheckParams;
 import software.wings.beans.container.EcsSteadyStateCheckResponse;
 import software.wings.helpers.ext.container.ContainerDeploymentManagerHelper;
+import software.wings.service.impl.aws.manager.AwsHelperServiceManager;
 import software.wings.service.intfc.ActivityService;
 import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.DelegateService;
@@ -121,6 +122,7 @@ public class EcsSteadyStateCheck extends State {
       EcsInfrastructureMapping ecsInfrastructureMapping = (EcsInfrastructureMapping) infrastructureMapping;
       Activity activity = createActivity(context);
       AwsConfig awsConfig = getAwsConfig(ecsInfrastructureMapping.getComputeProviderSettingId());
+      AwsHelperServiceManager.setAmazonClientSDKDefaultBackoffStrategyIfExists(context,awsConfig);
       EcsSteadyStateCheckParams params =
           EcsSteadyStateCheckParams.builder()
               .appId(app.getUuid())

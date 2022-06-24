@@ -38,6 +38,9 @@
       "type": "string",
       "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"
     },
+    "strategy": {
+      "$ref": "#/definitions/StrategyConfig"
+    },
     "tags": {
       "type": "object",
       "additionalProperties": {
@@ -313,6 +316,9 @@
         "name": {
           "type": "string",
           "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"
+        },
+        "strategy": {
+          "$ref": "#/definitions/StrategyConfig"
         },
         "tags": {
           "type": "object",
@@ -644,6 +650,18 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "ExcludeConfig": {
+      "type": "object",
+      "properties": {
+        "exclude": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "ExecutionElementConfig": {
       "type": "object",
       "required": [
@@ -808,6 +826,40 @@
           }
         }
       ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "HarnessForConfig": {
+      "type": "object",
+      "properties": {
+        "iteration": {
+          "oneOf": [
+            {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            },
+            {
+              "type": "string",
+              "pattern": "<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>",
+              "minLength": 1
+            }
+          ]
+        },
+        "maxConcurrency": {
+          "oneOf": [
+            {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            },
+            {
+              "type": "string",
+              "pattern": "<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>",
+              "minLength": 1
+            }
+          ]
+        }
+      },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "HttpHeaderConfig": {
@@ -1198,6 +1250,53 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "MatrixConfig": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/MatrixConfigInterface"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "exclude": {
+              "oneOf": [
+                {
+                  "$ref": "#/definitions/ParameterFieldListExcludeConfig"
+                },
+                {
+                  "type": "array"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "maxConcurrency": {
+              "oneOf": [
+                {
+                  "type": "integer",
+                  "format": "int32",
+                  "minimum": 0
+                },
+                {
+                  "type": "string",
+                  "pattern": "<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "MatrixConfigInterface": {
+      "type": "object",
+      "discriminator": "type",
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "NGVariable": {
       "type": "object",
       "discriminator": "type",
@@ -1424,6 +1523,45 @@
         },
         "value": {
           "type": "object"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ParameterFieldListExcludeConfig": {
+      "type": "object",
+      "properties": {
+        "defaultValue": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ExcludeConfig"
+          }
+        },
+        "executionInput": {
+          "type": "boolean"
+        },
+        "expression": {
+          "type": "boolean"
+        },
+        "expressionValue": {
+          "type": "string"
+        },
+        "inputSetValidator": {
+          "$ref": "#/definitions/InputSetValidator"
+        },
+        "jsonResponseField": {
+          "type": "boolean"
+        },
+        "responseField": {
+          "type": "string"
+        },
+        "typeString": {
+          "type": "boolean"
+        },
+        "value": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ExcludeConfig"
+          }
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -2371,6 +2509,9 @@
           "type": "string",
           "pattern": "^[a-zA-Z_][-0-9a-zA-Z_\\s]{0,63}$"
         },
+        "strategy": {
+          "$ref": "#/definitions/StrategyConfig"
+        },
         "timeout": {
           "type": "string",
           "pattern": "^(([1-9])+\\d+[s])|(((([1-9])+\\d*[mhwd])+([\\s]?\\d+[smhwd])*)|(<\\+input>.*)|(.*<\\+.*>.*))$"
@@ -2690,6 +2831,57 @@
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "StrategyConfig": {
+      "type": "object",
+      "properties": {
+        "for": {
+          "$ref": "#/definitions/HarnessForConfig"
+        },
+        "matrix": {
+          "oneOf": [
+            {
+              "$ref": "#/definitions/MatrixConfig"
+            }
+          ]
+        },
+        "parallelism": {
+          "oneOf": [
+            {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            },
+            {
+              "type": "string",
+              "pattern": "<\\+([a-zA-Z]\\w*\\.?)*([a-zA-Z]\\w*)>",
+              "minLength": 1
+            }
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "oneOf": [
+            {
+              "required": [
+                "parallelism"
+              ]
+            },
+            {
+              "required": [
+                "for"
+              ]
+            },
+            {
+              "required": [
+                "matrix"
+              ]
+            }
+          ]
+        }
+      ]
     },
     "StringNGVariable": {
       "allOf": [

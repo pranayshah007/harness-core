@@ -9,13 +9,16 @@ package io.harness.plancreator.strategy;
 
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.beans.SwaggerConstants.INTEGER_CLASSPATH;
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.expression;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.pms.yaml.ParameterField;
+import io.harness.yaml.YamlSchemaTypes;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.annotations.ApiModelProperty;
+import javax.validation.constraints.Min;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -27,8 +30,14 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @RecasterAlias("io.harness.plancreator.strategy.HarnessForConfig")
 public class HarnessForConfig {
-  @JsonProperty("iteration") @ApiModelProperty(dataType = INTEGER_CLASSPATH) ParameterField<Integer> iteration;
+  @YamlSchemaTypes(value = {expression})
+  @JsonProperty("iteration")
   @ApiModelProperty(dataType = INTEGER_CLASSPATH)
+  @Min(value = 0)
+  ParameterField<Integer> iteration;
+  @ApiModelProperty(dataType = INTEGER_CLASSPATH)
+  @YamlSchemaTypes(value = {expression})
   @JsonProperty("maxConcurrency")
+  @Min(value = 0)
   ParameterField<Integer> maxConcurrency;
 }

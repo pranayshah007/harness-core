@@ -54,6 +54,19 @@ public class GitAwareEntityHelper {
     return entity;
   }
 
+  // todo: make pipeline import call this method too
+  public String fetchYAMLFromRemote(String accountId, String orgIdentifier, String projectIdentifier) {
+    GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
+    Scope scope = Scope.of(accountId, orgIdentifier, projectIdentifier);
+    GitContextRequestParams gitContextRequestParams = GitContextRequestParams.builder()
+                                                          .branchName(gitEntityInfo.getBranch())
+                                                          .connectorRef(gitEntityInfo.getConnectorRef())
+                                                          .filePath(gitEntityInfo.getFilePath())
+                                                          .repoName(gitEntityInfo.getRepoName())
+                                                          .build();
+    return fetchYAMLFromRemote(scope, gitContextRequestParams, Collections.emptyMap());
+  }
+
   public String fetchYAMLFromRemote(
       Scope scope, GitContextRequestParams gitContextRequestParams, Map<String, String> contextMap) {
     String repoName = gitContextRequestParams.getRepoName();

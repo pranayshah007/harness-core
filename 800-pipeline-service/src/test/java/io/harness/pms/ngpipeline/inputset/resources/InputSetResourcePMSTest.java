@@ -40,6 +40,7 @@ import io.harness.pms.inputset.MergeInputSetResponseDTOPMS;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntity.InputSetEntityKeys;
 import io.harness.pms.ngpipeline.inputset.beans.entity.InputSetEntityType;
+import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetImportResponseDTO;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetResponseDTOPMS;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetSummaryResponseDTOPMS;
 import io.harness.pms.ngpipeline.inputset.beans.resource.InputSetTemplateRequestDTO;
@@ -516,5 +517,17 @@ public class InputSetResourcePMSTest extends PipelineServiceTestBase {
     MergeInputSetResponseDTOPMS data = responseDTO.getData();
     assertThat(data.isErrorResponse()).isTrue();
     assertThat(data.getInputSetErrorWrapper()).isEqualTo(dummyErrorResponse);
+  }
+
+  @Test
+  @Owner(developers = NAMAN)
+  @Category(UnitTests.class)
+  public void testImportInputSetFromGit() {
+    doReturn(inputSetEntity)
+        .when(pmsInputSetService)
+        .importInputSetFromRemote(ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_ID, null);
+    ResponseDTO<InputSetImportResponseDTO> inputSetImportResponse = inputSetResourcePMS.importInputSetFromGit(
+        ACCOUNT_ID, ORG_IDENTIFIER, PROJ_IDENTIFIER, PIPELINE_IDENTIFIER, INPUT_SET_ID, null, null);
+    assertThat(inputSetImportResponse.getData().getIdentifier()).isEqualTo(INPUT_SET_ID);
   }
 }
