@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: rolesConfiguration
-version: 28
+version: 29
 roles:
     - identifier: _project_admin
       name: Project Admin
@@ -483,6 +483,21 @@ roles:
         - chaos_chaosworkflow_view
         - chaos_chaosworkflow_edit
         - chaos_chaosworkflow_delete
+        - ccm_perspective_view
+        - ccm_perspective_edit
+        - ccm_perspective_delete
+        - ccm_budget_view
+        - ccm_budget_edit
+        - ccm_budget_delete
+        - ccm_costCategory_view
+        - ccm_costCategory_edit
+        - ccm_costCategory_delete
+        - ccm_autoStoppingRule_view
+        - ccm_autoStoppingRule_edit
+        - ccm_autoStoppingRule_delete
+        - ccm_folder_view
+        - ccm_folder_edit
+        - ccm_folder_delete
       allowedScopeLevels:
         - account
       managed: true
@@ -533,6 +548,11 @@ roles:
         - chaos_chaosagent_view
         - chaos_chaosgitops_view
         - chaos_chaosworkflow_view
+        - ccm_perspective_view
+        - ccm_budget_view
+        - ccm_costCategory_view
+        - ccm_autoStoppingRule_view
+        - ccm_folder_view
       allowedScopeLevels:
         - account
       managed: true
@@ -616,6 +636,40 @@ roles:
       permissions:
         - core_license_view
         - core_account_view
+      managed: true
+      allowedScopeLevels:
+        - account
+    - identifier: _ccm_admin
+      name: CCM Admin
+      description: CCM Admin
+      permissions:
+        - ccm_perspective_view
+        - ccm_perspective_edit
+        - ccm_perspective_delete
+        - ccm_budget_view
+        - ccm_budget_edit
+        - ccm_budget_delete
+        - ccm_costCategory_view
+        - ccm_costCategory_edit
+        - ccm_costCategory_delete
+        - ccm_autoStoppingRule_view
+        - ccm_autoStoppingRule_edit
+        - ccm_autoStoppingRule_delete
+        - ccm_folder_view
+        - ccm_folder_edit
+        - ccm_folder_delete
+      managed: true
+      allowedScopeLevels:
+        - account
+    - identifier: _ccm_viewer
+      name: CCM Viewer
+      description: CCM Viewer
+      permissions:
+        - ccm_perspective_view
+        - ccm_budget_view
+        - ccm_costCategory_view
+        - ccm_autoStoppingRule_view
+        - ccm_folder_view
       managed: true
       allowedScopeLevels:
         - account
