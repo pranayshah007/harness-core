@@ -12,6 +12,7 @@ import static io.harness.git.model.ChangeType.MODIFY;
 import static io.harness.logging.LogLevel.ERROR;
 import static io.harness.logging.LogLevel.INFO;
 
+import static io.harness.logging.LogLevel.WARN;
 import static software.wings.beans.LogHelper.color;
 
 import static java.lang.String.format;
@@ -137,7 +138,6 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
     CommandUnitsProgress commandUnitsProgress = CommandUnitsProgress.builder().build();
     try {
       log.info("Running Merge PR Task for activityId {}", gitOpsTaskParams.getActivityId());
-
       logCallback = new NGDelegateLogCallback(getLogStreamingTaskClient(), MergePR, true, commandUnitsProgress);
 
       ConnectorType connectorType = gitOpsTaskParams.connectorInfoDTO.getConnectorType();
@@ -146,6 +146,7 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
       switch (connectorType) {
         case GITHUB:
           responseData = (GitApiTaskResponse) githubApiClient.mergePR(gitOpsTaskParams.getGitApiTaskParams());
+          break;
         default:
           logCallback.saveExecutionLog("Connector not supported", INFO, CommandExecutionStatus.FAILURE);
       }
@@ -160,6 +161,8 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
             .build();
       }
 
+
+      logCallback.saveExecutionLog(format("PR is merged."), INFO);
       logCallback.saveExecutionLog("Done.", INFO, CommandExecutionStatus.SUCCESS);
 
       return NGGitOpsResponse.builder()
@@ -185,6 +188,10 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
       FetchFilesResult fetchFilesResult =
           getFetchFilesResult(gitOpsTaskParams.getGitFetchFilesConfig(), gitOpsTaskParams.getAccountId());
 
+      if (fetchFilesResult == null) {
+        throw new InvalidRequestException("Fetch Files task encoutered an error");
+      }
+
       logCallback = markDoneAndStartNew(logCallback, UpdateFiles, commandUnitsProgress);
 
       String baseBranch = gitOpsTaskParams.getGitFetchFilesConfig().getGitStoreDelegateConfig().getBranch();
@@ -194,6 +201,7 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
           gitOpsTaskParams.getGitFetchFilesConfig().getGitStoreDelegateConfig().getGitConfigDTO();
 
       createNewBranch(scmConnector, newBranch, baseBranch);
+
       updateFiles(gitOpsTaskParams.getFilesToVariablesMap(), fetchFilesResult);
 
       logCallback = markDoneAndStartNew(logCallback, CommitAndPush, commandUnitsProgress);
@@ -201,6 +209,11 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
       CommitAndPushResult gitCommitAndPushResult = commit(gitOpsTaskParams, fetchFilesResult, COMMIT_MSG, newBranch);
 
       List<GitFileChange> files = gitCommitAndPushResult.getFilesCommittedToGit();
+      if (files == null || files.isEmpty()) {
+        logCallback.saveExecutionLog("No files were committed. Hence not creating a pull request.", ERROR, CommandExecutionStatus.FAILURE);
+        throw new InvalidRequestException(
+            "No files were committed. Hence not creating a pull request.");
+      }
       StringBuilder sb = new StringBuilder(1024);
       files.forEach(f -> sb.append("\n- ").append(f.getFilePath()));
 
@@ -238,6 +251,13 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
 
     FetchFilesResult fetchFilesResult = fetchFilesFromRepo(gitFetchFilesConfig, logCallback, accountId);
 
+    if (fetchFilesResult.getFiles().isEmpty()) {
+      logCallback.saveExecutionLog(color(format("%nGit Fetch Files completed successfully but no files were fetched"),
+                                       LogColor.White, LogWeight.Bold),
+          INFO);
+      return fetchFilesResult;
+    }
+
     logCallback.saveExecutionLog(
         color(format("%nGit Fetch Files completed successfully."), LogColor.White, LogWeight.Bold), INFO);
     return fetchFilesResult;
@@ -252,16 +272,6 @@ public class NGGitOpsCommandTask extends AbstractDelegateRunnableTask {
             + "/" + githubConnectorDTO.getGitRepositoryDetails().getOrg() + "/"
             + githubConnectorDTO.getGitRepositoryDetails().getName() + "/pull"
             + "/" + prNumber;
-      default:
-        return "";
-    }
-  }
-
-  public String getMergePRLink(String prLink, ConnectorType connectorType) {
-    switch (connectorType) {
-      // TODO: GITLAB, BITBUCKET
-      case GITHUB:
-        return "";
       default:
         return "";
     }

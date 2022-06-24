@@ -16,7 +16,6 @@ import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
-import com.google.gson.Gson;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cistatus.service.GithubAppConfig;
@@ -45,8 +44,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.jooq.tools.json.JSONObject;
-import org.jooq.tools.json.JSONValue;
+import org.json.JSONObject;
 
 @Singleton
 @AllArgsConstructor(onConstructor = @__({ @Inject }))
@@ -98,27 +96,31 @@ public class GithubApiClient implements GitApiClient {
     ConnectorDetails gitConnector = gitApiTaskParams.getConnectorDetails();
     try {
       if (gitConnector == null
-              || !gitConnector.getConnectorConfig().getClass().isAssignableFrom(GithubConnectorDTO.class)) {
+          || !gitConnector.getConnectorConfig().getClass().isAssignableFrom(GithubConnectorDTO.class)) {
         throw new InvalidRequestException(
-                format("Invalid Connector %s, Need GithubConfig: ", gitConnector.getIdentifier()));
+            format("Invalid Connector %s, Need GithubConfig: ", gitConnector.getIdentifier()));
       }
       GithubConnectorDTO gitConfigDTO = (GithubConnectorDTO) gitConnector.getConnectorConfig();
       String token = retrieveAuthToken(gitConnector);
       String gitApiURL = getGitApiURL(gitConfigDTO.getUrl());
 
-      String mergePRResponse = githubService.mergePR(
-              gitApiURL, token, gitApiTaskParams.getOwner(), gitApiTaskParams.getRepo(), gitApiTaskParams.getPrNumber());
-      if (isNotBlank(mergePRResponse)) {
+      JSONObject mergePRResponse = githubService.mergePR(
+          gitApiURL, token, gitApiTaskParams.getOwner(), gitApiTaskParams.getRepo(), gitApiTaskParams.getPrNumber());
+      if (mergePRResponse != null) {
         responseBuilder.commandExecutionStatus(CommandExecutionStatus.SUCCESS)
-                .gitApiResult(GitApiMergePRTaskResponse.builder().message(mergePRResponse).build());
+            .gitApiResult(GitApiMergePRTaskResponse.builder()
+                              .sha(mergePRResponse.get("sha").toString())
+                              .merged(Boolean.parseBoolean(mergePRResponse.get("merged").toString()))
+                              .message(mergePRResponse.get("message").toString())
+                              .build());
       } else {
         responseBuilder.commandExecutionStatus(FAILURE).errorMessage("Merging PR encountered a problem");
       }
     } catch (Exception e) {
       log.error(new StringBuilder("failed while merging PR using connector: ")
-                      .append(gitConnector.getIdentifier())
-                      .toString(),
-              e);
+                    .append(gitConnector.getIdentifier())
+                    .toString(),
+          e);
       responseBuilder.commandExecutionStatus(FAILURE).errorMessage(e.getMessage());
     }
 

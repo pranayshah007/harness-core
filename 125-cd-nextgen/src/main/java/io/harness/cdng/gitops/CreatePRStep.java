@@ -102,6 +102,7 @@ public class CreatePRStep extends TaskExecutableWithRollbackAndRbac<NGGitOpsResp
 
     if (TaskStatus.SUCCESS.equals(ngGitOpsResponse.getTaskStatus())) {
       CreatePROutcome createPROutcome = CreatePROutcome.builder()
+                                            .prlink(ngGitOpsResponse.getPrLink())
                                             .prNumber(ngGitOpsResponse.getPrNumber())
                                             .commitId(ngGitOpsResponse.getCommitId())
                                             .build();

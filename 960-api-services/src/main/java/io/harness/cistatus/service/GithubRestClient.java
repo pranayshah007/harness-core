@@ -43,6 +43,6 @@ public interface GithubRestClient {
 
   @PUT("repos/{owner}/{repo}/pulls/{pull_number}/merge")
   @Headers("Accept: application/vnd.github.v3+json")
-  Call<StatusCreationResponse> mergePR(@Header("Authorization") String authorization, @Path("owner") String owner,
+  Call<Object> mergePR(@Header("Authorization") String authorization, @Path("owner") String owner,
       @Path("repo") String repo, @Path("pull_number") String pullNumber);
 }

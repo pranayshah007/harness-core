@@ -28,6 +28,7 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.cdng.gitops.CreatePROutcome")
 public class CreatePROutcome implements Outcome, ExecutionSweepingOutput {
   int prNumber;
+  String prlink;
   List<String> changedFiles;
   String commitId;
 }

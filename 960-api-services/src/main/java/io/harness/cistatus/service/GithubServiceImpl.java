@@ -26,9 +26,11 @@ import java.security.interfaces.RSAPrivateKey;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Date;
 import java.util.EnumSet;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Base64;
+import org.json.JSONObject;
 import retrofit2.Call;
 import retrofit2.Response;
 import retrofit2.Retrofit;
@@ -100,19 +102,23 @@ public class GithubServiceImpl implements GithubService {
   }
 
   @Override
-  public String mergePR(String apiUrl, String token, String owner, String repo, String prNumber) {
+  public JSONObject mergePR(String apiUrl, String token, String owner, String repo, String prNumber) {
     try {
-      Response<StatusCreationResponse> response = getGithubClient(GithubAppConfig.builder().githubUrl(apiUrl).build())
-                                                      .mergePR(getAuthToken(token), owner, repo, prNumber)
-                                                      .execute();
+      Response<Object> response = getGithubClient(GithubAppConfig.builder().githubUrl(apiUrl).build())
+                                      .mergePR(getAuthToken(token), owner, repo, prNumber)
+                                      .execute();
       if (response.isSuccessful()) {
-        return new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(response.body());
+        JSONObject json = new JSONObject();
+        json.put("sha", ((LinkedHashMap)response.body()).get("sha"));
+        json.put("merged", ((LinkedHashMap)response.body()).get("merged"));
+        json.put("message", ((LinkedHashMap)response.body()).get("message"));
+        return json;
       } else {
         return null;
       }
     } catch (Exception e) {
       log.error("Failed to merge PR for github url {} and prNum {} ", apiUrl, prNumber, e);
-      return "";
+      return new JSONObject();
     }
   }
 
