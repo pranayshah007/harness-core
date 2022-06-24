@@ -64,6 +64,7 @@ import retrofit2.http.Body;
     })
 public interface SettingsResource {
   @GET
+  @Path("{category}/{identifier}")
   @ApiOperation(value = "Resolves and gets a setting value by Identifier", nickname = "getSettingValue")
   @Operation(operationId = "getSettingValue", summary = "Get a setting value by identifier",
       responses =
@@ -73,14 +74,12 @@ public interface SettingsResource {
       })
   ResponseDTO<SettingValueResponseDTO>
   get(@Parameter(description = "This is the Identifier of the Entity", required = true) @NotNull @PathParam(
-          NGCommonEntityConstants.IDENTIFIER_KEY) String identifier,
+          NGCommonEntityConstants.IDENTIFIER_KEY) String identifier, @Parameter(description = SettingConstants.CATEGORY) @PathParam(SettingConstants.CATEGORY_KEY) SettingCategory category,
       @Parameter(description = ACCOUNT_PARAM_MESSAGE, required = true) @NotNull @QueryParam(
           NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(
-          NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier,
-      @RequestBody(
-          description = SettingConstants.FETCH_VALUE_DTO) @Body @NotNull SettingValueRequestDTO settingValueRequetDTO);
+          NGCommonEntityConstants.PROJECT_KEY) String projectIdentifier, @RequestBody( description = SettingConstants.FETCH_VALUE_DTO) @Body SettingValueRequestDTO settingValueRequetDTO);
 
   @GET
   @Path("{category}")
@@ -96,7 +95,7 @@ public interface SettingsResource {
            NGCommonEntityConstants.ACCOUNT_KEY) String accountIdentifier,
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.ORG_KEY) String orgIdentifier,
       @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(NGCommonEntityConstants.PROJECT_KEY)
-      String projectIdentifier, @PathParam(SettingConstants.CATEGORY) SettingCategory category);
+      String projectIdentifier, @Parameter(description = SettingConstants.CATEGORY) @PathParam(SettingConstants.CATEGORY_KEY) SettingCategory category);
 
   @PUT
   @ApiOperation(value = "Updates the settings", nickname = "getSettingValue")

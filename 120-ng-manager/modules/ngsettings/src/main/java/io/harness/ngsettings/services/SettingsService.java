@@ -18,10 +18,10 @@ import java.util.List;
 
 public interface SettingsService {
   List<SettingResponseDTO> list(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, SettingCategory category);
+          String accountIdentifier, String orgIdentifier, String projectIdentifier, SettingCategory category);
   List<SettingResponseDTO> update(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       List<SettingRequestDTO> settingRequestDTO);
-  SettingValueResponseDTO get(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+  SettingValueResponseDTO get(String identifier, SettingCategory category, String accountIdentifier, String orgIdentifier, String projectIdentifier,
       SettingValueRequestDTO settingValueRequestDTO);
   List<SettingConfiguration> listDefaultSettings();
   void deleteConfig(String identifier);

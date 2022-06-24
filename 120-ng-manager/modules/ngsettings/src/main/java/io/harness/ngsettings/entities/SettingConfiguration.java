@@ -52,7 +52,7 @@ public class SettingConfiguration implements PersistentEntity {
   @NotNull SettingValueType valueType;
   @NotNull Set<String> allowedValues;
   @NotNull Boolean allowOverrides;
-  @NotBlank Set<String> allowedScopes;
+  @NotNull Set<String> allowedScopes;
 
   public static List<MongoIndex> mongoIndexes() {
     return ImmutableList.<MongoIndex>builder()

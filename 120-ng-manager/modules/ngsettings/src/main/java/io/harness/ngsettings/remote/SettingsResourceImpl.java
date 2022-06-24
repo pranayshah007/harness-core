@@ -23,15 +23,15 @@ import lombok.AllArgsConstructor;
 public class SettingsResourceImpl implements SettingsResource {
   SettingsService settingsService;
   @Override
-  public ResponseDTO<SettingValueResponseDTO> get(String identifier, String accountIdentifier, String orgIdentifier,
+  public ResponseDTO<SettingValueResponseDTO> get(String identifier, SettingCategory category, String accountIdentifier, String orgIdentifier,
       String projectIdentifier, SettingValueRequestDTO settingValueRequetDTO) {
     return ResponseDTO.newResponse(
-        settingsService.get(accountIdentifier, orgIdentifier, projectIdentifier, settingValueRequetDTO));
+        settingsService.get(identifier, category, accountIdentifier, orgIdentifier, projectIdentifier, settingValueRequetDTO));
   }
 
   @Override
   public ResponseDTO<List<SettingResponseDTO>> list(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, SettingCategory category) {
+          String accountIdentifier, String orgIdentifier, String projectIdentifier, SettingCategory category) {
     return ResponseDTO.newResponse(settingsService.list(accountIdentifier, orgIdentifier, projectIdentifier, category));
   }
 

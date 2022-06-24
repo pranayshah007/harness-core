@@ -6,7 +6,9 @@ public final class SettingConstants {
   public static final String LAST_MODIFIED_AT = "Time when the Setting was last modified.";
   public static final String NAME = "Name of the Setting.";
   public static final String IDENTIFIER = "Identifier of the Setting.";
+  public static final String IDENTIFIER_KEY = "identifier";
   public static final String CATEGORY = "Category of the Setting.";
+  public static final String CATEGORY_KEY = "category";
   public static final String DEFAULT_VALUE = "Default Value of the Setting.";
   public static final String VALUE_TYPE = "Type of Value of the Setting.";
   public static final String ALLOW_OVERRIDES = "Allow override of the Setting in subscopes.";

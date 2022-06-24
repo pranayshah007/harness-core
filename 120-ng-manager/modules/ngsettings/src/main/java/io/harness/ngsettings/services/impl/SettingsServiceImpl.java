@@ -31,13 +31,8 @@ import io.harness.repositories.SettingsRepository;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Map;
-import java.util.Optional;
+
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -66,9 +61,9 @@ public class SettingsServiceImpl implements SettingsService {
 
   @Override
   public List<SettingResponseDTO> list(
-      String accountIdentifier, String orgIdentifier, String projectIdentifier, SettingCategory category) {
-    List<SettingConfiguration> defaultSettings = settingConfigurationRepository.findAllByCategoryAndAllowedScopes(
-        category, getScope(orgIdentifier, projectIdentifier));
+          String accountIdentifier, String orgIdentifier, String projectIdentifier, SettingCategory category) {
+    List<SettingConfiguration> defaultSettings = settingConfigurationRepository.findByCategoryAndAllowedScopesIn(
+            category, Arrays.asList(new String[]{ getScope(orgIdentifier, projectIdentifier)}));
 
     List<Setting> settings = settingsRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndCategory(
         accountIdentifier, orgIdentifier, projectIdentifier, category);
@@ -109,6 +104,7 @@ public class SettingsServiceImpl implements SettingsService {
   @Override
   public List<SettingResponseDTO> update(String accountIdentifier, String orgIdentifier, String projectIdentifier,
       List<SettingRequestDTO> settingRequestDTOList) {
+    List<Setting> updatedSettingsList = new ArrayList<>();
     ListIterator<SettingRequestDTO> settingRequestDTOListIterator = settingRequestDTOList.listIterator();
     Failsafe.with(DEFAULT_TRANSACTION_RETRY_POLICY).get(() -> transactionTemplate.execute(status -> {
     while (settingRequestDTOListIterator.hasNext()) {
@@ -131,44 +127,55 @@ public class SettingsServiceImpl implements SettingsService {
           updatedSetting.setLastModifiedAt(System.currentTimeMillis());
           settingsRepository.save(updatedSetting);
         } else {
-          Optional<SettingConfiguration> defaultSetting = settingConfigurationRepository.findAByCategoryAndIdentifier(
-              settingRequestDTO.getCategory(), settingRequestDTO.getIdentifier());
-          if (defaultSetting.isPresent()) {
-            SettingConfiguration settingConfiguration = defaultSetting.get();
-            SettingDTO settingDTO = settingsMapper.getSettingDTO(settingConfiguration);
-            settingDTO.setOrgIdentifier(orgIdentifier);
-            settingDTO.setProjectIdentifier(projectIdentifier);
-            settingDTO.setValue(settingRequestDTO.getValue());
-            settingDTO.setAllowOverrides(settingRequestDTO.getAllowOverrides());
-            SettingResponseDTO settingResponseDTO =
-                SettingResponseDTO.builder()
-                    .setting(settingDTO)
-                    .name(settingConfiguration.getName())
-                    .lastModifiedAt(System.currentTimeMillis())
-                    .settingSource(getSettingSource(orgIdentifier, projectIdentifier))
-                    .build();
-            Setting newSetting = settingsMapper.getSetting(settingResponseDTO, accountIdentifier);
-            settingsRepository.save(newSetting);
+          Setting updatedSettingResponse = null;
+          if (existingSetting.isPresent()) {
+            Setting updatedSetting = existingSetting.get();
+            updatedSetting.setValue(settingRequestDTO.getValue());
+            updatedSetting.setAllowOverrides(settingRequestDTO.getAllowOverrides());
+            updatedSetting.setLastModifiedAt(System.currentTimeMillis());
+            updatedSettingResponse = settingsRepository.save(updatedSetting);
           } else {
-            // ERROR
+            Optional<SettingConfiguration> defaultSetting = settingConfigurationRepository.findByCategoryAndIdentifier(
+                settingRequestDTO.getCategory(), settingRequestDTO.getIdentifier());
+            if (defaultSetting.isPresent()) {
+              SettingConfiguration settingConfiguration = defaultSetting.get();
+              SettingDTO settingDTO = settingsMapper.getSettingDTO(settingConfiguration);
+              settingDTO.setOrgIdentifier(orgIdentifier);
+              settingDTO.setProjectIdentifier(projectIdentifier);
+              settingDTO.setValue(settingRequestDTO.getValue());
+              settingDTO.setAllowOverrides(settingRequestDTO.getAllowOverrides());
+              SettingResponseDTO settingResponseDTO =
+                  SettingResponseDTO.builder()
+                      .setting(settingDTO)
+                      .name(settingConfiguration.getName())
+                      .lastModifiedAt(System.currentTimeMillis())
+                      .settingSource(getSettingSource(orgIdentifier, projectIdentifier))
+                      .build();
+              Setting newSetting = settingsMapper.getSetting(settingResponseDTO, accountIdentifier);
+              updatedSettingResponse = settingsRepository.save(newSetting);
+            } else {
+              // ERROR
+            }
+          }
+          if(updatedSettingResponse != null) {
+            updatedSettingsList.add(updatedSettingResponse);
           }
         }
       }
-    }
-      return null;
+      return updatedSettingsList.stream().map(setting -> settingsMapper.settingtoSettingResponseDTO(setting)).collect(Collectors.toList());
     }));
-    return null;
+    return updatedSettingsList.stream().map(setting -> settingsMapper.settingtoSettingResponseDTO(setting)).collect(Collectors.toList());
   }
 
   @Override
-  public SettingValueResponseDTO get(String accountIdentifier, String orgIdentifier, String projectIdentifier,
+  public SettingValueResponseDTO get(String identifier, SettingCategory category, String accountIdentifier, String orgIdentifier, String projectIdentifier,
       SettingValueRequestDTO settingValueRequestDTO) {
     Optional<Setting> existingSetting =
         settingsRepository.findByAccountIdentifierAndOrgIdentifierAndProjectIdentifierAndCategoryAndIdentifier(
-            accountIdentifier, orgIdentifier, projectIdentifier, settingValueRequestDTO.getCategory(),
-            settingValueRequestDTO.getIdentifier());
-    Optional<SettingConfiguration> settingConfiguration = settingConfigurationRepository.findAByCategoryAndIdentifier(
-        settingValueRequestDTO.getCategory(), settingValueRequestDTO.getIdentifier());
+            accountIdentifier, orgIdentifier, projectIdentifier, category,
+            identifier);
+    Optional<SettingConfiguration> settingConfiguration = settingConfigurationRepository.findByCategoryAndIdentifier(
+        category, identifier);
     String value;
     if (existingSetting.isPresent()) {
       value = existingSetting.get().getValue();
@@ -211,7 +218,7 @@ public class SettingsServiceImpl implements SettingsService {
     return Scope.ACCOUNT.toString();
   }
 
-  public SettingSource getSettingSource(String orgIdentifier, String projectIdentifier) {
+  public static SettingSource getSettingSource(String orgIdentifier, String projectIdentifier) {
     if (orgIdentifier != null) {
       if (projectIdentifier != null) {
         return SettingSource.PROJECT;
