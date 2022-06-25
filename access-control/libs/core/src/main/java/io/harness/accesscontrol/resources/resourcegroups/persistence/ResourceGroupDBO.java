@@ -10,6 +10,7 @@ package io.harness.accesscontrol.resources.resourcegroups.persistence;
 import static io.harness.ng.DbAliases.ACCESS_CONTROL;
 
 import io.harness.accesscontrol.AccessControlEntity;
+import io.harness.accesscontrol.resources.resourcegroups.ResourceSelector;
 import io.harness.annotation.StoreIn;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -62,7 +63,7 @@ public class ResourceGroupDBO implements PersistentRegularIterable, AccessContro
   @EqualsAndHashCode.Include @NotEmpty final String name;
   @EqualsAndHashCode.Include final Set<String> allowedScopeLevels;
   @EqualsAndHashCode.Include @NotNull final Set<String> resourceSelectors;
-  @EqualsAndHashCode.Include @NotNull @Builder.Default final Boolean fullScopeSelected = Boolean.FALSE;
+  @EqualsAndHashCode.Include @NotNull final Set<ResourceSelector> resourceSelectorsV2;
   @EqualsAndHashCode.Include @NotNull @Builder.Default final Boolean managed = Boolean.FALSE;
 
   @Setter @CreatedDate Long createdAt;
@@ -72,10 +73,6 @@ public class ResourceGroupDBO implements PersistentRegularIterable, AccessContro
   @Setter @Version Long version;
 
   @FdIndex @Setter Long nextReconciliationIterationAt;
-
-  public boolean isFullScopeSelected() {
-    return fullScopeSelected != null && fullScopeSelected;
-  }
 
   public boolean isManaged() {
     return managed != null && managed;

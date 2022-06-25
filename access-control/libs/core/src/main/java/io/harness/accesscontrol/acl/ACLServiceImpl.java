@@ -103,12 +103,12 @@ public class ACLServiceImpl implements ACLService {
   private boolean evaluateAccessFromConditionalACL(PermissionCheck permissionCheck, ACL acl) {
     Map<String, String> attributes = getAttributes(permissionCheck);
     ACLExpressionEvaluator engineExpressionEvaluator = aclExpressionEvaluatorProvider.get(permissionCheck, attributes);
-    return engineExpressionEvaluator.evaluateExpression(acl.getJexlCondition());
+    return engineExpressionEvaluator.evaluateExpression(acl.getCondition());
   }
 
   private Map<String, String> getAttributes(PermissionCheck permissionCheck) {
     HashMap<String, String> attributes = new HashMap<>();
-    attributes.put("type", "PRODUCTION");
+    attributes.put("category", "SECRET_MANAGER");
     return attributes;
   }
 

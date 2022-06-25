@@ -15,7 +15,6 @@ import static org.mockito.Mockito.spy;
 import io.harness.category.element.UnitTests;
 import io.harness.resourcegroup.beans.ScopeFilterType;
 import io.harness.resourcegroup.v2.model.ResourceFilter;
-import io.harness.resourcegroup.v2.model.ResourceSelector;
 import io.harness.resourcegroup.v2.model.ScopeSelector;
 import io.harness.resourcegroup.v2.remote.dto.ResourceGroupDTO;
 import io.harness.rule.Owner;
@@ -44,7 +43,7 @@ public class ResourceGroupFactoryTest {
                                             .includedScopes(null)
                                             .resourceFilter(ResourceFilter.builder().includeAllResources(true).build())
                                             .build();
-    Set<String> resourceSelector = resourceGroupFactory.buildResourceSelector(resourceGroupDTO);
+    Set<ResourceSelector> resourceSelector = resourceGroupFactory.buildResourceSelector(resourceGroupDTO);
     assertThat(resourceSelector.size()).isEqualTo(0);
   }
 
@@ -59,7 +58,7 @@ public class ResourceGroupFactoryTest {
                 Arrays.asList(ScopeSelector.builder().filter(ScopeFilterType.INCLUDING_CHILD_SCOPES).build()))
             .resourceFilter(null)
             .build();
-    Set<String> resourceSelector = resourceGroupFactory.buildResourceSelector(resourceGroupDTO);
+    Set<ResourceSelector> resourceSelector = resourceGroupFactory.buildResourceSelector(resourceGroupDTO);
     assertThat(resourceSelector.size()).isEqualTo(0);
   }
 
@@ -76,7 +75,7 @@ public class ResourceGroupFactoryTest {
                                               .build()))
             .resourceFilter(ResourceFilter.builder().includeAllResources(true).build())
             .build();
-    Set<String> resourceSelector = resourceGroupFactory.buildResourceSelector(resourceGroupDTO);
+    Set<ResourceSelector> resourceSelector = resourceGroupFactory.buildResourceSelector(resourceGroupDTO);
     assertThat(resourceSelector.size()).isEqualTo(1);
   }
 
@@ -87,9 +86,13 @@ public class ResourceGroupFactoryTest {
     ResourceFilter resourceFilter =
         ResourceFilter.builder()
             .includeAllResources(false)
-            .resources(Arrays.asList(ResourceSelector.builder().resourceType("R1").build(),
-                ResourceSelector.builder().resourceType("R2").build(),
-                ResourceSelector.builder().resourceType("R3").identifiers(Arrays.asList("1", "2", "3")).build()))
+            .resources(
+                Arrays.asList(io.harness.resourcegroup.v2.model.ResourceSelector.builder().resourceType("R1").build(),
+                    io.harness.resourcegroup.v2.model.ResourceSelector.builder().resourceType("R2").build(),
+                    io.harness.resourcegroup.v2.model.ResourceSelector.builder()
+                        .resourceType("R3")
+                        .identifiers(Arrays.asList("1", "2", "3"))
+                        .build()))
             .build();
     List<ScopeSelector> includedScopes = Arrays.asList(
         ScopeSelector.builder().filter(ScopeFilterType.EXCLUDING_CHILD_SCOPES).accountIdentifier("testAcc1").build(),
@@ -109,7 +112,7 @@ public class ResourceGroupFactoryTest {
                                             .includedScopes(includedScopes)
                                             .resourceFilter(resourceFilter)
                                             .build();
-    Set<String> resourceSelector = resourceGroupFactory.buildResourceSelector(resourceGroupDTO);
+    Set<ResourceSelector> resourceSelector = resourceGroupFactory.buildResourceSelector(resourceGroupDTO);
     assertThat(resourceSelector.size()).isEqualTo(18);
   }
 }
