@@ -904,6 +904,7 @@ userDataSpecifications {"name": "appId_1", "background": true} {"appId": 1}
 userDataSpecifications {"name": "createdAt_1", "background": true} {"createdAt": 1}
 userDataSpecifications {"name": "serviceId_1", "unique": true} {"serviceId": 1}
 userGroups {"name": "accountAndMemberIds", "background": true} {"accountId": 1, "memberIds": 1}
+userGroups {"name": "accountIdAndFilterTypeAndAppIds", "background": true} {"accountId": 1, "appPermissions.appFilter.filterType": 1, "appPermissions.appFilter.ids": 1}
 userGroups {"name": "accountIdAndImportedByScim", "background": true} {"accountId": 1, "importedByScim": 1}
 userGroups {"name": "accountIdAndName", "background": true} {"accountId": 1, "name": 1}
 userGroups {"name": "accountId_1", "background": true} {"accountId": 1}
