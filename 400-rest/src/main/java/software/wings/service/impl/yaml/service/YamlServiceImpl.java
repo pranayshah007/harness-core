@@ -1253,13 +1253,16 @@ public class YamlServiceImpl<Y extends BaseYaml, B extends Base> implements Yaml
       }
     } catch (YamlProcessingException ex) {
       log.warn(format("Unable to process yaml file for account %s, error: %s", accountId, ex));
-      throw new InvalidRequestException(String.format("Failed in processing file: [%s] with error: [%s]", yamlFilePath,
-          ex.getFailedYamlFileChangeMap().get(yamlFilePath).getErrorMsg()));
-    } catch (YamlException e) {
-      throw new InvalidRequestException(String.format("Unknown file path: [%s]", yamlFilePath));
-    } catch (Exception ex) {
-      throw new InvalidRequestException(
-          String.format("Cannot process file: [%s]. Error: [%s]", yamlFilePath, ExceptionUtils.getMessage(ex)));
+      if (ex != null && !isEmpty(ex.getFailedYamlFileChangeMap())) {
+        final Map.Entry<String, ChangeWithErrorMsg> entry =
+            ex.getFailedYamlFileChangeMap().entrySet().iterator().next();
+        final ChangeWithErrorMsg changeWithErrorMsg = entry.getValue();
+        return FileOperationStatus.builder()
+            .status(FileOperationStatus.Status.FAILED)
+            .errorMssg(changeWithErrorMsg.getErrorMsg())
+            .yamlFilePath(changeWithErrorMsg.getChange().getFilePath())
+            .build();
+      }
     }
     return null;
   }
