@@ -446,7 +446,8 @@ public class HelmDeployServiceImpl implements HelmDeployService {
           workingDirectory, gitFileConfig, gitConfig, commandRequest.getExecutionLogCallback());
     } else {
       gitService.downloadFiles(gitConfig, gitFileConfig, workingDirectory, false,
-          ((HelmInstallCommandRequest) commandRequest).isUseGitFetchCommandTimeout(), null);
+          ((HelmInstallCommandRequest) commandRequest).isUseGitFetchCommandTimeout(),
+          commandRequest.getExecutionLogCallback());
     }
     commandRequest.setWorkingDir(workingDirectory);
     commandRequest.getExecutionLogCallback().saveExecutionLog("Repo checked-out locally");

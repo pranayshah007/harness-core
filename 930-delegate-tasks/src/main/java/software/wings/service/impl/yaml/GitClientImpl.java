@@ -700,7 +700,8 @@ public class GitClientImpl implements GitClient {
 
       // clone repo locally without checkout
       String branch = gitRequest.isUseBranch() ? gitRequest.getBranch() : StringUtils.EMPTY;
-      cloneRepoForFilePathCheckout(gitConfig, branch, gitConnectorId, false, logCallback);
+      cloneRepoForFilePathCheckout(
+          gitConfig, branch, gitConnectorId, gitRequest.isUseGitFetchCommandTimeout(), logCallback);
       // if useBranch is set, use it to checkout latest, else checkout given commitId
       String latestCommitSha;
       if (gitRequest.isUseBranch()) {

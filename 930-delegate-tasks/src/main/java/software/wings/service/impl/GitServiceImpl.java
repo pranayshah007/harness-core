@@ -178,7 +178,7 @@ public class GitServiceImpl implements GitService {
             .recursive(true)
             .useGitFetchCommandTimeout(useGitFetchCommandTimeout)
             .build(),
-        destinationDirectory, shouldExportCommitSha, null);
+        destinationDirectory, shouldExportCommitSha, logCallback);
   }
 
   @Override
