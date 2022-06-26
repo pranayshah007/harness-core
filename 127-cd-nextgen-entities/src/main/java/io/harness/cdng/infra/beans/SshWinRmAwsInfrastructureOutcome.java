@@ -14,17 +14,17 @@ import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.steps.environment.EnvironmentOutcome;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
-import lombok.Builder;
 import lombok.Value;
+import lombok.experimental.SuperBuilder;
 import org.springframework.data.annotation.TypeAlias;
 
 @Value
-@Builder
+@SuperBuilder
 @JsonTypeName(InfrastructureKind.SSH_WINRM_AWS)
 @TypeAlias("cdng.infra.beans.SshWinRmAwsInfrastructureOutcome")
 @OwnedBy(HarnessTeam.CDP)
 @RecasterAlias("io.harness.cdng.infra.beans.SshWinRmAwsInfrastructureOutcome")
-public class SshWinRmAwsInfrastructureOutcome implements InfrastructureOutcome {
+public class SshWinRmAwsInfrastructureOutcome extends InfrastructureOutcomeAbstract implements InfrastructureOutcome {
   private String connectorRef;
   private String credentialsRef;
   private String region;

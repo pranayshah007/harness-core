@@ -527,6 +527,7 @@ import io.harness.delegate.task.serverless.ServerlessAwsLambdaManifestConfig;
 import io.harness.delegate.task.serverless.ServerlessAwsLambdaRollbackConfig;
 import io.harness.delegate.task.serverless.ServerlessCommandType;
 import io.harness.delegate.task.serverless.ServerlessDeployConfig;
+import io.harness.delegate.task.serverless.ServerlessEcrArtifactConfig;
 import io.harness.delegate.task.serverless.ServerlessGitFetchFileConfig;
 import io.harness.delegate.task.serverless.ServerlessInfraConfig;
 import io.harness.delegate.task.serverless.ServerlessInfraType;
@@ -603,7 +604,6 @@ import io.harness.delegate.task.terraform.TerraformCommandUnit;
 import io.harness.delegate.task.terraform.TerraformTaskNGParameters;
 import io.harness.delegate.task.terraform.TerraformTaskNGResponse;
 import io.harness.delegate.task.terraform.TerraformVarFileInfo;
-import io.harness.exception.InterruptedRuntimeException;
 import io.harness.ng.core.dto.secrets.KerberosConfigDTO;
 import io.harness.ng.core.dto.secrets.KerberosWinRmConfigDTO;
 import io.harness.ng.core.dto.secrets.NTLMConfigDTO;
@@ -1525,6 +1525,7 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(ArtifactoryBaseArtifactDelegateRequest.class, 563531);
     kryo.register(AzureK8sInfraDelegateConfig.class, 563532);
     kryo.register(AzureAcrTokenTaskResponse.class, 563533);
+    kryo.register(ServerlessEcrArtifactConfig.class, 563534);
 
     kryo.register(LdapTestResponse.Status.class, 5500);
     kryo.register(LdapGroupSettings.class, 5498);
@@ -1592,6 +1593,5 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AzureWebAppSwapSlotsResponseNG.class, 55333);
     kryo.register(SerializedResponseData.class, 55401);
     kryo.register(SerializationFormat.class, 55402);
-    kryo.register(InterruptedRuntimeException.class, 55403);
   }
 }

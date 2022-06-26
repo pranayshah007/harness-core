@@ -340,12 +340,12 @@ public class DelegateTokenAuthenticatorImpl implements DelegateTokenAuthenticato
 
     // cache miss
     if (delegateJWTCacheValue == null) {
-      delegateMetricsService.recordDelegateJWTCacheMetrics(accountId, DELEGATE_JWT_CACHE_MISS);
+      delegateMetricsService.recordDelegateMetricsPerAccount(accountId, DELEGATE_JWT_CACHE_MISS);
       return false;
     }
 
     // cache hit
-    delegateMetricsService.recordDelegateJWTCacheMetrics(accountId, DELEGATE_JWT_CACHE_HIT);
+    delegateMetricsService.recordDelegateMetricsPerAccount(accountId, DELEGATE_JWT_CACHE_HIT);
 
     if (!delegateJWTCacheValue.isValid()) {
       throw new RevokedTokenException("Invalid delegate token. Delegate is using invalid token", USER_ADMIN);

@@ -19,6 +19,7 @@ public interface StepSpecTypeConstants {
   String SHELL_SCRIPT = "ShellScript";
   String BARRIER = "Barrier";
   String HTTP = "Http";
+  String CUSTOM_APPROVAL = "CustomApproval";
   String HARNESS_APPROVAL = "HarnessApproval";
   String JIRA_APPROVAL = "JiraApproval";
   String JIRA_CREATE = "JiraCreate";

@@ -11,6 +11,7 @@ import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.annotations.dev.TargetModule;
+import io.harness.delegate.beans.ldap.LdapSettingsWithEncryptedDataDetail;
 import io.harness.ng.core.account.AuthenticationMechanism;
 import io.harness.ng.core.account.OauthProviderType;
 
@@ -57,6 +58,7 @@ public interface SSOService {
   LdapSettings updateLdapSettings(@NotNull LdapSettings settings);
 
   LdapSettings getLdapSettings(@NotBlank String accountId);
+  LdapSettingsWithEncryptedDataDetail getLdapSettingWithEncryptedDataDetail(@NotBlank String accountId);
 
   LdapSettings deleteLdapSettings(@NotBlank String accountId);
 

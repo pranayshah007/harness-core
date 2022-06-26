@@ -156,6 +156,14 @@ public class ServerlessAwsLambdaDeployCommandTaskHandlerTest extends CategoryTes
         .when(serverlessAwsCommandTaskHelper)
         .configCredential(serverlessClient, serverlessAwsLambdaConfig, serverlessDelegateTaskParams,
             configureCredsLogCallback, true, timeout * 60000);
+    doReturn(intiServerlessCliResponse)
+        .when(serverlessAwsCommandTaskHelper)
+        .deployList(serverlessClient, serverlessDelegateTaskParams, prepareRollbackLogCallback,
+            (ServerlessAwsLambdaInfraConfig) serverlessInfraConfig, timeout * 60000,
+            (ServerlessAwsLambdaManifestConfig) serverlessManifestConfig);
+    doReturn(Optional.of(previousVersionTimeStamp))
+        .when(serverlessAwsCommandTaskHelper)
+        .getLastDeployedTimestamp(any(), any(), any());
 
     doReturn(deployServerlessCliResponse)
         .when(serverlessAwsCommandTaskHelper)
@@ -286,7 +294,7 @@ public class ServerlessAwsLambdaDeployCommandTaskHandlerTest extends CategoryTes
             (ServerlessAwsLambdaManifestConfig) serverlessManifestConfig);
     doReturn(Optional.of(previousVersionTimeStamp))
         .when(serverlessAwsCommandTaskHelper)
-        .getPreviousVersionTimeStamp(any(), any(), any());
+        .getLastDeployedTimestamp(any(), any(), any());
 
     doReturn(deployServerlessCliResponse)
         .when(serverlessAwsCommandTaskHelper)

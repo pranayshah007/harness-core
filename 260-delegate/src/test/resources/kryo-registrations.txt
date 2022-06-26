@@ -362,6 +362,7 @@
 5185:software.wings.service.impl.analysis.DataCollectionTaskResult.DataCollectionTaskStatus
 5186:software.wings.beans.delegation.ShellScriptParameters
 5187:software.wings.service.impl.aws.model.response.HostReachabilityResponse
+5188:io.harness.delegate.beans.ldap.LdapSettingsWithEncryptedDataDetail
 5189:software.wings.beans.command.CodeDeployParams
 5190:software.wings.beans.yaml.GitCommand.GitCommandType
 5191:software.wings.beans.GitConfig
@@ -438,6 +439,8 @@
 5279:software.wings.helpers.ext.pcf.request.CfCommandSetupRequest
 5293:software.wings.api.PcfInstanceElement
 5296:software.wings.beans.PcfConfig
+5297:io.harness.delegate.beans.ldap.NGLdapDelegateTaskResponse
+5298:io.harness.delegate.beans.ldap.NGLdapDelegateTaskParameters
 5303:software.wings.helpers.ext.mail.EmailData
 5304:software.wings.helpers.ext.mail.SmtpConfig
 5305:io.harness.security.encryption.EncryptionConfig
@@ -1490,7 +1493,6 @@
 19550:io.harness.delegate.beans.executioncapability.GitInstallationCapability
 19551:io.harness.delegate.beans.connector.ConnectorValidationParameterResponse
 19552:io.harness.delegate.beans.connector.scm.github.GithubOauthDTO
-19553:io.harness.delegate.beans.connector.scm.gitlab.GitlabOauthDTO
 19630:io.harness.delegate.beans.connector.helm.OciHelmValidationParams
 19640:io.harness.delegate.beans.connector.helm.HttpHelmConnectivityTaskParams
 19641:io.harness.delegate.beans.connector.helm.HttpHelmConnectivityTaskResponse
@@ -2125,6 +2127,7 @@
 563531:io.harness.delegate.task.artifacts.artifactory.ArtifactoryBaseArtifactDelegateRequest
 563532:io.harness.delegate.task.k8s.AzureK8sInfraDelegateConfig
 563533:io.harness.delegate.beans.azure.response.AzureAcrTokenTaskResponse
+563534:io.harness.delegate.task.serverless.ServerlessEcrArtifactConfig
 600001:io.harness.ng.core.dto.secrets.WinRmCredentialsSpecDTO
 600002:io.harness.secretmanagerclient.WinRmAuthScheme
 600003:io.harness.ng.core.dto.secrets.NTLMConfigDTO
@@ -2216,6 +2219,7 @@
 980027:io.harness.exception.runtime.serverless.ServerlessCommandExecutionException
 980028:io.harness.exception.AzureAKSException
 980029:io.harness.exception.runtime.SshCommandExecutionException
+980030:io.harness.exception.InterruptedRuntimeException
 9800001:io.harness.beans.RecasterMap
 
 

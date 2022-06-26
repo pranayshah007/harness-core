@@ -16,6 +16,7 @@ import io.harness.pms.sdk.core.steps.Step;
 import io.harness.registrar.NGCommonUtilStepsRegistrar;
 import io.harness.steps.StagesStep;
 import io.harness.steps.approval.stage.ApprovalStageStep;
+import io.harness.steps.approval.step.custom.CustomApprovalStep;
 import io.harness.steps.approval.step.harness.HarnessApprovalStep;
 import io.harness.steps.approval.step.jira.JiraApprovalStep;
 import io.harness.steps.approval.step.servicenow.ServiceNowApprovalStep;
@@ -51,6 +52,7 @@ public class OrchestrationStepsModuleStepRegistrar {
 
     engineSteps.put(ApprovalStageStep.STEP_TYPE, ApprovalStageStep.class);
     engineSteps.put(HarnessApprovalStep.STEP_TYPE, HarnessApprovalStep.class);
+    engineSteps.put(CustomApprovalStep.STEP_TYPE, CustomApprovalStep.class);
     engineSteps.put(JiraApprovalStep.STEP_TYPE, JiraApprovalStep.class);
     engineSteps.put(JiraCreateStep.STEP_TYPE, JiraCreateStep.class);
     engineSteps.put(JiraUpdateStep.STEP_TYPE, JiraUpdateStep.class);
