@@ -246,14 +246,13 @@ public class ServerlessTaskHelperBase {
       createDirectoryIfDoesNotExist(artifactoryDirectory);
       waitForDirectoryToBeAccessibleOutOfProcess(artifactoryDirectory, 10);
       fetchArtifactoryArtifact(serverlessArtifactoryArtifactConfig, logCallback, artifactoryDirectory);
-    } else if (serverlessArtifactConfig != null && serverlessArtifactConfig instanceof ServerlessEcrArtifactConfig) {
+    } else if (serverlessArtifactConfig instanceof ServerlessEcrArtifactConfig) {
       logCallback.saveExecutionLog(color("Skipping downloading artifact step as it is not needed..", White, Bold));
     }
   }
 
   public void fetchArtifacts(ServerlessArtifactsConfig serverlessArtifactsConfig, LogCallback logCallback,
-                            String workingDirectory) throws IOException {
-
+      String workingDirectory) throws IOException {
     ServerlessArtifactConfig primaryServerlessArtifactConfig = serverlessArtifactsConfig.getPrimary();
     fetchArtifact(primaryServerlessArtifactConfig, logCallback, workingDirectory);
 

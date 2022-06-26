@@ -254,14 +254,14 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
         serverlessArtifactConfig = getArtifactConfig(artifactsOutcome.get().getPrimary(), ambiance);
       }
       artifactsOutcome.get().getSidecars().forEach((key, value) -> {
-        if(value != null) {
+        if (value != null) {
           sidecarServerlessArtifactConfigMap.put(key, getArtifactConfig(value, ambiance));
         }
       });
     }
 
-    String manifestFileOverrideContent =
-        renderManifestContent(ambiance, manifestFilePathContent.get().getValue(), serverlessArtifactConfig, sidecarServerlessArtifactConfigMap);
+    String manifestFileOverrideContent = renderManifestContent(ambiance, manifestFilePathContent.get().getValue(),
+        serverlessArtifactConfig, sidecarServerlessArtifactConfigMap);
     ServerlessGitFetchOutcome serverlessGitFetchOutcome = ServerlessGitFetchOutcome.builder()
                                                               .manifestFilePathContent(manifestFilePathContent.get())
                                                               .manifestFileOverrideContent(manifestFileOverrideContent)
@@ -451,8 +451,9 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
         .build();
   }
 
-  public String renderManifestContent(
-      Ambiance ambiance, String manifestFileContent, ServerlessArtifactConfig serverlessArtifactConfig, Map<String, ServerlessArtifactConfig> sidecarServerlessArtifactConfigMap) {
+  public String renderManifestContent(Ambiance ambiance, String manifestFileContent,
+      ServerlessArtifactConfig serverlessArtifactConfig,
+      Map<String, ServerlessArtifactConfig> sidecarServerlessArtifactConfigMap) {
     if (isEmpty(manifestFileContent)) {
       return manifestFileContent;
     }
@@ -467,11 +468,12 @@ public class ServerlessStepCommonHelper extends ServerlessStepUtils {
     for (Map.Entry<String, ServerlessArtifactConfig> entry : sidecarServerlessArtifactConfigMap.entrySet()) {
       String identifier = SIDECAR_ARTIFACT_PATH_PREFIX + entry.getKey() + ">";
       if (manifestFileContent.contains(identifier)) {
-        if(entry.getValue().getServerlessArtifactType().equals(ServerlessArtifactType.ECR)) {
-          manifestFileContent = manifestFileContent.replace(
-                  identifier, ((ServerlessEcrArtifactConfig) entry.getValue()).getImage());
-        } else if(entry.getValue().getServerlessArtifactType().equals(ServerlessArtifactType.ARTIFACTORY)) {
-          manifestFileContent = manifestFileContent.replace(identifier, SIDECAR_ARTIFACT_FILE_NAME_PREFIX + entry.getKey());
+        if (entry.getValue().getServerlessArtifactType().equals(ServerlessArtifactType.ECR)) {
+          manifestFileContent =
+              manifestFileContent.replace(identifier, ((ServerlessEcrArtifactConfig) entry.getValue()).getImage());
+        } else if (entry.getValue().getServerlessArtifactType().equals(ServerlessArtifactType.ARTIFACTORY)) {
+          manifestFileContent =
+              manifestFileContent.replace(identifier, SIDECAR_ARTIFACT_FILE_NAME_PREFIX + entry.getKey());
         }
       }
     }

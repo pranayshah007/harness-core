@@ -23,11 +23,10 @@ import io.harness.exception.GeneralException;
 import io.harness.ng.core.NGAccess;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
-
-import com.google.inject.Inject;
 import io.harness.pms.sdk.core.data.OptionalOutcome;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
 
+import com.google.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -80,9 +79,8 @@ public class ServerlessStepUtils extends CDStepHelper {
   }
 
   public Optional<ArtifactsOutcome> getArtifactsOutcome(Ambiance ambiance) {
-
     OptionalOutcome artifactsOutcomeOption = outcomeService.resolveOptional(
-            ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.ARTIFACTS));
+        ambiance, RefObjectUtils.getOutcomeRefObject(OutcomeExpressionConstants.ARTIFACTS));
     if (artifactsOutcomeOption.isFound()) {
       ArtifactsOutcome artifactsOutcome = (ArtifactsOutcome) artifactsOutcomeOption.getOutcome();
       return Optional.of(artifactsOutcome);

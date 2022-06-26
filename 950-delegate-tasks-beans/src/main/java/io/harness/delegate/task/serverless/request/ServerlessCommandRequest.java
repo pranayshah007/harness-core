@@ -24,7 +24,6 @@ import io.harness.delegate.beans.storeconfig.GitStoreDelegateConfig;
 import io.harness.delegate.capability.EncryptedDataDetailsCapabilityHelper;
 import io.harness.delegate.task.TaskParameters;
 import io.harness.delegate.task.serverless.ServerlessArtifactConfig;
-import io.harness.delegate.task.serverless.ServerlessArtifactType;
 import io.harness.delegate.task.serverless.ServerlessArtifactoryArtifactConfig;
 import io.harness.delegate.task.serverless.ServerlessArtifactsConfig;
 import io.harness.delegate.task.serverless.ServerlessAwsLambdaInfraConfig;
@@ -81,11 +80,11 @@ public interface ServerlessCommandRequest extends TaskParameters, ExecutionCapab
     }
     if (serverlessArtifactsConfig != null) {
       ServerlessArtifactConfig primaryArtifact = serverlessArtifactsConfig.getPrimary();
-      if (primaryArtifact != null && primaryArtifact instanceof ServerlessArtifactoryArtifactConfig) {
+      if (primaryArtifact instanceof ServerlessArtifactoryArtifactConfig) {
         capabilities.addAll(ArtifactoryCapabilityHelper.fetchRequiredExecutionCapabilities(
             ((ServerlessArtifactoryArtifactConfig) primaryArtifact).getConnectorDTO().getConnectorConfig(),
             maskingEvaluator));
-      } else if (primaryArtifact != null && primaryArtifact instanceof ServerlessEcrArtifactConfig) {
+      } else if (primaryArtifact instanceof ServerlessEcrArtifactConfig) {
         AwsConnectorDTO connectorConfigDTO =
             (AwsConnectorDTO) ((ServerlessEcrArtifactConfig) primaryArtifact).getConnectorDTO().getConnectorConfig();
         capabilities.addAll(
@@ -94,16 +93,15 @@ public interface ServerlessCommandRequest extends TaskParameters, ExecutionCapab
 
       if (serverlessArtifactsConfig.getSidecars() != null) {
         for (ServerlessArtifactConfig serverlessArtifactConfig : serverlessArtifactsConfig.getSidecars().values()) {
-          if (serverlessArtifactConfig.getServerlessArtifactType().equals(ServerlessArtifactType.ARTIFACTORY)) {
+          if (serverlessArtifactConfig instanceof ServerlessArtifactoryArtifactConfig) {
             capabilities.addAll(ArtifactoryCapabilityHelper.fetchRequiredExecutionCapabilities(
                 ((ServerlessArtifactoryArtifactConfig) serverlessArtifactConfig).getConnectorDTO().getConnectorConfig(),
                 maskingEvaluator));
-          } else if (serverlessArtifactConfig != null
-              && serverlessArtifactConfig instanceof ServerlessEcrArtifactConfig) {
+          } else if (serverlessArtifactConfig instanceof ServerlessEcrArtifactConfig) {
             AwsConnectorDTO connectorConfigDTO =
                 (AwsConnectorDTO) ((ServerlessEcrArtifactConfig) serverlessArtifactConfig)
-                        .getConnectorDTO()
-                        .getConnectorConfig();
+                    .getConnectorDTO()
+                    .getConnectorConfig();
             capabilities.addAll(
                 AwsCapabilityHelper.fetchRequiredExecutionCapabilities(connectorConfigDTO, maskingEvaluator));
           }

@@ -99,10 +99,11 @@ public class ServerlessAwsLambdaDeployStep
     Map<String, ServerlessArtifactConfig> sidecarServerlessArtifactConfigMap = new HashMap<>();
     if (artifactsOutcome.isPresent()) {
       if (artifactsOutcome.get().getPrimary() != null) {
-        serverlessArtifactConfig = serverlessStepCommonHelper.getArtifactConfig(artifactsOutcome.get().getPrimary(), ambiance);
+        serverlessArtifactConfig =
+            serverlessStepCommonHelper.getArtifactConfig(artifactsOutcome.get().getPrimary(), ambiance);
       }
       artifactsOutcome.get().getSidecars().forEach((key, value) -> {
-        if(value != null) {
+        if (value != null) {
           sidecarServerlessArtifactConfigMap.put(key, serverlessStepCommonHelper.getArtifactConfig(value, ambiance));
         }
       });
@@ -116,8 +117,10 @@ public class ServerlessAwsLambdaDeployStep
     manifestParams.put("manifestFilePathContent", serverlessAwsLambdaStepExecutorParams.getManifestFilePathContent());
     ServerlessManifestConfig serverlessManifestConfig = serverlessStepCommonHelper.getServerlessManifestConfig(
         manifestParams, serverlessManifestOutcome, ambiance, serverlessAwsLambdaStepHelper);
-    ServerlessArtifactsConfig serverlessArtifactsConfig = ServerlessArtifactsConfig.builder().primary(serverlessArtifactConfig)
-            .sidecars(sidecarServerlessArtifactConfigMap).build();
+    ServerlessArtifactsConfig serverlessArtifactsConfig = ServerlessArtifactsConfig.builder()
+                                                              .primary(serverlessArtifactConfig)
+                                                              .sidecars(sidecarServerlessArtifactConfigMap)
+                                                              .build();
     ServerlessDeployRequest serverlessDeployRequest =
         ServerlessDeployRequest.builder()
             .commandName(SERVERLESS_AWS_LAMBDA_DEPLOY_COMMAND_NAME)
