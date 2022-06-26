@@ -25,9 +25,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Singleton
 @OwnedBy(CE)
@@ -117,7 +119,34 @@ public class AwsAccountFieldHelper {
     return updatedIdFilters;
   }
 
-  private static List<QLCEViewRule> removeAccountNameFromAWSAccountRuleFilter(final List<QLCEViewRule> ruleFilters) {
+  public List<QLCEViewFilter> addAccountIdsByAwsAccountNameFilter(
+      final List<QLCEViewFilter> idFilters, final String accountId) {
+    final List<QLCEViewFilter> updatedIdFilters = new ArrayList<>();
+    idFilters.forEach(idFilter -> {
+      if (Objects.nonNull(idFilter.getField()) && AWS_ACCOUNT_FIELD.equals(idFilter.getField().getFieldName())
+          && Objects.nonNull(idFilter.getValues()) && idFilter.getValues().length != 0
+          && !idFilter.getValues()[0].isEmpty()) {
+        final String[] updatedValues =
+            Arrays.stream(idFilter.getValues())
+                .map(value -> entityMetadataService.getAccountIdAndNameByAccountNameFilter(value, accountId).keySet())
+                .flatMap(Set::stream)
+                .distinct()
+                .toArray(String[] ::new);
+        updatedIdFilters.add(
+            QLCEViewFilter.builder()
+                .field(idFilter.getField())
+                .operator(idFilter.getOperator())
+                .values(Stream.concat(Arrays.stream(idFilter.getValues()), Arrays.stream(updatedValues))
+                            .toArray(String[] ::new))
+                .build());
+      } else {
+        updatedIdFilters.add(idFilter);
+      }
+    });
+    return updatedIdFilters;
+  }
+
+  public static List<QLCEViewRule> removeAccountNameFromAWSAccountRuleFilter(final List<QLCEViewRule> ruleFilters) {
     final List<QLCEViewRule> updatedRuleFilters = new ArrayList<>();
     ruleFilters.forEach(ruleFilter -> {
       if (Objects.nonNull(ruleFilter.getConditions())) {
