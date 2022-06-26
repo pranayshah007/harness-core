@@ -204,6 +204,8 @@ import software.wings.filter.AuditRequestFilter;
 import software.wings.filter.AuditResponseFilter;
 import software.wings.jersey.JsonViews;
 import software.wings.jersey.KryoFeature;
+import software.wings.jersey.ProtoBuffMessageBodyProvider;
+import software.wings.jersey.ProtobufFeature;
 import software.wings.licensing.LicenseService;
 import software.wings.notification.EmailNotificationListener;
 import software.wings.prune.PruneEntityListener;
@@ -1518,6 +1520,7 @@ public class WingsApplication extends Application<MainConfiguration> {
 
   private void registerJerseyProviders(Environment environment, Injector injector) {
     environment.jersey().register(injector.getInstance(KryoFeature.class));
+    environment.jersey().register(injector.getInstance(ProtobufFeature.class));
     environment.jersey().register(EarlyEofExceptionMapper.class);
     environment.jersey().register(JsonProcessingExceptionMapper.class);
     environment.jersey().register(ConstraintViolationExceptionMapper.class);
