@@ -15,6 +15,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import static io.harness.annotations.dev.HarnessTeam.CI;
+import static io.harness.configuration.DeployVariant.DEPLOY_VERSION;
 import static io.harness.telemetry.Destination.ALL;
 
 @Slf4j
@@ -29,10 +30,13 @@ public class CiTelemetryPublisher {
     @Inject
     CITelemetryStatusRepository ciTelemetryStatusRepository;
     String COUNT_ACTIVE_DEVELOPERS = "ci_license_developers_used";
+    String ACCOUNT_DEPLOY_TYPE = "account_deploy_type";
     // Locking for a bit less than one day. It's ok to send a bit more than less considering downtime/etc
     static final long A_DAY_MINUS_TEN_MINS = 85800000;
     private static final String ACCOUNT = "Account";
-    public static final String GLOBAL_ACCOUNT_ID = "__GLOBAL_ACCOUNT_ID__";
+    private static final String GLOBAL_ACCOUNT_ID = "__GLOBAL_ACCOUNT_ID__";
+    private static final String GROUP_TYPE = "group_type";
+    private static final String GROUP_ID = "group_id";
 
     public void recordTelemetry() {
         log.info("CiTelemetryPublisher recordTelemetry execute started.");
@@ -43,9 +47,10 @@ public class CiTelemetryPublisher {
                 if (EmptyPredicate.isNotEmpty(accountId) && !accountId.equals(GLOBAL_ACCOUNT_ID)) {
                     if (ciTelemetryStatusRepository.updateTimestampIfOlderThan(accountId, System.currentTimeMillis() - A_DAY_MINUS_TEN_MINS, System.currentTimeMillis())) {
                         HashMap<String, Object> map = new HashMap<>();
-                        map.put("group_type", ACCOUNT);
-                        map.put("group_id", accountId);
+                        map.put(GROUP_TYPE, ACCOUNT);
+                        map.put(GROUP_ID, accountId);
                         map.put(COUNT_ACTIVE_DEVELOPERS, ciOverviewDashboardService.getActiveCommitterCount(accountId));
+                        map.put(ACCOUNT_DEPLOY_TYPE, System.getenv().get(DEPLOY_VERSION));
                         telemetryReporter.sendGroupEvent(accountId, null, map, Collections.singletonMap(ALL, true),
                                 TelemetryOption.builder().sendForCommunity(true).build());
                         log.info("Scheduled CiTelemetryPublisher event sent! for account {}", accountId);
