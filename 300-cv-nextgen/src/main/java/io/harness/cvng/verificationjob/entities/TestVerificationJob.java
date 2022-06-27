@@ -40,10 +40,7 @@ import lombok.experimental.SuperBuilder;
 public class TestVerificationJob extends VerificationJob {
   private RuntimeParameter sensitivity;
   private String baselineVerificationJobInstanceId;
-  @Override
-  public VerificationJobType getType() {
-    return VerificationJobType.TEST;
-  }
+  private final VerificationJobType type = VerificationJobType.TEST;
 
   public Sensitivity getSensitivity() {
     if (sensitivity.isRuntimeParam()) {
@@ -131,10 +128,11 @@ public class TestVerificationJob extends VerificationJob {
   @Override
   public VerificationJob resolveAdditionsFields(VerificationJobInstanceService verificationJobInstanceService) {
     if (baselineVerificationJobInstanceId == null) {
-      baselineVerificationJobInstanceId = verificationJobInstanceService
-                                              .getLastSuccessfulTestVerificationJobExecutionId(getAccountId(),
-                                                  getOrgIdentifier(), getProjectIdentifier(), getIdentifier())
-                                              .orElse(null);
+      baselineVerificationJobInstanceId =
+          verificationJobInstanceService
+              .getLastSuccessfulTestVerificationJobExecutionId(
+                  getAccountId(), getOrgIdentifier(), getProjectIdentifier()) // TODO: add more filtering here.
+              .orElse(null);
     }
     return this;
   }

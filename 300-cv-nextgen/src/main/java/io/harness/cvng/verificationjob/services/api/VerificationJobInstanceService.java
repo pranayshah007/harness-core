@@ -11,7 +11,6 @@ import io.harness.cvng.activity.beans.ActivityVerificationSummary;
 import io.harness.cvng.activity.beans.DeploymentActivityResultDTO;
 import io.harness.cvng.core.beans.TimeRange;
 import io.harness.cvng.core.entities.CVConfig;
-import io.harness.cvng.verificationjob.beans.TestVerificationBaselineExecutionDTO;
 import io.harness.cvng.verificationjob.entities.VerificationJob;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance.ProgressLog;
@@ -28,10 +27,10 @@ public interface VerificationJobInstanceService {
   void createDataCollectionTasks(VerificationJobInstance verificationJobInstance);
   void logProgress(ProgressLog progressLog);
   Optional<TimeRange> getPreDeploymentTimeRange(String verificationJobInstanceId);
-  List<TestVerificationBaselineExecutionDTO> getTestJobBaselineExecutions(
-      String accountId, String orgIdentifier, String projectIdentifier, String verificationJobIdentifier);
+  // TODO: we need more filters to select last successful execution. We should add monitored service identifier as a
+  // filter.
   Optional<String> getLastSuccessfulTestVerificationJobExecutionId(
-      String accountId, String orgIdentifier, String projectIdentifier, String verificationJobIdentifier);
+      String accountId, String orgIdentifier, String projectIdentifier);
   ActivityVerificationSummary getActivityVerificationSummary(List<VerificationJobInstance> verificationJobInstances);
   DeploymentActivityResultDTO.DeploymentVerificationJobInstanceSummary getDeploymentVerificationJobInstanceSummary(
       List<String> verificationJobInstanceIds);

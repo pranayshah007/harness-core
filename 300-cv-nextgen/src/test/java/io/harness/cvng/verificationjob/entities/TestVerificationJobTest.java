@@ -48,7 +48,7 @@ public class TestVerificationJobTest extends CategoryTest {
     TestVerificationJob testVerificationJob = createTestVerificationJob();
     assertThat(testVerificationJob.getBaselineVerificationJobInstanceId()).isNull();
     VerificationJobInstanceService verificationJobInstanceService = mock(VerificationJobInstanceService.class);
-    when(verificationJobInstanceService.getLastSuccessfulTestVerificationJobExecutionId(any(), any(), any(), any()))
+    when(verificationJobInstanceService.getLastSuccessfulTestVerificationJobExecutionId(any(), any(), any()))
         .thenReturn(Optional.empty());
     testVerificationJob.resolveAdditionsFields(verificationJobInstanceService);
     assertThat(testVerificationJob.getBaselineVerificationJobInstanceId()).isNull();
@@ -62,7 +62,7 @@ public class TestVerificationJobTest extends CategoryTest {
     assertThat(testVerificationJob.getBaselineVerificationJobInstanceId()).isNull();
     VerificationJobInstanceService verificationJobInstanceService = mock(VerificationJobInstanceService.class);
     String baseline = generateUuid();
-    when(verificationJobInstanceService.getLastSuccessfulTestVerificationJobExecutionId(any(), any(), any(), any()))
+    when(verificationJobInstanceService.getLastSuccessfulTestVerificationJobExecutionId(any(), any(), any()))
         .thenReturn(Optional.of(baseline));
     testVerificationJob.resolveAdditionsFields(verificationJobInstanceService);
     assertThat(testVerificationJob.getBaselineVerificationJobInstanceId()).isEqualTo(baseline);

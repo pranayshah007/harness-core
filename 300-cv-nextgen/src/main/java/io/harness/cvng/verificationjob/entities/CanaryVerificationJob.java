@@ -24,10 +24,7 @@ import lombok.experimental.SuperBuilder;
 @EqualsAndHashCode(callSuper = true)
 @SuperBuilder
 public class CanaryVerificationJob extends CanaryBlueGreenVerificationJob {
-  @Override
-  public VerificationJobType getType() {
-    return VerificationJobType.CANARY;
-  }
+  private final VerificationJobType type = VerificationJobType.CANARY;
 
   @Override
   public void fromDTO(VerificationJobDTO verificationJobDTO) {

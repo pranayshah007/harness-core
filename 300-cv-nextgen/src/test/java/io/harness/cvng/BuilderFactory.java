@@ -160,6 +160,8 @@ import io.harness.cvng.verificationjob.entities.CanaryBlueGreenVerificationJob.C
 import io.harness.cvng.verificationjob.entities.CanaryVerificationJob;
 import io.harness.cvng.verificationjob.entities.TestVerificationJob;
 import io.harness.cvng.verificationjob.entities.VerificationJob;
+import io.harness.cvng.verificationjob.entities.VerificationJob.RuntimeParameter;
+import io.harness.cvng.verificationjob.entities.VerificationJob.VerificationJobBuilder;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance;
 import io.harness.cvng.verificationjob.entities.VerificationJobInstance.VerificationJobInstanceBuilder;
 import io.harness.delegate.beans.connector.customhealthconnector.CustomHealthMethod;
@@ -1031,25 +1033,25 @@ public class BuilderFactory {
         .projectIdentifier(context.getProjectIdentifier())
         .identifier("identifier")
         .monitoredServiceIdentifier(context.getMonitoredServiceIdentifier())
-        .serviceIdentifier(VerificationJob.RuntimeParameter.builder().value(context.getServiceIdentifier()).build())
-        .envIdentifier(VerificationJob.RuntimeParameter.builder().value(context.getEnvIdentifier()).build())
+        .serviceIdentifier(RuntimeParameter.builder().value(context.getServiceIdentifier()).build())
+        .envIdentifier(RuntimeParameter.builder().value(context.getEnvIdentifier()).build())
         .monitoringSources(Collections.singletonList(context.getMonitoredServiceIdentifier() + "/" + generateUuid()))
-        .sensitivity(VerificationJob.RuntimeParameter.builder().value("High").build())
-        .duration(VerificationJob.RuntimeParameter.builder().value("10m").build());
+        .sensitivity(RuntimeParameter.builder().value("High").build())
+        .duration(RuntimeParameter.builder().value("10m").build());
   }
-  public VerificationJob.VerificationJobBuilder testVerificationJobBuilder() {
+  public VerificationJobBuilder testVerificationJobBuilder() {
     return TestVerificationJob.builder()
         .accountId(context.getAccountId())
         .orgIdentifier(context.getOrgIdentifier())
         .projectIdentifier(context.getProjectIdentifier())
         .identifier("identifier")
         .monitoredServiceIdentifier(context.getMonitoredServiceIdentifier())
-        .serviceIdentifier(VerificationJob.RuntimeParameter.builder().value(context.getServiceIdentifier()).build())
-        .envIdentifier(VerificationJob.RuntimeParameter.builder().value(context.getEnvIdentifier()).build())
+        .serviceIdentifier(RuntimeParameter.builder().value(context.getServiceIdentifier()).build())
+        .envIdentifier(RuntimeParameter.builder().value(context.getEnvIdentifier()).build())
         .monitoringSources(Collections.singletonList(context.getMonitoredServiceIdentifier() + "/" + generateUuid()))
-        .sensitivity(VerificationJob.RuntimeParameter.builder().value("Medium").build())
+        .sensitivity(RuntimeParameter.builder().value("Medium").build())
         .baselineVerificationJobInstanceId(generateUuid())
-        .duration(VerificationJob.RuntimeParameter.builder().value("15m").build());
+        .duration(RuntimeParameter.builder().value("15m").build());
   }
   public static class BuilderFactoryBuilder {
     public BuilderFactory build() {

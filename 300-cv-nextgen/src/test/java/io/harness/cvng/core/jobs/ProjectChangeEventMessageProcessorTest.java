@@ -25,7 +25,6 @@ import io.harness.cvng.core.entities.MetricPack;
 import io.harness.cvng.core.entities.TimeSeriesThreshold;
 import io.harness.cvng.core.services.api.CVConfigService;
 import io.harness.cvng.core.services.api.MetricPackService;
-import io.harness.cvng.verificationjob.services.api.VerificationJobService;
 import io.harness.eventsframework.entity_crud.project.ProjectEntityChangeDTO;
 import io.harness.persistence.PersistentEntity;
 import io.harness.rule.Owner;

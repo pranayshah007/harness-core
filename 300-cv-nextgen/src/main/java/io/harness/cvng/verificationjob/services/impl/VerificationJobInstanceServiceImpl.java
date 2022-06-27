@@ -17,8 +17,7 @@ import static io.harness.cvng.verificationjob.entities.VerificationJobInstance.P
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.persistence.HQuery.excludeAuthority;
-
-import static java.util.stream.Collectors.groupingBy;
+import static io.harness.persistence.HQuery.excludeValidate;
 
 import io.harness.cvng.activity.beans.ActivityVerificationSummary;
 import io.harness.cvng.activity.beans.DeploymentActivityResultDTO.DeploymentVerificationJobInstanceSummary;
@@ -59,7 +58,6 @@ import io.harness.cvng.verificationjob.entities.VerificationJobInstance.Verifica
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
 import io.harness.metrics.AutoMetricContext;
 import io.harness.metrics.service.api.MetricService;
-import io.harness.ng.core.environment.beans.EnvironmentType;
 import io.harness.ng.core.environment.dto.EnvironmentResponseDTO;
 import io.harness.persistence.HPersistence;
 
@@ -321,21 +319,14 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
     return verificationJob.getPreActivityTimeRange(verificationJobInstance.getDeploymentStartTime());
   }
 
-  @Override
   public List<TestVerificationBaselineExecutionDTO> getTestJobBaselineExecutions(
-      String accountId, String orgIdentifier, String projectIdentifier, String verificationJobIdentifier) {
-    return getTestJobBaselineExecutions(accountId, orgIdentifier, projectIdentifier, verificationJobIdentifier, 5);
-  }
-
-  public List<TestVerificationBaselineExecutionDTO> getTestJobBaselineExecutions(
-      String accountId, String orgIdentifier, String projectIdentifier, String verificationJobIdentifier, int limit) {
+      String accountId, String orgIdentifier, String projectIdentifier, int limit) {
     List<VerificationJobInstance> verificationJobInstances =
-        hPersistence.createQuery(VerificationJobInstance.class)
+        hPersistence.createQuery(VerificationJobInstance.class, excludeValidate)
             .filter(VerificationJobInstanceKeys.executionStatus, ExecutionStatus.SUCCESS)
             .filter(VerificationJobInstanceKeys.accountId, accountId)
             .filter(PROJECT_IDENTIFIER_KEY, projectIdentifier)
             .filter(ORG_IDENTIFIER_KEY, orgIdentifier)
-            .filter(VerificationJobInstance.VERIFICATION_JOB_IDENTIFIER_KEY, verificationJobIdentifier)
             .filter(VerificationJobInstance.VERIFICATION_JOB_TYPE_KEY, VerificationJobType.TEST)
             .filter(VerificationJobInstanceKeys.verificationStatus, ActivityVerificationStatus.VERIFICATION_PASSED)
             .order(Sort.descending(VerificationJobInstanceKeys.createdAt))
@@ -351,26 +342,14 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
 
   @Override
   public Optional<String> getLastSuccessfulTestVerificationJobExecutionId(
-      String accountId, String projectIdentifier, String orgIdentifier, String verificationJobIdentifier) {
+      String accountId, String projectIdentifier, String orgIdentifier) {
     List<TestVerificationBaselineExecutionDTO> testVerificationBaselineExecutionDTOs =
-        getTestJobBaselineExecutions(accountId, projectIdentifier, orgIdentifier, verificationJobIdentifier, 1);
+        getTestJobBaselineExecutions(accountId, projectIdentifier, orgIdentifier, 1);
     if (testVerificationBaselineExecutionDTOs.isEmpty()) {
       return Optional.empty();
     } else {
       return Optional.of(testVerificationBaselineExecutionDTOs.get(0).getVerificationJobInstanceId());
     }
-  }
-
-  private Map<EnvironmentType, List<VerificationJobInstance>> getPreAndProductionDeploymentGroup(
-      List<VerificationJobInstance> verificationJobInstances) {
-    return verificationJobInstances.stream()
-        .filter(
-            verificationJobInstance -> verificationJobInstance.getResolvedJob().getType() != VerificationJobType.HEALTH)
-        .collect(groupingBy(verificationJobInstance -> {
-          VerificationJob resolvedJob = verificationJobInstance.getResolvedJob();
-          EnvironmentResponseDTO environmentResponseDTO = getEnvironment(resolvedJob);
-          return environmentResponseDTO.getType();
-        }));
   }
 
   //  TODO find the right place for this switch case

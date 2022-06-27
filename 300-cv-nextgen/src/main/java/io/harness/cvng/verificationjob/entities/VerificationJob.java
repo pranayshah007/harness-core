@@ -25,6 +25,7 @@ import io.harness.cvng.beans.job.VerificationJobType;
 import io.harness.cvng.core.beans.TimeRange;
 import io.harness.cvng.core.entities.CVConfig;
 import io.harness.cvng.core.utils.DateTimeUtils;
+import io.harness.cvng.verificationjob.entities.CanaryVerificationJob.CanaryVerificationJobKeys;
 import io.harness.cvng.verificationjob.services.api.VerificationJobInstanceService;
 import io.harness.mongo.index.CompoundMongoIndex;
 import io.harness.mongo.index.FdIndex;
@@ -94,9 +95,7 @@ public abstract class VerificationJob
         .build();
   }
 
-  public VerificationJob() {
-    this.type = getType();
-  }
+  public VerificationJob() {}
   @Id private String uuid;
   @NotNull private String identifier;
   @NotNull private String jobName;
@@ -105,7 +104,6 @@ public abstract class VerificationJob
   private String projectIdentifier;
   private String orgIdentifier;
   private String activitySourceIdentifier;
-  private VerificationJobType type;
   @NotNull private String accountId;
   private String monitoredServiceIdentifier;
   @NotNull private RuntimeParameter serviceIdentifier;
@@ -145,7 +143,7 @@ public abstract class VerificationJob
           monitoringSources, generateErrorMessageFromParam(VerificationJobKeys.monitoringSources));
       Preconditions.checkArgument(!monitoringSources.isEmpty(), "Monitoring Sources can not be empty");
     }
-    Preconditions.checkNotNull(type, generateErrorMessageFromParam(VerificationJobKeys.type));
+    Preconditions.checkNotNull(getType(), generateErrorMessageFromParam(CanaryVerificationJobKeys.type));
     this.validateParams();
   }
 
@@ -190,7 +188,6 @@ public abstract class VerificationJob
     this.setProjectIdentifier(verificationJobDTO.getProjectIdentifier());
     this.setOrgIdentifier(verificationJobDTO.getOrgIdentifier());
     this.setActivitySourceIdentifier(verificationJobDTO.getActivitySourceIdentifier());
-    this.setType(verificationJobDTO.getType());
     this.setDefaultJob(verificationJobDTO.isDefaultJob());
     this.setAllMonitoringSourcesEnabled(verificationJobDTO.isAllMonitoringSourcesEnabled());
   }
@@ -348,7 +345,6 @@ public abstract class VerificationJob
     verificationJob.setServiceIdentifier(getRunTimeParameter(RUNTIME_PARAM_STRING, true));
     verificationJob.setEnvIdentifier(getRunTimeParameter(RUNTIME_PARAM_STRING, true));
     verificationJob.setDuration(RUNTIME_PARAM_STRING, true);
-    verificationJob.setType(verificationJob.getType());
     verificationJob.setDefaultJob(true);
   }
 }
