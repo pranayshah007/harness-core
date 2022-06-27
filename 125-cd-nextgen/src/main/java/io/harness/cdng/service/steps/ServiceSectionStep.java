@@ -19,6 +19,8 @@ import io.harness.pms.contracts.execution.ChildExecutableResponse;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
 import io.harness.pms.execution.utils.StatusUtils;
+import io.harness.pms.sdk.core.resolver.outcome.OutcomeService;
+import io.harness.pms.sdk.core.resolver.outputs.ExecutionSweepingOutputService;
 import io.harness.pms.sdk.core.steps.executables.ChildExecutable;
 import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
@@ -33,14 +35,14 @@ import java.util.Collections;
 import java.util.Map;
 
 @OwnedBy(HarnessTeam.CDC)
-// TODO(archit): Check why and how serviceConfigStepOutcome will be replicated here, is it needed?
-// TODO(archit): check getPipelineLevelModuleInfo for v2 impl
 public class ServiceSectionStep implements ChildExecutable<ServiceSectionStepParameters> {
   public static final StepType STEP_TYPE = StepType.newBuilder()
                                                .setType(ExecutionNodeType.SERVICE_SECTION.getName())
                                                .setStepCategory(StepCategory.STEP)
                                                .build();
   @Inject private ServiceStepsHelper serviceStepsHelper;
+  @Inject private OutcomeService outcomeService;
+  @Inject private ExecutionSweepingOutputService executionSweepingOutputService;
 
   @Override
   public Class<ServiceSectionStepParameters> getStepParametersClass() {
@@ -70,6 +72,11 @@ public class ServiceSectionStep implements ChildExecutable<ServiceSectionStepPar
     } else {
       logCallback.saveExecutionLog("Completed service step", LogLevel.INFO, CommandExecutionStatus.SUCCESS);
     }
-    return stepResponse;
+    return stepResponse.withStepOutcomes(
+        Collections.singleton(StepResponse.StepOutcome.builder()
+                                  .name("output")
+                                  .outcome(ServiceOutcomeHelper.createSectionOutcome(
+                                      ambiance, outcomeService, executionSweepingOutputService))
+                                  .build()));
   }
 }
