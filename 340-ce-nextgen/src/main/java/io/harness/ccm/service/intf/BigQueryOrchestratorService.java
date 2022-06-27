@@ -8,6 +8,7 @@
 package io.harness.ccm.service.intf;
 
 import io.harness.ccm.commons.entities.BQOrchestratorExpensiveQueryPoint;
+import io.harness.ccm.commons.entities.BQOrchestratorSlotsDataPoint;
 import io.harness.ccm.commons.entities.BQOrchestratorVisibilityDataPoint;
 
 import java.util.List;
@@ -19,4 +20,5 @@ public interface BigQueryOrchestratorService {
     Double getFailedQueries();
     List<BQOrchestratorVisibilityDataPoint> getVisibilityTimeSeries();
     List<BQOrchestratorExpensiveQueryPoint> getExpensiveQueries();
+    List<BQOrchestratorSlotsDataPoint> getSlotData();
 }

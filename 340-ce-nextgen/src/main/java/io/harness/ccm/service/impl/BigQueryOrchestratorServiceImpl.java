@@ -11,6 +11,7 @@ import com.google.cloud.bigquery.*;
 import com.google.inject.Inject;
 import io.harness.ccm.bigQuery.BigQueryService;
 import io.harness.ccm.commons.entities.BQOrchestratorExpensiveQueryPoint;
+import io.harness.ccm.commons.entities.BQOrchestratorSlotsDataPoint;
 import io.harness.ccm.commons.entities.BQOrchestratorVisibilityDataPoint;
 import io.harness.ccm.service.intf.BigQueryOrchestratorService;
 import lombok.extern.slf4j.Slf4j;
@@ -112,6 +113,9 @@ public class BigQueryOrchestratorServiceImpl implements BigQueryOrchestratorServ
           "ORDER BY\n" +
           "    4 DESC\n" +
           "LIMIT 10";
+
+  private static final String BQ_SLOTS = "SELECT startTime, allocatedSlots, reservedSlots, netReservedSlots, gcpProjectId\n" +
+          "FROM `ccm-play.BigQueryHackathon.bqslotusage` WHERE (( startTime >= ((TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'UTC'), INTERVAL -29 DAY))) AND startTime < ((TIMESTAMP_ADD(TIMESTAMP_ADD(TIMESTAMP_TRUNC(CURRENT_TIMESTAMP(), DAY, 'UTC'), INTERVAL -29 DAY), INTERVAL 30 DAY))))) ";
 
   @Override
   public Double getTotalCost() {
@@ -270,5 +274,36 @@ public class BigQueryOrchestratorServiceImpl implements BigQueryOrchestratorServ
       bqOrchestratorExpensiveQueryPointList.add(builder.build());
     }
     return bqOrchestratorExpensiveQueryPointList;
+  }
+
+  @Override
+  public List<BQOrchestratorSlotsDataPoint> getSlotData() {
+    BigQuery bigquery = bigQueryService.get();
+    String query = String.format(BQ_SLOTS);
+    QueryJobConfiguration queryConfig =
+            QueryJobConfiguration.newBuilder(query)
+                    .build();
+    List<BQOrchestratorSlotsDataPoint> bqOrchestratorSlotsDataPointList = new ArrayList<>();
+
+
+    // Get the results.
+    TableResult result;
+    try {
+      result = bigquery.query(queryConfig);
+    } catch (InterruptedException e) {
+      log.error("Failed to check for data. {}", e);
+      Thread.currentThread().interrupt();
+      return bqOrchestratorSlotsDataPointList;
+    }
+
+    for (FieldValueList row : result.iterateAll()) {
+      BQOrchestratorSlotsDataPoint.BQOrchestratorSlotsDataPointBuilder builder = BQOrchestratorSlotsDataPoint.builder();
+      builder.startTime(row.get("startTime").getTimestampValue());
+      builder.allocatedSlots(row.get("allocatedSlots").getDoubleValue());
+      builder.reservedSlots(row.get("reservedSlots").getDoubleValue());
+      builder.gcpProjectId(row.get("gcpProjectId").getStringValue());
+      bqOrchestratorSlotsDataPointList.add(builder.build());
+    }
+    return bqOrchestratorSlotsDataPointList;
   }
 }

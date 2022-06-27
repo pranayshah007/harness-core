@@ -14,6 +14,7 @@ import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.ccm.commons.entities.BQOrchestratorExpensiveQueryPoint;
+import io.harness.ccm.commons.entities.BQOrchestratorSlotsDataPoint;
 import io.harness.ccm.commons.entities.BQOrchestratorVisibilityDataPoint;
 import io.harness.ccm.service.intf.BigQueryOrchestratorService;
 import io.harness.ccm.utils.LogAccountIdentifier;
@@ -110,5 +111,16 @@ public class BigQueryResource {
   getExpensiveQueries(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
           NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId) {
     return ResponseDTO.newResponse(bigQueryOrchestratorService.getExpensiveQueries());
+  }
+
+  @GET
+  @Path("slot-usage")
+  @Timed
+  @LogAccountIdentifier
+  @ExceptionMetered
+  public ResponseDTO<List<BQOrchestratorSlotsDataPoint>>
+  getSlotData(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
+          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId) {
+    return ResponseDTO.newResponse(bigQueryOrchestratorService.getSlotData());
   }
 }
