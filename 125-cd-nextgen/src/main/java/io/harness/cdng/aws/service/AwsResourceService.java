@@ -96,35 +96,46 @@ public interface AwsResourceService {
    * Get list of AWS VPC ids
    *
    * @param awsConnectorRef the IdentifierRef of the aws connector
+   * @param orgIdentifier is the org id
+   * @param projectIdentifier is the project id
    * @param region AWS region
    * @return list of AWS VPC ids
    */
-  List<AwsVPC> getVPCs(IdentifierRef awsConnectorRef, String region);
+  List<AwsVPC> getVPCs(IdentifierRef awsConnectorRef, String orgIdentifier, String projectIdentifier, String region);
 
   /**
    * Get list of AWS tags
    *
    * @param awsConnectorRef the IdentifierRef of the aws connector
+   * @param orgIdentifier is the org id
+   * @param projectIdentifier is the project id
    * @param region AWS region
    * @return list of AWS tags
    */
-  Map<String, String> getTags(IdentifierRef awsConnectorRef, String region);
+  Map<String, String> getTags(
+      IdentifierRef awsConnectorRef, String orgIdentifier, String projectIdentifier, String region);
 
   /**
    * Get list of AWS instance Load balancers
    *
    * @param awsConnectorRef the IdentifierRef of the aws connector
+   * @param orgIdentifier is the org id
+   * @param projectIdentifier is the project id
    * @param region AWS region
    * @return list of AWS Load balancers
    */
-  List<String> getLoadBalancers(IdentifierRef awsConnectorRef, String region);
+  List<String> getLoadBalancers(
+      IdentifierRef awsConnectorRef, String orgIdentifier, String projectIdentifier, String region);
 
   /**
    * Get list of AWS autoscaling groups
    *
    * @param awsConnectorRef the IdentifierRef of the aws connector
+   * @param orgIdentifier is the org id
+   * @param projectIdentifier is the project id
    * @param region AWS region
    * @return list of AWS autoscaling groups
    */
-  List<String> getASGNames(IdentifierRef awsConnectorRef, String region);
+  List<String> getASGNames(
+      IdentifierRef awsConnectorRef, String orgIdentifier, String projectIdentifier, String region);
 }
