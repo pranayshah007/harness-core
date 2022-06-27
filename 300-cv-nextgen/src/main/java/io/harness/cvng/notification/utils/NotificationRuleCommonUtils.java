@@ -92,6 +92,10 @@ public class NotificationRuleCommonUtils {
     return TimeUnit.MILLISECONDS.toMinutes(duration) + "m";
   }
 
+  public static String getDurationAsStringWithoutSuffix(long duration) {
+    return String.valueOf(TimeUnit.MILLISECONDS.toMinutes(duration));
+  }
+
   public static String getNotificationTemplateId(
       NotificationRuleType notificationRuleType, CVNGNotificationChannelType notificationChannelType) {
     return String.format("cvng_%s_%s", notificationRuleType.getTemplateSuffixIdentifier().toLowerCase(),
@@ -242,12 +246,13 @@ public class NotificationRuleCommonUtils {
       case ERROR_BUDGET_REMAINING_MINUTES:
         SLOErrorBudgetRemainingMinutesCondition remainingMinutesCondition =
             (SLOErrorBudgetRemainingMinutesCondition) condition;
-        return "When Error Budget remaining minutes drops below " + remainingMinutesCondition.getThreshold()
+        return "When Error Budget remaining minutes drops below " + remainingMinutesCondition.getThreshold().intValue()
             + " minutes";
       case ERROR_BUDGET_BURN_RATE:
         SLOErrorBudgetBurnRateCondition burnRateCondition = (SLOErrorBudgetBurnRateCondition) condition;
+        String durationAsString = getDurationAsStringWithoutSuffix(burnRateCondition.getLookBackDuration());
         return "When Error Budget burn rate goes above " + burnRateCondition.getThreshold() + "% in the last "
-            + getDurationAsString(burnRateCondition.getLookBackDuration()) + " minutes";
+            + durationAsString + " minutes";
       default:
         throw new InvalidArgumentsException("Not a valid Notification Rule Condition " + condition.getType());
     }
@@ -269,6 +274,7 @@ public class NotificationRuleCommonUtils {
 
   private String getTriggerMessageForMonitoredService(MonitoredServiceNotificationRuleCondition condition) {
     String changeEventTypeString = null;
+    String durationAsString = null;
     switch (condition.getType()) {
       case CHANGE_IMPACT:
         MonitoredServiceChangeImpactCondition changeImpactCondition = (MonitoredServiceChangeImpactCondition) condition;
@@ -276,13 +282,14 @@ public class NotificationRuleCommonUtils {
                                     .stream()
                                     .map(MonitoredServiceChangeEventType::getDisplayName)
                                     .collect(Collectors.joining(", "));
-        return "When service health score drops below " + changeImpactCondition.getThreshold() + " for longer than "
-            + getDurationAsString(changeImpactCondition.getPeriod()) + " minutes due to a change in "
-            + changeEventTypeString;
+        durationAsString = getDurationAsStringWithoutSuffix(changeImpactCondition.getPeriod());
+        return "When service health score drops below " + changeImpactCondition.getThreshold().intValue()
+            + " for longer than " + durationAsString + " minutes due to a change in " + changeEventTypeString;
       case HEALTH_SCORE:
         MonitoredServiceHealthScoreCondition healthScoreCondition = (MonitoredServiceHealthScoreCondition) condition;
-        return "When service health score drops below " + healthScoreCondition.getThreshold() + " for longer than "
-            + getDurationAsString(healthScoreCondition.getPeriod()) + " minutes";
+        durationAsString = getDurationAsStringWithoutSuffix(healthScoreCondition.getPeriod());
+        return "When service health score drops below " + healthScoreCondition.getThreshold().intValue()
+            + " for longer than " + durationAsString + " minutes";
       case CHANGE_OBSERVED:
         MonitoredServiceChangeObservedCondition changeObservedCondition =
             (MonitoredServiceChangeObservedCondition) condition;
