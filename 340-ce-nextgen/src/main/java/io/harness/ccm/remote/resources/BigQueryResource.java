@@ -13,9 +13,7 @@ import com.google.inject.Inject;
 import io.harness.NGCommonEntityConstants;
 import io.harness.accesscontrol.AccountIdentifier;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.ccm.commons.entities.BQOrchestratorExpensiveQueryPoint;
-import io.harness.ccm.commons.entities.BQOrchestratorSlotsDataPoint;
-import io.harness.ccm.commons.entities.BQOrchestratorVisibilityDataPoint;
+import io.harness.ccm.commons.entities.*;
 import io.harness.ccm.service.intf.BigQueryOrchestratorService;
 import io.harness.ccm.utils.LogAccountIdentifier;
 import io.harness.ng.core.dto.ResponseDTO;
@@ -44,83 +42,95 @@ import static io.harness.annotations.dev.HarnessTeam.CE;
 @Service
 @OwnedBy(CE)
 public class BigQueryResource {
-  @Inject
-  BigQueryOrchestratorService bigQueryOrchestratorService;
+    @Inject
+    BigQueryOrchestratorService bigQueryOrchestratorService;
 
-  @GET
-  @Path("total-cost")
-  @Timed
-  @LogAccountIdentifier
-  @ExceptionMetered
-  public ResponseDTO<Double>
-  getTotalCost(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
-                            NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId) {
-    return ResponseDTO.newResponse(bigQueryOrchestratorService.getTotalCost());
-  }
+    @GET
+    @Path("total-cost")
+    @Timed
+    @LogAccountIdentifier
+    @ExceptionMetered
+    public ResponseDTO<Double>
+    getTotalCost(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
+            NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId) {
+        return ResponseDTO.newResponse(bigQueryOrchestratorService.getTotalCost());
+    }
 
-  @GET
-  @Path("scanned-bytes")
-  @Timed
-  @LogAccountIdentifier
-  @ExceptionMetered
-  public ResponseDTO<Double>
-  getScannedBytes(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
-          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId) {
-    return ResponseDTO.newResponse(bigQueryOrchestratorService.getBytesScanned());
-  }
+    @GET
+    @Path("scanned-bytes")
+    @Timed
+    @LogAccountIdentifier
+    @ExceptionMetered
+    public ResponseDTO<Double>
+    getScannedBytes(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
+            NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId) {
+        return ResponseDTO.newResponse(bigQueryOrchestratorService.getBytesScanned());
+    }
 
-  @GET
-  @Path("successful-queries")
-  @Timed
-  @LogAccountIdentifier
-  @ExceptionMetered
-  public ResponseDTO<Double>
-  getSuccessfulQueries(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
-          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId) {
-    return ResponseDTO.newResponse(bigQueryOrchestratorService.getSuccessfulQueries());
-  }
+    @GET
+    @Path("successful-queries")
+    @Timed
+    @LogAccountIdentifier
+    @ExceptionMetered
+    public ResponseDTO<Double>
+    getSuccessfulQueries(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
+            NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId) {
+        return ResponseDTO.newResponse(bigQueryOrchestratorService.getSuccessfulQueries());
+    }
 
-  @GET
-  @Path("failed-queries")
-  @Timed
-  @LogAccountIdentifier
-  @ExceptionMetered
-  public ResponseDTO<Double>
-  getFailedQueries(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
-          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId) {
-    return ResponseDTO.newResponse(bigQueryOrchestratorService.getFailedQueries());
-  }
+    @GET
+    @Path("failed-queries")
+    @Timed
+    @LogAccountIdentifier
+    @ExceptionMetered
+    public ResponseDTO<Double>
+    getFailedQueries(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
+            NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId) {
+        return ResponseDTO.newResponse(bigQueryOrchestratorService.getFailedQueries());
+    }
 
-  @GET
-  @Path("time-series-visibility")
-  @Timed
-  @LogAccountIdentifier
-  @ExceptionMetered
-  public ResponseDTO<List<BQOrchestratorVisibilityDataPoint>>
-  getTimeSeries(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
-          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId) {
-    return ResponseDTO.newResponse(bigQueryOrchestratorService.getVisibilityTimeSeries());
-  }
+    @GET
+    @Path("time-series-visibility")
+    @Timed
+    @LogAccountIdentifier
+    @ExceptionMetered
+    public ResponseDTO<List<BQOrchestratorVisibilityDataPoint>>
+    getTimeSeries(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
+            NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId) {
+        return ResponseDTO.newResponse(bigQueryOrchestratorService.getVisibilityTimeSeries());
+    }
 
-  @GET
-  @Path("expensive-queries")
-  @Timed
-  @LogAccountIdentifier
-  @ExceptionMetered
-  public ResponseDTO<List<BQOrchestratorExpensiveQueryPoint>>
-  getExpensiveQueries(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
-          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId) {
-    return ResponseDTO.newResponse(bigQueryOrchestratorService.getExpensiveQueries());
-  }
+    @GET
+    @Path("expensive-queries")
+    @Timed
+    @LogAccountIdentifier
+    @ExceptionMetered
+    public ResponseDTO<List<BQOrchestratorExpensiveQueryPoint>>
+    getExpensiveQueries(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
+            NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId) {
+        return ResponseDTO.newResponse(bigQueryOrchestratorService.getExpensiveQueries());
+    }
 
-  @GET
-  @Path("slot-usage")
-  @Timed
-  @LogAccountIdentifier
-  @ExceptionMetered
-  public ResponseDTO<List<BQOrchestratorSlotsDataPoint>>
-  getSlotData(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
-          NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId) {
-    return ResponseDTO.newResponse(bigQueryOrchestratorService.getSlotData());
-  }
+    @GET
+    @Path("slot-usage")
+    @Timed
+    @LogAccountIdentifier
+    @ExceptionMetered
+    public ResponseDTO<List<BQOrchestratorSlotsDataPoint>>
+    getSlotData(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
+            NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId) {
+        return ResponseDTO.newResponse(bigQueryOrchestratorService.getSlotData());
+    }
+
+    @GET
+    @Path("slot-stats")
+    @Timed
+    @LogAccountIdentifier
+    @ExceptionMetered
+    public ResponseDTO<BQOrchestratorSlotUsageStats>
+    getSlotStats(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
+            NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId, @QueryParam("optimizationType")
+            BQOrchestratorOptimizationType optimizationType, @QueryParam("commitmentDuration") BQOrchestratorCommitmentDuration commitmentDuration, @QueryParam("slotCount") Double slotCount) {
+        return ResponseDTO.newResponse(bigQueryOrchestratorService.getSlotUsageStats(optimizationType, commitmentDuration, slotCount));
+    }
 }
