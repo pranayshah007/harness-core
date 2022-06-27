@@ -44,6 +44,7 @@ shared_dependencies = [
     "@maven//:com_microsoft_azure_msal4j",
     "@maven//:aopalliance_aopalliance",
     "@maven//:com_google_inject_guice",
+    "@maven//:com_google_cloud_google_cloud_bigqueryreservation",
     "@maven//:com_google_cloud_google_cloud_pubsub",
     "@maven//:com_squareup_retrofit2_retrofit",
     "@maven//:io_swagger_swagger_annotations",

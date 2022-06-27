@@ -7,13 +7,21 @@
 
 package io.harness.ccm.service.impl;
 
+import com.google.api.gax.core.FixedCredentialsProvider;
+import com.google.api.gax.core.GoogleCredentialsProvider;
 import com.google.cloud.bigquery.*;
+import com.google.cloud.bigquery.reservation.v1.Assignment;
+import com.google.cloud.bigquery.reservation.v1.CapacityCommitment;
+import com.google.cloud.bigquery.reservation.v1.Reservation;
+import com.google.cloud.bigquery.reservation.v1.ReservationServiceClient;
+import com.google.cloud.bigquery.reservation.v1.ReservationServiceSettings;
 import com.google.inject.Inject;
 import io.harness.ccm.bigQuery.BigQueryService;
 import io.harness.ccm.commons.entities.*;
 import io.harness.ccm.service.intf.BigQueryOrchestratorService;
 import lombok.extern.slf4j.Slf4j;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -329,6 +337,46 @@ public class BigQueryOrchestratorServiceImpl implements BigQueryOrchestratorServ
                 .coveragePercentage(coveragePercentage)
                 .averageOnDemandSlots(averageSlotUsage)
                 .build();
+    }
+
+    public boolean buySlots(long slotsCount) {
+        String projectID = "ccm-play";
+
+        try (ReservationServiceClient client = ReservationServiceClient.create(ReservationServiceSettings.newBuilder().setCredentialsProvider(FixedCredentialsProvider.create(bigQueryService.getCredentials("CE_GCP_CREDENTIALS_PATH"))).build())) {
+            String parent = String.format("projects/%s/locations/%s",projectID , "US");
+
+            CapacityCommitment capacityCommitment = client.createCapacityCommitment(parent, CapacityCommitment.newBuilder().setPlan(CapacityCommitment.CommitmentPlan.FLEX).setSlotCount(slotsCount).build());
+            Reservation reservation = client.createReservation(parent, Reservation.newBuilder().setSlotCapacity(slotsCount).setIgnoreIdleSlots(false).build(), "hack_bq_reservation");
+            Assignment assignment = client.createAssignment(parent, Assignment.newBuilder().setJobType(Assignment.JobType.QUERY).setAssignee(String.format("projects/{}", projectID)).build());
+            log.info(" {} Slots Purchased [CapacityCommitment:{}, reservation:{}, assignment:{}]", slotsCount, capacityCommitment.getName(), reservation.getName(), assignment.getName());
+            return true;
+        } catch (Exception e) {
+            log.error("Exception: {}", e);
+        }
+        return false;
+    }
+
+    public boolean releaseSlots(long slotsCount) {
+        String projectID = "ccm-play";
+        try (ReservationServiceClient client = ReservationServiceClient.create()) {
+            String parent = String.format("projects/%s/locations/%s",projectID , "US");
+            List<Assignment> assignmentsList = client.listAssignments(parent).getPage().getResponse().getAssignmentsList();
+            List<Reservation> reservationsList = client.listReservations(parent).getPage().getResponse().getReservationsList();
+            List<CapacityCommitment> capacityCommitmentsList = client.listCapacityCommitments(parent).getPage().getResponse().getCapacityCommitmentsList();
+            for (Assignment assignment: assignmentsList) {
+                client.deleteAssignment(assignment.getName());
+            }
+            for (Reservation reservation: reservationsList) {
+                client.deleteReservation(reservation.getName());
+            }
+            for (CapacityCommitment capacityCommitment: capacityCommitmentsList) {
+                client.deleteCapacityCommitment(capacityCommitment.getName());
+            }
+            return true;
+        } catch (Exception e) {
+            log.error("Exception: {}", e);
+        }
+        return false;
     }
 
     private Double getRecommendedSlotUsage(BQOrchestratorOptimizationType optimizationType, List<BQOrchestratorSlotsDataPoint> slotData){

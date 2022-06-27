@@ -9,6 +9,7 @@ package io.harness.ccm.service.intf;
 
 import io.harness.ccm.commons.entities.*;
 
+import java.io.IOException;
 import java.util.List;
 
 public interface BigQueryOrchestratorService {
@@ -21,5 +22,6 @@ public interface BigQueryOrchestratorService {
     List<BQOrchestratorSlotsDataPoint> getSlotData();
     BQOrchestratorSlotUsageStats getSlotUsageStats(BQOrchestratorOptimizationType optimizationType,
                                                    BQOrchestratorCommitmentDuration commitmentDuration, Double slotCount);
-
+    boolean releaseSlots(long slotsCount);
+    boolean buySlots(long slotsCount);
 }

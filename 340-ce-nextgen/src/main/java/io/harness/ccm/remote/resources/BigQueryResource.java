@@ -28,6 +28,7 @@ import javax.validation.constraints.NotNull;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 
+import java.io.IOException;
 import java.util.List;
 
 import static io.harness.NGCommonEntityConstants.ACCOUNT_PARAM_MESSAGE;
@@ -132,5 +133,27 @@ public class BigQueryResource {
             NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId, @QueryParam("optimizationType")
             BQOrchestratorOptimizationType optimizationType, @QueryParam("commitmentDuration") BQOrchestratorCommitmentDuration commitmentDuration, @QueryParam("slotCount") Double slotCount) {
         return ResponseDTO.newResponse(bigQueryOrchestratorService.getSlotUsageStats(optimizationType, commitmentDuration, slotCount));
+    }
+
+    @GET
+    @Path("buy-slots")
+    @Timed
+    @LogAccountIdentifier
+    @ExceptionMetered
+    public ResponseDTO<Boolean>
+    buySlots(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
+            NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId, @QueryParam("slotCount") Long slotCount) {
+        return ResponseDTO.newResponse(bigQueryOrchestratorService.buySlots(slotCount));
+    }
+
+    @GET
+    @Path("release-slots")
+    @Timed
+    @LogAccountIdentifier
+    @ExceptionMetered
+    public ResponseDTO<Boolean>
+    releaseSlots(@Parameter(required = true, description = ACCOUNT_PARAM_MESSAGE) @QueryParam(
+            NGCommonEntityConstants.ACCOUNT_KEY) @AccountIdentifier @NotNull @Valid String accountId, @QueryParam("slotCount") Long slotCount)  {
+        return ResponseDTO.newResponse(bigQueryOrchestratorService.releaseSlots(slotCount));
     }
 }

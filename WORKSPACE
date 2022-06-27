@@ -5021,6 +5021,7 @@ plain_artifacts = [
     "io.swagger.core.v3:swagger-annotations:2.1.2",
     "io.swagger.core.v3:swagger-models:2.1.2",
     "io.swagger.core.v3:swagger-integration:2.1.2",
+    "com.google.cloud:google-cloud-bigqueryreservation:2.3.1",
 ]
 
 amazon_artifacts = [
