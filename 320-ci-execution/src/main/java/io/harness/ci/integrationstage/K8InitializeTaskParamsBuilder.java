@@ -225,9 +225,8 @@ public class K8InitializeTaskParamsBuilder {
     Map<String, String> tiEnvVars = k8InitializeTaskUtils.getTIServiceEnvVariables(accountId);
     Map<String, String> stoEnvVars = k8InitializeTaskUtils.getSTOServiceEnvVariables(accountId);
     ConnectorDetails gitConnector = codebaseUtils.getGitConnector(
-            ngAccess, ciCodebase.getConnectorRef().getValue(), initializeStepInfo.isSkipGitClone());
-    Map<String, String> gitEnvVars = codebaseUtils.getGitEnvVariables(gitConnector,
-            ciCodebase.getProjectName().getValue(), ciCodebase.getRepoName().getValue() );
+            ngAccess, ciCodebase, initializeStepInfo.isSkipGitClone());
+    Map<String, String> gitEnvVars = codebaseUtils.getGitEnvVariables(gitConnector, ciCodebase);
     Map<String, String> runtimeCodebaseVars = codebaseUtils.getRuntimeCodebaseVars(ambiance);
     Map<String, String> commonEnvVars = k8InitializeTaskUtils.getCommonStepEnvVariables(
         k8PodDetails, runtimeCodebaseVars, k8InitializeTaskUtils.getWorkDir(), logPrefix, ambiance);

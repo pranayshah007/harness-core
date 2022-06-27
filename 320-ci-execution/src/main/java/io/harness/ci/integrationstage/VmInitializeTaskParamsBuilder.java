@@ -117,12 +117,10 @@ public class VmInitializeTaskParamsBuilder {
                                           .build();
 
     NGAccess ngAccess = AmbianceUtils.getNgAccess(ambiance);
-    final CodeBase ciCodebase = initializeStepInfo.getCiCodebase();
     ConnectorDetails gitConnector = codebaseUtils.getGitConnector(
-        ngAccess, ciCodebase.getConnectorRef().getValue(), initializeStepInfo.isSkipGitClone());
+        ngAccess, initializeStepInfo.getCiCodebase(), initializeStepInfo.isSkipGitClone());
     Map<String, String> codebaseEnvVars = codebaseUtils.getCodebaseVars(ambiance, ciExecutionArgs);
-    Map<String, String> gitEnvVars = codebaseUtils.getGitEnvVariables(gitConnector,
-            ciCodebase.getProjectName().getValue(), ciCodebase.getRepoName().getValue());
+    Map<String, String> gitEnvVars = codebaseUtils.getGitEnvVariables(gitConnector, initializeStepInfo.getCiCodebase());
 
     Map<String, String> envVars = new HashMap<>();
     envVars.putAll(codebaseEnvVars);

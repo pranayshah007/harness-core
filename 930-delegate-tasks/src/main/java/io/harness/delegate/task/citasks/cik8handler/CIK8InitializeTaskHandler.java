@@ -401,7 +401,7 @@ public class CIK8InitializeTaskHandler implements CIInitializeTaskHandler {
       }
     }
 
-    //TODO: need to put this somewhere else so we can save secret env variables for codebase and gitCloneSteps
+    //TODO: may need to put this somewhere else so we can save secret env variables for codebase and gitCloneSteps
 //    log.info("Creating git secret env variables for pod: {}", podParams.getName());
 //    Map<String, String> gitSecretData =
 //        getAndUpdateGitSecretData(gitConnectorDetails, containerParamsList, k8SecretName);

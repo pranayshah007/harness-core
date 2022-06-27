@@ -187,8 +187,7 @@ public class IntegrationStageUtils {
 
   public boolean treatWebhookAsManualExecution(
       ConnectorDetails connectorDetails, CodeBase codeBase, ParsedPayload parsedPayload, long version) {
-    String url = getGitURLFromConnector(connectorDetails, codeBase.getProjectName().getValue(),
-            codeBase.getRepoName().getValue());
+    String url = getGitURLFromConnector(connectorDetails, codeBase);
     WebhookExecutionSource webhookExecutionSource = WebhookTriggerProcessorUtils.convertWebhookResponse(parsedPayload);
     Build build = RunTimeInputHandler.resolveBuild(codeBase.getBuild());
     if (build != null) {
@@ -282,8 +281,17 @@ public class IntegrationStageUtils {
         .build();
   }
 
-  public String getGitURL(String project, String repo, GitConnectionType connectionType, String url) {
-    String gitUrl = retrieveGenericGitConnectorURL(project, repo, connectionType, url);
+  public String getGitURL(CodeBase ciCodebase, GitConnectionType connectionType, String url) {
+    if (ciCodebase == null) {
+      throw new IllegalArgumentException("CI codebase spec is not set");
+    }
+    String projectName = ciCodebase.getProjectName().getValue();
+    String repoName = ciCodebase.getRepoName().getValue();
+    return getGitURL(projectName, repoName, connectionType, url);
+  }
+
+  public String getGitURL(String projectName, String repoName, GitConnectionType connectionType, String url) {
+    String gitUrl = retrieveGenericGitConnectorURL(projectName, repoName, connectionType, url);
 
     if (!gitUrl.endsWith(GIT_URL_SUFFIX) && !gitUrl.contains(AZURE_REPO_BASE_URL)) {
       gitUrl += GIT_URL_SUFFIX;
@@ -291,21 +299,21 @@ public class IntegrationStageUtils {
     return gitUrl;
   }
 
-  public String retrieveGenericGitConnectorURL(String project, String repo, GitConnectionType connectionType, String url) {
+  public String retrieveGenericGitConnectorURL(String projectName, String repoName, GitConnectionType connectionType, String url) {
     String gitUrl;
     if (connectionType == GitConnectionType.REPO) {
       gitUrl = url;
     } else if (connectionType == GitConnectionType.ACCOUNT) {
 
-      if (isEmpty(repo)) {
+      if (isEmpty(repoName)) {
         throw new IllegalArgumentException("Repo name is not set in CI codebase spec");
       }
 
-      if (isNotEmpty(project) && url.contains(AZURE_REPO_BASE_URL)) {
-        gitUrl = GitClientHelper.getCompleteUrlForAccountLevelAzureConnector(url, project, repo);
+      if (isNotEmpty(projectName) && url.contains(AZURE_REPO_BASE_URL)) {
+        gitUrl = GitClientHelper.getCompleteUrlForAccountLevelAzureConnector(url, projectName, repoName);
       } else {
         gitUrl = StringUtils.join(StringUtils.stripEnd(url, PATH_SEPARATOR), PATH_SEPARATOR,
-            StringUtils.stripStart(repo, PATH_SEPARATOR));
+            StringUtils.stripStart(repoName, PATH_SEPARATOR));
       }
     } else {
       throw new InvalidArgumentsException(
@@ -315,31 +323,31 @@ public class IntegrationStageUtils {
     return gitUrl;
   }
 
-  public String getGitURLFromConnector(ConnectorDetails gitConnector, String projectName, String repoName) {
+  public String getGitURLFromConnector(ConnectorDetails gitConnector, CodeBase ciCodebase) {
     if (gitConnector == null) {
       return null;
     }
 
     if (gitConnector.getConnectorType() == GITHUB) {
       GithubConnectorDTO gitConfigDTO = (GithubConnectorDTO) gitConnector.getConnectorConfig();
-      return getGitURL(projectName, repoName, gitConfigDTO.getConnectionType(), gitConfigDTO.getUrl());
+      return getGitURL(ciCodebase, gitConfigDTO.getConnectionType(), gitConfigDTO.getUrl());
     } else if (gitConnector.getConnectorType() == AZURE_REPO) {
       AzureRepoConnectorDTO gitConfigDTO = (AzureRepoConnectorDTO) gitConnector.getConnectorConfig();
-      return getGitURL(projectName, repoName, gitConfigDTO.getConnectionType(), gitConfigDTO.getUrl());
+      return getGitURL(ciCodebase, gitConfigDTO.getConnectionType(), gitConfigDTO.getUrl());
     } else if (gitConnector.getConnectorType() == GITLAB) {
       GitlabConnectorDTO gitConfigDTO = (GitlabConnectorDTO) gitConnector.getConnectorConfig();
-      return getGitURL(projectName, repoName, gitConfigDTO.getConnectionType(), gitConfigDTO.getUrl());
+      return getGitURL(ciCodebase, gitConfigDTO.getConnectionType(), gitConfigDTO.getUrl());
     } else if (gitConnector.getConnectorType() == BITBUCKET) {
       BitbucketConnectorDTO gitConfigDTO = (BitbucketConnectorDTO) gitConnector.getConnectorConfig();
-      return getGitURL(projectName, repoName, gitConfigDTO.getConnectionType(), gitConfigDTO.getUrl());
+      return getGitURL(ciCodebase, gitConfigDTO.getConnectionType(), gitConfigDTO.getUrl());
     } else if (gitConnector.getConnectorType() == CODECOMMIT) {
       AwsCodeCommitConnectorDTO gitConfigDTO = (AwsCodeCommitConnectorDTO) gitConnector.getConnectorConfig();
       GitConnectionType gitConnectionType =
           gitConfigDTO.getUrlType() == AwsCodeCommitUrlType.REPO ? GitConnectionType.REPO : GitConnectionType.ACCOUNT;
-      return getGitURL(projectName, repoName, gitConnectionType, gitConfigDTO.getUrl());
+      return getGitURL(ciCodebase, gitConnectionType, gitConfigDTO.getUrl());
     } else if (gitConnector.getConnectorType() == GIT) {
       GitConfigDTO gitConfigDTO = (GitConfigDTO) gitConnector.getConnectorConfig();
-      return getGitURL(projectName, repoName, gitConfigDTO.getGitConnectionType(), gitConfigDTO.getUrl());
+      return getGitURL(ciCodebase, gitConfigDTO.getGitConnectionType(), gitConfigDTO.getUrl());
     } else {
       throw new CIStageExecutionException("Unsupported git connector type" + gitConnector.getConnectorType());
     }

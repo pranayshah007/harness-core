@@ -41,8 +41,7 @@ public class IntegrationStageUtilsTest {
     CodeBase ciCodebase = YamlUtils.read(yamlNode, CodeBase.class);
     GitConnectionType connectionType = GitConnectionType.ACCOUNT;
     String url = "git@github.com:devkimittal";
-    String actual = IntegrationStageUtils.getGitURL(ciCodebase.getProjectName().getValue(),
-            ciCodebase.getRepoName().getValue(), connectionType, url);
+    String actual = IntegrationStageUtils.getGitURL(ciCodebase, connectionType, url);
     String expected = "git@github.com:devkimittal/harness-core.git";
     assertThat(actual).isEqualTo(expected);
   }
@@ -55,8 +54,7 @@ public class IntegrationStageUtilsTest {
     CodeBase ciCodebase = YamlUtils.read(yamlNode, CodeBase.class);
     GitConnectionType connectionType = GitConnectionType.ACCOUNT;
     String url = "git@github.com:devkimittal";
-    String actual = IntegrationStageUtils.getGitURL(ciCodebase.getProjectName().getValue(),
-            ciCodebase.getRepoName().getValue(), connectionType, url);
+    String actual = IntegrationStageUtils.getGitURL(ciCodebase, connectionType, url);
     String expected = "git@github.com:devkimittal/harness-core.git";
     assertThat(actual).isEqualTo(expected);
   }

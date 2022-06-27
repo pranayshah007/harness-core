@@ -37,7 +37,6 @@ import io.harness.sto.beans.entities.STOServiceConfig;
 import io.harness.stoserviceclient.STOServiceUtils;
 import io.harness.tiserviceclient.TIServiceUtils;
 import io.harness.util.CIVmSecretEvaluator;
-import io.harness.yaml.extended.ci.codebase.CodeBase;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -100,13 +99,11 @@ public class VmInitializeTaskParamsBuilderTest extends CIExecutionTestBase {
                         .build());
 
     Map<String, String> m = new HashMap<>();
-    final CodeBase ciCodebase = initializeStepInfo.getCiCodebase();
-    when(codebaseUtils.getGitConnector(AmbianceUtils.getNgAccess(ambiance), ciCodebase.getConnectorRef().getValue(),
+    when(codebaseUtils.getGitConnector(AmbianceUtils.getNgAccess(ambiance), initializeStepInfo.getCiCodebase(),
              initializeStepInfo.isSkipGitClone()))
         .thenReturn(null);
     when(codebaseUtils.getCodebaseVars(any(), any())).thenReturn(m);
-    when(codebaseUtils.getGitEnvVariables(null, ciCodebase.getProjectName().getValue(),
-            ciCodebase.getRepoName().getValue())).thenReturn(m);
+    when(codebaseUtils.getGitEnvVariables(null, initializeStepInfo.getCiCodebase())).thenReturn(m);
 
     when(logServiceUtils.getLogServiceConfig()).thenReturn(LogServiceConfig.builder().baseUrl("1.1.1.1").build());
     when(logServiceUtils.getLogServiceToken(any())).thenReturn("test");
