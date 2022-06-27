@@ -17,12 +17,12 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
 import io.harness.rule.Owner;
 
-import com.fasterxml.jackson.dataformat.yaml.snakeyaml.introspector.FieldProperty;
-import com.fasterxml.jackson.dataformat.yaml.snakeyaml.nodes.NodeTuple;
 import lombok.Builder;
 import lombok.Value;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.yaml.snakeyaml.introspector.FieldProperty;
+import org.yaml.snakeyaml.nodes.NodeTuple;
 
 @OwnedBy(CDP)
 public class YamlRepresenterTest extends CategoryTest {

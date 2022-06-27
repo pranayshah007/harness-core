@@ -4360,7 +4360,7 @@ plain_artifacts = [
     "com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:2.13.1",
     "com.fasterxml.jackson.dataformat:jackson-dataformat-smile:2.13.1",
     "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.13.1",
-    "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.7.9",
+    "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.13.1",
     "com.fasterxml.jackson.datatype:jackson-datatype-guava:2.13.1",
     "com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.13.1",
     "com.fasterxml.jackson.datatype:jackson-datatype-joda:2.13.1",
@@ -5015,12 +5015,12 @@ plain_artifacts = [
     "xml-apis:xml-apis:1.4.01",
     "xml-resolver:xml-resolver:1.2",
     "xpp3:xpp3:1.1.3.3",
-    "io.swagger.core.v3:swagger-jaxrs2:2.1.2",
-    "io.swagger.core.v3:swagger-jaxrs2-servlet-initializer-v2:2.1.2",
-    "io.swagger.core.v3:swagger-core:2.1.2",
-    "io.swagger.core.v3:swagger-annotations:2.1.2",
-    "io.swagger.core.v3:swagger-models:2.1.2",
-    "io.swagger.core.v3:swagger-integration:2.1.2",
+    "io.swagger.core.v3:swagger-jaxrs2:2.2.0",
+    "io.swagger.core.v3:swagger-jaxrs2-servlet-initializer-v2:2.2.0",
+    "io.swagger.core.v3:swagger-core:2.2.0",
+    "io.swagger.core.v3:swagger-annotations:2.2.0",
+    "io.swagger.core.v3:swagger-models:2.2.0",
+    "io.swagger.core.v3:swagger-integration:2.2.0",
 ]
 
 amazon_artifacts = [
