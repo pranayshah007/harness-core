@@ -61,7 +61,7 @@ public class YamlAuthHandler {
     }
 
     YamlType yamlType = yamlService.findYamlType(filePath);
-    String appId;
+    String appId = null;
     try {
       appId = yamlHelper.getAppId(accountId, filePath);
     } catch (GeneralException e) {
