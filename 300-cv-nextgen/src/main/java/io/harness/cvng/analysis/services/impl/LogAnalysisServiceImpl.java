@@ -409,17 +409,4 @@ public class LogAnalysisServiceImpl implements LogAnalysisService {
         .lessThanOrEq(endTime)
         .asList(new FindOptions().maxTime(MONGO_QUERY_TIMEOUT_SEC, TimeUnit.SECONDS));
   }
-
-  @Override
-  public LogAnalysisResult getLatestAnalysisForVerificationTaskId(
-      String verificationTaskId, Instant startTime, Instant endTime) {
-    return hPersistence.createQuery(LogAnalysisResult.class, excludeAuthority)
-        .filter(LogAnalysisResultKeys.verificationTaskId, verificationTaskId)
-        .field(LogAnalysisResultKeys.analysisEndTime)
-        .greaterThanOrEq(startTime)
-        .field(LogAnalysisResultKeys.analysisEndTime)
-        .lessThanOrEq(endTime)
-        .order(Sort.descending(LogAnalysisResultKeys.analysisEndTime))
-        .get();
-  }
 }

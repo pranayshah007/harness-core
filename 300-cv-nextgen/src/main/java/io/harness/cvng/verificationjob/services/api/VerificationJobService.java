@@ -18,8 +18,6 @@ public interface VerificationJobService {
   VerificationJob getVerificationJob(
       String accountId, String orgIdentifier, String projectIdentifier, String identifier);
   void create(String accountId, VerificationJobDTO verificationJobDTO);
-  void save(VerificationJob verificationJob);
 
   VerificationJob fromDto(VerificationJobDTO verificationJobDTO);
-  void createDefaultVerificationJobs(String accountId, String orgIdentifier, String projectIdentifier);
 }

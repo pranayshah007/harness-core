@@ -361,14 +361,6 @@ public class VerificationJobInstanceServiceImpl implements VerificationJobInstan
     }
   }
 
-  private List<VerificationJobInstance> getPostDeploymentVerificationJobInstances(
-      List<VerificationJobInstance> verificationJobInstances) {
-    return verificationJobInstances.stream()
-        .filter(
-            verificationJobInstance -> verificationJobInstance.getResolvedJob().getType() == VerificationJobType.HEALTH)
-        .collect(Collectors.toList());
-  }
-
   private Map<EnvironmentType, List<VerificationJobInstance>> getPreAndProductionDeploymentGroup(
       List<VerificationJobInstance> verificationJobInstances) {
     return verificationJobInstances.stream()
