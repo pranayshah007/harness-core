@@ -148,7 +148,7 @@ public interface DelegateAgentManagerClient {
       @Query("accountId") String accountId, @Body RequestBody buildSourceExecutionResponse);
 
   @KryoResponse
-  @PUT("agent/delegates/{delegateId}/tasks/{taskId}/acquire")
+  @PUT("agent/delegates/{delegateId}/tasks/{taskId}/acquire/v2")
   Call<DelegateTaskPackage> acquireTask(@Path("delegateId") String delegateId, @Path("taskId") String uuid,
       @Query("accountId") String accountId, @Query("delegateInstanceId") String delegateInstanceId);
 
