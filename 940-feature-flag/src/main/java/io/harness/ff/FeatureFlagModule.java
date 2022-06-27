@@ -38,10 +38,10 @@ public class FeatureFlagModule extends AbstractModule {
   @Override
   protected void configure() {
     install(PersistentLockModule.getInstance());
-    OptionalBinder.newOptionalBinder(binder(), AccountClient.class);
     if (accountClientModule != null) {
       install(accountClientModule);
     }
+    OptionalBinder.newOptionalBinder(binder(), AccountClient.class);
     bind(FeatureFlagService.class).to(FeatureFlagServiceImpl.class);
   }
 }
