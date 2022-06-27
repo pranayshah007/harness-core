@@ -17,12 +17,12 @@ public class CITelemetryStatusRepositoryCustomImpl implements CITelemetryStatusR
     private final MongoTemplate mongoTemplate;
 
     @Override
-    public boolean updateTimestampIfOlderThan(String accountId, long notOlderThan, long updateToTime) {
+    public boolean updateTimestampIfOlderThan(String accountId, long olderThanTime, long updateToTime) {
         Query query = new Query().addCriteria(new Criteria()
                 .and(CITelemetrySentStatusKeys.accountId)
                 .is(accountId)
                 .and(CITelemetrySentStatusKeys.lastSent)
-                .lte(notOlderThan));
+                .lte(olderThanTime));
         Update update = new Update().set(CITelemetrySentStatusKeys.lastSent, updateToTime);
         FindAndModifyOptions options = new FindAndModifyOptions().returnNew(true).upsert(true);
         // Account ID is unique here so setting upsert to true will throw exception
