@@ -30,7 +30,7 @@ public class KryoConverterFactory extends Factory {
   private static final MediaType MEDIA_TYPE = MediaType.parse("application/x-kryo");
 
   @Inject private KryoSerializer kryoSerializer;
-  @Inject @Named("mykryo") private KryoSerializer kryoSerializerWithFalseReference;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
 
   @Override
   public Converter<?, RequestBody> requestBodyConverter(
@@ -47,7 +47,7 @@ public class KryoConverterFactory extends Factory {
     if (stream(annotations).anyMatch(annotation -> annotation.annotationType().isAssignableFrom(KryoResponse.class))) {
       return value -> {
         try {
-          return kryoSerializerWithFalseReference.asObject(value.bytes());
+          return referenceFalseKryoSerializer.asObject(value.bytes());
         } catch (Exception exception) {
           log.error("Faced Kryo Deserialization exception, trying to deserizalize again with default deserializer ",
               exception);
