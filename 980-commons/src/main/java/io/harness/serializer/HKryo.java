@@ -99,7 +99,7 @@ public class HKryo extends Kryo {
   private final boolean skipHarnessClassOriginRegistrarCheck;
 
   public HKryo(ClassResolver classResolver) {
-    this(classResolver, false);
+    this(classResolver, false, true);
   }
 
   /**
@@ -108,7 +108,7 @@ public class HKryo extends Kryo {
    * @param skipHarnessClassOriginRegistrarCheck if true, classes can be registered by registrars from other sources -
    *     only meant for UTs.
    */
-  public HKryo(ClassResolver classResolver, boolean skipHarnessClassOriginRegistrarCheck) {
+  public HKryo(ClassResolver classResolver, boolean skipHarnessClassOriginRegistrarCheck, boolean shouldSetReferences) {
     super(classResolver, new MapReferenceResolver(), new DefaultStreamFactory());
 
     this.skipHarnessClassOriginRegistrarCheck = skipHarnessClassOriginRegistrarCheck;
@@ -118,6 +118,7 @@ public class HKryo extends Kryo {
     getFieldSerializerConfig().setCachedFieldNameStrategy(FieldSerializer.CachedFieldNameStrategy.EXTENDED);
     getFieldSerializerConfig().setCopyTransient(false);
     setRegistrationRequired(true);
+    setReferences(shouldSetReferences);
 
     register(byte[].class, 10);
     register(char[].class, 11);
