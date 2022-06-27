@@ -69,10 +69,10 @@ public class AwsS3SyncServiceImpl implements AwsS3SyncService {
 
       String destinationBucket = s3SyncRecord.getDestinationBucket() != null ? s3SyncRecord.getDestinationBucket()
                                                                              : awsCredentials.getAwsS3BucketName();
-
+      // TODO: Dynamically determine the month folder
       destinationBucketPath =
           String.join("/", "s3://" + destinationBucket, assumedRoleUser.get("AssumedRoleId").getAsString(),
-              s3SyncRecord.getSettingId(), s3SyncRecord.getCurReportName());
+              s3SyncRecord.getSettingId(), s3SyncRecord.getCurReportName(), "20220601-20220701");
 
       // TODO: Dynamically determine the month folder
       final ArrayList<String> cmd =

@@ -145,9 +145,7 @@ public class S3FastSyncEventWriter extends EventWriter implements ItemWriter<Set
                   .destinationBucket(destinationBucket)
                   .build();
 
-          S3FastSyncEventWriter.CacheKey cacheKey = new S3FastSyncEventWriter.CacheKey(connectorInfo.getIdentifier());
-          s3SyncInfo.get(cacheKey,
-                  key -> awsS3SyncService.syncBuckets(s3SyncRecord));
+          awsS3SyncService.syncBuckets(s3SyncRecord);
         }
       } catch (Exception ex) {
         log.error("Exception while s3 sync", ex);
