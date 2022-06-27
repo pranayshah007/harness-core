@@ -7,6 +7,7 @@ import io.harness.core.ci.services.CIOverviewDashboardService;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.ng.core.dto.AccountDTO;
 import io.harness.remote.client.RestClientUtils;
+import io.harness.repositories.CITelemetryStatusRepository;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Collections;
@@ -21,27 +22,37 @@ import static io.harness.telemetry.Destination.ALL;
 public class CiTelemetryPublisher {
     @Inject
     CIOverviewDashboardService ciOverviewDashboardService;
-    @Inject TelemetryReporter telemetryReporter;
+    @Inject
+    TelemetryReporter telemetryReporter;
     @Inject
     AccountClient accountClient;
+    @Inject
+    CITelemetryStatusRepository ciTelemetryStatusRepository;
     String COUNT_ACTIVE_DEVELOPERS = "ci_license_developers_used";
+    // Locking for a bit less than one day. It's ok to send a bit more than less considering downtime/etc
+    static final long A_DAY_MINUS_TEN_MINS = 85800000;
     private static final String ACCOUNT = "Account";
     public static final String GLOBAL_ACCOUNT_ID = "__GLOBAL_ACCOUNT_ID__";
 
     public void recordTelemetry() {
         log.info("CiTelemetryPublisher recordTelemetry execute started.");
         try {
-            String accountId = getAccountId();
-            if (EmptyPredicate.isNotEmpty(accountId) || !accountId.equals(GLOBAL_ACCOUNT_ID)) {
-                HashMap<String, Object> map = new HashMap<>();
-                map.put("group_type", ACCOUNT);
-                map.put("group_id", accountId);
-                map.put(COUNT_ACTIVE_DEVELOPERS, ciOverviewDashboardService.getActiveCommitterCount(accountId));
-                telemetryReporter.sendGroupEvent(accountId, null, map, Collections.singletonMap(ALL, true),
-                        TelemetryOption.builder().sendForCommunity(true).build());
-                log.info("Scheduled CiTelemetryPublisher event sent!");
-            } else {
-                log.info("There is no Account found!. Can not send scheduled CiTelemetryPublisher event.");
+            List<AccountDTO> accountDTOList = getAllAccounts();
+            for (AccountDTO accountDTO : accountDTOList) {
+                String accountId = accountDTO.getIdentifier();
+                if (EmptyPredicate.isNotEmpty(accountId) && !accountId.equals(GLOBAL_ACCOUNT_ID)) {
+                    if (ciTelemetryStatusRepository.updateTimestampIfOlderThan(accountId, System.currentTimeMillis() - A_DAY_MINUS_TEN_MINS, System.currentTimeMillis())) {
+                        HashMap<String, Object> map = new HashMap<>();
+                        map.put("group_type", ACCOUNT);
+                        map.put("group_id", accountId);
+                        map.put(COUNT_ACTIVE_DEVELOPERS, ciOverviewDashboardService.getActiveCommitterCount(accountId));
+                        telemetryReporter.sendGroupEvent(accountId, null, map, Collections.singletonMap(ALL, true),
+                                TelemetryOption.builder().sendForCommunity(true).build());
+                        log.info("Scheduled CiTelemetryPublisher event sent! for account {}", accountId);
+                    } else {
+                        log.info("Skipping already sent account {} in past 24 hours", accountId);
+                    }
+                }
             }
         } catch (Exception e) {
             log.error("CITelemetryPublisher recordTelemetry execute failed.", e);
@@ -50,12 +61,7 @@ public class CiTelemetryPublisher {
         }
     }
 
-    String getAccountId() {
-        List<AccountDTO> accountDTOList = RestClientUtils.getResponse(accountClient.getAllAccounts());
-        String accountId = accountDTOList.get(0).getIdentifier();
-        if (accountDTOList.size() > 1 && accountId.equals(GLOBAL_ACCOUNT_ID)) {
-            accountId = accountDTOList.get(1).getIdentifier();
-        }
-        return accountId;
+    List<AccountDTO> getAllAccounts() {
+        return RestClientUtils.getResponse(accountClient.getAllAccounts());
     }
 }

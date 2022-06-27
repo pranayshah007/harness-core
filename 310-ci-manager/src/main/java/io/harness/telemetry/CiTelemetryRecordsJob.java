@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 @Singleton
 public class CiTelemetryRecordsJob {
-    public static final int METRICS_RECORD_PERIOD_SECONDS = 86400;
+    public static final int THIRTY_MINS = 1800;
 
     @Inject @Named("ciTelemetryPublisherExecutor") protected ScheduledExecutorService executorService;
     @Inject CiTelemetryPublisher publisher;
@@ -29,7 +29,7 @@ public class CiTelemetryRecordsJob {
         try {
             log.info("CiTelemetryRecordsJob scheduler starting");
             executorService.scheduleAtFixedRate(
-                    () -> publisher.recordTelemetry(), initialDelay, METRICS_RECORD_PERIOD_SECONDS, TimeUnit.SECONDS);
+                    () -> publisher.recordTelemetry(), initialDelay, THIRTY_MINS, TimeUnit.SECONDS);
             log.info("CiTelemetryRecordsJob scheduler started");
         } catch (Exception e) {
             log.error("Exception while creating the scheduled job to track CI developers", e);
