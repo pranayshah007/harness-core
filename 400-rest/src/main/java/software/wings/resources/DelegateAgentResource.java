@@ -16,6 +16,7 @@ import static software.wings.security.PermissionAttribute.ResourceType.DELEGATE;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+import io.harness.annotations.ReferenceFalseKryoSerialization;
 import io.harness.annotations.dev.BreakDependencyOn;
 import io.harness.annotations.dev.HarnessModule;
 import io.harness.annotations.dev.OwnedBy;
@@ -311,6 +312,19 @@ public class DelegateAgentResource {
       }
       return delegateTaskServiceClassic.acquireDelegateTask(accountId, delegateId, taskId, delegateInstanceId);
     }
+  }
+
+  @DelegateAuth
+  @PUT
+  @ReferenceFalseKryoSerialization
+  @Produces("application/x-kryo")
+  @Path("{delegateId}/tasks/{taskId}/acquire/v2")
+  @Timed
+  @ExceptionMetered
+  public DelegateTaskPackage acquireDelegateTaskV2(@PathParam("delegateId") String delegateId,
+      @PathParam("taskId") String taskId, @QueryParam("accountId") @NotEmpty String accountId,
+      @QueryParam("delegateInstanceId") String delegateInstanceId) {
+    return acquireDelegateTask(delegateId, taskId, accountId, delegateInstanceId);
   }
 
   @DelegateAuth

@@ -7,11 +7,14 @@
 
 package software.wings.jersey;
 
+import io.harness.annotations.ReferenceFalseKryoSerialization;
 import io.harness.serializer.KryoSerializer;
 
+import com.google.common.collect.Lists;
 import com.google.common.io.ByteStreams;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -34,6 +37,7 @@ import lombok.extern.slf4j.Slf4j;
 @Singleton
 public class KryoMessageBodyProvider implements MessageBodyWriter<Object>, MessageBodyReader<Object> {
   @Inject KryoSerializer kryoSerializer;
+  @Inject @Named("referenceFalseKryoSerializer") private KryoSerializer referenceFalseKryoSerializer;
 
   @Override
   public long getSize(final Object object, final Class<?> type, final Type genericType, final Annotation[] annotations,
@@ -55,13 +59,23 @@ public class KryoMessageBodyProvider implements MessageBodyWriter<Object>, Messa
     try {
       // We are seeing occasional failures writing delegate tasks where it fails with broken pipe.
       // Separating the kryo serialization from writing to the stream to identify the real cause of the issue.
-      bytes = kryoSerializer.asBytes(object);
+      bytes = shouldUseReferenceFalseKryoSerialization(annotations) ? referenceFalseKryoSerializer.asBytes(object)
+                                                                    : kryoSerializer.asBytes(object);
       entityStream.write(bytes);
       entityStream.flush();
     } catch (Exception e) {
       log.error("Failed to write {} to stream. {} bytes deserialized.", object.getClass().getCanonicalName(),
           bytes == null ? 0 : bytes.length, e);
     }
+  }
+
+  private boolean shouldUseReferenceFalseKryoSerialization(final Annotation[] annotations) {
+    for (Annotation annotation : annotations) {
+      if (annotation.annotationType().getName().equals(ReferenceFalseKryoSerialization.class.getName())) {
+        return true;
+      }
+    }
+    return false;
   }
 
   //

@@ -61,11 +61,9 @@ public class KryoModule extends AbstractModule {
   }
 
   @Provides
-  @Named("mykryo")
+  @Named("referenceFalseKryoSerializer")
   @Singleton
   public KryoSerializer getKryoSerializer(Provider<Set<Class<? extends KryoRegistrar>>> provider) {
-    //    Provider<Set<Class<? extends KryoRegistrar>>> provider =
-    //        getProvider(Key.get(new TypeLiteral<Set<Class<? extends KryoRegistrar>>>() {}));
     return new KryoSerializer(provider.get(), false, false);
   }
 }
