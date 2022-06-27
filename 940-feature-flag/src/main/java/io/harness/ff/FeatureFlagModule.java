@@ -29,9 +29,18 @@ public class FeatureFlagModule extends AbstractModule {
     return instance;
   }
 
+  public static FeatureFlagModule getInstance(AccountClientModule accountClientModule) {
+    FeatureFlagModule featureFlagModule = getInstance();
+    featureFlagModule.accountClientModule = accountClientModule;
+    return featureFlagModule;
+  }
+
   @Override
   protected void configure() {
     install(PersistentLockModule.getInstance());
+    if (accountClientModule != null) {
+      install(accountClientModule);
+    }
     OptionalBinder.newOptionalBinder(binder(), AccountClient.class);
     bind(FeatureFlagService.class).to(FeatureFlagServiceImpl.class);
   }
