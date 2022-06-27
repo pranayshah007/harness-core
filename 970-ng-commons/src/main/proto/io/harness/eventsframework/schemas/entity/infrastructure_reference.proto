@@ -1,0 +1,22 @@
+// Copyright 2021 Harness Inc. All rights reserved.
+// Use of this source code is governed by the PolyForm Shield 1.0.0 license
+// that can be found in the licenses directory at the root of this repository, also available at
+// https://polyformproject.org/wp-content/uploads/2020/06/PolyForm-Shield-1.0.0.txt.
+
+syntax = "proto3";
+package io.harness.eventsframework.schemas.entity;
+import "google/protobuf/wrappers.proto";
+
+option java_multiple_files = true;
+import "970-ng-commons/src/main/proto/io/harness/eventsframework/schemas/entity/scope.proto";
+option go_package = "970_ng_commons";
+
+message InfrastructureReferenceProtoDTO {
+  io.harness.eventsframework.schemas.entity.ScopeProtoEnum scope = 1;
+  google.protobuf.StringValue identifier = 2;
+  google.protobuf.StringValue environmentIdentifier = 3;
+  google.protobuf.StringValue accountIdentifier = 4;
+  google.protobuf.StringValue orgIdentifier = 5;
+  google.protobuf.StringValue projectIdentifier = 6;
+  map<string, string> metadata = 7;
+}
