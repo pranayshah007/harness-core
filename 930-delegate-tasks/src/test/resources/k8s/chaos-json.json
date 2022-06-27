@@ -1,0 +1,10 @@
+{
+  "skipDryRun": true,
+  "commandName": "K8s Apply",
+  "taskType": "APPLY",
+  "timeoutIntervalInMin": 10,
+  "accountId": "kmpySmUISimoRrJL6NL73w",
+  "skipSteadyStateCheck": false,
+  "useNewKubectlVersion": true,
+  "useLatestKustomizeVersion": false
+}
