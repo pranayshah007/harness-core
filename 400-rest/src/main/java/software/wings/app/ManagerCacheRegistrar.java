@@ -9,7 +9,7 @@ package software.wings.app;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
 
-import static javax.cache.expiry.Duration.TWENTY_MINUTES;
+import static javax.cache.expiry.Duration.THIRTY_MINUTES;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cache.HarnessCacheManager;
@@ -50,7 +50,8 @@ public class ManagerCacheRegistrar extends AbstractModule {
   public static final String PRIMARY_CACHE_PREFIX = "primary_";
   public static final String SECRET_CACHE = "secretCache";
 
-  @Provides  @Named(AUTH_TOKEN_CACHE)
+  @Provides
+  @Named(AUTH_TOKEN_CACHE)
   @Singleton
   public Cache<String, AuthToken> getAuthTokenCache(
       HarnessCacheManager harnessCacheManager, VersionInfoManager versionInfoManager) {
@@ -125,7 +126,7 @@ public class ManagerCacheRegistrar extends AbstractModule {
   public Cache<String, EncryptedDataDetails> getSecretTokenCache(
       HarnessCacheManager harnessCacheManager, VersionInfoManager versionInfoManager) {
     return harnessCacheManager.getCache(SECRET_CACHE, String.class, EncryptedDataDetails.class,
-        CreatedExpiryPolicy.factoryOf(TWENTY_MINUTES), versionInfoManager.getVersionInfo().getBuildNo());
+        CreatedExpiryPolicy.factoryOf(THIRTY_MINUTES), versionInfoManager.getVersionInfo().getBuildNo());
   }
 
   @Override

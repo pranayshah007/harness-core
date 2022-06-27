@@ -28,6 +28,7 @@ public interface YamlTypes {
   String ENVIRONMENT_GROUP_YAML = "environmentGroup";
   String GITOPS_CLUSTERS = "gitopsClusters";
   String ENVIRONMENT_REF = "environmentRef";
+  String ENVIRONMENT_GROUP_REF = "envGroupRef";
   String INFRASTRUCTURE_DEF = "infrastructureDefinition";
   String INFRASTRUCTURE_DEFS = "infrastructureDefinitions";
   String INFRASTRUCTURE_STEP_PARAMETERS = "infrastructureStepParameters";

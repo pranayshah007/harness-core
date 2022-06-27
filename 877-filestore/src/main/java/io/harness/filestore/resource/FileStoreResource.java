@@ -42,6 +42,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SearchPageParams;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.filestore.dto.filter.FilesFilterPropertiesDTO;
+import io.harness.filestore.dto.node.FileStoreNodeDTO;
 import io.harness.filestore.dto.node.FolderNodeDTO;
 import io.harness.filestore.service.FileStoreService;
 import io.harness.ng.beans.PageRequest;
@@ -73,6 +74,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.File;
 import java.io.InputStream;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -185,12 +187,11 @@ public class FileStoreResource {
         ApiResponse(responseCode = "default", description = "Download the file with content")
       })
   public Response
-  downloadFile(
+  downloadFile(@Parameter(description = FILE_PARAM_MESSAGE) @PathParam(
+                   IDENTIFIER_KEY) @NotBlank @EntityIdentifier String fileIdentifier,
       @Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(ACCOUNT_KEY) @NotBlank String accountIdentifier,
       @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(ORG_KEY) String orgIdentifier,
-      @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(PROJECT_KEY) String projectIdentifier,
-      @Parameter(description = FILE_PARAM_MESSAGE) @PathParam(
-          IDENTIFIER_KEY) @NotBlank @EntityIdentifier String fileIdentifier) {
+      @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(PROJECT_KEY) String projectIdentifier) {
     accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
         Resource.of(FILE, fileIdentifier), FILE_VIEW_PERMISSION);
 
@@ -410,5 +411,34 @@ public class FileStoreResource {
 
     return ResponseDTO.newResponse(
         fileStoreService.getCreatedByList(accountIdentifier, orgIdentifier, projectIdentifier));
+  }
+
+  @GET
+  @Path("files/{identifier}")
+  @ApiOperation(value = "Get file", nickname = "getFile")
+  @Operation(operationId = "getFile", summary = "Get File",
+      responses =
+      {
+        @io.swagger.v3.oas.annotations.responses.
+        ApiResponse(responseCode = "default", description = "Download the file with content")
+      })
+  public ResponseDTO<FileStoreNodeDTO>
+  getFile(@Parameter(description = FILE_PARAM_MESSAGE) @PathParam(
+              IDENTIFIER_KEY) @NotBlank @EntityIdentifier String fileIdentifier,
+      @Parameter(description = ACCOUNT_PARAM_MESSAGE) @QueryParam(ACCOUNT_KEY) @NotBlank String accountIdentifier,
+      @Parameter(description = ORG_PARAM_MESSAGE) @QueryParam(ORG_KEY) String orgIdentifier,
+      @Parameter(description = PROJECT_PARAM_MESSAGE) @QueryParam(PROJECT_KEY) String projectIdentifier,
+      @Parameter(description = "Include content") @QueryParam("includeContent") Boolean includeContent) {
+    accessControlClient.checkForAccessOrThrow(ResourceScope.of(accountIdentifier, orgIdentifier, projectIdentifier),
+        Resource.of(FILE, fileIdentifier), FILE_VIEW_PERMISSION);
+
+    Optional<FileStoreNodeDTO> file =
+        fileStoreService.get(accountIdentifier, orgIdentifier, projectIdentifier, fileIdentifier, includeContent);
+
+    if(file.isPresent()) {
+      return ResponseDTO.newResponse(file.get());
+    } else {
+      throw new IllegalArgumentException("File or folder with specified identifier, account, org and project could not be found.");
+    }
   }
 }

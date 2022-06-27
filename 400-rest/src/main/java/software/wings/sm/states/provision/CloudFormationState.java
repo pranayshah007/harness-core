@@ -20,13 +20,6 @@ import static io.harness.validation.Validator.notNullCheck;
 import static software.wings.beans.CGConstants.GLOBAL_ENV_ID;
 import static software.wings.beans.Log.Builder.aLog;
 import static software.wings.service.impl.aws.model.AwsConstants.AWS_DEFAULT_REGION;
-import static software.wings.service.impl.aws.model.AwsConstants.BASE_DELAY_ACCOUNT_VARIABLE;
-import static software.wings.service.impl.aws.model.AwsConstants.MAX_BACKOFF_ACCOUNT_VARIABLE;
-import static software.wings.service.impl.aws.model.AwsConstants.MAX_ERROR_RETRY_ACCOUNT_VARIABLE;
-import static software.wings.service.impl.aws.model.AwsConstants.NULL_STR;
-import static software.wings.service.impl.aws.model.AwsConstants.THROTTLED_BASE_DELAY_ACCOUNT_VARIABLE;
-
-import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import io.harness.annotations.dev.BreakDependencyOn;
 import io.harness.annotations.dev.HarnessModule;
@@ -47,7 +40,6 @@ import software.wings.api.cloudformation.CloudFormationElement;
 import software.wings.beans.Activity;
 import software.wings.beans.Activity.ActivityBuilder;
 import software.wings.beans.Activity.Type;
-import software.wings.beans.AmazonClientSDKDefaultBackoffStrategy;
 import software.wings.beans.Application;
 import software.wings.beans.AwsConfig;
 import software.wings.beans.CloudFormationInfrastructureProvisioner;
@@ -69,6 +61,7 @@ import software.wings.helpers.ext.cloudformation.response.CloudFormationCommandE
 import software.wings.helpers.ext.cloudformation.response.CloudFormationCommandResponse;
 import software.wings.helpers.ext.cloudformation.response.CloudFormationCreateStackResponse;
 import software.wings.helpers.ext.cloudformation.response.CloudFormationRollbackInfo;
+import software.wings.service.impl.aws.manager.AwsHelperServiceManager;
 import software.wings.service.intfc.ActivityService;
 import software.wings.service.intfc.AppService;
 import software.wings.service.intfc.DelegateService;
@@ -90,7 +83,6 @@ import software.wings.sm.states.ManagerExecutionLogCallback;
 import software.wings.stencils.DefaultValue;
 
 import com.github.reinert.jjschema.Attributes;
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -231,7 +223,7 @@ public abstract class CloudFormationState extends State {
     } else {
       awsConfig = getAwsConfig(awsConfigId);
     }
-    setAmazonClientSDKDefaultBackoffStrategyIfExists(context, awsConfig);
+    AwsHelperServiceManager.setAmazonClientSDKDefaultBackoffStrategyIfExists(context, awsConfig);
 
     return buildAndQueueDelegateTask(executionContext, cloudFormationInfrastructureProvisioner, awsConfig, activityId);
   }
@@ -315,53 +307,6 @@ public abstract class CloudFormationState extends State {
     Activity activity = activityBuilder.build();
     activity.setAppId(app.getUuid());
     return activityService.save(activity).getUuid();
-  }
-
-  @VisibleForTesting
-  public void setAmazonClientSDKDefaultBackoffStrategyIfExists(ExecutionContext context, AwsConfig awsConfig) {
-    if (!validateSDKDefaultBackoffStrategyAccountVariables(context)) {
-      return;
-    }
-
-    AmazonClientSDKDefaultBackoffStrategy sdkDefaultBackoffStrategy =
-        AmazonClientSDKDefaultBackoffStrategy.builder()
-            .baseDelayInMs(resolveAccountVariable(context, BASE_DELAY_ACCOUNT_VARIABLE))
-            .throttledBaseDelayInMs(resolveAccountVariable(context, THROTTLED_BASE_DELAY_ACCOUNT_VARIABLE))
-            .maxBackoffInMs(resolveAccountVariable(context, MAX_BACKOFF_ACCOUNT_VARIABLE))
-            .maxErrorRetry(resolveAccountVariable(context, MAX_ERROR_RETRY_ACCOUNT_VARIABLE))
-            .build();
-    awsConfig.setAmazonClientSDKDefaultBackoffStrategy(sdkDefaultBackoffStrategy);
-    log.info("Using Amazon SDK default backoff strategy for CloudFormation operations with account level values: {}",
-        sdkDefaultBackoffStrategy);
-  }
-
-  private boolean validateSDKDefaultBackoffStrategyAccountVariables(ExecutionContext context) {
-    if (isRenderedExpressionBlank(context, BASE_DELAY_ACCOUNT_VARIABLE)
-        || isRenderedExpressionBlank(context, THROTTLED_BASE_DELAY_ACCOUNT_VARIABLE)
-        || isRenderedExpressionBlank(context, MAX_BACKOFF_ACCOUNT_VARIABLE)
-        || isRenderedExpressionBlank(context, MAX_ERROR_RETRY_ACCOUNT_VARIABLE)) {
-      return false;
-    }
-
-    try {
-      resolveAccountVariable(context, BASE_DELAY_ACCOUNT_VARIABLE);
-      resolveAccountVariable(context, THROTTLED_BASE_DELAY_ACCOUNT_VARIABLE);
-      resolveAccountVariable(context, MAX_BACKOFF_ACCOUNT_VARIABLE);
-      resolveAccountVariable(context, MAX_ERROR_RETRY_ACCOUNT_VARIABLE);
-    } catch (Exception ex) {
-      log.error("Not valid account level backoff strategy variables, msg: {}", ex.getMessage());
-      return false;
-    }
-    return true;
-  }
-
-  private boolean isRenderedExpressionBlank(ExecutionContext context, final String expression) {
-    String renderedExpression = context.renderExpression(expression);
-    return isBlank(renderedExpression) || NULL_STR.equals(renderedExpression);
-  }
-
-  private int resolveAccountVariable(ExecutionContext context, final String expression) {
-    return Integer.parseInt(context.renderExpression(expression));
   }
 
   protected String getStackNameSuffix(ExecutionContextImpl executionContext, String provisionerId) {

@@ -140,9 +140,9 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     YamlField specField =
         Preconditions.checkNotNull(ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.SPEC));
     stageParameters.specConfig(getSpecParameters(specField.getNode().getUuid(), ctx, stageNode));
-    //We need to swap the ids if strategy is present
+    // We need to swap the ids if strategy is present
     return PlanNode.builder()
-        .uuid(StageStrategyUtils.getSwappedPlanNodeId(ctx, stageNode))
+        .uuid(StageStrategyUtils.getSwappedPlanNodeId(ctx, stageNode.getUuid()))
         .name(stageNode.getName())
         .identifier(stageNode.getIdentifier())
         .group(StepOutcomeGroup.STAGE.name())
@@ -335,6 +335,6 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
   }
 
   private boolean isGitopsEnabled(DeploymentStageConfig deploymentStageConfig) {
-    return deploymentStageConfig.getGitOpsEnabled() == Boolean.TRUE;
+    return deploymentStageConfig.getGitOpsEnabled();
   }
 }

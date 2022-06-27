@@ -36,6 +36,7 @@ public class InputSetUpdateEvent implements Event {
   private String pipelineIdentifier;
   private InputSetEntity newInputSet;
   private InputSetEntity oldInputSet;
+  private Boolean isForOldGitSync;
 
   @JsonIgnore
   @Override

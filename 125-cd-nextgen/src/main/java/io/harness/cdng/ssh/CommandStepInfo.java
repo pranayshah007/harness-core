@@ -21,6 +21,7 @@ import io.harness.pms.execution.OrchestrationFacilitatorType;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
+import io.harness.yaml.core.VariableExpression;
 import io.harness.yaml.core.variables.NGVariable;
 import io.harness.yaml.utils.NGVariablesUtils;
 
@@ -43,12 +44,14 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.cdng.ssh.CommandStepInfo")
 public class CommandStepInfo extends CommandBaseStepInfo implements CDStepInfo, Visitable {
   List<NGVariable> environmentVariables;
+  @VariableExpression(skipVariableExpression = true) List<NGVariable> outputVariables;
 
   @Builder(builderMethodName = "infoBuilder")
   public CommandStepInfo(ParameterField<Boolean> onDelegate, ParameterField<List<TaskSelectorYaml>> delegateSelectors,
-      List<NGVariable> environmentVariables, List<CommandUnitWrapper> commandUnits) {
+      List<NGVariable> environmentVariables, List<NGVariable> outputVariables, List<CommandUnitWrapper> commandUnits) {
     super(onDelegate, delegateSelectors, commandUnits);
     this.environmentVariables = environmentVariables;
+    this.outputVariables = outputVariables;
   }
 
   @Override
@@ -69,6 +72,7 @@ public class CommandStepInfo extends CommandBaseStepInfo implements CDStepInfo, 
         .onDelegate(getOnDelegate())
         .delegateSelectors(getDelegateSelectors())
         .environmentVariables(NGVariablesUtils.getMapOfVariables(environmentVariables, 0L))
+        .outputVariables(NGVariablesUtils.getMapOfVariables(outputVariables, 0L))
         .commandUnits(getCommandUnits())
         .build();
   }

@@ -39,6 +39,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.steps.StepCategory;
 import io.harness.pms.contracts.steps.StepType;
+import io.harness.pms.expression.EngineExpressionService;
 import io.harness.pms.sdk.core.data.OptionalSweepingOutput;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
 import io.harness.pms.sdk.core.resolver.RefObjectUtils;
@@ -48,6 +49,7 @@ import io.harness.pms.sdk.core.steps.io.StepInputPackage;
 import io.harness.pms.sdk.core.steps.io.StepResponse;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepOutcome;
 import io.harness.pms.sdk.core.steps.io.StepResponse.StepResponseBuilder;
+import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.steps.StepUtils;
 import io.harness.steps.executable.SyncExecutableWithRbac;
@@ -77,12 +79,14 @@ import retrofit2.Response;
 public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepParameters> {
   public static final String GITOPS_SWEEPING_OUTPUT = "gitops";
   private static final int UNLIMITED_SIZE = 100000;
+  private static final int STRINGS_LOGGING_LIMIT = 500;
 
   @Inject private ClusterService clusterService;
   @Inject private EnvironmentGroupService environmentGroupService;
   @Inject private GitopsResourceClient gitopsResourceClient;
   @Inject private ExecutionSweepingOutputService executionSweepingOutputResolver;
   @Inject private LogStreamingStepClientFactory logStreamingStepClientFactory;
+  @Inject private EngineExpressionService engineExpressionService;
 
   private static final RetryPolicy<Object> retryPolicyForGitopsClustersFetch = RetryUtils.getRetryPolicy(
       "Error getting clusters from Harness Gitops..retrying", "Failed to fetch clusters from Harness Gitops",
@@ -115,6 +119,10 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
         ? ((VariablesSweepingOutput) optionalSweepingOutput.getOutput())
         : null;
 
+    // TODO: need to have thorough testing. Add unit test also
+    if (isNotEmpty(variables)) {
+      resolveVariables(ambiance, variables);
+    }
     try {
       final Map<String, IndividualClusterInternal> validatedClusters = validatedClusters(ambiance, stepParameters);
       final GitopsClustersOutcome outcome = toOutcome(validatedClusters, variables);
@@ -160,6 +168,8 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
       throw new InvalidRequestException("No Gitops Cluster is selected with the current environment configuration");
     }
 
+    logEnvironments(envClusterRefs);
+
     // clusterId -> IndividualClusterInternal
     final Map<String, IndividualClusterInternal> individualClusters =
         fetchClusterRefs(params.getEnvGroupRef(), ambiance, envClusterRefs);
@@ -187,17 +197,20 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
       if (response.isSuccessful() && response.body() != null) {
         List<Cluster> content = CollectionUtils.emptyIfNull(response.body().getContent());
 
-        saveExecutionLog(format("%d clusters %s exist in Harness Gitops", content.size(), content));
+        logDataFromGitops(content);
 
         content.forEach(c -> {
           if (individualClusters.containsKey(c.getIdentifier())) {
             individualClusters.get(c.getIdentifier()).setClusterName(c.name());
           }
         });
-        individualClusters.values().removeIf(c -> c.getClusterName() == null);
 
-        saveExecutionLog(format("%d clusters %s selected after filtering from Harness Gitops",
-            individualClusters.size(), individualClusters));
+        logSkippedClusters(individualClusters.values()
+                               .stream()
+                               .filter(GitopsClustersStep::clusterNameNull)
+                               .collect(Collectors.toList()));
+        individualClusters.values().removeIf(GitopsClustersStep::clusterNameNull);
+        logFinalSelectedClusters(individualClusters);
         return individualClusters;
       }
       throw new InvalidRequestException(format("Failed to fetch clusters from gitops. %s",
@@ -234,8 +247,7 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
 
     // Todo: Proper handling for large number of clusters
     if (isNotEmpty(envsWithAllClustersAsTarget)) {
-      saveExecutionLog(format("Deploying to all gitops clusters in environments %s", envsWithAllClustersAsTarget),
-          envsWithAllClustersAsTarget.keySet());
+      logIdentifiers("Deploying to all gitops clusters in environment(s)", envsWithAllClustersAsTarget.keySet());
       clusterRefs.addAll(clusterService
                              .listAcrossEnv(0, UNLIMITED_SIZE, getAccountId(ambiance), getOrgIdentifier(ambiance),
                                  getProjectIdentifier(ambiance), envsWithAllClustersAsTarget.keySet())
@@ -281,13 +293,68 @@ public class GitopsClustersStep implements SyncExecutableWithRbac<ClusterStepPar
     String clusterName;
   }
 
-  private void saveExecutionLog(String log, Collection<?> mustBeNotNull) {
-    if (isNotEmpty(mustBeNotNull)) {
-      logger.saveExecutionLog(log);
+  private void resolveVariables(Ambiance ambiance, Map<String, Object> variables) {
+    for (Object value : variables.values()) {
+      if (value instanceof ParameterField) {
+        ParameterField parameterFieldValue = (ParameterField) value;
+        String resolvedValue = null;
+        if (parameterFieldValue.isExpression()) {
+          resolvedValue =
+              engineExpressionService.renderExpression(ambiance, parameterFieldValue.getExpressionValue(), false);
+        }
+        if (resolvedValue != null) {
+          if (!parameterFieldValue.isTypeString()) {
+            parameterFieldValue.setValue(Double.valueOf(resolvedValue));
+
+          } else {
+            parameterFieldValue.setValue(resolvedValue);
+          }
+        }
+      }
     }
+  }
+
+  private void logDataFromGitops(List<Cluster> content) {
+    saveExecutionLog(format("Following %d cluster(s) are present in Harness Gitops", content.size()));
+    logIdentifiers("Identifiers:", content.stream().map(Cluster::getIdentifier).collect(Collectors.toSet()));
+  }
+
+  private void logFinalSelectedClusters(Map<String, IndividualClusterInternal> individualClusters) {
+    saveExecutionLog(format("Following %d cluster(s) are selected after filtering", individualClusters.size()));
+    logIdentifiers("Identifiers:", individualClusters.keySet());
+  }
+
+  private void logEnvironments(Collection<EnvClusterRefs> envClusterRefs) {
+    logIdentifiers(
+        "Environment(s):", envClusterRefs.stream().map(EnvClusterRefs::getEnvRef).collect(Collectors.toSet()));
+  }
+
+  private void logSkippedClusters(List<IndividualClusterInternal> clusterInternals) {
+    if (isEmpty(clusterInternals)) {
+      return;
+    }
+
+    saveExecutionLog(
+        "Following clusters were skipped either because clusters were not linked to the environment or not present in harness gitops");
+    Map<String, List<IndividualClusterInternal>> groupedClusters =
+        clusterInternals.stream().collect(Collectors.groupingBy(IndividualClusterInternal::getEnvRef));
+    groupedClusters.forEach(
+        (key, value)
+            -> logIdentifiers("Environment: " + key,
+                value.stream().map(IndividualClusterInternal::getClusterRef).collect(Collectors.toList())));
+  }
+
+  private void logIdentifiers(String logPrefix, Collection<String> strings) {
+    int maxSize = STRINGS_LOGGING_LIMIT;
+    saveExecutionLog(logPrefix + " " + strings.stream().limit(maxSize).collect(Collectors.joining(",", "{", "}")) + " "
+        + (strings.size() > maxSize ? "..." : "\n\n"));
   }
 
   private void saveExecutionLog(String log) {
     logger.saveExecutionLog(log);
+  }
+
+  private static boolean clusterNameNull(IndividualClusterInternal c) {
+    return c.getClusterName() == null;
   }
 }

@@ -18,8 +18,8 @@ import io.harness.accesscontrol.scopes.harness.ScopeMapper;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.resourcegroup.beans.ScopeFilterType;
+import io.harness.resourcegroup.v2.model.AttributeFilter;
 import io.harness.resourcegroup.v2.model.ResourceFilter;
-import io.harness.resourcegroup.v2.model.ResourceSelector;
 import io.harness.resourcegroup.v2.model.ScopeSelector;
 import io.harness.resourcegroup.v2.remote.dto.ResourceGroupDTO;
 import io.harness.resourcegroup.v2.remote.dto.ResourceGroupResponse;
@@ -28,34 +28,13 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 @OwnedBy(HarnessTeam.PL)
 public class ResourceGroupFactory {
-  public ResourceGroup buildResourceGroup(ResourceGroupResponse resourceGroupResponse, String scopeIdentifier) {
-    ResourceGroupDTO resourceGroupDTO = resourceGroupResponse.getResourceGroup();
-    Set<String> resourceSelectors = buildResourceSelector(resourceGroupDTO);
-    return ResourceGroup.builder()
-        .identifier(resourceGroupDTO.getIdentifier())
-        .scopeIdentifier(scopeIdentifier)
-        .name(resourceGroupDTO.getName())
-        .resourceSelectors(resourceSelectors)
-        .managed(resourceGroupResponse.isHarnessManaged())
-        .allowedScopeLevels(resourceGroupDTO.getAllowedScopeLevels())
-        .build();
-  }
-
-  public Scope getScope(ScopeSelector scopeSelector) {
-    if (isNotEmpty(scopeSelector.getAccountIdentifier())) {
-      return ScopeMapper.fromParams(HarnessScopeParams.builder()
-                                        .accountIdentifier(scopeSelector.getAccountIdentifier())
-                                        .orgIdentifier(scopeSelector.getOrgIdentifier())
-                                        .projectIdentifier(scopeSelector.getProjectIdentifier())
-                                        .build());
-    }
-    return null;
-  }
+  private final String CONDITIONAL_EXPRESSION_TEMPLATE = "<+resource.attribute.%s> =~ [%s]";
 
   public ResourceGroup buildResourceGroup(ResourceGroupResponse resourceGroupResponse) {
     ResourceGroupDTO resourceGroupDTO = resourceGroupResponse.getResourceGroup();
@@ -70,7 +49,35 @@ public class ResourceGroupFactory {
     return buildResourceGroup(resourceGroupResponse, scope == null ? null : scope.toString());
   }
 
-  public boolean addProjectResource(ScopeSelector scopeSelector) {
+  ResourceGroup buildResourceGroup(ResourceGroupResponse resourceGroupResponse, String scopeIdentifier) {
+    ResourceGroupDTO resourceGroupDTO = resourceGroupResponse.getResourceGroup();
+    Set<ResourceSelector> resourceSelectors = buildResourceSelector(resourceGroupDTO);
+    return ResourceGroup.builder()
+        .identifier(resourceGroupDTO.getIdentifier())
+        .scopeIdentifier(scopeIdentifier)
+        .name(resourceGroupDTO.getName())
+        .resourceSelectors(resourceSelectors.stream()
+                               .filter(resourceSelector -> !resourceSelector.isConditional())
+                               .map(ResourceSelector::getSelector)
+                               .collect(Collectors.toSet()))
+        .resourceSelectorsV2(resourceSelectors)
+        .managed(resourceGroupResponse.isHarnessManaged())
+        .allowedScopeLevels(resourceGroupDTO.getAllowedScopeLevels())
+        .build();
+  }
+
+  private Scope getScope(ScopeSelector scopeSelector) {
+    if (isNotEmpty(scopeSelector.getAccountIdentifier())) {
+      return ScopeMapper.fromParams(HarnessScopeParams.builder()
+                                        .accountIdentifier(scopeSelector.getAccountIdentifier())
+                                        .orgIdentifier(scopeSelector.getOrgIdentifier())
+                                        .projectIdentifier(scopeSelector.getProjectIdentifier())
+                                        .build());
+    }
+    return null;
+  }
+
+  private boolean addProjectResource(ScopeSelector scopeSelector) {
     if (ScopeFilterType.INCLUDING_CHILD_SCOPES.equals(scopeSelector.getFilter())) {
       return true;
     } else if (ScopeFilterType.EXCLUDING_CHILD_SCOPES.equals(scopeSelector.getFilter())
@@ -80,7 +87,7 @@ public class ResourceGroupFactory {
     return false;
   }
 
-  public boolean addOrgResource(ScopeSelector scopeSelector) {
+  private boolean addOrgResource(ScopeSelector scopeSelector) {
     if (scopeSelector.getProjectIdentifier() == null) {
       if (ScopeFilterType.INCLUDING_CHILD_SCOPES.equals(scopeSelector.getFilter())) {
         return true;
@@ -92,74 +99,88 @@ public class ResourceGroupFactory {
     return false;
   }
 
-  public Set<String> getResourceSelector(ResourceSelector resourceSelector) {
+  private Set<ResourceSelector> getResourceSelectors(
+      io.harness.resourcegroup.v2.model.ResourceSelector resourceSelector) {
     if (isEmpty(resourceSelector.getIdentifiers())) {
-      return Collections.singleton(PATH_DELIMITER.concat(resourceSelector.getResourceType())
-                                       .concat(PATH_DELIMITER)
-                                       .concat(ResourceGroup.ALL_RESOURCES_IDENTIFIER));
+      String selector = PATH_DELIMITER.concat(resourceSelector.getResourceType())
+                            .concat(PATH_DELIMITER)
+                            .concat(ResourceGroup.ALL_RESOURCES_IDENTIFIER);
+      Optional<String> condition = getCondition(resourceSelector.getAttributeFilter());
+      return Collections.singleton(ResourceSelector.builder()
+                                       .selector(selector)
+                                       .conditional(condition.isPresent())
+                                       .condition(condition.orElse(null))
+                                       .build());
     } else {
       return resourceSelector.getIdentifiers()
           .stream()
           .map(identifier
-              -> PATH_DELIMITER.concat(resourceSelector.getResourceType()).concat(PATH_DELIMITER).concat(identifier))
+              -> ResourceSelector.builder()
+                     .selector(PATH_DELIMITER.concat(resourceSelector.getResourceType())
+                                   .concat(PATH_DELIMITER)
+                                   .concat(identifier))
+                     .build())
           .collect(Collectors.toSet());
     }
   }
 
-  public Set<String> buildResourceSelector(ResourceGroupDTO resourceGroupDTO) {
-    Set<String> resourceSelectors = new HashSet<>();
-    Set<String> scopeSelectors = new HashSet<>();
-    Set<String> selectors = new HashSet<>();
+  private Optional<String> getCondition(AttributeFilter attributeFilter) {
+    if (attributeFilter == null || isEmpty(attributeFilter.getAttributeValues())) {
+      return Optional.empty();
+    }
+    return Optional.of(String.format(CONDITIONAL_EXPRESSION_TEMPLATE, attributeFilter.getAttributeName(),
+        convertToString(attributeFilter.getAttributeValues())));
+  }
+
+  private String convertToString(List<String> attributeValues) {
+    return attributeValues.stream().map(value -> "\"" + value + "\"").collect(Collectors.joining(","));
+  }
+
+  Set<ResourceSelector> buildResourceSelector(ResourceGroupDTO resourceGroupDTO) {
+    Set<ResourceSelector> resourceSelectors = new HashSet<>();
+    Set<ResourceSelector> selectors = new HashSet<>();
     ResourceFilter resourceFilter = resourceGroupDTO.getResourceFilter();
     List<ScopeSelector> includedScopes = resourceGroupDTO.getIncludedScopes();
     if (isEmpty(includedScopes) || resourceFilter == null) {
       return new HashSet<>();
     }
 
-    includedScopes.stream().filter(Objects::nonNull).forEach(scopeSelector -> {
-      Scope scope = getScope(scopeSelector);
-      StringBuilder selector = new StringBuilder(scope == null ? "" : scope.toString().concat(SCOPE_DELIMITER));
-      if (ScopeFilterType.INCLUDING_CHILD_SCOPES.equals(scopeSelector.getFilter())) {
-        selector.append(PATH_DELIMITER).append(ResourceGroup.INCLUDE_CHILD_SCOPES_IDENTIFIER);
-      }
-      scopeSelectors.add(selector.toString());
-    });
-
     if (Boolean.TRUE.equals(resourceFilter.isIncludeAllResources())) {
-      resourceSelectors.add(PATH_DELIMITER.concat(ResourceGroup.ALL_RESOURCES_IDENTIFIER)
-                                .concat(PATH_DELIMITER)
-                                .concat(ResourceGroup.ALL_RESOURCES_IDENTIFIER));
+      resourceSelectors.add(ResourceSelector.builder()
+                                .selector(PATH_DELIMITER.concat(ResourceGroup.ALL_RESOURCES_IDENTIFIER)
+                                              .concat(PATH_DELIMITER)
+                                              .concat(ResourceGroup.ALL_RESOURCES_IDENTIFIER))
+                                .build());
     } else {
-      List<ResourceSelector> resources = resourceFilter.getResources();
-      resources.forEach(resourceSelector -> { resourceSelectors.addAll(getResourceSelector(resourceSelector)); });
+      resourceFilter.getResources().forEach(
+          resourceSelector -> { resourceSelectors.addAll(getResourceSelectors(resourceSelector)); });
     }
 
     includedScopes.stream().filter(Objects::nonNull).forEach(scopeSelector -> {
       Scope scope = getScope(scopeSelector);
-      Set<String> modifiedResourceSelectors = new HashSet<>(resourceSelectors);
-
       StringBuilder selector = new StringBuilder(scope == null ? "" : scope.toString().concat(SCOPE_DELIMITER));
       if (ScopeFilterType.INCLUDING_CHILD_SCOPES.equals(scopeSelector.getFilter())) {
         selector.append(PATH_DELIMITER).append(ResourceGroup.INCLUDE_CHILD_SCOPES_IDENTIFIER);
       }
+
+      Set<ResourceSelector> modifiedResourceSelectors = new HashSet<>(resourceSelectors);
       if (Boolean.FALSE.equals(resourceFilter.isIncludeAllResources())) {
         if (addOrgResource(scopeSelector)) {
-          modifiedResourceSelectors.addAll(
-              getResourceSelector(ResourceSelector.builder().resourceType("ORGANIZATION").build()));
+          modifiedResourceSelectors.addAll(getResourceSelectors(
+              io.harness.resourcegroup.v2.model.ResourceSelector.builder().resourceType("ORGANIZATION").build()));
         }
         if (addProjectResource(scopeSelector)) {
-          modifiedResourceSelectors.addAll(
-              getResourceSelector(ResourceSelector.builder().resourceType("PROJECT").build()));
+          modifiedResourceSelectors.addAll(getResourceSelectors(
+              io.harness.resourcegroup.v2.model.ResourceSelector.builder().resourceType("PROJECT").build()));
         }
       }
-      modifiedResourceSelectors.forEach(
-          resourceSelector -> { selectors.add(selector.toString().concat(resourceSelector)); });
+      modifiedResourceSelectors.forEach(resourceSelector
+          -> selectors.add(ResourceSelector.builder()
+                               .selector(selector.toString().concat(resourceSelector.getSelector()))
+                               .conditional(resourceSelector.isConditional())
+                               .condition(resourceSelector.getCondition())
+                               .build()));
     });
-
-    scopeSelectors.forEach(scopeSelector -> {
-      resourceSelectors.forEach(resourceSelector -> { selectors.add(scopeSelector.concat(resourceSelector)); });
-    });
-
     return selectors;
   }
 }

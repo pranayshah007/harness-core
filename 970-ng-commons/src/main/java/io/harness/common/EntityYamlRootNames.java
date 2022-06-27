@@ -11,15 +11,16 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 
 import io.harness.annotations.dev.OwnedBy;
 
+import lombok.experimental.UtilityClass;
+
 /**
- * Name of the top element in yaml.
- * For example:
+ * Name of the top element in yaml. For example:
  * <p>connector:
- * name: testname
- * projectIdentifier: projectId
+ * name: testname projectIdentifier: projectId
  * </p>
  * In this the top element is <b>connector</b>
  */
+@UtilityClass
 @OwnedBy(PL)
 public class EntityYamlRootNames {
   public static final String GITOPS_CREATE_PR = "CreatePR";
@@ -77,6 +78,7 @@ public class EntityYamlRootNames {
   public static final String SERVICENOW_APPROVAL = "ServiceNowApproval";
   public static final String JIRA_APPROVAL = "JiraApproval";
   public static final String HARNESS_APPROVAL = "HarnessApproval";
+  public static final String CUSTOM_APPROVAL = "CustomApproval";
   public static final String BARRIER = "Barrier";
   public static final String FLAG_CONFIGURATION = "FlagConfiguration";
   public static final String OPAPOLICY = "governancePolicy";
@@ -98,6 +100,7 @@ public class EntityYamlRootNames {
   public static final String BUILD_AND_PUSH_ECR = "BuildAndPushECR";
   public static final String BUILD_AND_PUSH_DOCKER_REGISTRY = "BuildAndPushDockerRegistry";
   public static final String NG_FILE = "NgFile";
+  public static final String QUEUE = "Lock";
   public static final String CLOUDFORMATION_CREATE_STACK_STEP = "CreateStack";
   public static final String CLOUDFORMATION_DELETE_STACK_STEP = "DeleteStack";
   public static final String SERVERLESS_AWS_LAMBDA_DEPLOY = "ServerlessAwsLambdaDeploy";

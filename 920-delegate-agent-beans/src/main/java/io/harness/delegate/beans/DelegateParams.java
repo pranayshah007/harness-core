@@ -49,6 +49,7 @@ public class DelegateParams {
   boolean pollingModeEnabled;
   boolean proxy;
   boolean ceEnabled;
+  boolean heartbeatAsObject;
 
   List<String> supportedTaskTypes;
 

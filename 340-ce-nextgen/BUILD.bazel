@@ -7,6 +7,8 @@ HarnessTeam = "CE"
 shared_dependencies = [
     "@maven//:io_netty_netty_all",
     "@ce-nextgen//:com_azure_azure_core",
+    "@ce-nextgen//:com_azure_azure_storage_blob",
+    "@ce-nextgen//:com_azure_azure_storage_common",
 ] + [
     "//374-ceng-graphql:module",
     "//440-connector-nextgen:module",
@@ -30,6 +32,9 @@ shared_dependencies = [
     "//970-ng-commons:module",
     "//980-commons:module",
     "//999-annotations:module",
+    "//platform-service/modules/notification-service/contracts:module",
+    "//platform-service/modules/notification-service/contracts/src/main/proto:notification_beans_java_proto",
+    "//clients/notification:module",
     "@maven//:com_amazonaws_aws_java_sdk_core",
     "@maven//:com_amazonaws_aws_java_sdk_costandusagereport",
     "@maven//:com_amazonaws_aws_java_sdk_iam",

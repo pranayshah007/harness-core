@@ -7,6 +7,7 @@
 
 package io.harness.ng.core.service.services.impl;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static io.harness.annotations.dev.HarnessTeam.PIPELINE;
 import static io.harness.beans.FeatureName.HARD_DELETE_ENTITIES;
 import static io.harness.data.structure.EmptyPredicate.isEmpty;
@@ -14,8 +15,6 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static io.harness.exception.WingsException.USER_SRE;
 import static io.harness.outbox.TransactionOutboxModule.OUTBOX_TRANSACTION_TEMPLATE;
 import static io.harness.springdata.TransactionUtils.DEFAULT_TRANSACTION_RETRY_POLICY;
-
-import static com.google.common.base.Preconditions.checkArgument;
 
 import io.harness.EntityType;
 import io.harness.annotations.dev.OwnedBy;
@@ -96,6 +95,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
   private final RetryPolicy<Object> transactionRetryPolicy = DEFAULT_TRANSACTION_RETRY_POLICY;
   private final NGFeatureFlagHelperService ngFeatureFlagHelperService;
   private final ServiceOverrideService serviceOverrideService;
+  private final ServiceEntitySetupUsageHelper entitySetupUsageHelper;
 
   private static final String DUP_KEY_EXP_FORMAT_STRING_FOR_PROJECT =
       "Service [%s] under Project[%s], Organization [%s] in Account [%s] already exists";
@@ -113,17 +113,19 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
       validatePresenceOfRequiredFields(serviceEntity.getAccountId(), serviceEntity.getIdentifier());
       setNameIfNotPresent(serviceEntity);
       modifyServiceRequest(serviceEntity);
-      return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
-        ServiceEntity service = serviceRepository.save(serviceEntity);
-        outboxService.save(ServiceCreateEvent.builder()
-                               .accountIdentifier(serviceEntity.getAccountId())
-                               .orgIdentifier(serviceEntity.getOrgIdentifier())
-                               .projectIdentifier(serviceEntity.getProjectIdentifier())
-                               .service(serviceEntity)
-                               .build());
-        return service;
-      }));
-
+      ServiceEntity createdService =
+          Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+            ServiceEntity service = serviceRepository.save(serviceEntity);
+            outboxService.save(ServiceCreateEvent.builder()
+                                   .accountIdentifier(serviceEntity.getAccountId())
+                                   .orgIdentifier(serviceEntity.getOrgIdentifier())
+                                   .projectIdentifier(serviceEntity.getProjectIdentifier())
+                                   .service(serviceEntity)
+                                   .build());
+            return service;
+          }));
+      entitySetupUsageHelper.updateSetupUsages(createdService);
+      return createdService;
     } catch (DuplicateKeyException ex) {
       throw new DuplicateFieldException(
           getDuplicateServiceExistsErrorMessage(serviceEntity.getAccountId(), serviceEntity.getOrgIdentifier(),
@@ -150,23 +152,26 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
             requestService.getIdentifier(), false);
     if (serviceEntityOptional.isPresent()) {
       ServiceEntity oldService = serviceEntityOptional.get();
-      return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
-        ServiceEntity updatedResult = serviceRepository.update(criteria, requestService);
-        if (updatedResult == null) {
-          throw new InvalidRequestException(
-              String.format("Service [%s] under Project[%s], Organization [%s] couldn't be updated or doesn't exist.",
+      ServiceEntity updatedService =
+          Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+            ServiceEntity updatedResult = serviceRepository.update(criteria, requestService);
+            if (updatedResult == null) {
+              throw new InvalidRequestException(String.format(
+                  "Service [%s] under Project[%s], Organization [%s] couldn't be updated or doesn't exist.",
                   requestService.getIdentifier(), requestService.getProjectIdentifier(),
                   requestService.getOrgIdentifier()));
-        }
-        outboxService.save(ServiceUpdateEvent.builder()
-                               .accountIdentifier(requestService.getAccountId())
-                               .orgIdentifier(requestService.getOrgIdentifier())
-                               .projectIdentifier(requestService.getProjectIdentifier())
-                               .newService(updatedResult)
-                               .oldService(oldService)
-                               .build());
-        return updatedResult;
-      }));
+            }
+            outboxService.save(ServiceUpdateEvent.builder()
+                                   .accountIdentifier(requestService.getAccountId())
+                                   .orgIdentifier(requestService.getOrgIdentifier())
+                                   .projectIdentifier(requestService.getProjectIdentifier())
+                                   .newService(updatedResult)
+                                   .oldService(oldService)
+                                   .build());
+            return updatedResult;
+          }));
+      entitySetupUsageHelper.updateSetupUsages(updatedService);
+      return updatedService;
     } else {
       throw new InvalidRequestException(String.format(
           "Service [%s] under Project[%s], Organization [%s] doesn't exist.", requestService.getIdentifier(),
@@ -180,23 +185,27 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
     setNameIfNotPresent(requestService);
     modifyServiceRequest(requestService);
     Criteria criteria = getServiceEqualityCriteria(requestService, requestService.getDeleted());
-    return Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
-      ServiceEntity result = serviceRepository.upsert(criteria, requestService);
-      if (result == null) {
-        throw new InvalidRequestException(String.format(
-            "Service [%s] under Project[%s], Organization [%s] couldn't be upserted.", requestService.getIdentifier(),
-            requestService.getProjectIdentifier(), requestService.getOrgIdentifier()));
-      }
-      if (upsertOptions.isSendOutboxEvent()) {
-        outboxService.save(ServiceUpsertEvent.builder()
-                               .accountIdentifier(requestService.getAccountId())
-                               .orgIdentifier(requestService.getOrgIdentifier())
-                               .projectIdentifier(requestService.getProjectIdentifier())
-                               .service(requestService)
-                               .build());
-      }
-      return result;
-    }));
+    ServiceEntity upsertedService =
+        Failsafe.with(transactionRetryPolicy).get(() -> transactionTemplate.execute(status -> {
+          ServiceEntity result = serviceRepository.upsert(criteria, requestService);
+          if (result == null) {
+            throw new InvalidRequestException(
+                String.format("Service [%s] under Project[%s], Organization [%s] couldn't be upserted.",
+                    requestService.getIdentifier(), requestService.getProjectIdentifier(),
+                    requestService.getOrgIdentifier()));
+          }
+          if (upsertOptions.isSendOutboxEvent()) {
+            outboxService.save(ServiceUpsertEvent.builder()
+                                   .accountIdentifier(requestService.getAccountId())
+                                   .orgIdentifier(requestService.getOrgIdentifier())
+                                   .projectIdentifier(requestService.getProjectIdentifier())
+                                   .service(requestService)
+                                   .build());
+          }
+          return result;
+        }));
+    entitySetupUsageHelper.updateSetupUsages(upsertedService);
+    return upsertedService;
   }
 
   @Override
@@ -248,6 +257,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
       processQuietly(()
                          -> serviceOverrideService.deleteAllInProjectForAService(
                              accountId, orgIdentifier, projectIdentifier, serviceIdentifier));
+      entitySetupUsageHelper.deleteSetupUsages(serviceEntityOptional.get());
       return success;
     } else {
       throw new InvalidRequestException(
@@ -346,12 +356,6 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
     return serviceRepository
         .findActiveServiceCountAtGivenTimestamp(accountIdentifier, orgIdentifier, projectIdentifier, timestampInMs)
         .intValue();
-  }
-
-  @Override
-  public ServiceEntity find(String accountIdentifier, String orgIdentifier, String projectIdentifier,
-      String serviceIdentifier, boolean deleted) {
-    return serviceRepository.find(accountIdentifier, orgIdentifier, projectIdentifier, serviceIdentifier, deleted);
   }
 
   @Override
@@ -483,7 +487,7 @@ public class ServiceEntityServiceImpl implements ServiceEntityService {
     if (isEmpty(serviceEntities)) {
       return;
     }
-    serviceEntities.forEach(serviceEntity -> modifyServiceRequest(serviceEntity));
+    serviceEntities.forEach(this::modifyServiceRequest);
   }
 
   boolean processQuietly(BooleanSupplier b) {

@@ -101,6 +101,7 @@ import io.harness.service.EventConfigService;
 
 import software.wings.api.DeploymentType;
 import software.wings.beans.Account;
+import software.wings.beans.ApiKeyEntry;
 import software.wings.beans.Application;
 import software.wings.beans.ConfigFile;
 import software.wings.beans.EntityType;
@@ -2987,6 +2988,8 @@ public class YamlDirectoryServiceImpl implements YamlDirectoryService {
     } else if (entity instanceof CgEventConfig) {
       return getRootPathByEventConfig((CgEventConfig) entity);
     } else if (entity instanceof UserGroup) {
+      return SETUP_FOLDER;
+    } else if (entity instanceof ApiKeyEntry) {
       return SETUP_FOLDER;
     }
     throw new InvalidRequestException(

@@ -62,7 +62,6 @@ phases:
     name: Wrap Up
     stepsInParallel: false
   provisionNodes: false
-  serviceName: SERVICE_NAME
   statefulSet: false
   templateExpressions:
   - expression: ${Service}
@@ -113,7 +112,6 @@ rollbackPhases:
     name: Wrap Up
     stepsInParallel: false
   provisionNodes: false
-  serviceName: SERVICE_NAME
   statefulSet: false
   templateExpressions:
   - expression: ${Service}

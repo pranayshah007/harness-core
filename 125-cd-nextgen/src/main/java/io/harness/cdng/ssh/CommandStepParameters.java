@@ -31,13 +31,15 @@ import org.springframework.data.annotation.TypeAlias;
 @RecasterAlias("io.harness.cdng.ssh.CommandStepParameters")
 public class CommandStepParameters extends CommandBaseStepInfo implements SshSpecParameters {
   Map<String, Object> environmentVariables;
+  Map<String, Object> outputVariables;
   @JsonIgnore String host;
 
   @Builder(builderMethodName = "infoBuilder")
   public CommandStepParameters(ParameterField<Boolean> onDelegate,
       ParameterField<List<TaskSelectorYaml>> delegateSelectors, Map<String, Object> environmentVariables,
-      List<CommandUnitWrapper> commandUnits) {
+      List<CommandUnitWrapper> commandUnits, Map<String, Object> outputVariables) {
     super(onDelegate, delegateSelectors, commandUnits);
     this.environmentVariables = environmentVariables;
+    this.outputVariables = outputVariables;
   }
 }

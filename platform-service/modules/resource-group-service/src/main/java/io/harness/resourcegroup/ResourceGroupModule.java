@@ -29,7 +29,7 @@ import io.harness.organization.OrganizationClientModule;
 import io.harness.organization.remote.OrganizationClient;
 import io.harness.outbox.api.OutboxEventHandler;
 import io.harness.outbox.api.OutboxService;
-import io.harness.pipeline.PipelineRemoteClientModule;
+import io.harness.pipeline.remote.PipelineRemoteClientModule;
 import io.harness.pipeline.remote.PipelineServiceClient;
 import io.harness.project.ProjectClientModule;
 import io.harness.project.remote.ProjectClient;

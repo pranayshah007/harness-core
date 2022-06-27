@@ -17,6 +17,7 @@ import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.SwaggerConstants;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.EntityName;
+import io.harness.plancreator.strategy.StrategyConfig;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.validator.NGRegexValidatorConstants;
@@ -62,6 +63,9 @@ public class StepElementConfig {
   @Pattern(regexp = NGRegexValidatorConstants.TIMEOUT_PATTERN)
   ParameterField<Timeout> timeout;
   List<FailureStrategyConfig> failureStrategies;
+
+  @JsonProperty("strategy") StrategyConfig strategy;
+
 
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) })
   @ApiModelProperty(hidden = true)

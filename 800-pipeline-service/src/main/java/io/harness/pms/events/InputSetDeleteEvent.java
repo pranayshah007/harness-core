@@ -35,6 +35,7 @@ public class InputSetDeleteEvent implements Event {
   private String projectIdentifier;
   private String pipelineIdentifier;
   private InputSetEntity inputSet;
+  private Boolean isForOldGitSync;
 
   @JsonIgnore
   @Override

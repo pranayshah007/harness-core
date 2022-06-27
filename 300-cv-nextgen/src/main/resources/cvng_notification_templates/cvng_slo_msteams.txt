@@ -4,27 +4,28 @@
   "summary": "Harness SRM",
   "sections": [
     {
-      "activityTitle": "The Error Budget for SLO ${SLO_NAME} has breached a condition",
-      "activitySubtitle": "In Account ${ACCOUNT_ID}, Org ${ORG_ID}, Project ${PROJECT_ID}",
+      "activityTitle": "SLO: ${SLO_NAME} ${HEADER_MESSAGE} ${SERVICE_NAME} service",
+      "activitySubtitle": "Trigger ${TRIGGER_MESSAGE}. Incident occurred ${START_DATE}",
       "facts": [
               {
-                  "name": "Rule",
-                  "value": "${RULE_NAME}"
+                  "name": "Account Name",
+                  "value": "${ACCOUNT_NAME}"
               },
               {
-                  "name": "Condition",
-                  "value": "${CONDITION_NAME}"
+                  "name": "Organization Name",
+                  "value": "${ORG_NAME}"
               },
              {
-                  "name": "Events",
-                  "value": "Incident occurred ${START_DATE}"
+                  "name": "Project Name",
+                  "value": "${PROJECT_NAME}"
              },
              {
-                  "name": "Click link to goto Service Health dashboard",
-                  "value": "[${URL}](${URL})"
+                   "name": "View SLO details",
+                   "value": "[${URL}](${URL})"
              },
       ],
     }
   ]
 }
+
 

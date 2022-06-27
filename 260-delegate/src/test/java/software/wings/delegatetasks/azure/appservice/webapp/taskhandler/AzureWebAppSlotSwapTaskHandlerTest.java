@@ -28,6 +28,7 @@ import io.harness.azure.model.AzureConfig;
 import io.harness.category.element.UnitTests;
 import io.harness.delegate.beans.logstreaming.ILogStreamingTaskClient;
 import io.harness.delegate.task.azure.appservice.AzureAppServicePreDeploymentData;
+import io.harness.delegate.task.azure.appservice.AzureAppServiceResourceUtilities;
 import io.harness.delegate.task.azure.appservice.AzureAppServiceTaskResponse;
 import io.harness.delegate.task.azure.appservice.deployment.AzureAppServiceDeploymentService;
 import io.harness.delegate.task.azure.appservice.deployment.context.AzureAppServiceDeploymentContext;
@@ -61,7 +62,7 @@ public class AzureWebAppSlotSwapTaskHandlerTest extends WingsBaseTest {
   @Mock private AzureLogCallbackProvider mockLogCallbackProvider;
   @Mock private AzureLogCallbackProviderFactory mockLogCallbackProviderFactory;
   @Mock private AzureAppServiceDeploymentService azureAppServiceDeploymentService;
-
+  @Spy protected AzureAppServiceResourceUtilities azureAppServiceResourceUtilities;
   @Spy @InjectMocks AzureWebAppSlotSwapTaskHandler slotSwapTaskHandler;
 
   @Before

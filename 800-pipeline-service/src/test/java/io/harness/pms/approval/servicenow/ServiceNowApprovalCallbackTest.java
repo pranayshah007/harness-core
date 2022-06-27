@@ -12,6 +12,7 @@ import static io.harness.rule.OwnerRule.PRABU;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.joor.Reflect.on;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
@@ -33,6 +34,7 @@ import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.rule.Owner;
 import io.harness.serializer.KryoSerializer;
 import io.harness.servicenow.ServiceNowTicketNG;
+import io.harness.servicenow.TicketNG;
 import io.harness.steps.approval.step.ApprovalInstanceService;
 import io.harness.steps.approval.step.beans.ApprovalStatus;
 import io.harness.steps.approval.step.beans.ApprovalType;
@@ -103,14 +105,16 @@ public class ServiceNowApprovalCallbackTest extends CategoryTest {
     doReturn(iLogStreamingStepClient).when(logStreamingStepClientFactory).getLogStreamingStepClient(ambiance);
     doReturn(instance).when(approvalInstanceService).get(approvalInstanceId);
     serviceNowApprovalCallback.push(response);
-    verify(approvalInstanceService).finalizeStatus(approvalInstanceId, ApprovalStatus.EXPIRED);
+    verify(approvalInstanceService)
+        .finalizeStatus(eq(approvalInstanceId), eq(ApprovalStatus.EXPIRED), nullable(TicketNG.class));
 
     instance.setDeadline(Long.MAX_VALUE);
     when(ngErrorHelper.getErrorSummary(any()))
         .thenAnswer(invocationOnMock -> invocationOnMock.getArgument(0, String.class));
     when(ServiceNowCriteriaEvaluator.evaluateCriteria(any(), any())).thenReturn(false);
     serviceNowApprovalCallback.push(response);
-    verify(approvalInstanceService).finalizeStatus(approvalInstanceId, ApprovalStatus.EXPIRED);
+    verify(approvalInstanceService)
+        .finalizeStatus(eq(approvalInstanceId), eq(ApprovalStatus.EXPIRED), nullable(TicketNG.class));
 
     JexlCriteriaSpecDTO rejectionCriteria = JexlCriteriaSpecDTO.builder().build();
     instance.setRejectionCriteria(CriteriaSpecWrapperDTO.builder().criteriaSpecDTO(rejectionCriteria).build());
@@ -119,7 +123,8 @@ public class ServiceNowApprovalCallbackTest extends CategoryTest {
     instance.getApprovalCriteria().setCriteriaSpecDTO(JexlCriteriaSpecDTO.builder().expression("1==2").build());
     rejectionCriteria.setExpression("b==b");
     serviceNowApprovalCallback.push(response);
-    verify(approvalInstanceService).finalizeStatus(approvalInstanceId, ApprovalStatus.REJECTED);
+    verify(approvalInstanceService)
+        .finalizeStatus(eq(approvalInstanceId), eq(ApprovalStatus.REJECTED), nullable(TicketNG.class));
 
     when(ServiceNowCriteriaEvaluator.evaluateCriteria(any(), any()))
         .thenThrow(new ApprovalStepNGException("error", true));

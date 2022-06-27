@@ -75,4 +75,5 @@ public class YAMLFieldNameConstants {
 
   public final String ORG_IDENTIFIER = "orgIdentifier";
   public final String PROJECT_IDENTIFIER = "projectIdentifier";
+  public final String PIPELINE_IDENTIFIER = "pipelineIdentifier";
 }

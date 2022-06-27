@@ -83,7 +83,6 @@ import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.http.client.utils.URIBuilder;
 import org.mongodb.morphia.query.Query;
-import org.mongodb.morphia.query.Sort;
 import org.mongodb.morphia.query.UpdateOperations;
 
 @Slf4j
@@ -422,18 +421,6 @@ public class TimeSeriesAnalysisServiceImpl implements TimeSeriesAnalysisService 
   }
 
   @Override
-  public List<TimeSeriesRiskSummary> getRiskSummariesByTimeRange(
-      String verificationTaskId, Instant startTime, Instant endTime) {
-    return hPersistence.createQuery(TimeSeriesRiskSummary.class, excludeAuthority)
-        .filter(TimeSeriesRiskSummaryKeys.verificationTaskId, verificationTaskId)
-        .field(TimeSeriesRiskSummaryKeys.analysisStartTime)
-        .greaterThanOrEq(startTime)
-        .field(TimeSeriesRiskSummaryKeys.analysisEndTime)
-        .lessThanOrEq(endTime)
-        .asList();
-  }
-
-  @Override
   public void saveAnalysis(String taskId, ServiceGuardTimeSeriesAnalysisDTO analysis) {
     LearningEngineTask learningEngineTask = learningEngineTaskService.get(taskId);
     Preconditions.checkNotNull(learningEngineTask, "Needs to be a valid LE task.");
@@ -579,18 +566,5 @@ public class TimeSeriesAnalysisServiceImpl implements TimeSeriesAnalysisService 
         .verificationTaskId(analysisDTO.getVerificationTaskId())
         .transactionMetricHistories(TimeSeriesShortTermHistory.convertFromMap(shortTermHistoryMap))
         .build();
-  }
-
-  @Override
-  public TimeSeriesRiskSummary getLatestTimeSeriesRiskSummary(
-      String verificationTaskId, Instant startTime, Instant endTime) {
-    return hPersistence.createQuery(TimeSeriesRiskSummary.class, excludeAuthority)
-        .filter(TimeSeriesRiskSummaryKeys.verificationTaskId, verificationTaskId)
-        .field(TimeSeriesRiskSummaryKeys.analysisEndTime)
-        .greaterThanOrEq(startTime)
-        .field(TimeSeriesRiskSummaryKeys.analysisEndTime)
-        .lessThanOrEq(endTime)
-        .order(Sort.descending(TimeSeriesRiskSummaryKeys.analysisEndTime))
-        .get();
   }
 }

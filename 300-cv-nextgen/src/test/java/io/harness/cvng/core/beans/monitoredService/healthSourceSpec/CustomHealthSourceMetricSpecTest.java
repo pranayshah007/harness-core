@@ -47,7 +47,6 @@ public class CustomHealthSourceMetricSpecTest extends CvNextGenTestBase {
   CustomHealthSourceMetricSpec customHealthSourceSpec;
   String groupName = "group_1";
   String metricName = "metric_1";
-  String metricValueJSONPath = "json.path.to.metricValue";
   String identifier = "1234_identifier";
   String accountId;
   String orgIdentifier;
@@ -68,10 +67,17 @@ public class CustomHealthSourceMetricSpecTest extends CvNextGenTestBase {
     projectIdentifier = builderFactory.getContext().getProjectIdentifier();
     environmentRef = builderFactory.getContext().getEnvIdentifier();
     serviceRef = builderFactory.getContext().getServiceIdentifier();
-
-    responseMapping = MetricResponseMapping.builder().metricValueJsonPath(metricValueJSONPath).build();
-    customHealthSourceSpec = builderFactory.customHealthMetricSourceSpecBuilder(metricValueJSONPath, groupName,
-        metricName, identifier, HealthSourceQueryType.HOST_BASED, CVMonitoringCategory.PERFORMANCE, true, false, false);
+    String metricValueJSONPath = "json.[*].metrics.[*].metricValue";
+    String timestampValueJSONPath = "json.[*].metrics.[*].timestampValue";
+    String serviceInstanceValueJSONPath = "json.[*].serviceInstanceValue";
+    responseMapping = MetricResponseMapping.builder()
+                          .metricValueJsonPath(metricValueJSONPath)
+                          .timestampJsonPath(timestampValueJSONPath)
+                          .serviceInstanceJsonPath(serviceInstanceValueJSONPath)
+                          .build();
+    customHealthSourceSpec = builderFactory.customHealthMetricSourceSpecBuilder(metricValueJSONPath,
+        timestampValueJSONPath, serviceInstanceValueJSONPath, groupName, metricName, identifier,
+        HealthSourceQueryType.HOST_BASED, CVMonitoringCategory.PERFORMANCE, true, false, false);
     customHealthSourceSpecs = customHealthSourceSpec.getMetricDefinitions();
   }
 
@@ -109,8 +115,8 @@ public class CustomHealthSourceMetricSpecTest extends CvNextGenTestBase {
                                      .build());
     addedConfigs.add(metricCVConfig);
 
-    assertThat(((CustomHealthMetricCVConfig) result.getAdded().get(0)).getMetricInfos())
-        .isEqualTo(addedConfigs.get(0).getMetricInfos());
+    compareMetricDefinition(((CustomHealthMetricCVConfig) result.getAdded().get(0)).getMetricInfos().get(0),
+        addedConfigs.get(0).getMetricInfos().get(0));
   }
 
   @Test
@@ -171,8 +177,8 @@ public class CustomHealthSourceMetricSpecTest extends CvNextGenTestBase {
         groupName, HealthSourceQueryType.SERVICE_BASED, CustomHealthMethod.POST, CVMonitoringCategory.PERFORMANCE,
         "post body"));
 
-    assertThat(((CustomHealthMetricCVConfig) result.getUpdated().get(0)).getMetricInfos())
-        .isEqualTo(updatedConfigs.get(0).getMetricInfos());
+    compareMetricDefinition(((CustomHealthMetricCVConfig) result.getUpdated().get(0)).getMetricInfos().get(0),
+        updatedConfigs.get(0).getMetricInfos().get(0));
   }
 
   @Test
@@ -308,5 +314,19 @@ public class CustomHealthSourceMetricSpecTest extends CvNextGenTestBase {
       assertThat(configs.get(0).getMetricInfos()).isEqualTo(singleMetricDefinition.getMetricInfos());
       assertThat(configs.get(1).getMetricInfos()).isEqualTo(multipleMetricDefinitions.getMetricInfos());
     }
+  }
+
+  private void compareMetricDefinition(CustomHealthMetricCVConfig.CustomHealthCVConfigMetricDefinition def1,
+      CustomHealthMetricCVConfig.CustomHealthCVConfigMetricDefinition def2) {
+    assertThat(def1.getMetricType()).isEqualTo(def2.getMetricType());
+    assertThat(def1.getRequestDefinition()).isEqualTo(def2.getRequestDefinition());
+    assertThat(def1.getMetricName()).isEqualTo(def2.getMetricName());
+    assertThat(def1.getSli()).isEqualTo(def2.getSli());
+    assertThat(def1.getMetricResponseMapping().getMetricValueJsonPath())
+        .isEqualTo(def2.getMetricResponseMapping().getMetricValueJsonPath());
+    assertThat(def1.getMetricResponseMapping().getTimestampJsonPath())
+        .isEqualTo(def2.getMetricResponseMapping().getTimestampJsonPath());
+    assertThat(def1.getMetricResponseMapping().getServiceInstanceJsonPath())
+        .isEqualTo(def2.getMetricResponseMapping().getServiceInstanceJsonPath());
   }
 }

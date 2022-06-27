@@ -94,6 +94,7 @@ import io.harness.cvng.statemachine.entities.AnalysisOrchestrator;
 import io.harness.cvng.statemachine.entities.AnalysisOrchestrator.AnalysisOrchestratorKeys;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.beans.PageResponse;
+import io.harness.ng.core.dto.AccountDTO;
 import io.harness.notification.notificationclient.NotificationResultWithoutStatus;
 import io.harness.outbox.OutboxEvent;
 import io.harness.outbox.api.OutboxService;
@@ -1006,6 +1007,8 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
     when(notificationClient.sendNotificationAsync(any()))
         .thenReturn(NotificationResultWithoutStatus.builder().notificationId("notificationId").build());
     when(accountClient.getVanityUrl(any()).execute()).thenReturn(Response.success(new RestResponse()));
+    when(accountClient.getAccountDTO(any()).execute())
+        .thenReturn(Response.success(new RestResponse(AccountDTO.builder().build())));
 
     serviceLevelObjectiveService.sendNotification(serviceLevelObjective);
     verify(notificationClient, times(1)).sendNotificationAsync(any());
@@ -1033,7 +1036,8 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
         SLOErrorBudgetRemainingPercentageCondition.builder().threshold(10.0).build();
 
     assertThat(((ServiceLevelObjectiveServiceImpl) serviceLevelObjectiveService)
-                   .shouldSendNotification(serviceLevelObjective, condition))
+                   .getNotificationMessage(serviceLevelObjective, condition)
+                   .isShouldSendNotification())
         .isFalse();
   }
 
@@ -1062,12 +1066,14 @@ public class ServiceLevelObjectiveServiceImplTest extends CvNextGenTestBase {
                                                     .build();
 
     assertThat(((ServiceLevelObjectiveServiceImpl) serviceLevelObjectiveService)
-                   .shouldSendNotification(serviceLevelObjective, condition))
+                   .getNotificationMessage(serviceLevelObjective, condition)
+                   .isShouldSendNotification())
         .isTrue();
 
     condition.setThreshold(0.05);
     assertThat(((ServiceLevelObjectiveServiceImpl) serviceLevelObjectiveService)
-                   .shouldSendNotification(serviceLevelObjective, condition))
+                   .getNotificationMessage(serviceLevelObjective, condition)
+                   .isShouldSendNotification())
         .isFalse();
   }
 

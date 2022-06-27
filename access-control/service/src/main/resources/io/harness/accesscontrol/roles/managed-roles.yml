@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: rolesConfiguration
-version: 27
+version: 29
 roles:
     - identifier: _project_admin
       name: Project Admin
@@ -118,6 +118,8 @@ roles:
         - chaos_chaosagent_view
         - chaos_chaosagent_edit
         - chaos_chaosagent_delete
+        - chaos_chaosgitops_view
+        - chaos_chaosgitops_edit
         - chaos_chaosworkflow_view
         - chaos_chaosworkflow_edit
         - chaos_chaosworkflow_delete
@@ -163,6 +165,7 @@ roles:
         - core_variable_view
         - chaos_chaoshub_view
         - chaos_chaosagent_view
+        - chaos_chaosgitops_view
         - chaos_chaosworkflow_view
       allowedScopeLevels:
         - project
@@ -289,6 +292,8 @@ roles:
         - chaos_chaosagent_view
         - chaos_chaosagent_edit
         - chaos_chaosagent_delete
+        - chaos_chaosgitops_view
+        - chaos_chaosgitops_edit
         - chaos_chaosworkflow_view
         - chaos_chaosworkflow_edit
         - chaos_chaosworkflow_delete
@@ -336,6 +341,7 @@ roles:
         - core_variable_view
         - chaos_chaoshub_view
         - chaos_chaosagent_view
+        - chaos_chaosgitops_view
         - chaos_chaosworkflow_view
       allowedScopeLevels:
         - organization
@@ -459,6 +465,13 @@ roles:
         - gitops_cert_view
         - gitops_cert_edit
         - gitops_cert_delete
+        - sto_issue_view
+        - sto_scan_view
+        - sto_testtarget_view
+        - sto_testtarget_edit
+        - sto_exception_view
+        - sto_exception_create
+        - sto_exception_approve
         - core_file_view
         - core_file_edit
         - core_file_delete
@@ -472,6 +485,8 @@ roles:
         - chaos_chaosagent_view
         - chaos_chaosagent_edit
         - chaos_chaosagent_delete
+        - chaos_chaosgitops_view
+        - chaos_chaosgitops_edit
         - chaos_chaosworkflow_view
         - chaos_chaosworkflow_edit
         - chaos_chaosworkflow_delete
@@ -519,10 +534,15 @@ roles:
         - gitops_cluster_view
         - gitops_gpgkey_view
         - gitops_cert_view
+        - sto_issue_view
+        - sto_scan_view
+        - sto_testtarget_view
+        - sto_exception_view
         - core_file_view
         - core_variable_view
         - chaos_chaoshub_view
         - chaos_chaosagent_view
+        - chaos_chaosgitops_view
         - chaos_chaosworkflow_view
       allowedScopeLevels:
         - account
@@ -601,6 +621,33 @@ roles:
         - account
         - organization
         - project
+    - identifier: _sto_developer_role
+      name: Security Testing Developer Role
+      description: Can work with security issues
+      permissions:
+        - sto_issue_view
+        - sto_scan_view
+        - sto_testtarget_view
+        - sto_testtarget_edit
+        - sto_exception_view
+        - sto_exception_create
+      managed: true
+      allowedScopeLevels:
+        - account
+    - identifier: _sto_secops_role
+      name: Security Testing SecOps Role
+      description: Can work with security issues and manage security exceptions
+      permissions:
+        - sto_issue_view
+        - sto_scan_view
+        - sto_testtarget_view
+        - sto_testtarget_edit
+        - sto_exception_view
+        - sto_exception_create
+        - sto_exception_approve
+      managed: true
+      allowedScopeLevels:
+        - account
     - identifier: _account_basic
       name: Account Basic
       description: Account Basic

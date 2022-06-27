@@ -8,13 +8,9 @@
 package io.harness.task.service.impl;
 
 import static io.harness.annotations.dev.HarnessTeam.CI;
-import static io.harness.govern.Switch.unhandled;
-
-import static java.lang.String.format;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.delegate.TaskExecutionStage;
-import io.harness.delegate.TaskId;
 import io.harness.delegate.task.stepstatus.StepStatusTaskResponseData;
 import io.harness.delegate.task.stepstatus.artifact.ArtifactMetadata;
 import io.harness.delegate.task.stepstatus.artifact.ArtifactMetadataType;
@@ -22,16 +18,9 @@ import io.harness.delegate.task.stepstatus.artifact.DockerArtifactDescriptor;
 import io.harness.delegate.task.stepstatus.artifact.DockerArtifactMetadata;
 import io.harness.delegate.task.stepstatus.artifact.FileArtifactDescriptor;
 import io.harness.delegate.task.stepstatus.artifact.FileArtifactMetadata;
-import io.harness.exception.InvalidArgumentsException;
 import io.harness.grpc.DelegateServiceGrpcAgentClient;
 import io.harness.serializer.KryoSerializer;
 import io.harness.task.converters.ResponseDataConverterRegistry;
-import io.harness.task.service.ExecuteParkedTaskRequest;
-import io.harness.task.service.ExecuteParkedTaskResponse;
-import io.harness.task.service.FetchParkedTaskStatusRequest;
-import io.harness.task.service.FetchParkedTaskStatusResponse;
-import io.harness.task.service.HTTPTaskResponse;
-import io.harness.task.service.JiraTaskResponse;
 import io.harness.task.service.SendTaskProgressRequest;
 import io.harness.task.service.SendTaskProgressResponse;
 import io.harness.task.service.SendTaskStatusRequest;
@@ -40,12 +29,9 @@ import io.harness.task.service.TaskProgressRequest;
 import io.harness.task.service.TaskProgressResponse;
 import io.harness.task.service.TaskServiceGrpc;
 import io.harness.task.service.TaskStatusData;
-import io.harness.task.service.TaskType;
-import io.harness.tasks.ResponseData;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Inject;
-import com.google.protobuf.ByteString;
 import io.grpc.stub.StreamObserver;
 import java.time.Duration;
 import java.util.List;
@@ -68,21 +54,6 @@ public class TaskServiceImpl extends TaskServiceGrpc.TaskServiceImplBase {
   }
 
   @Override
-  public void executeParkedTask(
-      ExecuteParkedTaskRequest request, StreamObserver<ExecuteParkedTaskResponse> responseObserver) {
-    log.info("Received fetchParkedTaskStatus call, accountId:{}, taskId:{}", request.getAccountId().getId(),
-        request.getTaskId().getId());
-    try {
-      delegateServiceGrpcAgentClient.executeParkedTask(request.getAccountId(), request.getTaskId());
-      responseObserver.onNext(ExecuteParkedTaskResponse.newBuilder().setTaskId(request.getTaskId()).build());
-      responseObserver.onCompleted();
-    } catch (Exception ex) {
-      log.error("Unexpected error occurred while processing execute parked task request.", ex);
-      responseObserver.onError(io.grpc.Status.INTERNAL.withDescription(ex.getMessage()).asRuntimeException());
-    }
-  }
-
-  @Override
   public void taskProgress(TaskProgressRequest request, StreamObserver<TaskProgressResponse> responseObserver) {
     log.info("Received fetchParkedTaskStatus call, accountId:{}, taskId:{}", request.getAccountId().getId(),
         request.getTaskId().getId());
@@ -94,55 +65,6 @@ public class TaskServiceImpl extends TaskServiceGrpc.TaskServiceImplBase {
     } catch (Exception ex) {
       log.error("Unexpected error occurred while processing taskProgress request.", ex);
       responseObserver.onError(io.grpc.Status.INTERNAL.withDescription(ex.getMessage()).asRuntimeException());
-    }
-  }
-
-  @Override
-  public void fetchParkedTaskStatus(
-      FetchParkedTaskStatusRequest request, StreamObserver<FetchParkedTaskStatusResponse> responseObserver) {
-    log.info("Received fetchParkedTaskStatus call, accountId:{}, taskId:{}, callbackToken:{}",
-        request.getAccountId().getId(), request.getTaskId().getId(), request.getCallbackToken().getToken());
-    try {
-      io.harness.delegate.FetchParkedTaskStatusResponse fetchParkedTaskStatusResponse =
-          delegateServiceGrpcAgentClient.fetchParkedTaskStatus(
-              request.getAccountId(), request.getTaskId(), request.getCallbackToken());
-      if (fetchParkedTaskStatusResponse.getFetchResults()) {
-        responseObserver.onNext(buildFetchParkedTaskStatusResponse(
-            request.getTaskId(), request.getTaskType(), fetchParkedTaskStatusResponse.getSerializedTaskResults()));
-      } else {
-        responseObserver.onNext(FetchParkedTaskStatusResponse.newBuilder()
-                                    .setTaskId(request.getTaskId())
-                                    .setTaskType(request.getTaskType())
-                                    .setHaveResponseData(false)
-                                    .build());
-      }
-      responseObserver.onCompleted();
-    } catch (Exception ex) {
-      log.error("Unexpected error occurred while processing getTaskResults request.", ex);
-      responseObserver.onError(io.grpc.Status.INTERNAL.withDescription(ex.getMessage()).asRuntimeException());
-    }
-  }
-
-  private FetchParkedTaskStatusResponse buildFetchParkedTaskStatusResponse(
-      TaskId taskId, TaskType taskType, ByteString responseDataByteArray) {
-    FetchParkedTaskStatusResponse.Builder builder = FetchParkedTaskStatusResponse.newBuilder();
-    builder.setTaskId(taskId).setTaskType(taskType).setHaveResponseData(true).setSerializedTaskResults(
-        responseDataByteArray);
-
-    ResponseData responseData = (ResponseData) kryoSerializer.asInflatedObject(responseDataByteArray.toByteArray());
-    switch (taskType) {
-      case JIRA:
-        JiraTaskResponse jiraTaskResponse =
-            responseDataConverterRegistry.<JiraTaskResponse>obtain(taskType).convert(responseData);
-        return builder.setJiraTaskResponse(jiraTaskResponse).build();
-      case HTTP:
-        HTTPTaskResponse httpTaskResponse =
-            responseDataConverterRegistry.<HTTPTaskResponse>obtain(taskType).convert(responseData);
-        return builder.setHttpTaskResponse(httpTaskResponse).build();
-
-      default:
-        unhandled(taskType);
-        throw new InvalidArgumentsException(format("Can't execute task with type:%s", taskType));
     }
   }
 

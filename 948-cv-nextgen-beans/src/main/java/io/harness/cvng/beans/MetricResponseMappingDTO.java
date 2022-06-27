@@ -22,4 +22,9 @@ public class MetricResponseMappingDTO {
   String timestampJsonPath;
   String serviceInstanceJsonPath;
   String timestampFormat;
+  String serviceInstanceListJsonPath;
+  String relativeMetricListJsonPath;
+  String relativeTimestampJsonPath;
+  String relativeMetricValueJsonPath;
+  String relativeServiceInstanceValueJsonPath;
 }

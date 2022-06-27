@@ -81,6 +81,7 @@ public class AnomalyFilterPropertiesDTO extends FilterPropertiesDTO {
   @Schema(description = "Query Limit") Integer limit;
 
   @Override
+  @Schema(type = "string", allowableValues = {"Anomaly"})
   public FilterType getFilterType() {
     return FilterType.ANOMALY;
   }

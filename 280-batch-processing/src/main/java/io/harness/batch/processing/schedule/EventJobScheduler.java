@@ -49,6 +49,7 @@ import io.harness.logging.AutoLogContext;
 
 import software.wings.service.intfc.instance.CloudToHarnessMappingService;
 
+import com.google.common.collect.ImmutableSet;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Stream;
@@ -364,6 +365,12 @@ public class EventJobScheduler {
   private void runJob(String accountId, Job job, boolean runningMode) {
     if (BatchJobType.K8S_NODE_RECOMMENDATION == BatchJobType.fromJob(job)
         && !featureFlagService.isEnabled(FeatureName.NODE_RECOMMENDATION_AGGREGATE, accountId)) {
+      return;
+    }
+
+    if (ImmutableSet.of(BatchJobType.K8S_WATCH_EVENT, BatchJobType.K8S_WORKLOAD_RECOMMENDATION)
+            .contains(BatchJobType.fromJob(job))
+        && accountId.equals("hW63Ny6rQaaGsKkVjE0pJA")) {
       return;
     }
 

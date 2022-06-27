@@ -145,6 +145,7 @@ public class AppDynamicsResource {
   @ExceptionMetered
   @ApiOperation(value = "get all appdynamics metric data for an application and a metric path",
       nickname = "getAppdynamicsMetricDataByPath")
+  @Deprecated(since = "moving to v2")
   public ResponseDTO<AppdynamicsMetricDataResponse>
   getMetricData(@BeanParam @Valid ProjectParams projectParams,
       @NotNull @QueryParam("connectorIdentifier") String connectorIdentifier,
@@ -164,6 +165,7 @@ public class AppDynamicsResource {
   @ExceptionMetered
   @ApiOperation(value = "get service instance metric path for an application and a metric path",
       nickname = "getServiceInstanceMetricPath")
+  @Deprecated(since = "moving to getCompleteServiceInstanceMetricPath")
   public ResponseDTO<String>
   getServiceInstanceMetricPath(@BeanParam ProjectParams projectParams,
       @NotNull @QueryParam("connectorIdentifier") final String connectorIdentifier,
@@ -175,5 +177,35 @@ public class AppDynamicsResource {
     }
     return ResponseDTO.newResponse(appDynamicsService.getServiceInstanceMetricPath(
         projectParams, connectorIdentifier, appName, baseFolder, tier, metricPath, routingId));
+  }
+
+  @GET
+  @Path("/metric-data/v2")
+  @Timed
+  @ExceptionMetered
+  @ApiOperation(value = "get all appdynamics metric data for an application and a complete metric path",
+      nickname = "getAppdynamicsMetricDataByPathV2")
+  public ResponseDTO<AppdynamicsMetricDataResponse>
+  getMetricData(@BeanParam @Valid ProjectParams projectParams,
+      @NotNull @QueryParam("connectorIdentifier") String connectorIdentifier,
+      @NotNull @QueryParam("appName") String appName,
+      @NotNull @QueryParam("completeMetricPath") String completeMetricPath) {
+    return ResponseDTO.newResponse(appDynamicsService.getMetricDataV2(
+        projectParams, connectorIdentifier, appName, completeMetricPath, CorrelationContext.getCorrelationId()));
+  }
+
+  @GET
+  @Path("/complete-service-instance-metric-path")
+  @Timed
+  @ExceptionMetered
+  @ApiOperation(value = "get complete service instance metric path for an application and a complete metric path",
+      nickname = "getCompleteServiceInstanceMetricPath")
+  public ResponseDTO<String>
+  getCompleteServiceInstanceMetricPath(@BeanParam ProjectParams projectParams,
+      @NotNull @QueryParam("connectorIdentifier") final String connectorIdentifier,
+      @NotNull @QueryParam("appName") String appName,
+      @NotNull @QueryParam("completeMetricPath") String completeMetricPath) {
+    return ResponseDTO.newResponse(appDynamicsService.getCompleteServiceInstanceMetricPath(
+        projectParams, connectorIdentifier, appName, completeMetricPath, CorrelationContext.getCorrelationId()));
   }
 }

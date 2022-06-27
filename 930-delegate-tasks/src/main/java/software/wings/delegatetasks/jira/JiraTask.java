@@ -577,8 +577,14 @@ public class JiraTask extends AbstractDelegateRunnableTask {
 
   void setUserTypeCustomFieldsIfPresent(io.harness.jira.JiraClient jiraNGClient, Map<String, String> userTypeFields) {
     if (!userTypeFields.isEmpty()) {
-      List<JiraUserData> userDataList;
+      List<JiraUserData> userDataList = new ArrayList<>();
       for (Entry<String, String> userField : userTypeFields.entrySet()) {
+        if (userField.getValue().startsWith("JIRAUSER")) {
+          JiraUserData userData = jiraNGClient.getUser(userField.getValue());
+          userTypeFields.put(userField.getKey(), userData.getName());
+          continue;
+        }
+
         if (ObjectId.isValid(userField.getValue())) {
           userDataList = jiraNGClient.getUsers(null, userField.getValue(), null);
         } else {

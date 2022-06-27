@@ -2404,6 +2404,13 @@ public class WorkflowServiceImpl implements WorkflowService {
       OrchestrationWorkflow clonedOrchestrationWorkflow = orchestrationWorkflow.cloneInternal();
       // Set service ids
       clonedOrchestrationWorkflow.setCloneMetadata(cloneMetadata.getServiceMapping());
+      //Make the service ids and infra ids null if applications do not match
+      if(clonedOrchestrationWorkflow instanceof CanaryOrchestrationWorkflow){
+        ((CanaryOrchestrationWorkflow)clonedOrchestrationWorkflow).getWorkflowPhases().forEach(workflowPhase -> {
+          workflowPhase.setServiceId(null);
+          workflowPhase.setInfraDefinitionId(null);
+        });
+      }
       savedWorkflow.setOrchestrationWorkflow(clonedOrchestrationWorkflow);
     }
     return updateWorkflow(savedWorkflow, savedWorkflow.getOrchestrationWorkflow(), false, true, true, true, false);

@@ -239,8 +239,8 @@ public class AuthServiceTest extends WingsBaseTest {
   @Owner(developers = MARKO)
   @Category(UnitTests.class)
   public void testValidateDelegateToken() {
-    authService.validateDelegateToken(ACCOUNT_ID, VALID_TOKEN, null, false);
-    verify(delegateTokenAuthenticator).validateDelegateToken(ACCOUNT_ID, VALID_TOKEN, null, false);
+    authService.validateDelegateToken(ACCOUNT_ID, VALID_TOKEN, null, null, false);
+    verify(delegateTokenAuthenticator).validateDelegateToken(ACCOUNT_ID, VALID_TOKEN, null, null, false);
   }
 
   @Test

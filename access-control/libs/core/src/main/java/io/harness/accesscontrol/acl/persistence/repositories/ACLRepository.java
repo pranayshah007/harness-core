@@ -8,6 +8,7 @@
 package io.harness.accesscontrol.acl.persistence.repositories;
 
 import io.harness.accesscontrol.acl.persistence.ACL;
+import io.harness.accesscontrol.resources.resourcegroups.ResourceSelector;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 
@@ -20,9 +21,10 @@ public interface ACLRepository {
 
   long deleteByRoleAssignmentId(String id);
 
-  List<String> getDistinctResourceSelectorsInACLs(String roleAssignmentId);
+  Set<ResourceSelector> getDistinctResourceSelectorsInACLs(String roleAssignmentId);
 
-  long deleteByRoleAssignmentIdAndResourceSelectors(String roleAssignmentId, Set<String> resourceSelectorsToDelete);
+  long deleteByRoleAssignmentIdAndResourceSelectors(
+      String roleAssignmentId, Set<ResourceSelector> resourceSelectorsToDelete);
 
   long deleteByRoleAssignmentIdAndPermissions(String roleAssignmentId, Set<String> permissions);
 
@@ -32,7 +34,7 @@ public interface ACLRepository {
 
   List<String> getDistinctPrincipalsInACLsForRoleAssignment(String id);
 
-  List<ACL> getByAclQueryStringInAndEnabled(List<String> aclQueryStrings, boolean enabled);
+  List<ACL> getByAclQueryStringInAndEnabled(Set<String> aclQueryStrings, boolean enabled);
 
   void cleanCollection();
 

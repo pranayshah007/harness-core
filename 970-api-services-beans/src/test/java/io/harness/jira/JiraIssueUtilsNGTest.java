@@ -134,7 +134,7 @@ public class JiraIssueUtilsNGTest extends CategoryTest {
     assertThat(currFields.get("customfield_10210")).isEqualTo("2021-03-25");
     assertThat(currFields.get("customfield_10211")).isEqualTo("2021-03-25T18:58:16.535+0000");
     JiraFieldUserPickerNG reporter = (JiraFieldUserPickerNG) currFields.get("reporter");
-    assertThat(reporter.getAccountId()).isEqualTo("userid");
+    assertThat(reporter.getName()).isEqualTo("userid");
 
     assertThat(((JiraTimeTrackingFieldNG) currFields.get("timetracking")).getOriginalEstimate()).isEqualTo("3d");
     assertThat(((JiraTimeTrackingFieldNG) currFields.get("timetracking")).getRemainingEstimate()).isEqualTo("2d");

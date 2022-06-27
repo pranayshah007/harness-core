@@ -85,28 +85,21 @@ public class PMSInputSetRepositoryCustomImpl implements PMSInputSetRepositoryCus
 
   @Override
   public InputSetEntity saveForOldGitSync(InputSetEntity entityToSave, InputSetYamlDTO yamlDTO) {
-    Supplier<OutboxEvent> functor = ()
-        -> outboxService.save(InputSetCreateEvent.builder()
-                                  .accountIdentifier(entityToSave.getAccountIdentifier())
-                                  .orgIdentifier(entityToSave.getOrgIdentifier())
-                                  .projectIdentifier(entityToSave.getProjectIdentifier())
-                                  .pipelineIdentifier(entityToSave.getPipelineIdentifier())
-                                  .inputSet(entityToSave)
-                                  .build());
-    return gitAwarePersistence.save(
-        entityToSave, entityToSave.getYaml(), ChangeType.ADD, InputSetEntity.class, functor);
+    InputSetEntity savedInputSetEntity =
+        gitAwarePersistence.save(entityToSave, entityToSave.getYaml(), ChangeType.ADD, InputSetEntity.class, null);
+    outboxService.save(InputSetCreateEvent.builder()
+                           .accountIdentifier(entityToSave.getAccountIdentifier())
+                           .orgIdentifier(entityToSave.getOrgIdentifier())
+                           .projectIdentifier(entityToSave.getProjectIdentifier())
+                           .pipelineIdentifier(entityToSave.getPipelineIdentifier())
+                           .inputSet(savedInputSetEntity)
+                           .isForOldGitSync(true)
+                           .build());
+    return savedInputSetEntity;
   }
 
   @Override
   public InputSetEntity save(InputSetEntity entityToSave) {
-    Supplier<OutboxEvent> functor = ()
-        -> outboxService.save(InputSetCreateEvent.builder()
-                                  .accountIdentifier(entityToSave.getAccountIdentifier())
-                                  .orgIdentifier(entityToSave.getOrgIdentifier())
-                                  .projectIdentifier(entityToSave.getProjectIdentifier())
-                                  .pipelineIdentifier(entityToSave.getPipelineIdentifier())
-                                  .inputSet(entityToSave)
-                                  .build());
     GitAwareContextHelper.initDefaultScmGitMetaData();
     GitEntityInfo gitEntityInfo = GitContextHelper.getGitEntityInfo();
     boolean isRemoteFlow = gitEntityInfo != null && gitEntityInfo.getStoreType() == StoreType.REMOTE;
@@ -130,7 +123,41 @@ public class PMSInputSetRepositoryCustomImpl implements PMSInputSetRepositoryCus
     }
     return transactionHelper.performTransaction(() -> {
       InputSetEntity savedInputSetEntity = mongoTemplate.save(entityToSave);
-      functor.get();
+      outboxService.save(InputSetCreateEvent.builder()
+                             .accountIdentifier(entityToSave.getAccountIdentifier())
+                             .orgIdentifier(entityToSave.getOrgIdentifier())
+                             .projectIdentifier(entityToSave.getProjectIdentifier())
+                             .pipelineIdentifier(entityToSave.getPipelineIdentifier())
+                             .inputSet(savedInputSetEntity)
+                             .build());
+      return savedInputSetEntity;
+    });
+  }
+
+  @Override
+  public InputSetEntity saveForImportedYAML(InputSetEntity entityToSave, boolean pushToGit) {
+    String accountIdentifier = entityToSave.getAccountIdentifier();
+    String orgIdentifier = entityToSave.getOrgIdentifier();
+    String projectIdentifier = entityToSave.getProjectIdentifier();
+    GitEntityInfo gitEntityInfo = GitAwareContextHelper.getGitRequestParamsInfo();
+    String yamlToPush = entityToSave.getYaml();
+    entityToSave.setStoreType(StoreType.REMOTE);
+    entityToSave.setConnectorRef(gitEntityInfo.getConnectorRef());
+    entityToSave.setRepo(gitEntityInfo.getRepoName());
+    entityToSave.setFilePath(gitEntityInfo.getFilePath());
+    return transactionHelper.performTransaction(() -> {
+      if (pushToGit) {
+        Scope scope = Scope.of(accountIdentifier, orgIdentifier, projectIdentifier);
+        gitAwareEntityHelper.updateFileImportedFromGit(entityToSave, yamlToPush, scope);
+      }
+      InputSetEntity savedInputSetEntity = mongoTemplate.save(entityToSave);
+      outboxService.save(InputSetCreateEvent.builder()
+                             .accountIdentifier(accountIdentifier)
+                             .orgIdentifier(orgIdentifier)
+                             .projectIdentifier(projectIdentifier)
+                             .pipelineIdentifier(savedInputSetEntity.getPipelineIdentifier())
+                             .inputSet(savedInputSetEntity)
+                             .build());
       return savedInputSetEntity;
     });
   }
@@ -197,6 +224,7 @@ public class PMSInputSetRepositoryCustomImpl implements PMSInputSetRepositoryCus
                                       .pipelineIdentifier(entityToUpdate.getPipelineIdentifier())
                                       .newInputSet(entityToUpdate)
                                       .oldInputSet(oldInputSet)
+                                      .isForOldGitSync(true)
                                       .build());
       } else {
         throw new InvalidRequestException("No such input set exist");
@@ -245,8 +273,14 @@ public class PMSInputSetRepositoryCustomImpl implements PMSInputSetRepositoryCus
     }
     InputSetEntity updatedEntity =
         PMSInputSetFilterHelper.updateFieldsInDBEntry(oldEntityFromDB, entityToUpdate, timeOfUpdate);
-    outboxService.save(new InputSetUpdateEvent(entityToUpdate.getAccountIdentifier(), entityToUpdate.getOrgIdentifier(),
-        entityToUpdate.getProjectIdentifier(), entityToUpdate.getPipelineIdentifier(), updatedEntity, oldEntityFromDB));
+    outboxService.save(InputSetUpdateEvent.builder()
+                           .accountIdentifier(entityToUpdate.getAccountIdentifier())
+                           .orgIdentifier(entityToUpdate.getOrgIdentifier())
+                           .projectIdentifier(entityToUpdate.getProjectIdentifier())
+                           .pipelineIdentifier(entityToUpdate.getPipelineIdentifier())
+                           .newInputSet(updatedEntity)
+                           .oldInputSet(oldEntityFromDB)
+                           .build());
     return updatedEntity;
   }
 
@@ -293,6 +327,7 @@ public class PMSInputSetRepositoryCustomImpl implements PMSInputSetRepositoryCus
                            .projectIdentifier(entityToDelete.getProjectIdentifier())
                            .pipelineIdentifier(entityToDelete.getPipelineIdentifier())
                            .inputSet(entityToDelete)
+                           .isForOldGitSync(true)
                            .build());
   }
 
@@ -303,8 +338,13 @@ public class PMSInputSetRepositoryCustomImpl implements PMSInputSetRepositoryCus
         accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, identifier, true);
     Query query = new Query(criteria);
     InputSetEntity removedEntity = mongoTemplate.findAndRemove(query, InputSetEntity.class);
-    outboxService.save(
-        new InputSetDeleteEvent(accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, removedEntity));
+    outboxService.save(InputSetDeleteEvent.builder()
+                           .accountIdentifier(accountId)
+                           .orgIdentifier(orgIdentifier)
+                           .projectIdentifier(projectIdentifier)
+                           .pipelineIdentifier(pipelineIdentifier)
+                           .inputSet(removedEntity)
+                           .build());
   }
 
   @Override
