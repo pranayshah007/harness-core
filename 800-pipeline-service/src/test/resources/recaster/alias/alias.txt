@@ -124,3 +124,4 @@ io.harness.steps.approval.step.custom.CustomApprovalSpecParameters
 io.harness.steps.approval.step.custom.CustomApprovalStepInfo
 io.harness.steps.approval.step.custom.CustomApprovalStepNode
 io.harness.steps.approval.step.custom.CustomApprovalOutcome
+io.harness.steps.policy.step.outcome.PolicyStepOutcome
