@@ -7,9 +7,6 @@
 
 package io.harness.cvng.verificationjob.entities;
 
-import static io.harness.cvng.CVConstants.DEFAULT_TEST_JOB_ID;
-import static io.harness.cvng.CVConstants.DEFAULT_TEST_JOB_NAME;
-import static io.harness.cvng.CVConstants.RUNTIME_PARAM_STRING;
 import static io.harness.cvng.core.utils.ErrorMessageUtils.generateErrorMessageFromParam;
 import static io.harness.cvng.verificationjob.CVVerificationJobConstants.SENSITIVITY_KEY;
 
@@ -140,16 +137,5 @@ public class TestVerificationJob extends VerificationJob {
                                               .orElse(null);
     }
     return this;
-  }
-
-  public static TestVerificationJob createDefaultJob(String accountId, String orgIdentifier, String projectIdentifier) {
-    TestVerificationJob verificationJob =
-        TestVerificationJob.builder()
-            .jobName(DEFAULT_TEST_JOB_NAME)
-            .identifier(DEFAULT_TEST_JOB_ID)
-            .sensitivity(VerificationJob.getRunTimeParameter(RUNTIME_PARAM_STRING, true))
-            .build();
-    VerificationJob.setDefaultJobCommonParameters(verificationJob, accountId, orgIdentifier, projectIdentifier);
-    return verificationJob;
   }
 }

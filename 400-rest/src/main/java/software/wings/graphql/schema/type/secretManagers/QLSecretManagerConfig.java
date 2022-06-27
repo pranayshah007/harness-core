@@ -5,17 +5,7 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.pms.schema;
+package software.wings.graphql.schema.type.secretManagers;
 
-import io.harness.annotations.dev.HarnessTeam;
-import io.harness.annotations.dev.OwnedBy;
-
-import lombok.Builder;
-import lombok.Data;
-
-@OwnedBy(HarnessTeam.PIPELINE)
-@Data
-@Builder
-public class SchemaErrorResponse {
-  String message;
+public interface QLSecretManagerConfig {
 }

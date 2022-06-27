@@ -7,24 +7,42 @@
 
 package io.harness.ng.core.artifacts.resources.util;
 
+import static io.harness.pms.yaml.YamlNode.PATH_SEP;
+
+import static com.fasterxml.jackson.annotation.JsonTypeInfo.As.EXTERNAL_PROPERTY;
+import static com.fasterxml.jackson.annotation.JsonTypeInfo.Id.NAME;
+import static java.lang.String.format;
+
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.cdng.artifact.bean.ArtifactConfig;
 import io.harness.common.NGExpressionUtils;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.delegate.task.artifacts.ArtifactSourceType;
 import io.harness.evaluators.YamlExpressionEvaluator;
 import io.harness.exception.InvalidRequestException;
 import io.harness.expression.EngineExpressionEvaluator;
 import io.harness.gitsync.interceptor.GitEntityFindInfoDTO;
+import io.harness.ng.core.service.entity.ServiceEntity;
+import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.ng.core.template.TemplateApplyRequestDTO;
 import io.harness.ng.core.template.TemplateMergeResponseDTO;
 import io.harness.pipeline.remote.PipelineServiceClient;
 import io.harness.pms.inputset.MergeInputSetResponseDTOPMS;
 import io.harness.pms.inputset.MergeInputSetTemplateRequestDTO;
+import io.harness.pms.yaml.YamlNode;
+import io.harness.pms.yaml.YamlUtils;
 import io.harness.remote.client.NGRestUtils;
 import io.harness.template.remote.TemplateResourceClient;
 import io.harness.template.yaml.TemplateRefHelper;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.google.inject.Inject;
+import java.io.IOException;
+import java.util.List;
+import java.util.Optional;
+import javax.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 
 @OwnedBy(HarnessTeam.CDC)
@@ -32,6 +50,7 @@ import lombok.extern.slf4j.Slf4j;
 public class ArtifactResourceUtils {
   @Inject PipelineServiceClient pipelineServiceClient;
   @Inject TemplateResourceClient templateResourceClient;
+  @Inject ServiceEntityService serviceEntityService;
 
   // Checks whether field is fixed value or not, if empty then also we return false for fixed value.
   public static boolean isFieldFixedValue(String fieldValue) {
@@ -82,5 +101,75 @@ public class ArtifactResourceUtils {
       imagePath = yamlExpressionEvaluator.renderExpression(imagePath);
     }
     return imagePath;
+  }
+
+  /**
+   * Locates ArtifactConfig in a service entity for a given FQN of type
+   * pipeline.stages.s1.spec.service.serviceInputs.serviceDefinition.spec.artifacts.primary.spec.tag
+   * pipeline.stages.s1.spec.service.serviceInputs.serviceDefinition.spec.artifacts.sidecars[0].sidecar.spec.tag
+   * @return ArtifactConfig
+   */
+  @NotNull
+  public ArtifactConfig locateArtifactInService(
+      String accountId, String orgId, String projectId, String imageTagFqn, String serviceRef) {
+    Optional<ServiceEntity> entity = serviceEntityService.get(accountId, orgId, projectId, serviceRef, false);
+    if (entity.isEmpty()) {
+      throw new InvalidRequestException(format("Service: %s does not exist", serviceRef));
+    }
+
+    int index = 0;
+    String[] split = imageTagFqn.split("\\.");
+    final String serviceInputsDelimiter = "serviceInputs";
+    for (int i = 0; i < split.length; i++) {
+      if (serviceInputsDelimiter.equals(split[i])) {
+        index = i;
+        break;
+      }
+    }
+
+    if (index == 0) {
+      throw new InvalidRequestException(format("FQN must contain %s", serviceInputsDelimiter));
+    }
+
+    List<String> splitPaths = List.of(split).subList(index + 1, split.length);
+    String fqnWithinServiceEntityYaml = String.join(PATH_SEP, splitPaths);
+
+    // convert sidecars[0]/sidecar to sidecars/[0]/
+    fqnWithinServiceEntityYaml = fqnWithinServiceEntityYaml.replace("[", "/[");
+
+    YamlNode service;
+    try {
+      service = YamlNode.fromYamlPath(entity.get().getYaml(), "service");
+    } catch (IOException e) {
+      throw new InvalidRequestException("Service entity yaml must be rooted at \"service\"");
+    }
+
+    if (service == null) {
+      throw new InvalidRequestException("Service entity yaml must be rooted at \"service\"");
+    }
+
+    YamlNode artifactTagLeafNode = service.gotoPath(fqnWithinServiceEntityYaml);
+    if (artifactTagLeafNode == null) {
+      throw new InvalidRequestException(
+          format("Unable to locate path %s within service yaml", fqnWithinServiceEntityYaml));
+    }
+
+    YamlNode artifactSpecNode = artifactTagLeafNode.getParentNode().getParentNode();
+
+    final ArtifactInternalDTO artifactDTO;
+    try {
+      artifactDTO = YamlUtils.read(artifactSpecNode.toString(), ArtifactInternalDTO.class);
+    } catch (IOException e) {
+      throw new InvalidRequestException("Unable to read artifact spec in service yaml", e);
+    }
+
+    return artifactDTO.spec;
+  }
+
+  static class ArtifactInternalDTO {
+    @JsonProperty("type") ArtifactSourceType sourceType;
+    @JsonProperty("spec")
+    @JsonTypeInfo(use = NAME, property = "type", include = EXTERNAL_PROPERTY, visible = true)
+    ArtifactConfig spec;
   }
 }

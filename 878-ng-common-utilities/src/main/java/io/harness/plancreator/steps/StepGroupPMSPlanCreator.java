@@ -16,6 +16,7 @@ import static io.harness.pms.yaml.YAMLFieldNameConstants.STEP_GROUP;
 import io.harness.advisers.nextstep.NextStepAdviserParameters;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.structure.EmptyPredicate;
+import io.harness.plancreator.strategy.StageStrategyUtils;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
@@ -74,6 +75,9 @@ public class StepGroupPMSPlanCreator extends ChildrenPlanCreator<StepGroupElemen
               .dependencies(DependenciesUtils.toDependenciesProto(stepsYamlFieldMap))
               .build());
     }
+    StageStrategyUtils.addStrategyFieldDependencyIfPresent(kryoSerializer, ctx, config.getUuid(), config.getName(),
+        config.getIdentifier(), responseMap, new HashMap<>(),
+        getAdviserObtainmentFromMetaData(ctx.getCurrentField(), false));
 
     return responseMap;
   }
@@ -92,7 +96,7 @@ public class StepGroupPMSPlanCreator extends ChildrenPlanCreator<StepGroupElemen
 
     return PlanNode.builder()
         .name(config.getName())
-        .uuid(config.getUuid())
+        .uuid(StageStrategyUtils.getSwappedPlanNodeId(ctx, config.getUuid()))
         .identifier(config.getIdentifier())
         .stepType(StepGroupStep.STEP_TYPE)
         .group(StepCategory.STEP_GROUP.name())
@@ -105,7 +109,8 @@ public class StepGroupPMSPlanCreator extends ChildrenPlanCreator<StepGroupElemen
             FacilitatorObtainment.newBuilder()
                 .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.CHILD).build())
                 .build())
-        .adviserObtainments(getAdviserObtainmentFromMetaData(ctx.getCurrentField()))
+        .adviserObtainments(getAdviserObtainmentFromMetaData(
+            ctx.getCurrentField(), StageStrategyUtils.isWrappedUnderStrategy(ctx.getCurrentField())))
         .skipExpressionChain(false)
         .build();
   }
@@ -120,8 +125,11 @@ public class StepGroupPMSPlanCreator extends ChildrenPlanCreator<StepGroupElemen
     return Collections.singletonMap(STEP_GROUP, Collections.singleton(PlanCreatorUtils.ANY_TYPE));
   }
 
-  private List<AdviserObtainment> getAdviserObtainmentFromMetaData(YamlField currentField) {
+  private List<AdviserObtainment> getAdviserObtainmentFromMetaData(YamlField currentField, boolean checkForStrategy) {
     List<AdviserObtainment> adviserObtainments = new ArrayList<>();
+    if (checkForStrategy) {
+      return adviserObtainments;
+    }
 
     /*
      * Adding OnSuccess adviser if stepGroup is inside rollback section else adding NextStep adviser for when condition

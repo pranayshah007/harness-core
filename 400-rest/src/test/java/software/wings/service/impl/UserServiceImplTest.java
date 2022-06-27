@@ -731,7 +731,7 @@ public class UserServiceImplTest extends WingsBaseTest {
     when(accountService.isNextGenEnabled("ACCOUNT_ID")).thenReturn(false);
     when(userGroupService.getCountOfUserGroups("ACCOUNT_ID")).thenReturn(Long.valueOf(1));
     when(userGroupService.list("ACCOUNT_ID",
-             aPageRequest().withLimit("1").addFilter(UserGroupKeys.memberIds, HAS, user1.getUuid()).build(), true))
+             aPageRequest().withLimit("1").addFilter(UserGroupKeys.memberIds, HAS, user1.getUuid()).build(), true, null, null))
         .thenReturn(
             aPageResponse().withResponse(Collections.singletonList(userGroup1)).withTotal(1).withLimit("10").build());
     when(userGroupService.updateMembers(userGroup1, false, false)).thenReturn(userGroup1_updated);
@@ -761,7 +761,7 @@ public class UserServiceImplTest extends WingsBaseTest {
     verifyNoMoreInteractions(userMembershipClient);
     verify(userGroupService, times(1))
         .list("ACCOUNT_ID",
-            aPageRequest().withLimit("1").addFilter(UserGroupKeys.memberIds, HAS, user1.getUuid()).build(), true);
+            aPageRequest().withLimit("1").addFilter(UserGroupKeys.memberIds, HAS, user1.getUuid()).build(), true, null, null);
     verify(userGroupService, times(1)).updateMembers(userGroup1, false, false);
     assertThat(
         wingsPersistence.findAndDelete(wingsPersistence.createQuery(User.class).filter(BaseKeys.uuid, user1.getUuid()),
@@ -827,7 +827,7 @@ public class UserServiceImplTest extends WingsBaseTest {
 
     when(userGroupService.getCountOfUserGroups("ACCOUNT_ID")).thenReturn(Long.valueOf(1));
     when(userGroupService.list("ACCOUNT_ID",
-             aPageRequest().withLimit("1").addFilter(UserGroupKeys.memberIds, HAS, user1.getUuid()).build(), true))
+             aPageRequest().withLimit("1").addFilter(UserGroupKeys.memberIds, HAS, user1.getUuid()).build(), true, null, null))
         .thenReturn(
             aPageResponse().withResponse(Collections.singletonList(userGroup1)).withTotal(1).withLimit("10").build());
     when(userGroupService.updateMembers(userGroup1, false, false)).thenReturn(userGroup1_updated);
@@ -859,7 +859,7 @@ public class UserServiceImplTest extends WingsBaseTest {
         .removeUserInternal(user1.getUuid(), "ACCOUNT_ID", null, null, NGRemoveUserFilter.ACCOUNT_LAST_ADMIN_CHECK);
     verify(userGroupService, times(1))
         .list("ACCOUNT_ID",
-            aPageRequest().withLimit("1").addFilter(UserGroupKeys.memberIds, HAS, user1.getUuid()).build(), true);
+            aPageRequest().withLimit("1").addFilter(UserGroupKeys.memberIds, HAS, user1.getUuid()).build(), true, null, null);
     verify(userGroupService, times(1)).updateMembers(userGroup1, false, false);
     assertThat(
         wingsPersistence.findAndDelete(wingsPersistence.createQuery(User.class).filter(BaseKeys.uuid, user1.getUuid()),

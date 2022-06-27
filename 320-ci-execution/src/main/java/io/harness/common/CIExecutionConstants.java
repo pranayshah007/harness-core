@@ -34,6 +34,7 @@ public class CIExecutionConstants {
   public static final String STEP_MOUNT_PATH = "/harness";
   public static final String OSX_STEP_MOUNT_PATH = "/tmp/harness";
   public static final String STEP_WORK_DIR = STEP_MOUNT_PATH;
+  public static final String ETC_DIR = "/etc";
 
   public static final int POD_MAX_WAIT_UNTIL_READY_SECS = 8 * 60;
 

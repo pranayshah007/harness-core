@@ -12,21 +12,24 @@ import static io.harness.pms.yaml.YAMLFieldNameConstants.STEPS;
 
 import io.harness.advisers.nextstep.NextStepAdviserParameters;
 import io.harness.exception.InvalidYamlException;
-import io.harness.plancreator.stages.stage.AbstractStageNode;
-import io.harness.plancreator.stages.stage.StageElementConfig;
-import io.harness.plancreator.steps.AbstractStepNode;
 import io.harness.pms.contracts.advisers.AdviserObtainment;
 import io.harness.pms.contracts.advisers.AdviserType;
+import io.harness.pms.contracts.plan.Dependency;
 import io.harness.pms.contracts.plan.EdgeLayoutList;
 import io.harness.pms.contracts.plan.GraphLayoutNode;
 import io.harness.pms.sdk.core.adviser.OrchestrationAdviserTypes;
 import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationContext;
+import io.harness.pms.sdk.core.plan.creation.beans.PlanCreationResponse;
 import io.harness.pms.sdk.core.plan.creation.yaml.StepOutcomeGroup;
+import io.harness.pms.yaml.DependenciesUtils;
 import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.pms.yaml.YamlField;
 import io.harness.serializer.KryoSerializer;
+import io.harness.steps.matrix.StrategyConstants;
+import io.harness.steps.matrix.StrategyMetadata;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -42,38 +45,17 @@ public class StageStrategyUtils {
     return strategyField != null;
   }
 
-  public String getSwappedPlanNodeId(PlanCreationContext ctx, AbstractStageNode stageNode) {
+  public String getSwappedPlanNodeId(PlanCreationContext ctx, String originalPlanNodeId) {
     YamlField strategyField = ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.STRATEGY);
     // Since strategy is a child of stage but in execution we want to wrap stage around strategy,
     // we are swapping the uuid of stage and strategy node.
-    String planNodeId = stageNode.getUuid();
+    String planNodeId = originalPlanNodeId;
     if (strategyField != null) {
       planNodeId = strategyField.getNode().getUuid();
     }
     return planNodeId;
   }
 
-  public String getSwappedPlanNodeId(PlanCreationContext ctx, AbstractStepNode stageNode) {
-    YamlField strategyField = ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.STRATEGY);
-    // Since strategy is a child of stage but in execution we want to wrap stage around strategy,
-    // we are swapping the uuid of stage and strategy node.
-    String planNodeId = stageNode.getUuid();
-    if (strategyField != null) {
-      planNodeId = strategyField.getNode().getUuid();
-    }
-    return planNodeId;
-  }
-
-  public String getSwappedPlanNodeId(PlanCreationContext ctx, StageElementConfig stageNode) {
-    YamlField strategyField = ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.STRATEGY);
-    // Since strategy is a child of stage but in execution we want to wrap stage around strategy,
-    // we are swapping the uuid of stage and strategy node.
-    String planNodeId = stageNode.getUuid();
-    if (strategyField != null) {
-      planNodeId = strategyField.getNode().getUuid();
-    }
-    return planNodeId;
-  }
   public List<AdviserObtainment> getAdviserObtainments(
       YamlField stageField, KryoSerializer kryoSerializer, boolean checkForStrategy) {
     List<AdviserObtainment> adviserObtainments = new ArrayList<>();
@@ -168,7 +150,7 @@ public class StageStrategyUtils {
     } else if (!ParameterField.isBlank(config.getParallelism()) && config.getParallelism().getValue() != null
         && config.getParallelism().getValue() == 0) {
       throw new InvalidYamlException(
-          "Parallelism can not be [zero]. please provide some positive Integer for Parallelism");
+          "Parallelism can not be [zero]. Please provide some positive Integer for Parallelism");
     }
   }
 
@@ -193,5 +175,50 @@ public class StageStrategyUtils {
       }
     }
     return adviserObtainments;
+  }
+
+  public void addStrategyFieldDependencyIfPresent(KryoSerializer kryoSerializer, PlanCreationContext ctx, String uuid,
+      String name, String identifier, LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap,
+      Map<String, ByteString> metadataMap, List<AdviserObtainment> adviserObtainments) {
+    YamlField strategyField = ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.STRATEGY);
+    if (strategyField != null) {
+      // This is mandatory because it is the parent's responsibility to pass the nodeId and the childNodeId to the
+      // strategy node
+      metadataMap.put(StrategyConstants.STRATEGY_METADATA + strategyField.getNode().getUuid(),
+          ByteString.copyFrom(kryoSerializer.asDeflatedBytes(StrategyMetadata.builder()
+                                                                 .strategyNodeId(uuid)
+                                                                 .adviserObtainments(adviserObtainments)
+                                                                 .childNodeId(strategyField.getNode().getUuid())
+                                                                 .strategyNodeName(name)
+                                                                 .strategyNodeIdentifier(identifier)
+                                                                 .build())));
+      planCreationResponseMap.put(uuid,
+          PlanCreationResponse.builder()
+              .dependencies(
+                  DependenciesUtils.toDependenciesProto(ImmutableMap.of(uuid, strategyField))
+                      .toBuilder()
+                      .putDependencyMetadata(uuid, Dependency.newBuilder().putAllMetadata(metadataMap).build())
+                      .build())
+              .build());
+    }
+  }
+
+  public void addStrategyFieldDependencyIfPresent(KryoSerializer kryoSerializer, PlanCreationContext ctx,
+      String fieldUuid, String fieldIdentifier, String fieldName, Map<String, YamlField> dependenciesNodeMap,
+      Map<String, ByteString> metadataMap, List<AdviserObtainment> adviserObtainments) {
+    YamlField strategyField = ctx.getCurrentField().getNode().getField(YAMLFieldNameConstants.STRATEGY);
+    if (strategyField != null) {
+      dependenciesNodeMap.put(fieldUuid, strategyField);
+      // This is mandatory because it is the parent's responsibility to pass the nodeId and the childNodeId to the
+      // strategy node
+      metadataMap.put(StrategyConstants.STRATEGY_METADATA + strategyField.getNode().getUuid(),
+          ByteString.copyFrom(kryoSerializer.asDeflatedBytes(StrategyMetadata.builder()
+                                                                 .strategyNodeId(fieldUuid)
+                                                                 .adviserObtainments(adviserObtainments)
+                                                                 .childNodeId(strategyField.getNode().getUuid())
+                                                                 .strategyNodeIdentifier(fieldIdentifier)
+                                                                 .strategyNodeName(fieldName)
+                                                                 .build())));
+    }
   }
 }

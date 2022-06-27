@@ -7,6 +7,7 @@
 
 package io.harness.cdng.creator.filters;
 
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
 import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static java.lang.String.format;
@@ -113,7 +114,7 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
   }
 
   private void addFiltersFromEnvironment(FilterCreationContext filterCreationContext, CdFilterBuilder filterBuilder,
-      EnvironmentYamlV2 env, Boolean gitOpsEnabled) {
+      EnvironmentYamlV2 env, boolean gitOpsEnabled) {
     final ParameterField<String> environmentRef = env.getEnvironmentRef();
     if (environmentRef == null || environmentRef.fetchFinalValue() == null) {
       throw new InvalidYamlRuntimeException(
@@ -121,7 +122,7 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
               YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
     }
 
-    if (gitOpsEnabled != true && env.isDeployToAll()) {
+    if (!gitOpsEnabled && env.isDeployToAll()) {
       throw new InvalidYamlRuntimeException(
           "Deploy to all environments is not supported yet. Please select a specific infrastructure and try again");
     }
@@ -151,10 +152,23 @@ public class DeploymentStageFilterJsonCreatorV2 extends GenericStageFilterJsonCr
         }
       }
     }
+
+    if (gitOpsEnabled) {
+      if (env.isDeployToAll() && isNotEmpty(env.getGitOpsClusters())) {
+        throw new InvalidYamlRuntimeException(format(
+            "When deploying to all, individual gitops clusters must not be provided in stage [%s]. Please remove the gitOpsClusters property and try again",
+            YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
+      }
+      if (!env.isDeployToAll() && isEmpty(env.getGitOpsClusters())) {
+        throw new InvalidYamlRuntimeException(format(
+            "When deploy to all is false, list of gitops clusters must be provided  in stage [%s].  Please specify the gitOpsClusters property and try again",
+            YamlUtils.getFullyQualifiedName(filterCreationContext.getCurrentField().getNode())));
+      }
+    }
   }
 
   private void addFiltersFromEnvironmentGroup(FilterCreationContext filterCreationContext,
-      CdFilterBuilder filterBuilder, EnvironmentGroupYaml envGroupYaml, Boolean gitOpsEnabled) {
+      CdFilterBuilder filterBuilder, EnvironmentGroupYaml envGroupYaml, boolean gitOpsEnabled) {
     final ParameterField<String> envGroupRef = envGroupYaml.getEnvGroupRef();
     if (envGroupRef == null || envGroupRef.fetchFinalValue() == null) {
       throw new InvalidYamlRuntimeException(

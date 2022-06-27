@@ -122,7 +122,7 @@ public class FileStoreResourceTest extends CategoryTest {
     File file = new File("returnedFile-download-path");
     doNothing().when(accessControlClient).checkForAccessOrThrow(any(), any(), eq(FILE_VIEW_PERMISSION));
     when(fileStoreService.downloadFile(ACCOUNT, ORG, PROJECT, IDENTIFIER)).thenReturn(file);
-    Response response = fileStoreResource.downloadFile(ACCOUNT, ORG, PROJECT, IDENTIFIER);
+    Response response = fileStoreResource.downloadFile(IDENTIFIER, ACCOUNT, ORG, PROJECT);
     File returnedFile = (File) response.getEntity();
 
     assertThat(returnedFile).isNotNull();
@@ -248,7 +248,7 @@ public class FileStoreResourceTest extends CategoryTest {
     when(fileStoreService.downloadFile(ACCOUNT, ORG, PROJECT, IDENTIFIER))
         .thenThrow(new InvalidRequestException("Unable to download file"));
 
-    assertThatThrownBy(() -> fileStoreResource.downloadFile(ACCOUNT, ORG, PROJECT, IDENTIFIER))
+    assertThatThrownBy(() -> fileStoreResource.downloadFile(IDENTIFIER, ACCOUNT, ORG, PROJECT))
         .isInstanceOf(InvalidRequestException.class)
         .hasMessage("Unable to download file");
   }

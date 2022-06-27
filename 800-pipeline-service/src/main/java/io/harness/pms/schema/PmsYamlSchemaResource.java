@@ -25,6 +25,8 @@ import io.harness.ng.core.dto.ResponseDTO;
 import io.harness.ngtriggers.service.NGTriggerYamlSchemaService;
 import io.harness.pms.annotations.PipelineServiceAuth;
 import io.harness.pms.pipeline.service.PMSYamlSchemaService;
+import io.harness.pms.yaml.SchemaErrorResponse;
+import io.harness.pms.yaml.YamlSchemaResponse;
 import io.harness.yaml.schema.YamlSchemaResource;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -88,7 +90,7 @@ public class PmsYamlSchemaResource implements YamlSchemaResource {
   @GET
   @Path("/get")
   @ApiOperation(value = "Get step YAML schema", nickname = "getStepYamlSchema")
-  public ResponseDTO<YamlSchemaResponse> getIndividualYamlSchema(
+  public ResponseDTO<io.harness.pms.yaml.YamlSchemaResponse> getIndividualYamlSchema(
       @NotNull @QueryParam(ACCOUNT_KEY) String accountIdentifier, @QueryParam(ORG_KEY) String orgIdentifier,
       @QueryParam(PROJECT_KEY) String projectIdentifier, @QueryParam("yamlGroup") String yamlGroup,
       @QueryParam(NGCommonEntityConstants.ENTITY_TYPE) EntityType stepEntityType, @QueryParam("scope") Scope scope) {

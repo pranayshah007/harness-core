@@ -75,7 +75,7 @@ public class DeploymentStageConfig implements StageInfoConfig, Visitable {
   @ApiModelProperty(hidden = true)
   ServiceDefinitionType deploymentType;
 
-  public Boolean getGitOpsEnabled() {
+  public boolean getGitOpsEnabled() {
     return gitOpsEnabled == Boolean.TRUE;
   }
 

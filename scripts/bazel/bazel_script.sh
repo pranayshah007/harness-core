@@ -131,6 +131,7 @@ BAZEL_MODULES="\
   //clients/notification:module \
   //clients/notification:module_deploy.jar \
   //940-secret-manager-client:module \
+  //941-filestore-client:module \
   //942-enforcement-sdk:module \
   //943-enforcement-beans:module \
   //945-account-mgmt:module \

@@ -41,6 +41,7 @@ import io.harness.filter.mapper.FilterPropertiesMapper;
 import io.harness.grpc.DelegateServiceDriverGrpcClientModule;
 import io.harness.grpc.DelegateServiceGrpcClient;
 import io.harness.grpc.server.PipelineServiceGrpcModule;
+import io.harness.licensing.remote.NgLicenseHttpClientModule;
 import io.harness.lock.DistributedLockImplementation;
 import io.harness.lock.PersistentLockModule;
 import io.harness.logstreaming.LogStreamingModule;
@@ -395,6 +396,10 @@ public class PipelineServiceModule extends AbstractModule {
     install(EnforcementClientModule.getInstance(configuration.getNgManagerServiceHttpClientConfig(),
         configuration.getNgManagerServiceSecret(), PIPELINE_SERVICE.getServiceId(),
         configuration.getEnforcementClientConfiguration()));
+
+    // ng-license dependencies
+    install(NgLicenseHttpClientModule.getInstance(configuration.getNgManagerServiceHttpClientConfig(),
+            configuration.getNgManagerServiceSecret(), PIPELINE_SERVICE.getServiceId()));
     registerEventsFrameworkMessageListeners();
   }
 

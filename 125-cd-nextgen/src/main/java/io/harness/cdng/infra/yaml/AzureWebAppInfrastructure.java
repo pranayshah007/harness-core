@@ -7,6 +7,8 @@
 
 package io.harness.cdng.infra.yaml;
 
+import static io.harness.yaml.schema.beans.SupportedPossibleFieldTypes.string;
+
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
@@ -20,6 +22,7 @@ import io.harness.pms.yaml.ParameterField;
 import io.harness.pms.yaml.YAMLFieldNameConstants;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
+import io.harness.yaml.YamlSchemaTypes;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModelProperty;
@@ -66,6 +69,7 @@ public class AzureWebAppInfrastructure implements Infrastructure, Visitable, Wit
   @ApiModelProperty(dataType = SwaggerConstants.STRING_CLASSPATH)
   @Wither
   ParameterField<String> deploymentSlot;
+  @YamlSchemaTypes({string}) @Wither ParameterField<String> targetSlot;
 
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
 
@@ -114,6 +118,9 @@ public class AzureWebAppInfrastructure implements Infrastructure, Visitable, Wit
     }
     if (!ParameterField.isNull(config.getDeploymentSlot())) {
       resultantInfra = resultantInfra.withDeploymentSlot(config.getDeploymentSlot());
+    }
+    if (!ParameterField.isNull(config.getTargetSlot())) {
+      resultantInfra = resultantInfra.withTargetSlot(config.getTargetSlot());
     }
     return resultantInfra;
   }

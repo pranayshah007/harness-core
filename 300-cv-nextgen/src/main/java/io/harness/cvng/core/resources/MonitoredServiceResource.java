@@ -265,7 +265,8 @@ public class MonitoredServiceResource {
                                                             .orgIdentifier(projectParams.getOrgIdentifier())
                                                             .projectIdentifier(projectParams.getProjectIdentifier())
                                                             .build();
-    return ResponseDTO.newResponse(monitoredServiceService.get(serviceEnvironmentParams));
+    return ResponseDTO.newResponse(
+        monitoredServiceService.getApplicationMonitoredServiceResponse(serviceEnvironmentParams));
   }
 
   @GET

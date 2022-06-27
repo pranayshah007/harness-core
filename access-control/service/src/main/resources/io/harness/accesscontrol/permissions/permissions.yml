@@ -1,6 +1,6 @@
 # Any edit in this file should accompany an increment in version.
 name: permissionsConfiguration
-version: 28
+version: 29
 permissions:
   - identifier: core_project_delete
     name: Delete Project
@@ -875,6 +875,48 @@ permissions:
       - account
       - organization
       - project
+  - identifier: sto_testtarget_view
+    name: View test targets
+    status: ACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: sto_testtarget_edit
+    name: Edit test targets
+    status: ACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: sto_exception_view
+    name: View exceptions
+    status: ACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: sto_exception_create
+    name: Create exception
+    status: ACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: sto_exception_approve
+    name: Approve exception
+    status: ACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: sto_issue_view
+    name: View security issue
+    status: ACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
+  - identifier: sto_scan_view
+    name: View security scan
+    status: ACTIVE
+    includeInAllRoles: false
+    allowedScopeLevels:
+      - account
   - identifier: core_file_view
     name: View Files
     status: ACTIVE
@@ -986,7 +1028,7 @@ permissions:
     allowedScopeLevels:
       - account
       - organization
-      - project    
+      - project
   - identifier: chaos_chaosgitops_edit
     name: Edit Gitops
     status: ACTIVE

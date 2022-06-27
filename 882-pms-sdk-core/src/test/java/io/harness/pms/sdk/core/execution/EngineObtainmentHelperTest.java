@@ -13,6 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.category.element.UnitTests;
@@ -75,5 +76,6 @@ public class EngineObtainmentHelperTest extends PmsSdkCoreTestBase {
 
   @Data
   @Builder
+  @RecasterAlias("io.harness.pms.sdk.core.execution.TestStepTransput")
   private static class TestStepTransput implements Outcome, ExecutionSweepingOutput {}
 }

@@ -29,6 +29,7 @@ import io.harness.accesscontrol.principals.usergroups.UserGroupTestUtils;
 import io.harness.accesscontrol.resources.resourcegroups.ResourceGroup;
 import io.harness.accesscontrol.resources.resourcegroups.ResourceGroupService;
 import io.harness.accesscontrol.resources.resourcegroups.ResourceGroupTestUtils;
+import io.harness.accesscontrol.resources.resourcegroups.ResourceSelector;
 import io.harness.accesscontrol.roleassignments.RoleAssignmentTestUtils;
 import io.harness.accesscontrol.roleassignments.persistence.RoleAssignmentDBO;
 import io.harness.accesscontrol.roleassignments.persistence.repositories.RoleAssignmentRepository;
@@ -48,6 +49,7 @@ import com.google.inject.name.Named;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -187,7 +189,10 @@ public class RoleAssignmentChangeConsumerImplTest extends AggregatorTestBase {
           .isEqualTo(userGroup.getUsers());
     }
     assertThat(new HashSet<>(aclRepository.getDistinctResourceSelectorsInACLs(assignment.getId())))
-        .isEqualTo(resourceGroup.getResourceSelectors());
+        .isEqualTo(resourceGroup.getResourceSelectors()
+                       .stream()
+                       .map(selector -> ResourceSelector.builder().selector(selector).build())
+                       .collect(Collectors.toSet()));
   }
 
   private void verifyNoACLs(RoleAssignmentDBO assignment) {

@@ -37,14 +37,14 @@ public class CIBuildStatusPushTask extends AbstractDelegateRunnableTask {
   @Override
   public DelegateResponseData run(TaskParameters parameters) {
     if (((CIBuildPushParameters) parameters).commandType == CIBuildPushTaskType.STATUS) {
-        CIBuildStatusPushParameters ciBuildStatusPushParameters = (CIBuildStatusPushParameters) parameters;
-        GitStatusCheckParams gitStatusCheckParams = convertParams(ciBuildStatusPushParameters);
-        boolean statusSent = gitStatusCheckHelper.sendStatus(gitStatusCheckParams, null);
-        if (statusSent) {
-          return BuildStatusPushResponse.builder().status(Status.SUCCESS).build();
-        } else {
-          return BuildStatusPushResponse.builder().status(Status.ERROR).build();
-        }
+      CIBuildStatusPushParameters ciBuildStatusPushParameters = (CIBuildStatusPushParameters) parameters;
+      GitStatusCheckParams gitStatusCheckParams = convertParams(ciBuildStatusPushParameters);
+      boolean statusSent = gitStatusCheckHelper.sendStatus(gitStatusCheckParams, null);
+      if (statusSent) {
+        return BuildStatusPushResponse.builder().status(Status.SUCCESS).build();
+      } else {
+        return BuildStatusPushResponse.builder().status(Status.ERROR).build();
+      }
     }
     return BuildStatusPushResponse.builder().status(Status.ERROR).build();
   }

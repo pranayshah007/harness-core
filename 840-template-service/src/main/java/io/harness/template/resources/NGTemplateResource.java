@@ -224,8 +224,6 @@ public class NGTemplateResource {
     TemplateEntity templateEntity = NGTemplateDtoMapper.toTemplateEntity(accountId, orgId, projectId, templateYaml);
     log.info(String.format("Creating Template with identifier %s with label %s in project %s, org %s, account %s",
         templateEntity.getIdentifier(), templateEntity.getVersionLabel(), projectId, orgId, accountId));
-
-    // TODO(archit): Add schema validations
     TemplateEntity createdTemplate = templateService.create(templateEntity, setDefaultTemplate, comments);
     TemplateWrapperResponseDTO templateWrapperResponseDTO =
         TemplateWrapperResponseDTO.builder()
@@ -304,8 +302,6 @@ public class NGTemplateResource {
         String.format("Updating Template with identifier %s with versionLabel %s in project %s, org %s, account %s",
             templateEntity.getIdentifier(), templateEntity.getVersionLabel(), projectId, orgId, accountId));
     templateEntity = templateEntity.withVersion(isNumeric(ifMatch) ? parseLong(ifMatch) : null);
-
-    // TODO(archit): Add schema validations
     TemplateEntity createdTemplate =
         templateService.updateTemplateEntity(templateEntity, ChangeType.MODIFY, setDefaultTemplate, comments);
     TemplateWrapperResponseDTO templateWrapperResponseDTO =

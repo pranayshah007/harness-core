@@ -141,19 +141,6 @@ public class VerificationTaskServiceImpl implements VerificationTaskService {
   }
 
   @Override
-  public Optional<String> maybeGetCVConfigId(String verificationTaskId) {
-    VerificationTask verificationTask = get(verificationTaskId);
-    String cvConfigId = null;
-    if (verificationTask.getTaskInfo().getTaskType().equals(TaskType.DEPLOYMENT)) {
-      cvConfigId = ((DeploymentInfo) verificationTask.getTaskInfo()).getCvConfigId();
-    }
-    if (verificationTask.getTaskInfo().getTaskType().equals(TaskType.LIVE_MONITORING)) {
-      cvConfigId = ((LiveMonitoringInfo) verificationTask.getTaskInfo()).getCvConfigId();
-    }
-    return Optional.ofNullable(cvConfigId);
-  }
-
-  @Override
   public String getSliId(String verificationTaskId) {
     VerificationTask verificationTask = get(verificationTaskId);
     if (verificationTask.getTaskInfo().getTaskType().equals(TaskType.SLI)) {
@@ -261,11 +248,6 @@ public class VerificationTaskServiceImpl implements VerificationTaskService {
             .collect(Collectors.toList()));
 
     return verificationTasksIds;
-  }
-
-  @Override
-  public List<String> getServiceGuardVerificationTaskIds(String accountId, String cvConfigId) {
-    return getServiceGuardVerificationTaskIds(accountId, Collections.singletonList(cvConfigId));
   }
 
   @Override
