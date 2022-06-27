@@ -57,6 +57,6 @@ public class SshScriptCommandHandler implements CommandHandler {
 
     AbstractScriptExecutor executor = sshScriptExecutorFactory.getExecutor(context);
 
-    return executor.executeCommandString(scriptCommandUnit.getCommand());
+    return executor.executeCommandString(scriptCommandUnit.getCommand(), sshCommandTaskParameters.getOutputVariables()).getStatus();
   }
 }

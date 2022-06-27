@@ -9,26 +9,19 @@ package io.harness.delegate.task.ssh.config;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
+import io.harness.beans.DecryptableEntity;
+import io.harness.encryption.SecretRefData;
+import io.harness.encryption.SecretReference;
 
-import io.harness.security.encryption.EncryptedDataDetail;
-import lombok.AllArgsConstructor;
+import javax.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
-
-import java.util.List;
+import lombok.EqualsAndHashCode;
 
 @Data
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
+@EqualsAndHashCode
 @OwnedBy(HarnessTeam.CDP)
-public class ConfigFileParameters {
-  private String fileName;
-  private String fileContent;
-  private long fileSize;
-  private String destinationPath;
-  private SecretConfigFile secretConfigFile;
-  private boolean isEncrypted;
-  List<EncryptedDataDetail> encryptionDataDetails;
+public class SecretConfigFile implements DecryptableEntity {
+  @NotNull @SecretReference SecretRefData encryptedConfigFile;
 }

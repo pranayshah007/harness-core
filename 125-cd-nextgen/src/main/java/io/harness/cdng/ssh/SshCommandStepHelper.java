@@ -41,17 +41,20 @@ import io.harness.delegate.task.ssh.NgInitCommandUnit;
 import io.harness.delegate.task.ssh.ScriptCommandUnit;
 import io.harness.delegate.task.ssh.config.ConfigFileParameters;
 import io.harness.delegate.task.ssh.config.FileDelegateConfig;
+import io.harness.delegate.task.ssh.config.SecretConfigFile;
 import io.harness.encryption.Scope;
+import io.harness.encryption.SecretRefHelper;
 import io.harness.exception.InvalidRequestException;
 import io.harness.filestore.dto.node.FileNodeDTO;
 import io.harness.filestore.dto.node.FileStoreNodeDTO;
 import io.harness.filestore.service.FileStoreService;
+import io.harness.ng.core.BaseNGAccess;
 import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.api.NGEncryptedDataService;
-import io.harness.ng.core.entities.NGEncryptedData;
 import io.harness.ng.core.filestore.NGFileType;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.execution.utils.AmbianceUtils;
+import io.harness.security.encryption.EncryptedDataDetail;
 import io.harness.steps.shellscript.ShellScriptHelperService;
 import io.harness.steps.shellscript.ShellScriptInlineSource;
 import io.harness.steps.shellscript.ShellScriptSourceWrapper;
@@ -59,7 +62,6 @@ import io.harness.utils.IdentifierRefHelper;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -87,6 +89,7 @@ public class SshCommandStepHelper extends CDStepHelper {
         .executionId(AmbianceUtils.obtainCurrentRuntimeId(ambiance))
         .environmentVariables(
             shellScriptHelperService.getEnvironmentVariables(executeCommandStepParameters.getEnvironmentVariables()))
+        .outputVariables(shellScriptHelperService.getOutputVars(executeCommandStepParameters.getOutputVariables()))
         .sshInfraDelegateConfig(sshEntityHelper.getSshInfraDelegateConfig(infrastructure, ambiance))
         .artifactDelegateConfig(
             artifactOutcome.map(outcome -> sshEntityHelper.getArtifactDelegateConfigConfig(outcome, ambiance))
@@ -169,23 +172,30 @@ public class SshCommandStepHelper extends CDStepHelper {
   }
 
   private ConfigFileParameters fetchSecretConfigFile(IdentifierRef fileRef) {
-    // TODO decryption should be handled on delegate
-    NGEncryptedData ngEncryptedData = ngEncryptedDataService.get(fileRef.getAccountIdentifier(),
-        fileRef.getOrgIdentifier(), fileRef.getProjectIdentifier(), fileRef.getIdentifier());
-    if (ngEncryptedData == null) {
-      throw new InvalidRequestException(
-          format("Config file not found in encrypted store with identifier : [%s]", fileRef.getIdentifier()));
+    SecretConfigFile secretConfigFile =
+        SecretConfigFile.builder()
+            .encryptedConfigFile(SecretRefHelper.createSecretRef(fileRef.getIdentifier()))
+            .build();
+
+    NGAccess ngAccess = BaseNGAccess.builder()
+                            .accountIdentifier(fileRef.getAccountIdentifier())
+                            .orgIdentifier(fileRef.getOrgIdentifier())
+                            .projectIdentifier(fileRef.getProjectIdentifier())
+                            .build();
+
+    List<EncryptedDataDetail> encryptedDataDetails =
+        ngEncryptedDataService.getEncryptionDetails(ngAccess, secretConfigFile);
+
+    if (isEmpty(encryptedDataDetails)) {
+      throw new InvalidRequestException(format("Secret file with identifier %s not found", fileRef.getIdentifier()));
     }
 
     return ConfigFileParameters.builder()
-        .fileContent(new String(ngEncryptedData.getEncryptedValue()))
-        .fileName(ngEncryptedData.getName())
-        .fileSize(getEncryptedDataLength(ngEncryptedData))
+        .fileName(secretConfigFile.getEncryptedConfigFile().getIdentifier())
+        .isEncrypted(true)
+        .secretConfigFile(secretConfigFile)
+        .encryptionDataDetails(encryptedDataDetails)
         .build();
-  }
-
-  private int getEncryptedDataLength(NGEncryptedData ngEncryptedData) {
-    return new String(ngEncryptedData.getEncryptedValue()).getBytes(StandardCharsets.UTF_8).length;
   }
 
   private List<NgCommandUnit> mapCommandUnits(List<CommandUnitWrapper> stepCommandUnits, boolean onDelegate) {

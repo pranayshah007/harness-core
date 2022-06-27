@@ -585,6 +585,7 @@ import io.harness.delegate.task.ssh.artifact.SshWinRmArtifactDelegateConfig;
 import io.harness.delegate.task.ssh.artifact.SshWinRmArtifactType;
 import io.harness.delegate.task.ssh.config.ConfigFileParameters;
 import io.harness.delegate.task.ssh.config.FileDelegateConfig;
+import io.harness.delegate.task.ssh.config.SecretConfigFile;
 import io.harness.delegate.task.stepstatus.StepExecutionStatus;
 import io.harness.delegate.task.stepstatus.StepMapOutput;
 import io.harness.delegate.task.stepstatus.StepStatus;
@@ -1593,5 +1594,6 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(AzureWebAppSwapSlotsResponseNG.class, 55333);
     kryo.register(SerializedResponseData.class, 55401);
     kryo.register(SerializationFormat.class, 55402);
+    kryo.register(SecretConfigFile.class, 55334);
   }
 }

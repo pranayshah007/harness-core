@@ -1710,6 +1710,7 @@
 55331:io.harness.delegate.task.azure.appservice.webapp.ng.response.AzureWebAppTrafficShiftResponse
 55332:io.harness.delegate.task.azure.appservice.webapp.ng.request.AzureWebAppSwapSlotsRequest
 55333:io.harness.delegate.task.azure.appservice.webapp.ng.response.AzureWebAppSwapSlotsResponseNG
+55334:io.harness.delegate.task.ssh.config.SecretConfigFile
 55401:io.harness.delegate.beans.SerializedResponseData
 55402:software.wings.beans.SerializationFormat
 70001:io.harness.accesscontrol.commons.exceptions.AccessDeniedErrorDTO
