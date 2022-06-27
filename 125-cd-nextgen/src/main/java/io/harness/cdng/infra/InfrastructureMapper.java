@@ -48,8 +48,8 @@ import org.apache.commons.lang3.tuple.Pair;
 @UtilityClass
 @OwnedBy(HarnessTeam.CDP)
 public class InfrastructureMapper {
-  public InfrastructureOutcome toOutcome(@Nonnull Infrastructure infrastructure, EnvironmentOutcome environmentOutcome,
-      ServiceStepOutcome service, String infraIdentifier, String infraName) {
+  public InfrastructureOutcome toOutcome(
+      @Nonnull Infrastructure infrastructure, EnvironmentOutcome environmentOutcome, ServiceStepOutcome service) {
     switch (infrastructure.getKind()) {
       case InfrastructureKind.KUBERNETES_DIRECT:
         K8SDirectInfrastructure k8SDirectInfrastructure = (K8SDirectInfrastructure) infrastructure;
@@ -59,8 +59,6 @@ public class InfrastructureMapper {
             .namespace(k8SDirectInfrastructure.getNamespace().getValue())
             .releaseName(getValueOrExpression(k8SDirectInfrastructure.getReleaseName()))
             .environment(environmentOutcome)
-            .infraIdentifier(infraIdentifier)
-            .infraName(infraName)
             .infrastructureKey(InfrastructureKey.generate(
                 service, environmentOutcome, k8SDirectInfrastructure.getInfrastructureKeyValues()))
             .build();
@@ -74,8 +72,6 @@ public class InfrastructureMapper {
             .cluster(k8sGcpInfrastructure.getCluster().getValue())
             .releaseName(getValueOrExpression(k8sGcpInfrastructure.getReleaseName()))
             .environment(environmentOutcome)
-            .infraIdentifier(infraIdentifier)
-            .infraName(infraName)
             .infrastructureKey(InfrastructureKey.generate(
                 service, environmentOutcome, k8sGcpInfrastructure.getInfrastructureKeyValues()))
             .build();
@@ -88,8 +84,6 @@ public class InfrastructureMapper {
             .region(serverlessAwsLambdaInfrastructure.getRegion().getValue())
             .stage(serverlessAwsLambdaInfrastructure.getStage().getValue())
             .environment(environmentOutcome)
-            .infraIdentifier(infraIdentifier)
-            .infraName(infraName)
             .infrastructureKey(InfrastructureKey.generate(
                 service, environmentOutcome, serverlessAwsLambdaInfrastructure.getInfrastructureKeyValues()))
             .build();
@@ -103,8 +97,6 @@ public class InfrastructureMapper {
             .cluster(ParameterFieldHelper.getParameterFieldValue(k8sAzureInfrastructure.getCluster()))
             .releaseName(getValueOrExpression(k8sAzureInfrastructure.getReleaseName()))
             .environment(environmentOutcome)
-            .infraIdentifier(infraIdentifier)
-            .infraName(infraName)
             .infrastructureKey(InfrastructureKey.generate(
                 service, environmentOutcome, k8sAzureInfrastructure.getInfrastructureKeyValues()))
             .subscription(ParameterFieldHelper.getParameterFieldValue(k8sAzureInfrastructure.getSubscriptionId()))
@@ -122,8 +114,6 @@ public class InfrastructureMapper {
             .connectorRef(ParameterFieldHelper.getParameterFieldValue(pdcInfrastructure.getConnectorRef()))
             .hostFilters(ParameterFieldHelper.getParameterFieldValue(pdcInfrastructure.getHostFilters()))
             .attributeFilters(ParameterFieldHelper.getParameterFieldValue(pdcInfrastructure.getAttributeFilters()))
-            .infraIdentifier(infraIdentifier)
-            .infraName(infraName)
             .environment(environmentOutcome)
             .infrastructureKey(
                 InfrastructureKey.generate(service, environmentOutcome, pdcInfrastructure.getInfrastructureKeyValues()))
@@ -149,9 +139,7 @@ public class InfrastructureMapper {
                 ParameterFieldHelper.getParameterFieldValue(sshWinRmAwsInfrastructure.getAutoScalingGroupName()))
             .environment(environmentOutcome)
             .infrastructureKey(
-                InfrastructureKey.generate(service, environmentOutcome, infrastructure.getInfrastructureKeyValues()))
-            .infraIdentifier(infraIdentifier)
-            .infraName(infraName);
+                InfrastructureKey.generate(service, environmentOutcome, infrastructure.getInfrastructureKeyValues()));
 
         if (!useAutoScalingGroup) {
           sshWinRmAwsInfrastructureOutcomeBuilder.awsInstanceFilter(
@@ -176,8 +164,6 @@ public class InfrastructureMapper {
             .tags(ParameterFieldHelper.getParameterFieldValue(sshWinRmAzureInfrastructure.getTags()))
             .usePublicDns(ParameterFieldHelper.getParameterFieldValue(sshWinRmAzureInfrastructure.getUsePublicDns()))
             .environment(environmentOutcome)
-            .infraIdentifier(infraIdentifier)
-            .infraName(infraName)
             .infrastructureKey(InfrastructureKey.generate(
                 service, environmentOutcome, sshWinRmAzureInfrastructure.getInfrastructureKeyValues()))
             .build();
@@ -190,8 +176,6 @@ public class InfrastructureMapper {
             .webApp(azureWebAppInfrastructure.getWebApp().getValue())
             .deploymentSlot(azureWebAppInfrastructure.getDeploymentSlot().getValue())
             .environment(environmentOutcome)
-            .infraIdentifier(infraIdentifier)
-            .infraName(infraName)
             .infrastructureKey(InfrastructureKey.generate(
                 service, environmentOutcome, azureWebAppInfrastructure.getInfrastructureKeyValues()))
             .subscription(azureWebAppInfrastructure.getSubscriptionId().getValue())

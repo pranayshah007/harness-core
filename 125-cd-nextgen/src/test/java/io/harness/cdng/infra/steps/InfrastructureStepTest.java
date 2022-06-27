@@ -43,7 +43,6 @@ import io.harness.cdng.infra.beans.K8sGcpInfraMapping;
 import io.harness.cdng.infra.beans.PdcInfraMapping;
 import io.harness.cdng.infra.beans.SshWinRmAzureInfraMapping;
 import io.harness.cdng.infra.yaml.AzureWebAppInfrastructure;
-import io.harness.cdng.infra.yaml.InfraConfigStepParameter;
 import io.harness.cdng.infra.yaml.Infrastructure;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure.K8SDirectInfrastructureBuilder;
@@ -128,12 +127,8 @@ public class InfrastructureStepTest extends CategoryTest {
   public void testValidateResource() {
     Ambiance ambiance = Ambiance.newBuilder().build();
     K8SDirectInfrastructureBuilder k8SDirectInfrastructureBuilder = K8SDirectInfrastructure.builder();
-    InfraConfigStepParameter infraConfigStepParameter = InfraConfigStepParameter.builder()
-                                                            .infraName(null)
-                                                            .infraIdentifier(null)
-                                                            .spec(k8SDirectInfrastructureBuilder.build())
-                                                            .build();
-    infrastructureStep.validateResources(ambiance, infraConfigStepParameter);
+
+    infrastructureStep.validateResources(ambiance, k8SDirectInfrastructureBuilder.build());
   }
 
   @Test
@@ -162,8 +157,6 @@ public class InfrastructureStepTest extends CategoryTest {
                                             .releaseName(ParameterField.createValueField("releaseName"))
                                             .cluster(ParameterField.createValueField("cluster"))
                                             .build();
-    InfraConfigStepParameter infraConfigStepParameter =
-        InfraConfigStepParameter.builder().infraIdentifier(null).infraName(null).spec(infrastructureSpec).build();
 
     when(infrastructureStepHelper.getInfrastructureLogCallback(ambiance, true)).thenReturn(ngLogCallbackOpen);
     when(infrastructureStepHelper.getInfrastructureLogCallback(ambiance)).thenReturn(ngLogCallback);
@@ -175,8 +168,7 @@ public class InfrastructureStepTest extends CategoryTest {
         .thenReturn(ServiceStepOutcome.builder().type(ServiceSpecType.KUBERNETES).build());
     when(k8sStepHelper.getK8sInfraDelegateConfig(any(), eq(ambiance))).thenReturn(k8sInfraDelegateConfig);
 
-    infrastructureStep.executeSyncAfterRbac(
-        ambiance, infraConfigStepParameter, StepInputPackage.builder().build(), null);
+    infrastructureStep.executeSyncAfterRbac(ambiance, infrastructureSpec, StepInputPackage.builder().build(), null);
 
     // Verifies `getInfrastructureLogCallback` is called with `shouldOpenStream` as `true` only once
     // Verifies `ngLogCallbackOpen` is used at least 4 times for the static logs
@@ -204,9 +196,6 @@ public class InfrastructureStepTest extends CategoryTest {
                                             .hosts(ParameterField.createValueField(Arrays.asList("host1", "host2")))
                                             .build();
 
-    InfraConfigStepParameter infraConfigStepParameter =
-        InfraConfigStepParameter.builder().infraIdentifier(null).infraName(null).spec(infrastructureSpec).build();
-
     when(executionSweepingOutputService.resolve(
              any(), eq(RefObjectUtils.getSweepingOutputRefObject(OutputExpressionConstants.ENVIRONMENT))))
         .thenReturn(EnvironmentOutcome.builder().build());
@@ -214,8 +203,7 @@ public class InfrastructureStepTest extends CategoryTest {
         .thenReturn(ServiceStepOutcome.builder().type(ServiceSpecType.SSH).build());
     when(k8sStepHelper.getSshInfraDelegateConfig(any(), eq(ambiance))).thenReturn(pdcSshInfraDelegateConfig);
 
-    infrastructureStep.executeSyncAfterRbac(
-        ambiance, infraConfigStepParameter, StepInputPackage.builder().build(), null);
+    infrastructureStep.executeSyncAfterRbac(ambiance, infrastructureSpec, StepInputPackage.builder().build(), null);
 
     ArgumentCaptor<SshInfraDelegateConfigOutput> pdcConfigOutputCaptor =
         ArgumentCaptor.forClass(SshInfraDelegateConfigOutput.class);

@@ -15,23 +15,24 @@ import io.harness.steps.environment.EnvironmentOutcome;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.Map;
+import lombok.Builder;
 import lombok.Value;
-import lombok.experimental.SuperBuilder;
 import org.springframework.data.annotation.TypeAlias;
 
 @Value
-@SuperBuilder
+@Builder
 @JsonTypeName(InfrastructureKind.SSH_WINRM_AZURE)
 @TypeAlias("cdng.infra.beans.SshWinRmAzureInfrastructureOutcome")
 @OwnedBy(HarnessTeam.CDP)
 @RecasterAlias("io.harness.cdng.infra.beans.SshWinRmAzureInfrastructureOutcome")
-public class SshWinRmAzureInfrastructureOutcome extends InfrastructureOutcomeAbstract implements InfrastructureOutcome {
+public class SshWinRmAzureInfrastructureOutcome implements InfrastructureOutcome {
   String connectorRef;
   String subscriptionId;
   String resourceGroup;
   String credentialsRef;
   Map<String, String> tags;
   Boolean usePublicDns;
+
   EnvironmentOutcome environment;
   String infrastructureKey;
 

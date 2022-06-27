@@ -14,17 +14,17 @@ import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.steps.environment.EnvironmentOutcome;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import lombok.Builder;
 import lombok.Value;
-import lombok.experimental.SuperBuilder;
 import org.springframework.data.annotation.TypeAlias;
 
 @Value
-@SuperBuilder
+@Builder
 @JsonTypeName(InfrastructureKind.AZURE_WEB_APP)
 @TypeAlias("io.harness.cdng.infra.beans.AzureWebAppInfrastructureOutcome")
 @OwnedBy(HarnessTeam.CDP)
 @RecasterAlias("io.harness.cdng.infra.beans.AzureWebAppInfrastructureOutcome")
-public class AzureWebAppInfrastructureOutcome extends InfrastructureOutcomeAbstract implements InfrastructureOutcome {
+public class AzureWebAppInfrastructureOutcome implements InfrastructureOutcome {
   String connectorRef;
   EnvironmentOutcome environment;
   String infrastructureKey;

@@ -14,17 +14,17 @@ import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.steps.environment.EnvironmentOutcome;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import lombok.Builder;
 import lombok.Value;
-import lombok.experimental.SuperBuilder;
 import org.springframework.data.annotation.TypeAlias;
 
 @Value
-@SuperBuilder
+@Builder
 @JsonTypeName(InfrastructureKind.KUBERNETES_AZURE)
 @TypeAlias("cdng.infra.beans.K8sAzureInfrastructureOutcome")
 @OwnedBy(HarnessTeam.CDP)
 @RecasterAlias("io.harness.cdng.infra.beans.K8sAzureInfrastructureOutcome")
-public class K8sAzureInfrastructureOutcome extends InfrastructureOutcomeAbstract implements InfrastructureOutcome {
+public class K8sAzureInfrastructureOutcome implements InfrastructureOutcome {
   String connectorRef;
   String namespace;
   String cluster;
