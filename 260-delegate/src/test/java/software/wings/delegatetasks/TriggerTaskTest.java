@@ -12,6 +12,7 @@ import static io.harness.rule.OwnerRule.ANSHUL;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -90,7 +91,7 @@ public class TriggerTaskTest extends WingsBaseTest {
     gitFileList.add(GitFile.builder().filePath("abc/ghi.txt").build());
     GitFetchFilesResult gitFetchFilesResult = GitFetchFilesResult.builder().files(gitFileList).build();
 
-    when(gitService.fetchFilesBetweenCommits(any(), any(), any(), any(), false)).thenReturn(gitFetchFilesResult);
+    when(gitService.fetchFilesBetweenCommits(any(), any(), any(), any(), anyBoolean())).thenReturn(gitFetchFilesResult);
 
     TriggerDeploymentNeededResponse triggerResponse =
         (TriggerDeploymentNeededResponse) triggerTask.run(new Object[] {triggerRequest});
@@ -110,7 +111,7 @@ public class TriggerTaskTest extends WingsBaseTest {
     gitFileList.add(GitFile.builder().filePath("abc/ghi.txt").build());
     GitFetchFilesResult gitFetchFilesResult = GitFetchFilesResult.builder().files(gitFileList).build();
 
-    when(gitService.fetchFilesBetweenCommits(any(), any(), any(), any(), false)).thenReturn(gitFetchFilesResult);
+    when(gitService.fetchFilesBetweenCommits(any(), any(), any(), any(), anyBoolean())).thenReturn(gitFetchFilesResult);
 
     TriggerDeploymentNeededResponse triggerResponse =
         (TriggerDeploymentNeededResponse) triggerTask.run(new Object[] {triggerRequest});
@@ -123,7 +124,7 @@ public class TriggerTaskTest extends WingsBaseTest {
   @Category(UnitTests.class)
   public void testDeploymentNeededException() {
     TriggerDeploymentNeededRequest triggerRequest = getTriggerDeploymentNeededRequest();
-    when(gitService.fetchFilesBetweenCommits(any(), any(), any(), any(), false))
+    when(gitService.fetchFilesBetweenCommits(any(), any(), any(), any(), anyBoolean()))
         .thenThrow(new WingsException(ErrorCode.YAML_GIT_SYNC_ERROR).addParam("message", ""));
 
     TriggerResponse triggerResponse = triggerTask.run(new Object[] {triggerRequest});
