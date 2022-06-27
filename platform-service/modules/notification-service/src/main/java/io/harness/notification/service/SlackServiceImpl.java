@@ -129,7 +129,7 @@ public class SlackServiceImpl implements ChannelService {
     StrSubstitutor strSubstitutor = new StrSubstitutor(templateData);
     String message = strSubstitutor.replace(template);
     NotificationProcessingResponse processingResponse = null;
-    if (notificationSettingsService.getSendNotificationViaDelegate(accountId)) {
+    if (notificationSettingsService.checkIfWebhookIsSecret(slackWebhookUrls)) {
       DelegateTaskRequest delegateTaskRequest = DelegateTaskRequest.builder()
                                                     .accountId(accountId)
                                                     .taskType("NOTIFY_SLACK")

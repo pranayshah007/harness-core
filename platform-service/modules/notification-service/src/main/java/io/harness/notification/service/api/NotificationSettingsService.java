@@ -32,4 +32,6 @@ public interface NotificationSettingsService {
   NotificationSetting setSmtpConfig(String accountId, SmtpConfig smtpConfig);
 
   SmtpConfigResponse getSmtpConfigResponse(String accountId);
+
+  boolean checkIfWebhookIsSecret(List<String> webhooks);
 }
