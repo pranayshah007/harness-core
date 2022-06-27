@@ -9,6 +9,8 @@ import io.harness.entities.InstanceType;
 import io.harness.entities.instanceinfo.K8sBasicInfo;
 import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.services.EnvironmentService;
+import io.harness.ng.core.service.entity.ServiceEntity;
+import io.harness.ng.core.service.services.ServiceEntityService;
 
 import com.google.inject.Inject;
 import java.util.ArrayList;
@@ -19,14 +21,19 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class GitOpsRequestDTOMapper {
   @Inject private EnvironmentService environmentService;
+  @Inject private ServiceEntityService serviceEntityService;
   public InstanceDTO toInstanceDTO(
       GitOpsInstanceRequestDTO gitOpsInstanceRequestDTO, String accountId, K8sInstanceBasicInfoDTO k8sInstanceInfoDTO) {
     String orgId = gitOpsInstanceRequestDTO.getOrgIdentifier();
     String projId = gitOpsInstanceRequestDTO.getProjectIdentifier();
     String envId = gitOpsInstanceRequestDTO.getEnvIdentifier();
+    String svcId = gitOpsInstanceRequestDTO.getServiceIdentifier();
 
     Environment env =
         environmentService.get(accountId, orgId, projId, envId, false).orElseGet(() -> Environment.builder().build());
+
+    ServiceEntity service = serviceEntityService.get(accountId, orgId, projId, svcId, false)
+                                .orElseGet(() -> ServiceEntity.builder().build());
 
     return InstanceDTO.builder()
         .accountIdentifier(accountId)
@@ -36,6 +43,7 @@ public class GitOpsRequestDTOMapper {
         .envName(env.getName())
         .envType(env.getType())
         .serviceIdentifier(gitOpsInstanceRequestDTO.getServiceIdentifier())
+        .serviceName(service.getName())
         .instanceKey(gitOpsInstanceRequestDTO.getInstanceKey())
         .instanceType(InstanceType.K8S_INSTANCE)
         .lastDeployedById(gitOpsInstanceRequestDTO.getLastDeployedById())
