@@ -5215,6 +5215,9 @@ maven_install(
     name = "batch",
     artifacts = [
         "com.fasterxml.jackson.core:jackson-databind:2.13.1",
+        "com.azure:azure-core:1.25.0",
+        "com.azure:azure-storage-blob:12.9.0",
+        "com.azure:azure-storage-common:12.9.0",
     ],
     repositories = [
         "http://jfrogdev.dev.harness.io:80/artifactory/portal-maven",
@@ -5227,6 +5230,8 @@ maven_install(
     name = "ce-nextgen",
     artifacts = [
         "com.azure:azure-core:1.25.0",
+        "com.azure:azure-storage-blob:12.9.0",
+        "com.azure:azure-storage-common:12.9.0",
     ],
     repositories = [
         "http://jfrogdev.dev.harness.io:80/artifactory/portal-maven",
